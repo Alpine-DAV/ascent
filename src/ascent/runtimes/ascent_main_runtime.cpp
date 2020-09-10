@@ -345,11 +345,171 @@ AscentRuntime::Cleanup()
 }
 
 //-----------------------------------------------------------------------------
+void paint_nestsets(conduit::Node &data)
+{
+  const int num_domains = data.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = data.child(i);
+    if(!dom.has_path("nestsets"))
+    {
+      std::cout<<"NO\n";
+      continue;
+    }
+
+    conduit::Node &nestset = dom["nestsets"].child(0);
+    const std::string topo_name = nestset["topology"].as_string();
+    const Node &topo = dom["topologies/"+topo_name];
+
+    if(topo["type"].as_string() == "unstructured")
+    {
+      std::cout<<"Paint nestsets: cannot paint on unstructured topology\n";
+    }
+
+    int el_dims[3] = {1,1,1};
+    bool is_3d = false;
+
+    if(topo["type"].as_string() == "structured")
+    {
+      el_dims[0] = topo["elements/dims/i"].to_int32();
+      el_dims[1] = topo["elements/dims/j"].to_int32();
+      if(topo.has_path("elements/dims/k"))
+      {
+        is_3d = true;
+        el_dims[2] = topo["elements/dims/k"].to_int32();
+      }
+
+    }
+    else
+    {
+      const std::string coord_name = topo["coordset"].as_string();
+      const Node &coords = dom["coordsets/"+coord_name];
+      if(coords["type"].as_string() == "uniform")
+      {
+        el_dims[0] = coords["dims/i"].as_int32() - 1;
+        el_dims[1] = coords["dims/j"].as_int32() - 1;
+
+        if(coords.has_path("dims/k"))
+        {
+          is_3d = true;
+          el_dims[2] = topo["dims/k"].to_int32();
+        }
+      }
+      else if(coords["type"].as_string() == "rectilinear")
+      {
+        el_dims[0] = coords["values/x"].dtype().number_of_elements() - 1;
+        el_dims[1] = coords["values/y"].dtype().number_of_elements() - 1;
+        if(coords.has_path("values/z"))
+        {
+          is_3d = true;
+          el_dims[1] = coords["values/z"].dtype().number_of_elements() - 1;
+        }
+      }
+      else
+      {
+        ASCENT_ERROR("unknown coord type");
+      }
+    }
+    // ok, now paint
+
+    int32 field_size = el_dims[0] * el_dims[1];
+    if(is_3d)
+    {
+      field_size *= el_dims[2];
+    }
+
+    // lots of checking needs to be done
+    //Node &levels_field = dom["fields/ghost_indicator"];
+    Node &levels_field = dom["fields/mask"];
+    levels_field["association"] = "element";
+    levels_field["topology"] = topo_name;
+    levels_field["values"] = DataType::int32(field_size);
+    int32_array levels = levels_field["values"].value();
+
+    // already exists
+    //for(int i = 0; i < field_size; ++i)
+    //{
+    //  levels[i] = 0;
+    //}
+
+    //int nest_id = -1;
+    //for(int i = 0; i < dom["nestsets"].number_of_children(); ++i)
+    //{
+    //  //const Node &nestset = dom["nestsets"].child(0);
+    //  if(nestset["topology"].as_string() == topo_name)
+    //  {
+    //    nest_id = i;
+    //    break;
+    //  }
+    //}
+
+    //if(nest_id == -1) return;
+
+    //const Node &nestset = dom["nestsets"].child(nest_id);
+    const int windows = nestset["windows"].number_of_children();
+    for(int i = 0; i < windows; ++i)
+    {
+      const Node &window = nestset["windows"].child(i);
+      if(window["domain_type"].as_string() != "child")
+      {
+        continue;
+      }
+
+      int origin[3];
+      origin[0] = window["origin/i"].to_int32();
+      origin[1] = window["origin/j"].to_int32();
+
+      if(is_3d)
+      {
+        origin[2] = window["origin/k"].to_int32();
+      }
+
+      int dims[3];
+      dims[0] = window["dims/i"].to_int32();
+      dims[1] = window["dims/j"].to_int32();
+      if(is_3d)
+      {
+        dims[2] = window["dims/k"].to_int32();
+      }
+      if(is_3d)
+      {
+        // all the nesting relationship is local
+        for(int z = origin[2]; z < origin[2] + dims[2]; ++z)
+        {
+          const int z_offset = z * el_dims[0] * el_dims[1];
+          for(int y = origin[1]; y < origin[1] + dims[1]; ++y)
+          {
+            const int32 y_offset = y * el_dims[0];
+            for(int x = origin[0]; x < origin[0] + dims[0]; ++x)
+            {
+              levels[z_offset + y_offset + x] = 1;
+            }
+          }
+        }
+      }
+      else
+      {
+        // all the nesting relationship is local
+        for(int y = origin[1]; y < origin[1] + dims[1]; ++y)
+        {
+          const int32 y_offset = y * el_dims[0];
+          for(int x = origin[0]; x < origin[0] + dims[0]; ++x)
+          {
+            levels[y_offset + x] = 1;
+          }
+        }
+      }
+    }
+  } // for each domain
+
+}
+
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
+    paint_nestsets(m_source);
 }
 
 //-----------------------------------------------------------------------------

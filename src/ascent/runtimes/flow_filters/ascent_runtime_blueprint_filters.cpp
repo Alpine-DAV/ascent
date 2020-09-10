@@ -597,7 +597,10 @@ Learn::execute()
 
     std::string assoc =  "";
     std::string topo =  "";
-    int field_size = 0;
+    //int field_size = 0;
+    std::vector<int> field_sizes;
+    field_sizes.resize(n_input->number_of_children());
+
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
       const conduit::Node &dom = n_input->child(i);
@@ -612,9 +615,11 @@ Learn::execute()
         std::string f_topo = dom[fpath + "/topology"].as_string();
         if(f == 0)
         {
+          // todo: this is not totally right.
+          // we need to check that all domains and all fields are cool
           assoc = f_assoc;
           topo = f_topo;
-          field_size = dom[fpath + "/values"].dtype().number_of_elements();
+          field_sizes[i] = dom[fpath + "/values"].dtype().number_of_elements();
         }
         else
         {
@@ -665,7 +670,7 @@ Learn::execute()
     d_name<<"rank_"<<rank;
     std::ofstream debug;
     debug.open(d_name.str());
-    debug<<"Field size "<<field_size<<"\n";
+    //debug<<"Field size "<<field_size<<"\n";
 
 
 #ifdef ASCENT_VTKM_USE_CUDA
@@ -689,8 +694,8 @@ Learn::execute()
         const double * field_ptr = dom[fpath].value();
         fields.push_back(field_ptr);
       }
-      double *A = new double[field_size*num_fields];
-      for(int a = 0; a < field_size; ++a)
+      double *A = new double[field_sizes[i]*num_fields];
+      for(int a = 0; a < field_sizes[i]; ++a)
       {
         int offset = a * num_fields;
         for(int f = 0; f < num_fields; ++f)
@@ -704,7 +709,7 @@ Learn::execute()
       }
       // in column major order
       f_cokurt_vecs_cublas_wrapper(num_fields, // nrow
-                                   field_size, // nCol
+                                   field_sizes[i], // nCol
                                    A,
                                    kVecs,
                                    eigvals);
@@ -826,13 +831,15 @@ Learn::execute()
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
       conduit::Node &dom = n_input->child(i);
+      debug<<"Domain "<<i<<" "<<dom["coordsets"].to_yaml()<<"\n";
+      debug<<"field size "<<field_sizes[i]<<"\n";
       conduit::Node &field = dom["fields/spatial_metric"];
       field["association"] = assoc;
       field["topology"] = topo;
-      field["values"].set(conduit::DataType::float64(field_size));
+      field["values"].set(conduit::DataType::float64(field_sizes[i]));
       conduit::float64_array array = field["values"].value();
 
-      for(int v = 0; v < field_size; ++v)
+      for(int v = 0; v < field_sizes[i]; ++v)
       {
         array[v] = spatial_metric[i];
       }
