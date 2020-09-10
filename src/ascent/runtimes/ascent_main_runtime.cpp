@@ -1467,18 +1467,25 @@ void AscentRuntime::Execute(const conduit::Node &actions)
     vtkh::DataLogger::GetInstance()->CloseLogEntry();
 #endif
 
-    Node msg;
-    this->Info(msg["info"]);
-    ascent::about(msg["about"]);
-    m_web_interface.PushMessage(msg);
+    // Node msg;
+    // this->Info(msg["info"]);
+    // ascent::about(msg["about"]);
+    // m_web_interface.PushMessage(msg);
+
+    // std::string insitu_type;
+    // if (meta->has_path("insitu_type"))
+    // {
+      // insitu_type = (*meta)["insitu_type"].as_string();
+      // std::cout << insitu_type << std::endl;
+    // }
 
     auto t_detail = std::chrono::system_clock::now();
-
     // std::cout << "** set info " << std::endl;
     Node *images;
     if (w.registry().has_entry("image_list"))
     {
       images = w.registry().fetch<Node>("image_list");
+      // m_info["images"].set_external(*images);
     }
     else
     {
@@ -1515,29 +1522,6 @@ void AscentRuntime::Execute(const conduit::Node &actions)
       m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
     }
 
-    // Node renders;
-    // Node render_file_names;
-    // Node render_times;
-    // Node color_buffers;
-    // Node depth_buffers;
-    // Node depths;
-    // FindRenders(renders, render_file_names, render_times, color_buffers, depth_buffers, depths);
-    // print_time(t_detail, "''' copy image info ", m_rank);
-
-    // t_detail = std::chrono::system_clock::now();
-    // m_info["images"] = renders;
-    // m_info["render_times"] = render_times;
-    // m_info["color_buffers"] = color_buffers;
-    // m_info["depth_buffers"] = depth_buffers;
-    // m_info["depths"] = depths;
-    // m_info["render_file_names"] = render_file_names;
-
-    // m_info["images"].set_external(renders);
-    // m_info["render_times"].set_external(render_times);
-    // m_info["color_buffers"].set_external(color_buffers);
-    // m_info["depth_buffers"].set_external(depth_buffers);
-    // m_info["depths"].set_external(depths);
-    // m_info["render_file_names"].set_external(render_file_names);
 
     // Node *images = w.registry().fetch<Node>("image_list");
     // images->reset();

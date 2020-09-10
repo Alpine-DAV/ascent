@@ -647,10 +647,10 @@ int recv_any_using_schema(Node &node, const int src, const int tag, const MPI_Co
     return status.MPI_SOURCE;
 }
 
-void pack_node_external(Node &node, Node &packed)
+void pack_node(Node &node, Node &packed)
 {
     conduit::Schema s_data_compact;
-    
+
     // schema will only be valid if compact and contig
     if( node.is_compact() && node.is_contiguous())
     {
@@ -676,49 +676,15 @@ void pack_node_external(Node &node, Node &packed)
     // these sets won't realloc since schemas are compatible
     packed["schema_len"].set((int64)snd_schema_json.length());
     packed["schema"].set(snd_schema_json);
-     
-    // TODO: update_external is not working. 
-    // Probably because setting the data external leads to non aligned memory?
-    // -> Sending schema separate from data results in:
-    // Fatal error in MPI_Ssend: Invalid buffer pointer, error stack:
-    // MPI_Ssend(152): MPI_Ssend(buf=(nil)
+
+    // packed["data"].set_external(node);
     packed["data"].update(node);
+
+    // Node ninfo;
+    // packed.info(ninfo);
+    // ninfo.print();
 }
 
-Node pack_node(Node &node)  // TODO: use/test pack_node_external
-{
-    conduit::Schema s_data_compact;
-    
-    // schema will only be valid if compact and contig
-    if( node.is_compact() && node.is_contiguous())
-    {
-        s_data_compact = node.schema();
-    }
-    else
-    {
-        node.schema().compact_to(s_data_compact);
-    }
-    
-    std::string snd_schema_json = s_data_compact.to_json();
-
-    conduit::Schema s_msg;
-    s_msg["schema_len"].set(DataType::int64());
-    s_msg["schema"].set(DataType::char8_str(snd_schema_json.size()+1));
-    s_msg["data"].set(s_data_compact);
-    
-    // create a compact schema to use
-    conduit::Schema s_msg_compact;
-    s_msg.compact_to(s_msg_compact);
-    
-    Node n_msg;
-    n_msg.set_schema(s_msg_compact);
-    // these sets won't realloc since schemas are compatible
-    n_msg["schema_len"].set((int64)snd_schema_json.length());
-    n_msg["schema"].set(snd_schema_json);
-    n_msg["data"].update(node); // TODO: change to set_external
-
-    return n_msg;
-}
 
 void unpack_node(const Node &node, Node &unpacked)
 {
@@ -747,7 +713,13 @@ void unpack_node(const Node &node, Node &unpacked)
     
     // set data to our result node (external, no copy)
     unpacked.update_external(n_msg["data"]); 
+    // unpacked.set_external(n_msg["data"]);
     // unpacked.update(n_msg["data"]);
+
+    // std::cout << "unpack " << std::endl;
+    // Node ninfo;
+    // unpacked.info(ninfo);
+    // ninfo.print();
 }
 
 
@@ -777,7 +749,7 @@ int calc_render_msg_size(const int render_count, const int probing_count,
     const int total_renders = render_count - probing_count;
 
     const int overhead_render = 396 + 512;    // TODO: add correct bytes for name
-    const int overhead_global = 288;
+    const int overhead_global = 288 + 42000;
     return total_renders * channels * width * height + 
            total_renders * overhead_render + overhead_global;
 }
@@ -1012,7 +984,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
     std::cout << "~~~~arrange render order " << mpi_props.rank << std::endl;
 
     // arrange render order   
-    vector<int> probing_enum_sim(my_render_recv_cnt, 0);
+    vector<int> probing_enum_sim(my_data_recv_cnt, 0);  // TODO: test hybrid
     vector<int> probing_enum_vis(my_data_recv_cnt, 0);
     // images / sender / values
     vec_vec_node_sptr render_ptrs(render_cfg.max_count);
@@ -1023,22 +995,23 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         render_ptrs[j].reserve(my_data_recv_cnt);
         render_arrangement[j].reserve(my_data_recv_cnt);
 
-        // std::cout << "\nimage " << j << std::endl;
+        std::cout << "\nimage " << j << std::endl;
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
-            // std::cout << "  " << i << " ";
+            std::cout << "  " << i << " " << probing_enum_sim[i];
             if (render_cfg.probing_stride && (j % render_cfg.probing_stride == 0)) // probing image
             {
+                std::cout << " " << mpi_props.rank << " .probing  " << render_cfg.probing_stride << std::endl;
                 const index_t id = j / render_cfg.probing_stride;
                 if (parts_probing[i]->has_child("render_file_names"))
                 {
                     render_ptrs[j].emplace_back(parts_probing[i]);
                     render_arrangement[j].emplace_back(id);
-                    // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
+                    std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
                 }
                 else
                 {
-                    // std::cout << " " << mpi_props.rank << " skip probe " << id << std::endl;
+                    std::cout << " " << mpi_props.rank << " skip probe " << id << std::endl;
                 }
 
                 {   // keep track of probing images
@@ -1053,6 +1026,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             }
             else if (j < g_render_counts[src_ranks[i]] + probing_enum_sim[i]) // part comes from sim node (inline)
             {
+                std::cout << " " << mpi_props.rank << " .sim  " << std::endl;
                 int batch_id = 0;
                 int sum = 0;
                 for (size_t k = 0; k < sim_batch_sizes[i].size(); k++)
@@ -1082,6 +1056,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             }
             else    // part rendered on this vis node
             {
+                std::cout << " " << mpi_props.rank << " .vis  " << std::endl;
                 // Reset the probing counter if this is the first render in vis node chunks 
                 // and this is not a probing render.
                 if (j == g_render_counts[src_ranks[i]] + probing_enum_sim[i])
@@ -1093,11 +1068,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                 {
                     render_ptrs[j].emplace_back(render_chunks_vis[i]);
                     render_arrangement[j].emplace_back(id);
-                    // std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
+                    std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
                 }
                 else
                 {
-                    // std::cout << " " << mpi_props.rank << " skip vis " << id << std::endl;
+                    std::cout << " " << mpi_props.rank << " skip vis " << id << std::endl;
                 }
             }
         }
@@ -1252,7 +1227,8 @@ void pack_and_send(Node &data, const int destination, const int tag,
                    const MPI_Comm comm, MPI_Request &req)
 {
     // debug_break();
-    Node compact_node = pack_node(data);
+    Node compact_node;
+    pack_node(data, compact_node);
 
     int mpi_error = MPI_Ibsend(compact_node.data_ptr(),
                                compact_node.total_bytes_compact(),
@@ -1289,7 +1265,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
     float my_sim_estimate = data["state/sim_time"].to_float();
     std::cout << mpi_props.rank << " ~ sim time estimate: " << my_sim_estimate << std::endl;
 
-    Node data_packed = pack_node(data);
+    Node data_packed;
+    pack_node(data, data_packed);
     int my_data_size = data_packed.total_bytes_compact();
 
     if (mpi_props.rank >= mpi_props.sim_node_count) // nodes with the highest ranks are vis nodes
@@ -1341,7 +1318,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         if (render_cfg.insitu_type == "hybrid")
         {
             skipped_render = 1;
-            if (render_chunks_probing.has_child("render_file_names"))
+            if (render_chunks_probing.has_child("render_file_names")) //images")) 
                 skipped_render = 0; // false
         }
     }
@@ -1666,8 +1643,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
         Node verify_info;
         if (conduit::blueprint::mesh::verify(data, verify_info))
         {
-            // Node compact_probing_renders = pack_node(render_chunks_probing);
-            // compact_probing_renders are now packed and send in separate thread
             std::vector<int> batch_sizes = get_batch_sizes(g_render_counts[mpi_props.rank], 
                                                            render_cfg, true);
 
@@ -1677,9 +1652,10 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 const index_t msg_size_render = calc_render_msg_size(g_render_counts[mpi_props.rank], 0);
                 const index_t msg_size_probing = calc_render_msg_size(render_cfg.probing_count, 0);
                 const int overhead = MPI_BSEND_OVERHEAD * (batch_sizes.size() + 1); // 1 probing batch
-                MPI_Buffer_attach(malloc(msg_size_render + msg_size_probing + overhead), 
-                                         msg_size_render + msg_size_probing + overhead);
-                // std::cout << "-- buffer size: " << (msg_size_render + msg_size_probing + overhead) << std::endl;
+                const int total_size = msg_size_render + msg_size_probing + overhead;
+                
+                MPI_Buffer_attach(malloc(total_size), total_size);
+                // std::cout << mpi_props.rank << " -- buffer size: " << total_size << std::endl;
             }
 
             {   // send data to vis node
@@ -1704,8 +1680,6 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 pack_probing_thread = std::thread(&pack_and_send, std::ref(render_chunks_probing), 
                                                   destination, tag_probing, mpi_props.comm_world, 
                                                   std::ref(request_probing));
-                // pack_and_send(render_chunks_probing, destination, tag_probing, mpi_props.comm_world, 
-                //                                   request_probing); 
 
             log_global_time("end sendData", mpi_props.rank);
 
@@ -1713,7 +1687,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             std::vector<Ascent> ascent_renders(batch_sizes.size());
             std::vector<MPI_Request> requests(batch_sizes.size(), MPI_REQUEST_NULL);
             std::vector<conduit::Node> info(batch_sizes.size());
-            Node renders_inline;
+            std::vector<conduit::Node> renders_inline(batch_sizes.size());
 
             std::vector<std::thread> threads;
             std::chrono::duration<double> sum_render(0);
@@ -1761,12 +1735,12 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 
                 // send render chunks
                 ascent_renders[i].info(info[i]);
-                renders_inline["depths"].set_external(info[i]["depths"]);
-                renders_inline["color_buffers"].set_external(info[i]["color_buffers"]);
-                renders_inline["depth_buffers"].set_external(info[i]["depth_buffers"]);
-                renders_inline["render_file_names"].set_external(info[i]["render_file_names"]);
+                renders_inline[i]["depths"].set_external(info[i]["depths"]);
+                renders_inline[i]["color_buffers"].set_external(info[i]["color_buffers"]);
+                renders_inline[i]["depth_buffers"].set_external(info[i]["depth_buffers"]);
+                renders_inline[i]["render_file_names"].set_external(info[i]["render_file_names"]);
 
-                threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline), 
+                threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline[i]), 
                                               destination, 
                                               tag_inline + i, mpi_props.comm_world, 
                                               std::ref(requests[i])));
@@ -1951,7 +1925,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     Ascent ascent_probing;
     Node render_chunks;
     // run probing only if this is a sim node
-    if ((world_rank < sim_count && probing_factor > 0.0) || insitu_type == "inline")
+    if (world_rank < sim_count && (probing_factor > 0.0 || insitu_type == "inline"))
     {
         auto start = std::chrono::system_clock::now();
         ascent_opt["runtime/type"] = "ascent"; // set to main runtime
@@ -1984,6 +1958,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
 
             if (info.has_child("render_file_names"))
             {
+                // render_chunks.set_external(info);
                 render_chunks["render_file_names"].set_external(info["render_file_names"]);
                 render_chunks["depths"].set_external(info["depths"]);
                 render_chunks["color_buffers"].set_external(info["color_buffers"]);

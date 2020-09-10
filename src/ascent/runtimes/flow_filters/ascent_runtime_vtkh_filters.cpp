@@ -384,7 +384,7 @@ public:
         // NOTE: move costs < 0.2 seconds per node per batch (200-400 renders)
         m_render_times.push_back(std::move(r->GetRenderTimes()));
         m_color_buffers.push_back(std::move(r->GetColorBuffers()));
-        m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
+        // m_depth_buffers.push_back(std::move(r->GetDepthBuffers()));
         m_depths.push_back(std::move(r->GetDepths()));
 
         // t_img_data += std::chrono::system_clock::now() - start;
@@ -2636,7 +2636,7 @@ void add_images(std::vector<vtkh::Render> *renders,
                 flow::Graph *graph, 
                 const std::vector<std::vector<double> > *scene_render_times,
                 std::vector<std::vector<unsigned char> > *color_buffers,
-                std::vector<std::vector<float> > *depth_buffers,
+                // std::vector<std::vector<float> > *depth_buffers,
                 std::vector<float> *depths)
 {
   // check if anything was rendered
@@ -2702,7 +2702,10 @@ void add_images(std::vector<vtkh::Render> *renders,
     int size = renders->at(i).GetWidth() * renders->at(i).GetHeight();
     // NOTE: only getting canvas from domain 0 for now
     image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
-    image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
+
+    float* depth_buffer = vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer());
+    image_data[i]["depth_buffer"].set_external(depth_buffer, size);
+    // image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
     image_data[i]["depth"] = depths->at(i);
 
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
@@ -2766,12 +2769,12 @@ void ExecScene::execute()
   std::vector<std::vector<double> > *render_times = scene->GetRenderTimes();
   // NOTE: only domain 0 for now
   std::vector<std::vector<unsigned char> > *color_buffers = scene->GetColorBuffers(0);
-  std::vector<std::vector<float> > *depth_buffers = scene->GetDepthBuffers(0); 
+  // std::vector<std::vector<float> > *depth_buffers = scene->GetDepthBuffers(0); 
   std::vector<float> *depths = scene->GetDepths(0);
 
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
-  add_images(renders, &graph(), render_times, color_buffers, depth_buffers, depths);
+  add_images(renders, &graph(), render_times, color_buffers, /*depth_buffers,*/ depths);
 
   scene->ConsumeRenderers();
 }
