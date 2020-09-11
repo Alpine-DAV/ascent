@@ -2711,8 +2711,10 @@ void add_images(std::vector<vtkh::Render> *renders,
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
     // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
 
-    // TODO: copy: big performance hit
-    // set_external is way faster (no copy) but results in memory error on pack_and_send 
+    // TODO: copy: big performance hit -> avoid
+    // set_external is way faster (no copy) but results in empty packed messages (png write)
+    // image_list->child(i).set_external(image_data[i]);
+
     // Node &image = image_list->append();
     // image.set(std::move(image_data[i]));
 
@@ -2774,7 +2776,8 @@ void ExecScene::execute()
 
   // the images should exist now so add them to the image list
   // this can be used for the web server or jupyter
-  add_images(renders, &graph(), render_times, color_buffers, /*depth_buffers,*/ depths);
+  if (!is_inline)
+    add_images(renders, &graph(), render_times, color_buffers, /*depth_buffers,*/ depths);
 
   scene->ConsumeRenderers();
 }

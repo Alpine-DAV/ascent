@@ -995,23 +995,22 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         render_ptrs[j].reserve(my_data_recv_cnt);
         render_arrangement[j].reserve(my_data_recv_cnt);
 
-        std::cout << "\nimage " << j << std::endl;
+        // std::cout << "\nimage " << j << std::endl;
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
-            std::cout << "  " << i << " " << probing_enum_sim[i];
+            // std::cout << "  " << i << " " << probing_enum_sim[i];
             if (render_cfg.probing_stride && (j % render_cfg.probing_stride == 0)) // probing image
             {
-                std::cout << " " << mpi_props.rank << " .probing  " << render_cfg.probing_stride << std::endl;
                 const index_t id = j / render_cfg.probing_stride;
                 if (parts_probing[i]->has_child("render_file_names"))
                 {
                     render_ptrs[j].emplace_back(parts_probing[i]);
                     render_arrangement[j].emplace_back(id);
-                    std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " probe  " << id << std::endl;
                 }
                 else
                 {
-                    std::cout << " " << mpi_props.rank << " skip probe " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " skip probe " << id << std::endl;
                 }
 
                 {   // keep track of probing images
@@ -1026,7 +1025,6 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             }
             else if (j < g_render_counts[src_ranks[i]] + probing_enum_sim[i]) // part comes from sim node (inline)
             {
-                std::cout << " " << mpi_props.rank << " .sim  " << std::endl;
                 int batch_id = 0;
                 int sum = 0;
                 for (size_t k = 0; k < sim_batch_sizes[i].size(); k++)
@@ -1056,7 +1054,6 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             }
             else    // part rendered on this vis node
             {
-                std::cout << " " << mpi_props.rank << " .vis  " << std::endl;
                 // Reset the probing counter if this is the first render in vis node chunks 
                 // and this is not a probing render.
                 if (j == g_render_counts[src_ranks[i]] + probing_enum_sim[i])
@@ -1068,11 +1065,11 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                 {
                     render_ptrs[j].emplace_back(render_chunks_vis[i]);
                     render_arrangement[j].emplace_back(id);
-                    std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " vis  " << id << std::endl;
                 }
                 else
                 {
-                    std::cout << " " << mpi_props.rank << " skip vis " << id << std::endl;
+                    // std::cout << " " << mpi_props.rank << " skip vis " << id << std::endl;
                 }
             }
         }
