@@ -128,6 +128,7 @@ TEST(ascent_babelfow_pmt_mpi, test_babelfow_pmt_mpi)
                                               data_size[1],
                                               data_size[2],
                                               whole_data_node);
+
     conduit::DataArray<double> whole_data_array = whole_data_node["fields/braid/values"].as_float64_array();
 
     // copy the subsection of data
@@ -170,6 +171,19 @@ TEST(ascent_babelfow_pmt_mpi, test_babelfow_pmt_mpi)
 
   int32_t fanin = 2;
   FunctionType threshold = -FLT_MAX;
+  std::vector<int64_t> in_ghosts({1, 1, 1, 1, 1, 1});
+
+  // Make sure the output dir exists 
+  string output_path = "";
+  if (mpi_rank == 0)
+  {
+      output_path = prepare_output_dir();
+  }
+  else
+  {
+      output_path = output_dir();
+  }
+  string output_file = conduit::utils::join_file_path(output_path, "tout_babelflow_pmt_mpi");
 
   // build filter Node
   Node pipelines;
@@ -177,16 +191,51 @@ TEST(ascent_babelfow_pmt_mpi, test_babelfow_pmt_mpi)
   pipelines["pl1/f1/params/field"] = "braids";
   pipelines["pl1/f1/params/fanin"] = int64_t(fanin);
   pipelines["pl1/f1/params/threshold"] = threshold;
-  pipelines["pl1/f1/params/gen_segment"] = int64_t(1);
+  pipelines["pl1/f1/params/in_ghosts"].set_int64_vector(in_ghosts);
+  pipelines["pl1/f1/params/gen_segment"] = int64_t(1);    // 1 -- means create a field with segmentation
 
-  Node action;
-  Node &add_pipelines = action.append();
+  ///
+  Node extracts;
+  extracts["e1/type"] = "relay";
+  extracts["e1/pipeline"] = "pl1";
+  extracts["e1/params/path"] = "seg";
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+  extracts["e1/params/fields"].append() = "segment";
+  ///
+
+  // Build scene node for volume rendering of the segmentation field
+  Node scenes;
+
+  scenes["s1/plots/p1/type"]  = "volume";
+  scenes["s1/plots/p1/field"] = "segment";
+  // scenes["s1/plots/p1/color_table/control_points"] = control_points;
+  
+  scenes["s1/renders/r1/image_width"]  = 512;
+  scenes["s1/renders/r1/image_height"] = 512;
+  scenes["s1/renders/r1/image_prefix"] = output_file;
+  scenes["s1/renders/r1/camera/azimuth"] = 30.0;
+  scenes["s1/renders/r1/camera/elevation"] = 30.0;
+
+  Node actions;
+
+  Node &add_pipelines = actions.append();
   add_pipelines["action"] = "add_pipelines";
   add_pipelines["pipelines"] = pipelines;
 
-  action.append()["action"] = "execute";
+  // Add the extracts
+  Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  add_extracts["extracts"] = extracts;
+
+  Node &add_scenes = actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
+
+  if (mpi_rank == 0)
+    actions.print();
+
   start = clock();
-  a.execute(action);
+  a.execute(actions);
   finish = clock();
   run_time = (static_cast<double>(finish) - static_cast<double>(start)) / CLOCKS_PER_SEC;
   MPI_Reduce(&run_time, &max_run_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -195,6 +244,9 @@ TEST(ascent_babelfow_pmt_mpi, test_babelfow_pmt_mpi)
   }
 
   a.close();
+
+  // Check that we created an image
+  EXPECT_TRUE(check_test_image(output_file, 0.1, "0"));
 }
 
 
