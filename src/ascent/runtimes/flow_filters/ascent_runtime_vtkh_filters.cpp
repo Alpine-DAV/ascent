@@ -2703,15 +2703,14 @@ void add_images(std::vector<vtkh::Render> *renders,
     // NOTE: only getting canvas from domain 0 for now
     image_data[i]["color_buffer"].set_external(color_buffers->at(i).data(), size * 4); // *4 for RGBA
 
-    float* depth_buffer = vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer());
-    image_data[i]["depth_buffer"].set_external(depth_buffer, size);
+    // image_data[i]["depth_buffer"].set_external(depth_buffer, size);
     // image_data[i]["depth_buffer"].set_external(depth_buffers->at(i).data(), size);
     image_data[i]["depth"] = depths->at(i);
 
     // get depth buffer directly from vtk-m -> memory error bc renderer is consumed ?
     // image_data[i]["depth_buffer"].set_external(vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer()), size);
 
-    // TODO: copy: big performance hit -> avoid
+    // TODO: copy: big performance hit -> avoid copy of color buffer and move uchar cast
     // set_external is way faster (no copy) but results in empty packed messages (png write)
     // image_list->child(i).set_external(image_data[i]);
 
@@ -2719,6 +2718,11 @@ void add_images(std::vector<vtkh::Render> *renders,
     // image.set(std::move(image_data[i]));
 
     image_list->child(i).set(std::move(image_data[i]));
+
+    float* depth_buffer = vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetDepthBuffer());
+    image_list->child(i)["depth_buffer"].set_external(depth_buffer, size);
+    // float* color_buffer = &vtkh::GetVTKMPointer(renders->at(i).GetCanvas(0)->GetColorBuffer())[0][0];
+    // image_list->child(i)["color_buffer"].set_external(color_buffer, size * 4);
     
     // image_list->append() = image_data;
 

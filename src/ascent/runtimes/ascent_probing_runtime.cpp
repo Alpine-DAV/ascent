@@ -1220,9 +1220,30 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
     log_global_time("end compositing", mpi_props.rank);
 }
 
+// TODO: fix
+void convert_color_buffer(Node &data)
+{
+    int size = 800*800*4;
+    for (int i = 0; i < data["color_buffers"].number_of_children(); i++)
+    {
+        float *cb_float = data["color_buffers"].child(i).as_float_ptr();
+        std::vector<unsigned char> cb_uchar(size);
+
+    #pragma omp parallel for
+        for (size_t j = 0; j < cb_uchar.size(); j++)
+            cb_uchar[j] = static_cast<unsigned char>(int(cb_float[j] * 255.f));
+        
+        data["color_buffers_uchar"].append();
+        data["color_buffers_uchar"][i].set(cb_uchar.data(), size);
+    }
+    data.remove("color_buffers");
+}
+
 void pack_and_send(Node &data, const int destination, const int tag, 
                    const MPI_Comm comm, MPI_Request &req)
 {
+    // convert_color_buffer(data);
+
     // debug_break();
     Node compact_node;
     pack_node(data, compact_node);
