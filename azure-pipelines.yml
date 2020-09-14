@@ -60,12 +60,14 @@ stages:
           ENABLE_PYTHON: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
+          ENABLE_BABELFLOW: OFF
         shared_py36:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
     steps:
       - checkout: self
         clean: boolean
@@ -106,6 +108,7 @@ stages:
            if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           if [ $ENABLE_BABELFLOW  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DBABELFLOW_DIR=IGNORE"; fi
            echo ${CMAKE_OPTS}
            # configure
            cmake ${CMAKE_OPTS} ../src
