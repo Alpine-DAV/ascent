@@ -34,7 +34,6 @@ class Pmt(CMakePackage):
     version('develop',
             git='https://bitbucket.org/cedmav/parallelmergetree.git',
             branch='ascent',
-            commit='6bd8fd82e8f4a755c3466fb4d30b8c18509bd000',
             submodules=True,
             preferred=True)
 
