@@ -34,7 +34,7 @@ class Babelflow(CMakePackage):
     version('develop',
             git='https://github.com/sci-visus/BabelFlow.git',
             branch='ascent',
-            commit='62e0eae8b2ff28094ec03f0c2496e579dda794ab',
+            commit='7a082859b8871ffae445bfe5a9699f17ea58ef9b'
             submodules=True,
             preferred=True)
 
