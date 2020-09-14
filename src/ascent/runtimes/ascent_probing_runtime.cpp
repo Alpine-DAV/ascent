@@ -1260,6 +1260,14 @@ void pack_and_send(Node &data, const int destination, const int tag,
         std::cout << "ERROR sending node to " << destination << std::endl;
 }
 
+void get_renders(Ascent &ascent, std::shared_ptr<conduit::Node> &renders)
+{
+    conduit::Node info;
+    ascent.info(info);
+
+    if (info.has_child("render_file_names"))
+        renders = std::make_shared<Node>(info);
+}
 
 //-----------------------------------------------------------------------------
 void hybrid_render(const MPI_Properties &mpi_props,
@@ -1570,6 +1578,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
         // render all data sets
         std::vector<Ascent> ascent_renders(my_data_recv_cnt);
         vec_node_sptr render_chunks_vis(my_data_recv_cnt, nullptr);
+        std::vector<std::thread> threads;
 
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
@@ -1604,18 +1613,20 @@ void hybrid_render(const MPI_Properties &mpi_props,
                     ascent_renders[i].open(ascent_opts);
                     ascent_renders[i].publish(dataset);
                     ascent_renders[i].execute(blank_actions);
-                    // print_time(t_render, "ascent render vis ", mpi_props.rank, 1.0 / current_render_count);
+                    print_time(t_render, "-- render VIS ", mpi_props.rank, 1.0 / current_render_count);
 
-                    conduit::Node info;
-                    // ascent_main_runtime : out.set_external(m_info);
-                    ascent_renders[i].info(info);
+                    threads.push_back(std::thread(&get_renders, std::ref(ascent_renders[i]), 
+                                                   std::ref(render_chunks_vis[i])));
+                    // conduit::Node info;
+                    // // ascent_main_runtime : out.set_external(m_info);
+                    // ascent_renders[i].info(info);
 
-                    if (info.has_child("render_file_names"))
-                    {
-                        render_chunks_vis[i] = std::make_shared<Node>(info);
-                        // ascent_renders[i].info(*render_chunks_vis[i]);
-                        // render_chunks_vis.push_back(std::make_shared<Node>(info));
-                    }
+                    // if (info.has_child("render_file_names"))
+                    // {
+                    //     render_chunks_vis[i] = std::make_shared<Node>(info);
+                    //     // ascent_renders[i].info(*render_chunks_vis[i]);
+                    //     // render_chunks_vis.push_back(std::make_shared<Node>(info));
+                    // }
                 }
                 else
                 {
@@ -1630,6 +1641,15 @@ void hybrid_render(const MPI_Properties &mpi_props,
                             << std::endl;
             }
         }   // for: render all datasets sent
+
+        auto t_render = std::chrono::system_clock::now();
+        while (threads.size() > 0)
+        {
+            threads.back().join();
+            threads.pop_back();
+        }
+        print_time(t_render, "-- copy VIS ", mpi_props.rank);
+
         log_global_time("end render", mpi_props.rank);
 
         {   // wait for receive of render chunks to complete
@@ -1745,11 +1765,11 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 sum_render += t_end - t_render;
 
                 t_render = std::chrono::system_clock::now();
-                if (threads.size() > 0)
-                {
-                    threads.back().join();
-                    threads.pop_back();
-                }
+                // if (threads.size() > 0)
+                // {
+                //     threads.back().join();
+                //     threads.pop_back();
+                // }
                 
                 // send render chunks
                 ascent_renders[i].info(info[i]);
