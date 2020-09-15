@@ -584,7 +584,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
   {
     const conduit::Node &func = overload_list.child(i);
     bool valid = true;
-    int total_args = 0;
+    size_t total_args = 0;
 
     if(func.has_path("args"))
     {
@@ -601,12 +601,12 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
 
     // populate args_map
     args_map.clear();
-    for(int a = 0; a < pos_size; ++a)
+    for(size_t a = 0; a < pos_size; ++a)
     {
       const conduit::Node &arg = pos_arg_nodes[a];
       args_map[func_arg_names[a]] = &arg;
     }
-    for(int a = 0; a < named_size; ++a)
+    for(size_t a = 0; a < named_size; ++a)
     {
       const conduit::Node &arg = named_arg_nodes[a];
       // ensure an argument wasn't passed twice
@@ -627,7 +627,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
     // populate opt_args and req_args
     req_args.clear();
     opt_args.clear();
-    for(int a = 0; a < total_args; ++a)
+    for(size_t a = 0; a < total_args; ++a)
     {
       conduit::Node func_arg = func["args"].child(a);
       if(func_arg.has_path("optional"))
@@ -738,6 +738,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
       conduit::Node params;
       params["func"] = func["filter_name"].as_string();
       params["filter_name"] = name;
+      params["inputs"];
       int port = 0;
       for(auto const &arg : args_map)
       {

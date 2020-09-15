@@ -327,7 +327,7 @@ device_alloc_array(const conduit::Node &array,
       const std::string param = "const " +
                                 detail::type_string(n_component.dtype()) +
                                 " *" + array.name() + "_" + component;
-      // TODO should make a slice, push it and use that to support cases where
+      // make a slice, push it and use that to support cases where
       // we have multiple pointers inside one allocation
       slices.push_back(slice_t(full_region_it->index,
                                static_cast<const unsigned char *>(start_ptr) -
@@ -1809,7 +1809,7 @@ schemaFactory(const std::string &schema_type,
 // Compacts an array (generates a contigous schema) so that only one
 // allocation is needed. Code generation will read this schema from
 // array_code. The array in args is a set_external to the original data so we
-// can copy from it later.
+// can copy to the device later.
 void
 pack_array(const conduit::Node &array,
            const std::string &name,
@@ -1935,7 +1935,7 @@ pack_topology(const std::string &topo_name,
 // {{{
 FieldCode::FieldCode(const std::string &field_name,
                      const std::string &association,
-                     TopologyCode &&topo_code,
+                     const std::shared_ptr<const TopologyCode> topo_code,
                      const ArrayCode &arrays,
                      const int num_components,
                      const int component)
@@ -1946,6 +1946,7 @@ FieldCode::FieldCode(const std::string &field_name,
 }
 
 // get the flat index from index_name[3]
+// used for structured topologies
 void
 FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
                      const std::string &index_name,
@@ -1959,23 +1960,23 @@ FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
     res += "const double ";
   }
   res += res_name + " = " + index_name + "[0]";
-  if(topo_code.num_dims >= 2)
+  if(topo_code->num_dims >= 2)
   {
-    res += " + " + index_name + "[1] * (" + topo_code.topo_name + "_dims_i";
+    res += " + " + index_name + "[1] * (" + topo_code->topo_name + "_dims_i";
     if(association == "element")
     {
       res += " - 1";
     }
     res += ")";
   }
-  if(topo_code.num_dims == 3)
+  if(topo_code->num_dims == 3)
   {
-    res += " + " + index_name + "[2] * (" + topo_code.topo_name + "_dims_i";
+    res += " + " + index_name + "[2] * (" + topo_code->topo_name + "_dims_i";
     if(association == "element")
     {
       res += " - 1";
     }
-    res += ") * (" + topo_code.topo_name + "_dims_j";
+    res += ") * (" + topo_code->topo_name + "_dims_j";
     if(association == "element")
     {
       res += " - 1";
@@ -2006,8 +2007,8 @@ FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
 
   // vi = .5 * (v[3] + v[0] - v[1] - v[2]);
   // vj = .5 * (v[0] + v[1] - v[2] - v[3]);
-  const std::string vertex_locs = topo_code.topo_name + "_vertex_locs";
-  const std::string vertices = topo_code.topo_name + "_vertices";
+  const std::string vertex_locs = topo_code->topo_name + "_vertex_locs";
+  const std::string vertices = topo_code->topo_name + "_vertices";
   code.insert(
       {"double " + res_name + "_x[3];\n",
        res_name + "_x[0] = .5 * (" + vertex_locs + "[3][0] + " + vertex_locs +
@@ -2078,8 +2079,8 @@ FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
   // vj = .25 * ( (v[0] + v[1] + v[5] + v[4]) - (v[3] + v[2] + v[6] + v[7]) );
   // vk = .25 * ( (v[7] + v[4] + v[5] + v[6]) - (v[3] + v[0] + v[1] + v[2]) );
   // clang-format on
-  const std::string vertex_locs = topo_code.topo_name + "_vertex_locs";
-  const std::string vertices = topo_code.topo_name + "_vertices";
+  const std::string vertex_locs = topo_code->topo_name + "_vertex_locs";
+  const std::string vertices = topo_code->topo_name + "_vertices";
   code.insert({
       "double " + res_name + "_x[3];\n",
       res_name + "_x[0] = .25 * ( (" + vertex_locs + "[3][0] + " + vertex_locs +
@@ -2198,19 +2199,19 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
   code.insert("double " + gradient_name + "[3];\n");
 
   // handle hex and quad gradients elsewhere
-  if(association == "vertex" && (topo_code.topo_type == "structured" ||
-                                 topo_code.topo_type == "unstructured"))
+  if(association == "vertex" && (topo_code->topo_type == "structured" ||
+                                 topo_code->topo_type == "unstructured"))
   {
     code.insert("double " + gradient_name + "[3];\n");
     code.insert("const double tiny = 1.e-37;\n");
-    if(topo_code.topo_type == "structured")
+    if(topo_code->topo_type == "structured")
     {
-      topo_code.structured_vertices(code);
-      if(topo_code.num_dims == 3)
+      topo_code->structured_vertices(code);
+      if(topo_code->num_dims == 3)
       {
         hex_gradient(code, gradient_name);
       }
-      else if(topo_code.num_dims == 2)
+      else if(topo_code->num_dims == 2)
       {
         quad_gradient(code, gradient_name);
       }
@@ -2219,14 +2220,14 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
         ASCENT_ERROR("Gradient is not implemented for 1D structured meshes.");
       }
     }
-    else if(topo_code.topo_type == "unstructured")
+    else if(topo_code->topo_type == "unstructured")
     {
-      topo_code.unstructured_vertices(code);
-      if(topo_code.shape == "hex")
+      topo_code->unstructured_vertices(code);
+      if(topo_code->shape == "hex")
       {
         hex_gradient(code, gradient_name);
       }
-      else if(topo_code.shape == "quad")
+      else if(topo_code->shape == "quad")
       {
         quad_gradient(code, gradient_name);
       }
@@ -2234,28 +2235,28 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
       {
         ASCENT_ERROR("Gradient of unstructured vertex associated fields only "
                      "works on hex and quad shapes. The given shape was '"
-                     << topo_code.shape << "'.");
+                     << topo_code->shape << "'.");
       }
     }
     return;
   }
 
   // handle uniforma and rectilinear gradients
-  if(topo_code.topo_type != "uniform" && topo_code.topo_type != "rectilinear")
+  if(topo_code->topo_type != "uniform" && topo_code->topo_type != "rectilinear")
   {
     ASCENT_ERROR("Unsupported topo_type: '"
-                 << topo_code.topo_type
+                 << topo_code->topo_type
                  << "'. Gradient is not implemented for unstructured "
                     "topologies nor structured element associated fields.");
   }
 
   if(association == "element")
   {
-    topo_code.element_idx(code);
+    topo_code->element_idx(code);
   }
   else if(association == "vertex")
   {
-    topo_code.vertex_idx(code);
+    topo_code->vertex_idx(code);
   }
   else
   {
@@ -2263,7 +2264,7 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
   }
 
   const std::string index_name =
-      topo_code.topo_name + "_" + association + "_idx";
+      topo_code->topo_name + "_" + association + "_idx";
   const std::string upper = gradient_name + "_upper";
   const std::string lower = gradient_name + "_lower";
   code.insert({"double " + upper + ";\n",
@@ -2273,18 +2274,18 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
                "int " + upper + "_idx;\n",
                "int " + lower + "_idx;\n",
                "double " + gradient_name + "_delta;\n"});
-  if(topo_code.topo_type == "rectilinear")
+  if(topo_code->topo_type == "rectilinear")
   {
     code.insert({"double " + upper + "_loc;\n", "double " + lower + "_loc;\n"});
   }
   for(int i = 0; i < 3; ++i)
   {
-    if(i < topo_code.num_dims)
+    if(i < topo_code->num_dims)
     {
       // positive (upper) direction
       InsertionOrderedSet<std::string> u_if_code;
       u_if_code.insert({"if(" + index_name + "[" + std::to_string(i) + "] < " +
-                            topo_code.topo_name + "_dims_" +
+                            topo_code->topo_name + "_dims_" +
                             std::string(1, 'i' + i) + " - " +
                             (association == "element" ? "2" : "1") + ")\n",
                         "{\n"});
@@ -2297,19 +2298,19 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
           array_code.index(field_name, upper + "_idx", component) + ";\n");
       if(association == "vertex")
       {
-        topo_code.vertex_coord(upper_body,
-                               std::string(1, 'x' + i),
-                               index_name + "[" + std::to_string(i) + "]",
-                               upper + "_loc",
-                               false);
-      }
-      else
-      {
-        topo_code.element_coord(upper_body,
+        topo_code->vertex_coord(upper_body,
                                 std::string(1, 'x' + i),
                                 index_name + "[" + std::to_string(i) + "]",
                                 upper + "_loc",
                                 false);
+      }
+      else
+      {
+        topo_code->element_coord(upper_body,
+                                 std::string(1, 'x' + i),
+                                 index_name + "[" + std::to_string(i) + "]",
+                                 upper + "_loc",
+                                 false);
       }
       const std::string upper_body_str = upper_body.accumulate();
 
@@ -2338,19 +2339,19 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
           array_code.index(field_name, lower + "_idx", component) + ";\n");
       if(association == "vertex")
       {
-        topo_code.vertex_coord(lower_body,
-                               std::string(1, 'x' + i),
-                               index_name + "[" + std::to_string(i) + "]",
-                               lower + "_loc",
-                               false);
-      }
-      else
-      {
-        topo_code.element_coord(lower_body,
+        topo_code->vertex_coord(lower_body,
                                 std::string(1, 'x' + i),
                                 index_name + "[" + std::to_string(i) + "]",
                                 lower + "_loc",
                                 false);
+      }
+      else
+      {
+        topo_code->element_coord(lower_body,
+                                 std::string(1, 'x' + i),
+                                 index_name + "[" + std::to_string(i) + "]",
+                                 lower + "_loc",
+                                 false);
       }
       const std::string lower_body_str = lower_body.accumulate();
       l_if_code.insert(lower_body_str);
@@ -2490,9 +2491,10 @@ JitableFunctions::binary_op()
       }
       if(error)
       {
-        ASCENT_ERROR("Unsupported binary_op: field["
-                     << lhs_kernel.num_components << "] " << op_str << " field["
-                     << rhs_kernel.num_components << "].");
+        ASCENT_ERROR("Unsupported binary_op: (field with "
+                     << lhs_kernel.num_components << " components) " << op_str
+                     << " (field with " << rhs_kernel.num_components
+                     << " components).");
       }
     }
   }
@@ -2753,6 +2755,9 @@ JitableFunctions::expr_if()
     const Kernel &condition_kernel = *input_kernels[condition_port];
     const Kernel &if_kernel = *input_kernels[if_port];
     const Kernel &else_kernel = *input_kernels[else_port];
+    out_kernel.functions.insert(condition_kernel.functions);
+    out_kernel.functions.insert(if_kernel.functions);
+    out_kernel.functions.insert(else_kernel.functions);
     out_kernel.kernel_body.insert(condition_kernel.kernel_body);
     out_kernel.kernel_body.insert(if_kernel.kernel_body);
     out_kernel.kernel_body.insert(else_kernel.kernel_body);
@@ -2792,10 +2797,10 @@ JitableFunctions::derived_field()
 {
   // setting association and topology should run once for Jitable not for
   // each domain, but won't hurt
-  if(inputs.has_path("association"))
+  if(inputs.has_path("assoc"))
   {
     const conduit::Node &string_obj =
-        input_jitables[inputs["association/port"].as_int32()]->obj;
+        input_jitables[inputs["assoc/port"].as_int32()]->obj;
     const std::string &new_association = string_obj["value"].as_string();
     if(new_association != "vertex" && new_association != "element")
     {
@@ -2805,10 +2810,10 @@ JitableFunctions::derived_field()
     }
     out_jitable.association = new_association;
   }
-  if(inputs.has_path("topology"))
+  if(inputs.has_path("topo"))
   {
     const conduit::Node &string_obj =
-        input_jitables[inputs["topology/port"].as_int32()]->obj;
+        input_jitables[inputs["topo/port"].as_int32()]->obj;
     const std::string &new_topology = string_obj["value"].as_string();
     // We repeat this check because we pass the topology name as a
     // string. If we pass a topo object it will get packed which is
@@ -2944,11 +2949,11 @@ JitableFunctions::gradient(const Jitable &field_jitable,
 
     // generate a new derived field if the field we're taking the gradient of
     // wasn't originally on the dataset
-    TopologyCode topo_code =
-        TopologyCode(topo->topo_name, domain, out_jitable.arrays[dom_idx]);
+    const auto topo_code = std::make_shared<const TopologyCode>(
+        topo->topo_name, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(my_input_field,
                                      field_jitable.association,
-                                     std::move(topo_code),
+                                     topo_code,
                                      out_jitable.arrays[dom_idx],
                                      1,
                                      component);
@@ -3011,11 +3016,11 @@ JitableFunctions::vorticity()
   // TODO make it easier to construct FieldCode
   if(not_fused)
   {
-    TopologyCode topo_code =
-        TopologyCode(out_jitable.topology, domain, out_jitable.arrays[dom_idx]);
+    const auto topo_code = std::make_shared<const TopologyCode>(
+        out_jitable.topology, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(field_name,
                                      field_jitable.association,
-                                     std::move(topo_code),
+                                     topo_code,
                                      out_jitable.arrays[dom_idx],
                                      field_kernel.num_components,
                                      -1);
@@ -3100,6 +3105,251 @@ JitableFunctions::vector()
     out_kernel.num_components = 3;
   }
 }
+
+void
+JitableFunctions::binning_value(const conduit::Node &binning)
+{
+  // bin lookup functions
+  // clang-format off
+  // implements std::upper_bound
+  const std::string rectilinear_bin =
+    "int\n"
+    "rectilinear_bin(const double value,\n"
+    "                const double *const bins_begin,\n"
+    "                const int len,\n"
+    "                const bool clamp)\n"
+    "{\n"
+      "int mid;\n"
+      "int low = 0;\n"
+      "int high = len;\n"
+      "while(low < high)\n"
+      "{\n"
+        "mid = (low + high) / 2;\n"
+        "if(value >= bins_begin[mid])\n"
+        "{\n"
+          "low = mid + 1;\n"
+        "}\n"
+        "else\n"
+        "{\n"
+          "high = mid;\n"
+        "}\n"
+      "}\n"
+      "if(clamp)\n"
+      "{\n"
+        "if(low <= 0)\n"
+        "{\n"
+          "return 0;\n"
+        "}\n"
+        "else if(low >= len)\n"
+        "{\n"
+          "return len - 2;\n"
+        "}\n"
+      "}\n"
+      "else if(low <= 0 || low >= len)\n"
+      "{\n"
+        "return -1;\n"
+      "}\n"
+      "return low - 1;\n"
+    "}\n\n";
+  const std::string uniform_bin =
+    "int\n"
+    "uniform_bin(const double value,\n"
+    "            const double min_val,\n"
+    "            const double max_val,\n"
+    "            const int num_bins,\n"
+    "            const bool clamp)\n"
+    "{\n"
+      "const double inv_delta = num_bins / (max_val - min_val);\n"
+      "const int bin_index = (int)((value - min_val) * inv_delta);\n"
+      "if(clamp)\n"
+      "{\n"
+        "if(bin_index < 0)\n"
+        "{\n"
+          "return 0;\n"
+        "}\n"
+        "else if(bin_index >= num_bins)\n"
+        "{\n"
+          "return num_bins - 1;\n"
+        "}\n"
+      "}\n"
+      "else if(bin_index < 0 || bin_index >= num_bins)\n"
+      "{\n"
+        "return -1;\n"
+      "}\n"
+      "return bin_index;\n"
+    "}\n\n";
+  // clang-format on
+  //---------------------------------------------------------------------------
+
+  // assume the necessary fields have been packed and are present in all domains
+
+  // get the passed association
+  std::string assoc_str_;
+  if(inputs.has_path("assoc"))
+  {
+    const conduit::Node &assoc_obj =
+        input_jitables[inputs["assoc/port"].as_int32()]->obj;
+    assoc_str_ = assoc_obj["value"].as_string();
+  }
+
+  const conduit::Node &bin_axes = binning["attrs/bin_axes/value"];
+  std::vector<std::string> axis_names = bin_axes.child_names();
+
+  // set/verify out_jitable.topology and out_jitable.association
+  const conduit::Node &topo_and_assoc =
+      final_topo_and_assoc(dataset, bin_axes, out_jitable.topology, assoc_str_);
+  std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+  if(assoc_str.empty())
+  {
+    // use the association from the binning
+    assoc_str = binning["attrs/association/value"].as_string();
+  }
+  out_jitable.association = assoc_str;
+
+  // set entries based on out_jitable.topology and out_jitable.association
+  std::unique_ptr<Topology> topo =
+      topologyFactory(out_jitable.topology, domain);
+  conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
+  if(out_jitable.association == "vertex")
+  {
+    n_entries = topo->get_num_points();
+  }
+  else if(out_jitable.association == "element")
+  {
+    n_entries = topo->get_num_cells();
+  }
+
+  if(not_fused)
+  {
+    const TopologyCode topo_code =
+        TopologyCode(topo->topo_name, domain, out_jitable.arrays[dom_idx]);
+    const std::string &binning_name = inputs["binning/filter_name"].as_string();
+    InsertionOrderedSet<std::string> &code = out_kernel.for_body;
+    const int num_axes = bin_axes.number_of_children();
+    bool used_uniform = false;
+    bool used_rectilinear = false;
+
+    code.insert("int " + filter_name + "_home = 0;\n");
+    code.insert("int " + filter_name + "_stride = 1;\n");
+    for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+    {
+      const conduit::Node &axis = bin_axes.child(axis_index);
+      const std::string axis_name = axis.name();
+      const std::string axis_prefix = binning_name + "_" + axis_name + "_";
+      // find the value associated with the axis for the current item
+      std::string axis_value;
+      if(domain.has_path("fields/" + axis_name))
+      {
+        axis_value = axis_name + "_item";
+        code.insert("const double " + axis_value + " = " +
+                    out_jitable.arrays[dom_idx].index(axis_name, "item") +
+                    ";\n");
+      }
+      else if(is_xyz(axis_name))
+      {
+        if(out_jitable.association == "vertex")
+        {
+          axis_value = topo->topo_name + "_vertex_" + axis_name;
+          topo_code.vertex_coord(code, axis_name, "", axis_value);
+        }
+        else if(out_jitable.association == "element")
+        {
+          axis_value = topo->topo_name + "_cell_" + axis_name;
+          topo_code.element_coord(code, axis_name, "", axis_value);
+        }
+      }
+
+      size_t stride_multiplier;
+      if(axis.has_path("num_bins"))
+      {
+        // uniform axis
+        stride_multiplier = bin_axes.child(axis_index)["num_bins"].as_int32();
+
+        // find the value's index in the axis
+        if(!used_uniform)
+        {
+          used_uniform = true;
+          out_kernel.functions.insert(uniform_bin);
+        }
+        code.insert("int " + axis_prefix + "bin_index = uniform_bin(" +
+                    axis_value + ", " + axis_prefix + "min_val, " +
+                    axis_prefix + "max_val, " + axis_prefix + "num_bins, " +
+                    axis_prefix + "clamp);\n");
+      }
+      else
+      {
+        // rectilinear axis
+        stride_multiplier =
+            bin_axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
+
+        // find the value's index in the axis
+        if(!used_rectilinear)
+        {
+          used_rectilinear = true;
+          out_kernel.functions.insert(rectilinear_bin);
+        }
+        code.insert("int " + axis_prefix + "bin_index = rectilinear_bin(" +
+                    axis_value + ", " + axis_prefix + "bins, " + axis_prefix +
+                    "bins_len, " + axis_prefix + "clamp);\n");
+      }
+
+      // update the current item's home
+      code.insert("if(" + axis_prefix + "bin_index != -1 && " + filter_name +
+                  "_home != -1)\n{\n" + filter_name + "_home += " +
+                  axis_prefix + "bin_index * " + filter_name + "_stride;\n}\n");
+      // update stride
+      code.insert(filter_name +
+                  "_stride *= " + std::to_string(stride_multiplier) + ";\n");
+    }
+
+    // get the value at home
+    std::string default_value;
+    if(inputs.has_path("default_value"))
+    {
+      default_value = inputs["default_value/filter_name"].as_string();
+    }
+    else
+    {
+      default_value = "0";
+    }
+    code.insert({"double " + filter_name + ";\n",
+                 "if(" + filter_name + "_home != -1)\n{\n" + filter_name +
+                     " = " + binning_name + "_value[" + filter_name +
+                     "_home];\n}\nelse\n{\n" + filter_name + " = " +
+                     default_value + ";\n}\n"});
+    out_kernel.expr = filter_name;
+    out_kernel.num_components = 1;
+  }
+}
+
+void
+JitableFunctions::rand()
+{
+  out_jitable.dom_info.child(dom_idx)["args/" + filter_name + "_seed"] =
+      time(nullptr);
+  if(not_fused)
+  {
+    // clang-format off
+    const std::string halton =
+			"double rand(int i)\n"
+			"{\n"
+				"const int b = 2;\n"
+				"double f = 1;\n"
+				"double r = 0;\n"
+				"while(i > 0)\n"
+				"{\n"
+					"f = f / b;\n"
+					"r = r + f * (i \% b);\n"
+					"i = i / b;\n"
+				"}\n"
+				"return r;\n"
+			"}\n\n";
+    // clang-format on
+    out_kernel.functions.insert(halton);
+    out_kernel.expr = "rand(item + " + filter_name + "_seed)";
+    out_kernel.num_components = 1;
+  }
+}
 // }}}
 
 //-----------------------------------------------------------------------------
@@ -3161,6 +3411,7 @@ AlwaysExecutePolicy::get_name() const
 void
 Kernel::fuse_kernel(const Kernel &from)
 {
+  functions.insert(from.functions);
   kernel_body.insert(from.kernel_body);
   for_body.insert(from.for_body);
 }
@@ -3241,7 +3492,9 @@ Jitable::generate_kernel(const int dom_idx, const conduit::Node &args) const
 {
   const conduit::Node &cur_dom_info = dom_info.child(dom_idx);
   const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
-  std::string kernel_string = "@kernel void map(";
+  std::string kernel_string;
+  kernel_string += kernel.functions.accumulate();
+  kernel_string += "@kernel void map(";
   const int num_args = args.number_of_children();
   bool first = true;
   for(int i = 0; i < num_args; ++i)
@@ -3386,8 +3639,8 @@ Jitable::can_execute() const
 //    (e.g. "b ::map(const int &, const double *, const double &, double
 //    *)")
 
-// TODO for now we just put the field on the mesh when calling execute
-// should probably delete it later if it's an intermediate field
+// we put the field on the mesh when calling execute and delete it later if it's
+// an intermediate field
 void
 Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {

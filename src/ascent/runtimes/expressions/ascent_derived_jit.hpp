@@ -303,7 +303,7 @@ class FieldCode
 public:
   FieldCode(const std::string &field_name,
             const std::string &association,
-            TopologyCode &&topo_code,
+            const std::shared_ptr<const TopologyCode> topo_code,
             const ArrayCode &array_code,
             const int num_components,
             const int component);
@@ -328,7 +328,7 @@ private:
 
   const ArrayCode &array_code;
 
-  const TopologyCode topo_code;
+  const std::shared_ptr<const TopologyCode> topo_code;
   const MathCode math_code;
 };
 
@@ -342,6 +342,7 @@ public:
                             const ArrayCode &array_code,
                             const std::string &entries_name) const;
 
+  InsertionOrderedSet<std::string> functions;
   InsertionOrderedSet<std::string> kernel_body;
   InsertionOrderedSet<std::string> for_body;
   std::string expr;
@@ -405,6 +406,8 @@ public:
   void vorticity();
   void magnitude();
   void vector();
+  void binning_value(const conduit::Node &binning);
+  void rand();
 
 private:
   void topo_attrs(const conduit::Node &obj, const std::string &name);

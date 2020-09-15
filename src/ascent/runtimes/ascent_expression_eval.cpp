@@ -708,7 +708,9 @@ initialize_functions()
   binning_sig["args/reduction_var/type"] = "string";
   binning_sig["args/reduction_var/description"] =
       "The variable being reduced. Either the name of a scalar field on the "
-      "mesh or one of ``'x'``, ``'y'``, or ``'z'``.";
+      "mesh or one of ``'x'``, ``'y'``, or ``'z'``. ``reduction_var`` should "
+      "be "
+      "left empty if ``reduction_op`` is one of ``cnt``, ``pdf``, or ``cdf``.";
   binning_sig["args/reduction_op/type"] = "string";
   binning_sig["args/reduction_op/description"] =
       "The reduction operator to use when \
@@ -718,25 +720,41 @@ initialize_functions()
   - max: maximum value in a bin \n \
   - sum: sum of values in a bin \n \
   - avg: average of values in a bin \n \
-  - pdf: probability distribution function over all bins \n \
+  - pdf: probability distribution function \n \
+  - cdf: cumulative distribution function (only supported with 1 axis)\n \
   - std: standard deviation of values in a bin \n \
   - var: variance of values in a bin \n \
   - rms: root mean square of values in a bin";
   binning_sig["args/bin_axes/type"] = "list";
   binning_sig["args/bin_axes/description"] =
       "List of Axis objects which define the bin axes.";
-  binning_sig["args/empty_bin_val/type"] = "scalar";
-  binning_sig["args/empty_bin_val/optional"];
-  binning_sig["args/empty_bin_val/description"] =
-      "The value that empty bins should have. Defaults to 0.";
+  binning_sig["args/empty_val/type"] = "scalar";
+  binning_sig["args/empty_val/optional"];
+  binning_sig["args/empty_val/description"] =
+      "The value that empty bins should have. Defaults to ``0``.";
   binning_sig["args/component/type"] = "string";
   binning_sig["args/component/optional"];
   binning_sig["args/component/description"] =
       "the component of a vector field to use for the reduction."
       " Example 'x' for a field defined as 'velocity/x'";
+  binning_sig["args/topo/type"] = "topo";
+  binning_sig["args/topo/optional"];
+  binning_sig["args/topo/description"] =
+      "The topology to bin. Defaults to the "
+      "topology associated with the bin axes. This topology must have "
+      "all the fields used for the axes of ``binning``. It only makes sense "
+      "to specify this when ``bin_axes`` and ``reduction_var`` are a "
+      "subset of ``x``, ``y``, ``z``.";
+  binning_sig["args/assoc/type"] = "topo";
+  binning_sig["args/assoc/optional"];
+  binning_sig["args/assoc/description"] =
+      "The association of the resultant field. Defaults to the association "
+      "infered from the bin axes and and reduction variable. It only "
+      "makes sense to specify this when ``bin_axes`` and ``reduction_var`` are "
+      "a subset of ``x``, ``y``, ``z``.";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
-  // TODO for now this does not jit
+  // this does not jit but binning_value does
   conduit::Node &paint_binning_sig = (*functions)["paint_binning"].append();
   paint_binning_sig["return_type"] = "field";
   paint_binning_sig["filter_name"] = "paint_binning";
@@ -747,17 +765,20 @@ initialize_functions()
   paint_binning_sig["args/name/optional"];
   paint_binning_sig["args/name/description"] =
       "The name of the new field to be generated. If not specified, a name "
-      "is "
-      "automatically generated and the field is treated as a temporary and "
+      "is automatically generated and the field is treated as a temporary and "
       "removed from the dataset when the expression is done executing.";
+  paint_binning_sig["args/default_val/type"] = "scalar";
+  paint_binning_sig["args/default_val/optional"];
+  paint_binning_sig["args/default_val/description"] =
+      "The value given to elements which do not fall into "
+      "any of the bins. Defaults to ``0``.";
   paint_binning_sig["args/topo/type"] = "topo";
   paint_binning_sig["args/topo/optional"];
   paint_binning_sig["args/topo/description"] =
       " The topology to paint the bin values back onto. Defaults to the "
       "topology associated with the bin axes. This topology must have "
       "all the fields used for the axes of ``binning``. It only makes sense "
-      "to "
-      "specify this when the only bin axes are a subset of ``x``, ``y``, "
+      "to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, "
       "``z``. Additionally, it must be specified in this case since there is "
       "not enough info to infer the topology assuming there are multiple "
       "topologies in the dataset.";
@@ -765,17 +786,10 @@ initialize_functions()
   paint_binning_sig["args/assoc/optional"];
   paint_binning_sig["args/assoc/description"] =
       "Defaults to the association infered from the bin axes and and "
-      "reduction "
-      "variable. The topology to paint the bin values back onto. This "
-      "topology "
-      "must have all the fields used for the axes of ``binning``. It only "
-      "makes sense to specify this when the only bin axes are a subset of "
+      "reduction variable. The association of the resultant field. This "
+      "topology must have all the fields used for the axes of ``binning``. It "
+      "only makes sense to specify this when the ``bin_axes`` are a subset of "
       "``x``, ``y``, ``z``.";
-  paint_binning_sig["args/default_value/type"] = "scalar";
-  paint_binning_sig["args/default_value/optional"];
-  paint_binning_sig["args/default_value/description"] =
-      "Defaults to ``0``. The value given to elements which do not fall into "
-      "any of the bins.";
   paint_binning_sig["description"] =
       "Paints back the bin values onto an existing mesh by binning the "
       "elements of the mesh and creating a new field there the value at each "
@@ -813,9 +827,9 @@ initialize_functions()
   field_scalar_max_sig["filter_name"] = "field_field_max";
   field_scalar_max_sig["args/arg1/type"] = "field";
   field_scalar_max_sig["args/arg2/type"] = "scalar";
-  field_scalar_max_sig["jitable"];
   field_scalar_max_sig["description"] =
       "Return a derived field that is the max of two fields.";
+  field_scalar_max_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -824,9 +838,9 @@ initialize_functions()
   field_field_min_sig["filter_name"] = "field_field_min";
   field_field_min_sig["args/arg1/type"] = "field";
   field_field_min_sig["args/arg2/type"] = "field";
-  field_field_min_sig["jitable"];
   field_field_min_sig["description"] =
       "Return a derived field that is the min of two fields.";
+  field_field_min_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -834,9 +848,9 @@ initialize_functions()
   field_sin_sig["return_type"] = "jitable";
   field_sin_sig["filter_name"] = "field_sin";
   field_sin_sig["args/arg1/type"] = "field";
-  field_sin_sig["jitable"];
   field_sin_sig["description"] =
       "Return a derived field that is the sin of a field.";
+  field_sin_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -844,9 +858,9 @@ initialize_functions()
   field_abs_sig["return_type"] = "jitable";
   field_abs_sig["filter_name"] = "field_abs";
   field_abs_sig["args/arg1/type"] = "field";
-  field_abs_sig["jitable"];
   field_abs_sig["description"] =
       "Return a derived field that is the absolute value of a field.";
+  field_abs_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -854,9 +868,9 @@ initialize_functions()
   field_sqrt_sig["return_type"] = "jitable";
   field_sqrt_sig["filter_name"] = "field_sqrt";
   field_sqrt_sig["args/arg1/type"] = "field";
-  field_sqrt_sig["jitable"];
   field_sqrt_sig["description"] =
       "Return a derived field that is the square root value of a field.";
+  field_sqrt_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -864,9 +878,9 @@ initialize_functions()
   field_gradient_sig["return_type"] = "jitable";
   field_gradient_sig["filter_name"] = "gradient";
   field_gradient_sig["args/field/type"] = "field";
-  field_gradient_sig["jitable"];
   field_gradient_sig["description"] =
       "Return a derived field that is the gradient of a field.";
+  field_gradient_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -874,9 +888,9 @@ initialize_functions()
   field_vorticity_sig["return_type"] = "jitable";
   field_vorticity_sig["filter_name"] = "vorticity";
   field_vorticity_sig["args/field/type"] = "field";
-  field_vorticity_sig["jitable"];
   field_vorticity_sig["description"] =
       "Return a derived field that is the vorticity of a vector field.";
+  field_vorticity_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -884,9 +898,9 @@ initialize_functions()
   field_magnitude_sig["return_type"] = "jitable";
   field_magnitude_sig["filter_name"] = "magnitude";
   field_magnitude_sig["args/vector/type"] = "field";
-  field_magnitude_sig["jitable"];
   field_magnitude_sig["description"] =
       "Return a derived field that is the magnitude of a vector field.";
+  field_magnitude_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -896,8 +910,8 @@ initialize_functions()
   field_vector["args/arg1/type"] = "field";
   field_vector["args/arg2/type"] = "field";
   field_vector["args/arg3/type"] = "field";
-  field_vector["jitable"];
   field_vector["description"] = "Return a vector field on the mesh.";
+  field_vector["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -907,19 +921,19 @@ initialize_functions()
   derived_field["args/arg1/type"] = "scalar";
   derived_field["args/arg1/description"] =
       "The scalar to be cast to a derived field.";
-  derived_field["args/topology/type"] = "string";
-  derived_field["args/topology/optional"];
-  derived_field["args/topology/description"] =
+  derived_field["args/topo/type"] = "string";
+  derived_field["args/topo/optional"];
+  derived_field["args/topo/description"] =
       "The topology to put the derived field onto. The language tries to infer "
       "this if not specified.";
-  derived_field["args/association/type"] = "string";
-  derived_field["args/association/optional"];
-  derived_field["args/association/description"] =
+  derived_field["args/assoc/type"] = "string";
+  derived_field["args/assoc/optional"];
+  derived_field["args/assoc/description"] =
       "The association of the derived field. The language will try to infer "
       "this if not specified.";
-  derived_field["jitable"];
   derived_field["description"] =
       "Cast a scalar to a derived field (type `jitable`).";
+  derived_field["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -929,20 +943,61 @@ initialize_functions()
   derived_field2["args/arg1/type"] = "field";
   derived_field2["args/arg1/description"] =
       "The scalar to be cast to a derived field.";
-  derived_field2["args/topology/type"] = "string";
-  derived_field2["args/topology/optional"];
-  derived_field2["args/topology/description"] =
+  derived_field2["args/topo/type"] = "string";
+  derived_field2["args/topo/optional"];
+  derived_field2["args/topo/description"] =
       "The topology to put the derived field onto. The language tries to infer "
       "this if not specified.";
-  derived_field2["args/association/type"] = "string";
-  derived_field2["args/association/optional"];
-  derived_field2["args/association/description"] =
+  derived_field2["args/assoc/type"] = "string";
+  derived_field2["args/assoc/optional"];
+  derived_field2["args/assoc/description"] =
       "The association of the derived field. The language will try to infer "
       "this if not specified.";
-  derived_field2["jitable"];
   derived_field2["description"] =
-      "Used to explicitly specfiy the topology and association of a derived "
-      "field (e.g. in case it cannot be inferred).";
+      "Used to explicitly specify the topology and association of a derived "
+      "field (e.g. in case it cannot be inferred or needs to be changed).";
+  derived_field2["jitable"];
+
+  //---------------------------------------------------------------------------
+  // essentially the jit version of paint_binning
+  conduit::Node &binning_value_sig = (*functions)["binning_value"].append();
+  binning_value_sig["return_type"] = "jitable";
+  binning_value_sig["filter_name"] = "binning_value";
+  binning_value_sig["args/binning/type"] = "binning";
+  binning_value_sig["args/binning/description"] =
+      "The ``binning`` to lookup values in.";
+  binning_value_sig["args/default_val/type"] = "scalar";
+  binning_value_sig["args/default_val/optional"];
+  binning_value_sig["args/default_val/description"] =
+      "The value given to elements which do not fall into "
+      "any of the bins. Defaults to ``0``.";
+  binning_value_sig["args/topo/type"] = "topo";
+  binning_value_sig["args/topo/optional"];
+  binning_value_sig["args/topo/description"] =
+      "The topology to bin. Defaults to the "
+      "topology associated with the bin axes. This topology must have "
+      "all the fields used for the axes of ``binning``. It only makes sense "
+      "to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, "
+      "``z``.";
+  binning_value_sig["args/assoc/type"] = "topo";
+  binning_value_sig["args/assoc/optional"];
+  binning_value_sig["args/assoc/description"] =
+      "The association of the resultant field. Defaults to the association "
+      "infered from the bin axes and and reduction variable. It only "
+      "makes sense to specify this when the ``bin_axes`` are a subset of "
+      "``x``, ``y``, ``z``.";
+  binning_value_sig["description"] =
+      "Get the value of a vertex or cell in a given binning. In other words, "
+      "bin the cell and return the value found in that bin of ``binning``.";
+  binning_value_sig["jitable"];
+
+  //---------------------------------------------------------------------------
+  conduit::Node &rand_sig = (*functions)["rand"].append();
+  rand_sig["return_type"] = "jitable";
+  rand_sig["filter_name"] = "rand";
+  rand_sig["description"] = "Return a random number between 0 and 1.";
+  rand_sig["jitable"];
+
 
   count_params();
   // functions->save("functions.json", "json");

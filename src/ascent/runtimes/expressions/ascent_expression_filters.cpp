@@ -1664,6 +1664,14 @@ Field::execute()
     }
   }
 
+  // if the field only has one component use that
+  const conduit::Node &values =
+      dataset->child(0)["fields/" + field_name + "/values"];
+  if(component.empty() && values.number_of_children() == 1)
+  {
+    component = values.child(0).name();
+  }
+
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_name;
   if(!component.empty())
@@ -2026,8 +2034,10 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "reduction_var";
   i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
-  i["port_names"].append() = "empty_bin_val";
+  i["port_names"].append() = "empty_val";
   i["port_names"].append() = "component";
+  i["port_names"].append() = "topo";
+  i["port_names"].append() = "assoc";
   i["output_port"] = "true";
 }
 
@@ -2050,13 +2060,33 @@ Binning::execute()
       (*input<Node>("reduction_op"))["value"].as_string();
   const conduit::Node *n_axes_list = input<Node>("bin_axes");
   // optional arguments
-  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_empty_val = input<conduit::Node>("empty_val");
   const conduit::Node *n_component = input<conduit::Node>("component");
+  const conduit::Node *n_topo = input<conduit::Node>("topo");
+  const conduit::Node *n_assoc = input<conduit::Node>("assoc");
+
+  double empty_val = 0;
+  if(!n_empty_val->dtype().is_empty())
+  {
+    empty_val = (*n_empty_val)["value"].to_float64();
+  }
 
   std::string component = "";
   if(!n_component->dtype().is_empty())
   {
     component = (*n_component)["value"].as_string();
+  }
+
+  std::string topo = "";
+  if(!n_topo->dtype().is_empty())
+  {
+    topo = (*n_topo)["value"].as_string();
+  }
+
+  std::string assoc = "";
+  if(!n_assoc->dtype().is_empty())
+  {
+    assoc = (*n_assoc)["value"].as_string();
   }
 
   conduit::Node *const dataset =
@@ -2075,13 +2105,18 @@ Binning::execute()
     n_bin_axes.update(axis["value"]);
   }
 
+  if(reduction_op == "cdf" && n_bin_axes.number_of_children() > 1)
+  {
+    ASCENT_ERROR("Binning: cdf is only supported on one axis.");
+  }
+
   // verify reduction_var
   if(reduction_var.empty())
   {
-    if(reduction_op != "sum" && reduction_op != "pdf")
+    if(reduction_op != "sum" && reduction_op != "pdf" && reduction_op != "cdf")
     {
       ASCENT_ERROR("Binning: reduction_var can only be left empty if "
-                   "reduction_op is 'sum' or 'pdf'.");
+                   "reduction_op is 'sum', 'pdf', or 'cdf'.");
     }
   }
   else if(!is_xyz(reduction_var))
@@ -2141,28 +2176,23 @@ Binning::execute()
 
   // verify reduction_op
   if(reduction_op != "sum" && reduction_op != "min" && reduction_op != "max" &&
-     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "std" &&
-     reduction_op != "var" && reduction_op != "rms")
+     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "cdf" &&
+     reduction_op != "std" && reduction_op != "var" && reduction_op != "rms")
   {
-    ASCENT_ERROR(
-        "Unknown reduction_op: '"
-        << reduction_op
-        << "'. Known reduction operators are: cnt, sum, min, max, avg, pdf, "
-           "std, var, rms");
-  }
-
-  double empty_bin_val = 0;
-  if(!n_empty_bin_val->dtype().is_empty())
-  {
-    empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
+    ASCENT_ERROR("Unknown reduction_op: '"
+                 << reduction_op
+                 << "'. Known reduction operators are: cnt, sum, min, max, "
+                    "avg, pdf, cdf, std, var, rms");
   }
 
   const conduit::Node &n_binning = binning(*dataset,
                                            n_bin_axes,
                                            reduction_var,
                                            reduction_op,
-                                           empty_bin_val,
-                                           component);
+                                           empty_val,
+                                           component,
+                                           topo,
+                                           assoc);
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";
@@ -2174,6 +2204,8 @@ Binning::execute()
   (*output)["attrs/reduction_op/type"] = "string";
   (*output)["attrs/bin_axes/value"] = n_bin_axes;
   (*output)["attrs/bin_axes/type"] = "list";
+  (*output)["attrs/topology/value"] = n_binning["topology"];
+  (*output)["attrs/topology/type"] = "topo";
   (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
@@ -2198,9 +2230,9 @@ PaintBinning::declare_interface(Node &i)
   i["type_name"] = "paint_binning";
   i["port_names"].append() = "binning";
   i["port_names"].append() = "name";
+  i["port_names"].append() = "default_val";
   i["port_names"].append() = "topo";
   i["port_names"].append() = "assoc";
-  i["port_names"].append() = "default_value";
   i["output_port"] = "true";
 }
 
@@ -2222,7 +2254,7 @@ PaintBinning::execute()
   const conduit::Node *n_name = input<conduit::Node>("name");
   const conduit::Node *n_topo = input<conduit::Node>("topo");
   const conduit::Node *n_assoc = input<conduit::Node>("assoc");
-  const conduit::Node *n_default = input<conduit::Node>("default_value");
+  const conduit::Node *n_default = input<conduit::Node>("default_val");
 
   conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
@@ -2258,13 +2290,13 @@ PaintBinning::execute()
   {
     assoc = (*n_assoc)["value"].as_string();
   }
-  double default_value = 0;
+  double default_val = 0;
   if(!n_default->dtype().is_empty())
   {
-    default_value = (*n_default)["value"].to_float64();
+    default_val = (*n_default)["value"].to_float64();
   }
 
-  paint_binning(*binning, *dataset, name, topo, assoc, default_value);
+  paint_binning(*binning, *dataset, name, topo, assoc, default_val);
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = name;
@@ -2937,6 +2969,24 @@ fused_kernel_type(const std::vector<std::string> kernel_types)
   return ss.str();
 }
 
+void
+topo_to_jitable(const std::string &topology,
+                const conduit::Node &dataset,
+                Jitable &jitable)
+{
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    std::unique_ptr<Topology> topo = topologyFactory(topology, dom);
+    pack_topology(
+        topology, dom, jitable.dom_info.child(i)["args"], jitable.arrays[i]);
+    const std::string kernel_type = topology + "=" + topo->topo_type;
+    jitable.dom_info.child(i)["kernel_type"] = kernel_type;
+    jitable.kernels[kernel_type];
+  }
+  jitable.topology = topology;
+}
+
 // each jitable has kernels and dom_info
 // dom_info holds number of entries, kernel_type, and args for the dom
 // kernel_type maps to a kernel in kernels
@@ -2969,6 +3019,10 @@ JitFilter::execute()
       graph().workspace().registry().fetch<Node>("dataset");
   const int num_domains = dataset->number_of_children();
 
+  // registry node that stores temporary arrays
+  conduit::Node *const remove =
+      graph().workspace().registry().fetch<Node>("remove");
+
   for(int i = 0; i < num_inputs; ++i)
   {
     const std::string input_fname = inputs.child(i)["filter_name"].as_string();
@@ -2992,21 +3046,7 @@ JitFilter::execute()
       {
         // topo is special because it can build different kernels for each
         // domain (kernel types)
-        const std::string topo_name = (*inp)["value"].as_string();
-        jitable.topology = topo_name;
-        for(int i = 0; i < num_domains; ++i)
-        {
-          const conduit::Node &dom = dataset->child(i);
-
-          std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
-          pack_topology(topo_name,
-                        dom,
-                        jitable.dom_info.child(i)["args"],
-                        jitable.arrays[i]);
-          const std::string kernel_type = topo_name + "=" + topo->topo_type;
-          jitable.dom_info.child(i)["kernel_type"] = kernel_type;
-          jitable.kernels[kernel_type];
-        }
+        topo_to_jitable((*inp)["value"].as_string(), *dataset, jitable);
         jitable.obj = *inp;
       }
       else
@@ -3157,6 +3197,63 @@ JitFilter::execute()
             default_kernel.expr = field_name + "_item";
           }
         }
+        else if(type == "binning")
+        {
+          // we need to put the binning in the registry, otherwise it may get
+          // deleted
+          conduit::Node &binning_value = (*remove)["temporaries"].append();
+          binning_value = (*inp)["attrs/value/value"];
+          for(int i = 0; i < num_domains; ++i)
+          {
+            conduit::Node &args = jitable.dom_info.child(i)["args"];
+            // pack the binning array
+            // TODO this is the same for every domain and it's getting copied...
+            pack_array(
+                binning_value, input_fname + "_value", args, jitable.arrays[i]);
+
+            // pack the axes
+            // if axis is a field pack the field
+            const conduit::Node &axes = (*inp)["attrs/bin_axes/value"];
+            for(int i = 0; i < axes.number_of_children(); ++i)
+            {
+              const conduit::Node &axis = axes.child(i);
+              const std::string &axis_name = axis.name();
+              const std::string axis_prefix =
+                  input_fname + "_" + axis_name + "_";
+              if(axis.has_path("num_bins"))
+              {
+                args[axis_prefix + "min_val"] = axis["min_val"];
+                args[axis_prefix + "max_val"] = axis["max_val"];
+                args[axis_prefix + "num_bins"] = axis["num_bins"];
+              }
+              else
+              {
+                pack_array(args["bins"],
+                           axis_prefix + "bins",
+                           args,
+                           jitable.arrays[i]);
+                args[axis_prefix + "bins_len"] =
+                    axis["bins"].dtype().number_of_elements();
+              }
+              args[axis_prefix + "clamp"] = axis["clamp"];
+              if(!is_xyz(axis_name))
+              {
+                if(!has_field(*dataset, axis_name))
+                {
+                  ASCENT_ERROR("Could not find field '"
+                               << axis_name
+                               << "' in the dataset while packing binning.");
+                }
+                const conduit::Node &dom = dataset->child(i);
+                const conduit::Node &values =
+                    dom["fields/" + axis_name + "/values"];
+                pack_array(values, axis_name, args, jitable.arrays[i]);
+              }
+              // we may not need the topology associated with the binning if we
+              // are painting to a different topology so don't pack it here
+            }
+          }
+        }
         else if(type == "string")
         {
           // strings don't get converted to jitables, they are used as arguments
@@ -3174,34 +3271,44 @@ JitFilter::execute()
 
   // fuse
   Jitable *out_jitable = new Jitable(num_domains);
-  // fuse jitable variables (e.g. entries) and args
+  // fuse jitable variables (e.g. entries, topo, assoc) and args
   for(const Jitable *input_jitable : input_jitables)
   {
     out_jitable->fuse_vars(*input_jitable);
   }
 
-  // some functions need to pack the topology
-  // hack: add a new input jitable to the end with the topology (some of this
-  // code is duplicated from when type="topo")
-  if(func == "gradient" || func == "vorticity")
+  // some functions need to pack the topology but don't take it in as an
+  // argument. hack: add a new input jitable to the end with the topology and
+  // fuse it
+  if(func == "gradient" || func == "vorticity" ||
+     (func == "binning_value" && !inputs.has_path("topo")))
   {
     new_jitables.emplace_back(num_domains);
     Jitable &jitable = new_jitables.back();
     input_jitables.push_back(&jitable);
-    for(int i = 0; i < num_domains; ++i)
+
+    std::string topology;
+    if(func == "binning_value")
     {
-      const conduit::Node &dom = dataset->child(i);
-      std::unique_ptr<Topology> topo =
-          topologyFactory(out_jitable->topology, dom);
-      pack_topology(out_jitable->topology,
-                    dom,
-                    jitable.dom_info.child(i)["args"],
-                    jitable.arrays[i]);
-      const std::string kernel_type =
-          out_jitable->topology + "=" + topo->topo_type;
-      jitable.dom_info.child(i)["kernel_type"] = kernel_type;
-      jitable.kernels[kernel_type];
+      // if a topology wasn't passed in get the one associated with the binning
+      const int binning_port = inputs["binning/port"].to_int32();
+      const conduit::Node &binning = *input<conduit::Node>(binning_port);
+      topology = binning["attrs/topology/value"].as_string();
+      if(!has_topology(*dataset, topology))
+      {
+        ASCENT_ERROR("binning_value: dataset does not contain the topology "
+                     "associated with the binning '"
+                     << topology
+                     << "'. Try explicitly specifying a topology. known = "
+                     << known_topos(*dataset));
+      }
     }
+    else
+    {
+      topology = out_jitable->topology;
+    }
+    topo_to_jitable(topology, *dataset, jitable);
+
     out_jitable->fuse_vars(jitable);
   }
 
@@ -3288,6 +3395,16 @@ JitFilter::execute()
       {
         jitable_functions.vorticity();
       }
+      else if(func == "binning_value")
+      {
+        const int binning_port = inputs["binning/port"].to_int32();
+        const conduit::Node &binning = *input<conduit::Node>(binning_port);
+        jitable_functions.binning_value(binning);
+      }
+      else if(func == "rand")
+      {
+        jitable_functions.rand();
+      }
       else
       {
         ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
@@ -3306,8 +3423,6 @@ JitFilter::execute()
     else
     {
       field_name = filter_name;
-      conduit::Node *const remove =
-          graph().workspace().registry().fetch<Node>("remove");
       (*remove)["fields/" + filter_name];
     }
     out_jitable->execute(*dataset, field_name);
