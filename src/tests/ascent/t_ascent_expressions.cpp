@@ -690,6 +690,7 @@ TEST(ascent_binning, binning_basic_meshes)
 
   expr = "binning('field', 'sum', [axis('x', [0, 2.5, 5, 7.5, 10])])";
   res = eval.evaluate(expr);
+  res.print();
   EXPECT_EQ(res["attrs/value/value"].to_json(), "[0.0, 0.0, 16.0, 0.0]");
 
   expr = "binning('field', 'max', [axis('z', [-5, 0, 5])])";

@@ -266,8 +266,10 @@ conduit::Node binning(const conduit::Node &dataset,
                       conduit::Node &bin_axes,
                       const std::string &reduction_var,
                       const std::string &reduction_op,
-                      const double empty_bin_val,
-                      const std::string &component);
+                      const double empty_val,
+                      const std::string &component,
+                      const std::string &topo_name,
+                      const std::string &assoc_str);
 
 void paint_binning(const conduit::Node &binning,
                    conduit::Node &dataset,
@@ -347,6 +349,14 @@ std::string field_topology(const conduit::Node &dataset,
 void paint_nestsets(const std::string nestset_name,
                     conduit::Node &dom,
                     conduit::Node &field); // field to paint on
+
+// get the global topology and association if possible and check them against
+// the ones supplied
+conduit::Node
+final_topo_and_assoc(const conduit::Node &dataset,
+                     const conduit::Node &bin_axes,
+                     const std::string &topo_name,
+                     const std::string &assoc_str);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

@@ -619,9 +619,9 @@ UnstructuredTopology<T, N>::get_num_points() const
   const size_t num_points = std::unordered_set<T>(conn_begin, conn_end).size();
   // points available in the coordset
   const size_t coords_size = domain["coordsets/" + coords_name + "/values"]
-                               .child(0)
-                               .dtype()
-                               .number_of_elements();
+                                 .child(0)
+                                 .dtype()
+                                 .number_of_elements();
   if(num_points != coords_size)
   {
     ASCENT_ERROR("Unstructured topology '"
@@ -1152,7 +1152,7 @@ field_homes(const T *const field,
     {
       const int bin_index =
           rectilinear_bin(field[i], bins_begin, bins_end, clamp);
-      if(bin_index != -1)
+      if(bin_index != -1 && homes[i] != -1)
       {
         homes[i] += bin_index * stride;
       }
@@ -1174,7 +1174,7 @@ field_homes(const T *const field,
     {
       const int bin_index =
           uniform_bin(field[i], min_val, max_val, num_bins, clamp);
-      if(bin_index != -1)
+      if(bin_index != -1 && homes[i] != -1)
       {
         homes[i] += bin_index * stride;
       }
@@ -1193,7 +1193,7 @@ populate_homes(const conduit::Node &dom,
                const std::string &assoc_str,
                conduit::Node &res)
 {
-  int num_axes = bin_axes.number_of_children();
+  const int num_axes = bin_axes.number_of_children();
 
   // ensure this domain has the necessary fields
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
@@ -1275,11 +1275,11 @@ populate_homes(const conduit::Node &dom,
   res.set(conduit::DataType::c_int(homes_size));
   int *homes = res.value();
 
-  int stride = 1;
+  size_t stride = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
     const conduit::Node &axis = bin_axes.child(axis_index);
-    const std::string axis_name = axis.name();
+    const std::string &axis_name = axis.name();
     if(dom.has_path("fields/" + axis_name))
     {
       std::string values_path = "fields/" + axis_name + "/values";
@@ -1340,7 +1340,7 @@ update_bin(double *bins,
     bins[num_bins + i] += 1;
   }
   else if(reduction_op == "avg" || reduction_op == "sum" ||
-          reduction_op == "pdf")
+          reduction_op == "pdf" || reduction_op == "cdf")
   {
     bins[i] += value;
     bins[num_bins + i] += 1;
@@ -1358,17 +1358,18 @@ update_bin(double *bins,
   }
 }
 
-// get the association and topology and ensure they are the same
+// global topology and association as determined by a list of fields
+// checks for consistency
 conduit::Node
 global_topo_and_assoc(const conduit::Node &dataset,
-                      const std::vector<std::string> var_names)
+                      const std::vector<std::string> axis_names)
 {
   std::string assoc_str;
   std::string topo_name;
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
     const conduit::Node &dom = dataset.child(dom_index);
-    for(const std::string &var_name : var_names)
+    for(const std::string &var_name : axis_names)
     {
       if(dom.has_path("fields/" + var_name))
       {
@@ -1426,12 +1427,7 @@ global_topo_and_assoc(const conduit::Node &dataset,
     ASCENT_ERROR("All Binning fields must have the same topology.");
   }
 #endif
-  if(assoc_str.empty())
-  {
-    ASCENT_ERROR("Could not determine the associate from the given "
-                 "reduction_var and axes. Try supplying a field.");
-  }
-  else if(assoc_str != "vertex" && assoc_str != "element")
+  if(!assoc_str.empty() && assoc_str != "vertex" && assoc_str != "element")
   {
     ASCENT_ERROR("Unknown association: '"
                  << assoc_str
@@ -1441,6 +1437,57 @@ global_topo_and_assoc(const conduit::Node &dataset,
   conduit::Node res;
   res["topo_name"] = topo_name;
   res["assoc_str"] = assoc_str;
+  return res;
+}
+
+conduit::Node
+final_topo_and_assoc(const conduit::Node &dataset,
+                     const conduit::Node &bin_axes,
+                     const std::string &topo_name,
+                     const std::string &assoc_str)
+{
+  std::vector<std::string> axis_names = bin_axes.child_names();
+
+  bool all_xyz = true;
+  for(const std::string &axis_name : axis_names)
+  {
+    all_xyz &= is_xyz(axis_name);
+  }
+  std::string new_topo_name;
+  std::string new_assoc_str;
+  if(all_xyz)
+  {
+    new_topo_name = topo_name;
+    new_assoc_str = assoc_str;
+  }
+  else
+  {
+    const conduit::Node &topo_and_assoc =
+        global_topo_and_assoc(dataset, axis_names);
+    new_topo_name = topo_and_assoc["topo_name"].as_string();
+    new_assoc_str = topo_and_assoc["assoc_str"].as_string();
+    if(!topo_name.empty() && topo_name != new_topo_name)
+    {
+      ASCENT_ERROR(
+          "The specified topology '"
+          << topo_name
+          << "' does not have the required fields specified in the bin axes: "
+          << bin_axes.to_yaml() << "\n Did you mean to use '" << new_topo_name
+          << "'?");
+    }
+    if(!assoc_str.empty() && assoc_str != new_assoc_str)
+    {
+      ASCENT_ERROR(
+          "The specified association '"
+          << assoc_str
+          << "' conflicts with the association of the fields of the bin axes:"
+          << bin_axes.to_yaml() << ". Did you mean to use '" << new_assoc_str
+          << "'?");
+    }
+  }
+  conduit::Node res;
+  res["topo_name"] = new_topo_name;
+  res["assoc_str"] = new_assoc_str;
   return res;
 }
 
@@ -1535,24 +1582,39 @@ init_bins(double *bins, const int size, const std::string reduction_op)
   }
 }
 
-// reduction_op: sum, min, max, avg, pdf, std, var, rms
+// reduction_op: sum, min, max, avg, pdf, cdf, std, var, rms
 conduit::Node
 binning(const conduit::Node &dataset,
         conduit::Node &bin_axes,
         const std::string &reduction_var,
         const std::string &reduction_op,
-        const double empty_bin_val,
-        const std::string &component)
+        const double empty_val,
+        const std::string &component,
+        const std::string &topo_name_,
+        const std::string &assoc_str_)
 {
-  std::vector<std::string> var_names = bin_axes.child_names();
+  // get the final topo_name and assoc_str
+  conduit::Node axes_and_reduction_var = bin_axes;
   if(!reduction_var.empty())
   {
-    var_names.push_back(reduction_var);
+    axes_and_reduction_var[reduction_var];
   }
-  const conduit::Node &topo_and_assoc =
-      global_topo_and_assoc(dataset, var_names);
+  const conduit::Node &topo_and_assoc = final_topo_and_assoc(
+      dataset, axes_and_reduction_var, topo_name_, assoc_str_);
   const std::string topo_name = topo_and_assoc["topo_name"].as_string();
   const std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+  if(topo_name.empty())
+  {
+    ASCENT_ERROR(
+        "Binning: Could not determine the topology to bin. Please pass it in "
+        "explicitly or supply a field for reduction_var or one of the axes.");
+  }
+  if(assoc_str.empty())
+  {
+    ASCENT_ERROR("Binning: Could not determine the association to bin. Please "
+                 "pass it in explicitly or supply a field for reduction_var "
+                 "or one of the axes.");
+  }
 
   const conduit::Node &bounds = global_bounds(dataset, topo_name);
   const double *min_coords = bounds["min_coords"].value();
@@ -1726,14 +1788,16 @@ binning(const conduit::Node &dataset,
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   double *global_bins = new double[bins_size];
-  if(reduction_op == "sum" || reduction_op == "pdf" || reduction_op == "avg" ||
-     reduction_op == "std" || reduction_op == "var" || reduction_op == "rms")
+  if(reduction_op == "sum" || reduction_op == "pdf" || reduction_op == "cdf" ||
+     reduction_op == "avg" || reduction_op == "std" || reduction_op == "var" ||
+     reduction_op == "rms")
   {
     MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
   }
   else if(reduction_op == "min")
   {
     MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_MIN, mpi_comm);
+    // sum the counts
     MPI_Allreduce(bins + num_bins,
                   global_bins + num_bins,
                   num_bins,
@@ -1744,6 +1808,7 @@ binning(const conduit::Node &dataset,
   else if(reduction_op == "max")
   {
     MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_MAX, mpi_comm);
+    // sum the counts
     MPI_Allreduce(bins + num_bins,
                   global_bins + num_bins,
                   num_bins,
@@ -1775,11 +1840,35 @@ binning(const conduit::Node &dataset,
     {
       if(bins[num_bins + i] == 0)
       {
-        res_bins[i] = empty_bin_val;
+        res_bins[i] = empty_val;
       }
       else
       {
         res_bins[i] = bins[i] / total;
+      }
+    }
+  }
+  else if(reduction_op == "cdf")
+  {
+    double total = 0;
+#ifdef ASCENT_USE_OPENMP
+#pragma omp parallel for reduction(+ : total)
+#endif
+    for(size_t i = 0; i < num_bins; ++i)
+    {
+      total += bins[i];
+    }
+    double rolling_cdf = 0;
+    for(size_t i = 0; i < num_bins; ++i)
+    {
+      if(bins[num_bins + i] == 0)
+      {
+        res_bins[i] = rolling_cdf;
+      }
+      else
+      {
+        rolling_cdf += bins[i] / total;
+        res_bins[i] = rolling_cdf;
       }
     }
   }
@@ -1793,7 +1882,7 @@ binning(const conduit::Node &dataset,
     {
       if(bins[num_bins + i] == 0)
       {
-        res_bins[i] = empty_bin_val;
+        res_bins[i] = empty_val;
       }
       else
       {
@@ -1812,7 +1901,7 @@ binning(const conduit::Node &dataset,
       const double n = bins[num_bins + i];
       if(n == 0)
       {
-        res_bins[i] = empty_bin_val;
+        res_bins[i] = empty_val;
       }
       else
       {
@@ -1831,7 +1920,7 @@ binning(const conduit::Node &dataset,
       const double n = bins[num_bins + i];
       if(n == 0)
       {
-        res_bins[i] = empty_bin_val;
+        res_bins[i] = empty_val;
       }
       else
       {
@@ -1851,7 +1940,7 @@ binning(const conduit::Node &dataset,
       const double n = bins[2 * num_bins + i];
       if(n == 0)
       {
-        res_bins[i] = empty_bin_val;
+        res_bins[i] = empty_val;
       }
       else
       {
@@ -1871,7 +1960,7 @@ binning(const conduit::Node &dataset,
       const double n = bins[2 * num_bins + i];
       if(n == 0)
       {
-        res_bins[i] = empty_bin_val;
+        res_bins[i] = empty_val;
       }
       else
       {
@@ -1879,6 +1968,7 @@ binning(const conduit::Node &dataset,
       }
     }
   }
+  res["topology"] = topo_name;
   res["association"] = assoc_str;
   delete[] bins;
   return res;
@@ -1936,75 +2026,34 @@ void
 paint_binning(const conduit::Node &binning,
               conduit::Node &dataset,
               const std::string &field_name,
-              const std::string &topo_name,
-              const std::string &assoc_str,
-              const double default_value)
+              const std::string &topo_name_,
+              const std::string &assoc_str_,
+              const double default_val)
 {
   const conduit::Node &bin_axes = binning["attrs/bin_axes/value"];
 
   // get assoc_str and topo_name
-  std::vector<std::string> axis_names = bin_axes.child_names();
-  bool all_xyz = true;
-  for(const std::string &axis_name : axis_names)
+  const conduit::Node &topo_and_assoc =
+      final_topo_and_assoc(dataset, bin_axes, topo_name_, assoc_str_);
+  std::string topo_name = topo_and_assoc["topo_name"].as_string();
+  std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+  if(topo_name.empty())
   {
-    all_xyz &= is_xyz(axis_name);
-  }
-
-  std::string new_topo_name;
-  std::string new_assoc_str;
-  if(all_xyz)
-  {
-    if(!topo_name.empty())
+    // use the topology from the binning
+    topo_name = binning["attrs/topology/value"].as_string();
+    if(!has_topology(dataset, topo_name))
     {
-      new_topo_name = topo_name;
-    }
-    else if(dataset.child(0)["topologies"].number_of_children() == 1)
-    {
-      new_topo_name = dataset.child(0)["topologies"].child(0).name();
-    }
-    else
-    {
-      ASCENT_ERROR(
-          "Please specify a topology to paint onto. The topology could not "
-          "be inferred because the bin axes are a subset of x, y, z. Known "
-          "topologies: "
-          << known_topos(dataset));
-    }
-
-    if(!assoc_str.empty())
-    {
-      new_assoc_str = assoc_str;
-    }
-    else
-    {
-      // and use the association from the binning
-      new_assoc_str = binning["attrs/association/value"].as_string();
+      ASCENT_ERROR("binning_value: dataset does not contain the topology "
+                   "associated with the binning '"
+                   << topo_name
+                   << "'. Try explicitly specifying a topology. known = "
+                   << known_topos(dataset));
     }
   }
-  else
+  if(assoc_str.empty())
   {
-    const conduit::Node &topo_and_assoc =
-        global_topo_and_assoc(dataset, axis_names);
-    new_topo_name = topo_and_assoc["topo_name"].as_string();
-    new_assoc_str = topo_and_assoc["assoc_str"].as_string();
-    if(!topo_name.empty() && topo_name != new_topo_name)
-    {
-      ASCENT_ERROR(
-          "The specified topology '"
-          << topo_name
-          << "' does not have the required fields specified in the bin axes: "
-          << bin_axes.to_yaml() << "\n Did you mean to use '" << new_topo_name
-          << "'?");
-    }
-    if(!assoc_str.empty() && assoc_str != new_assoc_str)
-    {
-      ASCENT_ERROR(
-          "The specified association '"
-          << assoc_str
-          << "' conflicts with the association of the fields of the bin axes:"
-          << bin_axes.to_yaml() << ". Did you mean to use '" << new_assoc_str
-          << "'?");
-    }
+    // use the association from the binning
+    assoc_str = binning["attrs/association/value"].as_string();
   }
 
   const double *bins = binning["attrs/value/value"].as_double_ptr();
@@ -2014,7 +2063,7 @@ paint_binning(const conduit::Node &binning,
     conduit::Node &dom = dataset.child(dom_index);
 
     conduit::Node n_homes;
-    populate_homes(dom, bin_axes, new_topo_name, new_assoc_str, n_homes);
+    populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
     if(n_homes.has_path("error"))
     {
       ASCENT_INFO("Binning: not painting domain "
@@ -2026,8 +2075,8 @@ paint_binning(const conduit::Node &binning,
     const int *homes = n_homes.as_int_ptr();
     const int homes_size = n_homes.dtype().number_of_elements();
 
-    dom["fields/" + field_name + "/association"] = new_assoc_str;
-    dom["fields/" + field_name + "/topology"] = new_topo_name;
+    dom["fields/" + field_name + "/association"] = assoc_str;
+    dom["fields/" + field_name + "/topology"] = topo_name;
     dom["fields/" + field_name + "/values"].set(
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
@@ -2043,7 +2092,7 @@ paint_binning(const conduit::Node &binning,
       }
       else
       {
-        values[i] = default_value;
+        values[i] = default_val;
       }
     }
   }
