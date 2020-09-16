@@ -333,8 +333,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  const float skipped_renders)
 {
     // optional render factors for sim and/or vis nodes (empirically determined)
-    const float sim_factor = 1.5;       // 1.24;
-    const float vis_factor = 1.5;       // 0.97;       // 0.9317 for n33, 1.0069 for n10
+    const float sim_factor = 1.0f;       // 1.24;
+    const float vis_factor = 1.0f;       // 0.97;       // 0.9317 for n33, 1.0069 for n10
 
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -1403,9 +1403,9 @@ void hybrid_render(const MPI_Properties &mpi_props,
     MPI_Allgather(&my_data_size, 1, MPI_INT, g_data_sizes.data(), 1, MPI_INT, mpi_props.comm_world);
     
     // mpi message tags
-    const int tag_data = 0;
-    const int tag_probing = tag_data + 1;
-    const int tag_inline = tag_probing + 1;
+    const int TAG_DATA = 0;
+    const int TAG_PROBING = TAG_DATA + 1;
+    const int TAG_INLINE = TAG_PROBING + 1;
 
     // common options for both sim and vis nodes
     Node ascent_opts, blank_actions;
@@ -1470,7 +1470,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                                       datasets[i]->total_bytes_compact(),
                                       MPI_BYTE,
                                       src_ranks[i],
-                                      tag_data,
+                                      TAG_DATA,
                                       mpi_props.comm_world,
                                       &requests_data[i]
                                       );
@@ -1537,7 +1537,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                                           render_chunks_probe[i]->total_bytes_compact(),
                                           MPI_BYTE,
                                           src_ranks[i],
-                                          tag_probing,
+                                          TAG_PROBING,
                                           mpi_props.comm_world,
                                           &requests_probing[i]
                                           );
@@ -1556,7 +1556,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                                           render_chunks_sim[i][j]->total_bytes_compact(),
                                           MPI_BYTE,
                                           src_ranks[i],
-                                          tag_inline + j,
+                                          TAG_INLINE + j,
                                           mpi_props.comm_world,
                                           &requests_inline_sim[i][j]
                                           );
@@ -1597,7 +1597,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 const int probing_count_part = render_cfg.get_probing_count_part(current_render_count, render_offset);
 
                 auto start = std::chrono::system_clock::now();
-                if (current_render_count > 0)
+                if (current_render_count - probing_count_part > 0)
                 {
                     // debug_break();
                     std::cout   << "~~~~ VIS node " << mpi_props.rank << " rendering " 
@@ -1702,7 +1702,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                                           data_packed.total_bytes_compact(),
                                           MPI_BYTE,
                                           destination,
-                                          tag_data,
+                                          TAG_DATA,
                                           mpi_props.comm_world
                                           );
                 if (mpi_error)
@@ -1716,7 +1716,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
             std::thread pack_probing_thread;
             if (!skipped_render)
                 pack_probing_thread = std::thread(&pack_and_send, std::ref(render_chunks_probing), 
-                                                  destination, tag_probing, mpi_props.comm_world, 
+                                                  destination, TAG_PROBING, mpi_props.comm_world, 
                                                   std::ref(request_probing));
 
             log_global_time("end sendData", mpi_props.rank);
@@ -1780,7 +1780,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
                 threads.push_back(std::thread(&pack_and_send, std::ref(renders_inline[i]), 
                                               destination, 
-                                              tag_inline + i, mpi_props.comm_world, 
+                                              TAG_INLINE + i, mpi_props.comm_world, 
                                               std::ref(requests[i])));
 
                 t_end = std::chrono::system_clock::now();
