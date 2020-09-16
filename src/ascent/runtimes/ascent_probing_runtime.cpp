@@ -343,7 +343,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
     // TODO: add smarter way to estimate compositing cost
-    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.14f) * render_cfg.max_count;  // assume flat cost per image
+    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.15f) * render_cfg.max_count;  // assume flat cost per image
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
 
@@ -749,7 +749,7 @@ int calc_render_msg_size(const int render_count, const int probing_count,
     const int total_renders = render_count - probing_count;
 
     const int overhead_render = 396 + 512;    // TODO: add correct bytes for name
-    const int overhead_global = 288 + 42000;
+    const int overhead_global = 288;
     return total_renders * channels * width * height + 
            total_renders * overhead_render + overhead_global;
 }
@@ -763,8 +763,8 @@ std::vector<int> get_batch_sizes(const int render_count, const RenderConfig rend
         return std::vector<int>();
 
     int batch_count = render_cfg.batch_count;
-    if (render_count < 50)
-        batch_count = 1;
+    while (render_count/batch_count < 32 && batch_count > 1)
+        --batch_count;
 
     std::vector<int> batch_sizes(batch_count - 1);
 
@@ -1114,7 +1114,6 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         auto t_start = std::chrono::system_clock::now();
         // gather all dephts values from vis nodes
         std::vector<float> v_depths(mpi_props.sim_node_count, std::numeric_limits<float>::lowest());
-
         std::vector<float> depths(render_ptrs[j].size());
 
         for (int i = 0; i < render_ptrs[j].size(); i++)
@@ -1152,7 +1151,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             float *db = (*render_ptrs[j][i])["depth_buffers"].child(render_arrangement[j][i]).as_float_ptr();
             // std::cout << mpi_props.rank << " | ..add image " << j << " " << render_arrangement.at(j).at(i) << " | id " << id << std::endl;
             
-            // TODO: test & debug
+            // TODO: test & debug ActivePixelDecoding
             if (false)
             {
                 std::vector<unsigned char> dec_colors;
@@ -1696,14 +1695,16 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 // std::cout << mpi_props.rank << " -- buffer size: " << total_size << std::endl;
             }
 
+            MPI_Request request_data = MPI_REQUEST_NULL;
             {   // send data to vis node
                 auto t_start = std::chrono::system_clock::now();
-                int mpi_error = MPI_Ssend(const_cast<void*>(data_packed.data_ptr()),
+                int mpi_error = MPI_Isend(const_cast<void*>(data_packed.data_ptr()),
                                           data_packed.total_bytes_compact(),
                                           MPI_BYTE,
                                           destination,
                                           TAG_DATA,
-                                          mpi_props.comm_world
+                                          mpi_props.comm_world,
+                                          &request_data
                                           );
                 if (mpi_error)
                     std::cout << "ERROR sending sim data to " << destination << std::endl;
@@ -1807,6 +1808,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
             {   // wait for all sent data to be received
                 t_start = std::chrono::system_clock::now();
+                MPI_Wait(&request_data, MPI_STATUS_IGNORE);
                 // probing
                 if (!skipped_render)
                 {
