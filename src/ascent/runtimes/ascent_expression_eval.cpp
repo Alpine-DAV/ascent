@@ -806,7 +806,7 @@ initialize_functions()
   binning_mesh_sig["args/name/description"] =
       "The name of the new field to be generated, the corresponding topology "
       "topology and coordinate sets will be named '``name``_topo' and "
-      "``name``_coords' respectively. If not specified, a name is "
+      "'``name``_coords' respectively. If not specified, a name is "
       "automatically generated and the field is treated as a temporary and "
       "removed from the dataset when the expression is done executing.";
   binning_mesh_sig["description"] =
@@ -884,13 +884,13 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
-  conduit::Node &field_vorticity_sig = (*functions)["vorticity"].append();
-  field_vorticity_sig["return_type"] = "jitable";
-  field_vorticity_sig["filter_name"] = "vorticity";
-  field_vorticity_sig["args/field/type"] = "field";
-  field_vorticity_sig["description"] =
-      "Return a derived field that is the vorticity of a vector field.";
-  field_vorticity_sig["jitable"];
+  conduit::Node &field_curl_sig = (*functions)["curl"].append();
+  field_curl_sig["return_type"] = "jitable";
+  field_curl_sig["filter_name"] = "curl";
+  field_curl_sig["args/field/type"] = "field";
+  field_curl_sig["description"] =
+      "Return a derived field that is the curl of a vector field.";
+  field_curl_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
@@ -929,7 +929,7 @@ initialize_functions()
   derived_field["args/assoc/type"] = "string";
   derived_field["args/assoc/optional"];
   derived_field["args/assoc/description"] =
-      "The association of the derived field. The language will try to infer "
+      "The association of the derived field. The language tries to infer "
       "this if not specified.";
   derived_field["description"] =
       "Cast a scalar to a derived field (type `jitable`).";
@@ -951,7 +951,7 @@ initialize_functions()
   derived_field2["args/assoc/type"] = "string";
   derived_field2["args/assoc/optional"];
   derived_field2["args/assoc/description"] =
-      "The association of the derived field. The language will try to infer "
+      "The association of the derived field. The language tries to infer "
       "this if not specified.";
   derived_field2["description"] =
       "Used to explicitly specify the topology and association of a derived "
@@ -1000,7 +1000,7 @@ initialize_functions()
 
 
   count_params();
-  // functions->save("functions.json", "json");
+  functions->save("functions.json", "json");
 }
 
 void
@@ -1023,26 +1023,41 @@ initialize_objects()
 
   conduit::Node &topo = (*objects)["topo/attrs"];
   topo["cell/type"] = "cell";
+  topo["cell/description"] = "Holds ``jitable`` cell attributes.";
   topo["vertex/type"] = "vertex";
+  topo["vertex/description"] = "Holds ``jitable`` vertex attributes.";
 
   conduit::Node &cell = (*objects)["cell/attrs"];
   (*objects)["cell/jitable"];
   cell["x/type"] = "jitable";
+  cell["x/description"] = "Cell x-coordinate.";
   cell["y/type"] = "jitable";
+  cell["y/description"] = "Cell y-coordinate.";
   cell["z/type"] = "jitable";
+  cell["z/description"] = "Cell z-coordinate.";
   cell["dx/type"] = "jitable";
+  cell["dx/description"] = "Cell dx, only defined for rectilinear topologies.";
   cell["dy/type"] = "jitable";
+  cell["dy/description"] = "Cell dy, only defined for rectilinear topologies.";
   cell["dz/type"] = "jitable";
+  cell["dz/description"] = "Cell dz, only defined for rectilinear topologies.";
   cell["id/type"] = "jitable";
+  cell["id/description"] = "Domain cell id.";
   cell["volume/type"] = "jitable";
+  cell["volume/description"] = "Cell volume, only defined for 3D topologies";
   cell["area/type"] = "jitable";
+  cell["area/description"] = "Cell area, only defined for 2D topologies";
 
   conduit::Node &vertex = (*objects)["vertex/attrs"];
   (*objects)["vertex/jitable"];
   vertex["x/type"] = "jitable";
+  vertex["x/description"] = "Vertex x-coordinate.";
   vertex["y/type"] = "jitable";
+  vertex["y/description"] = "Vertex y-coordinate.";
   vertex["z/type"] = "jitable";
+  vertex["z/description"] = "Vertex z-coordinate.";
   vertex["id/type"] = "jitable";
+  vertex["id/description"] = "Domain vertex id.";
 
   conduit::Node &vector_atts = (*objects)["vector/attrs"];
   vector_atts["x/type"] = "double";
@@ -1063,7 +1078,7 @@ initialize_objects()
   // we give field the attributes of jitable since all fields are jitables
   (*objects)["field/attrs"].update(jitable);
 
-  // objects->save("objects.json", "json");
+  objects->save("objects.json", "json");
 }
 
 conduit::Node

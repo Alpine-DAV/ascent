@@ -3280,7 +3280,7 @@ JitFilter::execute()
   // some functions need to pack the topology but don't take it in as an
   // argument. hack: add a new input jitable to the end with the topology and
   // fuse it
-  if(func == "gradient" || func == "vorticity" ||
+  if(func == "gradient" || func == "curl" ||
      (func == "binning_value" && !inputs.has_path("topo")))
   {
     new_jitables.emplace_back(num_domains);
@@ -3391,9 +3391,9 @@ JitFilter::execute()
       {
         jitable_functions.gradient();
       }
-      else if(func == "vorticity")
+      else if(func == "curl")
       {
-        jitable_functions.vorticity();
+        jitable_functions.curl();
       }
       else if(func == "binning_value")
       {

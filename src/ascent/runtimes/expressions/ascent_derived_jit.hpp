@@ -308,7 +308,7 @@ public:
             const int num_components,
             const int component);
   void gradient(InsertionOrderedSet<std::string> &code);
-  void vorticity(InsertionOrderedSet<std::string> &code);
+  void curl(InsertionOrderedSet<std::string> &code);
 
 private:
   void hex_gradient(InsertionOrderedSet<std::string> &code,
@@ -403,7 +403,7 @@ public:
   void expr_if();
   void derived_field();
   void gradient();
-  void vorticity();
+  void curl();
   void magnitude();
   void vector();
   void binning_value(const conduit::Node &binning);

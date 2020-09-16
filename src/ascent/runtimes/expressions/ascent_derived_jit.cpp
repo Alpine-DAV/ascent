@@ -2383,25 +2383,25 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 }
 
 void
-FieldCode::vorticity(InsertionOrderedSet<std::string> &code)
+FieldCode::curl(InsertionOrderedSet<std::string> &code)
 {
   // assumes the gradient for each component is present (generated in
-  // JitableFunctions::vorticity)
-  const std::string vorticity_name = field_name + "_vorticity";
-  code.insert("double " + vorticity_name + "[3];\n");
+  // JitableFunctions::curl)
+  const std::string curl_name = field_name + "_curl";
+  code.insert("double " + curl_name + "[3];\n");
   if(num_components == 3)
   {
 
-    code.insert({vorticity_name + "[0] = " + field_name + "_2_gradient[1] - " +
+    code.insert({curl_name + "[0] = " + field_name + "_2_gradient[1] - " +
                      field_name + "_1_gradient[2];\n",
-                 vorticity_name + "[1] = " + field_name + "_0_gradient[2] - " +
+                 curl_name + "[1] = " + field_name + "_0_gradient[2] - " +
                      field_name + "_2_gradient[0];\n"});
   }
   else if(num_components == 2)
   {
-    code.insert({vorticity_name + "[0] = 0;\n", vorticity_name + "[1] = 0;\n"});
+    code.insert({curl_name + "[0] = 0;\n", curl_name + "[1] = 0;\n"});
   }
-  code.insert(vorticity_name + "[2] = " + field_name + "_1_gradient[0] - " +
+  code.insert(curl_name + "[2] = " + field_name + "_1_gradient[0] - " +
               field_name + "_0_gradient[1];\n");
 }
 // }}}
@@ -2986,7 +2986,7 @@ JitableFunctions::gradient()
 }
 
 void
-JitableFunctions::vorticity()
+JitableFunctions::curl()
 {
   const int field_port = inputs["field/port"].as_int32();
   const Jitable &field_jitable = *input_jitables[field_port];
@@ -3024,8 +3024,8 @@ JitableFunctions::vorticity()
                                      out_jitable.arrays[dom_idx],
                                      field_kernel.num_components,
                                      -1);
-    field_code.vorticity(out_kernel.for_body);
-    out_kernel.expr = field_name + "_vorticity";
+    field_code.curl(out_kernel.for_body);
+    out_kernel.expr = field_name + "_curl";
     out_kernel.num_components = field_kernel.num_components;
   }
 }
