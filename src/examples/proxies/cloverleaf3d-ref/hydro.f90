@@ -121,7 +121,11 @@ SUBROUTINE hydro
 
     
     ! visualization
-    IF(visit_sim_time.GT.0.0) THEN
+    IF (visit_sim_time.GT.0.0) THEN
+      IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
+        CALL clover_barrier_sim
+      ENDIF
+
       ! trigger vis based on cycle time
       cycle_time = timer() - sim_timer
       IF(cycle_time.GT.visit_sim_time) THEN
@@ -139,8 +143,7 @@ SUBROUTINE hydro
         sim_timer = timer()
       ENDIF
 
-    ELSE IF(visit_frequency.NE.0) THEN
-      
+    ELSE IF (visit_frequency.NE.0) THEN
       IF(MOD(step, visit_frequency).EQ.initial_steps) THEN
         vis_time=timer()
 
