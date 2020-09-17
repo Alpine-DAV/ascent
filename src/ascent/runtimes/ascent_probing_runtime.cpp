@@ -1241,9 +1241,6 @@ void convert_color_buffer(Node &data)
 void pack_and_send(Node &data, const int destination, const int tag, 
                    const MPI_Comm comm, MPI_Request &req)
 {
-    // convert_color_buffer(data);
-
-    // debug_break();
     Node compact_node;
     pack_node(data, compact_node);
 
@@ -1565,6 +1562,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
         }
 
         // wait for all data sets to arrive
+        // NOTE: if we use waitany an then render in between waiting for the next dataset, 
+        // we stall the remaining sim nodes until the rendering on this vis node is finished
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
             int id = -1;
@@ -1581,7 +1580,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
         for (int i = 0; i < my_data_recv_cnt; ++i)
         {
-            // std::cout << "=== dataset size " << mpi_props.rank << " "
+            // std::cout << "=== dataset size " << mpi_props.rank << " from " << src_ranks[i] << " "
             //           << datasets[i]->total_bytes_compact() << std::endl;
             Node dataset;
             unpack_node(*datasets[i], dataset);
@@ -1696,20 +1695,25 @@ void hybrid_render(const MPI_Properties &mpi_props,
             }
 
             MPI_Request request_data = MPI_REQUEST_NULL;
-            {   // send data to vis node
-                auto t_start = std::chrono::system_clock::now();
-                int mpi_error = MPI_Isend(const_cast<void*>(data_packed.data_ptr()),
-                                          data_packed.total_bytes_compact(),
-                                          MPI_BYTE,
-                                          destination,
-                                          TAG_DATA,
-                                          mpi_props.comm_world,
-                                          &request_data
-                                          );
-                if (mpi_error)
-                    std::cout << "ERROR sending sim data to " << destination << std::endl;
-                log_time(t_start, "- send data ", mpi_props.rank);
-            }
+            // TODO: send data only if not skipped_render
+            // {   // send data to vis node
+            //     auto t_start = std::chrono::system_clock::now();
+            //     int mpi_error = MPI_Isend(const_cast<void*>(data_packed.data_ptr()),
+            //                               data_packed.total_bytes_compact(),
+            //                               MPI_BYTE,
+            //                               destination,
+            //                               TAG_DATA,
+            //                               mpi_props.comm_world,
+            //                               &request_data
+            //                               );
+            //     if (mpi_error)
+            //         std::cout << "ERROR sending sim data to " << destination << std::endl;
+            //     log_time(t_start, "- send data ", mpi_props.rank);
+            // }
+
+            std::thread send_data_thread = std::thread(&MPI_Ssend, const_cast<void*>(data_packed.data_ptr()), 
+                                                        data_packed.total_bytes_compact(), 
+                                                        MPI_BYTE, destination, TAG_DATA, mpi_props.comm_world);
                        
             // debug_break();
             MPI_Request request_probing = MPI_REQUEST_NULL;
@@ -1816,6 +1820,9 @@ void hybrid_render(const MPI_Properties &mpi_props,
                         pack_probing_thread.join();
                     MPI_Wait(&request_probing, MPI_STATUS_IGNORE);
                 }
+                if (send_data_thread.joinable())
+                    send_data_thread.join();
+                
                 // render chunks
                 MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
                 log_time(t_start, "+ wait send img ", mpi_props.rank);
