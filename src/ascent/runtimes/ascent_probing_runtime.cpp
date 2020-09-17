@@ -1688,8 +1688,8 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
                 const index_t msg_size_render = calc_render_msg_size(g_render_counts[mpi_props.rank], 0);
                 const index_t msg_size_probing = calc_render_msg_size(render_cfg.probing_count, 0);
-                const int overhead = MPI_BSEND_OVERHEAD * (batch_sizes.size() + 1); // 1 probing batch
-                const int total_size = msg_size_render + msg_size_probing + overhead;
+                const int overhead = MPI_BSEND_OVERHEAD * (batch_sizes.size() + 2); // 1 probing batch
+                const int total_size = msg_size_render + msg_size_probing + overhead + my_data_size;
                 
                 MPI_Buffer_attach(malloc(total_size), total_size);
                 // std::cout << mpi_props.rank << " -- buffer size: " << total_size << std::endl;
@@ -1698,14 +1698,14 @@ void hybrid_render(const MPI_Properties &mpi_props,
             MPI_Request request_data = MPI_REQUEST_NULL;
             {   // send data to vis node
                 auto t_start = std::chrono::system_clock::now();
-                int mpi_error = MPI_Isend(const_cast<void*>(data_packed.data_ptr()),
-                                          data_packed.total_bytes_compact(),
-                                          MPI_BYTE,
-                                          destination,
-                                          TAG_DATA,
-                                          mpi_props.comm_world,
-                                          &request_data
-                                          );
+                int mpi_error = MPI_Ibsend(const_cast<void*>(data_packed.data_ptr()),
+                                           data_packed.total_bytes_compact(),
+                                           MPI_BYTE,
+                                           destination,
+                                           TAG_DATA,
+                                           mpi_props.comm_world,
+                                           &request_data
+                                           );
                 if (mpi_error)
                     std::cout << "ERROR sending sim data to " << destination << std::endl;
                 log_time(t_start, "- send data ", mpi_props.rank);
