@@ -98,7 +98,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_slice)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
-# same for t_ascent_babelflow_pmt_mpi
+# same for t_ascent_babelflow_pmt_mpi and t_ascent_babelflow_comp_mpi
 
 # include the "ascent" pipeline
 if(VTKM_FOUND)
@@ -158,8 +158,12 @@ if(MPI_FOUND AND ENABLE_MPI)
     add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
 
   if(ENABLE_BABELFLOW)
-  # add the babelflow pmt mpi test
+    # add the babelflow pmt mpi test
     add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
+    if(DRAY_FOUND)
+      # babelflow compositing test requires dray
+      add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
+    endif()  
   endif()
 else()
     message(STATUS "MPI disabled: Skipping related tests")

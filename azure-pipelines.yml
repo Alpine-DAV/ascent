@@ -8,7 +8,7 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2020-08-25-sha784de7
+  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2020-09-14-sha602e66
   cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2020-08-25-sha449ef8
 
 
@@ -60,12 +60,14 @@ stages:
           ENABLE_PYTHON: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
+          ENABLE_BABELFLOW: OFF
         shared_py36:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
     steps:
       - checkout: self
         clean: boolean
@@ -106,6 +108,7 @@ stages:
            if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            echo ${CMAKE_OPTS}
            # configure
            cmake ${CMAKE_OPTS} ../src

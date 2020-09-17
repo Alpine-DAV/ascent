@@ -12,8 +12,12 @@
 #include <ascent_png_encoder.hpp>
 #include "ascent_runtime_babelflow_comp_utils.hpp"
 
+#include "BabelFlow/DefGraphConnector.h"
+#include "BabelFlow/ComposableTaskGraph.h"
+#include "BabelFlow/ComposableTaskMap.h"
 
-//#define BFLOW_COMP_UTIL_DEBUG
+
+// #define BFLOW_COMP_UTIL_DEBUG
 
 
 //-----------------------------------------------------------------------------
@@ -63,7 +67,7 @@ void ImageData::writeImage(const char* filename, uint32_t* extent)
   int y_extent = extent[3] - extent[2] + 1;
   
   // PNGEncoder works with rgba -- 4 channels
-  unsigned char* pixel_buff = new unsigned char[x_extent*y_extent*4]();
+  PixelType* pixel_buff = new PixelType[x_extent*y_extent*4]();
   
   uint32_t x_size = rend_bounds[1] - rend_bounds[0] + 1;
   uint32_t y_size = rend_bounds[3] - rend_bounds[2] + 1;
@@ -81,51 +85,104 @@ void ImageData::writeImage(const char* filename, uint32_t* extent)
           continue;
         }
         
-        uint32_t myidx = (x + extent[0] -rend_bounds[0]) + (y + extent[2] - rend_bounds[2])*x_size;
+        uint32_t myidx = (x + extent[0] - rend_bounds[0]) + (y + extent[2] - rend_bounds[2])*x_size;
         uint32_t myimgidx = myidx*ImageData::sNUM_CHANNELS;
         
-        pixel_buff[imgidx + 3] = 255;
-        memcpy(pixel_buff + imgidx, image + myimgidx, ImageData::sNUM_CHANNELS);
+        pixel_buff[imgidx + 3] = ImageData::sOPAQUE;
+        memcpy( pixel_buff + imgidx, image + myimgidx, ImageData::sNUM_CHANNELS*sizeof(PixelType) );
       }
   }
 
   // Use Ascent's PNGEncoder to write image to disk
   PNGEncoder encoder;
-  encoder.Encode(pixel_buff, x_extent, y_extent);
-  encoder.Save(filename);
+  encoder.Encode( pixel_buff, x_extent, y_extent );
+  encoder.Save( filename );
+  
+  delete[] pixel_buff;
+}
+
+void ImageData::writeDepth(const char* filename, uint32_t* extent)
+{
+  int x_extent = extent[1] - extent[0] + 1;
+  int y_extent = extent[3] - extent[2] + 1;
+  
+  // PNGEncoder works with rgba -- 4 channels
+  PixelType* pixel_buff = new PixelType[x_extent*y_extent*4]();
+  
+  uint32_t x_size = rend_bounds[1] - rend_bounds[0] + 1;
+  uint32_t y_size = rend_bounds[3] - rend_bounds[2] + 1;
+
+  PixelType max_depth = -1.f, min_depth = zbuf[0];
+  for( uint32_t i = 0; i < x_size*y_size; ++i )
+  {
+    if( zbuf[i] >= std::numeric_limits<float>::infinity() )
+      continue;
+    if( zbuf[i] > max_depth ) max_depth = zbuf[i];
+    if( zbuf[i] < min_depth ) min_depth = zbuf[i];
+  }
+  
+  for(int y=0; y < y_extent; ++y)
+  {
+      for(int x=0; x < x_extent; ++x)
+      {
+        int idx = x + y*x_extent; 
+        int imgidx = idx*4;
+        
+        if( (x + extent[0] < rend_bounds[0]) || (x + extent[0] > rend_bounds[1]) || 
+            (y + extent[2] < rend_bounds[2]) || (y + extent[2] > rend_bounds[3]) )
+        {
+          continue;
+        }
+        
+        uint32_t myidx = (x + extent[0] - rend_bounds[0]) + (y + extent[2] - rend_bounds[2])*x_size;
+        
+        PixelType pval = (zbuf[myidx] - min_depth) / (max_depth - min_depth);
+        if( pval >= std::numeric_limits<float>::infinity() )
+          pval = 1.f;
+        pixel_buff[imgidx + 0] = pval;
+        pixel_buff[imgidx + 1] = pval;
+        pixel_buff[imgidx + 2] = pval;
+        pixel_buff[imgidx + 3] = 1.f;
+      }
+  }
+
+  // Use Ascent's PNGEncoder to write image to disk
+  PNGEncoder encoder;
+  encoder.Encode( pixel_buff, x_extent, y_extent );
+  encoder.Save( filename );
   
   delete[] pixel_buff;
 }
 
 BabelFlow::Payload ImageData::serialize() const
 {
-  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1)*(rend_bounds[3]-rend_bounds[2]+1);
+  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1) * (rend_bounds[3]-rend_bounds[2]+1) * sizeof(PixelType);
   uint32_t psize = zsize*ImageData::sNUM_CHANNELS;
   uint32_t bounds_size = 4*sizeof(uint32_t);
   uint32_t total_size = 2*bounds_size + zsize + psize;
 
   char* out_buffer = new char[total_size];
-  memcpy(out_buffer, (const char*)bounds, bounds_size);
-  memcpy(out_buffer + bounds_size, (const char*)rend_bounds, bounds_size);
-  memcpy(out_buffer + 2*bounds_size, (const char*)zbuf, zsize);
-  memcpy(out_buffer + 2*bounds_size + zsize, (const char*)image, psize);
+  memcpy( out_buffer, (const char*)bounds, bounds_size );
+  memcpy( out_buffer + bounds_size, (const char*)rend_bounds, bounds_size );
+  memcpy( out_buffer + 2*bounds_size, (const char*)zbuf, zsize );
+  memcpy( out_buffer + 2*bounds_size + zsize, (const char*)image, psize );
 
   return BabelFlow::Payload(total_size, out_buffer);
 }
 
 void ImageData::deserialize(BabelFlow::Payload payload)
 {
-  unsigned char* img_buff = (unsigned char*)payload.buffer();
+  char* img_buff = payload.buffer();
   uint32_t bounds_size = 4*sizeof(uint32_t);
   
   bounds = (uint32_t*)img_buff;
   rend_bounds = (uint32_t*)(img_buff + bounds_size);
 
-  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1)*(rend_bounds[3]-rend_bounds[2]+1);
+  uint32_t zsize = (rend_bounds[1]-rend_bounds[0]+1) * (rend_bounds[3]-rend_bounds[2]+1) * sizeof(PixelType);
   uint32_t psize = ImageData::sNUM_CHANNELS*zsize;
   
-  zbuf = img_buff + 2*bounds_size;
-  image = img_buff + 2*bounds_size + zsize;
+  zbuf = (PixelType*)(img_buff + 2*bounds_size);
+  image = (PixelType*)(img_buff + 2*bounds_size + zsize);
 }
 
 void ImageData::delBuffers()
@@ -198,14 +255,15 @@ void split_and_blend(const std::vector<ImageData>& input_images,
 
     uint32_t zsize = 
       (outimg.rend_bounds[1] - outimg.rend_bounds[0] + 1) * (outimg.rend_bounds[3] - outimg.rend_bounds[2] + 1);
-    outimg.image = new unsigned char[zsize*ImageData::sNUM_CHANNELS]();
+    outimg.image = new ImageData::PixelType[zsize*ImageData::sNUM_CHANNELS]();
     // Initialize alpha channel to 255 (fully opaque)
     if( ImageData::sNUM_CHANNELS > 3 )
     {
       for( uint32_t j = 0; j < zsize; ++j )
-        outimg.image[j*ImageData::sNUM_CHANNELS + 3] = 255;
+        outimg.image[j*ImageData::sNUM_CHANNELS + 3] = ImageData::sOPAQUE;
     }
-    outimg.zbuf = new unsigned char[zsize]();
+    outimg.zbuf = new ImageData::PixelType[zsize];
+    std::fill( outimg.zbuf, outimg.zbuf + zsize, std::numeric_limits<float>::infinity() );
     
     if( zsize == 0 )
       std::cout << i << " image is empty" << std::endl;
@@ -243,10 +301,10 @@ void split_and_blend(const std::vector<ImageData>& input_images,
           uint32_t myidx = (x - bound[0]) + (y - bound[2]) * (bound[1] - bound[0] + 1);
           uint32_t imgmyidx = myidx*ImageData::sNUM_CHANNELS;
 
-          if( skip_z_check || outimg.zbuf[myidx] < inimg.zbuf[idx] )
+          if( skip_z_check || outimg.zbuf[myidx] > inimg.zbuf[idx] )
           {
             outimg.zbuf[myidx] = inimg.zbuf[idx];
-            memcpy(outimg.image + imgmyidx, inimg.image + imgidx, ImageData::sNUM_CHANNELS);
+            memcpy( outimg.image + imgmyidx, inimg.image + imgidx, ImageData::sNUM_CHANNELS*sizeof(ImageData::PixelType));
           }
         }
       }
@@ -301,17 +359,20 @@ int generic_composite(std::vector<BabelFlow::Payload>& inputs,
 #ifdef BFLOW_COMP_UTIL_DEBUG    // DEBUG -- write local rendering result to a file
     {
       std::stringstream filename;
-      filename << "composite_" << task_id << "_" << i << ".png";
+      filename << "comp_img_" << task_id << "_" << i << ".png";
       out_images[i].writeImage(filename.str().c_str(), out_images[i].rend_bounds);
+
+      std::stringstream filename1;
+      filename1 << "comp_dep_" << task_id << "_" << i << ".png";
+      out_images[i].writeDepth(filename1.str().c_str(), out_images[i].rend_bounds);
     }
 #endif
     
     out_images[i].delBuffers();
   }
   
-  for(uint32_t i = 0; i < inputs.size(); ++i)
-    delete[] inputs[i].buffer();
-  inputs.clear();
+  for( BabelFlow::Payload& payl : inputs )  
+    payl.reset();
   
   return 1;
 }
@@ -358,16 +419,16 @@ int write_results_red(std::vector<BabelFlow::Payload>& inputs,
 {
   // Writing results is the root of the composition reduce tree, so now we have to do
   // one last composition step
-  outputs.resize(1);
-  composite_red(inputs, outputs, task_id);   // will also free the memory for input buffers
+  std::vector<BabelFlow::Payload> comp_outputs( 1 );
+  composite_red(inputs, comp_outputs, task_id);   // will also free the memory for input buffers
 
   ImageData out_image;
-  out_image.deserialize(outputs[0]);
+  out_image.deserialize( comp_outputs[0] );
   std::stringstream filename;
   filename << BabelGraphWrapper::sIMAGE_NAME << ".png";
   out_image.writeImage(filename.str().c_str(), out_image.bounds);
 
-  delete[] outputs[0].buffer();
+  comp_outputs[0].reset();
 
   return 1;
 }
@@ -404,18 +465,18 @@ int write_results_binswap(std::vector<BabelFlow::Payload>& inputs,
 {
   // Writing results is the root of the binswap graph, so now we have to do
   // one last composition step
-  outputs.resize(1);
-  composite_binswap(inputs, outputs, task_id);   // will also free the memory for input buffers
+  std::vector<BabelFlow::Payload> comp_outputs( 1 );
+  composite_binswap(inputs, comp_outputs, task_id);   // will also free the memory for input buffers
   
   ImageData out_image;
-  out_image.deserialize(outputs[0]);
+  out_image.deserialize( comp_outputs[0] );
   uint32_t x = out_image.bounds[0];
   uint32_t y = out_image.bounds[2];
   std::stringstream filename;
   filename << BabelGraphWrapper::sIMAGE_NAME << "_" << x << "_" << y << ".png";
   out_image.writeImage(filename.str().c_str(), out_image.rend_bounds);
   
-  delete[] outputs[0].buffer();
+  comp_outputs[0].reset();
   
   return 1;
 }
@@ -452,19 +513,36 @@ int write_results_radixk(std::vector<BabelFlow::Payload>& inputs,
 {
   // Writing results is the root of the Radix-K graph, so now we have to do
   // one last composition step
-  outputs.resize(1);
+  std::vector<BabelFlow::Payload> comp_outputs( 1 );
   // will also free the memory for input buffers
-  generic_composite(inputs, outputs, task_id, false, false, true);
+  generic_composite(inputs, comp_outputs, task_id, false, false, true);
 
   ImageData out_image;
-  out_image.deserialize(outputs[0]);
+  out_image.deserialize( comp_outputs[0] );
   std::stringstream filename;
   filename << BabelGraphWrapper::sIMAGE_NAME << ".png";
   out_image.writeImage(filename.str().c_str(), out_image.rend_bounds);
+
+#ifdef BFLOW_COMP_UTIL_DEBUG    // DEBUG -- write local rendering result to a file
+  {
+    std::stringstream filename;
+    filename << BabelGraphWrapper::sIMAGE_NAME << "_dep.png";
+    out_image.writeDepth(filename.str().c_str(), out_image.rend_bounds);
+  }
+#endif
   
-  delete[] outputs[0].buffer();
+  comp_outputs[0].reset();
 
   return 1;
+}
+
+//-----------------------------------------------------------------------------
+
+int gather_results_radixk(std::vector<BabelFlow::Payload>& inputs,
+                          std::vector<BabelFlow::Payload>& outputs, 
+                          BabelFlow::TaskId task_id)
+{
+  return generic_composite( inputs, outputs, task_id, false, false, true );
 }
 
 //-----------------------------------------------------------------------------
@@ -478,15 +556,15 @@ std::string BabelGraphWrapper::sIMAGE_NAME;
 
 BabelGraphWrapper::BabelGraphWrapper(const ImageData& input_img,
                                      const std::string& img_name,
-                                     int32_t task_id,
-                                     int32_t n_blocks,
+                                     int32_t rank_id,
+                                     int32_t n_ranks,
                                      int32_t fanin,
                                      MPI_Comm mpi_comm)
- : m_inputImg(input_img), m_comm(mpi_comm)
+ : m_inputImg( input_img ), m_comm( mpi_comm )
 {
-  m_taskId = static_cast<uint32_t>(task_id);
-  m_numBlocks = static_cast<uint32_t>(n_blocks);
-  m_fanin = static_cast<uint32_t>(fanin);
+  m_rankId = static_cast<uint32_t>( rank_id );
+  m_nRanks = static_cast<uint32_t>( n_ranks );
+  m_fanin = static_cast<uint32_t>( fanin );
   
   sIMAGE_NAME = img_name;
 }
@@ -507,43 +585,42 @@ void BabelGraphWrapper::Execute()
 
 BabelCompReduce::BabelCompReduce(const ImageData& input_image,
                                  const std::string& img_name,
-                                 int32_t task_id,
+                                 int32_t rank_id,
                                  int32_t n_blocks,
                                  int32_t fanin,
-                                 MPI_Comm mpi_comm,
-                                 const int32_t* blk_arr)
- : BabelGraphWrapper(input_image, img_name, task_id, n_blocks, fanin, mpi_comm)
+                                 MPI_Comm mpi_comm)
+ : BabelGraphWrapper( input_image, img_name, rank_id, n_blocks, fanin, mpi_comm )
 {
-  m_nBlocks[0] = static_cast<uint32_t>(blk_arr[0]);
-  m_nBlocks[1] = static_cast<uint32_t>(blk_arr[1]);
-  m_nBlocks[2] = static_cast<uint32_t>(blk_arr[2]);
 }
 
 //-----------------------------------------------------------------------------
 
 void BabelCompReduce::Initialize()
 {
-  int mpi_size = 1;
+  uint32_t blks[3] = { m_nRanks, 1, 1 };
+  m_graph = BabelFlow::KWayReduction( blks, m_fanin );
+  m_graph.registerCallback( BabelFlow::KWayReduction::LEAF_TASK_CB, bflow_comp::volume_render_red );
+  m_graph.registerCallback( BabelFlow::KWayReduction::MID_TASK_CB, bflow_comp::composite_red) ;
+  m_graph.registerCallback( BabelFlow::KWayReduction::ROOT_TASK_CB, bflow_comp::write_results_red );
 
-#ifdef ASCENT_MPI_ENABLED
-  MPI_Comm_size(m_comm, &mpi_size);
+  m_taskMap = BabelFlow::KWayReductionTaskMap( m_nRanks, &m_graph );
+
+  m_modGraph = BabelFlow::PreProcessInputTaskGraph( m_nRanks, &m_graph, &m_taskMap );
+  m_modGraph.registerCallback( BabelFlow::PreProcessInputTaskGraph::PRE_PROC_TASK_CB, bflow_comp::pre_proc );
+
+  m_modMap = BabelFlow::ModTaskMap( &m_taskMap );
+  m_modMap.update( m_modGraph );
+
+#ifdef BFLOW_COMP_UTIL_DEBUG
+  if( m_rankId == 0 )
+  {
+    m_graph.outputGraphHtml( m_nRanks, &m_taskMap, "reduce.html" );
+  }
 #endif
 
-  m_graph = BabelFlow::KWayReduction(m_nBlocks, m_fanin);
-  m_taskMap = BabelFlow::KWayReductionTaskMap(mpi_size, &m_graph);
+  m_master.initialize( m_modGraph, &m_modMap, m_comm, &m_contMap );
 
-  m_modGraph = 
-    BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
-  m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
-  m_modMap.update(m_modGraph);
-
-  m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
-  m_master.registerCallback(1, bflow_comp::volume_render_red);
-  m_master.registerCallback(2, bflow_comp::composite_red);
-  m_master.registerCallback(3, bflow_comp::write_results_red);
-  m_master.registerCallback(m_modGraph.newCallBackId, bflow_comp::pre_proc);
-
-  m_inputs[m_modGraph.new_tids[m_taskId]] = m_inputImg.serialize();
+  m_inputs[m_modGraph.new_tids[m_rankId]] = m_inputImg.serialize();
 }
 
 //-----------------------------------------------------------------------------
@@ -555,11 +632,11 @@ void BabelCompReduce::Initialize()
 
 BabelCompBinswap::BabelCompBinswap(const ImageData& input_image,
                                    const std::string& img_name,
-                                   int32_t task_id,
+                                   int32_t rank_id,
                                    int32_t n_blocks,
                                    int32_t fanin,
                                    MPI_Comm mpi_comm)
- : BabelGraphWrapper(input_image, img_name, task_id, n_blocks, fanin, mpi_comm)
+ : BabelGraphWrapper(input_image, img_name, rank_id, n_blocks, fanin, mpi_comm)
 {
 }
 
@@ -567,26 +644,29 @@ BabelCompBinswap::BabelCompBinswap(const ImageData& input_image,
 
 void BabelCompBinswap::Initialize()
 {
-  int mpi_size = 1;
+  m_graph = BabelFlow::BinarySwap( m_nRanks );
+  m_graph.registerCallback( BabelFlow::BinarySwap::LEAF_TASK_CB, bflow_comp::volume_render_binswap );
+  m_graph.registerCallback( BabelFlow::BinarySwap::MID_TASK_CB, bflow_comp::composite_binswap );
+  m_graph.registerCallback( BabelFlow::BinarySwap::ROOT_TASK_CB, bflow_comp::write_results_binswap );
 
-#ifdef ASCENT_MPI_ENABLED
-  MPI_Comm_size(m_comm, &mpi_size);
+  m_taskMap = BabelFlow::BinarySwapTaskMap( m_nRanks, &m_graph );
+
+#ifdef BFLOW_COMP_UTIL_DEBUG
+  if( m_rankId == 0 )
+  {
+    m_graph.outputGraphHtml( m_nRanks, &m_taskMap, "bin-swap.html" );
+  }
 #endif
 
-  m_graph = BabelFlow::BinarySwap(m_numBlocks);
-  m_taskMap = BabelFlow::BinarySwapTaskMap(mpi_size, &m_graph);
+  m_modGraph = BabelFlow::PreProcessInputTaskGraph( m_nRanks, &m_graph, &m_taskMap );
+  m_modGraph.registerCallback( BabelFlow::PreProcessInputTaskGraph::PRE_PROC_TASK_CB, bflow_comp::pre_proc );
 
-  m_modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
-  m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
-  m_modMap.update(m_modGraph);
+  m_modMap = BabelFlow::ModTaskMap( &m_taskMap );
+  m_modMap.update( m_modGraph );
 
-  m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
-  m_master.registerCallback(1, bflow_comp::volume_render_binswap);
-  m_master.registerCallback(2, bflow_comp::composite_binswap);
-  m_master.registerCallback(3, bflow_comp::write_results_binswap);
-  m_master.registerCallback(m_modGraph.newCallBackId, bflow_comp::pre_proc);
+  m_master.initialize( m_modGraph, &m_modMap, m_comm, &m_contMap );
 
-  m_inputs[m_modGraph.new_tids[m_taskId]] = m_inputImg.serialize();
+  m_inputs[m_modGraph.new_tids[m_rankId]] = m_inputImg.serialize();
 }
 
 //-----------------------------------------------------------------------------
@@ -598,53 +678,98 @@ void BabelCompBinswap::Initialize()
 
 BabelCompRadixK::BabelCompRadixK(const ImageData& input_image,
                                  const std::string& img_name,
-                                 int32_t task_id,
+                                 int32_t rank_id,
                                  int32_t n_blocks,
                                  int32_t fanin,
                                  MPI_Comm mpi_comm,
                                  const std::vector<uint32_t>& radix_v)
- : BabelGraphWrapper(input_image, img_name, task_id, n_blocks, fanin, mpi_comm), m_Radices(radix_v)
+ : BabelGraphWrapper(input_image, img_name, rank_id, n_blocks, fanin, mpi_comm), m_Radices(radix_v)
 {
+}
+
+//-----------------------------------------------------------------------------
+
+BabelCompRadixK::~BabelCompRadixK()
+{
+}
+
+//-----------------------------------------------------------------------------
+
+void BabelCompRadixK::InitRadixKGraph()
+{
+  // RadixK exchange graph
+  m_radixkGr = BabelFlow::RadixKExchange( m_nRanks, m_Radices );
+  m_radixkGr.registerCallback( BabelFlow::RadixKExchange::LEAF_TASK_CB, bflow_comp::volume_render_radixk );
+  m_radixkGr.registerCallback( BabelFlow::RadixKExchange::MID_TASK_CB, bflow_comp::composite_radixk );
+  m_radixkGr.registerCallback( BabelFlow::RadixKExchange::ROOT_TASK_CB, bflow_comp::composite_radixk );
+  m_radixkMp = BabelFlow::RadixKExchangeTaskMap( m_nRanks, &m_radixkGr );
+}
+
+//-----------------------------------------------------------------------------
+
+void BabelCompRadixK::InitGatherGraph()
+{
+  // Gather graph
+  uint32_t blks[3] = { m_nRanks, 1, 1 };
+  m_gatherTaskGr = BabelFlow::KWayReduction( blks, m_fanin );
+  m_gatherTaskGr.registerCallback( BabelFlow::KWayReduction::LEAF_TASK_CB, bflow_comp::pre_proc );
+  m_gatherTaskGr.registerCallback( BabelFlow::KWayReduction::MID_TASK_CB, bflow_comp::gather_results_radixk) ;
+  m_gatherTaskGr.registerCallback( BabelFlow::KWayReduction::ROOT_TASK_CB, bflow_comp::write_results_radixk );
+  m_gatherTaskMp = BabelFlow::KWayReductionTaskMap( m_nRanks, &m_gatherTaskGr );
 }
 
 //-----------------------------------------------------------------------------
 
 void BabelCompRadixK::Initialize()
 {
-  int mpi_size = 1, myrank = 0;
+  InitRadixKGraph();
+  InitGatherGraph();
+  
+  /////
+  // Pre-process graph
+  // m_preProcTaskGr = BabelFlow::SingleTaskGraph();
+  // m_preProcTaskGr.registerCallback( BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, bflow_comp::pre_proc );
+  // m_preProcTaskMp = BabelFlow::ModuloMap( m_nRanks, m_nRanks );
+  /////
 
-#ifdef ASCENT_MPI_ENABLED
-  MPI_Comm_size(m_comm, &mpi_size);
-  MPI_Comm_rank(m_comm, &myrank);
-#endif
+  /////
+  // m_defGraphConnectorPreProc = BabelFlow::DefGraphConnector( m_nRanks,
+  //                                                            &m_preProcTaskGr, 0,
+  //                                                            &m_radixkGr, 1,
+  //                                                            &m_preProcTaskMp,
+  //                                                            &m_radixkMp );
+  /////
 
-  m_graph = BabelFlow::RadixKExchange(m_numBlocks, m_Radices);
-  m_taskMap = BabelFlow::RadixKExchangeTaskMap(mpi_size, &m_graph);
+  m_defGraphConnector = BabelFlow::DefGraphConnector( m_nRanks,
+                                                      &m_radixkGr, 0,
+                                                      &m_gatherTaskGr, 1,
+                                                      &m_radixkMp,
+                                                      &m_gatherTaskMp );
 
-  m_modGraph = BabelFlow::PreProcessInputTaskGraph(mpi_size, &m_graph, &m_taskMap);
-  m_modMap = BabelFlow::ModTaskMap(&m_taskMap);
-  m_modMap.update(m_modGraph);
+  // std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnectorPreProc, &m_defGraphConnector };
+  // std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_radixkGr, &m_gatherTaskGr };
+  // std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_radixkMp, &m_gatherTaskMp }; 
+
+  std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
+  std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_radixkGr, &m_gatherTaskGr };
+  std::vector<BabelFlow::TaskMap*> task_maps{ &m_radixkMp, &m_gatherTaskMp }; 
+
+  m_radGatherGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
+  m_radGatherTaskMap = BabelFlow::ComposableTaskMap( task_maps );
   
 #ifdef BFLOW_COMP_UTIL_DEBUG
-  if( myrank == 0 )
+  if( m_rankId == 0 )
   {
-    FILE* fp = fopen( "radixk.html", "w" );
-    m_graph.output_graph_html( mpi_size, &m_taskMap, fp );
-    fclose(fp);
-    
-    FILE* fp_mod = fopen( "mod_radixk.html", "w" );
-    m_modGraph.output_graph_html( mpi_size, &m_modMap, fp_mod );
-    fclose(fp_mod);
+    m_preProcTaskGr.outputGraphHtml( m_nRanks, &m_preProcTaskMp, "pre-proc.html" );
+    m_radixkGr.outputGraphHtml( m_nRanks, &m_radixkMp, "radixk.html" );
+    m_gatherTaskGr.outputGraphHtml( m_nRanks, &m_gatherTaskMp, "gather-task.html" );
+    m_radGatherGraph.outputGraphHtml( m_nRanks, &m_radGatherTaskMap, "radixk-gather.html" );
   }
 #endif
 
-  m_master.initialize(m_modGraph, &m_modMap, m_comm, &m_contMap);
-  m_master.registerCallback(1, bflow_comp::volume_render_radixk);
-  m_master.registerCallback(2, bflow_comp::composite_radixk);
-  m_master.registerCallback(3, bflow_comp::write_results_radixk);
-  m_master.registerCallback(m_modGraph.newCallBackId, bflow_comp::pre_proc);
+  m_master.initialize( m_radGatherGraph, &m_radGatherTaskMap, m_comm, &m_contMap );
 
-  m_inputs[m_modGraph.new_tids[m_taskId]] = m_inputImg.serialize();
+  m_inputs[m_rankId] = m_inputImg.serialize();
 }
 
 //-----------------------------------------------------------------------------
