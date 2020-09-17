@@ -116,7 +116,8 @@ MODULE definitions_module
                   ,dtu            &
                   ,dtv            &
                   ,dtw            &
-                  ,dtdiv
+                  ,dtdiv          &
+                  ,visit_sim_time
 
    INTEGER      :: visit_frequency   &
                   ,summary_frequency

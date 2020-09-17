@@ -57,6 +57,7 @@ SUBROUTINE hydro
   REAL(KIND=8)    :: kernel_total,totals(parallel%max_task)
 
   INTEGER(kind=8), parameter :: initial_steps = 5
+  REAL(kind=8), parameter :: max_sim_time = 10.0
 
   TYPE(C_PTR) my_ascent
   TYPE(C_PTR) ascent_opts
@@ -89,18 +90,14 @@ SUBROUTINE hydro
     ! IF(parallel%task.LT.parallel%max_task)THEN
     IF(MPI_COMM_NULL.NE.parallel%sim_comm)THEN
       CALL timestep()
-
       CALL PdV(.TRUE.)
-    
       CALL accelerate()
-
-      CALL PdV(.FALSE.)
-    
+      CALL PdV(.FALSE.)    
       CALL flux_calc()
-
       CALL advection()
-      
       CALL reset_field()
+    ELSE
+      CALL visit(my_ascent, 0)
     ENDIF
     
     advect_x = .NOT. advect_x
@@ -121,15 +118,34 @@ SUBROUTINE hydro
         ENDIF
       ENDIF
     ENDIF
+
+    
     ! visualization
-    IF(visit_frequency.NE.0) THEN
+    IF(visit_sim_time.GT.0.0) THEN
+      ! trigger vis based on cycle time
+      cycle_time = timer() - sim_timer
+      IF(cycle_time.GT.visit_sim_time) THEN
+        vis_time=timer()
+
+        unix = c_time(int(0, kind=8))
+        WRITE(g_out_stamps,*) 'end sim ', unix
+        WRITE(g_out_times,*) '       sim ', step, timer()-sim_timer
+
+        CALL visit(my_ascent, cycle_time)
+
+        wall_clock=timer() - timerstart
+        WRITE(g_out_times,*) '       vis ', step, timer()-vis_time
+        WRITE(g_out_stamps,*) 'start sim ', unix
+        sim_timer = timer()
+      ENDIF
+
+    ELSE IF(visit_frequency.NE.0) THEN
+      
       IF(MOD(step, visit_frequency).EQ.initial_steps) THEN
         vis_time=timer()
 
         unix = c_time(int(0, kind=8))
         WRITE(g_out_stamps,*) 'end sim ', unix
-
-        ! TODO: accumulate last sim times
         WRITE(g_out_times,*) '       sim ', step, timer()-sim_timer
 
         cycle_time = timer() - sim_timer

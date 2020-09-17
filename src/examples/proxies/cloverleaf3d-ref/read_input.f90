@@ -57,6 +57,7 @@ SUBROUTINE read_input()
   visit_frequency=0
   summary_frequency=10
 
+  visit_sim_time=0.0_8
   dtinit=0.1_8
   dtmax=1.0_8
   dtmin=0.0000001_8
@@ -170,6 +171,9 @@ SUBROUTINE read_input()
       CASE('visit_frequency')
         visit_frequency=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'visit_frequency',visit_frequency
+      CASE('visit_sim_time')
+        visit_sim_time=parse_getrval(parse_getword(.TRUE.))
+        IF(parallel%boss)WRITE(g_out,"(1x,a25,e12.4)")'visit_sim_time',visit_sim_time
       CASE('summary_frequency')
         summary_frequency=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'summary_frequency',summary_frequency
