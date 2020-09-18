@@ -128,7 +128,7 @@ SUBROUTINE hydro
 
       ! trigger vis based on cycle time
       cycle_time = timer() - sim_timer
-      IF(cycle_time.GT.visit_sim_time) THEN
+      IF(cycle_time.GT.visit_sim_time .OR. step.EQ.1) THEN
         vis_time=timer()
 
         unix = c_time(int(0, kind=8))

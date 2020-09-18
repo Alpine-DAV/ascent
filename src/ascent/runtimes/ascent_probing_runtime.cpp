@@ -1694,7 +1694,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
                 // std::cout << mpi_props.rank << " -- buffer size: " << total_size << std::endl;
             }
 
-            MPI_Request request_data = MPI_REQUEST_NULL;
+            // MPI_Request request_data = MPI_REQUEST_NULL;
             // TODO: send data only if not skipped_render
             // {   // send data to vis node
             //     auto t_start = std::chrono::system_clock::now();
@@ -1812,7 +1812,7 @@ void hybrid_render(const MPI_Properties &mpi_props,
 
             {   // wait for all sent data to be received
                 t_start = std::chrono::system_clock::now();
-                MPI_Wait(&request_data, MPI_STATUS_IGNORE);
+                // MPI_Wait(&request_data, MPI_STATUS_IGNORE);
                 // probing
                 if (!skipped_render)
                 {
