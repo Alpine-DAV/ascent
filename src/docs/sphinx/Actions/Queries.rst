@@ -102,14 +102,13 @@ The expression language currently supports simple if-then-else semantics.
 
 .. code-block:: yaml
 
-   actions:
-     -
-       action: "add_queries"
-       queries:
-         q1:
-           params:
-             expression: "if cycle() > 100 then 1 else 0"
-             name: "cycle_bigger_than_100"
+   -
+     action: "add_queries"
+     queries:
+       q1:
+         params:
+           expression: "if cycle() > 100 then 1 else 0"
+           name: "cycle_bigger_than_100"
 
 .. note::
    Both branches of the if-then-else will be execute.
@@ -143,18 +142,17 @@ each query can be thought of as an assignment statement in a program, with one q
 
 .. code-block:: yaml
 
-   actions:
-     -
-       action: "add_queries"
-       queries:
-         q1:
-           params:
-             expression: "1+1"
-             name: "two"
-         q2:
-           params:
-             expression: "two + 1"
-             name: "result"
+   -
+     action: "add_queries"
+     queries:
+       q1:
+         params:
+           expression: "1+1"
+           name: "two"
+       q2:
+         params:
+           expression: "two + 1"
+           name: "result"
 
 In the above example, ``q1`` is evaluated and the result is stored in the identifier ``two``.
 In ``q2``, the identifier is referenced and the expression evaluates to ``3``.
@@ -175,19 +173,18 @@ Here is an example of a use case for the history function:
 
 .. code-block:: yaml
 
-   actions:
-     -
-       action: "add_queries"
-       queries:
-         q1:
-           params:
-             # get the maximum value of a field
-             expression: "max(field('pressure'))"
-             name: "max_pressure"
-         q2:
-           params:
-             expression: "max_pressure - history(max_pressure, relative_index = 1) > 100"
-             name: "result"
+   -
+     action: "add_queries"
+     queries:
+       q1:
+         params:
+           # get the maximum value of a field
+           expression: "max(field('pressure'))"
+           name: "max_pressure"
+       q2:
+         params:
+           expression: "max_pressure - history(max_pressure, relative_index = 1) > 100"
+           name: "result"
 
 In the above example, `q2` will evaluate to true if the maximum value of pressure jumps over 100 units
 since the last in invocation, possibly indicating that an interesting event inside the simulation occurred.

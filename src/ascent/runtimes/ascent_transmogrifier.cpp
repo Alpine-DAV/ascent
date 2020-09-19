@@ -89,21 +89,22 @@ bool Transmogrifier::is_high_order(const conduit::Node &doms)
 
 conduit::Node* Transmogrifier::low_order(conduit::Node &dataset)
 {
-      if(!is_high_order(dataset))
-      {
-        ASCENT_ERROR("low_order requires high order data");
-      }
+  if(!is_high_order(dataset))
+  {
+    ASCENT_ERROR("low_order requires high order data");
+  }
 #if defined(ASCENT_MFEM_ENABLED)
-      MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(dataset);
-      conduit::Node *lo_dset = new conduit::Node;
-      MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
-      delete domains;
+  MFEMDomains *domains = MFEMDataAdapter::BlueprintToMFEMDataSet(dataset);
+  conduit::Node *lo_dset = new conduit::Node;
+  MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
+  delete domains;
 
       // add a second registry entry for the output so it can be zero copied.
-      return lo_dset;
+  lo_dset->child(0)["state"].print();
+  return lo_dset;
 #else
-      ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
-      return nullptr;
+  ASCENT_ERROR("Unable to convert high order mesh when MFEM is not enabled");
+  return nullptr;
 #endif
 }
 

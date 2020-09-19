@@ -42,19 +42,15 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_blueprint_architect.hpp
+/// file: ascent_runtime_vtkh_utils.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_BLUEPRINT_ARCHITECT
-#define ASCENT_BLUEPRINT_ARCHITECT
-
-#include <ascent.hpp>
-#include <conduit.hpp>
-// TODO this is temporary
-#include <ascent_exports.h>
+#include "ascent_runtime_vtkh_utils.hpp"
+#include <ascent_runtime_utils.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -69,89 +65,97 @@ namespace runtime
 {
 
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime::expressions--
+// -- begin ascent::runtime::filters --
 //-----------------------------------------------------------------------------
-namespace expressions
+namespace filters
 {
 
-conduit::Node vert_location(const conduit::Node &domain,
-                            const int &index,
-                            const std::string &topo_name = "");
+namespace detail
+{
 
-conduit::Node element_location(const conduit::Node &domain,
-                               const int &index,
-                               const std::string &topo_name = "");
 
-conduit::Node field_max(const conduit::Node &dataset,
-                        const std::string &field_name);
+void field_error(const std::string field_name,
+                 const std::string filter_name,
+                 std::shared_ptr<VTKHCollection> collection)
+{
+  std::string fpath = filter_to_path(filter_name);
+  std::vector<std::string> possible_names = collection->field_names();
+  std::stringstream ss;
+  ss<<" possible field names: ";
+  for(int i = 0; i < possible_names.size(); ++i)
+  {
+    ss<<"'"<<possible_names[i]<<"'";
+    if(i != possible_names.size() - 1)
+    {
+      ss<<", ";
+    }
+  }
+  ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'"
+               <<ss.str());
+}
 
-conduit::Node field_min(const conduit::Node &dataset,
-                        const std::string &field_name);
+std::string possible_topologies(std::shared_ptr<VTKHCollection> collection)
+{
+   std::stringstream ss;
+   ss<<" possible topology names: ";
+   std::vector<std::string> names = collection->topology_names();
+   for(int i = 0; i < names.size(); ++i)
+   {
+     ss<<"'"<<names[i]<<"'";
+     if(i != names.size() -1)
+     {
+       ss<<", ";
+     }
+   }
+   return ss.str();
+}
 
-conduit::Node field_sum(const conduit::Node &dataset,
-                        const std::string &field_name);
+std::string resolve_topology(const conduit::Node &params,
+                             const std::string filter_name,
+                             std::shared_ptr<VTKHCollection> collection)
+{
+  int num_topologies = collection->number_of_topologies();
+  std::string topo_name;
+  std::string fpath = filter_to_path(filter_name);
+  if(num_topologies > 1)
+  {
+    if(!params.has_path("topology"))
+    {
+      std::string topo_names = detail::possible_topologies(collection);;
+      ASCENT_ERROR(fpath<<": data set has multiple topologies "
+                   <<"and no topology is specified. "<<topo_names);
+    }
 
-conduit::Node field_avg(const conduit::Node &dataset,
-                        const std::string &field_name);
+    topo_name = params["topology"].as_string();
+    if(!collection->has_topology(topo_name))
+    {
+      std::string topo_names = detail::possible_topologies(collection);;
+      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'."
+                   <<topo_names);
 
-conduit::Node field_nan_count(const conduit::Node &dataset,
-                              const std::string &field_name);
+    }
 
-conduit::Node field_inf_count(const conduit::Node &dataset,
-                              const std::string &field_name);
+    if(!collection->has_topology(topo_name))
+    {
+      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'");
 
-conduit::Node field_histogram(const conduit::Node &dataset,
-                              const std::string &field,
-                              const double &min_val,
-                              const double &max_val,
-                              const int &num_bins);
+    }
+  }
+  else
+  {
+    topo_name = collection->topology_names()[0];
+  }
 
-conduit::Node field_entropy(const conduit::Node &hist);
+  return topo_name;
+}
 
-conduit::Node field_pdf(const conduit::Node &hist);
-conduit::Node field_cdf(const conduit::Node &hist);
-
-conduit::Node global_bounds(const conduit::Node &dataset,
-                            const conduit::Node &field_names);
-
-conduit::Node binning(const conduit::Node &dataset,
-                      conduit::Node &bin_axes,
-                      const std::string &reduction_var,
-                      const std::string &reduction_op,
-                      const double empty_bin_val,
-                      const std::string &component);
-
-void ASCENT_API paint_binning(const conduit::Node &binning,
-                              conduit::Node &dataset);
-
-void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
-
-conduit::Node get_state_var(const conduit::Node &dataset,
-                            const std::string &var_name);
-
-bool is_scalar_field(const conduit::Node &dataset,
-                     const std::string &field_name);
-
-bool has_field(const conduit::Node &dataset, const std::string &field_name);
-
-bool has_component(const conduit::Node &dataset,
-                   const std::string &field_name,
-                   const std::string &component);
-
-std::string
-possible_components(const conduit::Node &dataset,
-                    const std::string &field_name);
-
-bool is_xyz(const std::string &axis_name);
-
-conduit::Node quantile(const conduit::Node &cdf,
-                       const double val,
-                       const std::string &interpolation);
-
+} // namespace detail
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-// -- end ascent::runtime::expressions--
+// -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 //-----------------------------------------------------------------------------
 };
@@ -159,13 +163,9 @@ conduit::Node quantile(const conduit::Node &cdf,
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
 //-----------------------------------------------------------------------------

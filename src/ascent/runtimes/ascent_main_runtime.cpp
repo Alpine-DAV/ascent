@@ -136,6 +136,7 @@ AscentRuntime::AscentRuntime()
  m_refinement_level(2), // default refinement level for high order meshes
  m_rank(0),
  m_default_output_dir("."),
+ m_session_name("ascent_session"),
  m_field_filtering(false)
 {
     m_ghost_fields.append() = "ascent_ghosts";
@@ -273,6 +274,14 @@ AscentRuntime::Initialize(const conduit::Node &options)
     runtime::filters::register_builtin();
     // filters for expression evaluation
     runtime::expressions::register_builtin();
+
+    if(options.has_path("session_name"))
+    {
+      m_session_name = options["session_name"].as_string();
+    }
+
+    runtime::expressions::ExpressionEval::load_cache(m_default_output_dir,
+                                                     m_session_name);
 
     if(options.has_path("web/stream") &&
        options["web/stream"].as_string() == "true" &&
