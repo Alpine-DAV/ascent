@@ -709,7 +709,7 @@ GetCamera(int frame, int nframes, double radius, double* lookat, float *bounds)
 }
 
 
-
+#if defined(ASCENT_VTKM_ENABLED)
 class ProcessTriangle : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
@@ -939,6 +939,7 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
   }
   return data;
 }
+#endif
 
 Triangle transformTriangle(Triangle t, Camera c, int width, int height)
 {
@@ -1291,7 +1292,7 @@ calcArea(std::vector<float> triangle, Camera c, int width, int height)
 
 }
 
-
+#if defined(ASCENT_VTKM_ENABLED)
 
 float
 calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width)
@@ -2223,6 +2224,7 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
   return score;
 }
 
+#endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -2314,178 +2316,131 @@ AutoCamera::execute()
 {
     double time = 0.;
     auto time_start = high_resolution_clock::now();
-    #if ASCENT_MPI_ENABLED
-      int rank;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    #if defined(ASCENT_VTKM_ENABLED)
+      #if ASCENT_MPI_ENABLED
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       
-    #endif  
-    DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+      #endif  
+      DataObject *data_object = input<DataObject>(0);
+      std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     //int cycle = params()["state/cycle"].to_int32();
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-int cycle = -1;
-if(meta->has_path("cycle"))
-{
-  cycle = (*meta)["cycle"].to_int32();
-}
-    cerr << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
-    std::string field_name = params()["field"].as_string();
-    std::string metric     = params()["metric"].as_string();
+      conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+      int cycle = -1;
+      if(meta->has_path("cycle"))
+      {
+        cycle = (*meta)["cycle"].to_int32();
+      }
+      cerr << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
+      std::string field_name = params()["field"].as_string();
+      std::string metric     = params()["metric"].as_string();
 
-    if(!collection->has_field(field_name))
-    {
-      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
-    }
-    int samples = (int)params()["samples"].as_int64();
+      if(!collection->has_field(field_name))
+      {
+        ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+      }
+      int samples = (int)params()["samples"].as_int64();
     //TODO:Get the height and width of the image from Ascent
-    int width  = 1000;
-    int height = 1000;
+      int width  = 1000;
+      int height = 1000;
     
-    std::string topo_name = collection->field_topology(field_name);
+      std::string topo_name = collection->field_topology(field_name);
 
-    vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+      vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
     
-    double triangle_time = 0.;
-    auto triangle_start = high_resolution_clock::now();
-    std::vector<Triangle> triangles = GetTriangles(dataset);
-    float total_triangles = (float) triangles.size();
-    vtkh::DataSet* data = AddTriangleFields(dataset);
-    //data->PrintSummary(cerr);
-    auto triangle_stop = high_resolution_clock::now();
-    triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
-    //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
-    /*#if ASCENT_MPI_ENABLED
-      cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
-      cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
-    #endif*/
+      double triangle_time = 0.;
+      auto triangle_start = high_resolution_clock::now();
+      std::vector<Triangle> triangles = GetTriangles(dataset);
+      float total_triangles = (float) triangles.size();
+      vtkh::DataSet* data = AddTriangleFields(dataset);
+      //data->PrintSummary(cerr);
+      auto triangle_stop = high_resolution_clock::now();
+      triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
+      //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+      /*#if ASCENT_MPI_ENABLED
+        cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+        cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
+      #endif*/
 
-    vtkm::Bounds b = data->GetGlobalBounds();
-    vtkm::Float32 xb = vtkm::Float32(b.X.Length());
-    vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
-    vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
-    float bounds[6] = {(float)b.X.Max, (float)b.X.Min, 
-	              (float)b.Y.Max, (float)b.Y.Min, 
-	              (float)b.Z.Max, (float)b.Z.Min};
-    //double bounds[3] = {(double)xb, (double)yb, (double)zb};
-    //cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
+      vtkm::Bounds b = data->GetGlobalBounds();
+      vtkm::Float32 xb = vtkm::Float32(b.X.Length());
+      vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
+      vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
+      float bounds[6] = {(float)b.X.Max, (float)b.X.Min, 
+	                (float)b.Y.Max, (float)b.Y.Min, 
+	                (float)b.Z.Max, (float)b.Z.Min};
+      //double bounds[3] = {(double)xb, (double)yb, (double)zb};
+      //cerr << "x y z bounds " << xb << " " << yb << " " << zb << endl;
 
-    vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
-    //cerr << "radius " << radius << endl;
-    //if(radius<1)
-      //radius = radius + 1;
-    //vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
-    vtkmCamera *camera = new vtkmCamera;
-    camera->ResetToBounds(data->GetGlobalBounds());
+      vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
+      //cerr << "radius " << radius << endl;
+      //if(radius<1)
+        //radius = radius + 1;
+      //vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
+      vtkmCamera *camera = new vtkmCamera;
+      camera->ResetToBounds(data->GetGlobalBounds());
     //cerr << "vtkm Cam" << endl;
     //camera->Print();
-    vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
-    double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
+      vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+      double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
-/*
-    Screen screen;
-    screen.width = width;
-    screen.height = height;
-    screen.zBufferInitialize();
-    screen.triScreenInitialize();
-    screen.triCameraInitialize();
-    screen.valueInitialize();
-*/
-    double winning_score  = -DBL_MAX;
-    int    winning_sample = -1;
-    double losing_score   = DBL_MAX;
-    int    losing_sample  = -1;
+      double winning_score  = -DBL_MAX;
+      int    winning_sample = -1;
+      double losing_score   = DBL_MAX;
+      int    losing_sample  = -1;
     //loop through number of camera samples.
-    double scanline_time = 0.;
-    double metric_time   = 0.;
-    for(int sample = 0; sample < samples; sample++)
-    {
+      double scanline_time = 0.;
+      double metric_time   = 0.;
+      for(int sample = 0; sample < samples; sample++)
+      {
     /*================ Scalar Renderer Code ======================*/
     //What it does: Quick ray tracing of data (replaces get triangles and scanline).
     //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
       
-      Camera cam = GetCamera(sample, samples, radius, focus, bounds);
-      vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
+        Camera cam = GetCamera(sample, samples, radius, focus, bounds);
+        vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
                                 (float)cam.position[1],
                                 (float)cam.position[2]};
 
-      camera->SetPosition(pos);
-      vtkh::ScalarRenderer tracer;
-      tracer.SetWidth(width);
-      tracer.SetHeight(height);
-      tracer.SetInput(data); //vtkh dataset by toponame
-      tracer.SetCamera(*camera);
-      tracer.Update();
+        camera->SetPosition(pos);
+        vtkh::ScalarRenderer tracer;
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+        tracer.SetInput(data); //vtkh dataset by toponame
+        tracer.SetCamera(*camera);
+        tracer.Update();
 
-      vtkh::DataSet *output = tracer.GetOutput();
-      float score = calculateMetric(output, metric, field_name, triangles, height, width, cam);
-      std::cerr << "sample " << sample << " score: " << score << std::endl;
-      delete output;
+        vtkh::DataSet *output = tracer.GetOutput();
+        float score = calculateMetric(output, metric, field_name, triangles, height, width, cam);
+        std::cerr << "sample " << sample << " score: " << score << std::endl;
+        delete output;
 
     /*================ End Scalar Renderer  ======================*/
 
-/*
+        //cerr << "sample " << sample << " score: " << score << endl;
+        if(winning_score < score)
+        {
+          winning_score = score;
+	  winning_sample = sample;
+        }
+        if(losing_score > score)
+        {
+          losing_score = score;
+	  losing_sample = sample;
+        }
+      } //end of sample loop
+      delete data;
 
-      screen.width = width;
-      screen.height = height;
-      screen.visible = 0.0;
-      screen.occluded = 0.0;
-      screen.zBufferInitialize();
-      screen.triScreenInitialize();
-      screen.triCameraInitialize();
-      screen.valueInitialize();
-
-      Camera c = GetCamera(sample, samples, radius, focus);
-      c.screen = screen;
-      int num_tri = triangles.size();
-      
-      //Scanline timings
-      auto scanline_start = high_resolution_clock::now();
-      //loop through all triangles
-      for(int tri = 0; tri < num_tri; tri++)
-      {
-	//triangle in world space
-        Triangle w_t = triangles[tri];
-	
-	//triangle in image space
-	Triangle i_t = transformTriangle(w_t, c);
-	i_t.vis_counted = false;
-	i_t.screen = screen;
-	i_t.scanline(tri, c);
-	screen = i_t.screen;
-
-      }//end of triangle loop
-      auto scanline_stop = high_resolution_clock::now();
-
-      scanline_time += duration_cast<microseconds>(scanline_stop - scanline_start).count();
-      //metric timings
-      auto metric_start = high_resolution_clock::now();
-      double score = calculateMetric(screen, metric);
-      auto metric_stop = high_resolution_clock::now();
-      metric_time += duration_cast<microseconds>(metric_stop - metric_start).count();
-*/
-      //cerr << "sample " << sample << " score: " << score << endl;
-      if(winning_score < score)
-      {
-        winning_score = score;
-	winning_sample = sample;
-      }
-      if(losing_score > score)
-      {
-        losing_score = score;
-	losing_sample = sample;
-      }
-    } //end of sample loop
-    delete data;
-
-    if(winning_sample == -1)
-      ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-    cerr << metric << " winning_sample " << winning_sample << " score: " << winning_score << endl;
-    cerr << metric << " losing_sample " << losing_sample << " score: " << losing_score << endl;
-   // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
-    //Camera best_c = GetCamera(losing_sample, samples, radius, focus, bounds);
-    Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+      if(winning_sample == -1)
+        ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
+      cerr << metric << " winning_sample " << winning_sample << " score: " << winning_score << endl;
+      cerr << metric << " losing_sample " << losing_sample << " score: " << losing_score << endl;
+     // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
+      //Camera best_c = GetCamera(losing_sample, samples, radius, focus, bounds);
+      Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
     
-    vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
+      vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
 				    (float)best_c.position[2]}; 
 /*
@@ -2499,15 +2454,15 @@ if(meta->has_path("cycle"))
     }
 #endif
 */
-    camera->SetPosition(pos);
-    //camera->Print();
+      camera->SetPosition(pos);
+      //camera->Print();
 
 
-    if(!graph().workspace().registry().has_entry("camera"))
-    {
+      if(!graph().workspace().registry().has_entry("camera"))
+      {
       //cerr << "making camera in registry" << endl;
-      graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
-    }
+        graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
+      }
     //This breaks everything
     //TODO:Figure out where to delete it, probably after where it's grabbed. 
     //delete camera;
@@ -2518,6 +2473,7 @@ if(meta->has_path("cycle"))
       camera->Print();
 #endif
 */
+      #endif
     set_output<DataObject>(input<DataObject>(0));
     //set_output<vtkmCamera>(camera);
     auto time_stop = high_resolution_clock::now();

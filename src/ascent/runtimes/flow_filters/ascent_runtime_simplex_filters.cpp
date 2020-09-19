@@ -387,6 +387,7 @@ CameraSimplex::execute()
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     #endif  
 
+    #if defined(ASCENT_VTKM_ENABLED)
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     std::string field_name = params()["field"].as_string();
@@ -522,7 +523,6 @@ CameraSimplex::execute()
 
 	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
         //cout << "Score is: " << score << endl << endl;
-
 	if (score > winning_score) {
             winning_score = score;
             winning_i = i;
@@ -632,6 +632,7 @@ CameraSimplex::execute()
       camera->Print();
 #endif
 */
+    #endif
     set_output<DataObject>(input<DataObject>(0));
     //set_output<vtkmCamera>(camera);
     auto time_stop = high_resolution_clock::now();
