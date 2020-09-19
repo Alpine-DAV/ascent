@@ -97,11 +97,11 @@ TEST(ascent_opt_viewpoint, test_opt_viewpoint)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing Optimal Viewpoint with 10 samples");
+    ASCENT_INFO("Testing Optimal Viewpoint with 10 samples using viewpoint entropy");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_opt_viewpoint");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_opt_viewpoint_viewpoint_entropy");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -122,7 +122,7 @@ TEST(ascent_opt_viewpoint, test_opt_viewpoint)
     
     conduit::Node &camera_params = pipelines["pl1/f2/params"];
     camera_params["field"] = "braid";
-    camera_params["metric"] = "data_entropy";
+    camera_params["metric"] = "viewpoint_entropy";
     int64 samples = 10;
     camera_params["samples"] = samples;
 
@@ -158,7 +158,7 @@ TEST(ascent_opt_viewpoint, test_opt_viewpoint)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of the optimal viewpoint filter with 10 samples.";
+    std::string msg = "Using viewpoint entropy to determine the optimal camera placment among 10 samples.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 

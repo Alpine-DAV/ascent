@@ -52,7 +52,15 @@
 ################################
 set(BASIC_TESTS t_ascent_smoke
                 t_ascent_runtime_options
-		t_ascent_opt_viewpoint
+		t_ascent_opt_viewpoint_data_entropy
+		t_ascent_opt_viewpoint_depth_entropy
+		t_ascent_opt_viewpoint_max_depth
+		t_ascent_opt_viewpoint_viewpoint_entropy
+		t_ascent_opt_viewpoint_projected_area
+		t_ascent_opt_viewpoint_pb
+		t_ascent_opt_viewpoint_vkl
+		t_ascent_opt_viewpoint_visibility_ratio
+		t_ascent_opt_viewpoint_visible_triangles
                 t_ascent_utils
                 t_ascent_empty_runtime
                 t_ascent_error_handling
