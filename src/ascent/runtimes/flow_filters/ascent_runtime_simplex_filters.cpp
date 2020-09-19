@@ -116,6 +116,7 @@
 
 #include <chrono>
 #include <stdio.h>
+#include <math.h>
 
 ////openCV
 //#include <opencv2/highgui/highgui.hpp>
