@@ -104,6 +104,10 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/raytracing/Camera.h>
 #include <vtkm/cont/ArrayCopy.h>
+#include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/Invoker.h>
+#include <vtkm/cont/DataSetFieldAdd.h>
+#include <vtkm/worklet/WorkletMapTopology.h>
 
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -285,10 +289,6 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   return c;
 }
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/Invoker.h>
-#include <vtkm/cont/DataSetFieldAdd.h>
-#include <vtkm/worklet/WorkletMapTopology.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -103,6 +103,10 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/raytracing/Camera.h>
 #include <vtkm/cont/ArrayCopy.h>
+#include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/Invoker.h>
+#include <vtkm/worklet/WorkletMapTopology.h>
+#include <vtkm/cont/DataSetFieldAdd.h>
 
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -113,9 +117,9 @@
 #include <stdio.h>
 
 //openCV
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/imgcodecs.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -705,10 +709,6 @@ GetCamera(int frame, int nframes, double radius, double* lookat, float *bounds)
 }
 
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/Invoker.h>
-#include <vtkm/worklet/WorkletMapTopology.h>
-#include <vtkm/cont/DataSetFieldAdd.h>
 
 class ProcessTriangle : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
