@@ -55,7 +55,9 @@
 #include <ascent.hpp>
 
 #include <flow_filter.hpp>
+#if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/DataSet.hpp>
+#endif
 
 
 //-----------------------------------------------------------------------------
@@ -81,7 +83,7 @@ class Matrix
     double          A[4][4];
 
     void            TransformPoint(const double *ptIn, double *ptOut);
-    static Matrix   ComposeMatrices(const Matrix &, const Matrix &);
+    static Matrix   ComposeMatrices(const Matrix &m1, const Matrix &m2);
     void            Print(std::ostream &o);
 
 };
@@ -177,7 +179,7 @@ class Triangle
       double findMax(double a, double b, double c);
 };
 
-
+#if defined(ASCENT_VTKM_ENABLED)
 Triangle transformTriangle(Triangle t, Camera c);
 std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name );
@@ -185,13 +187,13 @@ double CalculateNormalCameraDot(double* cameraPositions, Triangle tri);
 
 
 //Stefan's copied over for simplex
-float calculateMetric(vtkh::DataSet*, std::string, std::string, std::vector<Triangle> &, int, int, Camera);
+float calculateMetric(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, int i1, int i2, Camera c);
 
-vtkh::DataSet* AddTriangleFields(vtkh::DataSet &);
+vtkh::DataSet* AddTriangleFields(vtkh::DataSet &d);
 
-std::vector<Triangle> GetTriangles(vtkh::DataSet &);
+std::vector<Triangle> GetTriangles(vtkh::DataSet &d);
 //End Stefan's copied over
-
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

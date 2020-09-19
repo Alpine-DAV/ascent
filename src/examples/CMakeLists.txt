@@ -59,6 +59,7 @@ endif()
 
 if(ENABLE_BABELFLOW)
   add_subdirectory(babelflow/pmt)
+  add_subdirectory(babelflow/comp)
 endif()
 
 # install using and python examples

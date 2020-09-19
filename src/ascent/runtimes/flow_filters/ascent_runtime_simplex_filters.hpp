@@ -55,7 +55,9 @@
 #include <ascent.hpp>
 
 #include <flow_filter.hpp>
+#if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/DataSet.hpp>
+#endif
 
 
 //-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 //
-// Created by Li, Jixian on 2019-06-04.
+// Created by Sergei Shudler on 2020-06-09.
 //
 
 #ifndef ASCENT_ASCENT_RUNTIME_BABELFLOW_FILTERS_H
@@ -9,37 +9,76 @@
 #include <fstream>
 #include <sstream>
 
+
+//-----------------------------------------------------------------------------
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
 namespace ascent
 {
+
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
 namespace runtime
 {
+
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
 namespace filters
 {
 
-// Xuan
-// change here from op to op_enum to avoid naming dup
-enum op_enum
-{
-  NOOP = 0,
-  PMT
-};
 
-class BabelFlow : public ::flow::Filter
+//-----------------------------------------------------------------------------
+class BFlowPmt : public ::flow::Filter
 {
-private:
-  op_enum op = NOOP;
-
 public:
-  BabelFlow()= default;
-  void declare_interface(conduit::Node &i) override;
+    BFlowPmt() = default;
+    virtual ~BFlowPmt() {}
 
-  void execute() override;
-
-  bool verify_params(const conduit::Node &params, conduit::Node &info) override;
+    virtual void   declare_interface(conduit::Node &i) override;
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info) override;
+    virtual void   execute() override;
 };
+
+
+//-----------------------------------------------------------------------------
+class BFlowCompose : public ::flow::Filter
+{
+public:
+    enum CompositingType { REDUCE = 0, BINSWAP = 1, RADIX_K = 2 };
+    
+    BFlowCompose() = default;
+    virtual ~BFlowCompose() {}
+
+    virtual void   declare_interface(conduit::Node &i) override;
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info) override;
+    virtual void   execute() override;
+};
+
+
+//-----------------------------------------------------------------------------
 }
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 }
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
 }
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------
+
 
 
 #endif //ASCENT_ASCENT_RUNTIME_BABELFLOW_FILTERS_H

@@ -104,6 +104,10 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/raytracing/Camera.h>
 #include <vtkm/cont/ArrayCopy.h>
+#include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/Invoker.h>
+#include <vtkm/cont/DataSetFieldAdd.h>
+#include <vtkm/worklet/WorkletMapTopology.h>
 
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -112,11 +116,12 @@
 
 #include <chrono>
 #include <stdio.h>
+#include <math.h>
 
-//openCV
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
+////openCV
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/imgcodecs.hpp>
 
 using namespace conduit;
 using namespace std;
@@ -124,8 +129,9 @@ using namespace std::chrono;
 
 using namespace flow;
 
+#if defined(ASCENT_VTKM_ENABLED)
 typedef vtkm::rendering::Camera vtkmCamera;
-
+#endif
 /* This is stuff for old camera, leaving it in here for now
 void fibonacciSphere(int i, int samples, double* points)
 {
@@ -285,10 +291,6 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   return c;
 }
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/Invoker.h>
-#include <vtkm/cont/DataSetFieldAdd.h>
-#include <vtkm/worklet/WorkletMapTopology.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -387,6 +389,7 @@ CameraSimplex::execute()
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     #endif  
 
+    #if defined(ASCENT_VTKM_ENABLED)
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     std::string field_name = params()["field"].as_string();
@@ -522,7 +525,6 @@ CameraSimplex::execute()
 
 	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
         //cout << "Score is: " << score << endl << endl;
-
 	if (score > winning_score) {
             winning_score = score;
             winning_i = i;
@@ -632,6 +634,7 @@ CameraSimplex::execute()
       camera->Print();
 #endif
 */
+    #endif
     set_output<DataObject>(input<DataObject>(0));
     //set_output<vtkmCamera>(camera);
     auto time_stop = high_resolution_clock::now();

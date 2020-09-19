@@ -42,7 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_blueprint_architect.hpp
@@ -54,7 +53,8 @@
 
 #include <ascent.hpp>
 #include <conduit.hpp>
-
+// TODO this is temporary
+#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -76,11 +76,11 @@ namespace expressions
 
 conduit::Node vert_location(const conduit::Node &domain,
                             const int &index,
-                            const std::string topo_name = "");
+                            const std::string &topo_name = "");
 
 conduit::Node element_location(const conduit::Node &domain,
                                const int &index,
-                               const std::string topo_name = "");
+                               const std::string &topo_name = "");
 
 conduit::Node field_max(const conduit::Node &dataset,
                         const std::string &field_name);
@@ -101,7 +101,7 @@ conduit::Node field_inf_count(const conduit::Node &dataset,
                               const std::string &field_name);
 
 conduit::Node field_histogram(const conduit::Node &dataset,
-                              const std::string &field_name,
+                              const std::string &field,
                               const double &min_val,
                               const double &max_val,
                               const int &num_bins);
@@ -111,18 +111,42 @@ conduit::Node field_entropy(const conduit::Node &hist);
 conduit::Node field_pdf(const conduit::Node &hist);
 conduit::Node field_cdf(const conduit::Node &hist);
 
+conduit::Node global_bounds(const conduit::Node &dataset,
+                            const conduit::Node &field_names);
+
+conduit::Node binning(const conduit::Node &dataset,
+                      conduit::Node &bin_axes,
+                      const std::string &reduction_var,
+                      const std::string &reduction_op,
+                      const double empty_bin_val,
+                      const std::string &component);
+
+void ASCENT_API paint_binning(const conduit::Node &binning,
+                              conduit::Node &dataset);
+
+void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
+
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
 
 bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
-bool has_field(const conduit::Node &dataset,
-               const std::string &field_name);
+bool has_field(const conduit::Node &dataset, const std::string &field_name);
+
+bool has_component(const conduit::Node &dataset,
+                   const std::string &field_name,
+                   const std::string &component);
+
+std::string
+possible_components(const conduit::Node &dataset,
+                    const std::string &field_name);
+
+bool is_xyz(const std::string &axis_name);
 
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
-                       const std::string interpolation);
+                       const std::string &interpolation);
 
 };
 //-----------------------------------------------------------------------------
@@ -140,7 +164,6 @@ conduit::Node quantile(const conduit::Node &cdf,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 #endif
 //-----------------------------------------------------------------------------

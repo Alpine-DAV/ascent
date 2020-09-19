@@ -82,11 +82,11 @@
 #ifdef ASCENT_MPI_ENABLED
     #include <ascent_runtime_hola_filters.hpp>
     #ifdef ASCENT_BABELFLOW_ENABLED
-        #include <ascent_runtime_babelflow_filters.hpp>
+    #include <ascent_runtime_babelflow_filters.hpp>
     #endif
-#if defined(ASCENT_ADIOS_ENABLED)
+    #if defined(ASCENT_ADIOS_ENABLED)
     #include <ascent_runtime_adios_filters.hpp>
-#endif
+    #endif
 #endif
 
 
@@ -125,13 +125,13 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
 
-    //Magic Camera
-    AscentRuntime::register_filter_type<AutoCamera>("transforms","camera");
-    AscentRuntime::register_filter_type<CameraSimplex>("transforms","simplex");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
 
+    //Magic Camera
+    AscentRuntime::register_filter_type<AutoCamera>("transforms","camera");
+    AscentRuntime::register_filter_type<CameraSimplex>("transforms","simplex");
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
     // transforms, the current crop expect vtk-h input data
@@ -181,7 +181,8 @@ register_builtin()
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
 
 #if defined(ASCENT_BABELFLOW_ENABLED)
-    AscentRuntime::register_filter_type<BabelFlow>("transforms", "babelflow");
+    AscentRuntime::register_filter_type<BFlowPmt>("transforms", "bflow_pmt");
+    AscentRuntime::register_filter_type<BFlowCompose>("extracts", "bflow_comp");
 #endif
 
 #if defined(ASCENT_ADIOS_ENABLED)
