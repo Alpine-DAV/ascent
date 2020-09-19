@@ -113,10 +113,10 @@
 #include <chrono>
 #include <stdio.h>
 
-//openCV
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
+////openCV
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/imgcodecs.hpp>
 
 using namespace conduit;
 using namespace std;
