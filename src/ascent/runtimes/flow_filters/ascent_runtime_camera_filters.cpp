@@ -127,8 +127,9 @@ using namespace std::chrono;
 
 using namespace flow;
 
+#if defined(ASCENT_VTKM_ENABLED)
 typedef vtkm::rendering::Camera vtkmCamera;
-
+#endif
 //Camera Class Functions
 
 Matrix

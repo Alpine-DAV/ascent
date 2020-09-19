@@ -128,8 +128,9 @@ using namespace std::chrono;
 
 using namespace flow;
 
+#if defined(ASCENT_VTKM_ENABLED)
 typedef vtkm::rendering::Camera vtkmCamera;
-
+#endif
 /* This is stuff for old camera, leaving it in here for now
 void fibonacciSphere(int i, int samples, double* points)
 {
