@@ -334,7 +334,7 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
 {
     // optional render factors for sim and/or vis nodes (empirically determined)
     const float sim_factor = 1.0f;       // 1.24;
-    const float vis_factor = 1.1f;       // 0.97;       // 0.9317 for n33, 1.0069 for n10
+    const float vis_factor = 1.2f;       // 0.97;       // 0.9317 for n33, 1.0069 for n10
 
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -343,10 +343,10 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
     // TODO: add smarter way to estimate compositing cost
-    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.15f) * render_cfg.max_count;  // assume flat cost per image
+    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.16f) * render_cfg.max_count;  // assume flat cost per image
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
-    const float t_send = 0.5f * node_map.size() / mpi_props.vis_node_count; // data send overhead
+    const float t_send = 1.0f * mpi_props.sim_node_count; // data send overhead
 
     std::valarray<float> t_intransit(t_compositing + t_send, mpi_props.vis_node_count);
     std::valarray<float> t_sim(sim_estimate.data(), mpi_props.sim_node_count);
