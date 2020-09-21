@@ -131,6 +131,10 @@ SUBROUTINE hydro
       IF(cycle_time.GT.visit_sim_time .OR. step.EQ.1) THEN
         vis_time=timer()
 
+        IF (step.EQ.1) THEN
+          cycle_time = visit_sim_time
+        ENDIF
+
         unix = c_time(int(0, kind=8))
         WRITE(g_out_stamps,*) 'end sim ', unix
         WRITE(g_out_times,*) '       sim ', step, timer()-sim_timer
