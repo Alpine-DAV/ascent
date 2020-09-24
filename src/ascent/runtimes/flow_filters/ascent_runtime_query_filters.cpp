@@ -227,6 +227,14 @@ FilterQuery::execute()
     runtime::expressions::ExpressionEval eval(n_input.get());
     conduit::Node res = eval.evaluate(expression, name);
 
+    // Since queries might add new fields, the blueprint needs to become the source
+    if(data_object->source() != DataObject::Source::LOW_BP)
+    {
+      // TODO for now always copy the bp...
+      conduit::Node *new_data_object = new conduit::Node(*n_input);
+      data_object->reset(new_data_object);
+    }
+
     set_output<DataObject>(data_object);
 }
 

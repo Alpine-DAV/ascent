@@ -1758,7 +1758,7 @@ void
 Axis::declare_interface(Node &i)
 {
   i["type_name"] = "axis";
-  i["port_names"].append() = "name";
+  i["port_names"].append() = "var";
   i["port_names"].append() = "min_val";
   i["port_names"].append() = "max_val";
   i["port_names"].append() = "num_bins";
@@ -1780,7 +1780,9 @@ Axis::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Axis::execute()
 {
-  const std::string name = (*input<Node>("name"))["value"].as_string();
+  // axis_var can be a field or a string ('x', 'y', 'z')
+  const conduit::Node *n_axis_var = input<Node>("var");
+  const std::string axis_var = (*n_axis_var)["value"].as_string();
   // uniform binning
   const conduit::Node *n_min = input<Node>("min_val");
   const conduit::Node *n_max = input<Node>("max_val");
@@ -1797,11 +1799,25 @@ Axis::execute()
   const conduit::Node *const dataset =
       graph().workspace().registry().fetch<Node>("dataset");
 
-  if(!is_scalar_field(*dataset, name) && !is_xyz(name))
+  // verify axis_var
+  if(n_axis_var->has_path("component"))
+  {
+    ASCENT_ERROR("Axis of a field component is not yet implemented, and only "
+                 "works on scalar fields.");
+  }
+  if((*n_axis_var)["type"].as_string() == "string" && !is_xyz(axis_var))
+  {
+    ASCENT_ERROR("Unknown axis_var '"
+                 << axis_var
+                 << "'. If axis_var is specified as a string it must be "
+                    "one of 'x', 'y', 'z'. If it is a field use field('"
+                 << axis_var << "').");
+  }
+  if(!is_scalar_field(*dataset, axis_var) && !is_xyz(axis_var))
   {
     ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
                  "contain scalar field '"
-                 << name << "'.");
+                 << axis_var << "'.");
   }
 
   conduit::Node *output;
@@ -1824,9 +1840,9 @@ Axis::execute()
     }
 
     output = new conduit::Node();
-    (*output)["value/" + name + "/bins"].set(
+    (*output)["value/" + axis_var + "/bins"].set(
         conduit::DataType::c_double(bins_len));
-    double *bins = (*output)["value/" + name + "/bins"].value();
+    double *bins = (*output)["value/" + axis_var + "/bins"].value();
 
     for(int i = 0; i < bins_len; ++i)
     {
@@ -1853,13 +1869,13 @@ Axis::execute()
     if(!n_min->dtype().is_empty())
     {
       min_val = (*n_min)["value"].to_float64();
-      (*output)["value/" + name + "/min_val"] = min_val;
+      (*output)["value/" + axis_var + "/min_val"] = min_val;
       min_found = true;
     }
-    else if(!is_xyz(name))
+    else if(!is_xyz(axis_var))
     {
-      min_val = field_min(*dataset, name)["value"].to_float64();
-      (*output)["value/" + name + "/min_val"] = min_val;
+      min_val = field_min(*dataset, axis_var)["value"].to_float64();
+      (*output)["value/" + axis_var + "/min_val"] = min_val;
       min_found = true;
     }
 
@@ -1869,41 +1885,41 @@ Axis::execute()
     {
       max_val = (*n_max)["value"].to_float64();
       max_found = true;
-      (*output)["value/" + name + "/max_val"] = max_val;
+      (*output)["value/" + axis_var + "/max_val"] = max_val;
     }
-    else if(!is_xyz(name))
+    else if(!is_xyz(axis_var))
     {
       // We add eps because the last bin isn't inclusive
-      max_val = field_max(*dataset, name)["value"].to_float64() + 1.0;
+      max_val = field_max(*dataset, axis_var)["value"].to_float64() + 1.0;
       double length = max_val - min_val;
       double eps = length * 1e-8;
-      (*output)["value/" + name + "/max_val"] = max_val + eps;
+      (*output)["value/" + axis_var + "/max_val"] = max_val + eps;
       max_found = true;
     }
 
-    (*output)["value/" + name + "/num_bins"] = 256;
+    (*output)["value/" + axis_var + "/num_bins"] = 256;
     if(!n_num_bins->dtype().is_empty())
     {
-      (*output)["value/" + name + "/num_bins"] =
+      (*output)["value/" + axis_var + "/num_bins"] =
           (*n_num_bins)["value"].to_int32();
     }
 
     if(min_found && max_found && min_val >= max_val)
     {
       delete output;
-      ASCENT_ERROR("Axis: axis with name '"
-                   << name << "': min_val (" << min_val
+      ASCENT_ERROR("Axis: axis with axis_var '"
+                   << axis_var << "': min_val (" << min_val
                    << ") must be smaller than max_val (" << max_val << ")");
     }
   }
 
-  (*output)["value/" + name + "/clamp"] = false;
+  (*output)["value/" + axis_var + "/clamp"] = false;
   if(!n_clamp->dtype().is_empty())
   {
-    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_uint8();
+    (*output)["value/" + axis_var + "/clamp"] = (*n_clamp)["value"].to_uint8();
   }
 
-  (*output)["value/" + name];
+  (*output)["value/" + axis_var];
   (*output)["type"] = "axis";
   set_output<conduit::Node>(output);
 }
@@ -2035,7 +2051,6 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
   i["port_names"].append() = "empty_val";
-  i["port_names"].append() = "component";
   i["port_names"].append() = "topo";
   i["port_names"].append() = "assoc";
   i["output_port"] = "true";
@@ -2054,27 +2069,27 @@ Binning::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Binning::execute()
 {
-  const std::string reduction_var =
-      (*input<Node>("reduction_var"))["value"].as_string();
+  // reduction_var can be a field or a string ('x', 'y', 'z')
+  const conduit::Node *n_reduction_var = input<conduit::Node>("reduction_var");
+  const std::string reduction_var = (*n_reduction_var)["value"].as_string();
   const std::string reduction_op =
       (*input<Node>("reduction_op"))["value"].as_string();
   const conduit::Node *n_axes_list = input<Node>("bin_axes");
   // optional arguments
   const conduit::Node *n_empty_val = input<conduit::Node>("empty_val");
-  const conduit::Node *n_component = input<conduit::Node>("component");
   const conduit::Node *n_topo = input<conduit::Node>("topo");
   const conduit::Node *n_assoc = input<conduit::Node>("assoc");
+
+  std::string component = "";
+  if(n_reduction_var->has_path("component"))
+  {
+    component = (*n_reduction_var)["component"].as_string();
+  }
 
   double empty_val = 0;
   if(!n_empty_val->dtype().is_empty())
   {
     empty_val = (*n_empty_val)["value"].to_float64();
-  }
-
-  std::string component = "";
-  if(!n_component->dtype().is_empty())
-  {
-    component = (*n_component)["value"].as_string();
   }
 
   std::string topo = "";
@@ -2111,39 +2126,25 @@ Binning::execute()
   }
 
   // verify reduction_var
-  if(reduction_var.empty())
+  if((*n_reduction_var)["type"].as_string() == "string" &&
+     !is_xyz(reduction_var) && reduction_var != "cnt")
+  {
+    ASCENT_ERROR("Unknown reduction_var '"
+                 << reduction_var
+                 << "'. If reduction_var is specified as a string it must be "
+                    "one of 'x', 'y', 'z', 'cnt'. If it is a field use field('"
+                 << reduction_var << "').");
+  }
+  if(reduction_var == "cnt")
   {
     if(reduction_op != "sum" && reduction_op != "pdf" && reduction_op != "cdf")
     {
-      ASCENT_ERROR("Binning: reduction_var can only be left empty if "
+      ASCENT_ERROR("Binning: reduction_var can only be 'cnt' if "
                    "reduction_op is 'sum', 'pdf', or 'cdf'.");
     }
   }
   else if(!is_xyz(reduction_var))
   {
-    if(!has_field(*dataset, reduction_var))
-    {
-      std::string known;
-      if(dataset->number_of_children() > 0)
-      {
-        std::vector<std::string> names =
-            dataset->child(0)["fields"].child_names();
-        std::stringstream ss;
-        ss << "[";
-        for(size_t i = 0; i < names.size(); ++i)
-        {
-          ss << " '" << names[i] << "'";
-        }
-        ss << "]";
-        known = ss.str();
-      }
-      ASCENT_ERROR(
-          "Binning: reduction variable '"
-          << reduction_var
-          << "' must be a scalar field in the dataset or x/y/z or empty."
-          << " known = " << known);
-    }
-
     bool scalar = is_scalar_field(*dataset, reduction_var);
     if(!scalar && component == "")
     {
@@ -2153,24 +2154,6 @@ Binning::execute()
           << " has multiple components and no 'component' is specified."
           << " known components = "
           << possible_components(*dataset, reduction_var));
-    }
-    if(scalar && component != "")
-    {
-      ASCENT_ERROR("Binning: reduction variable '"
-                   << reduction_var << "'"
-                   << " is a scalar(i.e., has not components "
-                   << " but 'component' "
-                   << " '" << component << "' was"
-                   << " specified. Remove the 'component' argument"
-                   << " or choose a vector variable.");
-    }
-    if(!has_component(*dataset, reduction_var, component))
-    {
-      ASCENT_ERROR("Binning: reduction variable '"
-                   << reduction_var << "'"
-                   << " does not have component '" << component << "'."
-                   << " known components = "
-                   << possible_components(*dataset, reduction_var));
     }
   }
 
@@ -3280,7 +3263,7 @@ JitFilter::execute()
   // some functions need to pack the topology but don't take it in as an
   // argument. hack: add a new input jitable to the end with the topology and
   // fuse it
-  if(func == "gradient" || func == "curl" ||
+  if(func == "gradient" || func == "curl" || func == "recenter" ||
      (func == "binning_value" && !inputs.has_path("topo")))
   {
     new_jitables.emplace_back(num_domains);
@@ -3404,6 +3387,10 @@ JitFilter::execute()
       else if(func == "rand")
       {
         jitable_functions.rand();
+      }
+      else if(func == "recenter")
+      {
+        jitable_functions.recenter();
       }
       else
       {

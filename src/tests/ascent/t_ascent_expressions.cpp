@@ -688,40 +688,46 @@ TEST(ascent_binning, binning_basic_meshes)
   conduit::Node res;
   std::string expr;
 
-  expr = "binning('field', 'sum', [axis('x', [0, 2.5, 5, 7.5, 10])])";
+  expr = "binning(field('field'), 'sum', [axis('x', [0, 2.5, 5, 7.5, 10])])";
   res = eval.evaluate(expr);
   res.print();
   EXPECT_EQ(res["attrs/value/value"].to_json(), "[0.0, 0.0, 16.0, 0.0]");
 
-  expr = "binning('field', 'max', [axis('z', [-5, 0, 5])])";
+  expr = "binning(field('field'), 'max', [axis('z', [-5, 0, 5])])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 0.0]");
 
-  expr = "binning('field', 'max', [axis('z', [-5, 0, 5], clamp=True)])";
+  expr = "binning(field('field'), 'max', [axis('z', [-5, 0, 5], clamp=True)])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 7.0]");
 
-  expr =
-      "binning('field', 'max', [axis('x', num_bins=4), axis('y', num_bins=4)], "
-      "empty_bin_val=100)";
+  expr = "binning(field('field'), 'max', [axis('x', num_bins=4), axis('y', "
+         "num_bins=4)], empty_val=100)";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(),
             "[4.0, 100.0, 5.0, 100.0, 100.0, 100.0, 100.0, 100.0, 6.0, 100.0, "
             "7.0, 100.0, 100.0, 100.0, 100.0, 100.0]");
 
-  expr =
-      "binning('field', 'sum', [axis('x', num_bins=2), axis('y', num_bins=2), "
-      "axis('z', num_bins=2)])";
+  expr = "binning(field('field'), 'sum', [axis('x', num_bins=2), axis('y', "
+         "num_bins=2), axis('z', num_bins=2)])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(),
             "[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]");
 
-  expr = "binning('', 'pdf', [axis('field', bins=[0,1,2,3,4,5,6,7,8.1])])";
+  expr = "binning('cnt', 'pdf', [axis(field('field'), "
+         "bins=[0,1,2,3,4,5,6,7,8.1])])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(),
             "[0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125]");
 
-  expr = "binning('field', 'pdf', [axis('x', num_bins=2), axis('y', "
+  // topology and association specified explicitely
+  expr = "binning('cnt', 'pdf', [axis('x', num_bins=2), axis('y', num_bins=2), "
+         "axis('z', num_bins=2)], topo=topo('mesh'), assoc='element')";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_json(),
+            "[0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125]");
+
+  expr = "binning(field('field'), 'pdf', [axis('x', num_bins=2), axis('y', "
          "num_bins=2), axis('z', num_bins=2)])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(),
@@ -832,12 +838,12 @@ TEST(ascent_binning, braid_binning)
 
   const std::string output_path = prepare_output_dir();
 
-  expr = "paint_binning(binning('braid', 'std', [axis('x', num_bins=10), axis('y', "
-         "num_bins=10)]), name='painted_braid_std')";
-  eval.evaluate(expr);
   expr =
-      "binning_mesh(binning('braid', 'sum', [axis('x', num_bins=21), axis('y', "
-      "num_bins=21)]), name='braid_sum')";
+      "paint_binning(binning(field('braid'), 'std', [axis('x', num_bins=10), "
+      "axis('y', num_bins=10)]), name='painted_braid_std')";
+  eval.evaluate(expr);
+  expr = "binning_mesh(binning(field('braid'), 'sum', [axis('x', num_bins=21), "
+         "axis('y', num_bins=21)]), name='braid_sum')";
   eval.evaluate(expr);
 
   std::string output_file =
@@ -882,11 +888,11 @@ TEST(ascent_binning, multi_dom_binning)
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
   std::string expr;
-  expr = "paint_binning(binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
-         "num_bins=9)]), name='painted_dist_std')";
+  expr = "paint_binning(binning(field('dist'), 'std', [axis('x', num_bins=6), "
+         "axis('y', num_bins=9)]), name='painted_dist_std')";
   eval.evaluate(expr);
-  expr = "binning_mesh(binning('dist', 'std', [axis('x', num_bins=6), axis('y', "
-         "num_bins=9)]), name='dist_std')";
+  expr = "binning_mesh(binning(field('dist'), 'std', [axis('x', num_bins=6), "
+         "axis('y', num_bins=9)]), name='dist_std')";
   eval.evaluate(expr);
 
   const std::string output_path = prepare_output_dir();
@@ -949,7 +955,7 @@ TEST(ascent_binning, binning_errors)
   threw = false;
   try
   {
-    expr = "binning('braid', 'sum', [axis('x'), axis('vel')])";
+    expr = "binning(field('braid'), 'sum', [axis('x'), axis('vel')])";
     res = eval.evaluate(expr);
   }
   catch(...)
@@ -961,7 +967,7 @@ TEST(ascent_binning, binning_errors)
   threw = false;
   try
   {
-    expr = "binning('vel', 'sum', [axis('x'), axis('y')])";
+    expr = "binning(field('vel'), 'sum', [axis('x'), axis('y')])";
     res = eval.evaluate(expr);
   }
   catch(...)
@@ -973,7 +979,7 @@ TEST(ascent_binning, binning_errors)
   threw = false;
   try
   {
-    expr = "binning('braid', 'sum', [axis('x', bins=[1,2], num_bins=1), "
+    expr = "binning(field('braid'), 'sum', [axis('x', bins=[1,2], num_bins=1), "
            "axis('y')])";
     res = eval.evaluate(expr);
   }
@@ -986,7 +992,7 @@ TEST(ascent_binning, binning_errors)
   threw = false;
   try
   {
-    expr = "binning('braid', 'sum', [axis('x', bins=[1]), axis('y')])";
+    expr = "binning(field('braid'), 'sum', [axis('x', bins=[1]), axis('y')])";
     res = eval.evaluate(expr);
   }
   catch(...)

@@ -87,6 +87,20 @@ namespace expressions
 namespace detail
 {
 
+std::vector<std::string>
+component_names(const int num_components)
+{
+  std::vector<std::string> component_names{};
+  if(num_components > 1)
+  {
+    for(int i = 0; i < num_components; ++i)
+    {
+      component_names.push_back(std::string(1, 'x' + i));
+    }
+  }
+  return component_names;
+}
+
 std::string
 type_string(const conduit::DataType &dtype)
 {
@@ -682,6 +696,54 @@ MathCode::magnitude(InsertionOrderedSet<std::string> &code,
                                           << " is not implemented.");
   }
 }
+
+void
+MathCode::array_avg(InsertionOrderedSet<std::string> &code,
+                    const int length,
+                    const std::string &array_name,
+                    const std::string &res_name,
+                    const bool declare) const
+{
+  std::stringstream array_avg;
+  array_avg << "(";
+  for(int i = 0; i < length; ++i)
+  {
+    if(i != 0)
+    {
+      array_avg << " + ";
+    }
+    array_avg << array_name + "[" << i << "]";
+  }
+  array_avg << ") / " << length;
+  code.insert((declare ? "const double " : "") + res_name + " = " +
+              array_avg.str() + ";\n");
+}
+
+// average value of a component given an array of vectors
+void
+MathCode::component_avg(InsertionOrderedSet<std::string> &code,
+                        const int length,
+                        const std::string &array_name,
+                        const std::string &coord,
+                        const std::string &res_name,
+                        const bool declare) const
+{
+  const int component = coord[0] - 'x';
+  std::stringstream comp_avg;
+  comp_avg << "(";
+  for(int i = 0; i < length; ++i)
+  {
+    if(i != 0)
+    {
+      comp_avg << " + ";
+    }
+    comp_avg << array_name + "[" << i << "][" << component << "]";
+  }
+  comp_avg << ") / " << length;
+  code.insert((declare ? "const double " : "") + res_name + " = " +
+              comp_avg.str() + ";\n");
+}
+
 // }}}
 
 //-----------------------------------------------------------------------------
@@ -726,6 +788,10 @@ TopologyCode::TopologyCode(const std::string &topo_name,
       this->shape_size = detail::get_num_vertices(shape);
     }
   }
+  else
+  {
+    this->shape_size = static_cast<int>(std::pow(2, num_dims));
+  }
 }
 
 void
@@ -762,16 +828,17 @@ TopologyCode::element_idx(InsertionOrderedSet<std::string> &code) const
 void
 TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code) const
 {
-  if(topo_type != "structured")
+  if(topo_type != "uniform" && topo_type != "rectilinear" &&
+     topo_type != "structured")
   {
-    ASCENT_ERROR("The function structured_vertices only supports structured "
-                 "topologies.");
+    ASCENT_ERROR("The function structured_vertices only supports uniform, "
+                 "rectilinear, and structured topologies.");
   }
   element_idx(code);
 
   // vertex indices
-  code.insert("int " + topo_name + "_vertices[" +
-              std::to_string(static_cast<int>(std::pow(2, num_dims))) + "];\n");
+  code.insert("int " + topo_name + "_vertices[" + std::to_string(shape_size) +
+              "];\n");
   if(num_dims == 1)
   {
     code.insert(
@@ -806,60 +873,31 @@ TopologyCode::structured_vertices(InsertionOrderedSet<std::string> &code) const
         topo_name + "_vertices[7] = " + topo_name + "_vertices[6] - 1;\n",
     });
   }
+}
 
-  // locations
-  code.insert("double " + topo_name + "_vertex_locs[" +
-              std::to_string(static_cast<int>(std::pow(2, num_dims))) + "][" +
-              std::to_string(num_dims) + "];\n");
-  vertex_xyz(code,
-             topo_name + "_vertices[0]",
-             false,
-             topo_name + "_vertex_locs[0]",
-             false);
-  vertex_xyz(code,
-             topo_name + "_vertices[1]",
-             false,
-             topo_name + "_vertex_locs[1]",
-             false);
-  if(num_dims >= 2)
+void
+TopologyCode::structured_vertex_locs(
+    InsertionOrderedSet<std::string> &code) const
+{
+  if(topo_type != "structured")
   {
-    vertex_xyz(code,
-               topo_name + "_vertices[2]",
-               false,
-               topo_name + "_vertex_locs[2]",
-               false);
-    vertex_xyz(code,
-               topo_name + "_vertices[3]",
-               false,
-               topo_name + "_vertex_locs[3]",
-               false);
+    ASCENT_ERROR("The function structured_vertex_locs only supports structured "
+                 "topologies.");
   }
-  if(num_dims == 3)
+  structured_vertices(code);
+  code.insert("double " + topo_name + "_vertex_locs[" +
+              std::to_string(shape_size) + "][" + std::to_string(num_dims) +
+              "];\n");
+  for(int i = 0; i < shape_size; ++i)
   {
     vertex_xyz(code,
-               topo_name + "_vertices[4]",
+               array_code.index(topo_name + "_vertices", std::to_string(i)),
                false,
-               topo_name + "_vertex_locs[4]",
-               false);
-    vertex_xyz(code,
-               topo_name + "_vertices[5]",
-               false,
-               topo_name + "_vertex_locs[5]",
-               false);
-    vertex_xyz(code,
-               topo_name + "_vertices[6]",
-               false,
-               topo_name + "_vertex_locs[6]",
-               false);
-    vertex_xyz(code,
-               topo_name + "_vertices[7]",
-               false,
-               topo_name + "_vertex_locs[7]",
+               array_code.index(topo_name + "_vertex_locs", std::to_string(i)),
                false);
   }
 }
 
-// TODO generate vertices array
 void
 TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
                                     const std::string &index_name) const
@@ -870,6 +908,38 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
         "The function unstructured_vertices only supports unstructured "
         "topologies.");
   }
+  if(shape_size == -1)
+  {
+    // TODO generate vertices array for multi-shapes case, it's variable length
+    // so might have to find the max shape size before hand
+  }
+  else
+  {
+    // single shape
+    // inline the for-loop
+    code.insert("int " + topo_name + "_vertices[" + std::to_string(shape_size) +
+                "];\n");
+    for(int i = 0; i < shape_size; ++i)
+    {
+      code.insert(topo_name + "_vertices[" + std::to_string(i) +
+                  "] = " + topo_name + "_connectivity[" + index_name + " * " +
+                  std::to_string(shape_size) + " + " + std::to_string(i) +
+                  "];\n");
+    }
+  }
+}
+
+void
+TopologyCode::unstructured_vertex_locs(InsertionOrderedSet<std::string> &code,
+                                       const std::string &index_name) const
+{
+  if(topo_type != "unstructured")
+  {
+    ASCENT_ERROR(
+        "The function unstructured_vertex_locs only supports unstructured "
+        "topologies.");
+  }
+  unstructured_vertices(code, index_name);
   if(shape_size == -1)
   {
     // multiple shapes
@@ -887,7 +957,7 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
                array_code.index(topo_name + "_connectivity",
                                 topo_name + "_offset + i"),
                false,
-               topo_name + "_vertex_locs[i]",
+               array_code.index(topo_name + "_vertex_locs", "i"),
                false);
     for_loop.insert("}\n");
     code.insert(for_loop.accumulate());
@@ -895,53 +965,19 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
   else
   {
     // single shape
-    // inline the for-loop
-    code.insert("int " + topo_name + "_vertices[" + std::to_string(shape_size) +
-                "];\n");
-    for(int i = 0; i < shape_size; ++i)
-    {
-      code.insert(topo_name + "_vertices[" + std::to_string(i) +
-                  "] = " + topo_name + "_connectivity[" + index_name + " * " +
-                  std::to_string(shape_size) + " + " + std::to_string(i) +
-                  "];\n");
-    }
     code.insert("double " + topo_name + "_vertex_locs[" +
                 std::to_string(shape_size) + "][" + std::to_string(num_dims) +
                 "];\n");
     for(int i = 0; i < shape_size; ++i)
     {
-      vertex_xyz(code,
-                 array_code.index(topo_name + "_vertices", std::to_string(i)),
-                 false,
-                 topo_name + "_vertex_locs[" + std::to_string(i) + "]",
-                 false);
+      vertex_xyz(
+          code,
+          array_code.index(topo_name + "_vertices", std::to_string(i)),
+          false,
+          array_code.index(topo_name + "_vertex_locs", std::to_string(i)),
+          false);
     }
   }
-}
-
-// average value of a component given an array of vectors
-void
-component_avg(InsertionOrderedSet<std::string> &code,
-              const int length,
-              const std::string &array_name,
-              const std::string &coord,
-              const std::string &res_name,
-              const bool declare)
-{
-  const int component = coord[0] - 'x';
-  std::stringstream vert_avg;
-  vert_avg << "(";
-  for(int j = 0; j < length; ++j)
-  {
-    if(j != 0)
-    {
-      vert_avg << " + ";
-    }
-    vert_avg << array_name + "[" << j << "][" << component << "]";
-  }
-  vert_avg << ") / " << length;
-  code.insert((declare ? "const double " : "") + res_name + " = " +
-              vert_avg.str() + ";\n");
 }
 
 void
@@ -981,17 +1017,17 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
   }
   else if(topo_type == "structured")
   {
-    structured_vertices(code);
-    component_avg(code,
-                  std::pow(2, num_dims),
-                  topo_name + "_vertex_locs",
-                  coord,
-                  res_name,
-                  declare);
+    structured_vertex_locs(code);
+    math_code.component_avg(code,
+                            std::pow(2, num_dims),
+                            topo_name + "_vertex_locs",
+                            coord,
+                            res_name,
+                            declare);
   }
   else if(topo_type == "unstructured")
   {
-    unstructured_vertices(code);
+    unstructured_vertex_locs(code);
     if(shape_size == -1)
     {
       // multiple shapes
@@ -1001,12 +1037,12 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
       InsertionOrderedSet<std::string> for_loop;
       for_loop.insert(
           {"for(int i = 0; i < " + topo_name + "_shape_size; ++i)\n", "{\n"});
-      component_avg(for_loop,
-                    std::pow(2, num_dims),
-                    topo_name + "_vertex_locs",
-                    coord,
-                    res_name,
-                    declare);
+      math_code.component_avg(for_loop,
+                              std::pow(2, num_dims),
+                              topo_name + "_vertex_locs",
+                              coord,
+                              res_name,
+                              declare);
       for_loop.insert("}\n");
       code.insert(for_loop.accumulate());
     }
@@ -1015,12 +1051,12 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
       // single shape
       for(int i = 0; i < shape_size; ++i)
       {
-        component_avg(code,
-                      std::pow(2, num_dims),
-                      topo_name + "_vertex_locs",
-                      coord,
-                      res_name,
-                      declare);
+        math_code.component_avg(code,
+                                std::pow(2, num_dims),
+                                topo_name + "_vertex_locs",
+                                coord,
+                                res_name,
+                                declare);
         code.insert("}\n");
       }
     }
@@ -1450,7 +1486,7 @@ TopologyCode::polyhedron_volume(InsertionOrderedSet<std::string> &code,
   for_loop.insert(
       {"for(int j = 0; j < " + topo_name + "_polyhedral_shape_size; ++j)\n",
        "{\n"});
-  unstructured_vertices(for_loop,
+  unstructured_vertex_locs(for_loop,
                         array_code.index(topo_name +
 "_polyhedral_connectivity", topo_name + "_polyhedral_offset + j"));
   polygon_area_vec(for_loop, vertex_locs, res_name + "_face");
@@ -1490,12 +1526,12 @@ TopologyCode::volume(InsertionOrderedSet<std::string> &code) const
   }
   else if(topo_type == "structured")
   {
-    structured_vertices(code);
+    structured_vertex_locs(code);
     hexahedral_volume(code, topo_name + "_vertex_locs", topo_name + "_volume");
   }
   else if(topo_type == "unstructured")
   {
-    unstructured_vertices(code);
+    unstructured_vertex_locs(code);
     if(shape == "hex")
     {
       hexahedral_volume(
@@ -1623,7 +1659,7 @@ TopologyCode::area(InsertionOrderedSet<std::string> &code) const
   }
   else if(topo_type == "structured")
   {
-    structured_vertices(code);
+    structured_vertex_locs(code);
     if(num_dims == 2)
     {
       quadrilateral_area(code, topo_name + "_vertex_locs", topo_name + "_area");
@@ -1644,7 +1680,7 @@ TopologyCode::area(InsertionOrderedSet<std::string> &code) const
   }
   else if(topo_type == "unstructured")
   {
-    unstructured_vertices(code);
+    unstructured_vertex_locs(code);
     if(shape == "quad")
     {
       quadrilateral_area(code, topo_name + "_vertex_locs", topo_name + "_area");
@@ -1685,13 +1721,13 @@ TopologyCode::surface_area(InsertionOrderedSet<std::string> &code) const
   }
   else if(topo_type == "structured")
   {
-    structured_vertices(code);
+    structured_vertex_locs(code);
     hexahedral_surface_area(
         code, topo_name + "_vertex_locs", topo_name + "_area");
   }
   else if(topo_type == "unstructured")
   {
-    unstructured_vertices(code);
+    unstructured_vertex_locs(code);
     if(shape == "hex")
     {
       hexahedral_surface_area(
@@ -1943,6 +1979,10 @@ FieldCode::FieldCode(const std::string &field_name,
       num_components(num_components), component(component), array_code(arrays),
       topo_code(topo_code), math_code()
 {
+  if(association != "element" && association != "vertex")
+  {
+    ASCENT_ERROR("FieldCode: unknown association '" << association << "'.");
+  }
 }
 
 // get the flat index from index_name[3]
@@ -1950,14 +1990,14 @@ FieldCode::FieldCode(const std::string &field_name,
 void
 FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
                      const std::string &index_name,
-                     const std::string &res_name,
                      const std::string &association,
-                     const bool declare)
+                     const std::string &res_name,
+                     const bool declare) const
 {
   std::string res;
   if(declare)
   {
-    res += "const double ";
+    res += "const int ";
   }
   res += res_name + " = " + index_name + "[0]";
   if(topo_code->num_dims >= 2)
@@ -1987,6 +2027,43 @@ FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
   code.insert(res);
 }
 
+// field values at the vertices of an element
+void
+FieldCode::element_vertex_values(InsertionOrderedSet<std::string> &code,
+                                 const std::string &res_name,
+                                 const int component,
+                                 const bool declare) const
+{
+  if(topo_code->topo_type == "unstructured")
+  {
+    topo_code->unstructured_vertices(code);
+    if(topo_code->shape_size == -1)
+    {
+      // multiple shapes
+      ASCENT_ERROR("element_vertex_values is not implemented for multi-shape "
+                   "unstructured topologies");
+      // TODO see unstructured_vertices
+      return;
+    }
+  }
+  else
+  {
+    topo_code->structured_vertices(code);
+  }
+  if(declare)
+  {
+    code.insert("double " + res_name + "[" +
+                std::to_string(topo_code->shape_size) + "];\n");
+  }
+  for(int i = 0; i < topo_code->shape_size; ++i)
+  {
+    const std::string &vertex =
+        array_code.index(topo_code->topo_name + "_vertices", std::to_string(i));
+    code.insert(array_code.index(res_name, std::to_string(i)) + " = " +
+                array_code.index(field_name, vertex, component) + ";\n");
+  }
+}
+
 // Calculate the element associated gradient of a vertex associated field on
 // a quadrilateral mesh
 // https://github.com/visit-dav/visit/blob/f835d5132bdf7c6c8da09157ff86541290675a6f/src/avt/Expressions/General/avtGradientExpression.C#L1417
@@ -1997,7 +2074,7 @@ FieldCode::field_idx(InsertionOrderedSet<std::string> &code,
 // 0 : 3
 void
 FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
-                         const std::string &res_name)
+                         const std::string &res_name) const
 {
   // xi = .5 * (x[3] + x[0] - x[1] - x[2]);
   // xj = .5 * (x[0] + x[1] - x[2] - x[3]);
@@ -2009,6 +2086,8 @@ FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
   // vj = .5 * (v[0] + v[1] - v[2] - v[3]);
   const std::string vertex_locs = topo_code->topo_name + "_vertex_locs";
   const std::string vertices = topo_code->topo_name + "_vertices";
+  const std::string vertex_values = res_name + "_vertex_values";
+  element_vertex_values(code, vertex_values, component, true);
   code.insert(
       {"double " + res_name + "_x[3];\n",
        res_name + "_x[0] = .5 * (" + vertex_locs + "[3][0] + " + vertex_locs +
@@ -2021,16 +2100,14 @@ FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
        res_name + "_y[1] = .5 * (" + vertex_locs + "[0][1] + " + vertex_locs +
            "[1][1] - " + vertex_locs + "[2][1] - " + vertex_locs + "[3][1]);\n",
        "double " + res_name + "_v[3];\n",
-       res_name + "_v[0] = .5 * (" +
-           array_code.index(field_name, vertices + "[3]", component) + " + " +
-           array_code.index(field_name, vertices + "[0]", component) + " - " +
-           array_code.index(field_name, vertices + "[1]", component) + " - " +
-           array_code.index(field_name, vertices + "[2]", component) + ");\n",
-       res_name + "_v[1] = .5 * (" +
-           array_code.index(field_name, vertices + "[0]", component) + " + " +
-           array_code.index(field_name, vertices + "[1]", component) + " - " +
-           array_code.index(field_name, vertices + "[2]", component) + " - " +
-           array_code.index(field_name, vertices + "[3]", component) + ");\n"});
+       res_name + "_v[0] = .5 * (" + array_code.index(vertex_values, "3") +
+           " + " + array_code.index(vertex_values, "0") + " - " +
+           array_code.index(vertex_values, "1") + " - " +
+           array_code.index(vertex_values, "2") + ");\n",
+       res_name + "_v[1] = .5 * (" + array_code.index(vertex_values, "0") +
+           " + " + array_code.index(vertex_values, "1") + " - " +
+           array_code.index(vertex_values, "2") + " - " +
+           array_code.index(vertex_values, "3") + ");\n"});
   math_code.determinant_2x2(
       code, res_name + "_x", res_name + "_y", res_name + "_area");
   code.insert("const double " + res_name + "_inv_vol = 1.0 / (tiny + " +
@@ -2058,7 +2135,7 @@ FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
 // 7 : 6
 void
 FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
-                        const std::string &res_name)
+                        const std::string &res_name) const
 {
   // assume vertex locations are populated (either structured or unstructured
   // hexes)
@@ -2081,6 +2158,8 @@ FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
   // clang-format on
   const std::string vertex_locs = topo_code->topo_name + "_vertex_locs";
   const std::string vertices = topo_code->topo_name + "_vertices";
+  const std::string vertex_values = res_name + "_vertex_values";
+  element_vertex_values(code, vertex_values, component, true);
   code.insert({
       "double " + res_name + "_x[3];\n",
       res_name + "_x[0] = .25 * ( (" + vertex_locs + "[3][0] + " + vertex_locs +
@@ -2132,33 +2211,30 @@ FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
           "[0][2] + " + vertex_locs + "[1][2] + " + vertex_locs +
           "[2][2]) );\n",
       "double " + res_name + "_v[3];\n",
-      res_name + "_v[0] = .25 * ( (" +
-          array_code.index(field_name, vertices + "[3]", component) + " + " +
-          array_code.index(field_name, vertices + "[0]", component) + " + " +
-          array_code.index(field_name, vertices + "[7]", component) + " + " +
-          array_code.index(field_name, vertices + "[4]", component) + ") - (" +
-          array_code.index(field_name, vertices + "[2]", component) + " + " +
-          array_code.index(field_name, vertices + "[1]", component) + " + " +
-          array_code.index(field_name, vertices + "[5]", component) + " + " +
-          array_code.index(field_name, vertices + "[6]", component) + ") );\n",
-      res_name + "_v[1] = .25 * ( (" +
-          array_code.index(field_name, vertices + "[0]", component) + " + " +
-          array_code.index(field_name, vertices + "[1]", component) + " + " +
-          array_code.index(field_name, vertices + "[5]", component) + " + " +
-          array_code.index(field_name, vertices + "[4]", component) + ") - (" +
-          array_code.index(field_name, vertices + "[3]", component) + " + " +
-          array_code.index(field_name, vertices + "[2]", component) + " + " +
-          array_code.index(field_name, vertices + "[6]", component) + " + " +
-          array_code.index(field_name, vertices + "[7]", component) + ") );\n",
-      res_name + "_v[2] = .25 * ( (" +
-          array_code.index(field_name, vertices + "[7]", component) + " + " +
-          array_code.index(field_name, vertices + "[4]", component) + " + " +
-          array_code.index(field_name, vertices + "[5]", component) + " + " +
-          array_code.index(field_name, vertices + "[6]", component) + ") - (" +
-          array_code.index(field_name, vertices + "[3]", component) + " + " +
-          array_code.index(field_name, vertices + "[0]", component) + " + " +
-          array_code.index(field_name, vertices + "[1]", component) + " + " +
-          array_code.index(field_name, vertices + "[2]", component) + ") );\n",
+      res_name + "_v[0] = .25 * ( (" + array_code.index(vertex_values, "3") +
+          " + " + array_code.index(vertex_values, "0") + " + " +
+          array_code.index(vertex_values, "7") + " + " +
+          array_code.index(vertex_values, "4") + ") - (" +
+          array_code.index(vertex_values, "2") + " + " +
+          array_code.index(vertex_values, "1") + " + " +
+          array_code.index(vertex_values, "5") + " + " +
+          array_code.index(vertex_values, "6") + ") );\n",
+      res_name + "_v[1] = .25 * ( (" + array_code.index(vertex_values, "0") +
+          " + " + array_code.index(vertex_values, "1") + " + " +
+          array_code.index(vertex_values, "5") + " + " +
+          array_code.index(vertex_values, "4") + ") - (" +
+          array_code.index(vertex_values, "3") + " + " +
+          array_code.index(vertex_values, "2") + " + " +
+          array_code.index(vertex_values, "6") + " + " +
+          array_code.index(vertex_values, "7") + ") );\n",
+      res_name + "_v[2] = .25 * ( (" + array_code.index(vertex_values, "7") +
+          " + " + array_code.index(vertex_values, "4") + " + " +
+          array_code.index(vertex_values, "5") + " + " +
+          array_code.index(vertex_values, "6") + ") - (" +
+          array_code.index(vertex_values, "3") + " + " +
+          array_code.index(vertex_values, "0") + " + " +
+          array_code.index(vertex_values, "1") + " + " +
+          array_code.index(vertex_values, "2") + ") );\n",
   });
   math_code.determinant_3x3(code,
                             res_name + "_x",
@@ -2190,8 +2266,89 @@ FieldCode::hex_gradient(InsertionOrderedSet<std::string> &code,
   code.insert(res_name + "[2] *= " + res_name + "_inv_vol;\n");
 }
 
+// if_body is executed if the target element/vertex (e.g. upper, lower, current)
+// is within the mesh boundary otherwise else_body is executed
 void
-FieldCode::gradient(InsertionOrderedSet<std::string> &code)
+FieldCode::visit_current(InsertionOrderedSet<std::string> &code,
+                         const std::string &index_name,
+                         const std::string &if_body,
+                         const std::string &else_body,
+                         const int dim) const
+{
+  InsertionOrderedSet<std::string> if_code;
+  if_code.insert({"if(" + index_name + "[" + std::to_string(dim) + "] > 0 && " +
+                      index_name + "[" + std::to_string(dim) + "] < " +
+                      topo_code->topo_name + "_dims_" +
+                      std::string(1, 'i' + dim) +
+                      (association == "element" ? " - 1" : "") + ")\n",
+                  "{\n"});
+  if_code.insert(if_body);
+  if_code.insert("}\n");
+  InsertionOrderedSet<std::string> else_code;
+  if(!else_body.empty())
+  {
+    else_code.insert({"else\n", "{\n"});
+    else_code.insert(else_body);
+    else_code.insert("}\n");
+  }
+  code.insert(if_code.accumulate() + else_code.accumulate());
+}
+
+// visit_upper and visit_lower assume that the index_name is within the
+// bounds of the mesh
+void
+FieldCode::visit_upper(InsertionOrderedSet<std::string> &code,
+                       const std::string &index_name,
+                       const std::string &if_body,
+                       const std::string &else_body,
+                       const int dim) const
+{
+  InsertionOrderedSet<std::string> if_code;
+  if_code.insert({"if(" + index_name + "[" + std::to_string(dim) + "] < " +
+                      topo_code->topo_name + "_dims_" +
+                      std::string(1, 'i' + dim) + " - " +
+                      (association == "element" ? "2" : "1") + ")\n",
+                  "{\n"});
+  if_code.insert(index_name + "[" + std::to_string(dim) + "] += 1;\n");
+  if_code.insert(if_body);
+  if_code.insert(index_name + "[" + std::to_string(dim) + "] -= 1;\n");
+  if_code.insert("}\n");
+  InsertionOrderedSet<std::string> else_code;
+  if(!else_body.empty())
+  {
+    else_code.insert({"else\n", "{\n"});
+    else_code.insert(else_body);
+    else_code.insert("}\n");
+  }
+  code.insert(if_code.accumulate() + else_code.accumulate());
+}
+
+void
+FieldCode::visit_lower(InsertionOrderedSet<std::string> &code,
+                       const std::string &index_name,
+                       const std::string &if_body,
+                       const std::string &else_body,
+                       const int dim) const
+{
+  InsertionOrderedSet<std::string> if_code;
+  if_code.insert(
+      {"if(" + index_name + "[" + std::to_string(dim) + "] > 0)\n", "{\n"});
+  if_code.insert(index_name + "[" + std::to_string(dim) + "] -= 1;\n");
+  if_code.insert(if_body);
+  if_code.insert(index_name + "[" + std::to_string(dim) + "] += 1;\n");
+  if_code.insert("}\n");
+  InsertionOrderedSet<std::string> else_code;
+  if(!else_body.empty())
+  {
+    else_code.insert({"else\n", "{\n"});
+    else_code.insert(else_body);
+    else_code.insert("}\n");
+  }
+  code.insert(if_code.accumulate() + else_code.accumulate());
+}
+
+void
+FieldCode::gradient(InsertionOrderedSet<std::string> &code) const
 {
   const std::string gradient_name =
       field_name + (component == -1 ? "" : "_" + std::to_string(component)) +
@@ -2206,7 +2363,7 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
     code.insert("const double tiny = 1.e-37;\n");
     if(topo_code->topo_type == "structured")
     {
-      topo_code->structured_vertices(code);
+      topo_code->structured_vertex_locs(code);
       if(topo_code->num_dims == 3)
       {
         hex_gradient(code, gradient_name);
@@ -2222,7 +2379,7 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
     }
     else if(topo_code->topo_type == "unstructured")
     {
-      topo_code->unstructured_vertices(code);
+      topo_code->unstructured_vertex_locs(code);
       if(topo_code->shape == "hex")
       {
         hex_gradient(code, gradient_name);
@@ -2258,13 +2415,9 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
   {
     topo_code->vertex_idx(code);
   }
-  else
-  {
-    ASCENT_ERROR("Gradient: unknown association: '" << association << "'.");
-  }
-
   const std::string index_name =
       topo_code->topo_name + "_" + association + "_idx";
+
   const std::string upper = gradient_name + "_upper";
   const std::string lower = gradient_name + "_lower";
   code.insert({"double " + upper + ";\n",
@@ -2274,25 +2427,13 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
                "int " + upper + "_idx;\n",
                "int " + lower + "_idx;\n",
                "double " + gradient_name + "_delta;\n"});
-  if(topo_code->topo_type == "rectilinear")
-  {
-    code.insert({"double " + upper + "_loc;\n", "double " + lower + "_loc;\n"});
-  }
   for(int i = 0; i < 3; ++i)
   {
     if(i < topo_code->num_dims)
     {
       // positive (upper) direction
-      InsertionOrderedSet<std::string> u_if_code;
-      u_if_code.insert({"if(" + index_name + "[" + std::to_string(i) + "] < " +
-                            topo_code->topo_name + "_dims_" +
-                            std::string(1, 'i' + i) + " - " +
-                            (association == "element" ? "2" : "1") + ")\n",
-                        "{\n"});
-      u_if_code.insert(index_name + "[" + std::to_string(i) + "] += 1;\n");
-
       InsertionOrderedSet<std::string> upper_body;
-      field_idx(upper_body, index_name, upper + "_idx", association, false);
+      field_idx(upper_body, index_name, association, upper + "_idx", false);
       upper_body.insert(
           upper + " = " +
           array_code.index(field_name, upper + "_idx", component) + ";\n");
@@ -2313,27 +2454,11 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
                                  false);
       }
       const std::string upper_body_str = upper_body.accumulate();
-
-      u_if_code.insert(upper_body_str);
-
-      u_if_code.insert(index_name + "[" + std::to_string(i) + "] -= 1;\n");
-      u_if_code.insert("}\n");
-      InsertionOrderedSet<std::string> p_else_code;
-      p_else_code.insert({"else\n", "{\n"});
-
-      p_else_code.insert(upper_body_str);
-
-      p_else_code.insert("}\n");
-      code.insert(u_if_code.accumulate() + p_else_code.accumulate());
+      visit_upper(code, index_name, upper_body_str, upper_body_str, i);
 
       // negative (lower) direction
-      InsertionOrderedSet<std::string> l_if_code;
-      l_if_code.insert(
-          {"if(" + index_name + "[" + std::to_string(i) + "] > 0)\n", "{\n"});
-      l_if_code.insert(index_name + "[" + std::to_string(i) + "] -= 1;\n");
-
       InsertionOrderedSet<std::string> lower_body;
-      field_idx(lower_body, index_name, lower + "_idx", association, false);
+      field_idx(lower_body, index_name, association, lower + "_idx", false);
       lower_body.insert(
           lower + " = " +
           array_code.index(field_name, lower + "_idx", component) + ";\n");
@@ -2354,17 +2479,7 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
                                  false);
       }
       const std::string lower_body_str = lower_body.accumulate();
-      l_if_code.insert(lower_body_str);
-
-      l_if_code.insert(index_name + "[" + std::to_string(i) + "] += 1;\n");
-      l_if_code.insert("}\n");
-      InsertionOrderedSet<std::string> n_else_code;
-      n_else_code.insert({"else\n", "{\n"});
-
-      n_else_code.insert(lower_body_str);
-
-      n_else_code.insert("}\n");
-      code.insert(l_if_code.accumulate() + n_else_code.accumulate());
+      visit_lower(code, index_name, lower_body_str, lower_body_str, i);
 
       // calculate delta
       code.insert(gradient_name + "_delta = " + upper + "_loc - " + lower +
@@ -2383,7 +2498,7 @@ FieldCode::gradient(InsertionOrderedSet<std::string> &code)
 }
 
 void
-FieldCode::curl(InsertionOrderedSet<std::string> &code)
+FieldCode::curl(InsertionOrderedSet<std::string> &code) const
 {
   // assumes the gradient for each component is present (generated in
   // JitableFunctions::curl)
@@ -2404,6 +2519,138 @@ FieldCode::curl(InsertionOrderedSet<std::string> &code)
   code.insert(curl_name + "[2] = " + field_name + "_1_gradient[0] - " +
               field_name + "_0_gradient[1];\n");
 }
+
+// recursive function to run "body" for all elements surrounding a vertex in a
+// structured topology
+void
+FieldCode::visit_vertex_elements(InsertionOrderedSet<std::string> &code,
+                                 const std::string &index_name,
+                                 const std::string &if_body,
+                                 const std::string &else_body,
+                                 const int dim) const
+{
+  if(topo_code->topo_type != "uniform" &&
+     topo_code->topo_type != "rectilinear" &&
+     topo_code->topo_type != "structured")
+  {
+    ASCENT_ERROR("Function visit_vertex_elements only works on uniform, "
+                 "rectilinear, and structured topologies.");
+  }
+  if(dim > 0)
+  {
+    InsertionOrderedSet<std::string> lower_code;
+    InsertionOrderedSet<std::string> upper_code;
+    visit_lower(lower_code, index_name, if_body, else_body, dim - 1);
+    visit_current(upper_code, index_name, if_body, else_body, dim - 1);
+    visit_vertex_elements(
+        code, index_name, upper_code.accumulate(), else_body, dim - 1);
+    visit_vertex_elements(
+        code, index_name, lower_code.accumulate(), else_body, dim - 1);
+  }
+  else
+  {
+    code.insert(if_body);
+  }
+}
+
+void
+FieldCode::recenter(InsertionOrderedSet<std::string> &code,
+                    const std::string &target_association,
+                    const std::string &res_name) const
+{
+
+  if(target_association == "element")
+  {
+    const std::string vertex_values = res_name + "_vertex_values";
+    if(component == -1 && num_components > 1)
+    {
+      code.insert("double " + vertex_values + "[" +
+                  std::to_string(num_components) + "][" +
+                  std::to_string(topo_code->shape_size) + "];\n");
+      for(int i = 0; i < num_components; ++i)
+      {
+        element_vertex_values(
+            code, vertex_values + "[" + std::to_string(i) + "]", i, false);
+        math_code.array_avg(code,
+                            topo_code->shape_size,
+                            vertex_values + "[" + std::to_string(i) + "]",
+                            res_name,
+                            true);
+      }
+    }
+    else
+    {
+      element_vertex_values(code, vertex_values, component, true);
+      math_code.array_avg(
+          code, topo_code->shape_size, vertex_values, res_name, true);
+    }
+  }
+  else
+  {
+    if(topo_code->topo_type == "uniform" ||
+       topo_code->topo_type == "rectilinear" ||
+       topo_code->topo_type == "structured")
+    {
+      topo_code->vertex_idx(code);
+      const std::string index_name = topo_code->topo_name + "_vertex_idx";
+
+      InsertionOrderedSet<std::string> if_body;
+      InsertionOrderedSet<std::string> avg_code;
+      if_body.insert(res_name + "_num_adj += 1;\n");
+      field_idx(if_body, index_name, association, "field_idx", true);
+      if(component == -1 && num_components > 1)
+      {
+        // prelude
+        code.insert({"int " + res_name + "_num_adj = 0;\n",
+                     "double " + res_name + "_sum[" +
+                         std::to_string(num_components) + "];\n"});
+
+        // declare res array
+        avg_code.insert("double " + res_name + "[" +
+                        std::to_string(num_components) + "];\n");
+        for(int i = 0; i < num_components; ++i)
+        {
+          const std::string i_str = std::to_string(i);
+          code.insert(res_name + "_sum[" + i_str + "] = 0;\n");
+
+          // if-statement body
+          if_body.insert(res_name + "_sum[" + i_str + "] += " +
+                         array_code.index(field_name, "field_idx", i) + ";\n");
+
+          // average to get result
+          avg_code.insert(res_name + "[" + i_str + "] = " + res_name + "_sum[" +
+                          i_str + "] / " + res_name + "_num_adj;\n");
+        }
+      }
+      else
+      {
+        // prelude
+        code.insert({"int " + res_name + "_num_adj = 0;\n",
+                     "double " + res_name + "_sum = 0;\n"});
+
+        // if-statement body
+        if_body.insert(res_name + "_sum += " +
+                       array_code.index(field_name, "field_idx", component) +
+                       ";\n");
+
+        // average to get result
+        avg_code.insert("const double " + res_name + " = " + res_name +
+                        "_sum / " + res_name + "_num_adj;\n");
+      }
+
+      visit_vertex_elements(
+          code, index_name, if_body.accumulate(), "", topo_code->num_dims);
+
+      code.insert(avg_code);
+    }
+    else
+    {
+      ASCENT_ERROR("Element to Vertex recenter is not implemented on "
+                   "unstructured meshes.");
+    }
+  }
+}
+
 // }}}
 
 //-----------------------------------------------------------------------------
@@ -2604,8 +2851,8 @@ JitableFunctions::topo_attrs(const conduit::Node &obj, const std::string &name)
           }
           else
           {
-            ASCENT_ERROR("Can only get dx, dy, dz for uniform or rectiilnear "
-                         "topologies not topologies of type '"
+            ASCENT_ERROR("Can only get dx, dy, dz for uniform or rectilinear "
+                         "topologies, not topologies of type '"
                          << topo->topo_type << "'.");
           }
         }
@@ -2867,34 +3114,39 @@ JitableFunctions::derived_field()
   }
 }
 
-// generate a temporary field on the device, used by things like gradient which
-// have data dependencies that require the entire field to be present
+// generate a temporary field on the device, used by things like gradient
+// which have data dependencies that require the entire field to be present.
+// essentially wrap field_kernel in a for loop
 void
-JitableFunctions::temporary_field(const Kernel &field_kernel)
+JitableFunctions::temporary_field(const Kernel &field_kernel,
+                                  const std::string &field_name)
 {
   // pass the value of entries for the temporary field
   const auto entries =
       out_jitable.dom_info.child(dom_idx)["entries"].to_int64();
-  const std::string entries_name = filter_name + "_entries";
+  const std::string entries_name = filter_name + "_inp_entries";
   out_jitable.dom_info.child(dom_idx)["args/" + entries_name] = entries;
 
-  // we will need to allocate a temporary array so make a schema for it and put
-  // it in the array map
-  const std::string tmp_field = filter_name + "_inp";
+  // we will need to allocate a temporary array so make a schema for it and
+  // put it in the array map
   conduit::Schema s;
   schemaFactory("interleaved",
                 conduit::DataType::FLOAT64_ID,
                 entries,
-                {"x", "y", "z"},
+                detail::component_names(field_kernel.num_components),
                 s);
   // The array will have to be allocated but doesn't point to any data so we
-  // won't put it in args
+  // won't put it in args but it will still be passed in
   out_jitable.arrays[dom_idx].array_map.insert(
-      std::make_pair(tmp_field, SchemaBool(s, false)));
+      std::make_pair(field_name, SchemaBool(s, false)));
   if(not_fused)
   {
+    // not a regular kernel_fuse because we have to generate a for-loop and add
+    // it to kernel_body instead of fusing for_body
+    out_kernel.functions.insert(field_kernel.functions);
+    out_kernel.kernel_body.insert(field_kernel.kernel_body);
     out_kernel.kernel_body.insert(field_kernel.generate_loop(
-        tmp_field, out_jitable.arrays[dom_idx], filter_name + "_entries"));
+        field_name, out_jitable.arrays[dom_idx], entries_name));
   }
 }
 
@@ -2924,12 +3176,13 @@ JitableFunctions::gradient(const Jitable &field_jitable,
   if(input_field.empty())
   {
     // need to generate a temporary field
-    temporary_field(field_kernel);
     my_input_field = filter_name + "_inp";
+    temporary_field(field_kernel, my_input_field);
   }
   else
   {
     my_input_field = input_field;
+    out_kernel.fuse_kernel(field_kernel);
   }
   if((topo->topo_type == "structured" || topo->topo_type == "unstructured") &&
      field_jitable.association == "vertex")
@@ -2947,8 +3200,6 @@ JitableFunctions::gradient(const Jitable &field_jitable,
     // "gradient[i][0]" rather than "gradient[0][i]" where the "[0]" would
     // have to be inserted between "gradient" and "[i]"
 
-    // generate a new derived field if the field we're taking the gradient of
-    // wasn't originally on the dataset
     const auto topo_code = std::make_shared<const TopologyCode>(
         topo->topo_name, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(my_input_field,
@@ -2961,6 +3212,7 @@ JitableFunctions::gradient(const Jitable &field_jitable,
     out_kernel.expr = my_input_field +
                       (component == -1 ? "" : "_" + std::to_string(component)) +
                       "_gradient";
+    out_kernel.num_components = 3;
   }
 }
 
@@ -2982,7 +3234,6 @@ JitableFunctions::gradient()
                  << field_kernel.num_components << " components was given.");
   }
   gradient(field_jitable, field_kernel, field_name, -1);
-  out_kernel.num_components = 3;
 }
 
 void
@@ -3002,11 +3253,12 @@ JitableFunctions::curl()
   if(obj.has_path("value"))
   {
     field_name = obj["value"].as_string();
+    out_kernel.fuse_kernel(field_kernel);
   }
   else
   {
     field_name = filter_name + "_inp";
-    temporary_field(field_kernel);
+    temporary_field(field_kernel, field_name);
   }
   // calling gradient here reuses the logic to update entries and association
   for(int i = 0; i < field_kernel.num_components; ++i)
@@ -3026,6 +3278,98 @@ JitableFunctions::curl()
                                      -1);
     field_code.curl(out_kernel.for_body);
     out_kernel.expr = field_name + "_curl";
+    out_kernel.num_components = field_kernel.num_components;
+  }
+}
+
+void
+JitableFunctions::recenter()
+{
+  if(not_fused)
+  {
+    const int field_port = inputs["field/port"].as_int32();
+    const Jitable &field_jitable = *input_jitables[field_port];
+    const Kernel &field_kernel = *input_kernels[field_port];
+    const conduit::Node &obj = field_jitable.obj;
+
+    std::string mode;
+    if(inputs.has_path("mode"))
+    {
+      const int mode_port = inputs["mode/port"].as_int32();
+      const Jitable &mode_jitable = *input_jitables[mode_port];
+      mode = mode_jitable.obj["value"].as_string();
+      if(mode != "toggle" && mode != "vertex" && mode != "element")
+      {
+        ASCENT_ERROR("recenter: Unknown mode '"
+                     << mode
+                     << "'. Known modes are 'toggle', 'vertex', 'element'.");
+      }
+      if(field_jitable.association == mode)
+      {
+        ASCENT_ERROR("Recenter: The field is already "
+                     << field_jitable.association
+                     << " associated, redundant recenter.");
+      }
+    }
+    else
+    {
+      mode = "toggle";
+    }
+    std::string target_association;
+    if(mode == "toggle")
+    {
+      if(field_jitable.association == "vertex")
+      {
+        target_association = "element";
+      }
+      else
+      {
+        target_association = "vertex";
+      }
+    }
+    else
+    {
+      target_association = mode;
+    }
+
+    // TODO duplicate code from curl
+    std::string field_name;
+    if(obj.has_path("value"))
+    {
+      field_name = obj["value"].as_string();
+      out_kernel.fuse_kernel(field_kernel);
+    }
+    else
+    {
+      field_name = filter_name + "_inp";
+      temporary_field(field_kernel, field_name);
+    }
+
+    // update entries and association
+    conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
+    std::unique_ptr<Topology> topo =
+        topologyFactory(field_jitable.topology, domain);
+    if(target_association == "vertex")
+    {
+      n_entries = topo->get_num_points();
+    }
+    else
+    {
+      n_entries = topo->get_num_cells();
+    }
+    out_jitable.association = target_association;
+
+    const auto topo_code = std::make_shared<const TopologyCode>(
+        out_jitable.topology, domain, out_jitable.arrays[dom_idx]);
+    FieldCode field_code = FieldCode(field_name,
+                                     field_jitable.association,
+                                     topo_code,
+                                     out_jitable.arrays[dom_idx],
+                                     field_kernel.num_components,
+                                     -1);
+    const std::string res_name = field_name + "_recenter_" + target_association;
+    field_code.recenter(out_kernel.for_body, target_association, res_name);
+    out_kernel.expr = res_name;
     out_kernel.num_components = field_kernel.num_components;
   }
 }
@@ -3111,7 +3455,6 @@ JitableFunctions::binning_value(const conduit::Node &binning)
 {
   // bin lookup functions
   // clang-format off
-  // implements std::upper_bound
   const std::string rectilinear_bin =
     "int\n"
     "rectilinear_bin(const double value,\n"
@@ -3119,6 +3462,7 @@ JitableFunctions::binning_value(const conduit::Node &binning)
     "                const int len,\n"
     "                const bool clamp)\n"
     "{\n"
+      // implements std::upper_bound
       "int mid;\n"
       "int low = 0;\n"
       "int high = len;\n"
@@ -3134,6 +3478,7 @@ JitableFunctions::binning_value(const conduit::Node &binning)
           "high = mid;\n"
         "}\n"
       "}\n"
+
       "if(clamp)\n"
       "{\n"
         "if(low <= 0)\n"
@@ -3181,7 +3526,8 @@ JitableFunctions::binning_value(const conduit::Node &binning)
   // clang-format on
   //---------------------------------------------------------------------------
 
-  // assume the necessary fields have been packed and are present in all domains
+  // assume the necessary fields have been packed and are present in all
+  // domains
 
   // get the passed association
   std::string assoc_str_;
@@ -3331,7 +3677,7 @@ JitableFunctions::rand()
   {
     // clang-format off
     const std::string halton =
-			"double rand(int i)\n"
+      "double rand(int i)\n"
 			"{\n"
 				"const int b = 2;\n"
 				"double f = 1;\n"
@@ -3639,8 +3985,9 @@ Jitable::can_execute() const
 //    (e.g. "b ::map(const int &, const double *, const double &, double
 //    *)")
 
-// we put the field on the mesh when calling execute and delete it later if it's
-// an intermediate field
+// we put the field on the mesh when calling execute and delete it later if
+// it's an intermediate field
+
 void
 Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
@@ -3698,19 +4045,13 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 
     // create output array schema and put it in array_map
     conduit::Schema output_schema;
-    std::vector<std::string> component_names{};
-    if(kernel.num_components > 1)
-    {
-      for(int i = 0; i < kernel.num_components; ++i)
-      {
-        component_names.push_back(std::string(1, 'x' + i));
-      }
-    }
 
+    // TODO this is duplicating some code from
+    // JitableFunctions::temporary_field
     schemaFactory("interleaved",
                   conduit::DataType::FLOAT64_ID,
                   entries,
-                  component_names,
+                  detail::component_names(kernel.num_components),
                   output_schema);
 
     arrays[dom_idx].array_map.insert(
@@ -3884,7 +4225,6 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   ASCENT_DATA_CLOSE();
 }
 // }}}
-
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

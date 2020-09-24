@@ -136,9 +136,9 @@ TEST(ascent_expressions, derived_expressions)
   // expr = "binning_mesh(binning('braid','max', [axis('x', num_bins=10)]), "
   //        "name='binning')";
   // eval.evaluate(expr);
-  expr = "binning = binning('', 'cdf', [axis('braid', num_bins=10)])\n"
-         "if(binning_value(binning) < rand()) then 0 else field('braid')";
-  eval.evaluate(expr);
+  // expr = "binning = binning('', 'cdf', [axis('braid', num_bins=10)])\n"
+  //        "if(binning_value(binning) < rand()) then 0 else field('braid')";
+  // eval.evaluate(expr);
   // expr = "min(if field('binning') > .2 then abs(5 - "
   //        "topo('binning_topo').cell.x) else 1e18)";
   // res = eval.evaluate(expr);
@@ -175,6 +175,9 @@ TEST(ascent_expressions, derived_expressions)
 
   // expr = "field('field') * topo('mesh').cell.volume";
   // eval.evaluate(expr, "mass");
+
+  // expr = "recenter(field('braid') + 1)";
+  // eval.evaluate(expr);
 
   // conduit::Node m, info;
   // std::cout << "interleaved" << std::endl;
@@ -270,8 +273,7 @@ TEST(ascent_expressions, derived_temperature)
   // eval.evaluate(expr, "uinterp_vorticity");
 
   // expr = "vorticity(vector(field('uinterp', 'c0'), field('vinterp', 'c0'),
-field('winterp', 'c0')))";
-  // eval.evaluate(expr, "velocity_vorticity");
+  // field('winterp', 'c0')))"; eval.evaluate(expr, "velocity_vorticity");
 
   expr = "du = gradient(field('uinterp'))\n"
          "dv = gradient(field('vinterp'))\n"
@@ -279,41 +281,69 @@ field('winterp', 'c0')))";
          "w_x = dw.y - dv.z\n"
          "w_y = du.z - dw.x\n"
          "w_z = dv.x - du.y\n"
-         "vector(w_x, w_y, w_z)";
+         "magnitude(vector(w_x, w_y, w_z))";
   eval.evaluate(expr, "velocity_vorticity");
 
   // expr = "vector(field('uinterp', 'c0'), field('vinterp', 'c0'),
-field('winterp', 'c0'))";
-  // eval.evaluate(expr, "velocity");
+  // field('winterp', 'c0'))"; eval.evaluate(expr, "velocity");
 
   // expr = "vorticity(field('velocity'))";
   // eval.evaluate(expr, "velocity_vorticity");
 
   const std::string output_path = prepare_output_dir();
 
-  std::string output_file =
-      conduit::utils::join_file_path(output_path, "braid_grad");
+  std::string output_file_image =
+      conduit::utils::join_file_path(output_path, "vorticity_image");
+  std::string output_file_hdf5 =
+      conduit::utils::join_file_path(output_path, "vorticity");
 
   conduit::Node actions;
 
   conduit::Node extracts;
   extracts["e1/type"] = "relay";
-  extracts["e1/params/path"] = output_file;
+  extracts["e1/params/path"] = output_file_hdf5;
   extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
   conduit::Node &add_extracts = actions.append();
   add_extracts["action"] = "add_extracts";
   add_extracts["extracts"] = extracts;
 
-  // conduit::Node scenes;
-  // scenes["s1/plots/p1/type"] = "pseudocolor";
-  // scenes["s1/plots/p1/field"] = "mass";
-  // scenes["s1/renders/r1/image_prefix"] = output_file;
-  // scenes["s1/renders/r1/camera/azimuth"] = 30.0;
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"] = "volume";
+  scenes["s1/plots/p1/field"] = "velocity_vorticity";
+  // scenes["s1/plots/p1/min_value"] = 500;
+  scenes["s1/plots/p1/color_table/name"] = "rainbow desaturated";
+  conduit::Node &c1 = scenes["s1/plots/p1/color_table/control_points"].append();
+  c1["type"] = "alpha";
+  c1["position"] = 0;
+  c1["alpha"] = 0;
+  conduit::Node &c2 = scenes["s1/plots/p1/color_table/control_points"].append();
+  c2["type"] = "alpha";
+  c2["position"] = .05;
+  c2["alpha"] = 0;
+  conduit::Node &c3 = scenes["s1/plots/p1/color_table/control_points"].append();
+  c3["type"] = "alpha";
+  c3["position"] = 1;
+  c3["alpha"] = 1;
+  scenes["s1/renders/r1/image_prefix"] = output_file_image;
+  // scenes["s1/renders/r1/camera/azimuth"] = 35.0;
+  scenes["s1/renders/r1/camera/zoom"] = 1.5;
+  double look_at[3] = {-1, 0, 0};
+  double up[3] = {0, 0, 1};
+  double position[3] = {-2, -2, 3};
+  scenes["s1/renders/r1/camera/look_at"].set(look_at, 3);
+  scenes["s1/renders/r1/camera/up"].set(up, 3);
+  // scenes["s1/renders/r1/camera/position"].set(position, 3);
+  // scenes["s1/renders/r1/camera/fov"] = 30.0;
+  // scenes["s1/renders/r1/camera/xpan"] = 0;
+  // scenes["s1/renders/r1/camera/ypan"] = 0;
+  // scenes["s1/renders/r1/camera/zoom"] = .1;
+  // scenes["s1/renders/r1/camera/near_plane"] = -18.26;
+  // scenes["s1/renders/r1/camera/far_plane"] = 18.26;
 
-  // conduit::Node &add_plots = actions.append();
-  // add_plots["action"] = "add_scenes";
-  // add_plots["scenes"] = scenes;
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
 
   //
   // Run Ascent
@@ -335,6 +365,80 @@ field('winterp', 'c0'))";
 }
 */
 
+TEST(ascent_expressions, braid_sample)
+{
+  conduit::Node data, multi_dom;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+  data["state/domain_id"] = 0;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  conduit::Node res;
+  std::string expr;
+
+  expr = "binning = binning('cnt', 'cdf', [axis(field('braid'), num_bins=10)])\n"
+         "if(binning_value(binning) < rand()) then 0 else field('braid')";
+  eval.evaluate(expr, "braid_sample");
+
+  const std::string output_path = prepare_output_dir();
+
+  std::string output_file_image =
+      conduit::utils::join_file_path(output_path, "braid_sample_image");
+  std::string output_file_braid =
+      conduit::utils::join_file_path(output_path, "braid_original");
+  std::string output_file_hdf5 =
+      conduit::utils::join_file_path(output_path, "braid_sample");
+
+  conduit::Node actions;
+
+  conduit::Node extracts;
+  extracts["e1/type"] = "relay";
+  extracts["e1/params/path"] = output_file_hdf5;
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+  conduit::Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  add_extracts["extracts"] = extracts;
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"] = "volume";
+  scenes["s1/plots/p1/field"] = "braid_sample";
+  scenes["s1/plots/p1/color_table/name"] = "rainbow desaturated";
+  scenes["s1/renders/r1/image_prefix"] = output_file_image;
+  scenes["s1/renders/r1/camera/azimuth"] = 35.0;
+
+  scenes["s2/plots/p1/type"] = "volume";
+  scenes["s2/plots/p1/field"] = "braid";
+  scenes["s2/plots/p1/color_table/name"] = "rainbow desaturated";
+  scenes["s2/renders/r1/image_prefix"] = output_file_braid;
+  scenes["s2/renders/r1/camera/azimuth"] = 35.0;
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["ascent_info"] = "verbose";
+  ascent_opts["timings"] = "enabled";
+  ascent_opts["runtime/type"] = "ascent";
+
+  ascent.open(ascent_opts);
+  ascent.publish(multi_dom);
+  ascent.execute(actions);
+  ascent.close();
+}
 //-----------------------------------------------------------------------------
 
 int

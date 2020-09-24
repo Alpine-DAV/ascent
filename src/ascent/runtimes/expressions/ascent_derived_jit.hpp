@@ -208,6 +208,17 @@ public:
                  const std::string &res_name,
                  const int num_components,
                  const bool declare = true) const;
+  void array_avg(InsertionOrderedSet<std::string> &code,
+                 const int length,
+                 const std::string &array_name,
+                 const std::string &res_name,
+                 const bool declare) const;
+  void component_avg(InsertionOrderedSet<std::string> &code,
+                     const int length,
+                     const std::string &array_name,
+                     const std::string &coord,
+                     const std::string &res_name,
+                     const bool declare) const;
 };
 
 class TopologyCode
@@ -229,8 +240,11 @@ public:
   void element_idx(InsertionOrderedSet<std::string> &code) const;
   void dxdydz(InsertionOrderedSet<std::string> &code) const;
   void structured_vertices(InsertionOrderedSet<std::string> &code) const;
+  void structured_vertex_locs(InsertionOrderedSet<std::string> &code) const;
   void unstructured_vertices(InsertionOrderedSet<std::string> &code,
                              const std::string &index_name = "item") const;
+  void unstructured_vertex_locs(InsertionOrderedSet<std::string> &code,
+                                const std::string &index_name = "item") const;
   void vertex_coord(InsertionOrderedSet<std::string> &code,
                     const std::string &coord,
                     const std::string &index_name,
@@ -307,19 +321,46 @@ public:
             const ArrayCode &array_code,
             const int num_components,
             const int component);
-  void gradient(InsertionOrderedSet<std::string> &code);
-  void curl(InsertionOrderedSet<std::string> &code);
+  void gradient(InsertionOrderedSet<std::string> &code) const;
+  void curl(InsertionOrderedSet<std::string> &code) const;
+  void recenter(InsertionOrderedSet<std::string> &code,
+                const std::string &target_association,
+                const std::string &res_name) const;
 
 private:
   void hex_gradient(InsertionOrderedSet<std::string> &code,
-                    const std::string &res_name);
+                    const std::string &res_name) const;
   void quad_gradient(InsertionOrderedSet<std::string> &code,
-                     const std::string &res_name);
+                     const std::string &res_name) const;
+  void element_vertex_values(InsertionOrderedSet<std::string> &code,
+                             const std::string &res_name,
+                             const int component,
+                             const bool declare) const;
   void field_idx(InsertionOrderedSet<std::string> &code,
                  const std::string &index_name,
-                 const std::string &res_name,
                  const std::string &association,
-                 const bool declare = true);
+                 const std::string &res_name,
+                 const bool declare) const;
+  void visit_upper(InsertionOrderedSet<std::string> &code,
+                   const std::string &index_name,
+                   const std::string &if_body,
+                   const std::string &else_body,
+                   const int dim) const;
+  void visit_lower(InsertionOrderedSet<std::string> &code,
+                   const std::string &index_name,
+                   const std::string &if_body,
+                   const std::string &else_body,
+                   const int dim) const;
+  void visit_current(InsertionOrderedSet<std::string> &code,
+                     const std::string &index_name,
+                     const std::string &if_body,
+                     const std::string &else_body,
+                     const int dim) const;
+  void visit_vertex_elements(InsertionOrderedSet<std::string> &code,
+                             const std::string &index_name,
+                             const std::string &if_body,
+                             const std::string &else_body,
+                             const int dim) const;
 
   const std::string field_name;
   const std::string association;
@@ -404,6 +445,7 @@ public:
   void derived_field();
   void gradient();
   void curl();
+  void recenter();
   void magnitude();
   void vector();
   void binning_value(const conduit::Node &binning);
@@ -415,7 +457,8 @@ private:
                 const Kernel &field_kernel,
                 const std::string &input_field,
                 const int component);
-  void temporary_field(const Kernel &field_kernel);
+  void temporary_field(const Kernel &field_kernel,
+                       const std::string &field_name);
 
   const conduit::Node &params;
   const std::vector<const Jitable *> &input_jitables;

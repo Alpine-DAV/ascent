@@ -167,6 +167,32 @@ The expression language currently supports simple if-then-else semantics.
            expression: "if cycle() > 100 then 1 else 0"
            name: "cycle_bigger_than_100"
 
+.. code-block:: yaml
+
+   -
+     action: "add_queries"
+     queries:
+       q1:
+         params:
+           expression: |
+                   energy_max = max(field('energy'))
+                   if energy_max.value > 10 then \
+                        energy_max.position \
+                   else \
+                        vector(0, 0, 0)
+           name: "max_energy_position_above_10"
+
+.. code-block:: yaml
+
+     action: "add_queries"
+     queries:
+       q1:
+         params:
+           expression: |
+             accept_prob = binning('cnt', 'cdf', [axis(field('braid'), num_bins=10)])
+             if(binning_value(accept_prob) < rand()) then 0 else field('braid')
+           name: "cdf_random_sampling"
+
 .. note::
    Both branches of the if-then-else will be execute.
 
@@ -188,7 +214,7 @@ value on the mesh. They would be accessed via ``min(field('braid')).value`` and
 ``min(field('braid')).position`` respectively.
 
 The attributes of the various objects are specified in the :ref:`Ascent
-Expressions Objects` section of the Ascent Expressions Documentation.
+Objects Documentation` section.
 
 .. note::
    Not all attributes listed in the documentation are available at runtime. For
@@ -280,7 +306,7 @@ curl (which is also a builtin function) using the gradient.
 
 The assignments and the final expression must be separated by newlines or
 semicolons or both. The above example shows newline separation using multi-line
-strings in YAML.
+strings in YAML. Backslashes (``\``) may be used at the end of a line to split up long lines. Lines can also be split without the need for a backslash if there are unclosed parenthesis or brackets.
 
 When resolving identifiers, the language will give precedence to identifiers
 defined in the same expression (as shown in this example) before falling back

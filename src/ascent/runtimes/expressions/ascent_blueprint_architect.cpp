@@ -1595,7 +1595,7 @@ binning(const conduit::Node &dataset,
 {
   // get the final topo_name and assoc_str
   conduit::Node axes_and_reduction_var = bin_axes;
-  if(!reduction_var.empty())
+  if(reduction_var != "cnt")
   {
     axes_and_reduction_var[reduction_var];
   }
@@ -1705,7 +1705,7 @@ binning(const conduit::Node &dataset,
     const int homes_size = n_homes.dtype().number_of_elements();
 
     // update bins
-    if(reduction_var.empty())
+    if(reduction_var == "cnt")
     {
       //#ifdef ASCENT_USE_OPENMP
       //#pragma omp parallel for
