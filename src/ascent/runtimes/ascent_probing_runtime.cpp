@@ -233,19 +233,22 @@ struct MPI_Properties
     int vis_node_count = 0;
     MPI_Comm comm_world;
     MPI_Comm comm_vis;
+    MPI_Group vis_group;
 
     MPI_Properties(int size,
                    int rank,
                    int sim_node_count,
                    int vis_node_count,
                    MPI_Comm comm_world,
-                   MPI_Comm comm_vis)
+                   MPI_Comm comm_vis,
+                   MPI_Group vis_group)
      : size(size)
      , rank(rank)
      , sim_node_count(sim_node_count)
      , vis_node_count(vis_node_count)
      , comm_world(comm_world)
      , comm_vis(comm_vis)
+     , vis_group(vis_group)
     {
     }
 };
@@ -321,6 +324,20 @@ struct RenderBatch
 };
 
 
+struct NodeConfig
+{
+    // TODO: move all my_ vars here
+    // my_vis_rank
+    // my_render_recv_cnt
+    // my_data_recv_cnt
+
+    // my_sim_estimate
+    // my_probing_times
+    // my_avg_probing_time
+    // my_data_size
+};
+
+
 /**
  * Assign part of the vis load to the vis nodes.
  */
@@ -343,10 +360,10 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
         t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
     // TODO: add smarter way to estimate compositing cost
-    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.16f) * render_cfg.max_count;  // assume flat cost per image
+    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.17f) * render_cfg.max_count;  // assume flat cost per image
     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
-    const float t_send = 1.0f * mpi_props.sim_node_count; // data send overhead
+    const float t_send = 0.0f * mpi_props.sim_node_count; // data send overhead
 
     std::valarray<float> t_intransit(t_compositing + t_send, mpi_props.vis_node_count);
     std::valarray<float> t_sim(sim_estimate.data(), mpi_props.sim_node_count);
@@ -951,7 +968,8 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
                         const std::map<int, int> &recv_counts,
                         const int my_vis_rank, 
                         const int my_render_recv_cnt, const int my_data_recv_cnt,
-                        const RenderConfig &render_cfg, const MPI_Properties &mpi_props)
+                        const RenderConfig &render_cfg, const MPI_Properties &mpi_props,
+                        const MPI_Comm active_vis_comm)
 {
     auto t_start0 = std::chrono::system_clock::now();
 
@@ -1079,7 +1097,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
     std::cout << "~~~~start compositing " << mpi_props.rank << std::endl;
 
     // Set the vis_comm to be the vtkh comm.
-    vtkh::SetMPICommHandle(int(MPI_Comm_c2f(mpi_props.comm_vis)));
+    vtkh::SetMPICommHandle(int(MPI_Comm_c2f(active_vis_comm)));
 
     // Set the number of receiving depth values per node and the according displacements.
     std::vector<int> counts_recv;
@@ -1125,7 +1143,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
 
         MPI_Allgatherv(depths.data(), depths.size(), 
                         MPI_FLOAT, v_depths.data(), counts_recv.data(), displacements.data(), 
-                        MPI_FLOAT, mpi_props.comm_vis);
+                        MPI_FLOAT, active_vis_comm);
 
         std::vector<std::pair<float, int> > depth_id(v_depths.size());
 
@@ -1168,10 +1186,10 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
             }
             ++image_cnt;
         }
-        // MPI_Barrier(mpi_props.comm_vis);
+        // MPI_Barrier(active_vis_comm);
         // std::cout << mpi_props.rank << " | ..composite " << j << " img count " << image_cnt << std::endl;
         
-        // composited
+        // composite
         results[j] = compositors[j].CompositeNoCopy();
 
         // TODO: add screen annotations for hybrid (see vtk-h Scene::Render)
@@ -1215,7 +1233,7 @@ void hybrid_compositing(const vec_node_uptr &render_chunks_probe,
         }
         // print_time(t_start, "end save ", mpi_props.rank);
     }
-    MPI_Barrier(mpi_props.comm_vis);
+    MPI_Barrier(active_vis_comm);
     log_time(t_start0, "+ compositing total ", mpi_props.rank);
     log_global_time("end compositing", mpi_props.rank);
 }
@@ -1663,13 +1681,39 @@ void hybrid_render(const MPI_Properties &mpi_props,
         }
         log_global_time("end receiveRenders", mpi_props.rank);
 
-        hybrid_compositing(render_chunks_probe, render_chunks_sim, render_chunks_vis, 
-                           g_render_counts, src_ranks, depth_id_order, recv_counts, my_vis_rank,
-                           my_render_recv_cnt, my_data_recv_cnt, render_cfg, mpi_props);
+        // find out which of the vis nodes do actual rendering/compositing
+        std::vector<int> active_nodes(mpi_props.vis_node_count, 0);
+        for (int v = 0; v < mpi_props.vis_node_count; v++)
+        {
+            for (int i = 0; i < mpi_props.sim_node_count; ++i)
+            {
+                if (node_map[i] == v)
+                    if (!g_skipped[i])
+                        active_nodes[v] = 1;
+            }
+        }
+        const int active_vis_nodes = std::accumulate(active_nodes.begin(), active_nodes.end(), 0);
+        std::cout << "=== Active vis nodes: " << active_vis_nodes << std::endl;
 
-        // Keep the vis node ascent instances open until render chunks have been processed.
-        for (int i = 0; i < my_data_recv_cnt; i++)
-            ascent_renders[i].close();  
+        // adapt the vis comm according to the active vis nodes        
+        std::vector<int> vis_ranks(active_vis_nodes);
+        std::iota(vis_ranks.begin(), vis_ranks.end(), 0); // inactive nodes are always highest ranks
+        MPI_Group active_vis_group;
+        MPI_Group_incl(mpi_props.vis_group, active_vis_nodes, vis_ranks.data(), &active_vis_group);
+        MPI_Comm active_vis_comm;
+        MPI_Comm_create_group(mpi_props.comm_vis, active_vis_group, 2, &active_vis_comm);
+
+        if (active_nodes[my_vis_rank])
+        {
+            hybrid_compositing(render_chunks_probe, render_chunks_sim, render_chunks_vis, 
+                               g_render_counts, src_ranks, depth_id_order, recv_counts, my_vis_rank,
+                               my_render_recv_cnt, my_data_recv_cnt, render_cfg, 
+                               mpi_props, active_vis_comm);
+
+            // Keep the vis node ascent instances open until render chunks have been processed.
+            for (int i = 0; i < my_data_recv_cnt; i++)
+                ascent_renders[i].close();  
+        }
 
     } // end vis node
     else // SIM nodes
@@ -2035,7 +2079,7 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
     if (!is_inline) 
     {
         MPI_Properties mpi_props(world_size, world_rank, sim_count, world_size - sim_count, 
-                                 mpi_comm_world, vis_comm);
+                                 mpi_comm_world, vis_comm, vis_group);
         RenderConfig render_cfg(phi*theta, probing_factor, insitu_type, batch_count);
         if (world_rank == 0)
         {

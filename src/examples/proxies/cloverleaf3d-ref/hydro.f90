@@ -97,7 +97,7 @@ SUBROUTINE hydro
       CALL advection()
       CALL reset_field()
     ELSE
-      CALL visit(my_ascent, 0)
+      CALL visit(my_ascent, 0)  ! TODO: avoid last call time+g_small.GT.end_time.OR.step.GE.end_step
     ENDIF
     
     advect_x = .NOT. advect_x
