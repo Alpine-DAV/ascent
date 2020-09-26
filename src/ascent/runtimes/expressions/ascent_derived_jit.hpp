@@ -315,6 +315,7 @@ public:
 class FieldCode
 {
 public:
+  // if component is -1 use all the field's components
   FieldCode(const std::string &field_name,
             const std::string &association,
             const std::shared_ptr<const TopologyCode> topo_code,
@@ -328,8 +329,12 @@ public:
                 const std::string &res_name) const;
 
 private:
+  // Calculate the element associated gradient of a vertex associated field on
+  // a hexahedral mesh
   void hex_gradient(InsertionOrderedSet<std::string> &code,
                     const std::string &res_name) const;
+  // Calculate the element associated gradient of a vertex associated field on
+  // a quadrilateral mesh
   void quad_gradient(InsertionOrderedSet<std::string> &code,
                      const std::string &res_name) const;
   void element_vertex_values(InsertionOrderedSet<std::string> &code,
@@ -453,12 +458,10 @@ public:
 
 private:
   void topo_attrs(const conduit::Node &obj, const std::string &name);
-  void gradient(const Jitable &field_jitable,
-                const Kernel &field_kernel,
-                const std::string &input_field,
-                const int component);
+  void gradient(const int field_port, const int component);
   void temporary_field(const Kernel &field_kernel,
                        const std::string &field_name);
+  std::string possible_temporary(const int field_port);
 
   const conduit::Node &params;
   const std::vector<const Jitable *> &input_jitables;

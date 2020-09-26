@@ -352,7 +352,7 @@ initialize_functions()
   field_avg_sig["return_type"] = "double";
   field_avg_sig["filter_name"] = "field_avg";
   field_avg_sig["args/arg1/type"] = "field";
-  field_avg_sig["description"] = "Return the field average of a mesh variable.";
+  field_avg_sig["description"] = "Return the field average of a field.";
 
   //---------------------------------------------------------------------------
 
@@ -360,8 +360,7 @@ initialize_functions()
   field_nan_sig["return_type"] = "double";
   field_nan_sig["filter_name"] = "field_nan_count";
   field_nan_sig["args/arg1/type"] = "field"; // arg names match input port names
-  field_nan_sig["description"] =
-      "Return the number  of NaNs in a mesh variable.";
+  field_nan_sig["description"] = "Return the number  of NaNs in a field.";
 
   //---------------------------------------------------------------------------
 
@@ -370,7 +369,7 @@ initialize_functions()
   field_inf_sig["filter_name"] = "field_inf_count";
   field_inf_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_inf_sig["description"] =
-      "Return the number  of -inf and +inf in a mesh variable.";
+      "Return the number  of -inf and +inf in a field.";
 
   //---------------------------------------------------------------------------
 
@@ -489,8 +488,7 @@ initialize_functions()
   hist_sig["args/max_val/optional"];
   hist_sig["args/max_val/description"] = "defaults to ``max(arg1)``";
 
-  hist_sig["description"] = "Return a histogram of the mesh variable. Return a "
-                            "histogram of the mesh variable.";
+  hist_sig["description"] = "Return a histogram of the field.";
 
   //---------------------------------------------------------------------------
 
@@ -720,7 +718,7 @@ initialize_functions()
   axis_sig2["args/num_bins/optional"];
   axis_sig2["args/clamp/type"] = "bool";
   axis_sig2["args/clamp/optional"];
-  axis_sig["description"] =
+  axis_sig2["description"] =
       "Same as the above function except that ``reduction_var`` should be one "
       "of the strings ``'x', 'y', 'z'``";
 
@@ -1058,8 +1056,10 @@ initialize_functions()
   recenter_sig["args/field/type"] = "field";
   recenter_sig["args/mode/type"] = "string";
   recenter_sig["args/mode/optional"] = "string";
-  recenter_sig["args/mode/description"] = "One of ``'toggle', 'vertex', 'element'``. Defaults to ``'toggle'``.";
-  recenter_sig["description"] = "Recenter a field from vertex association to element association or vice versa.";
+  recenter_sig["args/mode/description"] =
+      "One of ``'toggle', 'vertex', 'element'``. Defaults to ``'toggle'``.";
+  recenter_sig["description"] = "Recenter a field from vertex association to "
+                                "element association or vice versa.";
   recenter_sig["jitable"];
 
   //---------------------------------------------------------------------------
@@ -1231,7 +1231,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
 
-  return_val.print();
+  // return_val.print();
 
   // remove temporary fields, topologies, and coordsets from the dataset
   const int num_domains = m_data->number_of_children();

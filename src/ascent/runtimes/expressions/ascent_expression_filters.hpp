@@ -540,6 +540,8 @@ private:
   int num_inputs;
   const std::shared_ptr<const JitExecutionPolicy> exec_policy;
 };
+// register a JitFilter with the correct number of inputs and execution policy
+// or return its type_name if it exists
 std::string register_jit_filter(
     flow::Workspace &w,
     const int num_inputs,

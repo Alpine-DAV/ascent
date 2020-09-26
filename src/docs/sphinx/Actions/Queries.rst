@@ -254,7 +254,8 @@ Derived fields or ``jitable`` types can be used in place of a regular field. For
 example, we can combine a derived field and a reduction by writing
 ``sum(topo('mesh').cell.volume)`` to find the total volume of the mesh.
 
-The if-then-else construct can also be used to generate derived fields. If we
+The if-then-else construct can also be used to generate derived fields when one
+or more its operands (i.e. condition, if-branch, else-branch) are fields. If we
 wanted to zero-out energy values below a certain threshold we can write
 ``if(field('energy') < 10) then 0 else field('energy')``.
 
@@ -262,6 +263,11 @@ Expressions that output a derived field will result in a mesh field with the sam
 name as the expression (see more about names below) which can be retrieved in
 later expressions via ``field('name')``.
 
+.. note::
+   For performance reasons, derived expressions dealing with vectors should
+   prefer using ``field('velocity', 'x')`` over ``field('velocity').x`` to get
+   a component. Using ``.x`` will be necessary in the case that the field is a
+   derived field. See the :ref:`Curl Example`.
 
 Function Examples
 ~~~~~~~~~~~~~~~~~
@@ -287,6 +293,7 @@ preceding the final expression.
 Here is an expression which takes advantage of assignments to calculate the
 curl (which is also a builtin function) using the gradient.
 
+.. _Curl Example:
 .. code-block:: yaml
 
    -

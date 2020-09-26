@@ -1,5 +1,6 @@
 import json
 import argparse
+import sys
 from collections import OrderedDict
 
 try:
@@ -74,6 +75,8 @@ with open(args.output_rst, "w+") as docs:
                             sig += ", "
                 sig += ")"
                 docs.write(".. function:: {}\n\n".format(sig))
+                if not "description" in func:
+                    sys.exit("Function {} does not have a description.".format(sig))
                 docs.write(indent("{}\n\n".format(func["description"]), 4))
                 docs.write(indent("{}".format(params), 4))
                 docs.write(indent("{}\n\n".format(ret), 4))

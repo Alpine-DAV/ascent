@@ -2993,7 +2993,7 @@ JitFilter::execute()
     return;
   }
 
-  // create a vector of input_jitables ot be fused
+  // create a vector of input_jitables to be fused
   std::vector<const Jitable *> input_jitables;
   // keep around the new jitables we create
   std::list<Jitable> new_jitables;
@@ -3006,6 +3006,7 @@ JitFilter::execute()
   conduit::Node *const remove =
       graph().workspace().registry().fetch<Node>("remove");
 
+  // convert filter's inputs (numbers, topos, fields, binnings, etc.) to jitables
   for(int i = 0; i < num_inputs; ++i)
   {
     const std::string input_fname = inputs.child(i)["filter_name"].as_string();
@@ -3044,7 +3045,7 @@ JitFilter::execute()
           jitable.dom_info.child(i)["kernel_type"] = "default";
         }
 
-        if(type == "int" || type == "double")
+        if(type == "int" || type == "double" || type == "bool")
         {
           // force everthing to a double
           for(int i = 0; i < num_domains; ++i)
@@ -3452,8 +3453,6 @@ int JitFilterFactoryFunctor::num_inputs;
 std::shared_ptr<const JitExecutionPolicy> JitFilterFactoryFunctor::exec_policy;
 
 //-----------------------------------------------------------------------------
-// register a JitFilter with the correct number of inputs and execution policy
-// or return its type_name if it exists
 std::string
 register_jit_filter(flow::Workspace &w,
                     const int num_inputs,

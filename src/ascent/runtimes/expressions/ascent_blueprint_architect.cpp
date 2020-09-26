@@ -463,7 +463,6 @@ StructuredTopology<T, N>::StructuredTopology(const std::string &topo_name,
     num_cells *= dims[i] - 1;
   }
   // check that number of vertices in coordset matches dims
-  // TODO maybe this is fine and should just be a warning?
   if((size_t)coords[0].dtype().number_of_elements() != num_points)
   {
     ASCENT_ERROR(

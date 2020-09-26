@@ -207,8 +207,8 @@ host_realloc_array(const conduit::Node &src_array,
     dest_array.set(dest_schema);
     dest_array.update_compatible(src_array);
 
-    src_array.info().print();
-    dest_array.info().print();
+    // src_array.info().print();
+    // dest_array.info().print();
   }
 }
 
@@ -466,8 +466,10 @@ ArrayCode::index(const std::string &array_name,
   const auto array_it = array_map.find(array_name);
   if(array_it == array_map.end())
   {
-    // array is not in the map meaning it was created in the kernel and is
-    // interleaved
+    // array is not in the map meaning it was created in the kernel
+    // by default that means it's interleaved...
+    // This is not even used for temporary_field because their schema is put
+    // into array_map explicitely
     pointer_name = array_name;
     if(component == -1)
     {
@@ -790,6 +792,7 @@ TopologyCode::TopologyCode(const std::string &topo_name,
   }
   else
   {
+    // uniform, rectilinear, structured
     this->shape_size = static_cast<int>(std::pow(2, num_dims));
   }
 }
@@ -911,7 +914,7 @@ TopologyCode::unstructured_vertices(InsertionOrderedSet<std::string> &code,
   if(shape_size == -1)
   {
     // TODO generate vertices array for multi-shapes case, it's variable length
-    // so might have to find the max shape size before hand
+    // so might have to find the max shape size before hand and pass it in
   }
   else
   {
@@ -995,7 +998,7 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
   {
     element_idx(code);
     my_index_name =
-        topo_name + "element_locs[" + std::to_string(coord[0] - 'x') + "]";
+        topo_name + "_element_idx[" + std::to_string(coord[0] - 'x') + "]";
   }
   else
   {
@@ -1018,12 +1021,8 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
   else if(topo_type == "structured")
   {
     structured_vertex_locs(code);
-    math_code.component_avg(code,
-                            std::pow(2, num_dims),
-                            topo_name + "_vertex_locs",
-                            coord,
-                            res_name,
-                            declare);
+    math_code.component_avg(
+        code, shape_size, topo_name + "_vertex_locs", coord, res_name, declare);
   }
   else if(topo_type == "unstructured")
   {
@@ -1038,7 +1037,7 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
       for_loop.insert(
           {"for(int i = 0; i < " + topo_name + "_shape_size; ++i)\n", "{\n"});
       math_code.component_avg(for_loop,
-                              std::pow(2, num_dims),
+                              shape_size,
                               topo_name + "_vertex_locs",
                               coord,
                               res_name,
@@ -1052,12 +1051,11 @@ TopologyCode::element_coord(InsertionOrderedSet<std::string> &code,
       for(int i = 0; i < shape_size; ++i)
       {
         math_code.component_avg(code,
-                                std::pow(2, num_dims),
+                                shape_size,
                                 topo_name + "_vertex_locs",
                                 coord,
                                 res_name,
                                 declare);
-        code.insert("}\n");
       }
     }
   }
@@ -1884,12 +1882,11 @@ pack_array(const conduit::Node &array,
   }
 }
 
-// TODO a lot of duplicated code from TopologyCode and Topology
 void
 pack_topology(const std::string &topo_name,
               const conduit::Node &domain,
               conduit::Node &args,
-              ArrayCode &array)
+              ArrayCode &array_code)
 {
   const conduit::Node &topo = domain["topologies/" + topo_name];
   const std::string &topo_type = topo["type"].as_string();
@@ -1915,7 +1912,7 @@ pack_topology(const std::string &topo_name,
       args[topo_name + "_dims_" + dim] =
           coords["values"].child(i).dtype().number_of_elements();
     }
-    pack_array(coords["values"], topo_name + "_coords", args, array);
+    pack_array(coords["values"], topo_name + "_coords", args, array_code);
   }
   else if(topo_type == "structured")
   {
@@ -1925,42 +1922,33 @@ pack_topology(const std::string &topo_name,
       args[topo_name + "_dims_" + dim] =
           topo["elements/dims"].child(i).to_int64() + 1;
     }
-    pack_array(coords["values"], topo_name + "_coords", args, array);
+    pack_array(coords["values"], topo_name + "_coords", args, array_code);
   }
   else if(topo_type == "unstructured")
   {
-    pack_array(coords["values"], topo_name + "_coords", args, array);
-    pack_array(topo["elements/connectivity"],
+    const conduit::Node &elements = topo["elements"];
+
+    pack_array(coords["values"], topo_name + "_coords", args, array_code);
+    pack_array(elements["connectivity"],
                topo_name + "_connectivity",
                args,
-               array);
+               array_code);
 
-    // TODO polygonal and polyhedral need to pack additional things
-    // if(shape == "polygonal")
-    // {
-    //   args[topo_name + "_sizes"].set_external(sizes);
-    //   args[topo_name + "_offsets"].set_external(offsets);
-    // }
-    // else if(shape == "polyhedral")
-    // {
-    //   args[topo_name + "_polyhedral_sizes"].set_external(polyhedral_sizes);
-    //   args[topo_name +
-    //   "_polyhedral_offsets"].set_external(polyhedral_offsets);
-    //   args[topo_name
-    //   + "_polyhedral_connectivity"].set_external(
-    //       polyhedral_connectivity);
-
-    //   args[topo_name + "_sizes"].set_external(sizes);
-    //   args[topo_name + "_offsets"].set_external(offsets);
-    //   if(polyhedral_shape != "polygonal")
-    //   {
-    //     args[topo_name + "_shape_size"] = polyhedral_shape_size;
-    //   }
-    // }
-    // else
-    // {
-    // single shape
-    // }
+    const std::string &shape = elements["shape"].as_string();
+    if(shape == "polygonal")
+    {
+      pack_array(elements["sizes"], topo_name + "_sizes", args, array_code);
+      pack_array(elements["offsets"], topo_name + "_offsets", args, array_code);
+    }
+    else if(shape == "polyhedral")
+    {
+      // TODO polyhedral needs to pack additional things
+    }
+    else
+    {
+      // single shape
+      // no additional packing
+    }
   }
 }
 // }}}
@@ -2055,6 +2043,7 @@ FieldCode::element_vertex_values(InsertionOrderedSet<std::string> &code,
     code.insert("double " + res_name + "[" +
                 std::to_string(topo_code->shape_size) + "];\n");
   }
+  // structured and single-shape unstructured use the same code
   for(int i = 0; i < topo_code->shape_size; ++i)
   {
     const std::string &vertex =
@@ -2064,8 +2053,6 @@ FieldCode::element_vertex_values(InsertionOrderedSet<std::string> &code,
   }
 }
 
-// Calculate the element associated gradient of a vertex associated field on
-// a quadrilateral mesh
 // https://github.com/visit-dav/visit/blob/f835d5132bdf7c6c8da09157ff86541290675a6f/src/avt/Expressions/General/avtGradientExpression.C#L1417
 // gradient mapping : vtk mapping
 // 1 : 0
@@ -2121,8 +2108,6 @@ FieldCode::quad_gradient(InsertionOrderedSet<std::string> &code,
   code.insert(res_name + "[2] = 0;\n");
 }
 
-// Calculate the element associated gradient of a vertex associated field on
-// a hexahedral mesh
 // https://github.com/visit-dav/visit/blob/f835d5132bdf7c6c8da09157ff86541290675a6f/src/avt/Expressions/General/avtGradientExpression.C#L1511
 // gradient mapping : vtk mapping
 // 0 : 3
@@ -2692,12 +2677,33 @@ JitableFunctions::binary_op()
     const std::string &op_str = params["op_string"].as_string();
     if(lhs_kernel.num_components == 1 && rhs_kernel.num_components == 1)
     {
-      // generate the new expression string (main line of code)
-      out_kernel.expr = "(" + lhs_expr + " " + op_str + " " + rhs_expr + ")";
+      // scalar ops
+      if(op_str == "not")
+      {
+        out_kernel.expr = "!(" + rhs_expr + ")";
+      }
+      else
+      {
+        std::string occa_op_str;
+        if(op_str == "and")
+        {
+          occa_op_str = "&&";
+        }
+        else if(op_str == "or")
+        {
+          occa_op_str = "||";
+        }
+        else
+        {
+          occa_op_str = op_str;
+        }
+        out_kernel.expr = "(" + lhs_expr + " " + op_str + " " + rhs_expr + ")";
+      }
       out_kernel.num_components = 1;
     }
     else
     {
+      // vector ops
       bool error = false;
       if(lhs_kernel.num_components == rhs_kernel.num_components)
       {
@@ -3111,6 +3117,8 @@ JitableFunctions::derived_field()
     const int arg1_port = inputs["arg1/port"].as_int32();
     const Kernel &arg1_kernel = *input_kernels[arg1_port];
     out_kernel.fuse_kernel(arg1_kernel);
+    out_kernel.expr = arg1_kernel.expr;
+    out_kernel.num_components = arg1_kernel.num_components;
   }
 }
 
@@ -3129,6 +3137,7 @@ JitableFunctions::temporary_field(const Kernel &field_kernel,
 
   // we will need to allocate a temporary array so make a schema for it and
   // put it in the array map
+  // TODO for now temporary fields are interleaved
   conduit::Schema s;
   schemaFactory("interleaved",
                 conduit::DataType::FLOAT64_ID,
@@ -3150,12 +3159,37 @@ JitableFunctions::temporary_field(const Kernel &field_kernel,
   }
 }
 
-void
-JitableFunctions::gradient(const Jitable &field_jitable,
-                           const Kernel &field_kernel,
-                           const std::string &input_field,
-                           const int component)
+std::string
+JitableFunctions::possible_temporary(const int field_port)
 {
+  const Jitable &field_jitable = *input_jitables[field_port];
+  const Kernel &field_kernel = *input_kernels[field_port];
+  const conduit::Node &obj = field_jitable.obj;
+  std::string field_name;
+  if(obj.has_path("value"))
+  {
+    field_name = obj["value"].as_string();
+    out_kernel.fuse_kernel(field_kernel);
+  }
+  else
+  {
+    field_name = filter_name + "_inp";
+    temporary_field(field_kernel, field_name);
+  }
+  return field_name;
+}
+
+void
+JitableFunctions::gradient(const int field_port, const int component)
+{
+  const Kernel &field_kernel = *input_kernels[field_port];
+
+  if(component == -1 && field_kernel.num_components > 1)
+  {
+    ASCENT_ERROR("gradient is only supported on scalar fields but a field with "
+                 << field_kernel.num_components << " components was given.");
+  }
+
   // association and topology should be the same for out_jitable and
   // field_jitable because we have already fused jitables at this point
   if(out_jitable.topology.empty() || out_jitable.topology == "none")
@@ -3169,23 +3203,10 @@ JitableFunctions::gradient(const Jitable &field_jitable,
                  "because the association could not be determined.");
   }
   std::unique_ptr<Topology> topo =
-      topologyFactory(field_jitable.topology, domain);
-  // we need to change entries for each domain if we're doing a vertex to
-  // element gradient
-  std::string my_input_field;
-  if(input_field.empty())
-  {
-    // need to generate a temporary field
-    my_input_field = filter_name + "_inp";
-    temporary_field(field_kernel, my_input_field);
-  }
-  else
-  {
-    my_input_field = input_field;
-    out_kernel.fuse_kernel(field_kernel);
-  }
+      topologyFactory(out_jitable.topology, domain);
+  std::string field_name = possible_temporary(field_port);
   if((topo->topo_type == "structured" || topo->topo_type == "unstructured") &&
-     field_jitable.association == "vertex")
+     out_jitable.association == "vertex")
   {
     // this does a vertex to cell gradient so update entries
     conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
@@ -3194,22 +3215,16 @@ JitableFunctions::gradient(const Jitable &field_jitable,
   }
   if(not_fused)
   {
-    // vectors use the intereleaved memory layout because it is easier to
-    // pass "gradient[i]" to a function that takes in a vector and
-    // have it concatentate "[0]" to access the first element resulting in
-    // "gradient[i][0]" rather than "gradient[0][i]" where the "[0]" would
-    // have to be inserted between "gradient" and "[i]"
-
     const auto topo_code = std::make_shared<const TopologyCode>(
         topo->topo_name, domain, out_jitable.arrays[dom_idx]);
-    FieldCode field_code = FieldCode(my_input_field,
-                                     field_jitable.association,
+    FieldCode field_code = FieldCode(field_name,
+                                     out_jitable.association,
                                      topo_code,
                                      out_jitable.arrays[dom_idx],
                                      1,
                                      component);
     field_code.gradient(out_kernel.for_body);
-    out_kernel.expr = my_input_field +
+    out_kernel.expr = field_name +
                       (component == -1 ? "" : "_" + std::to_string(component)) +
                       "_gradient";
     out_kernel.num_components = 3;
@@ -3220,50 +3235,25 @@ void
 JitableFunctions::gradient()
 {
   const int field_port = inputs["field/port"].as_int32();
-  const Jitable &field_jitable = *input_jitables[field_port];
-  const Kernel &field_kernel = *input_kernels[field_port];
-  const conduit::Node &obj = field_jitable.obj;
-  std::string field_name;
-  if(obj.has_path("value"))
-  {
-    field_name = obj["value"].as_string();
-  }
-  if(field_kernel.num_components > 1)
-  {
-    ASCENT_ERROR("gradient is only supported on scalar fields but a field with "
-                 << field_kernel.num_components << " components was given.");
-  }
-  gradient(field_jitable, field_kernel, field_name, -1);
+  gradient(field_port, -1);
 }
 
 void
 JitableFunctions::curl()
 {
   const int field_port = inputs["field/port"].as_int32();
-  const Jitable &field_jitable = *input_jitables[field_port];
   const Kernel &field_kernel = *input_kernels[field_port];
-  const conduit::Node &obj = field_jitable.obj;
   if(field_kernel.num_components < 2)
   {
     ASCENT_ERROR("Vorticity is only implemented for fields with at least 2 "
                  "components. The input field has "
                  << field_kernel.num_components << ".");
   }
-  std::string field_name;
-  if(obj.has_path("value"))
-  {
-    field_name = obj["value"].as_string();
-    out_kernel.fuse_kernel(field_kernel);
-  }
-  else
-  {
-    field_name = filter_name + "_inp";
-    temporary_field(field_kernel, field_name);
-  }
+  const std::string field_name = possible_temporary(field_port);
   // calling gradient here reuses the logic to update entries and association
   for(int i = 0; i < field_kernel.num_components; ++i)
   {
-    gradient(field_jitable, field_kernel, field_name, i);
+    gradient(field_port, i);
   }
   // TODO make it easier to construct FieldCode
   if(not_fused)
@@ -3271,7 +3261,7 @@ JitableFunctions::curl()
     const auto topo_code = std::make_shared<const TopologyCode>(
         out_jitable.topology, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(field_name,
-                                     field_jitable.association,
+                                     out_jitable.association,
                                      topo_code,
                                      out_jitable.arrays[dom_idx],
                                      field_kernel.num_components,
@@ -3288,9 +3278,7 @@ JitableFunctions::recenter()
   if(not_fused)
   {
     const int field_port = inputs["field/port"].as_int32();
-    const Jitable &field_jitable = *input_jitables[field_port];
     const Kernel &field_kernel = *input_kernels[field_port];
-    const conduit::Node &obj = field_jitable.obj;
 
     std::string mode;
     if(inputs.has_path("mode"))
@@ -3304,10 +3292,10 @@ JitableFunctions::recenter()
                      << mode
                      << "'. Known modes are 'toggle', 'vertex', 'element'.");
       }
-      if(field_jitable.association == mode)
+      if(out_jitable.association == mode)
       {
         ASCENT_ERROR("Recenter: The field is already "
-                     << field_jitable.association
+                     << out_jitable.association
                      << " associated, redundant recenter.");
       }
     }
@@ -3318,7 +3306,7 @@ JitableFunctions::recenter()
     std::string target_association;
     if(mode == "toggle")
     {
-      if(field_jitable.association == "vertex")
+      if(out_jitable.association == "vertex")
       {
         target_association = "element";
       }
@@ -3332,23 +3320,12 @@ JitableFunctions::recenter()
       target_association = mode;
     }
 
-    // TODO duplicate code from curl
-    std::string field_name;
-    if(obj.has_path("value"))
-    {
-      field_name = obj["value"].as_string();
-      out_kernel.fuse_kernel(field_kernel);
-    }
-    else
-    {
-      field_name = filter_name + "_inp";
-      temporary_field(field_kernel, field_name);
-    }
+    const std::string field_name = possible_temporary(field_port);
 
     // update entries and association
     conduit::Node &n_entries = out_jitable.dom_info.child(dom_idx)["entries"];
     std::unique_ptr<Topology> topo =
-        topologyFactory(field_jitable.topology, domain);
+        topologyFactory(out_jitable.topology, domain);
     if(target_association == "vertex")
     {
       n_entries = topo->get_num_points();
@@ -3362,7 +3339,7 @@ JitableFunctions::recenter()
     const auto topo_code = std::make_shared<const TopologyCode>(
         out_jitable.topology, domain, out_jitable.arrays[dom_idx]);
     FieldCode field_code = FieldCode(field_name,
-                                     field_jitable.association,
+                                     out_jitable.association,
                                      topo_code,
                                      out_jitable.arrays[dom_idx],
                                      field_kernel.num_components,
@@ -3928,21 +3905,24 @@ Jitable::fuse_vars(const Jitable &from)
     dest_dom_info["kernel_type"] = src_dom_info["kernel_type"];
 
     // fuse args, set_external arrays and copy other arguments
-    conduit::NodeConstIterator arg_itr = src_dom_info["args"].children();
-    while(arg_itr.has_next())
+    if(src_dom_info.has_path("args"))
     {
-      const conduit::Node &arg = arg_itr.next();
-      conduit::Node &dest_args = dest_dom_info["args"];
-      if(!dest_args.has_path(arg.name()))
+      conduit::NodeConstIterator arg_itr = src_dom_info["args"].children();
+      while(arg_itr.has_next())
       {
-        if(arg.number_of_children() != 0 ||
-           arg.dtype().number_of_elements() > 1)
+        const conduit::Node &arg = arg_itr.next();
+        conduit::Node &dest_args = dest_dom_info["args"];
+        if(!dest_args.has_path(arg.name()))
         {
-          dest_args[arg.name()].set_external(arg);
-        }
-        else
-        {
-          dest_args[arg.name()].set(arg);
+          if(arg.number_of_children() != 0 ||
+             arg.dtype().number_of_elements() > 1)
+          {
+            dest_args[arg.name()].set_external(arg);
+          }
+          else
+          {
+            dest_args[arg.name()].set(arg);
+          }
         }
       }
     }
@@ -3992,15 +3972,19 @@ void
 Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
   ASCENT_DATA_OPEN("jitable_execute");
-  // TODO set this automatically?
-  // occa::setDevice("mode: 'OpenCL', platform_id: 0, device_id: 1");
+  // TODO set this during initialization not here
   static bool device_set = false;
   if(!device_set)
   {
     // running this in a loop segfaults...
+#ifdef ASCENT_CUDA_ENABLED
+    // TODO get the right device_id
     occa::setDevice("mode: 'CUDA', device_id: 0");
-    // occa::setDevice("mode: 'Serial'");
-    // occa::setDevice("mode: 'OpenMP'");
+#elif ASCENT_USE_OPENMP
+    occa::setDevice("mode: 'OpenMP'");
+#else
+    occa::setDevice("mode: 'Serial'");
+#endif
     device_set = true;
   }
   occa::device &device = occa::getDevice();
@@ -4046,8 +4030,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // create output array schema and put it in array_map
     conduit::Schema output_schema;
 
-    // TODO this is duplicating some code from
-    // JitableFunctions::temporary_field
+    // TODO output to the host is always interleaved
     schemaFactory("interleaved",
                   conduit::DataType::FLOAT64_ID,
                   entries,
@@ -4066,7 +4049,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     n_output["values"].set(output_schema);
     unsigned char *output_ptr =
         static_cast<unsigned char *>(n_output["values"].data_ptr());
-    // output to the host will always be contiguous
+    // output to the host will always be compact
     ASCENT_DATA_ADD("bytes", output_schema.total_bytes_compact());
     ASCENT_DATA_CLOSE();
 
@@ -4140,7 +4123,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     // generate and compile the kernel
     const std::string kernel_string = generate_kernel(dom_idx, new_args);
 
-    std::cout << kernel_string << std::endl;
+    // std::cout << kernel_string << std::endl;
 
     // store kernels so that we don't have to recompile, even loading a cached
     // kernel from disk is slow

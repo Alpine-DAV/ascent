@@ -22,7 +22,7 @@ Functions
     
 .. function:: avg(arg1)
 
-    Return the field average of a mesh variable.
+    Return the field average of a field.
     
     :type arg1: field
     :param arg1:
@@ -31,7 +31,7 @@ Functions
     
 .. function:: field_nan_count(arg1)
 
-    Return the number  of NaNs in a mesh variable.
+    Return the number  of NaNs in a field.
     
     :type arg1: field
     :param arg1:
@@ -40,7 +40,7 @@ Functions
     
 .. function:: field_inf_count(arg1)
 
-    Return the number  of -inf and +inf in a mesh variable.
+    Return the number  of -inf and +inf in a field.
     
     :type arg1: field
     :param arg1:
@@ -198,7 +198,7 @@ Functions
     
 .. function:: histogram(arg1, [num_bins], [min_val], [max_val])
 
-    Return a histogram of the mesh variable. Return a histogram of the mesh variable.
+    Return a histogram of the field.
     
     :type arg1: field
     :param arg1:
@@ -357,12 +357,12 @@ Functions
     :rtype: double
     
     
-.. function:: axis(name, [bins], [min_val], [max_val], [num_bins], [clamp])
+.. function:: axis(var, [bins], [min_val], [max_val], [num_bins], [clamp])
 
-    Defines a uniform or rectilinear axis. When used for binning the bins are inclusive on the lower boundary and exclusive on the higher boundary of each bin. Either specify only ``bins`` or a subset of the ``min_val``, ``max_val``, ``num_bins`` options.
+    Returns a rectilinear or uniform axis object used to define the axes for ``binning``.
     
-    :type name: string
-    :param name: The name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``.
+    :type var: field
+    :param var:
     :type bins: list
     :param bins: A strictly increasing list of scalars containing the values for each tick. Used to specify a rectilinear axis.
     :type min_val: scalar
@@ -376,16 +376,34 @@ Functions
     :rtype: axis
     
     
-.. function:: binning(reduction_var, reduction_op, bin_axes, [empty_val], [component], [topo], [assoc])
+.. function:: axis(var, [bins], [min_val], [max_val], [num_bins], [clamp])
+
+    Same as the above function except that ``reduction_var`` should be one of the strings ``'x', 'y', 'z'``
+    
+    :type var: string
+    :param var: One of the strings ``'x', 'y', 'z'`` corresponding to a spacial coordinate.
+    :type bins: list
+    :param bins:
+    :type min_val: scalar
+    :param min_val:
+    :type max_val: scalar
+    :param max_val:
+    :type num_bins: int
+    :param num_bins:
+    :type clamp: bool
+    :param clamp:
+    :rtype: axis
+    
+    
+.. function:: binning(reduction_var, reduction_op, bin_axes, [empty_val], [topo], [assoc])
 
     Returns a multidimensional data binning.
     
-    :type reduction_var: string
-    :param reduction_var: The variable being reduced. Either the name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``. ``reduction_var`` should be left empty if ``reduction_op`` is one of ``cnt``, ``pdf``, or ``cdf``.
+    :type reduction_var: field
+    :param reduction_var: The field being reduced.
     :type reduction_op: string
     :param reduction_op: The reduction operator to use when   putting values in bins. Available reductions are: 
     
-       - cnt: number of elements in a bin 
        - min: minimum value in a bin 
        - max: maximum value in a bin 
        - sum: sum of values in a bin 
@@ -399,11 +417,28 @@ Functions
     :param bin_axes: List of Axis objects which define the bin axes.
     :type empty_val: scalar
     :param empty_val: The value that empty bins should have. Defaults to ``0``.
-    :type component: string
-    :param component: the component of a vector field to use for the reduction. Example 'x' for a field defined as 'velocity/x'
+    :type topo: topo
+    :param topo: Do not specify this in this overload, it will be inferred from ``reduction_var``.
+    :type assoc: string
+    :param assoc: Do not specify this in this overload, it will be inferred from ``reduction_var``.
+    :rtype: binning
+    
+    
+.. function:: binning(reduction_var, reduction_op, bin_axes, [empty_val], [topo], [assoc])
+
+    Returns a multidimensional data binning. Same as the above function except that ``reduction_var`` should be one of the strings ``'x', 'y', 'z'`` and the association and topology can be explicitely specified.
+    
+    :type reduction_var: string
+    :param reduction_var: One of the strings ``'x', 'y', 'z'`` corresponding to a spacial coordinate. ``reduction_var`` can be ``'cnt'`` to mean "bin the count" if ``reduction_op`` is one of ``sum``, ``pdf``, or ``cdf``.
+    :type reduction_op: string
+    :param reduction_op:
+    :type bin_axes: list
+    :param bin_axes: List of Axis objects which define the bin axes.
+    :type empty_val: scalar
+    :param empty_val:
     :type topo: topo
     :param topo: The topology to bin. Defaults to the topology associated with the bin axes. This topology must have all the fields used for the axes of ``binning``. It only makes sense to specify this when ``bin_axes`` and ``reduction_var`` are a subset of ``x``, ``y``, ``z``.
-    :type assoc: topo
+    :type assoc: string
     :param assoc: The association of the resultant field. Defaults to the association infered from the bin axes and and reduction variable. It only makes sense to specify this when ``bin_axes`` and ``reduction_var`` are a subset of ``x``, ``y``, ``z``.
     :rtype: binning
     
@@ -490,7 +525,7 @@ Functions
     :type topo: string
     :param topo: The topology to put the derived field onto. The language tries to infer this if not specified.
     :type assoc: string
-    :param assoc: The association of the derived field. The language will try to infer this if not specified.
+    :param assoc: The association of the derived field. The language tries to infer this if not specified.
     :rtype: jitable
     
     
@@ -503,7 +538,7 @@ Functions
     :type topo: string
     :param topo: The topology to put the derived field onto. The language tries to infer this if not specified.
     :type assoc: string
-    :param assoc: The association of the derived field. The language will try to infer this if not specified.
+    :param assoc: The association of the derived field. The language tries to infer this if not specified.
     :rtype: jitable
     
     
@@ -526,6 +561,17 @@ Functions
 
     Return a random number between 0 and 1.
     
+    :rtype: jitable
+    
+    
+.. function:: recenter(field, [mode])
+
+    Recenter a field from vertex association to element association or vice versa.
+    
+    :type field: field
+    :param field:
+    :type mode: string
+    :param mode: One of ``'toggle', 'vertex', 'element'``. Defaults to ``'toggle'``.
     :rtype: jitable
     
     
