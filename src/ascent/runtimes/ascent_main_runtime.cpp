@@ -1693,9 +1693,10 @@ void AscentRuntime::SourceFieldFilter()
         if(high_order)
         {
           // handle special mfem fields
-          if(names[f] == "element_attribute" ||
-             names[f] == "boundary_attribute" ||
-             names[f] == "mesh_nodes")
+          if(names[f].find("position") != std::string::npos ||
+             names[f].find("_nodes") != std::string::npos ||
+             names[f].find("_attribute") != std::string::npos ||
+             names[f].find("boundary") != std::string::npos)
           {
             continue;
           }
@@ -1704,8 +1705,8 @@ void AscentRuntime::SourceFieldFilter()
                      m_field_list.end(),
                      names[f]) == m_field_list.end())
         {
-          // remove the field
-          dom.remove("fields/"+names[f]);
+            // remove the field
+            dom.remove("fields/"+names[f]);
         }
       } // for fields
     }
