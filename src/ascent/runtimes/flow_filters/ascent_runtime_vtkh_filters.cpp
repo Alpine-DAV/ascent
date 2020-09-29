@@ -86,6 +86,7 @@
 #include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
+#include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
 #include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
@@ -487,6 +488,91 @@ VTKH3Slice::execute()
 }
 
 //-----------------------------------------------------------------------------
+VTKHCleanGrid::VTKHCleanGrid()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHCleanGrid::~VTKHCleanGrid()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHCleanGrid::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_clean";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHCleanGrid::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res = check_string("topology",params, info, false) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("topology");
+
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHCleanGrid::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHCleanGrid input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkh::CleanGrid cleaner;
+
+    cleaner.SetInput(&data);
+
+    cleaner.Update();
+
+    vtkh::DataSet *clean_output = cleaner.GetOutput();
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*clean_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete clean_output;
+    set_output<DataObject>(res);
+
+}
+
+//-----------------------------------------------------------------------------
 VTKHSlice::VTKHSlice()
 :Filter()
 {
@@ -644,7 +730,8 @@ VTKHSlice::execute()
 
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
-    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    VTKHCollection *new_coll = new VTKHCollection();
+    //= collection->copy_without_topology(topo_name);
     new_coll->add(*slice_output, topo_name);
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
