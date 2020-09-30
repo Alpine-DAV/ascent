@@ -205,7 +205,6 @@ BlueprintVerify::execute()
         ASCENT_ERROR("blueprint verify failed: published data is empty");
     }
 
-
     set_output<DataObject>(d_input);
 }
 

@@ -731,6 +731,8 @@ VTKHSlice::execute()
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->cycle(collection->cycle());
+    new_coll->time(collection->time());
     //= collection->copy_without_topology(topo_name);
     new_coll->add(*slice_output, topo_name);
     // re wrap in data object

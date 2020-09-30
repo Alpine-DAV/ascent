@@ -833,7 +833,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // 3) only filter if we have state/time
   static bool first_execute = true;
 
-  if(first_execute && 
+  if(first_execute &&
      !m_cache.filtered() &&
      time <= m_cache.last_known_time() &&
      valid_time)
@@ -874,8 +874,8 @@ void ExpressionEval::get_last(conduit::Node &data)
 
   for(int i = 0; i < entries; ++i)
   {
-    conduit::Node &entry = m_cache.m_data.child(i); 
-    const int cycles = entry.number_of_children(); 
+    conduit::Node &entry = m_cache.m_data.child(i);
+    const int cycles = entry.number_of_children();
     if(cycles > 0)
     {
       conduit::Node &cycle = entry.child(cycles-1);

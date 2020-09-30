@@ -474,7 +474,6 @@ AscentRuntime::CreateDefaultFilters()
     //
     conduit::Node params;
     params["protocol"] = "mesh";
-
     w.graph().add_filter("blueprint_verify", // registered filter name
                          "verify",           // "unique" filter name
                          params);
@@ -842,10 +841,11 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
                                   const std::string query_name,
                                   const std::string prev_name)
 {
+
   std::string filter_name;
 
   conduit::Node params;
-  std::string pipeline = "source";
+  std::string pipeline = CreateDefaultFilters();
   if(query.has_path("params"))
   {
     params = query["params"];
@@ -866,7 +866,7 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
   std::string conn_port;
   if(prev_name == "")
   {
-    conn_port = "source";
+    conn_port = pipeline;
   }
   else
   {
@@ -1549,7 +1549,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         //w.print();
         //std::cout<<w.graph().to_dot();
-        //w.graph().save_dot_html("ascent_flow_graph.html");
+        w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         Node *meta = w.registry().fetch<Node>("metadata");
