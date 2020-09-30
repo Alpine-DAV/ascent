@@ -132,6 +132,7 @@ register_builtin()
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
+    AscentRuntime::register_filter_type<VTKHCleanGrid>("transforms","clean_grid");
     AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
     AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
