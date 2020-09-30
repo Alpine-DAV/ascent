@@ -932,17 +932,30 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
                                                               dims,
                                                               origin,
                                                               spacing));
+    vtkm::Id3 topo_origin(0,0,0);
+    if(n_topo.has_path("elements/origin"))
+    {
+      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
+      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+      if(!is_2d)
+      {
+        topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+      }
+    }
     if(is_2d)
     {
       vtkm::Id2 dims2(dims[0], dims[1]);
       vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(dims2);
+      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+      cell_set.SetGlobalPointIndexStart(origin2);
       result->SetCellSet(cell_set);
     }
     else
     {
       vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(dims);
+      cell_set.SetGlobalPointIndexStart(topo_origin);
       result->SetCellSet(cell_set);
     }
 
@@ -1048,11 +1061,23 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
                                                   coords);
     result->AddCoordinateSystem(coordinate_system);
 
+    vtkm::Id3 topo_origin(0,0,0);
+    if(n_topo.has_path("elements/origin"))
+    {
+      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
+      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+      if(ndims == 3)
+      {
+        topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+      }
+    }
     if (ndims == 2)
     {
       vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts));
+      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+      cell_set.SetGlobalPointIndexStart(origin2);
       result->SetCellSet(cell_set);
     }
     else
@@ -1061,6 +1086,7 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts,
                                                  z_npts));
+      cell_set.SetGlobalPointIndexStart(topo_origin);
       result->SetCellSet(cell_set);
     }
 
@@ -1117,11 +1143,25 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 
     int32 x_elems = n_topo["elements/dims/i"].as_int32();
     int32 y_elems = n_topo["elements/dims/j"].as_int32();
+
+    vtkm::Id3 topo_origin(0,0,0);
+    if(n_topo.has_path("elements/origin"))
+    {
+      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
+      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+      if(ndims == 3)
+      {
+        topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+      }
+    }
+
     if (ndims == 2)
     {
       vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1));
+      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+      cell_set.SetGlobalPointIndexStart(origin2);
       result->SetCellSet(cell_set);
       neles = x_elems * y_elems;
     }
@@ -1132,6 +1172,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1,
                                                  z_elems+1));
+      cell_set.SetGlobalPointIndexStart(topo_origin);
       result->SetCellSet(cell_set);
       neles = x_elems * y_elems * z_elems;
 
