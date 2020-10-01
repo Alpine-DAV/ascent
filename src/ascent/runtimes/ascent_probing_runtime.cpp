@@ -1981,15 +1981,14 @@ void ProbingRuntime::Execute(const conduit::Node &actions)
         }
     }
 
-    int sim_count = 0;
     bool is_inline = false;
     if (probing_factor >= 1.0) // probing_factor of 1 implies inline rendering only
         is_inline = true;
 
-#if ASCENT_MPI_ENABLED
-    sim_count = int(std::round(world_size * node_split));
+    const int sim_count = int(std::round(world_size * node_split));
     const int vis_count = world_size - sim_count;
 
+#if ASCENT_MPI_ENABLED
     // construct simulation comm
     std::vector<int> sim_ranks(sim_count);
     std::iota(sim_ranks.begin(), sim_ranks.end(), 0);

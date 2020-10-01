@@ -73,8 +73,9 @@ MODULE definitions_module
 
    INTEGER      :: test_problem
    LOGICAL      :: complete
-
+   
    LOGICAL      :: use_fortran_kernels
+   LOGICAL      :: sim_only
 
    LOGICAL      :: profiler_on ! Internal code profiler to make comparisons across systems easier
 

@@ -36,27 +36,27 @@ SUBROUTINE read_input()
   CHARACTER(LEN=500) :: word
 
   test_problem=0
-
+  
   state_max=0
-
+  
   grid%xmin=  0.0_8
   grid%ymin=  0.0_8
   grid%zmin=  0.0_8
   grid%xmax=100.0_8
   grid%ymax=100.0_8
   grid%zmax=100.0_8
-
+  
   grid%x_cells=10
   grid%y_cells=10
   grid%z_cells=10
-
+  
   end_time=10.0_8
   end_step=g_ibig
   complete=.FALSE.
-
+  
   visit_frequency=0
   summary_frequency=10
-
+  
   visit_sim_time=0.0_8
   dtinit=0.1_8
   dtmax=1.0_8
@@ -67,8 +67,9 @@ SUBROUTINE read_input()
   dtv_safe=0.5_8
   dtw_safe=0.5_8
   dtdiv_safe=0.5_8
-
+  
   use_fortran_kernels=.TRUE.
+  sim_nodes_only=.FALSE.
   profiler_on=.FALSE.
   profiler%timestep=0.0
   profiler%acceleration=0.0
@@ -185,6 +186,8 @@ SUBROUTINE read_input()
       CASE('test_problem')
         test_problem=parse_getival(parse_getword(.TRUE.))
         IF(parallel%boss)WRITE(g_out,"(1x,a25,i12)")'test_problem',test_problem
+      CASE('sim_nodes_only')
+        sim_nodes_only=.TRUE.
       CASE('state')
 
         state=parse_getival(parse_getword(.TRUE.))
