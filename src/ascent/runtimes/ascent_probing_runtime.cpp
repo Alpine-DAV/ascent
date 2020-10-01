@@ -350,8 +350,8 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
                                  const float skipped_renders)
 {
     // optional render factors for sim and/or vis nodes (empirically determined)
-    const float sim_factor = 1.0f;       // 1.24;
-    const float vis_factor = 1.2f;       // 0.97;       // 0.9317 for n33, 1.0069 for n10
+    const float sim_factor = 1.0f;
+    const float vis_factor = 1.01f;
 
     assert(sim_estimate.size() == vis_estimates.size());
     
@@ -359,12 +359,16 @@ std::vector<int> load_assignment(const std::vector<float> &sim_estimate,
     for (size_t i = 0; i < mpi_props.sim_node_count; i++)
         t_inline[i] = vis_estimates[i] * sim_factor * render_cfg.non_probing_count;
 
-    // TODO: add smarter way to estimate compositing cost
-    const float t_compositing = (skipped_renders*0.02f + (1.f-skipped_renders)*0.16f) * render_cfg.max_count;  // assume flat cost per image
-    if (mpi_props.rank == 0)
+    // compositing time per image determined on stampede2 with 2/10 and 6/33 nodes  
+    const float t_compose = 0.11f + 0.025f * mpi_props.vis_node_count; 
+    const float t_compose_skipped = 0.01f * mpi_props.vis_node_count; 
+    // estimate with average compositing cost 
+    const float t_compositing = (skipped_renders*t_compose_skipped + (1.f-skipped_renders)*t_compose) 
+                                 * render_cfg.max_count; 
+     if (mpi_props.rank == 0)
         std::cout << "~~compositing estimate: " << t_compositing << std::endl;
     // data send overhead
-    const float t_send = 0.5f * std::ceil((1.f-skipped_renders) * mpi_props.sim_node_count / mpi_props.vis_node_count); 
+    const float t_send = 1.0f * std::ceil((1.f-skipped_renders) * mpi_props.sim_node_count / mpi_props.vis_node_count); 
 
     std::valarray<float> t_intransit(t_compositing + t_send, mpi_props.vis_node_count);
     std::valarray<float> t_sim(sim_estimate.data(), mpi_props.sim_node_count);
