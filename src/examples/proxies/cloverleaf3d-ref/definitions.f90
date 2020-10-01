@@ -75,7 +75,7 @@ MODULE definitions_module
    LOGICAL      :: complete
    
    LOGICAL      :: use_fortran_kernels
-   LOGICAL      :: sim_only
+   LOGICAL      :: sim_nodes_only
 
    LOGICAL      :: profiler_on ! Internal code profiler to make comparisons across systems easier
 
