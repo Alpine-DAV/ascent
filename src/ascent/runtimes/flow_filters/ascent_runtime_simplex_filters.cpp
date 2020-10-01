@@ -583,65 +583,51 @@ CameraSimplex::execute()
 */
 
 ///*
-    // Testing specific points
-    winning_i = 98;
-    winning_j = 2;
+    // Code for scores for quizzes
+    
+    ofstream myfile;
+    myfile.open("quiz_scores.txt");
 
-    Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+    float known_min = -2.623;
+    float known_max = -0.1186;
+
+    int number = 0;
+
+    while (number < 10000) {
+        winning_i = number / 100;
+        winning_j = number % 100;
+
+        Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
         	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
 
-    vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+        vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
                                   (float)cam.position[1],
                                   (float)cam.position[2]};
 
-    camera->SetPosition(postest);
-    vtkh::ScalarRenderer tracer;
-    tracer.SetWidth(width);
-    tracer.SetHeight(height);
-    tracer.SetInput(data); //vtkh dataset by toponame
-    tracer.SetCamera(*camera);
-    tracer.Update();
+        camera->SetPosition(postest);
+        vtkh::ScalarRenderer tracer;
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+        tracer.SetInput(data); //vtkh dataset by toponame
+        tracer.SetCamera(*camera);
+        tracer.Update();
 
-    vtkh::DataSet *output = tracer.GetOutput();
+        vtkh::DataSet *output = tracer.GetOutput();
 
-    cout << "Starting" << endl << endl;
+        float score = calculateMetric(output, metric, field_name,
+		          triangles, height, width, cam);
 
-    float score_1 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "depth_entropy";
-    float score_2 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "max_depth";
-    float score_3 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "pb";
-    float score_4 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "projected_area";
-    float score_5 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "viewpoint_entropy";
-    float score_6 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "visibility_ratio";
-    float score_7 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "visible_triangles";
-    float score_8 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-    metric = "vkl";
-    float score_9 = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
+        float relative = (score - known_min) / (known_max - known_min);
+	float result = relative * 10;
 
-    cout << "Data entropy score at      (" << winning_i << ", " << winning_j << ") is " << score_1 << endl;
-    cout << "Depth entropy score at     (" << winning_i << ", " << winning_j << ") is " << score_2 << endl;
-    cout << "Max Depth score at         (" << winning_i << ", " << winning_j << ") is " << score_3 << endl;
-    cout << "PB score at                (" << winning_i << ", " << winning_j << ") is " << score_4 << endl;
-    cout << "Projected area score at    (" << winning_i << ", " << winning_j << ") is " << score_5 << endl;
-    cout << "Viewpoint entropy score at (" << winning_i << ", " << winning_j << ") is " << score_6 << endl;
-    cout << "Visibility ratio score at  (" << winning_i << ", " << winning_j << ") is " << score_7 << endl;
-    cout << "Visible triangles score at (" << winning_i << ", " << winning_j << ") is " << score_8 << endl;
-    cout << "VKL score at               (" << winning_i << ", " << winning_j << ") is " << score_9 << endl << endl;
+        myfile << result << endl;
+          
+        cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
+
+        number += 377;
+    }
+
+    myfile.close();
 
 //*/
 
