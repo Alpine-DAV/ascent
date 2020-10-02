@@ -1328,17 +1328,13 @@ void hybrid_render(const MPI_Properties &mpi_props,
                                                   my_probing_times.end(), 0.0);
         sum_render_times = std::isnan(sum_render_times) ? 0.0 : sum_render_times;
 
-        if (my_probing_times.size() == 0)
-        {
-            my_avg_probing_time = 0.f;
-        }
-        else
+        if (my_probing_times.size() > 0)
         {
             my_avg_probing_time = float(sum_render_times / my_probing_times.size());
             my_avg_probing_time /= 1000.f; // convert to seconds
         }
 
-        bool use_total_time = true;
+        bool use_total_time = false;
         if (my_avg_probing_time > 0.f && use_total_time)
         {
             my_avg_probing_time = total_probing_time;

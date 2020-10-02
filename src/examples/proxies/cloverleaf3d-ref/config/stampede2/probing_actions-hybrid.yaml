@@ -10,7 +10,7 @@
 -
   action: "add_scenes"
   probing:
-    factor: 0.15
+    factor: 0.1
     node_split: 0.8
     batch_count: 3
     insitu_type: "hybrid"
@@ -22,7 +22,7 @@
           field: "energy"
           pipeline: "pl1"
           min_value: 0.1
-          max_value: 50.0
+          max_value: 100.0
           color_table: 
             name: "rainbow desaturated"
             control_points: 

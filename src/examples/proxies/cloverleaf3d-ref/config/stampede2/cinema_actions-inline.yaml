@@ -17,7 +17,7 @@
           field: "energy"
           pipeline: "pl1"
           min_value: 0.1
-          max_value: 50.0
+          max_value: 100.0
           color_table: 
             name: "rainbow desaturated"
             control_points: 
@@ -40,8 +40,8 @@
       renders:
         r1:
           type: "cinema"
-          phi: 10
-          theta: 10
+          phi: 20
+          theta: 20
           camera:
             zoom: 0.3
           db_name: "clover_db"

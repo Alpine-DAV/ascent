@@ -1,9 +1,18 @@
 -
+  action: "add_pipelines"
+  pipelines: 
+    pl1:
+      f1:
+        type: "recenter"
+        params:
+          field: "energy"
+          association: "vertex"
+-
   action: "add_scenes"
   probing:
     factor: 1.0
     node_split: 0.818
-    batch_size: 10
+    batch_size: 3
     insitu_type: "inline"
   scenes:
     s1:
@@ -11,8 +20,9 @@
         p1:
           type: "volume"
           field: "energy"
+          pipeline: "pl1"
           min_value: 0.1
-          max_value: 40.0
+          max_value: 100.0
           color_table: 
             name: "rainbow desaturated"
             control_points: 
@@ -22,13 +32,21 @@
                 alpha: 0.0
               - 
                 type: "alpha"
+                position: 0.6
+                alpha: 0.5
+              - 
+                type: "alpha"
+                position: 0.9
+                alpha: 0.9
+              - 
+                type: "alpha"
                 position: 1.0
                 alpha: 1.0
       renders:
         r1:
           type: "cinema"
-          phi: 15
-          theta: 15
+          phi: 20
+          theta: 20
           camera:
             zoom: 0.3
           db_name: "clover_db"
