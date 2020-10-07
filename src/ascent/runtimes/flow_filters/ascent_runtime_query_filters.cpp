@@ -64,6 +64,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_expression_eval.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
 
 #include <flow_graph.hpp>
@@ -112,7 +113,12 @@ BasicQuery::declare_interface(Node &i)
 {
     i["type_name"]   = "basic_query";
     i["port_names"].append() = "in";
-    i["output_port"] = "false";
+    // this is a dummy port that we use to enforce
+    // a order of execution
+    i["port_names"].append() = "dummy";
+    // adding an output port to chain queries together
+    // so they execute in order of declaration
+    i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
@@ -136,22 +142,28 @@ BasicQuery::verify_params(const conduit::Node &params,
 void
 BasicQuery::execute()
 {
-    if(!input(0).check_type<Node>())
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("Query input must be a conduit node");
+        ASCENT_ERROR("Query input must be a data object");
     }
 
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
     std::string expression = params()["expression"].as_string();
     std::string name = params()["name"].as_string();
     conduit::Node actions;
 
     Node v_info;
-    Node *n_input = input<Node>(0);
 
     // The mere act of a query stores the results
-    runtime::expressions::ExpressionEval eval(n_input);
+    runtime::expressions::ExpressionEval eval(n_input.get());
     conduit::Node res = eval.evaluate(expression, name);
+
+    // we never actually use the output port
+    // since we only use it to chain ordering
+    conduit::Node *dummy =  new conduit::Node();
+    set_output<conduit::Node>(dummy);
 }
 
 

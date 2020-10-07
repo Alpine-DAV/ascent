@@ -47,7 +47,7 @@ Tutorial
 
 This tutorial introduces how to use Ascent, including basics about:
 
- - Formating mesh data for Ascent
+ - Formatting mesh data for Ascent
  - Using Conduit and Ascent's Conduit-based API
  - Using and combining Ascent's core building blocks: Scenes, Pipelines, Extracts, Queries, and Triggers
  - Using Ascent with the Cloverleaf3D example integration
@@ -59,10 +59,10 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 `Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/2019_11_17_SC19_insitu_tutorial_ascent_intro_slides.pdf>`_
 
 Scheduled Tutorials:
- * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
- * ECP 2020 Annual Meeting - Feb 2020, Houston, TX
+  * ECP 2020 Annual Meeting - Feb 2020, Houston, TX
 
 Past Tutorials:
+ * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
  * ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX
  * ECP 2019 Annual Meeting - Jan 2019, Houston, TX
 

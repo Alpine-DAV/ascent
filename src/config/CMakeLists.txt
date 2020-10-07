@@ -74,6 +74,7 @@ endif()
 # static builds require python 
 set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "")
 if(PYTHON_FOUND)
+    set(ASCENT_CONFIG_MK_PYTHON_LIB_DIR ${PYTHON_LIB_DIR})
     foreach(_lib ${PYTHON_LIBRARY})
         set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "${ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS} ${_lib}")
     endforeach()
@@ -113,7 +114,11 @@ if (NOT DEFINED ASCENT_INSTALL_SHARED_RESOURCES_DIR)
 endif()
 
 if (NOT DEFINED ASCENT_INSTALL_CMAKE_MODULE_DIR)
-  set(ASCENT_INSTALL_CMAKE_MODULE_DIR "${ASCENT_INSTALL_CONFIG_DIR}/cmake")
+  if(WIN32)
+    set(ASCENT_INSTALL_CMAKE_MODULE_DIR "cmake")
+  else()
+    set(ASCENT_INSTALL_CMAKE_MODULE_DIR "${ASCENT_INSTALL_CONFIG_DIR}/cmake/ascent")
+  endif()
 endif()
 
 include(CMakePackageConfigHelpers)
@@ -130,7 +135,7 @@ write_basic_package_version_file(
 configure_package_config_file(
   AscentConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/AscentConfig.cmake
-  INSTALL_DESTINATION ${ASCENT_INSTALL_CONFIG_DIR}
+  INSTALL_DESTINATION ${ASCENT_INSTALL_CMAKE_MODULE_DIR}
   PATH_VARS
     ASCENT_INSTALL_INCLUDE_DIR
     ASCENT_INSTALL_LIB_DIR

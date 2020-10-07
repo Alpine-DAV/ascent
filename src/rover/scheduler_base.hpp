@@ -74,6 +74,10 @@ public:
   virtual ~SchedulerBase();
   virtual void trace_rays() = 0;
   virtual void save_result(std::string file_name) = 0;
+  virtual void save_result(std::string file_name,
+                           float min_val,
+                           float max_val,
+                           bool log_scale) = 0;
   virtual void save_bov(std::string file_name) = 0;
   void clear_data_sets();
   //

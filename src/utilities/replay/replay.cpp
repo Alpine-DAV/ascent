@@ -49,6 +49,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include <ascent.hpp>
+#include <flow_timer.hpp>
 #include <ascent_hola.hpp>
 
 #include <fstream>
@@ -224,11 +225,38 @@ int main (int argc, char *argv[])
   for(int i = 0; i < time_steps.size(); ++i)
   {
     replay_opts["root_file"] = time_steps[i];
+    if(rank == 0)
+    {
+      std::cout<<"Root file "<<time_steps[i]<<"\n";
+    }
+    flow::Timer load;
     ascent::hola("relay/blueprint/mesh", replay_opts, replay_data);
-
+#ifdef REPLAY_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    float load_time = load.elapsed();
+      
+    flow::Timer publish;
     ascent.publish(replay_data);
+#ifdef REPLAY_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    float publish_time = publish.elapsed();
+
+    flow::Timer execute;
     ascent.execute(actions);
+#ifdef REPLAY_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    float execute_time = execute.elapsed();
+    if(rank == 0)
+    {
+      std::cout<<" Load -----: "<<load_time<<"\n";
+      std::cout<<" Publish --: "<<publish_time<<"\n";
+      std::cout<<" Execute --: "<<execute_time<<"\n";
+    }
   }
+
   ascent.close();
 
 #ifdef REPLAY_MPI

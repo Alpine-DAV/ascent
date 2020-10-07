@@ -120,7 +120,6 @@ TEST(ascent_flow_runtime, test_flow_runtime)
     conduit::blueprint::mesh::examples::braid("quads",100,100,0,data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
     Node actions;
     actions.append();

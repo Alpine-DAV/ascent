@@ -98,8 +98,9 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 
+protected:
+    void execute_python(conduit::Node *n);
 private:
-
     static flow::PythonInterpreter *interpreter();
     static flow::PythonInterpreter *m_interp;
 };

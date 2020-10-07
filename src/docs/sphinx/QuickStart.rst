@@ -73,10 +73,55 @@ We also provide spack settings for several well known HPC clusters, here is an e
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
+Public Installs of Ascent
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We also provide public installs of Ascent for the default compilers at a few  DOE HPC centers.
+
+Summary table of public ascent installs:
+
+.. list-table:: 
+   :widths: 10 15 10 10 50
+   :header-rows: 1
+
+   * - Site
+     - System
+     - Compiler
+     - Runtime
+     - Install Path
+
+   * - LLNL LC
+     - CZ TOSS 3 (Pascal)
+     - gcc 4.9.3
+     - OpenMP
+     - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
+
+   * - NERSC
+     - Cori
+     - gcc 8.2.0
+     - OpenMP
+     - ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install/``
+
+   * - OLCF
+     - Summit
+     - gcc 6.4.0
+     - OpenMP
+     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
+
+   * - OLCF
+     - Summit
+     - gcc 6.4.0
+     - CUDA
+     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
+
+
+See :ref:`tutorial_setup_public_installs` for more details on using these installs.
+
+
 Using Ascent in Your Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The install includes examples that demonstrate how to use Ascent in a CMake-based build system  and via a Makefile.
+The install includes examples that demonstrate how to use Ascent in a CMake-based build system and via a Makefile.
 
 CMake-based build system example (see: ``examples/ascent/using-with-cmake``):
 
@@ -90,6 +135,12 @@ Makefile-based build system example (see: ``examples/ascent/using-with-make``):
 .. literalinclude:: ../../examples/using-with-make/Makefile
    :lines: 46-61
    :dedent: 2
+
+
+
+
+
+
 
 
 

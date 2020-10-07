@@ -1469,7 +1469,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     scenes["s1/renders/r2/camera/fov"] = 60.;
     scenes["s1/renders/r2/camera/xpan"] = 0.;
     scenes["s1/renders/r2/camera/ypan"] = 0.;
-    scenes["s1/renders/r2/camera/zoom"] = 0.0;
+    scenes["s1/renders/r2/camera/zoom"] = 1.0;
     scenes["s1/renders/r2/camera/azimuth"] = 10.0;
     scenes["s1/renders/r2/camera/elevation"] = -10.0;
     scenes["s1/renders/r2/camera/near_plane"] = 0.1;
@@ -1499,7 +1499,7 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     std::string msg = "An example of creating a render, specifying all camera parameters.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file1));
+    EXPECT_TRUE(check_test_image(output_file1, 0.01f));
 }
 
 //-----------------------------------------------------------------------------

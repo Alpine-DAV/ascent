@@ -95,7 +95,8 @@ MFEMDataSet::~MFEMDataSet()
 
 MFEMDataSet::MFEMDataSet(mfem::Mesh *mesh)
  : m_mesh(mesh),
-   m_cycle(0)
+   m_cycle(0),
+   m_time(0.0)
 {
 
 }
@@ -104,6 +105,18 @@ int
 MFEMDataSet::cycle()
 {
   return m_cycle;
+}
+
+double
+MFEMDataSet::time()
+{
+  return m_time;
+}
+
+void
+MFEMDataSet::time(double time)
+{
+  m_time = time;
 }
 
 void
@@ -199,6 +212,13 @@ MFEMDataAdapter::BlueprintToMFEMDataSet(const Node &node,
         cycle = dom["state/cycle"].to_int32();
       }
       dset->cycle(cycle);
+
+      double time = 0;
+      if(dom.has_path("state/time"))
+      {
+        time = dom["state/time"].to_float64();
+      }
+      dset->time(time);
 
       std::string t_name = topo_name;
       // no topology name provied, use the first
@@ -320,6 +340,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     conduit::Node &n_dset = output.append();
     n_dset["state/domain_id"] = int(ho_domains->m_domain_ids[i]);
     n_dset["state/cycle"] = int(ho_domains->m_data_sets[i]->cycle());
+    n_dset["state/time"] = double(ho_domains->m_data_sets[i]->time());
 
     // get the high order data
     mfem::Mesh *ho_mesh = ho_domains->m_data_sets[i]->get_mesh();
@@ -336,6 +357,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
 
     for(auto it = field_map.begin(); it != field_map.end(); ++it)
     {
+
       mfem::GridFunction *ho_gf = it->second;
       std::string basis(ho_gf->FESpace()->FEColl()->Name());
       // we only have L2 or H2 at this point
@@ -405,11 +427,12 @@ MFEMDataAdapter::GridFunctionToBlueprintField(mfem::GridFunction *gf,
    int vdim  = gf->FESpace()->GetVDim();
    int ndofs = gf->FESpace()->GetNDofs();
 
+   const double * values = gf->HostRead();
    if (vdim == 1) // scalar case
    {
       //n_field["values"].set_external(gf->GetData(),
       //                               ndofs);
-      n_field["values"].set(gf->GetData(),
+      n_field["values"].set(values,
                             ndofs);
    }
    else // vector case
@@ -433,7 +456,7 @@ MFEMDataAdapter::GridFunctionToBlueprintField(mfem::GridFunction *gf,
          //                                          ndofs,
          //                                          offset,
          //                                          stride);
-         n_field["values"][comp_name].set(gf->GetData(),
+         n_field["values"][comp_name].set(values,
                                           ndofs,
                                           offset,
                                           stride);
@@ -550,6 +573,7 @@ MFEMDataAdapter::MeshToBlueprintMesh(mfem::Mesh *mesh,
       GridFunctionToBlueprintField(gf_mesh_nodes,
                                    n_mesh["fields/mesh_nodes"],
                                    main_topology_name);
+      n_mesh["fields/mesh_nodes/association"] = "vertex";
    }
 
    ////////////////////////////////////////////
@@ -644,6 +668,7 @@ MFEMDataAdapter::ElementTypeToShapeName(mfem::Element::Type element_type)
      case mfem::Element::QUADRILATERAL:  return "quad";
      case mfem::Element::TETRAHEDRON:    return "tet";
      case mfem::Element::HEXAHEDRON:     return "hex";
+     case mfem::Element::WEDGE:          return "wedge";
    }
 
    return "unknown";

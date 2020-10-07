@@ -23,4 +23,4 @@
           type: "pseudocolor"
           field: "log_mag"
           pipeline: "pl1"
-      image_prefix: "/Users/larsen30/research/test_builds/gradient/ascent/build/tests/_output/tout_log_field"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_log_field"

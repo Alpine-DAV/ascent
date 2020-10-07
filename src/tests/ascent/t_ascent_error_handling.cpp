@@ -188,7 +188,6 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing bad plot variable name");
 
@@ -282,7 +281,6 @@ TEST(ascent_error_handling, test_bad_color_table)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D warning for no bad color table name");
 
@@ -360,7 +358,6 @@ TEST(ascent_error_handling, test_emtpy)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    //verify_info.print();
 
     ASCENT_INFO("Testing 3D warning for no data to plot");
 

@@ -50,6 +50,7 @@
 
 #include "ascent_web_interface.hpp"
 
+#include <ascent.hpp>
 #include <ascent_config.h>
 #include <ascent_file_system.hpp>
 #include <ascent_logging.hpp>
@@ -70,11 +71,44 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
+std::string
+web_client_root_directory()
+{
+    // check for source dir
+    std::string web_root = ASCENT_SOURCE_WEB_CLIENT_ROOT;
+
+    if(conduit::utils::is_directory(web_root))
+    {
+        return web_root;
+    }
+
+    Node n;
+    ascent::about(n);
+
+    if(!n.has_child("web_client_root"))
+    {
+        ASCENT_ERROR("ascent:about result missing 'web_client_root'"
+                      << std::endl
+                      << n.to_yaml());
+    }
+
+    web_root = n["web_client_root"].as_string();
+
+    if(!conduit::utils::is_directory(web_root))
+    {
+         ASCENT_ERROR("Web client root directory (" << web_root << ") "
+                       " is missing");
+    }
+
+    return web_root;
+}
+
+//-----------------------------------------------------------------------------
 WebInterface::WebInterface()
 :m_enabled(false),
  m_ms_poll(100),
  m_ms_timeout(100),
- m_doc_root(ASCENT_WEB_CLIENT_ROOT)
+ m_doc_root("")
 {}
 
 //-----------------------------------------------------------------------------
@@ -124,11 +158,20 @@ WebInterface::Connection()
     {
         m_server.set_port(8081);
 
+        std::string  default_root =conduit::utils::join_file_path(web_client_root_directory(),
+                                                                  "ascent");
+
+        // support default doc root
+        if(m_doc_root == "")
+        {
+           m_doc_root = default_root;
+        }
         // if we aren't using the standard doc root loc, copy
         // the necessary web client files to the requested doc root
-        if(m_doc_root != ASCENT_WEB_CLIENT_ROOT)
+
+        if(m_doc_root != default_root)
         {
-            copy_directory(ASCENT_WEB_CLIENT_ROOT,
+            copy_directory(default_root,
                            m_doc_root);
         }
 

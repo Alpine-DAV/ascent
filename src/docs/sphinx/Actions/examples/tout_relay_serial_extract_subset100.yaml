@@ -6,7 +6,7 @@
     e1: 
       type: "relay"
       params: 
-        path: "/Users/larsen30/research/test_builds/ascent/build/tests/_output/tout_relay_serial_extract_subset"
+        path: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_relay_serial_extract_subset"
         protocol: "blueprint/mesh/hdf5"
         fields: 
           - "braid"

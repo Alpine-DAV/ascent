@@ -54,6 +54,7 @@
 #include <string.h>
 #include <chrono>
 #include <ostream>
+#include <algorithm>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -70,8 +71,12 @@
 #endif
 
 #include <flow.hpp>
+#include <ascent_actions_utils.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
+#include <expressions/ascent_blueprint_architect.hpp>
+#include <ascent_transmogrifier.hpp>
+#include <ascent_data_object.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
   #include <vtkm/cont/Error.h>
@@ -82,6 +87,10 @@
   #ifdef VTKM_CUDA
     #include <vtkm/cont/cuda/ChooseCudaDevice.h>
   #endif
+#endif
+
+#if defined(ASCENT_DRAY_ENABLED)
+#include <dray/dray.hpp>
 #endif
 using namespace conduit;
 using namespace std;
@@ -124,20 +133,23 @@ int InfoHandler::m_rank = 0;
 
 //-----------------------------------------------------------------------------
 AscentRuntime::AscentRuntime()
-    : Runtime(),
-      m_refinement_level(2), // default refinement level for high order meshes
-      m_rank(0),
-      m_ghost_field_name("ascent_ghosts"),
-      m_is_probing(0),
-      m_probing_factor(0.0),
-      m_render_count(0),
-      m_render_offset(0),
-      m_insitu_type("hybrid"),
-      m_is_cinema_increment(0),
-      m_sleep(0)
+ : Runtime(),
+ m_refinement_level(2), // default refinement level for high order meshes
+ m_rank(0),
+ m_default_output_dir("."),
+ m_session_name("ascent_session"),
+ m_field_filtering(false),
+ m_is_probing(0),
+ m_probing_factor(0.0),
+ m_render_count(0),
+ m_render_offset(0),
+ m_insitu_type("hybrid"),
+ m_is_cinema_increment(0),
+ m_sleep(0)
 {
-  flow::filters::register_builtin();
-  ResetInfo();
+    m_ghost_fields.append() = "ascent_ghosts";
+    flow::filters::register_builtin();
+    ResetInfo();
 }
 
 //-----------------------------------------------------------------------------
@@ -154,7 +166,7 @@ AscentRuntime::~AscentRuntime()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-void AscentRuntime::print_time(std::chrono::time_point<std::chrono::system_clock> start, 
+void AscentRuntime::print_time(std::chrono::time_point<std::chrono::system_clock> start,
                                const std::string &description,
                                const int rank)
 {
@@ -179,11 +191,11 @@ void AscentRuntime::Initialize(const conduit::Node &options)
   // vtkh::SetMPICommHandle(sim_vis_comm);
   // std::cout << ">>>>MPI size:" << vtkh::GetMPISize() << std::endl;
 #endif
-  if (options["mpi_comm"].to_int() != MPI_COMM_NULL)
-  {
-    MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
-    MPI_Comm_rank(comm, &m_rank);
-  }
+#if defined(ASCENT_DRAY_ENABLED)
+    dray::dray::mpi_comm(options["mpi_comm"].to_int());
+#endif
+  MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+  MPI_Comm_rank(comm, &m_rank);
   InfoHandler::m_rank = m_rank;
 #else // non mpi version
   if (options.has_child("mpi_comm"))
@@ -227,37 +239,79 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     m_refinement_level = options["refinement_level"].to_int32();
     if (m_refinement_level < 2)
     {
-      ASCENT_ERROR("'refinement_level' must be greater than 1");
+      m_refinement_level = options["refinement_level"].to_int32();
+      Transmogrifier::m_refinement_level = m_refinement_level;
+      if(m_refinement_level < 1)
+      {
+        ASCENT_ERROR("'refinement_level' must be greater than 0");
+      }
     }
   }
 #endif
+    if(options.has_path("default_dir"))
+    {
+      std::string dir = options["default_dir"].as_string();
 
-  m_runtime_options = options;
+      if(!directory_exists(dir))
+      {
+        ASCENT_INFO("'default_dir' '"<<dir<<"' does not exist."
+                    <<" Output dir will default to the cwd.");
+      }
+      m_default_output_dir = dir;
+    }
 
-  if (options.has_path("ghost_field_name"))
-  {
-    m_ghost_field_name = options["ghost_field_name"].as_string();
-  }
+    m_runtime_options = options;
 
-  // standard flow filters
-  flow::filters::register_builtin();
-  // filters for ascent flow runtime.
-  runtime::filters::register_builtin();
-  // filters for expression evaluation
-  runtime::expressions::register_builtin();
+    if(options.has_path("ghost_field_name"))
+    {
+      if(options["ghost_field_name"].dtype().is_string())
+      {
+        m_ghost_fields.reset();
 
-  if (options.has_path("web/stream") &&
-      options["web/stream"].as_string() == "true" &&
-      m_rank == 0)
-  {
+        std::string ghost_name = options["ghost_field_name"].as_string();
+        m_ghost_fields.append() = ghost_name;
+      }
+      else if(options["ghost_field_name"].dtype().is_list())
+      {
+        const int num_children = options["ghost_field_name"].number_of_children();
+        for(int i = 0; i < num_children; ++i)
+        {
+          const conduit::Node &child = options["ghost_field_name"].child(i);
+          if(!child.dtype().is_string())
+          {
+            ASCENT_ERROR("ghost_field_name list child is not a string");
+          }
+        }
+      }
+      else
+      {
+        ASCENT_ERROR("ghost_field_name is not a string or a list");
+      }
+    }
 
-    if (options.has_path("web/document_root"))
+    if(options.has_path("session_name"))
+    {
+      m_session_name = options["session_name"].as_string();
+    }
+
+    runtime::expressions::ExpressionEval::load_cache(m_default_output_dir,
+                                                     m_session_name);
+
+    if(options.has_path("web/stream") &&
+       options["web/stream"].as_string() == "true" &&
+       m_rank == 0)
     {
       m_web_interface.SetDocumentRoot(options["web/document_root"].as_string());
     }
 
-    m_web_interface.Enable();
-  }
+    if(options.has_path("field_filtering"))
+    {
+      if(options["field_filtering"].as_string() == "true")
+      {
+        m_field_filtering = true;
+      }
+    }
+
 
   if (options.has_path("is_probing") && options.has_path("probing_factor"))
   {
@@ -268,7 +322,7 @@ void AscentRuntime::Initialize(const conduit::Node &options)
   if (options.has_path("render_count"))
     m_render_count = options["render_count"].as_int32();
   if (options.has_path("render_offset"))
-    m_render_offset = options["render_offset"].as_int32();    
+    m_render_offset = options["render_offset"].as_int32();
   if (options.has_path("insitu_type"))
     m_insitu_type = options["insitu_type"].as_string();
   if (options.has_path("cinema_increment"))
@@ -300,270 +354,304 @@ void AscentRuntime::ResetInfo()
 //-----------------------------------------------------------------------------
 void AscentRuntime::Cleanup()
 {
-  if (m_runtime_options.has_child("timings") &&
-      m_runtime_options["timings"].as_string() == "enabled")
-  {
-    // save out timing info on close
-    std::stringstream fname;
-    fname << "ascent_filter_times";
+    if(m_runtime_options.has_child("timings") &&
+       m_runtime_options["timings"].as_string() == "true")
+    {
+        // save out timing info on close
+        std::stringstream fname;
+        fname << "ascent_filter_times";
 
 #ifdef ASCENT_MPI_ENABLED
     fname << "_" << m_rank;
 #endif
-    fname << ".csv";
-    std::ofstream ftimings;
-    ftimings.open(fname.str());
-    ftimings << w.timing_info();
-    ftimings.close();
-  }
+        fname << ".csv";
+        std::ofstream ftimings;
+        std::string file_name = fname.str();
+        file_name = conduit::utils::join_file_path(m_default_output_dir,file_name);
+        ftimings.open(file_name, std::ofstream::out | std::ofstream::app);
+        ftimings << w.timing_info();
+        ftimings.close();
+    }
 }
 
 //-----------------------------------------------------------------------------
 void AscentRuntime::Publish(const conduit::Node &data)
 {
-  // create our own tree, with all data zero copied.
-  blueprint::mesh::to_multi_domain(data, m_data);
-  EnsureDomainIds();
+    blueprint::mesh::to_multi_domain(data, m_source);
+    EnsureDomainIds();
+    // filter out default ghost name and
+    // check if user provided ghost names are actually there
+    VerifyGhosts();
+    // if nestsets are present, agument current ghost fields
+    // for zones masked by finer levels. If no ghosts are present
+    // we create them
+    PaintNestsets();
 }
 
 //-----------------------------------------------------------------------------
 void AscentRuntime::EnsureDomainIds()
 {
-  // if no domain ids were provided add them now
-  int num_domains = 0;
-  bool has_ids = true;
-  bool no_ids = true;
+ // if no domain ids were provided add them now
+    int num_domains = 0;
+    bool has_ids = true;
+    bool no_ids = true;
 
-  // get the number of domains and check for id consistency
-  num_domains = m_data.number_of_children();
-  for (int i = 0; i < num_domains; ++i)
-  {
-    const conduit::Node &dom = m_data.child(i);
-    if (dom.has_path("state/domain_id"))
+    // get the number of domains and check for id consistency
+    num_domains = m_source.number_of_children();
+    for(int i = 0; i < num_domains; ++i)
     {
-      no_ids = false;
+      const conduit::Node &dom = m_source.child(i);
+      if(dom.has_path("state/domain_id"))
+      {
+        no_ids = false;
+      }
+      else
+      {
+        has_ids = false;
+      }
     }
-    else
+
+
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id = flow::Workspace::default_mpi_comm();
+
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+
+    int comm_size = 1;
+    MPI_Comm_size(mpi_comm, &comm_size);
+    int *has_ids_array = new int[comm_size];
+    int *no_ids_array = new int[comm_size];
+    int boolean = has_ids ? 1 : 0;
+
+    MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
+    boolean = no_ids ? 1 : 0;
+    MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
+
+    bool global_has_ids = true;
+    bool global_no_ids = false;
+    for(int i = 0; i < comm_size; ++i)
     {
-      has_ids = false;
+      if(has_ids_array[i] == 0)
+      {
+        global_has_ids = false;
+      }
+      if(no_ids_array[i] == 1)
+      {
+        global_no_ids = true;
+      }
     }
-  }
+    has_ids = global_has_ids;
+    no_ids = global_no_ids;
+    delete[] has_ids_array;
+    delete[] no_ids_array;
+#endif
 
-// #ifdef ASCENT_MPI_ENABLED
-//   int comm_id = flow::Workspace::default_mpi_comm();
-
-//   MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
-
-//   int comm_size = 1;
-//   MPI_Comm_size(mpi_comm, &comm_size);
-//   int *has_ids_array = new int[comm_size];
-//   int *no_ids_array = new int[comm_size];
-//   int boolean = has_ids ? 1 : 0;
-
-//   MPI_Allgather(&boolean, 1, MPI_INT, has_ids_array, 1, MPI_INT, mpi_comm);
-//   boolean = no_ids ? 1 : 0;
-//   MPI_Allgather(&boolean, 1, MPI_INT, no_ids_array, 1, MPI_INT, mpi_comm);
-
-//   bool global_has_ids = true;
-//   bool global_no_ids = false;
-//   for (int i = 0; i < comm_size; ++i)
-//   {
-//     if (has_ids_array[i] == 0)
-//     {
-//       global_has_ids = false;
-//     }
-//     if (no_ids_array[i] == 1)
-//     {
-//       global_no_ids = true;
-//     }
-//   }
-//   has_ids = global_has_ids;
-//   no_ids = global_no_ids;
-//   delete[] has_ids_array;
-//   delete[] no_ids_array;
-// #endif
-
-  bool consistent_ids = (has_ids || no_ids);
-  if (!consistent_ids)
-  {
-    ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "
-                 << "or all domains do not have an id");
-  }
-
-  int domain_offset = 0;
-// #ifdef ASCENT_MPI_ENABLED
-//   int *domains_per_rank = new int[comm_size];
-//   MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
-//   for (int i = 0; i < m_rank; ++i)
-//   {
-//     domain_offset += domains_per_rank[i];
-//   }
-//   delete[] domains_per_rank;
-// #endif
-  for (int i = 0; i < num_domains; ++i)
-  {
-    conduit::Node &dom = m_data.child(i);
-
-    if (!dom.has_path("state/domain_id"))
+    bool consistent_ids = (has_ids || no_ids);
+    if(!consistent_ids)
     {
-      dom["state/domain_id"] = domain_offset + i;
+      ASCENT_ERROR("Inconsistent domain ids: all domains must either have an id "
+                  <<"or all domains do not have an id");
     }
-  }
+
+    int domain_offset = 0;
+#ifdef ASCENT_MPI_ENABLED
+    int *domains_per_rank = new int[comm_size];
+    MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
+    for(int i = 0; i < m_rank; ++i)
+    {
+      domain_offset += domains_per_rank[i];
+    }
+    delete[] domains_per_rank;
+#endif
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = m_source.child(i);
+
+      if(!dom.has_path("state/domain_id"))
+      {
+         dom["state/domain_id"] = domain_offset + i;
+      }
+    }
 }
 
 //-----------------------------------------------------------------------------
 std::string
 AscentRuntime::CreateDefaultFilters()
 {
-  static std::string end_filter = "vtkh_data";
-  if (w.graph().has_filter(end_filter))
-  {
-    return end_filter;
-  }
-  //
-  // Here we are creating the default set of filters that all
-  // pipelines will connect to. It verifies the mesh and
-  // ensures we have a vtkh data set going forward.
-  //
-  conduit::Node params;
-  params["protocol"] = "mesh";
+    static std::string endpoint = "default_filters_endpoint";
 
-  w.graph().add_filter("blueprint_verify", // registered filter name
-                       "verify",           // "unique" filter name
-                       params);
+    if(w.graph().has_filter(endpoint))
+    {
+      return endpoint;
+    }
 
-  w.graph().connect("source",
-                    "verify",
-                    0); // default port
-  // conver high order MFEM meshes to low order
-  conduit::Node low_params;
-  w.graph().add_filter("ensure_low_order",
-                       "low_order",
-                       low_params);
+    //
+    // Here we are creating the default set of filters that all
+    // pipelines will connect to. It verifies the mesh and
+    // ensures we have a vtkh data set going forward.
+    //
+    conduit::Node params;
+    params["protocol"] = "mesh";
+    w.graph().add_filter("blueprint_verify", // registered filter name
+                         "verify",           // "unique" filter name
+                         params);
 
-  w.graph().connect("verify",
-                    "low_order",
-                    0); // default port
+    w.graph().connect("source",
+                      "verify",
+                      0);        // default port
 
-  conduit::Node vtkh_params;
-  vtkh_params["zero_copy"] = "true";
+    // we can have multiple ghost fields
+    std::vector<std::string> ghost_fields;
+    const int num_children = m_ghost_fields.number_of_children();
+    for(int i = 0; i < num_children; ++i)
+    {
+      ghost_fields.push_back(m_ghost_fields.child(i).as_string());
+    }
 
-  w.graph().add_filter("ensure_vtkh",
-                       "vtkh_data",
-                       vtkh_params);
+    std::string prev_filter = "verify";
+    std::string first_stripper;
+    const int num_ghosts = ghost_fields.size();
+    for(int i = 0; i < num_ghosts; ++i)
+    {
+      std::string filter_name = "strip_garbage_" + ghost_fields[i];
 
-  w.graph().connect("low_order",
-                    "vtkh_data",
-                    0); // default port
-                        //if(m_has_ghosts)
-                        //{
-  const std::string strip_name = "strip_garbage_ghosts";
-  // garbage zones have a value of 2
-  conduit::Node threshold_params;
-  threshold_params["field"] = m_ghost_field_name;
-  threshold_params["min_value"] = 0;
-  threshold_params["max_value"] = 1;
+      if(i == 0)
+      {
+        first_stripper = filter_name;
+      }
+      // garbage zones have a value of 2
+      conduit::Node threshold_params;
+      threshold_params["field"] = ghost_fields[i];
+      threshold_params["min_value"] = 0;
+      threshold_params["max_value"] = 1;
 
-  w.graph().add_filter("vtkh_ghost_stripper",
-                       strip_name,
-                       threshold_params);
+      w.graph().add_filter("vtkh_ghost_stripper",
+                           filter_name,
+                           threshold_params);
 
-  w.graph().connect("vtkh_data",
-                    strip_name,
-                    0); // default port
+      w.graph().connect(prev_filter,
+                        filter_name,
+                        0);        // default port
 
-  end_filter = strip_name;
-  //}
+      prev_filter = filter_name;
+    }
 
-  return end_filter;
+    // create an alias passthrough
+    w.graph().add_filter("alias",
+                         endpoint);
+
+    w.graph().connect(prev_filter, // src
+                      endpoint,    // dest
+                      0);          // default port
+
+    return endpoint;
 }
 //-----------------------------------------------------------------------------
-void AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
-                                          const std::string pipeline_name)
+void
+AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
+                                     const std::string pipeline_name)
 {
-  std::string prev_name = CreateDefaultFilters();
-  bool has_pipeline = false;
-  std::string input_name;
-  // check to see if there is a non-default input to this pipeline
-  if (pipeline.has_path("pipeline"))
-  {
-    prev_name = pipeline["pipeline"].as_string();
-    input_name = prev_name;
-
-    has_pipeline = true;
-  }
-
-  const std::vector<std::string> &child_names = pipeline.child_names();
-
-  for (int i = 0; i < pipeline.number_of_children(); ++i)
-  {
-    const std::string cname = child_names[i];
-    if (cname == "pipeline")
+    std::string prev_name = CreateDefaultFilters();
+    bool has_pipeline = false;
+    std::string input_name;
+    // check to see if there is a non-default input to this pipeline
+    if(pipeline.has_path("pipeline"))
     {
-      // this is a child that is not a filter.
-      // It specifies the input to the pipeline itself
-      continue;
-    }
-    conduit::Node filter = pipeline.child(i);
-    std::string filter_name;
+      prev_name = pipeline["pipeline"].as_string();
+      input_name = prev_name;
 
-    if (!filter.has_path("type"))
-    {
-      filter.print();
-      ASCENT_ERROR("Filter must declare a 'type'");
+      has_pipeline = true;
     }
 
-    std::string type = filter["type"].as_string();
+    const std::vector<std::string> &child_names = pipeline.child_names();
 
-    if (registered_filter_types()["transforms"].has_child(type))
+    for(int i = 0; i < pipeline.number_of_children(); ++i)
     {
-      filter_name = registered_filter_types()["transforms"][type].as_string();
+      const std::string cname = child_names[i];
+      if(cname == "pipeline")
+      {
+        // this is a child that is not a filter.
+        // It specifies the input to the pipeline itself
+        continue;
+      }
+
+      if(cname == "type")
+      {
+        // this is common error to put a filter directly
+        // under pipelines
+        ASCENT_ERROR("Detected 'type' with a pipeline definition "<<
+                     "("<<pipeline_name<<"). This occurs when a "
+                     "filter type is mistakenly placed outside "
+                     "a filter");
+
+      }
+
+      conduit::Node filter = pipeline.child(i);
+      std::string filter_name;
+
+      if(!filter.has_path("type"))
+      {
+        filter.print();
+        ASCENT_ERROR("Filter must declare a 'type'");
+      }
+
+      std::string type = filter["type"].as_string();
+
+      // support pipelines that specify "exa" style filters
+      if(type.find("exa") == (size_t)0 &&
+         type.size() > (size_t)3)
+      {
+          type = type.substr(3);
+      }
+
+      if(registered_filter_types()["transforms"].has_child(type))
+      {
+          filter_name = registered_filter_types()["transforms"][type].as_string();
+      }
+      else
+      {
+        ASCENT_ERROR("Unrecognized transform filter "<<filter["type"].as_string());
+      }
+
+      // create a unique name for the filter
+      std::stringstream ss;
+      ss<<pipeline_name<<"_"<<cname<<"_"<<type;
+      std::string name = ss.str();
+      w.graph().add_filter(filter_name,
+                           name,
+                           filter["params"]);
+
+      if((input_name == prev_name) && has_pipeline)
+      {
+        // connect this later so we can specify them in any order
+        m_connections[name] = prev_name;
+      }
+      else
+      {
+        w.graph().connect(prev_name, // src
+                          name,      // dest
+                          0);        // default port
+      }
+
+      prev_name = name;
     }
-    else
+
+    if(w.graph().has_filter(pipeline_name))
     {
-      ASCENT_ERROR("Unrecognized transform filter " << filter["type"].as_string());
+      ASCENT_INFO("Duplicate pipeline name '"<<pipeline_name
+                  <<"' this is usually the symptom of a larger problem."
+                  <<" Locate the first error message to find the root cause");
     }
 
-    // create a unique name for the filter
-    std::stringstream ss;
-    ss << pipeline_name << "_" << i << "_" << filter_name;
-    std::string name = ss.str();
-    w.graph().add_filter(filter_name,
-                         name,
-                         filter["params"]);
+    // create an alias passthrough filter so plots and extracts
+    // can connect to the end result by pipeline name
+    w.graph().add_filter("alias",
+                         pipeline_name);
 
-    if ((input_name == prev_name) && has_pipeline)
-    {
-      // connect this later so we can specify them in any order
-      m_connections[name] = prev_name;
-    }
-    else
-    {
-      w.graph().connect(prev_name, // src
-                        name,      // dest
-                        0);        // default port
-    }
-
-    prev_name = name;
-  }
-
-  if (w.graph().has_filter(pipeline_name))
-  {
-    ASCENT_INFO("Duplicate pipeline name '" << pipeline_name
-                                            << "' this is usually the symptom of a larger problem."
-                                            << " Locate the first error message to find the root cause");
-  }
-
-  // create an alias passthrough filter so plots and extracts
-  // can connect to the end result by pipeline name
-  w.graph().add_filter("alias",
-                       pipeline_name);
-
-  w.graph().connect(prev_name,     // src
-                    pipeline_name, // dest
-                    0);            // default port
+    w.graph().connect(prev_name,     // src
+                      pipeline_name, // dest
+                      0);            // default port
 }
-
 //-----------------------------------------------------------------------------
 void AscentRuntime::CreatePipelines(const conduit::Node &pipelines)
 {
@@ -595,7 +683,7 @@ void AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   // current special case filter setup
   if (extract_type == "python")
   {
-    filter_name = "python_script";
+    filter_name = "ascent_python_script";
 
     // customize the names of the script integration module and funcs
     params["interface/module"] = "ascent_extract";
@@ -665,7 +753,7 @@ void AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
   else if (extract_type == "jupyter")
   {
-    filter_name = "python_script";
+    filter_name = "ascent_python_script";
 
     // customize the names of the script integration module and funcs
     params["interface/module"] = "ascent_extract";
@@ -714,24 +802,6 @@ void AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                  << " already exists");
   }
 
-  // currently these are special cases.
-  // TODO:
-  bool special = false;
-  if (extract_type == "xray" ||
-      extract_type == "volume" ||
-      extract_type == "histogram" ||
-      extract_type == "statistics")
-    special = true;
-
-  std::string ensure_name = "ensure_blueprint_" + extract_name;
-  conduit::Node empty_params;
-  if (!special)
-  {
-    w.graph().add_filter("ensure_blueprint",
-                         ensure_name,
-                         empty_params);
-  }
-
   w.graph().add_filter(filter_name,
                        extract_name,
                        params);
@@ -748,23 +818,11 @@ void AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
   else
   {
-    // this is the blueprint mesh
     extract_source = "source";
-    //current special case
-    if (special)
-    {
-      extract_source = "default";
-    }
+
   }
-  if (!special)
-  {
-    m_connections[ensure_name] = extract_source;
-    m_connections[extract_name] = ensure_name;
-  }
-  else
-  {
-    m_connections[extract_name] = extract_source;
-  }
+  m_connections[extract_name] = extract_source;
+
 }
 //-----------------------------------------------------------------------------
 void AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
@@ -773,39 +831,75 @@ void AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
   std::string filter_name;
 
   conduit::Node params;
-  if (trigger.has_path("params"))
+  if(trigger.has_path("params"))
+  {
     params = trigger["params"];
+  }
+
+  std::string pipeline = "source";
+  if(trigger.has_path("pipeline"))
+  {
+    pipeline = trigger["pipeline"].as_string();
+  }
 
   w.graph().add_filter("basic_trigger",
                        trigger_name,
                        params);
 
   // this is the blueprint mesh
-  m_connections[trigger_name] = "source";
+  m_connections[trigger_name] = pipeline;
+
 }
 //-----------------------------------------------------------------------------
-void AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
-                                       const std::string query_name)
+void
+AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
+                                  const std::string query_name,
+                                  const std::string prev_name)
 {
+
   std::string filter_name;
 
   conduit::Node params;
-  if (query.has_path("params"))
+  std::string pipeline = CreateDefaultFilters();
+  if(query.has_path("params"))
+  {
     params = query["params"];
+  }
+
+  if(query.has_path("pipeline"))
+  {
+    pipeline = query["pipeline"].as_string();
+  }
+
 
   w.graph().add_filter("basic_query",
                        query_name,
                        params);
 
+
+  // connection port to enforce order of execution
+  std::string conn_port;
+  if(prev_name == "")
+  {
+    conn_port = pipeline;
+  }
+  else
+  {
+    conn_port = prev_name;
+  }
+
+  w.graph().connect(conn_port,
+                    query_name,
+                    "dummy");
+
   // this is the blueprint mesh
-  m_connections[query_name] = "source";
+  m_connections[query_name] = pipeline;
 }
 //-----------------------------------------------------------------------------
 void AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                       const std::string plot_name)
 {
   std::string filter_name = "create_plot";
-  ;
 
   if (w.graph().has_filter(plot_name))
   {
@@ -826,7 +920,6 @@ void AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   if (plot.has_path("pipeline"))
   {
     plot_source = plot["pipeline"].as_string();
-    ;
   }
   else
   {
@@ -834,29 +927,69 @@ void AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
     plot_source = CreateDefaultFilters();
   }
 
-  // we need to make sure that ghost zones don't make it into rendering
-  // so we will create new filters that attach to the pipeline outputs
-  std::string strip_name = plot_source + "_strip_real_ghosts";
-  if (!w.graph().has_filter(strip_name))
+  std::string pipeline_filter_name = plot_source;
+
+  std::string prev_filter = plot_source;
+
+  const int num_ghosts = m_ghost_fields.number_of_children();
+  if(num_ghosts != 0)
   {
-    conduit::Node threshold_params;
-    threshold_params["field"] = m_ghost_field_name;
-    threshold_params["min_value"] = 0;
-    threshold_params["max_value"] = 0;
+    // we need to make sure that ghost zones don't make it into rendering
+    // so we will create new filters that attach to the pipeline outputs
+    std::string strip_name = plot_source + "_strip_real_ghosts";
 
-    w.graph().add_filter("vtkh_ghost_stripper",
-                         strip_name,
-                         threshold_params);
+    // we can have multiple ghost fields
+    std::vector<std::string> ghost_fields;
+    const int num_children = m_ghost_fields.number_of_children();
+    for(int i = 0; i < num_children; ++i)
+    {
+      ghost_fields.push_back(m_ghost_fields.child(i).as_string());
+    }
 
-    w.graph().connect(plot_source,
-                      strip_name,
-                      0); // default port
+    const int num_ghosts = ghost_fields.size();
+    for(int i = 0; i < num_ghosts; ++i)
+    {
+      std::string filter_name = strip_name + "_" + ghost_fields[i];
+
+      // if this alread exists then it was created by another plot
+      if(!w.graph().has_filter(filter_name))
+      {
+        conduit::Node threshold_params;
+        threshold_params["field"] = ghost_fields[i];
+        threshold_params["min_value"] = 0;
+        threshold_params["max_value"] = 0;
+
+        w.graph().add_filter("vtkh_ghost_stripper",
+                             filter_name,
+                             threshold_params);
+
+        w.graph().connect(prev_filter,
+                          filter_name,
+                          0);        // default port
+
+        prev_filter = filter_name;
+      }
+    }
+  } // if stripping ghosts
+
+  // create an a consistent name
+  std::string endpoint_name = pipeline_filter_name + "_plot_source";
+
+  if(!w.graph().has_filter(endpoint_name))
+  {
+    w.graph().add_filter("alias",
+                         endpoint_name);
+
+    w.graph().connect(prev_filter,   // src
+                      endpoint_name, // dest
+                      0);            // default port
+
   }
 
-  plot_source = strip_name;
+  m_connections[plot_name] = endpoint_name;
 
-  m_connections[plot_name] = plot_source;
 }
+
 //-----------------------------------------------------------------------------
 void AscentRuntime::CreatePlots(const conduit::Node &plots)
 {
@@ -867,6 +1000,7 @@ void AscentRuntime::CreatePlots(const conduit::Node &plots)
     ConvertPlotToFlow(plot, names[i]);
   }
 }
+
 //-----------------------------------------------------------------------------
 void AscentRuntime::CreateExtracts(const conduit::Node &extracts)
 {
@@ -893,10 +1027,12 @@ void AscentRuntime::CreateTriggers(const conduit::Node &triggers)
 void AscentRuntime::CreateQueries(const conduit::Node &queries)
 {
   std::vector<std::string> names = queries.child_names();
-  for (int i = 0; i < queries.number_of_children(); ++i)
+  std::string prev_name = "";
+  for(int i = 0; i < queries.number_of_children(); ++i)
   {
     conduit::Node query = queries.child(i);
-    ConvertQueryToFlow(query, names[i]);
+    ConvertQueryToFlow(query, names[i], prev_name);
+    prev_name = names[i];
   }
 }
 
@@ -904,14 +1040,14 @@ void AscentRuntime::CreateQueries(const conduit::Node &queries)
 void AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
-  const int num_domains = m_data.number_of_children();
+  const int num_domains = m_source.number_of_children();
   int cycle = 0;
   float time = 0.f;
 
   for (int i = 0; i < num_domains; ++i)
   {
-    const conduit::Node &dom = m_data.child(i);
-    if (dom.has_path("state/cycle"))
+    const conduit::Node &dom = m_source.child(i);
+    if(dom.has_path("state/cycle"))
     {
       cycle = dom["state/cycle"].to_int32();
     }
@@ -931,7 +1067,7 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["cycle"] = cycle;
   (*meta)["time"] = time;
   (*meta)["refinement_level"] = m_refinement_level;
-  (*meta)["ghost_field"] = m_ghost_field_name;
+  (*meta)["ghost_field"] = m_ghost_fields;
   (*meta)["is_probing"] = m_is_probing;
   (*meta)["probing_factor"] = m_probing_factor;
   (*meta)["render_count"] = m_render_count;
@@ -939,19 +1075,32 @@ void AscentRuntime::PopulateMetadata()
   (*meta)["insitu_type"] = m_insitu_type;
   (*meta)["cinema_increment"] = m_is_cinema_increment;
   (*meta)["sleep"] = m_sleep;
+  (*meta)["ghost_field"] = m_ghost_fields;
+  (*meta)["default_dir"] = m_default_output_dir;
+
 }
 
 //-----------------------------------------------------------------------------
 void AscentRuntime::ConnectSource()
 {
-  // note: if the reg entry for data was already added
-  // the set_external updates everything,
-  // we don't need to remove and re-add.
-  if (!w.registry().has_entry("_ascent_input_data"))
-  {
-    w.registry().add<Node>("_ascent_input_data",
-                           &m_data);
-  }
+    // There is no promise that all data can be zero copied
+    // and conversions to vtkh/low order will be invalid.
+    // We must reset the source object
+    conduit::Node *data_node = new conduit::Node();
+    data_node->set_external(m_source);
+    m_data_object.reset(data_node);
+
+    SourceFieldFilter();
+
+    // note: if the reg entry for data was already added
+    // the set_external updates everything,
+    // we don't need to remove and re-add.
+
+    if(!w.registry().has_entry("_ascent_input_data"))
+    {
+        w.registry().add<DataObject>("_ascent_input_data",
+                                     &m_data_object);
+    }
 
   if (!w.graph().has_filter("source"))
   {
@@ -1003,10 +1152,8 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
     {
       pipeline = CreateDefaultFilters();
     }
-
-    // we are always adding a ghost filter so append the name
-    // so bounds and domain ids get the right input
-    pipeline = pipeline + "_strip_real_ghosts";
+    // use the consistent name from PlotToFlow
+    pipeline = pipeline + "_plot_source";
     pipelines.push_back(pipeline);
   }
 
@@ -1092,11 +1239,11 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     std::vector<std::string> pipelines = GetPipelines(scene["plots"]);
     std::vector<std::string> plot_names = scene["plots"].child_names();
 
-    // create plots with scene name appended
+    // create plots with scene name + plot_name
     conduit::Node appended_plots;
     for (int k = 0; k < plot_names.size(); ++k)
     {
-      std::string p_name = plot_names[k] + "_" + names[i];
+      std::string p_name = names[i] + "_" + plot_names[k];
       appended_plots[p_name] = scene["plots/" + plot_names[k]];
     }
 
@@ -1106,8 +1253,6 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     std::vector<std::string> bounds_names;
     std::vector<std::string> union_bounds_names;
-    std::vector<std::string> domain_ids_names;
-    std::vector<std::string> union_domain_ids_names;
 
     //
     // as we add plots we aggregate them into the scene.
@@ -1122,11 +1267,10 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     {
       //
       // To setup the rendering we need to setup a several filters.
-      // A render, needs two inputs:
-      //     1) a set of domain ids to create canvases
-      //     2) the coordinate bounds of all the input pipelines
-      //        to be able to create a default camera
-      // Thus, we have to call bounds and domain id filters and
+      // A render, needs one inputs
+      //     1) the coordinate bounds of all the input pipelines
+      //        to be able to create a defailt camera
+      // Thus, we have to call bounds and
       // create unions of all inputs to feed to the render.
       //
       std::string bounds_name = plot_names[p] + "_bounds";
@@ -1140,16 +1284,6 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                         0);           // default port
       bounds_names.push_back(bounds_name);
 
-      std::string domain_ids_name = plot_names[p] + "_domain_ids";
-      w.graph().add_filter("vtkh_domain_ids",
-                           domain_ids_name,
-                           empty);
-
-      w.graph().connect(pipelines[p],    // src
-                        domain_ids_name, // dest
-                        0);              // default port
-      domain_ids_names.push_back(domain_ids_name);
-
       //
       // we have more than one. Create union filters.
       //
@@ -1161,23 +1295,13 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                              empty);
         union_bounds_names.push_back(union_bounds_name);
 
-        std::string union_domain_ids_name = plot_names[p] + "_union_domain_ids";
-        w.graph().add_filter("vtkh_union_domain_ids",
-                             union_domain_ids_name,
-                             empty);
-        union_domain_ids_names.push_back(union_domain_ids_name);
-
-        if (p == 1)
+        if(p == 1)
         {
           // first union just needs the output
           // of the first bounds
-          w.graph().connect(bounds_names[p - 1], // src
-                            union_bounds_name,   // dest
-                            0);                  // default port
-
-          w.graph().connect(domain_ids_names[p - 1], // src
-                            union_domain_ids_name,   // dest
-                            0);                      // default port
+          w.graph().connect(bounds_names[p-1],  // src
+                            union_bounds_name,  // dest
+                            0);                 // default port
         }
         else
         {
@@ -1189,18 +1313,12 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
                             union_bounds_name,         // dest
                             0);                        // default port
 
-          w.graph().connect(union_domain_ids_names[p - 2], // src
-                            union_domain_ids_name,         // dest
-                            0);                            // default port
         }
 
         w.graph().connect(bounds_name,       // src
                           union_bounds_name, // dest
                           1);                // default port
 
-        w.graph().connect(domain_ids_name,       // src
-                          union_domain_ids_name, // dest
-                          1);                    // default port
       }
 
       // connect the plot with the scene
@@ -1232,27 +1350,20 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
     // up to the render inputs
     //
     std::string bounds_output;
-    std::string domain_ids_output;
 
     if (bounds_names.size() == 1)
     {
       bounds_output = bounds_names[0];
-      domain_ids_output = domain_ids_names[0];
     }
     else
     {
       const size_t union_size = union_bounds_names.size();
-      bounds_output = union_bounds_names[union_size - 1];
-      domain_ids_output = union_domain_ids_names[union_size - 1];
+      bounds_output = union_bounds_names[union_size-1];
     }
 
     w.graph().connect(bounds_output, // src
                       renders_name,  // dest
                       0);            // default port
-
-    w.graph().connect(domain_ids_output, // src
-                      renders_name,      // dest
-                      1);                // default port
 
     // connect Exec Scene to the output of the last
     // add_plot and to the renders
@@ -1267,7 +1378,7 @@ void AscentRuntime::CreateScenes(const conduit::Node &scenes)
   } // each scene
 }
 
-// void AscentRuntime::FindRenders(conduit::Node &image_params, 
+// void AscentRuntime::FindRenders(conduit::Node &image_params,
 //                                 conduit::Node &image_list,
 //                                 conduit::Node &render_times,
 //                                 conduit::Node &color_buffers,
@@ -1388,8 +1499,12 @@ void AscentRuntime::BuildGraph(const conduit::Node &actions)
     }
   }
 
-  // we are enforcing the order of exectution
-  for (int i = 0; i < queries.number_of_children(); ++i)
+  // we are enforcing the order of execution
+  for(int i = 0; i < pipelines.number_of_children(); ++i)
+  {
+    CreatePipelines(pipelines.child(i));
+  }
+  for(int i = 0; i < queries.number_of_children(); ++i)
   {
     CreateQueries(queries.child(i));
   }
@@ -1397,11 +1512,7 @@ void AscentRuntime::BuildGraph(const conduit::Node &actions)
   {
     CreateTriggers(triggers.child(i));
   }
-  for (int i = 0; i < pipelines.number_of_children(); ++i)
-  {
-    CreatePipelines(pipelines.child(i));
-  }
-  for (int i = 0; i < scenes.number_of_children(); ++i)
+  for(int i = 0; i < scenes.number_of_children(); ++i)
   {
     CreateScenes(scenes.child(i));
   }
@@ -1415,165 +1526,133 @@ void AscentRuntime::BuildGraph(const conduit::Node &actions)
 //-----------------------------------------------------------------------------
 void AscentRuntime::Execute(const conduit::Node &actions)
 {
-  // catch any errors that come up here and forward
-  // them up as a conduit error
+    // catch any errors that come up here and forward
+    // them up as a conduit error
 
-  // --- open try --- //
-  try
-  {
-    ResetInfo();
-
-    conduit::Node diff_info;
-    bool different_actions = m_previous_actions.diff(actions, diff_info);
-
-    if (different_actions)
+    // --- open try --- //
+    try
     {
-      // destroy existing graph an start anew
+        ResetInfo();
+
+        conduit::Node diff_info;
+        bool different_actions = m_previous_actions.diff(actions, diff_info);
+
+        if(different_actions)
+        {
+          if(m_field_filtering)
+          {
+            // check to see if we can determine what
+            // fields the actions need
+            conduit::Node info;
+            bool success = field_list(actions, m_field_list, info);
+            if(!success)
+            {
+              ASCENT_ERROR("Field filtering failed: "<<info.to_yaml());
+            }
+            if(m_field_list.size() == 0)
+            {
+              ASCENT_ERROR("Field filtering failed to find any fields");
+            }
+          }
+
+          // destroy existing graph an start anew
+          w.reset();
+          ConnectSource();
+          BuildGraph(actions);
+        }
+        else
+        {
+          // always ensure that we have the source
+          ConnectSource();
+        }
+
+
+        m_previous_actions = actions;
+
+        PopulateMetadata(); // add metadata so filters can access it
+
+        w.info(m_info["flow_graph"]);
+        m_info["actions"] = actions;
+        //w.print();
+        //std::cout<<w.graph().to_dot();
+        w.graph().save_dot_html("ascent_flow_graph.html");
+
+#if defined(ASCENT_VTKM_ENABLED)
+        Node *meta = w.registry().fetch<Node>("metadata");
+        int cycle = 0;
+        if(meta->has_path("cycle"))
+        {
+          cycle = (*meta)["cycle"].to_int32();
+        }
+        std::stringstream ss;
+        ss<<"cycle_"<<cycle;
+        vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+        vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
+#endif
+        // now execute the data flow graph
+        w.execute();
+
+#if defined(ASCENT_VTKM_ENABLED)
+        vtkh::DataLogger::GetInstance()->CloseLogEntry();
+#endif
+        Node msg;
+        this->Info(msg["info"]);
+        ascent::about(msg["about"]);
+        m_web_interface.PushMessage(msg);
+
+        //Node render_file_names;
+        //Node renders;
+        //FindRenders(renders, render_file_names);
+        //m_info["images"] = renders;
+
+        const conduit::Node &expression_cache =
+          runtime::expressions::ExpressionEval::get_cache();
+
+        if(expression_cache.number_of_children() > 0)
+        {
+          runtime::expressions::ExpressionEval::get_last(m_info["expressions"]);
+        }
+
+        m_info["flow_graph_dot"]      = w.graph().to_dot();
+        m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
+
+        //m_web_interface.PushRenders(render_file_names);
+
+        w.registry().reset();
+    }
+    // --- close try --- //
+
+    // Defend calling code by repackaging
+    // as many errors as possible with catch statements
+#if defined(ASCENT_VTKM_ENABLED)
+    // bottle vtkm and vtkh errors
+    catch(vtkh::Error &e)
+    {
       w.reset();
-      ConnectSource();
-      BuildGraph(actions);
+      ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
-    else
+    catch(vtkm::cont::Error &e)
     {
-      // always ensure that we have the source
-      ConnectSource();
+      w.reset();
+      ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
     }
-
-    m_previous_actions = actions;
-
-    PopulateMetadata(); // add metadata so filters can access it
-    w.info(m_info["flow_graph"]);
-    m_info["actions"] = actions;
-    //w.print();
-    // std::cout<<w.graph().to_dot();
-    // w.graph().save_dot_html("ascent_flow_graph.html");
-
-#if defined(ASCENT_VTKM_ENABLED)
-    Node *meta = w.registry().fetch<Node>("metadata");
-    int cycle = 0;
-    if (meta->has_path("cycle"))
-    {
-      cycle = (*meta)["cycle"].to_int32();
-    }
-    std::stringstream ss;
-    ss << "cycle_" << cycle;
-    vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
-    vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
-    // now execute the data flow graph
-    w.execute();
-
-#if defined(ASCENT_VTKM_ENABLED)
-    vtkh::DataLogger::GetInstance()->CloseLogEntry();
-#endif
-
-    // Node msg;
-    // this->Info(msg["info"]);
-    // ascent::about(msg["about"]);
-    // m_web_interface.PushMessage(msg);
-
-    // std::string insitu_type;
-    // if (meta->has_path("insitu_type"))
-    // {
-      // insitu_type = (*meta)["insitu_type"].as_string();
-      // std::cout << insitu_type << std::endl;
-    // }
-
-    auto t_detail = std::chrono::system_clock::now();
-    // std::cout << "** set info " << std::endl;
-    Node *images;
-    if (w.registry().has_entry("image_list"))
+    catch(conduit::Error &e)
     {
-      images = w.registry().fetch<Node>("image_list");
-      // m_info["images"].set_external(*images);
+      w.reset();
+      throw e;
     }
-    else
+    catch(std::exception &e)
     {
-      std::cout << "No image list." << std::endl;
-      return;
+      w.reset();
+      ASCENT_ERROR("Execution failed with: "<<e.what());
+    }
+    catch(...)
+    {
+      w.reset();
+      ASCENT_ERROR("Ascent: unknown exception thrown");
     }
 
-    const int size = images->number_of_children();
-
-    // std::cout << "_ascent main: number of images " << size << std::endl;
-
-    // Note: this copy costs ~1.5 seconds -> avoid it (only needed for interactive web interface?)
-    // Node image_params = *images;
-    // m_info["images"].set_external(image_params);
-
-    for (int i = 0; i < size; i++)
-    {
-      m_info["render_file_names"].append();
-      m_info["render_times"].append();
-      m_info["depths"].append();
-
-      m_info["color_buffers"].append();
-      m_info["depth_buffers"].append();
-    }
-
-  #pragma omp parallel for
-    for (int i = 0; i < size; i++)
-    {
-      m_info["render_file_names"][i].set_external(images->child(i)["image_name"]);
-      m_info["render_times"][i].set_external(images->child(i)["render_time"]);
-      m_info["depths"][i].set_external(images->child(i)["depth"]);
-
-      m_info["color_buffers"][i].set_external(images->child(i)["color_buffer"]);
-      m_info["depth_buffers"][i].set_external(images->child(i)["depth_buffer"]);
-    }
-
-
-    // Node *images = w.registry().fetch<Node>("image_list");
-    // images->reset();
-    // print_time(t_detail, "''' copy info ", m_rank);
-
-    const conduit::Node &expression_cache =
-        runtime::expressions::ExpressionEval::get_cache();
-
-    if (expression_cache.number_of_children() > 0)
-    {
-      m_info["expressions"] = expression_cache;
-    }
-
-    m_info["flow_graph_dot"] = w.graph().to_dot();
-    m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
-
-    // m_web_interface.PushRenders(render_file_names);
-    if (m_info["render_file_names"].number_of_children() > 0)
-      m_web_interface.PushRenders(m_info["render_file_names"]);
-
-    // w.registry().reset();
-  }
-  // --- close try --- //
-
-  // Defend calling code by repackaging
-  // as many errors as possible with catch statements
-#if defined(ASCENT_VTKM_ENABLED)
-  // bottle vtkm and vtkh errors
-  catch (vtkh::Error &e)
-  {
-    w.reset();
-    ASCENT_ERROR("Execution failed with vtkh: " << e.what());
-  }
-  catch (vtkm::cont::Error &e)
-  {
-    ASCENT_ERROR("Execution failed with vtkm: " << e.what());
-  }
-#endif
-  catch (conduit::Error &e)
-  {
-    w.reset();
-    throw e;
-  }
-  catch (std::exception &e)
-  {
-    w.reset();
-    ASCENT_ERROR("Execution failed with: " << e.what());
-  }
-  catch (...)
-  {
-    ASCENT_ERROR("Ascent: unknown exception thrown");
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1612,6 +1691,247 @@ void AscentRuntime::RegisterFilterType(const std::string &role_path,
     s_reged_filter_types[path][f_name] = filter_type_name;
   }
 }
+
+//-----------------------------------------------------------------------------
+void AscentRuntime::SourceFieldFilter()
+{
+  if(!m_field_filtering)
+  {
+    return;
+  }
+
+  bool high_order = m_data_object.source() == DataObject::Source::HIGH_BP;
+  conduit::Node *data = m_data_object.as_node().get();
+  const int num_domains = data->number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = data->child(i);
+    if(dom.has_path("fields"))
+    {
+
+      const int num_fields = dom["fields"].number_of_children();
+      std::vector<std::string> names = dom["fields"].child_names();
+      for(int f = 0; f < num_fields; ++f)
+      {
+        if(high_order)
+        {
+          // handle special mfem fields
+          if(names[f].find("position") != std::string::npos ||
+             names[f].find("_nodes") != std::string::npos ||
+             names[f].find("_attribute") != std::string::npos ||
+             names[f].find("boundary") != std::string::npos)
+          {
+            continue;
+          }
+        }
+        if(std::find(m_field_list.begin(),
+                     m_field_list.end(),
+                     names[f]) == m_field_list.end())
+        {
+            // remove the field
+            dom.remove("fields/"+names[f]);
+        }
+      } // for fields
+    }
+  } // for doms
+
+}
+
+
+//-----------------------------------------------------------------------------
+void AscentRuntime::PaintNestsets()
+{
+  std::vector<std::string> ghosts;
+  std::map<std::string,std::string> topo_ghosts;
+  std::map<std::string,std::string> topo_nestsets;
+
+  bool bad_bp = false;
+
+  const int num_ghosts = m_ghost_fields.number_of_children();
+
+  for(int i = 0; i < num_ghosts; ++i)
+  {
+    ghosts.push_back(m_ghost_fields.child(i).as_string());
+  }
+  // we have to be careful since we have not called verify
+  // but we need to do this now, since we might be creating
+  // new ghost fields
+
+  const int num_domains = m_source.number_of_children();
+  for(int i = 0; i < num_domains; ++i)
+  {
+    const conduit::Node &dom = m_source.child(i);
+
+    if(dom.has_path("nestsets"))
+    {
+      const conduit::Node &nestsets = dom["nestsets"];
+      const int num_nests = nestsets.number_of_children();
+      std::vector<std::string> nest_names = nestsets.child_names();
+      for(int n = 0; n < num_nests; ++n)
+      {
+        const conduit::Node &nestset = nestsets.child(n);
+        if(nestset.has_path("topology"))
+        {
+          topo_nestsets[nestset["topology"].as_string()] = nest_names[n];
+        }
+        else
+        {
+          // maybe we just do nothing and let verify tell people
+          // about the sins of the mesh
+          bad_bp = true;
+          break;
+        }
+
+      }
+    }
+
+    for(int f = 0; f < num_ghosts; ++f)
+    {
+      const string fpath = "fields/"+ghosts[f];
+      if(dom.has_path(fpath))
+      {
+        if(dom.has_path(fpath+"/topology"))
+        {
+          topo_ghosts[dom[fpath+"/topology"].as_string()] = ghosts[f];
+        }
+        else
+        {
+          bad_bp = true;
+          break;
+        }
+      }
+    }
+  }
+  if(bad_bp)
+  {
+    // its bad, punt reporting to verify;
+    return;
+  }
+
+  // ok, we have built up a map of topologies, nestsets, and ghosts;
+  // if we have a ghost that is associated with a topology with a nestset,
+  // then we will augment the ghost field with 1s(real ghosts) in zones
+  // that are covered by a finer resolution mesh, that are not already
+  // marked as ghosts.
+  // If there arent't ghosts associated with a nestset topology,
+  // we will create them.
+  std::set<std::string> new_ghosts;
+
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = m_source.child(i);
+    const int num_topos = dom["topologies"].number_of_children();
+    const std::vector<std::string> topo_names = dom["topologies"].child_names();
+    for(auto topo_name : topo_names)
+    {
+      bool has_ghost = topo_ghosts.find(topo_name) != topo_ghosts.end();
+      bool has_nest = topo_nestsets.find(topo_name) != topo_nestsets.end();
+
+      if(!has_nest)
+      {
+        continue;
+      }
+
+      std::string nest_name =  topo_nestsets[topo_name];
+
+      if(!dom.has_path("nestsets/"+nest_name))
+      {
+        continue;
+      }
+
+      if(has_ghost)
+      {
+        std::string ghost_name = topo_ghosts[topo_name];
+        if(dom.has_path("fields/" + ghost_name))
+        {
+          // ok, we need to alter the ghosts but the simulation
+          // gave us this data. In most cases, the ascent
+          // integration made the ghost zones, so it would
+          // be safe to change them. That said, it would
+          // be bad practice to alter the data, so we will make a
+          // copy and update our tree to point at the copy.
+          const std::string ghost_path = "fields/" + ghost_name;
+          const std::string temp_path = "fields/" + ghost_name + "_bananas";
+
+          conduit::Node &field = dom["fields/" + ghost_name];
+          dom[temp_path].set(field);
+          dom.remove(ghost_path);
+          //dom.rename_child(temp_path, ghost_path);
+          dom["fields/"].rename_child(ghost_name+"_bananas", ghost_name);
+
+          conduit::Node &ghost_field = dom[ghost_path];
+
+          runtime::expressions::paint_nestsets(nest_name, dom, ghost_field);
+        }
+        else
+        {
+          // this is weird and shouldn't happen in the real world.
+          // Some domain had a ghost but others didn't
+          ASCENT_ERROR("missing ghost field "<<ghost_name);
+        }
+      }
+      else
+      {
+        // there are no ghosts, so we have to build a new field
+        std::string ghost_name = topo_name + "_ghosts";
+        conduit::Node &field = dom["fields/" + ghost_name];
+        runtime::expressions::paint_nestsets(nest_name, dom, field);
+        new_ghosts.insert(ghost_name);
+      }
+    }
+  }
+
+  for(auto name : new_ghosts)
+  {
+    ASCENT_INFO("added new ghost field because of nestset: "<<name);
+    m_ghost_fields.append() = name;
+  }
+
+}
+
+void AscentRuntime::VerifyGhosts()
+{
+  conduit::Node verified;
+  const int num_ghosts = m_ghost_fields.number_of_children();
+  for(int i = 0; i < num_ghosts; ++i)
+  {
+    std::string ghost_name = m_ghost_fields.child(i).as_string();
+    if(runtime::expressions::has_field(m_source, ghost_name))
+    {
+      verified.append() = ghost_name;
+    }
+    else
+    {
+      // only report errors for user defined ghosts
+      if(ghost_name != "ascent_ghosts")
+      {
+        std::stringstream ss;
+        if(m_source.number_of_children() > 0)
+        {
+          if(m_source.child(0).has_path("fields"))
+          {
+            std::vector<string> names = m_source.child(0)["fields"].child_names();
+            for(auto name : names)
+            {
+              ss<<" '"<<name<<"'";
+            }
+          }
+          else
+          {
+            ss<<"can't deduce possible fields. "
+              <<"Published data does not contain fields in dom 0";
+          }
+        }
+        ASCENT_ERROR("User specified Ghost field '"<<ghost_name
+                     <<"' does not exist. Possible fields: "
+                     <<ss.str());
+      }
+    }
+  }
+  m_ghost_fields = verified;
+
+}
+
 
 //-----------------------------------------------------------------------------
 }; // namespace ascent

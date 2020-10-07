@@ -55,6 +55,7 @@
 #include <ascent.hpp>
 #include <ascent_exports.h>
 #include <ascent_runtime.hpp>
+#include <ascent_data_object.hpp>
 #include <ascent_web_interface.hpp>
 #include <flow.hpp>
 
@@ -98,8 +99,9 @@ public:
 private:
     // holds options passed to initialize
     conduit::Node     m_runtime_options;
-    // conduit node that (externally) holds the data from the simulation
-    conduit::Node     m_data;
+    // DataObject that (externally) holds the data from the simulation
+    conduit::Node     m_source;
+    DataObject        m_data_object;
     conduit::Node     m_connections;
     conduit::Node     m_scene_connections;
 
@@ -109,15 +111,20 @@ private:
     WebInterface      m_web_interface;
     int               m_refinement_level;
     int               m_rank;
-    std::string       m_ghost_field_name;
-    
+
     int               m_is_probing = 0;
-    double            m_probing_factor = 0.0;    
+    double            m_probing_factor = 0.0;
     int               m_render_count = 0;
     int               m_render_offset = 0;
     std::string       m_insitu_type = "hybrid";
     int               m_is_cinema_increment = 0;
     int               m_sleep = 0;
+    conduit::Node     m_ghost_fields; // a list of strings
+    std::string       m_default_output_dir;
+    std::string       m_session_name;
+
+    bool              m_field_filtering;
+    std::set<std::string> m_field_list;
 
     void              ResetInfo();
 
@@ -132,7 +139,8 @@ private:
     void ConvertTriggerToFlow(const conduit::Node &trigger,
                               const std::string trigger_name);
     void ConvertQueryToFlow(const conduit::Node &trigger,
-                            const std::string trigger_name);
+                            const std::string trigger_name,
+                            const std::string prev_name);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreateExtracts(const conduit::Node &extracts);
     void CreateTriggers(const conduit::Node &triggers);
@@ -143,6 +151,9 @@ private:
     void ConvertSceneToFlow(const conduit::Node &scenes);
     void ConnectSource();
     void ConnectGraphs();
+    void SourceFieldFilter();
+    void PaintNestsets();
+    void VerifyGhosts();
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();
@@ -150,10 +161,10 @@ private:
 
     std::string GetDefaultImagePrefix(const std::string scene);
 
-    // void FindRenders(conduit::Node &image_params, 
+    // void FindRenders(conduit::Node &image_params,
     //                  conduit::Node &image_list,
     //                  conduit::Node &render_times);
-    void FindRenders(conduit::Node &image_params, 
+    void FindRenders(conduit::Node &image_params,
                      conduit::Node &image_list,
                      conduit::Node &render_times,
                      conduit::Node &color_buffers,
@@ -165,7 +176,7 @@ private:
                                    const std::string &api_name,
                                    const std::string &filter_type_name);
 
-    static void print_time(std::chrono::time_point<std::chrono::system_clock> start, 
+    static void print_time(std::chrono::time_point<std::chrono::system_clock> start,
                            const std::string &description,
                            const int rank = -1);
 

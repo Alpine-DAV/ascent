@@ -108,6 +108,13 @@ if (MFEM_DIR)
   include(cmake/thirdparty/SetupMFEM.cmake)
 endif()
 
+################################
+# Setup Devil Ray
+################################
+if (DRAY_DIR)
+  include(cmake/thirdparty/SetupDevilRay.cmake)
+endif()
+
 
 ################################
 # Setup ADIOS
@@ -116,4 +123,10 @@ if (ADIOS_DIR)
   include(cmake/thirdparty/SetupADIOS.cmake)
 endif()
 
+################################
+# Setup Babelflow
+################################
+if (ENABLE_BABELFLOW)
+    include(cmake/thirdparty/SetupBabelFlow.cmake)
+endif ()
 

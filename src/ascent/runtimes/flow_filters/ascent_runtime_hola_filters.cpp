@@ -66,6 +66,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_data_object.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -143,13 +144,14 @@ HolaMPIExtract::verify_params(const conduit::Node &params,
 void
 HolaMPIExtract::execute()
 {
-    if(!input(0).check_type<Node>())
+
+    if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("hola_mpi input must be a conduit node");
+        ASCENT_ERROR("hola_mpi input must be a DataObject");
     }
 
-    Node *n_input = input<Node>(0);
-
+    DataObject * data_object = input<DataObject>(0);
+    Node *n_input = data_object->as_node().get();
     // assumes multi domain input
 
     // int rank = -1;

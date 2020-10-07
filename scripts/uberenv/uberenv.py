@@ -178,6 +178,13 @@ def parse_args():
         if not os.path.isdir(opts["spack_config_dir"]):
             print("[ERROR: invalid spack config dir: {} ]".format(opts["spack_config_dir"]))
             sys.exit(-1)
+    # if rel path is given for the mirror, we need to evaluate here -- before any
+    # chdirs to avoid confusion related to what it is relative to.
+    # (it should be relative to where uberenv is run from, so it matches what you expect
+    #  from shell completion, etc)
+    if not opts["mirror"] is None:
+        if not opts["mirror"].startswith("http") and not os.path.isabs(opts["mirror"]):
+            opts["mirror"] = os.path.abspath(opts["mirror"])
     return opts, extras
 
 
@@ -262,7 +269,6 @@ def create_spack_mirror(mirror_path,pkg_name,ignore_ssl_errors=False):
     if not mirror_path:
         print("[--create-mirror requires a mirror directory]")
         sys.exit(-1)
-    mirror_path = os.path.abspath(mirror_path)
 
     mirror_cmd = "spack/bin/spack "
     if ignore_ssl_errors:
@@ -292,7 +298,6 @@ def use_spack_mirror(spack_dir,
     """
     Configures spack to use mirror at a given path.
     """
-    mirror_path = os.path.abspath(mirror_path)
     existing_mirror_path = find_spack_mirror(spack_dir, mirror_name)
     if existing_mirror_path and mirror_path != existing_mirror_path:
         # Existing mirror has different URL, error out
@@ -302,12 +307,12 @@ def use_spack_mirror(spack_dir,
         # Note: In this case, spack says it removes the mirror, but we still
         # get errors when we try to add a new one, sounds like a bug
         #
-        sexe("spack/bin/spack mirror remove --scope=site {} ".format(mirror_name),
+        sexe("spack/bin/spack mirror remove {} ".format(mirror_name),
              echo=True)
         existing_mirror_path = None
     if not existing_mirror_path:
         # Add if not already there
-        sexe("spack/bin/spack mirror add --scope=site {} {}".format(
+        sexe("spack/bin/spack mirror add {} {}".format(
                 mirror_name, mirror_path), echo=True)
         print("[using mirror {}]".format(mirror_path))
 
@@ -479,7 +484,7 @@ def main():
     ##########################################################
     if opts["create_mirror"]:
         return create_spack_mirror(opts["mirror"],
-                                   uberenv_pkg_name,
+                                   uberenv_pkg_name + opts["spec"],
                                    opts["ignore_ssl_errors"])
     else:
         if not opts["mirror"] is None:
@@ -530,7 +535,7 @@ def main():
                 if os.path.islink(pkg_lnk_dir):
                     os.unlink(pkg_lnk_dir)
                 print("")
-                print("[symlinking install to {}]").format(pjoin(dest_dir,pkg_lnk_dir))
+                print("[symlinking install to {}]".format(pjoin(dest_dir,pkg_lnk_dir)))
                 os.symlink(pkg_path["path"],os.path.abspath(pkg_lnk_dir))
                 hcfg_glob = glob.glob(pjoin(pkg_lnk_dir,"*.cmake"))
                 if len(hcfg_glob) > 0:

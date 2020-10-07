@@ -15,7 +15,7 @@
 # -------------------------------------------------------------------------
 packages:
   all:
-    variants: ~docs~openmp
+    variants: ~docs~openmp+logging
     compiler: [clang, gcc, intel, pgi, xl, nag]
     providers:
       awk: [gawk]

@@ -42,41 +42,46 @@
 .. #
 .. ############################################################################
 
+.. _tutorial_setup:
 
 Tutorial Setup
 =================
 
 The tutorial examples are installed with Ascent to the subdirectory ``examples/ascent/tutorial/``.  Below are several options for using pre-built Ascent installs and links to info about building Ascent. If you have access to Docker, the easiest way to test the waters is via the ``alpinedav/ascent`` Docker image.
 
-SC19 Tutorial Cloud Option
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Tutorial Cloud Option
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For SC19, we plan to have several instances of our Ascent Docker image up and running the jupyter notebook server.
-We will provide IP addresses and login info to attendees.
+For in person tutorials (at Supercomputing, the ECP Annual Meeting, etc), we provide HTTP access to several instances of our Ascent Docker image running the jupyter notebook server.
+We hand out IP addresses and login info to attendees during these events.
 
 Using Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_. This image also includes a jupyter install to support running Ascent's tutorial notebooks.
+If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_. This image also includes a Jupyter install to support running Ascent's tutorial notebooks.
 
-Fetch the latest Ascent image:
 
-.. code::
-
-    docker pull alpinedav/ascent
-
-After the download completes, create and run a container using this image:
+To directly start the Jupyter Notebook server and run the tutorial notebooks, run:
 
 .. code::
 
-    docker run -p 8000:8000 run -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent
+    docker run -p 8000:8000 -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent-jupyter
 
 (The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
+
+This image automatically launches a Jupyter Notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``learn``
+
+
+To start the base image and explore the install and tutorial examples with bash, run:
+
+.. code::
+
+    docker run -p 8000:8000 -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent
 
 
 You will now be at a bash prompt in you container.
 
-To add the proper paths to Python and MPI to your environment run:
+To add the proper paths to Python and MPI to your environment, run:
 
 .. code::
 
@@ -86,95 +91,112 @@ The ascent source code is at ``/home/user/ascent/src/``, and the install is at `
 The tutorial examples are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/``.
 
 
-To launch the a jupyter notebook server run:
+You can also launch the a Jupyter Notebook server from this image using the following:
 
 .. code::
 
     ./ascent_docker_run_jupyter.sh
 
-This will launch a notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``ascentsc19``
+The url (http://localhost:8888) and password (``learn``) are the same as above.
 
 
-NERSC Cori Install
+.. _tutorial_setup_public_installs:
+
+Using Public Installs of Ascent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We have a public ascent install for use on NERSC's Cori System. This install was built with the default
-gnu compiler (8.2.0). You need to use `module load gcc` to build and run the installed examples.
+NERSC Cori Install
++++++++++++++++++++++++
+
+We have a public ascent install for use on NERSC's Cori System. This install was built using the default
+gnu compiler (8.2.0) with OpenMP and MPI support. You need to use ``module load gcc`` to build and run the installed examples.
 
 
 The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
 You can copy the tutorial examples from this install and use them as follows:
 
-.. code::
+.. literalinclude:: tutorial_setup_nersc_cori_test.sh
+   :language: bash
 
-    #
-    # source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
-    #
-    source /project/projectdirs/alpine/software/ascent/current/cori/ascent_cori_setup_env_gcc.sh
-    
-    #
-    # make your own dir to hold the tutorial examples
-    #
-    mkdir ascent_tutorial
-    cd ascent_tutorial
-    
-    #
-    # copy the examples from the public install
-    #
-    cp -r /project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install/examples/ascent/tutorial/* .
-    
-    #
-    # build cpp examples and run the first one
-    #
-    cd ascent_intro/cpp
-    make
-    ./ascent_first_light_example
-    
-    #
-    # run a python example
-    #
-    cd ..
-    cd python
-    python ascent_first_light_example.py  
+OLCF Summit Install
++++++++++++++++++++++++
+
+We have two public ascents install for use on OLCF's Summit System. One install was built using the default
+gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to build and run the installed examples.
+
+.. warning::
+    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
 
 
-SC19 Tutorial VM Option
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
 
-Ascent is also installed on the SC19 SENSEI + Ascent Example VM Image. The install is located at ``/home/in-situ-user/ascent/current``. You can use the tutorial examples as follows:
-
-.. code::
-
-    #
-    # source helper script with Ascent paths
-    #
-    source /home/in-situ-user/ascent/current/setup_ascent_env.sh
-
-    #
-    # build cpp examples and run the first one
-    #
-    cd /home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/cpp
-    make
-    ./ascent_first_light_example
-
-    #
-    # run a python example
-    #
-    cd ..
-    cd python
-    python ascent_first_light_example.py  
+.. literalinclude:: tutorial_setup_olcf_summit_openmp_test.sh
+   :language: bash
 
 
-This install also includes jupyter, you can launch the notebook server with:
+The second was built using the default
+gnu compiler (6.4.0) with CUDA and MPI support. You need to use ``module load gcc`` and ``module load cuda`` to build and run the installed examples.
 
-.. code::
+This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
 
-   jupyter notebook
+.. literalinclude:: tutorial_setup_olcf_summit_cuda_test.sh
+   :language: bash
 
 
-The jupyter examples are at:
+LLNL CZ TOSS 3 Install
++++++++++++++++++++++++
 
-`/home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/`
+We have a public ascent install on LLNL CZ TOSS 3 Systems. This install was built using the default
+gnu compiler (4.9.3) with OpenMP and MPI support.
+
+
+The install is located at ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``.
+You can copy the tutorial examples from this install and use them as follows:
+
+.. literalinclude:: tutorial_setup_llnl_pascal_openmp_test.sh
+   :language: bash
+
+
+..
+.. SC19 Tutorial VM Option
+.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+..
+.. Ascent is also installed on the SC19 SENSEI + Ascent Example VM Image. The install is located at ``/home/in-situ-user/ascent/current``. You can use the tutorial examples as follows:
+..
+.. .. code::
+..
+..     #
+..     # source helper script with Ascent paths
+..     #
+..     source /home/in-situ-user/ascent/current/setup_ascent_env.sh
+..
+..     #
+..     # build cpp examples and run the first one
+..     #
+..     cd /home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/cpp
+..     make
+..     ./ascent_first_light_example
+..
+..     #
+..     # run a python example
+..     #
+..     cd ..
+..     cd python
+..     python ascent_first_light_example.py
+..
+..
+.. This install also includes jupyter, you can launch the notebook server with:
+..
+.. .. code::
+..
+..    jupyter notebook
+..
+..
+.. The jupyter examples are at:
+..
+.. `/home/in-situ-user/ascent/current/ascent-install/examples/ascent/tutorial/ascent_intro/`
 
 
 Build and Install

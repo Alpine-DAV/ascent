@@ -65,6 +65,8 @@ add_subdirectory("flow")
 # add ascent tests
 add_subdirectory("ascent")
 
+# add ascent performance tests
+add_subdirectory("perf")
 
 if(PYTHON_FOUND)
 # if we have python:
@@ -74,6 +76,6 @@ if(PYTHON_FOUND)
     add_custom_target(gen_report
                       ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_img_compare_html_report.py
                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                      COMMENT "Generating html summary of image compare tests")
+                      COMMENT "Generating html summary of image compare tests (tests/_output/tout_img_report.html)")
 endif()
 
