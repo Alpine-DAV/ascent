@@ -677,7 +677,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
             const Node &n_field = itr.next();
             std::string field_name = itr.name();
-            std::cout<<"NAME "<<field_name<<"\n";
             if(n_field["topology"].as_string() != topo_name)
             {
               // these are not the fields we are looking for
