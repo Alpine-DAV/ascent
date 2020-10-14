@@ -687,7 +687,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
             // more logic to AddField
             const int num_children = n_field["values"].number_of_children();
 
-            if(num_children == 0 )
+            if(num_children == 0 || num_children == 1)
             {
 
                 AddField(field_name,
@@ -1271,8 +1271,13 @@ VTKHDataAdapter::AddField(const std::string &field_name,
       ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
       return;
     }
+    if(n_field["values"].number_of_children() > 1)
+    {
+      ASCENT_ERROR("Add field can only use zero or one component");
+    }
 
-    const Node &n_vals = n_field["values"];
+    bool is_values = n_field["values"].number_of_children() == 0;
+    const Node &n_vals = is_values ? n_field["values"] : n_field["values"].child(0);
     int num_vals = n_vals.dtype().number_of_elements();
 
     if(assoc_str == "vertex" && nverts != num_vals)
