@@ -142,6 +142,100 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     EXPECT_TRUE(check_test_image(output_file));
 }
 
+TEST(ascent_render_3d, test_render_3d_original_bounds)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_original_bounds");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "clip";
+    // filter knobs
+    conduit::Node &clip_params = pipelines["pl1/f1/params"];
+    clip_params["box/min/x"] = -10.;
+    clip_params["box/min/y"] = -10.;
+    clip_params["box/min/z"] = 0.;
+    clip_params["box/max/x"] = 10.01; // <=
+    clip_params["box/max/y"] = 10.01;
+    clip_params["box/max/z"] = 10.01;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/use_original_bounds"] = "true";
+    scenes["s1/renders/r1/camera/azimuth"] = 90;
+
+
+    conduit::Node actions;
+
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+
+    conduit::Node &add_plots = actions.append();
+    add_plots["scenes"] = scenes;
+    add_plots["action"] = "add_scenes";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    //ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["timings"] = "enabled";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
 TEST(ascent_render_3d, test_render_3d_single_comp_scalar)
 {
     // the ascent runtime is currently our only rendering runtime
