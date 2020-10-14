@@ -42,12 +42,48 @@
 #
 ###############################################################################
 
-FROM nvidia/9.2-devel-ubuntu16.04
-docker pull nvidia/cuda:9.2-devel-ubuntu16.04
-
+FROM alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel
 MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
-# add sudo to base cuda devel env
-# so we can install additional packages as
-# non-root, but admin default user on azure pipelines
-RUN apt-get update && apt-get -y install sudo
 
+# obtain a copy of ascent source from host env,
+# which we use to call uberenv
+COPY ascent.docker.src.tar.gz /
+# extract ou
+RUN tar -xzf ascent.docker.src.tar.gz
+
+# at some sites ssl certs are intercepted, which cases issues fetching
+# tpl sources via https
+
+# to resolve this, either:
+# 1) pass the "-k" option to uberenv (recommended),
+# 2) install the proper certs into the image, or
+# 3) use  the following commands to disable ssl for git and
+#    curl (both are used by spack):
+#RUN git config --global http.sslVerify false
+#RUN echo insecure >> ~/.curlrc
+
+# bootstrap third party libs using spack and uberenv
+
+##########
+# TODO: RE-ENABLE MFEM + DRAY
+# Last try result: https://github.com/Alpine-DAV/ascent/issues/590
+#
+##########
+# RUN cd ascent && python scripts/uberenv/uberenv.py \
+#       -k \
+#       --spec "%gcc+mpi+cuda+mfem+dray+vtkh~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^dray~openmp ^cmake@3.14.5~openssl~ncurses" \
+#       --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16_cuda_10.1_devel/ \
+#       --prefix=/uberenv_libs
+
+RUN cd ascent && python scripts/uberenv/uberenv.py \
+       -k \
+       --spec "%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^cmake@3.14.5~openssl~ncurses" \
+       --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16_cuda_10.1_devel/ \
+       --prefix=/uberenv_libs
+
+# cleanup the spack build stuff to free up space
+RUN uberenv_libs/spack/bin/spack clean --all
+
+
+# delete copy of source from host (ci will fetch new from repo)
+RUN rm -rf ascent

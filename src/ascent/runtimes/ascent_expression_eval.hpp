@@ -87,7 +87,7 @@ struct Cache
 
   double last_known_time();
   void last_known_time(double time);
-  void filter_time(double time);
+  void filter_time(double ftime);
   bool filtered();
   bool loaded();
 
@@ -106,6 +106,8 @@ public:
   ExpressionEval(conduit::Node *data);
 
   static const conduit::Node &get_cache();
+  static void get_last(conduit::Node &data);
+  static void reset_cache();
   static void load_cache(const std::string &dir,
                          const std::string &session);
 

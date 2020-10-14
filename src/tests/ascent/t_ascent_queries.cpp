@@ -94,6 +94,7 @@ TEST(ascent_queries, max_query)
         conduit::utils::remove_file(output_file);
     }
 
+
     //
     // Create the actions.
     //
@@ -188,7 +189,7 @@ TEST(ascent_queries, max_query_pipeline)
 
     conduit::Node queries;
     queries["q1/params/expression"] = "max(field('braid'))";
-    queries["q1/params/name"] = "max_braid";
+    queries["q1/params/name"] = "max_braid_pipeline";
     queries["q1/pipeline"] = "pl1";
 
     conduit::Node &add_queries = actions.append();
@@ -215,7 +216,7 @@ TEST(ascent_queries, max_query_pipeline)
 
     conduit::Node info;
     ascent.info(info);
-    EXPECT_TRUE(info.has_path("expressions/max_braid/100/attrs/value"));
+    EXPECT_TRUE(info.has_path("expressions/max_braid_pipeline/100/attrs/value"));
     info["expressions"].print();
     info["expressions"].save(output_file, "json");
 

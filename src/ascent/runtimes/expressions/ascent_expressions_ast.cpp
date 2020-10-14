@@ -918,7 +918,7 @@ ASTDotAccess::build_graph(flow::Workspace &w)
       std::string attr_yaml = obj["attrs"].to_yaml();
       if(attr_yaml == "")
       {
-        ss<<" No know attribtues.";
+        ss<<" No known attribtues.";
       }
       else
       {

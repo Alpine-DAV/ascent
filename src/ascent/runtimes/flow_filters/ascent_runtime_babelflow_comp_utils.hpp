@@ -16,8 +16,13 @@
 #include "BabelFlow/reduce/KWayReductionTaskMap.h"
 #include "BabelFlow/reduce/RadixKExchange.h"
 #include "BabelFlow/reduce/RadixKExchangeTaskMap.h"
+#include "BabelFlow/reduce/SingleTaskGraph.h"
+#include "BabelFlow/ComposableTaskGraph.h"
+#include "BabelFlow/ComposableTaskMap.h"
+#include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/PreProcessInputTaskGraph.hpp"
 #include "BabelFlow/ModTaskMap.hpp"
+#include "BabelFlow/ModuloMap.h"
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -41,16 +46,20 @@ namespace bflow_comp
 
 struct ImageData
 {
+  using PixelType = float;
+
   static const uint32_t sNUM_CHANNELS = 4;
+  constexpr static const PixelType sOPAQUE = 0.f;
   
-  unsigned char* image; 
-  unsigned char* zbuf;
+  PixelType* image; 
+  PixelType* zbuf;
   uint32_t* bounds;
   uint32_t* rend_bounds;     // Used only for binswap and k-radix
   
   ImageData() : image( nullptr ), zbuf( nullptr ), bounds( nullptr ), rend_bounds( nullptr ) {}
   
   void writeImage(const char* filename, uint32_t* extent);
+  void writeDepth(const char* filename, uint32_t* extent);
   BabelFlow::Payload serialize() const;
   void deserialize(BabelFlow::Payload buffer);
   void delBuffers();
@@ -77,8 +86,8 @@ public:
    
   BabelGraphWrapper(const ImageData& input_img,
                     const std::string& img_name,
-                    int32_t task_id,
-                    int32_t n_blocks,
+                    int32_t rank_id,
+                    int32_t n_ranks,
                     int32_t fanin,
                     MPI_Comm mpi_comm);
   virtual ~BabelGraphWrapper() {}
@@ -87,8 +96,8 @@ public:
   
 protected:
   ImageData m_inputImg;
-  uint32_t m_taskId;
-  uint32_t m_numBlocks;
+  uint32_t m_rankId;
+  uint32_t m_nRanks;
   uint32_t m_fanin;
   MPI_Comm m_comm;
 
@@ -104,17 +113,14 @@ class BabelCompReduce : public BabelGraphWrapper
 public:
   BabelCompReduce(const ImageData& input_img,
                   const std::string& img_name,
-                  int32_t task_id,
+                  int32_t rank_id,
                   int32_t n_blocks,
                   int32_t fanin,
-                  MPI_Comm mpi_comm,
-                  const int32_t* blk_arr);
+                  MPI_Comm mpi_comm);
   virtual ~BabelCompReduce() {}
   virtual void Initialize() override;
 
 private:
-  uint32_t m_nBlocks[3];
-
   BabelFlow::KWayReduction m_graph;
   BabelFlow::KWayReductionTaskMap m_taskMap; 
   BabelFlow::PreProcessInputTaskGraph m_modGraph;
@@ -128,7 +134,7 @@ class BabelCompBinswap : public BabelGraphWrapper
 public:
   BabelCompBinswap(const ImageData& input_img,
                    const std::string& img_name,
-                   int32_t task_id,
+                   int32_t rank_id,
                    int32_t n_blocks,
                    int32_t fanin,
                    MPI_Comm mpi_comm);
@@ -149,21 +155,34 @@ class BabelCompRadixK : public BabelGraphWrapper
 public:
   BabelCompRadixK(const ImageData& input_img,
                   const std::string& img_name,
-                  int32_t task_id,
+                  int32_t rank_id,
                   int32_t n_blocks,
                   int32_t fanin,
                   MPI_Comm mpi_comm,
                   const std::vector<uint32_t>& radix_v);
-  virtual ~BabelCompRadixK() {}
+  virtual ~BabelCompRadixK();
+  
+  virtual void InitRadixKGraph();
+  virtual void InitGatherGraph();
   virtual void Initialize() override;
-
-private:
+  
+protected:
   std::vector<uint32_t> m_Radices;
   
-  BabelFlow::RadixKExchange m_graph;
-  BabelFlow::RadixKExchangeTaskMap m_taskMap; 
-  BabelFlow::PreProcessInputTaskGraph m_modGraph;
-  BabelFlow::ModTaskMap m_modMap;
+  BabelFlow::SingleTaskGraph m_preProcTaskGr;
+  BabelFlow::ModuloMap m_preProcTaskMp;
+
+  BabelFlow::RadixKExchange m_radixkGr;
+  BabelFlow::RadixKExchangeTaskMap m_radixkMp; 
+
+  BabelFlow::KWayReduction m_gatherTaskGr;
+  BabelFlow::KWayReductionTaskMap m_gatherTaskMp; 
+
+  BabelFlow::ComposableTaskGraph m_radGatherGraph;
+  BabelFlow::ComposableTaskMap m_radGatherTaskMap;
+
+  BabelFlow::DefGraphConnector m_defGraphConnector;
+  BabelFlow::DefGraphConnector m_defGraphConnectorPreProc;
 };
 
 //-----------------------------------------------------------------------------

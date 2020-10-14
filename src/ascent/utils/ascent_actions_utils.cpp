@@ -61,9 +61,83 @@ namespace ascent
 
 namespace detail
 {
+void parse_binning_var(const std::string &expression,
+                       std::set<std::string> &fields)
+{
+
+  // find binning variable
+  // \\s* = allow for spaces
+  std::regex e ("binning\\(\\s*'(.*?)'");
+  std::smatch m;
+
+  std::set<std::string> matches;
+  std::string s = expression;
+  while (std::regex_search (s,m,e))
+  {
+    int count = 0;
+    for (auto x:m)
+    {
+      // we  want the second submatch that
+      // matches the regex  inside the single
+      // quotes
+      if(count == 1)
+      {
+        fields.insert(x);
+      }
+      count++;
+    }
+    s = m.suffix().str();
+  }
+}
+
+void parse_binning_axis(const std::string &expression,
+                        std::set<std::string> &fields)
+{
+  std::regex e ("axis\\(\\s*'(.*?)'");
+  std::smatch m;
+
+  std::set<std::string> matches;
+  std::string s = expression;
+  while (std::regex_search (s,m,e))
+  {
+    int count = 0;
+    for (auto x:m)
+    {
+      // we  want the second submatch that
+      // matches the regex  inside the single
+      // quotes
+      if(count == 1)
+      {
+        // skip coordinate axes
+        if(x != "x" && x != "y" && x != "z")
+        {
+          fields.insert(x);
+        }
+      }
+      count++;
+    }
+    s = m.suffix().str();
+  }
+}
+
+void parse_binning(const std::string &expression,
+                   std::set<std::string> &fields)
+{
+  if(expression.find("binning") == std::string::npos)
+  {
+    return;
+  }
+
+  parse_binning_var(expression, fields);
+  parse_binning_axis(expression, fields);
+
+}
+
 void parse_expression(const std::string &expression,
                       std::set<std::string> &fields)
 {
+  parse_binning(expression, fields);
+
   std::regex e ("field\\('(.*?)'\\)");
   std::smatch m;
 
@@ -83,7 +157,6 @@ void parse_expression(const std::string &expression,
       }
       count++;
     }
-    std::cout << std::endl;
     s = m.suffix().str();
   }
 }

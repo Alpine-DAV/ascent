@@ -539,6 +539,7 @@ TEST(ascent_expressions, test_history)
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
+  runtime::expressions::ExpressionEval::reset_cache();
 
   conduit::Node res;
   std::string expr;

@@ -186,6 +186,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("annotations");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
+  r_valid_paths.push_back("shading");
 
   for(int i = 0; i < num_renders; ++i)
   {
@@ -325,7 +326,11 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     camera.Print();
     render.SetCamera(camera);
   }
-  else
+  if(render_node.has_path("shading"))
+  {
+    bool on = render_node["shading"].as_string() == "enabled";
+    render.SetShadingOn(on);
+  }
 
   if(render_node.has_path("annotations"))
   {

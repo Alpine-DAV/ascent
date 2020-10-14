@@ -60,6 +60,19 @@ public:
 
 
 //-----------------------------------------------------------------------------
+class BFlowIso : public ::flow::Filter
+{
+public:
+    BFlowIso() = default;
+    virtual ~BFlowIso() {}
+
+    virtual void   declare_interface(conduit::Node &i) override;
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info) override;
+    virtual void   execute() override;
+};
+
+//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --

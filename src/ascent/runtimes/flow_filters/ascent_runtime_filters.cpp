@@ -137,6 +137,7 @@ register_builtin()
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
+    AscentRuntime::register_filter_type<VTKHCleanGrid>("transforms","clean_grid");
     AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
     AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
@@ -166,6 +167,8 @@ register_builtin()
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
     AscentRuntime::register_filter_type<DRayVolume>("extracts", "dray_volume");
     AscentRuntime::register_filter_type<DRayProject2d>("transforms", "dray_project_2d");
+    AscentRuntime::register_filter_type<DRayProjectColors2d>("transforms",
+                                                             "dray_project_colors_2d");
     AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
 #endif
 

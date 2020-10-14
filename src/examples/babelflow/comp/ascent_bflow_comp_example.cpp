@@ -117,7 +117,7 @@ int main(int argc, char **argv)
   extract["e1/type"] = "bflow_comp";
   extract["e1/params/color_field"] = "colors";
   extract["e1/params/depth_field"] = "depth";
-  extract["e1/params/image_name"] = "radixk_comp";
+  extract["e1/params/image_name"] = "comp_img";
   extract["e1/params/fanin"] = int64_t(fanin);
   extract["e1/params/compositing"] = int64_t(2);   // 0 -- reduction, 1 -- bin-swap, 2 -- radix-k
   extract["e1/params/radices"].set_int64_vector(radices);

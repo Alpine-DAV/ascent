@@ -128,7 +128,7 @@ RUN cd /home/user/ascent/build-debug && \
 
 # build, test, and install ascent
 RUN cd /home/user/ascent/build-debug && make
-RUN cd /home/user/ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
+#RUN cd /home/user/ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
 RUN cd /home/user/ascent/build-debug && make install
 
 # install ascent bridge kernel into jupyter
