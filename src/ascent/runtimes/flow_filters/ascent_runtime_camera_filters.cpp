@@ -2350,12 +2350,23 @@ AutoCamera::execute()
       std::string topo_name = collection->field_topology(field_name);
 
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-    
+      
       double triangle_time = 0.;
       auto triangle_start = high_resolution_clock::now();
       std::vector<Triangle> triangles = GetTriangles(dataset);
       float total_triangles = (float) triangles.size();
       vtkh::DataSet* data = AddTriangleFields(dataset);
+      int num_domains = data->GetNumberOfDomains();
+      for(int i = 0; i < num_domains; i++)
+      {
+        vtkm::cont::DataSet data_set;
+        vtkm::Id domain_id;
+        data->GetDomain(i, data_set, domain_id);
+
+      // all the data sets better be the same
+        if(data_set.GetCellSet().GetNumberOfCells() == 0)
+          data_set.Clear();
+      }
       //data->PrintSummary(cerr);
       auto triangle_stop = high_resolution_clock::now();
       triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
@@ -2394,6 +2405,7 @@ AutoCamera::execute()
     //loop through number of camera samples.
       double scanline_time = 0.;
       double metric_time   = 0.;
+
       for(int sample = 0; sample < samples; sample++)
       {
     /*================ Scalar Renderer Code ======================*/

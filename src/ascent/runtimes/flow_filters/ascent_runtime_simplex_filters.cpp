@@ -365,6 +365,8 @@ CameraSimplex::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("metric");
     valid_paths.push_back("samples");
+    valid_paths.push_back("i");
+    valid_paths.push_back("j");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -394,7 +396,8 @@ CameraSimplex::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     std::string field_name = params()["field"].as_string();
     std::string metric     = params()["metric"].as_string();
-
+    int         i          = (int)params()["i"].as_int64();
+    cout << "i: " << i << endl;
     if(!collection->has_field(field_name))
     {
       ASCENT_ERROR("Unknown field '"<<field_name<<"'");
