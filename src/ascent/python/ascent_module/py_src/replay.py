@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2020, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -43,10 +43,20 @@
 ###############################################################################
 
 ###############################################################################
-# file: __init__.py
-# Purpose: Main init for the ascent module.
+# file: replay.py
+# Purpose: Helpers to make it easy to use Ascent's Python API like Replay.
+#
 ###############################################################################
-from .ascent  import *
-from .jupyter import *
-from .replay  import *
 
+import conduit
+import conduit.relay.io.blueprint
+
+def read_actions(actions_file):
+    actions = conduit.Node()
+    actions.load(actions_file)
+    return actions
+
+def read_mesh(root_file):
+    mesh_data = conduit.Node()
+    conduit.relay.io.blueprint.read_mesh(mesh_data,root_file)
+    return mesh_data
