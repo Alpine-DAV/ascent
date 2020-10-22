@@ -115,7 +115,15 @@ RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
-    jupyter matplotlib cinemasci bash_kernel scipy scikit-learn torch
+    bash_kernel \
+    jupyter \
+    jupyterlab \
+    matplotlib \
+    cinemasci \
+    scipy \
+    scikit-learn \
+    torch \
+    ipympl
 
 # configure a debug build with cmake
 RUN cd /home/user/ascent && mkdir build-debug

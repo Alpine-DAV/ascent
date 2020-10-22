@@ -42,7 +42,7 @@
 #
 ###############################################################################
 
-FROM ascent-ubuntu:latest
+FROM alpinedav/ascent:latest
 MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
 # use alternate launch 

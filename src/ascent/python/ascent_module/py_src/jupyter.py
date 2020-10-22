@@ -48,6 +48,8 @@
 #
 ###############################################################################
 
+import conduit
+
 class AscentImagesViewer(object):
     """
     Widget that shows all rendered images.
