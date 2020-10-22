@@ -46,4 +46,4 @@ FROM alpinedav/ascent:latest
 MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 
 # use alternate launch 
-CMD sudo service ssh start && cd /home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/ && /home/user/ascent_docker_run_jupyter.sh
+CMD sudo service ssh start && cd /home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/ && /home/user/ascent_docker_run_jupyterlab.sh
