@@ -173,8 +173,13 @@ RUN echo "export PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> 
 RUN cp /home/user/ascent_docker_setup_env.sh ascent_docker_run_jupyter.sh
 RUN echo "jupyter notebook --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyter.sh
 
+# gen script that allows us to easily run jupyter lab
+RUN cp /home/user/ascent_docker_setup_env.sh ascent_docker_run_jupyterlab.sh
+RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyterlab.sh
+
 #make sure helpers are executable
 RUN chmod 777 /home/user/ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyter.sh
+RUN chmod 777 /home/user/ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyterlab.sh
 RUN chmod 777 /home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/*/cleanup.sh
 
 # open port 8000, for use as http server
