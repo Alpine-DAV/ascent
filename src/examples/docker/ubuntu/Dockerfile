@@ -71,12 +71,13 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libbz2-dev \
     openssh-server \
-    nodejs \
     vim \
-    emacs \
- && rm -rf /var/lib/apt/lists/*
+    emacs 
 
 # nodejs is needed by jupyterlab for widgets
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN apt-get install -y nodejs
+RUN rm -rf /var/lib/apt/lists/*
 
 # add our 'user' with password 'docker'
 RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
@@ -124,8 +125,11 @@ RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     cinemasci \
     scipy \
     scikit-learn \
-    torch \
     ipympl
+
+# finish jupyter lab setup
+RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/jupyter \
+    labextension install @jupyter-widgets/jupyterlab-manager
 
 # configure a debug build with cmake
 RUN cd /home/user/ascent && mkdir build-debug
