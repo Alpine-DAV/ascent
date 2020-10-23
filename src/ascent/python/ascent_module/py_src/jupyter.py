@@ -53,25 +53,20 @@ import ipywidgets
 import conduit
 
 
-class AscentImagesViewer(object):
+class AscentImageSequenceViewer(object):
     """
     Widget that shows all rendered images.
     """
-    def __init__(self, info):
+    def __init__(self, image_fnames, title = 'Renders'):
         self.image_display_w = 400
         self.image_display_h = 400
-
+        self.image_fnames = image_fnames
         self.image_index = 0
         self.image_data = []
-        self.image_fnames = []
-        # get fnames from images section of info
-        if info.has_child("images"):
-            for c in info["images"].children():
-                self.image_fnames.append(c.node()["image_name"])
         for fname in self.image_fnames:
             with open(fname, "rb") as f:
                 self.image_data.append(f.read())
-        self.title = ipywidgets.Label(value='Renders')
+        self.title = ipywidgets.Label(value=title)
         self.label = ipywidgets.Label(value=self.image_fnames[self.image_index])
         self.image = ipywidgets.Image(value=self.image_data[self.image_index],
                                       width=self.image_display_w,
@@ -130,7 +125,12 @@ class AscentResultsViewer(object):
     Groups widgets that display Ascent results.
     """
     def __init__(self, info):
-        self.renders = AscentImagesViewer(info)
+        renders_fnames  = []
+        # get fnames from images section of info
+        if info.has_child("images"):
+            for c in info["images"].children():
+                renders_fnames.append(c.node()["image_name"])
+        self.renders = AscentImageSequenceViewer(renders_fnames)
     def show(self):
         return self.renders.show()
 
