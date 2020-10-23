@@ -48,7 +48,10 @@
 #
 ###############################################################################
 
+import os
+import ipywidgets
 import conduit
+
 
 class AscentImagesViewer(object):
     """
@@ -68,26 +71,26 @@ class AscentImagesViewer(object):
         for fname in self.image_fnames:
             with open(fname, "rb") as f:
                 self.image_data.append(f.read())
-        self.title = widgets.Label(value='Renders')
-        self.label = widgets.Label(value=self.image_fnames[self.image_index])
-        self.image = widgets.Image(value=self.image_data[self.image_index],
-                                   width=self.image_display_w,
-                                   height=self.image_display_h,
-                                   format="png")
-        self.check = widgets.Checkbox(value=False,
+        self.title = ipywidgets.Label(value='Renders')
+        self.label = ipywidgets.Label(value=self.image_fnames[self.image_index])
+        self.image = ipywidgets.Image(value=self.image_data[self.image_index],
+                                      width=self.image_display_w,
+                                      height=self.image_display_h,
+                                      format="png")
+        self.check = ipywidgets.Checkbox(value=False,
                                       description='Show absolute file path',
                                       disabled=False,
                                       indent=False)
-        self.slider = widgets.IntSlider()
-        self.play = widgets.Play(value=0,
+        self.slider = ipywidgets.IntSlider()
+        self.play   = ipywidgets.Play(value=0,
                                  min=0,
                                  max=len(self.image_data)-1,
                                  step=1,
                                  interval=500) 
 
-        widgets.jslink((self.play, "min"), (self.slider, "min"))
-        widgets.jslink((self.play, "max"), (self.slider, "max"))
-        widgets.jslink((self.play, "value"), (self.slider, "value"))
+        ipywidgets.jslink((self.play, "min"), (self.slider, "min"))
+        ipywidgets.jslink((self.play, "max"), (self.slider, "max"))
+        ipywidgets.jslink((self.play, "value"), (self.slider, "value"))
 
     def update_index(self,change):
         self.image_index = change.owner.value
@@ -106,17 +109,17 @@ class AscentImagesViewer(object):
     def show(self):
         if len(self.image_data) > 1:
             # box that groups our widgets
-            v = widgets.VBox([self.title,
-                              self.image,
-                              self.label,
-                              self.check,
-                              self.slider,self.play])
+            v = ipywidgets.VBox([self.title,
+                                 self.image,
+                                 self.label,
+                                 self.check,
+                                 self.slider,self.play])
             # setup connections for this case
             self.slider.observe(self.update_index)
             self.play.observe(self.update_index)
         else:
             # box that groups our widgets
-            v = widgets.VBox([self.title,self.image, self.check, self.label])
+            v = ipywidgets.VBox([self.title,self.image, self.check, self.label])
         # setup connections the check box (always in use)
         self.check.observe(self.update_checkbox)
         return v
@@ -140,14 +143,14 @@ class AscentActionsViewer(object):
         val = ""
         if info.has_child("actions"):
             val = info["actions"].to_yaml()
-        self.title = widgets.Label(value='Actions')
-        self.txt = widgets.Textarea(value=val,
-                                    placeholder='',
-                                    description='',
-                                    disabled=False,
-                                    layout={'height': '100%'})
-        self.box = widgets.VBox([self.title, self.txt],
-                                layout={'height': '500px'})
+        self.title = ipywidgets.Label(value='Actions')
+        self.txt = ipywidgets.Textarea(value=val,
+                                       placeholder='',
+                                       description='',
+                                       disabled=False,
+                                       layout={'height': '100%'})
+        self.box = ipywidgets.VBox([self.title, self.txt],
+                                    layout={'height': '500px'})
 
     def show(self):
         return self.box
@@ -199,7 +202,8 @@ class AscentViewer(object):
         if self.show_actions:
             self.actions_view = AscentActionsViewer(self.last_info)
             self.results_view = AscentResultsViewer(self.last_info)
-            self.box = widgets.HBox([self.actions_view.show(),self.results_view.show()])
+            self.box = ipywidgets.HBox([self.actions_view.show(),
+                                        self.results_view.show()])
             return self.box
         else:
             self.results_view = AscentResultsViewer(self.last_info)

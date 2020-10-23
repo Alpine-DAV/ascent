@@ -71,10 +71,12 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libbz2-dev \
     openssh-server \
+    nodejs \
     vim \
     emacs \
  && rm -rf /var/lib/apt/lists/*
 
+# nodejs is needed by jupyterlab for widgets
 
 # add our 'user' with password 'docker'
 RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
