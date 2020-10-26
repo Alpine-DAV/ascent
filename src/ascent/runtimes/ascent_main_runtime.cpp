@@ -1593,6 +1593,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_web_interface.PushRenders(render_file_names);
 
         w.registry().reset();
+
+        // log status to info
+        m_info["status"] = "execute";
     }
     // --- close try --- //
 

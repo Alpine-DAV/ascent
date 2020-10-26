@@ -90,17 +90,18 @@ class AscentImageSequenceViewer(object):
     def update_index(self,change):
         self.image_index = change.owner.value
         self.image.value = self.image_data[self.image_index]
-        if self.check.value is False:
-            self.label.value = "File: " + self.image_fnames[self.image_index]
-        else:
-            self.label.value = "File: " + os.path.abspath(self.image_fnames[self.image_index])
+        self.label.value = self.image_path_txt()
 
     def update_checkbox(self,change):
-        if self.check.value is False:
-            self.label.value = "File: " + self.image_fnames[self.image_index]
-        else:
-            self.label.value = "File: " + os.path.abspath(self.image_fnames[self.image_index])
+            self.label.value = self.image_path_txt()
 
+    def image_path_txt(self):
+        fname = self.image_fnames[self.image_index]
+        if self.check.value is False:
+            return "File: " + fname
+        else:
+            return "File: " + os.path.abspath(fname)
+            
     def show(self):
         if len(self.image_data) > 1:
             # box that groups our widgets
@@ -114,26 +115,58 @@ class AscentImageSequenceViewer(object):
             self.play.observe(self.update_index)
         else:
             # box that groups our widgets
-            v = ipywidgets.VBox([self.title,self.image, self.check, self.label])
+            v = ipywidgets.VBox([self.title,
+                                 self.image,
+                                 self.check,
+                                 self.label])
         # setup connections the check box (always in use)
         self.check.observe(self.update_checkbox)
         return v
 
+class AscentStatusWidget(object):
+    """
+    Simple display of info["status"]
+    """
+    def __init__(self, info):
+        # keep so we can print error details on show
+        self.info = info
+        style = self.detect_style(info)
+        status_title = ipywidgets.Button(description=str(info["status/message"]),
+                                         disabled=True,
+                                         layout=ipywidgets.Layout(width='500px'),
+                                         button_style=style)
+        self.main = status_title
+        
+    def show(self):
+        return self.main
+
+    def detect_style(self,info):
+        msg = info["status/message"]
+        if "failed" in msg:
+            return 'danger'
+        elif  "Ascent::close" in msg:
+            return 'warning'
+        else:
+            return 'success'
 
 class AscentResultsViewer(object):
     """
     Groups widgets that display Ascent results.
     """
     def __init__(self, info):
+        self.status = AscentStatusWidget(info)
         renders_fnames  = []
         # get fnames from images section of info
         if info.has_child("images"):
             for c in info["images"].children():
                 renders_fnames.append(c.node()["image_name"])
-        self.renders = AscentImageSequenceViewer(renders_fnames)
+            self.renders = AscentImageSequenceViewer(renders_fnames)
+            self.main = ipywidgets.VBox([self.renders.show(),
+                                         self.status.show()])
+        else:
+            self.main = ipywidgets.VBox([self.status.show()])
     def show(self):
-        return self.renders.show()
-
+        return self.main
 
 class AscentActionsViewer(object):
     """
@@ -150,7 +183,7 @@ class AscentActionsViewer(object):
                                        disabled=False,
                                        layout={'height': '100%'})
         self.box = ipywidgets.VBox([self.title, self.txt],
-                                    layout={'height': '500px'})
+                                    layout={'width': '500px'})
 
     def show(self):
         return self.box
@@ -191,14 +224,21 @@ class AscentViewer(object):
     def refresh_info(self):
         self.last_info  = conduit.Node()
         self.ascent.info(self.last_info)
-        
+        if not self.last_info.has_child("status"):
+            raise Exception("ERROR: AscentViewer.refresh_info() failed: info lacks `status` child")
+        msg = self.last_info["status/message"]
+        if "failed" in msg and self.last_info.has_path("status/details"):
+            # print to standard notebook output, this looks
+            # pretty sensible vs a widget
+            print("[Ascent Error]")
+            print(self.last_info["status/details"])
+
     def toggle_actions(self):
         self.show_actions = not self.show_actions
         self.show()
- 
+
     def show(self):
         self.refresh_info()
-        self.results_view = AscentResultsViewer(self.last_info)
         if self.show_actions:
             self.actions_view = AscentActionsViewer(self.last_info)
             self.results_view = AscentResultsViewer(self.last_info)
