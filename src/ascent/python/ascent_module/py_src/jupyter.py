@@ -49,15 +49,22 @@
 ###############################################################################
 
 import os
-import ipywidgets
 import conduit
+
+try:
+    # we might not always have jupyter widgets
+    # allow import to work
+    import ipywidgets
+    ipywidgets_support = True
+except:
+    ipywidgets_support = False
 
 try:
     # cinema jupyter widget
     import cinemasci.pynb
-    cinema_support = True
+    cinemasci_support = True
 except:
-    cinema_support = False
+    cinemasci_support = False
 
 
 class AscentImageSequenceViewer(object):
@@ -311,7 +318,6 @@ class AscentViewer(object):
     """
     def __init__(self,ascent):
         self.ascent = ascent
-        self.show_actions = False
 
     def open(self, opts=None):
         if not opts is None:
@@ -337,7 +343,7 @@ class AscentViewer(object):
         self.last_info  = conduit.Node()
         self.ascent.info(self.last_info)
         if not self.last_info.has_child("status"):
-            raise Exception("ERROR: AscentViewer.refresh_info() failed: info lacks `status` child")
+            raise Exception("ERROR: AscentViewer.refresh_info() failed: info lacks `status`")
         msg = self.last_info["status/message"]
         if "failed" in msg and self.last_info.has_path("status/details"):
             # print to standard notebook output, this looks
@@ -345,18 +351,10 @@ class AscentViewer(object):
             print("[Ascent Error]")
             print(self.last_info["status/details"])
 
-    def toggle_actions(self):
-        self.show_actions = not self.show_actions
-        self.show()
-
     def show(self):
         self.refresh_info()
-        if self.show_actions:
-            self.actions_view = AscentActionsViewer(self.last_info)
-            self.results_view = AscentResultsViewer(self.last_info)
-            self.box = ipywidgets.HBox([self.actions_view.show(),
-                                        self.results_view.show()])
-            return self.box
-        else:
+        if ipywidgets_support:
             self.results_view = AscentResultsViewer(self.last_info)
             return self.results_view.show()
+        else:
+            raise Exception("ERROR: AscentViewer.show() failed: ipywidgets missing")
