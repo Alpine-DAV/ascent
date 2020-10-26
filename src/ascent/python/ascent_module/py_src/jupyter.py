@@ -52,6 +52,13 @@ import os
 import ipywidgets
 import conduit
 
+try:
+    # cinema jupyter widget
+    import cinemasci.pynb
+    cinema_support = True
+except:
+    cinema_support = False
+
 
 class AscentImageSequenceViewer(object):
     """
@@ -123,6 +130,71 @@ class AscentImageSequenceViewer(object):
         self.check.observe(self.update_checkbox)
         return v
 
+#
+# We can't embed the cinema viewer in our own widgets
+# I think this is b/c it directly uses IPython.display()
+# Skip until we solve this mystery.
+#
+# class AscentCinemaDBViewer(object):
+#     """
+#     Widget that shows all created cinema dbs.
+#     """
+#     def __init__(self, cinema_dbs):
+#         self.cinema_dbs = cinema_dbs
+#         self.index = 0
+#         self.label = ipywidgets.Label(value=self.cinema_dbs[self.index])
+#         self.cviewer = cinemasci.pynb.CinemaViewer()
+#         self.cviewer.load(self.cinema_dbs[self.index])
+#         self.check = ipywidgets.Checkbox(value=False,
+#                                       description='Show absolute file path',
+#                                       disabled=False,
+#                                       indent=False)
+#         self.slider = ipywidgets.IntSlider()
+#         self.play   = ipywidgets.Play(value=0,
+#                                  min=0,
+#                                  max=len(self.cinema_dbs)-1,
+#                                  step=1,
+#                                  interval=500)
+#
+#         ipywidgets.jslink((self.play, "min"), (self.slider, "min"))
+#         ipywidgets.jslink((self.play, "max"), (self.slider, "max"))
+#         ipywidgets.jslink((self.play, "value"), (self.slider, "value"))
+#
+#     def update_index(self,change):
+#         self.index = change.owner.value
+#         self.cviewer.load(self.cinema_dbs[self.index])
+#         self.label.value = self.db_path_txt()
+#
+#     def update_checkbox(self,change):
+#             self.label.value = self.image_path_txt()
+#
+#     def db_path_txt(self):
+#         path = self.cinema_dbs[self.index]
+#         if self.check.value is False:
+#             return "DB Path: " + fname
+#         else:
+#             return "DB Path: " + os.path.abspath(path)
+#
+#     def show(self):
+#         if len(self.cinema_dbs) > 1:
+#             # box that groups our widgets
+#             v = ipywidgets.VBox([self.cviewer,
+#                                  self.label,
+#                                  self.check,
+#                                  self.slider,self.play])
+#             # setup connections for this case
+#             self.slider.observe(self.update_index)
+#             self.play.observe(self.update_index)
+#         else:
+#             # box that groups our widgets
+#             v = ipywidgets.VBox([self.cviewer,
+#                                  self.check,
+#                                  self.label])
+#         # setup connections the check box (always in use)
+#         self.check.observe(self.update_checkbox)
+#         return v
+
+
 class AscentStatusWidget(object):
     """
     Simple display of info["status"]
@@ -133,7 +205,7 @@ class AscentStatusWidget(object):
         style = self.detect_style(info)
         status_title = ipywidgets.Button(description=str(info["status/message"]),
                                          disabled=True,
-                                         layout=ipywidgets.Layout(width='500px'),
+                                         layout=ipywidgets.Layout(width='100%'),
                                          button_style=style)
         self.main = status_title
         
@@ -154,39 +226,79 @@ class AscentResultsViewer(object):
     Groups widgets that display Ascent results.
     """
     def __init__(self, info):
-        self.status = AscentStatusWidget(info)
-        renders_fnames  = []
-        # get fnames from images section of info
+        status = AscentStatusWidget(info)
+        widget_titles  = []
+        widgets = []
+        # cinema databases
+        # (skipping until we have a handle on embedding cinema widgets)
+        # if cinema_support and info.has_child("extracts"):
+        #     # filter out any cinema extracts
+        #     cinema_exts = conduit.Node()
+        #     cinema_paths = []
+        #     for c in info["extracts"].children():
+        #         if c.node()["type"] == "cinema":
+        #             cinema_exts.append().set(c.node())
+        #             cinema_paths.append(c.node()["path"])
+        #     if cinema_exts.number_of_children() > 0:
+        #         w = AscentNodeViewer(cinema_exts)
+        #         widget_titles.append("Cinema Databases")
+        #         widgets.append(w.show())
+        #         w = AscentCinemaDBViewer(cinema_paths)
+        #         widget_titles.append("Cinema Databases")
+        #         widgets.append(w.show())
+        # rendered images
         if info.has_child("images"):
+            # get fnames from images section of info
+            renders_fnames = []
             for c in info["images"].children():
                 renders_fnames.append(c.node()["image_name"])
-            self.renders = AscentImageSequenceViewer(renders_fnames)
-            self.main = ipywidgets.VBox([self.renders.show(),
-                                         self.status.show()])
+            w = AscentImageSequenceViewer(renders_fnames)
+            widget_titles.append("Renders")
+            widgets.append(w.show())
+        # extracts
+        if info.has_child("extracts"):
+            w = AscentNodeViewer(info["extracts"])
+            widget_titles.append("Extracts")
+            widgets.append(w.show())
+        # actions
+        if info.has_child("actions"):
+            w = AscentNodeViewer(info["actions"])
+            widget_titles.append("Actions")
+            widgets.append(w.show())
+        if len(widgets) > 1:
+            # use tabs!
+            tab = ipywidgets.Tab()
+            tab.children = widgets
+            for i,v in enumerate(widget_titles):
+                tab.set_title(i,v)
+            self.main = ipywidgets.VBox([tab,
+                                         status.show()],
+                                         layout=ipywidgets.Layout(overflow_x="hidden"))
+        elif len(widgets) == 1:
+            title = ipywidgets.Label(value=widget_titles[0])
+            self.main = ipywidgets.VBox( [title,
+                                          widgets[0],
+                                          status.show()],
+                                         layout=ipywidgets.Layout(overflow_x="hidden"))
         else:
-            self.main = ipywidgets.VBox([self.status.show()])
+            self.main = ipywidgets.VBox([status.show()],
+                                        layout=ipywidgets.Layout(overflow_x="hidden"))
+
+
     def show(self):
         return self.main
 
-class AscentActionsViewer(object):
+class AscentNodeViewer(object):
     """
-    Shows Actions from Ascent info.
+    Shows Yaml Repr of a Conduit Node
     """
-    def __init__(self, info):
-        val = ""
-        if info.has_child("actions"):
-            val = info["actions"].to_yaml()
-        self.title = ipywidgets.Label(value='Actions')
-        self.txt = ipywidgets.Textarea(value=val,
-                                       placeholder='',
-                                       description='',
-                                       disabled=False,
-                                       layout={'height': '100%'})
-        self.box = ipywidgets.VBox([self.title, self.txt],
-                                    layout={'width': '500px'})
-
+    def __init__(self, node):
+        v = "<pre>" + node.to_yaml() + "</pre>"
+        self.main = ipywidgets.HTML(value=v,
+                                    placeholder='',
+                                    description='')
     def show(self):
-        return self.box
+        return self.main
 
 class AscentViewer(object):
     """
