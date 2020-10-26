@@ -952,7 +952,6 @@ DRayVolume::verify_params(const conduit::Node &params,
     res &= check_numeric("image_height",params, info, false);
     res &= check_string("log_scale",params, info, false);
     res &= check_string("annotations",params, info, false);
-    res &= check_string("load_balancing",params, info, false);
 
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
