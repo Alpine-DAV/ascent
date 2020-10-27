@@ -120,6 +120,61 @@ namespace runtime
 namespace filters
 {
 
+namespace detail
+{
+void write_metric(conduit::Node &input,
+                  const std::string topo,
+                  double *metric)
+{
+  conduit::Node output;
+  for(int i = 0; i < input.number_of_children(); ++i)
+  {
+    conduit::Node &dom = input.child(i);
+    conduit::Node &out_dom = output.append();
+    out_dom["state"] = dom["state"];
+    out_dom["topologies"] = dom["topologies"];
+    std::string coords_name = dom["topologies/"+topo+"/coordset"].as_string();
+    conduit::Node &in_coords = dom["coordsets/"+coords_name];
+    double in_i = in_coords["dims/i"].to_float64();
+    double in_j = in_coords["dims/j"].to_float64();
+    double in_k = in_coords["dims/k"].to_float64();
+
+    conduit::Node &out_coords = out_dom["coordsets/"+coords_name];
+    out_coords["type"] = "uniform";
+    out_coords["dims/i"] = 2;
+    out_coords["dims/j"] = 2;
+    out_coords["dims/k"] = 2;
+    out_coords["origin"] = in_coords["origin"];
+    out_coords["spacing/dx"] = in_i * in_coords["spacing/dx"].to_float64();
+    out_coords["spacing/dy"] = in_j * in_coords["spacing/dy"].to_float64();
+    out_coords["spacing/dz"] = in_k * in_coords["spacing/dz"].to_float64();
+
+
+    conduit::Node &field = out_dom["fields/spatial_metric"];
+    field["association"] = "element";
+    field["topology"] = topo;
+    field["values"].set(conduit::DataType::float64(1));
+    conduit::float64_array array = field["values"].value();
+    array[0] = metric[i];
+    if(mpi_rank() == 0 && i ==0)
+    {
+      out_dom.print();
+    }
+  }
+  conduit::Node info;
+  bool is_valid = blueprint::mesh::verify(output, info);
+  if(!is_valid && mpi_rank() == 0)
+  {
+    info.print();
+  }
+  mesh_blueprint_save(output,
+                      "small_spatial_metric",
+                      "hdf5",
+                      -1);
+}
+
+} //  namespace detail
+
 //-----------------------------------------------------------------------------
 BlueprintVerify::BlueprintVerify()
 :Filter()
@@ -355,6 +410,7 @@ void f_cokurt_vecs_cublas_wrapper(int nRows,
                            nRows);
     CHECK_ERROR();
 
+    (void) stat;
 
     //Form the Matrix Khatri Rao product i.e. B = KhatriRao(A,A)
     dim3 threadsPerBlock(64);
@@ -674,6 +730,12 @@ Learn::execute()
 
 #ifdef ASCENT_VTKM_USE_CUDA
     const int num_domains = n_input->number_of_children();
+    int global_blocks = num_domains;
+
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Allreduce(&num_domains, &global_blocks, 1, MPI_INT, MPI_SUM, mpi_comm);
+#endif
+
     double *kVecs = new double[num_fields*num_fields]; // TODO: need one per domain!!!!
     double *eigvals = new double[num_fields];
     double *fmms = new double[num_fields * num_domains];
@@ -713,10 +775,22 @@ Learn::execute()
                                    kVecs,
                                    eigvals);
       delete[] A;
-      //std::cout<<"kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
-      //std::cout<<"eigvals "<<eigvals[0]<<" "<<eigvals[1]<<"\n";
-      debug<<"domain "<<i<<" kVecs "<<kVecs[0]<<" "<<kVecs[1]<<" "<<kVecs[2]<<" "<<kVecs[3]<<"\n";
-      debug<<"domain "<<i<<" eigvals "<<eigvals[0]<<" "<<eigvals[1]<<"\n";
+      //
+      // nfield x nfield eigvals
+      // nfield x nfield eigvc
+      debug<<"domain "<<i<<" kVecs";
+      for(int e = 0; e < num_fields*num_fields; ++e)
+      {
+        debug<<kVecs[e]<<" ";
+      }
+      debug<<"\n";
+
+      debug<<"domain "<<i<<" eigvals ";
+      for(int e = 0; e < num_fields; ++e)
+      {
+        debug<<eigvals[e]<<" ";
+      }
+      debug<<"\n";
 
       debug<<"domain "<<i<<" min value "<<min_value<<"\n";
       debug<<"domain "<<i<<" max value "<<max_value<<"\n";
@@ -726,6 +800,7 @@ Learn::execute()
       // offset for current domain
       double * domain_fmms = fmms + num_fields * i;
       compute_fmms(num_fields, kVecs, eigvals, domain_fmms);
+      // NaN check
       for(int f = 0; f < num_fields; ++f)
       {
         if(domain_fmms[f]  != domain_fmms[f]) domain_fmms[f] = 0;
@@ -747,7 +822,7 @@ Learn::execute()
       for(int f = 0; f < num_fields; f++)
       {
         double val = fmms[offset + f];
-        local_sum[f] = val;
+        local_sum[f] += val;
       }
     }
     for(int f = 0; f < num_fields; f++)
@@ -757,18 +832,23 @@ Learn::execute()
 #ifdef ASCENT_MPI_ENABLED
     //int *domains_per_rank = new int[comm_size];
     MPI_Allreduce(local_sum, average_fmms, num_fields, MPI_DOUBLE, MPI_SUM, mpi_comm);
+#else
+    for(int f = 0; f < num_fields; f++)
+    {
+      average_fmms[f] = local_sum[f]/double(num_domains);
+    }
 #endif //MPI
 
     for(int f = 0; f< num_fields; f++)
     {
-      average_fmms[f] /= double(comm_size * num_domains);
+      average_fmms[f] /= double(global_blocks);
     }
 
     if(rank  == 0)
     {
       for(int f = 0; f < num_fields; f++)
       {
-        std::cout<<field_selection[f]<<" ave "<<average_fmms[f] <<"\n";
+        std::cout<<field_selection[f]<<" average fmms"<<average_fmms[f] <<"\n";
       }
     }
 
@@ -822,16 +902,22 @@ Learn::execute()
       std::cout<<"Spatial threshold "<<threshold<<"\n";
     }
 
+#ifdef ASCENT_MPI_ENABLED
+    if (global_max == max_metric) std::cout<<"In rank "<<rank<<"\n";
+#endif
+
     if(rank == 0 && triggered)
     {
       std::cout<<"FIRE\n";
     }
 
+    debug<<"*** Rank ***"<<rank<<"\n";
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
       conduit::Node &dom = n_input->child(i);
       debug<<"Domain "<<i<<" "<<dom["coordsets"].to_yaml()<<"\n";
       debug<<"field size "<<field_sizes[i]<<"\n";
+      debug<<"spatial metric "<< spatial_metric[i] <<"\n";
       conduit::Node &field = dom["fields/spatial_metric"];
       field["association"] = assoc;
       field["topology"] = topo;
@@ -851,10 +937,14 @@ Learn::execute()
       info.print();
     }
 
+    //  For scalability this is not necessary
+    //  debugging only
     mesh_blueprint_save(*n_input,
                         "spatial_metric",
                         "hdf5",
                         -1);
+
+    detail::write_metric(*n_input, topo, spatial_metric);
 
     delete[] kVecs;
     delete[] eigvals;
