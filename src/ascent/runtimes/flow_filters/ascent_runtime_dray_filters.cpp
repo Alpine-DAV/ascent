@@ -1084,7 +1084,7 @@ DRayVolume::execute()
         balancer.prefix_balancing(prefix);
         balancer.piece_factor(piece_factor);
 
-        dataset = balancer.execute(dataset, camera);
+        dataset = balancer.execute(dataset, camera, samples);
 
       }
 
