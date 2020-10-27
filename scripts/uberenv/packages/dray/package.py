@@ -34,6 +34,7 @@ class Dray(Package,CudaPackage):
     url      = "https://github.com/LLNL/devil_ray/releases/download/v0.1.2/dray-v0.1.3.tar.gz"
 
     version('develop',  branch='develop', submodules='True', preferred=True)
+    version('0.1.4',  sha256='e763a3aa537b23486a4788f9d68db0a3eb545f6a2e617cd7c8a876682ca2d0a0')
     version('0.1.3',  sha256='b2f624a072463189997343b1ed911cc34c9bb1b6c7f0c3e48efeb40c05dd0d92')
     version('0.1.2',  sha256='46937f20124b28dc78a634e8e063a3e7a3bbfd9f424ce2680b08417010c376da')
     version('0.1.1',  sha256='e5daa49ee3367c087f5028dc5a08655298beb318014c6f3f65ef4a08fcbe346c')
