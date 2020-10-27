@@ -17,7 +17,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added optional `num_files` parameter to the Relay Extract. See the [Relay Extract Docs](https://ascent.readthedocs.io/en/latest/Actions/Extracts.html#relay) for more details.
 - Added an AscentViewer Widget for Jupyter
 - Added new CUDA device link logic to help bottle CUDA dependencies for downstream use
-- Added support for Exa prefix style filters
+- Added support for `exa` prefix style filters
 
 ### Changed
 - Modified Cinema output so it can be viewed without a webserver
