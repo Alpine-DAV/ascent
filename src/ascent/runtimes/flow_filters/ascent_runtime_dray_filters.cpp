@@ -88,6 +88,7 @@
 #include <dray/collection.hpp>
 #include <dray/filters/reflect.hpp>
 #include <dray/filters/mesh_boundary.hpp>
+#include <dray/filters/volume_balance.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
@@ -204,6 +205,22 @@ dray_color_table_surprises(const conduit::Node &color_table)
       surprises += surprise_check(c_valid_paths, point);
     }
   }
+
+  return surprises;
+}
+
+std::string
+dray_load_balance_surprises(const conduit::Node &load_balance)
+{
+  std::string surprises;
+
+  std::vector<std::string> valid_paths;
+  valid_paths.push_back("enabled");
+  valid_paths.push_back("factor");
+  valid_paths.push_back("threshold");
+  valid_paths.push_back("use_prefix");
+
+  surprises += surprise_check(valid_paths, load_balance);
 
   return surprises;
 }
@@ -957,12 +974,18 @@ DRayVolume::verify_params(const conduit::Node &params,
 
     ignore_paths.push_back("camera");
     ignore_paths.push_back("color_table");
+    ignore_paths.push_back("load_balancing");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
     if(params.has_path("color_table"))
     {
       surprises += detail::dray_color_table_surprises(params["color_table"]);
+    }
+
+    if(params.has_path("load_balancing"))
+    {
+      surprises += detail::dray_load_balance_surprises(params["load_balancing"]);
     }
 
     if(surprises != "")
@@ -985,6 +1008,8 @@ DRayVolume::execute()
     DataObject *d_input = input<DataObject>(0);
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
+
+    dray::Collection dataset = *dcol;
 
     dray::Camera camera;
 
@@ -1025,8 +1050,47 @@ DRayVolume::execute()
       samples = params()["samples"].to_int32();
     }
 
+    if(params().has_path("load_balancing"))
+    {
+      const conduit::Node &load = params()["load_balancing"];
+      bool enabled = true;
+      if(load.has_path("enabled") &&
+         load["enabled"].as_string() == "false")
+      {
+        enabled = false;
+      }
+
+      if(enabled)
+      {
+        float piece_factor = 0.75f;
+        float threshold = 2.0f;
+        bool prefix = true;
+        if(load.has_path("factor"))
+        {
+          piece_factor = load["factor"].to_float32();
+        }
+        if(load.has_path("threshold"))
+        {
+          threshold = load["threshold"].to_float32();
+        }
+
+        if(load.has_path("use_prefix"))
+        {
+          prefix = load["use_prefix"].as_string() != "false";
+        }
+        dray::VolumeBalance balancer;
+        balancer.threshold(threshold);
+        balancer.prefix_balancing(prefix);
+        balancer.piece_factor(piece_factor);
+
+        dataset = balancer.execute(dataset, camera, samples);
+
+      }
+
+    }
+
     std::shared_ptr<dray::Volume> volume
-      = std::make_shared<dray::Volume>(*dcol);
+      = std::make_shared<dray::Volume>(dataset);
 
     volume->color_map() = color_map;
     volume->samples(samples);
