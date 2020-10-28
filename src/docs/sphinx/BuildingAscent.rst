@@ -75,7 +75,7 @@ For a minimal build with no parallel components, the following are required:
 We recognize that building on HPC systems can be difficult, and we have provide two separate build strategies.
 
     * A spack based build
-    * Manually compile decencies using a CMake configuration file to keep compilers and libraries consistent
+    * Manually compile dependencies using a CMake configuration file to keep compilers and libraries consistent
 
 Most often, the spack based build should be attempted first. Spack will automatically download and build all
 the third party dependencies and create a CMake configuration file for Ascent. Should you encounter build issues

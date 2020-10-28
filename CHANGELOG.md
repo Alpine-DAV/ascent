@@ -7,18 +7,25 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased
 
 ### Added
-- Added optional `num_files` parameter to the Relay Extract. See the [Relay Extract Docs](https://ascent.readthedocs.io/en/latest/Actions/Extracts.html#relay) for more details.
-
-### Changed
-
-- Modified Cinema output so it can be viewed without a webserver.
 - Added support for Devil Ray (high-order) ray tracer
 - Added vector operations
   - composite vector (create vector from three scalars)
   - vector component (extract scalar component)
-- removed default behavior of publishing individual vector components when vectors were three separate arrays. This can be achieved by using the vector component filter.
-- allow no refinement for high-order meshes
-- added support for multiple topologies (e.g., volume and particles in the same mesh)
+- Allow no refinement for high-order meshes
+- Added support for multiple topologies (e.g., volume and particles in the same mesh)
+- Added support for AMR Nesting relationships (Blueprint Nestsets)
+- Added optional `num_files` parameter to the Relay Extract. See the [Relay Extract Docs](https://ascent.readthedocs.io/en/latest/Actions/Extracts.html#relay) for more details.
+- Added an AscentViewer Widget for Jupyter
+- Added new CUDA device link logic to help bottle CUDA dependencies for downstream use
+- Added support for `exa` prefix style filters
+
+### Changed
+- Modified Cinema output so it can be viewed without a webserver
+- Removed default behavior of publishing individual vector components when vectors were three separate arrays. This can be achieved by using the vector component filter
+- Changed Docker Images to leverage Jupyter lab
+- Tutorial updates
+- Rendering improvements
+
 
 ## [0.5.1] - Released 2020-01-31
 

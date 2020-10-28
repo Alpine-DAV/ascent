@@ -1363,8 +1363,10 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
   } // each scene
 }
 
+//-----------------------------------------------------------------------------
 void
-AscentRuntime::FindRenders(conduit::Node &image_params, conduit::Node& image_list)
+AscentRuntime::FindRenders(conduit::Node &image_params,
+                           conduit::Node& image_list)
 {
     image_list.reset();
 
@@ -1547,9 +1549,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         w.info(m_info["flow_graph"]);
         m_info["actions"] = actions;
-        //w.print();
-        //std::cout<<w.graph().to_dot();
-        w.graph().save_dot_html("ascent_flow_graph.html");
+        // w.print();
+        // std::cout<<w.graph().to_dot();
+        // w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         Node *meta = w.registry().fetch<Node>("metadata");
@@ -1574,11 +1576,29 @@ AscentRuntime::Execute(const conduit::Node &actions)
         ascent::about(msg["about"]);
         m_web_interface.PushMessage(msg);
 
+        // add render results to info
         Node render_file_names;
         Node renders;
         FindRenders(renders, render_file_names);
-        m_info["images"] = renders;
 
+        if(renders.number_of_children() > 0)
+        {
+            m_info["images"] = renders;
+        }
+        
+        // add extract results to info
+        if(w.registry().has_entry("extract_list"))
+        {
+            Node *extracts_list = w.registry().fetch<Node>("extract_list");
+            if(extracts_list->number_of_children() > 0)
+            {
+                m_info["extracts"].set(*extracts_list);
+            }
+            // always clear after fetch.
+            extracts_list->reset();
+        }
+
+        // add expression results to info
         const conduit::Node &expression_cache =
           runtime::expressions::ExpressionEval::get_cache();
 
@@ -1587,6 +1607,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
           runtime::expressions::ExpressionEval::get_last(m_info["expressions"]);
         }
 
+        // add flow graphviz details to info
         m_info["flow_graph_dot"]      = w.graph().to_dot();
         m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
 

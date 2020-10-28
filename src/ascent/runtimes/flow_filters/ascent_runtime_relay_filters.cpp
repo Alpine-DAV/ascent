@@ -488,7 +488,8 @@ void gen_domain_to_file_map(int num_domains,
 void mesh_blueprint_save(const Node &data,
                          const std::string &path,
                          const std::string &file_protocol,
-                         int num_files)
+                         int num_files,
+                         std::string &root_file_out)
 {
     // The assumption here is that everything is multi domain
 
@@ -835,19 +836,22 @@ void mesh_blueprint_save(const Node &data,
         ASCENT_WARN("Relay: there are no domains to write out");
     }
 
-    // let rank zero write out the root file
+    snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
+
+    oss.str("");
+    oss << path
+        << ".cycle_"
+        << fmt_buff
+        << ".root";
+
+    string root_file = oss.str();
+
+    // return this via out var
+    root_file_out = root_file;
+
+    // let selected rank write out the root file
     if(par_rank == root_file_writer)
     {
-        snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-
-        oss.str("");
-        oss << path
-            << ".cycle_"
-            << fmt_buff
-            << ".root";
-
-        string root_file = oss.str();
-
         string output_dir_base, output_dir_path;
 
         // TODO: Fix for windows
@@ -997,27 +1001,60 @@ RelayIOSave::execute()
         num_files = params()["num_files"].to_int();
     }
 
+    std::string result_path;
     if(protocol.empty())
     {
         conduit::relay::io::save(selected,path);
+        result_path = path;
     }
     else if( protocol == "blueprint/mesh/hdf5")
     {
-        mesh_blueprint_save(selected,path,"hdf5",num_files);
+        mesh_blueprint_save(selected,
+                            path,
+                            "hdf5",
+                            num_files,
+                            result_path);
     }
     else if( protocol == "blueprint/mesh/json")
     {
-        mesh_blueprint_save(selected,path,"json",num_files);
+        mesh_blueprint_save(selected,
+                            path,
+                            "hdf5",
+                            num_files,
+                            result_path);
+        
     }
     else if( protocol == "blueprint/mesh/yaml")
     {
-        mesh_blueprint_save(selected,path,"yaml",num_files);
+        mesh_blueprint_save(selected,
+                            path,
+                            "hdf5",
+                            num_files,
+                            result_path);
+        
     }
     else
     {
         conduit::relay::io::save(selected,path,protocol);
+        result_path = path;
     }
 
+    // add this to the extract results in the registry
+    if(!graph().workspace().registry().has_entry("extract_list"))
+    {
+      conduit::Node *extract_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+    }
+
+    conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+
+    Node &einfo = extract_list->append();
+    einfo["type"] = "relay";
+    if(!protocol.empty())
+        einfo["protocol"] = protocol;
+    einfo["path"] = result_path;
 }
 
 

@@ -91,12 +91,16 @@ public:
     void   close();
 
 private:
-
-    Runtime    *m_runtime;
-    bool        m_verbose_msgs;
-    bool        m_forward_exceptions;
-    std::string m_actions_file;
-    conduit::Node m_options;
+    
+    void           set_status(const std::string &msg);
+    void           set_status(const std::string &msg,
+                              const std::string &details);
+    Runtime       *m_runtime;
+    bool           m_verbose_msgs;
+    bool           m_forward_exceptions;
+    std::string    m_actions_file;
+    conduit::Node  m_options;
+    conduit::Node  m_status;
 };
 
 

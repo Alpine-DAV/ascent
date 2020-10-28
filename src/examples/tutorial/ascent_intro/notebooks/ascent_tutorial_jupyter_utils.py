@@ -159,6 +159,7 @@ def tutorial_gyre_example(time):
                                           z_dims,
                                           mesh)
 
+    mesh["state/time"] = time
     field = mesh["fields/gyre"]
     field["association"] = "vertex"
     field["topology"] = "mesh"

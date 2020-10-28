@@ -442,6 +442,11 @@ public:
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
 
+  std::string db_path()
+  {
+       return conduit::utils::join_file_path(m_base_path, m_image_name);
+  }
+
   void set_bounds(vtkm::Bounds &bounds)
   {
     if(bounds != m_bounds)
@@ -465,7 +470,7 @@ public:
     }
 
     // add a database path
-    m_db_path = conduit::utils::join_file_path(m_base_path, m_image_name);
+    m_db_path = db_path();
 
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
@@ -879,7 +884,21 @@ DefaultRender::execute()
           {
             detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name, output_path);
           }
+
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
+          // add this to the extract results in the registry
+          if(!graph().workspace().registry().has_entry("extract_list"))
+          {
+            conduit::Node *extract_list = new conduit::Node();
+            graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+          }
+
+          conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+          Node &einfo = extract_list->append();
+          einfo["type"] = "cinema";
+          einfo["path"] = manager.db_path();
 
           int image_width;
           int image_height;
