@@ -1485,7 +1485,7 @@ DRayProjectColors2d::execute()
                          image_name);
 
 
-    const int num_domains = faces.size();
+    const int num_domains = faces.local_size();
 
     dray::Framebuffer framebuffer (camera.get_width(), camera.get_height());
     std::shared_ptr<dray::Surface> surface = std::make_shared<dray::Surface>(faces);
