@@ -119,8 +119,8 @@ TEST(ascent_cinema_a, test_cinema_a)
     scenes["scene1/plots/plt1/field"] = "braid";
     // setup required cinema params
     scenes["scene1/renders/r1/type"] = "cinema";
-    scenes["scene1/renders/r1/phi"] = 4;
-    scenes["scene1/renders/r1/theta"] = 4;
+    scenes["scene1/renders/r1/phi"] = 2;
+    scenes["scene1/renders/r1/theta"] = 2;
     scenes["scene1/renders/r1/db_name"] = "test_db";
     //scenes["scene1/renders/r1/annotations"] = "false";
     scenes["scene1/renders/r1/camera/zoom"] = 1.0; // no zoom
