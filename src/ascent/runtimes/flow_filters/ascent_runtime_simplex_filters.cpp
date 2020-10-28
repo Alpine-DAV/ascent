@@ -396,8 +396,6 @@ CameraSimplex::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     std::string field_name = params()["field"].as_string();
     std::string metric     = params()["metric"].as_string();
-    int         i          = (int)params()["i"].as_int64();
-    cout << "i: " << i << endl;
     if(!collection->has_field(field_name))
     {
       ASCENT_ERROR("Unknown field '"<<field_name<<"'");
@@ -463,7 +461,6 @@ CameraSimplex::execute()
     double scanline_time = 0.;
     double metric_time   = 0.;
 
-
     // Basic winning score while making new camera
     double winning_score = -DBL_MAX;
     int winning_i = -1;
@@ -474,118 +471,126 @@ CameraSimplex::execute()
     int losing_j = -1;
 
     // New theta and phi camera code
-    int numTheta = 100;
-    int numPhi = 100;
+    int numTheta = 50;
+    int numPhi = 50;
 
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
-/* Testing stuff so commenting out main loop
+    // Check for i and j before main loop
+    int yaml_i = (int)params()["i"].as_int64();
+    int yaml_j = (int)params()["j"].as_int64();
+    cout << "yaml i: " << yaml_i << " , yaml j: " << yaml_j << endl;
 
-    // File stuff
-    FILE *datafile;
-    float buffer[numTheta][numPhi];
+    if ((yaml_i >= 0) && (yaml_j >= 0)) {
+      // Skip main loop
+      cout << "i and j positive so skipping loop" << endl;
 
-    // Get nice filename
-    char dataFileName[metric.length() + 5];
-    strcpy(dataFileName, metric.c_str());
-    dataFileName[metric.length()] = '.';
-    dataFileName[metric.length() + 1] = 'b';
-    dataFileName[metric.length() + 2] = 'i';
-    dataFileName[metric.length() + 3] = 'n';
-    dataFileName[metric.length() + 4] = '\0';
+      winning_i = yaml_i;
+      winning_j = yaml_j;
 
-    datafile = fopen(dataFileName, "wb");
+      Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+          	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
 
-    for (int i = 0 ; i < numTheta ; i++) {
-      cout << "Step: " << i << endl;
-      cout << "  Current Winning Score: " << winning_score << endl;
-      cout << "  Current Losing Score: " << losing_score << endl;
-      for (int j = 0 ; j < numPhi ; j++) {
+      vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+                                    (float)cam.position[1],
+                                    (float)cam.position[2]};
 
-        Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+      camera->SetPosition(postest);
+      vtkh::ScalarRenderer tracer;
+      tracer.SetWidth(width);
+      tracer.SetHeight(height);
+      tracer.SetInput(data); //vtkh dataset by toponame
+      tracer.SetCamera(*camera);
+      tracer.Update();
+
+      vtkh::DataSet *output = tracer.GetOutput();
+
+      float score = calculateMetric(output, metric, field_name,
+                 		     triangles, height, width, cam);
+
+      cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
+    }
+
+    else {
+      // Main lopp
+      cout << "i or j negative so running loop" << endl;
+
+
+      // File stuff
+      FILE *datafile;
+      float buffer[numTheta][numPhi];
+
+      // Get nice filename
+      char dataFileName[metric.length() + 5];
+      strcpy(dataFileName, metric.c_str());
+      dataFileName[metric.length()] = '.';
+      dataFileName[metric.length() + 1] = 'b';
+      dataFileName[metric.length() + 2] = 'i';
+      dataFileName[metric.length() + 3] = 'n';
+      dataFileName[metric.length() + 4] = '\0';
+  
+      datafile = fopen(dataFileName, "wb");
+
+      for (int i = 0 ; i < numTheta ; i++) {
+        cout << "Step: " << i << endl;
+        cout << "  Current Winning Score: " << winning_score << endl;
+        cout << "  Current Losing Score: " << losing_score << endl;
+        for (int j = 0 ; j < numPhi ; j++) {
+
+          Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
 		       	        radius, i, numTheta, j, numPhi, focus); 
 
-        vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
-                                  (float)cam.position[1],
-                                  (float)cam.position[2]};
+          vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
+                                    (float)cam.position[1],
+                                    (float)cam.position[2]};
 
-        camera->SetPosition(pos);
-        vtkh::ScalarRenderer tracer;
-        tracer.SetWidth(width);
-        tracer.SetHeight(height);
-        tracer.SetInput(data); //vtkh dataset by toponame
-        tracer.SetCamera(*camera);
-        tracer.Update();
+          camera->SetPosition(pos);
+          vtkh::ScalarRenderer tracer;
+          tracer.SetWidth(width);
+          tracer.SetHeight(height);
+          tracer.SetInput(data); //vtkh dataset by toponame
+          tracer.SetCamera(*camera);
+          tracer.Update();
 
-        vtkh::DataSet *output = tracer.GetOutput();
+          vtkh::DataSet *output = tracer.GetOutput();
 
-        float score = calculateMetric(output, metric, field_name,
+          float score = calculateMetric(output, metric, field_name,
 		       triangles, height, width, cam);
 
-        buffer[i][j] = score;
+          buffer[i][j] = score;
 
-	delete output;
+  	 delete output;
 
-	//cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
-        //cout << "Score is: " << score << endl << endl;
-	if (score > winning_score) {
-            winning_score = score;
-            winning_i = i;
-            winning_j = j;
+   	 //cout << "Camera at: " << cam.position[0] << ", " << cam.position[1] << ", " << cam.position[2] << endl;
+         //cout << "Score is: " << score << endl << endl;
+	 if (score > winning_score) {
+              winning_score = score;
+              winning_i = i;
+              winning_j = j;
+          }
+
+	 if (score < losing_score) {
+              losing_score = score;
+              losing_i = i;
+              losing_j = j;
+         }
+
         }
-
-	if (score < losing_score) {
-            losing_score = score;
-            losing_i = i;
-            losing_j = j;
-        }
-
       }
-    }
 
-    cout << "Winning score: " << winning_score << " at (" << winning_i << ", " << winning_j << ")" << endl;
-    cout << "Losing score: " << losing_score << " at (" << losing_i << ", " << losing_j << ")" << endl;
+      cout << "Winning score: " << winning_score << " at (" << winning_i << ", " << winning_j << ")" << endl;
+      cout << "Losing score: " << losing_score << " at (" << losing_i << ", " << losing_j << ")" << endl;
 
-    for (int k = 0 ; k < numTheta ; k++) {
-      fwrite(buffer[k], sizeof(float), numPhi, datafile);
-    }
+      for (int k = 0 ; k < numTheta ; k++) {
+        fwrite(buffer[k], sizeof(float), numPhi, datafile);
+      }
 
-    fclose(datafile);
-
-*/
-
+      fclose(datafile);
+  }
 
     /*================ End Scalar Renderer  ======================*/
 
-/* 
-    // Testing specific scores
-    winning_i = 46;
-    winning_j = 97;
-
-    Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
-        	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
-
-    vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
-                                  (float)cam.position[1],
-                                  (float)cam.position[2]};
-
-    camera->SetPosition(postest);
-    vtkh::ScalarRenderer tracer;
-    tracer.SetWidth(width);
-    tracer.SetHeight(height);
-    tracer.SetInput(data); //vtkh dataset by toponame
-    tracer.SetCamera(*camera);
-    tracer.Update();
-
-    vtkh::DataSet *output = tracer.GetOutput();
-
-    float score = calculateMetric(output, metric, field_name,
-		       triangles, height, width, cam);
-
-    cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
-*/
-
-///*
+/*
     // Code for scores for quizzes
     
     ofstream myfile;
@@ -632,7 +637,7 @@ CameraSimplex::execute()
 
     myfile.close();
 
-//*/
+*/
 
 /*
     // Getting all pictures	
