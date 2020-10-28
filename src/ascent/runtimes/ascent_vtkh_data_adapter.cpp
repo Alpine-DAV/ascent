@@ -935,11 +935,11 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
     vtkm::Id3 topo_origin(0,0,0);
     if(n_topo.has_path("elements/origin"))
     {
-      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
-      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
+      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
       if(!is_2d)
       {
-        topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+        topo_origin[2] = n_topo["elements/origin/k"].to_int32();
       }
     }
     if(is_2d)
@@ -1064,11 +1064,11 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
     vtkm::Id3 topo_origin(0,0,0);
     if(n_topo.has_path("elements/origin"))
     {
-      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
-      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
+      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
       if(ndims == 3)
       {
-        topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+        topo_origin[2] = n_topo["elements/origin/k"].to_int32();
       }
     }
     if (ndims == 2)
@@ -1147,11 +1147,11 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     vtkm::Id3 topo_origin(0,0,0);
     if(n_topo.has_path("elements/origin"))
     {
-      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
-      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
+      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
       if(ndims == 3)
       {
-        topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+        topo_origin[2] = n_topo["elements/origin/k"].to_int32();
       }
     }
 
