@@ -517,9 +517,10 @@ public:
 
     for(int i = 0; i < num_renders; ++i)
     {
+      vtkh::Render tmp = render.Copy();
       std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
-      render.SetImageName(image_name);
+      tmp.SetImageName(image_name);
       // we have to make a copy of the camera because
       // zoom is additive for some reason
       vtkm::rendering::Camera camera = m_cameras[i];
@@ -531,8 +532,8 @@ public:
         camera.Zoom(vtkm_zoom);
       }
 
-      render.SetCamera(camera);
-      renders->push_back(render);
+      tmp.SetCamera(camera);
+      renders->push_back(tmp);
     }
   }
 
