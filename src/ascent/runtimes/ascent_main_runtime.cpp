@@ -1547,6 +1547,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         PopulateMetadata(); // add metadata so filters can access it
 
+        // add the source to the registry so we can access information
+        // about the original mesh (like bounds)
+        w.registry().add<DataObject>("source_object", &m_data_object,1);
+
         w.info(m_info["flow_graph"]);
         m_info["actions"] = actions;
         // w.print();

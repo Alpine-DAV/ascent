@@ -187,6 +187,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
   r_valid_paths.push_back("shading");
+  r_valid_paths.push_back("use_original_bounds");
 
   for(int i = 0; i < num_renders; ++i)
   {
@@ -838,6 +839,8 @@ DefaultRender::execute()
       cycle = (*meta)["cycle"].as_int32();
     }
 
+    // figure out if we need the original bounds for the scene
+    bool needs_original_bounds = false;
     if(params().has_path("renders"))
     {
       const conduit::Node renders_node = params()["renders"];
@@ -845,7 +848,54 @@ DefaultRender::execute()
 
       for(int i = 0; i < num_renders; ++i)
       {
-        const conduit::Node render_node = renders_node.child(i);
+        const conduit::Node &render_node = renders_node.child(i);
+        if(render_node.has_path("use_original_bounds"))
+        {
+          if(render_node["use_original_bounds"].as_string() == "true")
+          {
+            needs_original_bounds = true;
+            break;
+          }
+        }
+      }
+    }
+    else
+    {
+      if(params().has_path("use_original_bounds"))
+      {
+        if(params()["use_original_bounds"].as_string() == "true")
+        {
+          needs_original_bounds = true;
+        }
+      }
+    }
+
+    vtkm::Bounds original_bounds;
+    if(needs_original_bounds)
+    {
+      DataObject *source
+        = graph().workspace().registry().fetch<DataObject>("source_object");
+      original_bounds = source->as_vtkh_collection()->global_bounds();
+    }
+
+
+    if(params().has_path("renders"))
+    {
+      const conduit::Node &renders_node = params()["renders"];
+      const int num_renders = renders_node.number_of_children();
+
+      for(int i = 0; i < num_renders; ++i)
+      {
+        const conduit::Node &render_node = renders_node.child(i);
+        vtkm::Bounds scene_bounds = *bounds;
+        if(render_node.has_path("use_original_bounds"))
+        {
+          if(render_node["use_original_bounds"].as_string() == "true")
+          {
+            scene_bounds = original_bounds;
+          }
+        }
+
         std::string image_name;
 
         bool is_cinema = false;
@@ -904,7 +954,7 @@ DefaultRender::execute()
           int image_height;
           parse_image_dims(render_node, image_width, image_height);
 
-          manager.set_bounds(*bounds);
+          manager.set_bounds(scene_bounds);
           manager.add_time_step();
           manager.fill_renders(renders, render_node);
           manager.write_metadata();
@@ -935,7 +985,7 @@ DefaultRender::execute()
           }
 
           vtkh::Render render = detail::parse_render(render_node,
-                                                     *bounds,
+                                                     scene_bounds,
                                                      image_name);
           renders->push_back(render);
         }
@@ -955,9 +1005,18 @@ DefaultRender::execute()
         image_name = expand_family_name(image_name, cycle);
       }
 
+      vtkm::Bounds scene_bounds = *bounds;
+      if(params().has_path("use_original_bounds"))
+      {
+        if(params()["use_original_bounds"].as_string() == "true")
+        {
+          scene_bounds = original_bounds;
+        }
+      }
+
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024,
-                                             *bounds,
+                                             scene_bounds,
                                              image_name);
 
       renders->push_back(render);
