@@ -1209,7 +1209,7 @@ DRayReflect::execute()
 
     dray::Collection output = reflector.execute(*dcol);
 
-    for(int i = 0; i < dcol->size(); ++i)
+    for(int i = 0; i < dcol->local_size(); ++i)
     {
       dray::DataSet dset = dcol->domain(i);
       output.add_domain(dset);
