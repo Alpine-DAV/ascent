@@ -1392,7 +1392,12 @@ AscentRuntime::FindRenders(conduit::Node &image_params,
 void
 AscentRuntime::BuildGraph(const conduit::Node &actions)
 {
-  // exection will be enforced in the following order:
+  // make sure to clean helpers that we use
+  // to build the graph
+  m_connections.reset();
+  m_scene_connections.reset();
+
+  // execution will be enforced in the following order:
   conduit::Node queries;
   conduit::Node triggers;
   conduit::Node pipelines;
