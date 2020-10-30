@@ -124,7 +124,7 @@ namespace detail
 {
 void write_metric(conduit::Node &input,
                   const std::string topo,
-                  double *metric)
+                  std::vector<std::vector<std::pair<std::string,double>>> &mesh_data)
 {
   conduit::Node output;
   for(int i = 0; i < input.number_of_children(); ++i)
@@ -150,12 +150,17 @@ void write_metric(conduit::Node &input,
     out_coords["spacing/dz"] = in_k * in_coords["spacing/dz"].to_float64();
 
 
-    conduit::Node &field = out_dom["fields/spatial_metric"];
-    field["association"] = "element";
-    field["topology"] = topo;
-    field["values"].set(conduit::DataType::float64(1));
-    conduit::float64_array array = field["values"].value();
-    array[0] = metric[i];
+    std::vector<std::pair<std::string,double>> &dom_scalars = mesh_data[i];
+    for(int s = 0; s < dom_scalars.size(); ++s)
+    {
+      std::string field_name = dom_scalars[s].first;
+      conduit::Node &field = out_dom["fields/"+field_name];
+      field["association"] = "element";
+      field["topology"] = topo;
+      field["values"].set(conduit::DataType::float64(1));
+      conduit::float64_array array = field["values"].value();
+      array[0] = dom_scalars[s].second;;
+    }
     if(mpi_rank() == 0 && i ==0)
     {
       out_dom.print();
@@ -656,6 +661,7 @@ Learn::execute()
     std::vector<int> field_sizes;
     field_sizes.resize(n_input->number_of_children());
 
+
     for(int i = 0; i < n_input->number_of_children(); ++i)
     {
       const conduit::Node &dom = n_input->child(i);
@@ -727,10 +733,14 @@ Learn::execute()
     debug.open(d_name.str());
     //debug<<"Field size "<<field_size<<"\n";
 
-
 #ifdef ASCENT_VTKM_USE_CUDA
     const int num_domains = n_input->number_of_children();
     int global_blocks = num_domains;
+    //
+    // data for visual debugging
+    using Data = std::pair<std::string,double>;
+    std::vector<std::vector<Data>> mesh_data;
+    mesh_data.resize(num_domains);
 
 #ifdef ASCENT_MPI_ENABLED
     MPI_Allreduce(&num_domains, &global_blocks, 1, MPI_INT, MPI_SUM, mpi_comm);
@@ -744,6 +754,9 @@ Learn::execute()
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = n_input->child(i);
+
+      // visual debugging data
+      std::vector<Data> &domain_data = mesh_data[i];
 
       double min_value = std::numeric_limits<double>::max();
       double max_value = std::numeric_limits<double>::lowest();
@@ -789,6 +802,11 @@ Learn::execute()
       for(int e = 0; e < num_fields; ++e)
       {
         debug<<eigvals[e]<<" ";
+        // visual debuggin
+        Data eig;
+        eig.first = "eig_val_" + field_selection[e];
+        eig.second = eigvals[e];
+        domain_data.push_back(eig);
       }
       debug<<"\n";
 
@@ -805,6 +823,12 @@ Learn::execute()
       {
         if(domain_fmms[f]  != domain_fmms[f]) domain_fmms[f] = 0;
         debug<<"domain "<<i<<" fmms "<<f<<" "<<domain_fmms[f]<<"\n";
+
+        // visual debuggin
+        Data fmms_val;
+        fmms_val.first = "fmms_" + field_selection[f];
+        fmms_val.second = domain_fmms[f];
+        domain_data.push_back(fmms_val);
       }
     }
 
@@ -944,7 +968,17 @@ Learn::execute()
                         "hdf5",
                         -1);
 
-    detail::write_metric(*n_input, topo, spatial_metric);
+    // add in the spatial metric
+    for(int i = 0; i < num_domains; ++i)
+    {
+      std::vector<Data> &domain_data = mesh_data[i];
+      Data metric;
+      metric.first = "spatial_metric";
+      metric.second = spatial_metric[i];
+      domain_data.push_back(metric);
+    }
+
+    detail::write_metric(*n_input, topo, mesh_data);
 
     delete[] kVecs;
     delete[] eigvals;
