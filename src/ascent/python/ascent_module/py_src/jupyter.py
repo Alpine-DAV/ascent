@@ -260,7 +260,7 @@ class AscentViewer(object):
             # print error details to standard notebook output, 
             # this looks pretty sensible vs trying to format in a widget
             print("[Ascent Error]")
-            print(self.last_info["status/details"])
+            print(info["status/details"])
         if ipywidgets_support:
             view = AscentResultsViewer(info)
             return view.show()
