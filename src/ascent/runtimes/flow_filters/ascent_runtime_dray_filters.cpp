@@ -1209,7 +1209,7 @@ DRayReflect::execute()
 
     dray::Collection output = reflector.execute(*dcol);
 
-    for(int i = 0; i < dcol->size(); ++i)
+    for(int i = 0; i < dcol->local_size(); ++i)
     {
       dray::DataSet dset = dcol->domain(i);
       output.add_domain(dset);
@@ -1485,7 +1485,7 @@ DRayProjectColors2d::execute()
                          image_name);
 
 
-    const int num_domains = faces.size();
+    const int num_domains = faces.local_size();
 
     dray::Framebuffer framebuffer (camera.get_width(), camera.get_height());
     std::shared_ptr<dray::Surface> surface = std::make_shared<dray::Surface>(faces);
