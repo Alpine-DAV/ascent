@@ -350,7 +350,7 @@ def main():
         uberenv_pkg_name = project_opts["package_name"]
     else:
         uberenv_pkg_name = project_opts["uberenv_package_name"]
-    if "mirror_url" in project_opts.keys():
+    if "mirror_url" in project_opts.keys() and not opts["create_mirror"]:
         opts["mirror"] = project_opts["mirror_url"]
     print("[uberenv project settings: {}]".format(str(project_opts)))
     print("[uberenv options: {}]".format(str(opts)))

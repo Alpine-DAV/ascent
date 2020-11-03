@@ -54,8 +54,8 @@ from os.path import join as pjoin
 def key_pkgs():
     return  ["ascent", "vtk-h", "vtk-m", "conduit"]
 
-def spec():
-    return  "+mfem+dray+babelflow"
+def specs():
+    return  ["+python+mfem+dray+babelflow ^openmpi", "+mfem+dray+babelflow ^mpich"]
 
 def timestamp(t=None,sep="_"):
     """ Creates a timestamp that can easily be included in a filename. """
@@ -121,10 +121,11 @@ def gen_key_tarballs():
         shutil.copyfile(pkg_tarball,des_path)
 
 def gen_mirror():
-    cmd = 'python {0} --create-mirror --spec="{1}"'.format(pjoin("uberenv","uberenv.py"),
-                                                           spec())
-    cmd += ' --prefix=uberenv_libs --mirror=uberenv_mirror'
-    sexe(cmd)
+    for spec in specs():
+        cmd = 'python {0} --create-mirror --spec="{1}"'.format(pjoin("uberenv","uberenv.py"),
+                                                               spec)
+        cmd += ' --prefix=uberenv_libs --mirror=uberenv_mirror'
+        sexe(cmd)
 
 def main():
     gen_mirror()
