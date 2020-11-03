@@ -94,6 +94,46 @@ namespace ascent
 namespace detail
 {
 
+vtkm::Id3 topo_origin(const conduit::Node &n_topo)
+{
+  vtkm::Id3 topo_origin(0,0,0);
+  // maintain backwards compatibility between
+  // i and i0 versions
+  if(n_topo.has_path("elements/origin"))
+  {
+    const conduit::Node &origin = n_topo["elements/origin"];
+
+    if(origin.has_path("i"))
+    {
+      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
+    }
+    if(origin.has_path("i0"))
+    {
+      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
+    }
+
+    if(origin.has_path("j"))
+    {
+      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
+    }
+    if(origin.has_path("j0"))
+    {
+      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+    }
+
+    if(origin.has_path("k"))
+    {
+      topo_origin[2] = n_topo["elements/origin/k"].to_int32();
+    }
+    if(origin.has_path("k0"))
+    {
+      topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+    }
+  }
+
+  return topo_origin;
+}
+
 template<typename T>
 const T* GetNodePointer(const conduit::Node &node);
 
@@ -932,16 +972,7 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
                                                               dims,
                                                               origin,
                                                               spacing));
-    vtkm::Id3 topo_origin(0,0,0);
-    if(n_topo.has_path("elements/origin"))
-    {
-      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
-      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
-      if(!is_2d)
-      {
-        topo_origin[2] = n_topo["elements/origin/k"].to_int32();
-      }
-    }
+    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
     if(is_2d)
     {
       vtkm::Id2 dims2(dims[0], dims[1]);
@@ -1061,16 +1092,8 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
                                                   coords);
     result->AddCoordinateSystem(coordinate_system);
 
-    vtkm::Id3 topo_origin(0,0,0);
-    if(n_topo.has_path("elements/origin"))
-    {
-      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
-      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
-      if(ndims == 3)
-      {
-        topo_origin[2] = n_topo["elements/origin/k"].to_int32();
-      }
-    }
+    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
+
     if (ndims == 2)
     {
       vtkm::cont::CellSetStructured<2> cell_set;
