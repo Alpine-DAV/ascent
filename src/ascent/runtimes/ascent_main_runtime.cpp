@@ -1644,7 +1644,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
     catch(std::exception &e)
     {
       w.reset();
-      ASCENT_ERROR("Execution failed with: "<<e.what());
+      std::err<<"Execution failed with exception: "<<e.what()<<"\n";
     }
     catch(...)
     {
