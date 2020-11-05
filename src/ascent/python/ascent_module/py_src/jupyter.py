@@ -214,6 +214,13 @@ class AscentResultsViewer(object):
             widget_titles.append("Extracts")
             widgets.append(w.show())
 
+        # expressions
+        if info.has_child("expressions"):
+            # view results info as yaml repr
+            w = AscentNodeViewer(info["expressions"])
+            widget_titles.append("Expressions")
+            widgets.append(w.show())
+
         # actions
         if info.has_child("actions"):
             # view results info as yaml repr
