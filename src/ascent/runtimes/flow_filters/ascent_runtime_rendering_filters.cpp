@@ -130,6 +130,7 @@ check_color_table_surprises(const conduit::Node &color_table)
   std::vector<std::string> valid_paths;
   valid_paths.push_back("name");
   valid_paths.push_back("reverse");
+  valid_paths.push_back("annotation");
 
   std::vector<std::string> ignore_paths;
   ignore_paths.push_back("control_points");
@@ -1339,7 +1340,17 @@ CreatePlot::execute()
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
-      vtkm::cont::ColorTable color_table =  parse_color_table(plot_params["color_table"]);
+      vtkm::cont::ColorTable color_table = parse_color_table(plot_params["color_table"]);
+      if(type != "mesh")
+      {
+        if(plot_params["color_table"].has_path("annotation"))
+        {
+           if(plot_params["color_table/annotation"].as_string() == "false")
+           {
+              renderer->DisableColorBar();
+           }
+        }
+      }
       renderer->SetColorTable(color_table);
     }
 
