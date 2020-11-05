@@ -120,7 +120,7 @@ mesh_bp_generate_index(const conduit::Node &mesh,
                        int num_domains,
                        Node &index_out)
 {
-    if(::conduit::blueprint::mesh::is_multi_domain(mesh))
+    if(blueprint::mesh::is_multi_domain(mesh))
     {
         NodeConstIterator itr = mesh.children();
 
@@ -128,20 +128,20 @@ mesh_bp_generate_index(const conduit::Node &mesh,
         {
             Node curr_idx;
             const Node &cld = itr.next();
-            ::conduit::blueprint::mesh::generate_index(cld,
-                                                       ref_path,
-                                                       num_domains,
-                                                       curr_idx);
+            blueprint::mesh::generate_index(cld,
+                                            ref_path,
+                                            num_domains,
+                                            curr_idx);
             // add any new entries to the running index
             index_out.update(curr_idx);
         }
     }
     else
     {
-        ::conduit::blueprint::mesh::generate_index(mesh,
-                                                   ref_path,
-                                                   num_domains,
-                                                   index_out);
+        blueprint::mesh::generate_index(mesh,
+                                        ref_path,
+                                        num_domains,
+                                        index_out);
     }
 }
 
@@ -165,7 +165,7 @@ mesh_bp_generate_index(const conduit::Node &mesh,
     // se an all gather and union the results together
     // to create an accurate global index. 
 
-    index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
+    index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
     // note: 
     // find global # of domains w/o conduit_blueprint_mpi for now
     // since we aren't yet linking conduit_blueprint_mpi
