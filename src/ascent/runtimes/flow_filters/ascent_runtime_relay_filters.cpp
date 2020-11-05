@@ -155,14 +155,19 @@ mesh_bp_generate_index(const conduit::Node &mesh,
 {
     int par_rank = relay::mpi::rank(comm);
     int par_size = relay::mpi::size(comm);
-    // we need to know the mesh structure and the number of domains
-    // we can't assume rank zero has any domains (could be empty)
-    // we need the union of all mesh components across domains
-    // so we use an all gather
+
+    // we need a list of all possible topos, coordsets, etc
+    // for the blueprint index in the root file. 
+    //
+    // across ranks, domains may be sparse
+    //  for example: a topo may only exist on one domain
+    // so we use an all gather and union the results together
+    // to create an accurate index. 
 
     index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
+    // note: 
     // find global # of domains w/o conduit_blueprint_mpi for now
-    // since that is our only use of that newer part of conduit
+    // since we aren't yet linking conduit_blueprint_mpi
     Node n_src, n_reduce;
     n_src = local_num_domains;
 
