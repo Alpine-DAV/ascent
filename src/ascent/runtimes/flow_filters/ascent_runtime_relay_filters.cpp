@@ -78,8 +78,6 @@
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
-// -- conduit blueprint mpi
-#include <conduit_blueprint_mpi_mesh.hpp>
 #endif
 
 // std includes
@@ -114,11 +112,6 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
-
-// recalculate domain ids so that we are consistant.
-// Assumes that domains are valid
-//
-
 
 //-------------------------------------------------------------------------
 void
@@ -168,8 +161,16 @@ mesh_bp_generate_index(const conduit::Node &mesh,
     // so we use an all gather
 
     index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
-    index_t global_num_domains = ::conduit::blueprint::mpi::mesh::number_of_domains(mesh,
-                                                                                    comm);
+    // find global # of domains w/o conduit_blueprint_mpi for now
+    // since that is our only use of that newer part of conduit
+    Node n_src, n_reduce;
+    n_src = local_num_domains;
+
+    mpi::sum_all_reduce(n_src,
+                        n_reduce,
+                        comm);
+
+    index_t global_num_domains = n_reduce.to_int();
 
     index_out.reset();
 
