@@ -65,8 +65,8 @@ Scheduled Tutorials:
 Past Tutorials:
  * ECP 2020 Annual Meeting - Feb 2020, Houston, TX
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
- * ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX
  * ECP 2019 Annual Meeting - Jan 2019, Houston, TX
+ * ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX
 
 .. toctree::
    Tutorial_Setup
