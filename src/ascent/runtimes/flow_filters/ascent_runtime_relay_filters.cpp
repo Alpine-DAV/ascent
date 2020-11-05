@@ -160,9 +160,10 @@ mesh_bp_generate_index(const conduit::Node &mesh,
     // for the blueprint index in the root file. 
     //
     // across ranks, domains may be sparse
-    //  for example: a topo may only exist on one domain
-    // so we use an all gather and union the results together
-    // to create an accurate index. 
+    //  for example: a topo may only exist in one domain
+    // so we union all local mesh indices, and then 
+    // se an all gather and union the results together
+    // to create an accurate global index. 
 
     index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
     // note: 
