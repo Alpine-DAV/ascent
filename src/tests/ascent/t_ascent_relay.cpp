@@ -57,6 +57,7 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -597,6 +598,11 @@ TEST(ascent_relay, test_relay_sparse_topos)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
+    
+    
+    Node n_root;
+    conduit::relay::io::load(output_file + ".cycle_000000.root","hdf5",n_root);
+    n_root.print();
 }
 
 

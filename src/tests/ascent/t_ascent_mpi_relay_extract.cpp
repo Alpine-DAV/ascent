@@ -57,6 +57,7 @@
 #include <mpi.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -707,7 +708,134 @@ TEST(ascent_relay, test_relay_bp_num_files)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_relay, test_relay_mpi_sparse_topos)
+TEST(ascent_relay, test_relay_mpi_sparse_topos_1)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    ASCENT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    Node data;
+    ostringstream oss;
+
+    // create mesh where each rank has three domains with different topos
+    for(index_t d =0; d<3; d++)
+    {
+        Node &mesh = data.append();
+
+        mesh["state/cycle"] = 0;
+
+        oss.str("");
+        oss << "my_coords_rank_" <<  par_rank << "_" << d;
+        std::string c_name = oss.str();
+
+        oss.str("");
+        oss << "my_topo_rank_" <<  par_rank << "_" << d;
+        std::string t_name = oss.str();
+
+        oss.str("");
+        oss << "my_field_rank_" <<  par_rank << "_" << d;
+        std::string f_name = oss.str();
+
+        // create the coordinate set
+        mesh["coordsets"][c_name]["type"] = "uniform";
+        mesh["coordsets"][c_name]["dims/i"] = 3;
+        mesh["coordsets"][c_name]["dims/j"] = 3;
+        mesh["coordsets"][c_name]["origin/x"] = -10.0;
+        mesh["coordsets"][c_name]["origin/y"] = -10.0;
+        mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+        mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+        mesh["topologies"][t_name]["type"] = "uniform";
+        mesh["topologies"][t_name]["coordset"] = c_name;
+
+        mesh["fields"][f_name]["association"] =  "element";
+        mesh["fields"][f_name]["topology"] =  t_name;
+        mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+        float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+        for(int i=0;i<4;i++)
+        {
+            ele_vals_ptr[i] = float64(d);
+        }
+    }
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract with sparse topos in parallel");
+
+    std::string output_path;
+
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+
+
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_mpi_sparse_topos_1");
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    Ascent ascent;
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    MPI_Barrier(comm);
+    
+    // read back in the blueprint index and make sure it 
+    // has what we expect in it
+
+    Node n_root;
+    conduit::relay::io::load(output_file + ".cycle_000000.root","hdf5",n_root);
+
+    const Node &bp_index = n_root["blueprint_index/mesh"];
+
+    EXPECT_EQ(bp_index["state/number_of_domains"].to_int(),6);
+    EXPECT_EQ(bp_index["coordsets"].number_of_children(),6);
+    EXPECT_EQ(bp_index["topologies"].number_of_children(),6);
+    EXPECT_EQ(bp_index["fields"].number_of_children(),6);
+    
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_mpi_sparse_topos_2)
 {
     //
     // Set Up MPI
@@ -731,65 +859,68 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos)
     // Create an example mesh.
     //
 
-    // Node data;
-    ostringstream oss;
-
     Node data;
-    create_3d_example_dataset(data,32,par_rank,par_size);
-    data["state/cycle"] = 101;
+    ostringstream oss;
+    
+    // rank 1 have 3 domains, rank zero none
+    if(par_rank > 0)
+    {
 
-    // // three domains with different topos
-    // for(index_t d =0; d<4; d++)
-    // {
-    //     Node &mesh = data.append();
-    //
-    //     mesh["state/cycle"] = 0;
-    //
-    //     oss.str("");
-    //     oss << "my_coords_rank_" <<  par_rank << "_" << d;
-    //     std::string c_name = oss.str();
-    //
-    //     oss.str("");
-    //     oss << "my_topo_rank_" <<  par_rank << "_" << d;
-    //     std::string t_name = oss.str();
-    //
-    //     oss.str("");
-    //     oss << "my_field_rank_" <<  par_rank << "_" << d;
-    //     std::string f_name = oss.str();
-    //
-    //     // create the coordinate set
-    //     mesh["coordsets"][c_name]["type"] = "uniform";
-    //     mesh["coordsets"][c_name]["dims/i"] = 3;
-    //     mesh["coordsets"][c_name]["dims/j"] = 3;
-    //     // add origin and spacing to the coordset (optional)
-    //     mesh["coordsets"][c_name]["origin/x"] = -10.0;
-    //     mesh["coordsets"][c_name]["origin/y"] = -10.0;
-    //     mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
-    //     mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
-    //
-    //     // add the topology
-    //     // this case is simple b/c it's implicitly derived from the coordinate set
-    //     mesh["topologies"][t_name]["type"] = "uniform";
-    //     // reference the coordinate set by name
-    //     mesh["topologies"][t_name]["coordset"] = c_name;
-    //
-    //     // add a simple element-associated field
-    //     mesh["fields"][f_name]["association"] =  "element";
-    //     // reference the topology this field is defined on by name
-    //     mesh["fields"][f_name]["topology"] =  t_name;
-    //     // set the field values, for this case we have 4 elements
-    //     mesh["fields"][f_name]["values"].set(DataType::float64(4));
-    //
-    //     float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
-    //
-    //     for(int i=0;i<4;i++)
-    //     {
-    //         ele_vals_ptr[i] = float64(d);
-    //     }
-    // }
+        // three domains with different topos
+        for(index_t d =0; d<3; d++)
+        {
+            Node &mesh = data.append();
 
-    Node verify_info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+            mesh["state/cycle"] = 0;
+
+            oss.str("");
+            oss << "my_coords_rank_" <<  par_rank << "_" << d;
+            std::string c_name = oss.str();
+
+            oss.str("");
+            oss << "my_topo_rank_" <<  par_rank << "_" << d;
+            std::string t_name = oss.str();
+
+            oss.str("");
+            oss << "my_field_rank_" <<  par_rank << "_" << d;
+            std::string f_name = oss.str();
+
+            // create the coordinate set
+            mesh["coordsets"][c_name]["type"] = "uniform";
+            mesh["coordsets"][c_name]["dims/i"] = 3;
+            mesh["coordsets"][c_name]["dims/j"] = 3;
+            // add origin and spacing to the coordset (optional)
+            mesh["coordsets"][c_name]["origin/x"] = -10.0;
+            mesh["coordsets"][c_name]["origin/y"] = -10.0;
+            mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+            mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+            // add the topology
+            // this case is simple b/c it's implicitly derived from the coordinate set
+            mesh["topologies"][t_name]["type"] = "uniform";
+            // reference the coordinate set by name
+            mesh["topologies"][t_name]["coordset"] = c_name;
+
+            // add a simple element-associated field
+            mesh["fields"][f_name]["association"] =  "element";
+            // reference the topology this field is defined on by name
+            mesh["fields"][f_name]["topology"] =  t_name;
+            // set the field values, for this case we have 4 elements
+            mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+            float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+            for(int i=0;i<4;i++)
+            {
+                ele_vals_ptr[i] = float64(d);
+            }
+        }
+
+        Node verify_info;
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    }
+
+
 
     ASCENT_INFO("Testing relay extract with sparse topos in parallel");
 
@@ -805,7 +936,7 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos)
     }
 
 
-    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_mpi_sparse_topos");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_mpi_sparse_topos_2");
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -821,9 +952,9 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos)
 
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
-
+    //
     Ascent ascent;
-
+    //
     Node ascent_opts;
     // we use the mpi handle provided by the fortran interface
     // since it is simply an integer
@@ -834,9 +965,23 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos)
     ascent.execute(actions);
     ascent.close();
 
-    //MPI_Barrier(comm);
-}
 
+    MPI_Barrier(comm);
+
+    // read back in the blueprint index and make sure it 
+    // has what we expect in it
+
+    Node n_root;
+    conduit::relay::io::load(output_file + ".cycle_000000.root","hdf5",n_root);
+
+    const Node &bp_index = n_root["blueprint_index/mesh"];
+
+    EXPECT_EQ(bp_index["state/number_of_domains"].to_int(),3);
+    EXPECT_EQ(bp_index["coordsets"].number_of_children(),3);
+    EXPECT_EQ(bp_index["topologies"].number_of_children(),3);
+    EXPECT_EQ(bp_index["fields"].number_of_children(),3);
+
+}
 
 //
 //-----------------------------------------------------------------------------

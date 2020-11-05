@@ -164,7 +164,8 @@ mesh_bp_generate_index(const conduit::Node &mesh,
     int par_size = relay::mpi::size(comm);
     // we need to know the mesh structure and the number of domains
     // we can't assume rank zero has any domains (could be empty)
-    // so we look for the lowest rank with 1 or more domains
+    // we need the union of all mesh components across domains
+    // so we use an all gather
 
     index_t local_num_domains = ::conduit::blueprint::mesh::number_of_domains(mesh);
     index_t global_num_domains = ::conduit::blueprint::mpi::mesh::number_of_domains(mesh,
@@ -192,42 +193,6 @@ mesh_bp_generate_index(const conduit::Node &mesh,
         const Node &curr = itr.next();
         index_out.update(curr);
     }
-
-    // index_t rank_send = par_size;
-    // index_t selected_rank = par_size;
-    // if(local_num_domains > 0)
-    //     rank_send = par_rank;
-
-    // Node n_snd, n_reduce;
-    // // make sure some MPI task actually had bp data
-    // n_snd.set_external(&rank_send,1);
-    // n_reduce.set_external(&selected_rank,1);
-    //
-    // relay::mpi::min_all_reduce(n_snd, n_reduce, comm);
-    //
-    // if(par_rank == selected_rank )
-    // {
-    //     if(::conduit::blueprint::mesh::is_multi_domain(mesh))
-    //     {
-    //         // we need to gather fields, topos, etc from each domain and union them.
-    //         ::conduit::blueprint::mesh::generate_index(mesh.child(0),
-    //                                                    ref_path,
-    //                                                    global_num_domains,
-    //                                                    index_out);
-    //     }
-    //     else
-    //     {
-    //         ::conduit::blueprint::mesh::generate_index(mesh,
-    //                                                    ref_path,
-    //                                                    global_num_domains,
-    //                                                    index_out);
-    //     }
-    // }
-
-    // broadcast the resulting index to all other ranks
-    // relay::mpi::broadcast_using_schema(index_out,
-    //                                    selected_rank,
-    //                                    comm);
 }
 
 #endif
@@ -731,8 +696,6 @@ void mesh_blueprint_save(const Node &data,
 #endif
 
 
-    std::cout << "num_global_domains" <<global_num_domains << std::endl;
-
     if(global_num_domains == 0)
     {
       if(par_rank == 0)
@@ -973,6 +936,26 @@ void mesh_blueprint_save(const Node &data,
     // return this via out var
     root_file_out = root_file;
 
+    // --------
+    // create blueprint index
+    // --------
+
+    // all ranks participate in the index gen
+    Node bp_idx;
+#ifdef ASCENT_MPI_ENABLED
+        // mpi tasks may have diff fields, topos, etc
+        //
+        detail::mesh_bp_generate_index(multi_dom,
+                                       "",
+                                       bp_idx["mesh"],
+                                       mpi_comm);
+#else
+        detail::mesh_bp_generate_index(multi_dom,
+                                       "",
+                                       global_num_domains,
+                                       bp_idx["mesh"]);
+#endif
+
     // let selected rank write out the root file
     if(par_rank == root_file_writer)
     {
@@ -1002,31 +985,7 @@ void mesh_blueprint_save(const Node &data,
 
 
         Node root;
-        Node &bp_idx = root["blueprint_index"];
-
-#ifdef ASCENT_MPI_ENABLED
-        // mpi tasks may have diff fields, topos, etc
-        //        
-        detail::mesh_bp_generate_index(multi_dom,
-                                       "",
-                                       bp_idx["mesh"],
-                                       mpi_comm);
-        // blueprint::mpi::mesh::generate_index(multi_dom.child(0),
-        //                                      "",
-        //                                      bp_idx["mesh"],
-        //                                      mpi_comm);
-#else
-        // blueprint::mesh::generate_index(multi_dom.child(0),
-        //                                 "",
-        //                                 global_num_domains,
-        //                                 bp_idx["mesh"]);
-        detail::mesh_bp_generate_index(multi_dom,
-                                       "",
-                                       global_num_domains,
-                                       bp_idx["mesh"]);
-#endif
-
-        bp_idx["mesh"].print();
+        root["blueprint_index"] = bp_idx;
 
         // work around conduit and manually add state fields
         if(multi_dom.child(0).has_path("state/cycle"))
