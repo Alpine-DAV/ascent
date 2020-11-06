@@ -31,7 +31,6 @@ packages:
       mpi: [mpich]
       blas: [openblas]
       lapack: [openblas]
-    variants: +mpi 
   mpich:
     version: [7.7.6]
     buildable: false
