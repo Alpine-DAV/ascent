@@ -1167,16 +1167,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     int32 x_elems = n_topo["elements/dims/i"].as_int32();
     int32 y_elems = n_topo["elements/dims/j"].as_int32();
 
-    vtkm::Id3 topo_origin(0,0,0);
-    if(n_topo.has_path("elements/origin"))
-    {
-      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
-      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
-      if(ndims == 3)
-      {
-        topo_origin[2] = n_topo["elements/origin/k"].to_int32();
-      }
-    }
+    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
 
     if (ndims == 2)
     {

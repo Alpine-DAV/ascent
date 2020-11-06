@@ -99,6 +99,18 @@ else()
 endif()
 
 ################################
+# Tests Option.
+# save option here to defend if
+# a TPL flips it a part a
+# cmake import
+################################
+if(ENABLE_TESTS)
+    set(ASCENT_ENABLE_TESTS ON)
+else()
+    set(ASCENT_ENABLE_TESTS OFF)
+endif()
+
+################################
 # Win32 Output Dir Settings
 ################################
 # On windows we place all of the libs and execs in one dir.
