@@ -1006,7 +1006,7 @@ void mesh_blueprint_save(const Node &data,
         }
 
         root["protocol/name"]    = file_protocol;
-        root["protocol/version"] = "0.5.1";
+        root["protocol/version"] = "0.6.0";
 
         root["number_of_files"]  = num_files;
         root["number_of_trees"]  = global_num_domains;
