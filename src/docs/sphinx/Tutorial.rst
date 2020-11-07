@@ -59,6 +59,8 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 `Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/sc/2020_11_09_SC20_ascent_intro.pdf>`_
 
 Scheduled Tutorials:
+ * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
+
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual
 
 
