@@ -471,9 +471,11 @@ CameraSimplex::execute()
     int losing_j = -1;
 
     // New theta and phi camera code
-    int numTheta = 50;
-    int numPhi = 50;
+    int numTheta = 100;
+    int numPhi = 100;
 
+/*
+    // Commenting out main block to get 27 scores
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
     // Check for i and j before main loop
@@ -588,56 +590,115 @@ CameraSimplex::execute()
       fclose(datafile);
   }
 
+*/ 
+
     /*================ End Scalar Renderer  ======================*/
 
-/*
+///*
     // Code for scores for quizzes
+  
+    	
+    int metric_num = 0;
+    string metrics[] = {"data_entropy", "depth_entropy", "max_depth",
+	                  "pb", "projected_area", "viewpoint_entropy",
+			  "visibility_ratio", "visible_triangles", "vkl"};
     
-    ofstream myfile;
-    myfile.open("quiz_scores.txt");
+    for (metric_num ; metric_num < 9 ; metric_num++) {
+      metric = metrics[metric_num];
+      string filename = metrics[metric_num];
+      filename += "_scores.txt"; 
 
-    float known_min = -2.623;
-    float known_max = -0.1186;
+      ofstream myfile;
+      myfile.open(filename);
+       
+      double known_min = DBL_MAX;
+      double known_max = -DBL_MAX;
+      int number = 0;
 
-    int number = 0;
+      cout << endl << "Gathering max and min data for: " << metric << endl;
 
-    while (number < 10000) {
-        winning_i = number / 100;
-        winning_j = number % 100;
+      // First loop, find min and max
+      while (number < 10000) {
+          winning_i = number / 100;
+          winning_j = number % 100;
 
-        Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
-        	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
+          Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+          	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
 
-        vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
-                                  (float)cam.position[1],
-                                  (float)cam.position[2]};
+          vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+                                    (float)cam.position[1],
+                                    (float)cam.position[2]};
+  
+          camera->SetPosition(postest);
+          vtkh::ScalarRenderer tracer;
+          tracer.SetWidth(width);
+          tracer.SetHeight(height);
+          tracer.SetInput(data); //vtkh dataset by toponame
+          tracer.SetCamera(*camera);
+          tracer.Update();
 
-        camera->SetPosition(postest);
-        vtkh::ScalarRenderer tracer;
-        tracer.SetWidth(width);
-        tracer.SetHeight(height);
-        tracer.SetInput(data); //vtkh dataset by toponame
-        tracer.SetCamera(*camera);
-        tracer.Update();
+          vtkh::DataSet *output = tracer.GetOutput();
 
-        vtkh::DataSet *output = tracer.GetOutput();
+          float score = calculateMetric(output, metric, field_name,
+  		          triangles, height, width, cam);
 
-        float score = calculateMetric(output, metric, field_name,
-		          triangles, height, width, cam);
+   	  if (score < known_min) {
+            known_min = score;
+	  }
 
-        float relative = (score - known_min) / (known_max - known_min);
-	float result = relative * 10;
+	  if (score > known_max) {
+            known_max = score;
+	  }
 
-        myfile << result << endl;
+          cout << "Natural score at (" << winning_i << ", " << winning_j << ") is " << score << endl;
+
+          number += 377;
+      }
+
+      number = 0;
+
+      cout << endl << "Writing score file for: " << metric << endl;
+
+      // Second loop, put relative scores in file
+      while (number < 10000) {
+          winning_i = number / 100;
+          winning_j = number % 100;
+
+          Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+          	        radius, winning_i, numTheta, winning_j, numPhi, focus); 
+
+          vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+                                    (float)cam.position[1],
+                                    (float)cam.position[2]};
+
+          camera->SetPosition(postest);
+          vtkh::ScalarRenderer tracer;
+          tracer.SetWidth(width);
+          tracer.SetHeight(height);
+          tracer.SetInput(data); //vtkh dataset by toponame
+          tracer.SetCamera(*camera);
+          tracer.Update();
+
+          vtkh::DataSet *output = tracer.GetOutput();
+
+          float score = calculateMetric(output, metric, field_name,
+	  	          triangles, height, width, cam);
+
+          float relative = (score - known_min) / (known_max - known_min);
+	  float result = relative * 10;
+
+          myfile << result << endl;
           
-        cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
+          cout << "Relative score at (" << winning_i << ", " << winning_j << ") is " << result << endl;
 
-        number += 377;
-    }
+          number += 377;
+      }
 
-    myfile.close();
+      myfile.close();
 
-*/
+    } 
+
+//*/
 
 /*
     // Getting all pictures	
