@@ -175,7 +175,8 @@ void write_metric(conduit::Node &input,
   mesh_blueprint_save(output,
                       "small_spatial_metric",
                       "hdf5",
-                      -1);
+                      100);
+//                    -1);
 }
 
 } //  namespace detail
@@ -748,6 +749,7 @@ Learn::execute()
 
     double *kVecs = new double[num_fields*num_fields]; // TODO: need one per domain!!!!
     double *eigvals = new double[num_fields];
+    double *norm_eigv = new double[num_domains];
     double *fmms = new double[num_fields * num_domains];
     //double *anomaly_metric = new double
 
@@ -798,16 +800,18 @@ Learn::execute()
       }
       debug<<"\n";
 
-      debug<<"domain "<<i<<" eigvals ";
+      norm_eigv[i] = 0.;
       for(int e = 0; e < num_fields; ++e)
       {
+        norm_eigv[i] += std::abs(eigvals[e]);
         debug<<eigvals[e]<<" ";
-        // visual debuggin
+        // visual debugging
         Data eig;
         eig.first = "eig_val_" + field_selection[e];
         eig.second = eigvals[e];
         domain_data.push_back(eig);
       }
+      debug<<"domain "<<i<<" L2 norm " << norm_eigv[i] << " eigvals ";
       debug<<"\n";
 
       debug<<"domain "<<i<<" min value "<<min_value<<"\n";
@@ -830,8 +834,7 @@ Learn::execute()
         fmms_val.second = domain_fmms[f];
         domain_data.push_back(fmms_val);
       }
-    }
-
+    } // ends domain loop
 
     double *average_fmms = new double[num_fields];
     double *local_sum = new double[num_fields];
@@ -840,18 +843,26 @@ Learn::execute()
       local_sum[i] = 0.;
     }
 
+    // Field-by-field average over all the blocks
     for(int i = 0; i < num_domains; ++i)
     {
+
+      if(norm_eigv[i] > 1e-18)
+      {
+
       int offset = i * num_fields;
       for(int f = 0; f < num_fields; f++)
       {
         double val = fmms[offset + f];
         local_sum[f] += val;
       }
+        debug<<"keep domain "<<i<<" fmms "<< fmms[offset] << " " << fmms[offset+1] << " ";
+        debug<< fmms[offset+2] << " " << fmms[offset+3] << "\n";
+      }
     }
     for(int f = 0; f < num_fields; f++)
     {
-      debug<<"local sum field "<<f<<" sum "<<local_sum[f]<<"\n";
+      debug<<"field "<<f<<" block sum "<<local_sum[f]<<"\n";
     }
 #ifdef ASCENT_MPI_ENABLED
     //int *domains_per_rank = new int[comm_size];
@@ -887,6 +898,9 @@ Learn::execute()
     for(int i = 0; i < num_domains; ++i)
     {
       spatial_metric[i] = 0.0;
+      if(norm_eigv[i] > 1e-18)
+      {
+
       double * domain_fmms = fmms + num_fields * i;
 
       //Compute Hellinger distance between domain fmms and average fmms
@@ -899,6 +913,10 @@ Learn::execute()
       spatial_metric[i] = std::sqrt(spatial_metric[i] * 0.5);
       min_metric = std::min(min_metric, spatial_metric[i]);
       max_metric = std::max(max_metric, spatial_metric[i]);
+
+
+      }
+
 
       //This threshold is user specified, and a "hyper parameter" (fudge factor)
       if(spatial_metric[i] > threshold)
@@ -980,6 +998,7 @@ Learn::execute()
 
     detail::write_metric(*n_input, topo, mesh_data);
 
+    delete[] norm_eigv;
     delete[] kVecs;
     delete[] eigvals;
     delete[] fmms;
@@ -1011,8 +1030,5 @@ Learn::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
 
 
