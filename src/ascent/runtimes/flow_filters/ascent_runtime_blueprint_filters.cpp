@@ -984,7 +984,7 @@ Learn::execute()
     mesh_blueprint_save(*n_input,
                         "spatial_metric",
                         "hdf5",
-                        -1);
+                        200);
 
     // add in the spatial metric
     for(int i = 0; i < num_domains; ++i)
