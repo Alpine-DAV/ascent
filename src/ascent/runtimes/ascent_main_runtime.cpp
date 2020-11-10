@@ -1966,12 +1966,7 @@ void AscentRuntime::PaintNestsets()
         continue;
       }
 
-      std::string nest_name =  topo_nestsets[topo_name];
-
-      if(!dom.has_path("nestsets/"+nest_name))
-      {
-        continue;
-      }
+      std::string nest_name = topo_nestsets[topo_name];
 
       if(has_ghost)
       {
@@ -1995,7 +1990,7 @@ void AscentRuntime::PaintNestsets()
 
           conduit::Node &ghost_field = dom[ghost_path];
 
-          runtime::expressions::paint_nestsets(nest_name, dom, ghost_field);
+          runtime::expressions::paint_nestsets(nest_name, topo_name,  dom, ghost_field);
         }
         else
         {
@@ -2009,7 +2004,7 @@ void AscentRuntime::PaintNestsets()
         // there are no ghosts, so we have to build a new field
         std::string ghost_name = topo_name + "_ghosts";
         conduit::Node &field = dom["fields/" + ghost_name];
-        runtime::expressions::paint_nestsets(nest_name, dom, field);
+        runtime::expressions::paint_nestsets(nest_name, topo_name, dom, field);
         new_ghosts.insert(ghost_name);
       }
     }
