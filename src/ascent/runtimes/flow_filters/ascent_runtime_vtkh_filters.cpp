@@ -100,6 +100,7 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Threshold.hpp>
+#include <vtkh/filters/Triangulate.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
 #include <vtkh/filters/VectorComponent.hpp>
 #include <vtkh/filters/Histogram.hpp>
@@ -484,6 +485,93 @@ VTKH3Slice::execute()
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete slice_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+VTKHTriangulate::VTKHTriangulate()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHTriangulate::~VTKHTriangulate()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHTriangulate::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_triangulate";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHTriangulate::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res = check_string("topology",params, info, false) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("topology");
+
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHTriangulate::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHTriangulate input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkh::Triangulate tri;
+
+    tri.SetInput(&data);
+
+    tri.Update();
+
+    vtkh::DataSet *tri_output = tri.GetOutput();
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    //VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    //new_coll->add(*tri_output, topo_name);
+#warning "create option to not forward"
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*tri_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete tri_output;
     set_output<DataObject>(res);
 }
 

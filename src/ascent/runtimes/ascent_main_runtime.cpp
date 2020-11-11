@@ -1560,7 +1560,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         // w.print();
         // std::cout<<w.graph().to_dot();
-        // w.graph().save_dot_html("ascent_flow_graph.html");
+        //w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         Node *meta = w.registry().fetch<Node>("metadata");
@@ -1594,7 +1594,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
             m_info["images"] = renders;
         }
-        
+
         // add extract results to info
         if(w.registry().has_entry("extract_list"))
         {

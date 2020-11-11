@@ -63,6 +63,7 @@
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
 #include <ascent_logging.hpp>
+#include <utils/ascent_mpi_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_timer.hpp>
 #include <flow_workspace.hpp>
@@ -1726,9 +1727,23 @@ Axis::execute()
 
   if(!is_scalar_field(*dataset, name) && !is_xyz(name))
   {
+    std::string known;
+    if(dataset->number_of_children() > 0 )
+    {
+      std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+      std::stringstream ss;
+      ss << "[";
+      for(size_t i = 0; i < names.size(); ++i)
+      {
+        ss << " '" << names[i]<<"'";
+      }
+      ss << "]";
+      known = ss.str();
+    }
+
     ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
                  "contain scalar field '"
-                 << name << "'.");
+                 << name << "'. Possible field names "<<known<<".");
   }
 
   conduit::Node *output;
