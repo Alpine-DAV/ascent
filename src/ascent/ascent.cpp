@@ -140,6 +140,9 @@ CheckForSettingsFile(std::string file_name,
       return;
     }
 
+    int actions_file_valid = 0;
+    std::string emsg = "";
+
     if(rank == 0)
     {
       std::string curr,next;
@@ -150,23 +153,45 @@ CheckForSettingsFile(std::string file_name,
                                     ".",
                                     curr,
                                     next);
+
       if(curr == "yaml")
       {
-          protocol = "yaml";
+        protocol = "yaml";
       }
 
-      conduit::Node file_node;
-      file_node.load(file_name, protocol);
-      if(merge)
+      try
       {
-        node.update(file_node);
+        conduit::Node file_node;
+        file_node.load(file_name, protocol);
+        if(merge)
+        {
+          node.update(file_node);
+        }
+        else
+        {
+          node = file_node;
+        }
+
+        actions_file_valid = 1;
       }
-      else
+      catch(conduit::Error &e)
       {
-        node = file_node;
+        // failed to open or parse the actions file
+        actions_file_valid = 0;
+        emsg = e.message();
       }
     }
+
 #ifdef ASCENT_MPI_ENABLED
+    MPI_Bcast(&actions_file_valid, 1, MPI_INT, 0, mpi_comm);
+
+    if(actions_file_valid == 0)
+    {
+        // Raise Error
+        ASCENT_ERROR("Failed to load actions file: " << file_name
+                     << "\n" << emsg);
+    }
+
     relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
 #endif
 }

@@ -167,6 +167,35 @@ TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_for_error_reading_actions)
+{
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    Ascent ascent;
+    Node ascent_opts, ascent_actions;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["actions_file"] = "tin_bad_actions.yaml";
+
+    if(par_rank == 0)
+    {
+        std::ofstream ofs("tin_bad_actions.yaml", std::ofstream::out);
+        ofs  << "GARBAGE IS NOT YAML 123\n123\n123\n123";
+        ofs.close();
+    }
+
+    ascent.open(ascent_opts);
+
+    // make sure all task throw
+    EXPECT_THROW(ascent.execute(ascent_actions),conduit::Error);
+}
+
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
