@@ -179,7 +179,8 @@ TEST(ascent_mpi_runtime, test_for_error_reading_actions)
     Node ascent_opts, ascent_actions;
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent_opts["actions_file"] = "tin_bad_actions.yaml";
-
+    ascent_opts["exceptions"] = "forward";
+    
     if(par_rank == 0)
     {
         std::ofstream ofs("tin_bad_actions.yaml", std::ofstream::out);
