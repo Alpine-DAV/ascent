@@ -163,6 +163,7 @@ CheckForSettingsFile(std::string file_name,
       {
         conduit::Node file_node;
         file_node.load(file_name, protocol);
+        file_node.print();
         if(merge)
         {
           node.update(file_node);
@@ -183,6 +184,7 @@ CheckForSettingsFile(std::string file_name,
     }
 
 #ifdef ASCENT_MPI_ENABLED
+    // make sure all ranks error if the parsing on rank 0 failed.
     MPI_Bcast(&actions_file_valid, 1, MPI_INT, 0, mpi_comm);
 
     if(actions_file_valid == 0)

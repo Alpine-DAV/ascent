@@ -166,8 +166,6 @@ TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
     EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
 }
 
-
-
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_for_error_reading_actions)
 {
@@ -185,14 +183,27 @@ TEST(ascent_mpi_runtime, test_for_error_reading_actions)
     if(par_rank == 0)
     {
         std::ofstream ofs("tin_bad_actions.yaml", std::ofstream::out);
-        ofs  << "GARBAGE IS NOT YAML 123\n123\n123\n123";
+        ofs  << ":";
         ofs.close();
     }
 
     ascent.open(ascent_opts);
 
-    // make sure all task throw
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_2d_example_dataset(data,par_rank,par_size);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ascent.publish(data);
+
+    // all tasks should throw an error
     EXPECT_THROW(ascent.execute(ascent_actions),conduit::Error);
+
+
+    ascent.close();
+
 }
 
 
