@@ -106,6 +106,9 @@ if(VTKM_FOUND)
    list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
                            t_ascent_mpi_relay_extract)
+   if(CUDA_FOUND)
+     list(APPEND BASIC_TESTS t_ascent_unified_mem)
+   endif()
 endif()
 
 # adios tests
@@ -129,7 +132,7 @@ endif()
 if (ENABLE_SERIAL)
     message(STATUS "Adding ascent lib unit tests")
     foreach(TEST ${BASIC_TESTS})
-        add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
+      add_cpp_test(TEST ${TEST} DEPENDS_ON ascent nvToolsExt)
     endforeach()
 
     foreach(TEST ${VTKH_DEP_TESTS})
@@ -163,7 +166,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     if(DRAY_FOUND)
       # babelflow compositing test requires dray
       add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
-    endif()  
+    endif()
   endif()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
