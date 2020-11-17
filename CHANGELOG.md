@@ -4,6 +4,14 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+- Issue MPI hang if actions files (yaml or json) fail to parse.
+
+
+
+
 ## [0.6.0] - Released 2020-11-06
 
 ### Added
