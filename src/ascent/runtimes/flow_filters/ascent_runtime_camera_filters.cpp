@@ -825,7 +825,7 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
   //if there is data: loop through domains and grab all triangles.
   if(!vtkhData.IsEmpty())
   {
-    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
+    //vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
     for(int i = 0; i < localDomainIds.size(); i++)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
@@ -860,16 +860,25 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
       X2.insert(X2.end(), x2.begin(), x2.end());
       Y2.insert(Y2.end(), y2.begin(), y2.end());
       Z2.insert(Z2.end(), z2.begin(), z2.end());
-      dataSetFieldAdd.AddCellField(dataset, "X0", X0);
-      dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
-      dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
-      dataSetFieldAdd.AddCellField(dataset, "X1", X1);
-      dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
-      dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
-      dataSetFieldAdd.AddCellField(dataset, "X2", X2);
-      dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
-      dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
-      newDataSet->AddDomain(dataset,localDomainIds[i]);
+      dataset.AddCellField("X0", X0);
+      dataset.AddCellField("Y0", Y0);
+      dataset.AddCellField("Z0", Z0);
+      dataset.AddCellField("X1", X1);
+      dataset.AddCellField("Y1", Y1);
+      dataset.AddCellField("Z1", Z1);
+      dataset.AddCellField("X2", X2);
+      dataset.AddCellField("Y2", Y2);
+      dataset.AddCellField("Z2", Z2);
+      //dataSetFieldAdd.AddCellField(dataset, "X0", X0);
+      //dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
+      //dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
+      //dataSetFieldAdd.AddCellField(dataset, "X1", X1);
+      //dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
+      //dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
+      //dataSetFieldAdd.AddCellField(dataset, "X2", X2);
+      //dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
+      //dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
+      //newDataSet->AddDomain(dataset,localDomainIds[i]);
     }
   }
   return newDataSet;
@@ -932,7 +941,7 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
       
       vtkm::cont::ArrayHandle<float> field_data;
       field.GetData().CopyTo(field_data);
-      auto portal = field_data.GetPortalConstControl();
+      auto portal = field_data.ReadPortal();
 
       for(int i = 0; i < height*width; i++)
         data.push_back(portal.Get(i));
@@ -1771,6 +1780,8 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     // Get the number of processes
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Barrier(MPI_COMM_WORLD);
+    auto time_start = high_resolution_clock::now(); 
 
     // Get the rank of this process
     int rank;
@@ -1787,9 +1798,15 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
       float field_array[data.size()];
       std::copy(data.begin(), data.end(), field_array);
       entropy = calcentropy(field_array, data.size(), 100);
-
     }
+    auto time_stop = high_resolution_clock::now();
+    double metric_time = duration_cast<microseconds>(time_stop - time_start).count();
+//    cerr << "rank " << rank << " metric work time: " << metric_time << " microseconds." << endl;
+    time_start = high_resolution_clock::now();
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    time_stop = high_resolution_clock::now();
+    double coord = duration_cast<microseconds>(time_stop - time_start).count();
+//    cerr << "rank " << rank << " coordination time: " << metric_time << " microseconds." << endl;
   #else
     int size = height*width;
     std::vector<float> field_data = GetScalarData(*dataset, field_name, height, width);
@@ -2097,7 +2114,9 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
     // Get the number of processes
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
+    MPI_Barrier(MPI_COMM_WORLD);
+    double metric_time = 0.;
+    auto time_start = high_resolution_clock::now(); 
     // Get the rank of this process
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -2115,7 +2134,14 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
 	  }
 	}
     }
+    auto time_stop = high_resolution_clock::now(); 
+    metric_time += duration_cast<microseconds>(time_stop - time_start).count();
+//    cerr << "rank " << rank << " metric work time: " << metric_time << " microseconds." << endl;
+    time_start = high_resolution_clock::now();
     MPI_Bcast(&depth, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    time_stop = high_resolution_clock::now();
+    double coord = duration_cast<microseconds>(time_stop - time_start).count();
+//    cerr << "rank " << rank << " coordination time: " << coord << " microseconds." << endl;
   #else
     int size = height*width;
     std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
@@ -2323,6 +2349,7 @@ AutoCamera::execute()
       #if ASCENT_MPI_ENABLED
         int rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Barrier(MPI_COMM_WORLD);
       
       #endif  
       DataObject *data_object = input<DataObject>(0);
@@ -2347,12 +2374,12 @@ AutoCamera::execute()
       int width  = 1000;
       int height = 1000;
     
+      double triangle_time = 0.;
+      auto triangle_start = high_resolution_clock::now();
       std::string topo_name = collection->field_topology(field_name);
 
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
       
-      double triangle_time = 0.;
-      auto triangle_start = high_resolution_clock::now();
       std::vector<Triangle> triangles = GetTriangles(dataset);
       float total_triangles = (float) triangles.size();
       vtkh::DataSet* data = AddTriangleFields(dataset);
@@ -2368,13 +2395,6 @@ AutoCamera::execute()
           data_set.Clear();
       }
       //data->PrintSummary(cerr);
-      auto triangle_stop = high_resolution_clock::now();
-      triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
-      //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
-      /*#if ASCENT_MPI_ENABLED
-        cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
-        cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
-      #endif*/
 
       vtkm::Bounds b = data->GetGlobalBounds();
       vtkm::Float32 xb = vtkm::Float32(b.X.Length());
@@ -2398,6 +2418,16 @@ AutoCamera::execute()
       vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
       double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
 
+      auto triangle_stop = high_resolution_clock::now();
+      triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
+      //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+      #if ASCENT_MPI_ENABLED
+        //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
+        //cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
+//	cerr << "rank " << rank << " data processing time: " << triangle_time << " microseconds. " << endl;
+      #endif
+
+
       double winning_score  = -DBL_MAX;
       int    winning_sample = -1;
       double losing_score   = DBL_MAX;
@@ -2411,6 +2441,7 @@ AutoCamera::execute()
     /*================ Scalar Renderer Code ======================*/
     //What it does: Quick ray tracing of data (replaces get triangles and scanline).
     //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
+        auto render_start = high_resolution_clock::now();
       
         Camera cam = GetCamera(sample, samples, radius, focus, bounds);
         vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
@@ -2426,6 +2457,13 @@ AutoCamera::execute()
         tracer.Update();
 
         vtkh::DataSet *output = tracer.GetOutput();
+	auto render_stop = high_resolution_clock::now();
+	double render_time = duration_cast<microseconds>(render_stop - render_start).count();
+	#if ASCENT_MPI_ENABLED
+          if(rank == 0)
+            ;//cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
+        #endif
+        
         float score = calculateMetric(output, metric, field_name, triangles, height, width, cam);
         std::cerr << "sample " << sample << " score: " << score << std::endl;
         delete output;
@@ -2445,6 +2483,7 @@ AutoCamera::execute()
         }
       } //end of sample loop
       delete data;
+      auto setting_camera_start = high_resolution_clock::now();
 
       if(winning_sample == -1)
         ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
@@ -2477,10 +2516,15 @@ AutoCamera::execute()
       //cerr << "making camera in registry" << endl;
         graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
       }
+      auto setting_camera_end = high_resolution_clock::now();
+      double setting_camera = 0.;
+      setting_camera += duration_cast<microseconds>(setting_camera_end - setting_camera_start).count();
+      #if ASCENT_MPI_ENABLED
+//        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
+      #endif
+
     //This breaks everything
     //TODO:Figure out where to delete it, probably after where it's grabbed. 
-    //delete camera;
-
 /*
 #if ASCENT_MPI_ENABLED
     if(rank == 0)
@@ -2491,11 +2535,13 @@ AutoCamera::execute()
     set_output<DataObject>(input<DataObject>(0));
     //set_output<vtkmCamera>(camera);
     auto time_stop = high_resolution_clock::now();
-    time += duration_cast<seconds>(time_stop - time_start).count();
+    time += duration_cast<microseconds>(time_stop - time_start).count();
     cerr << "========END CAMERA PIPELINE=======" << endl;
-    /*#if ASCENT_MPI_ENABLED
-      cerr << "rank: " << rank << " secs total: " << time << endl;
-    #endif*/
+    
+   #if ASCENT_MPI_ENABLED
+      if(rank == 0)
+        ;//cerr << "rank: " << rank << " Total Time: " << time  << " microseconds " << endl;
+    #endif
 }
 
 
