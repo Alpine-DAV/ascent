@@ -275,23 +275,23 @@ void ParallelMergeTree::Initialize()
 
   std::cout << "Num blocks: " << num_blocks << std::endl;
 
-  m_preProcTaskGr = BabelFlow::SingleTaskGraph();
-  m_preProcTaskGr.registerCallback( BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, pre_proc );
+  m_preProcTaskGr = BabelFlow::SingleTaskGraph( );
   m_preProcTaskMp = BabelFlow::ModuloMap( mpi_size, m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2] );
 
   m_kWayMergeGr = KWayMerge( m_nBlocks, m_fanin );
-  m_kWayMergeGr.registerCallback( KWayMerge::LOCAL_COMP_CB, local_compute );
-  m_kWayMergeGr.registerCallback( KWayMerge::JOIN_COMP_CB, join );
-  m_kWayMergeGr.registerCallback( KWayMerge::LOCAL_CORR_CB, local_correction );
-  m_kWayMergeGr.registerCallback( KWayMerge::WRITE_RES_CB, write_results );
-  m_kWayMergeGr.registerCallback( KWayMerge::RELAY_CB, BabelFlow::relay_message );
   m_kWayTaskMp = KWayTaskMap( mpi_size, &m_kWayMergeGr );
 
-  m_defGraphConnector = BabelFlow::DefGraphConnector( mpi_size,
-                                                      &m_preProcTaskGr, 0,
-                                                      &m_kWayMergeGr, 1,
-                                                      &m_preProcTaskMp,
-                                                      &m_kWayTaskMp );
+  m_preProcTaskGr.setGraphId( 0 );
+  m_kWayMergeGr.setGraphId( 1 );
+
+  BabelFlow::TaskGraph::registerCallback( 0, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, pre_proc );
+  BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::LOCAL_COMP_CB, local_compute );
+  BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::JOIN_COMP_CB, join );
+  BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::LOCAL_CORR_CB, local_correction );
+  BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::WRITE_RES_CB, write_results );
+  BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::RELAY_CB, BabelFlow::relay_message );
+
+  m_defGraphConnector = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
   
   std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
   std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr };

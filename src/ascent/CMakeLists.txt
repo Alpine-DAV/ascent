@@ -365,7 +365,6 @@ if(MPI_FOUND)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp) 
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
@@ -392,6 +391,8 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp) 
+        
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
