@@ -116,6 +116,8 @@
 #include <chrono>
 #include <stdio.h>
 #include <math.h>
+#include <fstream>
+#include <iostream>
 
 //openCV
 //#include <opencv2/highgui/highgui.hpp>
@@ -131,6 +133,23 @@ using namespace flow;
 #if defined(ASCENT_VTKM_ENABLED)
 typedef vtkm::rendering::Camera vtkmCamera;
 #endif
+
+
+
+//make file
+void 
+MakeFile(std::string filename, double *array, int size)
+{
+  ofstream myfile(filename, ios::out | ios::app);
+  if(myfile.is_open())
+  {
+    for(int i = 0; i < size; i++)
+    {
+      myfile << array[i] << "\n";
+    }
+    myfile << "=========\n";
+  } 
+}
 //Camera Class Functions
 
 Matrix
@@ -825,7 +844,7 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
   //if there is data: loop through domains and grab all triangles.
   if(!vtkhData.IsEmpty())
   {
-    //vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
+    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
     for(int i = 0; i < localDomainIds.size(); i++)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
@@ -860,25 +879,25 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
       X2.insert(X2.end(), x2.begin(), x2.end());
       Y2.insert(Y2.end(), y2.begin(), y2.end());
       Z2.insert(Z2.end(), z2.begin(), z2.end());
-      dataset.AddCellField("X0", X0);
-      dataset.AddCellField("Y0", Y0);
-      dataset.AddCellField("Z0", Z0);
-      dataset.AddCellField("X1", X1);
-      dataset.AddCellField("Y1", Y1);
-      dataset.AddCellField("Z1", Z1);
-      dataset.AddCellField("X2", X2);
-      dataset.AddCellField("Y2", Y2);
-      dataset.AddCellField("Z2", Z2);
-      //dataSetFieldAdd.AddCellField(dataset, "X0", X0);
-      //dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
-      //dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
-      //dataSetFieldAdd.AddCellField(dataset, "X1", X1);
-      //dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
-      //dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
-      //dataSetFieldAdd.AddCellField(dataset, "X2", X2);
-      //dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
-      //dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
-      //newDataSet->AddDomain(dataset,localDomainIds[i]);
+      //dataset.AddCellField("X0", X0);
+      //dataset.AddCellField("Y0", Y0);
+      //dataset.AddCellField("Z0", Z0);
+      //dataset.AddCellField("X1", X1);
+      //dataset.AddCellField("Y1", Y1);
+      //dataset.AddCellField("Z1", Z1);
+      //dataset.AddCellField("X2", X2);
+      //dataset.AddCellField("Y2", Y2);
+      //dataset.AddCellField("Z2", Z2);
+      dataSetFieldAdd.AddCellField(dataset, "X0", X0);
+      dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
+      dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
+      dataSetFieldAdd.AddCellField(dataset, "X1", X1);
+      dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
+      dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
+      dataSetFieldAdd.AddCellField(dataset, "X2", X2);
+      dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
+      dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
+      newDataSet->AddDomain(dataset,localDomainIds[i]);
     }
   }
   return newDataSet;
@@ -941,7 +960,7 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
       
       vtkm::cont::ArrayHandle<float> field_data;
       field.GetData().CopyTo(field_data);
-      auto portal = field_data.ReadPortal();
+      auto portal = field_data.GetPortalConstControl();
 
       for(int i = 0; i < height*width; i++)
         data.push_back(portal.Get(i));
@@ -1802,11 +1821,12 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     auto time_stop = high_resolution_clock::now();
     double metric_time = duration_cast<microseconds>(time_stop - time_start).count();
 //    cerr << "rank " << rank << " metric work time: " << metric_time << " microseconds." << endl;
-    time_start = high_resolution_clock::now();
+    double array[world_size] = {0};
+    array[rank] = metric_time;
+    MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+    if(rank == 0)
+      MakeFile("metric_times.txt", array, world_size);
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    time_stop = high_resolution_clock::now();
-    double coord = duration_cast<microseconds>(time_stop - time_start).count();
-//    cerr << "rank " << rank << " coordination time: " << metric_time << " microseconds." << endl;
   #else
     int size = height*width;
     std::vector<float> field_data = GetScalarData(*dataset, field_name, height, width);
@@ -2348,6 +2368,8 @@ AutoCamera::execute()
     #if defined(ASCENT_VTKM_ENABLED)
       #if ASCENT_MPI_ENABLED
         int rank;
+	int world_size;
+        MPI_Comm_size(MPI_COMM_WORLD, &world_size);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Barrier(MPI_COMM_WORLD);
       
@@ -2425,6 +2447,11 @@ AutoCamera::execute()
         //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
         //cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
 //	cerr << "rank " << rank << " data processing time: " << triangle_time << " microseconds. " << endl;
+	double array[world_size] = {0};
+        array[rank] = triangle_time;
+        MPI_Allgather(&triangle_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+        if(rank == 0)
+          MakeFile("processing_times.txt", array, world_size);
       #endif
 
 
@@ -2460,8 +2487,12 @@ AutoCamera::execute()
 	auto render_stop = high_resolution_clock::now();
 	double render_time = duration_cast<microseconds>(render_stop - render_start).count();
 	#if ASCENT_MPI_ENABLED
+	  double array[world_size] = {0};
+          array[rank] = render_time;
+          MPI_Allgather(&render_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
           if(rank == 0)
-            ;//cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
+            MakeFile("renderer_times.txt", array, world_size);
+//          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
         #endif
         
         float score = calculateMetric(output, metric, field_name, triangles, height, width, cam);
@@ -2482,6 +2513,7 @@ AutoCamera::execute()
 	  losing_sample = sample;
         }
       } //end of sample loop
+      triangles.clear();
       delete data;
       auto setting_camera_start = high_resolution_clock::now();
 
@@ -2520,6 +2552,11 @@ AutoCamera::execute()
       double setting_camera = 0.;
       setting_camera += duration_cast<microseconds>(setting_camera_end - setting_camera_start).count();
       #if ASCENT_MPI_ENABLED
+        double array2[world_size] = {0};
+        array2[rank] = setting_camera;
+        MPI_Allgather(&setting_camera, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+        if(rank == 0)
+          MakeFile("setCam_times.txt", array2, world_size);
 //        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
       #endif
 
@@ -2539,8 +2576,12 @@ AutoCamera::execute()
     cerr << "========END CAMERA PIPELINE=======" << endl;
     
    #if ASCENT_MPI_ENABLED
-      if(rank == 0)
-        ;//cerr << "rank: " << rank << " Total Time: " << time  << " microseconds " << endl;
+     double array3[world_size] = {0};
+     array3[rank] = time;
+     MPI_Allgather(&time, 1, MPI_DOUBLE, array3, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+     if(rank == 0)
+       MakeFile("total_times.txt", array3, world_size);
+     //cerr << "rank: " << rank << " Total Time: " << time  << " microseconds " << endl;
     #endif
 }
 
