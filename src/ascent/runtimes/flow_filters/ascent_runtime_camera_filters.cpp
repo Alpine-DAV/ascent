@@ -1325,7 +1325,7 @@ calcArea(std::vector<float> triangle, Camera c, int width, int height)
 #if defined(ASCENT_VTKM_ENABLED)
 
 float
-calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width)
+calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, int height, int width)
 {
   float visibility_ratio = 0.0;
   #if ASCENT_MPI_ENABLED //pass screens among all ranks
@@ -1337,6 +1337,18 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &all_tria
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Status status;
+    int num_local_triangles = local_triangles.size();
+    float local_area        = 0.0;
+    float global_area       = 0.0;
+    
+    for(int i = 0; i < num_local_triangles; i++)
+    {
+      float area = local_triangles[i].calculateTriArea();
+      local_area += area;
+    }
+
+    MPI_Reduce(&local_area, &global_area, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    
     if(rank == 0)
     {
       int size = height*width;
@@ -1362,21 +1374,13 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &all_tria
       std::sort(triangles.begin(), triangles.end());
       triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
       int num_triangles = triangles.size();
-      int num_all_triangles = all_triangles.size();
       float projected_area = 0.0;
-      float total_area     = 0.0;
-      
-      for(int i = 0; i < num_all_triangles; i++)
-      {
-        float area = all_triangles[i].calculateTriArea();
-        total_area += area;
-      }
       for(int i = 0; i < num_triangles; i++)
       {
         float area = calcArea(triangles[i]);
         projected_area += area;
       }
-      visibility_ratio = projected_area/total_area;
+      visibility_ratio = projected_area/global_area;
     }
     MPI_Bcast(&visibility_ratio, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
     //cerr << "visibility_ratio " << visibility_ratio << endl;
@@ -1405,13 +1409,13 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &all_tria
     std::sort(triangles.begin(), triangles.end());
     triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
     int num_triangles = triangles.size();
-    int num_all_triangles = all_triangles.size();
+    int num_local_triangles = local_triangles.size();
     float projected_area = 0.0;
     float total_area     = 0.0;
     
-    for(int i = 0; i < num_all_triangles; i++)
+    for(int i = 0; i < num_local_triangles; i++)
     {
-      float area = all_triangles[i].calculateTriArea();
+      float area = local_triangles[i].calculateTriArea();
       total_area += area;
     }
     for(int i = 0; i < num_triangles; i++)
@@ -1425,7 +1429,7 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &all_tria
 }
 
 float 
-calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, int height, int width, Camera camera)
 {
   float viewpoint_entropy = 0.0;
   #if ASCENT_MPI_ENABLED //pass screens among all ranks
@@ -1437,6 +1441,18 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Status status;
+
+    int num_local_triangles = local_triangles.size();
+    float global_area       = 0.0;
+    float local_area        = 0.0;
+    for(int i = 0; i < num_local_triangles; i++)
+    {
+      Triangle t = transformTriangle(local_triangles[i], camera, width, height); 
+      float area = t.calculateTriArea();
+      local_area += area;
+    }
+    MPI_Reduce(&local_area, &global_area, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    
     if(rank == 0)
     {
       int size = height*width;
@@ -1462,20 +1478,12 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
       std::sort(triangles.begin(), triangles.end());
       triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
       int num_triangles     = triangles.size();
-      int num_all_triangles = all_triangles.size();
-      float total_area      = 0.0;
       float viewpoint_ratio = 0.0;
-      for(int i = 0; i < num_all_triangles; i++)
-      {
-        Triangle t = transformTriangle(all_triangles[i], camera, width, height); 
-	float area = t.calculateTriArea();
-	total_area += area;
-      }
       for(int i = 0; i < num_triangles; i++)
       {
         float area = calcArea(triangles[i]);
 	if(area != 0.0)
-          viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
+          viewpoint_ratio += ((area/global_area)*std::log(area/global_area));
       }
       viewpoint_entropy = (-1.0)*viewpoint_ratio;
     }
@@ -1512,13 +1520,13 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
     triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
     int num_triangles = triangles.size();
 
-    int num_all_triangles = all_triangles.size();
+    int num_local_triangles = local_triangles.size();
 
     float total_area      = 0.0;
     float viewpoint_ratio = 0.0;
-    for(int i = 0; i < num_all_triangles; i++)
+    for(int i = 0; i < num_local_triangles; i++)
     {
-      Triangle t = transformTriangle(all_triangles[i], camera, width, height);
+      Triangle t = transformTriangle(local_triangles[i], camera, width, height);
       float area = t.calculateTriArea();
       total_area += area;
     }
@@ -1538,7 +1546,7 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &all_tri
 }
 
 float
-calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, int height, int width, Camera camera)
 {
   float viewpoint_entropy = 0.0;
   float i2 = 0.0;
@@ -1576,17 +1584,17 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
       std::sort(triangles.begin(), triangles.end());
       triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
       int num_triangles     = triangles.size();
-      int num_all_triangles = all_triangles.size();
+      int num_local_triangles = local_triangles.size();
       float total_area      = 0.0;
       float real_total_area = 0.0;
       float viewpoint_ratio = 0.0;
       float hz              = 0.0;
-      for(int i = 0; i < num_all_triangles; i++)
+      for(int i = 0; i < num_local_triangles; i++)
       {
-        Triangle t = transformTriangle(all_triangles[i], camera, width, height);
+        Triangle t = transformTriangle(local_triangles[i], camera, width, height);
         float area = t.calculateTriArea();
         total_area += area;
-	real_total_area += all_triangles[i].calculateTriArea();
+	real_total_area += local_triangles[i].calculateTriArea();
       }
       for(int i = 0; i < num_triangles; i++)
       {
@@ -1594,9 +1602,9 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
         if(area != 0.0)
           viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
       }
-      for(int i = 0; i < num_all_triangles; i++)
+      for(int i = 0; i < num_local_triangles; i++)
       {
-        float area = all_triangles[i].calculateTriArea();
+        float area = local_triangles[i].calculateTriArea();
 	if(area != 0 && real_total_area != 0)
           hz += (area/real_total_area)*log((area/real_total_area));
       }
@@ -1637,15 +1645,15 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
     triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
     int num_triangles = triangles.size();
 
-    int num_all_triangles = all_triangles.size();
+    int num_local_triangles = local_triangles.size();
 
     float total_area      = 0.0;
     float real_total_area = 0.0;
     float hz              = 0.0;
     float viewpoint_ratio = 0.0;
-    for(int i = 0; i < num_all_triangles; i++)
+    for(int i = 0; i < num_local_triangles; i++)
     {
-      Triangle t = transformTriangle(all_triangles[i], camera, width, height);
+      Triangle t = transformTriangle(local_triangles[i], camera, width, height);
       float area = t.calculateTriArea();
       total_area += area;
     }
@@ -1657,9 +1665,9 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
       if(area != 0.0)
         viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
     }
-    for(int i = 0; i < num_all_triangles; i++)
+    for(int i = 0; i < num_local_triangles; i++)
     {
-      float area = all_triangles[i].calculateTriArea();
+      float area = local_triangles[i].calculateTriArea();
       if(area != 0 && real_total_area != 0)
         hz += (area/real_total_area)*log((area/real_total_area));
     }
@@ -1674,7 +1682,7 @@ calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int he
 }
 
 float
-calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, int height, int width, Camera camera)
 {
   float vkl = 0.0;
   #if ASCENT_MPI_ENABLED //pass screens among all ranks
@@ -1686,6 +1694,23 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int h
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Status status;
+    //Needs total world area and total image space area
+    int num_local_triangles = local_triangles.size();
+    float total_area     = 0.0;
+    float local_area     = 0.0;
+    float w_total_area   = 0.0;
+    float w_local_area   = 0.0;
+    for(int i = 0; i < num_local_triangles; i++)
+    {
+      float w_area = local_triangles[i].calculateTriArea();
+      Triangle t = transformTriangle(local_triangles[i], camera, width, height);	
+      float area = t.calculateTriArea();
+      local_area += area;
+      w_local_area += w_area;
+    }
+    MPI_Reduce(&w_local_area, &w_total_area, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&local_area, &total_area, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+
     if(rank == 0)
     {
       int size = height*width;
@@ -1711,18 +1736,7 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int h
       std::sort(triangles.begin(), triangles.end());
       triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
       int num_triangles = triangles.size();
-      int num_all_triangles = all_triangles.size();
-      float total_area     = 0.0;
-      float w_total_area   = 0.0;
       float projected_area = 0.0;
-      for(int i = 0; i < num_all_triangles; i++)
-      {
-        float w_area = all_triangles[i].calculateTriArea();
-        Triangle t = transformTriangle(all_triangles[i], camera, width, height);	
-	float area = t.calculateTriArea();
-	total_area += area;
-	w_total_area += w_area;
-      }
       for(int i = 0; i < num_triangles; i++)
       {
 	float area = calcArea(triangles[i], camera, width, height);
@@ -1763,14 +1777,14 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &all_triangles, int h
     std::sort(triangles.begin(), triangles.end());
     triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
     int num_triangles     = triangles.size();
-    int num_all_triangles = all_triangles.size();
+    int num_local_triangles = local_triangles.size();
     float total_area     = 0.0;
     float w_total_area   = 0.0;
     float projected_area = 0.0;
-    for(int i = 0; i < num_all_triangles; i++)
+    for(int i = 0; i < num_local_triangles; i++)
     {
-      float w_area = all_triangles[i].calculateTriArea();
-      Triangle t = transformTriangle(all_triangles[i], camera, width, height);
+      float w_area = local_triangles[i].calculateTriArea();
+      Triangle t = transformTriangle(local_triangles[i], camera, width, height);
       float area = t.calculateTriArea();
       total_area += area;
       w_total_area += w_area;
@@ -2036,7 +2050,7 @@ calculateProjectedArea(vtkh::DataSet* dataset, int height, int width, Camera cam
 }
 
 float
-calculatePlemenosAndBenayada(vtkh::DataSet *dataset, float total_triangles, int height, int width, Camera camera)
+calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, int height, int width, Camera camera)
 {
   float pb_score = 0.0;
   #if ASCENT_MPI_ENABLED //pass screens among all ranks
@@ -2048,6 +2062,9 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, float total_triangles, int 
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Status status;
+    //Needs total global triangles
+    int num_global_triangles = 0;
+    MPI_Reduce(&num_local_triangles, &num_global_triangles, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if(rank == 0)
     {
       int size = height*width;
@@ -2081,7 +2098,7 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, float total_triangles, int 
       }
 
       float pixel_ratio = projected_area/size;
-      float triangle_ratio = num_triangles/total_triangles;
+      float triangle_ratio = (float) num_triangles/(float) num_global_triangles;
       //cerr << "pixel_ratio: " << pixel_ratio << endl;
       //cerr << "triangle_ratio: " << triangle_ratio << endl;
       pb_score = pixel_ratio + triangle_ratio;
@@ -2119,7 +2136,7 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, float total_triangles, int 
     }
 
     float pixel_ratio = projected_area/size;
-    float triangle_ratio = num_triangles/total_triangles;
+    float triangle_ratio = (float) num_triangles/(float) num_local_triangles;
     pb_score = pixel_ratio + triangle_ratio;
   #endif
   return pb_score;
@@ -2221,7 +2238,7 @@ calculateMaxSilhouette(vtkh::DataSet *dataset, int height, int width)
 */
 
 float
-calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_name, std::vector<Triangle> &all_triangles, int height, int width, Camera camera)
+calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_name, std::vector<Triangle> &local_triangles, int height, int width, Camera camera)
 {
   float score = 0.0;
 
@@ -2231,19 +2248,19 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
   }
   else if (metric == "visibility_ratio")
   {
-    score = calculateVisibilityRatio(dataset, all_triangles,  height, width);
+    score = calculateVisibilityRatio(dataset, local_triangles,  height, width);
   }
   else if (metric == "viewpoint_entropy")
   {
-    score = calculateViewpointEntropy(dataset, all_triangles, height, width, camera);
+    score = calculateViewpointEntropy(dataset, local_triangles, height, width, camera);
   }
   else if (metric == "i2")
   {
-    score = calculateI2(dataset, all_triangles, height, width, camera);
+    score = calculateI2(dataset, local_triangles, height, width, camera);
   }
   else if (metric == "vkl")
   {
-    score = calculateVKL(dataset, all_triangles, height, width, camera);
+    score = calculateVKL(dataset, local_triangles, height, width, camera);
   }
   else if (metric == "visible_triangles")
   {
@@ -2255,8 +2272,8 @@ calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_na
   }
   else if (metric == "pb")
   {
-    float total_triangles = (float) all_triangles.size();
-    score = calculatePlemenosAndBenayada(dataset, total_triangles, height, width, camera); 
+    int num_local_triangles = local_triangles.size();
+    score = calculatePlemenosAndBenayada(dataset, num_local_triangles, height, width, camera); 
   }
   else if (metric == "depth_entropy")
   {
@@ -2403,7 +2420,7 @@ AutoCamera::execute()
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
       
       std::vector<Triangle> triangles = GetTriangles(dataset);
-      float total_triangles = (float) triangles.size();
+      int num_local_triangles = triangles.size();
       vtkh::DataSet* data = AddTriangleFields(dataset);
       int num_domains = data->GetNumberOfDomains();
       for(int i = 0; i < num_domains; i++)
@@ -2444,6 +2461,7 @@ AutoCamera::execute()
       triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
       //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
       #if ASCENT_MPI_ENABLED
+        cerr << "rank " << rank << " num_local_triangles: " << num_local_triangles << endl;
         //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
         //cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
 //	cerr << "rank " << rank << " data processing time: " << triangle_time << " microseconds. " << endl;
