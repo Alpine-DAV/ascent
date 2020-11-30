@@ -1594,7 +1594,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
             m_info["images"] = renders;
         }
-        
+
         // add extract results to info
         if(w.registry().has_entry("extract_list"))
         {
@@ -1880,6 +1880,7 @@ void AscentRuntime::PaintNestsets()
         // there are no ghosts, so we have to build a new field
         std::string ghost_name = topo_name + "_ghosts";
         conduit::Node &field = dom["fields/" + ghost_name];
+        field.reset();
         runtime::expressions::paint_nestsets(nest_name, dom, field);
         new_ghosts.insert(ghost_name);
       }
