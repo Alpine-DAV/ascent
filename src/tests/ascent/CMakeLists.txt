@@ -53,6 +53,7 @@
 set(BASIC_TESTS t_ascent_smoke
                 t_ascent_runtime_options
                 t_ascent_utils
+                t_ascent_cokurt
                 t_ascent_empty_runtime
                 t_ascent_error_handling
                 t_ascent_expressions
@@ -163,7 +164,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     if(DRAY_FOUND)
       # babelflow compositing test requires dray
       add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
-    endif()  
+    endif()
   endif()
 else()
     message(STATUS "MPI disabled: Skipping related tests")
