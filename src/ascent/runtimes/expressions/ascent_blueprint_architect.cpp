@@ -2252,7 +2252,7 @@ void paint_nestsets(const std::string nestset_name,
       if(coords.has_path("dims/k"))
       {
         is_3d = true;
-        el_dims[2] = coords["dims/k"].to_int32();
+        el_dims[2] = coords["dims/k"].to_int32() -1;
       }
     }
     else if(coords["type"].as_string() == "rectilinear")
