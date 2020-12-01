@@ -58,6 +58,11 @@
 
 #include "t_config.hpp"
 
+#include <math.h>
+
+#include <conduit_blueprint.hpp>
+
+#include "t_utils.hpp"
 
 using namespace std;
 using namespace conduit;
@@ -90,7 +95,13 @@ void create_uniform_domain(conduit::Node &dom,
   dom["coordsets/coords/spacing/dz"] = dz;
 
   int n_pts = res + 1;
+  std::vector<double> var_1;
+  std::vector<double> var_2;
+  var_1.resize(n_pts * n_pts * n_pts);
+  var_2.resize(n_pts * n_pts * n_pts);
+
   // we store x varying the fastest
+  int counter = 0;
   for(int z = 0; z < n_pts; ++z)
   {
     double p_z = z_min + dz * z;
@@ -101,19 +112,37 @@ void create_uniform_domain(conduit::Node &dom,
       {
         // point = (p_x, p_y, p_z)
         double p_x = x_min + dx * x;
+        // sphere 1 = (-4,0,0) r = 6
+        // sphere 2 = (4,0,0)  r = 6
+        double r1 = sqrt((p_x - 4) * (p_x - 4) + p_y * p_y + p_z * p_z) > 6 ? 0.5 : 1.f;
+        double r2 = sqrt((p_x + 4) * (p_x + 4) + p_y * p_y + p_z * p_z) > 6 ? 0.5 : 1.0;
+        //std::cout<<" r1 "<<r1<<" "<<p_x<<" "<<p_y<<" "<<p_z<<"\n";
+        var_1[counter] = r1;
+        var_2[counter] = r2;
+        counter++;
       }
     }
   }
+ dom["fields/var1/association"] = "vertex";
+ dom["fields/var1/type"]        = "scalar";
+ dom["fields/var1/topology"]    = "topo";
+ dom["fields/var1/values"].set(var_1);
+
+ dom["fields/var2/association"] = "vertex";
+ dom["fields/var2/type"]        = "scalar";
+ dom["fields/var2/topology"]    = "topo";
+ dom["fields/var2/values"].set(var_2);
 
 }
 
 void build_data_set(conduit::Node &dataset)
 {
-  int domain_res = 10; // each domain will be domain_res^3 zones
+  int domain_res = 64; // each domain will be domain_res^3 zones
   double xyz_min = -10;
   double xyz_max = 10;
   // we will create a data set with base^3 domains
   const int32 base = 2;
+
   std::vector<double> divs;
   divs.resize(base+1);
   double delta = (xyz_max - xyz_min) / (double) base;
@@ -141,7 +170,56 @@ void build_data_set(conduit::Node &dataset)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_smoke, ascent_about)
+TEST(ascent_cokurt, test_field)
 {
+    conduit::Node data;
+    build_data_set(data);
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_marco");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node actions;
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "slice";
+    // filter knobs
+    conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    slice_params["point/x"] = 0.f;
+    slice_params["point/y"] = 0.f;
+    slice_params["point/z"] = 0.f;
+
+    slice_params["normal/x"] = 0.f;
+    slice_params["normal/y"] = 0.f;
+    slice_params["normal/z"] = 1.f;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "var2";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
 }
 
