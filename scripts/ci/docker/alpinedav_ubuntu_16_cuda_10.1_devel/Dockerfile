@@ -49,15 +49,16 @@ MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 # non-root, but admin default user on azure pipelines
 RUN apt-get update && apt-get -y install sudo
 # install std packages we need for cuda dev env and test
-RUN apt-get -y install \
+RUN apt-get update && apt-get --fix-missing -y install \
                git \
                python \
                gfortran \
                zlib1g-dev \
-               curl\
+               curl \
                mpich \
                libmpich-dev \
                libblas-dev \
-               liblapack-dev 
+               liblapack-dev \
+               vim
 
 

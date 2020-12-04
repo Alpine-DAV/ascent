@@ -49,16 +49,18 @@ MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 # non-root, but admin default user on azure pipelines
 RUN apt-get update && apt-get -y install sudo
 # install std packages
-RUN apt-get -y install \
+RUN apt-get update && apt-get -y install \
              binutils \
              gcc \
              g++ \
              gfortran \
              python \
+             perl \
              git \
              curl \
-             unzip \
              wget \
+             tar \
+             unzip \
              build-essential \
              libncurses-dev \
              libssl-dev \
@@ -70,4 +72,6 @@ RUN apt-get -y install \
              libsqlite3-dev \
              libbz2-dev \
              mpich \
-             libmpich-dev 
+             libmpich-dev \
+             vim
+
