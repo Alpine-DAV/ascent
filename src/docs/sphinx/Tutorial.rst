@@ -56,7 +56,7 @@ Ascent installs include standalone C++, Python, and Python-based Jupyter noteboo
 You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
 
-`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/sc/2020_11_09_SC20_ascent_intro.pdf>`_
+`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2020_12_17_ecp_ascent_intro.pdf>`_
 
 Scheduled Tutorials:
  * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
