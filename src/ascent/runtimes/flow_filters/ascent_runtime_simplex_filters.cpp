@@ -259,6 +259,9 @@ GetCamera2(double frame, int nframes, double radius, double* lookat)
 #include <iostream>
 #include <fstream>
 
+// Stuff for random numbers
+#include<time.h>
+
 Camera
 GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, double radius,
 	       	int thetaPos, int numTheta, int phiPos, int numPhi, double *lookat)
@@ -268,7 +271,23 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   c.near = zoom/20;
   c.far = zoom*25;
   c.angle = M_PI/6;
-  
+
+  double theta = 2 * M_PI * (thetaPos / (numTheta - 1.0));
+  double phi = acos(1 - 2 * (phiPos / (numPhi - 1)));
+
+  double xmid = (x0 + x1) / 2.0;
+  double ymid = (y0 + y1) / 2.0;
+  double zmid = (z0 + z1) / 2.0;
+
+  double x = sin(phi) * cos(theta);
+  double y = sin(phi) * sin(theta);
+  double z = cos(phi);
+
+  c.position[0] = (zoom * 3 * radius * x) + xmid;
+  c.position[1] = (zoom * 3 * radius * y) + ymid;
+  c.position[2] = (zoom * 3 * radius * z) + zmid;
+
+  /* This is our old version, saved just in case 
   double theta = (thetaPos / (numTheta - 1.0)) * M_PI ;
   double phi = (phiPos / (numPhi - 1.0)) * M_PI * 2.0; 
   double xm = (x0 + x1) / 2.0;
@@ -278,6 +297,8 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   c.position[0] = (  zoom*3*radius * sin(theta) * cos(phi)  + xm );
   c.position[1] = (  zoom*3*radius * sin(theta) * sin(phi)  + ym );
   c.position[2] = (  zoom*3*radius * cos(theta)  + zm );
+  */
+
   //check lookat vs middle
   //cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
   //cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
@@ -383,7 +404,7 @@ CameraSimplex::verify_params(const conduit::Node &params,
 void
 CameraSimplex::execute()
 {
-    double time = 0.;
+    double time_var = 0.;
     auto time_start = high_resolution_clock::now();
     //cout << "USING SIMPLEX PIPELINE" << endl;
     #if ASCENT_MPI_ENABLED
@@ -474,7 +495,50 @@ CameraSimplex::execute()
     int numTheta = 100;
     int numPhi = 100;
 
-/*
+/* 
+    // Code for random images
+    ofstream randomFile;
+    randomFile.open("random.txt");
+
+    srand(time(NULL));
+    int rTheta;
+    int rPhi;
+
+    for (int i = 0 ; i < 20 ; ++i) {
+        rTheta = rand() % 100;
+        rPhi = rand() % 100; 
+
+        randomFile << "rTheta: " << rTheta << ", rPhi: " << rPhi << endl;
+
+        Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+            	        radius, rTheta, numTheta, rPhi, numPhi, focus); 
+
+        vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+                                      (float)cam.position[1],
+                                      (float)cam.position[2]};
+
+        camera->SetPosition(postest);
+        vtkh::ScalarRenderer tracer;
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+        tracer.SetInput(data); //vtkh dataset by toponame
+        tracer.SetCamera(*camera);
+        tracer.Update();
+
+        vtkh::DataSet *output = tracer.GetOutput();
+
+        float score = calculateMetric(output, metric, field_name,
+                 		     triangles, height, width, cam);
+
+        //cout << "Score at (" << rTheta << ", " << rPhi << ") is " << score << endl << endl;
+             	
+    }
+
+    randomFile.close();
+    
+*/
+
+///*
     // Commenting out main block to get 27 scores
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
@@ -590,11 +654,11 @@ CameraSimplex::execute()
       fclose(datafile);
   }
 
-*/ 
+//*/ 
 
     /*================ End Scalar Renderer  ======================*/
 
-///*
+/*
     // Code for scores for quizzes
   
     	
@@ -698,7 +762,7 @@ CameraSimplex::execute()
 
     } 
 
-//*/
+*/
 
 /*
     // Getting all pictures	
@@ -755,7 +819,7 @@ CameraSimplex::execute()
     set_output<DataObject>(input<DataObject>(0));
     //set_output<vtkmCamera>(camera);
     auto time_stop = high_resolution_clock::now();
-    time += duration_cast<seconds>(time_stop - time_start).count();
+    time_var += duration_cast<seconds>(time_stop - time_start).count();
 
     /*#if ASCENT_MPI_ENABLED
       cout << "rank: " << rank << " secs total: " << time << endl;
