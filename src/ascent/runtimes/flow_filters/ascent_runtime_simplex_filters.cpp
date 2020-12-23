@@ -414,7 +414,8 @@ CameraSimplex::execute()
     //std::vector<Triangle> triangles;// = GetTriangles2(dataset,field_name);
     std::vector<Triangle> triangles = GetTriangles(dataset);
     float total_triangles = (float) triangles.size();
-    vtkh::DataSet* data = AddTriangleFields(dataset);
+    AddTriangleFields(dataset);
+//    vtkh::DataSet* data = AddTriangleFields(dataset);
     auto triangle_stop = high_resolution_clock::now();
     triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
     /*#if ASCENT_MPI_ENABLED
@@ -633,7 +634,8 @@ CameraSimplex::execute()
           vtkh::ScalarRenderer tracer;
           tracer.SetWidth(width);
           tracer.SetHeight(height);
-          tracer.SetInput(data); //vtkh dataset by toponame
+          tracer.SetInput(&dataset); //vtkh dataset by toponame
+//          tracer.SetInput(data); //vtkh dataset by toponame
           tracer.SetCamera(*camera);
           tracer.Update();
 
@@ -675,7 +677,7 @@ CameraSimplex::execute()
           vtkh::ScalarRenderer tracer;
           tracer.SetWidth(width);
           tracer.SetHeight(height);
-          tracer.SetInput(data); //vtkh dataset by toponame
+          tracer.SetInput(&dataset); //vtkh dataset by toponame
           tracer.SetCamera(*camera);
           tracer.Update();
 

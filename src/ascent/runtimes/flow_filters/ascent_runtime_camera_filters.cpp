@@ -836,18 +836,17 @@ public:
   }
 };
 
-vtkh::DataSet*
+void
 AddTriangleFields(vtkh::DataSet &vtkhData)
 {
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
   std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
-  vtkh::DataSet* newDataSet = new vtkh::DataSet;
-
+//  vtkh::DataSet* newDataSet = new vtkh::DataSet;
   //if there is data: loop through domains and grab all triangles.
   if(!vtkhData.IsEmpty())
   {
-    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
+//    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
     for(int i = 0; i < localDomainIds.size(); i++)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
@@ -882,28 +881,29 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
       X2.insert(X2.end(), x2.begin(), x2.end());
       Y2.insert(Y2.end(), y2.begin(), y2.end());
       Z2.insert(Z2.end(), z2.begin(), z2.end());
-      //dataset.AddCellField("X0", X0);
-      //dataset.AddCellField("Y0", Y0);
-      //dataset.AddCellField("Z0", Z0);
-      //dataset.AddCellField("X1", X1);
-      //dataset.AddCellField("Y1", Y1);
-      //dataset.AddCellField("Z1", Z1);
-      //dataset.AddCellField("X2", X2);
-      //dataset.AddCellField("Y2", Y2);
-      //dataset.AddCellField("Z2", Z2);
-      dataSetFieldAdd.AddCellField(dataset, "X0", X0);
-      dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
-      dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
-      dataSetFieldAdd.AddCellField(dataset, "X1", X1);
-      dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
-      dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
-      dataSetFieldAdd.AddCellField(dataset, "X2", X2);
-      dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
-      dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
-      newDataSet->AddDomain(dataset,localDomainIds[i]);
+      dataset.AddCellField("X0", X0);
+      dataset.AddCellField("Y0", Y0);
+      dataset.AddCellField("Z0", Z0);
+      dataset.AddCellField("X1", X1);
+      dataset.AddCellField("Y1", Y1);
+      dataset.AddCellField("Z1", Z1);
+      dataset.AddCellField("X2", X2);
+      dataset.AddCellField("Y2", Y2);
+      dataset.AddCellField("Z2", Z2);
+      //dataSetFieldAdd.AddCellField(dataset, "X0", X0);
+      //dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
+      //dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
+      //dataSetFieldAdd.AddCellField(dataset, "X1", X1);
+      //dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
+      //dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
+      //dataSetFieldAdd.AddCellField(dataset, "X2", X2);
+      //dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
+      //dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
+      //newDataSet->AddDomain(dataset,localDomainIds[i]);
     }
   }
-  return newDataSet;
+  return;
+//  return newDataSet;
 }
 
 std::vector<Triangle>
@@ -2457,12 +2457,6 @@ AutoCamera::execute()
 {
     double time = 0.;
     auto time_start = high_resolution_clock::now();
-    #ifdef ASCENT_USE_OPENMP
-      int nthreads = omp_get_num_threads();
-      unsigned int nthreads2 = std::thread::hardware_concurrency();
-      cerr << "nthreds1: " << nthreads << endl;
-      cerr << "nthreds2: " << nthreads << endl;
-    #endif
 
     #if defined(ASCENT_VTKM_ENABLED)
       #if ASCENT_MPI_ENABLED
@@ -2503,21 +2497,25 @@ AutoCamera::execute()
       
       std::vector<Triangle> triangles = GetTriangles(dataset);
       int num_local_triangles = triangles.size();
-      vtkh::DataSet* data = AddTriangleFields(dataset);
-      int num_domains = data->GetNumberOfDomains();
-      for(int i = 0; i < num_domains; i++)
-      {
-        vtkm::cont::DataSet data_set;
-        vtkm::Id domain_id;
-        data->GetDomain(i, data_set, domain_id);
+//      vtkh::DataSet* data =AddTriangleFields(dataset);
+      AddTriangleFields(dataset);
+//      int num_domains = data->GetNumberOfDomains();
+//      data->PrintSummary(cerr);
+//      cerr << "AFTER" << endl;
+//      for(int i = 0; i < num_domains; i++)
+//      {
+//        vtkm::cont::DataSet data_set;
+//        vtkm::Id domain_id;
+//        data->GetDomain(i, data_set, domain_id);
 
       // all the data sets better be the same
-        if(data_set.GetCellSet().GetNumberOfCells() == 0)
-          data_set.Clear();
-      }
-      //data->PrintSummary(cerr);
+//        if(data_set.GetCellSet().GetNumberOfCells() == 0)
+//          data_set.Clear();
+//      }
+//      data->PrintSummary(cerr);
 
-      vtkm::Bounds b = data->GetGlobalBounds();
+      vtkm::Bounds b = dataset.GetGlobalBounds();
+//      vtkm::Bounds b = data->GetGlobalBounds();
       vtkm::Float32 xb = vtkm::Float32(b.X.Length());
       vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
       vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
@@ -2533,7 +2531,8 @@ AutoCamera::execute()
         //radius = radius + 1;
       //vtkm::Float32 x_pos = 0., y_pos = 0., z_pos = 0.;
       vtkmCamera *camera = new vtkmCamera;
-      camera->ResetToBounds(data->GetGlobalBounds());
+      camera->ResetToBounds(dataset.GetGlobalBounds());
+//      camera->ResetToBounds(data->GetGlobalBounds());
     //cerr << "vtkm Cam" << endl;
     //camera->Print();
       vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
@@ -2543,7 +2542,7 @@ AutoCamera::execute()
       triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
       //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
       #if ASCENT_MPI_ENABLED
-        cerr << "rank " << rank << " num_local_triangles: " << num_local_triangles << endl;
+        //cerr << "rank " << rank << " num_local_triangles: " << num_local_triangles << endl;
         //cerr << "Global bounds: " << dataset.GetGlobalBounds() << endl;
         //cerr << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
 //	cerr << "rank " << rank << " data processing time: " << triangle_time << " microseconds. " << endl;
@@ -2579,7 +2578,8 @@ AutoCamera::execute()
         vtkh::ScalarRenderer tracer;
         tracer.SetWidth(width);
         tracer.SetHeight(height);
-        tracer.SetInput(data); //vtkh dataset by toponame
+        tracer.SetInput(&dataset); //vtkh dataset by toponame
+//        tracer.SetInput(data); //vtkh dataset by toponame
         tracer.SetCamera(*camera);
         tracer.Update();
 
@@ -2614,7 +2614,7 @@ AutoCamera::execute()
         }
       } //end of sample loop
       triangles.clear();
-      delete data;
+//      delete data;
       auto setting_camera_start = high_resolution_clock::now();
 
       if(winning_sample == -1)
