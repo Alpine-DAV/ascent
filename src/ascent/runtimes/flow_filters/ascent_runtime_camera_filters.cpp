@@ -2440,6 +2440,7 @@ AutoCamera::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("metric");
     valid_paths.push_back("samples");
+    valid_paths.push_back("sample");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -2485,6 +2486,7 @@ AutoCamera::execute()
         ASCENT_ERROR("Unknown field '"<<field_name<<"'");
       }
       int samples = (int)params()["samples"].as_int64();
+      int sample = (int)params()["sample"].as_int64();
     //TODO:Get the height and width of the image from Ascent
       int width  = 1000;
       int height = 1000;
@@ -2623,7 +2625,8 @@ AutoCamera::execute()
       cerr << metric << " losing_sample " << losing_sample << " score: " << losing_score << endl;
      // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
       //Camera best_c = GetCamera(losing_sample, samples, radius, focus, bounds);
-      Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+      //Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+      Camera best_c = GetCamera(sample, samples, radius, focus, bounds);
     
       vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
@@ -2640,7 +2643,8 @@ AutoCamera::execute()
 #endif
 */
       camera->SetPosition(pos);
-      //camera->Print();
+      //camera->GetViewUp().Print();
+      camera->Print();
 
 
       if(!graph().workspace().registry().has_entry("camera"))
