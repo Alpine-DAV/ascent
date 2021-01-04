@@ -150,6 +150,7 @@ conduit::Node quantile(const conduit::Node &cdf,
 
 // if the field node is empty, we will allocate space
 void paint_nestsets(const std::string nestset_name,
+                    const std::string topo_name,
                     conduit::Node &dom,
                     conduit::Node &field); // field to paint on
 };
