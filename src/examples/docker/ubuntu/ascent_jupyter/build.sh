@@ -44,5 +44,5 @@
 ###############################################################################
 
 # exec docker build to create image
-echo "docker build -t ascent-jupyter:latest ."
-docker build -t ascent-jupyter:latest .
+echo "docker build -t alpinedav/ascent-jupyter ."
+docker build -t alpinedav/ascent-jupyter:latest .

@@ -74,6 +74,7 @@
 // other ascent includes
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
+#include <ascent_mpi_utils.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 
@@ -93,6 +94,46 @@ namespace ascent
 //-----------------------------------------------------------------------------
 namespace detail
 {
+
+vtkm::Id3 topo_origin(const conduit::Node &n_topo)
+{
+  vtkm::Id3 topo_origin(0,0,0);
+  // maintain backwards compatibility between
+  // i and i0 versions
+  if(n_topo.has_path("elements/origin"))
+  {
+    const conduit::Node &origin = n_topo["elements/origin"];
+
+    if(origin.has_path("i"))
+    {
+      topo_origin[0] = n_topo["elements/origin/i"].to_int32();
+    }
+    if(origin.has_path("i0"))
+    {
+      topo_origin[0] = n_topo["elements/origin/i0"].to_int32();
+    }
+
+    if(origin.has_path("j"))
+    {
+      topo_origin[1] = n_topo["elements/origin/j"].to_int32();
+    }
+    if(origin.has_path("j0"))
+    {
+      topo_origin[1] = n_topo["elements/origin/j0"].to_int32();
+    }
+
+    if(origin.has_path("k"))
+    {
+      topo_origin[2] = n_topo["elements/origin/k"].to_int32();
+    }
+    if(origin.has_path("k0"))
+    {
+      topo_origin[2] = n_topo["elements/origin/k0"].to_int32();
+    }
+  }
+
+  return topo_origin;
+}
 
 template<typename T>
 const T* GetNodePointer(const conduit::Node &node);
@@ -932,17 +973,21 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
                                                               dims,
                                                               origin,
                                                               spacing));
+    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
     if(is_2d)
     {
       vtkm::Id2 dims2(dims[0], dims[1]);
       vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(dims2);
+      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+      cell_set.SetGlobalPointIndexStart(origin2);
       result->SetCellSet(cell_set);
     }
     else
     {
       vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(dims);
+      cell_set.SetGlobalPointIndexStart(topo_origin);
       result->SetCellSet(cell_set);
     }
 
@@ -1048,11 +1093,15 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
                                                   coords);
     result->AddCoordinateSystem(coordinate_system);
 
+    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
+
     if (ndims == 2)
     {
       vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts));
+      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+      cell_set.SetGlobalPointIndexStart(origin2);
       result->SetCellSet(cell_set);
     }
     else
@@ -1061,6 +1110,7 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
       cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
                                                  y_npts,
                                                  z_npts));
+      cell_set.SetGlobalPointIndexStart(topo_origin);
       result->SetCellSet(cell_set);
     }
 
@@ -1117,11 +1167,16 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 
     int32 x_elems = n_topo["elements/dims/i"].as_int32();
     int32 y_elems = n_topo["elements/dims/j"].as_int32();
+
+    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
+
     if (ndims == 2)
     {
       vtkm::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1));
+      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+      cell_set.SetGlobalPointIndexStart(origin2);
       result->SetCellSet(cell_set);
       neles = x_elems * y_elems;
     }
@@ -1132,6 +1187,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1,
                                                  z_elems+1));
+      cell_set.SetGlobalPointIndexStart(topo_origin);
       result->SetCellSet(cell_set);
       neles = x_elems * y_elems * z_elems;
 
@@ -2229,6 +2285,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
 {
   node.reset();
 
+  bool success = true;
   const int cycle = collection->cycle();
   const double time = collection->time();
   // we have to re-merge the domains so all domains with the same
@@ -2236,23 +2293,35 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
   std::map<int, std::map<std::string,vtkm::cont::DataSet>> domain_map;
   domain_map = collection->by_domain_id();
 
-  for(auto domain_it : domain_map)
+  try
   {
-    const int domain_id = domain_it.first;
-
-    conduit::Node &dom = node.append();
-    dom["state/domain_id"] = (int) domain_id;
-    dom["state/cycle"] = cycle;
-    dom["state/time"] = time;
-
-    for(auto topo_it : domain_it.second)
+    for(auto domain_it : domain_map)
     {
-      const std::string topo_name = topo_it.first;
-      vtkm::cont::DataSet &dataset = topo_it.second;
-      VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name, zero_copy);
+      const int domain_id = domain_it.first;
+
+      conduit::Node &dom = node.append();
+      dom["state/domain_id"] = (int) domain_id;
+      dom["state/cycle"] = cycle;
+      dom["state/time"] = time;
+
+      for(auto topo_it : domain_it.second)
+      {
+        const std::string topo_name = topo_it.first;
+        vtkm::cont::DataSet &dataset = topo_it.second;
+        VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name, zero_copy);
+      }
     }
   }
+  catch(...)
+  {
+    success = false;
+  }
 
+  success = global_agreement(success);
+  if(!success)
+  {
+    ASCENT_ERROR("Failed to convert vtkm data set to blueprint");
+  }
 }
 
 void
@@ -2261,17 +2330,31 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
                                         bool zero_copy)
 {
   node.reset();
-  const int num_doms = dset->GetNumberOfDomains();
-  for(int i = 0; i < num_doms; ++i)
+  bool success = true;
+  try
   {
-    conduit::Node &dom = node.append();
-    vtkm::cont::DataSet vtkm_dom;
-    vtkm::Id domain_id;
-    int cycle = dset->GetCycle();
-    dset->GetDomain(i, vtkm_dom, domain_id);
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", zero_copy);
-    dom["state/domain_id"] = (int) domain_id;
-    dom["state/cycle"] = cycle;
+    const int num_doms = dset->GetNumberOfDomains();
+    for(int i = 0; i < num_doms; ++i)
+    {
+      conduit::Node &dom = node.append();
+      vtkm::cont::DataSet vtkm_dom;
+      vtkm::Id domain_id;
+      int cycle = dset->GetCycle();
+      dset->GetDomain(i, vtkm_dom, domain_id);
+      VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", zero_copy);
+      dom["state/domain_id"] = (int) domain_id;
+      dom["state/cycle"] = cycle;
+    }
+  }
+  catch(...)
+  {
+    success = false;
+  }
+
+  success = global_agreement(success);
+  if(!success)
+  {
+    ASCENT_ERROR("Failed to convert vtkm data set to blueprint");
   }
 }
 

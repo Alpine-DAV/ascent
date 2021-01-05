@@ -44,5 +44,5 @@
 ###############################################################################
 
 # exec docker run to create a container from our image
-echo "docker run -p 8000:8000 -p 8888:8888 -p 9000:9000 -p 10000:10000 -t -i ascent-jupyter:latest"
-docker run -p 8000:8000 -p 8888:8888 -p 9000:9000 -p 10000:10000 -t -i ascent-jupyter:latest
+echo "docker run -p 8000:8000 -p 8888:8888 -p 9000:9000 -p 10000:10000 -t -i alpinedav/ascent-jupyter:latest"
+docker run -p 8000:8000 -p 8888:8888 -p 9000:9000 -p 10000:10000 -t -i alpinedav/ascent-jupyter:latest

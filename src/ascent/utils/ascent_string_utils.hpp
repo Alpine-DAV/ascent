@@ -66,6 +66,9 @@ namespace ascent
 std::string expand_family_name(const std::string name, int counter = 0);
 
 std::vector<std::string> split(const std::string &s, char delim = ' ');
+
+std::string timestamp();
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

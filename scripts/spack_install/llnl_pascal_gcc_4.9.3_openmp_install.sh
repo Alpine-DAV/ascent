@@ -6,10 +6,10 @@ set -e
 date
 # run spack install, this will install ascent@develop
 export BASE_DIR=/usr/gapps/conduit/software/ascent
-export ASCENT_VERSION=0.5.2-pre
+export ASCENT_VERSION=2020-11-06
 export DEST_DIR=${BASE_DIR}/${ASCENT_VERSION}/toss_3_x86_64_ib/openmp/gnu
 mkdir -p $DEST_DIR
-python scripts/uberenv/uberenv.py --spec="%gcc" \
+python scripts/uberenv/uberenv.py --spec="%gcc+doc" \
        --pull \
        --install \
        --spack-config-dir="scripts/uberenv/spack_configs/llnl/pascal_openmp/" \
