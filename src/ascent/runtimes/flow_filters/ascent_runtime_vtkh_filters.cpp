@@ -109,6 +109,7 @@
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
+#include <ascent_expression_eval.hpp>
 #endif
 
 #include <stdio.h>
@@ -135,6 +136,37 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
+
+
+
+double get_scalar(const conduit::Node &node, DataObject *dataset)
+{
+  double scalar = 0.;
+  // check to see if this is an expression
+  if(node.dtype().is_string())
+  {
+    std::cout<<"Trying expression\n";
+    // TODO: we want to zero copy this
+    conduit::Node * bp_dset = dataset->as_low_order_bp().get();
+    expressions::ExpressionEval eval(bp_dset);
+    std::string expr = node.as_string();
+    std::cout<<"expression "<<expr<<"\n";
+    conduit::Node res = eval.evaluate(expr);
+    res.print();
+    if(res["attrs/value/value"].dtype().number_of_elements() != 1)
+    {
+      ASCENT_ERROR("expression '"<<expr
+                   <<"' resulted in multiple values."
+                   <<" Expected scalar. "<<res.to_yaml());
+    }
+    scalar = res["attrs/value/value"].to_float64();
+  }
+  else
+  {
+    scalar = node.to_float64();
+  }
+  return scalar;
+}
 
 VTKHMarchingCubes::VTKHMarchingCubes()
 :Filter()
@@ -932,8 +964,11 @@ VTKHThreshold::execute()
     const Node &n_max_val = params()["max_value"];
 
     // convert to contig doubles
-    double min_val = n_min_val.to_float64();
-    double max_val = n_max_val.to_float64();
+    //double min_val = n_min_val.to_float64();
+    double min_val = get_scalar(n_min_val, data_object);
+    //double max_val = n_max_val.to_float64();
+    double max_val = get_scalar(n_max_val, data_object);
+    std::cout<<"Min value "<<min_val<<"\n";
     thresher.SetUpperThreshold(max_val);
     thresher.SetLowerThreshold(min_val);
 

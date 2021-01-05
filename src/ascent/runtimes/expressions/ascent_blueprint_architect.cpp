@@ -659,7 +659,7 @@ is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
       has_field = true;
       const conduit::Node &n_field = dom["fields/" + field_name];
       const int num_children = n_field["values"].number_of_children();
-      if(num_children == 0)
+      if(num_children == 0 || num_children == 1)
       {
         is_scalar = true;
       }

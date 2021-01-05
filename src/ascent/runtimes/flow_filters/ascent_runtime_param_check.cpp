@@ -50,6 +50,9 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_runtime_param_check.hpp"
+#include "expressions/ascent_expressions_ast.hpp"
+#include "expressions/ascent_expressions_tokens.hpp"
+#include "expressions/ascent_expressions_parser.hpp"
 #include <ascent_logging.hpp>
 
 #include <algorithm>
@@ -74,6 +77,21 @@ namespace runtime
 namespace filters
 {
 
+bool is_valid_expression(const std::string expr)
+{
+  bool res = true;
+  try
+  {
+    scan_string(expr.c_str());
+  }
+  catch(const char *msg)
+  {
+    //ASCENT_ERROR("Expression parsing error: " << msg << " in '" << expr << "'");
+    res = false;
+  }
+  return res;
+}
+
 bool
 check_numeric(const std::string path,
               const conduit::Node &params,
@@ -87,11 +105,23 @@ check_numeric(const std::string path,
     res = false;
   }
 
-  if(params.has_path(path) && !params[path].dtype().is_number())
+  if(params.has_path(path))
   {
-    std::string msg = "Numeric parameter '" + path + " is not numeric'";
-    info["errors"].append() = msg;
-    res = false;
+
+    bool is_expr = false;
+    if(params[path].dtype().is_string())
+    {
+      // check to see if this is a valid expression
+      is_expr = is_valid_expression(params[path].as_string());
+    }
+
+    if(!params[path].dtype().is_number() && !is_expr)
+    {
+      std::string msg = "Numeric parameter '" + path +
+                        " is not numeric and is not a valid expression'";
+      info["errors"].append() = msg;
+      res = false;
+    }
   }
   return res;
 }
