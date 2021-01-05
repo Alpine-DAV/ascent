@@ -1394,8 +1394,8 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_tr
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
     //cerr << "visibility_ratio " << visibility_ratio << endl;
     return visibility_ratio;
   #else
@@ -1509,8 +1509,8 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_t
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
 //    cerr << "viewpoint_entropy " << viewpoint_entropy << endl;
     return viewpoint_entropy;
   #else
@@ -1784,8 +1784,8 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, int
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
     //cerr << "vkl " << vkl << endl;
     return (-1.0)*vkl;
   #else
@@ -1873,8 +1873,8 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
     int size = height*width;
@@ -1929,8 +1929,8 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
   #else
     int size = height*width;
     std::vector<float> depth = GetScalarData(*dataset, "depth", height, width);
@@ -1996,8 +1996,8 @@ calculateVisibleTriangles(vtkh::DataSet *dataset, int height, int width)
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
   #else
     int size = height*width;
     std::vector<float> x0 = GetScalarData(*dataset, "X0", height, width);
@@ -2079,8 +2079,8 @@ calculateProjectedArea(vtkh::DataSet* dataset, int height, int width, Camera cam
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
   #else
     int size = height*width;
     std::vector<float> x0 = GetScalarData(*dataset, "X0", height, width);
@@ -2177,8 +2177,8 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
   #else
     int size = height*width;
     std::vector<float> x0 = GetScalarData(*dataset, "X0", height, width);
@@ -2253,8 +2253,8 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
     double array[world_size] = {0};
     array[rank] = metric_time;
     MPI_Allgather(&metric_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("metric_times.txt", array, world_size);
+    //if(rank == 0)
+      //MakeFile("metric_times.txt", array, world_size);
 //    cerr << "rank " << rank << " coordination time: " << coord << " microseconds." << endl;
   #else
     int size = height*width;
@@ -2551,8 +2551,8 @@ AutoCamera::execute()
 	double array[world_size] = {0};
         array[rank] = triangle_time;
         MPI_Allgather(&triangle_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-        if(rank == 0)
-          MakeFile("processing_times.txt", array, world_size);
+        //if(rank == 0)
+          //MakeFile("processing_times.txt", array, world_size);
       #endif
 
 
@@ -2592,8 +2592,8 @@ AutoCamera::execute()
 	  double array[world_size] = {0};
           array[rank] = render_time;
           MPI_Allgather(&render_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-          if(rank == 0)
-            MakeFile("renderer_times.txt", array, world_size);
+//          if(rank == 0)
+//            MakeFile("renderer_times.txt", array, world_size);
 //          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
         #endif
         
@@ -2625,8 +2625,8 @@ AutoCamera::execute()
       cerr << metric << " losing_sample " << losing_sample << " score: " << losing_score << endl;
      // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
       //Camera best_c = GetCamera(losing_sample, samples, radius, focus, bounds);
-      //Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
-      Camera best_c = GetCamera(sample, samples, radius, focus, bounds);
+      Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
+      //Camera best_c = GetCamera(sample, samples, radius, focus, bounds);
     
       vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
@@ -2659,8 +2659,8 @@ AutoCamera::execute()
         double array2[world_size] = {0};
         array2[rank] = setting_camera;
         MPI_Allgather(&setting_camera, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-        if(rank == 0)
-          MakeFile("setCam_times.txt", array2, world_size);
+        //if(rank == 0)
+          //MakeFile("setCam_times.txt", array2, world_size);
 //        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
       #endif
 
@@ -2683,8 +2683,8 @@ AutoCamera::execute()
      double array3[world_size] = {0};
      array3[rank] = time;
      MPI_Allgather(&time, 1, MPI_DOUBLE, array3, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-     if(rank == 0)
-       MakeFile("total_times.txt", array3, world_size);
+     //if(rank == 0)
+       //MakeFile("total_times.txt", array3, world_size);
      //cerr << "rank: " << rank << " Total Time: " << time  << " microseconds " << endl;
     #endif
 }
