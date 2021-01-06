@@ -767,6 +767,7 @@ initialize_objects()
 conduit::Node
 ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 {
+  std::cout<<"Evaluate "<<expr<<"\n";
   if(expr_name == "")
   {
     expr_name = expr;

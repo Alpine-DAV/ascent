@@ -153,13 +153,20 @@ double get_scalar(const conduit::Node &node, DataObject *dataset)
     std::cout<<"expression "<<expr<<"\n";
     conduit::Node res = eval.evaluate(expr);
     res.print();
-    if(res["attrs/value/value"].dtype().number_of_elements() != 1)
+    if(!res.has_path("value"))
+    {
+      ASCENT_ERROR("expression '"<<expr
+                   <<"': failed to extract a value from the result."
+                   <<" "<<res.to_yaml());
+    }
+
+    if(res["value"].dtype().number_of_elements() != 1)
     {
       ASCENT_ERROR("expression '"<<expr
                    <<"' resulted in multiple values."
                    <<" Expected scalar. "<<res.to_yaml());
     }
-    scalar = res["attrs/value/value"].to_float64();
+    scalar = res["value"].to_float64();
   }
   else
   {
@@ -969,6 +976,7 @@ VTKHThreshold::execute()
     //double max_val = n_max_val.to_float64();
     double max_val = get_scalar(n_max_val, data_object);
     std::cout<<"Min value "<<min_val<<"\n";
+    std::cout<<"Max value "<<max_val<<"\n";
     thresher.SetUpperThreshold(max_val);
     thresher.SetLowerThreshold(min_val);
 
