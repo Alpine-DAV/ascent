@@ -111,8 +111,10 @@ int main(int argc, char **argv)
   // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
 
   // set the gloabl data
-  vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
+  vector<float> global_data(data_size[0]*data_size[1]*data_size[2], 0);
   {
+    float mx = -FLT_MAX;
+    float mn = FLT_MAX;
     ifstream rf(dataset, ios::out | ios::binary);
     if(!rf) {
       cout << "Cannot open file!" << endl;
@@ -120,9 +122,16 @@ int main(int argc, char **argv)
     }
 
     for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
-      rf.read( (char *)&global_data[i], sizeof(FunctionType));
+    {
+      rf.read( (char *)&global_data[i], sizeof(float));
+      mx = std::max( mx, global_data[i] );
+      mn = std::min( mn, global_data[i] );
+    }
 
     rf.close();
+
+    if( mpi_rank == 0 )
+      std::cout << "Data range -- mx = " << mx << ", mn = " << mn << std::endl;
   }
 
   // size of the local data
@@ -258,7 +267,7 @@ int main(int argc, char **argv)
 
   conduit::Node &point2 = control_points.append();
   point2["type"] = "rgb";
-  point2["position"] = 0.5;
+  point2["position"] = 0.2;
   color[0] = 1.0;
   color[1] = 0.5;
   color[2] = 0.25;
@@ -279,7 +288,7 @@ int main(int argc, char **argv)
 
   conduit::Node &point5 = control_points.append();
   point5["type"] = "alpha";
-  point5["position"] = 0.2;
+  point5["position"] = 0.15;
   point5["alpha"] = 0.;
   
   conduit::Node &point6 = control_points.append();
@@ -300,7 +309,7 @@ int main(int argc, char **argv)
   scenes["s1/renders/r1/image_height"] = 512;
   scenes["s1/renders/r1/image_name"]   = "segmentation";
   scenes["s1/renders/r1/camera/azimuth"] = 30.0;
-  scenes["s1/renders/r1/camera/elevation"] = 20.0;
+  scenes["s1/renders/r1/camera/elevation"] = 30.0;
   
   // add a scene (s1) with one pseudocolor plot (p1) that
   // will render the result of our pipeline (pl1)
@@ -317,7 +326,8 @@ int main(int argc, char **argv)
   //scenes["s2/image_name"] = "segmentation";
 
   // print our full actions tree
-  std::cout << action.to_yaml() << std::endl;
+  if( mpi_rank == 0 )
+    std::cout << action.to_yaml() << std::endl;
 
   action.append()["action"] = "execute";
   start = clock();

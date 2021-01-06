@@ -47,7 +47,7 @@
 #include <climits>
 
 
-#define BFLOW_PMT_DEBUG
+// #define BFLOW_PMT_DEBUG
 
 
 class ParallelMergeTree {
@@ -275,7 +275,7 @@ void ParallelMergeTree::Initialize()
 
   std::cout << "Num blocks: " << num_blocks << std::endl;
 
-  m_preProcTaskGr = BabelFlow::SingleTaskGraph( );
+  m_preProcTaskGr = BabelFlow::SingleTaskGraph( mpi_size );
   m_preProcTaskMp = BabelFlow::ModuloMap( mpi_size, m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2] );
 
   m_kWayMergeGr = KWayMerge( m_nBlocks, m_fanin );
@@ -291,6 +291,13 @@ void ParallelMergeTree::Initialize()
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::WRITE_RES_CB, write_results );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::RELAY_CB, BabelFlow::relay_message );
 
+#ifdef BFLOW_PMT_DEBUG
+  if( my_rank == 0 ) 
+  {
+    m_kWayMergeGr.outputGraphHtml( mpi_size, &m_kWayTaskMp, "orig_pmt_gr.html" );
+  }
+#endif
+
   m_defGraphConnector = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
   
   std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
@@ -304,7 +311,6 @@ void ParallelMergeTree::Initialize()
 #ifdef BFLOW_PMT_DEBUG
   if( my_rank == 0 ) 
   {
-    m_kWayMergeGr.outputGraphHtml( mpi_size, &m_kWayTaskMp, "orig_pmt_gr.html" );
     m_fullGraph.outputGraphHtml( mpi_size, &m_fullTaskMap, "pmt_gr.html" );
   }
 #endif
