@@ -172,8 +172,8 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   //t.writeToFile(task & ~sPrefixMask);
   t.persistenceSimplification(1.f);
   t.computeSegmentation(sLocalData);
-  t.writeToFileBinary(task & ~KWayMerge::sPrefixMask);
-  t.writeToFile(task & ~KWayMerge::sPrefixMask);
+  // t.writeToFileBinary(task & ~KWayMerge::sPrefixMask);
+  // t.writeToFile(task & ~KWayMerge::sPrefixMask);
   //t.writeToHtmlFile(task & ~sPrefixMask);
 
   // Set the final tree as an output so that it could be extracted later
