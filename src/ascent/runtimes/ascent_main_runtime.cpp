@@ -861,6 +861,7 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
 
   conduit::Node params;
   std::string pipeline = CreateDefaultFilters()["queries"].as_string();
+  const std::string default_pipeline = pipeline;
   if(query.has_path("params"))
   {
     params = query["params"];
@@ -896,7 +897,7 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
   m_connections[query_name] = pipeline;
   // we need all filters to depend on queries
   // from the source this keeps track of that
-  if(pipeline == "source")
+  if(pipeline == default_pipeline)
   {
     m_connections["ascent_last_query"] = query_name;
   }
@@ -1522,13 +1523,13 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 
   }
 
-  for(int i = 0; i < queries.number_of_children(); ++i)
-  {
-    CreateQueries(queries.child(i));
-  }
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     CreatePipelines(pipelines.child(i));
+  }
+  for(int i = 0; i < queries.number_of_children(); ++i)
+  {
+    CreateQueries(queries.child(i));
   }
   for(int i = 0; i < triggers.number_of_children(); ++i)
   {
