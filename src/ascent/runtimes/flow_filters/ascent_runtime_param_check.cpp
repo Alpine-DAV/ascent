@@ -293,6 +293,15 @@ T get_value(const conduit::Node &node, DataObject *dataset)
   // check to see if this is an expression
   if(node.dtype().is_string())
   {
+    if(dataset == nullptr)
+    {
+      ASCENT_ERROR("Numeric parameter is an expression(string)"
+                   <<" but we can not evaluate the expression."
+                   <<" This is usaully for a parameter that is "
+                   <<"not meant to have an expression. expression '"
+                   <<node.to_string()<<"'");
+
+    }
     std::cout<<"Trying expression\n";
     // TODO: we want to zero copy this
     conduit::Node * bp_dset = dataset->as_low_order_bp().get();

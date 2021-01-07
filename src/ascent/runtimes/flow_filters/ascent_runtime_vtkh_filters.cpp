@@ -2644,7 +2644,7 @@ VTKHProject2d::execute()
 
     if(params().has_path("camera"))
     {
-      parse_camera(params()["camera"], camera);
+      parse_camera(params()["camera"], camera, data_object);
     }
 
     int width = 512;

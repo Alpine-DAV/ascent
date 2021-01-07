@@ -56,6 +56,7 @@
 
 #include<vtkm/rendering/Camera.h>
 #include<vtkm/cont/ColorTable.h>
+#include<ascent_data_object.hpp>
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -75,15 +76,21 @@ namespace filters
 {
 
 void
-parse_image_dims(const conduit::Node &node, int &width, int &height);
+parse_image_dims(const conduit::Node &node,
+                 int &width,
+                 int &height,
+                 DataObject *data_object);
 
 //-----------------------------------------------------------------------------
 void
-parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera);
+parse_camera(const conduit::Node camera_node,
+             vtkm::rendering::Camera &camera,
+             DataObject *data_object);
 
 //-----------------------------------------------------------------------------
 vtkm::cont::ColorTable
-parse_color_table(const conduit::Node &color_table_node);
+parse_color_table(const conduit::Node &color_table_node,
+                  DataObject *data_object);
 
 //-----------------------------------------------------------------------------
 double zoom_to_vtkm_zoom(double in_zoom);

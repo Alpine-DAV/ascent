@@ -108,7 +108,10 @@ double zoom_to_vtkm_zoom(double in_zoom)
 }
 
 void
-parse_image_dims(const conduit::Node &node, int &width, int &height)
+parse_image_dims(const conduit::Node &node,
+                 int &width,
+                 int &height,
+                 DataObject *data_object)
 {
   width = 1024;
   height = 1024;
@@ -127,7 +130,9 @@ parse_image_dims(const conduit::Node &node, int &width, int &height)
 
 //-----------------------------------------------------------------------------
 void
-parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
+parse_camera(const conduit::Node camera_node,
+             vtkm::rendering::Camera &camera,
+             DataObject *data_object)
 {
   typedef vtkm::Vec<vtkm::Float32,3> vtkmVec3f;
   //
@@ -236,7 +241,7 @@ bool is_valid_name(const std::string &name)
 }
 //-----------------------------------------------------------------------------
 vtkm::cont::ColorTable
-parse_color_table(const conduit::Node &color_table_node)
+parse_color_table(const conduit::Node &color_table_node, DataObject *data_object)
 {
   // default name
   std::string color_map_name = "cool to warm";
