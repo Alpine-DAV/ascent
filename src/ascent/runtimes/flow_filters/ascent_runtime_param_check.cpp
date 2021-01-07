@@ -312,14 +312,12 @@ T get_value(const conduit::Node &node, DataObject *dataset)
                    <<node.to_string()<<"'");
 
     }
-    std::cout<<"Trying expression\n";
     // TODO: we want to zero copy this
     conduit::Node * bp_dset = dataset->as_low_order_bp().get();
     expressions::ExpressionEval eval(bp_dset);
     std::string expr = node.as_string();
-    std::cout<<"expression "<<expr<<"\n";
     conduit::Node res = eval.evaluate(expr);
-    res.print();
+
     if(!res.has_path("value"))
     {
       ASCENT_ERROR("expression '"<<expr
