@@ -55,6 +55,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include <conduit_relay_io.hpp>
+#include <conduit_relay_io_handle.hpp>
 #include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
@@ -282,7 +283,7 @@ void relay_blueprint_mesh_read(const Node &options,
         ASCENT_ERROR("Root file missing 'blueprint_index'");
     }
 
-    NodeConstIterator itr =root_node["blueprint_index"].children();
+    NodeConstIterator itr = root_node["blueprint_index"].children();
     Node verify_info;
     // TODO, for now lets verify the first mesh index
 
@@ -359,21 +360,80 @@ void relay_blueprint_mesh_read(const Node &options,
     domain_end = rank_offset + read_size;
 #endif
 
-
+    relay::io::IOHandle hnd;
     for(int i = domain_start ; i < domain_end; i++)
     {
-        char domain_fmt_buff[64];
-        snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
-        oss.str("");
-        oss << "domain_" << std::string(domain_fmt_buff);
+      char domain_fmt_buff[64];
+      snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
+      oss.str("");
+      oss << "domain_" << std::string(domain_fmt_buff);
 
-        string current, next;
-        utils::rsplit_file_path (root_fname, current, next);
-        string domain_file = utils::join_path (next, gen.GenerateFilePath (i));
+      std::string current, next;
+      utils::rsplit_file_path (root_fname, current, next);
+      std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
 
-        relay::io::load(domain_file,
-                        data_protocol,
-                        data[oss.str()]);
+      hnd.open(domain_file, data_protocol);
+
+      // also need the tree path
+      std::string tree_path = gen.GenerateTreePath(i);
+
+      //std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
+      std::string mesh_path = oss.str();
+
+      Node &mesh_out = data[mesh_path];
+
+      // read components of the mesh according to the mesh index
+      // for each child in the index
+      NodeConstIterator outer_itr = mesh_index.children();
+      while(outer_itr.has_next())
+      {
+        const Node &outer = outer_itr.next();
+        std::string outer_name = outer_itr.name();
+
+        // special logic for state, since it was not included in the index
+        if(outer_name == "state" )
+        {
+          // we do need to read the state!
+          if(outer.has_child("path"))
+          {
+            hnd.read(utils::join_path(tree_path,outer["path"].as_string()),
+                     mesh_out[outer_name]);
+          }
+          else
+          {
+             if(outer.has_child("cycle"))
+             {
+                mesh_out[outer_name]["cycle"] = outer["cycle"];
+             }
+
+             if(outer.has_child("time"))
+             {
+               mesh_out[outer_name]["time"] = outer["time"];
+             }
+           }
+        }
+
+        NodeConstIterator itr = outer.children();
+        while(itr.has_next())
+        {
+          const Node &entry = itr.next();
+          // check if it has a path
+          if(entry.has_child("path"))
+          {
+            std::string entry_name = itr.name();
+            std::string entry_path = entry["path"].as_string();
+            std::string fetch_path = utils::join_path(tree_path,
+                                                      entry_path);
+            // some parts may not exist in all domains
+            // only read if they are there
+            if(hnd.has_path(fetch_path))
+            {
+              hnd.read(fetch_path,
+                       mesh_out[outer_name][entry_name]);
+            }
+          }
+        }
+      }
     }
 }
 
