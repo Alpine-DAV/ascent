@@ -72,9 +72,12 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     openssh-server \
     vim \
-    emacs \
- && rm -rf /var/lib/apt/lists/*
+    emacs 
 
+# nodejs is needed by jupyterlab for widgets
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN apt-get install -y nodejs
+RUN rm -rf /var/lib/apt/lists/*
 
 # add our 'user' with password 'docker'
 RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
@@ -111,11 +114,22 @@ RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
        --spec "%gcc+mpi+mfem ^python@3.6.3" \
        --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
-# install jupyter, matplotlib, etc via pip
+# install jupyter, matplotlib, cinema, etc via pip
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
-    jupyter matplotlib bash_kernel scipy scikit-learn torch
+    bash_kernel \
+    jupyter \
+    jupyterlab \
+    matplotlib \
+    cinemasci \
+    scipy \
+    scikit-learn \
+    ipympl
+
+# finish jupyter lab setup
+RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/jupyter \
+    labextension install @jupyter-widgets/jupyterlab-manager
 
 # configure a debug build with cmake
 RUN cd /home/user/ascent && mkdir build-debug
@@ -165,8 +179,13 @@ RUN echo "export PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> 
 RUN cp /home/user/ascent_docker_setup_env.sh ascent_docker_run_jupyter.sh
 RUN echo "jupyter notebook --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyter.sh
 
+# gen script that allows us to easily run jupyter lab
+RUN cp /home/user/ascent_docker_setup_env.sh ascent_docker_run_jupyterlab.sh
+RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyterlab.sh
+
 #make sure helpers are executable
 RUN chmod 777 /home/user/ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyter.sh
+RUN chmod 777 /home/user/ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyterlab.sh
 RUN chmod 777 /home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/*/cleanup.sh
 
 # open port 8000, for use as http server

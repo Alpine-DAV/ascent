@@ -58,6 +58,41 @@ Source distributions for Ascent are hosted on github:
 https://github.com/Alpine-DAV/ascent/releases
 
 
+v0.6.0
+-------
+
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.6.0/ascent-v0.6.0-src-with-blt.tar.gz>`_
+
+Highlights
++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Added
+~~~~~~~~~
+
+* Added support for Devil Ray (high-order) ray tracer
+* Added vector operations
+  * composite vector (create vector from three scalars)
+  * vector component (extract scalar component)
+* Allow no refinement for high-order meshes
+* Added support for multiple topologies (e.g., volume and particles in the same mesh)
+* Added support for AMR Nesting relationships (Blueprint Nestsets)
+* Added optional ``num_files`` parameter to the Relay Extract. See the [Relay Extract Docs](https://ascent.readthedocs.io/en/latest/Actions/Extracts.html#relay) for more details.
+* Added an AscentViewer Widget for Jupyter
+* Added new CUDA device link logic to help bottle CUDA dependencies for downstream use
+* Added support for `exa` prefix style filters
+
+
+Changed
+~~~~~~~~~
+* Modified Cinema output so it can be viewed without a webserver
+* Removed default behavior of publishing individual vector components when vectors were three separate arrays. This can be achieved by using the vector component filter
+* Changed Docker Images to leverage Jupyter lab
+* Tutorial updates
+* Rendering improvements
+
+
 v0.5.1
 -------
 

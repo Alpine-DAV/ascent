@@ -2209,16 +2209,10 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
 }
 
 void paint_nestsets(const std::string nestset_name,
+                    const std::string topo_name,
                     conduit::Node &dom,
                     conduit::Node &field)
 {
-  if(!dom.has_path("nestsets/"+nestset_name))
-  {
-    ASCENT_ERROR("No nestset with that name");
-  }
-
-  conduit::Node &nestset = dom["nestsets/"+nestset_name];
-  const std::string topo_name = nestset["topology"].as_string();
   const conduit::Node &topo = dom["topologies/"+topo_name];
 
   if(topo["type"].as_string() == "unstructured")
@@ -2252,7 +2246,7 @@ void paint_nestsets(const std::string nestset_name,
       if(coords.has_path("dims/k"))
       {
         is_3d = true;
-        el_dims[2] = coords["dims/k"].to_int32();
+        el_dims[2] = coords["dims/k"].to_int32() -1;
       }
     }
     else if(coords["type"].as_string() == "rectilinear")
@@ -2270,7 +2264,6 @@ void paint_nestsets(const std::string nestset_name,
       ASCENT_ERROR("unknown coord type");
     }
   }
-  // ok, now paint
 
   conduit::int32 field_size = el_dims[0] * el_dims[1];
   if(is_3d)
@@ -2302,6 +2295,19 @@ void paint_nestsets(const std::string nestset_name,
       levels[i] = 0;
     }
   }
+  // its possible at the coarsest level that there are
+  // no windows and thus no nestsets. We need to add
+  // an all zero field so that ghost field is consistent
+  // across all domains
+  if(!dom.has_path("nestsets/"+nestset_name))
+  {
+    // we alrady init'd it to zero if its a new field, so we are good to go
+    // if it wasnt' a new field, it should already have the correct values
+    return;
+  }
+
+  // ok, now paint
+  conduit::Node &nestset = dom["nestsets/"+nestset_name];
 
   const int windows = nestset["windows"].number_of_children();
 

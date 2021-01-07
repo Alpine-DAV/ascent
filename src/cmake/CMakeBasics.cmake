@@ -99,6 +99,18 @@ else()
 endif()
 
 ################################
+# Tests Option.
+# save option here to defend if
+# a TPL flips it a part a
+# cmake import
+################################
+if(ENABLE_TESTS)
+    set(ASCENT_ENABLE_TESTS ON)
+else()
+    set(ASCENT_ENABLE_TESTS OFF)
+endif()
+
+################################
 # Win32 Output Dir Settings
 ################################
 # On windows we place all of the libs and execs in one dir.
@@ -122,7 +134,7 @@ if(ENABLE_TESTS)
 endif()
 
 ##############################################################################
-# Try to extract the current git sha
+# Try to extract the current git sha and other info
 #
 # This solution is derived from:
 #  http://stackoverflow.com/a/21028226/203071
@@ -131,21 +143,49 @@ endif()
 # git HEAD changes or when a branch is checked out, unless a change causes
 # cmake to reconfigure.
 #
-# However, this limited approach will still be useful in many cases,
-# including building and for installing ascent as a tpl
+# However, this limited approach will still be useful in many cases, 
+# including building and for installing  conduit as a tpl
 #
 ##############################################################################
 find_package(Git)
 if(GIT_FOUND)
-  message(STATUS "git executable: ${GIT_EXECUTABLE}")
-  execute_process(COMMAND
-    "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    OUTPUT_VARIABLE CONDUIT_GIT_SHA1
-    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message(STATUS "Repo SHA1:" ${CONDUIT_GIT_SHA1})
-endif()
+    message(STATUS "git executable: ${GIT_EXECUTABLE}")
+    # try to get sha1
+    execute_process(COMMAND
+        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE ASCENT_GIT_SHA1
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+    if("${ASCENT_GIT_SHA1}" STREQUAL "")
+       set(ASCENT_GIT_SHA1 "unknown")
+    endif()
+    message(STATUS "git SHA1: " ${ASCENT_GIT_SHA1})
+
+    execute_process(COMMAND
+        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=5 --dirty
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE ASCENT_GIT_SHA1_ABBREV
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if("${ASCENT_GIT_SHA1_ABBREV}" STREQUAL "")
+       set(ASCENT_GIT_SHA1_ABBREV "unknown")
+    endif()
+    message(STATUS "git SHA1-abbrev: " ${ASCENT_GIT_SHA1_ABBREV})
+
+    # try to get tag
+    execute_process(COMMAND
+            "${GIT_EXECUTABLE}" describe --exact-match --tags
+            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+            OUTPUT_VARIABLE ASCENT_GIT_TAG
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if("${ASCENT_GIT_TAG}" STREQUAL "")
+       set(ASCENT_GIT_TAG "unknown")
+    endif()
+    message(STATUS "git tag: " ${ASCENT_GIT_TAG})
+  
+endif()
 
 ###############################################################################
 # This macro converts a cmake path to a platform specific string literal

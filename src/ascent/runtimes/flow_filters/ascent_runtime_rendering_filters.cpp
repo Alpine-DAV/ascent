@@ -130,6 +130,7 @@ check_color_table_surprises(const conduit::Node &color_table)
   std::vector<std::string> valid_paths;
   valid_paths.push_back("name");
   valid_paths.push_back("reverse");
+  valid_paths.push_back("annotation");
 
   std::vector<std::string> ignore_paths;
   ignore_paths.push_back("control_points");
@@ -187,6 +188,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
   r_valid_paths.push_back("shading");
+  r_valid_paths.push_back("use_original_bounds");
 
   for(int i = 0; i < num_renders; ++i)
   {
@@ -443,6 +445,11 @@ public:
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
 
+  std::string db_path()
+  {
+       return conduit::utils::join_file_path(m_base_path, m_image_name);
+  }
+
   void set_bounds(vtkm::Bounds &bounds)
   {
     if(bounds != m_bounds)
@@ -466,7 +473,7 @@ public:
     }
 
     // add a database path
-    m_db_path = conduit::utils::join_file_path(m_base_path, m_image_name);
+    m_db_path = db_path();
 
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
@@ -518,9 +525,10 @@ public:
 
     for(int i = 0; i < num_renders; ++i)
     {
+      vtkh::Render tmp = render.Copy();
       std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
-      render.SetImageName(image_name);
+      tmp.SetImageName(image_name);
       // we have to make a copy of the camera because
       // zoom is additive for some reason
       vtkm::rendering::Camera camera = m_cameras[i];
@@ -532,8 +540,8 @@ public:
         camera.Zoom(vtkm_zoom);
       }
 
-      render.SetCamera(camera);
-      renders->push_back(render);
+      tmp.SetCamera(camera);
+      renders->push_back(tmp);
     }
   }
 
@@ -833,6 +841,8 @@ DefaultRender::execute()
       cycle = (*meta)["cycle"].as_int32();
     }
 
+    // figure out if we need the original bounds for the scene
+    bool needs_original_bounds = false;
     if(params().has_path("renders"))
     {
       const conduit::Node renders_node = params()["renders"];
@@ -840,7 +850,54 @@ DefaultRender::execute()
 
       for(int i = 0; i < num_renders; ++i)
       {
-        const conduit::Node render_node = renders_node.child(i);
+        const conduit::Node &render_node = renders_node.child(i);
+        if(render_node.has_path("use_original_bounds"))
+        {
+          if(render_node["use_original_bounds"].as_string() == "true")
+          {
+            needs_original_bounds = true;
+            break;
+          }
+        }
+      }
+    }
+    else
+    {
+      if(params().has_path("use_original_bounds"))
+      {
+        if(params()["use_original_bounds"].as_string() == "true")
+        {
+          needs_original_bounds = true;
+        }
+      }
+    }
+
+    vtkm::Bounds original_bounds;
+    if(needs_original_bounds)
+    {
+      DataObject *source
+        = graph().workspace().registry().fetch<DataObject>("source_object");
+      original_bounds = source->as_vtkh_collection()->global_bounds();
+    }
+
+
+    if(params().has_path("renders"))
+    {
+      const conduit::Node &renders_node = params()["renders"];
+      const int num_renders = renders_node.number_of_children();
+
+      for(int i = 0; i < num_renders; ++i)
+      {
+        const conduit::Node &render_node = renders_node.child(i);
+        vtkm::Bounds scene_bounds = *bounds;
+        if(render_node.has_path("use_original_bounds"))
+        {
+          if(render_node["use_original_bounds"].as_string() == "true")
+          {
+            scene_bounds = original_bounds;
+          }
+        }
+
         std::string image_name;
 
         bool is_cinema = false;
@@ -879,13 +936,27 @@ DefaultRender::execute()
           {
             detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name, output_path);
           }
+
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
+          // add this to the extract results in the registry
+          if(!graph().workspace().registry().has_entry("extract_list"))
+          {
+            conduit::Node *extract_list = new conduit::Node();
+            graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+          }
+
+          conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+          Node &einfo = extract_list->append();
+          einfo["type"] = "cinema";
+          einfo["path"] = manager.db_path();
 
           int image_width;
           int image_height;
           parse_image_dims(render_node, image_width, image_height);
 
-          manager.set_bounds(*bounds);
+          manager.set_bounds(scene_bounds);
           manager.add_time_step();
           manager.fill_renders(renders, render_node);
           manager.write_metadata();
@@ -916,7 +987,7 @@ DefaultRender::execute()
           }
 
           vtkh::Render render = detail::parse_render(render_node,
-                                                     *bounds,
+                                                     scene_bounds,
                                                      image_name);
           renders->push_back(render);
         }
@@ -967,6 +1038,20 @@ DefaultRender::execute()
                                   1024,
                                   *bounds,
                                   image_name);
+
+      vtkm::Bounds scene_bounds = *bounds;
+      if(params().has_path("use_original_bounds"))
+      {
+        if(params()["use_original_bounds"].as_string() == "true")
+        {
+          scene_bounds = original_bounds;
+        }
+      }
+
+      vtkh::Render render = vtkh::MakeRender(1024,
+                                             1024,
+                                             scene_bounds,
+                                             image_name);
 
       }
       renders->push_back(render);
@@ -1289,7 +1374,17 @@ CreatePlot::execute()
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
-      vtkm::cont::ColorTable color_table =  parse_color_table(plot_params["color_table"]);
+      vtkm::cont::ColorTable color_table = parse_color_table(plot_params["color_table"]);
+      if(type != "mesh")
+      {
+        if(plot_params["color_table"].has_path("annotation"))
+        {
+           if(plot_params["color_table/annotation"].as_string() == "false")
+           {
+              renderer->DisableColorBar();
+           }
+        }
+      }
       renderer->SetColorTable(color_table);
     }
 

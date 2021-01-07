@@ -87,6 +87,7 @@ nsteps = 10
 time = 0.0
 delta_time = 0.5
 
+info = conduit.Node()
 for step in range(nsteps):
     # call helper that generates a gyre time varying example mesh.
     # gyre ref :https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/examples.html
@@ -105,13 +106,16 @@ for step in range(nsteps):
     
     # execute the actions
     a.execute(actions)
-    
+
+    # retrieve the info node that contains the query results
+    ts_info = conduit.Node()
+    a.info(ts_info)
+
+    # add to our running info
+    info["expressions"].update(ts_info["expressions"])
+
     # update time
     time = time + delta_time
-    
-# retrieve the info node that contains the query results
-info = conduit.Node()
-a.info(info)
 
 # close ascent
 a.close()

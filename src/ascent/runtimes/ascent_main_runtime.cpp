@@ -1363,8 +1363,10 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
   } // each scene
 }
 
+//-----------------------------------------------------------------------------
 void
-AscentRuntime::FindRenders(conduit::Node &image_params, conduit::Node& image_list)
+AscentRuntime::FindRenders(conduit::Node &image_params,
+                           conduit::Node& image_list)
 {
     image_list.reset();
 
@@ -1390,7 +1392,12 @@ AscentRuntime::FindRenders(conduit::Node &image_params, conduit::Node& image_lis
 void
 AscentRuntime::BuildGraph(const conduit::Node &actions)
 {
-  // exection will be enforced in the following order:
+  // make sure to clean helpers that we use
+  // to build the graph
+  m_connections.reset();
+  m_scene_connections.reset();
+
+  // execution will be enforced in the following order:
   conduit::Node queries;
   conduit::Node triggers;
   conduit::Node pipelines;
@@ -1545,11 +1552,15 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         PopulateMetadata(); // add metadata so filters can access it
 
+        // add the source to the registry so we can access information
+        // about the original mesh (like bounds)
+        w.registry().add<DataObject>("source_object", &m_data_object,1);
+
         w.info(m_info["flow_graph"]);
         m_info["actions"] = actions;
-        //w.print();
-        //std::cout<<w.graph().to_dot();
-        w.graph().save_dot_html("ascent_flow_graph.html");
+        // w.print();
+        // std::cout<<w.graph().to_dot();
+        // w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         Node *meta = w.registry().fetch<Node>("metadata");
@@ -1574,11 +1585,29 @@ AscentRuntime::Execute(const conduit::Node &actions)
         ascent::about(msg["about"]);
         m_web_interface.PushMessage(msg);
 
+        // add render results to info
         Node render_file_names;
         Node renders;
         FindRenders(renders, render_file_names);
-        m_info["images"] = renders;
 
+        if(renders.number_of_children() > 0)
+        {
+            m_info["images"] = renders;
+        }
+
+        // add extract results to info
+        if(w.registry().has_entry("extract_list"))
+        {
+            Node *extracts_list = w.registry().fetch<Node>("extract_list");
+            if(extracts_list->number_of_children() > 0)
+            {
+                m_info["extracts"].set(*extracts_list);
+            }
+            // always clear after fetch.
+            extracts_list->reset();
+        }
+
+        // add expression results to info
         const conduit::Node &expression_cache =
           runtime::expressions::ExpressionEval::get_cache();
 
@@ -1587,6 +1616,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
           runtime::expressions::ExpressionEval::get_last(m_info["expressions"]);
         }
 
+        // add flow graphviz details to info
         m_info["flow_graph_dot"]      = w.graph().to_dot();
         m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
 
@@ -1619,7 +1649,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
     catch(std::exception &e)
     {
       w.reset();
-      ASCENT_ERROR("Execution failed with: "<<e.what());
+      std::cerr<<"Execution failed with exception: "<<e.what()<<"\n";
     }
     catch(...)
     {
@@ -1807,12 +1837,7 @@ void AscentRuntime::PaintNestsets()
         continue;
       }
 
-      std::string nest_name =  topo_nestsets[topo_name];
-
-      if(!dom.has_path("nestsets/"+nest_name))
-      {
-        continue;
-      }
+      std::string nest_name = topo_nestsets[topo_name];
 
       if(has_ghost)
       {
@@ -1836,7 +1861,7 @@ void AscentRuntime::PaintNestsets()
 
           conduit::Node &ghost_field = dom[ghost_path];
 
-          runtime::expressions::paint_nestsets(nest_name, dom, ghost_field);
+          runtime::expressions::paint_nestsets(nest_name, topo_name,  dom, ghost_field);
         }
         else
         {
@@ -1850,7 +1875,8 @@ void AscentRuntime::PaintNestsets()
         // there are no ghosts, so we have to build a new field
         std::string ghost_name = topo_name + "_ghosts";
         conduit::Node &field = dom["fields/" + ghost_name];
-        runtime::expressions::paint_nestsets(nest_name, dom, field);
+        field.reset();
+        runtime::expressions::paint_nestsets(nest_name, topo_name, dom, field);
         new_ghosts.insert(ghost_name);
       }
     }

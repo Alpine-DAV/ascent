@@ -272,6 +272,7 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   c.far = zoom*25;
   c.angle = M_PI/6;
 
+  /* New version that didn't work
   double theta = 2 * M_PI * (thetaPos / (numTheta - 1.0));
   double phi = acos(1 - 2 * (phiPos / (numPhi - 1)));
 
@@ -286,8 +287,9 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   c.position[0] = (zoom * 3 * radius * x) + xmid;
   c.position[1] = (zoom * 3 * radius * y) + ymid;
   c.position[2] = (zoom * 3 * radius * z) + zmid;
+  */
 
-  /* This is our old version, saved just in case 
+  ///* This is our old version, saved just in case 
   double theta = (thetaPos / (numTheta - 1.0)) * M_PI ;
   double phi = (phiPos / (numPhi - 1.0)) * M_PI * 2.0; 
   double xm = (x0 + x1) / 2.0;
@@ -297,7 +299,7 @@ GetCamera3(double x0, double x1, double y0, double y1, double z0, double z1, dou
   c.position[0] = (  zoom*3*radius * sin(theta) * cos(phi)  + xm );
   c.position[1] = (  zoom*3*radius * sin(theta) * sin(phi)  + ym );
   c.position[2] = (  zoom*3*radius * cos(theta)  + zm );
-  */
+  //*/
 
   //check lookat vs middle
   //cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
@@ -456,7 +458,7 @@ CameraSimplex::execute()
     vtkm::Float32 xb = vtkm::Float32(b.X.Length());
     vtkm::Float32 yb = vtkm::Float32(b.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(b.Z.Length());
-    //double bounds[3] = {(double)xb, (double)yb, (double)zb};
+    float bounds[3] = {(float)xb, (float)yb, (float)zb};
     //cout << "x y z bounds " << xb << " " << yb << " " << zb << endl;
     vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
     //cout << "radius " << radius << endl;
@@ -493,54 +495,133 @@ CameraSimplex::execute()
     int losing_j = -1;
 
     // New theta and phi camera code
-    int numTheta = 100;
-    int numPhi = 100;
+    //int numTheta = 100;
+    //int numPhi = 100;
 
-/* 
-    // Code for random images
-    ofstream randomFile;
-    randomFile.open("random.txt");
+///* 
+    // Code for 20 images from spiral, must change sample from 0->20 in the yaml file 
+    int sample = (int)params()["sample"].as_int64();
+    
+    cout << "Getting picture for sample: " << sample << endl;
 
-    srand(time(NULL));
-    int rTheta;
-    int rPhi;
+    Camera cam = GetCamera(sample, samples, radius, focus, bounds);  
 
-    for (int i = 0 ; i < 20 ; ++i) {
-        rTheta = rand() % 100;
-        rPhi = rand() % 100; 
-
-        randomFile << "rTheta: " << rTheta << ", rPhi: " << rPhi << endl;
-
-        Camera cam = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
-            	        radius, rTheta, numTheta, rPhi, numPhi, focus); 
-
-        vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+    vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
                                       (float)cam.position[1],
                                       (float)cam.position[2]};
 
-        camera->SetPosition(postest);
-        vtkh::ScalarRenderer tracer;
-        tracer.SetWidth(width);
-        tracer.SetHeight(height);
-        tracer.SetInput(data); //vtkh dataset by toponame
-        tracer.SetCamera(*camera);
-        tracer.Update();
+    camera->SetPosition(postest);
+    vtkh::ScalarRenderer tracer;
+    tracer.SetWidth(width);
+    tracer.SetHeight(height);
+    tracer.SetInput(&dataset); //vtkh dataset by toponame
+    tracer.SetCamera(*camera);
+    tracer.Update();
 
-        vtkh::DataSet *output = tracer.GetOutput();
+    vtkh::DataSet *output = tracer.GetOutput();
 
-        float score = calculateMetric(output, metric, field_name,
+    float score = calculateMetric(output, metric, field_name,
                  		     triangles, height, width, cam);
 
-        //cout << "Score at (" << rTheta << ", " << rPhi << ") is " << score << endl << endl;
-             	
+//*/
+
+/*
+    // Code for getting all scores from the 20 image spirals
+    
+    int metric_num = 0;
+    string metrics[] = {"data_entropy", "depth_entropy", "max_depth",
+	                  "pb", "projected_area", "viewpoint_entropy",
+			  "visibility_ratio", "visible_triangles", "vkl"};
+    
+    for (metric_num ; metric_num < 9 ; metric_num++) {
+      metric = metrics[metric_num];
+      string filename = metrics[metric_num];
+      filename += "_scores.txt"; 
+
+      ofstream myfile;
+      myfile.open(filename);
+       
+      double known_min = DBL_MAX;
+      double known_max = -DBL_MAX;
+      int number = 0;
+
+      cout << endl << "Gathering max and min data for: " << metric << endl;
+
+      // First loop, find min and max
+      for (int i = 0 ; i < 20 ; ++i) {
+
+          Camera cam = GetCamera(i, samples, radius, focus, bounds);  
+
+          vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+                                    (float)cam.position[1],
+                                    (float)cam.position[2]};
+  
+          camera->SetPosition(postest);
+          vtkh::ScalarRenderer tracer;
+          tracer.SetWidth(width);
+          tracer.SetHeight(height);
+          tracer.SetInput(&dataset); //vtkh dataset by toponame
+          tracer.SetCamera(*camera);
+          tracer.Update();
+
+          vtkh::DataSet *output = tracer.GetOutput();
+
+          float score = calculateMetric(output, metric, field_name,
+  		          triangles, height, width, cam);
+
+   	  if (score < known_min) {
+            known_min = score;
+	  }
+
+	  if (score > known_max) {
+            known_max = score;
+	  }
+
+          cout << "Natural score at (" << winning_i << ", " << winning_j << ") is " << score << endl;
+      }
+
+      cout << endl << "Writing score file for: " << metric << endl;
+
+      // Second loop, put relative scores in file
+      for (i = 0 ; i < 20 ; ++i) {
+
+          Camera cam = GetCamera(i, samples, radius, focus, bounds);  
+
+          vtkm::Vec<vtkm::Float32, 3> postest{(float)cam.position[0],
+                                    (float)cam.position[1],
+                                    (float)cam.position[2]};
+
+          camera->SetPosition(postest);
+          vtkh::ScalarRenderer tracer;
+          tracer.SetWidth(width);
+          tracer.SetHeight(height);
+          tracer.SetInput(&dataset); //vtkh dataset by toponame
+          tracer.SetCamera(*camera);
+          tracer.Update();
+
+          vtkh::DataSet *output = tracer.GetOutput();
+
+          float score = calculateMetric(output, metric, field_name,
+	  	          triangles, height, width, cam);
+
+          float relative = (score - known_min) / (known_max - known_min);
+	  float result = relative * 10;
+
+          myfile << result << endl;
+          
+          cout << "Relative score at (" << winning_i << ", " << winning_j << ") is " << result << endl;
+
+          number += 377;
+      }
+
+      myfile.close();
+
     }
 
-    randomFile.close();
-    
-*/
+*/ 
 
-///*
-    // Commenting out main block to get 27 scores
+/*
+    // Main block for theta and phi
     cout << "Gathering data for metric: " << metric.c_str() << endl;
 
     // Check for i and j before main loop
@@ -655,12 +736,12 @@ CameraSimplex::execute()
       fclose(datafile);
   }
 
-//*/ 
+*/ 
 
     /*================ End Scalar Renderer  ======================*/
 
 /*
-    // Code for scores for quizzes
+    // Code for scores for quizzes with theta and phi
   
     	
     int metric_num = 0;
@@ -766,27 +847,11 @@ CameraSimplex::execute()
 
 */
 
-/*
-    // Getting all pictures	
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
 
-    int cycle = -1;
-
-    if (meta->has_path("cycle")) {
-      cycle = (*meta)["cycle"].to_int32();
-    }
-
-    int cycle_i = cycle / 10;
-    int cycle_j = cycle % 10;
-
-    cout << "  cycle is (" << cycle_i << ", " << cycle_j << ")" << endl;
-
-    winning_i = cycle_i;
-    winning_j = cycle_j;
-*/
-
-    Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
-		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);
+    //Camera best_c = GetCamera3(xMin, xMax, yMin, yMax, zMin, zMax,
+    //		       	        radius, winning_i, numTheta, winning_j, numPhi, focus);
+    
+    Camera best_c = GetCamera(sample, samples, radius, focus, bounds);  
 
     vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 

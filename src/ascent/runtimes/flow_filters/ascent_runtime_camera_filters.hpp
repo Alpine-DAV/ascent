@@ -130,7 +130,7 @@ class Camera
     Matrix          DeviceTransform();
 };
 
-Camera GetCamera(int frame, int nframes);
+Camera GetCamera(int frame, int nframes, double radius, double *lookat, float *bounds);
 //-----------------------------------------------------------------------------
 //Edge Class
 //-----------------------------------------------------------------------------
