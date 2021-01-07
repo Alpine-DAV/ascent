@@ -51,6 +51,7 @@
 
 #include "ascent_runtime_conduit_to_vtkm_parsing.hpp"
 
+#include "ascent_runtime_param_check.hpp"
 #include <ascent_logging.hpp>
 using namespace conduit;
 

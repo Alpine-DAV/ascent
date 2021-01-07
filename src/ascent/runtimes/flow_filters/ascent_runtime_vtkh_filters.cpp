@@ -138,43 +138,6 @@ namespace filters
 {
 
 
-
-double get_scalar(const conduit::Node &node, DataObject *dataset)
-{
-  double scalar = 0.;
-  // check to see if this is an expression
-  if(node.dtype().is_string())
-  {
-    std::cout<<"Trying expression\n";
-    // TODO: we want to zero copy this
-    conduit::Node * bp_dset = dataset->as_low_order_bp().get();
-    expressions::ExpressionEval eval(bp_dset);
-    std::string expr = node.as_string();
-    std::cout<<"expression "<<expr<<"\n";
-    conduit::Node res = eval.evaluate(expr);
-    res.print();
-    if(!res.has_path("value"))
-    {
-      ASCENT_ERROR("expression '"<<expr
-                   <<"': failed to extract a value from the result."
-                   <<" "<<res.to_yaml());
-    }
-
-    if(res["value"].dtype().number_of_elements() != 1)
-    {
-      ASCENT_ERROR("expression '"<<expr
-                   <<"' resulted in multiple values."
-                   <<" Expected scalar. "<<res.to_yaml());
-    }
-    scalar = res["value"].to_float64();
-  }
-  else
-  {
-    scalar = node.to_float64();
-  }
-  return scalar;
-}
-
 VTKHMarchingCubes::VTKHMarchingCubes()
 :Filter()
 {
@@ -479,7 +442,7 @@ VTKH3Slice::execute()
     const float eps = 1e-5; // ensure that the slice is always inside the data set
     if(params().has_path("x_offset"))
     {
-      float offset = params()["x_offset"].to_float32();
+      float offset = get_float32(params()["x_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -488,7 +451,7 @@ VTKH3Slice::execute()
 
     if(params().has_path("y_offset"))
     {
-      float offset = params()["y_offset"].to_float32();
+      float offset = get_float32(params()["y_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -497,7 +460,7 @@ VTKH3Slice::execute()
 
     if(params().has_path("z_offset"))
     {
-      float offset = params()["z_offset"].to_float32();
+      float offset = get_float32(params()["z_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -733,19 +696,19 @@ VTKHSlice::execute()
 
     if(n_point.has_path("x_offset"))
     {
-      float offset = n_point["x_offset"].to_float32();
+      float offset = get_float32(params()["x_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
 
-      offset = n_point["y_offset"].to_float32();
+      offset = get_float32(params()["y_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
 
-      offset = n_point["z_offset"].to_float32();
+      offset = get_float32(params()["z_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -753,14 +716,15 @@ VTKHSlice::execute()
     }
     else
     {
-      point[0] = n_point["x"].to_float32();
-      point[1] = n_point["y"].to_float32();
-      point[2] = n_point["z"].to_float32();
+      point[0] = get_float32(n_point["x"], data_object);
+      point[1] = get_float32(n_point["y"], data_object);
+      point[2] = get_float32(n_point["z"], data_object);
     }
 
-    vtkm::Vec<vtkm::Float32,3> v_normal(n_normal["x"].to_float32(),
-                                        n_normal["y"].to_float32(),
-                                        n_normal["z"].to_float32());
+    Vec3f v_normal;
+    v_normal[0] = get_float32(n_normal["x"], data_object);
+    v_normal[1] = get_float32(n_normal["y"], data_object);
+    v_normal[2] = get_float32(n_normal["z"], data_object);
 
     slicer.AddPlane(point, v_normal);
     slicer.Update();
@@ -971,12 +935,8 @@ VTKHThreshold::execute()
     const Node &n_max_val = params()["max_value"];
 
     // convert to contig doubles
-    //double min_val = n_min_val.to_float64();
-    double min_val = get_scalar(n_min_val, data_object);
-    //double max_val = n_max_val.to_float64();
-    double max_val = get_scalar(n_max_val, data_object);
-    std::cout<<"Min value "<<min_val<<"\n";
-    std::cout<<"Max value "<<max_val<<"\n";
+    double min_val = get_float64(n_min_val, data_object);
+    double max_val = get_float64(n_max_val, data_object);
     thresher.SetUpperThreshold(max_val);
     thresher.SetLowerThreshold(min_val);
 
@@ -1171,22 +1131,22 @@ VTKHClip::execute()
       const Node &sphere = params()["sphere"];
       double center[3];
 
-      center[0] = sphere["center/x"].to_float64();
-      center[1] = sphere["center/y"].to_float64();
-      center[2] = sphere["center/z"].to_float64();
-      double radius = sphere["radius"].to_float64();
+      center[0] = get_float64(sphere["center/x"], data_object);
+      center[1] = get_float64(sphere["center/y"], data_object);
+      center[2] = get_float64(sphere["center/z"], data_object);
+      double radius = get_float64(sphere["radius"], data_object);
       clipper.SetSphereClip(center, radius);
     }
     else if(params().has_path("box"))
     {
       const Node &box = params()["box"];
       vtkm::Bounds bounds;
-      bounds.X.Min= box["min/x"].to_float64();
-      bounds.Y.Min= box["min/y"].to_float64();
-      bounds.Z.Min= box["min/z"].to_float64();
-      bounds.X.Max = box["max/x"].to_float64();
-      bounds.Y.Max = box["max/y"].to_float64();
-      bounds.Z.Max = box["max/z"].to_float64();
+      bounds.X.Min= get_float64(box["min/x"], data_object);
+      bounds.Y.Min= get_float64(box["min/y"], data_object);
+      bounds.Z.Min= get_float64(box["min/z"], data_object);
+      bounds.X.Max = get_float64(box["max/x"], data_object);
+      bounds.Y.Max = get_float64(box["max/y"], data_object);
+      bounds.Z.Max = get_float64(box["max/z"], data_object);
       clipper.SetBoxClip(bounds);
     }
     else if(params().has_path("plane"))
@@ -1194,12 +1154,12 @@ VTKHClip::execute()
       const Node &plane= params()["plane"];
       double point[3], normal[3];;
 
-      point[0] = plane["point/x"].to_float64();
-      point[1] = plane["point/y"].to_float64();
-      point[2] = plane["point/z"].to_float64();
-      normal[0] = plane["normal/x"].to_float64();
-      normal[1] = plane["normal/y"].to_float64();
-      normal[2] = plane["normal/z"].to_float64();
+      point[0] =  get_float64(plane["point/x"], data_object);
+      point[1] =  get_float64(plane["point/y"], data_object);
+      point[2] =  get_float64(plane["point/z"], data_object);
+      normal[0] = get_float64(plane["normal/x"], data_object);
+      normal[1] = get_float64(plane["normal/y"], data_object);
+      normal[2] = get_float64(plane["normal/z"], data_object);
       clipper.SetPlaneClip(point, normal);
     }
     else if(params().has_path("multi_plane"))
@@ -1207,18 +1167,18 @@ VTKHClip::execute()
       const Node &plane= params()["multi_plane"];
       double point1[3], normal1[3], point2[3], normal2[3];
 
-      point1[0] = plane["point1/x"].to_float64();
-      point1[1] = plane["point1/y"].to_float64();
-      point1[2] = plane["point1/z"].to_float64();
-      normal1[0] = plane["normal1/x"].to_float64();
-      normal1[1] = plane["normal1/y"].to_float64();
-      normal1[2] = plane["normal1/z"].to_float64();
-      point2[0] = plane["point2/x"].to_float64();
-      point2[1] = plane["point2/y"].to_float64();
-      point2[2] = plane["point2/z"].to_float64();
-      normal2[0] = plane["normal2/x"].to_float64();
-      normal2[1] = plane["normal2/y"].to_float64();
-      normal2[2] = plane["normal2/z"].to_float64();
+      point1[0] = get_float64(plane["point1/x"], data_object);
+      point1[1] = get_float64(plane["point1/y"], data_object);
+      point1[2] = get_float64(plane["point1/z"], data_object);
+      normal1[0] = get_float64(plane["normal1/x"], data_object);
+      normal1[1] = get_float64(plane["normal1/y"], data_object);
+      normal1[2] = get_float64(plane["normal1/z"], data_object);
+      point2[0] = get_float64(plane["point2/x"], data_object);
+      point2[1] = get_float64(plane["point2/y"], data_object);
+      point2[2] = get_float64(plane["point2/z"], data_object);
+      normal2[0] = get_float64(plane["normal2/x"], data_object);
+      normal2[1] = get_float64(plane["normal2/y"], data_object);
+      normal2[2] = get_float64(plane["normal2/z"], data_object);
       clipper.Set2PlaneClip(point1, normal1, point2, normal2);
     }
 
@@ -1329,7 +1289,7 @@ VTKHClipWithField::execute()
       }
     }
 
-    vtkm::Float64 clip_value = params()["clip_value"].to_float64();
+    vtkm::Float64 clip_value = get_float64(params()["clip_value"], data_object);
 
     clipper.SetField(field_name);
     clipper.SetClipValue(clip_value);
@@ -1425,8 +1385,8 @@ VTKHIsoVolume::execute()
     clipper.SetInput(&data);
 
     vtkm::Range clip_range;
-    clip_range.Min = params()["min_value"].to_float64();
-    clip_range.Max = params()["max_value"].to_float64();
+    clip_range.Min = get_float64(params()["min_value"], data_object);
+    clip_range.Max = get_float64(params()["max_value"], data_object);
 
     clipper.SetField(field_name);
     clipper.SetRange(clip_range);
@@ -1640,7 +1600,8 @@ VTKHLog::execute()
 
     if(params().has_path("clamp_min_value"))
     {
-      logger.SetClampMin(params()["clamp_min_value"].to_float32());
+      double min_value = get_float64(params()["clamp_min_value"], data_object);
+      logger.SetClampMin(min_value);
       logger.SetClampToMin(true);
     }
 
@@ -1839,7 +1800,7 @@ VTKHHistSampling::execute()
     float sample_rate = .1f;
     if(params().has_path("sample_rate"))
     {
-      sample_rate = params()["sample_rate"].to_float32();
+      sample_rate = get_float32(params()["sample_rate"], data_object);
       if(sample_rate <= 0.f || sample_rate >= 1.f)
       {
         ASCENT_ERROR("vtkh_hist_sampling 'sample_rate' value '"<<sample_rate<<"'"
@@ -1851,7 +1812,7 @@ VTKHHistSampling::execute()
 
     if(params().has_path("bins"))
     {
-      bins = params()["bins"].to_int32();
+      bins = get_int32(params()["bins"], data_object);
       if(bins <= 0.f)
       {
         ASCENT_ERROR("vtkh_hist_sampling 'bins' value '"<<bins<<"'"
@@ -2483,7 +2444,7 @@ VTKHHistogram::execute()
     int bins = 128;
     if(params().has_path("bins"))
     {
-      bins = params()["bins"].to_int32();
+      bins = get_int32(params()["bins"], data_object);
     }
 
     vtkh::Histogram hist;
@@ -2577,11 +2538,11 @@ VTKHParticleAdvection::execute()
     int seeds = 500;
     if(params().has_path("seeds"))
     {
-      seeds = params()["seeds"].to_int32();
+      seeds = get_int32(params()["seeds"], data_object);
     }
     if(params().has_path("step_size"))
     {
-      step_size = params()["step_size"].to_float32();
+      step_size = get_float32(params()["step_size"], data_object);
     }
 
     vtkh::ParticleAdvection streamline;

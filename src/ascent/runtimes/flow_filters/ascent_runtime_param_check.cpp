@@ -50,6 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_runtime_param_check.hpp"
+#include "ascent_expression_eval.hpp"
 #include "expressions/ascent_expressions_ast.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
 #include "expressions/ascent_expressions_parser.hpp"
@@ -264,6 +265,78 @@ path_helper(std::vector<std::string> &paths,
 
 }
 
+template<typename T>
+T conduit_cast(const conduit::Node &node);
+
+template<>
+int conduit_cast<int>(const conduit::Node &node)
+{
+  return node.to_int32();
+}
+
+template<>
+double conduit_cast<double>(const conduit::Node &node)
+{
+  return node.to_float64();
+}
+
+template<>
+float conduit_cast<float>(const conduit::Node &node)
+{
+  return node.to_float32();
+}
+
+template<typename T>
+T get_value(const conduit::Node &node, DataObject *dataset)
+{
+  T value = 0;
+  // check to see if this is an expression
+  if(node.dtype().is_string())
+  {
+    std::cout<<"Trying expression\n";
+    // TODO: we want to zero copy this
+    conduit::Node * bp_dset = dataset->as_low_order_bp().get();
+    expressions::ExpressionEval eval(bp_dset);
+    std::string expr = node.as_string();
+    std::cout<<"expression "<<expr<<"\n";
+    conduit::Node res = eval.evaluate(expr);
+    res.print();
+    if(!res.has_path("value"))
+    {
+      ASCENT_ERROR("expression '"<<expr
+                   <<"': failed to extract a value from the result."
+                   <<" "<<res.to_yaml());
+    }
+
+    if(res["value"].dtype().number_of_elements() != 1)
+    {
+      ASCENT_ERROR("expression '"<<expr
+                   <<"' resulted in multiple values."
+                   <<" Expected scalar. "<<res.to_yaml());
+    }
+    value = res["value"].to_float64();
+  }
+  else
+  {
+    value = conduit_cast<T>(node);
+  }
+  return value;
+}
+
+double get_float64(const conduit::Node &node, DataObject *dataset)
+{
+  return get_value<double>(node, dataset);
+}
+
+float get_float32(const conduit::Node &node, DataObject *dataset)
+{
+  return get_value<float>(node, dataset);
+}
+
+int get_int32(const conduit::Node &node, DataObject *dataset)
+{
+  return get_value<int>(node, dataset);
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
