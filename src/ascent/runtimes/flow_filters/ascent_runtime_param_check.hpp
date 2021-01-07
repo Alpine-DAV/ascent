@@ -82,7 +82,8 @@ namespace filters
 bool ASCENT_API check_numeric(const std::string path,
                               const conduit::Node &params,
                               conduit::Node &info,
-                              bool required);
+                              bool required,
+                              bool supports_expressions = false);
 
 bool ASCENT_API check_string(const std::string path,
                              const conduit::Node &params,

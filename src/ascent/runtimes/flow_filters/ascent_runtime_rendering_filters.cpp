@@ -302,8 +302,7 @@ public:
 
 vtkh::Render parse_render(const conduit::Node &render_node,
                           vtkm::Bounds &bounds,
-                          const std::string &image_name,
-                          DataObject *data_object)
+                          const std::string &image_name)
 {
   int image_width;
   int image_height;
@@ -325,7 +324,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   if(render_node.has_path("camera"))
   {
     vtkm::rendering::Camera camera = render.GetCamera();
-    parse_camera(render_node["camera"], camera, data_object);
+    parse_camera(render_node["camera"], camera);
     render.SetCamera(camera);
   }
   if(render_node.has_path("shading"))

@@ -383,9 +383,9 @@ VTKH3Slice::verify_params(const conduit::Node &params,
     res &= check_string("topology",params, info, false);
     valid_paths.push_back("topology");
 
-    res &= check_numeric("x_offset",params, info, false);
-    res &= check_numeric("y_offset",params, info, false);
-    res &= check_numeric("z_offset",params, info, false);
+    res &= check_numeric("x_offset",params, info, false, true);
+    res &= check_numeric("y_offset",params, info, false, true);
+    res &= check_numeric("z_offset",params, info, false, true);
     res = check_string("topology",params, info, false) && res;
 
     valid_paths.push_back("x_offset");
@@ -615,15 +615,15 @@ VTKHSlice::verify_params(const conduit::Node &params,
 
     if(params.has_path("point/x"))
     {
-      res &= check_numeric("point/x",params, info, true);
-      res = check_numeric("point/y",params, info, true) && res;
-      res = check_numeric("point/z",params, info, true) && res;
+      res &= check_numeric("point/x",params, info, true, true);
+      res = check_numeric("point/y",params, info, true, true) && res;
+      res = check_numeric("point/z",params, info, true, true) && res;
     }
     else if(params.has_path("point/x_offset"))
     {
-      res &= check_numeric("point/x_offset",params, info, true);
-      res = check_numeric("point/y_offset",params, info, true) && res;
-      res = check_numeric("point/z_offset",params, info, true) && res;
+      res &= check_numeric("point/x_offset",params, info, true, true);
+      res = check_numeric("point/y_offset",params, info, true, true) && res;
+      res = check_numeric("point/z_offset",params, info, true, true) && res;
     }
     else
     {
@@ -634,9 +634,9 @@ VTKHSlice::verify_params(const conduit::Node &params,
 
     res = check_string("topology",params, info, false) && res;
 
-    res = check_numeric("normal/x",params, info, true) && res;
-    res = check_numeric("normal/y",params, info, true) && res;
-    res = check_numeric("normal/z",params, info, true) && res;
+    res = check_numeric("normal/x",params, info, true, true) && res;
+    res = check_numeric("normal/y",params, info, true, true) && res;
+    res = check_numeric("normal/z",params, info, true, true) && res;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("point/x");
@@ -776,8 +776,8 @@ VTKHGhostStripper::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
 
-    res = check_numeric("min_value",params, info, true) && res;
-    res = check_numeric("max_value",params, info, true) && res;
+    res = check_numeric("min_value",params, info, true, true) && res;
+    res = check_numeric("max_value",params, info, true, true) && res;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -884,8 +884,8 @@ VTKHThreshold::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
 
-    res = check_numeric("min_value",params, info, true) && res;
-    res = check_numeric("max_value",params, info, true) && res;
+    res = check_numeric("min_value",params, info, true, true) && res;
+    res = check_numeric("max_value",params, info, true, true) && res;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -1014,45 +1014,45 @@ VTKHClip::verify_params(const conduit::Node &params,
       res &= check_string("topology",params, info, false);
       if(params.has_child("sphere"))
       {
-         res = check_numeric("sphere/center/x",params, info, true) && res;
-         res = check_numeric("sphere/center/y",params, info, true) && res;
-         res = check_numeric("sphere/center/z",params, info, true) && res;
-         res = check_numeric("sphere/radius",params, info, true) && res;
+         res = check_numeric("sphere/center/x",params, info, true, true) && res;
+         res = check_numeric("sphere/center/y",params, info, true, true) && res;
+         res = check_numeric("sphere/center/z",params, info, true, true) && res;
+         res = check_numeric("sphere/radius",params, info, true, true) && res;
 
       }
       else if(params.has_child("box"))
       {
-         res = check_numeric("box/min/x",params, info, true) && res;
-         res = check_numeric("box/min/y",params, info, true) && res;
-         res = check_numeric("box/min/z",params, info, true) && res;
-         res = check_numeric("box/max/x",params, info, true) && res;
-         res = check_numeric("box/max/y",params, info, true) && res;
-         res = check_numeric("box/max/z",params, info, true) && res;
+         res = check_numeric("box/min/x",params, info, true, true) && res;
+         res = check_numeric("box/min/y",params, info, true, true) && res;
+         res = check_numeric("box/min/z",params, info, true, true) && res;
+         res = check_numeric("box/max/x",params, info, true, true) && res;
+         res = check_numeric("box/max/y",params, info, true, true) && res;
+         res = check_numeric("box/max/z",params, info, true, true) && res;
       }
       else if(params.has_child("plane"))
       {
-         res = check_numeric("plane/point/x",params, info, true) && res;
-         res = check_numeric("plane/point/y",params, info, true) && res;
-         res = check_numeric("plane/point/z",params, info, true) && res;
-         res = check_numeric("plane/normal/x",params, info, true) && res;
-         res = check_numeric("plane/normal/y",params, info, true) && res;
-         res = check_numeric("plane/normal/z",params, info, true) && res;
+         res = check_numeric("plane/point/x",params, info, true, true) && res;
+         res = check_numeric("plane/point/y",params, info, true, true) && res;
+         res = check_numeric("plane/point/z",params, info, true, true) && res;
+         res = check_numeric("plane/normal/x",params, info, true, true) && res;
+         res = check_numeric("plane/normal/y",params, info, true, true) && res;
+         res = check_numeric("plane/normal/z",params, info, true, true) && res;
       }
       else if(params.has_child("multi_plane"))
       {
-         res = check_numeric("multi_plane/point1/x",params, info, true) && res;
-         res = check_numeric("multi_plane/point1/y",params, info, true) && res;
-         res = check_numeric("multi_plane/point1/z",params, info, true) && res;
-         res = check_numeric("multi_plane/normal1/x",params, info, true) && res;
-         res = check_numeric("multi_plane/normal1/y",params, info, true) && res;
-         res = check_numeric("multi_plane/normal1/z",params, info, true) && res;
+         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
 
-         res = check_numeric("multi_plane/point2/x",params, info, true) && res;
-         res = check_numeric("multi_plane/point2/y",params, info, true) && res;
-         res = check_numeric("multi_plane/point2/z",params, info, true) && res;
-         res = check_numeric("multi_plane/normal2/x",params, info, true) && res;
-         res = check_numeric("multi_plane/normal2/y",params, info, true) && res;
-         res = check_numeric("multi_plane/normal2/z",params, info, true) && res;
+         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
       }
     }
 
@@ -1233,7 +1233,7 @@ VTKHClipWithField::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = check_numeric("clip_value",params, info, true);
+    bool res = check_numeric("clip_value",params, info, true, true);
     res = check_string("field",params, info, true) && res;
     res = check_string("invert",params, info, false) && res;
 
@@ -1337,8 +1337,8 @@ VTKHIsoVolume::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("min_value",params, info, true);
-    res = check_numeric("max_value",params, info, true) && res;
+    bool res = check_numeric("min_value",params, info, true, true);
+    res = check_numeric("max_value",params, info, true, true) && res;
     res = check_string("field",params, info, true) && res;
 
     std::vector<std::string> valid_paths;
@@ -1549,7 +1549,7 @@ VTKHLog::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
     res &= check_string("output_name",params, info, false);
-    res &= check_numeric("clamp_min_value",params, info, false);
+    res &= check_numeric("clamp_min_value",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -1755,8 +1755,8 @@ VTKHHistSampling::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
-    res &= check_numeric("bins",params, info, false);
-    res &= check_numeric("sample_rate",params, info, false);
+    res &= check_numeric("bins",params, info, false, true);
+    res &= check_numeric("sample_rate",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -2401,7 +2401,7 @@ VTKHHistogram::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
-    res &= check_numeric("bins",params, info, false);
+    res &= check_numeric("bins",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -2492,8 +2492,8 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
-    res &= check_numeric("seeds",params, info, false);
-    res &= check_numeric("step_size",params, info, false);
+    res &= check_numeric("seeds",params, info, false, true);
+    res &= check_numeric("step_size",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -2644,7 +2644,7 @@ VTKHProject2d::execute()
 
     if(params().has_path("camera"))
     {
-      parse_camera(params()["camera"], camera, data_object);
+      parse_camera(params()["camera"], camera);
     }
 
     int width = 512;

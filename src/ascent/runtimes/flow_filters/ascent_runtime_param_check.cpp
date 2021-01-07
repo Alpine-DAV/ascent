@@ -98,7 +98,8 @@ bool
 check_numeric(const std::string path,
               const conduit::Node &params,
               conduit::Node &info,
-              bool required)
+              bool required,
+              bool supports_expressions)
 {
   bool res = true;
   if(!params.has_path(path) && required)
@@ -111,7 +112,7 @@ check_numeric(const std::string path,
   {
 
     bool is_expr = false;
-    if(params[path].dtype().is_string())
+    if(params[path].dtype().is_string() && supports_expressions)
     {
       // check to see if this is a valid expression
       is_expr = is_valid_expression(params[path].as_string());
@@ -119,10 +120,19 @@ check_numeric(const std::string path,
 
     if(!params[path].dtype().is_number() && !is_expr)
     {
-      std::string msg = "Numeric parameter '" + path +
-                        " : " + params[path].to_yaml()
-                           + "'  is not numeric and is not a valid expression'";
-      info["errors"].append() = msg;
+      if(supports_expressions)
+      {
+        std::string msg = "Numeric parameter '" + path +
+                          " : " + params[path].to_yaml()
+                             + "'  is not numeric and is not a valid expression";
+        info["errors"].append() = msg;
+      }
+      else
+      {
+        std::string msg = "Numeric parameter '" + path +
+                          " : " + params[path].to_yaml()
+                             + "'  is not numeric and does not support expressions";
+      }
       res = false;
     }
   }

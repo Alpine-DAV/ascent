@@ -894,7 +894,12 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
 
   // this is the blueprint mesh
   m_connections[query_name] = pipeline;
-  m_connections["ascent_last_query"] = query_name;
+  // we need all filters to depend on queries
+  // from the source this keeps track of that
+  if(pipeline == "source")
+  {
+    m_connections["ascent_last_query"] = query_name;
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -1131,6 +1136,7 @@ AscentRuntime::ConnectGraphs()
       default_dummy_connection = pipeline;
       continue;
     }
+
     if(pipeline == "default")
     {
       pipeline = CreateDefaultFilters()["filters"].as_string();
@@ -1145,10 +1151,13 @@ AscentRuntime::ConnectGraphs()
                       0);       // default port
   }
 
-  // now connect the dummy port of the default_filters
-  w.graph().connect(default_dummy_connection,   // src
-                    "default_filters_endpoint", // dest
-                    1);                         // dummy port
+  if(w.graph().has_filter("default_filters_endpoint"))
+  {
+    // now connect the dummy port of the default_filters
+    w.graph().connect(default_dummy_connection,   // src
+                      "default_filters_endpoint", // dest
+                      1);                         // dummy port
+  }
 }
 
 //-----------------------------------------------------------------------------
