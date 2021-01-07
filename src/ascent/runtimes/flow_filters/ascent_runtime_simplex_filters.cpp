@@ -566,7 +566,7 @@ CameraSimplex::execute()
       vtkh::ScalarRenderer tracer;
       tracer.SetWidth(width);
       tracer.SetHeight(height);
-      tracer.SetInput(data); //vtkh dataset by toponame
+      tracer.SetInput(&dataset); //vtkh dataset by toponame
       tracer.SetCamera(*camera);
       tracer.Update();
 
@@ -615,7 +615,7 @@ CameraSimplex::execute()
           vtkh::ScalarRenderer tracer;
           tracer.SetWidth(width);
           tracer.SetHeight(height);
-          tracer.SetInput(data); //vtkh dataset by toponame
+          tracer.SetInput(&dataset); //vtkh dataset by toponame
           tracer.SetCamera(*camera);
           tracer.Update();
 

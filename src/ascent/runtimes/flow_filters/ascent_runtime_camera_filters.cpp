@@ -2494,9 +2494,28 @@ AutoCamera::execute()
       std::string topo_name = collection->field_topology(field_name);
 
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-      
+
+      /*
+       * Begin weird test code
+       */
       std::vector<Triangle> triangles = GetTriangles(dataset);
       int num_local_triangles = triangles.size();
+      cerr <<"num triangles: " << num_local_triangles << endl;
+/*        AddTriangleFields(dataset);
+        vtkmCamera *camera2 = new vtkmCamera;
+        camera2->ResetToBounds(dataset.GetGlobalBounds());
+        vtkh::ScalarRenderer tracer;
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+        tracer.SetInput(&dataset); //vtkh dataset by toponame
+//        tracer.SetInput(data); //vtkh dataset by toponame
+        tracer.SetCamera(*camera2);
+        tracer.Update();
+	set_output<DataObject>(input<DataObject>(0));
+	return;*/
+      /*
+       * End weird test code
+       */
 //      vtkh::DataSet* data =AddTriangleFields(dataset);
       AddTriangleFields(dataset);
 //      int num_domains = data->GetNumberOfDomains();
@@ -2553,11 +2572,48 @@ AutoCamera::execute()
           MakeFile("processing_times.txt", array, world_size);
       #endif
 
-
+      //original
       double winning_score  = -DBL_MAX;
       int    winning_sample = -1;
       double losing_score   = DBL_MAX;
       int    losing_sample  = -1;
+      //new
+      double data_entropy_winning_score  = -DBL_MAX;
+      int    data_entropy_winning_sample = -1;
+      double data_entropy_losing_score   = DBL_MAX;
+      int    data_entropy_losing_sample  = -1;
+      double depth_entropy_winning_score  = -DBL_MAX;
+      int    depth_entropy_winning_sample = -1;
+      double depth_entropy_losing_score   = DBL_MAX;
+      int    depth_entropy_losing_sample  = -1;
+      double max_depth_winning_score  = -DBL_MAX;
+      int    max_depth_winning_sample = -1;
+      double max_depth_losing_score   = DBL_MAX;
+      int    max_depth_losing_sample  = -1;
+      double pb_winning_score  = -DBL_MAX;
+      int    pb_winning_sample = -1;
+      double pb_losing_score   = DBL_MAX;
+      int    pb_losing_sample  = -1;
+      double projected_area_winning_score  = -DBL_MAX;
+      int    projected_area_winning_sample = -1;
+      double projected_area_losing_score   = DBL_MAX;
+      int    projected_area_losing_sample  = -1;
+      double viewpoint_entropy_winning_score  = -DBL_MAX;
+      int    viewpoint_entropy_winning_sample = -1;
+      double viewpoint_entropy_losing_score   = DBL_MAX;
+      int    viewpoint_entropy_losing_sample  = -1;
+      double visibility_ratio_winning_score  = -DBL_MAX;
+      int    visibility_ratio_winning_sample = -1;
+      double visibility_ratio_losing_score   = DBL_MAX;
+      int    visibility_ratio_losing_sample  = -1;
+      double visible_triangles_winning_score  = -DBL_MAX;
+      int    visible_triangles_winning_sample = -1;
+      double visible_triangles_losing_score   = DBL_MAX;
+      int    visible_triangles_losing_sample  = -1;
+      double vkl_winning_score  = -DBL_MAX;
+      int    vkl_winning_sample = -1;
+      double vkl_losing_score   = DBL_MAX;
+      int    vkl_losing_sample  = -1;
     //loop through number of camera samples.
       double scanline_time = 0.;
       double metric_time   = 0.;
@@ -2594,14 +2650,34 @@ AutoCamera::execute()
             MakeFile("renderer_times.txt", array, world_size);
 //          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
         #endif
-        
+
+        //original 
         float score = calculateMetric(output, metric, field_name, triangles, height, width, cam);
-        std::cerr << "sample " << sample << " score: " << score << std::endl;
+        //new
+	int data_entropy_sample = sample;
+	int depth_entropy_sample = sample;
+	int max_depth_sample = sample;
+	int pb_sample = sample;
+	int projected_area_sample = sample;
+	int viewpoint_entropy_sample = sample;
+	int visibility_ratio_sample = sample;
+	int visible_triangles_sample = sample;
+	int vkl_sample = sample;
+	float data_entropy_score = calculateMetric(output, "data_entropy", field_name, triangles, height, width, cam);
+        float depth_entropy_score = calculateMetric(output, "depth_entropy", field_name, triangles, height, width, cam);
+        float max_depth_score = calculateMetric(output, "max_depth", field_name, triangles, height, width, cam);
+        float pb_score = calculateMetric(output, "pb", field_name, triangles, height, width, cam);
+        float projected_area_score = calculateMetric(output, "projected_area", field_name, triangles, height, width, cam);
+        float viewpoint_entropy_score = calculateMetric(output, "viewpoint_entropy", field_name, triangles, height, width, cam);
+        float visibility_ratio_score = calculateMetric(output, "visibility_ratio", field_name, triangles, height, width, cam);
+        float visible_triangles_score = calculateMetric(output, "visible_triangles", field_name, triangles, height, width, cam);
+        float vkl_score = calculateMetric(output, "vkl", field_name, triangles, height, width, cam);
+        std::cerr << "sample " << sample << " " << metric << " score: " << score << std::endl;
         delete output;
 
     /*================ End Scalar Renderer  ======================*/
 
-        //cerr << "sample " << sample << " score: " << score << endl;
+	//original
         if(winning_score < score)
         {
           winning_score = score;
@@ -2612,9 +2688,156 @@ AutoCamera::execute()
           losing_score = score;
 	  losing_sample = sample;
         }
+	//new
+	if(data_entropy_winning_score < data_entropy_score)
+        {
+          data_entropy_winning_score = data_entropy_score;
+          data_entropy_winning_sample = data_entropy_sample;
+        }
+        if(data_entropy_losing_score > data_entropy_score)
+        {
+          data_entropy_losing_score = data_entropy_score;
+          data_entropy_losing_sample = data_entropy_sample;
+        }
+        if(depth_entropy_winning_score < depth_entropy_score)
+        {
+          depth_entropy_winning_score = depth_entropy_score;
+          depth_entropy_winning_sample = depth_entropy_sample;
+        }
+        if(depth_entropy_losing_score > depth_entropy_score)
+        {
+          depth_entropy_losing_score = depth_entropy_score;
+          depth_entropy_losing_sample = depth_entropy_sample;
+        }
+	if(max_depth_winning_score < max_depth_score)
+        {
+          max_depth_winning_score = max_depth_score;
+          max_depth_winning_sample = max_depth_sample;
+        }
+        if(max_depth_losing_score > max_depth_score)
+        {
+          max_depth_losing_score = max_depth_score;
+          max_depth_losing_sample = max_depth_sample;
+        }
+	if(pb_winning_score < pb_score)
+        {
+          pb_winning_score = pb_score;
+          pb_winning_sample = pb_sample;
+        }
+        if(pb_losing_score > pb_score)
+        {
+          pb_losing_score = pb_score;
+          pb_losing_sample = pb_sample;
+        }
+	if(projected_area_winning_score < projected_area_score)
+        {
+          projected_area_winning_score = projected_area_score;
+          projected_area_winning_sample = projected_area_sample;
+        }
+        if(projected_area_losing_score > projected_area_score)
+        {
+          projected_area_losing_score = projected_area_score;
+          projected_area_losing_sample = projected_area_sample;
+        }
+	if(viewpoint_entropy_winning_score < viewpoint_entropy_score)
+        {
+          viewpoint_entropy_winning_score = viewpoint_entropy_score;
+          viewpoint_entropy_winning_sample = viewpoint_entropy_sample;
+        }
+        if(viewpoint_entropy_losing_score > viewpoint_entropy_score)
+        {
+          viewpoint_entropy_losing_score = viewpoint_entropy_score;
+          viewpoint_entropy_losing_sample = viewpoint_entropy_sample;
+        }
+	if(visibility_ratio_winning_score < visibility_ratio_score)
+        {
+          visibility_ratio_winning_score = visibility_ratio_score;
+          visibility_ratio_winning_sample = visibility_ratio_sample;
+        }
+        if(visibility_ratio_losing_score > visibility_ratio_score)
+        {
+          visibility_ratio_losing_score = visibility_ratio_score;
+          visibility_ratio_losing_sample = visibility_ratio_sample;
+        }
+	if(visible_triangles_winning_score < visible_triangles_score)
+        {
+          visible_triangles_winning_score = visible_triangles_score;
+          visible_triangles_winning_sample = visible_triangles_sample;
+        }
+        if(visible_triangles_losing_score > visible_triangles_score)
+        {
+          visible_triangles_losing_score = visible_triangles_score;
+          visible_triangles_losing_sample = visible_triangles_sample;
+        }
+	if(vkl_winning_score < vkl_score)
+        {
+          vkl_winning_score = vkl_score;
+          vkl_winning_sample = vkl_sample;
+        }
+        if(vkl_losing_score > vkl_score)
+        {
+          vkl_losing_score = vkl_score;
+          vkl_losing_sample = vkl_sample;
+        }
       } //end of sample loop
       triangles.clear();
 //      delete data;
+      //new
+      double data_entropy_sample_array[1];
+      double data_entropy_score_array[1];
+      data_entropy_score_array[0] = data_entropy_winning_score;
+      data_entropy_sample_array[0] = data_entropy_winning_sample;
+      MakeFile("data_entropy_score.txt",data_entropy_score_array,1);
+      MakeFile("data_entropy_sample.txt",data_entropy_sample_array,1);
+      double depth_entropy_sample_array[1];
+      double depth_entropy_score_array[1];
+      depth_entropy_score_array[0] = depth_entropy_winning_score;
+      depth_entropy_sample_array[0] = depth_entropy_winning_sample;
+      MakeFile("depth_entropy_score.txt",depth_entropy_score_array,1);
+      MakeFile("depth_entropy_sample.txt",depth_entropy_sample_array,1);
+      double max_depth_sample_array[1];
+      double max_depth_score_array[1];
+      max_depth_score_array[0] = max_depth_winning_score;
+      max_depth_sample_array[0] = max_depth_winning_sample;
+      MakeFile("max_depth_score.txt",max_depth_score_array,1);
+      MakeFile("max_depth_sample.txt",max_depth_sample_array,1);
+      double pb_sample_array[1];
+      double pb_score_array[1];
+      pb_score_array[0] = pb_winning_score;
+      pb_sample_array[0] = pb_winning_sample;
+      MakeFile("pb_score.txt",pb_score_array,1);
+      MakeFile("pb_sample.txt",pb_sample_array,1);
+      double projected_area_sample_array[1];
+      double projected_area_score_array[1];
+      projected_area_score_array[0] = projected_area_winning_score;
+      projected_area_sample_array[0] = projected_area_winning_sample;
+      MakeFile("projected_area_score.txt",projected_area_score_array,1);
+      MakeFile("projected_area_sample.txt",projected_area_sample_array,1);
+      double viewpoint_entropy_sample_array[1];
+      double viewpoint_entropy_score_array[1];
+      viewpoint_entropy_score_array[0] = viewpoint_entropy_winning_score;
+      viewpoint_entropy_sample_array[0] = viewpoint_entropy_winning_sample;
+      MakeFile("viewpoint_entropy_score.txt",viewpoint_entropy_score_array,1);
+      MakeFile("viewpoint_entropy_sample.txt",viewpoint_entropy_sample_array,1);
+      double visibility_ratio_sample_array[1];
+      double visibility_ratio_score_array[1];
+      visibility_ratio_score_array[0] = visibility_ratio_winning_score;
+      visibility_ratio_sample_array[0] = visibility_ratio_winning_sample;
+      MakeFile("visibility_ratio_score.txt",visibility_ratio_score_array,1);
+      MakeFile("visibility_ratio_sample.txt",visibility_ratio_sample_array,1);
+      double visible_triangles_sample_array[1];
+      double visible_triangles_score_array[1];
+      visible_triangles_score_array[0] = visible_triangles_winning_score;
+      visible_triangles_sample_array[0] = visible_triangles_winning_sample;
+      MakeFile("visible_triangles_score.txt",visible_triangles_score_array,1);
+      MakeFile("visible_triangles_sample.txt",visible_triangles_sample_array,1);
+      double vkl_sample_array[1];
+      double vkl_score_array[1];
+      vkl_score_array[0] = vkl_winning_score;
+      vkl_sample_array[0] = vkl_winning_sample;
+      MakeFile("vkl_score.txt",vkl_score_array,1);
+      MakeFile("vkl_sample.txt",vkl_sample_array,1);
+      //Write out files: each metric's winning sample, each metric's winning score.
       auto setting_camera_start = high_resolution_clock::now();
 
       if(winning_sample == -1)
@@ -2683,6 +2906,7 @@ AutoCamera::execute()
        MakeFile("total_times.txt", array3, world_size);
      //cerr << "rank: " << rank << " Total Time: " << time  << " microseconds " << endl;
     #endif
+    return;
 }
 
 
