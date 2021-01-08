@@ -163,7 +163,7 @@ CheckForSettingsFile(std::string file_name,
       {
         conduit::Node file_node;
         file_node.load(file_name, protocol);
-        file_node.print();
+
         if(merge)
         {
           node.update(file_node);
@@ -661,7 +661,7 @@ about(conduit::Node &n)
     n["git_tag"] = "unknown";
 #endif
 
-    if(n["git_tag"].as_string() == "unknown" && 
+    if(n["git_tag"].as_string() == "unknown" &&
        n["git_sha1_abbrev"].as_string() != "unknown")
     {
         n["version"] = n["version"].as_string()
