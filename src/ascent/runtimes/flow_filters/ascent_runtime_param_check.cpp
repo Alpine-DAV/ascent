@@ -80,7 +80,7 @@ namespace filters
 
 // this detects if the syntax is valid, not
 // whether the expression will actually work
-bool is_valid_expression(const std::string expr)
+bool is_valid_expression(const std::string expr, std::string &err_msg)
 {
   bool res = true;
   try
@@ -89,6 +89,7 @@ bool is_valid_expression(const std::string expr)
   }
   catch(const char *msg)
   {
+    err_msg = msg;
     res = false;
   }
   return res;
@@ -112,10 +113,12 @@ check_numeric(const std::string path,
   {
 
     bool is_expr = false;
+    std::string err_msg;
     if(params[path].dtype().is_string() && supports_expressions)
     {
       // check to see if this is a valid expression
-      is_expr = is_valid_expression(params[path].as_string());
+
+      is_expr = is_valid_expression(params[path].as_string(), err_msg);
     }
 
     if(!params[path].dtype().is_number() && !is_expr)
@@ -124,7 +127,8 @@ check_numeric(const std::string path,
       {
         std::string msg = "Numeric parameter '" + path +
                           " : " + params[path].to_yaml()
-                             + "'  is not numeric and is not a valid expression";
+                             + "'  is not numeric and is not a valid expression."
+                             + " Error message '" + err_msg + "'";
         info["errors"].append() = msg;
       }
       else

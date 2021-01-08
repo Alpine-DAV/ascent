@@ -302,6 +302,15 @@ TEST(ascent_queries, filter_params)
     Node n;
     ascent::about(n);
 
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
     //
     // Create example mesh.
     //
