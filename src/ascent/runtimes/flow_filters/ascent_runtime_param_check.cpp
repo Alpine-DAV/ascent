@@ -332,14 +332,14 @@ T get_value(const conduit::Node &node, DataObject *dataset)
     {
       ASCENT_ERROR("expression '"<<expr
                    <<"': failed to extract a value from the result."
-                   <<" "<<res.to_yaml());
+                   <<" '"<<res.to_yaml()<<"'");
     }
 
     if(res["value"].dtype().number_of_elements() != 1)
     {
       ASCENT_ERROR("expression '"<<expr
                    <<"' resulted in multiple values."
-                   <<" Expected scalar. "<<res.to_yaml());
+                   <<" Expected scalar. '"<<res.to_yaml()<<"'");
     }
     value = res["value"].to_float64();
   }
