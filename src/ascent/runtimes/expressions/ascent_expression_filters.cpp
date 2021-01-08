@@ -2994,9 +2994,10 @@ Bounds::execute()
       graph().workspace().registry().fetch<Node>("dataset");
 
   std::set<std::string> topos;
+  n_topology.print();
   if(!n_topology.dtype().is_empty())
   {
-    std::string topo = n_topology.as_string();
+    std::string topo = n_topology["value"].as_string();
     if(!has_topology(*dataset, topo))
     {
       std::set<std::string> names = topology_names(*dataset);
