@@ -52,6 +52,7 @@
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
+#include <ascent_mpi_utils.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -2373,6 +2374,44 @@ void paint_nestsets(const std::string nestset_name,
 
 } // paint
 
+bool
+has_topology(const conduit::Node &dataset, const std::string &topo_name)
+{
+  bool has_topo = false;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(!has_topo && dom.has_path("topologies/" + topo_name))
+    {
+      has_topo = true;
+    }
+  }
+  // check to see if the topology exists in any rank
+  has_topo = global_someone_agrees(has_topo);
+  return has_topo;
+}
+
+std::set<std::string> topology_names(const conduit::Node &dataset)
+{
+  std::set<std::string> topos;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("topologies"))
+    {
+      const int num_topos = dom["topologies"].number_of_children();
+      std::vector<std::string> topo_names = dom["topologies"].child_names();
+      for(int t = 0; t < num_topos; t++)
+      {
+        topos.insert(topo_names[t]);
+      }
+    }
+  }
+
+  gather_strings(topos);
+
+  return topos;
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

@@ -112,7 +112,7 @@ conduit::Node field_pdf(const conduit::Node &hist);
 conduit::Node field_cdf(const conduit::Node &hist);
 
 conduit::Node global_bounds(const conduit::Node &dataset,
-                            const conduit::Node &field_names);
+                            const std::string &topo_name);
 
 conduit::Node binning(const conduit::Node &dataset,
                       conduit::Node &bin_axes,
@@ -133,6 +133,13 @@ bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
 bool has_field(const conduit::Node &dataset, const std::string &field_name);
+
+// topology exists on at least one rank
+bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
+
+std::set<std::string> topology_names(const conduit::Node &dataset);
+
+//std::string known_topos(const conduit::Node &dataset);
 
 bool has_component(const conduit::Node &dataset,
                    const std::string &field_name,
