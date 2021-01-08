@@ -300,6 +300,12 @@ template<typename T>
 T get_value(const conduit::Node &node, DataObject *dataset)
 {
   T value = 0;
+  if(node.dtype().is_empty())
+  {
+    // don't silently return a value from an empty node
+    ASCENT_ERROR("Cannot get value from and empty node");
+  }
+
   // check to see if this is an expression
   if(node.dtype().is_string())
   {

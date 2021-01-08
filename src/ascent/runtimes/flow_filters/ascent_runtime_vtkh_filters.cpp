@@ -693,22 +693,22 @@ VTKHSlice::execute()
 
     const float eps = 1e-5; // ensure that the slice is always inside the data set
 
-
     if(n_point.has_path("x_offset"))
     {
-      float offset = get_float32(params()["x_offset"], data_object);
+      float offset = get_float32(n_point["x_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
 
-      offset = get_float32(params()["y_offset"], data_object);
+      offset = get_float32(n_point["y_offset"], data_object);
+      std::cout<<"y offset "<<offset<<"\n";
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
 
-      offset = get_float32(params()["z_offset"], data_object);
+      offset = get_float32(n_point["z_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
