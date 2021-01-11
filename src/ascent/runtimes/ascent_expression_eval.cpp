@@ -646,7 +646,7 @@ initialize_functions()
 
   quantile_sig["description"] = "Return the `q`-th quantile of the data along \
   the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the \
-  x-axis which 50\% of the data lies below.";
+  x-axis which 50 percent of the data lies below.";
 
   // -------------------------------------------------------------
 
