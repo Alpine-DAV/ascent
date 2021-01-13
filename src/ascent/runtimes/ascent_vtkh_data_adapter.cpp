@@ -2275,7 +2275,7 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else
   {
     std::stringstream msg;
-    msg<<"Field type unsupported for conversion: ";
+    msg<<"Field type unsupported for conversion to blueprint.\n";
     field.PrintSummary(msg);
     msg<<" Skipping.";
     ASCENT_INFO(msg.str());
