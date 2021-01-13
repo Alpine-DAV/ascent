@@ -335,8 +335,10 @@ int main(int argc, char **argv)
   finish = clock();
   run_time = (static_cast<double>(finish) - static_cast<double>(start)) / CLOCKS_PER_SEC;
   MPI_Reduce(&run_time, &max_run_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  if (mpi_rank == 0) {
-    cout << dim << " " << max_run_time << endl;
+  if (mpi_rank == 0) 
+  {
+    cout << "Dim: " << dim << endl;
+    cout << "Runtime(sec): " << max_run_time << endl;
   }
 
   a.close();

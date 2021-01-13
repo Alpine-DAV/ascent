@@ -273,7 +273,12 @@ void ParallelMergeTree::Initialize()
 
   uint32_t num_blocks = m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2];
 
-  std::cout << "Num blocks: " << num_blocks << std::endl;
+#ifdef BFLOW_PMT_DEBUG
+  if( my_rank == 0 ) 
+  {
+    std::cout << "Num blocks: " << num_blocks << std::endl;
+  }
+#endif
 
   m_preProcTaskGr = BabelFlow::SingleTaskGraph( mpi_size );
   m_preProcTaskMp = BabelFlow::ModuloMap( mpi_size, m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2] );
