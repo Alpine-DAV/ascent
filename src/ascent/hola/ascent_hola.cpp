@@ -249,7 +249,9 @@ void relay_blueprint_mesh_read(const Node &options,
 
     // assume hdf5, but check for json file
     std::string root_protocol = "hdf5";
-    char buff[5] = {0,0,0,0,0};
+
+    // we will read only 5 bytes + keep the buffer null termed.
+    char buff[6] = {0,0,0,0,0,0};
 
     // heuristic, if json, we expect to see "{" in the first 5 chars of the file.
     ifstream ifs;
