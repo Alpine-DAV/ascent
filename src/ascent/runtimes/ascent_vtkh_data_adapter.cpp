@@ -1744,13 +1744,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     output["coordsets/"+coords_name+"/type"] = "explicit";
     using Coords32 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float32, 3>>;
     using Coords64 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float64, 3>>;
-    //using Coords32 = vtkm::cont::ArrayHandleSOA<vtkm::cont::ArrayHandle<vtkm::Float32>,
-    //                                            vtkm::cont::ArrayHandle<vtkm::Float32>,
-    //                                            vtkm::cont::ArrayHandle<vtkm::Float32>>;
-
-    //using Coords64 = vtkm::cont::ArrayHandleSOA<vtkm::cont::ArrayHandle<vtkm::Float64>,
-    //                                            vtkm::cont::ArrayHandle<vtkm::Float64>,
-    //                                            vtkm::cont::ArrayHandle<vtkm::Float64>>;
 
     using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
