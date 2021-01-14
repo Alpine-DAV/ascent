@@ -16,6 +16,10 @@
 #include <ctime>
 #include <cassert>
 
+// #define BFLOW_PMT_DEBUG
+
+
+
 typedef double FunctionType;
 
 using namespace ascent;
@@ -179,6 +183,8 @@ int main(int argc, char **argv)
 
   // output binary blocks for debugging purpose
   //  data<mpi_rank>.bin
+
+#ifdef BFLOW_PMT_DEBUG
   {
     stringstream ss;
     ss << "data" << mpi_rank << ".bin";
@@ -186,8 +192,11 @@ int main(int argc, char **argv)
     bofs.write(reinterpret_cast<char *>(block_data.data()), block_data.size() * sizeof(FunctionType));
     bofs.close();
   }
+#endif
   // output text block parameters
   //  data<mpi_rank>.params
+
+#ifdef BFLOW_PMT_DEBUG
   {
     stringstream ss;
     ss << "data" << mpi_rank << ".params";
@@ -204,6 +213,8 @@ int main(int argc, char **argv)
     ofs.flush();
     ofs.close();
   }
+#endif
+
   // publish
   a.publish(mesh);
   
