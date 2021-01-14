@@ -325,15 +325,6 @@ void relay_blueprint_mesh_read(const Node &options,
     int rank = relay::mpi::rank(comm);
     int total_size = relay::mpi::size(comm);
 
-    if(num_domains < total_size)
-    {
-      if(rank == 0)
-      {
-        ASCENT_ERROR("hola: total domains "<<num_domains<<" must be equal to "
-                     <<"or greater than the number of ranks "<<total_size<<".");
-      }
-    }
-
     int read_size = num_domains / total_size;
     int rem = num_domains % total_size;
     if(rank < rem)
