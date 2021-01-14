@@ -457,14 +457,19 @@ AscentRuntime::EnsureDomainIds()
 }
 
 //-----------------------------------------------------------------------------
-std::string
+conduit::Node
 AscentRuntime::CreateDefaultFilters()
 {
+    static std::string queries_endpoint = "default_queries_endpoint";
     static std::string endpoint = "default_filters_endpoint";
+
+    conduit::Node endpoints;
+    endpoints["filters"] = endpoint;
+    endpoints["queries"] = queries_endpoint;
 
     if(w.graph().has_filter(endpoint))
     {
-      return endpoint;
+      return endpoints;
     }
 
     //
@@ -518,22 +523,32 @@ AscentRuntime::CreateDefaultFilters()
       prev_filter = filter_name;
     }
 
+    // we are creating a series of endpoints to enforce and
+    // order of execution. Pipelines using expressions might
+    // need the results of a query, so make them execute first
     // create an alias passthrough
     w.graph().add_filter("alias",
+                         queries_endpoint);
+
+    w.graph().connect(prev_filter,      // src
+                      queries_endpoint, // dest
+                      0);               // default port
+
+    w.graph().add_filter("dependent_alias",
                          endpoint);
 
-    w.graph().connect(prev_filter, // src
-                      endpoint,    // dest
-                      0);          // default port
+    w.graph().connect(queries_endpoint, // src
+                      endpoint,         // dest
+                      0);               // default port
 
-    return endpoint;
+    return endpoints;
 }
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
                                      const std::string pipeline_name)
 {
-    std::string prev_name = CreateDefaultFilters();
+    std::string prev_name = CreateDefaultFilters()["filters"].as_string();
     bool has_pipeline = false;
     std::string input_name;
     // check to see if there is a non-default input to this pipeline
@@ -845,7 +860,8 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
   std::string filter_name;
 
   conduit::Node params;
-  std::string pipeline = CreateDefaultFilters();
+  std::string pipeline = CreateDefaultFilters()["queries"].as_string();
+  const std::string default_pipeline = pipeline;
   if(query.has_path("params"))
   {
     params = query["params"];
@@ -879,6 +895,12 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
 
   // this is the blueprint mesh
   m_connections[query_name] = pipeline;
+  // we need all filters to depend on queries
+  // from the source this keeps track of that
+  if(pipeline == default_pipeline)
+  {
+    m_connections["ascent_last_query"] = query_name;
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -910,7 +932,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   else
   {
     // default pipeline: directly connect to published data
-    plot_source = CreateDefaultFilters();
+    plot_source = CreateDefaultFilters()["filters"].as_string();
   }
 
   std::string pipeline_filter_name = plot_source;
@@ -1098,13 +1120,27 @@ void
 AscentRuntime::ConnectGraphs()
 {
   //connect plot + pipeline graphs
+
+  // the default dummy connection is used to enforce the ordering
+  // that ensures that source queries are available to filters
+  // if not present, then there are no quieries and we just connect
+  // the dummy port to another alias
+  std::string default_dummy_connection = "default_queries_endpoint";
+
   std::vector<std::string> names = m_connections.child_names();
   for (int i = 0; i < m_connections.number_of_children(); ++i)
   {
     std::string pipeline = m_connections[names[i]].as_string();
+    if(names[i] == "ascent_last_query")
+    {
+      // this is the name of the last query
+      default_dummy_connection = pipeline;
+      continue;
+    }
+
     if(pipeline == "default")
     {
-      pipeline = CreateDefaultFilters();
+      pipeline = CreateDefaultFilters()["filters"].as_string();
     }
     else if(!w.graph().has_filter(pipeline))
     {
@@ -1114,6 +1150,14 @@ AscentRuntime::ConnectGraphs()
     w.graph().connect(pipeline, // src
                       names[i], // dest
                       0);       // default port
+  }
+
+  if(w.graph().has_filter("default_filters_endpoint"))
+  {
+    // now connect the dummy port of the default_filters
+    w.graph().connect(default_dummy_connection,   // src
+                      "default_filters_endpoint", // dest
+                      1);                         // dummy port
   }
 }
 
@@ -1134,7 +1178,7 @@ AscentRuntime::GetPipelines(const conduit::Node &plots)
     }
     else
     {
-      pipeline = CreateDefaultFilters();
+      pipeline = CreateDefaultFilters()["filters"].as_string();
     }
     // use the consistent name from PlotToFlow
     pipeline = pipeline + "_plot_source";
@@ -1479,7 +1523,6 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 
   }
 
-  // we are enforcing the order of execution
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     CreatePipelines(pipelines.child(i));
@@ -1560,7 +1603,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         // w.print();
         // std::cout<<w.graph().to_dot();
-        // w.graph().save_dot_html("ascent_flow_graph.html");
+        //w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         Node *meta = w.registry().fetch<Node>("metadata");
@@ -1837,12 +1880,7 @@ void AscentRuntime::PaintNestsets()
         continue;
       }
 
-      std::string nest_name =  topo_nestsets[topo_name];
-
-      if(!dom.has_path("nestsets/"+nest_name))
-      {
-        continue;
-      }
+      std::string nest_name = topo_nestsets[topo_name];
 
       if(has_ghost)
       {
@@ -1866,7 +1904,7 @@ void AscentRuntime::PaintNestsets()
 
           conduit::Node &ghost_field = dom[ghost_path];
 
-          runtime::expressions::paint_nestsets(nest_name, dom, ghost_field);
+          runtime::expressions::paint_nestsets(nest_name, topo_name,  dom, ghost_field);
         }
         else
         {
@@ -1881,7 +1919,7 @@ void AscentRuntime::PaintNestsets()
         std::string ghost_name = topo_name + "_ghosts";
         conduit::Node &field = dom["fields/" + ghost_name];
         field.reset();
-        runtime::expressions::paint_nestsets(nest_name, dom, field);
+        runtime::expressions::paint_nestsets(nest_name, topo_name, dom, field);
         new_ghosts.insert(ghost_name);
       }
     }

@@ -84,6 +84,24 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+///
+/// Depennt Alias returns its input as output with a dummy connection
+/// to enforce and ordering.
+///
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+class FLOW_API DependentAlias : public ::flow::Filter
+{
+public:
+    DependentAlias();
+   ~DependentAlias();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
 
 //-----------------------------------------------------------------------------
 ///
