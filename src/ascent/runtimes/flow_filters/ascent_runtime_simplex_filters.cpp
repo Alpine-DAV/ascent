@@ -498,7 +498,7 @@ CameraSimplex::execute()
     //int numTheta = 100;
     //int numPhi = 100;
 
-///* 
+/* 
     // Code for 20 images from spiral, must change sample from 0->20 in the yaml file 
     int sample = (int)params()["sample"].as_int64();
     
@@ -523,19 +523,18 @@ CameraSimplex::execute()
     float score = calculateMetric(output, metric, field_name,
                  		     triangles, height, width, cam);
 
-//*/
+*/
 
-/*
+///*
     // Code for getting all scores from the 20 image spirals
     int sample = (int)params()["sample"].as_int64();
     
     int metric_num = 0;
-    string metrics[] = {"data_entropy", "depth_entropy", "max_depth" };
-                         //  Next 6 commented out because of crashing,
-	                 // "pb", "projected_area", "viewpoint_entropy", 
-			 // "visibility_ratio", "visible_triangles", "vkl"};
+    string metrics[] = {"data_entropy", "depth_entropy", "max_depth",
+	                  "pb", "projected_area", "viewpoint_entropy", 
+			  "visibility_ratio", "visible_triangles", "vkl"};
     
-    for (metric_num ; metric_num < 3 ; metric_num++) { // 3 Should be nine but metrics bugged
+    for (metric_num ; metric_num < 9 ; metric_num++) {
       metric = metrics[metric_num];
       string filename = metrics[metric_num];
       filename += "_scores.txt"; 
@@ -620,7 +619,7 @@ CameraSimplex::execute()
 
     }
 
-*/ 
+//*/ 
 
 /*
     // Main block for theta and phi
