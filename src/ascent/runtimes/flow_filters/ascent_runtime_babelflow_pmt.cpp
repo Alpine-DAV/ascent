@@ -48,6 +48,7 @@
 
 
 // #define BFLOW_PMT_DEBUG
+// #define BFLOW_PMT_WRITE_RES
 
 
 class ParallelMergeTree {
@@ -172,9 +173,11 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   //t.writeToFile(task & ~sPrefixMask);
   t.persistenceSimplification(1.f);
   t.computeSegmentation(sLocalData);
-  // t.writeToFileBinary(task & ~KWayMerge::sPrefixMask);
-  // t.writeToFile(task & ~KWayMerge::sPrefixMask);
+#ifdef BFLOW_PMT_WRITE_RES
+  t.writeToFileBinary(task & ~KWayMerge::sPrefixMask);
+  t.writeToFile(task & ~KWayMerge::sPrefixMask);
   //t.writeToHtmlFile(task & ~sPrefixMask);
+#endif
 
   // Set the final tree as an output so that it could be extracted later
   output[0] = t.encode();
