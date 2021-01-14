@@ -1906,7 +1906,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
       vtkm::cont::ArrayHandle<vtkm::Vec<double,3>> coords_copy;
       vtkm::cont::ArrayCopy(coordsHandle, coords_copy);
-      const int num_vals = vcoords.GetNumberOfValues();
+      const int num_vals = coords_copy.GetNumberOfValues();
       vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(coords_copy);
       const int byte_size = sizeof(vtkm::Float64);
 
