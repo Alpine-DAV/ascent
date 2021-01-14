@@ -252,9 +252,9 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       }
 
       return vtkm::cont::CoordinateSystem(name,
-                                          make_ArrayHandleCompositeVector(x_coords_handle,
-                                                                          y_coords_handle,
-                                                                          z_coords_handle));
+                                          make_ArrayHandleSOA(x_coords_handle,
+                                                              y_coords_handle,
+                                                              z_coords_handle));
     }
     else // NOTE: This case is disabled.
     {
@@ -295,9 +295,9 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
         }
 
         return vtkm::cont::CoordinateSystem(name,
-                                            make_ArrayHandleCompositeVector(x_coords_handle,
-                                                                            y_coords_handle,
-                                                                            z_coords_handle));
+                                            make_ArrayHandleSOA(x_coords_handle,
+                                                                y_coords_handle,
+                                                                z_coords_handle));
       }
 
       return vtkm::cont::CoordinateSystem(name, coords);
@@ -431,8 +431,9 @@ void ExtractVector(vtkm::cont::DataSet *dset,
     detail::CopyArray(x_handle, x_ptr, num_vals, true);
     detail::CopyArray(y_handle, y_ptr, num_vals, true);
 
-    auto composite  = make_ArrayHandleCompositeVector(x_handle,
-                                                      y_handle);
+
+    auto composite  = make_ArrayHandleSOA(x_handle,
+                                          y_handle);
 
     vtkm::cont::ArrayHandle<vtkm::Vec<T,2>> interleaved_handle;
     interleaved_handle.Allocate(num_vals);
@@ -461,9 +462,9 @@ void ExtractVector(vtkm::cont::DataSet *dset,
     detail::CopyArray(y_handle, y_ptr, num_vals, true);
     detail::CopyArray(z_handle, z_ptr, num_vals, true);
 
-    auto composite  = make_ArrayHandleCompositeVector(x_handle,
-                                                      y_handle,
-                                                      z_handle);
+    auto composite  = make_ArrayHandleSOA(x_handle,
+                                          y_handle,
+                                          z_handle);
 
     vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
     interleaved_handle.Allocate(num_vals);
@@ -1045,8 +1046,8 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
 
     if(zero_copy)
     {
-      x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, x_npts);
-      y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, y_npts);
+      x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, x_npts, vtkm::CopyFlag::Off);
+      y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, y_npts, vtkm::CopyFlag::Off);
     }
     else
     {
@@ -1063,7 +1064,7 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
     {
       if(zero_copy)
       {
-        z_coords_handle = vtkm::cont::make_ArrayHandle(z_coords_ptr, z_npts);
+        z_coords_handle = vtkm::cont::make_ArrayHandle(z_coords_ptr, z_npts, vtkm::CopyFlag::Off);
       }
       else
       {
@@ -1741,13 +1742,15 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     // This still could be structured, but this will always
     // have an explicit coordinate system
     output["coordsets/"+coords_name+"/type"] = "explicit";
-    using Coords32 = vtkm::cont::ArrayHandleCompositeVector<vtkm::cont::ArrayHandle<vtkm::Float32>,
-                                                            vtkm::cont::ArrayHandle<vtkm::Float32>,
-                                                            vtkm::cont::ArrayHandle<vtkm::Float32>>;
+    using Coords32 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float32, 3>>;
+    using Coords64 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float64, 3>>;
+    //using Coords32 = vtkm::cont::ArrayHandleSOA<vtkm::cont::ArrayHandle<vtkm::Float32>,
+    //                                            vtkm::cont::ArrayHandle<vtkm::Float32>,
+    //                                            vtkm::cont::ArrayHandle<vtkm::Float32>>;
 
-    using Coords64 = vtkm::cont::ArrayHandleCompositeVector<vtkm::cont::ArrayHandle<vtkm::Float64>,
-                                                            vtkm::cont::ArrayHandle<vtkm::Float64>,
-                                                            vtkm::cont::ArrayHandle<vtkm::Float64>>;
+    //using Coords64 = vtkm::cont::ArrayHandleSOA<vtkm::cont::ArrayHandle<vtkm::Float64>,
+    //                                            vtkm::cont::ArrayHandle<vtkm::Float64>,
+    //                                            vtkm::cont::ArrayHandle<vtkm::Float64>>;
 
     using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
@@ -1760,9 +1763,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords32 points = coordsHandle.Cast<Coords32>();
 
-      auto x_handle = vtkm::get<0>(points.GetArrayTuple());
-      auto y_handle = vtkm::get<1>(points.GetArrayTuple());
-      auto z_handle = vtkm::get<2>(points.GetArrayTuple());
+      auto x_handle = points.GetArray(0);
+      auto y_handle = points.GetArray(1);
+      auto z_handle = points.GetArray(2);
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
@@ -1834,9 +1837,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords64 points = coordsHandle.Cast<Coords64>();
 
-      auto x_handle = vtkm::get<0>(points.GetArrayTuple());
-      auto y_handle = vtkm::get<1>(points.GetArrayTuple());
-      auto z_handle = vtkm::get<2>(points.GetArrayTuple());
+      auto x_handle = points.GetArray(0);
+      auto y_handle = points.GetArray(1);
+      auto z_handle = points.GetArray(2);
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
