@@ -388,6 +388,7 @@ CameraSimplex::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("metric");
     valid_paths.push_back("samples");
+    valid_paths.push_back("sample");
     valid_paths.push_back("i");
     valid_paths.push_back("j");
     std::string surprises = surprise_check(valid_paths, params);
@@ -527,13 +528,15 @@ CameraSimplex::execute()
 
 /*
     // Code for getting all scores from the 20 image spirals
+    int sample = (int)params()["sample"].as_int64();
     
     int metric_num = 0;
-    string metrics[] = {"data_entropy", "depth_entropy", "max_depth",
-	                  "pb", "projected_area", "viewpoint_entropy",
-			  "visibility_ratio", "visible_triangles", "vkl"};
+    string metrics[] = {"data_entropy", "depth_entropy", "max_depth" };
+                         //  Next 6 commented out because of crashing,
+	                 // "pb", "projected_area", "viewpoint_entropy", 
+			 // "visibility_ratio", "visible_triangles", "vkl"};
     
-    for (metric_num ; metric_num < 9 ; metric_num++) {
+    for (metric_num ; metric_num < 3 ; metric_num++) { // 3 Should be nine but metrics bugged
       metric = metrics[metric_num];
       string filename = metrics[metric_num];
       filename += "_scores.txt"; 
@@ -577,13 +580,13 @@ CameraSimplex::execute()
             known_max = score;
 	  }
 
-          cout << "Natural score at (" << winning_i << ", " << winning_j << ") is " << score << endl;
+          cout << "Natural score for sample " << i << " is " << score << endl;
       }
 
       cout << endl << "Writing score file for: " << metric << endl;
 
       // Second loop, put relative scores in file
-      for (i = 0 ; i < 20 ; ++i) {
+      for (int i = 0 ; i < 20 ; ++i) {
 
           Camera cam = GetCamera(i, samples, radius, focus, bounds);  
 
@@ -609,7 +612,7 @@ CameraSimplex::execute()
 
           myfile << result << endl;
           
-          cout << "Relative score at (" << winning_i << ", " << winning_j << ") is " << result << endl;
+          cout << "Relative score for sample " << i << " is " << result << endl;
 
           number += 377;
       }
