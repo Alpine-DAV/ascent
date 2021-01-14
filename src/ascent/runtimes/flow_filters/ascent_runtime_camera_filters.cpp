@@ -837,7 +837,7 @@ public:
 };
 
 void
-AddTriangleFields(vtkh::DataSet &vtkhData)
+AddTriangleFields2(vtkh::DataSet &vtkhData)
 {
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
@@ -904,6 +904,65 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
   }
   return;
 //  return newDataSet;
+}
+vtkh::DataSet*
+AddTriangleFields(vtkh::DataSet &vtkhData)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  vtkh::DataSet* newDataSet = new vtkh::DataSet;
+  //if there is data: loop through domains and grab all triangles.
+  if(!vtkhData.IsEmpty())
+  {
+    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
+    for(int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
+      //Get Data points
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      //Get triangles
+      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+
+      int numTris = cellset.GetNumberOfCells();
+      //make vectors and array handles for x,y,z triangle points.
+      std::vector<double> x0(numTris), y0(numTris), z0(numTris), x1(numTris), y1(numTris), z1(numTris), x2(numTris), y2(numTris), z2(numTris);
+      std::vector<double> X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2;
+     
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_0 = vtkm::cont::make_ArrayHandle(x0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_0 = vtkm::cont::make_ArrayHandle(y0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_0 = vtkm::cont::make_ArrayHandle(z0);
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_1 = vtkm::cont::make_ArrayHandle(x1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_1 = vtkm::cont::make_ArrayHandle(y1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_1 = vtkm::cont::make_ArrayHandle(z1);
+      vtkm::cont::ArrayHandle<vtkm::Float64> x_2 = vtkm::cont::make_ArrayHandle(x2);
+      vtkm::cont::ArrayHandle<vtkm::Float64> y_2 = vtkm::cont::make_ArrayHandle(y2);
+      vtkm::cont::ArrayHandle<vtkm::Float64> z_2 = vtkm::cont::make_ArrayHandle(z2);
+      vtkm::cont::Invoker invoker;
+      invoker(GetTriangleFields{}, cellset, coords, x_0, y_0, z_0, x_1, y_1, z_1, x_2, y_2, z_2);
+
+      X0.insert(X0.end(), x0.begin(), x0.end());
+      Y0.insert(Y0.end(), y0.begin(), y0.end());
+      Z0.insert(Z0.end(), z0.begin(), z0.end());
+      X1.insert(X1.end(), x1.begin(), x1.end());
+      Y1.insert(Y1.end(), y1.begin(), y1.end());
+      Z1.insert(Z1.end(), z1.begin(), z1.end());
+      X2.insert(X2.end(), x2.begin(), x2.end());
+      Y2.insert(Y2.end(), y2.begin(), y2.end());
+      Z2.insert(Z2.end(), z2.begin(), z2.end());
+      dataSetFieldAdd.AddCellField(dataset, "X0", X0);
+      dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
+      dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
+      dataSetFieldAdd.AddCellField(dataset, "X1", X1);
+      dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
+      dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
+      dataSetFieldAdd.AddCellField(dataset, "X2", X2);
+      dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
+      dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
+      newDataSet->AddDomain(dataset,localDomainIds[i]);
+    }
+  }
+  return newDataSet;
 }
 
 std::vector<Triangle>
@@ -1912,7 +1971,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
       std::vector<float> depth = GetScalarData(*dataset, "depth", height, width);
       std::vector<float> depth_data;
       for(int i = 0; i < size; i++)
-        if(depth[i] == depth[i] && depth[i] <= 1000)
+        if(depth[i] == depth[i] && depth[i] <= INT_MAX)
 	{
           depth_data.push_back(depth[i]);
 	}
@@ -1936,7 +1995,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width)
     std::vector<float> depth = GetScalarData(*dataset, "depth", height, width);
     std::vector<float> depth_data;
     for(int i = 0; i < size; i++)
-      if(depth[i] == depth[i] && depth[i] <= 1000)
+      if(depth[i] == depth[i] && depth[i] <= INT_MAX)
       {
         depth_data.push_back(depth[i]);
       }
@@ -2239,7 +2298,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
       for(int i = 0; i < size; i++)
         if(depth_data[i] == depth_data[i])
 	{
-          if(depth < depth_data[i] && depth_data[i] <= 1000)
+          if(depth < depth_data[i] && depth_data[i] < INT_MAX)
 	  {
             depth = depth_data[i];
 	  }
@@ -2261,7 +2320,7 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
     std::vector<float> depth_data = GetScalarData(*dataset, "depth", height, width);
     for(int i = 0; i < size; i++)
       if(depth_data[i] == depth_data[i])
-        if(depth < depth_data[i] && depth_data[i] <= 1000)
+        if(depth < depth_data[i] && depth_data[i] < INT_MAX)
           depth = depth_data[i];
   #endif
   return depth;
@@ -2486,7 +2545,7 @@ AutoCamera::execute()
         ASCENT_ERROR("Unknown field '"<<field_name<<"'");
       }
       int samples = (int)params()["samples"].as_int64();
-      int sample = (int)params()["sample"].as_int64();
+      int sample2 = (int)params()["sample"].as_int64();
     //TODO:Get the height and width of the image from Ascent
       int width  = 1000;
       int height = 1000;
@@ -2502,7 +2561,6 @@ AutoCamera::execute()
        */
       std::vector<Triangle> triangles = GetTriangles(dataset);
       int num_local_triangles = triangles.size();
-      cerr <<"num triangles: " << num_local_triangles << endl;
 /*        AddTriangleFields(dataset);
         vtkmCamera *camera2 = new vtkmCamera;
         camera2->ResetToBounds(dataset.GetGlobalBounds());
@@ -2518,8 +2576,8 @@ AutoCamera::execute()
       /*
        * End weird test code
        */
-//      vtkh::DataSet* data =AddTriangleFields(dataset);
-      AddTriangleFields(dataset);
+      vtkh::DataSet* data = AddTriangleFields(dataset);
+      //AddTriangleFields2(dataset);
 //      int num_domains = data->GetNumberOfDomains();
 //      data->PrintSummary(cerr);
 //      cerr << "AFTER" << endl;
@@ -2580,7 +2638,7 @@ AutoCamera::execute()
       double losing_score   = DBL_MAX;
       int    losing_sample  = -1;
       //new
-      double data_entropy_winning_score  = -DBL_MAX;
+      /*double data_entropy_winning_score  = -DBL_MAX;
       int    data_entropy_winning_sample = -1;
       double data_entropy_losing_score   = DBL_MAX;
       int    data_entropy_losing_sample  = -1;
@@ -2616,6 +2674,7 @@ AutoCamera::execute()
       int    vkl_winning_sample = -1;
       double vkl_losing_score   = DBL_MAX;
       int    vkl_losing_sample  = -1;
+      */
     //loop through number of camera samples.
       double scanline_time = 0.;
       double metric_time   = 0.;
@@ -2636,8 +2695,8 @@ AutoCamera::execute()
         vtkh::ScalarRenderer tracer;
         tracer.SetWidth(width);
         tracer.SetHeight(height);
-        tracer.SetInput(&dataset); //vtkh dataset by toponame
-//        tracer.SetInput(data); //vtkh dataset by toponame
+//        tracer.SetInput(&dataset); //vtkh dataset by toponame
+        tracer.SetInput(data); //vtkh dataset by toponame
         tracer.SetCamera(*camera);
         tracer.Update();
 
@@ -2665,16 +2724,63 @@ AutoCamera::execute()
 	int visibility_ratio_sample = sample;
 	int visible_triangles_sample = sample;
 	int vkl_sample = sample;
+
 	float data_entropy_score = calculateMetric(output, "data_entropy", field_name, triangles, height, width, cam);
+	double data_entropy_array[1];
+	data_entropy_array[0] = data_entropy_score;
+	std::string data_entropy_file = std::to_string(sample) + "_data_entropy_score.txt";
+	cerr << "data entropy file: " << data_entropy_file << endl;
+        MakeFile(data_entropy_file,data_entropy_array,1);
+
         float depth_entropy_score = calculateMetric(output, "depth_entropy", field_name, triangles, height, width, cam);
-        float max_depth_score = calculateMetric(output, "max_depth", field_name, triangles, height, width, cam);
-        float pb_score = calculateMetric(output, "pb", field_name, triangles, height, width, cam);
-        float projected_area_score = calculateMetric(output, "projected_area", field_name, triangles, height, width, cam);
-        float viewpoint_entropy_score = calculateMetric(output, "viewpoint_entropy", field_name, triangles, height, width, cam);
-        float visibility_ratio_score = calculateMetric(output, "visibility_ratio", field_name, triangles, height, width, cam);
-        float visible_triangles_score = calculateMetric(output, "visible_triangles", field_name, triangles, height, width, cam);
-        float vkl_score = calculateMetric(output, "vkl", field_name, triangles, height, width, cam);
-        std::cerr << "sample " << sample << " " << metric << " score: " << score << std::endl;
+	double depth_entropy_array[1];
+	depth_entropy_array[0] = depth_entropy_score;
+	std::string depth_entropy_file = std::to_string(sample) + "_depth_entropy_score.txt";
+        MakeFile(depth_entropy_file, depth_entropy_array,1);
+        
+	float max_depth_score = calculateMetric(output, "max_depth", field_name, triangles, height, width, cam);
+        double max_depth_array[1];
+        max_depth_array[0] = max_depth_score;
+        std::string max_depth_file = std::to_string(sample) + "_max_depth_score.txt";
+        MakeFile(max_depth_file, max_depth_array,1);
+
+	float pb_score = calculateMetric(output, "pb", field_name, triangles, height, width, cam);
+        double pb_array[1];
+        pb_array[0] = pb_score;
+        std::string pb_file = std::to_string(sample) + "_pb_score.txt";
+        MakeFile(pb_file, pb_array,1);
+
+	float projected_area_score = calculateMetric(output, "projected_area", field_name, triangles, height, width, cam);
+        double projected_area_array[1];
+        projected_area_array[0] = projected_area_score;
+        std::string projected_area_file = std::to_string(sample) + "_projected_area_score.txt";
+        MakeFile(projected_area_file, projected_area_array,1);
+
+	float viewpoint_entropy_score = calculateMetric(output, "viewpoint_entropy", field_name, triangles, height, width, cam);
+        double viewpoint_entropy_array[1];
+        viewpoint_entropy_array[0] = viewpoint_entropy_score;
+        std::string viewpoint_entropy_file = std::to_string(sample) + "_viewpoint_entropy_score.txt";
+        MakeFile(viewpoint_entropy_file, viewpoint_entropy_array,1);
+
+	float visibility_ratio_score = calculateMetric(output, "visibility_ratio", field_name, triangles, height, width, cam);
+        double visibility_ratio_array[1];
+        visibility_ratio_array[0] = visibility_ratio_score;
+        std::string visibility_ratio_file = std::to_string(sample) + "_visibility_ratio_score.txt";
+        MakeFile(visibility_ratio_file, visibility_ratio_array,1);
+
+	float visible_triangles_score = calculateMetric(output, "visible_triangles", field_name, triangles, height, width, cam);
+        double visible_triangles_array[1];
+        visible_triangles_array[0] = visible_triangles_score;
+        std::string visible_triangles_file = std::to_string(sample) + "_visible_triangles_score.txt";
+        MakeFile(visible_triangles_file, visible_triangles_array,1);
+
+	float vkl_score = calculateMetric(output, "vkl", field_name, triangles, height, width, cam);
+        double vkl_array[1];
+        vkl_array[0] = vkl_score;
+        std::string vkl_file = std::to_string(sample) + "_vkl_score.txt";
+        MakeFile(vkl_file, vkl_array,1);
+        
+	std::cerr << "sample " << sample << " " << metric << " score: " << score << std::endl;
         delete output;
 
     /*================ End Scalar Renderer  ======================*/
@@ -2691,7 +2797,7 @@ AutoCamera::execute()
 	  losing_sample = sample;
         }
 	//new
-	if(data_entropy_winning_score < data_entropy_score)
+	/*if(data_entropy_winning_score < data_entropy_score)
         {
           data_entropy_winning_score = data_entropy_score;
           data_entropy_winning_sample = data_entropy_sample;
@@ -2780,12 +2886,12 @@ AutoCamera::execute()
         {
           vkl_losing_score = vkl_score;
           vkl_losing_sample = vkl_sample;
-        }
+        }*/
       } //end of sample loop
       triangles.clear();
 //      delete data;
       //new
-      double data_entropy_sample_array[1];
+      /*double data_entropy_sample_array[1];
       double data_entropy_score_array[1];
       data_entropy_score_array[0] = data_entropy_winning_score;
       data_entropy_sample_array[0] = data_entropy_winning_sample;
@@ -2840,6 +2946,7 @@ AutoCamera::execute()
       MakeFile("vkl_score.txt",vkl_score_array,1);
       MakeFile("vkl_sample.txt",vkl_sample_array,1);
       //Write out files: each metric's winning sample, each metric's winning score.
+      */
       auto setting_camera_start = high_resolution_clock::now();
 
       if(winning_sample == -1)
