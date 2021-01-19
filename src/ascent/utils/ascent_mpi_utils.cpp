@@ -146,10 +146,14 @@ void gather_strings(std::set<std::string> &string_set)
   }
   conduit::Node res;
   conduit::relay::mpi::all_gather_using_schema(n_strings, res, mpi_comm);
-  std::vector<std::string> res_names = res.child_names();
-  for(auto &str : res_names)
+  int num_children = res.number_of_children();
+  for(int i = 0; i < num_children; ++i)
   {
-    string_set.insert(str);
+    std::vector<std::string> res_names = res.child(i).child_names();
+    for(auto &str : res_names)
+    {
+      string_set.insert(str);
+    }
   }
 #endif
 }
