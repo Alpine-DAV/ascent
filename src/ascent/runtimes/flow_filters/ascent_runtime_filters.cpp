@@ -85,8 +85,10 @@
     #if defined(ASCENT_ADIOS_ENABLED)
     #include <ascent_runtime_adios_filters.hpp>
     #endif
+//    #if defined(ASCENT_ADIOS2_ENABLED)
+    #include <ascent_runtime_adios2_filters.hpp>
+//    #endif
 #endif
-
 
 
 using namespace flow;
@@ -154,7 +156,6 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
-    AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 #if defined(ASCENT_DRAY_ENABLED)
@@ -186,6 +187,10 @@ register_builtin()
 #if defined(ASCENT_ADIOS_ENABLED)
     AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
 #endif
+
+//#if defined(ASCENT_ADIOS2_ENABLED)
+    AscentRuntime::register_filter_type<ADIOS2>("extracts","ADIOS2");
+//#endif    
 
 #endif
 

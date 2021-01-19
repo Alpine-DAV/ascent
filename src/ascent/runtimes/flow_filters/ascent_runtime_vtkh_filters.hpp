@@ -367,18 +367,6 @@ public:
     virtual void   execute();
 };
 
-//-----------------------------------------------------------------------------
-class ASCENT_API VTKHParticleAdvection : public ::flow::Filter
-{
-public:
-    VTKHParticleAdvection();
-    virtual ~VTKHParticleAdvection();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
 
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHProject2d : public ::flow::Filter

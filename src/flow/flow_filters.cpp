@@ -89,10 +89,6 @@ register_builtin()
     {
         Workspace::register_filter_type<Alias>();
     }
-    if(!Workspace::supports_filter_type<DependentAlias>())
-    {
-        Workspace::register_filter_type<DependentAlias>();
-    }
 #ifdef FLOW_PYTHON_ENABLED
     if(!Workspace::supports_filter_type<PythonScript>())
     {

@@ -121,7 +121,7 @@ private:
     void              ResetInfo();
 
     flow::Workspace w;
-    conduit::Node CreateDefaultFilters();
+    std::string CreateDefaultFilters();
     void ConvertPipelineToFlow(const conduit::Node &pipeline,
                                const std::string pipeline_name);
     void ConvertPlotToFlow(const conduit::Node &plot,

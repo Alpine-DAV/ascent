@@ -14,12 +14,6 @@ using namespace std;
 
 namespace detail
 {
-
-void cast_to_value()
-{
-
-}
-
 std::string
 print_match_error(const std::string &fname,
                   const std::vector<conduit::Node> &pos_arg_nodes,

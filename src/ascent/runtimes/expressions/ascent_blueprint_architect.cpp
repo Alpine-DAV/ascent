@@ -52,7 +52,6 @@
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
-#include <ascent_mpi_utils.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -660,7 +659,7 @@ is_scalar_field(const conduit::Node &dataset, const std::string &field_name)
       has_field = true;
       const conduit::Node &n_field = dom["fields/" + field_name];
       const int num_children = n_field["values"].number_of_children();
-      if(num_children == 0 || num_children == 1)
+      if(num_children == 0)
       {
         is_scalar = true;
       }
@@ -2210,10 +2209,16 @@ get_state_var(const conduit::Node &dataset, const std::string &var_name)
 }
 
 void paint_nestsets(const std::string nestset_name,
-                    const std::string topo_name,
                     conduit::Node &dom,
                     conduit::Node &field)
 {
+  if(!dom.has_path("nestsets/"+nestset_name))
+  {
+    ASCENT_ERROR("No nestset with that name");
+  }
+
+  conduit::Node &nestset = dom["nestsets/"+nestset_name];
+  const std::string topo_name = nestset["topology"].as_string();
   const conduit::Node &topo = dom["topologies/"+topo_name];
 
   if(topo["type"].as_string() == "unstructured")
@@ -2265,6 +2270,7 @@ void paint_nestsets(const std::string nestset_name,
       ASCENT_ERROR("unknown coord type");
     }
   }
+  // ok, now paint
 
   conduit::int32 field_size = el_dims[0] * el_dims[1];
   if(is_3d)
@@ -2296,19 +2302,6 @@ void paint_nestsets(const std::string nestset_name,
       levels[i] = 0;
     }
   }
-  // its possible at the coarsest level that there are
-  // no windows and thus no nestsets. We need to add
-  // an all zero field so that ghost field is consistent
-  // across all domains
-  if(!dom.has_path("nestsets/"+nestset_name))
-  {
-    // we alrady init'd it to zero if its a new field, so we are good to go
-    // if it wasnt' a new field, it should already have the correct values
-    return;
-  }
-
-  // ok, now paint
-  conduit::Node &nestset = dom["nestsets/"+nestset_name];
 
   const int windows = nestset["windows"].number_of_children();
 
@@ -2380,44 +2373,6 @@ void paint_nestsets(const std::string nestset_name,
 
 } // paint
 
-bool
-has_topology(const conduit::Node &dataset, const std::string &topo_name)
-{
-  bool has_topo = false;
-  for(int i = 0; i < dataset.number_of_children(); ++i)
-  {
-    const conduit::Node &dom = dataset.child(i);
-    if(!has_topo && dom.has_path("topologies/" + topo_name))
-    {
-      has_topo = true;
-    }
-  }
-  // check to see if the topology exists in any rank
-  has_topo = global_someone_agrees(has_topo);
-  return has_topo;
-}
-
-std::set<std::string> topology_names(const conduit::Node &dataset)
-{
-  std::set<std::string> topos;
-  for(int i = 0; i < dataset.number_of_children(); ++i)
-  {
-    const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("topologies"))
-    {
-      const int num_topos = dom["topologies"].number_of_children();
-      std::vector<std::string> topo_names = dom["topologies"].child_names();
-      for(int t = 0; t < num_topos; t++)
-      {
-        topos.insert(topo_names[t]);
-      }
-    }
-  }
-
-  gather_strings(topos);
-
-  return topos;
-}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

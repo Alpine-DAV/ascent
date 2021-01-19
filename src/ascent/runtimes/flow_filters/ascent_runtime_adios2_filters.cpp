@@ -1,5 +1,5 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
 //
 // Produced at the Lawrence Livermore National Laboratory
 //
@@ -50,11 +50,11 @@ TODO:
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_adios_filters.cpp
+/// file: ascent_runtime_adios2_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_adios_filters.hpp"
+#include "ascent_runtime_adios2_filters.hpp"
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -66,9 +66,15 @@ TODO:
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
-#include <ascent_data_object.hpp>
+#include <ascent_runtime_utils.hpp>
+#include <ascent_string_utils.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_file_system.hpp>
+#include <ascent_data_object.hpp>
+
+#include <vtkh/vtkh.hpp>
+#include <vtkh/DataSet.hpp>
+#include <ascent_runtime_vtkh_utils.hpp>
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -88,30 +94,12 @@ TODO:
 #include <cstring>
 #include <limits>
 
+#include <fides/DataSetReader.h>
+#include <fides/DataSetWriter.h>
+
 using namespace std;
 using namespace conduit;
 using namespace flow;
-
-struct coordInfo
-{
-    coordInfo(int r, int n, double r0, double r1) : num(n), rank(r) {range[0]=r0; range[1]=r1;}
-    coordInfo() {num=0; rank=-1; range[0]=range[1]=0;}
-    coordInfo(const coordInfo &c) {num=c.num; rank=c.rank; range[0]=c.range[0]; range[1]=c.range[1];}
-
-    int num, rank;
-    double range[2];
-};
-
-inline bool operator<(const coordInfo &c1, const coordInfo &c2)
-{
-    return c1.range[0] < c2.range[0];
-}
-
-inline ostream& operator<<(ostream &os, const coordInfo &ci)
-{
-    os<<"(r= "<<ci.rank<<" : n= "<<ci.num<<" ["<<ci.range[0]<<","<<ci.range[1]<<"])";
-    return os;
-}
 
 template <class T>
 inline std::ostream& operator<<(ostream& os, const vector<T>& v)
@@ -135,6 +123,8 @@ inline ostream& operator<<(ostream& os, const set<T>& s)
     return os;
 }
 
+static fides::io::DataSetWriter *writer = NULL;
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -154,48 +144,33 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
-ADIOS::ADIOS()
+ADIOS2::ADIOS2()
     :Filter()
 {
-    mpi_comm = 0;
-    rank = 0;
-    numRanks = 1;
-    meshName = "mesh";
-    globalDims.resize(3);
-    localDims.resize(3);
-    offset.resize(3);
-    for (int i = 0; i < 3; i++)
-        globalDims[i] = localDims[i] = offset[i] = 0;
-
-#ifdef ASCENT_MPI_ENABLED
-    mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-    MPI_Comm_rank(mpi_comm, &rank);
-    MPI_Comm_size(mpi_comm, &numRanks);
-#endif
 }
 
 //-----------------------------------------------------------------------------
-ADIOS::~ADIOS()
+ADIOS2::~ADIOS2()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-ADIOS::declare_interface(Node &i)
+ADIOS2::declare_interface(Node &i)
 {
-    i["type_name"]   = "adios";
+    i["type_name"]   = "adios2";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
 bool
-ADIOS::verify_params(const conduit::Node &params,
+ADIOS2::verify_params(const conduit::Node &params,
                      conduit::Node &info)
 {
     bool res = true;
-
+#if 0
     if (!params.has_child("transport") ||
         !params["transport"].dtype().is_string())
     {
@@ -210,46 +185,69 @@ ADIOS::verify_params(const conduit::Node &params,
         info["errors"].append() = "missing required entry 'filename'";
         res = false;
     }
-
+#endif
+    
     return res;
 }
 
 //-----------------------------------------------------------------------------
 void
-ADIOS::execute()
+ADIOS2::execute()
 {
+  ASCENT_INFO("execute");
+    
+  if (writer == NULL)
+    writer = new fides::io::DataSetWriter("out.bp");
+  
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("adios filter requires a DataObject input");
+        ASCENT_ERROR("ADIOS2 input must be a data object");
     }
 
-    std::string protocol = params()["protocol"].as_string();
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    DataObject *d_input = input<DataObject>(0);
-    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkm::cont::PartitionedDataSet pds;
+    vtkm::Id numDS = data.GetNumberOfDomains();
+    for (vtkm::Id i = 0; i < numDS; i++)
+      pds.AppendPartition(data.GetDomain(i));
+
+    writer->Write(pds, "BPFile");
+
+    return;
+
+#if 0    
+    if(!input("in").check_type<Node>())
+    {
+        // error
+        ASCENT_ERROR("adios2 filter requires a conduit::Node input");
+    }
 
     transportType = params()["transport"].as_string();
     fileName      = params()["filename"].as_string();
 
     // get params
 
-    if (transportType == "file")
-    {
-        adios_init_noxml(mpi_comm);
-        //adios_set_max_buffer_size(100);
-        adios_declare_group(&adiosGroup, "test_data", "iter", adios_stat_default);
-        adios_select_method(adiosGroup, "MPI", "", "");
-        adios_open(&adiosFile, "test_data", fileName.c_str(), "w", mpi_comm);
-    }
-    else
-    {
-        //  if (transportType == "staging")
-        ASCENT_ERROR("Transport type: " <<transportType << " not supported!");
-    }
-    adios_define_schema_version(adiosGroup, (char*)"1.1");
+    #ifdef ADIOS2_HAVE_MPI
+        adios2::ADIOS adios(mpi_comm, adios2::DebugON);
+    #else
+        adios2::ADIOS adios;
+    #endif
+    adios2::IO adiosWriter = adios.DeclareIO("adiosWriter");
+    // ************************************************************
+    // <-----------
+    //      adios_define_schema_version(adiosGroup, (char*)"1.1");
+    // <-----------
+    // ************************************************************
 
     //Fetch input data
-    Node *blueprint_data = n_input.get();
+    Node *blueprint_data = input<Node>("in");
 
     NodeConstIterator itr = (*blueprint_data)["coordsets"].children();
     while (itr.has_next())
@@ -259,12 +257,12 @@ ADIOS::execute()
 
         if (coordSetType == "uniform")
         {
-            UniformMeshSchema(coordSet);
+            UniformMeshSchema(coordSet); // Returns false
             break;
         }
         else if (coordSetType == "rectilinear")
         {
-            RectilinearMeshSchema(coordSet);
+            RectilinearMeshSchema(coordSet); // Holds a adios_write
             break;
         }
     }
@@ -278,167 +276,44 @@ ADIOS::execute()
         {
             const Node& field = fields_itr.next();
             std::string field_name = fields_itr.name();
-            FieldVariable(field_name, field);
+            FieldVariable(field_name, field); // Has a adios_write
         }
     }
-    adios_close(adiosFile);
 
+/*
+    // I think this comes down but how are the variables coming through?
+    if (transportType == "file")
+    {
+        adios2::Engine adiosWriter = bpIO.Open(fileName, adios2::Mode::Write);
+        //adios_init_noxml(mpi_comm);
+        ////adios_set_max_buffer_size(100);
+        //adios_declare_group(&adiosGroup, "test_data", "iter", adios_stat_default);
+        //adios_select_method(adiosGroup, "MPI", "", "");
+        //adios_open(&adiosFile, "test_data", fileName.c_str(), "w", mpi_comm);
+        adiosWriter.SetEngine("BPReader");
+    }
+    else if ( transportType == "sst" )
+    {
+        ASCENT_ERROR("SST is not enabled at this time");
+        //adiosWriter.SetEngine("SST");
+    }
+    else
+    {
+        ASCENT_ERROR("Transport type: " <<transportType << " not supported!");
+    }
+    //adios_close(adiosFile);
+    //I think I just need to open and close at write. Maybe close here
+    //adiosWriter.Close();
+    //adios2::Engine adiosWriter = bpIO.Open(fileName, adios2::Mode::Write);
+*/
+#endif
 }
 
-//-----------------------------------------------------------------------------
-bool
-ADIOS::UniformMeshSchema(const Node &node)
-{
-    return false;
-}
-
-//-----------------------------------------------------------------------------
-bool
-ADIOS::CalcRectilinearMeshInfo(const conduit::Node &node,
-                               vector<vector<double>> &XYZ)
-{
-    const Node &X = node["x"];
-    const Node &Y = node["y"];
-    const Node &Z = node["z"];
-
-    const double *xyzPtr[3] = {X.as_float64_ptr(),
-                               Y.as_float64_ptr(),
-                               Z.as_float64_ptr()};
-
-    localDims = {X.dtype().number_of_elements(),
-                 Y.dtype().number_of_elements(),
-                 Z.dtype().number_of_elements()};
-
-    //Stuff the XYZ coordinates into the conveniently provided array.
-    XYZ.resize(3);
-    for (int i = 0; i < 3; i++)
-    {
-        XYZ[i].resize(localDims[i]);
-        std::memcpy(&(XYZ[i][0]), xyzPtr[i], localDims[i]*sizeof(double));
-    }
-
-    //Participation trophy if you only bring 1 rank to the game.
-    if (numRanks == 1)
-    {
-        offset = {0,0,0};
-        globalDims = localDims;
-        return true;
-    }
-
-#ifdef ASCENT_MPI_ENABLED
-
-    // Have to figure out the indexing for each rank.
-    vector<int> ldims(3*numRanks, 0), buff(3*numRanks,0);
-    ldims[3*rank + 0] = localDims[0];
-    ldims[3*rank + 1] = localDims[1];
-    ldims[3*rank + 2] = localDims[2];
-
-    int mpiStatus;
-    mpiStatus = MPI_Allreduce(&ldims[0], &buff[0], ldims.size(), MPI_INT, MPI_SUM, mpi_comm);
-    if (mpiStatus != MPI_SUCCESS)
-        return false;
-
-    //Calculate the global dims. This is just the sum of all the localDims.
-    globalDims = {0,0,0};
-    for (int i = 0; i < buff.size(); i+=3)
-    {
-        globalDims[0] += buff[i + 0];
-        globalDims[1] += buff[i + 1];
-        globalDims[2] += buff[i + 2];
-    }
-
-    //And now for the offsets. It is the sum of all the localDims before me.
-    offset = {0,0,0};
-    for (int i = 0; i < rank; i++)
-    {
-        offset[0] += buff[i*3 + 0];
-        offset[1] += buff[i*3 + 1];
-        offset[2] += buff[i*3 + 2];
-    }
 
 #if 0
-    if (rank == 0)
-    {
-        cout<<"***************************************"<<endl;
-        cout<<"*****globalDims: "<<globalDims<<endl;
-    }
-    MPI_Barrier(mpi_comm);
-    for (int i = 0; i < numRanks; i++)
-    {
-        if (i == rank)
-        {
-            cout<<"  "<<rank<<": *****localDims:"<<localDims<<endl;
-            cout<<"  "<<rank<<": *****offset:"<<offset<<endl;
-            cout<<"  X: "<<rank<<XYZ[0]<<endl;
-            cout<<"  Y: "<<rank<<XYZ[1]<<endl;
-            cout<<"  Z: "<<rank<<XYZ[2]<<endl;
-            cout<<"***************************************"<<endl<<endl;
-        }
-        MPI_Barrier(mpi_comm);
-    }
-#endif
-
-    return true;
-
-#endif
-}
-
-
 //-----------------------------------------------------------------------------
 bool
-ADIOS::RectilinearMeshSchema(const Node &node)
-{
-    if (!node.has_child("values"))
-        return false;
-
-    const Node &coords = node["values"];
-    if (!coords.has_child("x") || !coords.has_child("y") || !coords.has_child("z"))
-        return false;
-
-    vector<vector<double>> XYZ;
-    if (!CalcRectilinearMeshInfo(coords, XYZ))
-        return false;
-
-    string coordNames[3] = {"coords_x", "coords_y", "coords_z"};
-
-    //Write schema metadata for Rect Mesh.
-    if (rank == 0)
-    {
-        /*
-        cout<<"**************************************************"<<endl;
-        cout<<rank<<": globalDims: "<<dimsToStr(globalDims)<<endl;
-        cout<<rank<<": localDims: "<<dimsToStr(localDims)<<endl;
-        cout<<rank<<": offset: "<<dimsToStr(offset)<<endl;
-        */
-
-        adios_define_mesh_timevarying("no", adiosGroup, meshName.c_str());
-        adios_define_mesh_rectilinear((char*)dimsToStr(globalDims).c_str(),
-                                      (char*)(coordNames[0]+","+coordNames[1]+","+coordNames[2]).c_str(),
-                                      0,
-                                      adiosGroup,
-                                      meshName.c_str());
-    }
-
-    //Write out coordinates.
-    int64_t ids[3];
-    for (int i = 0; i < 3; i++)
-    {
-        ids[i] = adios_define_var(adiosGroup,
-                                  coordNames[i].c_str(),
-                                  "",
-                                  adios_double,
-                                  to_string(localDims[i]).c_str(),
-                                  to_string(globalDims[i]).c_str(),
-                                  to_string(offset[i]).c_str());
-        adios_write_byid(adiosFile, ids[i], (void *)&(XYZ[i][0]));
-    }
-
-    return true;
-}
-
-//-----------------------------------------------------------------------------
-bool
-ADIOS::FieldVariable(const string &fieldName, const Node &node)
+ADIOS2::FieldVariable(const string &fieldName, const Node &node)
 {
     // TODO: we can assuem this is true if verify is true and this is a recti
     // mesh.
@@ -454,14 +329,14 @@ ADIOS::FieldVariable(const string &fieldName, const Node &node)
     {
         ASCENT_INFO("Field type "
                     << fieldType
-                    << " not supported for ADIOS this time");
+                    << " not supported for ADIOS2 this time");
         return false;
     }
     if (fieldAssoc != "vertex" && fieldAssoc != "element")
     {
         ASCENT_INFO("Field association "
                     << fieldAssoc
-                    <<" not supported for ADIOS this time");
+                    <<" not supported for ADIOS2 this time");
         return false;
     }
 
@@ -476,6 +351,8 @@ ADIOS::FieldVariable(const string &fieldName, const Node &node)
     cout<<"offset: "<<dimsToStr(offset, (fieldAssoc=="vertex"))<<endl;
     */
 
+    
+    /*
     int64_t varId = adios_define_var(adiosGroup,
                                      (char*)fieldName.c_str(),
                                      "",
@@ -490,9 +367,10 @@ ADIOS::FieldVariable(const string &fieldName, const Node &node)
                                fieldName.c_str(),
                                (fieldAssoc == "vertex" ? "point" : "cell"));
     adios_write(adiosFile, fieldName.c_str(), (void*)vals);
-
+    */
     return true;
 }
+#endif
 
 //-----------------------------------------------------------------------------
 };
@@ -513,8 +391,3 @@ ADIOS::FieldVariable(const string &fieldName, const Node &node)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

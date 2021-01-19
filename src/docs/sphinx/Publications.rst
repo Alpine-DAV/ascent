@@ -49,8 +49,6 @@ Publications and Presentations
 Publications
 ------------
 
-- `JIT’s Complicated: A Comprehensive System For Derived Field Generation <https://doi.org/10.1145/3426462.3426467>`_  Presented at the `ISAV 2020 Workshop <https://dav.lbl.gov/events/ISAV2020/>`_, held in conjunction with SC 20, on November 12th 2020, Virtual Event.
-
 - `Interactive In Situ Visualization and Analysis using Ascent and Jupyter <https://dl.acm.org/doi/pdf/10.1145/3364228.3364232>`_  Presented at the `ISAV 2019 Workshop <https://dav.lbl.gov/events/ISAV2019/>`_, held in conjunction with SC 19, on November 18h 2019 in Denver, CO.
 
 - `A Flexible System For In Situ Triggers <https://sc18.supercomputing.org/proceedings/workshops/workshop_files/ws_isav110s3-file1.pdf>`_  Presented at the `ISAV 2018 Workshop <http://vis.lbl.gov/events/ISAV2018/>`_, held in conjunction with SC 18, on November 12th 2018 in Dallas, TX.
@@ -73,8 +71,6 @@ Publications
 Tutorials
 -------------
 
-- `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual Event.
-- ECP 2020 Annual Meeting - Feb 2020, Houston, TX
 - In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2020, Houston, TX.
 - `In Situ Analysis and Visualization with SENSEI and Ascent <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_, SC19, Nov 17th, 2020, Denver, CO.
 - In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2019, Houston, TX.

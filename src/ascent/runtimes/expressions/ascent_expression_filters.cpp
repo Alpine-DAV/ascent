@@ -109,12 +109,9 @@ void fill_attrs(conduit::Node &obj)
   if(type == "vector")
   {
     double *vals = obj["value"].value();
-    obj["attrs/x/value"] = vals[0];
-    obj["attrs/x/type"] = "double";
-    obj["attrs/y/value"] = vals[1];
-    obj["attrs/y/type"] = "double";
-    obj["attrs/z/value"] = vals[2];
-    obj["attrs/z/type"] = "double";
+    obj["attrs/x"] = vals[0];
+    obj["attrs/y"] = vals[1];
+    obj["attrs/z"] = vals[2];
   }
 }
 
@@ -862,7 +859,6 @@ DotAccess::execute()
                       <<" type '"<<(*n_obj)["type"].as_string()<<"'."
                       <<ss.str());
   }
-
   (*output) = (*n_obj)["attrs/" + name];
 
   set_output<conduit::Node>(output);
@@ -2957,94 +2953,6 @@ Bin::execute()
 
   set_output<conduit::Node>(output);
 }
-//-----------------------------------------------------------------------------
-Bounds::Bounds() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Bounds::~Bounds()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Bounds::declare_interface(Node &i)
-{
-  i["type_name"] = "bounds";
-  i["port_names"].append() = "topology";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Bounds::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Bounds::execute()
-{
-  conduit::Node &n_topology = *input<Node>("topology");
-  conduit::Node *output = new conduit::Node();
-
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
-
-  std::set<std::string> topos;
-
-  if(!n_topology.dtype().is_empty())
-  {
-    std::string topo = n_topology["value"].as_string();
-    if(!has_topology(*dataset, topo))
-    {
-      std::set<std::string> names = topology_names(*dataset);
-      std::stringstream msg;
-      msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
-      for(auto &name : names)
-      {
-        msg<<" "<<name;
-      }
-      msg<<" ]";
-      ASCENT_ERROR(msg.str());
-    }
-    topos.insert(topo);
-  }
-  else
-  {
-    topos = topology_names(*dataset);
-  }
-
-  double inf = std::numeric_limits<double>::infinity();
-  double min_vec[3] = {inf, inf, inf};
-  double max_vec[3] = {-inf, -inf, -inf};
-  for(auto &topo_name : topos)
-  {
-    conduit::Node n_aabb = global_bounds(*dataset, topo_name);
-    double *t_min = n_aabb["min_coords"].as_float64_ptr();
-    double *t_max = n_aabb["max_coords"].as_float64_ptr();
-    for(int i = 0; i < 3; ++i)
-    {
-      min_vec[i] = std::min(t_min[i],min_vec[i]);
-      max_vec[i] = std::max(t_max[i],max_vec[i]);
-    }
-  }
-
-  (*output)["type"] = "aabb";
-  (*output)["attrs/min/value"].set(min_vec, 3);
-  (*output)["attrs/min/type"] = "vector";
-  (*output)["attrs/max/value"].set(max_vec, 3);
-  (*output)["attrs/max/type"] = "vector";
-
-  set_output<conduit::Node>(output);
-}
-
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions --

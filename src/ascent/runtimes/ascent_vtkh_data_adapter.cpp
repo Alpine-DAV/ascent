@@ -74,7 +74,6 @@
 // other ascent includes
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
-#include <ascent_mpi_utils.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 
@@ -1760,9 +1759,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords32 points = coordsHandle.Cast<Coords32>();
 
-      auto x_handle = vtkm::get<0>(points.GetStorage().GetArrayTuple());
-      auto y_handle = vtkm::get<1>(points.GetStorage().GetArrayTuple());
-      auto z_handle = vtkm::get<2>(points.GetStorage().GetArrayTuple());
+      auto x_handle = vtkm::get<0>(points.GetArrayTuple());
+      auto y_handle = vtkm::get<1>(points.GetArrayTuple());
+      auto z_handle = vtkm::get<2>(points.GetArrayTuple());
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
@@ -1834,9 +1833,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       Coords64 points = coordsHandle.Cast<Coords64>();
 
-      auto x_handle = vtkm::get<0>(points.GetStorage().GetArrayTuple());
-      auto y_handle = vtkm::get<1>(points.GetStorage().GetArrayTuple());
-      auto z_handle = vtkm::get<2>(points.GetStorage().GetArrayTuple());
+      auto x_handle = vtkm::get<0>(points.GetArrayTuple());
+      auto y_handle = vtkm::get<1>(points.GetArrayTuple());
+      auto z_handle = vtkm::get<2>(points.GetArrayTuple());
 
       point_dims[0] = x_handle.GetNumberOfValues();
       point_dims[1] = y_handle.GetNumberOfValues();
@@ -2013,7 +2012,10 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
+        std::cerr<<"BAD TYPE!!! "<<__FILE__<<" "<<__LINE__<<std::endl;
+        /*
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
+        */
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
@@ -2039,7 +2041,10 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
+        std::cerr<<"BAD TYPE!!! "<<__FILE__<<" "<<__LINE__<<std::endl;
+        /*
         static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
+        */
 
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
@@ -2274,11 +2279,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   }
   else
   {
-    std::stringstream msg;
-    msg<<"Field type unsupported for conversion to blueprint.\n";
-    field.PrintSummary(msg);
-    msg<<" Skipping.";
-    ASCENT_INFO(msg.str());
+    field.PrintSummary(std::cerr);
+    ASCENT_ERROR("Field type unsupported for conversion");
   }
 }
 
@@ -2288,7 +2290,6 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
 {
   node.reset();
 
-  bool success = true;
   const int cycle = collection->cycle();
   const double time = collection->time();
   // we have to re-merge the domains so all domains with the same
@@ -2296,35 +2297,23 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
   std::map<int, std::map<std::string,vtkm::cont::DataSet>> domain_map;
   domain_map = collection->by_domain_id();
 
-  try
+  for(auto domain_it : domain_map)
   {
-    for(auto domain_it : domain_map)
+    const int domain_id = domain_it.first;
+
+    conduit::Node &dom = node.append();
+    dom["state/domain_id"] = (int) domain_id;
+    dom["state/cycle"] = cycle;
+    dom["state/time"] = time;
+
+    for(auto topo_it : domain_it.second)
     {
-      const int domain_id = domain_it.first;
-
-      conduit::Node &dom = node.append();
-      dom["state/domain_id"] = (int) domain_id;
-      dom["state/cycle"] = cycle;
-      dom["state/time"] = time;
-
-      for(auto topo_it : domain_it.second)
-      {
-        const std::string topo_name = topo_it.first;
-        vtkm::cont::DataSet &dataset = topo_it.second;
-        VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name, zero_copy);
-      }
+      const std::string topo_name = topo_it.first;
+      vtkm::cont::DataSet &dataset = topo_it.second;
+      VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name, zero_copy);
     }
   }
-  catch(...)
-  {
-    success = false;
-  }
 
-  success = global_agreement(success);
-  if(!success)
-  {
-    ASCENT_ERROR("Failed to convert vtkm data set to blueprint");
-  }
 }
 
 void
@@ -2333,31 +2322,17 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
                                         bool zero_copy)
 {
   node.reset();
-  bool success = true;
-  try
+  const int num_doms = dset->GetNumberOfDomains();
+  for(int i = 0; i < num_doms; ++i)
   {
-    const int num_doms = dset->GetNumberOfDomains();
-    for(int i = 0; i < num_doms; ++i)
-    {
-      conduit::Node &dom = node.append();
-      vtkm::cont::DataSet vtkm_dom;
-      vtkm::Id domain_id;
-      int cycle = dset->GetCycle();
-      dset->GetDomain(i, vtkm_dom, domain_id);
-      VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", zero_copy);
-      dom["state/domain_id"] = (int) domain_id;
-      dom["state/cycle"] = cycle;
-    }
-  }
-  catch(...)
-  {
-    success = false;
-  }
-
-  success = global_agreement(success);
-  if(!success)
-  {
-    ASCENT_ERROR("Failed to convert vtkm data set to blueprint");
+    conduit::Node &dom = node.append();
+    vtkm::cont::DataSet vtkm_dom;
+    vtkm::Id domain_id;
+    int cycle = dset->GetCycle();
+    dset->GetDomain(i, vtkm_dom, domain_id);
+    VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", zero_copy);
+    dom["state/domain_id"] = (int) domain_id;
+    dom["state/cycle"] = cycle;
   }
 }
 

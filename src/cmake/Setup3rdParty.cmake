@@ -102,9 +102,9 @@ if(HDF5_DIR)
 endif()
 
 ################################
-# Setup MFEM if enabled
+# Setup MFEM
 ################################
-if (MFEM_DIR AND ENABLE_MFEM)
+if (MFEM_DIR)
   include(cmake/thirdparty/SetupMFEM.cmake)
 endif()
 
@@ -119,9 +119,9 @@ endif()
 ################################
 # Setup ADIOS
 ################################
-if (ADIOS_DIR)
-  include(cmake/thirdparty/SetupADIOS.cmake)
-endif()
+#if (ADIOS2_DIR)
+#  include(cmake/thirdparty/SetupADIOS2.cmake)
+#endif()
 
 ################################
 # Setup Babelflow
