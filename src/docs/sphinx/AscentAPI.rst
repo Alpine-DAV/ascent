@@ -188,7 +188,7 @@ per MPI rank.
 .. code-block:: json
 
   {
-    "timings" : "true"
+    "timings" : "enabled"
   }
 
 
