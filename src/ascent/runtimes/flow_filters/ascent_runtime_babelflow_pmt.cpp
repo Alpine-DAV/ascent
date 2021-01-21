@@ -49,6 +49,7 @@
 
 // #define BFLOW_PMT_DEBUG
 // #define BFLOW_PMT_WRITE_RES
+#define EPSILON     0.00001
 
 
 class ParallelMergeTree {
@@ -497,7 +498,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
   //std::cout << world_rank << ": " << data_node["coordsets/coords/type"].as_string() << " color " << color <<std::endl;
 
   // Decide which uniform grid to work on (default 0, the finest spacing)
-  int32_t selected_spacing = 0;
+  double selected_spacing = 0;
 
   MPI_Comm uniform_comm;
   MPI_Comm_split(world_comm, uniform_color, world_rank, &uniform_comm);
@@ -506,18 +507,18 @@ void ascent::runtime::filters::BFlowPmt::execute()
   MPI_Comm_size(uniform_comm, &uniform_comm_size);
 
   if(uniform_color){
-    int32_t myspacing = 0;
+    double myspacing = 0;
     
     // uniform grid should not have spacing as {x,y,z}
     // this is a workaround to support old Ascent dataset using {x,y,z}
     if(data_node.has_path("coordsets/coords/spacing/x"))
-      myspacing = data_node["coordsets/coords/spacing/x"].value();
+      myspacing = data_node["coordsets/coords/spacing/x"].to_float64();
     else if(data_node.has_path("coordsets/coords/spacing/dx"))
-      myspacing = data_node["coordsets/coords/spacing/dx"].value();
+      myspacing = data_node["coordsets/coords/spacing/dx"].to_float64();
     
-    std::vector<int32_t> uniform_spacing(uniform_comm_size);
+    std::vector<double> uniform_spacing(uniform_comm_size);
     
-    MPI_Allgather(&myspacing, 1, MPI_INT, uniform_spacing.data(), 1, MPI_INT, uniform_comm);
+    MPI_Allgather(&myspacing, 1, MPI_DOUBLE, uniform_spacing.data(), 1, MPI_DOUBLE, uniform_comm);
     
     std::sort(uniform_spacing.begin(), uniform_spacing.end());
     std::unique(uniform_spacing.begin(), uniform_spacing.end());
@@ -527,7 +528,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
     else
       selected_spacing = *std::next(uniform_spacing.begin(), 0);
     
-    color = (myspacing == selected_spacing);
+    color = fabs(myspacing - selected_spacing) < EPSILON;
     
     //std::cout << "Selected spacing "<< selected_spacing << " rank " << world_rank << " contributing " << color <<"\n";
   }
@@ -555,8 +556,8 @@ void ascent::runtime::filters::BFlowPmt::execute()
 
     // NOTE: when field is a vector the coords/spacing has dx/dy/dz
     int32_t dims[3] = {1, 1, 1};
-    int32_t spacing[3] = {1, 1, 1};
-    int32_t origin[3] = {0, 0, 0};
+    double spacing[3] = {1, 1, 1};
+    double origin[3] = {0, 0, 0};
     
     dims[0] = data_node["coordsets/coords/dims/i"].value();
     dims[1] = data_node["coordsets/coords/dims/j"].value();
@@ -569,29 +570,29 @@ void ascent::runtime::filters::BFlowPmt::execute()
       // this is a workaround to support old Ascent dataset using {x,y,z}
       // TODO: we should probably remove {x,y,z} from the dataset
       if(data_node.has_path("coordsets/coords/spacing/x")){
-        spacing[0] = data_node["coordsets/coords/spacing/x"].value();
-        spacing[1] = data_node["coordsets/coords/spacing/y"].value();
+        spacing[0] = data_node["coordsets/coords/spacing/x"].to_float64();
+        spacing[1] = data_node["coordsets/coords/spacing/y"].to_float64();
         if(ndims > 2)
-          spacing[2] = data_node["coordsets/coords/spacing/z"].value();
+          spacing[2] = data_node["coordsets/coords/spacing/z"].to_float64();
 
         data_node["coordsets/coords/spacing/dx"] = spacing[0];
         data_node["coordsets/coords/spacing/dy"] = spacing[1];
         data_node["coordsets/coords/spacing/dz"] = spacing[2];
       }
       else if(data_node.has_path("coordsets/coords/spacing/dx")){
-        spacing[0] = data_node["coordsets/coords/spacing/dx"].value();
-        spacing[1] = data_node["coordsets/coords/spacing/dy"].value();
+        spacing[0] = data_node["coordsets/coords/spacing/dx"].to_float64();
+        spacing[1] = data_node["coordsets/coords/spacing/dy"].to_float64();
         if(ndims > 2)
-          spacing[2] = data_node["coordsets/coords/spacing/dz"].value();
+          spacing[2] = data_node["coordsets/coords/spacing/dz"].to_float64();
       }
       
     }
 
 
-    origin[0] = data_node["coordsets/coords/origin/x"].value();
-    origin[1] = data_node["coordsets/coords/origin/y"].value();
+    origin[0] = data_node["coordsets/coords/origin/x"].to_float64();
+    origin[1] = data_node["coordsets/coords/origin/y"].to_float64();
     if(ndims > 2)
-      origin[2] = data_node["coordsets/coords/origin/z"].value();
+      origin[2] = data_node["coordsets/coords/origin/z"].to_float64();
 
     // Inputs of PMT assume 3D dataset
     int32_t low[3] = {0,0,0};
