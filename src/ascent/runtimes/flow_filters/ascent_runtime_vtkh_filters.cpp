@@ -109,6 +109,7 @@
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
+#include <ascent_expression_eval.hpp>
 #endif
 
 #include <stdio.h>
@@ -135,6 +136,7 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
+
 
 VTKHMarchingCubes::VTKHMarchingCubes()
 :Filter()
@@ -381,9 +383,9 @@ VTKH3Slice::verify_params(const conduit::Node &params,
     res &= check_string("topology",params, info, false);
     valid_paths.push_back("topology");
 
-    res &= check_numeric("x_offset",params, info, false);
-    res &= check_numeric("y_offset",params, info, false);
-    res &= check_numeric("z_offset",params, info, false);
+    res &= check_numeric("x_offset",params, info, false, true);
+    res &= check_numeric("y_offset",params, info, false, true);
+    res &= check_numeric("z_offset",params, info, false, true);
     res = check_string("topology",params, info, false) && res;
 
     valid_paths.push_back("x_offset");
@@ -440,7 +442,7 @@ VTKH3Slice::execute()
     const float eps = 1e-5; // ensure that the slice is always inside the data set
     if(params().has_path("x_offset"))
     {
-      float offset = params()["x_offset"].to_float32();
+      float offset = get_float32(params()["x_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -449,7 +451,7 @@ VTKH3Slice::execute()
 
     if(params().has_path("y_offset"))
     {
-      float offset = params()["y_offset"].to_float32();
+      float offset = get_float32(params()["y_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -458,7 +460,7 @@ VTKH3Slice::execute()
 
     if(params().has_path("z_offset"))
     {
-      float offset = params()["z_offset"].to_float32();
+      float offset = get_float32(params()["z_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -613,15 +615,15 @@ VTKHSlice::verify_params(const conduit::Node &params,
 
     if(params.has_path("point/x"))
     {
-      res &= check_numeric("point/x",params, info, true);
-      res = check_numeric("point/y",params, info, true) && res;
-      res = check_numeric("point/z",params, info, true) && res;
+      res &= check_numeric("point/x",params, info, true, true);
+      res = check_numeric("point/y",params, info, true, true) && res;
+      res = check_numeric("point/z",params, info, true, true) && res;
     }
     else if(params.has_path("point/x_offset"))
     {
-      res &= check_numeric("point/x_offset",params, info, true);
-      res = check_numeric("point/y_offset",params, info, true) && res;
-      res = check_numeric("point/z_offset",params, info, true) && res;
+      res &= check_numeric("point/x_offset",params, info, true, true);
+      res = check_numeric("point/y_offset",params, info, true, true) && res;
+      res = check_numeric("point/z_offset",params, info, true, true) && res;
     }
     else
     {
@@ -632,9 +634,9 @@ VTKHSlice::verify_params(const conduit::Node &params,
 
     res = check_string("topology",params, info, false) && res;
 
-    res = check_numeric("normal/x",params, info, true) && res;
-    res = check_numeric("normal/y",params, info, true) && res;
-    res = check_numeric("normal/z",params, info, true) && res;
+    res = check_numeric("normal/x",params, info, true, true) && res;
+    res = check_numeric("normal/y",params, info, true, true) && res;
+    res = check_numeric("normal/z",params, info, true, true) && res;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("point/x");
@@ -691,22 +693,22 @@ VTKHSlice::execute()
 
     const float eps = 1e-5; // ensure that the slice is always inside the data set
 
-
     if(n_point.has_path("x_offset"))
     {
-      float offset = n_point["x_offset"].to_float32();
+      float offset = get_float32(n_point["x_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
 
-      offset = n_point["y_offset"].to_float32();
+      offset = get_float32(n_point["y_offset"], data_object);
+      std::cout<<"y offset "<<offset<<"\n";
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
 
-      offset = n_point["z_offset"].to_float32();
+      offset = get_float32(n_point["z_offset"], data_object);
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -714,14 +716,15 @@ VTKHSlice::execute()
     }
     else
     {
-      point[0] = n_point["x"].to_float32();
-      point[1] = n_point["y"].to_float32();
-      point[2] = n_point["z"].to_float32();
+      point[0] = get_float32(n_point["x"], data_object);
+      point[1] = get_float32(n_point["y"], data_object);
+      point[2] = get_float32(n_point["z"], data_object);
     }
 
-    vtkm::Vec<vtkm::Float32,3> v_normal(n_normal["x"].to_float32(),
-                                        n_normal["y"].to_float32(),
-                                        n_normal["z"].to_float32());
+    Vec3f v_normal;
+    v_normal[0] = get_float32(n_normal["x"], data_object);
+    v_normal[1] = get_float32(n_normal["y"], data_object);
+    v_normal[2] = get_float32(n_normal["z"], data_object);
 
     slicer.AddPlane(point, v_normal);
     slicer.Update();
@@ -773,8 +776,8 @@ VTKHGhostStripper::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
 
-    res = check_numeric("min_value",params, info, true) && res;
-    res = check_numeric("max_value",params, info, true) && res;
+    res = check_numeric("min_value",params, info, true, true) && res;
+    res = check_numeric("max_value",params, info, true, true) && res;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -881,8 +884,8 @@ VTKHThreshold::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
 
-    res = check_numeric("min_value",params, info, true) && res;
-    res = check_numeric("max_value",params, info, true) && res;
+    res = check_numeric("min_value",params, info, true, true) && res;
+    res = check_numeric("max_value",params, info, true, true) && res;
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -932,8 +935,8 @@ VTKHThreshold::execute()
     const Node &n_max_val = params()["max_value"];
 
     // convert to contig doubles
-    double min_val = n_min_val.to_float64();
-    double max_val = n_max_val.to_float64();
+    double min_val = get_float64(n_min_val, data_object);
+    double max_val = get_float64(n_max_val, data_object);
     thresher.SetUpperThreshold(max_val);
     thresher.SetLowerThreshold(min_val);
 
@@ -1011,45 +1014,45 @@ VTKHClip::verify_params(const conduit::Node &params,
       res &= check_string("topology",params, info, false);
       if(params.has_child("sphere"))
       {
-         res = check_numeric("sphere/center/x",params, info, true) && res;
-         res = check_numeric("sphere/center/y",params, info, true) && res;
-         res = check_numeric("sphere/center/z",params, info, true) && res;
-         res = check_numeric("sphere/radius",params, info, true) && res;
+         res = check_numeric("sphere/center/x",params, info, true, true) && res;
+         res = check_numeric("sphere/center/y",params, info, true, true) && res;
+         res = check_numeric("sphere/center/z",params, info, true, true) && res;
+         res = check_numeric("sphere/radius",params, info, true, true) && res;
 
       }
       else if(params.has_child("box"))
       {
-         res = check_numeric("box/min/x",params, info, true) && res;
-         res = check_numeric("box/min/y",params, info, true) && res;
-         res = check_numeric("box/min/z",params, info, true) && res;
-         res = check_numeric("box/max/x",params, info, true) && res;
-         res = check_numeric("box/max/y",params, info, true) && res;
-         res = check_numeric("box/max/z",params, info, true) && res;
+         res = check_numeric("box/min/x",params, info, true, true) && res;
+         res = check_numeric("box/min/y",params, info, true, true) && res;
+         res = check_numeric("box/min/z",params, info, true, true) && res;
+         res = check_numeric("box/max/x",params, info, true, true) && res;
+         res = check_numeric("box/max/y",params, info, true, true) && res;
+         res = check_numeric("box/max/z",params, info, true, true) && res;
       }
       else if(params.has_child("plane"))
       {
-         res = check_numeric("plane/point/x",params, info, true) && res;
-         res = check_numeric("plane/point/y",params, info, true) && res;
-         res = check_numeric("plane/point/z",params, info, true) && res;
-         res = check_numeric("plane/normal/x",params, info, true) && res;
-         res = check_numeric("plane/normal/y",params, info, true) && res;
-         res = check_numeric("plane/normal/z",params, info, true) && res;
+         res = check_numeric("plane/point/x",params, info, true, true) && res;
+         res = check_numeric("plane/point/y",params, info, true, true) && res;
+         res = check_numeric("plane/point/z",params, info, true, true) && res;
+         res = check_numeric("plane/normal/x",params, info, true, true) && res;
+         res = check_numeric("plane/normal/y",params, info, true, true) && res;
+         res = check_numeric("plane/normal/z",params, info, true, true) && res;
       }
       else if(params.has_child("multi_plane"))
       {
-         res = check_numeric("multi_plane/point1/x",params, info, true) && res;
-         res = check_numeric("multi_plane/point1/y",params, info, true) && res;
-         res = check_numeric("multi_plane/point1/z",params, info, true) && res;
-         res = check_numeric("multi_plane/normal1/x",params, info, true) && res;
-         res = check_numeric("multi_plane/normal1/y",params, info, true) && res;
-         res = check_numeric("multi_plane/normal1/z",params, info, true) && res;
+         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
 
-         res = check_numeric("multi_plane/point2/x",params, info, true) && res;
-         res = check_numeric("multi_plane/point2/y",params, info, true) && res;
-         res = check_numeric("multi_plane/point2/z",params, info, true) && res;
-         res = check_numeric("multi_plane/normal2/x",params, info, true) && res;
-         res = check_numeric("multi_plane/normal2/y",params, info, true) && res;
-         res = check_numeric("multi_plane/normal2/z",params, info, true) && res;
+         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
       }
     }
 
@@ -1128,22 +1131,22 @@ VTKHClip::execute()
       const Node &sphere = params()["sphere"];
       double center[3];
 
-      center[0] = sphere["center/x"].to_float64();
-      center[1] = sphere["center/y"].to_float64();
-      center[2] = sphere["center/z"].to_float64();
-      double radius = sphere["radius"].to_float64();
+      center[0] = get_float64(sphere["center/x"], data_object);
+      center[1] = get_float64(sphere["center/y"], data_object);
+      center[2] = get_float64(sphere["center/z"], data_object);
+      double radius = get_float64(sphere["radius"], data_object);
       clipper.SetSphereClip(center, radius);
     }
     else if(params().has_path("box"))
     {
       const Node &box = params()["box"];
       vtkm::Bounds bounds;
-      bounds.X.Min= box["min/x"].to_float64();
-      bounds.Y.Min= box["min/y"].to_float64();
-      bounds.Z.Min= box["min/z"].to_float64();
-      bounds.X.Max = box["max/x"].to_float64();
-      bounds.Y.Max = box["max/y"].to_float64();
-      bounds.Z.Max = box["max/z"].to_float64();
+      bounds.X.Min= get_float64(box["min/x"], data_object);
+      bounds.Y.Min= get_float64(box["min/y"], data_object);
+      bounds.Z.Min= get_float64(box["min/z"], data_object);
+      bounds.X.Max = get_float64(box["max/x"], data_object);
+      bounds.Y.Max = get_float64(box["max/y"], data_object);
+      bounds.Z.Max = get_float64(box["max/z"], data_object);
       clipper.SetBoxClip(bounds);
     }
     else if(params().has_path("plane"))
@@ -1151,12 +1154,12 @@ VTKHClip::execute()
       const Node &plane= params()["plane"];
       double point[3], normal[3];;
 
-      point[0] = plane["point/x"].to_float64();
-      point[1] = plane["point/y"].to_float64();
-      point[2] = plane["point/z"].to_float64();
-      normal[0] = plane["normal/x"].to_float64();
-      normal[1] = plane["normal/y"].to_float64();
-      normal[2] = plane["normal/z"].to_float64();
+      point[0] =  get_float64(plane["point/x"], data_object);
+      point[1] =  get_float64(plane["point/y"], data_object);
+      point[2] =  get_float64(plane["point/z"], data_object);
+      normal[0] = get_float64(plane["normal/x"], data_object);
+      normal[1] = get_float64(plane["normal/y"], data_object);
+      normal[2] = get_float64(plane["normal/z"], data_object);
       clipper.SetPlaneClip(point, normal);
     }
     else if(params().has_path("multi_plane"))
@@ -1164,18 +1167,18 @@ VTKHClip::execute()
       const Node &plane= params()["multi_plane"];
       double point1[3], normal1[3], point2[3], normal2[3];
 
-      point1[0] = plane["point1/x"].to_float64();
-      point1[1] = plane["point1/y"].to_float64();
-      point1[2] = plane["point1/z"].to_float64();
-      normal1[0] = plane["normal1/x"].to_float64();
-      normal1[1] = plane["normal1/y"].to_float64();
-      normal1[2] = plane["normal1/z"].to_float64();
-      point2[0] = plane["point2/x"].to_float64();
-      point2[1] = plane["point2/y"].to_float64();
-      point2[2] = plane["point2/z"].to_float64();
-      normal2[0] = plane["normal2/x"].to_float64();
-      normal2[1] = plane["normal2/y"].to_float64();
-      normal2[2] = plane["normal2/z"].to_float64();
+      point1[0] = get_float64(plane["point1/x"], data_object);
+      point1[1] = get_float64(plane["point1/y"], data_object);
+      point1[2] = get_float64(plane["point1/z"], data_object);
+      normal1[0] = get_float64(plane["normal1/x"], data_object);
+      normal1[1] = get_float64(plane["normal1/y"], data_object);
+      normal1[2] = get_float64(plane["normal1/z"], data_object);
+      point2[0] = get_float64(plane["point2/x"], data_object);
+      point2[1] = get_float64(plane["point2/y"], data_object);
+      point2[2] = get_float64(plane["point2/z"], data_object);
+      normal2[0] = get_float64(plane["normal2/x"], data_object);
+      normal2[1] = get_float64(plane["normal2/y"], data_object);
+      normal2[2] = get_float64(plane["normal2/z"], data_object);
       clipper.Set2PlaneClip(point1, normal1, point2, normal2);
     }
 
@@ -1230,7 +1233,7 @@ VTKHClipWithField::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
-    bool res = check_numeric("clip_value",params, info, true);
+    bool res = check_numeric("clip_value",params, info, true, true);
     res = check_string("field",params, info, true) && res;
     res = check_string("invert",params, info, false) && res;
 
@@ -1286,7 +1289,7 @@ VTKHClipWithField::execute()
       }
     }
 
-    vtkm::Float64 clip_value = params()["clip_value"].to_float64();
+    vtkm::Float64 clip_value = get_float64(params()["clip_value"], data_object);
 
     clipper.SetField(field_name);
     clipper.SetClipValue(clip_value);
@@ -1334,8 +1337,8 @@ VTKHIsoVolume::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("min_value",params, info, true);
-    res = check_numeric("max_value",params, info, true) && res;
+    bool res = check_numeric("min_value",params, info, true, true);
+    res = check_numeric("max_value",params, info, true, true) && res;
     res = check_string("field",params, info, true) && res;
 
     std::vector<std::string> valid_paths;
@@ -1382,8 +1385,8 @@ VTKHIsoVolume::execute()
     clipper.SetInput(&data);
 
     vtkm::Range clip_range;
-    clip_range.Min = params()["min_value"].to_float64();
-    clip_range.Max = params()["max_value"].to_float64();
+    clip_range.Min = get_float64(params()["min_value"], data_object);
+    clip_range.Max = get_float64(params()["max_value"], data_object);
 
     clipper.SetField(field_name);
     clipper.SetRange(clip_range);
@@ -1546,7 +1549,7 @@ VTKHLog::verify_params(const conduit::Node &params,
 
     bool res = check_string("field",params, info, true);
     res &= check_string("output_name",params, info, false);
-    res &= check_numeric("clamp_min_value",params, info, false);
+    res &= check_numeric("clamp_min_value",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -1597,7 +1600,8 @@ VTKHLog::execute()
 
     if(params().has_path("clamp_min_value"))
     {
-      logger.SetClampMin(params()["clamp_min_value"].to_float32());
+      double min_value = get_float64(params()["clamp_min_value"], data_object);
+      logger.SetClampMin(min_value);
       logger.SetClampToMin(true);
     }
 
@@ -1751,8 +1755,8 @@ VTKHHistSampling::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
-    res &= check_numeric("bins",params, info, false);
-    res &= check_numeric("sample_rate",params, info, false);
+    res &= check_numeric("bins",params, info, false, true);
+    res &= check_numeric("sample_rate",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -1796,7 +1800,7 @@ VTKHHistSampling::execute()
     float sample_rate = .1f;
     if(params().has_path("sample_rate"))
     {
-      sample_rate = params()["sample_rate"].to_float32();
+      sample_rate = get_float32(params()["sample_rate"], data_object);
       if(sample_rate <= 0.f || sample_rate >= 1.f)
       {
         ASCENT_ERROR("vtkh_hist_sampling 'sample_rate' value '"<<sample_rate<<"'"
@@ -1808,7 +1812,7 @@ VTKHHistSampling::execute()
 
     if(params().has_path("bins"))
     {
-      bins = params()["bins"].to_int32();
+      bins = get_int32(params()["bins"], data_object);
       if(bins <= 0.f)
       {
         ASCENT_ERROR("vtkh_hist_sampling 'bins' value '"<<bins<<"'"
@@ -2397,7 +2401,7 @@ VTKHHistogram::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
-    res &= check_numeric("bins",params, info, false);
+    res &= check_numeric("bins",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -2440,7 +2444,7 @@ VTKHHistogram::execute()
     int bins = 128;
     if(params().has_path("bins"))
     {
-      bins = params()["bins"].to_int32();
+      bins = get_int32(params()["bins"], data_object);
     }
 
     vtkh::Histogram hist;
@@ -2488,8 +2492,8 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
-    res &= check_numeric("seeds",params, info, false);
-    res &= check_numeric("step_size",params, info, false);
+    res &= check_numeric("seeds",params, info, false, true);
+    res &= check_numeric("step_size",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
@@ -2534,11 +2538,11 @@ VTKHParticleAdvection::execute()
     int seeds = 500;
     if(params().has_path("seeds"))
     {
-      seeds = params()["seeds"].to_int32();
+      seeds = get_int32(params()["seeds"], data_object);
     }
     if(params().has_path("step_size"))
     {
-      step_size = params()["step_size"].to_float32();
+      step_size = get_float32(params()["step_size"], data_object);
     }
 
     vtkh::ParticleAdvection streamline;
