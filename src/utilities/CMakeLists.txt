@@ -47,9 +47,11 @@
 # file: src/utilites/CMakeLists.txt
 #
 ###############################################################################
+add_subdirectory(about)
 add_subdirectory(replay)
 add_subdirectory(actions_conversions)
 add_subdirectory(holo_compare)
+
 
 # install visit scripts
 install(DIRECTORY visit_session_converters

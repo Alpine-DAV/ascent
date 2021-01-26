@@ -110,6 +110,37 @@ Alias::execute()
     set_output(input(0));
 }
 
+//-----------------------------------------------------------------------------
+DependentAlias::DependentAlias()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DependentAlias::~DependentAlias()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DependentAlias::declare_interface(Node &i)
+{
+    i["type_name"]   = "dependent_alias";
+    i["port_names"].append() = "in";
+    i["port_names"].append() = "dummy";
+    i["output_port"] = "true";
+}
+
+
+//-----------------------------------------------------------------------------
+void
+DependentAlias::execute()
+{
+    set_output(input(0));
+}
+
 
 //-----------------------------------------------------------------------------
 RegistrySource::RegistrySource()

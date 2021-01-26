@@ -11,6 +11,7 @@ variables:
   main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-01-25-sha3769e1
   cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2021-01-25-sha3769e1
 
+
 # only build merge target pr to develop
 trigger: none
 pr:
@@ -60,13 +61,23 @@ stages:
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
-        shared_py36:
+          BLT_CXX_STD: c++11
+        shared_py36_cxx11:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: ON
+          BLT_CXX_STD: c++11
+        shared_py36_cxx14:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
+          BLT_CXX_STD: c++14
     steps:
       - checkout: self
         clean: boolean
@@ -99,6 +110,8 @@ stages:
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # c++ std
+           export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            # include host config
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
            # extra settings

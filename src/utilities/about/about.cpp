@@ -42,53 +42,38 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_mpi_utils.hpp
-///
-//-----------------------------------------------------------------------------
-#ifndef ASCENT_MPI_UTILS_HPP
-#define ASCENT_MPI_UTILS_HPP
 
-#include <set>
-#include <string>
-#ifdef ASCENT_MPI_ENABLED
+//-----------------------------------------------------------------------------
+///
+/// file: about.cpp
+///
+//-----------------------------------------------------------------------------
+#include <ascent.hpp>
+
+#ifdef ABOUT_MPI
 #include <mpi.h>
 #endif
-//-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
+
+int main (int argc, char *argv[])
 {
+    int par_size = 1;
+    int par_rank = 0;
 
-//
-// returns true if all ranks say true
-//
-bool global_agreement(bool vote);
-
-//
-// returns true if any ranks says true
-//
-bool global_someone_agrees(bool vote);
-
-//
-// gathers strings from all ranks
-//
-void gather_strings(std::set<std::string> &set);
-
-int mpi_rank();
-int mpi_size();
-
-//-----------------------------------------------------------------------------
-};
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-
+#ifdef ABOUT_MPI
+    MPI_Init(NULL,NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &par_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
 #endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 
+    if(par_rank == 0)
+    {
+        conduit::Node info;
+        ascent::about(info);
+        info.print();
+    }
 
+#ifdef ABOUT_MPI
+  MPI_Finalize();
+#endif
+  return 0;
+}

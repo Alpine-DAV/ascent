@@ -6,6 +6,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Fixed
+- Issue MPI hang if actions files (yaml or json) fail to parse.
+
+
+
+
+## [0.6.0] - Released 2020-11-06
+
 ### Added
 - Added support for Devil Ray (high-order) ray tracer
 - Added vector operations

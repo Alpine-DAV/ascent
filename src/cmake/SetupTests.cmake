@@ -42,6 +42,30 @@
 #
 ###############################################################################
 
+################################################################
+# SetupTests.cmake is called after Setup3rdParty.cmake
+# Here we check ENABLE_TESTS vs ASCENT_ENABLE_TESTS.
+# They should be the same, since we simply cache
+# the value of ENABLE_TESTS in ASCENT_ENABLE_TESTS at 
+# the very beginning of configure (in CMakeBasics.cmake)
+#
+# But if Setup3rdParty.cmake imports something that changes
+# ENABLE_TESTS, they could be different.
+# Trust ASCENT_ENABLE_TESTS
+################################################################
+
+if(ASCENT_ENABLE_TESTS AND NOT ENABLE_TESTS)
+    message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
+    set(ENABLE_TESTS ON)
+endif()
+
+if(ENABLE_TESTS)
+    message(STATUS "Tests are enabled (ENABLE_TESTS=ON)")
+else()
+    message(STATUS "Tests are disabled (ENABLE_TESTS=OFF)")
+endif()
+
+
 ##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest
 ##
