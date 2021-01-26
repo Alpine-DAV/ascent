@@ -395,7 +395,9 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
-        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+        if (ENABLE_BABELFLOW)
+            list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+        endif()
 
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
