@@ -68,6 +68,14 @@ stages:
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++11
+        shared_py36_cxx11_bflow:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
           ENABLE_BABELFLOW: ON
           BLT_CXX_STD: c++11
         shared_py36_cxx14:
@@ -76,7 +84,7 @@ stages:
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: ON
+          ENABLE_BABELFLOW: OFF
           BLT_CXX_STD: c++14
     steps:
       - checkout: self
@@ -234,6 +242,7 @@ stages:
         static:
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Debug
+          ENABLE_BABELFLOW: OFF
     steps:
       - checkout: self
         clean: boolean
@@ -265,6 +274,7 @@ stages:
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
