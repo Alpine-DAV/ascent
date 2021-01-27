@@ -544,7 +544,6 @@ CameraSimplex::execute()
        
       double known_min = DBL_MAX;
       double known_max = -DBL_MAX;
-      int number = 0;
 
       cout << endl << "Gathering max and min data for: " << metric << endl;
 
@@ -612,7 +611,6 @@ CameraSimplex::execute()
           
           cout << "Relative score for sample " << i << " is " << result << endl;
 
-          number += 377;
       }
 
       myfile.close();
