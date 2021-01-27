@@ -241,7 +241,7 @@ stages:
       matrix:
         static:
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
+          CMAKE_BUILD_TYPE: Debug
           ENABLE_BABELFLOW: OFF
     steps:
       - checkout: self
