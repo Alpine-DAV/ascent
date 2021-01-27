@@ -243,6 +243,9 @@ stages:
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
           ENABLE_BABELFLOW: OFF
+          # static linking unit tests eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
     steps:
       - checkout: self
         clean: boolean
@@ -274,6 +277,7 @@ stages:
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
