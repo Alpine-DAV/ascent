@@ -322,7 +322,10 @@ if (ENABLE_SERIAL)
                           vtkh_utils
                           vtkm_io
                           vtkm_rendering
-                          vtkm_filter
+                          vtkm_filter_common
+                          vtkm_filter_contour
+                          vtkm_filter_gradient
+                          vtkm_filter_extra
                           vtkm_worklet
                           vtkm_source
                           vtkm_cont
@@ -364,8 +367,8 @@ if(MPI_FOUND)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp) 
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
@@ -392,6 +395,10 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
+        if (ENABLE_BABELFLOW)
+            list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+        endif()
+
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
@@ -440,7 +447,10 @@ if(MPI_FOUND)
                           vtkh_utils_mpi
                           vtkm_io
                           vtkm_rendering
-                          vtkm_filter
+                          vtkm_filter_common
+                          vtkm_filter_contour
+                          vtkm_filter_gradient
+                          vtkm_filter_extra
                           vtkm_worklet
                           vtkm_source
                           vtkm_cont

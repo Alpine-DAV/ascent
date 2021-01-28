@@ -154,7 +154,6 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
-    AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 #if defined(ASCENT_DRAY_ENABLED)
@@ -181,6 +180,7 @@ register_builtin()
 #if defined(ASCENT_BABELFLOW_ENABLED)
     AscentRuntime::register_filter_type<BFlowPmt>("transforms", "bflow_pmt");
     AscentRuntime::register_filter_type<BFlowCompose>("extracts", "bflow_comp");
+    AscentRuntime::register_filter_type<BFlowIso>("extracts", "bflow_iso");
 #endif
 
 #if defined(ASCENT_ADIOS_ENABLED)

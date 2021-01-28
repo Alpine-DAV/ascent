@@ -95,7 +95,6 @@
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Log.hpp>
-#include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
@@ -2461,111 +2460,6 @@ VTKHHistogram::execute()
       res.Print(std::cout);
     }
 }
-//-----------------------------------------------------------------------------
-
-VTKHParticleAdvection::VTKHParticleAdvection()
-:Filter()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-VTKHParticleAdvection::~VTKHParticleAdvection()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void
-VTKHParticleAdvection::declare_interface(Node &i)
-{
-    i["type_name"]   = "vtkh_particle_advection";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-VTKHParticleAdvection::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
-
-    bool res = check_string("field",params, info, true);
-    res &= check_numeric("seeds",params, info, false, true);
-    res &= check_numeric("step_size",params, info, false, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("seeds");
-    valid_paths.push_back("step_size");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-VTKHParticleAdvection::execute()
-{
-
-    if(!input(0).check_type<DataObject>())
-    {
-        ASCENT_ERROR("vtkh_particle_advection input must be a data object");
-    }
-
-    DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-
-    std::string field_name = params()["field"].as_string();
-    if(!collection->has_field(field_name))
-    {
-      detail::field_error(field_name, this->name(), collection);
-    }
-
-    std::string topo_name = collection->field_topology(field_name);
-
-    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-
-    float step_size = 0.1f;
-    int seeds = 500;
-    if(params().has_path("seeds"))
-    {
-      seeds = get_int32(params()["seeds"], data_object);
-    }
-    if(params().has_path("step_size"))
-    {
-      step_size = get_float32(params()["step_size"], data_object);
-    }
-
-    vtkh::ParticleAdvection streamline;
-
-    streamline.SetInput(&data);
-    streamline.SetField(field_name);
-    streamline.SetStepSize(step_size);
-    streamline.SetSeedsRandomWhole(seeds);
-
-    streamline.Update();
-
-    vtkh::DataSet *output = streamline.GetOutput();
-
-    // we need to pass through the rest of the topologies, untouched,
-    // and add the result of this operation
-    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    new_coll->add(*output, topo_name);
-    // re wrap in data object
-    DataObject *res =  new DataObject(new_coll);
-    delete output;
-    set_output<DataObject>(res);
-}
-
 //-----------------------------------------------------------------------------
 
 VTKHProject2d::VTKHProject2d()
