@@ -20,8 +20,6 @@
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
 #include "BabelFlow/DefGraphConnector.h"
-#include "BabelFlow/PreProcessInputTaskGraph.hpp"
-#include "BabelFlow/ModTaskMap.hpp"
 #include "BabelFlow/ModuloMap.h"
 
 #ifdef ASCENT_MPI_ENABLED
@@ -43,6 +41,22 @@ namespace ascent
 //-----------------------------------------------------------------------------
 namespace bflow_comp
 {
+
+int volume_render_radixk(std::vector<BabelFlow::Payload>& inputs, 
+                         std::vector<BabelFlow::Payload>& outputs, 
+                         BabelFlow::TaskId task_id);
+
+int composite_radixk(std::vector<BabelFlow::Payload>& inputs, 
+                     std::vector<BabelFlow::Payload>& outputs, 
+                     BabelFlow::TaskId task_id);
+
+int write_results_radixk(std::vector<BabelFlow::Payload>& inputs,
+                         std::vector<BabelFlow::Payload>& outputs, 
+                         BabelFlow::TaskId task_id);
+
+int gather_results_radixk(std::vector<BabelFlow::Payload>& inputs,
+                          std::vector<BabelFlow::Payload>& outputs, 
+                          BabelFlow::TaskId task_id);
 
 struct ImageData
 {
@@ -121,10 +135,16 @@ public:
   virtual void Initialize() override;
 
 private:
-  BabelFlow::KWayReduction m_graph;
-  BabelFlow::KWayReductionTaskMap m_taskMap; 
-  BabelFlow::PreProcessInputTaskGraph m_modGraph;
-  BabelFlow::ModTaskMap m_modMap;
+  BabelFlow::SingleTaskGraph m_preProcTaskGr;
+  BabelFlow::ModuloMap m_preProcTaskMp;
+
+  BabelFlow::KWayReduction m_reduceTaskGr;
+  BabelFlow::KWayReductionTaskMap m_reduceTaskMp; 
+
+  BabelFlow::ComposableTaskGraph m_reduceGraph;
+  BabelFlow::ComposableTaskMap m_reduceTaskMap;
+
+  BabelFlow::DefGraphConnector m_defGraphConnector;
 };
 
 //-----------------------------------------------------------------------------
@@ -142,10 +162,16 @@ public:
   virtual void Initialize() override;
 
 private:
-  BabelFlow::BinarySwap m_graph;
-  BabelFlow::BinarySwapTaskMap m_taskMap; 
-  BabelFlow::PreProcessInputTaskGraph m_modGraph;
-  BabelFlow::ModTaskMap m_modMap;
+  BabelFlow::SingleTaskGraph m_preProcTaskGr;
+  BabelFlow::ModuloMap m_preProcTaskMp;
+
+  BabelFlow::BinarySwap m_binSwapTaskGr;
+  BabelFlow::BinarySwapTaskMap m_binSwapTaskMp; 
+
+  BabelFlow::ComposableTaskGraph m_binSwapGraph;
+  BabelFlow::ComposableTaskMap m_binSwapTaskMap;
+
+  BabelFlow::DefGraphConnector m_defGraphConnector;
 };
 
 //-----------------------------------------------------------------------------
@@ -182,7 +208,6 @@ protected:
   BabelFlow::ComposableTaskMap m_radGatherTaskMap;
 
   BabelFlow::DefGraphConnector m_defGraphConnector;
-  BabelFlow::DefGraphConnector m_defGraphConnectorPreProc;
 };
 
 //-----------------------------------------------------------------------------
