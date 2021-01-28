@@ -103,6 +103,7 @@
 #include <vtkh/filters/VectorComponent.hpp>
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
+#include <vtkh/filters/PointTransform.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
@@ -2874,6 +2875,100 @@ VTKHCompositeVector::execute()
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete comp_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHScale::VTKHScale()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHScale::~VTKHScale()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHScale::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_scale_transform";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHScale::verify_params(const conduit::Node &params,
+                                  conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_numeric("x_scale",params, info, true, true);
+    res &= check_numeric("y_scale",params, info, true, true);
+    res &= check_numeric("z_scale",params, info, true, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("x_scale");
+    valid_paths.push_back("y_scale");
+    valid_paths.push_back("z_scale");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHScale::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_point_transform input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    float x_scale = get_float32(params()["x_scale"], data_object);
+    float y_scale = get_float32(params()["y_scale"], data_object);
+    float z_scale = get_float32(params()["z_scale"], data_object);
+
+    std::vector<std::string> topo_names = collection->topology_names();
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    for(auto &topo : topo_names)
+    {
+      vtkh::DataSet &data = collection->dataset_by_topology(topo);
+      vtkh::PointTransform transform;
+      transform.SetScale(x_scale, y_scale, z_scale);
+      transform.SetInput(&data);
+      transform.Update();
+      vtkh::DataSet *trans_output = transform.GetOutput();
+      new_coll->add(*trans_output, topo);
+      delete trans_output;
+    }
+
+    //// re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
     set_output<DataObject>(res);
 }
 
