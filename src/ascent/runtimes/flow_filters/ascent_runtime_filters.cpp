@@ -155,6 +155,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
     AscentRuntime::register_filter_type<VTKHScale>("transforms","scale");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
+    AscentRuntime::register_filter_type<VTKHTriangulate>("transforms","triangulate");
+
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
 #if defined(ASCENT_DRAY_ENABLED)
