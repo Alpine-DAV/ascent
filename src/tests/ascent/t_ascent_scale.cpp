@@ -44,9 +44,10 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_mpi_render_2d.cpp
+/// file: t_ascent_slice.cpp
 ///
 //-----------------------------------------------------------------------------
+
 
 #include "gtest/gtest.h"
 
@@ -54,22 +55,25 @@
 
 #include <iostream>
 #include <math.h>
-#include <mpi.h>
 
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
+
+
+
 using namespace std;
 using namespace conduit;
-using ascent::Ascent;
+using namespace ascent;
+
+
+index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
+TEST(ascent_scale, test_scale)
 {
-
-    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
@@ -80,60 +84,54 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     }
 
     //
-    // Set Up MPI
-    //
-    int par_rank;
-    int par_size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &par_rank);
-    MPI_Comm_size(comm, &par_size);
-
-    ASCENT_INFO("Rank "
-                  << par_rank
-                  << " of "
-                  << par_size
-                  << " reporting");
-    //
-    // Create the data.
+    // Create an example mesh.
     //
     Node data, verify_info;
-    create_2d_example_dataset(data,par_rank,par_size);
-
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    verify_info.print();
 
-    // make sure the _output dir exists
-    string output_path = "";
-    if(par_rank == 0)
-    {
-        output_path = prepare_output_dir();
-    }
-    else
-    {
-        output_path = output_dir();
-    }
+    ASCENT_INFO("Testing scale");
 
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_mpi_2d_default_runtime");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_scale");
 
     // remove old images before rendering
     remove_test_image(output_file);
+
 
     //
     // Create the actions.
     //
 
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "scale";
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["x_scale"] = 2.f;
+    params["y_scale"] = 2.f;
+    params["z_scale"] = 2.f;
+
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial_vert";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
-    conduit::Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
-
-    actions.print();
-
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
 
     //
     // Run Ascent
@@ -142,82 +140,31 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     Ascent ascent;
 
     Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    ascent_opts["runtime"] = "ascent";
+    ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
 
-    MPI_Barrier(comm);
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the log filter.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-
-//-----------------------------------------------------------------------------
-TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
-{
-    Ascent ascent;
-    Node ascent_opts;
-    ascent_opts["exceptions"] = "forward";
-    // we throw an error if an mpi_comm is NO provided to a mpi ver of ascent
-    EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_mpi_runtime, test_for_error_reading_actions)
-{
-    int par_rank;
-    int par_size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &par_rank);
-    MPI_Comm_size(comm, &par_size);
-
-    Ascent ascent;
-    Node ascent_opts, ascent_actions;
-    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    ascent_opts["actions_file"] = "tin_bad_actions.yaml";
-    ascent_opts["exceptions"] = "forward";
-    
-    if(par_rank == 0)
-    {
-        std::ofstream ofs("tin_bad_actions.yaml", std::ofstream::out);
-        ofs  << ":";
-        ofs.close();
-    }
-
-    ascent.open(ascent_opts);
-
-    //
-    // Create the data.
-    //
-    Node data, verify_info;
-    create_2d_example_dataset(data,par_rank,par_size);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ascent.publish(data);
-
-    // all tasks should throw an error
-    EXPECT_THROW(ascent.execute(ascent_actions),conduit::Error);
-
-
-    ascent.close();
-
-}
-
-
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
-    MPI_Init(&argc, &argv);
-    result = RUN_ALL_TESTS();
-    MPI_Finalize();
 
+    // allow override of the data size via the command line
+    if(argc == 2)
+    {
+        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
+    }
+
+    result = RUN_ALL_TESTS();
     return result;
 }
 

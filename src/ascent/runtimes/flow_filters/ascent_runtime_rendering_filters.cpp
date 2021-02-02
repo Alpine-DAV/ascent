@@ -185,6 +185,9 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("axis_scale_x");
+  r_valid_paths.push_back("axis_scale_y");
+  r_valid_paths.push_back("axis_scale_z");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
   r_valid_paths.push_back("shading");
@@ -397,6 +400,27 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     color4f[3] = 1.f;
     render.SetForegroundColor(color4f);
   }
+
+  float axis_scale_x = 1.f;
+  float axis_scale_y = 1.f;
+  float axis_scale_z = 1.f;
+
+  if(render_node.has_path("axis_scale_x"))
+  {
+    axis_scale_x = render_node["axis_scale_x"].to_float32();
+  }
+
+  if(render_node.has_path("axis_scale_y"))
+  {
+    axis_scale_y = render_node["axis_scale_y"].to_float32();
+  }
+
+  if(render_node.has_path("axis_scale_z"))
+  {
+    axis_scale_z = render_node["axis_scale_z"].to_float32();
+  }
+
+  render.ScaleWorldAnnotations(axis_scale_x, axis_scale_y, axis_scale_z);
 
   return render;
 }

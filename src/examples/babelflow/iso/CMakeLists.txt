@@ -44,27 +44,27 @@
 
 ###############################################################################
 #
-# file: src/examples/CMakeLists.txt
+# BabelFlow iso surfaces example 
+# Usage: mpirun -n N ./ascent_bflow_iso_example <dim> <fanin> <blk x> <blk y> <blk z> <radices>
 #
-###############################################################################
-add_subdirectory(proxies/lulesh2.0.3)
-add_subdirectory(proxies/kripke)
-add_subdirectory(proxies/cloverleaf3d-ref)
-add_subdirectory(synthetic/noise)
-add_subdirectory(paraview-vis)
+##############################################################################
 
-if(MFEM_FOUND)
-  add_subdirectory(proxies/laghos)
+
+set(ascent_bflow_iso_example_sources
+    ascent_bflow_iso_example.cpp)
+
+if(MPI_FOUND)
+  set(ascent_bflow_iso_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES})
+
+    blt_add_executable(
+        NAME        ascent_bflow_iso_example
+        SOURCES     ${ascent_bflow_iso_example_sources}
+        DEPENDS_ON  ${ascent_bflow_iso_example_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+  install(TARGETS ascent_bflow_iso_example
+      EXPORT  ascent
+      LIBRARY DESTINATION examples/ascent/babelflow/iso
+      ARCHIVE DESTINATION examples/ascent/babelflow/iso
+      RUNTIME DESTINATION examples/ascent/babelflow/iso)
 endif()
-
-if(ENABLE_BABELFLOW)
-  add_subdirectory(babelflow/pmt)
-  add_subdirectory(babelflow/comp)
-  add_subdirectory(babelflow/iso)
-endif()
-
-# install using and python examples
-install(DIRECTORY using-with-cmake using-with-make python tutorial 
-        DESTINATION examples/ascent)
-
-
