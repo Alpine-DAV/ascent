@@ -205,6 +205,12 @@ VTKHMarchingCubes::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid)
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
