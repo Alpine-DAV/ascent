@@ -93,7 +93,8 @@ std::string possible_topologies(std::shared_ptr<VTKHCollection> collection);
 // name cannot be deduced or found
 std::string resolve_topology(const conduit::Node &params,
                              const std::string filter_name,
-                             std::shared_ptr<VTKHCollection> collection);
+                             std::shared_ptr<VTKHCollection> collection,
+                             bool error = true);
 
 } // namespace detail
 //-----------------------------------------------------------------------------

@@ -443,9 +443,17 @@ VTKH3Slice::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
@@ -583,9 +591,17 @@ VTKHTriangulate::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::Triangulate tri;
@@ -670,9 +686,17 @@ VTKHCleanGrid::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::CleanGrid cleaner;
@@ -800,9 +824,17 @@ VTKHSlice::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::Slice slicer;
@@ -1260,9 +1292,18 @@ VTKHClip::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
@@ -2785,9 +2826,17 @@ VTKHProject2d::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkm::Bounds bounds = data.GetGlobalBounds();

@@ -121,7 +121,8 @@ std::string possible_topologies(std::shared_ptr<VTKHCollection> collection)
 
 std::string resolve_topology(const conduit::Node &params,
                              const std::string filter_name,
-                             std::shared_ptr<VTKHCollection> collection)
+                             std::shared_ptr<VTKHCollection> collection,
+                             bool error)
 {
   int num_topologies = collection->number_of_topologies();
   std::string topo_name;
@@ -131,22 +132,34 @@ std::string resolve_topology(const conduit::Node &params,
     if(!params.has_path("topology"))
     {
       std::string topo_names = detail::possible_topologies(collection);;
-      ASCENT_ERROR(fpath<<": data set has multiple topologies "
-                   <<"and no topology is specified. "<<topo_names);
+      if(error)
+      {
+        ASCENT_ERROR(fpath<<": data set has multiple topologies "
+                     <<"and no topology is specified. "<<topo_names);
+      }
+      else
+      {
+        ASCENT_INFO(fpath<<": data set has multiple topologies "
+                     <<"and no topology is specified. "<<topo_names);
+        return topo_name;
+      }
     }
 
     topo_name = params["topology"].as_string();
     if(!collection->has_topology(topo_name))
     {
       std::string topo_names = detail::possible_topologies(collection);;
-      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'."
+      if(error)
+      {
+        ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'."
+                     <<topo_names);
+      }
+      else
+      {
+        ASCENT_INFO(fpath<<": no topology named '"<<topo_name<<"'."
                    <<topo_names);
-
-    }
-
-    if(!collection->has_topology(topo_name))
-    {
-      ASCENT_ERROR(fpath<<": no topology named '"<<topo_name<<"'");
+        return topo_name;
+      }
 
     }
   }
