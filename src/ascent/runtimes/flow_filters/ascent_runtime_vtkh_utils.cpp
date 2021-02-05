@@ -76,28 +76,37 @@ namespace detail
 
 void field_error(const std::string field_name,
                  const std::string filter_name,
-                 std::shared_ptr<VTKHCollection> collection)
+                 std::shared_ptr<VTKHCollection> collection,
+                 bool error)
 {
   std::string fpath = filter_to_path(filter_name);
-  std::vector<std::string> possible_names = collection->field_names();
+  std::vector<std::string> names = collection->field_names();
   std::stringstream ss;
-  ss<<" possible field names: ";
-  for(int i = 0; i < possible_names.size(); ++i)
+  ss<<" field names: ";
+  for(int i = 0; i < names.size(); ++i)
   {
-    ss<<"'"<<possible_names[i]<<"'";
-    if(i != possible_names.size() - 1)
+    ss<<"'"<<names[i]<<"'";
+    if(i != names.size() - 1)
     {
       ss<<", ";
     }
   }
-  ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'"
-               <<ss.str());
+  if(error)
+  {
+    ASCENT_ERROR("("<<fpath<<") unknown field '"<<field_name<<"'"
+                 <<ss.str());
+  }
+  else
+  {
+    ASCENT_INFO("("<<fpath<<") unknown field '"<<field_name<<"'"
+                <<ss.str());
+  }
 }
 
 std::string possible_topologies(std::shared_ptr<VTKHCollection> collection)
 {
    std::stringstream ss;
-   ss<<" possible topology names: ";
+   ss<<" topology names: ";
    std::vector<std::string> names = collection->topology_names();
    for(int i = 0; i < names.size(); ++i)
    {

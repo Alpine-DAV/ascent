@@ -83,7 +83,8 @@ namespace detail
 // up a list of altenative field names
 void field_error(const std::string field_name,
                  const std::string filter_name,
-                 std::shared_ptr<VTKHCollection> collection);
+                 std::shared_ptr<VTKHCollection> collection,
+                 bool error = true);
 
 // build a list of possible topologies in this collection
 std::string possible_topologies(std::shared_ptr<VTKHCollection> collection);
