@@ -208,9 +208,14 @@ VTKHMarchingCubes::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
+
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -564,11 +569,6 @@ VTKHTriangulate::execute()
 
     vtkh::DataSet *tri_output = tri.GetOutput();
 
-    // we need to pass through the rest of the topologies, untouched,
-    // and add the result of this operation
-    //VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    //new_coll->add(*tri_output, topo_name);
-#warning "create option to not forward"
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*tri_output, topo_name);
     // re wrap in data object
