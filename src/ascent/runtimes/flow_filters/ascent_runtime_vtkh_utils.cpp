@@ -166,6 +166,27 @@ std::string resolve_topology(const conduit::Node &params,
   else
   {
     topo_name = collection->topology_names()[0];
+
+    if(params.has_path("topology"))
+    {
+      std::string provided = params["topology"].as_string();
+      if(topo_name != provided)
+      {
+        if(error)
+        {
+          ASCENT_ERROR(fpath<<": provided topology parameter '"<<provided<<"' "
+                       <<"does not match the name of the only topology '"
+                       <<topo_name<<"'.");
+        }
+        else
+        {
+          ASCENT_INFO(fpath<<": provided topology parameter '"<<provided<<"' "
+                      <<"does not match the name of the only topology '"
+                      <<topo_name<<"'.");
+          return "";
+        }
+      }
+    }
   }
 
   return topo_name;
