@@ -1319,16 +1319,26 @@ CreatePlot::execute()
     std::string topo_name;
     if(field_name == "")
     {
+      bool throw_error = false;
       topo_name = detail::resolve_topology(params(),
                                            this->name(),
-                                           collection);
+                                           collection,
+                                           throw_error);
+      // don't crash everything, just warn the user and continue
+      detail::RendererContainer *container = new detail::RendererContainer();
+      set_output<detail::RendererContainer>(container);
     }
     else
     {
       topo_name = collection->field_topology(field_name);
       if(topo_name == "")
       {
-        detail::field_error(field_name, this->name(), collection);
+        bool throw_error = false;
+        detail::field_error(field_name, this->name(), collection, throw_error);
+        // don't crash everything, just warn the user and continue
+        detail::RendererContainer *container = new detail::RendererContainer();
+        set_output<detail::RendererContainer>(container);
+        return;
       }
     }
 

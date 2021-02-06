@@ -155,6 +155,7 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
     ascent.open(ascent_opts);
     ascent.publish(data);
 
+    // not an error, but we want to make sure the warning is emitted
     conduit::utils::set_info_handler(throw_handler);
     bool error = false;
     try
