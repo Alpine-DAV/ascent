@@ -141,6 +141,7 @@ class Ascent(Package, CudaPackage):
     depends_on("mfem@4.0.2~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
 
     depends_on("adios", when="+adios")
+    depends_on("genten")
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us
