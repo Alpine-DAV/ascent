@@ -662,6 +662,10 @@ DRayPseudocolor::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
     int comm_id = -1;
@@ -838,6 +842,10 @@ DRay3Slice::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1006,6 +1014,10 @@ DRayVolume::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1185,6 +1197,11 @@ DRayReflect::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1287,6 +1304,11 @@ DRayProject2d::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1465,6 +1487,11 @@ DRayProjectColors2d::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 

@@ -214,8 +214,11 @@ protected:
   // out from under us, which will happen
   std::shared_ptr<VTKHCollection> m_collection;
   std::string m_topo_name;
-  RendererContainer() {};
+  bool m_valid;
 public:
+  RendererContainer()
+   : m_valid(false)
+  {};
   RendererContainer(std::string key,
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
@@ -224,13 +227,19 @@ public:
     : m_key(key),
       m_registry(r),
       m_collection(collection),
-      m_topo_name(topo_name)
+      m_topo_name(topo_name),
+      m_valid(true)
   {
     // we have to keep around the dataset so we bring the
     // whole collection with us
     vtkh::DataSet &data = m_collection->dataset_by_topology(m_topo_name);
     renderer->SetInput(&data);
     m_registry->add<vtkh::Renderer>(m_key,renderer,1);
+  }
+
+  bool is_valid()
+  {
+    return m_valid;
   }
 
   vtkh::Renderer *
@@ -1084,9 +1093,14 @@ VTKHBounds::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    bounds->Include(collection->global_bounds());
+    // data could be the result of a failed pipeline
+    if(data_object->is_valid())
+    {
+      std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+      bounds->Include(collection->global_bounds());
+    }
+
     set_output<vtkm::Bounds>(bounds);
 }
 
@@ -1178,7 +1192,14 @@ AddPlot::execute()
 
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     detail::RendererContainer * cont = input<detail::RendererContainer>(1);
-    scene->AddRenderer(cont);
+
+    // this plot might have been created from a failed pipeline
+    // so check to see if this is valid and only pass it on if
+    // it is
+    if(cont->is_valid())
+    {
+      scene->AddRenderer(cont);
+    }
     set_output<detail::AscentScene>(scene);
 }
 
@@ -1277,6 +1298,16 @@ CreatePlot::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+
+
+    if(!data_object->is_valid())
+    {
+      // this is trying to render a failed pipeline
+      detail::RendererContainer *container = new detail::RendererContainer();
+      set_output<detail::RendererContainer>(container);
+      return;
+    }
+
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     conduit::Node &plot_params = params();
@@ -1288,16 +1319,26 @@ CreatePlot::execute()
     std::string topo_name;
     if(field_name == "")
     {
+      bool throw_error = false;
       topo_name = detail::resolve_topology(params(),
                                            this->name(),
-                                           collection);
+                                           collection,
+                                           throw_error);
+      // don't crash everything, just warn the user and continue
+      detail::RendererContainer *container = new detail::RendererContainer();
+      set_output<detail::RendererContainer>(container);
     }
     else
     {
       topo_name = collection->field_topology(field_name);
       if(topo_name == "")
       {
-        detail::field_error(field_name, this->name(), collection);
+        bool throw_error = false;
+        detail::field_error(field_name, this->name(), collection, throw_error);
+        // don't crash everything, just warn the user and continue
+        detail::RendererContainer *container = new detail::RendererContainer();
+        set_output<detail::RendererContainer>(container);
+        return;
       }
     }
 

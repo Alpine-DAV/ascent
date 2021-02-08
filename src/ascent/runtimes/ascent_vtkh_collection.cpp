@@ -324,7 +324,7 @@ std::vector<std::string> VTKHCollection::field_names() const
 {
   // just grab the first domain of every topo and repo
   // the known fields
-  std::vector<std::string> names;
+  std::set<std::string> names;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
     vtkh::DataSet domains = it->second;
@@ -333,11 +333,15 @@ std::vector<std::string> VTKHCollection::field_names() const
       vtkm::cont::DataSet dom = domains.GetDomain(0);
       for(int i = 0; i < dom.GetNumberOfFields(); ++i)
       {
-        names.push_back(dom.GetField(i).GetName());
+        names.insert(dom.GetField(i).GetName());
       }
     }
   }
-  return names;
+
+  gather_strings(names);
+  std::vector<std::string> res(names.size());
+  std::copy(names.begin(), names.end(), res.begin());
+  return res;
 }
 
 std::map<int, std::map<std::string,vtkm::cont::DataSet>>

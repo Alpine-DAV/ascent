@@ -68,28 +68,20 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-void
-throw_handler(const std::string &,
-              const std::string &,
-              int )
-{
-  ASCENT_ERROR("");
-}
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
-//-----------------------------------------------------------------------------
-TEST(ascent_error_handling, test_bad_plot_var_name)
-{
 
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline_failure, test_bad_field)
+{
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
+        ASCENT_INFO("Ascent support disabled, skipping test");
         return;
     }
 
@@ -105,10 +97,15 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing bad plot variable name");
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_empty");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_failed_pipeline");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
 
     //
     // Create the actions.
@@ -116,26 +113,21 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
 
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "clip";
+    pipelines["pl1/f1/type"] = "contour";
     // filter knobs
-    conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
-    clip_params["box/min/x"] = 0.1;
-    clip_params["box/min/y"] = 0.1;
-    clip_params["box/min/z"] = 0.1;
-    clip_params["box/max/x"] = 10.01; // <=
-    clip_params["box/max/y"] = 10.01;
-    clip_params["box/max/z"] = 10.01;
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "bananas";
+    contour_params["iso_values"] = 0.;
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "bananas";
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
     // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
+    conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
     // add the scenes
@@ -151,39 +143,24 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
-    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
-
-    // not an error, but we want to make sure the warning is emitted
-    conduit::utils::set_info_handler(throw_handler);
-    bool error = false;
-    try
-    {
-      ascent.execute(actions);
-    }
-    catch(conduit::Error &e)
-    {
-      error = true;
-    }
-
-    ASSERT_TRUE(error);
-
+    ascent.execute(actions);
     ascent.close();
-    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
-}
-//-----------------------------------------------------------------------------
-TEST(ascent_error_handling, test_bad_color_table)
-{
 
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+TEST(ascent_pipeline_failure, test_partial_failure)
+{
+    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
+        ASCENT_INFO("Ascent support disabled, skipping test");
         return;
     }
 
@@ -199,87 +176,15 @@ TEST(ascent_error_handling, test_bad_color_table)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing 3D warning for no bad color table name");
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_bananas");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_partial_failure");
 
-    //
-    // Create the actions.
-    //
+    // remove old images before rendering
+    remove_test_image(output_file);
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]  = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial";
-    scenes["s1/plots/p1/color_table/name"] = "bananas";
-    scenes["s1/image_prefix"] = output_file;
-
-    conduit::Node actions;
-    // add the pipeline
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-
-    //
-    // Run Ascent
-    //
-
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent_opts["exceptions"] = "forward";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-
-    conduit::utils::set_info_handler(throw_handler);
-    bool error = false;
-    try
-    {
-      ascent.execute(actions);
-    }
-    catch(conduit::Error &e)
-    {
-      error = true;
-    }
-
-    ASSERT_TRUE(error);
-
-    ascent.close();
-    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
-}
-//-----------------------------------------------------------------------------
-TEST(ascent_error_handling, test_emtpy)
-{
-
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
-        return;
-    }
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing 3D warning for no data to plot");
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_empty");
 
     //
     // Create the actions.
@@ -287,26 +192,30 @@ TEST(ascent_error_handling, test_emtpy)
 
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "clip";
+    pipelines["pl1/f1/type"] = "contour";
     // filter knobs
-    conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["topology"] = "mesh";
-    clip_params["box/min/x"] = -10.1;
-    clip_params["box/min/y"] = -10.1;
-    clip_params["box/min/z"] = -10.1;
-    clip_params["box/max/x"] = 10.01; // <=
-    clip_params["box/max/y"] = 10.01;
-    clip_params["box/max/z"] = 10.01;
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "bananas";
+    contour_params["iso_values"] = 0.;
+
+    pipelines["pl2/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params2 = pipelines["pl2/f1/params"];
+    contour_params2["field"] = "braid";
+    contour_params2["iso_values"] = 0.;
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial";
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/plots/p2/type"] = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "braid";
+    scenes["s1/plots/p2/pipeline"] = "pl2";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
     // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
+    conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
     // add the scenes
@@ -322,25 +231,195 @@ TEST(ascent_error_handling, test_emtpy)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
-    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
-
-    conduit::utils::set_info_handler(throw_handler);
-    bool error = false;
-    try
-    {
-      ascent.execute(actions);
-    }
-    catch(conduit::Error &e)
-    {
-      error = true;
-    }
-
-    ASSERT_TRUE(error);
-
+    ascent.execute(actions);
     ascent.close();
-    conduit::utils::set_info_handler(conduit::utils::default_info_handler);
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline_failure, test_bad_chaining)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_failed_pipeline");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "bananas";
+    contour_params["iso_values"] = 0.;
+
+    pipelines["pl1/f2/type"] = "clip";
+    // filter knobs
+    conduit::Node &clip_params = pipelines["pl1/f2/params"];
+    clip_params["plane/point/x"] = 0.;
+    clip_params["plane/point/y"] = 0.;
+    clip_params["plane/point/z"] = 0.;
+    clip_params["plane/normal/x"] = 1.;
+    clip_params["plane/normal/y"] = 0.;
+    clip_params["plane/normal/z"] = 0;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline_failure, test_bad_chaining_topo)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_failed_pipeline");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+
+    pipelines["pl1/f2/type"] = "clip";
+    // filter knobs
+    conduit::Node &clip_params = pipelines["pl1/f2/params"];
+    clip_params["topology"] = "bananas";
+    clip_params["plane/point/x"] = 0.;
+    clip_params["plane/point/y"] = 0.;
+    clip_params["plane/point/z"] = 0.;
+    clip_params["plane/normal/x"] = 1.;
+    clip_params["plane/normal/y"] = 0.;
+    clip_params["plane/normal/z"] = 0;
+
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+    contour_params["iso_values"] = 0.;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
 }
 
 //-----------------------------------------------------------------------------

@@ -205,12 +205,23 @@ VTKHMarchingCubes::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
+
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -315,12 +326,23 @@ VTKHVectorMagnitude::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -414,11 +436,24 @@ VTKH3Slice::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
@@ -549,11 +584,24 @@ VTKHTriangulate::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::Triangulate tri;
@@ -564,11 +612,6 @@ VTKHTriangulate::execute()
 
     vtkh::DataSet *tri_output = tri.GetOutput();
 
-    // we need to pass through the rest of the topologies, untouched,
-    // and add the result of this operation
-    //VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    //new_coll->add(*tri_output, topo_name);
-#warning "create option to not forward"
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*tri_output, topo_name);
     // re wrap in data object
@@ -636,11 +679,24 @@ VTKHCleanGrid::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::CleanGrid cleaner;
@@ -761,11 +817,24 @@ VTKHSlice::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::Slice slicer;
@@ -893,6 +962,11 @@ VTKHGhostStripper::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     // ask what topology this field is associated with and
@@ -1002,12 +1076,21 @@ VTKHThreshold::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1202,11 +1285,25 @@ VTKHClip::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
@@ -1352,12 +1449,21 @@ VTKHClipWithField::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1456,12 +1562,21 @@ VTKHIsoVolume::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1561,12 +1676,21 @@ VTKHLagrangian::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1666,12 +1790,21 @@ VTKHLog::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1765,12 +1898,21 @@ VTKHRecenter::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -1873,12 +2015,21 @@ VTKHHistSampling::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2016,12 +2167,21 @@ VTKHQCriterion::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2120,12 +2280,21 @@ VTKHDivergence::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2225,12 +2394,21 @@ VTKHVorticity::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2331,12 +2509,21 @@ VTKHGradient::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2433,12 +2620,21 @@ VTKHStats::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2517,12 +2713,21 @@ VTKHHistogram::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2614,11 +2819,24 @@ VTKHProject2d::execute()
     // grab the data collection and ask for a vtkh collection
     // which is one vtkh data set per topology
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
-                                                     collection);
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkm::Bounds bounds = data.GetGlobalBounds();
@@ -2718,12 +2936,21 @@ VTKHNoOp::execute()
     // grab the data collection and ask for a vtkh collection
     // which is one vtkh data set per topology
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string topo_name = collection->field_topology(field_name);
@@ -2811,12 +3038,21 @@ VTKHVectorComponent::execute()
     // grab the data collection and ask for a vtkh collection
     // which is one vtkh data set per topology
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
-      detail::field_error(field_name, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
     int component = params()["component"].to_int32();
     std::string res_name = params()["output_name"].as_string();
@@ -2910,18 +3146,31 @@ VTKHCompositeVector::execute()
     // grab the data collection and ask for a vtkh collection
     // which is one vtkh data set per topology
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name1 = params()["field1"].as_string();
     if(!collection->has_field(field_name1))
     {
-      detail::field_error(field_name1, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name1, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string field_name2 = params()["field2"].as_string();
     if(!collection->has_field(field_name2))
     {
-      detail::field_error(field_name2, this->name(), collection);
+      bool throw_error = false;
+      detail::field_error(field_name2, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
     }
 
     std::string field_name3;
@@ -2931,7 +3180,11 @@ VTKHCompositeVector::execute()
       field_name3 = params()["field3"].as_string();
       if(!collection->has_field(field_name3))
       {
-        detail::field_error(field_name3, this->name(), collection);
+        bool throw_error = false;
+        detail::field_error(field_name3, this->name(), collection, throw_error);
+        // this creates a data object with an invalid soource
+        set_output<DataObject>(new DataObject());
+        return;
       }
     }
 
@@ -3029,6 +3282,11 @@ VTKHScale::execute()
     // grab the data collection and ask for a vtkh collection
     // which is one vtkh data set per topology
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     float x_scale = get_float32(params()["x_scale"], data_object);
