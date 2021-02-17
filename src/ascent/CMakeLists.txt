@@ -205,8 +205,7 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
-#for now, we depend on compositing so we need vtkh
-if(DRAY_FOUND AND VTKM_FOUND)
+if(DRAY_FOUND)
   list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
 endif()
@@ -275,7 +274,7 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
-if(DRAY_FOUND AND VTKM_FOUND)
+if(DRAY_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 

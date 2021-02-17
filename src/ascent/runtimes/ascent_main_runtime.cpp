@@ -487,6 +487,9 @@ AscentRuntime::CreateDefaultFilters()
                       "verify",
                       0);        // default port
 
+    std::string prev_filter = "verify";
+
+#if defined(ASCENT_VTKM_ENABLED)
     // we can have multiple ghost fields
     std::vector<std::string> ghost_fields;
     const int num_children = m_ghost_fields.number_of_children();
@@ -495,7 +498,6 @@ AscentRuntime::CreateDefaultFilters()
       ghost_fields.push_back(m_ghost_fields.child(i).as_string());
     }
 
-    std::string prev_filter = "verify";
     std::string first_stripper;
     const int num_ghosts = ghost_fields.size();
     for(int i = 0; i < num_ghosts; ++i)
@@ -522,6 +524,7 @@ AscentRuntime::CreateDefaultFilters()
 
       prev_filter = filter_name;
     }
+#endif
 
     // we are creating a series of endpoints to enforce and
     // order of execution. Pipelines using expressions might
