@@ -70,6 +70,13 @@ using ascent::Ascent;
 TEST(ascent_mpi_runtime, test_relay_extract_iso)
 {
 
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
     //
     // Set Up MPI
     //
@@ -330,6 +337,13 @@ TEST(ascent_mpi_runtime, test_relay_extract_mesh)
 TEST(ascent_mpi_runtime, test_relay_partially_empty)
 {
 
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
     //
     // Set Up MPI
     //
@@ -453,6 +467,13 @@ TEST(ascent_mpi_runtime, test_relay_partially_empty)
 TEST(ascent_mpi_runtime, test_relay_empty)
 {
 
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
     //
     // Set Up MPI
     //
@@ -817,8 +838,8 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos_1)
     ascent.close();
 
     MPI_Barrier(comm);
-    
-    // read back in the blueprint index and make sure it 
+
+    // read back in the blueprint index and make sure it
     // has what we expect in it
 
     Node n_root;
@@ -830,7 +851,7 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos_1)
     EXPECT_EQ(bp_index["coordsets"].number_of_children(),6);
     EXPECT_EQ(bp_index["topologies"].number_of_children(),6);
     EXPECT_EQ(bp_index["fields"].number_of_children(),6);
-    
+
 }
 
 
@@ -861,7 +882,7 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos_2)
 
     Node data;
     ostringstream oss;
-    
+
     // rank 1 have 3 domains, rank zero none
     if(par_rank > 0)
     {
@@ -968,7 +989,7 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos_2)
 
     MPI_Barrier(comm);
 
-    // read back in the blueprint index and make sure it 
+    // read back in the blueprint index and make sure it
     // has what we expect in it
 
     Node n_root;
