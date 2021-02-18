@@ -1,0 +1,37 @@
+#An example of using queries in filter parameters.
+
+- 
+  action: "add_queries"
+  queries: 
+    q1: 
+      params: 
+        expression: "min(field('braid')).value"
+        name: "min_value"
+    q2: 
+      params: 
+        expression: "max(field('braid')).value"
+        name: "max_value"
+    q3: 
+      params: 
+        expression: "max_value - min_value"
+        name: "length"
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "threshold"
+        params: 
+          field: "braid"
+          min_value: "0.75 * length + min_value"
+          max_value: "max_value"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_filter_params_query"

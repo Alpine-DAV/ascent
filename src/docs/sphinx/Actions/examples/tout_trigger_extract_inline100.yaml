@@ -1,0 +1,18 @@
+#An example of specifying trigger actions without a trigger trigger actions file.
+
+- 
+  action: "add_triggers"
+  triggers: 
+    t1: 
+      params: 
+        condition: "magnitude(max(field('braid')).position - vector(0,0,0)) > 0"
+        actions: 
+          - 
+            action: "add_scenes"
+            scenes: 
+              s1: 
+                plots: 
+                  p1: 
+                    type: "pseudocolor"
+                    field: "braid"
+                image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_trigger_extract_inline"
