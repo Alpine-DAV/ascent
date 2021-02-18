@@ -604,9 +604,11 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
           type = type.substr(3);
       }
 
-      if(registered_filter_types()["transforms"].has_child(type))
+      const conduit::Node &n_transforms = registered_filter_types()["transforms"];
+
+      if(n_transforms.has_child(type))
       {
-          filter_name = registered_filter_types()["transforms"][type].as_string();
+          filter_name = n_transforms[type].as_string();
       }
       else
       {
@@ -671,6 +673,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                                     const std::string extract_name)
 {
   std::string filter_name;
+
+  const conduit::Node &n_extracts = registered_filter_types()["extracts"];
 
   conduit::Node params;
   if(extract.has_path("params")) params = extract["params"];
@@ -789,9 +793,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     params["source"] = py_src_final.str();
   }
   // generic extract support
-  else if(registered_filter_types()["extracts"].has_child(extract_type))
+  else if(n_extracts.has_child(extract_type))
   {
-     filter_name = registered_filter_types()["extracts"][extract_type].as_string();
+     filter_name = n_extracts[extract_type].as_string();
   }
   else
   {
@@ -942,6 +946,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 
   std::string prev_filter = plot_source;
 
+#if defined(ASCENT_VTKM_ENABLED)
   const int num_ghosts = m_ghost_fields.number_of_children();
   if(num_ghosts != 0)
   {
@@ -982,7 +987,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
       }
     }
   } // if stripping ghosts
-
+#endif
   // create an a consistent name
   std::string endpoint_name = pipeline_filter_name + "_plot_source";
 
