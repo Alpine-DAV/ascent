@@ -327,15 +327,16 @@ parse_plane(const conduit::Node &plane, dray::PlaneDetector &plane_d)
 
   if(plane.has_child("height"))
   {
-      plane_d.m_plane_width = plane["height"].to_float64();
+      plane_d.m_plane_height = plane["height"].to_float64();
   }
   else
   {
     ASCENT_ERROR("Plane definition missing 'height'");
   }
+
 }
 
-std::vector<float>
+void
 parse_camera(const conduit::Node camera_node, dray::Camera &camera)
 {
   typedef dray::Vec<float,3> Vec3f;
@@ -393,25 +394,6 @@ parse_camera(const conduit::Node camera_node, dray::Camera &camera)
       float zoom = camera_node["zoom"].to_float32();
       camera.set_zoom(zoom);
   }
-  //
-  // With a new potential camera position. We need to reset the
-  // clipping plane as not to cut out part of the data set
-  //
-
-  // clipping defaults
-  std::vector<float> clipping(2);
-  clipping[0] = 0.01f;
-  clipping[1] = 1000.f;
-  if(camera_node.has_child("near_plane"))
-  {
-      clipping[0] = camera_node["near_plane"].to_float64();
-  }
-
-  if(camera_node.has_child("far_plane"))
-  {
-      clipping[1] = camera_node["far_plane"].to_float64();
-  }
-  return clipping;
 }
 
 dray::ColorTable
@@ -576,13 +558,10 @@ parse_params(const conduit::Node &params,
   dray::AABB<3> bounds = dcol->bounds();
   camera.reset_to_bounds(bounds);
 
-  std::vector<float> clipping(2);
-  clipping[0] = 0.01f;
-  clipping[1] = 1000.f;
   if(params.has_path("camera"))
   {
     const conduit::Node &n_camera = params["camera"];
-    clipping = detail::parse_camera(n_camera, camera);
+    detail::parse_camera(n_camera, camera);
   }
 
   dray::Range scalar_range = dcol->range(field_name);
@@ -1422,23 +1401,20 @@ DRayProject2d::execute()
     dray::AABB<3> bounds = dcol->bounds();
     camera.reset_to_bounds(bounds);
 
-    std::vector<float> clipping(2);
-    clipping[0] = 0.01f;
-    clipping[1] = 1000.f;
     dray::PlaneDetector plane;
     bool use_plane = false;
     if(params().has_path("plane"))
     {
       use_plane = true;
       detail::parse_plane(params()["plane"], plane);
+      plane.m_x_res = width;
+      plane.m_y_res = height;
     }
     else if(params().has_path("camera"))
     {
       const conduit::Node &n_camera = params()["camera"];
-      clipping = detail::parse_camera(n_camera, camera);
+      detail::parse_camera(n_camera, camera);
     }
-
-
 
     std::vector<dray::ScalarBuffer> buffers;
 
