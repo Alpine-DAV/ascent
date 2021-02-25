@@ -118,6 +118,7 @@ set(ascent_sources
     utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
+    utils/ascent_resources.cpp
     # hola
     hola/ascent_hola.cpp)
 
@@ -160,6 +161,8 @@ set(ascent_headers
     utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
+    utils/ascent_resources.hpp
+    utils/ascent_resources_cinema_web.hpp
     # hola
     hola/ascent_hola.hpp)
 
