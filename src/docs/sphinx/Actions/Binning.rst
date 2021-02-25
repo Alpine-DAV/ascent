@@ -106,10 +106,21 @@ To accomplish this, we will define a spatial binning that is like a pencil
 down the center of the data set in the z direction,
 and we will use the noise mini-app to demonstrate.
 
-In the noise mini-app, the mesh is defined with the spatial bounds (0,0,0)-(10,10,10).
-We will define a three dimentional binning on the ranges `x=(4,6)` with 1 bin,
-`y=(4,6)` with 1 bin, and `z=(0,10)` with 20 bins.
+In the Lulesh proxy application, the mesh is defined with the spatial bounds
+(0,0,0)-(1.2,1.2,1.2).
+We will define a three dimentional binning on the ranges `x=(0,0.1)` with 1 bin,
+`y=(0,1.2)` with 1 bin, and `z=(0,1.2)` with 20 bins.
 This is technically a 3d binning, but it will result in a 1d array of values.
+
+Lusesh implements the Sedov blast problem which deposits a region of high energy in
+one corner of the data set, and as time progresses, a shockwave propagate out.
+The idea behind this example is to create a simple query to help us track the shock
+front as it moves through the problem.
+To that end, we will create a query that bins pressure (i.e., the variable `p`).
+
+.. figure:: ../images/lulesh_binning_fig.png
+
+  An example of Lulesh where the binning region is highlighted in red..
 
 Actions File
 ^^^^^^^^^^^^
@@ -122,11 +133,11 @@ An example ascent actions file that create this query:
     queries:
       bin_density:
         params:
-          expression: "binning('nodal_noise','max', [axis('x',[4.0,6.0]), axis('y', [4.0,6.0]), axis('z', num_bins=20)])"
+          expression: "binning('p','max', [axis('x',[0.0,0.1]), axis('y', [0.0,0.1]), axis('z', num_bins=20)])"
           name: my_binning_name
 
 Note that with and `x` and `y` axes that we are explicity specifying the bounds of the bins.
-Ascent deduces the number of bins bases on the explicit coordinates inside the array `[4.0,6.0]`.
+Ascent deduces the number of bins bases on the explicit coordinates inside the array `[0.0,0.1]`.
 With the `z` axis, the binning  automatically defines a uniform binning based on the spatial
 extents of the mesh.
 Additionally, we are using `max` as the aggregation function.
@@ -147,10 +158,10 @@ Here is a excerpt from the session file (note: the large array is truncated):
       type: "binning"
       attrs:
         value:
-          value: [0.666660643920327, ...]
+          value: [0.0, ...]
           type: "array"
         reduction_var:
-          value: "nodal_noise"
+          value: "p"
           type: "string"
         reduction_op:
           value: "max"
@@ -158,20 +169,20 @@ Here is a excerpt from the session file (note: the large array is truncated):
         bin_axes:
           value:
             x:
-              bins: [4.0, 6.0]
+              bins: [0.0, 0.1]
               clamp: 0
             y:
-              bins: [4.0, 6.0]
+              bins: [0.0, 0.1]
               clamp: 0
             z:
               num_bins: 20
               clamp: 0
               min_val: 0.0
-              max_val: 10.0000001
+              max_val: 1.12500001125
         association:
-          value: "vertex"
+          value: "element"
           type: "string"
-      time: 0.5
+      time: 1.06812409221472e-05
 
 Inside the session file is all the information Ascent used to create the binning,
 including the automatically defined spatial ranges for the `z` axis,
@@ -184,6 +195,7 @@ and plot the data.
 
 Plotting
 ^^^^^^^^
+Plotting the resulting data is straight forward in python.
 
 .. code-block:: python
 
@@ -215,9 +227,14 @@ Plotting
   for b in range(0,z_bins):
     z_vals.append(b * z_delta + z_start)
 
-  fig = plt.figure()
-  ax = plt.axes()
-  ax.plot(z_vals, bins[0]);
+  # plot the curve from the last cycle
+  plt.plot(z_vals, bins[-1]);
   plt.xlabel('z position')
-  plt.ylabel('value')
+  plt.ylabel('pressure')
   plt.savefig("binning.png")
+
+
+.. figure:: ../images/lulesh_binning.png
+
+  The resulting plot of pressure from the last cycle.
+
