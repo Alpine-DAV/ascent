@@ -238,3 +238,5 @@ Plotting the resulting data is straight forward in python.
 
   The resulting plot of pressure from the last cycle.
 
+From the resulting plot, we can clearly see how far the shock front has traveled
+through the problem.
