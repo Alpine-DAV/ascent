@@ -82,12 +82,7 @@ binning, this is subject to over sampling or under sampling.
 
   An example of spatial under sampling.
 
-
-.. figure:: ../images/oversampling.png
-
-  An example of spatial over sampling.
-
-When multiple values fall into a sinlge bin, we aggregate values using the following options:
+When multiple values fall into a sinlge bin (i.e., undersampling), we aggregate values using the following options:
 
 *  min: minimum value in a bin
 *  max: maximum value in a bin
@@ -97,6 +92,19 @@ When multiple values fall into a sinlge bin, we aggregate values using the follo
 *  std: standard deviation of values in a bin
 *  var: variance of values in a bin
 *  rms: root mean square of values in a bin
+
+The aggegation function is the second argument to the binning function and is demonstrated in the line out
+example.
+
+.. figure:: ../images/oversampling.png
+
+  An example of spatial over sampling.
+
+When oversamping data, the default value of an empy bin is 0. That said, the default empty
+value can be overridden by an option named parameter, e.g., `empty_bin_val=100`.
+This is often useful when the default value is part of the data range, and setting
+the empty bin value to something known, allows the user to filter out empty bins
+from the results.
 
 
 Example Line Out
@@ -240,3 +248,6 @@ Plotting the resulting data is straight forward in python.
 
 From the resulting plot, we can clearly see how far the shock front has traveled
 through the problem.
+Plotting the curve through time, we can see the shock from move along the z-axis.
+
+.. image:: ../images/lulesh_binning.gif
