@@ -74,7 +74,7 @@ simulation codes, regardless of the underlying mesh representation.
 Sampling and Aggregation
 ------------------------
 When specifying the number of bins on an axis, there will always be over smapling or undersampling.
-During spatial binning, each zone is placed into a bin based on it centriod, and with all
+During spatial binning, each zone is placed into a bin based on it centriod, and as with all
 binning, this is subject to over sampling or under sampling.
 
 
