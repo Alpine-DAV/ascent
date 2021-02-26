@@ -82,7 +82,7 @@ binning, this is subject to over sampling or under sampling.
 
   An example of spatial under sampling.
 
-When multiple values fall into a sinlge bin (i.e., undersampling), we aggregate values using the following options:
+When multiple values fall into a single bin (i.e., undersampling), we aggregate values using the following options:
 
 *  min: minimum value in a bin
 *  max: maximum value in a bin
