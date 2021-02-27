@@ -74,46 +74,61 @@ namespace runtime
 namespace expressions
 {
 
+ASCENT_API
 conduit::Node vert_location(const conduit::Node &domain,
                             const int &index,
                             const std::string &topo_name = "");
 
+ASCENT_API
 conduit::Node element_location(const conduit::Node &domain,
                                const int &index,
                                const std::string &topo_name = "");
 
+ASCENT_API
 conduit::Node field_max(const conduit::Node &dataset,
                         const std::string &field_name);
 
+ASCENT_API
 conduit::Node field_min(const conduit::Node &dataset,
                         const std::string &field_name);
 
+ASCENT_API
 conduit::Node field_sum(const conduit::Node &dataset,
                         const std::string &field_name);
 
+ASCENT_API
 conduit::Node field_avg(const conduit::Node &dataset,
                         const std::string &field_name);
 
+ASCENT_API
 conduit::Node field_nan_count(const conduit::Node &dataset,
                               const std::string &field_name);
 
+ASCENT_API
 conduit::Node field_inf_count(const conduit::Node &dataset,
                               const std::string &field_name);
 
+ASCENT_API
 conduit::Node field_histogram(const conduit::Node &dataset,
                               const std::string &field,
                               const double &min_val,
                               const double &max_val,
                               const int &num_bins);
 
+ASCENT_API
 conduit::Node field_entropy(const conduit::Node &hist);
 
+ASCENT_API
 conduit::Node field_pdf(const conduit::Node &hist);
+
+ASCENT_API
 conduit::Node field_cdf(const conduit::Node &hist);
 
+ASCENT_API
 conduit::Node global_bounds(const conduit::Node &dataset,
                             const std::string &topo_name);
 
+ASCENT_API
 conduit::Node binning(const conduit::Node &dataset,
                       conduit::Node &bin_axes,
                       const std::string &reduction_var,
@@ -121,41 +136,52 @@ conduit::Node binning(const conduit::Node &dataset,
                       const double empty_bin_val,
                       const std::string &component);
 
+ASCENT_API
 void ASCENT_API paint_binning(const conduit::Node &binning,
                               conduit::Node &dataset);
 
 void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
 
+ASCENT_API
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
 
+ASCENT_API
 bool is_scalar_field(const conduit::Node &dataset,
                      const std::string &field_name);
 
+ASCENT_API
 bool has_field(const conduit::Node &dataset, const std::string &field_name);
 
 // topology exists on at least one rank
+ASCENT_API
 bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
 
+ASCENT_API
 std::set<std::string> topology_names(const conduit::Node &dataset);
 
 //std::string known_topos(const conduit::Node &dataset);
 
+ASCENT_API
 bool has_component(const conduit::Node &dataset,
                    const std::string &field_name,
                    const std::string &component);
 
+ASCENT_API
 std::string
 possible_components(const conduit::Node &dataset,
                     const std::string &field_name);
 
+ASCENT_API
 bool is_xyz(const std::string &axis_name);
 
+ASCENT_API
 conduit::Node quantile(const conduit::Node &cdf,
                        const double val,
                        const std::string &interpolation);
 
 // if the field node is empty, we will allocate space
+ASCENT_API
 void paint_nestsets(const std::string nestset_name,
                     const std::string topo_name,
                     conduit::Node &dom,
