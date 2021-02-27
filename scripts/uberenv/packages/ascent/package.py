@@ -97,6 +97,24 @@ class Ascent(Package, CudaPackage):
     depends_on("conduit+python~mpi", when="+python+shared~mpi")
     depends_on("conduit~shared~python~mpi", when="~shared~mpi")
 
+    ###########################################################################
+    #
+    ###########################################################################
+    depends_on("raja@0.12.1+cuda~openmp+shared", when="+cuda~openmp+shared")
+    depends_on("raja@0.12.1+cuda+openmp+shared", when="+cuda+openmp+shared")
+    depends_on("raja@0.12.1+cuda~openmp~shared", when="+cuda~openmp~shared")
+    depends_on("raja@0.12.1+cuda+openmp~shared", when="+cuda+openmp~shared")
+
+    depends_on("raja@0.12.1~cuda~openmp+shared", when="~cuda~openmp+shared")
+    depends_on("raja@0.12.1~cuda+openmp+shared", when="~cuda+openmp+shared")
+    depends_on("raja@0.12.1~cuda~openmp~shared", when="~cuda~openmp~shared")
+    depends_on("raja@0.12.1~cuda+openmp~shared", when="~cuda+openmp~shared")
+
+    depends_on("umpire@4.1.2+cuda+shared~examples", when="+cuda+shared")
+    depends_on("umpire@4.1.2+cuda~shared~examples", when="+cuda~shared")
+    depends_on("umpire@4.1.2~cuda+shared~examples", when="~cuda+shared")
+    depends_on("umpire@4.1.2~cuda~shared~examples", when="~cuda~shared")
+
     #######################
     # Python
     #######################
@@ -141,6 +159,7 @@ class Ascent(Package, CudaPackage):
     depends_on("mfem@4.0.2~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
 
     depends_on("adios", when="+adios")
+
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us
@@ -437,6 +456,20 @@ class Ascent(Package, CudaPackage):
                                                 mpiexe_bin))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
+
+        #######################
+        # UMPIRE
+        #######################
+        cfg.write("# umpire from spack \n")
+        cfg.write(cmake_cache_entry("UMPIRE_DIR", spec['umpire'].prefix))
+        cfg.write("# This should not even need to be here \n")
+        cfg.write(cmake_cache_entry("CAMP_DIR", spec['camp'].prefix))
+
+        #######################
+        # UMPIRE
+        #######################
+        cfg.write("# raja from spack \n")
+        cfg.write(cmake_cache_entry("RAJA_DIR", spec['raja'].prefix))
 
         #######################
         # BABELFLOW

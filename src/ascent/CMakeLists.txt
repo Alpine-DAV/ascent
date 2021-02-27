@@ -248,6 +248,8 @@ endif()
 
 set(ascent_thirdparty_libs
     conduit
+    RAJA
+    umpire
     ascent_flow
     ascent_lodepng)
 
