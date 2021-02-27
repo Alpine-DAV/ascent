@@ -69,8 +69,9 @@
 // this path points to the web client js code tree
 #cmakedefine ASCENT_SOURCE_WEB_CLIENT_ROOT   "@ASCENT_SOURCE_WEB_CLIENT_ROOT@"
 
-// defs for general openmp support
+// defs for general openmp/cuda support
 #cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
+#cmakedefine ASCENT_USE_CUDA          "@CUDA_FOUND@"
 
 // defs for runtime support based on which 3rd-party libs we have
 
@@ -79,7 +80,6 @@
 #cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_OPENMP   "@OPENMP_FOUND@"
-
 
 #cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
 #cmakedefine ASCENT_MFEM_ENABLED      "@MFEM_FOUND@"

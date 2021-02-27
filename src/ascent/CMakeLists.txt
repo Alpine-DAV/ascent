@@ -138,6 +138,8 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_ast.hpp
     runtimes/expressions/ascent_expressions_tokens.hpp
     runtimes/expressions/ascent_expressions_parser.hpp
+    runtimes/expressions/ascent_math.hpp
+    runtimes/expressions/ascent_raja_policies.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp

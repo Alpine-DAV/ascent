@@ -50,6 +50,8 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_conduit_reductions.hpp"
+#include "ascent_raja_policies.hpp"
+#include "ascent_math.hpp"
 
 #include <ascent_logging.hpp>
 
@@ -119,84 +121,65 @@ type_dispatch(const conduit::Node &values, const Function &func)
   return res;
 }
 
-struct MaxCompare
-{
-  double value;
-  int index;
-};
-
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp declare reduction(maximum: struct MaxCompare : \
-        omp_out = omp_in.value > omp_out.value ? omp_in : omp_out)
-#endif
-
 struct MaxFunctor
 {
   template<typename T>
   conduit::Node operator()(const T* values, const int &size) const
   {
-    MaxCompare mcomp;
+    T identity = std::numeric_limits<T>::lowest();
 
-    mcomp.value = std::numeric_limits<double>::lowest();
-    mcomp.index = 0;
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp parallel for reduction(maximum:mcomp)
-#endif
-    for(int v = 0; v < size; ++v)
+    struct Index
     {
-      double val = static_cast<double>(values[v]);
-      if(val > mcomp.value)
-      {
-        mcomp.value = val;
-        mcomp.index = v;
-      }
-    }
+      RAJA::Index_type idx;
+      constexpr Index() : idx(-1) {}
+      constexpr Index(RAJA::Index_type idx) : idx(idx) {}
+    };
+
+    RAJA::ReduceMaxLoc<reduce_policy, T, Index> reducer(identity, Index());
+
+    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+
+      const T val = values[i];
+      reducer.maxloc(val,i);
+    });
+    ASCENT_ERROR_CHECK()
 
     conduit::Node res;
-    res["value"] = mcomp.value;
-    res["index"] = mcomp.index;
+    res["value"] = reducer.get();
+    res["index"] = reducer.getLoc().idx;
     return res;
   }
 };
-
-struct MinCompare
-{
-  double value;
-  int index;
-};
-
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp declare reduction(minimum: struct MinCompare : \
-        omp_out = omp_in.value < omp_out.value ? omp_in : omp_out)
-#endif
 
 struct MinFunctor
 {
   template<typename T>
   conduit::Node operator()(const T* values, const int &size) const
   {
-    MinCompare mcomp;
+    T identity = std::numeric_limits<T>::max();
 
-    mcomp.value = std::numeric_limits<double>::max();
-    mcomp.index = 0;
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp parallel for reduction(minimum:mcomp)
-#endif
-    for(int v = 0; v < size; ++v)
+    struct Index
     {
-      double val = static_cast<double>(values[v]);
-      if(val < mcomp.value)
-      {
-        mcomp.value = val;
-        mcomp.index = v;
-      }
-    }
+      RAJA::Index_type idx;
+      constexpr Index() : idx(-1) {}
+      constexpr Index(RAJA::Index_type idx) : idx(idx) {}
+    };
+
+    RAJA::ReduceMinLoc<reduce_policy, T, Index> reducer(identity, Index());
+
+    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+
+      const T val = values[i];
+      reducer.minloc(val,i);
+    });
+    ASCENT_ERROR_CHECK()
 
     conduit::Node res;
-    res["value"] = mcomp.value;
-    res["index"] = mcomp.index;
+    res["value"] = reducer.get();
+    res["index"] = reducer.getLoc().idx;
     return res;
   }
+  ASCENT_ERROR_CHECK()
 };
 
 struct SumFunctor
@@ -204,18 +187,16 @@ struct SumFunctor
   template<typename T>
   conduit::Node operator()(const T* values, const int &size) const
   {
-    T sum = 0;
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp parallel for reduction(+:sum)
-#endif
-    for(int v = 0; v < size; ++v)
-    {
-      double val = static_cast<double>(values[v]);
+    RAJA::ReduceSum<reduce_policy, T> sum(static_cast<T>(0));
+    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+      const T val = values[i];
       sum += val;
-    }
+    });
+    ASCENT_ERROR_CHECK()
+
     conduit::Node res;
-    res["value"] = sum;
-    res["count"] = (int)size;
+    res["value"] = sum.get();
+    res["count"] = size;
     return res;
   }
 };
@@ -225,30 +206,30 @@ struct NanFunctor
   template<typename T>
   conduit::Node operator()(const T* values, const int &size) const
   {
-    T sum = 0;
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp parallel for reduction(+:sum)
-#endif
-    for(int v = 0; v < size; ++v)
-    {
-      T is_nan = T(0);
-      const T value = values[v];
+    RAJA::ReduceSum<reduce_policy, RAJA::Index_type> count(0);
+    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+
+      const T value = values[i];
+      RAJA::Index_type is_nan = 0;
       if(value != value)
       {
-        is_nan = T(1);
+        is_nan = 1;
       }
-      sum += is_nan;
-    }
+      count += is_nan;
+    });
+    ASCENT_ERROR_CHECK()
 
     conduit::Node res;
-    res["value"] = sum;
-    res["count"] = (int)size;
+    res["value"] = count.get();
+    res["count"] = size;
     return res;
   }
+
 };
 
 struct InfFunctor
 {
+  // default template for non floating point types
   template<typename T>
   conduit::Node operator()(const T* values, const int &size) const
   {
@@ -261,37 +242,46 @@ struct InfFunctor
 
   conduit::Node operator()(const float* values, const int &size) const
   {
-    double sum = 0;
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp parallel for reduction(+:sum)
-#endif
-    for(int v = 0; v < size; ++v)
-    {
-      sum += std::isinf(values[v]) ? 1. : 0.;
-    }
+    RAJA::ReduceSum<reduce_policy, RAJA::Index_type> count(0);
+    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+
+      const float value = values[i];
+      RAJA::Index_type is = 0;
+      if(is_inf(value))
+      {
+        is = 1;
+      }
+      count += is;
+    });
+    ASCENT_ERROR_CHECK()
 
     conduit::Node res;
-    res["value"] = sum;
-    res["count"] = (int)size;
+    res["value"] = count.get();
+    res["count"] = size;
     return res;
   }
 
   conduit::Node operator()(const double* values, const int &size) const
   {
-    double sum = 0;
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp parallel for reduction(+:sum)
-#endif
-    for(int v = 0; v < size; ++v)
-    {
-      sum += std::isinf(values[v]) ? 1. : 0.;
-    }
+    RAJA::ReduceSum<reduce_policy, RAJA::Index_type> count(0);
+    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+
+      const double value = values[i];
+      RAJA::Index_type is = 0;
+      if(is_inf(value))
+      {
+        is = 1;
+      }
+      count += is;
+    });
+    ASCENT_ERROR_CHECK()
 
     conduit::Node res;
-    res["value"] = sum;
-    res["count"] = (int)size;
+    res["value"] = count.get();
+    res["count"] = size;
     return res;
   }
+
 };
 
 struct HistogramFunctor
@@ -314,22 +304,18 @@ struct HistogramFunctor
 
     double *bins = new double[m_num_bins];
     memset(bins, 0, sizeof(double) * m_num_bins);
-#ifdef ASCENT_USE_OPENMP
-    #pragma omp parallel for
-#endif
-    for(int v = 0; v < size; ++v)
+
+    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
     {
-      double val = static_cast<double>(values[v]);
+      double val = static_cast<double>(values[i]);
       int bin_index = static_cast<int>((val - m_min_val) * inv_delta);
       // clamp for now
       // another option is not to count data outside the range
-      bin_index = std::max(0, std::min(bin_index, m_num_bins - 1));
-#ifdef ASCENT_USE_OPENMP
-      #pragma omp atomic
-#endif
-      bins[bin_index]++;
+      bin_index = max(0, min(bin_index, m_num_bins - 1));
+      int old = RAJA::atomicAdd<atomic_policy> (&(bins[bin_index]), 1.);
 
-    }
+    });
+    ASCENT_ERROR_CHECK();
     conduit::Node res;
     res["value"].set(bins, m_num_bins);
     res["bin_size"] = (m_max_val - m_min_val) / double(m_num_bins);
