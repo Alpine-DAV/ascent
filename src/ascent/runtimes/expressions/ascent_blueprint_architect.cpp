@@ -2036,7 +2036,7 @@ field_min(const conduit::Node &dataset, const std::string &field)
       if(a_min < min_value)
       {
         min_value = a_min;
-        index = res["index"].as_int32();
+        index = res["index"].to_int32();
         domain = i;
         domain_id = dom["state/domain_id"].to_int32();
       }
@@ -2187,7 +2187,7 @@ field_max(const conduit::Node &dataset, const std::string &field)
       if(a_max > max_value)
       {
         max_value = a_max;
-        index = res["index"].as_int32();
+        index = res["index"].to_int32();
         domain = i;
         domain_id = dom["state/domain_id"].to_int32();
       }

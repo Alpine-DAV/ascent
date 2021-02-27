@@ -66,7 +66,8 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-index_t EXAMPLE_MESH_SIDE_DIM = 32;
+// do not change this
+const index_t EXAMPLE_MESH_SIDE_DIM = 32;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, max)
@@ -87,11 +88,150 @@ TEST(ascent_blueprint_reductions, max)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    // everything expects a mutli-domain data set
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
     Node dataset;
     dataset.append().set_external(data);
 
     Node res = runtime::expressions::field_max(dataset,"braid");
     res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
+    EXPECT_EQ(res["index"].to_int32(), 817);
+}
 
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, min)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
+    Node dataset;
+    dataset.append().set_external(data);
+
+    Node res = runtime::expressions::field_min(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  -9.78495270947739, 0.0001);
+    EXPECT_EQ(res["index"].to_int32(), 10393);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, sum)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
+    Node dataset;
+    dataset.append().set_external(data);
+
+    Node res = runtime::expressions::field_sum(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  -1082.59582227313, 0.001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, ave)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
+    Node dataset;
+    dataset.append().set_external(data);
+
+    Node res = runtime::expressions::field_avg(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, histogram)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
+    Node dataset;
+    dataset.append().set_external(data);
+
+    const double min_val = -10.f;
+    const double max_val = 10.f;
+    constexpr int num_bins = 16;
+    Node res = runtime::expressions::field_histogram(dataset,"braid",min_val, max_val, num_bins);
+    res.print();
+    // right now everything is stored using doubles
+    double counts[num_bins] = { 126.0,  524.0, 1035.0, 1582.0,
+                               2207.0, 2999.0, 3548.0, 4378.0,
+                               4361.0, 3583.0, 2983.0, 2459.0,
+                               1646.0,  858.0,  379.0,  100.0};
+
+    double *vals = res["value"].as_float64_ptr();
+    for(int i = 0; i < num_bins; ++i)
+    {
+      EXPECT_EQ(counts[i], vals[i]);
+    }
+
+    //EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
 }
