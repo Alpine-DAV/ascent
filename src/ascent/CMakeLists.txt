@@ -99,6 +99,7 @@ set(ascent_sources
     runtimes/expressions/ascent_expressions_ast.cpp
     runtimes/expressions/ascent_expressions_tokens.cpp
     runtimes/expressions/ascent_expressions_parser.cpp
+    runtimes/expressions/ascent_memory_manager.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
@@ -139,6 +140,7 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_tokens.hpp
     runtimes/expressions/ascent_expressions_parser.hpp
     runtimes/expressions/ascent_math.hpp
+    runtimes/expressions/ascent_memory_manager.hpp
     runtimes/expressions/ascent_raja_policies.hpp
     # flow
     runtimes/ascent_main_runtime.hpp

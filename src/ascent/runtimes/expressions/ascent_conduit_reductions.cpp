@@ -50,6 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_conduit_reductions.hpp"
+#include "ascent_memory_manager.hpp"
 #include "ascent_raja_policies.hpp"
 #include "ascent_math.hpp"
 
@@ -90,17 +91,20 @@ type_dispatch(const conduit::Node &values, const Function &func)
   {
     ASCENT_ERROR("Internal error: expected scalar array.");
   }
+
   const conduit::Node &vals = num_children == 0 ? values : values.child(0);
+
   conduit::Node res;
   const int num_vals = vals.dtype().number_of_elements();
+
   if(vals.dtype().is_float32())
   {
-    const conduit::float32 *ptr =  vals.as_float32_ptr();
+    const conduit::float32 *ptr = MemoryAccessor::float32_ptr_const(vals);
     res = func(ptr, num_vals);
   }
   else if(vals.dtype().is_float64())
   {
-    const conduit::float64 *ptr =  vals.as_float64_ptr();
+    const conduit::float64 *ptr = MemoryAccessor::float64_ptr_const(vals);
     res = func(ptr, num_vals);
   }
   else if(vals.dtype().is_int32())
@@ -120,6 +124,7 @@ type_dispatch(const conduit::Node &values, const Function &func)
   }
   return res;
 }
+
 
 struct MaxFunctor
 {
