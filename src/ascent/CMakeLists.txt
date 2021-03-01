@@ -79,6 +79,7 @@ if(ASCENT_VTKM_ENABLED)
 endif()
 
 set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
+set(ASCENT_USE_CUDA ${CUDA_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
@@ -166,6 +167,14 @@ set(ascent_headers
     utils/ascent_web_interface.hpp
     # hola
     hola/ascent_hola.hpp)
+
+if(CUDA_FOUND)
+  set(ascent_cuda_sources runtimes/expressions/ascent_memory_manager.cpp
+                          runtimes/expressions/ascent_conduit_reductions.cpp)
+
+  # tell cmake to compiler these files with nvcc
+  set_source_files_properties(${ascent_cuda_sources}  PROPERTIES LANGUAGE CUDA)
+endif()
 
 if(VTKM_FOUND)
 
@@ -297,7 +306,7 @@ if (ENABLE_SERIAL)
 
     set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
-
+    target_compile_options(ascent PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
     if(VTKM_FOUND)
         set(ascent_device_sources ${ascent_vtkh_dep_sources})
         list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
@@ -424,6 +433,7 @@ if(MPI_FOUND)
 
     set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
+    target_compile_options(ascent_mpi PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
 
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})

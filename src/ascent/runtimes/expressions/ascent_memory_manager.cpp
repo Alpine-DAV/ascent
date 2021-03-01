@@ -9,11 +9,33 @@
 
 namespace ascent
 {
+  //
+// https://gitlab.kitware.com/third-party/nvpipe/blob/master/encode.c
+bool is_gpu_ptr(const void *ptr)
+{
+#ifdef ASCENT_USE_CUDA
+  cudaPointerAttributes atts;
+  const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
 
-
+  // clear last error so other error checking does
+  // not pick it up
+  cudaError_t error = cudaGetLastError();
+  #if CUDART_VERSION >= 10000
+  return perr == cudaSuccess &&
+                (atts.type == cudaMemoryTypeDevice ||
+                 atts.type == cudaMemoryTypeManaged);
+  #else
+  return perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
+  #endif
+#else
+  (void) ptr;
+  return false;
+#endif
+}
 int AllocationManager::m_umpire_device_allocator_id = -1;
 int AllocationManager::m_umpire_host_allocator_id = -1;
 int AllocationManager::m_conduit_host_allocator_id = -1;
+int AllocationManager::m_conduit_device_allocator_id = -1;
 bool AllocationManager::m_external_device_allocator = false;
 
 int
@@ -135,6 +157,22 @@ AllocationManager::conduit_host_allocator_id()
   return m_conduit_host_allocator_id;
 }
 
+int
+AllocationManager::conduit_device_allocator_id()
+{
+  if(m_conduit_device_allocator_id == -1)
+  {
+    m_conduit_device_allocator_id
+      = conduit::utils::register_mem_handler(DeviceAllocator::alloc,
+                                             DeviceAllocator::free,
+                                             DeviceAllocator::copy,
+                                             DeviceAllocator::memset);
+
+  }
+  return m_conduit_device_allocator_id;
+}
+
+// ------------------------- Host Allocator -----------------------------------
 size_t HostAllocator::m_total_bytes_alloced = 0;
 size_t HostAllocator::m_alloc_count = 0;
 size_t HostAllocator::m_free_count = 0;
@@ -176,6 +214,89 @@ HostAllocator::copy(void * destination, const void * source, size_t num)
   std::cout<<"copy bananas\n";
   memcpy(destination,source,num);
 }
+
+// ------------------------- Host Allocator -----------------------------------
+size_t DeviceAllocator::m_total_bytes_alloced = 0;
+size_t DeviceAllocator::m_alloc_count = 0;
+size_t DeviceAllocator::m_free_count = 0;
+
+void *
+DeviceAllocator::alloc(size_t items, size_t item_size)
+{
+#ifdef ASCENT_USE_CUDA
+  m_total_bytes_alloced += items * item_size;
+  m_alloc_count++;
+  auto &rm = umpire::ResourceManager::getInstance ();
+  const int allocator_id = AllocationManager::umpire_device_allocator_id();
+  umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
+  return device_allocator.allocate (items * item_size);
+#else
+  (void) items;
+  (void) item_size;
+  ASCENT_ERROR("Calling device allocator when no device is present.");
+  return nullptr;
+#endif
+}
+
+void
+DeviceAllocator::free(void *data_ptr)
+{
+#ifdef ASCENT_USE_CUDA
+  m_free_count++;
+  auto &rm = umpire::ResourceManager::getInstance ();
+  const int allocator_id = AllocationManager::umpire_device_allocator_id();
+  umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
+  device_allocator.deallocate (data_ptr);
+#else
+  (void) data_ptr;
+  ASCENT_ERROR("Calling device allocator when no device is present.");
+#endif
+}
+
+void
+DeviceAllocator::memset(void * ptr, int value, size_t num )
+{
+#ifdef ASCENT_USE_CUDA
+ cudaMemset(ptr,value,num);
+#else
+  (void) ptr;
+  (void) value;
+  (void) num;
+  ASCENT_ERROR("Calling device allocator when no device is present.");
+#endif
+}
+
+void
+DeviceAllocator::copy(void * destination, const void * source, size_t num)
+{
+#ifdef ASCENT_USE_CUDA
+  bool src_is_gpu = is_gpu_ptr(source);
+  bool dst_is_gpu = is_gpu_ptr(destination);
+  if(src_is_gpu && dst_is_gpu)
+  {
+    cudaMemcpy(destination, source, num, cudaMemcpyDeviceToDevice);
+  }
+  else if(src_is_gpu && !dst_is_gpu)
+  {
+    cudaMemcpy(destination, source, num, cudaMemcpyDeviceToHost);
+  }
+  else if(!src_is_gpu && dst_is_gpu)
+  {
+    cudaMemcpy(destination, source, num, cudaMemcpyHostToDevice);
+  }
+  else
+  {
+    std::cout<<"This copy is a surprise: device allocator cpy\n";
+    memcpy(destination,source,num);
+  }
+#else
+  (void) destination;
+  (void) source;
+  (void) num;
+  ASCENT_ERROR("Calling device allocator when no device is present.");
+#endif
+}
+
 
 // ----------------------- Memory Access -----------------------------
 const conduit::float32 *

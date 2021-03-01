@@ -2180,9 +2180,10 @@ field_max(const conduit::Node &dataset, const std::string &field)
     const conduit::Node &dom = dataset.child(i);
     if(dom.has_path("fields/" + field))
     {
-      const std::string path = "fields/" + field + "/values";
+      //const std::string path = "fields/" + field + "/values";
+      const std::string path = "fields/" + field;
       conduit::Node res;
-      res = array_max(dom[path]);
+      res = field_array_max(dom[path]);
       double a_max = res["value"].to_float64();
       if(a_max > max_value)
       {

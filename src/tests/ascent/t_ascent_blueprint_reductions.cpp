@@ -99,7 +99,7 @@ TEST(ascent_blueprint_reductions, max)
     EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
     EXPECT_EQ(res["index"].to_int32(), 817);
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, min)
 {
@@ -235,3 +235,4 @@ TEST(ascent_blueprint_reductions, histogram)
 
     //EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
 }
+#endif

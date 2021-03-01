@@ -39,7 +39,6 @@ using atomic_cpu_policy = RAJA::seq_atomic;
 // -------------------- Lambda decorators ----------------------
 #if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
 
-#define ASCENT_USE_CUDA
 #define ASCENT_EXEC inline __host__ __device__
 #define ASCENT_LAMBDA __device__
 

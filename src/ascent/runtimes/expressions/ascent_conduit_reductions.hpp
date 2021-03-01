@@ -76,6 +76,8 @@ namespace expressions
 
 conduit::Node array_max(const conduit::Node &values);
 
+conduit::Node field_array_max(const conduit::Node &field);
+
 conduit::Node array_min(const conduit::Node &values);
 
 conduit::Node array_sum(const conduit::Node &values);

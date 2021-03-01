@@ -51,6 +51,7 @@
 
 #include "ascent_conduit_reductions.hpp"
 #include "ascent_memory_manager.hpp"
+#include "ascent_field_array.hpp"
 #include "ascent_raja_policies.hpp"
 #include "ascent_math.hpp"
 
@@ -80,6 +81,48 @@ namespace expressions
 
 namespace detail
 {
+
+template<typename Function>
+conduit::Node
+field_dispatch(const conduit::Node &field, const Function &func)
+{
+  // check for single component scalar
+  int num_children = field["values"].number_of_children();
+  if(num_children > 1)
+  {
+    ASCENT_ERROR("Field Dispatch internal error: expected scalar array.");
+  }
+  conduit::Node res;
+
+  // NO this is not the way
+  if(field["values"].dtype().is_float32())
+  {
+    FieldArray<conduit::float32> farray(field);
+    res = func(farray.ptr_const(), farray.size());
+  }
+  else if(field["values"].dtype().is_float64())
+  {
+    FieldArray<conduit::float64> farray(field);
+    res = func(farray.ptr_const(), farray.size());
+  }
+  //}
+  //else if(vals.dtype().is_int32())
+  //{
+  //  const conduit::int32 *ptr =  vals.as_int32_ptr();
+  //  res = func(ptr, num_vals);
+  //}
+  //else if(vals.dtype().is_int64())
+  //{
+  //  const conduit::int64 *ptr =  vals.as_int64_ptr();
+  //  res = func(ptr, num_vals);
+  //}
+  //else
+  //{
+  //  ASCENT_ERROR("Type dispatch: unsupported array type "<<
+  //                values.schema().to_string());
+  //}
+  return res;
+}
 
 template<typename Function>
 conduit::Node
@@ -125,6 +168,12 @@ type_dispatch(const conduit::Node &values, const Function &func)
   return res;
 }
 
+struct IndexLoc
+{
+  RAJA::Index_type idx;
+  constexpr IndexLoc() : idx(-1) {}
+  constexpr IndexLoc(RAJA::Index_type idx) : idx(idx) {}
+};
 
 struct MaxFunctor
 {
@@ -133,21 +182,15 @@ struct MaxFunctor
   {
     T identity = std::numeric_limits<T>::lowest();
 
-    struct Index
-    {
-      RAJA::Index_type idx;
-      constexpr Index() : idx(-1) {}
-      constexpr Index(RAJA::Index_type idx) : idx(idx) {}
-    };
 
-    RAJA::ReduceMaxLoc<reduce_policy, T, Index> reducer(identity, Index());
+    RAJA::ReduceMaxLoc<reduce_policy, T, IndexLoc> reducer(identity, IndexLoc());
 
     RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
 
       const T val = values[i];
       reducer.maxloc(val,i);
     });
-    ASCENT_ERROR_CHECK()
+    ASCENT_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = reducer.get();
@@ -163,28 +206,20 @@ struct MinFunctor
   {
     T identity = std::numeric_limits<T>::max();
 
-    struct Index
-    {
-      RAJA::Index_type idx;
-      constexpr Index() : idx(-1) {}
-      constexpr Index(RAJA::Index_type idx) : idx(idx) {}
-    };
-
-    RAJA::ReduceMinLoc<reduce_policy, T, Index> reducer(identity, Index());
+    RAJA::ReduceMinLoc<reduce_policy, T, IndexLoc> reducer(identity, IndexLoc());
 
     RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
 
       const T val = values[i];
       reducer.minloc(val,i);
     });
-    ASCENT_ERROR_CHECK()
+    ASCENT_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = reducer.get();
     res["index"] = reducer.getLoc().idx;
     return res;
   }
-  ASCENT_ERROR_CHECK()
 };
 
 struct SumFunctor
@@ -197,7 +232,7 @@ struct SumFunctor
       const T val = values[i];
       sum += val;
     });
-    ASCENT_ERROR_CHECK()
+    ASCENT_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = sum.get();
@@ -222,7 +257,7 @@ struct NanFunctor
       }
       count += is_nan;
     });
-    ASCENT_ERROR_CHECK()
+    ASCENT_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = count.get();
@@ -258,7 +293,7 @@ struct InfFunctor
       }
       count += is;
     });
-    ASCENT_ERROR_CHECK()
+    ASCENT_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = count.get();
@@ -279,7 +314,7 @@ struct InfFunctor
       }
       count += is;
     });
-    ASCENT_ERROR_CHECK()
+    ASCENT_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = count.get();
@@ -339,6 +374,12 @@ conduit::Node
 array_max(const conduit::Node &values)
 {
   return detail::type_dispatch(values, detail::MaxFunctor());
+}
+
+conduit::Node
+field_array_max(const conduit::Node &field)
+{
+  return detail::field_dispatch(field, detail::MaxFunctor());
 }
 
 conduit::Node
