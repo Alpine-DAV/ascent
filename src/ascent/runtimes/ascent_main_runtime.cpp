@@ -74,6 +74,7 @@
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
+#include <expressions/ascent_memory_manager.hpp>
 #include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
 
@@ -193,6 +194,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 #endif
     // set a info handler so we only display messages on rank 0;
     conduit::utils::set_info_handler(InfoHandler::info_handler);
+    AllocationManager::set_conduit_mem_handlers();
 #ifdef VTKM_CUDA
 
     bool sel_cuda_device = true;

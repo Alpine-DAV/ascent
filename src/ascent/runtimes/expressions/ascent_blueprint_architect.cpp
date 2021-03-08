@@ -49,6 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_field_array.hpp"
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
@@ -319,26 +320,38 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
   double vert[3] = {0., 0., 0.};
   if(is_float64)
   {
-    conduit::float64_array x_a = n_coords["values/x"].value();
-    conduit::float64_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[index];
-    vert[1] = y_a[index];
-    if(n_coords.has_path("values/z"))
+    FieldArray<double> array(n_coords);
+    //conduit::float64_array x_a = n_coords["values/x"].value();
+    //conduit::float64_array y_a = n_coords["values/y"].value();
+    //vert[0] = x_a[index];
+    //vert[1] = y_a[index];
+    vert[0] = array.value(index,0);
+    vert[1] = array.value(index,1);
+    //if(coords.has_path("values/z"))
+    if(array.components() == 3)
     {
-      conduit::float64_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[index];
+      //conduit::float64_array z_a = n_coords["values/z"].value();
+      //vert[2] = z_a[index];
+      vert[2] = array.value(index,2);
     }
   }
   else
   {
-    conduit::float32_array x_a = n_coords["values/x"].value();
-    conduit::float32_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[index];
-    vert[1] = y_a[index];
-    if(n_coords.has_path("values/z"))
+    FieldArray<float> array(n_coords);
+    //conduit::float32_array x_a = n_coords["values/x"].value();
+    //conduit::float32_array y_a = n_coords["values/y"].value();
+    //vert[0] = x_a[index];
+    //vert[1] = y_a[index];
+    //if(n_coords.has_path("values/z"))
+    //{
+    //  conduit::float32_array z_a = n_coords["values/z"].value();
+    //  vert[2] = z_a[index];
+    //}
+    vert[0] = array.value(index,0);
+    vert[1] = array.value(index,1);
+    if(array.components() == 3)
     {
-      conduit::float32_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[index];
+      vert[2] = array.value(index,2);
     }
   }
 

@@ -20,6 +20,9 @@ public:
   static int umpire_host_allocator_id();
   static int conduit_host_allocator_id();
   static int conduit_device_allocator_id();
+  // set the fancy conduit memory handlers for
+  // magic memset and memcpy
+  static void set_conduit_mem_handlers();
 
 private:
   static int m_umpire_device_allocator_id;

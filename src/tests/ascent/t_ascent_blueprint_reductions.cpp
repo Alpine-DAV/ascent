@@ -51,6 +51,7 @@
 
 #include <ascent.hpp>
 #include <runtimes/expressions/ascent_blueprint_architect.hpp>
+#include <runtimes/expressions/ascent_memory_manager.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -69,10 +70,31 @@ using namespace ascent;
 // do not change this
 const index_t EXAMPLE_MESH_SIDE_DIM = 32;
 
+void device_conversion(Node &host_data, Node &device_data)
+{
+  const int32 children = host_data.number_of_children();
+  if(children == 0)
+  {
+    if(host_data.dtype().is_number() && host_data.dtype().number_of_elements() > 1)
+    {
+      // we only want to set device mem for arrays
+      device_data.set_allocator(AllocationManager::conduit_device_allocator_id());
+      std::cout<<host_data.to_summary_string()<<"\n";
+    }
+    device_data = host_data;
+    return;
+  }
+  std::vector<std::string> names = host_data.child_names();
+  for(auto &name : names)
+  {
+    device_conversion(host_data[name], device_data[name]);
+  }
+}
+
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, max)
 {
-    // the vtkm runtime is currently our only rendering runtime
+
     Node n;
     ascent::about(n);
 
@@ -99,11 +121,48 @@ TEST(ascent_blueprint_reductions, max)
     EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
     EXPECT_EQ(res["index"].to_int32(), 817);
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, max_already_gpu)
+{
+    // this is normally set in ascent::Initialize, but we
+    // have to set it here so that we do the right thing with
+    // device pointers
+    AllocationManager::set_conduit_mem_handlers();
+
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    data["state/domain_id"] = 0;
+    Node device_data;
+    device_conversion(data, device_data);
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    // work aournd data we need
+    Node dataset;
+    dataset.append().set_external(device_data);
+
+    Node res = runtime::expressions::field_max(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
+    EXPECT_EQ(res["index"].to_int32(), 817);
+}
 #if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, min)
 {
-    // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
 
@@ -236,3 +295,18 @@ TEST(ascent_blueprint_reductions, histogram)
     //EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
 }
 #endif
+int
+main(int argc, char *argv[])
+{
+  int result = 0;
+
+  ::testing::InitGoogleTest(&argc, argv);
+
+  // this is normally set in ascent::Initialize, but we
+  // have to set it here so that we do the right thing with
+  // device pointers
+  AllocationManager::set_conduit_mem_handlers();
+
+  result = RUN_ALL_TESTS();
+  return result;
+}

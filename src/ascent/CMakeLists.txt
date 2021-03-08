@@ -170,7 +170,8 @@ set(ascent_headers
 
 if(CUDA_FOUND)
   set(ascent_cuda_sources runtimes/expressions/ascent_memory_manager.cpp
-                          runtimes/expressions/ascent_conduit_reductions.cpp)
+                          runtimes/expressions/ascent_conduit_reductions.cpp
+                          runtimes/expressions/ascent_blueprint_architect.cpp)
 
   # tell cmake to compiler these files with nvcc
   set_source_files_properties(${ascent_cuda_sources}  PROPERTIES LANGUAGE CUDA)

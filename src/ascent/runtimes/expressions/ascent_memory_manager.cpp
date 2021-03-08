@@ -32,6 +32,7 @@ bool is_gpu_ptr(const void *ptr)
   return false;
 #endif
 }
+
 int AllocationManager::m_umpire_device_allocator_id = -1;
 int AllocationManager::m_umpire_host_allocator_id = -1;
 int AllocationManager::m_conduit_host_allocator_id = -1;
@@ -148,10 +149,8 @@ AllocationManager::conduit_host_allocator_id()
   if(m_conduit_host_allocator_id == -1)
   {
     m_conduit_host_allocator_id
-      = conduit::utils::register_mem_handler(HostAllocator::alloc,
-                                             HostAllocator::free,
-                                             HostAllocator::copy,
-                                             HostAllocator::memset);
+      = conduit::utils::register_allocator(HostAllocator::alloc,
+                                           HostAllocator::free);
 
   }
   return m_conduit_host_allocator_id;
@@ -163,13 +162,21 @@ AllocationManager::conduit_device_allocator_id()
   if(m_conduit_device_allocator_id == -1)
   {
     m_conduit_device_allocator_id
-      = conduit::utils::register_mem_handler(DeviceAllocator::alloc,
-                                             DeviceAllocator::free,
-                                             DeviceAllocator::copy,
-                                             DeviceAllocator::memset);
+      = conduit::utils::register_allocator(DeviceAllocator::alloc,
+                                             DeviceAllocator::free);
 
   }
   return m_conduit_device_allocator_id;
+}
+
+void AllocationManager::set_conduit_mem_handlers()
+{
+#ifdef ASCENT_USE_CUDA
+  // we only need to overide the mem handlers in the
+  // presence of cuda
+  conduit::utils::set_memcpy_handler(DeviceAllocator::copy);
+  conduit::utils::set_memset_handler(DeviceAllocator::memset);
+#endif
 }
 
 // ------------------------- Host Allocator -----------------------------------
@@ -286,7 +293,8 @@ DeviceAllocator::copy(void * destination, const void * source, size_t num)
   }
   else
   {
-    std::cout<<"This copy is a surprise: device allocator cpy\n";
+    // we are the default memcpy in conduit so this is the normal
+    // path
     memcpy(destination,source,num);
   }
 #else
