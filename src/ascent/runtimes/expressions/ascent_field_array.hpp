@@ -164,6 +164,12 @@ public:
     return m_components;
   }
 
+  T value(const index_t idx, const std::string component)
+  {
+    int comp_idx = resolve_component(component);
+    return value(idx, comp_idx);
+  }
+
   T value(const index_t idx, int component)
   {
     std::string path;
@@ -203,6 +209,41 @@ public:
 
     const T * ptr = conduit_ptr<T>(m_field[path]);
     return ptr;
+  }
+
+  int resolve_component(const std::string component)
+  {
+    int component_idx = 0;
+
+    // im going to allow blank names for component 0 since
+    // an mcarray is ambiguous with a single component
+    if(m_components == 1 && component == "")
+    {
+      return component_idx;
+    }
+    else
+    {
+      const int children = m_field["values"].number_of_children();
+      bool match = false;
+      for(int i = 0; i < children; ++i)
+      {
+        if(component == m_field["values"].child(i).name())
+        {
+          component_idx = i;
+          match = true;
+          break;
+        }
+      }
+      if(!match)
+      {
+        ASCENT_ERROR("No component named '"<<component<<"'");
+      }
+    }
+    return component_idx;
+  }
+
+  const T *device_ptr_const(const std::string component)
+  {
   }
 
   const T *device_ptr_const(int component)

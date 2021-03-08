@@ -321,37 +321,21 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
   if(is_float64)
   {
     FieldArray<double> array(n_coords);
-    //conduit::float64_array x_a = n_coords["values/x"].value();
-    //conduit::float64_array y_a = n_coords["values/y"].value();
-    //vert[0] = x_a[index];
-    //vert[1] = y_a[index];
-    vert[0] = array.value(index,0);
-    vert[1] = array.value(index,1);
-    //if(coords.has_path("values/z"))
+    vert[0] = array.value(index,"x");
+    vert[1] = array.value(index,"y");
     if(array.components() == 3)
     {
-      //conduit::float64_array z_a = n_coords["values/z"].value();
-      //vert[2] = z_a[index];
-      vert[2] = array.value(index,2);
+      vert[2] = array.value(index,"z");
     }
   }
   else
   {
     FieldArray<float> array(n_coords);
-    //conduit::float32_array x_a = n_coords["values/x"].value();
-    //conduit::float32_array y_a = n_coords["values/y"].value();
-    //vert[0] = x_a[index];
-    //vert[1] = y_a[index];
-    //if(n_coords.has_path("values/z"))
-    //{
-    //  conduit::float32_array z_a = n_coords["values/z"].value();
-    //  vert[2] = z_a[index];
-    //}
-    vert[0] = array.value(index,0);
-    vert[1] = array.value(index,1);
+    vert[0] = array.value(index,"x");
+    vert[1] = array.value(index,"y");
     if(array.components() == 3)
     {
-      vert[2] = array.value(index,2);
+      vert[2] = array.value(index,"z");
     }
   }
 
