@@ -95,6 +95,67 @@ void device_conversion(Node &host_data, Node &device_data)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, sum)
+{
+
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
+    Node dataset;
+    dataset.append().set_external(data);
+
+    Node res = runtime::expressions::field_sum(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  -1082.59582227314, 0.0001);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, min)
+{
+
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
+    Node dataset;
+    dataset.append().set_external(data);
+
+    Node res = runtime::expressions::field_min(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  -9.7849527094773894, 0.0001);
+    EXPECT_EQ(res["index"].to_int32(), 10393);
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, max)
 {
 

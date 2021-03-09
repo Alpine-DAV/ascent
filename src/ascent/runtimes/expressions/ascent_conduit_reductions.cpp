@@ -178,49 +178,6 @@ field_dispatch(const conduit::Node &field, const Function &func)
   return res;
 }
 
-template<typename Function>
-conduit::Node
-type_dispatch(const conduit::Node &values, const Function &func)
-{
-  // check for single component scalar
-  int num_children = values.number_of_children();
-  if(num_children > 1)
-  {
-    ASCENT_ERROR("Internal error: expected scalar array.");
-  }
-
-  const conduit::Node &vals = num_children == 0 ? values : values.child(0);
-
-  conduit::Node res;
-  const int num_vals = vals.dtype().number_of_elements();
-
-  if(vals.dtype().is_float32())
-  {
-    const conduit::float32 *ptr = MemoryAccessor::float32_ptr_const(vals);
-    res = func(ptr, num_vals);
-  }
-  else if(vals.dtype().is_float64())
-  {
-    const conduit::float64 *ptr = MemoryAccessor::float64_ptr_const(vals);
-    res = func(ptr, num_vals);
-  }
-  else if(vals.dtype().is_int32())
-  {
-    const conduit::int32 *ptr =  vals.as_int32_ptr();
-    res = func(ptr, num_vals);
-  }
-  else if(vals.dtype().is_int64())
-  {
-    const conduit::int64 *ptr =  vals.as_int64_ptr();
-    res = func(ptr, num_vals);
-  }
-  else
-  {
-    ASCENT_ERROR("Type dispatch: unsupported array type "<<
-                  values.schema().to_string());
-  }
-  return res;
-}
 
 struct IndexLoc
 {
@@ -425,49 +382,43 @@ struct HistogramFunctor
 //-----------------------------------------------------------------------------
 
 conduit::Node
-array_max(const conduit::Node &values)
-{
-  return detail::type_dispatch(values, detail::MaxFunctor());
-}
-
-conduit::Node
-field_array_max(const conduit::Node &field)
+array_max(const conduit::Node &field)
 {
   return detail::field_dispatch(field, detail::MaxFunctor());
 }
 
 conduit::Node
-array_min(const conduit::Node &values)
+array_min(const conduit::Node &field)
 {
-  return detail::type_dispatch(values, detail::MinFunctor());
+  return detail::field_dispatch(field, detail::MinFunctor());
 }
 
 conduit::Node
-array_sum(const conduit::Node &values)
+array_sum(const conduit::Node &field)
 {
-  return detail::type_dispatch(values, detail::SumFunctor());
+  return detail::field_dispatch(field, detail::SumFunctor());
 }
 
 conduit::Node
-array_nan_count(const conduit::Node &values)
+array_nan_count(const conduit::Node &field)
 {
-  return detail::type_dispatch(values, detail::NanFunctor());
+  return detail::field_dispatch(field, detail::NanFunctor());
 }
 
 conduit::Node
-array_inf_count(const conduit::Node &values)
+array_inf_count(const conduit::Node &field)
 {
-  return detail::type_dispatch(values, detail::InfFunctor());
+  return detail::field_dispatch(field, detail::InfFunctor());
 }
 
 conduit::Node
-array_histogram(const conduit::Node &values,
+array_histogram(const conduit::Node &field,
                 const double &min_value,
                 const double &max_value,
                 const int &num_bins)
 {
   detail::HistogramFunctor histogram(min_value, max_value, num_bins);
-  return detail::type_dispatch(values, histogram);
+  return detail::field_dispatch(field, histogram);
 }
 
 //-----------------------------------------------------------------------------
