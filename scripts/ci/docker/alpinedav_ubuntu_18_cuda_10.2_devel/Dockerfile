@@ -50,6 +50,7 @@ RUN apt-get update && apt-get -y install sudo
 # install std packages we need for cuda dev env and test
 RUN apt-get update && apt-get -y install \
                git \
+               git-lfs \
                python \
                gfortran \
                zlib1g-dev \
