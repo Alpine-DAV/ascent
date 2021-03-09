@@ -82,6 +82,62 @@ namespace expressions
 namespace detail
 {
 
+bool field_is_float32(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_float32();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_float32();
+  }
+}
+
+bool field_is_float64(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_float64();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_float64();
+  }
+}
+
+bool field_is_int32(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_int32();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_int32();
+  }
+}
+
+bool field_is_int64(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_int64();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_int64();
+  }
+}
+
 template<typename Function>
 conduit::Node
 field_dispatch(const conduit::Node &field, const Function &func)
@@ -94,33 +150,31 @@ field_dispatch(const conduit::Node &field, const Function &func)
   }
   conduit::Node res;
 
-  // NO this is not the way
-  if(field["values"].dtype().is_float32())
+  if(field_is_float32(field))
   {
     FieldArray<conduit::float32> farray(field);
     res = func(farray.ptr_const(), farray.size());
   }
-  else if(field["values"].dtype().is_float64())
+  else if(field_is_float64(field))
   {
     FieldArray<conduit::float64> farray(field);
     res = func(farray.ptr_const(), farray.size());
   }
-  //}
-  //else if(vals.dtype().is_int32())
-  //{
-  //  const conduit::int32 *ptr =  vals.as_int32_ptr();
-  //  res = func(ptr, num_vals);
-  //}
-  //else if(vals.dtype().is_int64())
-  //{
-  //  const conduit::int64 *ptr =  vals.as_int64_ptr();
-  //  res = func(ptr, num_vals);
-  //}
-  //else
-  //{
-  //  ASCENT_ERROR("Type dispatch: unsupported array type "<<
-  //                values.schema().to_string());
-  //}
+  else if(field_is_int32(field))
+  {
+    FieldArray<conduit::int32> farray(field);
+    res = func(farray.ptr_const(), farray.size());
+  }
+  else if(field_is_int64(field))
+  {
+    FieldArray<conduit::int64> farray(field);
+    res = func(farray.ptr_const(), farray.size());
+  }
+  else
+  {
+    ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                  field.schema().to_string());
+  }
   return res;
 }
 

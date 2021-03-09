@@ -159,6 +159,43 @@ TEST(ascent_blueprint_reductions, max_already_gpu)
     EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
     EXPECT_EQ(res["index"].to_int32(), 817);
 }
+
+TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
+{
+    // this is normally set in ascent::Initialize, but we
+    // have to set it here so that we do the right thing with
+    // device pointers
+    AllocationManager::set_conduit_mem_handlers();
+
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    data["state/domain_id"] = 0;
+    Node device_data;
+    device_conversion(data, device_data);
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    // work aournd data we need
+    Node dataset;
+    dataset.append().set_external(device_data);
+
+    Node res = runtime::expressions::field_max(dataset,"radial");
+    res.print();
+    //EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
+    //EXPECT_EQ(res["index"].to_int32(), 817);
+}
 #if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, min)

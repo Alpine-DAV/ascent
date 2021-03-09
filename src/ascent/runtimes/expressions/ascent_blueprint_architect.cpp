@@ -229,11 +229,14 @@ get_element_indices(const conduit::Node &n_topo,
     indices.resize(num_indices);
     // look up the connectivity
     const conduit::Node &n_topo_conn = n_topo_eles["connectivity"];
-    const conduit::int32_array conn_a = n_topo_conn.value();
+    n_topo_eles.schema().print();
+    FieldArray<int> conn(n_topo_conn);
+
+    ///const conduit::int32_array conn_a = n_topo_conn.value();
     const int offset = index * num_indices;
     for(int i = 0; i < num_indices; ++i)
     {
-      indices[i] = conn_a[offset + i];
+      indices[i] = conn.value(offset + i,0);
     }
   }
   else

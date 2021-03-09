@@ -32,6 +32,12 @@ inline bool is_conduit_type<conduit::int32>(const conduit::Node &values)
   return values.dtype().is_int32();
 }
 
+template<>
+inline bool is_conduit_type<conduit::int64>(const conduit::Node &values)
+{
+  return values.dtype().is_int64();
+}
+
 template<typename T>
 inline T* conduit_ptr(conduit::Node &values);
 
@@ -107,9 +113,14 @@ private:
   int m_components;
   conduit::Node &m_field;
   index_t m_size;
+  // path to manage memory
+  std::string m_path;
 
 public:
-  FieldArray(const conduit::Node &field)
+  // no default constructor
+  FieldArray() = delete;
+
+  FieldArray(const conduit::Node &field, const std::string path = values)
     : m_field(const_cast<conduit::Node&>(field))
   {
     int children = m_field["values"].number_of_children();
@@ -127,6 +138,7 @@ public:
     {
       types_match = is_conduit_type<T>(m_field["values"]);
       m_size = m_field["values"].dtype().number_of_elements();
+      if(!types_match) std::cout<<"child 0 bad\n";
     }
     else
     {
