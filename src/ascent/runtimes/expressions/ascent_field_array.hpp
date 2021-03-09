@@ -112,18 +112,24 @@ class FieldArray
 private:
   int m_components;
   conduit::Node &m_field;
-  index_t m_size;
   // path to manage memory
-  std::string m_path;
+  const std::string m_path;
+  std::vector<index_t> m_sizes;
 
 public:
   // no default constructor
   FieldArray() = delete;
 
-  FieldArray(const conduit::Node &field, const std::string path = values)
-    : m_field(const_cast<conduit::Node&>(field))
+  FieldArray(const conduit::Node &field, const std::string path = "values")
+    : m_field(const_cast<conduit::Node&>(field)),
+      m_path(path)
   {
-    int children = m_field["values"].number_of_children();
+    if(!field.has_path(path))
+    {
+      ASCENT_ERROR("Array: does have path '"<<path<<"' "<<field.schema().to_yaml());
+    }
+
+    int children = m_field[m_path].number_of_children();
     if(children == 0 || children == 1)
     {
       m_components = 1;
@@ -133,42 +139,33 @@ public:
       m_components = children;
     }
 
+    m_sizes.resize(m_components);
+
     bool types_match = true;
     if(children == 0)
     {
-      types_match = is_conduit_type<T>(m_field["values"]);
-      m_size = m_field["values"].dtype().number_of_elements();
-      if(!types_match) std::cout<<"child 0 bad\n";
+      types_match = is_conduit_type<T>(m_field[m_path]);
+      m_sizes[0] = m_field[m_path].dtype().number_of_elements();
     }
     else
     {
       for(int i = 0; i < children; ++i)
       {
-        types_match &= is_conduit_type<T>(m_field["values"].child(i));
-        if(i == 0)
-        {
-          m_size = m_field["values"].child(i).dtype().number_of_elements();
-        }
-        else
-        {
-          index_t size = m_field["values"].child(i).dtype().number_of_elements();
-          if(m_size != size)
-          {
-            ASCENT_ERROR("Array size mismatch "<<m_size<<" != "<<size);
-          }
-        }
+        types_match &= is_conduit_type<T>(m_field[m_path].child(i));
+        m_sizes[i] = m_field[m_path].child(i).dtype().number_of_elements();
       }
     }
 
     if(!types_match)
     {
-      ASCENT_ERROR("Field type does not match conduit type");
+      std::string schema = m_field.schema().to_yaml();
+      ASCENT_ERROR("Field type does not match conduit type: "<<schema);
     }
   }
 
-  index_t size() const
+  index_t size(int component) const
   {
-    return m_size;
+    return m_sizes[component];
   }
 
   int components() const
@@ -204,22 +201,22 @@ public:
   }
 
   // get the raw pointer used by conduit and return the path
-  const T *raw_ptr(int component, std::string &path)
+  const T *raw_ptr(int component, std::string &leaf_path)
   {
     if(component < 0 || component >= m_components)
     {
       ASCENT_ERROR("Invalid component "<<component<<" number of components "<<m_components);
     }
 
-    const int children = m_field["values"].number_of_children();
+    const int children = m_field[m_path].number_of_children();
 
-    path = "values";
+    leaf_path = m_path;
     if(children > 0)
     {
-      path = "values/" + m_field["values"].child(component).name();
+      leaf_path = m_path + "/" + m_field[m_path].child(component).name();
     }
 
-    const T * ptr = conduit_ptr<T>(m_field[path]);
+    const T * ptr = conduit_ptr<T>(m_field[leaf_path]);
     return ptr;
   }
 
@@ -261,8 +258,8 @@ public:
   const T *device_ptr_const(int component)
   {
 
-    std::string path;
-    const T * ptr = raw_ptr(component,path);
+    std::string leaf_path;
+    const T * ptr = raw_ptr(component,leaf_path);
 
 
 #ifdef ASCENT_USE_CUDA
@@ -273,16 +270,16 @@ public:
     }
     else
     {
-      std::string d_path = "device_"+path;
-      std::cout<<"path '"<<path<<"' device _path '"<<d_path<<"'\n";
-      std::cout<<"size "<<m_size<<"\n";
+      std::string d_path = "device_"+leaf_path;
+      std::cout<<"leaf_path '"<<leaf_path<<"' device _path '"<<d_path<<"'\n";
+      std::cout<<"size "<<m_sizes[component]<<"\n";
       if(!m_field.has_path(d_path))
       {
         std::cout<<"Creating device pointer\n";
         conduit::Node &n_device = m_field[d_path];
         n_device.set_allocator(AllocationManager::conduit_device_allocator_id());
         std::cout<<"setting...\n";
-        n_device.set(ptr, m_size);
+        n_device.set(ptr, m_sizes[component]);
         std::cout<<"set\n";
       }
       else std::cout<<"already device_values\n";
@@ -296,8 +293,8 @@ public:
 
   const T *host_ptr_const(int component)
   {
-    std::string path;
-    const T * ptr = raw_ptr(component,path);
+    std::string leaf_path;
+    const T * ptr = raw_ptr(component,leaf_path);
 
 #ifdef ASCENT_USE_CUDA
     if(!is_gpu_ptr(ptr))
@@ -307,13 +304,13 @@ public:
     }
     else
     {
-      std::string h_path = "host_"+path;
+      std::string h_path = "host_" + leaf_path;
       if(!m_field.has_path(h_path))
       {
         std::cout<<"Creating host pointer\n";
         conduit::Node &n_host = m_field[h_path];
         n_host.set_allocator(AllocationManager::conduit_host_allocator_id());
-        n_host.set(ptr, m_size);
+        n_host.set(ptr, m_sizes[component]);
       }
       else std::cout<<"already host_values\n";
       return conduit_ptr<T>(m_field[h_path]);
@@ -325,6 +322,7 @@ public:
   }
 
   // can make string param that specifies the device
+  // TODO: this will not be the way to access ptrs going forward
   const T *ptr_const(const std::string location = "device")
   {
     if(location != "host" && location != "device")
@@ -343,11 +341,6 @@ public:
       return host_ptr_const(0);
     }
   }
-
-  //ArrayAccess<T> component_access(int component, const std::string location)
-  //{
-
-  //}
 
 };
 

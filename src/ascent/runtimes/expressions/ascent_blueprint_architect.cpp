@@ -228,11 +228,10 @@ get_element_indices(const conduit::Node &n_topo,
 
     indices.resize(num_indices);
     // look up the connectivity
+    // this is an array that could be on the GPU, so we have to
+    // use special care
     const conduit::Node &n_topo_conn = n_topo_eles["connectivity"];
-    n_topo_eles.schema().print();
-    FieldArray<int> conn(n_topo_conn);
-
-    ///const conduit::int32_array conn_a = n_topo_conn.value();
+    FieldArray<int> conn(n_topo_eles, "connectivity");
     const int offset = index * num_indices;
     for(int i = 0; i < num_indices; ++i)
     {
@@ -380,26 +379,26 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
 
   if(is_float64)
   {
-    conduit::float64_array x_a = n_coords["values/x"].value();
-    conduit::float64_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[logical_index[0]];
-    vert[1] = y_a[logical_index[1]];
+    FieldArray<double> f_coords(n_coords);
+    //conduit::float64_array x_a = n_coords["values/x"].value();
+    //conduit::float64_array y_a = n_coords["values/y"].value();
+    vert[0] = f_coords.value(logical_index[0],"x");
+    vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
     {
-      conduit::float64_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[logical_index[2]];
+      //conduit::float64_array z_a = n_coords["values/z"].value();
+      vert[2] = f_coords.value(logical_index[2],"z");
     }
   }
   else
   {
-    conduit::float32_array x_a = n_coords["values/x"].value();
-    conduit::float32_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[logical_index[0]];
-    vert[1] = y_a[logical_index[1]];
+    FieldArray<float> f_coords(n_coords);
+    vert[0] = f_coords.value(logical_index[0],"x");
+    vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
     {
-      conduit::float32_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[logical_index[2]];
+      //conduit::float64_array z_a = n_coords["values/z"].value();
+      vert[2] = f_coords.value(logical_index[2],"z");
     }
   }
 
@@ -1040,8 +1039,8 @@ global_topo_and_assoc(const conduit::Node &dataset,
                        + "'. Binning only supports vertex and element association.";
   }
 
-  int error_int = error ? 1 : 0;
 #ifdef ASCENT_MPI_ENABLED
+  int error_int = error ? 1 : 0;
   int global_error;
   MPI_Allreduce(&error_int, &global_error, 1, MPI_INT, MPI_MAX, mpi_comm);
   conduit::Node global_msg;

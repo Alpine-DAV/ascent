@@ -153,22 +153,22 @@ field_dispatch(const conduit::Node &field, const Function &func)
   if(field_is_float32(field))
   {
     FieldArray<conduit::float32> farray(field);
-    res = func(farray.ptr_const(), farray.size());
+    res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_float64(field))
   {
     FieldArray<conduit::float64> farray(field);
-    res = func(farray.ptr_const(), farray.size());
+    res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_int32(field))
   {
     FieldArray<conduit::int32> farray(field);
-    res = func(farray.ptr_const(), farray.size());
+    res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_int64(field))
   {
     FieldArray<conduit::int64> farray(field);
-    res = func(farray.ptr_const(), farray.size());
+    res = func(farray.ptr_const(), farray.size(0));
   }
   else
   {
