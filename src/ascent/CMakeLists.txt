@@ -101,6 +101,8 @@ set(ascent_sources
     runtimes/expressions/ascent_expressions_tokens.cpp
     runtimes/expressions/ascent_expressions_parser.cpp
     runtimes/expressions/ascent_memory_manager.cpp
+    runtimes/expressions/ascent_array.cpp
+    runtimes/expressions/ascent_array_internals.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
@@ -141,6 +143,8 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_tokens.hpp
     runtimes/expressions/ascent_expressions_parser.hpp
     runtimes/expressions/ascent_math.hpp
+    runtimes/expressions/ascent_array.hpp
+    runtimes/expressions/ascent_array_internals.hpp
     runtimes/expressions/ascent_memory_manager.hpp
     runtimes/expressions/ascent_raja_policies.hpp
     # flow
@@ -171,6 +175,8 @@ set(ascent_headers
 if(CUDA_FOUND)
   set(ascent_cuda_sources runtimes/expressions/ascent_memory_manager.cpp
                           runtimes/expressions/ascent_conduit_reductions.cpp
+                          runtimes/expressions/ascent_array.cpp
+                          runtimes/expressions/ascent_array_internals.cpp
                           runtimes/expressions/ascent_blueprint_architect.cpp)
 
   # tell cmake to compiler these files with nvcc

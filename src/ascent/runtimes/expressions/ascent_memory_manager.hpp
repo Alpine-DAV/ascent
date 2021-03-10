@@ -8,6 +8,7 @@ namespace ascent
 {
 
 bool is_gpu_ptr(const void *ptr);
+bool is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified);
 
 class AllocationManager
 {
@@ -54,13 +55,6 @@ struct DeviceAllocator
   static void free(void *data_ptr);
   static void memset(void * ptr, int value, size_t num );
   static void copy(void * destination, const void * source, size_t num);
-};
-
-class MemoryAccessor
-{
-public:
-  static const conduit::float32 * float32_ptr_const(const conduit::Node &values);
-  static const conduit::float64 * float64_ptr_const(const conduit::Node &values);
 };
 
 } // namespace ascent

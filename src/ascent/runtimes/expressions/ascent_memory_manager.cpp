@@ -10,6 +10,35 @@
 namespace ascent
 {
   //
+bool is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
+{
+  is_gpu = false;
+  is_unified = false;
+#if ASCENT_CUDA_ENABLED
+  cudaPointerAttributes atts;
+  const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
+
+  is_gpu = false;
+  is_unified = false;
+  // clear last error so other error checking does
+  // not pick it up
+  cudaError_t error = cudaGetLastError();
+#if CUDART_VERSION >= 10000
+  is_gpu = perr == cudaSuccess &&
+                   (atts.type == cudaMemoryTypeDevice ||
+                   atts.type == cudaMemoryTypeManaged);
+  is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
+#else
+  is_gpu = perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
+  is_unified = false;
+#endif
+  // This will gen an error when the pointer is not a GPU pointer.
+  // Clear the error so others don't pick it up.
+  error = cudaGetLastError();
+  (void) error;
+#endif
+}
+
 // https://gitlab.kitware.com/third-party/nvpipe/blob/master/encode.c
 bool is_gpu_ptr(const void *ptr)
 {
@@ -303,30 +332,6 @@ DeviceAllocator::copy(void * destination, const void * source, size_t num)
   (void) num;
   ASCENT_ERROR("Calling device allocator when no device is present.");
 #endif
-}
-
-
-// ----------------------- Memory Access -----------------------------
-const conduit::float32 *
-MemoryAccessor::float32_ptr_const(const conduit::Node &values)
-{
-  if(!values.dtype().is_float32())
-  {
-    ASCENT_ERROR("Accessor: Data type is not float32");
-  }
-  const conduit::float32 *ptr =  values.as_float32_ptr();
-  return ptr;
-}
-
-const conduit::float64 *
-MemoryAccessor::float64_ptr_const(const conduit::Node &values)
-{
-  if(!values.dtype().is_float64())
-  {
-    ASCENT_ERROR("Accessor: Data type is not float64");
-  }
-  const conduit::float64 *ptr =  values.as_float64_ptr();
-  return ptr;
 }
 
 } // namespace ascent
