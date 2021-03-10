@@ -8,8 +8,8 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-02-17-shabe074f
-  cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2021-02-17-shabe074f
+  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_FIXME
+  cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_FIXME
 
 
 # only build merge target pr to develop
@@ -228,7 +228,7 @@ stages:
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
-  - job: Main_Ubuntu_16_Cuda_10_1
+  - job: Main_Ubuntu_18_Cuda_10_1
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0

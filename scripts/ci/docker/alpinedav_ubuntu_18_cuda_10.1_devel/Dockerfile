@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2021, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -42,48 +42,23 @@
 #
 ###############################################################################
 
-FROM alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
-
-# obtain a copy of ascent source from host env,
-# which we use to call uberenv
-COPY ascent.docker.src.tar.gz /
-# extract ou
-RUN tar -xzf ascent.docker.src.tar.gz
-
-# at some sites ssl certs are intercepted, which cases issues fetching
-# tpl sources via https
-
-# to resolve this, either:
-# 1) pass the "-k" option to uberenv (recommended),
-# 2) install the proper certs into the image, or
-# 3) use  the following commands to disable ssl for git and
-#    curl (both are used by spack):
-#RUN git config --global http.sslVerify false
-#RUN echo insecure >> ~/.curlrc
-
-# bootstrap third party libs using spack and uberenv
-
-##########
-# TODO: RE-ENABLE MFEM + DRAY
-# Last try result: https://github.com/Alpine-DAV/ascent/issues/590
-#
-##########
-# RUN cd ascent && python scripts/uberenv/uberenv.py \
-#       -k \
-#       --spec "%gcc+mpi+cuda+mfem+dray+vtkh~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^dray~openmp ^cmake@3.14.5~openssl~ncurses" \
-#       --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16_cuda_10.1_devel/ \
-#       --prefix=/uberenv_libs
-
-RUN cd ascent && python scripts/uberenv/uberenv.py \
-       -k \
-       --spec "%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^cmake@3.14.5~openssl~ncurses" \
-       --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16_cuda_10.1_devel/ \
-       --prefix=/uberenv_libs
-
-# cleanup the spack build stuff to free up space
-RUN uberenv_libs/spack/bin/spack clean --all
+FROM nvidia/cuda:10.1-devel-ubuntu18.04
+# add sudo to base cuda devel env
+# so we can install additional packages as
+# non-root, but admin default user on azure pipelines
+RUN apt-get update && apt-get -y install sudo
+# install std packages we need for cuda dev env and test
+RUN apt-get update && apt-get -y install \
+               git \
+               git-lfs \
+               python \
+               gfortran \
+               zlib1g-dev \
+               curl \
+               mpich \
+               libmpich-dev \
+               libblas-dev \
+               liblapack-dev \
+               vim
 
 
-# delete copy of source from host (ci will fetch new from repo)
-RUN rm -rf ascent
