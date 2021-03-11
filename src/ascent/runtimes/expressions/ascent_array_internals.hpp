@@ -97,7 +97,6 @@ template <typename T> class ArrayInternals
 
   T get_value (const size_t i)
   {
-    assert (i >= 0);
     assert (i < m_size);
     T val = T();
     if (!m_cuda_enabled)

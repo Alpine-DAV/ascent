@@ -297,7 +297,12 @@ public:
     const T * ptr = raw_ptr(component,leaf_path);
 
 #ifdef ASCENT_USE_CUDA
-    if(!is_gpu_ptr(ptr))
+    bool is_unified;
+    bool is_gpu;
+    is_gpu_ptr(ptr,is_gpu, is_unified);
+    bool is_host_accessible =  !is_gpu || (is_gpu && is_unified);
+
+    if(is_host_accessible)
     {
       std::cout<<"already a host pointer\n";
       return ptr;

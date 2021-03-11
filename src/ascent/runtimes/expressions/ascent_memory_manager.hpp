@@ -8,7 +8,7 @@ namespace ascent
 {
 
 bool is_gpu_ptr(const void *ptr);
-bool is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified);
+void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified);
 
 class AllocationManager
 {
