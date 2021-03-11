@@ -1047,6 +1047,7 @@ DefaultRender::execute()
       {
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
+        image_name = output_dir(image_name, graph());
       }
 
       vtkm::Bounds scene_bounds = *bounds;
