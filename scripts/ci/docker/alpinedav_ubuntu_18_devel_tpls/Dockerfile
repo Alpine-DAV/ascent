@@ -62,12 +62,10 @@ RUN tar -xzf ascent.docker.src.tar.gz
 #RUN git config --global http.sslVerify false
 #RUN echo insecure >> ~/.curlrc
 
-# we will add babelflow back soon.
-
 # bootstrap third party libs using spack and uberenv
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec "%gcc+mpi+mfem+dray+python ^python@3.6.3" \
+       --spec "%gcc+mpi+mfem+dray+python+babelflow ^python@3.6.3" \
        --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18_devel/ \
        --prefix=/uberenv_libs
 
