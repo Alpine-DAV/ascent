@@ -68,7 +68,7 @@
 #include <ascent_runtime_param_check.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_web_interface.hpp> // -- for web_client_root_directory()
-///
+#include <ascent_resources.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -507,13 +507,23 @@ public:
     // add a database path
     m_db_path = db_path();
 
+    // note: there is an implicit assumption here that these
+    // resources are static and only need to be generated one
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
-    {
+    { 
         conduit::utils::create_directory(m_db_path);
-        // copy over cinema web resources
-        std::string cinema_root = conduit::utils::join_file_path(web_client_root_directory(),
-                                                                 "cinema");
-        ascent::copy_directory(cinema_root, m_db_path);
+
+        // load cinema web resources from compiled in resource tree
+        Node cinema_rc;
+        ascent::resources::load_compiled_resource_tree("cinema_web",
+                                                        cinema_rc);
+        if(cinema_rc.dtype().is_empty())
+        {
+            ASCENT_ERROR("Failed to load compiled resources for cinema_web");
+        }
+
+        ascent::resources::expand_resource_tree_to_file_system(cinema_rc,
+                                                               m_db_path);
     }
 
     std::stringstream ss;
@@ -1037,6 +1047,7 @@ DefaultRender::execute()
       {
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
+        image_name = output_dir(image_name, graph());
       }
 
       vtkm::Bounds scene_bounds = *bounds;

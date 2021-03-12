@@ -118,6 +118,7 @@ set(ascent_sources
     utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
+    utils/ascent_resources.cpp
     # hola
     hola/ascent_hola.cpp)
 
@@ -160,6 +161,8 @@ set(ascent_headers
     utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
+    utils/ascent_resources.hpp
+    utils/ascent_resources_cinema_web.hpp
     # hola
     hola/ascent_hola.hpp)
 
@@ -205,8 +208,7 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
-#for now, we depend on compositing so we need vtkh
-if(DRAY_FOUND AND VTKM_FOUND)
+if(DRAY_FOUND)
   list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
 endif()
@@ -275,7 +277,7 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
-if(DRAY_FOUND AND VTKM_FOUND)
+if(DRAY_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 
