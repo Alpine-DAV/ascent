@@ -116,8 +116,8 @@ class Ascent(Package, CudaPackage):
     #######################
     # BabelFlow
     #######################
-    depends_on('babelflow@develop', when='+babelflow+mpi')
-    depends_on('pmt@develop', when='+babelflow+mpi')
+    depends_on('babelflow', when='+babelflow+mpi')
+    depends_on('pmt', when='+babelflow+mpi')
 
     #############################
     # TPLs for Runtime Features
