@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2021, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -42,8 +42,7 @@
 #
 ###############################################################################
 
-FROM nvidia/cuda:10.1-devel-ubuntu16.04
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+FROM nvidia/cuda:10.1-devel-ubuntu18.04
 # add sudo to base cuda devel env
 # so we can install additional packages as
 # non-root, but admin default user on azure pipelines
@@ -51,6 +50,7 @@ RUN apt-get update && apt-get -y install sudo
 # install std packages we need for cuda dev env and test
 RUN apt-get update && apt-get -y install \
                git \
+               git-lfs \
                python \
                gfortran \
                zlib1g-dev \
