@@ -10,7 +10,7 @@ class Genten(CMakePackage,CudaPackage):
 
     version('master',
             git='https://gitlab.com/tensors/genten.git',
-            branch='master',
+            branch='higher-moments-interface',
             submodules=False,
             preferred=True)
 

@@ -75,6 +75,7 @@ class Ascent(Package, CudaPackage):
     variant("mfem", default=False, description="Build MFEM filter support")
     variant("adios", default=False, description="Build Adios filter support")
     variant("dray", default=False, description="Build with Devil Ray support")
+    variant("genten", default=False, description="Build with GenTen support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
@@ -141,7 +142,7 @@ class Ascent(Package, CudaPackage):
     depends_on("mfem@4.0.2~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
 
     depends_on("adios", when="+adios")
-    depends_on("genten")
+    depends_on("genten", when="+genten")
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us
@@ -515,6 +516,11 @@ class Ascent(Package, CudaPackage):
             cfg.write(cmake_cache_entry("ADIOS_DIR", spec['adios'].prefix))
         else:
             cfg.write("# adios not built by spack \n")
+
+        if "+genten" in spec:
+            cfg.write(cmake_cache_entry("GENTEN_DIR", spec['genten'].prefix))
+        else:
+            cfg.write("# genten not built by spack \n")
 
         cfg.write("##################################\n")
         cfg.write("# end spack generated host-config\n")
