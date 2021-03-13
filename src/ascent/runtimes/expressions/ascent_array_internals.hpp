@@ -6,6 +6,7 @@
 #ifndef ASCENT_ARRAY_INTERNALS
 #define ASCENT_ARRAY_INTERNALS
 
+#include <ascent_config.h>
 #include "ascent_memory_manager.hpp"
 #include "ascent_logging.hpp"
 
@@ -42,7 +43,7 @@ template <typename T> class ArrayInternals
     m_own_host(true),
     m_own_device(true)
   {
-#ifdef ASCENT_CUDA_ENABLED
+#ifdef ASCENT_USE_ENABLED
     m_cuda_enabled = true;
 #else
     m_cuda_enabled = false;
@@ -87,7 +88,7 @@ template <typename T> class ArrayInternals
   ArrayInternals (T *data, const size_t size)
   : m_size (size)
   {
-#ifdef ASCENT_CUDA_ENABLED
+#ifdef ASCENT_USE_CUDA
     m_cuda_enabled = true;
 #else
     m_cuda_enabled = false;
@@ -127,7 +128,7 @@ template <typename T> class ArrayInternals
           // ask for garbage and yee shall recieve
           allocate_device ();
         }
-#ifdef ASCENT_CUDA_ENABLED
+#ifdef ASCENT_USE_CUDA
         cudaMemcpy (&val, &m_device[i], sizeof (T), cudaMemcpyDeviceToHost);
 #endif
       }
@@ -445,7 +446,7 @@ template <typename T> class ArrayInternals
       // this is unified memory, so do nothing
       return;
     }
-#ifdef ASCENT_CUDA_ENABLED
+#ifdef ASCENT_USE_CUDA
     cudaMemcpy(m_host, m_device, m_size * sizeof(T), cudaMemcpyDeviceToHost);
 #endif
   }
@@ -457,7 +458,7 @@ template <typename T> class ArrayInternals
       // this is unified memory, so do nothing
       return;
     }
-#ifdef ASCENT_CUDA_ENABLED
+#ifdef ASCENT_USE_CUDA
     cudaMemcpy(m_device, m_host, m_size * sizeof(T), cudaMemcpyHostToDevice);
 #endif
   }

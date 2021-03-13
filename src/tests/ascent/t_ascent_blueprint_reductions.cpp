@@ -93,7 +93,7 @@ void device_conversion(Node &host_data, Node &device_data)
     device_conversion(host_data[name], device_data[name]);
   }
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, sum)
 {
@@ -300,6 +300,7 @@ TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
     // go check things
     EXPECT_EQ(res["index"].to_int32(), 0);
 }
+#endif
 
 TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
 {
@@ -334,10 +335,7 @@ TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
 
     Node res = runtime::expressions::field_histogram(dataset,"braid", -10, 10, 64);
     res.print();
-    //EXPECT_NEAR(res["value"].to_float64(),  173.205080756888, 0.0001);
-    // Its not obvious to me that the zone would be 0, so if this fails,
-    // go check things
-    //EXPECT_EQ(res["index"].to_int32(), 0);
+    EXPECT_NEAR(res["value"].as_float64_ptr()[0], 8.0, 0.0001);
 }
 #if 0
 //-----------------------------------------------------------------------------

@@ -52,6 +52,7 @@
 #include "ascent_conduit_reductions.hpp"
 #include "ascent_memory_manager.hpp"
 #include "ascent_field_array.hpp"
+#include "ascent_array.hpp"
 #include "ascent_raja_policies.hpp"
 #include "ascent_math.hpp"
 
@@ -352,26 +353,35 @@ struct HistogramFunctor
   conduit::Node operator()(const T* values, const int &size) const
   {
     const double inv_delta = double(m_num_bins) / (m_max_val - m_min_val);
+    // need to avoid capturing 'this'
+    const int num_bins = m_num_bins;
+    const double min_val = m_min_val;
 
-    double *bins = new double[m_num_bins];
-    memset(bins, 0, sizeof(double) * m_num_bins);
+    // conduit zero initializes this array
+    conduit::Node res;
+    res["value"].set(conduit::DataType::float64(num_bins));
+    double *nb = res["value"].value();
+
+    Array<double> bins(nb,num_bins);
+
+    double *bins_ptr = bins.device_ptr();
 
     RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
     {
       double val = static_cast<double>(values[i]);
-      int bin_index = static_cast<int>((val - m_min_val) * inv_delta);
+      int bin_index = static_cast<int>((val - min_val) * inv_delta);
       // clamp for now
       // another option is not to count data outside the range
-      bin_index = max(0, min(bin_index, m_num_bins - 1));
-      int old = RAJA::atomicAdd<atomic_policy> (&(bins[bin_index]), 1.);
+      bin_index = max(0, min(bin_index, num_bins - 1));
+      int old = RAJA::atomicAdd<atomic_policy> (&(bins_ptr[bin_index]), 1.);
 
     });
     ASCENT_ERROR_CHECK();
-    conduit::Node res;
-    res["value"].set(bins, m_num_bins);
+
+    // synch the values back to the host
+    (void)  bins.host_ptr();
     res["bin_size"] = (m_max_val - m_min_val) / double(m_num_bins);
 
-    delete[] bins;
     return res;
   }
 };
@@ -417,6 +427,7 @@ array_histogram(const conduit::Node &field,
                 const double &max_value,
                 const int &num_bins)
 {
+  field.schema().print();
   detail::HistogramFunctor histogram(min_value, max_value, num_bins);
   return detail::field_dispatch(field, histogram);
 }
