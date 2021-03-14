@@ -51,7 +51,7 @@
 
 #include "ascent_conduit_reductions.hpp"
 #include "ascent_memory_manager.hpp"
-#include "ascent_field_array.hpp"
+#include "ascent_memory_interface.hpp"
 #include "ascent_array.hpp"
 #include "ascent_raja_policies.hpp"
 #include "ascent_math.hpp"
@@ -141,6 +141,44 @@ bool field_is_int64(const conduit::Node &field)
 
 template<typename Function>
 conduit::Node
+field_dispatch2(const conduit::Node &field, std::string component, const Function &func)
+{
+
+  conduit::Node res;
+  const std::string loc = "device";
+
+  if(field_is_float32(field))
+  {
+    MemoryInterface<conduit::float32> farray(field);
+    MemoryAccessor<conduit::float32> accessor = farray.accessor(loc,component);
+    res = func(accessor);
+  }
+  else if(field_is_float64(field))
+  {
+    MemoryInterface<conduit::float64> farray(field);
+    MemoryAccessor<conduit::float64> accessor = farray.accessor(loc,component);
+    res = func(accessor);
+  }
+  //else if(field_is_int32(field))
+  //{
+  //  MemoryInterface<conduit::int32> farray(field);
+  //  res = func(farray.ptr_const(), farray.size(0));
+  //}
+  //else if(field_is_int64(field))
+  //{
+  //  MemoryInterface<conduit::int64> farray(field);
+  //  res = func(farray.ptr_const(), farray.size(0));
+  //}
+  else
+  {
+    ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                  field.schema().to_string());
+  }
+  return res;
+}
+
+template<typename Function>
+conduit::Node
 field_dispatch(const conduit::Node &field, const Function &func)
 {
   // check for single component scalar
@@ -153,22 +191,22 @@ field_dispatch(const conduit::Node &field, const Function &func)
 
   if(field_is_float32(field))
   {
-    FieldArray<conduit::float32> farray(field);
+    MemoryInterface<conduit::float32> farray(field);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_float64(field))
   {
-    FieldArray<conduit::float64> farray(field);
+    MemoryInterface<conduit::float64> farray(field);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_int32(field))
   {
-    FieldArray<conduit::int32> farray(field);
+    MemoryInterface<conduit::int32> farray(field);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_int64(field))
   {
-    FieldArray<conduit::int64> farray(field);
+    MemoryInterface<conduit::int64> farray(field);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else
@@ -350,8 +388,9 @@ struct HistogramFunctor
   {}
 
   template<typename T>
-  conduit::Node operator()(const T* values, const int &size) const
+  conduit::Node operator()(const MemoryAccessor<T> accessor) const
   {
+    const int size = accessor.m_size;
     const double inv_delta = double(m_num_bins) / (m_max_val - m_min_val);
     // need to avoid capturing 'this'
     const int num_bins = m_num_bins;
@@ -368,7 +407,7 @@ struct HistogramFunctor
 
     RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
     {
-      double val = static_cast<double>(values[i]);
+      double val = static_cast<double>(accessor[i]);
       int bin_index = static_cast<int>((val - min_val) * inv_delta);
       // clamp for now
       // another option is not to count data outside the range
@@ -425,11 +464,11 @@ conduit::Node
 array_histogram(const conduit::Node &field,
                 const double &min_value,
                 const double &max_value,
-                const int &num_bins)
+                const int &num_bins,
+                std::string component)
 {
-  field.schema().print();
   detail::HistogramFunctor histogram(min_value, max_value, num_bins);
-  return detail::field_dispatch(field, histogram);
+  return detail::field_dispatch2(field, component, histogram);
 }
 
 //-----------------------------------------------------------------------------

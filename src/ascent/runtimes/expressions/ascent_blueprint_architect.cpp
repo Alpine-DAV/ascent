@@ -49,7 +49,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_blueprint_architect.hpp"
-#include "ascent_field_array.hpp"
+#include "ascent_memory_interface.hpp"
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
@@ -231,7 +231,7 @@ get_element_indices(const conduit::Node &n_topo,
     // this is an array that could be on the GPU, so we have to
     // use special care
     const conduit::Node &n_topo_conn = n_topo_eles["connectivity"];
-    FieldArray<int> conn(n_topo_eles, "connectivity");
+    MemoryInterface<int> conn(n_topo_eles, "connectivity");
     const int offset = index * num_indices;
     for(int i = 0; i < num_indices; ++i)
     {
@@ -322,7 +322,7 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
   double vert[3] = {0., 0., 0.};
   if(is_float64)
   {
-    FieldArray<double> array(n_coords);
+    MemoryInterface<double> array(n_coords);
     vert[0] = array.value(index,"x");
     vert[1] = array.value(index,"y");
     if(array.components() == 3)
@@ -332,7 +332,7 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
   }
   else
   {
-    FieldArray<float> array(n_coords);
+    MemoryInterface<float> array(n_coords);
     vert[0] = array.value(index,"x");
     vert[1] = array.value(index,"y");
     if(array.components() == 3)
@@ -379,7 +379,7 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
 
   if(is_float64)
   {
-    FieldArray<double> f_coords(n_coords);
+    MemoryInterface<double> f_coords(n_coords);
     vert[0] = f_coords.value(logical_index[0],"x");
     vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
@@ -389,7 +389,7 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
   }
   else
   {
-    FieldArray<float> f_coords(n_coords);
+    MemoryInterface<float> f_coords(n_coords);
     vert[0] = f_coords.value(logical_index[0],"x");
     vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)

@@ -488,6 +488,11 @@ class Ascent(Package, CudaPackage):
 
         if "+cuda" in spec:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "ON"))
+            cfg.write(cmake_cache_entry("CUDA_TOOLKIT_ROOT_DIR", spec['cuda'].prefix))
+            if 'cuda_arch' in spec.variants:
+              cuda_value = spec.variants['cuda_arch'].value
+              cuda_arch = cuda_value[0]
+              cfg.write(cmake_cache_entry("CUDA_ARCH", 'sm_{0}'.format(cuda_arch)))
         else:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "OFF"))
 

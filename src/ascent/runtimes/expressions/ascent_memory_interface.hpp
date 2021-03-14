@@ -1,5 +1,5 @@
-#ifndef ASCENT_FIELD_ARRAY_HPP
-#define ASCENT_FIELD_ARRAY_HPP
+#ifndef ASCENT_MEMORY_INTERFACE_HPP
+#define ASCENT_MEMORY_INTERFACE_HPP
 
 #include <conduit.hpp>
 #include "ascent_raja_policies.hpp"
@@ -65,49 +65,37 @@ inline conduit::int64 * conduit_ptr<conduit::int64>(conduit::Node &values)
   return values.as_int64_ptr();
 }
 
-// TODO: int64 index and size?
 template<typename T>
-struct ScalarAccess
-{
-  const T *m_values;
-  const int m_size;
-  ASCENT_EXEC
-  T operator[](const int index)
-  {
-    return m_values[index];
-  }
-};
-
-template<typename T>
-struct ArrayAccess
+struct MemoryAccessor
 {
   const T *m_values;
   const index_t m_size;
   const index_t m_offset;
   const index_t m_stride;
 
-  ArrayAccess(const T *values, const index_t size, const index_t offset, const index_t stride)
+  MemoryAccessor(const T *values, const conduit::DataType &dtype)
     : m_values(values),
-      m_size(size),
-      m_offset(offset),
-      m_stride(stride)
+      m_size(dtype.number_of_elements()),
+      // conduit strides and offsets are in terms of bytes
+      m_offset(dtype.offset() / sizeof(T)),
+      m_stride(dtype.stride() / sizeof(T))
   {
   }
 
   ASCENT_EXEC
-  T operator[](const index_t index)
+  T operator[](const index_t index) const
   {
     return m_values[m_offset + m_stride * index];
   }
 protected:
-  ArrayAccess(){};
+  MemoryAccessor(){};
 };
 
 // rename to scalar array and don't support mcarrays
 // TODO: if we allow non-const access then we need to
 //       keep track of what is dirty
 template<typename T>
-class FieldArray
+class MemoryInterface
 {
 private:
   int m_components;
@@ -118,9 +106,9 @@ private:
 
 public:
   // no default constructor
-  FieldArray() = delete;
+  MemoryInterface() = delete;
 
-  FieldArray(const conduit::Node &field, const std::string path = "values")
+  MemoryInterface(const conduit::Node &field, const std::string path = "values")
     : m_field(const_cast<conduit::Node&>(field)),
       m_path(path)
   {
@@ -200,9 +188,9 @@ public:
     return val;
   }
 
-  // get the raw pointer used by conduit and return the path
-  const T *raw_ptr(int component, std::string &leaf_path)
+  std::string component_path(int component)
   {
+    std::string leaf_path;
     if(component < 0 || component >= m_components)
     {
       ASCENT_ERROR("Invalid component "<<component<<" number of components "<<m_components);
@@ -215,7 +203,13 @@ public:
     {
       leaf_path = m_path + "/" + m_field[m_path].child(component).name();
     }
+    return leaf_path;
+  }
 
+  // get the raw pointer used by conduit and return the path
+  const T *raw_ptr(int component, std::string &leaf_path)
+  {
+    leaf_path = component_path(component);
     const T * ptr = conduit_ptr<T>(m_field[leaf_path]);
     return ptr;
   }
@@ -232,11 +226,11 @@ public:
     }
     else
     {
-      const int children = m_field["values"].number_of_children();
+      const int children = m_field[m_path].number_of_children();
       bool match = false;
       for(int i = 0; i < children; ++i)
       {
-        if(component == m_field["values"].child(i).name())
+        if(component == m_field[m_path].child(i).name())
         {
           component_idx = i;
           match = true;
@@ -249,10 +243,6 @@ public:
       }
     }
     return component_idx;
-  }
-
-  const T *device_ptr_const(const std::string component)
-  {
   }
 
   const T *device_ptr_const(int component)
@@ -337,6 +327,7 @@ public:
 
     std::cout<<"SDKF:SDKFH\n";
 
+    std::string leaf_path;
     if(location == "device")
     {
       return device_ptr_const(0);
@@ -345,6 +336,32 @@ public:
     {
       return host_ptr_const(0);
     }
+  }
+
+  MemoryAccessor<T> accessor(const std::string location = "device", const std::string comp = "")
+  {
+    if(location != "device" && location != "host")
+    {
+      ASCENT_ERROR("Bad location string '"<<location<<"'");
+    }
+    const int children = m_field[m_path].number_of_children();
+    int comp_idx = 0;
+    if(comp == "")
+    {
+      if(m_components != 1)
+      {
+        ASCENT_ERROR("Ambiguous component: node has more than one component but no"<<
+                     " component was specified");
+      }
+    }
+    else
+    {
+      int comp_idx = resolve_component(comp);
+    }
+
+    std::string leaf_path = component_path(comp_idx);
+    const T* ptr = location == "device" ? device_ptr_const(comp_idx) : host_ptr_const(comp_idx);
+    return MemoryAccessor<T>(ptr, m_field[leaf_path].dtype());
   }
 
 };

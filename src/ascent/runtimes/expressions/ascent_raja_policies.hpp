@@ -12,7 +12,7 @@ namespace ascent
 using for_policy = RAJA::cuda_exec<BLOCK_SIZE>;
 using reduce_policy = RAJA::cuda_reduce;
 using atomic_policy = RAJA::cuda_atomic;
-#elif ASCENT_USE_OPENMP
+#elif defined(ASCENT_USE_OPENMP)
 using for_policy = RAJA::omp_parallel_for_exec;
 using reduce_policy = RAJA::omp_reduce;
 using atomic_policy = RAJA::omp_atomic;
@@ -26,7 +26,7 @@ using atomic_policy = RAJA::seq_atomic;
 // CPU only policies need when using classes
 // that cannot be called on a GPU, e.g. MFEM
 //
-#ifdef ASCENT_USE_OPENMP
+#if defined(ASCENT_USE_OPENMP)
 using for_cpu_policy = RAJA::omp_parallel_for_exec;
 using reduce_cpu_policy = RAJA::omp_reduce;
 using atomic_cpu_policy = RAJA::omp_atomic;

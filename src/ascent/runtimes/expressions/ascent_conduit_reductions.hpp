@@ -88,7 +88,8 @@ conduit::Node array_inf_count(const conduit::Node &field);
 conduit::Node array_histogram(const conduit::Node &field,
                               const double &min_value,
                               const double &max_value,
-                              const int &num_bins);
+                              const int &num_bins,
+                              std::string component = "");
 
 };
 //-----------------------------------------------------------------------------

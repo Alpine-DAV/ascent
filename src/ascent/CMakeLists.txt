@@ -145,6 +145,7 @@ set(ascent_headers
     runtimes/expressions/ascent_math.hpp
     runtimes/expressions/ascent_array.hpp
     runtimes/expressions/ascent_array_internals.hpp
+    runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
     runtimes/expressions/ascent_raja_policies.hpp
     # flow
@@ -313,7 +314,6 @@ if (ENABLE_SERIAL)
 
     set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
-    target_compile_options(ascent PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
     if(VTKM_FOUND)
         set(ascent_device_sources ${ascent_vtkh_dep_sources})
         list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
@@ -440,7 +440,6 @@ if(MPI_FOUND)
 
     set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    target_compile_options(ascent_mpi PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr>)
 
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})

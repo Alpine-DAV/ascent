@@ -143,7 +143,7 @@ endif()
 # git HEAD changes or when a branch is checked out, unless a change causes
 # cmake to reconfigure.
 #
-# However, this limited approach will still be useful in many cases, 
+# However, this limited approach will still be useful in many cases,
 # including building and for installing  conduit as a tpl
 #
 ##############################################################################
@@ -184,7 +184,7 @@ if(GIT_FOUND)
        set(ASCENT_GIT_TAG "unknown")
     endif()
     message(STATUS "git tag: " ${ASCENT_GIT_TAG})
-  
+
 endif()
 
 ###############################################################################
@@ -206,6 +206,12 @@ if(CUDA_FOUND)
      #otherwise we let the warning occur. We have to set this in CMAKE_CUDA_FLAGS
      #as it is passed to the device link step, unlike compile_options
      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xnvlink=--suppress-stack-size-warning")
+     # RAJA things
+     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-constexpr")
+     if(DEFINED CUDA_ARCH)
+       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -restrict -arch ${CUDA_ARCH}")
+     endif()
+
    endif()
 
 endif()
