@@ -6,10 +6,23 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Added
+- Added support to continue execution when a field or topology is missing
+- Expressions can be now be used as input to filter parameters
+- Added a `triangulate` transform
+- Added option to build Ascent with only Devil Ray support
+- Updated VTK-m to add support for `ZZZ`
+
 ### Fixed
-- Issue MPI hang if actions files (yaml or json) fail to parse.
+- Issue MPI hang if actions files (yaml or json) fail to parse
+- Several minor issues with saving and reading Mesh Blueprint file sets
+- Fixed a field association bug with Data Binning
+- Updated VTK-m to address `ZZZ`
 
 
+### Changed
+- To better support installs that are relocated on the file system, Cinema database file resources are now compiled into the Ascent library.
+- Updated to use Babelflow (1.0.1) and Parallel Merge Tree (1.0.2).
 
 
 ## [0.6.0] - Released 2020-11-06
@@ -70,8 +83,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Alpine-DAV/ascent/compare/v0.3.0...v0.4.0
-
