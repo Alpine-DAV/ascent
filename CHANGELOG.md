@@ -7,23 +7,21 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased
 
 ### Added
-- Added support to continue execution when a field or topology is missing
-- Expressions can be now be used as input to filter parameters
+- Added partial failure tolerance (i.e., if there are multiple plots the failure of one doesn't prevent the others from rendering)
+- Added the ability to use expressions as parameters to filters, e.g., `iso contour value = "(max(field('density')) - min(field('density)) / 2")`
+- Added orthogonal projections for scalar images (projecting onto a 2d plane)
 - Added a `triangulate` transform
 - Added option to build Ascent with only Devil Ray support
-- Updated VTK-m to add support for `ZZZ`
 
 ### Fixed
-- Issue MPI hang if actions files (yaml or json) fail to parse
-- Several minor issues with saving and reading Mesh Blueprint file sets
+- Fixed a MPI hang if actions files (yaml or json) fail to parse
+- Fixed several minor issues with saving and reading Mesh Blueprint file sets
 - Fixed a field association bug with Data Binning
-- Updated VTK-m to address `ZZZ`
-
+- Fixed a 2D AMR mesh rendering issue
 
 ### Changed
 - To better support installs that are relocated on the file system, Cinema database file resources are now compiled into the Ascent library.
 - Updated to use Babelflow (1.0.1) and Parallel Merge Tree (1.0.2).
-
 
 ## [0.6.0] - Released 2020-11-06
 
