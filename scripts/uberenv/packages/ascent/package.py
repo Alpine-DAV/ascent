@@ -134,17 +134,18 @@ class Ascent(Package, CudaPackage):
     depends_on("vtk-h~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
 
     # mfem
-    depends_on("mfem@4.0.2~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")
-    depends_on("mfem@4.0.2~threadsafe~openmp~shared+mpi+conduit", when="~shared+mfem+mpi")
+    depends_on("mfem~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")
+    depends_on("mfem~threadsafe~openmp~shared+mpi+conduit", when="~shared+mfem+mpi")
 
-    depends_on("mfem@4.0.2~threadsafe~openmp+shared~mpi+conduit", when="+shared+mfem~mpi")
-    depends_on("mfem@4.0.2~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
+    depends_on("mfem~threadsafe~openmp+shared~mpi+conduit", when="+shared+mfem~mpi")
+    depends_on("mfem~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
+
 
     depends_on("adios", when="+adios")
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us
-    depends_on("dray@develop+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
+    depends_on("dray+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
     depends_on("dray+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
     depends_on("dray+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
 
