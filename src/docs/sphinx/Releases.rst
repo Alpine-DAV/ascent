@@ -58,10 +58,45 @@ Source distributions for Ascent are hosted on github:
 https://github.com/Alpine-DAV/ascent/releases
 
 
+v0.7.0
+-------
+
+* `v0.7.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.7.0/ascent-v0.7.0-src-with-blt.tar.gz>`_
+
+Highlights
++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Added
+~~~~~~~~~
+
+* Added partial failure tolerance (i.e., if there are multiple plots the failure of one doesn't prevent the others from rendering)
+* Added the ability to use expressions as parameters to filters, e.g., ``iso contour value = "(max(field('density')) - min(field('density)) / 2")``
+* Added orthogonal projections for scalar images (projecting onto a 2d plane)
+* Added a `triangulate` transform
+* Added option to build Ascent with only Devil Ray support
+
+Fixed
+~~~~~~~~~
+
+* Fixed a MPI hang if actions files (yaml or json) fail to parse
+* Fixed several minor issues with saving and reading Mesh Blueprint file sets
+* Fixed a field association bug with Data Binning
+* Fixed a 2D AMR mesh rendering issue
+
+Changed
+~~~~~~~~~
+
+* To better support installs that are relocated on the file system, Cinema database file resources are now compiled into the Ascent library.
+* Updated to use Babelflow (1.0.1) and Parallel Merge Tree (1.0.2).
+
+
+
 v0.6.0
 -------
 
-* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.6.0/ascent-v0.6.0-src-with-blt.tar.gz>`_
+* `v0.6.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.6.0/ascent-v0.6.0-src-with-blt.tar.gz>`_
 
 Highlights
 +++++++++++++
@@ -96,7 +131,7 @@ Changed
 v0.5.1
 -------
 
-* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.1/ascent-v0.5.1-src-with-blt.tar.gz>`_
+* `v0.5.1 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.1/ascent-v0.5.1-src-with-blt.tar.gz>`_
 
 Highlights
 +++++++++++++
@@ -118,7 +153,7 @@ Fixed
 v0.5.0
 -------
 
-* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz>`_
+* `v0.5.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz>`_
 
 Highlights
 +++++++++++++
