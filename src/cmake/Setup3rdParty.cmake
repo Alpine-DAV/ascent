@@ -103,9 +103,9 @@ if(HDF5_DIR)
 endif()
 
 ################################
-# Setup MFEM
+# Setup MFEM if enabled
 ################################
-if (MFEM_DIR)
+if (MFEM_DIR AND ENABLE_MFEM)
   include(cmake/thirdparty/SetupMFEM.cmake)
 endif()
 

@@ -148,6 +148,11 @@ BasicQuery::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
     std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
     std::string expression = params()["expression"].as_string();

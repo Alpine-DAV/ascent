@@ -1,0 +1,22 @@
+#An example of using devil ray scalar rendering.
+
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "relay"
+      pipeline: "pl1"
+      params: 
+        path: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_scalar_renderer"
+        protocol: "blueprint/mesh/hdf5"
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "dray_project_2d"
+        params: 
+          image_width: 512
+          image_height: 512
+          fields: 
+            - "density"

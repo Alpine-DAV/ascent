@@ -81,7 +81,7 @@ TEST(ascent_contour, test_single_contour_3d)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping test");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 

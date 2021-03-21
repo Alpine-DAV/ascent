@@ -270,7 +270,73 @@ planes(const conduit::Node &params, const dray::AABB<3> bounds)
   return points;
 }
 
-std::vector<float>
+void
+parse_plane(const conduit::Node &plane, dray::PlaneDetector &plane_d)
+{
+  typedef dray::Vec<float,3> Vec3f;
+
+  if(plane.has_child("center"))
+  {
+      conduit::Node n;
+      plane["center"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      Vec3f vec = {{float(coords[0]), float(coords[1]), float(coords[2])}};
+      plane_d.m_center = vec;
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'center'");
+  }
+
+  if(plane.has_child("up"))
+  {
+      conduit::Node n;
+      plane["up"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      Vec3f vec = {{float(coords[0]), float(coords[1]), float(coords[2])}};
+      vec.normalize();
+      plane_d.m_up = vec;
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'up'");
+  }
+
+  if(plane.has_child("normal"))
+  {
+      conduit::Node n;
+      plane["normal"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      Vec3f vec = {{float(coords[0]), float(coords[1]), float(coords[2])}};
+      vec.normalize();
+      plane_d.m_view  = vec;
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'normal'");
+  }
+
+  if(plane.has_child("width"))
+  {
+      plane_d.m_plane_width = plane["width"].to_float64();
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'width'");
+  }
+
+  if(plane.has_child("height"))
+  {
+      plane_d.m_plane_height = plane["height"].to_float64();
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'height'");
+  }
+
+}
+
+void
 parse_camera(const conduit::Node camera_node, dray::Camera &camera)
 {
   typedef dray::Vec<float,3> Vec3f;
@@ -328,25 +394,6 @@ parse_camera(const conduit::Node camera_node, dray::Camera &camera)
       float zoom = camera_node["zoom"].to_float32();
       camera.set_zoom(zoom);
   }
-  //
-  // With a new potential camera position. We need to reset the
-  // clipping plane as not to cut out part of the data set
-  //
-
-  // clipping defaults
-  std::vector<float> clipping(2);
-  clipping[0] = 0.01f;
-  clipping[1] = 1000.f;
-  if(camera_node.has_child("near_plane"))
-  {
-      clipping[0] = camera_node["near_plane"].to_float64();
-  }
-
-  if(camera_node.has_child("far_plane"))
-  {
-      clipping[1] = camera_node["far_plane"].to_float64();
-  }
-  return clipping;
 }
 
 dray::ColorTable
@@ -511,13 +558,10 @@ parse_params(const conduit::Node &params,
   dray::AABB<3> bounds = dcol->bounds();
   camera.reset_to_bounds(bounds);
 
-  std::vector<float> clipping(2);
-  clipping[0] = 0.01f;
-  clipping[1] = 1000.f;
   if(params.has_path("camera"))
   {
     const conduit::Node &n_camera = params["camera"];
-    clipping = detail::parse_camera(n_camera, camera);
+    detail::parse_camera(n_camera, camera);
   }
 
   dray::Range scalar_range = dcol->range(field_name);
@@ -662,6 +706,10 @@ DRayPseudocolor::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
     int comm_id = -1;
@@ -838,6 +886,10 @@ DRay3Slice::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1006,6 +1058,10 @@ DRayVolume::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1185,6 +1241,11 @@ DRayReflect::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1265,6 +1326,7 @@ DRayProject2d::verify_params(const conduit::Node &params,
     valid_paths.push_back("fields");
 
     ignore_paths.push_back("camera");
+    ignore_paths.push_back("plane");
     ignore_paths.push_back("fields");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
@@ -1287,6 +1349,11 @@ DRayProject2d::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1334,13 +1401,19 @@ DRayProject2d::execute()
     dray::AABB<3> bounds = dcol->bounds();
     camera.reset_to_bounds(bounds);
 
-    std::vector<float> clipping(2);
-    clipping[0] = 0.01f;
-    clipping[1] = 1000.f;
-    if(params().has_path("camera"))
+    dray::PlaneDetector plane;
+    bool use_plane = false;
+    if(params().has_path("plane"))
+    {
+      use_plane = true;
+      detail::parse_plane(params()["plane"], plane);
+      plane.m_x_res = width;
+      plane.m_y_res = height;
+    }
+    else if(params().has_path("camera"))
     {
       const conduit::Node &n_camera = params()["camera"];
-      clipping = detail::parse_camera(n_camera, camera);
+      detail::parse_camera(n_camera, camera);
     }
 
     std::vector<dray::ScalarBuffer> buffers;
@@ -1361,7 +1434,15 @@ DRayProject2d::execute()
     }
 
     renderer.field_names(field_names);
-    dray::ScalarBuffer sb = renderer.render(camera);
+    dray::ScalarBuffer sb;
+    if(use_plane)
+    {
+      sb = renderer.render(plane);
+    }
+    else
+    {
+      sb = renderer.render(camera);
+    }
 
     conduit::Node *output = new conduit::Node();
     if(dray::dray::mpi_rank() == 0)
@@ -1465,6 +1546,11 @@ DRayProjectColors2d::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 

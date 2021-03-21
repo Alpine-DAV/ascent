@@ -1,0 +1,32 @@
+#An example of using devil ray to reflect a data set.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    p1: 
+      f1: 
+        type: "dray_reflect"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 1.0
+            z: 0.0
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "dray_pseudocolor"
+      pipeline: "p1"
+      params: 
+        field: "density"
+        min_value: 0.98
+        max_value: 1.04
+        log_scale: "false"
+        image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_reflect"
+        camera: 
+          azimuth: -30
+          elevation: 35
