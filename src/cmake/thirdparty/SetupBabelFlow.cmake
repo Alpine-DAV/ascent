@@ -50,21 +50,12 @@ if(NOT BabelFlow_DIR)
     MESSAGE(FATAL_ERROR "BabelFlow support needs explicit BabelFlow_DIR")
 endif()
 
+set(BabelFlow_DIR ${BabelFlow_DIR}/lib/cmake)
 MESSAGE(STATUS "Looking for BabelFlow using BabelFlow_DIR = ${BabelFlow_DIR}")
 
-# use BabelFlow_DIR to setup the options that cmake's find BabelFlow needs
-file(GLOB BabelFlow_DIR "${BabelFlow_DIR}/lib/cmake/BabelFlow*")
-if(NOT BabelFlow_DIR)
-    MESSAGE(FATAL_ERROR "Failed to find BabelFlow at BabelFlow_DIR=${BabelFlow_DIR}/lib/cmake/BabelFlow*")
-endif()
-
-find_package(MPI REQUIRED)
 find_package(BabelFlow REQUIRED)
 
-set(BabelFlow_INCLUDE_DIRS ${BabelFlow_DIR}/../../../include)
-
 message(STATUS "FOUND BabelFlow at ${BabelFlow_DIR}")
-#message(STATUS "BabelFlow_INCLUDE_DIRS = ${BabelFlow_INCLUDE_DIRS}")
 
 blt_register_library( NAME babelflow
                       INCLUDES ${BabelFlow_INCLUDE_DIRS}
@@ -76,24 +67,13 @@ if(NOT PMT_DIR)
     MESSAGE(FATAL_ERROR "ParallelMergeTree support needs explicit PMT_DIR")
 endif()
 
+set(PMT_DIR ${PMT_DIR}/lib/cmake)
 MESSAGE(STATUS "Looking for ParallelMergeTree using PMT_DIR = ${PMT_DIR}")
-
-# use PMT_DIR to setup the options that cmake's find ParallelMergeTree needs
-file(GLOB PMT_DIR "${PMT_DIR}/lib/cmake/PMT*")
-if(NOT PMT_DIR)
-    MESSAGE(FATAL_ERROR "Failed to find ParallelMergeTree at PMT_DIR=${PMT_DIR}/lib/cmake/PMT*")
-endif()
 
 find_package(PMT REQUIRED)
 
-set(PMT_INCLUDE_DIRS ${PMT_DIR}/../../../include/PMT)
-
 message(STATUS "FOUND PMT at ${PMT_DIR}")
-message(STATUS "PMT_INCLUDE_DIRS = ${PMT_INCLUDE_DIRS}")
 
 blt_register_library( NAME pmt
                       INCLUDES ${PMT_INCLUDE_DIRS}
                       LIBRARIES  pmt)
-
-
-

@@ -253,10 +253,6 @@ bool field_list(const conduit::Node &actions,
   info.reset();
   fields.clear();
   detail::filter_fields(actions, fields, info);
-  if(info.number_of_children() != 0)
-  {
-    info.print();
-  }
   return info.number_of_children() == 0;
 }
 

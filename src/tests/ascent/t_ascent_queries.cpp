@@ -145,7 +145,8 @@ TEST(ascent_queries, max_query_pipeline)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent vtkm support disabled: skipping");
+
         return;
     }
     //
@@ -305,8 +306,7 @@ TEST(ascent_queries, filter_params)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
+        ASCENT_INFO("Ascent vtkm support disabled: skipping");
 
         return;
     }
