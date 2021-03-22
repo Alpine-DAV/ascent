@@ -43,7 +43,6 @@
 ###############################################################################
 
 FROM ubuntu:18.04
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
 # add sudo to base ubuntu container
 # so we can install additional packages as
 # non-root, but admin default user on azure pipelines
@@ -57,6 +56,7 @@ RUN apt-get update && apt-get -y install \
              python \
              perl \
              git \
+             git-lfs \
              curl \
              wget \
              tar \

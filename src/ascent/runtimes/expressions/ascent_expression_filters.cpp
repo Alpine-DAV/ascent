@@ -63,6 +63,7 @@
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
 #include <ascent_logging.hpp>
+#include <utils/ascent_mpi_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_timer.hpp>
 #include <flow_workspace.hpp>
@@ -109,9 +110,12 @@ void fill_attrs(conduit::Node &obj)
   if(type == "vector")
   {
     double *vals = obj["value"].value();
-    obj["attrs/x"] = vals[0];
-    obj["attrs/y"] = vals[1];
-    obj["attrs/z"] = vals[2];
+    obj["attrs/x/value"] = vals[0];
+    obj["attrs/x/type"] = "double";
+    obj["attrs/y/value"] = vals[1];
+    obj["attrs/y/type"] = "double";
+    obj["attrs/z/value"] = vals[2];
+    obj["attrs/z/type"] = "double";
   }
 }
 
@@ -859,6 +863,7 @@ DotAccess::execute()
                       <<" type '"<<(*n_obj)["type"].as_string()<<"'."
                       <<ss.str());
   }
+
   (*output) = (*n_obj)["attrs/" + name];
 
   set_output<conduit::Node>(output);
@@ -1726,9 +1731,23 @@ Axis::execute()
 
   if(!is_scalar_field(*dataset, name) && !is_xyz(name))
   {
+    std::string known;
+    if(dataset->number_of_children() > 0 )
+    {
+      std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+      std::stringstream ss;
+      ss << "[";
+      for(size_t i = 0; i < names.size(); ++i)
+      {
+        ss << " '" << names[i]<<"'";
+      }
+      ss << "]";
+      known = ss.str();
+    }
+
     ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
                  "contain scalar field '"
-                 << name << "'.");
+                 << name << "'. Possible field names "<<known<<".");
   }
 
   conduit::Node *output;
@@ -2953,6 +2972,94 @@ Bin::execute()
 
   set_output<conduit::Node>(output);
 }
+//-----------------------------------------------------------------------------
+Bounds::Bounds() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Bounds::~Bounds()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Bounds::declare_interface(Node &i)
+{
+  i["type_name"] = "bounds";
+  i["port_names"].append() = "topology";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Bounds::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Bounds::execute()
+{
+  conduit::Node &n_topology = *input<Node>("topology");
+  conduit::Node *output = new conduit::Node();
+
+  const conduit::Node *const dataset =
+      graph().workspace().registry().fetch<Node>("dataset");
+
+  std::set<std::string> topos;
+
+  if(!n_topology.dtype().is_empty())
+  {
+    std::string topo = n_topology["value"].as_string();
+    if(!has_topology(*dataset, topo))
+    {
+      std::set<std::string> names = topology_names(*dataset);
+      std::stringstream msg;
+      msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
+      for(auto &name : names)
+      {
+        msg<<" "<<name;
+      }
+      msg<<" ]";
+      ASCENT_ERROR(msg.str());
+    }
+    topos.insert(topo);
+  }
+  else
+  {
+    topos = topology_names(*dataset);
+  }
+
+  double inf = std::numeric_limits<double>::infinity();
+  double min_vec[3] = {inf, inf, inf};
+  double max_vec[3] = {-inf, -inf, -inf};
+  for(auto &topo_name : topos)
+  {
+    conduit::Node n_aabb = global_bounds(*dataset, topo_name);
+    double *t_min = n_aabb["min_coords"].as_float64_ptr();
+    double *t_max = n_aabb["max_coords"].as_float64_ptr();
+    for(int i = 0; i < 3; ++i)
+    {
+      min_vec[i] = std::min(t_min[i],min_vec[i]);
+      max_vec[i] = std::max(t_max[i],max_vec[i]);
+    }
+  }
+
+  (*output)["type"] = "aabb";
+  (*output)["attrs/min/value"].set(min_vec, 3);
+  (*output)["attrs/min/type"] = "vector";
+  (*output)["attrs/max/value"].set(max_vec, 3);
+  (*output)["attrs/max/type"] = "vector";
+
+  set_output<conduit::Node>(output);
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions --

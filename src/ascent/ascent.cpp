@@ -163,7 +163,7 @@ CheckForSettingsFile(std::string file_name,
       {
         conduit::Node file_node;
         file_node.load(file_name, protocol);
-        file_node.print();
+
         if(merge)
         {
           node.update(file_node);
@@ -186,6 +186,7 @@ CheckForSettingsFile(std::string file_name,
 #ifdef ASCENT_MPI_ENABLED
     // make sure all ranks error if the parsing on rank 0 failed.
     MPI_Bcast(&actions_file_valid, 1, MPI_INT, 0, mpi_comm);
+#endif
 
     if(actions_file_valid == 0)
     {
@@ -193,7 +194,7 @@ CheckForSettingsFile(std::string file_name,
         ASCENT_ERROR("Failed to load actions file: " << file_name
                      << "\n" << emsg);
     }
-
+#ifdef ASCENT_MPI_ENABLED
     relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
 #endif
 }
@@ -661,7 +662,7 @@ about(conduit::Node &n)
     n["git_tag"] = "unknown";
 #endif
 
-    if(n["git_tag"].as_string() == "unknown" && 
+    if(n["git_tag"].as_string() == "unknown" &&
        n["git_sha1_abbrev"].as_string() != "unknown")
     {
         n["version"] = n["version"].as_string()

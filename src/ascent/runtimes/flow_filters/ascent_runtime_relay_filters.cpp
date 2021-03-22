@@ -157,16 +157,16 @@ mesh_bp_generate_index(const conduit::Node &mesh,
     int par_size = relay::mpi::size(comm);
 
     // we need a list of all possible topos, coordsets, etc
-    // for the blueprint index in the root file. 
+    // for the blueprint index in the root file.
     //
     // across ranks, domains may be sparse
     //  for example: a topo may only exist in one domain
-    // so we union all local mesh indices, and then 
+    // so we union all local mesh indices, and then
     // se an all gather and union the results together
-    // to create an accurate global index. 
+    // to create an accurate global index.
 
     index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
-    // note: 
+    // note:
     // find global # of domains w/o conduit_blueprint_mpi for now
     // since we aren't yet linking conduit_blueprint_mpi
     Node n_src, n_reduce;
@@ -338,6 +338,7 @@ void filter_fields(const conduit::Node &input,
     const conduit::Node &dom = input.child(d);
     conduit::Node &out_dom = output.append();
     std::set<std::string> topos;
+    std::set<std::string> matsets;
 
     for(int f = 0; f < fields.size(); ++f)
     {
@@ -350,6 +351,13 @@ void filter_fields(const conduit::Node &input,
         const std::string topo = dom[fpath + "/topology"].as_string();
         const std::string tpath = "topologies/" + topo;
         topos.insert(topo);
+
+        // check for matset
+        if(dom.has_path(fpath + "/matset"))
+        {
+          const std::string mopo = dom[fpath + "/matset"].as_string();
+          matsets.insert(mopo);
+        }
 
         if(!out_dom.has_path(tpath))
         {
@@ -390,6 +398,21 @@ void filter_fields(const conduit::Node &input,
         if(topos.find(nest_topo) != topos.end())
         {
           out_dom["nestsets/"+nest_names[i]].set_external(nestset);
+        }
+      }
+    }
+
+    // add nestsets associated with referenced topologies
+    if(dom.has_path("matsets"))
+    {
+      const int num_matts = dom["matsets"].number_of_children();
+      const std::vector<std::string> matt_names = dom["matsets"].child_names();
+      for(int i = 0; i < num_matts; ++i)
+      {
+        const conduit::Node &matt = dom["matsets"].child(i);
+        if(matsets.find(matt_names[i]) != matsets.end())
+        {
+          out_dom["matsets/"+matt_names[i]].set_external(matt);
         }
       }
     }
@@ -1071,6 +1094,10 @@ RelayIOSave::execute()
     }
 
     DataObject *data_object  = input<DataObject>("in");
+    if(!data_object->is_valid())
+    {
+      return;
+    }
     std::shared_ptr<Node> n_input = data_object->as_node();
 
     Node *in = n_input.get();
@@ -1131,7 +1158,7 @@ RelayIOSave::execute()
                             "hdf5",
                             num_files,
                             result_path);
-        
+
     }
     else if( protocol == "blueprint/mesh/yaml")
     {
@@ -1140,7 +1167,7 @@ RelayIOSave::execute()
                             "hdf5",
                             num_files,
                             result_path);
-        
+
     }
     else
     {

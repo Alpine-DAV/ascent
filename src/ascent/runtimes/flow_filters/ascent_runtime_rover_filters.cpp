@@ -215,6 +215,10 @@ RoverXRay::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["absorption"].as_string();
@@ -397,6 +401,10 @@ RoverVolume::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      return;
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();

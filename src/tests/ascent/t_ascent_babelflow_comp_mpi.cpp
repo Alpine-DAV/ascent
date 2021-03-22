@@ -117,7 +117,7 @@ TEST(ascent_babelflow_comp_mpi, test_babelflow_comp_radixk)
         output_path = output_dir();
     }
 
-    string output_file = conduit::utils::join_file_path(output_path, "tout_babelflow_comp_mpi");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_babelflow_comp_mpi_radix_k_");
 
     // Remove old images before rendering
     remove_test_image(output_file);
@@ -130,6 +130,8 @@ TEST(ascent_babelflow_comp_mpi, test_babelflow_comp_radixk)
     // Set filter params
     conduit::Node& filt_params = pipelines["pl1/f1/params/"];
     filt_params["field"] = "density";
+    filt_params["image_width"] = 1024;
+    filt_params["image_height"] = 1024;
     filt_params["color_table/name"] = "cool2warm";
     filt_params["camera/azimuth"] = -30;
     filt_params["camera/elevation"] = 35;
@@ -239,7 +241,7 @@ TEST(ascent_babelflow_comp_mpi, test_babelflow_comp_reduce)
         output_path = output_dir();
     }
 
-    string output_file = conduit::utils::join_file_path(output_path, "tout_babelflow_comp_mpi");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_babelflow_comp_mpi_reduce_");
 
     // Remove old images before rendering
     remove_test_image(output_file);

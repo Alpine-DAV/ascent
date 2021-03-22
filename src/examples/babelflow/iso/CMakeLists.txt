@@ -42,48 +42,29 @@
 #
 ###############################################################################
 
-FROM alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
-
-# obtain a copy of ascent source from host env,
-# which we use to call uberenv
-COPY ascent.docker.src.tar.gz /
-# extract ou
-RUN tar -xzf ascent.docker.src.tar.gz
-
-# at some sites ssl certs are intercepted, which cases issues fetching
-# tpl sources via https
-
-# to resolve this, either:
-# 1) pass the "-k" option to uberenv (recommended),
-# 2) install the proper certs into the image, or
-# 3) use  the following commands to disable ssl for git and
-#    curl (both are used by spack):
-#RUN git config --global http.sslVerify false
-#RUN echo insecure >> ~/.curlrc
-
-# bootstrap third party libs using spack and uberenv
-
-##########
-# TODO: RE-ENABLE MFEM + DRAY
-# Last try result: https://github.com/Alpine-DAV/ascent/issues/590
+###############################################################################
 #
-##########
-# RUN cd ascent && python scripts/uberenv/uberenv.py \
-#       -k \
-#       --spec "%gcc+mpi+cuda+mfem+dray+vtkh~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^dray~openmp ^cmake@3.14.5~openssl~ncurses" \
-#       --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16_cuda_10.1_devel/ \
-#       --prefix=/uberenv_libs
-
-RUN cd ascent && python scripts/uberenv/uberenv.py \
-       -k \
-       --spec "%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^cmake@3.14.5~openssl~ncurses" \
-       --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16_cuda_10.1_devel/ \
-       --prefix=/uberenv_libs
-
-# cleanup the spack build stuff to free up space
-RUN uberenv_libs/spack/bin/spack clean --all
+# BabelFlow iso surfaces example 
+# Usage: mpirun -n N ./ascent_bflow_iso_example <dim> <fanin> <blk x> <blk y> <blk z> <radices>
+#
+##############################################################################
 
 
-# delete copy of source from host (ci will fetch new from repo)
-RUN rm -rf ascent
+set(ascent_bflow_iso_example_sources
+    ascent_bflow_iso_example.cpp)
+
+if(MPI_FOUND)
+  set(ascent_bflow_iso_example_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES})
+
+    blt_add_executable(
+        NAME        ascent_bflow_iso_example
+        SOURCES     ${ascent_bflow_iso_example_sources}
+        DEPENDS_ON  ${ascent_bflow_iso_example_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+  install(TARGETS ascent_bflow_iso_example
+      EXPORT  ascent
+      LIBRARY DESTINATION examples/ascent/babelflow/iso
+      ARCHIVE DESTINATION examples/ascent/babelflow/iso
+      RUNTIME DESTINATION examples/ascent/babelflow/iso)
+endif()
