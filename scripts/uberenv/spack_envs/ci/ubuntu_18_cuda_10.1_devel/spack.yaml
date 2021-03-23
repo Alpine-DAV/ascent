@@ -9,7 +9,7 @@ spack:
   - camp+cuda
   - vtk-h+cuda~shared~openmp cuda_arch=70
   - vtk-m+cuda~shared~openmp cuda_arch=70
-  - cmake~ncurses~openssl
+  - cmake@3.14.7~ncurses~openssl
   concretization: together
   packages:
     cuda:
