@@ -394,7 +394,7 @@ Building with Spack
 
 Currently, we maintain our own fork of Spack for stability. As part of the uberenv python
 script, we automatically clone our
-`Spack fork. <https://github.com/Alpine-DAV/spack/tree/task/2018_04_update_ascent>`_
+`Spack fork. <https://github.com/Alpine-DAV/spack/tree/ascent/develop>`_
 
 .. warning::
   Installing Ascent from the Spack master branch will most likely fail. We build and test spack
@@ -771,7 +771,7 @@ The code below is minimal, and will only configure the serial device adapter. Fo
     mkdir install
     cmake -C path_to_host_config/myhost_config.cmake ../ -DCMAKE_INSTALL_PREFIX=path_to_install \
       -DCMAKE_BUILD_TYPE=Release -DVTKm_USE_64BIT_IDS=OFF -DVTKm_USE_DOUBLE_PRECISION=ON \
-      -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON -DVTKm_NO_DEPRECATED_VIRTUAL=OFF
+      -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON -DVTKm_NO_DEPRECATED_VIRTUAL=ON
     make install
 
 
