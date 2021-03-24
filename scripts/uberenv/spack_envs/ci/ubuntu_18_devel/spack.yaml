@@ -3,7 +3,7 @@
 # branch: task/2021_03_update_ascent_and_friends
 spack:
   specs:
-  - ascent+python+dray+mfem+doc ^mpich
+  - ascent+python+dray+mfem+babelflow+doc ^mpich
   concretization: together
   packages:
     netlib-lapack:
