@@ -5,6 +5,9 @@ spack:
   specs:
   - ascent+python+dray+mfem+babelflow+doc ^mpich
   concretization: together
+  config:
+    install_tree: .
+    install_path_scheme: spack-libs/${COMPILERNAME}-${COMPILERVER}/${PACKAGE}-${VERSION}
   packages:
     netlib-lapack:
       buildable: false

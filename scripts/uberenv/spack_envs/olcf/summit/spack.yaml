@@ -7,6 +7,9 @@ spack:
   - vtk-h+cuda~shared~openmp cuda_arch=70
   - vtk-m+cuda~shared~openmp cuda_arch=70
   - cmake@3.14.7~ncurses~openssl
+  config:
+    install_tree: .
+    install_path_scheme: spack-libs/${COMPILERNAME}-${COMPILERVER}/${PACKAGE}-${VERSION}
   concretization: together
   packages:
     cuda:
