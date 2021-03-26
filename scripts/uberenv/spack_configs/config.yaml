@@ -120,7 +120,7 @@ config:
   # - If set to 16 on a 4 cores machine `spack install` will run `make -j4`
   # - If set to 16 on a 18 cores machine `spack install` will run `make -j16`
   # If not set, Spack will use all available cores up to 16.
-  build_jobs: 2
+  build_jobs: 8
 
 
   # If set to true, Spack will use ccache to cache C compiles.
