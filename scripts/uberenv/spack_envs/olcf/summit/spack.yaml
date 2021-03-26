@@ -14,11 +14,11 @@ spack:
       externals:
       - spec: cuda@10.1.243
         prefix: /sw/summit/cuda/10.1.243
-     mvapich2:
-       buildable: false
-       externals:
-         - spec: mvapich2@2.2%gcc
-           prefix: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-6.4.0/spectrum-mpi-10.3.1.2-20200121-awz2q5brde7wgdqqw4ugalrkukeub4eb/
+    mvapich2:
+      buildable: false
+      externals:
+      - spec: mvapich2@2.2%gcc
+        prefix: /autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-6.4.0/spectrum-mpi-10.3.1.2-20200121-awz2q5brde7wgdqqw4ugalrkukeub4eb/
   compilers:
   - compiler:
       paths:
