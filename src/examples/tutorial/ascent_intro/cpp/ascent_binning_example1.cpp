@@ -107,9 +107,26 @@ int main(int argc, char **argv)
     // execute the actions
     a.execute(actions);
 
+    // retrieve the info node that contains the query results
+    Node info;
+    a.info(info);
+
     // close ascent
     a.close();
 
+    //
+    // We can use the included example python scripts to plot binning results,
+    // which are stored in an ascent yaml session file:
+    //  plot_binning_1d.py
+    //  plot_binning_2d.py
+    //  plot_binning_3d.py
+    //
+
+    //
+    // We can also examine when the results by looking at the expressions
+    // results in the output info
+    //
+    std::cout << info["expressions"].to_yaml() << std::endl;
 }
 
 

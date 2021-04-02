@@ -43,4 +43,4 @@ Helper scripts for plotting the results from the session file created in the C++
 
 **Output**
 
-.. literalinclude:: Tutorial_Output/out_txt_py_binning_example1.txt
+.. literalinclude:: Tutorial_Output/out_txt_binning_example1.txt
