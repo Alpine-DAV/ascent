@@ -27,9 +27,9 @@ Binning data spatially
 
 Helper scripts for plotting the results from the session file created in the C++ example:
 
-:download:`plot_binning_1d.py <../../../src/examples/tutorial/ascent_intro/cpp/plot_binning_1d.py>`
-:download:`plot_binning_2d.py <../../../src/examples/tutorial/ascent_intro/cpp/plot_binning_2d.py>`
-:download:`plot_binning_3d.py <../../../src/examples/tutorial/ascent_intro/cpp/plot_binning_3d.py>`
+* :download:`plot_binning_1d.py <../../../src/examples/tutorial/ascent_intro/cpp/plot_binning_1d.py>`
+* :download:`plot_binning_2d.py <../../../src/examples/tutorial/ascent_intro/cpp/plot_binning_2d.py>`
+* :download:`plot_binning_3d.py <../../../src/examples/tutorial/ascent_intro/cpp/plot_binning_3d.py>`
 
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_binning_example1.py>`
