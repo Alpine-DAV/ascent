@@ -69,7 +69,7 @@ info = conduit.Node()
 a.info(info)
 
 #####
-# plot the 1d binning result from the ascent session file
+# plot the 1d binning result
 #####
 binning = info.fetch_existing('expressions/1d_binning')
 cycles = binning.child_names()
@@ -92,38 +92,14 @@ for b in range(0,x_bins):
   x_vals.append(b * x_delta + x_start)
 
 # plot the curve from the last cycle
-plt.plot(x_vals, bins[-1])
-plt.xlabel('x position')
-plt.ylabel('max radial')
-
-binning = session['1d_binning']
-cycles = list(binning.keys())
-bins = []
-
-# loop through each cycle and grab the bins
-for cycle in binning.values():
-  bins.append((cycle['attrs']['value']['value']))
-
-# create the coordinate axis using bin centers
-x_axis = binning[cycles[0]]['attrs']['bin_axes']['value']['x']
-x_min = x_axis['min_val']
-x_max = x_axis['max_val']
-x_bins = x_axis['num_bins']
-
-x_delta = (x_max - x_min) / float(x_bins)
-x_start = x_min + 0.5 * x_delta
-x_vals = []
-for b in range(0,x_bins):
-  x_vals.append(b * x_delta + x_start)
-
-# plot the curve from the last cycle
+plt.figure(0)
 plt.plot(x_vals, bins[-1])
 plt.xlabel('x position')
 plt.ylabel('max radial')
 plt.savefig("1d_binning.png")
 
 #####
-# plot the 2d binning result from the ascent session file
+# plot the 2d binning result
 #####
 binning = info.fetch_existing('expressions/2d_binning')
 cycles = binning.child_names()
@@ -159,7 +135,8 @@ values = np.array(bins[-1]).reshape(x_size, y_size)
 
 
 # plot the curve from the last cycle
-plt.pcolormesh(x, y, values, shading='auto', cmap = 'viridis')
+plt.figure(1)
+plt.pcolormesh(x, y, values, shading='auto', cmap = 'viridis');
 plt.xlabel('x position')
 plt.ylabel('y position')
 cbar = plt.colorbar()
@@ -168,18 +145,18 @@ plt.savefig('2d_binning.png')
 
 
 #####
-# plot the 3d binning result from the ascent session file
+# plot the 3d binning result
 #####
-binning = session['3d_binning']
-cycles = list(binning.keys())
+binning = info.fetch_existing('expressions/3d_binning')
+cycles = binning.child_names()
 bins = []
 
 # loop through each cycle and grab the bins
-for cycle in binning.values():
-  bins.append((cycle['attrs']['value']['value']))
+for cycle in cycles:
+  bins.append(binning[cycle + '/attrs/value/value'])
 
 # create the coordinate axis using bin centers
-z_axis = binning[cycles[0]]['attrs']['bin_axes']['value']['z']
+z_axis =  binning[cycles[0]]['attrs/bin_axes/value/z']
 z_min = z_axis['min_val']
 z_max = z_axis['max_val']
 z_bins = z_axis['num_bins']
@@ -191,6 +168,7 @@ for b in range(0,z_bins):
   z_vals.append(b * z_delta + z_start)
 
 # plot the curve from the last cycle
+plt.figure(2)
 plt.plot(z_vals, bins[-1])
 plt.xlabel('z position')
 plt.ylabel('max radial')
