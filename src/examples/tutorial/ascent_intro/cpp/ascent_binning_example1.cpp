@@ -70,6 +70,7 @@ int main(int argc, char **argv)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               mesh);
 
+    // Use Ascent to bin an input mesh in a few ways
     Ascent a;
 
     // open ascent
