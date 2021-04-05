@@ -61,10 +61,11 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 
 
 Scheduled Tutorials:
- * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
+ * ECP 2021 Annual Meeting - April 2021, Virtual
 
 
 Past Tutorials:
+ * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual
  * ECP 2020 Annual Meeting - Feb 2020, Houston, TX
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
