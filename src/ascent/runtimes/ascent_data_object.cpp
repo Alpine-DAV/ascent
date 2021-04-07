@@ -189,7 +189,18 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
     }
     else
     {
-      ASCENT_ERROR("converting from low order to devil ray is not currenlty supported");
+      // attempt to conver this to low order and go
+      std::shared_ptr<conduit::Node> low_order = as_low_order_bp();
+      std::shared_ptr<dray::Collection> collection(new dray::Collection());
+      const int domains = low_order->number_of_children();
+      for(int i = 0; i < domains; ++i)
+      {
+        dray::DataSet dset = dray::BlueprintReader::blueprint_to_dray(low_order->child(i));
+        collection->add_domain(dset);
+      }
+
+      m_dray = collection;
+      return m_dray;
     }
 
   }
