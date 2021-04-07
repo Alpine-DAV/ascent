@@ -269,7 +269,17 @@ register_builtin()
   initialize_objects();
 }
 
-ExpressionEval::ExpressionEval(conduit::Node *data) : m_data(data)
+ExpressionEval::ExpressionEval(conduit::Node *data)
+{
+  // wrap the pointer in a data object we can assume that this
+  // is a valid multidomain dataset
+  conduit::Node *data_node = new conduit::Node();
+  data_node->set_external(*data);
+  m_data_object.reset(data_node);
+}
+
+ExpressionEval::ExpressionEval(DataObject &dataset)
+  : m_data_object(dataset)
 {
 }
 
@@ -786,11 +796,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     expr_name = expr;
   }
 
-  w.registry().add<conduit::Node>("dataset", m_data, -1);
+  w.registry().add<DataObject>("dataset", &m_data_object, -1);
   w.registry().add<conduit::Node>("cache", &m_cache.m_data, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
   w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
-  int cycle = get_state_var(*m_data, "cycle").to_int32();
+  int cycle = get_state_var(*m_data_object.as_node().get(), "cycle").to_int32();
   w.registry().add<int>("cycle", &cycle, -1);
 
   try
@@ -827,7 +837,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node return_val = *n_res;
 
   // add the sim time
-  conduit::Node n_time = get_state_var(*m_data, "time");
+  conduit::Node n_time = get_state_var(*m_data_object.as_node().get(), "time");
   double time = 0;
   bool valid_time = false;
   if(!n_time.dtype().is_empty())

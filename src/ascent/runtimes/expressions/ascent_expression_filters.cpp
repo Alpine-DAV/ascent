@@ -63,6 +63,7 @@
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
 #include <ascent_logging.hpp>
+#include <ascent_data_object.hpp>
 #include <utils/ascent_mpi_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_timer.hpp>
@@ -1126,8 +1127,9 @@ FieldMin::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1232,8 +1234,9 @@ FieldMax::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1338,8 +1341,9 @@ FieldAvg::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1390,8 +1394,9 @@ Cycle::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   conduit::Node state = get_state_var(*dataset, "cycle");
   if(!state.dtype().is_number())
@@ -1649,8 +1654,9 @@ Field::execute()
     ASCENT_ERROR("Field: Missing dataset");
   }
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!has_field(*dataset, field))
   {
@@ -1726,8 +1732,10 @@ Axis::execute()
   {
     ASCENT_ERROR("Field: Missing dataset");
   }
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, name) && !is_xyz(name))
   {
@@ -1897,8 +1905,9 @@ Histogram::execute()
 
   const std::string field = (*arg1)["value"].as_string();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -2013,8 +2022,9 @@ Binning::execute()
     component = (*n_component)["value"].as_string();
   }
 
-  conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   // verify n_axes_list and put the values in n_bin_axes
   conduit::Node n_bin_axes;
@@ -2509,8 +2519,10 @@ void
 FieldSum::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_sum(*dataset, field)["value"];
@@ -2554,8 +2566,10 @@ void
 FieldNanCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_nan_count(*dataset, field)["value"];
@@ -2599,8 +2613,10 @@ void
 FieldInfCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_inf_count(*dataset, field)["value"];
@@ -3009,8 +3025,9 @@ Bounds::execute()
   conduit::Node &n_topology = *input<Node>("topology");
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   std::set<std::string> topos;
 

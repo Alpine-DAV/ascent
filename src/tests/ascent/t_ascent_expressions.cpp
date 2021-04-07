@@ -66,7 +66,6 @@ using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
-
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -538,31 +537,42 @@ TEST(ascent_expressions, test_history)
   blueprint::mesh::to_multi_domain(data, multi_dom);
 
   runtime::expressions::register_builtin();
-  runtime::expressions::ExpressionEval eval(&multi_dom);
   runtime::expressions::ExpressionEval::reset_cache();
 
   conduit::Node res;
   std::string expr;
 
-  res = eval.evaluate("1", "val");
-  res = eval.evaluate("vector(1,2,3)", "vec");
+  // we can't change the input object so keep
+  // givin eval new ones
+  {
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("1", "val");
+    res = eval.evaluate("vector(1,2,3)", "vec");
+  }
 
-  multi_dom.child(0)["state/cycle"] = 200;
+  {
+    multi_dom.child(0)["state/cycle"] = 200;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("2", "val");
+    res = eval.evaluate("vector(9,3,4)", "vec");
+  }
 
-  res = eval.evaluate("2", "val");
-  res = eval.evaluate("vector(9,3,4)", "vec");
+  {
+    multi_dom.child(0)["state/cycle"] = 300;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("3", "val");
+    res = eval.evaluate("vector(3,4,0)", "vec");
+  }
 
-  multi_dom.child(0)["state/cycle"] = 300;
-
-  res = eval.evaluate("3", "val");
-  res = eval.evaluate("vector(3,4,0)", "vec");
-
-  multi_dom.child(0)["state/cycle"] = 400;
-
-  res = eval.evaluate("4", "val");
-  res = eval.evaluate("vector(6,4,8)", "vec");
+  {
+    multi_dom.child(0)["state/cycle"] = 400;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("4", "val");
+    res = eval.evaluate("vector(6,4,8)", "vec");
+  }
 
   expr = "history(val, absolute_index=2)";
+  runtime::expressions::ExpressionEval eval(&multi_dom);
   res = eval.evaluate(expr);
   EXPECT_EQ(res["value"].to_int32(), 3);
   EXPECT_EQ(res["type"].as_string(), "int");
