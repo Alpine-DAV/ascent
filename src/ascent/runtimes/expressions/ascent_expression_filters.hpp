@@ -531,6 +531,17 @@ public:
   virtual void execute();
 };
 
+class Lineout : public ::flow::Filter
+{
+public:
+  Lineout();
+  ~Lineout();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

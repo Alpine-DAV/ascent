@@ -264,6 +264,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
   flow::Workspace::register_filter_type<expressions::Bin>();
   flow::Workspace::register_filter_type<expressions::Bounds>();
+  flow::Workspace::register_filter_type<expressions::Lineout>();
 
   initialize_functions();
   initialize_objects();
@@ -630,6 +631,20 @@ initialize_functions()
   max_from_point_sig["args/point/type"] = "double";
   max_from_point_sig["description"] = "returns the closest max"
     " value from a reference point on an axis";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &lineout = (*functions)["lineout"].append();
+  lineout["return_type"] = "array";
+  lineout["filter_name"] = "lineout";
+  lineout["args/samples/type"] = "int";
+  lineout["args/start/type"] = "vector";
+  lineout["args/end/type"] = "vector";
+  lineout["args/fields/type"] = "list";
+  lineout["args/fields/optional"];
+  lineout["args/empty_val/type"] = "double";
+  lineout["args/empty_val/optional"];
+  lineout["description"] = "returns a sampled based line out";
 
   // -------------------------------------------------------------
 

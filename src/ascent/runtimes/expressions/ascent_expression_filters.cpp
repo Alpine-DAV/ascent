@@ -62,6 +62,7 @@
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
+#include <ascent_config.h>
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
 #include <utils/ascent_mpi_utils.hpp>
@@ -72,6 +73,10 @@
 #include <limits>
 #include <math.h>
 #include <typeinfo>
+
+#if defined(ASCENT_DRAY_ENABLED)
+#include <dray/queries/lineout.hpp>
+#endif
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -2988,6 +2993,169 @@ Bin::execute()
 
   set_output<conduit::Node>(output);
 }
+
+//-----------------------------------------------------------------------------
+Lineout::Lineout() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Lineout::~Lineout()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Lineout::declare_interface(Node &i)
+{
+  i["type_name"] = "lineout";
+  i["port_names"].append() = "samples";
+  i["port_names"].append() = "start";
+  i["port_names"].append() = "end";
+  i["port_names"].append() = "fields";
+  i["port_names"].append() = "empty_val";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Lineout::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Lineout::execute()
+{
+
+#if not defined(ASCENT_DRAY_ENABLED)
+  ASCENT_ERROR("Lineout only supported when Devil Ray is built");
+#else
+
+  conduit::Node &n_samples = *input<Node>("samples");
+  int32 samples = n_samples["value"].to_int32();;
+  if(samples < 1)
+  {
+    ASCENT_ERROR("Lineout: samples must be greater than zero: '"<<samples<<"'\n");
+  }
+
+  conduit::Node &n_start = *input<Node>("start");
+  double *p_start = n_start["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> start;
+  start[0] = static_cast<dray::Float>(p_start[0]);
+  start[1] = static_cast<dray::Float>(p_start[1]);
+  start[2] = static_cast<dray::Float>(p_start[2]);
+
+  conduit::Node &n_end= *input<Node>("end");
+  double *p_end = n_end["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> end;
+  end[0] = static_cast<dray::Float>(p_end[0]);
+  end[1] = static_cast<dray::Float>(p_end[1]);
+  end[2] = static_cast<dray::Float>(p_end[2]);
+
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  dray::Collection * collection = data_object->as_dray_collection().get();
+
+  dray::Lineout lineout;
+
+  lineout.samples(samples);
+
+  conduit::Node &n_empty_val = *input<Node>("empty_val");
+  if(!n_empty_val.dtype().is_empty())
+  {
+    double empty_val = n_empty_val["value"].to_float64();
+    lineout.empty_val(empty_val);
+  }
+
+  // figure out the number of fields we will use
+  conduit::Node &n_fields = *input<Node>("fields");
+  const int num_fields = n_fields.number_of_children();
+  if(num_fields > 0)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const conduit::Node &n_field = n_fields.child(i);
+      if(n_field["type"].as_string() != "string")
+      {
+        ASCENT_ERROR("Lineout: field list item is not a string");
+      }
+
+      lineout.add_var(n_field["value"].as_string());
+    }
+  }
+  else
+  {
+    std::set<std::string> field_names;
+    // use all fields
+    for(int i = 0; i < collection->size(); ++i)
+    {
+      dray::DataSet dset = collection->domain(i);
+      std::vector<std::string> d_names = dset.fields();
+      for(int n = 0; n < d_names.size(); ++n)
+      {
+        field_names.insert(d_names[n]);
+      }
+    }
+    gather_strings(field_names);
+  }
+
+
+
+  lineout.add_line(start, end);
+
+  dray::Lineout::Result res = lineout.execute(*collection);
+  (*output)["type"] = "lineout";
+  (*output)["attrs/empty_value/value"] = double(res.m_empty_val);
+  (*output)["attrs/empty_value/type"] = "double";
+  (*output)["attrs/samples/value"] = int(res.m_points_per_line);
+  (*output)["attrs/samples/type"] = "int";
+  // we only have one line so the size of points is the size of everything
+  const int size = res.m_points.size();
+  (*output)["attrs/coordinates/x/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/x/type"] = "array";
+  (*output)["attrs/coordinates/y/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/y/type"] = "array";
+  (*output)["attrs/coordinates/z/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/z/type"] = "array";
+  float64_array x = (*output)["attrs/coordinates/x/value"].value();
+  float64_array y = (*output)["attrs/coordinates/y/value"].value();
+  float64_array z = (*output)["attrs/coordinates/z/value"].value();
+  for(int i = 0; i < size; ++i)
+  {
+    dray::Vec<dray::Float,3> p = res.m_points.get_value(i);
+    x[i] = static_cast<double>(p[0]);
+    y[i] = static_cast<double>(p[1]);
+    z[i] = static_cast<double>(p[2]);
+  }
+
+  const int var_size = res.m_vars.size();
+  for(int v = 0; v < var_size; ++v)
+  {
+    std::string var = res.m_vars[v];
+    (*output)["attrs/vars/"+var+"/value"] = conduit::DataType::float64(size);
+    (*output)["attrs/vars/"+var+"/type"] = "array";
+    float64_array var_array = (*output)["attrs/vars/"+var+"/value"].value();
+    for(int i = 0; i < size; ++i)
+    {
+      var_array[i] = static_cast<double>(res.m_values[v].get_value(i));
+    }
+  }
+
+  set_output<conduit::Node>(output);
+#endif
+
+}
+
 //-----------------------------------------------------------------------------
 Bounds::Bounds() : Filter()
 {
