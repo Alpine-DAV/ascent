@@ -68,7 +68,7 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, verbose_msgs)
 {
@@ -892,7 +892,7 @@ TEST(ascent_runtime_options, test_field_filtering_binning)
     ascent.publish(data);
     ascent.execute(actions);
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, test_field_filtering_lineout)
 {

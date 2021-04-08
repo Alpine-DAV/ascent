@@ -92,39 +92,6 @@ TEST(ascent_expressions, basic_expressions)
   conduit::Node res;
   std::string expr;
 
-  expr = "lineout(10,vector(0,1,1),vector(5,5,5), fields=['braid'], empty_val=-1.0)";
-  //expr = "lineout(10,vector(0,1,1),vector(5,5,5))";
-  res = eval.evaluate(expr);
-  res.print();
-  //EXPECT_EQ(res["value"].to_float64(), 6.0);
-}
-#if 0
-//-----------------------------------------------------------------------------
-TEST(ascent_expressions, basic_expressions)
-{
-  Node n;
-  ascent::about(n);
-
-  //
-  // Create an example mesh.
-  //
-  Node data, verify_info;
-  conduit::blueprint::mesh::examples::braid("hexs",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            data);
-  // ascent normally adds this but we are doing an end around
-  data["state/domain_id"] = 0;
-  Node multi_dom;
-  blueprint::mesh::to_multi_domain(data, multi_dom);
-
-  runtime::expressions::register_builtin();
-  runtime::expressions::ExpressionEval eval(&multi_dom);
-
-  conduit::Node res;
-  std::string expr;
-
   expr = "(2.0 + 1) / 0.5";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["value"].to_float64(), 6.0);
@@ -1032,7 +999,43 @@ TEST(ascent_binning, binning_errors)
   }
   EXPECT_EQ(threw, true);
 }
-#endif
+
+//-----------------------------------------------------------------------------
+TEST(ascent_expressions, lineout)
+{
+  Node n;
+  ascent::about(n);
+
+  // only run this test if ascent was built with dray support
+  if(n["runtimes/ascent/dray/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent Devil Ray support disabled, skipping test");
+      return;
+  }
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  conduit::Node res;
+  std::string expr;
+
+  expr = "lineout(10,vector(0,1,1),vector(5,5,5), fields=['braid'], empty_val=-1.0)";
+  res = eval.evaluate(expr);
+}
+
 //-----------------------------------------------------------------------------
 int
 main(int argc, char *argv[])
