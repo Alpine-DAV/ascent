@@ -48,6 +48,30 @@ template <typename T> void Array<T>::resize (const size_t size)
   m_internals->resize (size);
 }
 
+template <typename T> T *Array<T>::ptr (const std::string loc)
+{
+  if(loc == "device")
+  {
+    return m_internals->get_device_ptr ();
+  }
+  else
+  {
+    return m_internals->get_host_ptr ();
+  }
+}
+
+template <typename T> const T *Array<T>::ptr_const (const std::string loc) const
+{
+  if(loc == "device")
+  {
+    return m_internals->get_device_ptr_const();
+  }
+  else
+  {
+    return m_internals->get_host_ptr_const();
+  }
+}
+
 template <typename T> T *Array<T>::host_ptr ()
 {
   return m_internals->get_host_ptr ();

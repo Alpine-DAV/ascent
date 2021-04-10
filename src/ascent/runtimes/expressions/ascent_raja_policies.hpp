@@ -2,10 +2,50 @@
 #define ASCENT_RAJA_POLICIECS_HPP
 
 #include <ascent_config.h>
+#include <conduit.hpp>
 #include <RAJA/RAJA.hpp>
 
 namespace ascent
 {
+
+class ExecutionManager
+{
+public:
+  static conduit::Node info();
+  static void execution(const std::string exec);
+  static std::string execution();
+private:
+  static std::string m_exec;
+};
+
+#ifdef ASCENT_USE_CUDA
+#define CUDA_BLOCK_SIZE 128
+struct CudaExec
+{
+  using for_policy = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
+  using reduce_policy = RAJA::cuda_reduce;
+  using atomic_policy = RAJA::cuda_atomic;
+  static std::string memory_space;
+};
+#endif
+
+#if defined(ASCENT_USE_OPENMP)
+struct OpenMPExec
+{
+  using for_policy = RAJA::omp_parallel_for_exec;
+  using reduce_policy = RAJA::omp_reduce;
+  using atomic_policy = RAJA::omp_atomic;
+  static std::string memory_space;
+};
+#endif
+
+struct SerialExec
+{
+  using for_policy = RAJA::seq_exec;
+  using reduce_policy = RAJA::seq_reduce;
+  using atomic_policy = RAJA::seq_atomic;
+  static std::string memory_space;
+};
 
 #ifdef ASCENT_USE_CUDA
 #define BLOCK_SIZE 128
@@ -26,7 +66,7 @@ using atomic_policy = RAJA::seq_atomic;
 // CPU only policies need when using classes
 // that cannot be called on a GPU, e.g. MFEM
 //
-#if defined(ASCENT_USE_OPENMP)
+#ifdef ASCENT_USE_OPENMP
 using for_cpu_policy = RAJA::omp_parallel_for_exec;
 using reduce_cpu_policy = RAJA::omp_reduce;
 using atomic_cpu_policy = RAJA::omp_atomic;
@@ -40,7 +80,11 @@ using atomic_cpu_policy = RAJA::seq_atomic;
 #if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
 
 #define ASCENT_EXEC inline __host__ __device__
-#define ASCENT_LAMBDA __device__
+// Note: there is a performance hit for doing both host and device
+// the cuda compiler calls this on then host as a std::function call for each i
+// in the for loop, and that basically works out to a virtual function
+// call. Thus for small loops, the know overhead is about 3x
+#define ASCENT_LAMBDA __device__ __host__
 
 #else
 

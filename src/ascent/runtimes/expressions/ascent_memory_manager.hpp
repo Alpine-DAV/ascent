@@ -41,6 +41,10 @@ struct HostAllocator
 
   static void * alloc(size_t items, size_t item_size);
   static void free(void *data_ptr);
+};
+
+struct MagicMemory
+{
   static void memset(void * ptr, int value, size_t num );
   static void copy(void * destination, const void * source, size_t num);
 };
@@ -53,8 +57,6 @@ struct DeviceAllocator
 
   static void * alloc(size_t items, size_t item_size);
   static void free(void *data_ptr);
-  static void memset(void * ptr, int value, size_t num );
-  static void copy(void * destination, const void * source, size_t num);
 };
 
 } // namespace ascent

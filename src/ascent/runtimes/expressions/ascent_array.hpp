@@ -35,6 +35,10 @@ template <typename T> class Array
   T *device_ptr ();
   const T *host_ptr_const () const;
   const T *device_ptr_const () const;
+
+  T *ptr(const std::string loc);
+  const T *ptr_const(const std::string loc) const;
+
   void summary ();
   void operator= (const Array<T> &other);
   // gets a single value and does not synch data between

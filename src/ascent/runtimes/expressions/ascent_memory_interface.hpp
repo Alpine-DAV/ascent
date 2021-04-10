@@ -291,7 +291,22 @@ public:
     bool is_gpu;
     is_gpu_ptr(ptr,is_gpu, is_unified);
     bool is_host_accessible =  !is_gpu || (is_gpu && is_unified);
+    if(is_unified)
+    {
+      std::cout<<"Unified\n";
+    }
 
+    if(is_gpu)
+    {
+      std::cout<<"gpu\n";
+    }
+
+    if(is_gpu_ptr(ptr))
+    {
+      std::cout<<"gpu banans\n";
+    }
+
+    std::cout<<"bananas\n";
     if(is_host_accessible)
     {
       std::cout<<"already a host pointer\n";

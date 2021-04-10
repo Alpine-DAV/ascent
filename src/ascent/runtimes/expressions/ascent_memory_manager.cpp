@@ -14,7 +14,7 @@ void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 {
   is_gpu = false;
   is_unified = false;
-#if ASCENT_CUDA_ENABLED
+#ifdef ASCENT_USE_CUDA
   cudaPointerAttributes atts;
   const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
 
@@ -181,7 +181,9 @@ AllocationManager::conduit_host_allocator_id()
       = conduit::utils::register_allocator(HostAllocator::alloc,
                                            HostAllocator::free);
 
+    std::cout<<"Created host allocator "<<m_conduit_host_allocator_id<<"\n";
   }
+  std::cout<<"conduit host allocator "<<m_conduit_host_allocator_id<<"\n";
   return m_conduit_host_allocator_id;
 }
 
@@ -194,6 +196,7 @@ AllocationManager::conduit_device_allocator_id()
       = conduit::utils::register_allocator(DeviceAllocator::alloc,
                                              DeviceAllocator::free);
 
+    std::cout<<"Created device allocator "<<m_conduit_device_allocator_id<<"\n";
   }
   return m_conduit_device_allocator_id;
 }
@@ -203,8 +206,8 @@ void AllocationManager::set_conduit_mem_handlers()
 #ifdef ASCENT_USE_CUDA
   // we only need to overide the mem handlers in the
   // presence of cuda
-  conduit::utils::set_memcpy_handler(DeviceAllocator::copy);
-  conduit::utils::set_memset_handler(DeviceAllocator::memset);
+  conduit::utils::set_memcpy_handler(MagicMemory::copy);
+  conduit::utils::set_memset_handler(MagicMemory::memset);
 #endif
 }
 
@@ -235,20 +238,6 @@ HostAllocator::free(void *data_ptr)
   const int allocator_id = AllocationManager::umpire_host_allocator_id();
   umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
   host_allocator.deallocate (data_ptr);
-}
-
-void
-HostAllocator::memset(void * ptr, int value, size_t num )
-{
-  std::cout<<"set bananas\n";
-  memset(ptr,value,num);
-}
-
-void
-HostAllocator::copy(void * destination, const void * source, size_t num)
-{
-  std::cout<<"copy bananas\n";
-  memcpy(destination,source,num);
 }
 
 // ------------------------- Host Allocator -----------------------------------
@@ -290,20 +279,25 @@ DeviceAllocator::free(void *data_ptr)
 }
 
 void
-DeviceAllocator::memset(void * ptr, int value, size_t num )
+MagicMemory::memset(void * ptr, int value, size_t num )
 {
 #ifdef ASCENT_USE_CUDA
- cudaMemset(ptr,value,num);
+  bool is_device = is_gpu_ptr(ptr);
+  if(is_device)
+  {
+    cudaMemset(ptr,value,num);
+  }
+  else
+  {
+    memset(ptr,value,num);
+  }
 #else
-  (void) ptr;
-  (void) value;
-  (void) num;
-  ASCENT_ERROR("Calling device allocator when no device is present.");
+  memset(ptr,value,num);
 #endif
 }
 
 void
-DeviceAllocator::copy(void * destination, const void * source, size_t num)
+MagicMemory::copy(void * destination, const void * source, size_t num)
 {
 #ifdef ASCENT_USE_CUDA
   bool src_is_gpu = is_gpu_ptr(source);
@@ -327,10 +321,7 @@ DeviceAllocator::copy(void * destination, const void * source, size_t num)
     memcpy(destination,source,num);
   }
 #else
-  (void) destination;
-  (void) source;
-  (void) num;
-  ASCENT_ERROR("Calling device allocator when no device is present.");
+  memcpy(destination,source,num);
 #endif
 }
 
