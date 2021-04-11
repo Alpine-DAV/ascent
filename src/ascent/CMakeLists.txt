@@ -103,6 +103,7 @@ set(ascent_sources
     runtimes/expressions/ascent_memory_manager.cpp
     runtimes/expressions/ascent_array.cpp
     runtimes/expressions/ascent_raja_policies.cpp
+    runtimes/expressions/ascent_execution.cpp
     runtimes/expressions/ascent_array_internals.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
@@ -149,6 +150,7 @@ set(ascent_headers
     runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
     runtimes/expressions/ascent_raja_policies.hpp
+    runtimes/expressions/ascent_execution.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_flow_runtime.hpp

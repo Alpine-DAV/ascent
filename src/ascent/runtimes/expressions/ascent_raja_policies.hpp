@@ -8,16 +8,6 @@
 namespace ascent
 {
 
-class ExecutionManager
-{
-public:
-  static conduit::Node info();
-  static void execution(const std::string exec);
-  static std::string execution();
-private:
-  static std::string m_exec;
-};
-
 #ifdef ASCENT_USE_CUDA
 #define CUDA_BLOCK_SIZE 128
 struct CudaExec

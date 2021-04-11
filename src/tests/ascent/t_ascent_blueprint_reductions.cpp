@@ -51,6 +51,7 @@
 
 #include <ascent.hpp>
 #include <runtimes/expressions/ascent_blueprint_architect.hpp>
+#include <runtimes/expressions/ascent_execution.hpp>
 #include <runtimes/expressions/ascent_memory_manager.hpp>
 
 #include <iostream>
@@ -93,6 +94,39 @@ void device_conversion(Node &host_data, Node &device_data)
     device_conversion(host_data[name], device_data[name]);
   }
 }
+//
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, max)
+{
+
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ExecutionManager::execution("serial");
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    data["state/domain_id"] = 0;
+    Node dataset;
+    dataset.append().set_external(data);
+
+    Node res = runtime::expressions::field_max(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
+    EXPECT_EQ(res["index"].to_int32(), 817);
+}
+
 #if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, sum)
@@ -153,37 +187,6 @@ TEST(ascent_blueprint_reductions, min)
     res.print();
     EXPECT_NEAR(res["value"].to_float64(),  -9.7849527094773894, 0.0001);
     EXPECT_EQ(res["index"].to_int32(), 10393);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, max)
-{
-
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    data["state/domain_id"] = 0;
-    Node dataset;
-    dataset.append().set_external(data);
-
-    Node res = runtime::expressions::field_max(dataset,"braid");
-    res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
-    EXPECT_EQ(res["index"].to_int32(), 817);
 }
 
 //-----------------------------------------------------------------------------

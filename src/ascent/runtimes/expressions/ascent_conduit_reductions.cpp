@@ -54,6 +54,7 @@
 #include "ascent_memory_interface.hpp"
 #include "ascent_array.hpp"
 #include "ascent_raja_policies.hpp"
+#include "ascent_execution.hpp"
 #include "ascent_math.hpp"
 
 #include <ascent_logging.hpp>
@@ -62,6 +63,16 @@
 #include <cmath>
 #include <limits>
 
+#pragma diag_suppress 2527
+#pragma diag_suppress 2529
+#pragma diag_suppress 2651
+#pragma diag_suppress 2653
+#pragma diag_suppress 2668
+#pragma diag_suppress 2669
+#pragma diag_suppress 2670
+#pragma diag_suppress 2671
+#pragma diag_suppress 2735
+#pragma diag_suppress 2737
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -185,7 +196,6 @@ conduit::Node
 exec_dispatch(const conduit::Node &field, std::string component, const Function &func)
 {
 
-  ExecutionManager::execution("openmp");
   conduit::Node res;
   const std::string exec_policy = ExecutionManager::execution();
   std::cout<<"Exec policy "<<exec_policy<<"\n";
@@ -256,27 +266,30 @@ field_dispatch(const conduit::Node &field, const Function &func)
   return res;
 }
 
-
 struct IndexLoc
 {
   RAJA::Index_type idx;
   constexpr IndexLoc() : idx(-1) {}
-  constexpr IndexLoc(RAJA::Index_type idx) : idx(idx) {}
+  constexpr __host__ __device__ IndexLoc(RAJA::Index_type idx) : idx(idx) {}
 };
 
 struct MaxFunctor
 {
-  template<typename T>
-  conduit::Node operator()(const T* values, const int &size) const
+  template<typename T, typename Exec>
+  conduit::Node operator()(const MemoryAccessor<T> accessor,
+                           const Exec &) const
   {
     T identity = std::numeric_limits<T>::lowest();
+    const int size = accessor.m_size;
 
+    using fp = typename Exec::for_policy;
+    using rp = typename Exec::reduce_policy;
 
-    RAJA::ReduceMaxLoc<reduce_policy, T, IndexLoc> reducer(identity, IndexLoc());
+    RAJA::ReduceMaxLoc<rp, T, IndexLoc> reducer(identity, IndexLoc());
 
-    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
-
-      const T val = values[i];
+    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+    {
+      const T val = accessor[i];
       reducer.maxloc(val,i);
     });
     ASCENT_ERROR_CHECK();
@@ -290,16 +303,21 @@ struct MaxFunctor
 
 struct MinFunctor
 {
-  template<typename T>
-  conduit::Node operator()(const T* values, const int &size) const
+  template<typename T, typename Exec>
+  conduit::Node operator()(const MemoryAccessor<T> accessor,
+                           const Exec &) const
   {
     T identity = std::numeric_limits<T>::max();
+    const int size = accessor.m_size;
 
-    RAJA::ReduceMinLoc<reduce_policy, T, IndexLoc> reducer(identity, IndexLoc());
+    using fp = typename Exec::for_policy;
+    using rp = typename Exec::reduce_policy;
 
-    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+    RAJA::ReduceMinLoc<rp, T, IndexLoc> reducer(identity, IndexLoc());
 
-      const T val = values[i];
+    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+
+      const T val = accessor[i];
       reducer.minloc(val,i);
     });
     ASCENT_ERROR_CHECK();
@@ -313,12 +331,18 @@ struct MinFunctor
 
 struct SumFunctor
 {
-  template<typename T>
-  conduit::Node operator()(const T* values, const int &size) const
+  template<typename T, typename Exec>
+  conduit::Node operator()(const MemoryAccessor<T> accessor,
+                           const Exec &) const
   {
-    RAJA::ReduceSum<reduce_policy, T> sum(static_cast<T>(0));
-    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
-      const T val = values[i];
+    const int size = accessor.m_size;
+    using fp = typename Exec::for_policy;
+    using rp = typename Exec::reduce_policy;
+
+    RAJA::ReduceSum<rp, T> sum(static_cast<T>(0));
+    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+    {
+      const T val = accessor[i];
       sum += val;
     });
     ASCENT_ERROR_CHECK();
@@ -332,13 +356,18 @@ struct SumFunctor
 
 struct NanFunctor
 {
-  template<typename T>
-  conduit::Node operator()(const T* values, const int &size) const
+  template<typename T, typename Exec>
+  conduit::Node operator()(const MemoryAccessor<T> accessor,
+                           const Exec &) const
   {
-    RAJA::ReduceSum<reduce_policy, RAJA::Index_type> count(0);
-    RAJA::forall<for_policy> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+    const int size = accessor.m_size;
+    using fp = typename Exec::for_policy;
+    using rp = typename Exec::reduce_policy;
 
-      const T value = values[i];
+    RAJA::ReduceSum<rp, RAJA::Index_type> count(0);
+    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+
+      const T value = accessor[i];
       RAJA::Index_type is_nan = 0;
       if(value != value)
       {
@@ -471,33 +500,33 @@ struct HistogramFunctor
 //-----------------------------------------------------------------------------
 
 conduit::Node
-array_max(const conduit::Node &field)
+array_max(const conduit::Node &field, std::string component)
 {
-  return detail::field_dispatch(field, detail::MaxFunctor());
+  return detail::exec_dispatch(field, component, detail::MaxFunctor());
 }
 
 conduit::Node
-array_min(const conduit::Node &field)
+array_min(const conduit::Node &field, const std::string component)
 {
-  return detail::field_dispatch(field, detail::MinFunctor());
+  return detail::exec_dispatch(field, component, detail::MinFunctor());
 }
 
 conduit::Node
-array_sum(const conduit::Node &field)
+array_sum(const conduit::Node &field, const std::string component)
 {
-  return detail::field_dispatch(field, detail::SumFunctor());
+  return detail::exec_dispatch(field, component, detail::SumFunctor());
 }
 
 conduit::Node
-array_nan_count(const conduit::Node &field)
+array_nan_count(const conduit::Node &field, std::string component)
 {
-  return detail::field_dispatch(field, detail::NanFunctor());
+  return detail::exec_dispatch(field, component, detail::NanFunctor());
 }
 
 conduit::Node
-array_inf_count(const conduit::Node &field)
+array_inf_count(const conduit::Node &field, std::string component)
 {
-  return detail::exec_dispatch(field, 0, detail::InfFunctor());
+  return detail::exec_dispatch(field, component, detail::InfFunctor());
 }
 
 conduit::Node
@@ -530,8 +559,3 @@ array_histogram(const conduit::Node &field,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-
