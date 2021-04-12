@@ -474,16 +474,10 @@ struct HistogramFunctor
     using fp = typename Exec::for_policy;
     using ap = typename Exec::atomic_policy;
 
-    RAJA::forall<fp> (RAJA::RangeSegment (0, num_bins), [=] ASCENT_LAMBDA (RAJA::Index_type i)
-    {
-      printf("init value %f\n", bins_ptr[i]);
-    });
-
     RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
     {
       double val = static_cast<double>(accessor[i]);
       int bin_index = static_cast<int>((val - min_val) * inv_delta);
-      //printf("value %f index %d i %d\n", val, bin_index, int(i));
       // clamp for now
       // another option is not to count data outside the range
       bin_index = max(0, min(bin_index, num_bins - 1));

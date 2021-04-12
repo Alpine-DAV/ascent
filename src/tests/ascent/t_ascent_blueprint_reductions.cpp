@@ -94,7 +94,7 @@ void device_conversion(Node &host_data, Node &device_data)
     device_conversion(host_data[name], device_data[name]);
   }
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, max)
 {
@@ -335,7 +335,6 @@ TEST(ascent_blueprint_reductions, ave)
 }
 //-----------------------------------------------------------------------------
 
-#endif
 TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
 {
     Node n;
