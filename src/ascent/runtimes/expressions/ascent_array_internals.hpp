@@ -77,7 +77,7 @@ template <typename T> class ArrayInternals
     {
       m_own_device = true;
       m_device = nullptr;
-      m_device_dirty = false;
+      m_device_dirty = true;
 
       m_own_host = false;
       m_host_dirty = false;

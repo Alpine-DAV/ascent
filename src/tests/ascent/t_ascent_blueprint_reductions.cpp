@@ -94,7 +94,7 @@ void device_conversion(Node &host_data, Node &device_data)
     device_conversion(host_data[name], device_data[name]);
   }
 }
-//
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, max)
 {
@@ -114,7 +114,7 @@ TEST(ascent_blueprint_reductions, max)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ExecutionManager::execution("serial");
+    ExecutionManager::execution("cuda");
     // everything expects a mutli-domain data set and expects that there
     // are domain ids
     data["state/domain_id"] = 0;
@@ -127,7 +127,6 @@ TEST(ascent_blueprint_reductions, max)
     EXPECT_EQ(res["index"].to_int32(), 817);
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, sum)
 {
@@ -303,103 +302,7 @@ TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
     // go check things
     EXPECT_EQ(res["index"].to_int32(), 0);
 }
-#endif
 
-TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
-{
-    // this is normally set in ascent::Initialize, but we
-    // have to set it here so that we do the right thing with
-    // device pointers
-    AllocationManager::set_conduit_mem_handlers();
-
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    data["state/domain_id"] = 0;
-    Node device_data;
-    device_conversion(data, device_data);
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    // work aournd data we need
-    Node dataset;
-    dataset.append().set_external(device_data);
-
-    Node res = runtime::expressions::field_histogram(dataset,"braid", -10, 10, 64);
-    res.print();
-    EXPECT_NEAR(res["value"].as_float64_ptr()[0], 8.0, 0.0001);
-}
-#if 0
-//-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, min)
-{
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    data["state/domain_id"] = 0;
-    Node dataset;
-    dataset.append().set_external(data);
-
-    Node res = runtime::expressions::field_min(dataset,"braid");
-    res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  -9.78495270947739, 0.0001);
-    EXPECT_EQ(res["index"].to_int32(), 10393);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, sum)
-{
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    data["state/domain_id"] = 0;
-    Node dataset;
-    dataset.append().set_external(data);
-
-    Node res = runtime::expressions::field_sum(dataset,"braid");
-    res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  -1082.59582227313, 0.001);
-}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, ave)
@@ -430,6 +333,40 @@ TEST(ascent_blueprint_reductions, ave)
     res.print();
     EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
 }
+//-----------------------------------------------------------------------------
+
+#endif
+TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    data["state/domain_id"] = 0;
+    Node device_data;
+    device_conversion(data, device_data);
+
+    // everything expects a mutli-domain data set and expects that there
+    // are domain ids
+    // work aournd data we need
+    Node dataset;
+    dataset.append().set_external(device_data);
+
+    const int num_bins = 64;
+    Node res = runtime::expressions::field_histogram(dataset,"braid", -10, 10, num_bins);
+    res.print();
+    EXPECT_NEAR(res["value"].as_float64_ptr()[0], 8.0, 0.0001);
+}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, histogram)
@@ -449,6 +386,8 @@ TEST(ascent_blueprint_reductions, histogram)
                                                data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ExecutionManager::execution("cuda");
 
     // everything expects a mutli-domain data set and expects that there
     // are domain ids
@@ -475,7 +414,7 @@ TEST(ascent_blueprint_reductions, histogram)
 
     //EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
 }
-#endif
+
 int
 main(int argc, char *argv[])
 {

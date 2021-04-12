@@ -23,7 +23,14 @@ struct CudaExec
 struct OpenMPExec
 {
   using for_policy = RAJA::omp_parallel_for_exec;
-  using reduce_policy = RAJA::omp_reduce;
+#ifdef ASCENT_USE_CUDA
+  // the cuda policy for reductions can be used
+  // by other backends, and this should suppress
+  // erroneous host device warnings
+  using reduce_policy = RAJA::cuda_reduce;
+#else
+  using reduce_policy = RAJA::cuda_reduce;
+#endif
   using atomic_policy = RAJA::omp_atomic;
   static std::string memory_space;
 };
@@ -32,7 +39,14 @@ struct OpenMPExec
 struct SerialExec
 {
   using for_policy = RAJA::seq_exec;
+#ifdef ASCENT_USE_CUDA
+  // the cuda policy for reductions can be used
+  // by other backends, and this should suppress
+  // erroneous host device warnings
+  using reduce_policy = RAJA::cuda_reduce;
+#else
   using reduce_policy = RAJA::seq_reduce;
+#endif
   using atomic_policy = RAJA::seq_atomic;
   static std::string memory_space;
 };
