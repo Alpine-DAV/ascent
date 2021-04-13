@@ -115,6 +115,13 @@ if (DRAY_DIR)
   include(cmake/thirdparty/SetupDevilRay.cmake)
 endif()
 
+################################
+# Setup GenTen
+################################
+if (GENTEN_DIR)
+  include(cmake/thirdparty/SetupGenTen.cmake)
+endif()
+
 
 ################################
 # Setup ADIOS

@@ -260,6 +260,11 @@ if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
 endif()
 
+if(GENTEN_FOUND)
+  message(STATUS "******** Found GENTEN **********")
+    list(APPEND ascent_thirdparty_libs genten)
+endif()
+
 if(MFEM_FOUND)
     list(APPEND ascent_thirdparty_libs mfem)
     # workaround for MPI headers

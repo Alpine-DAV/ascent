@@ -60,6 +60,8 @@
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
+#include <Genten_HigherMoments.hpp>
+
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
