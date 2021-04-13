@@ -61,6 +61,8 @@
 #include <conduit_blueprint.hpp>
 
 #include <Genten_HigherMoments.hpp>
+#include "Kokkos_Core.hpp"
+#include "Kokkos_Vector.hpp"
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -736,7 +738,7 @@ Learn::execute()
     debug.open(d_name.str());
     //debug<<"Field size "<<field_size<<"\n";
 
-#ifdef ASCENT_VTKM_USE_CUDA
+//#ifdef ASCENT_VTKM_USE_CUDA
     const int num_domains = n_input->number_of_children();
     int global_blocks = num_domains;
     //
@@ -785,59 +787,61 @@ Learn::execute()
           max_value = std::max(max_value, fields[f][a]);
         }
       }
-      //int order = 4; // default value in this function
-      //double *test_out = FormRawMomentTensor(A, field_sizes[0], num_fields, order);
+      Kokkos::initialize();
+      int order = 4; // default value in this function
+      double *fmms = FormRawMomentTensor(A, field_sizes[0], num_fields, order);
+      Kokkos::finalize();
       // in column major order
-      f_cokurt_vecs_cublas_wrapper(num_fields, // nrow
-                                   field_sizes[i], // nCol
-                                   A,
-                                   kVecs,
-                                   eigvals);
-      delete[] A;
-      //
-      // nfield x nfield eigvals
-      // nfield x nfield eigvc
-      debug<<"domain "<<i<<" kVecs";
-      for(int e = 0; e < num_fields*num_fields; ++e)
-      {
-        debug<<kVecs[e]<<" ";
-      }
-      debug<<"\n";
+ //     f_cokurt_vecs_cublas_wrapper(num_fields, // nrow
+ //                                  field_sizes[i], // nCol
+ //                                  A,
+ //                                  kVecs,
+ //                                  eigvals);
+ //     delete[] A;
+ //     //
+ //     // nfield x nfield eigvals
+ //     // nfield x nfield eigvc
+ //     debug<<"domain "<<i<<" kVecs";
+ //     for(int e = 0; e < num_fields*num_fields; ++e)
+ //     {
+ //       debug<<kVecs[e]<<" ";
+ //     }
+ //     debug<<"\n";
 
-      norm_eigv[i] = 0.;
-      for(int e = 0; e < num_fields; ++e)
-      {
-        norm_eigv[i] += std::abs(eigvals[e]);
-        debug<<eigvals[e]<<" ";
-        // visual debugging
-        Data eig;
-        eig.first = "eig_val_" + field_selection[e];
-        eig.second = eigvals[e];
-        domain_data.push_back(eig);
-      }
-      debug<<"domain "<<i<<" L2 norm " << norm_eigv[i] << " eigvals ";
-      debug<<"\n";
+ //     norm_eigv[i] = 0.;
+ //     for(int e = 0; e < num_fields; ++e)
+ //     {
+ //       norm_eigv[i] += std::abs(eigvals[e]);
+ //       debug<<eigvals[e]<<" ";
+ //       // visual debugging
+ //       Data eig;
+ //       eig.first = "eig_val_" + field_selection[e];
+ //       eig.second = eigvals[e];
+ //       domain_data.push_back(eig);
+ //     }
+ //     debug<<"domain "<<i<<" L2 norm " << norm_eigv[i] << " eigvals ";
+ //     debug<<"\n";
 
-      debug<<"domain "<<i<<" min value "<<min_value<<"\n";
-      debug<<"domain "<<i<<" max value "<<max_value<<"\n";
-      double diff = max_value - min_value;
-      if(diff > 10) debug<<"domain "<<i<<" diff "<<diff<<"\n";
-      //Code to compute 'feature moment metrics (fmms)' from kVecs
-      // offset for current domain
-      double * domain_fmms = fmms + num_fields * i;
-      compute_fmms(num_fields, kVecs, eigvals, domain_fmms);
-      // NaN check
-      for(int f = 0; f < num_fields; ++f)
-      {
-        if(domain_fmms[f]  != domain_fmms[f]) domain_fmms[f] = 0;
-        debug<<"domain "<<i<<" fmms "<<f<<" "<<domain_fmms[f]<<"\n";
+ //     debug<<"domain "<<i<<" min value "<<min_value<<"\n";
+ //     debug<<"domain "<<i<<" max value "<<max_value<<"\n";
+ //     double diff = max_value - min_value;
+ //     if(diff > 10) debug<<"domain "<<i<<" diff "<<diff<<"\n";
+ //     //Code to compute 'feature moment metrics (fmms)' from kVecs
+ //     // offset for current domain
+ //     double * domain_fmms = fmms + num_fields * i;
+ //     compute_fmms(num_fields, kVecs, eigvals, domain_fmms);
+ //     // NaN check
+ //     for(int f = 0; f < num_fields; ++f)
+ //     {
+ //       if(domain_fmms[f]  != domain_fmms[f]) domain_fmms[f] = 0;
+ //       debug<<"domain "<<i<<" fmms "<<f<<" "<<domain_fmms[f]<<"\n";
 
-        // visual debuggin
-        Data fmms_val;
-        fmms_val.first = "fmms_" + field_selection[f];
-        fmms_val.second = domain_fmms[f];
-        domain_data.push_back(fmms_val);
-      }
+ //       // visual debuggin
+ //       Data fmms_val;
+ //       fmms_val.first = "fmms_" + field_selection[f];
+ //       fmms_val.second = domain_fmms[f];
+ //       domain_data.push_back(fmms_val);
+ //     }
     } // ends domain loop
 
     double *average_fmms = new double[num_fields];
@@ -985,10 +989,12 @@ Learn::execute()
 
     //  For scalability this is not necessary
     //  debugging only
+    std::string result_path;
     mesh_blueprint_save(*n_input,
                         "spatial_metric",
                         "hdf5",
-                        200);
+                        200,
+                        result_path);
 
     // add in the spatial metric
     for(int i = 0; i < num_domains; ++i)
@@ -1002,14 +1008,14 @@ Learn::execute()
 
     detail::write_metric(*n_input, topo, mesh_data);
 
-    delete[] norm_eigv;
-    delete[] kVecs;
-    delete[] eigvals;
+//    delete[] norm_eigv;
+//    delete[] kVecs;
+//    delete[] eigvals;
     delete[] fmms;
-    delete[] average_fmms;
-    delete[] local_sum;
-    delete[] spatial_metric;
-#endif // cuda
+//    delete[] average_fmms;
+//    delete[] local_sum;
+//    delete[] spatial_metric;
+//#endif // cuda
   debug.close();
 
     //set_output<DataObject>(d_input);
