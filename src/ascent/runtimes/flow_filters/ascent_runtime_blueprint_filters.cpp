@@ -757,6 +757,7 @@ Learn::execute()
     double *fmms = new double[num_fields * num_domains];
     //double *anomaly_metric = new double
 
+    Kokkos::initialize();
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = n_input->child(i);
@@ -787,10 +788,8 @@ Learn::execute()
           max_value = std::max(max_value, fields[f][a]);
         }
       }
-      Kokkos::initialize();
       int order = 4; // default value in this function
       double *fmms = FormRawMomentTensor(A, field_sizes[0], num_fields, order);
-      Kokkos::finalize();
       // in column major order
  //     f_cokurt_vecs_cublas_wrapper(num_fields, // nrow
  //                                  field_sizes[i], // nCol
@@ -843,6 +842,7 @@ Learn::execute()
  //       domain_data.push_back(fmms_val);
  //     }
     } // ends domain loop
+    Kokkos::finalize();
 
     double *average_fmms = new double[num_fields];
     double *local_sum = new double[num_fields];
