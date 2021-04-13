@@ -260,7 +260,7 @@ if(VTKM_FOUND)
 endif()
 
 if(GENTEN_FOUND)
-  message(STATUS "****&&$&$&$& Found GENTEN")
+  message(STATUS "******** Found GENTEN **********")
     list(APPEND ascent_thirdparty_libs genten)
 endif()
 
