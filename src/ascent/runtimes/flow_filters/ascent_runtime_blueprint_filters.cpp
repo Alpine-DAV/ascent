@@ -174,11 +174,12 @@ void write_metric(conduit::Node &input,
   {
     info.print();
   }
+  std::string result_path;
   mesh_blueprint_save(output,
                       "small_spatial_metric",
                       "hdf5",
-                      100);
-//                    -1);
+                      100,
+                      result_path);
 }
 
 } //  namespace detail
@@ -784,6 +785,8 @@ Learn::execute()
           max_value = std::max(max_value, fields[f][a]);
         }
       }
+      //int order = 4; // default value in this function
+      //double *test_out = FormRawMomentTensor(A, field_sizes[0], num_fields, order);
       // in column major order
       f_cokurt_vecs_cublas_wrapper(num_fields, // nrow
                                    field_sizes[i], // nCol

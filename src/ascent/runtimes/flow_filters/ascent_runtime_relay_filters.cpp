@@ -157,16 +157,16 @@ mesh_bp_generate_index(const conduit::Node &mesh,
     int par_size = relay::mpi::size(comm);
 
     // we need a list of all possible topos, coordsets, etc
-    // for the blueprint index in the root file. 
+    // for the blueprint index in the root file.
     //
     // across ranks, domains may be sparse
     //  for example: a topo may only exist in one domain
-    // so we union all local mesh indices, and then 
+    // so we union all local mesh indices, and then
     // se an all gather and union the results together
-    // to create an accurate global index. 
+    // to create an accurate global index.
 
     index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
-    // note: 
+    // note:
     // find global # of domains w/o conduit_blueprint_mpi for now
     // since we aren't yet linking conduit_blueprint_mpi
     Node n_src, n_reduce;
@@ -1131,7 +1131,7 @@ RelayIOSave::execute()
                             "hdf5",
                             num_files,
                             result_path);
-        
+
     }
     else if( protocol == "blueprint/mesh/yaml")
     {
@@ -1140,7 +1140,7 @@ RelayIOSave::execute()
                             "hdf5",
                             num_files,
                             result_path);
-        
+
     }
     else
     {
