@@ -169,6 +169,8 @@ RUN mkdir /home/user/.jupyter/
 # the password is:
 #  learn
 RUN echo "c.NotebookApp.password = 'sha1:9777986fd066:283f673e1a311e2d5ef58c174eaebf3e1cb536dd'" > /home/user/.jupyter/jupyter_notebook_config.py
+# set bash as default shell
+RUN echo "c.NotebookApp.terminado_settings = { 'shell_command': ['/bin/bash'] }" >> /home/user/.jupyter/jupyter_notebook_config.py
 
 # gen env script that points to spack installs of tpls
 RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python
