@@ -1,0 +1,4 @@
+#!/bin/bash
+export PYTHON_DIR=$(dirname @PYTHON_EXECUTABLE@)
+export JUPYTER_EXE=${PYTHON_DIR}/jupyter
+env PYTHONPATH=$PYTHONPATH:@_PYMOD_DIR@ ${JUPYTER_EXE} lab

@@ -826,3 +826,68 @@ TEST(ascent_runtime_options, test_field_filtering_error)
 
     EXPECT_TRUE(error);
 }
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_field_filtering_binning)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    data["fields/bananas"] = data["fields/braid"];
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    data["state/cycle"] = 100;
+    data["state/time"] = 1.3;
+    data["state/domain_id"] = 0;
+
+    ASCENT_INFO("Testing field filtering error");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node queries;
+
+
+    std::string bin1 = "binning('braid', 'sum', [axis('x', [0, 2.5, 5, 7.5, 10])])";
+    queries["e1/params/expression"] = bin1;
+    queries["e1/params/name"] = "binnning";
+
+    std::string bin2 = "binning('braid', 'sum', [axis('bananas', [0, 2.5, 5, 7.5, 10])])";
+    queries["e2/params/expression"] = bin2;
+    queries["e2/params/name"] = "binnning2";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_queries = actions.append();
+    add_queries["action"] = "add_queries";
+    add_queries["queries"] = queries;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+}

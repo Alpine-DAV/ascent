@@ -1,5 +1,6 @@
+#!/bin/bash
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2020, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -42,12 +43,4 @@
 #
 ###############################################################################
 
-FROM nvidia/9.2-devel-ubuntu16.04
-docker pull nvidia/cuda:9.2-devel-ubuntu16.04
-
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
-# add sudo to base cuda devel env
-# so we can install additional packages as
-# non-root, but admin default user on azure pipelines
-RUN apt-get update && apt-get -y install sudo
-
+docker push alpinedav/ascent:latest

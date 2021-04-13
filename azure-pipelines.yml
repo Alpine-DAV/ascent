@@ -4,6 +4,14 @@
 # Ref:
 # https://aka.ms/yaml
 
+#####
+# TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
+#####
+variables:
+  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-01-25-sha3769e1
+  cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2021-01-25-sha3769e1
+
+
 # only build merge target pr to develop
 trigger: none
 pr:
@@ -39,7 +47,7 @@ stages:
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
-    container: alpinedav/ascent-ci:ubuntu-18-devel-tpls
+    container: ${{ variables.main_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
@@ -52,12 +60,32 @@ stages:
           ENABLE_PYTHON: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
-        shared_py36:
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++11
+        shared_py36_cxx11:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++11
+        shared_py36_cxx11_bflow:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
+          BLT_CXX_STD: c++11
+        shared_py36_cxx14:
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++14
     steps:
       - checkout: self
         clean: boolean
@@ -90,6 +118,8 @@ stages:
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # c++ std
+           export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            # include host config
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
            # extra settings
@@ -98,6 +128,7 @@ stages:
            if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            echo ${CMAKE_OPTS}
            # configure
            cmake ${CMAKE_OPTS} ../src
@@ -197,11 +228,11 @@ stages:
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
-  - job: Main_Ubuntu_16_Cuda_9_2
+  - job: Main_Ubuntu_16_Cuda_10_1
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
-    container: alpinedav/ascent-ci:ubuntu-16-cuda-9.2-devel-tpls
+    container: ${{ variables.cuda_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
@@ -210,7 +241,11 @@ stages:
       matrix:
         static:
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Debug
+          CMAKE_BUILD_TYPE: Release
+          ENABLE_BABELFLOW: OFF
+          # static linking unit tests eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
     steps:
       - checkout: self
         clean: boolean
@@ -242,6 +277,8 @@ stages:
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src

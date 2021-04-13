@@ -53,7 +53,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.5.1")
+project(ascent VERSION "0.6.0")
 
 ################################
 # Build Options
@@ -71,6 +71,8 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
+option(ENABLE_DOCS        "Build Documentation"       ON)
+option(ENABLE_MFEM        "Enable MFEM support"       ON)
 
 option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
 
@@ -200,7 +202,9 @@ endif()
 ################################
 # Add documentation targets
 ################################
-add_subdirectory(docs)
+if(ENABLE_DOCS)
+  add_subdirectory(docs)
+endif()
 
 ################################
 # Add our config helpers

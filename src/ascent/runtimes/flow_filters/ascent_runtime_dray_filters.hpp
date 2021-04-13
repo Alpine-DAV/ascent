@@ -132,6 +132,18 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class DRayProjectColors2d: public ::flow::Filter
+{
+public:
+    DRayProjectColors2d();
+    virtual ~DRayProjectColors2d();
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class DRayReflect : public ::flow::Filter
 {
 public:

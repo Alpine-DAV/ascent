@@ -131,6 +131,7 @@ tutorial_gyre_example(float64 time_value, Node &mesh)
                                              z_dims,
                                              mesh);
 
+    mesh["state/time"] = time_value;
     Node &field = mesh["fields/gyre"];
     field["association"] = "vertex";
     field["topology"] = "mesh";

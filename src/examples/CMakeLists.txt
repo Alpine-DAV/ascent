@@ -60,6 +60,7 @@ endif()
 if(ENABLE_BABELFLOW)
   add_subdirectory(babelflow/pmt)
   add_subdirectory(babelflow/comp)
+  add_subdirectory(babelflow/iso)
 endif()
 
 # install using and python examples

@@ -1,6 +1,6 @@
 packages:
   all:
-    variants: cuda_arch=30
+    variants: cuda_arch=70
     compiler: [gcc]
     providers:
       mpi:  [mpich]
@@ -8,7 +8,7 @@ packages:
       lapack: [netlib-lapack]
   cuda:
     paths:
-      cuda@9.2: /usr/local/cuda/
+      cuda@10.1: /usr/local/cuda/
     buildable: False
   netlib-lapack:
     buildable: False

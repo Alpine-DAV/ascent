@@ -42,20 +42,64 @@
 #
 ###############################################################################
 
-FROM nvidia/cuda:9.2-devel-ubuntu16.04
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
-# add sudo to base cuda devel env
-# so we can install additional packages as
-# non-root, but admin default user on azure pipelines
-RUN apt-get update && apt-get -y install sudo
-# install std packages we need for cuda dev env and test
-RUN apt-get -y install \
-               git \
-               python \
-               gfortran \
-               zlib1g-dev \
-               curl\
-               mpich \
-               libmpich-dev 
+###############################################################################
+#
+# About Util CMake Build for Ascent
+#
+###############################################################################
+
+set(ABOUT_SOURCES
+    about.cpp)
+
+set(ABOUT_DEPS ascent)
+
+if(OPENMP_FOUND)
+   list(APPEND deps openmp)
+endif()
+
+if (ENABLE_SERIAL)
+    blt_add_executable(
+        NAME        ascent_about
+        SOURCES     ${ABOUT_SOURCES}
+        DEPENDS_ON  ${ABOUT_DEPS}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    
+    # install target for replay serial
+    install(TARGETS ascent_about
+            EXPORT  ascent
+            LIBRARY DESTINATION utilities/ascent/
+            ARCHIVE DESTINATION utilities/ascent/
+            RUNTIME DESTINATION utilities/ascent/
+    )
+endif()
+
+if(MPI_FOUND)
+
+    set(ABOUT_MPI_DEPS ascent_mpi mpi)
+    if(OPENMP_FOUND)
+           list(APPEND about_mpi_deps openmp)
+    endif()
+
+    blt_add_executable(
+        NAME        ascent_about_mpi
+        SOURCES     ${ABOUT_SOURCES}
+        DEPENDS_ON  ${ABOUT_MPI_DEPS}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+    blt_add_target_compile_flags(TO ascent_about_mpi FLAGS "-DABOUT_MPI=1")
+
+    # install target for replay mpi
+    install(TARGETS ascent_about_mpi
+            EXPORT  ascent
+            LIBRARY DESTINATION utilities/ascent/
+            ARCHIVE DESTINATION utilities/ascent/
+            RUNTIME DESTINATION utilities/ascent/
+    )
+
+endif()
+
+
+
+
 
 

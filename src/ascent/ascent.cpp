@@ -56,6 +56,7 @@
 #include <ascent_empty_runtime.hpp>
 #include <ascent_flow_runtime.hpp>
 #include <runtimes/ascent_main_runtime.hpp>
+#include <utils/ascent_string_utils.hpp>
 #include <flow.hpp>
 
 #if defined(ASCENT_VTKH_ENABLED)
@@ -89,6 +90,7 @@ Ascent::Ascent()
   m_actions_file("<<UNSET>>")
 {
   m_options["mpi_comm"] = -1;
+  set_status("Ascent instance created");
 }
 
 //-----------------------------------------------------------------------------
@@ -138,6 +140,9 @@ CheckForSettingsFile(std::string file_name,
       return;
     }
 
+    int actions_file_valid = 0;
+    std::string emsg = "";
+
     if(rank == 0)
     {
       std::string curr,next;
@@ -148,21 +153,46 @@ CheckForSettingsFile(std::string file_name,
                                     ".",
                                     curr,
                                     next);
+
       if(curr == "yaml")
       {
-          protocol = "yaml";
+        protocol = "yaml";
       }
 
-      conduit::Node file_node;
-      file_node.load(file_name, protocol);
-      if(merge)
+      try
       {
-        node.update(file_node);
+        conduit::Node file_node;
+        file_node.load(file_name, protocol);
+
+        if(merge)
+        {
+          node.update(file_node);
+        }
+        else
+        {
+          node = file_node;
+        }
+
+        actions_file_valid = 1;
       }
-      else
+      catch(conduit::Error &e)
       {
-        node = file_node;
+        // failed to open or parse the actions file
+        actions_file_valid = 0;
+        emsg = e.message();
       }
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+    // make sure all ranks error if the parsing on rank 0 failed.
+    MPI_Bcast(&actions_file_valid, 1, MPI_INT, 0, mpi_comm);
+#endif
+
+    if(actions_file_valid == 0)
+    {
+        // Raise Error
+        ASCENT_ERROR("Failed to load actions file: " << file_name
+                     << "\n" << emsg);
     }
 #ifdef ASCENT_MPI_ENABLED
     relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
@@ -310,9 +340,14 @@ Ascent::open(const conduit::Node &options)
         {
             conduit::utils::set_info_handler(quiet_handler);
         }
+
+        set_status("Ascent::open completed");
     }
     catch(conduit::Error &e)
     {
+        set_status("Ascent::open failed",
+                    e.message());
+
         if(m_forward_exceptions)
         {
             throw e;
@@ -339,9 +374,14 @@ Ascent::publish(const conduit::Node &data)
         {
             ASCENT_ERROR("Ascent Runtime is not initialized");
         }
+
+        set_status("Ascent::publish completed");
     }
     catch(conduit::Error &e)
     {
+        set_status("Ascent::publish failed",
+                   e.message());
+
         if(m_forward_exceptions)
         {
             throw e;
@@ -406,6 +446,8 @@ Ascent::execute(const conduit::Node &actions)
                                  m_options["mpi_comm"].to_int32());
 
             m_runtime->Execute(processed_actions);
+
+            set_status("Ascent::execute completed");
         }
         else
         {
@@ -414,6 +456,9 @@ Ascent::execute(const conduit::Node &actions)
     }
     catch(conduit::Error &e)
     {
+        set_status("Ascent::execute failed",
+                   e.message());
+
         if(m_forward_exceptions)
         {
             throw e;
@@ -447,9 +492,17 @@ Ascent::info(conduit::Node &info_out)
         {
             m_runtime->Info(info_out);
         }
+
+        info_out["status"] = m_status;
+
+        // this doesn't modify status unless
+        // info triggers an error
     }
     catch(conduit::Error &e)
     {
+        set_status("Ascent::info failed",
+                   e.message());
+
         if(m_forward_exceptions)
         {
             throw e;
@@ -484,9 +537,14 @@ Ascent::close()
             delete m_runtime;
             m_runtime = NULL;
         }
+
+         set_status("Ascent::close completed");
     }
     catch(conduit::Error &e)
     {
+        set_status("Ascent::close failed",
+                   e.message());
+
         if(m_forward_exceptions)
         {
             throw e;
@@ -507,6 +565,28 @@ Ascent::close()
             }
         }
     }
+}
+
+//---------------------------------------------------------------------------//
+void
+Ascent::set_status(const std::string &msg)
+{
+    m_status.reset();
+    std::ostringstream oss;
+    oss << msg << " at " << timestamp();
+    m_status["message"] = oss.str();
+}
+
+//---------------------------------------------------------------------------//
+void
+Ascent::set_status(const std::string &msg,
+                   const std::string &details)
+{
+    m_status.reset();
+    std::ostringstream oss;
+    oss << msg << " at " << timestamp();
+    m_status["message"] = oss.str();
+    m_status["details"] = details;
 }
 
 //---------------------------------------------------------------------------//
@@ -553,7 +633,7 @@ about()
     " Derived from:\n"
     "  https://www.thingiverse.com/thing:5340\n";
 
-    return n.to_json() + "\n" + ASCENT_MASCOT;
+    return n.to_yaml() + "\n" + ASCENT_MASCOT;
 
 }
 
@@ -562,12 +642,32 @@ void
 about(conduit::Node &n)
 {
     n.reset();
-
     n["version"] = ASCENT_VERSION;
 
 #ifdef ASCENT_GIT_SHA1
     n["git_sha1"] = ASCENT_GIT_SHA1;
+#else
+    n["git_sha1"] = "unknown";
 #endif
+
+#ifdef ASCENT_GIT_SHA1_ABBREV
+    n["git_sha1_abbrev"] = ASCENT_GIT_SHA1_ABBREV;
+#else
+    n["git_sha1_abbrev"] = "unknown";
+#endif
+
+#ifdef ASCENT_GIT_TAG
+    n["git_tag"] = ASCENT_GIT_TAG;
+#else
+    n["git_tag"] = "unknown";
+#endif
+
+    if(n["git_tag"].as_string() == "unknown" &&
+       n["git_sha1_abbrev"].as_string() != "unknown")
+    {
+        n["version"] = n["version"].as_string()
+                       + "-" + n["git_sha1_abbrev"].as_string();
+    }
 
     n["compilers/cpp"] = ASCENT_CPP_COMPILER;
 #ifdef ASCENT_FORTRAN_COMPILER

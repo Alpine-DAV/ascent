@@ -250,7 +250,9 @@ void relay_blueprint_mesh_read(const Node &options,
 
     // assume hdf5, but check for json file
     std::string root_protocol = "hdf5";
-    char buff[5] = {0,0,0,0,0};
+
+    // we will read only 5 bytes + keep the buffer null termed.
+    char buff[6] = {0,0,0,0,0,0};
 
     // heuristic, if json, we expect to see "{" in the first 5 chars of the file.
     ifstream ifs;
@@ -323,15 +325,6 @@ void relay_blueprint_mesh_read(const Node &options,
     MPI_Comm comm  = MPI_Comm_f2c(options["mpi_comm"].to_int());
     int rank = relay::mpi::rank(comm);
     int total_size = relay::mpi::size(comm);
-
-    if(num_domains < total_size)
-    {
-      if(rank == 0)
-      {
-        ASCENT_ERROR("hola: total domains "<<num_domains<<" must be equal to "
-                     <<"or greater than the number of ranks "<<total_size<<".");
-      }
-    }
 
     int read_size = num_domains / total_size;
     int rem = num_domains % total_size;

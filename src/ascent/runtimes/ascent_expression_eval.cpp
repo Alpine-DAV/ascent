@@ -263,6 +263,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
   flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
   flow::Workspace::register_filter_type<expressions::Bin>();
+  flow::Workspace::register_filter_type<expressions::Bounds>();
 
   initialize_functions();
   initialize_objects();
@@ -579,6 +580,15 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &bounds_sig = (*functions)["bounds"].append();
+  bounds_sig["return_type"] = "aabb";
+  bounds_sig["filter_name"] = "bounds";
+  bounds_sig["args/topology/type"] = "string";
+  bounds_sig["args/topology/optional"];
+  bounds_sig["description"] = "Returns the spatial bounds of a mesh.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
   point_and_axis_sig["return_type"] = "bin";
   point_and_axis_sig["filter_name"] = "point_and_axis";
@@ -636,7 +646,7 @@ initialize_functions()
 
   quantile_sig["description"] = "Return the `q`-th quantile of the data along \
   the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the \
-  x-axis which 50\% of the data lies below.";
+  x-axis which 50 percent of the data lies below.";
 
   // -------------------------------------------------------------
 
@@ -750,6 +760,10 @@ initialize_objects()
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
 
+  conduit::Node &aabb = (*objects)["aabb/attrs"];
+  aabb["min/type"] = "vector";
+  aabb["max/type"] = "vector";
+
   conduit::Node &vector_atts = (*objects)["vector/attrs"];
   vector_atts["x/type"] = "double";
   vector_atts["y/type"] = "double";
@@ -833,7 +847,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // 3) only filter if we have state/time
   static bool first_execute = true;
 
-  if(first_execute && 
+  if(first_execute &&
      !m_cache.filtered() &&
      time <= m_cache.last_known_time() &&
      valid_time)
@@ -874,8 +888,8 @@ void ExpressionEval::get_last(conduit::Node &data)
 
   for(int i = 0; i < entries; ++i)
   {
-    conduit::Node &entry = m_cache.m_data.child(i); 
-    const int cycles = entry.number_of_children(); 
+    conduit::Node &entry = m_cache.m_data.child(i);
+    const int cycles = entry.number_of_children();
     if(cycles > 0)
     {
       conduit::Node &cycle = entry.child(cycles-1);
