@@ -2703,7 +2703,7 @@ AutoCamera::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("metric");
     valid_paths.push_back("samples");
-    valid_paths.push_back("sample");
+    //valid_paths.push_back("sample");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -2746,7 +2746,7 @@ AutoCamera::execute()
         ASCENT_ERROR("Unknown field '"<<field_name<<"'");
       }
       int samples = (int)params()["samples"].as_int64();
-      int sample2 = (int)params()["sample"].as_int64();
+//      int sample2 = (int)params()["sample"].as_int64();
     //TODO:Get the height and width of the image from Ascent
       int width  = 1000;
       int height = 1000;
