@@ -2,7 +2,8 @@ set(install_files
   ascent_actions.json
   expandingVortex.vti
   paraview_ascent_source.py
-  paraview-package-momentinvariants.patch)
+  paraview-package-momentinvariants.patch
+  summit-moment-invariants.lsf)
 
 set(configure_files
   paraview-vis-cloverleaf3d-momentinvariants.py.in
