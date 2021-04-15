@@ -43,6 +43,12 @@
 ###############################################################################
 
 ################################
+# cmake policy selection
+################################
+# avoid warnings for project commands w/o VERSION
+cmake_policy(SET CMP0048 NEW)
+
+################################
 # Ascent
 ################################
 
@@ -86,11 +92,8 @@ if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
 endif()
 
 ################################
-# cmake policy selections
+# cmake policy selection
 ################################
-# avoid warnings for project commands w/o VERSION
-cmake_policy(SET CMP0048 NEW)
-
 # cmake 3.18+ use CMP0104 OLD to manually specify cuda flags
 #https://cmake.org/cmake/help/latest/policy/CMP0104.html
 if(POLICY CMP0104)
