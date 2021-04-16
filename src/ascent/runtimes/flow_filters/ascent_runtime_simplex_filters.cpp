@@ -511,7 +511,7 @@ CameraSimplex::execute()
 	                  "pb", "projected_area", "viewpoint_entropy", 
 			  "visibility_ratio", "visible_triangles", "vkl"};
     
-    for (metric_num ; metric_num < 2 ; metric_num++) {
+    for (metric_num ; metric_num < 9 ; metric_num++) {
       metric = metrics[metric_num];
       string filename = metrics[metric_num];
       filename += "_normalized_scores.txt";
