@@ -57,6 +57,7 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay_io_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -237,28 +238,6 @@ TEST(ascent_amr, test_amr_render_complex_ghosts)
                                                       2, // amr levels
                                                       data);
 
-    const int num_domains = data.number_of_children();
-    for(int i = 0; i < num_domains; ++i)
-    {
-      conduit::Node &dom = data.child(i);
-      const int field_size = dom["fields/iters/values"].dtype().number_of_elements();
-      //std::cout<<"Field size "<<field_size<<"\n";
-      dom["fields/ascent_ghosts/values"].set(conduit::DataType::int32(field_size));
-      dom["fields/ascent_ghosts/topology"] = "topo";
-      dom["fields/ascent_ghosts/association"] = "element";
-      conduit::int32_array ghosts = dom["fields/ascent_ghosts/values"].value();
-      for(int a = 0; a < field_size; ++a)
-      {
-        if(a == 0)
-        {
-          ghosts[a] = 1;
-        }
-        else
-        {
-          ghosts[a] = 0;
-        }
-      }
-    }
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
 

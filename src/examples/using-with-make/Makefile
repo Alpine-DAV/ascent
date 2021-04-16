@@ -67,12 +67,13 @@ ASCENT_DIR ?= ../../..
 # See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
 include $(ASCENT_DIR)/share/ascent/ascent_config.mk
 
-
+# make sure to enable c++11 support (conduit's interface now requires it)
+CXX_FLAGS = -std=c++11
 INC_FLAGS = $(ASCENT_INCLUDE_FLAGS) 
 LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
 
 main:
-	$(CXX) $(INC_FLAGS) ascent_render_example.cpp $(LNK_FLAGS) -o ascent_render_example
+	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) ascent_render_example.cpp $(LNK_FLAGS) -o ascent_render_example
 
 
 clean:

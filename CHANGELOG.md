@@ -5,12 +5,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Added Data Binning examples to the Ascent Intro Tutorial
 
 ### Fixed
-- Issue MPI hang if actions files (yaml or json) fail to parse.
+- Fixed an issue with the Data Binning bin calculation logic
 
 
 
+## [0.7.0] - Released 2021-03-19
+
+### Added
+- Added partial failure tolerance (i.e., if there are multiple plots the failure of one doesn't prevent the others from rendering)
+- Added the ability to use expressions as parameters to filters, e.g., `iso contour value = "(max(field('density')) - min(field('density)) / 2")`
+- Added orthogonal projections for scalar images (projecting onto a 2d plane)
+- Added a `triangulate` transform
+- Added option to build Ascent with only Devil Ray support
+
+### Fixed
+- Fixed a MPI hang if actions files (yaml or json) fail to parse
+- Fixed several minor issues with saving and reading Mesh Blueprint file sets
+- Fixed a field association bug with Data Binning
+- Fixed a 2D AMR mesh rendering issue
+
+### Changed
+- To better support installs that are relocated on the file system, Cinema database file resources are now compiled into the Ascent library.
+- Updated to use Babelflow (1.0.1) and Parallel Merge Tree (1.0.2).
 
 ## [0.6.0] - Released 2020-11-06
 
@@ -70,8 +90,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Alpine-DAV/ascent/compare/v0.3.0...v0.4.0
-

@@ -59,6 +59,7 @@
 #include <vector>
 
 #include <ascent_exports.h>
+#include <ascent_data_object.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -81,7 +82,8 @@ namespace filters
 bool ASCENT_API check_numeric(const std::string path,
                               const conduit::Node &params,
                               conduit::Node &info,
-                              bool required);
+                              bool required,
+                              bool supports_expressions = false);
 
 bool ASCENT_API check_string(const std::string path,
                              const conduit::Node &params,
@@ -105,6 +107,11 @@ std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_path
 std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
                                       const std::vector<std::string> &ignore_paths,
                                       const conduit::Node &node);
+
+// evalute expression or return value
+double ASCENT_API get_float64(const conduit::Node &node, DataObject *dataset);
+float ASCENT_API get_float32(const conduit::Node &node, DataObject *dataset);
+int ASCENT_API get_int32(const conduit::Node &node, DataObject *dataset);
 
 //-----------------------------------------------------------------------------
 };
