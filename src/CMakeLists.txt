@@ -88,7 +88,7 @@ else()
 endif()
 
 if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  message(FATAL_ERROR "Static libraries are required when building with CUDA")Ï
+  message(FATAL_ERROR "Static libraries are required when building with CUDA")
 endif()
 
 if(ENABLE_CUDA)
