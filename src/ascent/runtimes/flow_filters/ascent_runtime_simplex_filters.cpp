@@ -507,9 +507,9 @@ CameraSimplex::execute()
     int sample = (int)params()["sample"].as_int64();
     
     int metric_num = 0;
-    string metrics[] = {"data_entropy", "depth_entropy"}; /*, "max_depth",
+    string metrics[] = {"data_entropy", "depth_entropy" , "max_depth",
 	                  "pb", "projected_area", "viewpoint_entropy", 
-			  "visibility_ratio", "visible_triangles", "vkl"}; */
+			  "visibility_ratio", "visible_triangles", "vkl"};
     
     for (metric_num ; metric_num < 2 ; metric_num++) {
       metric = metrics[metric_num];
@@ -528,7 +528,7 @@ CameraSimplex::execute()
       double known_min = DBL_MAX;
       double known_max = -DBL_MAX;
 
-      cout << endl << "Gathering max and min data for: " << metric << endl;
+      cout << endl << "Getting raw scores for: " << metric << endl;
 
       // First loop, find min and max
       for (int i = 0 ; i < samples ; ++i) {
@@ -567,7 +567,7 @@ CameraSimplex::execute()
 
       rawfile.close();
 
-      cout << endl << "Writing score file for: " << metric << endl;
+      cout << endl << "Getting normalized scores for: " << metric << endl;
 
       // Second loop, put relative scores in file
       for (int i = 0 ; i < samples ; ++i) {
