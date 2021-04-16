@@ -120,6 +120,7 @@ set(ascent_sources
     utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
+    utils/ascent_resources.cpp
     # hola
     hola/ascent_hola.cpp)
 
@@ -164,6 +165,8 @@ set(ascent_headers
     utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
+    utils/ascent_resources.hpp
+    utils/ascent_resources_cinema_web.hpp
     # hola
     hola/ascent_hola.hpp)
 
@@ -209,8 +212,7 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
-#for now, we depend on compositing so we need vtkh
-if(DRAY_FOUND AND VTKM_FOUND)
+if(DRAY_FOUND)
   list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
 endif()
@@ -279,7 +281,7 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs openmp)
 endif()
 
-if(DRAY_FOUND AND VTKM_FOUND)
+if(DRAY_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 
@@ -326,7 +328,10 @@ if (ENABLE_SERIAL)
                           vtkh_utils
                           vtkm_io
                           vtkm_rendering
-                          vtkm_filter
+                          vtkm_filter_common
+                          vtkm_filter_contour
+                          vtkm_filter_gradient
+                          vtkm_filter_extra
                           vtkm_worklet
                           vtkm_source
                           vtkm_cont
@@ -369,7 +374,6 @@ if(MPI_FOUND)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp) 
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
@@ -396,6 +400,10 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
+        if (ENABLE_BABELFLOW)
+            list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+        endif()
+
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
@@ -420,7 +428,7 @@ if(MPI_FOUND)
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
     endif()
-    blt_add_target_compile_flags(TO ascent_mpi FLAGS "-D ASCENT_MPI_ENABLED")
+    blt_add_target_compile_flags(TO ascent_mpi FLAGS "-DASCENT_MPI_ENABLED")
 
     # install target for mpi ver
     install(TARGETS ascent_mpi
@@ -444,7 +452,10 @@ if(MPI_FOUND)
                           vtkh_utils_mpi
                           vtkm_io
                           vtkm_rendering
-                          vtkm_filter
+                          vtkm_filter_common
+                          vtkm_filter_contour
+                          vtkm_filter_gradient
+                          vtkm_filter_extra
                           vtkm_worklet
                           vtkm_source
                           vtkm_cont

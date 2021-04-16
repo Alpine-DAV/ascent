@@ -150,7 +150,10 @@ ifeq ($(ASCENT_VTKM_DIR),)
 else
     ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
                             -lvtkm_rendering-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter_contour-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter_gradient-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter_extra-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter_common-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_source-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_io-$(ASCENT_VTKM_VERSION) \

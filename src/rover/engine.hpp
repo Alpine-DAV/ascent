@@ -44,7 +44,7 @@
 #include <rover_types.hpp>
 #include <vtkm_typedefs.hpp>
 
-#include <vtkm/cont/ColorTable.hxx>
+#include <vtkm/cont/ColorTable.h>
 namespace rover {
 
 class Engine
