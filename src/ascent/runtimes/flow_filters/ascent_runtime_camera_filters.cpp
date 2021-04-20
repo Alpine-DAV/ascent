@@ -551,6 +551,24 @@ Triangle::calculateTriArea(){
   return area;
 }
 
+void
+Triangle::cutoff(int width, int height)
+{
+  if(X[0] < 0) X[0] = 0;
+  if(X[0] > width) X[0] = width;
+  if(X[1] < 0) X[1] = 0;
+  if(X[1] > width) X[1] = width;
+  if(X[2] < 0) X[2] = 0;
+  if(X[2] > width) X[2] = width;
+
+  if(Y[0] < 0) Y[0] = 0;
+  if(Y[0] > height) Y[0] = height;
+  if(Y[1] < 0) Y[1] = 0;
+  if(Y[1] > height) Y[1] = height;
+  if(Y[2] < 0) Y[2] = 0;
+  if(Y[2] > height) Y[2] = height;
+}
+
 double
 Triangle::findMin(double a, double b, double c)
 {
@@ -1506,12 +1524,15 @@ calcArea(std::vector<float> triangle, Camera c, int width, int height)
 	       triangle[3], triangle[4], triangle[5], 
 	       triangle[6], triangle[7], triangle[8]);
   Triangle d_tri = transformTriangle(w_tri, c, width, height);
-  /*
+/* 
   cerr << "w_tri: " << endl;
   w_tri.printTri();
   cerr << "d_tri: " << endl;
   d_tri.printTri();
-  */
+  d_tri.cutoff(width, height);
+  cerr << "d_tri_cutoff: " << endl;
+  d_tri.printTri();
+*/
   return d_tri.calculateTriArea();
 
 }
@@ -1694,7 +1715,7 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_t
       #endif
       for(int i = 0; i < num_triangles; i++)
       {
-        float area = calcArea(triangles[i]);
+        float area = calcArea(triangles[i], camera, width, height);
 	if(area != 0.0)
           viewpoint_ratio += ((area/global_area)*std::log(area/global_area));
       }
@@ -1751,7 +1772,7 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_t
     #endif
     for(int i = 0; i < num_triangles; i++)
     {
-      float area = calcArea(triangles[i]);
+      float area = calcArea(triangles[i], camera, width, height);
 
       if(area != 0.0)
         viewpoint_ratio += ((area/total_area)*std::log(area/total_area));

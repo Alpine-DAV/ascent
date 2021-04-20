@@ -177,6 +177,7 @@ class Triangle
       float calculateTriArea();
       double findMin(double a, double b, double c);
       double findMax(double a, double b, double c);
+      void cutoff(int w, int h);
 };
 
 #if defined(ASCENT_VTKM_ENABLED)
