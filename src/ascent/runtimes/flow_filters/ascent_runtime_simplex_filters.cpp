@@ -474,7 +474,8 @@ CameraSimplex::execute()
     //int numTheta = 100;
     //int numPhi = 100;
 
-/* 
+/*
+
     // Code for 20 images from spiral, must change sample from 0->20 in the yaml file 
     int sample = (int)params()["sample"].as_int64();
     
@@ -506,25 +507,31 @@ CameraSimplex::execute()
     int sample = (int)params()["sample"].as_int64();
     
     int metric_num = 0;
-    string metrics[] = {"data_entropy", "depth_entropy", "max_depth",
+    string metrics[] = {"data_entropy", "depth_entropy" , "max_depth",
 	                  "pb", "projected_area", "viewpoint_entropy", 
 			  "visibility_ratio", "visible_triangles", "vkl"};
     
     for (metric_num ; metric_num < 9 ; metric_num++) {
       metric = metrics[metric_num];
       string filename = metrics[metric_num];
-      filename += "_scores.txt"; 
+      filename += "_normalized_scores.txt";
+
+      string rawfilename = metrics[metric_num];
+      rawfilename += "_raw_scores.txt";
 
       ofstream myfile;
       myfile.open(filename);
-       
+
+      ofstream rawfile;
+      rawfile.open(rawfilename);
+      
       double known_min = DBL_MAX;
       double known_max = -DBL_MAX;
 
-      cout << endl << "Gathering max and min data for: " << metric << endl;
+      cout << endl << "Getting raw scores for: " << metric << endl;
 
       // First loop, find min and max
-      for (int i = 0 ; i < 20 ; ++i) {
+      for (int i = 0 ; i < samples ; ++i) {
 
           Camera cam = GetCamera(i, samples, radius, focus, bounds);  
 
@@ -552,14 +559,18 @@ CameraSimplex::execute()
 	  if (score > known_max) {
             known_max = score;
 	  }
+          
+          rawfile << score << endl;
 
           cout << "Natural score for sample " << i << " is " << score << endl;
       }
 
-      cout << endl << "Writing score file for: " << metric << endl;
+      rawfile.close();
+
+      cout << endl << "Getting normalized scores for: " << metric << endl;
 
       // Second loop, put relative scores in file
-      for (int i = 0 ; i < 20 ; ++i) {
+      for (int i = 0 ; i < samples ; ++i) {
 
           Camera cam = GetCamera(i, samples, radius, focus, bounds);  
 
