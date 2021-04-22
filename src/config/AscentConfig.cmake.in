@@ -78,6 +78,8 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_DRAY_ENABLED @DRAY_FOUND@)
     set(ASCENT_DRAY_DIR "@DRAY_DIR@")
 
+    set(ASCENT_GENTEN_DIR "@GENTEN_DIR@")
+
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
     set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")

@@ -112,4 +112,24 @@ if(DRAY_DIR)
                    PATHS ${DRAY_DIR}/lib/cmake/)
 endif()
 
+###############################################################################
+# Setup Devil Ray
+###############################################################################
+if(NOT GENTEN_DIR)
+  set(GENTEN_DIR ${ASCENT_GENTEN_DIR})
+endif()
+
+if(GENTEN_DIR)
+  if(NOT EXISTS ${GENTEN_DIR}/lib64/cmake/Genten/)
+    MESSAGE(FATAL_ERROR "Could not find GenTen CMake include file (${GENTEN_DIR}/lib64/cmake/Genten/)")
+  endif()
+
+    ###############################################################################
+    # Import GenTen
+    ###############################################################################
+    find_dependency(Genten REQUIRED
+                   NO_DEFAULT_PATH
+                   PATHS ${GENTEN_DIR}/lib64/cmake/Genten/)
+endif()
+
 
