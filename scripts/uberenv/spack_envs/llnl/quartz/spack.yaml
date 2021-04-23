@@ -7,7 +7,6 @@ spack:
   concretization: together
   config:
     install_tree: spack-build
-    install_path_scheme: spack-libs/${COMPILERNAME}-${COMPILERVER}/${PACKAGE}-${VERSION}
   compilers:
   - compiler:
       environment: {unset: []}

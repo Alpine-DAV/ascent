@@ -12,7 +12,6 @@ spack:
   - cmake@3.14.7~ncurses~openssl
   config:
     install_tree: spack-build
-    install_path_scheme: spack-libs/${COMPILERNAME}-${COMPILERVER}/${PACKAGE}-${VERSION}
   concretization: together
   packages:
     cuda:
