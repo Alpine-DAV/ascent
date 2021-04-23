@@ -15,7 +15,8 @@ spack:
   - openblas+shared
   concretization: together
   config:
-    install_tree: spack-build
+    install_tree: 
+      root: spack-build
   compilers:
   - compiler:
       environment: {unset: []}

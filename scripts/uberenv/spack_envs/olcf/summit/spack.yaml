@@ -3,13 +3,13 @@
 # branch: task/2021_03_update_ascent_and_friends
 spack:
   specs:
-  - ascent+cuda~shared~openmp cuda_arch=70 ^mvapich2
-  - vtk-h+cuda~shared~openmp cuda_arch=70
-  - vtk-m+cuda~shared~openmp cuda_arch=70
+  - ascent@0.7.0+cuda~shared~openmp cuda_arch=70 ^mvapich2
+  - vtk-h@0.7.0+cuda~shared~openmp cuda_arch=70
+  - vtk-m@1.5.5+cuda~shared~openmp cuda_arch=70
   - cmake@3.14.7~ncurses~openssl
   config:
-    install_tree: spack-build
-    install_path_scheme: spack-libs/${COMPILERNAME}-${COMPILERVER}/${PACKAGE}-${VERSION}
+    install_tree: 
+      root: spack-build
   concretization: together
   packages:
     cuda:
