@@ -57,7 +57,7 @@
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-#include <dray/collection.hpp>
+#include <dray/data_model/collection.hpp>
 #include <dray/io/blueprint_reader.hpp>
 #endif
 
