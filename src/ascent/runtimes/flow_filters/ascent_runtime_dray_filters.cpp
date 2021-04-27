@@ -82,10 +82,9 @@
 #include <runtimes/ascent_data_object.hpp>
 
 #include <dray/dray.hpp>
-#include <dray/data_set.hpp>
+#include <dray/data_model/collection.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 
-#include <dray/collection.hpp>
 #include <dray/filters/reflect.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 #include <dray/filters/volume_balance.hpp>
