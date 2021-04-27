@@ -27,6 +27,16 @@ ExecutionManager::info()
   return res;
 }
 
+std::string ExecutionManager::preferred_cpu_device()
+{
+  std::string res = "serial";
+
+#if defined(ASCENT_USE_OPENMP)
+  res = "openmp";
+#endif
+  return res;
+}
+
 void
 ExecutionManager::execution(const std::string exec)
 {

@@ -62,6 +62,7 @@
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
+#include "ascent_execution.hpp"
 #include <ascent_logging.hpp>
 #include <utils/ascent_mpi_utils.hpp>
 #include <flow_graph.hpp>
@@ -961,7 +962,8 @@ void
 ArrayMin::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_min((*input<Node>("arg1"))["value"]);
+  std::string exec = ExecutionManager::preferred_cpu_device();
+  (*output)["value"] = array_min((*input<Node>("arg1"))["value"], exec);
   (*output)["type"] = "double";
 
   set_output<conduit::Node>(output);
@@ -1185,7 +1187,8 @@ void
 ArrayMax::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_max((*input<Node>("arg1"))["value"]);
+  std::string exec = ExecutionManager::preferred_cpu_device();
+  (*output)["value"] = array_max((*input<Node>("arg1"))["value"], exec);
   (*output)["type"] = "double";
 
   set_output<conduit::Node>(output);
@@ -1291,7 +1294,8 @@ void
 ArrayAvg::execute()
 {
   conduit::Node *output = new conduit::Node();
-  conduit::Node sum = array_sum((*input<Node>("arg1"))["value"]);
+  std::string exec = ExecutionManager::preferred_cpu_device();
+  conduit::Node sum = array_sum((*input<Node>("arg1"))["value"], exec);
   (*output)["value"] = sum["value"].to_float64() / sum["count"].to_float64();
   (*output)["type"] = "double";
 
@@ -2109,7 +2113,7 @@ Binning::execute()
     empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
   }
 
-  const conduit::Node &n_binning = binning(*dataset,
+  const conduit::Node &n_binning = binning2(*dataset,
                                            n_bin_axes,
                                            reduction_var,
                                            reduction_op,
@@ -2644,7 +2648,8 @@ void
 ArraySum::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_sum((*input<Node>("arg1"))["value"])["value"];
+  std::string exec = ExecutionManager::preferred_cpu_device();
+  (*output)["value"] = array_sum((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
   set_output<conduit::Node>(output);

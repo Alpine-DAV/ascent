@@ -137,10 +137,20 @@ conduit::Node binning(const conduit::Node &dataset,
                       const std::string &component);
 
 ASCENT_API
+conduit::Node binning2(const conduit::Node &dataset,
+                      conduit::Node &bin_axes,
+                      const std::string &reduction_var,
+                      const std::string &reduction_op,
+                      const double empty_bin_val,
+                      const std::string &component);
+
+ASCENT_API
 void ASCENT_API paint_binning(const conduit::Node &binning,
                               conduit::Node &dataset);
 
 void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
+
+void ASCENT_API binning_mesh2(const conduit::Node &binning, conduit::Node &mesh);
 
 ASCENT_API
 conduit::Node get_state_var(const conduit::Node &dataset,

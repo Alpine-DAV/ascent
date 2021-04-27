@@ -52,6 +52,7 @@
 
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
+#include <runtimes/expressions/ascent_memory_manager.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -66,7 +67,7 @@ using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -236,7 +237,7 @@ TEST(ascent_expressions, basic_expressions)
   EXPECT_EQ(res["value"].to_uint8(), 1);
   EXPECT_EQ(res["type"].as_string(), "bool");
 }
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, functional_correctness)
 {
@@ -997,6 +998,11 @@ main(int argc, char *argv[])
   int result = 0;
 
   ::testing::InitGoogleTest(&argc, argv);
+
+  // this is normally set in ascent::Initialize, but we
+  // have to set it here so that we do the right thing with
+  // device pointers
+  AllocationManager::set_conduit_mem_handlers();
 
   // allow override of the data size via the command line
   if(argc == 2)

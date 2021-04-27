@@ -500,37 +500,37 @@ struct HistogramFunctor
 //-----------------------------------------------------------------------------
 
 conduit::Node
-array_max(const conduit::Node &field, std::string component)
+field_reduction_max(const conduit::Node &field, std::string component)
 {
   return detail::exec_dispatch(field, component, detail::MaxFunctor());
 }
 
 conduit::Node
-array_min(const conduit::Node &field, const std::string component)
+field_reduction_min(const conduit::Node &field, const std::string component)
 {
   return detail::exec_dispatch(field, component, detail::MinFunctor());
 }
 
 conduit::Node
-array_sum(const conduit::Node &field, const std::string component)
+field_reduction_sum(const conduit::Node &field, const std::string component)
 {
   return detail::exec_dispatch(field, component, detail::SumFunctor());
 }
 
 conduit::Node
-array_nan_count(const conduit::Node &field, std::string component)
+field_reduction_nan_count(const conduit::Node &field, std::string component)
 {
   return detail::exec_dispatch(field, component, detail::NanFunctor());
 }
 
 conduit::Node
-array_inf_count(const conduit::Node &field, std::string component)
+field_reduction_inf_count(const conduit::Node &field, std::string component)
 {
   return detail::exec_dispatch(field, component, detail::InfFunctor());
 }
 
 conduit::Node
-array_histogram(const conduit::Node &field,
+field_reduction_histogram(const conduit::Node &field,
                 const double &min_value,
                 const double &max_value,
                 const int &num_bins,
@@ -540,6 +540,53 @@ array_histogram(const conduit::Node &field,
   return detail::exec_dispatch(field, component, histogram);
 }
 
+conduit::Node
+array_max(const conduit::Node &array, const std::string exec_loc, std::string component)
+{
+  // keep the original so we can set it back
+  const std::string orig = ExecutionManager::execution();
+  ExecutionManager::execution(exec_loc);
+
+  conduit::Node fake_field;
+  fake_field["values"].set_external(array);
+
+  conduit::Node res = field_reduction_max(fake_field, component);
+  // restore the original exectution env
+  ExecutionManager::execution(orig);
+  return res;
+}
+
+conduit::Node
+array_min(const conduit::Node &array, const std::string exec_loc, std::string component)
+{
+  // keep the original so we can set it back
+  const std::string orig = ExecutionManager::execution();
+  ExecutionManager::execution(exec_loc);
+
+  conduit::Node fake_field;
+  fake_field["values"].set_external(array);
+
+  conduit::Node res = field_reduction_min(fake_field, component);
+  // restore the original exectution env
+  ExecutionManager::execution(orig);
+  return res;
+}
+
+conduit::Node
+array_sum(const conduit::Node &array, const std::string exec_loc, std::string component)
+{
+  // keep the original so we can set it back
+  const std::string orig = ExecutionManager::execution();
+  ExecutionManager::execution(exec_loc);
+
+  conduit::Node fake_field;
+  fake_field["values"].set_external(array);
+
+  conduit::Node res = field_reduction_sum(fake_field, component);
+  // restore the original exectution env
+  ExecutionManager::execution(orig);
+  return res;
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

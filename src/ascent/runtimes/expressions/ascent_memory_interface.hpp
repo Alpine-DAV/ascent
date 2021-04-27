@@ -147,6 +147,7 @@ public:
     if(!types_match)
     {
       std::string schema = m_field.schema().to_yaml();
+      m_field.print();
       ASCENT_ERROR("Field type does not match conduit type: "<<schema);
     }
   }
