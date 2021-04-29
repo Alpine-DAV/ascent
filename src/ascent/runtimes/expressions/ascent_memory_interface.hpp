@@ -147,7 +147,8 @@ public:
     if(!types_match)
     {
       std::string schema = m_field.schema().to_yaml();
-      m_field.print();
+      //m_field.print();
+      //TODO: log error can't throw exception here
       ASCENT_ERROR("Field type does not match conduit type: "<<schema);
     }
   }
@@ -165,14 +166,26 @@ public:
   T value(const index_t idx, const std::string component)
   {
     int comp_idx = resolve_component(component);
+    // TODO: log error component and index
+    //if(idx < 0 || idx >= m_sizes[comp_idx])
+    //{
+    //  std::cout<<"[Memory Interface] Invalid index "<<idx<<" size "<<m_sizes[comp_idx]<<"\n";
+    //}
     return value(idx, comp_idx);
   }
 
   T value(const index_t idx, int component)
   {
+    // TODO: log error component and index
+    //if(idx < 0 || idx >= m_sizes[component])
+    //{
+    //  std::cout<<"[Memory Interface] Invalid index "<<idx<<" size "<<m_sizes[component]<<"\n";
+    //}
     std::string path;
     const T * ptr = raw_ptr(component,path);
-    index_t el_idx = m_field[path].dtype().element_index(idx);
+    // elemen_index is extremely missleading. Its actually the byte offset to
+    // the element. 2 hours to learn this
+    index_t el_idx = m_field[path].dtype().element_index(idx) / sizeof(T);
     T val;
 #ifdef ASCENT_USE_CUDA
     if(is_gpu_ptr(ptr))

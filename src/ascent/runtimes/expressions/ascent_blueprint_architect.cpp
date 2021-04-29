@@ -922,9 +922,13 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
       {
         const std::string axis_path = "values/" + axes[i][0];
         min_coords[i] = std::min(
-            min_coords[i], field_reduction_min(n_coords[axis_path])["value"].as_double());
+            min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].as_double());
         max_coords[i] = std::max(
-            max_coords[i], field_reduction_max(n_coords[axis_path])["value"].as_double());
+            max_coords[i], field_reduction_max(n_coords, axes[i][0])["value"].as_double());
+        //min_coords[i] = std::min(
+        //    min_coords[i], field_reduction_min(n_coords[axis_path])["value"].as_double());
+        //max_coords[i] = std::max(
+        //    max_coords[i], field_reduction_max(n_coords[axis_path])["value"].as_double());
       }
     }
     else
@@ -1302,6 +1306,129 @@ void init_bins(double *bins,
 
 }
 
+int coord_axis_to_int(const std::string coord)
+{
+  int axis = -1;
+  if(coord == "x")
+  {
+    axis = 0;
+  }
+  else if(coord == "y")
+  {
+    axis = 1;
+  }
+  else if(coord == "z")
+  {
+    axis = 2;
+  }
+  if(axis == -1)
+  {
+    ASCENT_ERROR("Unknown coord axis '"<<coord
+                 <<"'. This should not happen");
+  }
+  return axis;
+}
+// Create a set of explicit bins for all axes
+conduit::Node
+create_bins_axes(conduit::Node &bin_axes,
+                 const conduit::Node &dataset,
+                 std::string topo_name)
+{
+
+  // we are most likely to have some spatial bins so just calculate
+  // the global bounds
+  const conduit::Node &bounds = global_bounds(dataset, topo_name);
+  const double *min_coords = bounds["min_coords"].value();
+  const double *max_coords = bounds["max_coords"].value();
+  const std::string axes[3][3] = {
+      {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
+  // populate min_val, max_val, for x,y,z
+  bin_axes.print();
+  conduit::Node res;
+  const int num_axes = bin_axes.number_of_children();
+  for(int i = 0; i < num_axes; ++i)
+  {
+    const conduit::Node &axis = bin_axes.child(i);
+    const std::string axis_name = axis.name();
+    std::cout<<"Axis name "<<axis_name<<"\n";
+    if(axis.has_path("bins"))
+    {
+      // we have explicit bins, so just use them
+      // TODO: we could check and sort the bins
+      // just in case there was a typo
+      res[axis_name] = axis;
+      continue;
+    }
+
+    // ok, we need to create a uniform binning for this
+    // axis. So figure out the mins and maxs
+    if(!axis.has_path("num_bins"))
+    {
+      ASCENT_ERROR("Axis missing num_bins and explicit bins");
+    }
+
+    const int num_bins = axis["num_bins"].to_int32();
+    if(num_bins < 1)
+    {
+      ASCENT_ERROR("There must be at least one bin");
+    }
+
+    double min_val, max_val;
+    bool has_min = axis.has_path("min_val");
+    bool has_max = axis.has_path("max_val");
+    if(has_min)
+    {
+      min_val = axis["min_val"].as_float64();
+    }
+    if(has_min)
+    {
+      max_val = axis["max_val"].as_float64();
+    }
+
+    if(is_xyz(axis_name))
+    {
+      int axis_id = coord_axis_to_int(axis_name);
+      if(!has_min)
+      {
+        min_val = min_coords[axis_id];
+      }
+      if(!has_min)
+      {
+        max_val = max_coords[axis_id];
+      }
+      std::cout<<"spatial axis "<<axis_id<<"\n";
+    }
+    else
+    {
+      // this is a field, so
+      std::cout<<"filed\n";
+      if(!has_min)
+      {
+        min_val = field_min(dataset, axis_name)["value"].as_float64();
+      }
+      if(!has_max)
+      {
+        max_val = field_max(dataset, axis_name)["value"].as_float64();
+      }
+    }
+
+    const int divs = num_bins + 1;
+    res[axis_name +"/bins"].set(conduit::DataType::float64(divs));
+    double *bins = res[axis_name +"/bins"].value();
+    const double delta = (max_val - min_val) / double(num_bins);
+    bins[0] = min_val;
+
+    for(int j = 1; j < divs - 1; ++j)
+    {
+      bins[j] = min_val + j * delta;
+    }
+
+
+  }
+  res.print();
+  return res;
+}
+
 // reduction_op: sum, min, max, avg, pdf, std, var, rms
 conduit::Node
 binning2(const conduit::Node &dataset,
@@ -1322,6 +1449,11 @@ binning2(const conduit::Node &dataset,
       global_topo_and_assoc(dataset, var_names);
   const std::string topo_name = topo_and_assoc["topo_name"].as_string();
   const std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+
+  std::cout<<"Creating BINS\n";
+  conduit::Node bres = create_bins_axes(bin_axes, dataset, topo_name);
+  std::cout<<"DONE BINS\n";
+  return bres;
 
   const conduit::Node &bounds = global_bounds(dataset, topo_name);
   const double *min_coords = bounds["min_coords"].value();

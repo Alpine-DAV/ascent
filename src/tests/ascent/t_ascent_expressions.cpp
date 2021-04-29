@@ -67,7 +67,6 @@ using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
-#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -237,7 +236,7 @@ TEST(ascent_expressions, basic_expressions)
   EXPECT_EQ(res["value"].to_uint8(), 1);
   EXPECT_EQ(res["type"].as_string(), "bool");
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, functional_correctness)
 {

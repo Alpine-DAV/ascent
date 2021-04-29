@@ -1798,17 +1798,18 @@ Axis::execute()
   {
     output = new conduit::Node();
 
+    // Normally, we would do all the error checking here/ determined
+    // the mins and maxs, but there are some issues. Since we are
+    // merely an axis , which is part of data binning, we are not
+    // aware of the field that the binning is on. Thus, we can't
+    // automatically figure out the spatial min/max since
+    // we don't know the topoloy. Thus we will defer the error
+    // checking to the actual binning code.
     double min_val;
     bool min_found = false;
     if(!n_min->dtype().is_empty())
     {
       min_val = (*n_min)["value"].to_float64();
-      (*output)["value/" + name + "/min_val"] = min_val;
-      min_found = true;
-    }
-    else if(!is_xyz(name))
-    {
-      min_val = field_min(*dataset, name)["value"].to_float64();
       (*output)["value/" + name + "/min_val"] = min_val;
       min_found = true;
     }
@@ -1821,15 +1822,10 @@ Axis::execute()
       max_found = true;
       (*output)["value/" + name + "/max_val"] = max_val;
     }
-    else if(!is_xyz(name))
-    {
-      // add 1 because the last bin isn't inclusive
-      max_val = field_max(*dataset, name)["value"].to_float64() + 1.0;
-      (*output)["value/" + name + "/max_val"] = max_val;
-      max_found = true;
-    }
 
+    // default num bins
     (*output)["value/" + name + "/num_bins"] = 256;
+
     if(!n_num_bins->dtype().is_empty())
     {
       (*output)["value/" + name + "/num_bins"] =
