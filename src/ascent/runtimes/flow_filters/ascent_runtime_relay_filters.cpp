@@ -254,40 +254,16 @@ void make_domain_ids(conduit::Node &domains)
 bool clean_mesh(const conduit::Node &data, conduit::Node &output)
 {
   output.reset();
-  const int potential_doms = data.number_of_children();
-  bool maybe_multi_dom = true;
 
-  if(!data.dtype().is_object() && !data.dtype().is_list())
+  conduit::Node info;
+  if(blueprint::mesh::verify(data, info))
   {
-    maybe_multi_dom = false;
-  }
-
-  if(maybe_multi_dom)
-  {
-    // check all the children for valid domains
-    for(int i = 0; i < potential_doms; ++i)
+    const auto domains = blueprint::mesh::domains(data);
+    for(auto it = domains.cbegin(); it != domains.cend(); ++it)
     {
-      conduit::Node info;
-      const conduit::Node &child = data.child(i);
-      bool is_valid = blueprint::mesh::verify(child, info);
-      if(is_valid)
-      {
-        conduit::Node &dest_dom = output.append();
-        dest_dom.set_external(child);
-      }
-    }
-  }
-  // if there is nothing in the output, lets see if it is a
-  // valid single domain
-  if(output.number_of_children() == 0)
-  {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = blueprint::mesh::verify(data, info);
-    if(is_valid)
-    {
+      const conduit::Node &src_dom = **it;
       conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
+      dest_dom.set_external(src_dom);
     }
   }
 
