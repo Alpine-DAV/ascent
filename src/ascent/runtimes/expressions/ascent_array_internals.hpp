@@ -43,7 +43,7 @@ template <typename T> class ArrayInternals
     m_own_host(true),
     m_own_device(true)
   {
-#ifdef ASCENT_USE_ENABLED
+#ifdef ASCENT_USE_CUDA
     m_cuda_enabled = true;
 #else
     m_cuda_enabled = false;
@@ -195,7 +195,6 @@ template <typename T> class ArrayInternals
 
   T *get_device_ptr ()
   {
-
     if (!m_cuda_enabled)
     {
       return get_host_ptr ();

@@ -49,6 +49,8 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_array.hpp"
+#include "ascent_dispatch.hpp"
 #include "ascent_memory_interface.hpp"
 #include "ascent_execution.hpp"
 #include "ascent_conduit_reductions.hpp"
@@ -526,6 +528,76 @@ get_explicit_element(const conduit::Node &n_coords,
 
   conduit::Node res;
   res.set(vert, 3);
+  return res;
+}
+
+
+struct CentroidFunctor
+{
+  Array<double> m_centroids;
+  int m_dims;
+
+  template<typename MeshType, typename Exec>
+  void operator()(MeshType &mesh, const Exec &)
+  {
+    using fp = typename Exec::for_policy;
+    const int size = mesh.m_num_cells;
+    const int dims = mesh.m_dims;
+
+    // one component for each dim
+    m_centroids.resize(size * mesh.m_dims);
+    double *centroids_ptr = m_centroids.ptr(Exec::memory_space);
+    std::cout<<"Mem space "<<Exec::memory_space<<"\n";
+
+    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type cell_idx)
+    {
+      centroids_ptr[cell_idx] = cell_idx;
+      int indices[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
+      mesh.cell_indices(cell_idx, indices);
+
+      double centroid[3] = {0., 0., 0.};
+      const int num_indices = mesh.m_num_indices;
+      for(int i = 0; i < num_indices; ++i)
+      {
+        double vert[3];
+        mesh.cell_vertex(indices[i], vert);
+        for(int c = 0; c < 3; c++)
+        {
+          centroid[c] += vert[c];
+        }
+      }
+
+      centroid[0] /= double(num_indices);
+      centroid[1] /= double(num_indices);
+      centroid[2] /= double(num_indices);
+
+      const int out_offset = cell_idx * dims;
+      for(int i = 0; i < dims; i++)
+      {
+        centroids_ptr[out_offset + i] = centroid[i];
+      }
+
+    });
+    ASCENT_ERROR_CHECK();
+  }
+};
+
+Array<double>
+centroids(const conduit::Node &domain, const std::string topo)
+{
+  const conduit::Node &n_topo = domain["topologies"][topo];
+  const std::string mesh_type = n_topo["type"].as_string();
+  const std::string coords_name = n_topo["coordset"].as_string();
+  const conduit::Node &n_coords = domain["coordsets/"+coords_name];
+  Array<double> res;
+
+  CentroidFunctor func;
+  exec_dispatch_mesh(n_coords,n_topo, func);
+  for(int i = 0; i < func.m_centroids.size(); ++i)
+  {
+    std::cout<<func.m_centroids.value(i)<<"\n";
+  }
+  func.m_centroids.summary();
   return res;
 }
 
@@ -1340,11 +1412,10 @@ create_bins_axes(conduit::Node &bin_axes,
   const conduit::Node &bounds = global_bounds(dataset, topo_name);
   const double *min_coords = bounds["min_coords"].value();
   const double *max_coords = bounds["max_coords"].value();
-  const std::string axes[3][3] = {
-      {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
-  // populate min_val, max_val, for x,y,z
+
   bin_axes.print();
   conduit::Node res;
+
   const int num_axes = bin_axes.number_of_children();
   for(int i = 0; i < num_axes; ++i)
   {
@@ -1370,7 +1441,8 @@ create_bins_axes(conduit::Node &bin_axes,
     const int num_bins = axis["num_bins"].to_int32();
     if(num_bins < 1)
     {
-      ASCENT_ERROR("There must be at least one bin");
+      ASCENT_ERROR("Binning: There must be at least one bin for axis '"<<
+                   axis_name<<"'");
     }
 
     double min_val, max_val;
@@ -1412,6 +1484,12 @@ create_bins_axes(conduit::Node &bin_axes,
       }
     }
 
+    if(min_val > max_val)
+    {
+      ASCENT_ERROR("Binning: axis '"<<axis_name<<"' has invalid bounds "
+                   <<"min "<<min_val<<" max "<<max_val);
+    }
+
     const int divs = num_bins + 1;
     res[axis_name +"/bins"].set(conduit::DataType::float64(divs));
     double *bins = res[axis_name +"/bins"].value();
@@ -1440,6 +1518,8 @@ binning2(const conduit::Node &dataset,
 {
   bin_axes.print();
 
+  // first verify that all variables have matching associations
+  // and are part of the same topology
   std::vector<std::string> var_names = bin_axes.child_names();
   if(!reduction_var.empty())
   {
@@ -1451,70 +1531,18 @@ binning2(const conduit::Node &dataset,
   const std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
 
   std::cout<<"Creating BINS\n";
-  conduit::Node bres = create_bins_axes(bin_axes, dataset, topo_name);
+  conduit::Node axes = create_bins_axes(bin_axes, dataset, topo_name);
   std::cout<<"DONE BINS\n";
-  return bres;
 
-  const conduit::Node &bounds = global_bounds(dataset, topo_name);
-  const double *min_coords = bounds["min_coords"].value();
-  const double *max_coords = bounds["max_coords"].value();
-  const std::string axes[3][3] = {
-      {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
-  // populate min_val, max_val, for x,y,z
-  for(int axis_num = 0; axis_num < 3; ++axis_num)
-  {
-    if(bin_axes.has_path(axes[axis_num][0]))
-    {
-      conduit::Node &axis = bin_axes[axes[axis_num][0]];
-
-      if(axis.has_path("bins"))
-      {
-        // rectilinear binning was specified
-        continue;
-      }
-
-      if(min_coords[axis_num] == std::numeric_limits<double>::max())
-      {
-        ASCENT_ERROR("Could not finds bounds for axis: "
-                     << axes[axis_num][0]
-                     << ". It probably doesn't exist in the topology: "
-                     << topo_name);
-      }
-
-      if(!axis.has_path("min_val"))
-      {
-        axis["min_val"] = min_coords[axis_num];
-      }
-
-      if(!axis.has_path("max_val"))
-      {
-        // We add eps because the last bin isn't inclusive
-        double min_val = axis["min_val"].to_float64();
-        double length = max_coords[axis_num] - min_val;
-        double eps = length * 1e-8;
-        axis["max_val"] = max_coords[axis_num] + eps;
-      }
-    }
-  }
-
-  int num_axes = bin_axes.number_of_children();
+  const int num_axes = axes.number_of_children();
 
   // allocate memory for the total number of bins
   size_t num_bins = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
-    if(bin_axes.child(axis_index).has_path("num_bins"))
-    {
-      // uniform axis
-      num_bins *= bin_axes.child(axis_index)["num_bins"].as_int32();
-    }
-    else
-    {
-      // rectilinear axis
-      num_bins *=
-          bin_axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
-    }
+    num_bins *= axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
   }
+  std::cout<<"Total bins "<<num_bins<<"\n";
 
   // we might need additional space to keep track of statistics,
   // i.e., we might need to keep track of the bin sum and counts for
@@ -1528,9 +1556,22 @@ binning2(const conduit::Node &dataset,
   {
     num_bin_vars = 1;
   }
+
   const int bins_size = num_bins * num_bin_vars;
   double *bins = new double[bins_size]();
-  init_bins(bins, bins_size, reduction_op);
+  std::cout<<"total bins allocation "<<bins_size<<"\n";
+
+  for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
+  {
+    const conduit::Node &dom = dataset.child(dom_index);
+    if(!dom.has_path("topologies/"+topo_name))
+    {
+      continue;
+    }
+    detail::centroids(dom, topo_name);
+  }
+  return axes;
+  //init_bins(bins, bins_size, reduction_op);
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {

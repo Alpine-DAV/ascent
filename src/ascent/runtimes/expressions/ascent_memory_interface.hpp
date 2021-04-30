@@ -9,7 +9,7 @@
 namespace ascent
 {
 
-using index_t = conduit::index_t;
+using index_t = conduit::int64;
 
 template<typename T>
 inline bool is_conduit_type(const conduit::Node &values);
@@ -385,10 +385,12 @@ public:
     }
     else
     {
-      int comp_idx = resolve_component(comp);
+      comp_idx = resolve_component(comp);
     }
 
     std::string leaf_path = component_path(comp_idx);
+    std::cout<<"giving out access "<<leaf_path<<" "<<location<<"\n";
+
     const T* ptr = location == "device" ? device_ptr_const(comp_idx) : host_ptr_const(comp_idx);
     return MemoryAccessor<T>(ptr, m_field[leaf_path].dtype());
   }
