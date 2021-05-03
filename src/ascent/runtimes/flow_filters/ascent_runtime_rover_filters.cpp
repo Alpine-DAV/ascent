@@ -300,7 +300,15 @@ RoverXRay::execute()
     {
       filename = expand_family_name(filename, cycle);
     }
+
     filename = output_dir(filename, graph());
+
+    if(params().has_path("blueprint"))
+    {
+
+      std::string protocol = params()["blueprint"].as_string();
+      tracer.save_blueprint(filename, protocol);
+    }
 
     if(params().has_path("image_params"))
     {

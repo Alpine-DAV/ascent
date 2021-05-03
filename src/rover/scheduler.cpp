@@ -51,6 +51,10 @@
 #include <ray_generators/camera_generator.hpp>
 #include <rover_exceptions.hpp>
 
+#include <conduit.hpp>
+#include <conduit_relay.hpp>
+#include <conduit_blueprint.hpp>
+
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
@@ -635,6 +639,87 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
   }
 }
 
+template<typename FloatType>
+void Scheduler<FloatType>::save_blueprint(std::string root_file, std::string protocol)
+{
+  int height = 0;
+  int width = 0;
+  m_ray_generator->get_dims(height, width);
+  assert( height > 0 );
+  assert( width > 0 );
+  ROVER_INFO("Saving blueprint file " << height << " "<<width);
+
+  const std::string topo_name = "image_topo";
+  const std::string coord_name = "topo";
+
+  const int num_channels = m_result.get_num_channels();
+
+  conduit::Node n_dataset;
+  conduit::Node &n_topo = n_dataset["topologies/"+topo_name];
+  n_topo["coordset"] = coord_name;
+  n_topo["type"] = "uniform";
+
+  conduit::Node &n_coords = n_dataset["coordsets/"+coord_name];
+  n_coords["type"] = "uniform";
+  n_coords["dims/i"] = num_channels + 1;
+  n_coords["dims/j"] = width + 1;
+  n_coords["dims/k"] = height + 1;
+
+  // probably want to match the physical dims of the detector
+  n_coords["origin/x"] = 0;
+  n_coords["origin/y"] = 0;
+  n_coords["origin/z"] = 0;
+
+  // scale the group spacing so we get more squarish data set
+  n_coords["spacing/dx"] = float(width) / float(num_channels);
+  n_coords["spacing/dy"] = 1.f;
+  n_coords["spacing/dz"] = 1.f;
+
+
+  if(m_render_settings.m_render_mode == energy)
+  {
+    if(m_result.has_intensity(0))
+    {
+      conduit::Node &n_int = n_dataset["fields/intensities"];
+      n_int["topology"] = topo_name;
+      n_int["association"] = "element";
+      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_intensities();
+      FloatType *ints_buffer = get_vtkm_ptr(ints);
+      // can't set external since this goes out of scope
+      n_int["values"].set(ints_buffer, ints.GetNumberOfValues());
+
+      std::vector<int> shape = {num_channels, width, height};
+      n_int["shape"].set(shape);
+      n_int["labels"].append() = "groups";
+      n_int["labels"].append() = "width";
+      n_int["labels"].append() = "height";
+    }
+
+    if(m_result.has_optical_depth(0))
+    {
+      conduit::Node &n_op = n_dataset["fields/optical_depth"];
+      n_op["topology"] = topo_name;
+      n_op["association"] = "element";
+      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_optical_depths();
+      FloatType *ints_buffer = get_vtkm_ptr(ints);
+      // can't set external since this goes out of scope
+      n_op["values"].set(ints_buffer, ints.GetNumberOfValues());
+
+      std::vector<int> shape = {num_channels, width, height};
+      n_op["shape"].set(shape);
+      n_op["labels"].append() = "groups";
+      n_op["labels"].append() = "width";
+      n_op["labels"].append() = "height";
+    }
+  }
+
+  conduit::relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
+  conduit::Node info;
+  if(!conduit::blueprint::verify("mesh",n_dataset, info))
+  {
+    info.print();
+  }
+}
 
 //
 // Explicit instantiation

@@ -42,6 +42,7 @@
 #include <energy_engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
+
 namespace rover {
 
 struct ArraySizeFunctor

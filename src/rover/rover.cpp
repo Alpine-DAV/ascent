@@ -135,6 +135,17 @@ public:
     m_scheduler->set_background(background);
   }
 
+  void save_blueprint(const std::string &root_file, const std::string protocol)
+  {
+#ifdef ROVER_PARALLEL
+    if(m_rank != 0)
+    {
+      return;
+    }
+#endif
+    m_scheduler->save_blueprint(root_file, protocol);
+  }
+
   void save_png(const std::string &file_name)
   {
 #ifdef ROVER_PARALLEL
@@ -382,6 +393,11 @@ void
 Rover::set_background(const std::vector<vtkm::Float32> &background)
 {
   m_internals->set_background(background);
+}
+
+void Rover::save_blueprint(const std::string &root_file, const std::string protocol)
+{
+  m_internals->save_blueprint(root_file, protocol);
 }
 
 void

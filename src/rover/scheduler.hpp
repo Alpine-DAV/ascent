@@ -78,6 +78,7 @@ public:
                    float max_val,
                    bool log_scale) override;
   void save_bov(std::string file_name) override;
+  virtual void save_blueprint(std::string root_file, std::string protocol) override;
 
   virtual void get_result(Image<vtkm::Float32> &image) override;
   virtual void get_result(Image<vtkm::Float64> &image) override;
