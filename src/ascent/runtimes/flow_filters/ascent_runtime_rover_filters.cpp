@@ -83,6 +83,7 @@
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
+#include <ascent_runtime_relay_filters.hpp>
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)
@@ -307,7 +308,11 @@ RoverXRay::execute()
     {
 
       std::string protocol = params()["blueprint"].as_string();
-      tracer.save_blueprint(filename, protocol);
+      conduit::Node multi_domain;
+      conduit::Node &dom = multi_domain.append();
+      tracer.to_blueprint(dom);
+      std::string result_path;
+      mesh_blueprint_save(multi_domain, filename, protocol, -1, result_path);
     }
 
     if(params().has_path("image_params"))

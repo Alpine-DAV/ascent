@@ -640,7 +640,7 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::save_blueprint(std::string root_file, std::string protocol)
+void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
 {
   int height = 0;
   int width = 0;
@@ -654,12 +654,11 @@ void Scheduler<FloatType>::save_blueprint(std::string root_file, std::string pro
 
   const int num_channels = m_result.get_num_channels();
 
-  conduit::Node n_dataset;
-  conduit::Node &n_topo = n_dataset["topologies/"+topo_name];
+  conduit::Node &n_topo = dataset["topologies/"+topo_name];
   n_topo["coordset"] = coord_name;
   n_topo["type"] = "uniform";
 
-  conduit::Node &n_coords = n_dataset["coordsets/"+coord_name];
+  conduit::Node &n_coords = dataset["coordsets/"+coord_name];
   n_coords["type"] = "uniform";
   n_coords["dims/i"] = num_channels + 1;
   n_coords["dims/j"] = width + 1;
@@ -680,7 +679,7 @@ void Scheduler<FloatType>::save_blueprint(std::string root_file, std::string pro
   {
     if(m_result.has_intensity(0))
     {
-      conduit::Node &n_int = n_dataset["fields/intensities"];
+      conduit::Node &n_int = dataset["fields/intensities"];
       n_int["topology"] = topo_name;
       n_int["association"] = "element";
       vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_intensities();
@@ -697,7 +696,7 @@ void Scheduler<FloatType>::save_blueprint(std::string root_file, std::string pro
 
     if(m_result.has_optical_depth(0))
     {
-      conduit::Node &n_op = n_dataset["fields/optical_depth"];
+      conduit::Node &n_op = dataset["fields/optical_depth"];
       n_op["topology"] = topo_name;
       n_op["association"] = "element";
       vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_optical_depths();
@@ -713,9 +712,9 @@ void Scheduler<FloatType>::save_blueprint(std::string root_file, std::string pro
     }
   }
 
-  conduit::relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
+  //conduit::relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
   conduit::Node info;
-  if(!conduit::blueprint::verify("mesh",n_dataset, info))
+  if(!conduit::blueprint::verify("mesh",dataset, info))
   {
     info.print();
   }
