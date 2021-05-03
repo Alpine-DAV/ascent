@@ -281,13 +281,16 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
   // valid single domain
   if(output.number_of_children() == 0)
   {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = blueprint::mesh::verify(data, info);
-    if(is_valid)
+    if(!data.dtype().is_empty())
     {
-      conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
+      // check to see if this is a single valid domain
+      conduit::Node info;
+      bool is_valid = blueprint::mesh::verify(data, info);
+      if(is_valid)
+      {
+        conduit::Node &dest_dom = output.append();
+        dest_dom.set_external(data);
+      }
     }
   }
 
