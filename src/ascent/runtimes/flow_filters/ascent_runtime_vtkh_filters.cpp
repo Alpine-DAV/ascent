@@ -2871,6 +2871,8 @@ VTKHProject2d::execute()
     vtkh::DataSet *output = tracer.GetOutput();
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
+    //new_coll->cycle(collection->cycle());
+    //new_coll->time(collection->time());
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete output;

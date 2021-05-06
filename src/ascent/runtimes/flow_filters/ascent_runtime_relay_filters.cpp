@@ -1133,6 +1133,27 @@ RelayIOSave::execute()
       selected.set_external(*in);
     }
 
+    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+
+    // Get the cycle and add it so filters don't have to
+    // propagate this
+    int cycle = -1;
+
+    if(meta->has_path("cycle"))
+    {
+      cycle = (*meta)["cycle"].as_int32();
+    }
+    if(cycle != -1)
+    {
+      const int num_domains = selected.number_of_children();
+      for(int i = 0; i < num_domains; ++i)
+      {
+        conduit::Node &dom = selected.child(i);
+        dom["state/cycle"] = cycle;
+      }
+    }
+
+
     int num_files = -1;
 
     if(params().has_path("num_files"))
