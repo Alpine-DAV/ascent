@@ -42,6 +42,7 @@
 #include <energy_engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
+#include <vtkm/cont/DefaultTypes.h>
 
 namespace rover {
 
@@ -200,7 +201,10 @@ EnergyEngine::detect_num_bins()
 {
   vtkm::Id absorption_size = 0;
   ArraySizeFunctor functor(&absorption_size);
-  m_data_set.GetField(this->m_primary_field).GetData().CastAndCall(functor);
+  m_data_set.GetField(this->m_primary_field).
+                            GetData().
+                            CastAndCallForTypes<vtkm::TypeListAll,
+                                                VTKM_DEFAULT_STORAGE_LIST>(functor);
   vtkm::Id num_cells = m_data_set.GetCellSet().GetNumberOfCells();
 
   assert(num_cells > 0);
