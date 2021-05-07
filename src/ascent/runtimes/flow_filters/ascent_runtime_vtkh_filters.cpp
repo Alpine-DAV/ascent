@@ -63,6 +63,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -891,8 +892,6 @@ VTKHSlice::execute()
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = new VTKHCollection();
-    new_coll->cycle(collection->cycle());
-    new_coll->time(collection->time());
     //= collection->copy_without_topology(topo_name);
     new_coll->add(*slice_output, topo_name);
     // re wrap in data object
@@ -2061,14 +2060,14 @@ VTKHHistSampling::execute()
 
     // TODO: write helper functions for this
     std::string ghost_field = "";
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    Node meta = Metadata::n_metadata;
 
-    if(meta->has_path("ghost_field"))
+    if(meta.has_path("ghost_field"))
     {
 
       // there can be multiple ghost fields on different topologies
       // We should only find one(max) associated with this vtkh data set
-      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const conduit::Node ghost_list = meta["ghost_field"];
       const int num_ghosts = ghost_list.number_of_children();
 
       for(int i = 0; i < num_ghosts; ++i)
@@ -2871,8 +2870,6 @@ VTKHProject2d::execute()
     vtkh::DataSet *output = tracer.GetOutput();
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
-    //new_coll->cycle(collection->cycle());
-    //new_coll->time(collection->time());
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete output;

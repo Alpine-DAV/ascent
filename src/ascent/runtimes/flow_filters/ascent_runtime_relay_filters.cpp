@@ -65,6 +65,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -421,10 +422,10 @@ void filter_fields(const conduit::Node &input,
     }
 
     // auto save out ghost fields from subset of topologies
-    Node * meta = graph.workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("ghost_field"))
+    Node meta = Metadata::n_metadata;
+    if(meta.has_path("ghost_field"))
     {
-      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const conduit::Node ghost_list = meta["ghost_field"];
       const int num_ghosts = ghost_list.number_of_children();
 
       for(int i = 0; i < num_ghosts; ++i)
@@ -1083,7 +1084,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = output_dir(path, graph());
+    path = output_dir(path);
 
     if(params().has_child("protocol"))
     {
@@ -1133,15 +1134,15 @@ RelayIOSave::execute()
       selected.set_external(*in);
     }
 
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    Node meta = Metadata::n_metadata;
 
     // Get the cycle and add it so filters don't have to
     // propagate this
     int cycle = -1;
 
-    if(meta->has_path("cycle"))
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].as_int32();
     }
     if(cycle != -1)
     {
