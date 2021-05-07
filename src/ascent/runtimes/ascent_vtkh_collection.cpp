@@ -274,30 +274,6 @@ std::vector<vtkm::Id> VTKHCollection::domain_ids() const
   return all_ids;
 }
 
-int
-VTKHCollection::cycle() const
-{
-  return m_cycle;
-}
-
-void
-VTKHCollection::cycle(int cycle)
-{
-  m_cycle = cycle;
-}
-
-double
-VTKHCollection::time() const
-{
-  return m_time;
-}
-
-void
-VTKHCollection::time(double time)
-{
-  m_time = time;
-}
-
 vtkh::DataSet&
 VTKHCollection::dataset_by_topology(const std::string topology_name)
 {
@@ -404,8 +380,6 @@ std::string VTKHCollection::summary() const
 }
 
 VTKHCollection::VTKHCollection()
-  : m_cycle(0),
-    m_time(0)
 {
 
 }
