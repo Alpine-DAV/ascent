@@ -60,9 +60,15 @@
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
-#include <Genten_HigherMoments.hpp>
+
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Vector.hpp"
+typedef double ttb_real;
+namespace Genten
+{
+typedef Kokkos::DefaultHostExecutionSpace DefaultHostExecutionSpace;
+}
+#include <Genten_HigherMoments.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -318,7 +324,43 @@ Learn::verify_params(const conduit::Node &params,
 
     return res;
 }
+void compute_fmms(const int & nfields,
+                  const double * kvecs,
+                  double * eigenvalues,
+                  double * fmms) // output of size fields
+{
 
+   //Now that we have the eigenvalues/vectores, compute the fmms
+
+   double sum_eigvals = 0.0;
+   for(int i = 0; i<nfields; i++)
+   {
+     fmms[i] = 0.0; //important initialization
+     //This could be better, probably, with std::transform
+     eigenvalues[i] = std::sqrt(std::abs(eigenvalues[i])); //Need to include cmath.h
+     sum_eigvals += eigenvalues[i];
+   }
+
+   for(int j = 0; j<nfields; j++)
+   {
+     for(int i = 0; i<nfields; i++)
+     {
+       fmms[i] += eigenvalues[j] * ( kvecs[i + j*nfields]
+                                    *kvecs[i + j*nfields]) ;
+     }
+   }
+
+   //Normalise
+   for(int i = 0; i<nfields; i++)
+   {
+     fmms[i] = std::abs(fmms[i]) / sum_eigvals;
+   }
+
+   //If everything is correct sum of fmms should be close to 1.0
+   //Consider an assert to check that sum is in neighbourhood of 1.0
+
+
+}
 //-----------------------------------------------------------------------------
 void
 Learn::execute()
@@ -496,7 +538,13 @@ Learn::execute()
         }
       }
       int order = 4; // default value in this function
-      double *fmms = FormRawMomentTensor(A, field_sizes[0], num_fields, order);
+      //double *fmms = FormRawMomentTensor(A, field_sizes[0], num_fields, order);
+
+      Kokkos::View<ttb_real**, Kokkos::LayoutLeft, Kokkos::DefaultHostExecutionSpace> pvecs;
+      Kokkos::View<ttb_real*, Kokkos::LayoutLeft, Kokkos::DefaultHostExecutionSpace> pvals;
+      ComputePrincipalKurtosisVectors(A, field_sizes[0], num_fields, pvecs, pvals);
+      double * domain_fmms = fmms + num_fields * i;
+      compute_fmms(num_fields, pvecs.data(), pvals.data(), domain_fmms);
     } // ends domain loop
 
     double *average_fmms = new double[num_fields];
@@ -513,12 +561,12 @@ Learn::execute()
       if(norm_eigv[i] > 1e-18)
       {
 
-      int offset = i * num_fields;
-      for(int f = 0; f < num_fields; f++)
-      {
-        double val = fmms[offset + f];
-        local_sum[f] += val;
-      }
+        int offset = i * num_fields;
+        for(int f = 0; f < num_fields; f++)
+        {
+          double val = fmms[offset + f];
+          local_sum[f] += val;
+        }
         debug<<"keep domain "<<i<<" fmms "<< fmms[offset] << " " << fmms[offset+1] << " ";
         debug<< fmms[offset+2] << " " << fmms[offset+3] << "\n";
       }
