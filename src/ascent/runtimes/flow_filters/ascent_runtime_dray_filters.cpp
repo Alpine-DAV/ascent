@@ -791,7 +791,7 @@ DRayPseudocolor::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
@@ -960,7 +960,7 @@ DRay3Slice::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 }
@@ -1166,7 +1166,7 @@ DRayVolume::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
