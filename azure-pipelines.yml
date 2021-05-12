@@ -8,8 +8,9 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-03-18-shae218ec
-  cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-03-18-shae218ec
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-05-11-sha853324
+  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-05-11-sha853324
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-04-26-sha132bd6
 
 
 # only build merge target pr to develop
@@ -43,18 +44,18 @@ stages:
 # include tpls built with uber
 - stage: Main
   jobs:
-  - job: Main_Ubuntu_18
+  - job: Main_Ubuntu
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
-    container: ${{ variables.main_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        minimal:
+        ubuntu_18_minimal:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
@@ -62,7 +63,8 @@ stages:
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
           BLT_CXX_STD: c++11
-        shared_py36_cxx11:
+        ubuntu_18_shared_py36_cxx11:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -70,7 +72,8 @@ stages:
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
           BLT_CXX_STD: c++11
-        shared_py36_cxx11_bflow:
+        ubuntu_18_shared_py36_cxx11_bflow:
+          containerImage: ${{ variables.ubuntu_18_tag }}        
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -78,7 +81,8 @@ stages:
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: ON
           BLT_CXX_STD: c++11
-        shared_py36_cxx14:
+        ubuntu_18_shared_py36_cxx14:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -86,6 +90,17 @@ stages:
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
           BLT_CXX_STD: c++14
+        ubuntu_20_10_shared_py36_cxx11:
+          containerImage: ${{ variables.ubuntu_20_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++11
+    container: $[ variables['containerImage'] ]
+   
     steps:
       - checkout: self
         clean: boolean
@@ -232,7 +247,7 @@ stages:
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
-    container: ${{ variables.cuda_tag }}
+    container: ${{ variables.ubuntu_18_cuda_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++

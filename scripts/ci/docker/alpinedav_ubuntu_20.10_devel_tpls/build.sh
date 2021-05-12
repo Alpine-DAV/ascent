@@ -1,3 +1,4 @@
+#!/bin/bash
 ###############################################################################
 # Copyright (c) 2015-2021, Lawrence Livermore National Security, LLC.
 #
@@ -41,25 +42,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+export TAG_BASE=alpinedav/ascent-ci:ubuntu-20.10-devel-tpls
 
-FROM nvidia/cuda:10.1-devel-ubuntu18.04
-# add sudo to base cuda devel env
-# so we can install additional packages as
-# non-root, but admin default user on azure pipelines
-RUN apt-get update && apt-get -y install sudo
-# install std packages we need for cuda dev env and test
-RUN apt-get update && apt-get -y install \
-               git \
-               git-lfs \
-               python \
-               gfortran \
-               zlib1g-dev \
-               curl \
-               mpich \
-               libmpich-dev \
-               libblas-dev \
-               liblapack-dev \
-               unzip \
-               vim
+date
 
+python ../build_and_tag.py ${TAG_BASE}
+
+date
 

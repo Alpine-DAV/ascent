@@ -65,6 +65,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -281,13 +282,16 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
   // valid single domain
   if(output.number_of_children() == 0)
   {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = blueprint::mesh::verify(data, info);
-    if(is_valid)
+    if(!data.dtype().is_empty())
     {
-      conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
+      // check to see if this is a single valid domain
+      conduit::Node info;
+      bool is_valid = blueprint::mesh::verify(data, info);
+      if(is_valid)
+      {
+        conduit::Node &dest_dom = output.append();
+        dest_dom.set_external(data);
+      }
     }
   }
 
@@ -418,10 +422,10 @@ void filter_fields(const conduit::Node &input,
     }
 
     // auto save out ghost fields from subset of topologies
-    Node * meta = graph.workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("ghost_field"))
+    Node meta = Metadata::n_metadata;
+    if(meta.has_path("ghost_field"))
     {
-      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const conduit::Node ghost_list = meta["ghost_field"];
       const int num_ghosts = ghost_list.number_of_children();
 
       for(int i = 0; i < num_ghosts; ++i)
@@ -1080,7 +1084,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = output_dir(path, graph());
+    path = output_dir(path);
 
     if(params().has_child("protocol"))
     {
@@ -1129,6 +1133,27 @@ RelayIOSave::execute()
       // select all fields
       selected.set_external(*in);
     }
+
+    Node meta = Metadata::n_metadata;
+
+    // Get the cycle and add it so filters don't have to
+    // propagate this
+    int cycle = -1;
+
+    if(meta.has_path("cycle"))
+    {
+      cycle = meta["cycle"].as_int32();
+    }
+    if(cycle != -1)
+    {
+      const int num_domains = selected.number_of_children();
+      for(int i = 0; i < num_domains; ++i)
+      {
+        conduit::Node &dom = selected.child(i);
+        dom["state/cycle"] = cycle;
+      }
+    }
+
 
     int num_files = -1;
 

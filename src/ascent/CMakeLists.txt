@@ -90,6 +90,7 @@ set(ascent_sources
     # runtimes
     ascent_runtime.cpp
     runtimes/ascent_main_runtime.cpp
+    runtimes/ascent_metadata.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
     runtimes/ascent_transmogrifier.cpp
@@ -141,6 +142,7 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_parser.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
+    runtimes/ascent_metadata.hpp
     runtimes/ascent_flow_runtime.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_param_check.hpp
@@ -369,7 +371,7 @@ if(MPI_FOUND)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)

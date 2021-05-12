@@ -42,24 +42,36 @@
 #
 ###############################################################################
 
-FROM nvidia/cuda:10.1-devel-ubuntu18.04
-# add sudo to base cuda devel env
+FROM ubuntu:20.10
+# add sudo to base ubuntu container
 # so we can install additional packages as
 # non-root, but admin default user on azure pipelines
 RUN apt-get update && apt-get -y install sudo
-# install std packages we need for cuda dev env and test
+# install std packages
 RUN apt-get update && apt-get -y install \
-               git \
-               git-lfs \
-               python \
-               gfortran \
-               zlib1g-dev \
-               curl \
-               mpich \
-               libmpich-dev \
-               libblas-dev \
-               liblapack-dev \
-               unzip \
-               vim
-
+             binutils \
+             gcc \
+             g++ \
+             gfortran \
+             python \
+             perl \
+             git \
+             git-lfs \
+             curl \
+             wget \
+             tar \
+             unzip \
+             build-essential \
+             libncurses-dev \
+             libssl-dev \
+             libblas-dev \
+             liblapack-dev \
+             zlib1g-dev \
+             libgdbm-dev \
+             libreadline-dev \
+             libsqlite3-dev \
+             libbz2-dev \
+             mpich \
+             libmpich-dev \
+             vim
 
