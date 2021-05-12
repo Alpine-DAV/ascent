@@ -127,8 +127,8 @@ else
                           -lvtkh_compositing \
                           -lvtkh_filters \
                           -lvtkh_core \
-                          -lvtkh_lodepng \
-                          -lvtkh_utils
+                          -lvtkh_utils \
+                          -lvtkh_lodepng
 
     # If using VTKH with mpi
     ASCENT_VTKH_MPI_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
