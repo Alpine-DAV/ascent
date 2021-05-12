@@ -577,8 +577,6 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
 
     }
 
-    res->cycle(cycle);
-    res->time(time);
     for(auto dset_it : datasets)
     {
       res->add(dset_it.second, dset_it.first);
@@ -1673,7 +1671,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
   if(is_uniform)
   {
-    auto points = coords.GetData().Cast<vtkm::cont::ArrayHandleUniformPointCoordinates>();
+    auto points = coords.GetData().AsArrayHandle<vtkm::cont::ArrayHandleUniformPointCoordinates>();
     auto portal = points.ReadPortal();
 
     auto origin = portal.GetOrigin();
@@ -1700,23 +1698,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                                     vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
                                                     vtkm::cont::ArrayHandle<vtkm::FloatDefault>> Cartesian;
 
-    typedef vtkm::cont::ArrayHandle<vtkm::FloatDefault> HandleType;
-    typedef typename HandleType::template ExecutionTypes<vtkm::cont::DeviceAdapterTagSerial>::PortalConst PortalType;
-    typedef typename vtkm::cont::ArrayPortalToIterators<PortalType>::IteratorType IteratorType;
-
-    const auto points = coords.GetData().Cast<Cartesian>();
+    const auto points = coords.GetData().AsArrayHandle<Cartesian>();
     auto portal = points.ReadPortal();
     auto x_portal = portal.GetFirstPortal();
     auto y_portal = portal.GetSecondPortal();
     auto z_portal = portal.GetThirdPortal();
 
-    IteratorType x_iter = vtkm::cont::ArrayPortalToIterators<PortalType>(x_portal).GetBegin();
-    IteratorType y_iter = vtkm::cont::ArrayPortalToIterators<PortalType>(y_portal).GetBegin();
-    IteratorType z_iter = vtkm::cont::ArrayPortalToIterators<PortalType>(z_portal).GetBegin();
     // work around for conduit not accepting const pointers
-    vtkm::FloatDefault *x_ptr = const_cast<vtkm::FloatDefault*>(&(*x_iter));
-    vtkm::FloatDefault *y_ptr = const_cast<vtkm::FloatDefault*>(&(*y_iter));
-    vtkm::FloatDefault *z_ptr = const_cast<vtkm::FloatDefault*>(&(*z_iter));
+    vtkm::FloatDefault *x_ptr = const_cast<vtkm::FloatDefault*>(x_portal.GetArray());
+    vtkm::FloatDefault *y_ptr = const_cast<vtkm::FloatDefault*>(y_portal.GetArray());
+    vtkm::FloatDefault *z_ptr = const_cast<vtkm::FloatDefault*>(z_portal.GetArray());
 
     output["topologies/"+topo_name+"/coordset"] = coords_name;
     output["topologies/"+topo_name+"/type"] = "rectilinear";
@@ -2247,8 +2238,6 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
   node.reset();
 
   bool success = true;
-  const int cycle = collection->cycle();
-  const double time = collection->time();
   // we have to re-merge the domains so all domains with the same
   // domain id end up in a single domain
   std::map<int, std::map<std::string,vtkm::cont::DataSet>> domain_map;
@@ -2262,8 +2251,6 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
 
       conduit::Node &dom = node.append();
       dom["state/domain_id"] = (int) domain_id;
-      dom["state/cycle"] = cycle;
-      dom["state/time"] = time;
 
       for(auto topo_it : domain_it.second)
       {

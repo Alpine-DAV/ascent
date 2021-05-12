@@ -49,7 +49,7 @@ Data Binning
 Ascent's Data Binning was modeled after VisIt's Data Binning / Derived Data Field capability.
 The capability defies a good name, it is has also been called Equivalence Class Functions.
 The approach is very similar to a multi-dimensional histogram.
-You to define a multi-dimensional binning, based on either spatial coordinates or field values,  and then Ascent will loop over your mesh elements and aggregate them into these bins.
+You define a multi-dimensional binning, based on either spatial coordinates or field values,  and then Ascent will loop over your mesh elements and aggregate them into these bins.
 During the binning process, you can employ a menu of reduction functions
 (sum, average, min, max, variance, etc) depending on the type of analysis desired.
 

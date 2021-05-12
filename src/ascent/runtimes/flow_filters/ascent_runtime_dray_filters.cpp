@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
@@ -724,11 +725,11 @@ DRayPseudocolor::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -791,7 +792,7 @@ DRayPseudocolor::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
@@ -897,11 +898,11 @@ DRay3Slice::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -960,7 +961,7 @@ DRay3Slice::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 }
@@ -1072,11 +1073,11 @@ DRayVolume::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -1166,7 +1167,7 @@ DRayVolume::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
@@ -1361,7 +1362,7 @@ DRayProject2d::execute()
 
     std::string image_name;
 
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
     int width  = 512;
     int height = 512;
 
@@ -1455,9 +1456,9 @@ DRayProject2d::execute()
 
       int cycle = 0;
 
-      if(meta->has_path("cycle"))
+      if(meta.has_path("cycle"))
       {
-        cycle = (*meta)["cycle"].as_int32();
+        cycle = meta["cycle"].as_int32();
       }
       dom["state/cycle"] = cycle;
     }
@@ -1560,11 +1561,11 @@ DRayProjectColors2d::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,

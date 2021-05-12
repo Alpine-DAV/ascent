@@ -50,6 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_data_object.hpp"
+#include "ascent_metadata.hpp"
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include "ascent_vtkh_collection.hpp"
@@ -70,6 +71,40 @@
 //-----------------------------------------------------------------------------
 namespace ascent
 {
+
+namespace detail
+{
+
+void add_metadata(conduit::Node &dataset)
+{
+    int cycle = -1;
+    double time = -1.;
+
+    if(Metadata::n_metadata.has_path("cycle"))
+    {
+      cycle = Metadata::n_metadata["cycle"].to_int32();
+    }
+    if(Metadata::n_metadata.has_path("time"))
+    {
+      time = Metadata::n_metadata["time"].to_float64();
+    }
+
+    const int num_domains = dataset.number_of_children();
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = dataset.child(i);
+      if(cycle != -1)
+      {
+        dom["state/cycle"] = cycle;
+      }
+      if(time != -1.0)
+      {
+        dom["state/time"] = time;
+      }
+    }
+}
+
+} // namespace detail
 
 DataObject::DataObject()
   : m_low_bp(nullptr),
@@ -174,8 +209,6 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
   {
     if(m_source == Source::HIGH_BP)
     {
-
-      //std::shared_ptr<dray::Collection> dray(DRayCollection::blueprint_to_dray(*m_high_bp));
       std::shared_ptr<dray::Collection> collection(new dray::Collection());
       const int num_domains = m_high_bp->number_of_children();
       for(int i = 0; i < num_domains; ++i)
@@ -275,6 +308,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
     bool zero_copy = true;
     VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, true);
 
+    detail::add_metadata(*out_data);
     std::shared_ptr<conduit::Node> bp(out_data);
     m_low_bp = bp;
   }
@@ -317,6 +351,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
     bool zero_copy = true;
     VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, true);
 
+    detail::add_metadata(*out_data);
     std::shared_ptr<conduit::Node> bp(out_data);
     m_low_bp = bp;
   }

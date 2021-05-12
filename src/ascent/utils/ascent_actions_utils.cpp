@@ -217,6 +217,11 @@ void filter_fields(const conduit::Node &node,
       {
         fields.insert(child.as_string());
       }
+      // rover xray
+      if(names[i] == "absorption" || names[i] == "emission")
+      {
+        fields.insert(child.as_string());
+      }
       if(names[i] == "expression")
       {
         parse_expression(child.as_string(), fields);

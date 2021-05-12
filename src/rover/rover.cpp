@@ -135,6 +135,17 @@ public:
     m_scheduler->set_background(background);
   }
 
+  void to_blueprint(conduit::Node &dataset)
+  {
+#ifdef ROVER_PARALLEL
+    if(m_rank != 0)
+    {
+      return;
+    }
+#endif
+    m_scheduler->to_blueprint(dataset);
+  }
+
   void save_png(const std::string &file_name)
   {
 #ifdef ROVER_PARALLEL
@@ -382,6 +393,11 @@ void
 Rover::set_background(const std::vector<vtkm::Float32> &background)
 {
   m_internals->set_background(background);
+}
+
+void Rover::to_blueprint(conduit::Node &dataset)
+{
+  m_internals->to_blueprint(dataset);
 }
 
 void

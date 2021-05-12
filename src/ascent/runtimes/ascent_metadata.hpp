@@ -1,15 +1,17 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
 //
 // Produced at the Lawrence Livermore National Laboratory
 //
-// LLNL-CODE-749865
+// LLNL-CODE-716457
 //
 // All rights reserved.
 //
-// This file is part of Rover.
+// This file is part of Ascent.
 //
-// Please also read rover/LICENSE
+// For details, see: http://ascent.readthedocs.io/.
+//
+// Please also read ascent/LICENSE
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -40,46 +42,37 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef rover_png_encoder_h
-#define rover_png_encoder_h
 
-#include <string>
-// thirdparty includes
-#include <vtkh/utils/PNGEncoder.hpp>
+//-----------------------------------------------------------------------------
+///
+/// file: ascent_data_object.hpp
+///
+//-----------------------------------------------------------------------------
 
-namespace rover {
+#ifndef ASCENT_METADATA_HPP
+#define ASCENT_METADATA_HPP
 
-class PNGEncoder
+#include <conduit.hpp>
+
+//-----------------------------------------------------------------------------
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
+namespace ascent
 {
-public:
-  PNGEncoder();
-  ~PNGEncoder();
-
-  void           Encode(const unsigned char *rgba_in,
-                        const int width,
-                        const int height);
-  void           Encode(const float *rgba_in,
-                        const int width,
-                        const int height);
-
-  void           Encode(const double *rgba_in,
-                        const int width,
-                        const int height);
-
-  void           EncodeChannel(const float *buffer_in,
-                               const int width,
-                               const int height);
-
-  void           EncodeChannel(const double *buffer_in,
-                               const int width,
-                               const int height);
-
-  void           Save(const std::string &filename);
-
-private:
-  vtkh::PNGEncoder m_encoder;
+// this is a place for things everyone might need to know
+// ghost_fields,
+// refinement_level
+// default_directories
+// cycle and time
+// PopoulateMetaData fills this inside the main runtime
+struct Metadata
+{
+  static conduit::Node n_metadata;
 };
 
-} // namespace rover
-
+//-----------------------------------------------------------------------------
+};
 #endif
+//-----------------------------------------------------------------------------
+// -- end ascent:: --
+//-----------------------------------------------------------------------------

@@ -181,7 +181,6 @@ TEST(ascent_runtime_options, test_errors)
     Node n;
     // these will error to std::out, but we want to check they dont cras
     ascent.publish(n);
-    ascent.publish(n);
     ascent.close();
 
     Node open_opts;
@@ -189,7 +188,6 @@ TEST(ascent_runtime_options, test_errors)
     ascent.open(open_opts);
     ascent.close();
 
-    EXPECT_THROW(ascent.publish(n),conduit::Error);
     EXPECT_THROW(ascent.publish(n),conduit::Error);
     ascent.close();
 

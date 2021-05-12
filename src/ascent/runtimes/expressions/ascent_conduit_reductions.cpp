@@ -127,7 +127,8 @@ struct MaxCompare
 
 #ifdef ASCENT_USE_OPENMP
     #pragma omp declare reduction(maximum: struct MaxCompare : \
-        omp_out = omp_in.value > omp_out.value ? omp_in : omp_out)
+        omp_out = omp_in.value > omp_out.value ? omp_in : omp_out) \
+        initializer(omp_priv={std::numeric_limits<double>::lowest(),0})
 #endif
 
 struct MaxFunctor
@@ -167,7 +168,8 @@ struct MinCompare
 
 #ifdef ASCENT_USE_OPENMP
     #pragma omp declare reduction(minimum: struct MinCompare : \
-        omp_out = omp_in.value < omp_out.value ? omp_in : omp_out)
+        omp_out = omp_in.value < omp_out.value ? omp_in : omp_out) \
+        initializer(omp_priv={std::numeric_limits<double>::max(),0})
 #endif
 
 struct MinFunctor
