@@ -71,6 +71,7 @@
 
 #include <flow.hpp>
 #include <ascent_actions_utils.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
@@ -1062,8 +1063,8 @@ AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
   const int num_domains = m_source.number_of_children();
-  int cycle = 0;
-  float time = 0.f;
+  int cycle = -1;
+  float time = -1.f;
 
   for(int i = 0; i < num_domains; ++i)
   {
@@ -1078,18 +1079,19 @@ AscentRuntime::PopulateMetadata()
     }
   }
 
-  if(!w.registry().has_entry("metadata"))
+
+  if(cycle != -1)
   {
-    conduit::Node *meta = new conduit::Node();
-    w.registry().add<conduit::Node>("metadata", meta,1);
+    Metadata::n_metadata["cycle"] = cycle;
+  }
+  if(time != -1.f)
+  {
+    Metadata::n_metadata["time"] = time;
   }
 
-  Node *meta = w.registry().fetch<Node>("metadata");
-  (*meta)["cycle"] = cycle;
-  (*meta)["time"] = time;
-  (*meta)["refinement_level"] = m_refinement_level;
-  (*meta)["ghost_field"] = m_ghost_fields;
-  (*meta)["default_dir"] = m_default_output_dir;
+  Metadata::n_metadata["refinement_level"] = m_refinement_level;
+  Metadata::n_metadata["ghost_field"] = m_ghost_fields;
+  Metadata::n_metadata["default_dir"] = m_default_output_dir;
 
 }
 //-----------------------------------------------------------------------------
@@ -1614,11 +1616,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
         //w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
-        Node *meta = w.registry().fetch<Node>("metadata");
         int cycle = 0;
-        if(meta->has_path("cycle"))
+        if(Metadata::n_metadata.has_path("cycle"))
         {
-          cycle = (*meta)["cycle"].to_int32();
+          cycle = Metadata::n_metadata["cycle"].to_int32();
         }
         std::stringstream ss;
         ss<<"cycle_"<<cycle;

@@ -63,6 +63,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
@@ -510,7 +511,7 @@ public:
     // note: there is an implicit assumption here that these
     // resources are static and only need to be generated one
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
-    { 
+    {
         conduit::utils::create_directory(m_db_path);
 
         // load cinema web resources from compiled in resource tree
@@ -874,13 +875,13 @@ DefaultRender::execute()
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    Node meta = Metadata::n_metadata;
 
     int cycle = 0;
 
-    if(meta->has_path("cycle"))
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].as_int32();
     }
 
     // figure out if we need the original bounds for the scene
@@ -966,7 +967,7 @@ DefaultRender::execute()
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
 
-          std::string output_path = default_dir(graph());
+          std::string output_path = default_dir();
 
           if(!render_node.has_path("db_name"))
           {
@@ -1010,14 +1011,14 @@ DefaultRender::execute()
           if(render_node.has_path("image_name"))
           {
             image_name = render_node["image_name"].as_string();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else
           {
@@ -1047,7 +1048,7 @@ DefaultRender::execute()
       {
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
-        image_name = output_dir(image_name, graph());
+        image_name = output_dir(image_name);
       }
 
       vtkm::Bounds scene_bounds = *bounds;
