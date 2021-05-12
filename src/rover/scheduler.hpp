@@ -78,6 +78,7 @@ public:
                    float max_val,
                    bool log_scale) override;
   void save_bov(std::string file_name) override;
+  virtual void to_blueprint(conduit::Node &dataset) override;
 
   virtual void get_result(Image<vtkm::Float32> &image) override;
   virtual void get_result(Image<vtkm::Float64> &image) override;
