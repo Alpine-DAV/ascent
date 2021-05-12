@@ -83,7 +83,7 @@ VTKReader::VTKReader()
 void
 VTKReader::read_file(const std::string &file_name)
 {
-  vtkm::io::reader::VTKDataSetReader reader(file_name.c_str());
+  vtkm::io::VTKDataSetReader reader(file_name.c_str());
   m_dataset= reader.ReadDataSet();
 
 }
@@ -165,7 +165,7 @@ MultiDomainVTKReader::read_file(const std::string &directory, const std::string 
      for(int i = begining_domain; i <= end_domain; ++i)
      {
         //std::cout<<"Reading "<<number_of_domains<<" files\n";
-        vtkm::io::reader::VTKDataSetReader reader(file_names[i].c_str());
+        vtkm::io::VTKDataSetReader reader(file_names[i].c_str());
         m_datasets.push_back(reader.ReadDataSet());
         //m_datasets[i].PrintSummary(std::cout);
      }
