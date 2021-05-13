@@ -2007,41 +2007,31 @@ Binning::verify_params(const conduit::Node &params, conduit::Node &info)
   return res;
 }
 
-//-----------------------------------------------------------------------------
-void
-Binning::execute()
+void binning_interface(const std::string &reduction_var,
+                       const std::string &reduction_op,
+                       const conduit::Node &n_empty_bin_val,
+                       const conduit::Node &n_component,
+                       const conduit::Node &n_axis_list,
+                       conduit::Node &dataset,
+                       conduit::Node &n_binning,
+                       conduit::Node &n_output_axes)
 {
-  const std::string reduction_var =
-      (*input<Node>("reduction_var"))["value"].as_string();
-  const std::string reduction_op =
-      (*input<Node>("reduction_op"))["value"].as_string();
-  const conduit::Node *n_axes_list = input<Node>("bin_axes");
-  // optional arguments
-  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
-  const conduit::Node *n_component = input<conduit::Node>("component");
-  const conduit::Node *n_output_opt = input<conduit::Node>("output");
-
   std::string component = "";
-  if(!n_component->dtype().is_empty())
+  if(!n_component.dtype().is_empty())
   {
-    component = (*n_component)["value"].as_string();
+    component = n_component["value"].as_string();
   }
 
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  conduit::Node *dataset = data_object->as_low_order_bp().get();
-
-  // verify n_axes_list and put the values in n_bin_axes
-  conduit::Node n_bin_axes;
-  int num_axes = n_axes_list->number_of_children();
+  // verify n_axes_list and put the values in n_output_axes
+  int num_axes = n_axis_list.number_of_children();
   for(int i = 0; i < num_axes; ++i)
   {
-    const conduit::Node &axis = n_axes_list->child(i);
+    const conduit::Node &axis = n_axis_list.child(i);
     if(axis["type"].as_string() != "axis")
     {
       ASCENT_ERROR("Binning: bin_axes must be a list of axis");
     }
-    n_bin_axes.update(axis["value"]);
+    n_output_axes.update(axis["value"]);
   }
 
   // verify reduction_var
@@ -2055,12 +2045,12 @@ Binning::execute()
   }
   else if(!is_xyz(reduction_var))
   {
-    if(!has_field(*dataset, reduction_var))
+    if(!has_field(dataset, reduction_var))
     {
       std::string known;
-      if(dataset->number_of_children() > 0 )
+      if(dataset.number_of_children() > 0 )
       {
-        std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+        std::vector<std::string> names = dataset.child(0)["fields"].child_names();
         std::stringstream ss;
         ss << "[";
         for(size_t i = 0; i < names.size(); ++i)
@@ -2076,7 +2066,7 @@ Binning::execute()
                    << " known = " << known);
     }
 
-    bool scalar = is_scalar_field(*dataset, reduction_var);
+    bool scalar = is_scalar_field(dataset, reduction_var);
     if(!scalar && component == "")
     {
       ASCENT_ERROR("Binning: reduction variable '"
@@ -2084,7 +2074,7 @@ Binning::execute()
                    << " has multiple components and no 'component' is"
                    << " specified."
                    << " known components = "
-                   << possible_components(*dataset, reduction_var));
+                   << possible_components(dataset, reduction_var));
     }
     if(scalar && component != "")
     {
@@ -2095,13 +2085,13 @@ Binning::execute()
                    << " specified. Remove the 'component' argument"
                    << " or choose a vector variable.");
     }
-    if(!has_component(*dataset, reduction_var, component))
+    if(!has_component(dataset, reduction_var, component))
     {
       ASCENT_ERROR("Binning: reduction variable '"
                    << reduction_var << "'"
                    << " does not have component '"<<component<<"'."
                    << " known components = "
-                   << possible_components(*dataset, reduction_var));
+                   << possible_components(dataset, reduction_var));
 
     }
   }
@@ -2119,17 +2109,51 @@ Binning::execute()
   }
 
   double empty_bin_val = 0;
-  if(!n_empty_bin_val->dtype().is_empty())
+  if(!n_empty_bin_val.dtype().is_empty())
   {
-    empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
+    empty_bin_val = n_empty_bin_val["value"].to_float64();
   }
 
-  const conduit::Node &n_binning = binning(*dataset,
-                                           n_bin_axes,
-                                           reduction_var,
-                                           reduction_op,
-                                           empty_bin_val,
-                                           component);
+  n_binning = binning(dataset,
+                      n_output_axes,
+                      reduction_var,
+                      reduction_op,
+                      empty_bin_val,
+                      component);
+
+}
+//-----------------------------------------------------------------------------
+void
+Binning::execute()
+{
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
+
+  const std::string reduction_var =
+      (*input<Node>("reduction_var"))["value"].as_string();
+  const std::string reduction_op =
+      (*input<Node>("reduction_op"))["value"].as_string();
+  const conduit::Node *n_axes_list = input<Node>("bin_axes");
+  // optional arguments
+  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_component = input<conduit::Node>("component");
+  const conduit::Node *n_output_opt = input<conduit::Node>("output");
+
+
+  conduit::Node n_binning;
+  conduit::Node n_bin_axes;
+
+  binning_interface(reduction_var,
+                    reduction_op,
+                    *n_empty_bin_val,
+                    *n_component,
+                    *n_axes_list,
+                    *dataset,
+                    n_binning,
+                    n_bin_axes);
+
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";
@@ -3244,6 +3268,7 @@ Bounds::execute()
 
   set_output<conduit::Node>(output);
 }
+
 
 };
 //-----------------------------------------------------------------------------

@@ -66,6 +66,83 @@ using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
+
+TEST(ascent_binning, filter_braid_binning)
+{
+  // the vtkm runtime is currently our only rendering runtime
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent support disabled, skipping test");
+    return;
+  }
+
+  string output_path = prepare_output_dir();
+  std::string output_file =
+      conduit::utils::join_file_path(output_path, "tout_binning_filter");
+
+  remove_test_image(output_file);
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs", 20, 20, 20, data);
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "binning";
+  // filter knobs
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["reduction_op"] = "sum";
+  params["var"] = "braid";
+  params["output_field"] = "binning";
+
+  conduit::Node &axis0 = params["axes"].append();
+  axis0["var"] = "x";
+  axis0["num_bins"] = 10;
+
+  conduit::Node &axis1 = params["axes"].append();
+  axis1["var"] = "y";
+  axis1["num_bins"] = 10;
+
+  conduit::Node &axis2 = params["axes"].append();
+  axis2["var"] = "z";
+  axis2["num_bins"] = 10;
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "binning";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/image_prefix"] = output_file;
+
+  conduit::Node actions;
+  // add the pipeline
+  conduit::Node &add_pipelines= actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+  // add the scenes
+  conduit::Node &add_scenes= actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["runtime/type"] = "ascent";
+  ascent.open(ascent_opts);
+  ascent.publish(data);
+  ascent.execute(actions);
+  ascent.close();
+
+  EXPECT_TRUE(check_test_image(output_file, 0.1));
+}
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -1035,7 +1112,7 @@ TEST(ascent_expressions, lineout)
   expr = "lineout(10,vector(0,1,1),vector(5,5,5), fields=['braid'], empty_val=-1.0)";
   res = eval.evaluate(expr);
 }
-
+#endif
 //-----------------------------------------------------------------------------
 int
 main(int argc, char *argv[])

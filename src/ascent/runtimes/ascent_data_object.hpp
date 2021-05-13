@@ -88,6 +88,7 @@ public:
 
   DataObject(conduit::Node *dataset);
   void reset(conduit::Node *dataset);
+  void reset(std::shared_ptr<conduit::Node> dataset);
   bool is_valid() const { return m_source != Source::INVALID;};
 
 #if defined(ASCENT_VTKM_ENABLED)

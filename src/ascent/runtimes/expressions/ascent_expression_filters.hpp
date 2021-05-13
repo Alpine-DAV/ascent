@@ -73,6 +73,17 @@ namespace runtime
 namespace expressions
 {
 
+// Need to validate the binning input in several places
+// so consolidate this call
+void binning_interface(const std::string &reduction_var,
+                       const std::string &reduction_op,
+                       const conduit::Node &n_empty_bin_val,
+                       const conduit::Node &n_component,
+                       const conduit::Node &n_axis_list,
+                       conduit::Node &dataset,
+                       conduit::Node &n_binning,
+                       conduit::Node &n_output_axes);
+
 //-----------------------------------------------------------------------------
 ///
 /// Filters for expressions
