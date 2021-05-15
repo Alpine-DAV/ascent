@@ -53,6 +53,7 @@
 #define ASCENT_EXPRESSION_EVAL_HPP
 #include <conduit.hpp>
 #include <ascent_exports.h>
+#include <ascent_data_object.hpp>
 
 #include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
@@ -99,11 +100,12 @@ static conduit::Node m_function_table;
 class ASCENT_API ExpressionEval
 {
 protected:
-  conduit::Node *m_data;
+  DataObject m_data_object;
   flow::Workspace w;
   static Cache m_cache;
 public:
-  ExpressionEval(conduit::Node *data);
+  ExpressionEval(DataObject &dataset);
+  ExpressionEval(conduit::Node *dataset);
 
   static const conduit::Node &get_cache();
   static void get_last(conduit::Node &data);

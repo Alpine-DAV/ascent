@@ -68,6 +68,7 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
+
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, verbose_msgs)
 {
@@ -868,6 +869,67 @@ TEST(ascent_runtime_options, test_field_filtering_binning)
     std::string bin2 = "binning('braid', 'sum', [axis('bananas', [0, 2.5, 5, 7.5, 10])])";
     queries["e2/params/expression"] = bin2;
     queries["e2/params/name"] = "binnning2";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_queries = actions.append();
+    add_queries["action"] = "add_queries";
+    add_queries["queries"] = queries;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_field_filtering_lineout)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with dray support
+    if(n["runtimes/ascent/dray/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent Devil Ray  support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    data["fields/bananas"] = data["fields/braid"];
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    data["state/cycle"] = 100;
+    data["state/time"] = 1.3;
+    data["state/domain_id"] = 0;
+
+    ASCENT_INFO("Testing filtering field list");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node queries;
+
+    std::string lineout = "lineout(10, vector(0,1,1), vector(5,5,5), fields = ['braid', 'bananas'])";
+    queries["e1/params/expression"] = lineout;
+    queries["e1/params/name"] = "binnning";
 
     conduit::Node actions;
     // add the extracts

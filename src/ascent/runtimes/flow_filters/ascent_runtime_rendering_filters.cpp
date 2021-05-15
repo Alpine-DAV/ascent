@@ -216,6 +216,12 @@ protected:
   std::shared_ptr<VTKHCollection> m_collection;
   std::string m_topo_name;
   bool m_valid;
+  // we have to keep the data object that spit out
+  // the vtkh collection we are rendering since
+  // this could be a temporary result created by a
+  // pipeline. If we dont' keep it, then it will
+  // be freed before we can render it
+  DataObject m_data;
 public:
   RendererContainer()
    : m_valid(false)
@@ -224,12 +230,14 @@ public:
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
                     std::shared_ptr<VTKHCollection> collection,
-                    std::string topo_name)
+                    std::string topo_name,
+                    DataObject &data_object)
     : m_key(key),
       m_registry(r),
       m_collection(collection),
       m_topo_name(topo_name),
-      m_valid(true)
+      m_valid(true),
+      m_data(data_object)
   {
     // we have to keep around the dataset so we bring the
     // whole collection with us
@@ -1483,11 +1491,14 @@ CreatePlot::execute()
 
     std::string key = this->name() + "_cont";
 
-    detail::RendererContainer *container = new detail::RendererContainer(key,
-                                                                         &graph().workspace().registry(),
-                                                                         renderer,
-                                                                         collection,
-                                                                         topo_name);
+    detail::RendererContainer *container
+      = new detail::RendererContainer(key,
+                                      &graph().workspace().registry(),
+                                      renderer,
+                                      collection,
+                                      topo_name,
+                                      *data_object);
+
     set_output<detail::RendererContainer>(container);
 
 }
