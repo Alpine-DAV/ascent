@@ -1994,7 +1994,6 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "bin_axes";
   i["port_names"].append() = "empty_bin_val";
   i["port_names"].append() = "component";
-  i["port_names"].append() = "output";
   i["output_port"] = "true";
 }
 
@@ -2139,8 +2138,6 @@ Binning::execute()
   // optional arguments
   const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
   const conduit::Node *n_component = input<conduit::Node>("component");
-  const conduit::Node *n_output_opt = input<conduit::Node>("output");
-
 
   conduit::Node n_binning;
   conduit::Node n_bin_axes;
@@ -2169,28 +2166,6 @@ Binning::execute()
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
 
-  if(!n_output_opt->dtype().is_empty())
-  {
-    const std::string &output_opt = (*n_output_opt)["value"].as_string();
-    if(output_opt != "none" && output_opt != "bins" && output_opt != "mesh")
-    {
-      ASCENT_ERROR("Unknown ouput_opt: '"
-                   << output_opt
-                   << "'. Known output options are: 'none', 'bins', 'mesh'.");
-    }
-    if(output_opt == "bins")
-    {
-      conduit::Node n_binning_mesh;
-      binning_mesh(*output, n_binning_mesh);
-      n_binning_mesh["state/cycle"] = 100;
-      n_binning_mesh["state/domain_id"] = 0;
-      dataset->child(0).update(n_binning_mesh);
-    }
-    else if(output_opt == "mesh")
-    {
-      paint_binning(*output, *dataset);
-    }
-  }
 }
 
 //-----------------------------------------------------------------------------

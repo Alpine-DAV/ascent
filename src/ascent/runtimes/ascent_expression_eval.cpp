@@ -751,13 +751,6 @@ initialize_functions()
   binning_sig["args/component/description"] =
       "the component of a vector field to use for the reduction."
       " Example 'x' for a field defined as 'velocity/x'";
-  binning_sig["args/output/type"] = "string";
-  binning_sig["args/output/optional"];
-  binning_sig["args/output/description"] =
-      "Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer "
-      "dimensions will be output as a new topology on the dataset. This is "
-      "useful for directly visualizing the binning. If set to ``'mesh'`` the "
-      "bins will be \"painted\" back onto the original mesh as a new field.";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
   // -------------------------------------------------------------
