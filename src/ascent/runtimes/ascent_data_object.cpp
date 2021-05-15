@@ -117,7 +117,7 @@ DataObject::DataObject()
 #endif
     m_source(Source::INVALID)
 {
-
+  m_name = "default";
 }
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -130,7 +130,7 @@ DataObject::DataObject(VTKHCollection *dataset)
 #endif
     m_source(Source::VTKH)
 {
-
+  m_name = "default";
 }
 #endif
 
@@ -144,7 +144,7 @@ DataObject::DataObject(dray::Collection *dataset)
     m_dray(dataset),
     m_source(Source::DRAY)
 {
-
+  m_name = "default";
 }
 #endif
 
@@ -159,6 +159,17 @@ DataObject::DataObject(conduit::Node *dataset)
 #endif
 {
   reset(dataset);
+  m_name = "default";
+}
+
+void DataObject::name(const std::string n)
+{
+  m_name = n;
+}
+
+std::string DataObject::name() const
+{
+  return m_name;
 }
 
 void DataObject::reset(std::shared_ptr<conduit::Node> dataset)
@@ -190,6 +201,11 @@ void DataObject::reset(std::shared_ptr<conduit::Node> dataset)
     m_source = Source::LOW_BP;
   }
 }
+
+DataObject::~DataObject()
+{
+}
+
 void DataObject::reset(conduit::Node *dataset)
 {
   bool high_order = Transmogrifier::is_high_order(*dataset);

@@ -82,6 +82,7 @@ class DataObject
 public:
   enum class Source { VTKH, LOW_BP, HIGH_BP, DRAY, INVALID};
   DataObject();
+  ~DataObject();
   //
   // Constructors take ownership of pointers
   //
@@ -90,6 +91,8 @@ public:
   void reset(conduit::Node *dataset);
   void reset(std::shared_ptr<conduit::Node> dataset);
   bool is_valid() const { return m_source != Source::INVALID;};
+  void name(const std::string n);
+  std::string name() const;
 
 #if defined(ASCENT_VTKM_ENABLED)
   DataObject(VTKHCollection *dataset);
@@ -119,6 +122,7 @@ protected:
 #endif
 
   Source m_source;
+  std::string m_name;
 };
 
 //-----------------------------------------------------------------------------

@@ -437,13 +437,27 @@ DataBinning::execute()
     }
     // create a new reduced size mesh from the binning
     conduit::Node *out_data = new conduit::Node();
-    DataObject  *d_output = new DataObject(out_data);
-    // TODO: only rank 0
-    conduit::Node &n_binning_mesh = out_data->append();
-    expressions::binning_mesh(mesh_in, n_binning_mesh, output_field);
-    n_binning_mesh["state/cycle"] = cycle;
-    n_binning_mesh["state/time"] = time;
-    n_binning_mesh["state/domain_id"] = 0;
+    // we only have one data set so give this to rank 0
+
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+    MPI_Comm_rank(mpi_comm,&rank);
+#endif
+
+    if(rank == 0)
+    {
+      conduit::Node &n_binning_mesh = out_data->append();
+      expressions::binning_mesh(mesh_in, n_binning_mesh, output_field);
+      n_binning_mesh["state/cycle"] = cycle;
+      n_binning_mesh["state/time"] = time;
+      n_binning_mesh["state/domain_id"] = 0;
+    }
+
+    DataObject  *d_output = new DataObject();
+    d_output->reset(out_data);
+    d_output->name("binning");
     set_output<DataObject>(d_output);
   }
   else if(output_type== "mesh")
