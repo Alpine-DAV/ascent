@@ -75,6 +75,12 @@ TEST(ascent_mpi_expressions, mpi_binning_mesh)
     // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
 
     //
     // Set Up MPI
@@ -186,7 +192,12 @@ TEST(ascent_mpi_expressions, mpi_binning_bins)
     // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
     //
     // Set Up MPI
     //
