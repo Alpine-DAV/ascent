@@ -82,7 +82,6 @@ class DataObject
 public:
   enum class Source { VTKH, LOW_BP, HIGH_BP, DRAY, INVALID};
   DataObject();
-  ~DataObject();
   //
   // Constructors take ownership of pointers
   //

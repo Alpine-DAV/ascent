@@ -202,10 +202,6 @@ void DataObject::reset(std::shared_ptr<conduit::Node> dataset)
   }
 }
 
-DataObject::~DataObject()
-{
-}
-
 void DataObject::reset(conduit::Node *dataset)
 {
   bool high_order = Transmogrifier::is_high_order(*dataset);
