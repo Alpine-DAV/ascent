@@ -91,6 +91,7 @@
 #include <dray/filters/reflect.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 #include <dray/filters/volume_balance.hpp>
+#include <dray/filters/vector_component.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
@@ -1602,6 +1603,102 @@ DRayProjectColors2d::execute()
     }
 
     DataObject *res =  new DataObject(image_data);
+    set_output<DataObject>(res);
+
+}
+
+//-----------------------------------------------------------------------------
+DRayVectorComponent::DRayVectorComponent()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayVectorComponent::~DRayVectorComponent()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVectorComponent::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_vector_component";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayVectorComponent::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("component",params, info, true);
+    res &= check_string("output_name",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("component");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVectorComponent::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+      ASCENT_ERROR("dray_vector_component input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    dray::Collection *dcol = data_object->as_dray_collection().get();
+
+    std::string field_name = params()["field"].as_string();
+    // not really doing invalid results for dray atm
+    //if(!collection->has_field(field_name))
+    //{
+    //  // this creates a data object with an invalid soource
+    //  set_output<DataObject>(new DataObject());
+    //  return;
+    //}
+    int component = params()["component"].to_int32();
+    std::string res_name = params()["output_name"].as_string();
+
+    dray::VectorComponent comp;
+
+    comp.field(field_name);
+    comp.component(component);
+    comp.output_name(res_name);
+
+    dray::Collection comp_output = comp.execute(*dcol);
+    dray::Collection *output_ptr = new dray::Collection();
+    *output_ptr = comp_output;
+
+    DataObject *res =  new DataObject(output_ptr);
     set_output<DataObject>(res);
 
 }
