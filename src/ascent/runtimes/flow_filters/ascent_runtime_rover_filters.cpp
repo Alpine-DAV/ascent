@@ -308,10 +308,37 @@ RoverXRay::execute()
     if(params().has_path("blueprint"))
     {
 
+
       std::string protocol = params()["blueprint"].as_string();
       conduit::Node multi_domain;
       conduit::Node &dom = multi_domain.append();
       tracer.to_blueprint(dom);
+
+      if(dom.has_path("coordsets"))
+      {
+        int cycle = -1;
+        double time = -1.;
+
+        if(Metadata::n_metadata.has_path("cycle"))
+        {
+          cycle = Metadata::n_metadata["cycle"].to_int32();
+        }
+        if(Metadata::n_metadata.has_path("time"))
+        {
+          time = Metadata::n_metadata["time"].to_float64();
+        }
+
+        if(cycle != -1)
+        {
+          dom["state/cycle"] = cycle;
+        }
+
+        if(time != -1.)
+        {
+          dom["state/time"] = time;
+        }
+      }
+
       std::string result_path;
       mesh_blueprint_save(multi_domain, filename, protocol, -1, result_path);
     }
