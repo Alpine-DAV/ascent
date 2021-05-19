@@ -1460,9 +1460,14 @@ DRayProject2d::execute()
 
       if(meta.has_path("cycle"))
       {
-        cycle = meta["cycle"].as_int32();
+        cycle = meta["cycle"].to_int32();
       }
       dom["state/cycle"] = cycle;
+      if(meta.has_path("time"))
+      {
+        dom["state/time"] =  meta["time"].to_float64();
+      }
+
     }
 
     DataObject *res =  new DataObject(output);
