@@ -237,7 +237,7 @@ TEST(ascent_pipeline_failure, test_partial_failure)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file,0.1));
 }
 
 //-----------------------------------------------------------------------------
