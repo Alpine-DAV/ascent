@@ -198,7 +198,7 @@ stages:
       - task: PublishBuildArtifacts@1
         inputs:
           pathToPublish: $(Build.ArtifactStagingDirectory)
-          artifactName: $(Build.DefinitionName)
+          artifactName: $(Build.DefinitionName)_$(Agent.JobName)
         condition: always()
 
       - script: |
