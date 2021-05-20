@@ -6,7 +6,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## [0.7.1] - Released 2021-05-20
 
-### Preferred dependency versions  for ascent@0.7.1
+### Preferred dependency versions for ascent@0.7.1
 - conduit@0.7.2
 - dray@0.1.6
 - vtk-h@0.7.1
