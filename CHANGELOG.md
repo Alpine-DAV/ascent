@@ -4,13 +4,23 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.7.1] - Released 2021-05-20
+
+### Preferred dependency versions  for ascent@0.7.1
+- conduit@0.7.2
+- dray@0.1.6
+- vtk-h@0.7.1
+- vtk-m@1.5.5
+
+
 ### Added
 - Added Data Binning examples to the Ascent Intro Tutorial
 
 ### Fixed
 - Fixed an issue with the Data Binning bin calculation logic
 
+### Changed
+- Updated Ascent to use new conduit, dray, and vtk-h versions
 
 
 ## [0.7.0] - Released 2021-03-19
