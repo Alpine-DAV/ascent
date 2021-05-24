@@ -1168,7 +1168,7 @@ RelayIOSave::execute()
         conduit::relay::io::save(selected,path);
         result_path = path;
     }
-    else if( protocol == "blueprint/mesh/hdf5")
+    else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
     {
         mesh_blueprint_save(selected,
                             path,
@@ -1176,20 +1176,20 @@ RelayIOSave::execute()
                             num_files,
                             result_path);
     }
-    else if( protocol == "blueprint/mesh/json")
+    else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "hdf5",
+                            "json",
                             num_files,
                             result_path);
 
     }
-    else if( protocol == "blueprint/mesh/yaml")
+    else if( protocol == "blueprint/mesh/yaml" || protocol == "yaml")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "hdf5",
+                            "yaml",
                             num_files,
                             result_path);
 
