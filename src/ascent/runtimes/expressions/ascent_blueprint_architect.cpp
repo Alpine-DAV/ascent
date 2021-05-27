@@ -50,6 +50,7 @@
 
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_array.hpp"
+#include "ascent_array_utils.hpp"
 #include "ascent_dispatch.hpp"
 #include "ascent_memory_interface.hpp"
 #include "ascent_execution.hpp"
@@ -1348,6 +1349,23 @@ update_bin(double *bins,
   }
 }
 
+void init_bins(Array<double> &bins,
+               const std::string reduction_op)
+{
+  double init_val = 0.;
+  if(reduction_op == "max")
+  {
+    init_val = std::numeric_limits<double>::lowest();
+  }
+  else
+  {
+    init_val = std::numeric_limits<double>::max();
+  }
+
+  array_memset(bins, init_val);
+
+}
+
 void init_bins(double *bins,
                const int size,
                const std::string reduction_op)
@@ -1558,7 +1576,9 @@ binning2(const conduit::Node &dataset,
   }
 
   const int bins_size = num_bins * num_bin_vars;
-  double *bins = new double[bins_size]();
+  Array<double> bins;
+  bins.resize(bins_size);
+
   std::cout<<"total bins allocation "<<bins_size<<"\n";
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
@@ -1570,8 +1590,8 @@ binning2(const conduit::Node &dataset,
     }
     detail::centroids(dom, topo_name);
   }
+  init_bins(bins, reduction_op);
   return axes;
-  //init_bins(bins, bins_size, reduction_op);
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
@@ -1580,101 +1600,103 @@ binning2(const conduit::Node &dataset,
     {
       continue;
     }
+    // ensure this domain has the necessary fields
+    for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+    {
+      const conduit::Node &axis = bin_axes.child(axis_index);
+      const std::string axis_name = axis.name();
+      if(!dom.has_path("fields/" + axis_name) && !is_xyz(axis_name))
+      {
+        // return an error and skip the domain in binning
+        conduit::Node res;
+        res["error/field_name"] = axis_name;
+        continue;
+      }
+    }
 
     conduit::Node n_homes;
     populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
 
-    if(n_homes.has_path("error"))
-    {
-      ASCENT_INFO("Binning: not binning domain "
-                  << dom_index << " because field: '"
-                  << n_homes["error/field_name"].to_string()
-                  << "' was not found.");
-      continue;
-    }
-    const int *homes = n_homes.as_int_ptr();
-    const int homes_size = n_homes.dtype().number_of_elements();
+    //if(n_homes.has_path("error"))
+    //{
+    //  ASCENT_INFO("Binning: not binning domain "
+    //              << dom_index << " because field: '"
+    //              << n_homes["error/field_name"].to_string()
+    //              << "' was not found.");
+    //  continue;
+    //}
+    //const int *homes = n_homes.as_int_ptr();
+    //const int homes_size = n_homes.dtype().number_of_elements();
 
-    // update bins
-    if(reduction_var.empty())
-    {
-//#ifdef ASCENT_USE_OPENMP
-//#pragma omp parallel for
-//#endif
-      for(int i = 0; i < homes_size; ++i)
-      {
-        if(homes[i] != -1)
-        {
-          update_bin(bins, homes[i], 1, reduction_op);
-        }
-      }
-    }
-    else if(dom.has_path("fields/" + reduction_var))
-    {
-      const std::string comp_path = component == "" ? "" : "/" + component;
-      const std::string values_path
-        = "fields/" + reduction_var + "/values" + comp_path;
+    //// update bins
+    //if(reduction_var.empty())
+    //{
+    //  for(int i = 0; i < homes_size; ++i)
+    //  {
+    //    if(homes[i] != -1)
+    //    {
+    //      update_bin(bins, homes[i], 1, reduction_op);
+    //    }
+    //  }
+    //}
+    //else if(dom.has_path("fields/" + reduction_var))
+    //{
+    //  const std::string comp_path = component == "" ? "" : "/" + component;
+    //  const std::string values_path
+    //    = "fields/" + reduction_var + "/values" + comp_path;
 
-      if(dom[values_path].dtype().is_float32())
-      {
-        const conduit::float32_array values = dom[values_path].value();
-//#ifdef ASCENT_USE_OPENMP
-//#pragma omp parallel for
-//#endif
-        for(int i = 0; i < homes_size; ++i)
-        {
-          if(homes[i] != -1)
-          {
-            update_bin(bins, homes[i], values[i], reduction_op);
-          }
-        }
-      }
-      else
-      {
-        const conduit::float64_array values = dom[values_path].value();
-//#ifdef ASCENT_USE_OPENMP
-//#pragma omp parallel for
-//#endif
-        for(int i = 0; i < homes_size; ++i)
-        {
-          if(homes[i] != -1)
-          {
-            update_bin(bins, homes[i], values[i], reduction_op);
-          }
-        }
-      }
-    }
-    else if(is_xyz(reduction_var))
-    {
-      int coord = reduction_var[0] - 'x';
-//#ifdef ASCENT_USE_OPENMP
-//#pragma omp parallel for
-//#endif
-      for(int i = 0; i < homes_size; ++i)
-      {
-        conduit::Node n_loc;
-        if(assoc_str == "vertex")
-        {
-          n_loc = vert_location(dom, i, topo_name);
-        }
-        else if(assoc_str == "element")
-        {
-          n_loc = element_location(dom, i, topo_name);
-        }
-        const double *loc = n_loc.value();
-        if(homes[i] != -1)
-        {
-          update_bin(bins, homes[i], loc[coord], reduction_op);
-        }
-      }
-    }
-    else
-    {
-      ASCENT_INFO("Binning: not binning domain "
-                  << dom_index << " because field: '" << reduction_var
-                  << "' was not found.");
-    }
+    //  if(dom[values_path].dtype().is_float32())
+    //  {
+    //    const conduit::float32_array values = dom[values_path].value();
+    //    for(int i = 0; i < homes_size; ++i)
+    //    {
+    //      if(homes[i] != -1)
+    //      {
+    //        update_bin(bins, homes[i], values[i], reduction_op);
+    //      }
+    //    }
+    //  }
+    //  else
+    //  {
+    //    const conduit::float64_array values = dom[values_path].value();
+    //    for(int i = 0; i < homes_size; ++i)
+    //    {
+    //      if(homes[i] != -1)
+    //      {
+    //        update_bin(bins, homes[i], values[i], reduction_op);
+    //      }
+    //    }
+    //  }
+    //}
+    //else if(is_xyz(reduction_var))
+    //{
+    //  int coord = reduction_var[0] - 'x';
+    //  for(int i = 0; i < homes_size; ++i)
+    //  {
+    //    conduit::Node n_loc;
+    //    if(assoc_str == "vertex")
+    //    {
+    //      n_loc = vert_location(dom, i, topo_name);
+    //    }
+    //    else if(assoc_str == "element")
+    //    {
+    //      n_loc = element_location(dom, i, topo_name);
+    //    }
+    //    const double *loc = n_loc.value();
+    //    if(homes[i] != -1)
+    //    {
+    //      update_bin(bins, homes[i], loc[coord], reduction_op);
+    //    }
+    //  }
+    //}
+    //else
+    //{
+    //  ASCENT_INFO("Binning: not binning domain "
+    //              << dom_index << " because field: '" << reduction_var
+    //              << "' was not found.");
+    //}
   }
+#if 0
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
@@ -1857,6 +1879,7 @@ binning2(const conduit::Node &dataset,
   res["association"] = assoc_str;
   delete[] bins;
   return res;
+#endif
 }
 
 conduit::Node

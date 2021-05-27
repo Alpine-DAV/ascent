@@ -102,6 +102,7 @@ set(ascent_sources
     runtimes/expressions/ascent_expressions_parser.cpp
     runtimes/expressions/ascent_memory_manager.cpp
     runtimes/expressions/ascent_array.cpp
+    runtimes/expressions/ascent_array_utils.cpp
     runtimes/expressions/ascent_raja_policies.cpp
     runtimes/expressions/ascent_execution.cpp
     runtimes/expressions/ascent_array_internals.cpp
@@ -146,6 +147,7 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_parser.hpp
     runtimes/expressions/ascent_math.hpp
     runtimes/expressions/ascent_array.hpp
+    runtimes/expressions/ascent_array_utils.hpp
     runtimes/expressions/ascent_array_internals.hpp
     runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
@@ -180,6 +182,7 @@ if(CUDA_FOUND)
   set(ascent_cuda_sources runtimes/expressions/ascent_memory_manager.cpp
                           runtimes/expressions/ascent_conduit_reductions.cpp
                           runtimes/expressions/ascent_array.cpp
+                          runtimes/expressions/ascent_array_utils.cpp
                           runtimes/expressions/ascent_array_internals.cpp
                           runtimes/expressions/ascent_raja_policies.cpp
                           runtimes/expressions/ascent_blueprint_architect.cpp)

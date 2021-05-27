@@ -25,7 +25,7 @@ namespace runtime
 namespace expressions
 {
 
-int cell_shape(const std::string shape_type)
+static inline int cell_shape(const std::string shape_type)
 {
   int shape_id = 0;
   if(shape_type == "tri")
@@ -60,7 +60,7 @@ int cell_shape(const std::string shape_type)
 }
 
 ASCENT_EXEC
-int num_indices(const int shape_id)
+static int num_indices(const int shape_id)
 {
   int indices = 0;
   if(shape_id == 5)
@@ -274,6 +274,74 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
   {
     CudaExec exec;
     dispatch_memory_mesh(n_coords,n_topo, func, exec);
+  }
+#endif
+  else
+  {
+    //TODO: log error this could hang things
+    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+                  exec_policy);
+  }
+}
+
+template<typename Function, typename T>
+void
+exec_dispatch_array(Array<T> &array, Function &func)
+{
+  const std::string exec_policy = ExecutionManager::execution();
+
+  std::cout<<"Array Exec policy "<<exec_policy<<"\n";
+  if(exec_policy == "serial")
+  {
+    SerialExec exec;
+    func(array, exec);
+  }
+#if defined(ASCENT_USE_OPENMP)
+  else if(exec_policy == "openmp")
+  {
+    OpenMPExec exec;
+    func(array, exec);
+  }
+#endif
+#ifdef ASCENT_USE_CUDA
+  else if(exec_policy == "cuda")
+  {
+    CudaExec exec;
+    func(array, exec);
+  }
+#endif
+  else
+  {
+    //TODO: log error this could hang things
+    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+                  exec_policy);
+  }
+}
+
+template<typename Function>
+void
+exec_dispatch(Function &func)
+{
+  const std::string exec_policy = ExecutionManager::execution();
+
+  std::cout<<"Exec only policy "<<exec_policy<<"\n";
+  if(exec_policy == "serial")
+  {
+    SerialExec exec;
+    func(exec);
+  }
+#if defined(ASCENT_USE_OPENMP)
+  else if(exec_policy == "openmp")
+  {
+    OpenMPExec exec;
+    func(exec);
+  }
+#endif
+#ifdef ASCENT_USE_CUDA
+  else if(exec_policy == "cuda")
+  {
+    CudaExec exec;
+    func(exec);
   }
 #endif
   else
