@@ -89,7 +89,7 @@ class Ascent(Package, CudaPackage):
 
     # use cmake 3.14, newest that provides proper cuda support
     # and we have seen errors with cuda in 3.15
-    depends_on("cmake@3.14.1:3.14.99", type='build')
+    depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python+shared")
     depends_on("conduit~shared~python", when="~shared")
@@ -116,8 +116,8 @@ class Ascent(Package, CudaPackage):
     #######################
     # BabelFlow
     #######################
-    depends_on('babelflow@develop', when='+babelflow+mpi')
-    depends_on('pmt@develop', when='+babelflow+mpi')
+    depends_on('babelflow', when='+babelflow+mpi')
+    depends_on('pmt', when='+babelflow+mpi')
 
     #############################
     # TPLs for Runtime Features
@@ -134,32 +134,33 @@ class Ascent(Package, CudaPackage):
     depends_on("vtk-h~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
 
     # mfem
-    depends_on("mfem@4.0.2~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")
-    depends_on("mfem@4.0.2~threadsafe~openmp~shared+mpi+conduit", when="~shared+mfem+mpi")
+    depends_on("mfem~threadsafe~openmp+shared+mpi+conduit", when="+shared+mfem+mpi")
+    depends_on("mfem~threadsafe~openmp~shared+mpi+conduit", when="~shared+mfem+mpi")
 
-    depends_on("mfem@4.0.2~threadsafe~openmp+shared~mpi+conduit", when="+shared+mfem~mpi")
-    depends_on("mfem@4.0.2~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
+    depends_on("mfem~threadsafe~openmp+shared~mpi+conduit", when="+shared+mfem~mpi")
+    depends_on("mfem~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
+
 
     depends_on("adios", when="+adios")
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us
-    depends_on("dray@develop+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
-    depends_on("dray@develop+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
-    depends_on("dray@develop+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+    depends_on("dray+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
+    depends_on("dray+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
+    depends_on("dray+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
 
-    depends_on("dray@develop+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
-    depends_on("dray@develop+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
-    depends_on("dray@develop+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+    depends_on("dray+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
+    depends_on("dray+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
+    depends_on("dray+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
 
-    # devil ray variadevelopithout mpi
-    depends_on("dray@develop~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
-    depends_on("dray@develop~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
-    depends_on("dray@develop~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
+    # devil ray variants without mpi
+    depends_on("dray~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
+    depends_on("dray~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
+    depends_on("dray~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
 
-    depends_on("dray@develop~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
-    depends_on("dray@develop~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
-    depends_on("dray@develop~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+    depends_on("dray~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
+    depends_on("dray~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
+    depends_on("dray~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
 
 
     #######################

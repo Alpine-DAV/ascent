@@ -42,9 +42,8 @@
 #
 ###############################################################################
 
-
 ################################
-# cmake policy selections
+# cmake policy selection
 ################################
 # avoid warnings for project commands w/o VERSION
 cmake_policy(SET CMP0048 NEW)
@@ -53,7 +52,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.6.0")
+project(ascent VERSION "0.7.1")
 
 ################################
 # Build Options
@@ -89,6 +88,21 @@ endif()
 
 if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
   message(FATAL_ERROR "Static libraries are required when building with CUDA")
+endif()
+
+if(ENABLE_CUDA)
+    # ask politely a few times for SEPARABLE COMPILATION
+    set (CMAKE_CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "" )
+    set (CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "" )
+endif()
+
+################################
+# cmake policy selection
+################################
+# cmake 3.18+ use CMP0104 OLD to manually specify cuda flags
+#https://cmake.org/cmake/help/latest/policy/CMP0104.html
+if(POLICY CMP0104)
+    cmake_policy(SET CMP0104 OLD)
 endif()
 
 

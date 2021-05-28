@@ -263,12 +263,24 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
   flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
   flow::Workspace::register_filter_type<expressions::Bin>();
+  flow::Workspace::register_filter_type<expressions::Bounds>();
+  flow::Workspace::register_filter_type<expressions::Lineout>();
 
   initialize_functions();
   initialize_objects();
 }
 
-ExpressionEval::ExpressionEval(conduit::Node *data) : m_data(data)
+ExpressionEval::ExpressionEval(conduit::Node *data)
+{
+  // wrap the pointer in a data object we can assume that this
+  // is a valid multidomain dataset
+  conduit::Node *data_node = new conduit::Node();
+  data_node->set_external(*data);
+  m_data_object.reset(data_node);
+}
+
+ExpressionEval::ExpressionEval(DataObject &dataset)
+  : m_data_object(dataset)
 {
 }
 
@@ -613,6 +625,20 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &lineout = (*functions)["lineout"].append();
+  lineout["return_type"] = "array";
+  lineout["filter_name"] = "lineout";
+  lineout["args/samples/type"] = "int";
+  lineout["args/start/type"] = "vector";
+  lineout["args/end/type"] = "vector";
+  lineout["args/fields/type"] = "list";
+  lineout["args/fields/optional"];
+  lineout["args/empty_val/type"] = "double";
+  lineout["args/empty_val/optional"];
+  lineout["description"] = "returns a sampled based line out";
+
+  // -------------------------------------------------------------
+
   conduit::Node &quantile_sig = (*functions)["quantile"].append();
   quantile_sig["return_type"] = "double";
   quantile_sig["filter_name"] = "quantile";
@@ -716,13 +742,6 @@ initialize_functions()
   binning_sig["args/component/description"] =
       "the component of a vector field to use for the reduction."
       " Example 'x' for a field defined as 'velocity/x'";
-  binning_sig["args/output/type"] = "string";
-  binning_sig["args/output/optional"];
-  binning_sig["args/output/description"] =
-      "Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer "
-      "dimensions will be output as a new topology on the dataset. This is "
-      "useful for directly visualizing the binning. If set to ``'mesh'`` the "
-      "bins will be \"painted\" back onto the original mesh as a new field.";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
   // -------------------------------------------------------------
@@ -772,11 +791,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     expr_name = expr;
   }
 
-  w.registry().add<conduit::Node>("dataset", m_data, -1);
+  w.registry().add<DataObject>("dataset", &m_data_object, -1);
   w.registry().add<conduit::Node>("cache", &m_cache.m_data, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
   w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
-  int cycle = get_state_var(*m_data, "cycle").to_int32();
+  int cycle = get_state_var(*m_data_object.as_node().get(), "cycle").to_int32();
   w.registry().add<int>("cycle", &cycle, -1);
 
   try
@@ -813,7 +832,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node return_val = *n_res;
 
   // add the sim time
-  conduit::Node n_time = get_state_var(*m_data, "time");
+  conduit::Node n_time = get_state_var(*m_data_object.as_node().get(), "time");
   double time = 0;
   bool valid_time = false;
   if(!n_time.dtype().is_empty())

@@ -148,7 +148,11 @@ BasicQuery::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
 
     std::string expression = params()["expression"].as_string();
     std::string name = params()["name"].as_string();
@@ -157,7 +161,7 @@ BasicQuery::execute()
     Node v_info;
 
     // The mere act of a query stores the results
-    runtime::expressions::ExpressionEval eval(n_input.get());
+    runtime::expressions::ExpressionEval eval(*data_object);
     conduit::Node res = eval.evaluate(expression, name);
 
     // we never actually use the output port

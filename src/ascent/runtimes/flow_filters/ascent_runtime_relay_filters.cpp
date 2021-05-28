@@ -65,6 +65,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -157,16 +158,16 @@ mesh_bp_generate_index(const conduit::Node &mesh,
     int par_size = relay::mpi::size(comm);
 
     // we need a list of all possible topos, coordsets, etc
-    // for the blueprint index in the root file. 
+    // for the blueprint index in the root file.
     //
     // across ranks, domains may be sparse
     //  for example: a topo may only exist in one domain
-    // so we union all local mesh indices, and then 
+    // so we union all local mesh indices, and then
     // se an all gather and union the results together
-    // to create an accurate global index. 
+    // to create an accurate global index.
 
     index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
-    // note: 
+    // note:
     // find global # of domains w/o conduit_blueprint_mpi for now
     // since we aren't yet linking conduit_blueprint_mpi
     Node n_src, n_reduce;
@@ -281,13 +282,16 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
   // valid single domain
   if(output.number_of_children() == 0)
   {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = blueprint::mesh::verify(data, info);
-    if(is_valid)
+    if(!data.dtype().is_empty())
     {
-      conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
+      // check to see if this is a single valid domain
+      conduit::Node info;
+      bool is_valid = blueprint::mesh::verify(data, info);
+      if(is_valid)
+      {
+        conduit::Node &dest_dom = output.append();
+        dest_dom.set_external(data);
+      }
     }
   }
 
@@ -338,6 +342,7 @@ void filter_fields(const conduit::Node &input,
     const conduit::Node &dom = input.child(d);
     conduit::Node &out_dom = output.append();
     std::set<std::string> topos;
+    std::set<std::string> matsets;
 
     for(int f = 0; f < fields.size(); ++f)
     {
@@ -350,6 +355,13 @@ void filter_fields(const conduit::Node &input,
         const std::string topo = dom[fpath + "/topology"].as_string();
         const std::string tpath = "topologies/" + topo;
         topos.insert(topo);
+
+        // check for matset
+        if(dom.has_path(fpath + "/matset"))
+        {
+          const std::string mopo = dom[fpath + "/matset"].as_string();
+          matsets.insert(mopo);
+        }
 
         if(!out_dom.has_path(tpath))
         {
@@ -394,11 +406,26 @@ void filter_fields(const conduit::Node &input,
       }
     }
 
-    // auto save out ghost fields from subset of topologies
-    Node * meta = graph.workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("ghost_field"))
+    // add nestsets associated with referenced topologies
+    if(dom.has_path("matsets"))
     {
-      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const int num_matts = dom["matsets"].number_of_children();
+      const std::vector<std::string> matt_names = dom["matsets"].child_names();
+      for(int i = 0; i < num_matts; ++i)
+      {
+        const conduit::Node &matt = dom["matsets"].child(i);
+        if(matsets.find(matt_names[i]) != matsets.end())
+        {
+          out_dom["matsets/"+matt_names[i]].set_external(matt);
+        }
+      }
+    }
+
+    // auto save out ghost fields from subset of topologies
+    Node meta = Metadata::n_metadata;
+    if(meta.has_path("ghost_field"))
+    {
+      const conduit::Node ghost_list = meta["ghost_field"];
       const int num_ghosts = ghost_list.number_of_children();
 
       for(int i = 0; i < num_ghosts; ++i)
@@ -1057,7 +1084,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = output_dir(path, graph());
+    path = output_dir(path);
 
     if(params().has_child("protocol"))
     {
@@ -1071,6 +1098,10 @@ RelayIOSave::execute()
     }
 
     DataObject *data_object  = input<DataObject>("in");
+    if(!data_object->is_valid())
+    {
+      return;
+    }
     std::shared_ptr<Node> n_input = data_object->as_node();
 
     Node *in = n_input.get();
@@ -1103,6 +1134,27 @@ RelayIOSave::execute()
       selected.set_external(*in);
     }
 
+    Node meta = Metadata::n_metadata;
+
+    // Get the cycle and add it so filters don't have to
+    // propagate this
+    int cycle = -1;
+
+    if(meta.has_path("cycle"))
+    {
+      cycle = meta["cycle"].as_int32();
+    }
+    if(cycle != -1)
+    {
+      const int num_domains = selected.number_of_children();
+      for(int i = 0; i < num_domains; ++i)
+      {
+        conduit::Node &dom = selected.child(i);
+        dom["state/cycle"] = cycle;
+      }
+    }
+
+
     int num_files = -1;
 
     if(params().has_path("num_files"))
@@ -1116,7 +1168,7 @@ RelayIOSave::execute()
         conduit::relay::io::save(selected,path);
         result_path = path;
     }
-    else if( protocol == "blueprint/mesh/hdf5")
+    else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
     {
         mesh_blueprint_save(selected,
                             path,
@@ -1124,23 +1176,23 @@ RelayIOSave::execute()
                             num_files,
                             result_path);
     }
-    else if( protocol == "blueprint/mesh/json")
+    else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "hdf5",
+                            "json",
                             num_files,
                             result_path);
-        
+
     }
-    else if( protocol == "blueprint/mesh/yaml")
+    else if( protocol == "blueprint/mesh/yaml" || protocol == "yaml")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "hdf5",
+                            "yaml",
                             num_files,
                             result_path);
-        
+
     }
     else
     {

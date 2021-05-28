@@ -52,6 +52,7 @@
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
+#include <ascent_mpi_utils.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -893,6 +894,10 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
     const conduit::Node &dom = dataset.child(dom_index);
+    if(!dom.has_path("topologies/"+topo_name))
+    {
+      continue;
+    }
     const conduit::Node &n_topo = dom["topologies/" + topo_name];
     const std::string topo_type = n_topo["type"].as_string();
     const std::string coords_name = n_topo["coordset"].as_string();
@@ -948,6 +953,9 @@ global_topo_and_assoc(const conduit::Node &dataset,
 {
   std::string assoc_str;
   std::string topo_name;
+  bool error = false;
+  conduit::Node error_msg;
+
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
     const conduit::Node &dom = dataset.child(dom_index);
@@ -963,7 +971,8 @@ global_topo_and_assoc(const conduit::Node &dataset,
         }
         else if(assoc_str != cur_assoc_str)
         {
-          ASCENT_ERROR("All Binning fields must have the same association.");
+          error_msg.append() = "All Binning fields must have the same association.";
+          error = true;
         }
 
         const std::string cur_topo_name =
@@ -974,7 +983,8 @@ global_topo_and_assoc(const conduit::Node &dataset,
         }
         else if(topo_name != cur_topo_name)
         {
-          ASCENT_ERROR("All Binning fields must have the same topology.");
+          error_msg.append() = "All Binning fields must have the same topology.";
+          error = true;
         }
       }
     }
@@ -1000,31 +1010,108 @@ global_topo_and_assoc(const conduit::Node &dataset,
   msg["topo_name"] = topo_name;
   conduit::relay::mpi::broadcast_using_schema(msg, maxloc_res.rank, mpi_comm);
 
-  if(assoc_str != msg["assoc_str"].as_string())
+
+  if(assoc_str != "" && assoc_str != msg["assoc_str"].as_string())
   {
-    ASCENT_ERROR("All Binning fields must have the same association.");
+    error_msg.append() = "All Binning fields must have the same association.";
+    error = true;
   }
-  if(topo_name != msg["topo_name"].as_string())
+  if(topo_name != "" && topo_name != msg["topo_name"].as_string())
   {
-    ASCENT_ERROR("All Binning fields must have the same topology.");
+    error_msg.append() = "All Binning fields must have the same topology.";
+    error = true;
   }
+  assoc_str = msg["assoc_str"].as_string();
+  topo_name = msg["topo_name"].as_string();
 #endif
   if(assoc_str.empty())
   {
-    ASCENT_ERROR("Could not determine the associate from the given "
-                 "reduction_var and axes. Try supplying a field.");
+
+    error_msg.append() = "Could not determine the associate from the given "
+                          "reduction_var and axes. Try supplying a field.";
+    error = true;
   }
   else if(assoc_str != "vertex" && assoc_str != "element")
   {
-    ASCENT_ERROR("Unknown association: '"
-                 << assoc_str
-                 << "'. Binning only supports vertex and element association.");
+    error_msg.append() = "Unknown association: '"
+                       + assoc_str
+                       + "'. Binning only supports vertex and element association.";
+  }
+
+  int error_int = error ? 1 : 0;
+#ifdef ASCENT_MPI_ENABLED
+  int global_error;
+  MPI_Allreduce(&error_int, &global_error, 1, MPI_INT, MPI_MAX, mpi_comm);
+  conduit::Node global_msg;
+  error = global_error == 1;
+  if(global_error == 1)
+  {
+    conduit::relay::mpi::all_gather_using_schema(error_msg, global_msg, mpi_comm);
+    error_msg = global_msg;
+  }
+#endif
+
+  if(error)
+  {
+    ASCENT_ERROR(error_msg.to_yaml());
   }
 
   conduit::Node res;
   res["topo_name"] = topo_name;
   res["assoc_str"] = assoc_str;
   return res;
+}
+
+template<typename T>
+int find_bin(const T* bins, const int size, const T val, bool clamp)
+{
+  int first = 0;
+  int len = size;
+  while(len > 0)
+  {
+    int half = len >> 1;
+    int middle = first + half;
+
+    if(bins[middle] <= val)
+    {
+      first = middle + 1;
+      len -= half + 1;
+    }
+    else
+    {
+      len = half;
+    }
+  }
+
+  // values outside to the left will be 0 and values outside to the right
+  // will be size, that is valid bins go from 1 to size - 1
+  if(clamp)
+  {
+    first = first == 0 ? 1 : first;
+    first = first == size ? size - 1 : first;
+  }
+  else
+  {
+    // make sure that values on the far right edge of the range
+    // falls into the last bin
+    if(first == size && val == bins[first-1])
+    {
+      first--;
+    }
+    // ok, if not in the bins return -1 for not found;
+    if(first == 0 || first >= size)
+    {
+      first = -1;
+    }
+  }
+
+  if(first != -1)
+  {
+    // shift valid bins into the 0 to size - 1 range;
+    first--;
+  }
+
+  return first;
 }
 
 // returns -1 if value lies outside the range
@@ -1035,34 +1122,18 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
   if(axis.has_path("bins"))
   {
     // rectilinear
-    const conduit::float64 *bins_begin = axis["bins"].value();
-    const conduit::float64 *bins_end =
-        bins_begin + axis["bins"].dtype().number_of_elements() - 1;
-    // first element greater than value
-    const conduit::float64 *res = std::upper_bound(bins_begin, bins_end, value);
-    if(clamp)
-    {
-      if(res <= bins_begin)
-      {
-        return 0;
-      }
-      else if(res >= bins_end)
-      {
-        return bins_end - bins_begin - 1;
-      }
-    }
-    else if(res <= bins_begin || res >= bins_end)
-    {
-      return -1;
-    }
-    return (res - 1) - bins_begin;
+    const conduit::float64 *bins = axis["bins"].value();
+    const int num_bins = axis["bins"].dtype().number_of_elements();
+    return find_bin(bins, num_bins, value, clamp);
   }
   // uniform
   const double inv_delta =
       axis["num_bins"].to_float64() /
       (axis["max_val"].to_float64() - axis["min_val"].to_float64());
+
   const int bin_index =
       static_cast<int>((value - axis["min_val"].to_float64()) * inv_delta);
+
   if(clamp)
   {
     if(bin_index < 0)
@@ -1114,7 +1185,6 @@ populate_homes(const conduit::Node &dom,
   {
     homes_size = num_cells(dom, topo_name);
   }
-
   // each domain has a homes array
   // homes maps each datapoint (or cell) to an index in bins
   res.set(conduit::DataType::c_int(homes_size));
@@ -1138,13 +1208,17 @@ populate_homes(const conduit::Node &dom,
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
           const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
+          // don't set anything if we haven't found a bin yet
+          if(homes[i] != -1)
           {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
+            if(bin_index != -1)
+            {
+              homes[i] += bin_index * stride;
+            }
+            else
+            {
+              homes[i] = -1;
+            }
           }
         }
       }
@@ -1154,13 +1228,17 @@ populate_homes(const conduit::Node &dom,
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
           const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
+          // don't set anything if we haven't found a bin yet
+          if(homes[i] != -1)
           {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
+            if(bin_index != -1)
+            {
+              homes[i] += bin_index * stride;
+            }
+            else
+            {
+              homes[i] = -1;
+            }
           }
         }
       }
@@ -1181,13 +1259,17 @@ populate_homes(const conduit::Node &dom,
         }
         const double *loc = n_loc.value();
         const int bin_index = get_bin_index(loc[coord], axis);
-        if(bin_index != -1)
+        // don't set anything if we haven't found a bin yet
+        if(homes[i] != -1)
         {
-          homes[i] += bin_index * stride;
-        }
-        else
-        {
-          homes[i] = -1;
+          if(bin_index != -1)
+          {
+            homes[i] += bin_index * stride;
+          }
+          else
+          {
+            homes[i] = -1;
+          }
         }
       }
     }
@@ -1365,6 +1447,10 @@ binning(const conduit::Node &dataset,
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {
     const conduit::Node &dom = dataset.child(dom_index);
+    if(!dom.has_path("topologies/"+topo_name))
+    {
+      continue;
+    }
 
     conduit::Node n_homes;
     populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
@@ -1645,7 +1731,9 @@ binning(const conduit::Node &dataset,
 }
 
 void
-paint_binning(const conduit::Node &binning, conduit::Node &dataset)
+paint_binning(const conduit::Node &binning,
+              conduit::Node &dataset,
+              const std::string field_name)
 {
   const conduit::Node &bin_axes = binning["attrs/bin_axes/value"];
 
@@ -1698,12 +1786,18 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
     {
       reduction_var = "cnt";
     }
-    const std::string field_name =
+    std::string fname =
         "painted_" + reduction_var + "_" +
         binning["attrs/reduction_op/value"].as_string();
-    dom["fields/" + field_name + "/association"] = assoc_str;
-    dom["fields/" + field_name + "/topology"] = topo_name;
-    dom["fields/" + field_name + "/values"].set(
+
+    if(field_name != "")
+    {
+      fname = field_name;
+    }
+
+    dom["fields/" + fname + "/association"] = assoc_str;
+    dom["fields/" + fname + "/topology"] = topo_name;
+    dom["fields/" + fname + "/values"].set(
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
         dom["fields/" + field_name + "/values"].value();
@@ -1726,7 +1820,9 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
 }
 
 void
-binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
+binning_mesh(const conduit::Node &binning,
+             conduit::Node &mesh,
+             const std::string field_name)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
 
@@ -1776,11 +1872,15 @@ binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
   {
     reduction_var = "cnt";
   }
-  const std::string field_name =
+  std::string fname =
       reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();
-  mesh["fields/" + field_name + "/association"] = "element";
-  mesh["fields/" + field_name + "/topology"] = "binning_topo";
-  mesh["fields/" + field_name + "/values"].set(binning["attrs/value/value"]);
+  if(field_name != "")
+  {
+    fname = field_name;
+  }
+  mesh["fields/" + fname + "/association"] = "element";
+  mesh["fields/" + fname + "/topology"] = "binning_topo";
+  mesh["fields/" + fname + "/values"].set(binning["attrs/value/value"]);
 
   conduit::Node info;
   if(!conduit::blueprint::verify("mesh", mesh, info))
@@ -2002,25 +2102,35 @@ field_min(const conduit::Node &dataset, const std::string &field)
     }
   }
 
-  const std::string assoc_str =
-      dataset.child(0)["fields/" + field + "/association"].as_string();
-
+  // create a default location so everyone has something
+  // it won't matter since this rank cant have the value
+  double vert[3] = {0., 0., 0.};
   conduit::Node loc;
-  if(assoc_str == "vertex")
+  loc.set(vert,3);
+  std::string assoc_str = "";
+
+  if(domain != -1)
   {
-    loc = vert_location(dataset.child(domain), index);
-  }
-  else if(assoc_str == "element")
-  {
-    loc = element_location(dataset.child(domain), index);
-  }
-  else
-  {
-    ASCENT_ERROR("Location for " << assoc_str << " not implemented");
+    assoc_str = dataset.child(domain)["fields/" + field + "/association"].as_string();
+
+    if(assoc_str == "vertex")
+    {
+      loc = vert_location(dataset.child(domain), index);
+    }
+    else if(assoc_str == "element")
+    {
+      loc = element_location(dataset.child(domain), index);
+    }
+    else
+    {
+      ASCENT_ERROR("Location for " << assoc_str << " not implemented");
+    }
   }
 
   int rank = 0;
   conduit::Node res;
+  int assoc_int = assoc_str == "vertex" ? 1 : 0;
+
 #ifdef ASCENT_MPI_ENABLED
   struct MinLoc
   {
@@ -2034,12 +2144,16 @@ field_min(const conduit::Node &dataset, const std::string &field)
   MinLoc minloc = {min_value, rank};
   MinLoc minloc_res;
   MPI_Allreduce(&minloc, &minloc_res, 1, MPI_DOUBLE_INT, MPI_MINLOC, mpi_comm);
-  min_value = minloc.value;
+  min_value = minloc_res.value;
 
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, minloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, minloc_res.rank, mpi_comm);
   MPI_Bcast(&index, 1, MPI_INT, minloc_res.rank, mpi_comm);
+
+  // make sure everyone has the same assoc even if they
+  // didn't have the data
+  MPI_Bcast(&assoc_int, 1, MPI_INT, minloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
 
@@ -2048,7 +2162,7 @@ field_min(const conduit::Node &dataset, const std::string &field)
   res["rank"] = rank;
   res["domain_id"] = domain_id;
   res["index"] = index;
-  res["assoc"] = assoc_str;
+  res["assoc"] = assoc_int == 1 ? "vertex" : "element";
   res["position"] = loc;
   res["value"] = min_value;
 
@@ -2139,25 +2253,34 @@ field_max(const conduit::Node &dataset, const std::string &field)
     }
   }
 
-  const std::string assoc_str =
-      dataset.child(0)["fields/" + field + "/association"].as_string();
-
+  double vert[3] = {0., 0., 0.};
   conduit::Node loc;
-  if(assoc_str == "vertex")
+  loc.set(vert,3);
+  std::string assoc_str = "";
+
+  if(domain != -1)
   {
-    loc = vert_location(dataset.child(domain), index);
-  }
-  else if(assoc_str == "element")
-  {
-    loc = element_location(dataset.child(domain), index);
-  }
-  else
-  {
-    ASCENT_ERROR("Location for " << assoc_str << " not implemented");
+    const std::string assoc_str =
+        dataset.child(domain)["fields/" + field + "/association"].as_string();
+
+    if(assoc_str == "vertex")
+    {
+      loc = vert_location(dataset.child(domain), index);
+    }
+    else if(assoc_str == "element")
+    {
+      loc = element_location(dataset.child(domain), index);
+    }
+    else
+    {
+      ASCENT_ERROR("Location for " << assoc_str << " not implemented");
+    }
   }
 
   int rank = 0;
   conduit::Node res;
+  int assoc_int = assoc_str == "vertex" ? 1 : 0;
+
 #ifdef ASCENT_MPI_ENABLED
   struct MaxLoc
   {
@@ -2171,12 +2294,16 @@ field_max(const conduit::Node &dataset, const std::string &field)
   MaxLoc maxloc = {max_value, rank};
   MaxLoc maxloc_res;
   MPI_Allreduce(&maxloc, &maxloc_res, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mpi_comm);
-  max_value = maxloc.value;
+  max_value = maxloc_res.value;
 
   double *ploc = loc.as_float64_ptr();
   MPI_Bcast(ploc, 3, MPI_DOUBLE, maxloc_res.rank, mpi_comm);
   MPI_Bcast(&domain_id, 1, MPI_INT, maxloc_res.rank, mpi_comm);
   MPI_Bcast(&index, 1, MPI_INT, maxloc_res.rank, mpi_comm);
+
+  // make sure everyone has the same assoc even if they
+  // didn't have the data
+  MPI_Bcast(&assoc_int, 1, MPI_INT, maxloc_res.rank, mpi_comm);
 
   loc.set(ploc, 3);
   rank = maxloc_res.rank;
@@ -2184,7 +2311,7 @@ field_max(const conduit::Node &dataset, const std::string &field)
   res["rank"] = rank;
   res["domain_id"] = domain_id;
   res["index"] = index;
-  res["assoc"] = assoc_str;
+  res["assoc"] = assoc_int == 1 ? "vertex" : "element";
   res["position"] = loc;
   res["value"] = max_value;
 

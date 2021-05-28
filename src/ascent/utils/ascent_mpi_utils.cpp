@@ -129,11 +129,34 @@ int mpi_rank()
 #endif
   return rank;
 }
+
+void gather_strings(std::set<std::string> &string_set)
+{
+#ifdef ASCENT_MPI_ENABLED
+  int comm_id = flow::Workspace::default_mpi_comm();
+  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+
+  conduit::Node n_strings;
+  for(auto &name : string_set)
+  {
+    n_strings[name] = 0;
+  }
+  conduit::Node res;
+  conduit::relay::mpi::all_gather_using_schema(n_strings, res, mpi_comm);
+  int num_children = res.number_of_children();
+  for(int i = 0; i < num_children; ++i)
+  {
+    std::vector<std::string> res_names = res.child(i).child_names();
+    for(auto &str : res_names)
+    {
+      string_set.insert(str);
+    }
+  }
+#endif
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

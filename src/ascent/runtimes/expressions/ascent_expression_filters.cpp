@@ -62,7 +62,10 @@
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
+#include <ascent_config.h>
 #include <ascent_logging.hpp>
+#include <ascent_data_object.hpp>
+#include <utils/ascent_mpi_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_timer.hpp>
 #include <flow_workspace.hpp>
@@ -70,6 +73,10 @@
 #include <limits>
 #include <math.h>
 #include <typeinfo>
+
+#if defined(ASCENT_DRAY_ENABLED)
+#include <dray/queries/lineout.hpp>
+#endif
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -1121,8 +1128,9 @@ FieldMin::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1227,8 +1235,9 @@ FieldMax::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1333,8 +1342,9 @@ FieldAvg::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1385,8 +1395,9 @@ Cycle::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   conduit::Node state = get_state_var(*dataset, "cycle");
   if(!state.dtype().is_number())
@@ -1644,8 +1655,9 @@ Field::execute()
     ASCENT_ERROR("Field: Missing dataset");
   }
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!has_field(*dataset, field))
   {
@@ -1721,14 +1733,30 @@ Axis::execute()
   {
     ASCENT_ERROR("Field: Missing dataset");
   }
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, name) && !is_xyz(name))
   {
+    std::string known;
+    if(dataset->number_of_children() > 0 )
+    {
+      std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+      std::stringstream ss;
+      ss << "[";
+      for(size_t i = 0; i < names.size(); ++i)
+      {
+        ss << " '" << names[i]<<"'";
+      }
+      ss << "]";
+      known = ss.str();
+    }
+
     ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
                  "contain scalar field '"
-                 << name << "'.");
+                 << name << "'. Possible field names "<<known<<".");
   }
 
   conduit::Node *output;
@@ -1878,8 +1906,9 @@ Histogram::execute()
 
   const std::string field = (*arg1)["value"].as_string();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1961,7 +1990,6 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "bin_axes";
   i["port_names"].append() = "empty_bin_val";
   i["port_names"].append() = "component";
-  i["port_names"].append() = "output";
   i["output_port"] = "true";
 }
 
@@ -1974,40 +2002,31 @@ Binning::verify_params(const conduit::Node &params, conduit::Node &info)
   return res;
 }
 
-//-----------------------------------------------------------------------------
-void
-Binning::execute()
+void binning_interface(const std::string &reduction_var,
+                       const std::string &reduction_op,
+                       const conduit::Node &n_empty_bin_val,
+                       const conduit::Node &n_component,
+                       const conduit::Node &n_axis_list,
+                       conduit::Node &dataset,
+                       conduit::Node &n_binning,
+                       conduit::Node &n_output_axes)
 {
-  const std::string reduction_var =
-      (*input<Node>("reduction_var"))["value"].as_string();
-  const std::string reduction_op =
-      (*input<Node>("reduction_op"))["value"].as_string();
-  const conduit::Node *n_axes_list = input<Node>("bin_axes");
-  // optional arguments
-  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
-  const conduit::Node *n_component = input<conduit::Node>("component");
-  const conduit::Node *n_output_opt = input<conduit::Node>("output");
-
   std::string component = "";
-  if(!n_component->dtype().is_empty())
+  if(!n_component.dtype().is_empty())
   {
-    component = (*n_component)["value"].as_string();
+    component = n_component["value"].as_string();
   }
 
-  conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
-
-  // verify n_axes_list and put the values in n_bin_axes
-  conduit::Node n_bin_axes;
-  int num_axes = n_axes_list->number_of_children();
+  // verify n_axes_list and put the values in n_output_axes
+  int num_axes = n_axis_list.number_of_children();
   for(int i = 0; i < num_axes; ++i)
   {
-    const conduit::Node &axis = n_axes_list->child(i);
+    const conduit::Node &axis = n_axis_list.child(i);
     if(axis["type"].as_string() != "axis")
     {
       ASCENT_ERROR("Binning: bin_axes must be a list of axis");
     }
-    n_bin_axes.update(axis["value"]);
+    n_output_axes.update(axis["value"]);
   }
 
   // verify reduction_var
@@ -2021,12 +2040,12 @@ Binning::execute()
   }
   else if(!is_xyz(reduction_var))
   {
-    if(!has_field(*dataset, reduction_var))
+    if(!has_field(dataset, reduction_var))
     {
       std::string known;
-      if(dataset->number_of_children() > 0 )
+      if(dataset.number_of_children() > 0 )
       {
-        std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+        std::vector<std::string> names = dataset.child(0)["fields"].child_names();
         std::stringstream ss;
         ss << "[";
         for(size_t i = 0; i < names.size(); ++i)
@@ -2042,7 +2061,7 @@ Binning::execute()
                    << " known = " << known);
     }
 
-    bool scalar = is_scalar_field(*dataset, reduction_var);
+    bool scalar = is_scalar_field(dataset, reduction_var);
     if(!scalar && component == "")
     {
       ASCENT_ERROR("Binning: reduction variable '"
@@ -2050,7 +2069,7 @@ Binning::execute()
                    << " has multiple components and no 'component' is"
                    << " specified."
                    << " known components = "
-                   << possible_components(*dataset, reduction_var));
+                   << possible_components(dataset, reduction_var));
     }
     if(scalar && component != "")
     {
@@ -2061,13 +2080,13 @@ Binning::execute()
                    << " specified. Remove the 'component' argument"
                    << " or choose a vector variable.");
     }
-    if(!has_component(*dataset, reduction_var, component))
+    if(!has_component(dataset, reduction_var, component))
     {
       ASCENT_ERROR("Binning: reduction variable '"
                    << reduction_var << "'"
                    << " does not have component '"<<component<<"'."
                    << " known components = "
-                   << possible_components(*dataset, reduction_var));
+                   << possible_components(dataset, reduction_var));
 
     }
   }
@@ -2085,17 +2104,49 @@ Binning::execute()
   }
 
   double empty_bin_val = 0;
-  if(!n_empty_bin_val->dtype().is_empty())
+  if(!n_empty_bin_val.dtype().is_empty())
   {
-    empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
+    empty_bin_val = n_empty_bin_val["value"].to_float64();
   }
 
-  const conduit::Node &n_binning = binning(*dataset,
-                                           n_bin_axes,
-                                           reduction_var,
-                                           reduction_op,
-                                           empty_bin_val,
-                                           component);
+  n_binning = binning(dataset,
+                      n_output_axes,
+                      reduction_var,
+                      reduction_op,
+                      empty_bin_val,
+                      component);
+
+}
+//-----------------------------------------------------------------------------
+void
+Binning::execute()
+{
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
+
+  const std::string reduction_var =
+      (*input<Node>("reduction_var"))["value"].as_string();
+  const std::string reduction_op =
+      (*input<Node>("reduction_op"))["value"].as_string();
+  const conduit::Node *n_axes_list = input<Node>("bin_axes");
+  // optional arguments
+  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_component = input<conduit::Node>("component");
+
+  conduit::Node n_binning;
+  conduit::Node n_bin_axes;
+
+  binning_interface(reduction_var,
+                    reduction_op,
+                    *n_empty_bin_val,
+                    *n_component,
+                    *n_axes_list,
+                    *dataset,
+                    n_binning,
+                    n_bin_axes);
+
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";
@@ -2111,28 +2162,6 @@ Binning::execute()
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
 
-  if(!n_output_opt->dtype().is_empty())
-  {
-    const std::string &output_opt = (*n_output_opt)["value"].as_string();
-    if(output_opt != "none" && output_opt != "bins" && output_opt != "mesh")
-    {
-      ASCENT_ERROR("Unknown ouput_opt: '"
-                   << output_opt
-                   << "'. Known output options are: 'none', 'bins', 'mesh'.");
-    }
-    if(output_opt == "bins")
-    {
-      conduit::Node n_binning_mesh;
-      binning_mesh(*output, n_binning_mesh);
-      n_binning_mesh["state/cycle"] = 100;
-      n_binning_mesh["state/domain_id"] = 0;
-      dataset->child(0).update(n_binning_mesh);
-    }
-    else if(output_opt == "mesh")
-    {
-      paint_binning(*output, *dataset);
-    }
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -2490,8 +2519,10 @@ void
 FieldSum::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_sum(*dataset, field)["value"];
@@ -2535,8 +2566,10 @@ void
 FieldNanCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_nan_count(*dataset, field)["value"];
@@ -2580,8 +2613,10 @@ void
 FieldInfCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_inf_count(*dataset, field)["value"];
@@ -2950,6 +2985,257 @@ Bin::execute()
 
   (*output)["attrs/center/value"] = center;
   (*output)["attrs/center/type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Lineout::Lineout() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Lineout::~Lineout()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Lineout::declare_interface(Node &i)
+{
+  i["type_name"] = "lineout";
+  i["port_names"].append() = "samples";
+  i["port_names"].append() = "start";
+  i["port_names"].append() = "end";
+  i["port_names"].append() = "fields";
+  i["port_names"].append() = "empty_val";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Lineout::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Lineout::execute()
+{
+
+#if not defined(ASCENT_DRAY_ENABLED)
+  ASCENT_ERROR("Lineout only supported when Devil Ray is built");
+#else
+
+  conduit::Node &n_samples = *input<Node>("samples");
+  int32 samples = n_samples["value"].to_int32();;
+  if(samples < 1)
+  {
+    ASCENT_ERROR("Lineout: samples must be greater than zero: '"<<samples<<"'\n");
+  }
+
+  conduit::Node &n_start = *input<Node>("start");
+  double *p_start = n_start["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> start;
+  start[0] = static_cast<dray::Float>(p_start[0]);
+  start[1] = static_cast<dray::Float>(p_start[1]);
+  start[2] = static_cast<dray::Float>(p_start[2]);
+
+  conduit::Node &n_end= *input<Node>("end");
+  double *p_end = n_end["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> end;
+  end[0] = static_cast<dray::Float>(p_end[0]);
+  end[1] = static_cast<dray::Float>(p_end[1]);
+  end[2] = static_cast<dray::Float>(p_end[2]);
+
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  dray::Collection * collection = data_object->as_dray_collection().get();
+
+  dray::Lineout lineout;
+
+  lineout.samples(samples);
+
+  conduit::Node &n_empty_val = *input<Node>("empty_val");
+  if(!n_empty_val.dtype().is_empty())
+  {
+    double empty_val = n_empty_val["value"].to_float64();
+    lineout.empty_val(empty_val);
+  }
+
+  // figure out the number of fields we will use
+  conduit::Node &n_fields = *input<Node>("fields");
+  const int num_fields = n_fields.number_of_children();
+  if(num_fields > 0)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const conduit::Node &n_field = n_fields.child(i);
+      if(n_field["type"].as_string() != "string")
+      {
+        ASCENT_ERROR("Lineout: field list item is not a string");
+      }
+
+      lineout.add_var(n_field["value"].as_string());
+    }
+  }
+  else
+  {
+    std::set<std::string> field_names;
+    // use all fields
+    for(int i = 0; i < collection->size(); ++i)
+    {
+      dray::DataSet dset = collection->domain(i);
+      std::vector<std::string> d_names = dset.fields();
+      for(int n = 0; n < d_names.size(); ++n)
+      {
+        field_names.insert(d_names[n]);
+      }
+    }
+    gather_strings(field_names);
+  }
+
+
+
+  lineout.add_line(start, end);
+
+  dray::Lineout::Result res = lineout.execute(*collection);
+  (*output)["type"] = "lineout";
+  (*output)["attrs/empty_value/value"] = double(res.m_empty_val);
+  (*output)["attrs/empty_value/type"] = "double";
+  (*output)["attrs/samples/value"] = int(res.m_points_per_line);
+  (*output)["attrs/samples/type"] = "int";
+  // we only have one line so the size of points is the size of everything
+  const int size = res.m_points.size();
+  (*output)["attrs/coordinates/x/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/x/type"] = "array";
+  (*output)["attrs/coordinates/y/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/y/type"] = "array";
+  (*output)["attrs/coordinates/z/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/z/type"] = "array";
+  float64_array x = (*output)["attrs/coordinates/x/value"].value();
+  float64_array y = (*output)["attrs/coordinates/y/value"].value();
+  float64_array z = (*output)["attrs/coordinates/z/value"].value();
+  for(int i = 0; i < size; ++i)
+  {
+    dray::Vec<dray::Float,3> p = res.m_points.get_value(i);
+    x[i] = static_cast<double>(p[0]);
+    y[i] = static_cast<double>(p[1]);
+    z[i] = static_cast<double>(p[2]);
+  }
+
+  const int var_size = res.m_vars.size();
+  for(int v = 0; v < var_size; ++v)
+  {
+    std::string var = res.m_vars[v];
+    (*output)["attrs/vars/"+var+"/value"] = conduit::DataType::float64(size);
+    (*output)["attrs/vars/"+var+"/type"] = "array";
+    float64_array var_array = (*output)["attrs/vars/"+var+"/value"].value();
+    for(int i = 0; i < size; ++i)
+    {
+      var_array[i] = static_cast<double>(res.m_values[v].get_value(i));
+    }
+  }
+
+  set_output<conduit::Node>(output);
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+Bounds::Bounds() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Bounds::~Bounds()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Bounds::declare_interface(Node &i)
+{
+  i["type_name"] = "bounds";
+  i["port_names"].append() = "topology";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Bounds::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Bounds::execute()
+{
+  conduit::Node &n_topology = *input<Node>("topology");
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  std::set<std::string> topos;
+
+  if(!n_topology.dtype().is_empty())
+  {
+    std::string topo = n_topology["value"].as_string();
+    if(!has_topology(*dataset, topo))
+    {
+      std::set<std::string> names = topology_names(*dataset);
+      std::stringstream msg;
+      msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
+      for(auto &name : names)
+      {
+        msg<<" "<<name;
+      }
+      msg<<" ]";
+      ASCENT_ERROR(msg.str());
+    }
+    topos.insert(topo);
+  }
+  else
+  {
+    topos = topology_names(*dataset);
+  }
+
+  double inf = std::numeric_limits<double>::infinity();
+  double min_vec[3] = {inf, inf, inf};
+  double max_vec[3] = {-inf, -inf, -inf};
+  for(auto &topo_name : topos)
+  {
+    conduit::Node n_aabb = global_bounds(*dataset, topo_name);
+    double *t_min = n_aabb["min_coords"].as_float64_ptr();
+    double *t_max = n_aabb["max_coords"].as_float64_ptr();
+    for(int i = 0; i < 3; ++i)
+    {
+      min_vec[i] = std::min(t_min[i],min_vec[i]);
+      max_vec[i] = std::max(t_max[i],max_vec[i]);
+    }
+  }
+
+  (*output)["type"] = "aabb";
+  (*output)["attrs/min/value"].set(min_vec, 3);
+  (*output)["attrs/min/type"] = "vector";
+  (*output)["attrs/max/value"].set(max_vec, 3);
+  (*output)["attrs/max/type"] = "vector";
 
   set_output<conduit::Node>(output);
 }

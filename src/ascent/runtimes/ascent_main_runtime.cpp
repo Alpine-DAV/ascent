@@ -71,6 +71,7 @@
 
 #include <flow.hpp>
 #include <ascent_actions_utils.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
@@ -482,6 +483,9 @@ AscentRuntime::CreateDefaultFilters()
                       "verify",
                       0);        // default port
 
+    std::string prev_filter = "verify";
+
+#if defined(ASCENT_VTKM_ENABLED)
     // we can have multiple ghost fields
     std::vector<std::string> ghost_fields;
     const int num_children = m_ghost_fields.number_of_children();
@@ -490,7 +494,6 @@ AscentRuntime::CreateDefaultFilters()
       ghost_fields.push_back(m_ghost_fields.child(i).as_string());
     }
 
-    std::string prev_filter = "verify";
     std::string first_stripper;
     const int num_ghosts = ghost_fields.size();
     for(int i = 0; i < num_ghosts; ++i)
@@ -517,6 +520,7 @@ AscentRuntime::CreateDefaultFilters()
 
       prev_filter = filter_name;
     }
+#endif
 
     // create an alias passthrough
     w.graph().add_filter("alias",
@@ -586,9 +590,11 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
           type = type.substr(3);
       }
 
-      if(registered_filter_types()["transforms"].has_child(type))
+      const conduit::Node &n_transforms = registered_filter_types()["transforms"];
+
+      if(n_transforms.has_child(type))
       {
-          filter_name = registered_filter_types()["transforms"][type].as_string();
+          filter_name = n_transforms[type].as_string();
       }
       else
       {
@@ -653,6 +659,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                                     const std::string extract_name)
 {
   std::string filter_name;
+
+  const conduit::Node &n_extracts = registered_filter_types()["extracts"];
 
   conduit::Node params;
   if(extract.has_path("params")) params = extract["params"];
@@ -771,9 +779,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     params["source"] = py_src_final.str();
   }
   // generic extract support
-  else if(registered_filter_types()["extracts"].has_child(extract_type))
+  else if(n_extracts.has_child(extract_type))
   {
-     filter_name = registered_filter_types()["extracts"][extract_type].as_string();
+     filter_name = n_extracts[extract_type].as_string();
   }
   else
   {
@@ -917,6 +925,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 
   std::string prev_filter = plot_source;
 
+#if defined(ASCENT_VTKM_ENABLED)
   const int num_ghosts = m_ghost_fields.number_of_children();
   if(num_ghosts != 0)
   {
@@ -957,7 +966,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
       }
     }
   } // if stripping ghosts
-
+#endif
   // create an a consistent name
   std::string endpoint_name = pipeline_filter_name + "_plot_source";
 
@@ -1032,8 +1041,8 @@ AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
   const int num_domains = m_source.number_of_children();
-  int cycle = 0;
-  float time = 0.f;
+  int cycle = -1;
+  float time = -1.f;
 
   for(int i = 0; i < num_domains; ++i)
   {
@@ -1048,18 +1057,19 @@ AscentRuntime::PopulateMetadata()
     }
   }
 
-  if(!w.registry().has_entry("metadata"))
+
+  if(cycle != -1)
   {
-    conduit::Node *meta = new conduit::Node();
-    w.registry().add<conduit::Node>("metadata", meta,1);
+    Metadata::n_metadata["cycle"] = cycle;
+  }
+  if(time != -1.f)
+  {
+    Metadata::n_metadata["time"] = time;
   }
 
-  Node *meta = w.registry().fetch<Node>("metadata");
-  (*meta)["cycle"] = cycle;
-  (*meta)["time"] = time;
-  (*meta)["refinement_level"] = m_refinement_level;
-  (*meta)["ghost_field"] = m_ghost_fields;
-  (*meta)["default_dir"] = m_default_output_dir;
+  Metadata::n_metadata["refinement_level"] = m_refinement_level;
+  Metadata::n_metadata["ghost_field"] = m_ghost_fields;
+  Metadata::n_metadata["default_dir"] = m_default_output_dir;
 
 }
 //-----------------------------------------------------------------------------
@@ -1563,11 +1573,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
         // w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
-        Node *meta = w.registry().fetch<Node>("metadata");
         int cycle = 0;
-        if(meta->has_path("cycle"))
+        if(Metadata::n_metadata.has_path("cycle"))
         {
-          cycle = (*meta)["cycle"].to_int32();
+          cycle = Metadata::n_metadata["cycle"].to_int32();
         }
         std::stringstream ss;
         ss<<"cycle_"<<cycle;

@@ -367,7 +367,6 @@ public:
     virtual void   execute();
 };
 
-
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHProject2d : public ::flow::Filter
 {
@@ -387,6 +386,32 @@ class ASCENT_API VTKHCleanGrid : public ::flow::Filter
 public:
     VTKHCleanGrid();
     virtual ~VTKHCleanGrid();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHScale : public ::flow::Filter
+{
+public:
+    VTKHScale();
+    virtual ~VTKHScale();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHTriangulate : public ::flow::Filter
+{
+public:
+    VTKHTriangulate();
+    virtual ~VTKHTriangulate();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,
