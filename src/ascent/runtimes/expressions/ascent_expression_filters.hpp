@@ -520,7 +520,7 @@ public:
   virtual void execute();
 };
 
-class Bin: public ::flow::Filter
+class Bin : public ::flow::Filter
 {
 public:
   Bin();
@@ -552,6 +552,7 @@ public:
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

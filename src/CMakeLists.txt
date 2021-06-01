@@ -70,8 +70,8 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
-option(ENABLE_ADIOS2      "Build with ADIOS2"         ON)
-option(ENABLE_FIDES       "Build with Fides"          ON)
+option(ENABLE_DOCS        "Build Documentation"       ON)
+option(ENABLE_MFEM        "Enable MFEM support"       ON)
 
 option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
 
@@ -79,6 +79,7 @@ if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
   message(FATAL_ERROR "No libraries are built. "
     "Please set ENABLE_SERIAL, ENABLE_MPI or both to ON")
 endif()
+
 
 if(ENABLE_CUDA)
   cmake_minimum_required(VERSION 3.14)
@@ -179,10 +180,6 @@ include(cmake/SetupIncludes.cmake)
 # Add builtin third party libs
 ################################
 add_subdirectory(thirdparty_builtin)
-find_package(ADIOS2 REQUIRED) ##works here
-find_package(Fides REQUIRED)
-set(ASCENT_ADIOS2_ENABLED TRUE)
-
 
 ################################
 # Add our libs
@@ -219,7 +216,9 @@ endif()
 ################################
 # Add documentation targets
 ################################
-add_subdirectory(docs)
+if(ENABLE_DOCS)
+  add_subdirectory(docs)
+endif()
 
 ################################
 # Add our config helpers
@@ -235,9 +234,3 @@ if(WIN32)
 else()
     install(EXPORT ascent DESTINATION lib/cmake/${PROJECT_NAME})
 endif()
-
-
-
-
-
-

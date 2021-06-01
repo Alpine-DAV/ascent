@@ -22,6 +22,3 @@ Or on Cray systems:
 make MPI_COMPILER=ftn C_MPI_COMPILER=cc
 ```
 
-meow meow
-
-

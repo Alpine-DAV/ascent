@@ -397,7 +397,6 @@ TEST(ascent_queries, filter_params)
 }
 
 //-----------------------------------------------------------------------------
-
 int main(int argc, char* argv[])
 {
     int result = 0;
@@ -413,3 +412,5 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
+
+

@@ -367,6 +367,7 @@ public:
     virtual void   execute();
 };
 
+
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHProject2d : public ::flow::Filter
 {
@@ -379,6 +380,7 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+
 
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHCleanGrid : public ::flow::Filter

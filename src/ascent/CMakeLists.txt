@@ -68,7 +68,7 @@ set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
-set(ASCENT_ADIOS2_ENABLED ${ENABLE_ADIOS2})
+set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
@@ -372,7 +372,6 @@ if(MPI_FOUND)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
@@ -389,10 +388,11 @@ if(MPI_FOUND)
     list(APPEND ascent_headers hola/ascent_hola_mpi.hpp)
     list(APPEND ascent_sources hola/ascent_hola_mpi.cpp)
 
-    if (ENABLE_ADIOS2 AND MPI_FOUND)
-        list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
-        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
-        list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
+    # adios support is only in par (mpi ver)
+    if (ADIOS_FOUND)
+       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
+       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
+       list(APPEND ascent_mpi_thirdparty_libs adios)
     endif()
 
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
@@ -489,3 +489,5 @@ install(FILES ${ascent_headers} DESTINATION include/ascent)
 #############################################################
 install(DIRECTORY web_clients/
         DESTINATION share/ascent/web_clients/)
+
+

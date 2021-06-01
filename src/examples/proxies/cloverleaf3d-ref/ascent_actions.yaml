@@ -1,10 +1,8 @@
 -
-  action: "add_extracts"
-  extracts:
-   e1:
-    type: ADIOS2
-    params:
-     path: "./output/out.bp"
-     protocol: "adios"
-     fields:
-       - "energy"
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "volume"
+          field: "energy"

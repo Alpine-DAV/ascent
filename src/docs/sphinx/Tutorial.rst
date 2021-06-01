@@ -45,6 +45,9 @@
 Tutorial
 =================
 
+`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2020_12_17_ecp_ascent_intro.pdf>`_
+
+
 This tutorial introduces how to use Ascent, including basics about:
 
  - Formatting mesh data for Ascent
@@ -52,16 +55,13 @@ This tutorial introduces how to use Ascent, including basics about:
  - Using and combining Ascent's core building blocks: Scenes, Pipelines, Extracts, Queries, and Triggers
  - Using Ascent with the Cloverleaf3D example integration
 
-Ascent installs include standalone C++, Python, and Python-based Jupyter notebook examples for this tutorial.
+Ascent installs include standalone C++, Python, and Python-based Jupyter notebook examples for this tutorial. 
 You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
 
-`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/sc/2020_11_09_SC20_ascent_intro.pdf>`_
 
 Scheduled Tutorials:
  * ECP 2021 Annual Meeting - April 2021, Virtual
-
- * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual
 
 
 Past Tutorials:
@@ -76,3 +76,4 @@ Past Tutorials:
    Tutorial_Setup
    Tutorial_Intro
    Tutorial_CloverLeaf_Demos
+

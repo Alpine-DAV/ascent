@@ -116,9 +116,12 @@ void fill_attrs(conduit::Node &obj)
   if(type == "vector")
   {
     double *vals = obj["value"].value();
-    obj["attrs/x"] = vals[0];
-    obj["attrs/y"] = vals[1];
-    obj["attrs/z"] = vals[2];
+    obj["attrs/x/value"] = vals[0];
+    obj["attrs/x/type"] = "double";
+    obj["attrs/y/value"] = vals[1];
+    obj["attrs/y/type"] = "double";
+    obj["attrs/z/value"] = vals[2];
+    obj["attrs/z/type"] = "double";
   }
 }
 
@@ -866,6 +869,7 @@ DotAccess::execute()
                       <<" type '"<<(*n_obj)["type"].as_string()<<"'."
                       <<ss.str());
   }
+
   (*output) = (*n_obj)["attrs/" + name];
 
   set_output<conduit::Node>(output);
@@ -3239,6 +3243,8 @@ Bounds::execute()
 
   set_output<conduit::Node>(output);
 }
+
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions --

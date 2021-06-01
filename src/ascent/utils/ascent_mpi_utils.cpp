@@ -50,6 +50,9 @@
 
 #include "ascent_mpi_utils.hpp"
 #include <flow.hpp>
+#ifdef ASCENT_MPI_ENABLED
+#include <conduit_relay_mpi.hpp>
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -160,3 +163,6 @@ void gather_strings(std::set<std::string> &string_set)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+
+

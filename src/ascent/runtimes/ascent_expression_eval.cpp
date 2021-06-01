@@ -591,6 +591,15 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &bounds_sig = (*functions)["bounds"].append();
+  bounds_sig["return_type"] = "aabb";
+  bounds_sig["filter_name"] = "bounds";
+  bounds_sig["args/topology/type"] = "string";
+  bounds_sig["args/topology/optional"];
+  bounds_sig["description"] = "Returns the spatial bounds of a mesh.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
   point_and_axis_sig["return_type"] = "bin";
   point_and_axis_sig["filter_name"] = "point_and_axis";
@@ -662,7 +671,7 @@ initialize_functions()
 
   quantile_sig["description"] = "Return the `q`-th quantile of the data along \
   the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the \
-  x-axis which 50\% of the data lies below.";
+  x-axis which 50 percent of the data lies below.";
 
   // -------------------------------------------------------------
 
@@ -768,6 +777,10 @@ initialize_objects()
   conduit::Node &value_position = (*objects)["value_position/attrs"];
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
+
+  conduit::Node &aabb = (*objects)["aabb/attrs"];
+  aabb["min/type"] = "vector";
+  aabb["max/type"] = "vector";
 
   conduit::Node &vector_atts = (*objects)["vector/attrs"];
   vector_atts["x/type"] = "double";

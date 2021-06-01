@@ -83,7 +83,7 @@ TODO:
 #endif
 
 
-#include <adios2.h>
+#include <adios.h>
 #include <set>
 #include <cstring>
 #include <limits>
