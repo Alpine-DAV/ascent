@@ -16,5 +16,5 @@
  end_step=200
  test_problem 1
 
- visit_frequency=10
+ visit_frequency=1
 *endclover

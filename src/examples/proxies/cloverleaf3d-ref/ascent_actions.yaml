@@ -1,8 +1,10 @@
 -
-  action: "add_scenes"
-  scenes:
-    s1:
-      plots:
-        p1:
-          type: "volume"
-          field: "energy"
+action: "add_extracts"
+  extracts:
+   e1:
+    type: ADIOS2
+    params:
+     filename: "./output/out.bp"
+     engine: "BPFile"
+     fields:
+       - "energy"

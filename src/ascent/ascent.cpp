@@ -163,6 +163,7 @@ CheckForSettingsFile(std::string file_name,
       {
         conduit::Node file_node;
         file_node.load(file_name, protocol);
+        file_node.print();
 
         if(merge)
         {
@@ -764,5 +765,3 @@ about(conduit::Node &n)
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
-
-
