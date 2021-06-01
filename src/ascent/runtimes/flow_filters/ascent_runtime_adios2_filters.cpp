@@ -93,6 +93,10 @@ TODO:
 #include <set>
 #include <cstring>
 #include <limits>
+#include <string>
+#include <sstream>
+#include <algorithm>
+#include <iterator>
 
 #include <fides/DataSetReader.h>
 #include <fides/DataSetWriter.h>
@@ -123,7 +127,7 @@ inline ostream& operator<<(ostream& os, const set<T>& s)
     return os;
 }
 
-static fides::io::DataSetWriter *writer = NULL;
+static fides::io::DataSetAppendWriter *writer = NULL;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -196,31 +200,56 @@ ADIOS2::execute()
 {
   ASCENT_INFO("execute");
 
+  std::string engineType = params()["engine"].as_string();
+  std::string fileName   = params()["filename"].as_string();
+
   if (writer == NULL)
-    writer = new fides::io::DataSetWriter("out.bp");
+    writer = new fides::io::DataSetAppendWriter(fileName);
 
-    if(!input(0).check_type<DataObject>())
+  if(!input(0).check_type<DataObject>())
+  {
+    ASCENT_ERROR("ADIOS2 input must be a data object");
+  }
+
+  if (params().has_child("fields"))
+  {
+    std::string fields = params()["fields"].as_string();
+    if (!fields.empty())
     {
-        ASCENT_ERROR("ADIOS2 input must be a data object");
+      std::vector<std::string> fieldList;
+
+      std::istringstream iss(fields);
+      std::copy(std::istream_iterator<std::string>(iss),
+                std::istream_iterator<std::string>(),
+                std::back_inserter(fieldList));
+      /*
+      std::cout<<"Field list: "<<fieldList.size()<<std::endl;
+      for (const auto& s : fieldList)
+        std::cout<<"FIELD: "<<s<<std::endl;
+      */
+
+      writer->SetWriteFields(fieldList);
     }
+  }
 
-    DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string topo_name = detail::resolve_topology(params(),
-                                                     this->name(),
-                                                     collection);
+  DataObject *data_object = input<DataObject>(0);
+  std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+  std::string topo_name = detail::resolve_topology(params(),
+                                                   this->name(),
+                                                   collection);
 
-    vtkm::cont::PartitionedDataSet pds;
-    vtkm::Id numDS = data.GetNumberOfDomains();
-    for (vtkm::Id i = 0; i < numDS; i++)
-      pds.AppendPartition(data.GetDomain(i));
+  vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
-    writer->Write(pds, "BPFile");
+  vtkm::cont::PartitionedDataSet pds;
+  vtkm::Id numDS = data.GetNumberOfDomains();
+  for (vtkm::Id i = 0; i < numDS; i++)
+    pds.AppendPartition(data.GetDomain(i));
 
-    return;
+  writer->Write(pds, "BPFile");
+
+  return;
 
 #if 0
     if(!input("in").check_type<Node>())

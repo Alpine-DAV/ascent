@@ -1,10 +1,9 @@
 -
-action: "add_extracts"
+  action: "add_extracts"
   extracts:
-   e1:
-    type: ADIOS2
-    params:
-     filename: "./output/out.bp"
-     engine: "BPFile"
-     fields:
-       - "energy"
+    e1:
+      type: ADIOS2
+      params:
+        filename: "./output/out.bp"
+        engine: "BPFile"
+        fields: "energy"
