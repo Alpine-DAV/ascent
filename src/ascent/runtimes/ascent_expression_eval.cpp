@@ -252,6 +252,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::ArraySum>();
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
+  flow::Workspace::register_filter_type<expressions::Abs>();
   flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
@@ -476,6 +477,14 @@ initialize_functions()
   mag_sig["filter_name"] = "magnitude";
   mag_sig["args/arg1/type"] = "vector";
   mag_sig["description"] = "Return the magnitude of the input vector.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &abs_sig = (*functions)["abs"].append();
+  abs_sig["return_type"] = "double";
+  abs_sig["filter_name"] = "abs";
+  abs_sig["args/arg1/type"] = "double";
+  abs_sig["description"] = "Return the absolute value of the input.";
 
   // -------------------------------------------------------------
 

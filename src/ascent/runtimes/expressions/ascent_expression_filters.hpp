@@ -344,6 +344,17 @@ public:
   virtual void execute();
 };
 
+class Abs : public ::flow::Filter
+{
+public:
+  Abs();
+  ~Abs();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class Axis : public ::flow::Filter
 {
 public:

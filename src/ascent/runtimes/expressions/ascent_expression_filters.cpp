@@ -1617,6 +1617,51 @@ Magnitude::execute()
 }
 
 //-----------------------------------------------------------------------------
+Abs::Abs() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Abs::~Abs()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Abs::declare_interface(Node &i)
+{
+  i["type_name"] = "abs";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Abs::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Abs::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  const double *vec = (*arg1)["value"].value();
+  res = abs((*arg1)["value"].to_float64());
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 Field::Field() : Filter()
 {
   // empty
