@@ -247,7 +247,7 @@ ADIOS2::execute()
   for (vtkm::Id i = 0; i < numDS; i++)
     pds.AppendPartition(data.GetDomain(i));
 
-  writer->Write(pds, "BPFile");
+  writer->Write(pds, engineType);
 
   return;
 
