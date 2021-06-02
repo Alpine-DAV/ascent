@@ -253,7 +253,9 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
   flow::Workspace::register_filter_type<expressions::Abs>();
+  flow::Workspace::register_filter_type<expressions::Pow>();
   flow::Workspace::register_filter_type<expressions::Exp>();
+  flow::Workspace::register_filter_type<expressions::Log>();
   flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
@@ -494,6 +496,26 @@ initialize_functions()
   exp_sig["filter_name"] = "exp";
   exp_sig["args/arg1/type"] = "scalar";
   exp_sig["description"] = "Return the base e exponential.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &pow_sig = (*functions)["pow"].append();
+  pow_sig["return_type"] = "double";
+  pow_sig["filter_name"] = "pow";
+  pow_sig["args/arg1/type"] = "scalar";
+  pow_sig["args/arg2/type"] = "scalar";
+  pow_sig["description"] =
+    "Returns base raised to the power exponent."
+    " pow(base, exponent)";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &log_sig = (*functions)["log"].append();
+  log_sig["return_type"] = "double";
+  log_sig["filter_name"] = "log";
+  log_sig["args/arg1/type"] = "scalar";
+  log_sig["description"] =
+    "Returns the natural logarithm of the argument";
 
   // -------------------------------------------------------------
 
