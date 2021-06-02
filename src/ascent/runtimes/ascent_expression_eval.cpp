@@ -253,6 +253,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
   flow::Workspace::register_filter_type<expressions::Abs>();
+  flow::Workspace::register_filter_type<expressions::Exp>();
   flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
@@ -485,6 +486,14 @@ initialize_functions()
   abs_sig["filter_name"] = "abs";
   abs_sig["args/arg1/type"] = "scalar";
   abs_sig["description"] = "Return the absolute value of the input.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &exp_sig = (*functions)["exp"].append();
+  exp_sig["return_type"] = "double";
+  exp_sig["filter_name"] = "exp";
+  exp_sig["args/arg1/type"] = "scalar";
+  exp_sig["description"] = "Return the base e exponential.";
 
   // -------------------------------------------------------------
 

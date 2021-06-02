@@ -1673,6 +1673,50 @@ Abs::execute()
 }
 
 //-----------------------------------------------------------------------------
+Exp::Exp() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Exp::~Exp()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Exp::declare_interface(Node &i)
+{
+  i["type_name"] = "exp";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Exp::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Exp::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  res = exp((*arg1)["value"].to_float64());
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 Field::Field() : Filter()
 {
   // empty

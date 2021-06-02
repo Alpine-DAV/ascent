@@ -128,6 +128,11 @@ TEST(ascent_expressions, basic_expressions)
   EXPECT_EQ(res["value"].to_float64(), 1);
   EXPECT_EQ(res["type"].as_string(), "double");
 
+  expr = "exp(1.0)";
+  res = eval.evaluate(expr);
+  EXPECT_NEAR(res["value"].to_float64(), 2.71828, 0.0001);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
   bool threw = false;
   try
   {
