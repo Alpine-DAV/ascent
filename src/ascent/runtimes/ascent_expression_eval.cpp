@@ -208,7 +208,7 @@ void Cache::load(const std::string &dir,
   m_loaded = true;
 }
 
-Cache::~Cache()
+void Cache::save()
 {
   // the session file can be blank during testing,
   // since its not actually opening ascent
@@ -218,6 +218,11 @@ Cache::~Cache()
   {
     m_data.save(m_session_file,"yaml");
   }
+}
+
+Cache::~Cache()
+{
+  save();
 }
 
 void
@@ -897,6 +902,12 @@ void
 ExpressionEval::reset_cache()
 {
   m_cache.m_data.reset();
+}
+
+void
+ExpressionEval::save_cache()
+{
+  m_cache.save();
 }
 
 void ExpressionEval::get_last(conduit::Node &data)
