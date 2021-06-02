@@ -481,9 +481,9 @@ initialize_functions()
   // -------------------------------------------------------------
 
   conduit::Node &abs_sig = (*functions)["abs"].append();
-  abs_sig["return_type"] = "double";
+  abs_sig["return_type"] = "scalar";
   abs_sig["filter_name"] = "abs";
-  abs_sig["args/arg1/type"] = "double";
+  abs_sig["args/arg1/type"] = "scalar";
   abs_sig["description"] = "Return the absolute value of the input.";
 
   // -------------------------------------------------------------

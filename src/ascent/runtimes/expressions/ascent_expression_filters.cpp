@@ -1652,13 +1652,24 @@ Abs::execute()
 {
   const conduit::Node *arg1 = input<Node>("arg1");
 
-  double res = 0.;
-  const double *vec = (*arg1)["value"].value();
-  res = abs((*arg1)["value"].to_float64());
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "double";
-  (*output)["value"] = res;
-  set_output<conduit::Node>(output);
+  if((*arg1)["type"].as_string() == "double")
+  {
+    double res = 0.;
+    res = abs((*arg1)["value"].to_float64());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "double";
+    (*output)["value"] = res;
+    set_output<conduit::Node>(output);
+  }
+  else
+  {
+    int res = 0;
+    res = abs((*arg1)["value"].to_int32());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "int";
+    (*output)["value"] = res;
+    set_output<conduit::Node>(output);
+  }
 }
 
 //-----------------------------------------------------------------------------

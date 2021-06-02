@@ -118,6 +118,11 @@ TEST(ascent_expressions, basic_expressions)
   EXPECT_EQ(res["value"].to_int32(), 2);
   EXPECT_EQ(res["type"].as_string(), "int");
 
+  expr = "abs(-1)";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["value"].to_float64(), 1);
+  EXPECT_EQ(res["type"].as_string(), "int");
+
   expr = "abs(-1.0)";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["value"].to_float64(), 1);
