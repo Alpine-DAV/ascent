@@ -838,7 +838,7 @@ initialize_objects()
   bin_atts["center/type"] = "double";
   bin_atts["value/type"] = "double";
 
-  // objects->save("objects.json", "json");
+  //objects->save("objects.json", "json");
 }
 
 conduit::Node

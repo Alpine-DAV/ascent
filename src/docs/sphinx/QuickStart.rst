@@ -50,7 +50,7 @@ Quick Start
 
 
 Installing Ascent and Third Party Dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The quickest path to install Ascent and its dependencies is via :ref:`uberenv <building_with_uberenv>`:
 
@@ -74,13 +74,13 @@ For more details about building and installing Ascent see :ref:`building`. This 
 
 
 Public Installs of Ascent
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We also provide public installs of Ascent for the default compilers at a few  DOE HPC centers.
 
 Summary table of public ascent installs:
 
-.. list-table:: 
+.. list-table::
    :widths: 10 15 10 10 50
    :header-rows: 1
 
@@ -119,7 +119,7 @@ See :ref:`tutorial_setup_public_installs` for more details on using these instal
 
 
 Using Ascent in Your Project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The install includes examples that demonstrate how to use Ascent in a CMake-based build system and via a Makefile.
 
