@@ -62,10 +62,6 @@ Below is an example of a simple query.
              expression: "cycle()"
              name: "my_cycle"
 
-.. note::
-    Queries currently only support inspecting the data published to Ascent, and queries
-    on the results of pipelines is **not** currently supported..
-
 
 The results of queries can be accessed by the simulation and serve as a way to compose
 complex triggers, i.e., taking actions as a result of a condition.
@@ -188,3 +184,23 @@ Here is an example of a use case for the history function:
 
 In the above example, `q2` will evaluate to true if the maximum value of pressure jumps over 100 units
 since the last in invocation, possibly indicating that an interesting event inside the simulation occurred.
+
+Session File
+------------
+Ascent saves the results of all queries into a file called `ascent_session.yaml`
+when the simulation exits. This file is convenient for creating plotting scripts
+that consume the results of queries. The session file is capable of surviving
+simulation restarts, and it will continue adding to the file from the last time.
+If the restart occurs at a cycle in the past (i.e., if the session was saved at cycle
+200 and the simulation was restarted at cycle 150), all newer entries will be removed.
+
+If the simulation crashes, there is no promise that the session file will successfully
+written out, so Ascent provides an explicit action to save the session file. Its
+important to note that this involves IO, so its a good idea to only use this actions
+periodically.
+
+.. code-block:: yaml
+
+   -
+     action: "save_session"
+

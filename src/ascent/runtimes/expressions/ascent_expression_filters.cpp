@@ -1617,6 +1617,198 @@ Magnitude::execute()
 }
 
 //-----------------------------------------------------------------------------
+Abs::Abs() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Abs::~Abs()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Abs::declare_interface(Node &i)
+{
+  i["type_name"] = "abs";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Abs::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Abs::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  if((*arg1)["type"].as_string() == "double")
+  {
+    double res = 0.;
+    res = abs((*arg1)["value"].to_float64());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "double";
+    (*output)["value"] = res;
+    set_output<conduit::Node>(output);
+  }
+  else
+  {
+    int res = 0;
+    res = abs((*arg1)["value"].to_int32());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "int";
+    (*output)["value"] = res;
+    set_output<conduit::Node>(output);
+  }
+}
+
+//-----------------------------------------------------------------------------
+Exp::Exp() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Exp::~Exp()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Exp::declare_interface(Node &i)
+{
+  i["type_name"] = "exp";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Exp::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Exp::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  res = exp((*arg1)["value"].to_float64());
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Log::Log() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Log::~Log()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Log::declare_interface(Node &i)
+{
+  i["type_name"] = "log";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Log::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Log::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  res = log((*arg1)["value"].to_float64());
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Pow::Pow() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Pow::~Pow()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Pow::declare_interface(Node &i)
+{
+  i["type_name"] = "pow";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "arg2";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Pow::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Pow::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
+
+  double res = 0.;
+  double base = (*arg1)["value"].to_float64();
+  double exponent = (*arg2)["value"].to_float64();
+  res = pow(base, exponent);
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 Field::Field() : Filter()
 {
   // empty

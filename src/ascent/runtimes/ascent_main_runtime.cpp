@@ -1462,6 +1462,10 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   for (int i = 0; i < actions.number_of_children(); ++i)
   {
       const Node &action = actions.child(i);
+      if(!action.has_path("action"))
+      {
+        ASCENT_ERROR("Malformed actions");
+      }
       string action_name = action["action"].as_string();
 
       if(action_name == "add_pipelines")
@@ -1526,9 +1530,13 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // issues with existing integrations we will just
         // do nothing
       }
+      else if(action_name == "save_session")
+      {
+        runtime::expressions::ExpressionEval::save_cache();
+      }
       else
       {
-          ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
+        ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
       }
 
   }

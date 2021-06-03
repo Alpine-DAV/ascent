@@ -118,6 +118,31 @@ TEST(ascent_expressions, basic_expressions)
   EXPECT_EQ(res["value"].to_int32(), 2);
   EXPECT_EQ(res["type"].as_string(), "int");
 
+  expr = "abs(-1)";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["value"].to_float64(), 1);
+  EXPECT_EQ(res["type"].as_string(), "int");
+
+  expr = "abs(-1.0)";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["value"].to_float64(), 1);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "exp(1.0)";
+  res = eval.evaluate(expr);
+  EXPECT_NEAR(res["value"].to_float64(), 2.71828, 0.0001);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "pow(2.0,2)";
+  res = eval.evaluate(expr);
+  EXPECT_NEAR(res["value"].to_float64(), 4.0, 0.0001);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "log(3)";
+  res = eval.evaluate(expr);
+  EXPECT_NEAR(res["value"].to_float64(), 1.0986122886681098, 0.0001);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
   bool threw = false;
   try
   {
