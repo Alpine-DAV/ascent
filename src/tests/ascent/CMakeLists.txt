@@ -88,6 +88,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_queries
                 t_ascent_failed_pipeline
                 t_ascent_triggers
+                t_ascent_htg
                 t_ascent_hola)
 
 set(MPI_TESTS  t_ascent_mpi_smoke
