@@ -172,7 +172,9 @@ To save the files in HDF5 format:
 
 .. code-block:: c++
 
-    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/params/protocol"] = "hdf5";
+
+`yaml` and `json` are also valid `protocol` options.
 
 
 By default, the relay extract creates one file per mesh domain saved. You can control
