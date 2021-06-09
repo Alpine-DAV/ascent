@@ -147,7 +147,7 @@ through a new instance of Ascent. We call this technique Inception.
 
 Relay
 -----
-Relay extracts saves data to the file system. Currently, Relay supports saving files in two Blueprint formats: HDF5 and json (default).
+Relay extracts save data to the file system. Currently, Relay supports saving data to Blueprint HDF5, YAML, or JSON files.
 By default, Relay saves the published mesh data to the file system, but is a pipeline is specified, then the result of the
 pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
 
@@ -174,7 +174,7 @@ To save the files in HDF5 format:
 
     extracts["e1/params/protocol"] = "hdf5";
 
-`yaml` and `json` are also valid `protocol` options.
+``yaml`` and ``json`` are also valid ``protocol`` options.
 
 
 By default, the relay extract creates one file per mesh domain saved. You can control
