@@ -868,7 +868,7 @@ field_histogram(const conduit::Node &dataset,
   double *global_bins = new double[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_SUM, mpi_comm);
 
   delete[] bins;
   bins = global_bins;
