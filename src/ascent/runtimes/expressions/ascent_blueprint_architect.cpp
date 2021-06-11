@@ -533,6 +533,39 @@ get_explicit_element(const conduit::Node &n_coords,
 }
 
 
+struct VertexFunctor
+{
+  Array<double> m_vertices;
+  int m_dims;
+
+  template<typename MeshType, typename Exec>
+  void operator()(MeshType &mesh, const Exec &)
+  {
+    using fp = typename Exec::for_policy;
+    const int size = mesh.m_num_points;
+    //const int dims = mesh.m_dims;
+    // we cant capture class members
+    m_dims = mesh.m_dims;
+
+    // always output 3 components
+    m_vertices.resize(size * 3);
+    double *verts_ptr = m_vertices.ptr(Exec::memory_space);
+    std::cout<<"**** VertexFunctor Mem space "<<Exec::memory_space<<"\n";
+
+    RAJA::forall<fp>
+      (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type point_idx)
+    {
+      double vert[3];
+      mesh.vertex(point_idx, vert);
+      const int offset = point_idx * 3;
+      verts_ptr[offset + 0] = vert[0];
+      verts_ptr[offset + 1] = vert[1];
+      verts_ptr[offset + 2] = vert[2];
+    });
+    ASCENT_ERROR_CHECK();
+  }
+};
+
 struct CentroidFunctor
 {
   Array<double> m_centroids;
@@ -561,7 +594,7 @@ struct CentroidFunctor
       for(int i = 0; i < num_indices; ++i)
       {
         double vert[3];
-        mesh.cell_vertex(indices[i], vert);
+        mesh.vertex(indices[i], vert);
         for(int c = 0; c < 3; c++)
         {
           centroid[c] += vert[c];
@@ -582,25 +615,6 @@ struct CentroidFunctor
     ASCENT_ERROR_CHECK();
   }
 };
-
-Array<double>
-centroids(const conduit::Node &domain, const std::string topo)
-{
-  const conduit::Node &n_topo = domain["topologies"][topo];
-  const std::string mesh_type = n_topo["type"].as_string();
-  const std::string coords_name = n_topo["coordset"].as_string();
-  const conduit::Node &n_coords = domain["coordsets/"+coords_name];
-  Array<double> res;
-
-  CentroidFunctor func;
-  exec_dispatch_mesh(n_coords,n_topo, func);
-  for(int i = 0; i < func.m_centroids.size(); ++i)
-  {
-    std::cout<<func.m_centroids.value(i)<<"\n";
-  }
-  func.m_centroids.summary();
-  return res;
-}
 
 //-----------------------------------------------------------------------------
 }; // namespace detail
@@ -1588,7 +1602,7 @@ binning2(const conduit::Node &dataset,
     {
       continue;
     }
-    detail::centroids(dom, topo_name);
+    centroids(dom, topo_name);
   }
   init_bins(bins, reduction_op);
   return axes;
@@ -3129,6 +3143,90 @@ std::set<std::string> topology_names(const conduit::Node &dataset)
 
   return topos;
 }
+
+bool field_is_float32(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_float32();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_float32();
+  }
+}
+
+bool field_is_float64(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_float64();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_float64();
+  }
+}
+
+bool field_is_int32(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_int32();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_int32();
+  }
+}
+
+bool field_is_int64(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_int64();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_int64();
+  }
+}
+
+Array<double>
+centroids(const conduit::Node &domain, const std::string topo)
+{
+  const conduit::Node &n_topo = domain["topologies"][topo];
+  const std::string mesh_type = n_topo["type"].as_string();
+  const std::string coords_name = n_topo["coordset"].as_string();
+  const conduit::Node &n_coords = domain["coordsets/"+coords_name];
+  Array<double> res;
+
+  detail::CentroidFunctor func;
+  exec_dispatch_mesh(n_coords,n_topo, func);
+  return res;
+}
+
+Array<double>
+vertices(const conduit::Node &domain, const std::string topo)
+{
+  const conduit::Node &n_topo = domain["topologies"][topo];
+  const std::string mesh_type = n_topo["type"].as_string();
+  const std::string coords_name = n_topo["coordset"].as_string();
+  const conduit::Node &n_coords = domain["coordsets/"+coords_name];
+
+  detail::VertexFunctor func;
+  exec_dispatch_mesh(n_coords,n_topo, func);
+  return func.m_vertices;
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

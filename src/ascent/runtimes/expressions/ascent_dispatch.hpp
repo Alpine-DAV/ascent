@@ -3,6 +3,7 @@
 
 #include "ascent_memory_manager.hpp"
 #include "ascent_memory_interface.hpp"
+#include "ascent_meshes.hpp"
 #include "ascent_array.hpp"
 #include "ascent_raja_policies.hpp"
 #include "ascent_execution.hpp"
@@ -58,98 +59,6 @@ static inline int cell_shape(const std::string shape_type)
   }
   return shape_id;
 }
-
-ASCENT_EXEC
-static int num_indices(const int shape_id)
-{
-  int indices = 0;
-  if(shape_id == 5)
-  {
-    indices = 3;
-  }
-  else if(shape_id == 9)
-  {
-    indices = 4;
-  }
-  else if(shape_id == 10)
-  {
-    indices = 4;
-  }
-  else if(shape_id == 12)
-  {
-    indices = 8;
-  }
-  else if(shape_id == 1)
-  {
-    indices = 1;
-  }
-  else if(shape_id == 3)
-  {
-    indices = 2;
-  }
-  return indices;
-}
-
-template<typename CoordsType, typename ConnType>
-struct UnstructuredMesh
-{
-
-  MemoryAccessor<CoordsType> m_coords_x;
-  MemoryAccessor<CoordsType> m_coords_y;
-  MemoryAccessor<CoordsType> m_coords_z;
-  MemoryAccessor<ConnType> m_conn;
-  const int m_shape_type;
-  const int m_dims;
-  const int m_num_indices;
-  const int m_num_cells;
-
-  UnstructuredMesh() = delete;
-  UnstructuredMesh(const std::string mem_space,
-                   MemoryInterface<CoordsType> &coords,
-                   MemoryInterface<ConnType> &conn,
-                   const int shape_type,
-                   const int dims)
-    : m_coords_x(coords.accessor(mem_space, "x")),
-      m_coords_y(coords.accessor(mem_space, "y")),
-      m_coords_z(dims == 3 ? coords.accessor(mem_space, "z") :
-                             // just use a dummy in this case
-                             coords.accessor(mem_space, "x")),
-      m_conn(conn.accessor(mem_space)),
-      m_shape_type(shape_type),
-      m_dims(dims),
-      m_num_indices(num_indices(shape_type)),
-      m_num_cells(m_conn.m_size / m_num_indices)
-  {
-  }
-
-  // TODO: some sort of error checking mechinism
-  ASCENT_EXEC
-  void cell_indices(const int cell_index, int indices[8]) const
-  {
-    const int offset = cell_index * m_num_indices;
-    for(int i = 0; i < m_num_indices; ++i)
-    {
-      indices[i] = static_cast<int>(m_conn[offset + i]);
-    }
-  }
-
-  ASCENT_EXEC
-  void cell_vertex(const int vert_id, double vertex[3]) const
-  {
-    vertex[0] = static_cast<double>(m_coords_x[vert_id]);
-    vertex[1] = static_cast<double>(m_coords_y[vert_id]);
-    if(m_dims == 3)
-    {
-      vertex[2] = static_cast<double>(m_coords_z[vert_id]);
-    }
-    else
-    {
-      vertex[2] = 0.;
-    }
-  }
-
-};
-
 
 template<typename Function, typename Exec>
 void
@@ -242,8 +151,98 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
       std::cout<<"bad coords "<<n_coords.to_summary_string()<<" \n";
       // TODO: log error
     }
-
+    // end unstructured mesh
   }
+  else if(mesh_type == "uniform")
+  {
+
+    UniformMesh mesh(n_coords);
+    func(mesh,exec);
+  }
+  else if(mesh_type == "rectilinear")
+  {
+    const int dims = n_coords["values"].number_of_children();
+    if(dims < 2 || dims > 3)
+    {
+      std::cout<<"Bad dims "<<dims<<"\n";
+      // TODO: log error
+    }
+
+    // figure out the types of coords
+    if(is_conduit_type<conduit::float32>(n_coords["values/x"]))
+    {
+      MemoryInterface<conduit::float32> coords(n_coords);
+      RectilinearMesh<conduit::float32> mesh(mem_space,
+                                             coords,
+                                             dims);
+      func(mesh,exec);
+    }
+    else if(is_conduit_type<conduit::float64>(n_coords["values/x"]))
+    {
+      MemoryInterface<conduit::float32> coords(n_coords);
+      RectilinearMesh<conduit::float32> mesh(mem_space,
+                                             coords,
+                                             dims);
+      func(mesh,exec);
+    }
+    else
+    {
+      std::cout<<"Bad coordinates type rectilinear\n";
+    }
+  }
+  else if(mesh_type == "structured")
+  {
+    const int dims = n_coords["values"].number_of_children();
+    if(dims < 2 || dims > 3)
+    {
+      std::cout<<"Bad dims "<<dims<<"\n";
+      // TODO: log error
+    }
+    int point_dims[3] = {0,0,0};
+    point_dims[0] = n_topo["element/dims/i"].to_int32();
+    point_dims[1] = n_topo["element/dims/j"].to_int32();
+    if(dims == 3)
+    {
+      if(!n_topo.has_path("element/dims/k"))
+      {
+        std::cout<<"Coordinate system disagrees with element dims\n";
+      }
+      else
+      {
+        point_dims[2] = n_topo["element/dims/k"].to_int32();
+      }
+    }
+
+    // figure out the types of coords
+    if(is_conduit_type<conduit::float32>(n_coords["values/x"]))
+    {
+      MemoryInterface<conduit::float32> coords(n_coords);
+      StructuredMesh<conduit::float32> mesh(mem_space,
+                                            coords,
+                                            dims,
+                                            point_dims);
+      func(mesh,exec);
+    }
+    else if(is_conduit_type<conduit::float64>(n_coords["values/x"]))
+    {
+      MemoryInterface<conduit::float32> coords(n_coords);
+      StructuredMesh<conduit::float32> mesh(mem_space,
+                                            coords,
+                                            dims,
+                                            point_dims);
+      func(mesh,exec);
+    }
+    else
+    {
+      std::cout<<"Bad coordinates type structured\n";
+    }
+  }
+  else
+  {
+    std::cout<<"mesh type not implemented:  "<<mesh_type<<"\n";
+  }
+
+
 }
 
 // TODO could make this a variadic template, maybe

@@ -55,6 +55,7 @@
 #include <conduit.hpp>
 // TODO this is temporary
 #include <ascent_exports.h>
+#include <expressions/ascent_array.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -196,6 +197,32 @@ void paint_nestsets(const std::string nestset_name,
                     const std::string topo_name,
                     conduit::Node &dom,
                     conduit::Node &field); // field to paint on
+
+ASCENT_API
+int num_points(const conduit::Node &domain, const std::string &topo_name);
+
+ASCENT_API
+int num_cells(const conduit::Node &domain, const std::string &topo_name);
+
+ASCENT_API
+bool field_is_float32(const conduit::Node &field);
+
+ASCENT_API
+bool field_is_float64(const conduit::Node &field);
+
+ASCENT_API
+bool field_is_int32(const conduit::Node &field);
+
+ASCENT_API
+bool field_is_int64(const conduit::Node &field);
+
+ASCENT_API
+Array<double>
+centroids(const conduit::Node &domain, const std::string topo);
+
+ASCENT_API
+Array<double>
+vertices(const conduit::Node &domain, const std::string topo);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

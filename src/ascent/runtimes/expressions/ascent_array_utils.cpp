@@ -40,7 +40,7 @@ struct MemsetFunctor
 
     using fp = typename Exec::for_policy;
 
-    double *array_ptr = array.ptr(Exec::memory_space);
+    T *array_ptr = array.ptr(Exec::memory_space);
 
     RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
     {
@@ -54,14 +54,19 @@ struct MemsetFunctor
 } // namespace detail
 
 template <typename T>
-void array_memset_impl (Array<T> &array, const T val)
+void array_memset_impl(Array<T> &array, const T val)
 {
   detail::MemsetFunctor<T> func;
   func.m_value = val;
   exec_dispatch_array(array, func);
 }
 
-void array_memset (Array<double> &array, const double val)
+void array_memset(Array<double> &array, const double val)
+{
+  array_memset_impl(array,val);
+}
+
+void array_memset(Array<int> &array, const int val)
 {
   array_memset_impl(array,val);
 }

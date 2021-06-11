@@ -61,6 +61,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_data_binning.hpp"
 #include "ascent_conduit_reductions.hpp"
 #include "ascent_execution.hpp"
 #include <ascent_logging.hpp>
@@ -1841,10 +1842,10 @@ Axis::execute()
     }
   }
 
-  (*output)["value/" + name + "/clamp"] = false;
+  (*output)["value/" + name + "/clamp"] = 0;
   if(!n_clamp->dtype().is_empty())
   {
-    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_uint8();
+    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_int32();
   }
 
   (*output)["value/" + name];
@@ -2109,12 +2110,12 @@ Binning::execute()
     empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
   }
 
-  const conduit::Node &n_binning = binning2(*dataset,
-                                           n_bin_axes,
-                                           reduction_var,
-                                           reduction_op,
-                                           empty_bin_val,
-                                           component);
+  const conduit::Node &n_binning = data_binning(*dataset,
+                                                n_bin_axes,
+                                                reduction_var,
+                                                reduction_op,
+                                                empty_bin_val,
+                                                component);
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";

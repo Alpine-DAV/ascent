@@ -102,10 +102,11 @@ set(ascent_sources
     runtimes/expressions/ascent_expressions_parser.cpp
     runtimes/expressions/ascent_memory_manager.cpp
     runtimes/expressions/ascent_array.cpp
+    runtimes/expressions/ascent_array_internals.cpp
     runtimes/expressions/ascent_array_utils.cpp
+    runtimes/expressions/ascent_data_binning.cpp
     runtimes/expressions/ascent_raja_policies.cpp
     runtimes/expressions/ascent_execution.cpp
-    runtimes/expressions/ascent_array_internals.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
@@ -146,9 +147,12 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_tokens.hpp
     runtimes/expressions/ascent_expressions_parser.hpp
     runtimes/expressions/ascent_math.hpp
+    runtimes/expressions/ascent_dispatch.hpp
+    runtimes/expressions/ascent_meshes.hpp
     runtimes/expressions/ascent_array.hpp
     runtimes/expressions/ascent_array_utils.hpp
     runtimes/expressions/ascent_array_internals.hpp
+    runtimes/expressions/ascent_data_binning.hpp
     runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
     runtimes/expressions/ascent_raja_policies.hpp
@@ -184,6 +188,7 @@ if(CUDA_FOUND)
                           runtimes/expressions/ascent_array.cpp
                           runtimes/expressions/ascent_array_utils.cpp
                           runtimes/expressions/ascent_array_internals.cpp
+                          runtimes/expressions/ascent_data_binning.cpp
                           runtimes/expressions/ascent_raja_policies.cpp
                           runtimes/expressions/ascent_blueprint_architect.cpp)
 

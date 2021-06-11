@@ -1,7 +1,8 @@
-#ifndef ASCENT_ARRAY_UTILS_HPP
-#define ASCENT_ARRAY_UTILS_HPP
+#ifndef ASCENT_DATA_BINNING_HPP
+#define ASCENT_DATA_BINNING_HPP
 
-#include <expressions/ascent_array.hpp>
+#include <conduit.hpp>
+#include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -21,8 +22,26 @@ namespace runtime
 namespace expressions
 {
 
-void array_memset (Array<double> &array, const double val);
-void array_memset (Array<int> &array, const int val);
+// bin_axes lists of axes are in the form:
+//  axis_name:
+//    num_bins : int (required if explicit bins are not given
+//    min_val : double (optional used with num_bins)
+//    max_val : double (optional used with num_bins)
+//    clamp : int (optional: 0 = false 1 = true)
+//    bins : [double, ...] (required if not using automatic bins)
+//
+//  params:
+//    reduction_var: field on the mesh to bin
+//    reduction_op: min, max, ave, sum, pdf, rms, var, std
+//    component: if the variable is a vector, which component
+
+ASCENT_API
+conduit::Node data_binning(conduit::Node &dataset,
+                           conduit::Node &bin_axes,
+                           const std::string &reduction_var,
+                           const std::string &reduction_op,
+                           const double empty_bin_val,
+                           const std::string &component);
 
 //-----------------------------------------------------------------------------
 };
