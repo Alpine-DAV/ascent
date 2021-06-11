@@ -614,10 +614,17 @@ void mesh_blueprint_save(const Node &data,
 
     Node multi_dom;
 
-    bool is_valid = detail::clean_mesh(data, multi_dom);
-
     int par_rank = 0;
     int par_size = 1;
+
+    // {
+    //   auto& data_node = data.children().next();
+    //   par_rank = data_node["state/domain_id"].as_int32();
+    //   std::cout << "Relay data rank = " << par_rank << std::endl;
+    // }
+
+    bool is_valid = detail::clean_mesh(data, multi_dom);
+
     // we may not have any domains so init to max
     int cycle = std::numeric_limits<int>::max();
 
@@ -697,8 +704,18 @@ void mesh_blueprint_save(const Node &data,
             dir_ok = create_directory(output_dir);
         }
     }
+    else
+    {
+      dir_ok = true;
+    }
 
     int global_num_domains = local_num_domains;
+
+    // {
+    //   auto& data_node = data.children().next();
+    //   global_num_domains = data_node["state/glob_dom"].as_int32();
+    //   std::cout << "Relay glob dom = " << global_num_domains << std::endl;
+    // }
 
 #ifdef ASCENT_MPI_ENABLED
     // TODO:
@@ -764,9 +781,9 @@ void mesh_blueprint_save(const Node &data,
         for(int i = 0; i < local_num_domains; ++i)
         {
             const Node &dom = multi_dom.child(i);
-            uint64 domain = dom["state/domain_id"].to_uint64();
+            // uint64 domain = dom["state/domain_id"].to_uint64();
 
-            snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
+            snprintf(fmt_buff, sizeof(fmt_buff), "%06llu", uint64_t(par_rank));
             oss.str("");
             oss << "domain_" << fmt_buff << "." << file_protocol;
             string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
@@ -1105,6 +1122,15 @@ RelayIOSave::execute()
 
     Node *in = n_input.get();
 
+    // {
+    //   auto& data_node = in->children().next();
+    //   int rank = 0;
+    //   if( data_node.has_path("state/domain_id") )
+    //     rank = data_node["state/domain_id"].as_int32();
+    //   std::cout << "Relay in rank: " << rank << std::endl;
+    // }
+
+
     Node selected;
     conduit::Node test;
     if(params().has_path("fields"))
@@ -1132,6 +1158,15 @@ RelayIOSave::execute()
       // select all fields
       selected.set_external(*in);
     }
+
+    // {
+    //   auto& data_node = selected.children().next();
+    //   int rank = 0;
+    //   if( data_node.has_path("state/domain_id") )
+    //     rank = data_node["state/domain_id"].as_int32();
+    //   std::cout << "Relay sel rank: " << rank << std::endl;
+    // }
+
 
     int num_files = -1;
 

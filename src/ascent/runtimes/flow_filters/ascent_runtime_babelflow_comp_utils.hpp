@@ -9,7 +9,8 @@
 #include <vector>
 
 #include "BabelFlow/TypeDefinitions.h"
-#include "BabelFlow/mpi/Controller.h"
+// #include "BabelFlow/mpi/Controller.h"
+// #include "BabelFlow/charm/Controller.h"
 #include "BabelFlow/reduce/BinarySwap.h"
 #include "BabelFlow/reduce/BinarySwapTaskMap.h"
 #include "BabelFlow/reduce/KWayReduction.h"
@@ -25,7 +26,6 @@
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #else
-#include <mpidummy.h>
 #define _NOMPI
 #endif
 
@@ -102,8 +102,8 @@ public:
                     const std::string& img_name,
                     int32_t rank_id,
                     int32_t n_ranks,
-                    int32_t fanin,
-                    MPI_Comm mpi_comm);
+                    int32_t fanin);
+                    // MPI_Comm mpi_comm);
   virtual ~BabelGraphWrapper() {}
   virtual void Initialize() = 0;
   virtual void Execute();
@@ -113,11 +113,16 @@ protected:
   uint32_t m_rankId;
   uint32_t m_nRanks;
   uint32_t m_fanin;
-  MPI_Comm m_comm;
+  // MPI_Comm m_comm;
 
   std::map<BabelFlow::TaskId, BabelFlow::Payload> m_inputs;
-  BabelFlow::mpi::Controller m_master;
-  BabelFlow::ControllerMap m_contMap;
+  // BabelFlow::mpi::Controller m_master;
+  // BabelFlow::ControllerMap m_contMap;
+
+  ///// Charm++
+  BabelFlow::charm::Controller m_controller;  
+  BabelFlow::charm::Controller::ProxyType m_proxy;
+  /////
 };
 
 //-----------------------------------------------------------------------------
@@ -129,8 +134,8 @@ public:
                   const std::string& img_name,
                   int32_t rank_id,
                   int32_t n_blocks,
-                  int32_t fanin,
-                  MPI_Comm mpi_comm);
+                  int32_t fanin);
+                  // MPI_Comm mpi_comm);
   virtual ~BabelCompReduce() {}
   virtual void Initialize() override;
 
@@ -156,8 +161,8 @@ public:
                    const std::string& img_name,
                    int32_t rank_id,
                    int32_t n_blocks,
-                   int32_t fanin,
-                   MPI_Comm mpi_comm);
+                   int32_t fanin);
+                  //  MPI_Comm mpi_comm);
   virtual ~BabelCompBinswap() {}
   virtual void Initialize() override;
 
@@ -184,7 +189,7 @@ public:
                   int32_t rank_id,
                   int32_t n_blocks,
                   int32_t fanin,
-                  MPI_Comm mpi_comm,
+                  // MPI_Comm mpi_comm,
                   const std::vector<uint32_t>& radix_v);
   virtual ~BabelCompRadixK();
   

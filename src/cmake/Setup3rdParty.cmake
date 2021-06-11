@@ -128,5 +128,10 @@ endif()
 ################################
 if (ENABLE_BABELFLOW)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
+    include(cmake/thirdparty/SetupCharm.cmake)
+    # if(CHARM_FOUND)
+    #   # Link executables with the charmc wrapper
+    #   STRING(REGEX REPLACE "<CMAKE_CXX_COMPILER>" "${CHARM_COMPILER}"
+    #          CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE}")
+    # endif ()
 endif ()
-

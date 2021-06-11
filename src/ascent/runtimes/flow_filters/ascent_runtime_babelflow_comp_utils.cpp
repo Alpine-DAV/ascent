@@ -10,14 +10,21 @@
 #include <fstream>
 
 #include <ascent_png_encoder.hpp>
-#include "ascent_runtime_babelflow_comp_utils.hpp"
 
 #include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
+#include "BabelFlow/charm/CharmTask.h"
+#include "BabelFlow/charm/Controller.h"
+
+#include "ascent_runtime_babelflow_comp_utils.hpp"
 
 
 // #define BFLOW_COMP_UTIL_DEBUG
+
+
+using namespace BabelFlow;
+using namespace charm;
 
 
 namespace BabelFlow
@@ -127,6 +134,8 @@ void ImageData::writeDepth(const char* filename, uint32_t* extent)
     if( zbuf[i] < min_depth ) min_depth = zbuf[i];
   }
   
+  std::cout << "writeDepth: " << filename << "  min_depth = " << min_depth << "  max_depth = " << max_depth << "  zbuf[0] = " << zbuf[0] << std::endl;
+
   for(int y=0; y < y_extent; ++y)
   {
       for(int x=0; x < x_extent; ++x)
@@ -309,6 +318,8 @@ void split_and_blend(const std::vector<ImageData>& input_images,
 
           if( skip_z_check || outimg.zbuf[myidx] > inimg.zbuf[idx] )
           {
+            if( inimg.zbuf[idx] < 0 )
+              continue;
             outimg.zbuf[myidx] = inimg.zbuf[idx];
             memcpy( outimg.image + imgmyidx, inimg.image + imgidx, ImageData::sNUM_CHANNELS*sizeof(ImageData::PixelType));
           }
@@ -564,9 +575,9 @@ BabelGraphWrapper::BabelGraphWrapper(const ImageData& input_img,
                                      const std::string& img_name,
                                      int32_t rank_id,
                                      int32_t n_ranks,
-                                     int32_t fanin,
-                                     MPI_Comm mpi_comm)
- : m_inputImg( input_img ), m_comm( mpi_comm )
+                                     int32_t fanin)
+                                    //  MPI_Comm mpi_comm)
+ : m_inputImg( input_img ) //, m_comm( mpi_comm )
 {
   m_rankId = static_cast<uint32_t>( rank_id );
   m_nRanks = static_cast<uint32_t>( n_ranks );
@@ -579,7 +590,17 @@ BabelGraphWrapper::BabelGraphWrapper(const ImageData& input_img,
 
 void BabelGraphWrapper::Execute()
 {
-  m_master.run(m_inputs);
+  // for( uint32_t i = 0; i < m_nRanks; ++i )
+  // {
+  //   BabelFlow::Payload& payl = m_inputs[i];
+  //   std::vector<char> buffer(payl.size());
+  //   buffer.assign(payl.buffer(), payl.buffer() + payl.size());
+
+  //   // convert i to global_id ?
+  //   m_proxy[i].addInput(CharmTaskId(BabelFlow::TNULL), buffer);
+  // }
+
+  // m_master.run(m_inputs);
 }
 
 //-----------------------------------------------------------------------------
@@ -593,9 +614,9 @@ BabelCompReduce::BabelCompReduce(const ImageData& input_image,
                                  const std::string& img_name,
                                  int32_t rank_id,
                                  int32_t n_blocks,
-                                 int32_t fanin,
-                                 MPI_Comm mpi_comm)
- : BabelGraphWrapper( input_image, img_name, rank_id, n_blocks, fanin, mpi_comm )
+                                 int32_t fanin)
+                                //  MPI_Comm mpi_comm)
+ : BabelGraphWrapper( input_image, img_name, rank_id, n_blocks, fanin )
 {
 }
 
@@ -636,7 +657,11 @@ void BabelCompReduce::Initialize()
   }
 #endif
 
-  m_master.initialize( m_reduceGraph, &m_reduceTaskMap, m_comm, &m_contMap );
+  // m_master.initialize( m_reduceGraph, &m_reduceTaskMap, m_comm, &m_contMap );
+  ///// Charm++
+  m_proxy = m_controller.initialize(m_reduceGraph.serialize(), m_reduceGraph.size());
+  /////
+
 
   m_inputs[m_rankId] = m_inputImg.serialize();
 }
@@ -652,9 +677,9 @@ BabelCompBinswap::BabelCompBinswap(const ImageData& input_image,
                                    const std::string& img_name,
                                    int32_t rank_id,
                                    int32_t n_blocks,
-                                   int32_t fanin,
-                                   MPI_Comm mpi_comm)
- : BabelGraphWrapper(input_image, img_name, rank_id, n_blocks, fanin, mpi_comm)
+                                   int32_t fanin)
+                                  //  MPI_Comm mpi_comm)
+ : BabelGraphWrapper(input_image, img_name, rank_id, n_blocks, fanin )
 {
 }
 
@@ -693,7 +718,11 @@ void BabelCompBinswap::Initialize()
   }
 #endif
 
-  m_master.initialize( m_binSwapGraph, &m_binSwapTaskMap, m_comm, &m_contMap );
+  // m_master.initialize( m_binSwapGraph, &m_binSwapTaskMap, m_comm, &m_contMap );
+  ///// Charm++
+  m_proxy = m_controller.initialize(m_binSwapGraph.serialize(), m_binSwapGraph.size());
+  /////
+
 
   m_inputs[m_rankId] = m_inputImg.serialize();
 }
@@ -710,9 +739,9 @@ BabelCompRadixK::BabelCompRadixK(const ImageData& input_image,
                                  int32_t rank_id,
                                  int32_t n_blocks,
                                  int32_t fanin,
-                                 MPI_Comm mpi_comm,
+                                //  MPI_Comm mpi_comm,
                                  const std::vector<uint32_t>& radix_v)
- : BabelGraphWrapper(input_image, img_name, rank_id, n_blocks, fanin, mpi_comm), m_Radices(radix_v)
+ : BabelGraphWrapper(input_image, img_name, rank_id, n_blocks, fanin), m_Radices(radix_v)
 {
 }
 
@@ -777,7 +806,11 @@ void BabelCompRadixK::Initialize()
   }
 #endif
 
-  m_master.initialize( m_radGatherGraph, &m_radGatherTaskMap, m_comm, &m_contMap );
+  // m_master.initialize( m_radGatherGraph, &m_radGatherTaskMap, m_comm, &m_contMap );
+  ///// Charm++
+  m_proxy = m_controller.initialize(m_radGatherGraph.serialize(), m_radGatherGraph.size());
+  /////
+
 
   m_inputs[m_rankId] = m_inputImg.serialize();
 }

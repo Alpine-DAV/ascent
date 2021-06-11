@@ -281,6 +281,36 @@ if(DRAY_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 
+if (ENABLE_BABELFLOW)
+    # include(charm)
+
+    if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+        add_compile_definitions("BABELFLOW_DEBUG")
+    endif()
+
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
+    # list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
+
+    list(APPEND ascent_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_charm)
+    list(APPEND ascent_thirdparty_libs PMT::pmt)
+    add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+    include_directories(${BABELFLOW_INCLUDE_DIRS})
+    include_directories(${PMT_INCLUDE_DIRS})
+    include_directories(${CHARM_INCLUDE_DIRS})
+
+    set(CMAKE_CXX_COMPILER "${CHARM_COMPILER}")
+    set(CMAKE_LINKER "${CHARM_COMPILER}")
+    # set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+
+    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER>  <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS>  -o <TARGET> <LINK_LIBRARIES>") 
+
+    if(VTKM_FOUND)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+    endif()
+endif ()
 
 ##########################################
 # Build a serial version of ascent
@@ -360,23 +390,23 @@ if(MPI_FOUND)
     # req'd libs
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
 
-    if (ENABLE_BABELFLOW)
-	    if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-		    add_compile_definitions("BABELFLOW_DEBUG")
-	    endif()
+    # if (ENABLE_BABELFLOW)
+	#     if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+	# 	    add_compile_definitions("BABELFLOW_DEBUG")
+	#     endif()
 
-      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
+    #   list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+    #   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
+    #   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
+    #   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
+    #   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
 
-      list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
-      list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
-      add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
-      include_directories(${BABELFLOW_INCLUDE_DIRS})
-      include_directories(${PMT_INCLUDE_DIRS})
-    endif ()
+    #   list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
+    #   list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+    #   add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+    #   include_directories(${BABELFLOW_INCLUDE_DIRS})
+    #   include_directories(${PMT_INCLUDE_DIRS})
+    # endif ()
 
     # hola mpi support is only in par (mpi ver)
 
@@ -396,9 +426,9 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
-        if (ENABLE_BABELFLOW)
-            list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
-        endif()
+        # if (ENABLE_BABELFLOW)
+        #     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+        # endif()
 
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)

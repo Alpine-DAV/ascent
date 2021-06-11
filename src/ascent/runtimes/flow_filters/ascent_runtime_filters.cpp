@@ -77,11 +77,12 @@
     #include <ascent_python_script_filter.hpp>
 #endif
 
+#ifdef ASCENT_BABELFLOW_ENABLED
+    #include <ascent_runtime_babelflow_filters.hpp>
+#endif
+
 #ifdef ASCENT_MPI_ENABLED
     #include <ascent_runtime_hola_filters.hpp>
-    #ifdef ASCENT_BABELFLOW_ENABLED
-    #include <ascent_runtime_babelflow_filters.hpp>
-    #endif
     #if defined(ASCENT_ADIOS_ENABLED)
     #include <ascent_runtime_adios_filters.hpp>
     #endif
@@ -178,14 +179,14 @@ register_builtin()
 
 
 
-#if defined(ASCENT_MPI_ENABLED)
-    AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
-
 #if defined(ASCENT_BABELFLOW_ENABLED)
     AscentRuntime::register_filter_type<BFlowPmt>("transforms", "bflow_pmt");
-    AscentRuntime::register_filter_type<BFlowCompose>("extracts", "bflow_comp");
+    // AscentRuntime::register_filter_type<BFlowCompose>("extracts", "bflow_comp");
     AscentRuntime::register_filter_type<BFlowIso>("extracts", "bflow_iso");
 #endif
+
+#if defined(ASCENT_MPI_ENABLED)
+    AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
 
 #if defined(ASCENT_ADIOS_ENABLED)
     AscentRuntime::register_filter_type<ADIOS>("extracts","adios");

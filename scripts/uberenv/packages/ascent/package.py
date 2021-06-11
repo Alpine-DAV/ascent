@@ -116,8 +116,12 @@ class Ascent(Package, CudaPackage):
     #######################
     # BabelFlow
     #######################
-    depends_on('babelflow', when='+babelflow+mpi')
-    depends_on('pmt', when='+babelflow+mpi')
+    depends_on('babelflow runtime=mpi', when='+babelflow+mpi')
+    ###
+    depends_on('babelflow runtime=charm', when='+babelflow~mpi')
+    depends_on('charmpp', when='+babelflow~mpi')
+    ###
+    depends_on('pmt', when='+babelflow')
 
     #############################
     # TPLs for Runtime Features
@@ -447,6 +451,7 @@ class Ascent(Package, CudaPackage):
             cfg.write(cmake_cache_entry("ENABLE_BABELFLOW", "ON"))
             cfg.write(cmake_cache_entry("BabelFlow_DIR", spec['babelflow'].prefix))
             cfg.write(cmake_cache_entry("PMT_DIR", spec['pmt'].prefix))
+            cfg.write(cmake_cache_entry("CHARM_ROOT", spec['charmpp'].prefix))
 
         #######################
         # CUDA

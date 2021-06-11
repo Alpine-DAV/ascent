@@ -15,7 +15,6 @@
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #else
-#include <mpidummy.h>
 #define _NOMPI
 #endif
 
@@ -23,7 +22,10 @@
 // -- begin ParallelMergeTree --
 //-----------------------------------------------------------------------------
 
-#include "BabelFlow/mpi/Controller.h"
+// #include "BabelFlow/mpi/Controller.h"
+#include "BabelFlow/charm/CharmTask.h"
+#include "BabelFlow/charm/Controller.h"
+
 #include "PMT/KWayMerge.h"
 #include "PMT/KWayTaskMap.h"
 #include "PMT/SortedUnionFindAlgorithm.h"
@@ -52,11 +54,16 @@
 #define EPSILON     0.00001
 
 
+using namespace BabelFlow;
+using namespace charm;
+
+
+
 class ParallelMergeTree {
 public:
   ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, const int32_t *data_size, const int32_t *n_blocks,
                     const int32_t *low, const int32_t *high, int32_t fanin,
-                    FunctionType threshold, MPI_Comm mpi_comm);
+                    FunctionType threshold);
 
   void Initialize();
 
@@ -85,10 +92,15 @@ private:
   FunctionType m_threshold;
   std::map<BabelFlow::TaskId, BabelFlow::Payload> m_inputs;
 
-  MPI_Comm m_comm;
-  BabelFlow::mpi::Controller m_master;
-  BabelFlow::ControllerMap m_cMap;
-  
+  // MPI_Comm m_comm;
+  // BabelFlow::mpi::Controller m_master;
+  // BabelFlow::ControllerMap m_cMap;
+
+  ///// Charm++
+  BabelFlow::charm::Controller m_controller;  
+  BabelFlow::charm::Controller::ProxyType m_proxy;
+  /////
+
   BabelFlow::SingleTaskGraph m_preProcTaskGr;
   BabelFlow::ModuloMap m_preProcTaskMp;
 
@@ -284,11 +296,16 @@ void ParallelMergeTree::Initialize()
   }
 #endif
 
-  m_preProcTaskGr = BabelFlow::SingleTaskGraph( mpi_size );
-  m_preProcTaskMp = BabelFlow::ModuloMap( mpi_size, m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2] );
+  // m_preProcTaskGr = BabelFlow::SingleTaskGraph( mpi_size );
+  // m_preProcTaskMp = BabelFlow::ModuloMap( mpi_size, m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2] );
 
+  // m_kWayMergeGr = KWayMerge( m_nBlocks, m_fanin );
+  // m_kWayTaskMp = KWayTaskMap( mpi_size, &m_kWayMergeGr );
+
+  /// Charm++
+  m_preProcTaskGr = BabelFlow::SingleTaskGraph( num_blocks );
   m_kWayMergeGr = KWayMerge( m_nBlocks, m_fanin );
-  m_kWayTaskMp = KWayTaskMap( mpi_size, &m_kWayMergeGr );
+  /////
 
   m_preProcTaskGr.setGraphId( 0 );
   m_kWayMergeGr.setGraphId( 1 );
@@ -311,10 +328,10 @@ void ParallelMergeTree::Initialize()
   
   std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
   std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr };
-  std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp }; 
+  // std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp }; 
 
   m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
-  m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
+  // m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
 
   MergeTree::setDimension( m_dataSize );
 #ifdef BFLOW_PMT_DEBUG
@@ -324,14 +341,31 @@ void ParallelMergeTree::Initialize()
   }
 #endif
 
-  m_master.initialize( m_fullGraph, &m_fullTaskMap, m_comm, &m_cMap );
+
+  // m_master.initialize( m_fullGraph, &m_fullTaskMap, m_comm, &m_cMap );
+  ///// Charm++
+  std::cout << "PMT graph size: " << m_fullGraph.size() << std::endl;
+  // m_proxy = m_controller.initialize(m_fullGraph.serialize(), m_fullGraph.size());
+  /////
  
   m_inputs[m_taskId] = make_local_block( m_dataPtr, m_low, m_high, m_threshold );
 }
 
 void ParallelMergeTree::Execute() 
 {
-  m_master.run( m_inputs );
+  uint32_t num_blocks = m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2];
+
+  for( uint32_t i = 0; i < num_blocks; ++i )
+  {
+    BabelFlow::Payload& payl = m_inputs[i];
+    std::vector<char> buffer(payl.size());
+    buffer.assign(payl.buffer(), payl.buffer() + payl.size());
+
+    // convert i to global_id ?
+    // m_proxy[i].addInput(CharmTaskId(BabelFlow::TNULL), buffer);
+  }
+
+  // m_master.run( m_inputs );
 }
 
 void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr) 
@@ -350,7 +384,8 @@ void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr)
   ParallelMergeTree::ComputeGhostOffsets( m_low, m_high, dnx, dny, dnz, dpx, dpy, dpz );
   
   // Get the outputs map (maps task IDs to outputs) from the controller
-  std::map<BabelFlow::TaskId,std::vector<BabelFlow::Payload> >& outputs = m_master.getAllOutputs();
+  std::map<BabelFlow::TaskId,std::vector<BabelFlow::Payload> > outputs;
+  // std::map<BabelFlow::TaskId,std::vector<BabelFlow::Payload> >& outputs = m_master.getAllOutputs();
   
   // Only one task per rank should have output
   assert(outputs.size() == 1);
@@ -383,9 +418,9 @@ ParallelMergeTree::ParallelMergeTree( FunctionType *data_ptr,
                                       const int32_t *low, 
                                       const int32_t *high, 
                                       int32_t fanin,
-                                      FunctionType threshold, 
-                                      MPI_Comm mpi_comm)
-  : m_dataPtr( data_ptr ), m_threshold( threshold ), m_comm( mpi_comm )
+                                      FunctionType threshold)
+                                      // MPI_Comm mpi_comm)
+  : m_dataPtr( data_ptr ), m_threshold( threshold ) //, m_comm( mpi_comm )
 {
   m_taskId = static_cast<uint32_t>(task_id);
   memcpy( m_dataSize, reinterpret_cast<const uint32_t*>( data_size ), 3 * sizeof(uint32_t) );
@@ -471,11 +506,9 @@ void ascent::runtime::filters::BFlowPmt::execute()
 
   conduit::Node p = params();
   auto *in = n_input.get();
-  
   auto &data_node = in->children().next();
 
   int color = 0;
-
   int uniform_color = 0;
 
   // check if coordset uniform
@@ -499,12 +532,14 @@ void ascent::runtime::filters::BFlowPmt::execute()
 
   // Decide which uniform grid to work on (default 0, the finest spacing)
   double selected_spacing = 0;
+  int uniform_rank = 0, uniform_comm_size = 1;
 
+#ifdef ASCENT_MPI_ENABLED
   MPI_Comm uniform_comm;
   MPI_Comm_split(world_comm, uniform_color, world_rank, &uniform_comm);
-  int uniform_rank, uniform_comm_size;
   MPI_Comm_rank(uniform_comm, &uniform_rank);
   MPI_Comm_size(uniform_comm, &uniform_comm_size);
+#endif
 
   if(uniform_color){
     double myspacing = 0;
@@ -517,9 +552,11 @@ void ascent::runtime::filters::BFlowPmt::execute()
       myspacing = data_node["coordsets/coords/spacing/dx"].to_float64();
     
     std::vector<double> uniform_spacing(uniform_comm_size);
-    
+
+#ifdef ASCENT_MPI_ENABLED
     MPI_Allgather(&myspacing, 1, MPI_DOUBLE, uniform_spacing.data(), 1, MPI_DOUBLE, uniform_comm);
-    
+#endif
+
     std::sort(uniform_spacing.begin(), uniform_spacing.end());
     std::unique(uniform_spacing.begin(), uniform_spacing.end());
     
@@ -533,18 +570,20 @@ void ascent::runtime::filters::BFlowPmt::execute()
     //std::cout << "Selected spacing "<< selected_spacing << " rank " << world_rank << " contributing " << color <<"\n";
   }
 
+  int rank = 0, comm_size = 1;
+
+#ifdef ASCENT_MPI_ENABLED
   MPI_Barrier(uniform_comm);
 
   MPI_Comm comm;
   MPI_Comm_split(uniform_comm, color, uniform_rank, &comm);
 
-  int rank, comm_size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &comm_size);
+#endif
 
   conduit::Node& fields_root_node = data_node["fields"];
   conduit::Node& field_node = fields_root_node[p["field"].as_string()];
-
   conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
 
   if(color) {
@@ -587,7 +626,6 @@ void ascent::runtime::filters::BFlowPmt::execute()
       }
       
     }
-
 
     origin[0] = data_node["coordsets/coords/origin/x"].to_float64();
     origin[1] = data_node["coordsets/coords/origin/y"].to_float64();
@@ -681,7 +719,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
                           data_size,
                           n_blocks,
                           low, high,
-                          fanin, threshold, comm);
+                          fanin, threshold);
 
     ParallelMergeTree::s_data_size[0] = data_size[0];
     ParallelMergeTree::s_data_size[1] = data_size[1];
@@ -724,7 +762,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
     pmt.Initialize();
     pmt.Execute();
 
-    MPI_Barrier(comm);
+    // MPI_Barrier(comm);
 
     if (gen_field) {
       // Generate new field 'segment'
