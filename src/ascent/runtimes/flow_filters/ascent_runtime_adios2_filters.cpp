@@ -183,7 +183,7 @@ ADIOS2::verify_params(const conduit::Node &params,
   }
 
   std::string engineType = params["engine"].as_string();
-  if (engineType != "BPFile" || engineType != "SST")
+  if (engineType != "BPFile" && engineType != "SST")
   {
     info["errors"].append() = "unsupported engine type: " + engineType;
     res = false;
