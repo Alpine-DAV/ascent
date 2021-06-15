@@ -88,6 +88,24 @@ is_xyz(const std::string &axis_name)
   return axis_name == "x" || axis_name == "y" || axis_name == "z";
 }
 
+int spatial_component(const std::string axis)
+{
+  int res = -1;
+  if(axis == "x")
+  {
+    res = 0;
+  }
+  else if(axis == "y")
+  {
+    res = 1;
+  }
+  else if(axis == "z")
+  {
+    res = 2;
+  }
+  return res;
+}
+
 Array<double> allocate_bins(const std::string reduction_op, const conduit::Node &axes)
 {
   const int num_axes = axes.number_of_children();
@@ -371,8 +389,6 @@ template<typename Exec>
 void calc_bindex(const Array<double> &values,
                  const int num_components,
                  const int component_id,
-                 const int axis_id,
-                 const int num_axes,
                  const int bin_stride,
                  const conduit::Node &axis,
                  Array<int> &bindexes,
@@ -389,6 +405,7 @@ void calc_bindex(const Array<double> &values,
   const double *bins_ptr = bins.ptr_const(mem_space);
   const int bins_size = bins.size();
   bool clamp = axis["clamp"].to_int32() == 1;
+  std::cout<<"**** bindex size "<<size<<"\n";
 
   RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
   {
@@ -426,7 +443,7 @@ void calc_bindex(const Array<double> &values,
     int current_bindex = bins_ptr[i];
     bool valid = true;
     // this is missed some other bin, so just keep it that way
-    if(current_bindex != -1 || bindex == -1)
+    if(current_bindex == -1 || bindex == -1)
     {
       valid = false;
     }
@@ -548,6 +565,7 @@ struct BindexingFunctor
       // are in fact domain ids
       const int domain_id = dom["state/domain_id"].to_int32();
       Array<int> &bindexes = m_bindexes[domain_id];
+      std::cout<<"*** Homes size "<<homes_size<<"\n";
       bindexes.resize(homes_size);
       array_memset(bindexes, 0);
 
@@ -572,14 +590,13 @@ struct BindexingFunctor
           detail::calc_bindex(values,
                               1, // number of components
                               0, // which component
-                              axis_index,
-                              num_axes,
                               bin_stride,
                               axis,
                               bindexes,
                               Exec());
+
         }
-        else
+        else // this is a spatatial axis
         {
           // this is a coordinate axis so we need the spatial information
           if(do_once)
@@ -595,27 +612,31 @@ struct BindexingFunctor
               std::cout<<"**** Getting centroids\n";
               spatial_values = centroids(dom, m_topo_name);
             }
+            std::cout<<"*** spatial values "<<spatial_values.size()<<"\n";
           }
+          std::cout<<"Spatial axis "<<axis_name<<"\n";
+          int comp = detail::spatial_component(axis_name);
+          detail::calc_bindex(spatial_values,
+                              3, // number of components
+                              comp, // which component
+                              bin_stride,
+                              axis,
+                              bindexes,
+                              Exec());
         }
+
         bin_stride *= axis["bins"].dtype().number_of_elements() - 1;
       }
+
+      // debug
+      int bsize = bindexes.size();
+      int *b_ptr = bindexes.host_ptr();
+      for(int i = 0; i < bsize; ++i)
+      {
+        std::cout<<"Index "<<i<<" bin "<<b_ptr[i]<<"\n";
+      }
+
     }
-
-
-    //const int size = array.size();
-
-    //const T value = m_value;
-
-    //using fp = typename Exec::for_policy;
-
-    //double *array_ptr = array.ptr(Exec::memory_space);
-
-    //RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
-    //{
-    //  array_ptr[i] = value;
-    //});
-    //ASCENT_ERROR_CHECK();
-
   }
 };
 

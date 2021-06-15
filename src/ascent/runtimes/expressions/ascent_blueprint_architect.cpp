@@ -3207,11 +3207,10 @@ centroids(const conduit::Node &domain, const std::string topo)
   const std::string mesh_type = n_topo["type"].as_string();
   const std::string coords_name = n_topo["coordset"].as_string();
   const conduit::Node &n_coords = domain["coordsets/"+coords_name];
-  Array<double> res;
 
   detail::CentroidFunctor func;
   exec_dispatch_mesh(n_coords,n_topo, func);
-  return res;
+  return func.m_centroids;
 }
 
 Array<double>
