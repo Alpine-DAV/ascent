@@ -106,7 +106,9 @@ int spatial_component(const std::string axis)
   return res;
 }
 
-Array<double> allocate_bins(const std::string reduction_op, const conduit::Node &axes)
+Array<double> allocate_bins(const std::string reduction_op,
+                            const conduit::Node &axes,
+                            int &total_bins)
 {
   const int num_axes = axes.number_of_children();
 
@@ -134,6 +136,7 @@ Array<double> allocate_bins(const std::string reduction_op, const conduit::Node 
   const int bins_size = num_bins * num_bin_vars;
   Array<double> bins;
   bins.resize(bins_size);
+  total_bins = static_cast<int>(num_bins);
   return bins;
 }
 
@@ -510,26 +513,129 @@ Array<double> cast_field_values(conduit::Node &field, const std::string componen
   return res;
 }
 
+struct BinningFunctor
+{
+  std::map<int,Array<int>> &m_bindexes;
+  std::map<int,Array<double>> &m_values;
+  Array<double> &m_bins;
+  const std::string m_op;
+  std::vector<int> m_domain_ids;
+
+
+  BinningFunctor() = delete;
+  BinningFunctor(std::map<int,Array<int>> &bindexes,
+                 std::map<int,Array<double>> &values,
+                 Array<double> &bins,
+                 const std::string op)
+    : m_bindexes(bindexes),
+      m_values(values),
+      m_bins(bins),
+      m_op(op)
+  {
+    for(auto &pair : m_values)
+    {
+      m_domain_ids.push_back(pair.first);
+    }
+  }
+
+  template<typename Exec>
+  void operator()(const Exec &)
+  {
+
+    using fp = typename Exec::for_policy;
+    using ap = typename Exec::atomic_policy;
+
+    for(auto dom_id : m_domain_ids)
+    {
+      const int *bindex_ptr = m_bindexes[dom_id].ptr_const(Exec::memory_space);
+      const double *values_ptr = m_values[dom_id].ptr_const(Exec::memory_space);
+      const int size = m_values[dom_id].size();
+      double *bins_ptr = m_bins.ptr(Exec::memory_space);
+      if(m_op == "min")
+      {
+        RAJA::forall<fp>
+          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        {
+          const int index = bindex_ptr[i];
+          const double value = values_ptr[i];
+          RAJA::atomicMin<ap>(bins_ptr + index, value);
+        });
+      }
+      else if(m_op == "max")
+      {
+        RAJA::forall<fp>
+          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        {
+          const int index = bindex_ptr[i];
+          const double value = values_ptr[i];
+          RAJA::atomicMax<ap>(bins_ptr + index, value);
+        });
+      }
+      else if(m_op == "avg" || m_op == "sum" || m_op == "pdf")
+      {
+        RAJA::forall<fp>
+          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        {
+          const int index = bindex_ptr[i];
+          const double value = values_ptr[i];
+          const int offset = index * 2;
+          RAJA::atomicAdd<ap>(bins_ptr + offset, value);
+          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
+        });
+      }
+      else if(m_op == "rms")
+      {
+        RAJA::forall<fp>
+          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        {
+          const int index = bindex_ptr[i];
+          const double value = values_ptr[i];
+          const int offset = index * 2;
+          RAJA::atomicAdd<ap>(bins_ptr + offset, value * value);
+          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
+        });
+      }
+      else if(m_op == "var" || m_op == "std")
+      {
+        RAJA::forall<fp>
+          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        {
+          const int index = bindex_ptr[i];
+          const double value = values_ptr[i];
+          const int offset = index * 3;
+          RAJA::atomicAdd<ap>(bins_ptr + offset, value * value);
+          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, value);
+          RAJA::atomicAdd<ap>(bins_ptr + offset + 2, 1.);
+        });
+      }
+    }
+  }
+};
+
 struct BindexingFunctor
 {
 
   // map of domain_id to bin indexes
   std::map<int,Array<int>> m_bindexes;
+  std::map<int,Array<double>> m_values;
   const conduit::Node &m_axes;
   conduit::Node &m_dataset;
   const std::string m_topo_name;
   const std::string m_assoc;
   const std::string m_component;
+  const std::string m_reduction_var;
   BindexingFunctor(conduit::Node &dataset,
                    const conduit::Node &axes,
                    const std::string topo_name,
                    const std::string assoc,
-                   const std::string component)
+                   const std::string component,
+                   const std::string reduction_var)
     : m_axes(axes),
       m_dataset(dataset),
       m_topo_name(topo_name),
       m_assoc(assoc),
-      m_component(component)
+      m_component(component),
+      m_reduction_var(reduction_var)
   {}
 
   template<typename Exec>
@@ -594,7 +700,10 @@ struct BindexingFunctor
                               axis,
                               bindexes,
                               Exec());
-
+          if(axis_name == m_reduction_var)
+          {
+            m_values[domain_id] = values;
+          }
         }
         else // this is a spatatial axis
         {
@@ -640,6 +749,221 @@ struct BindexingFunctor
   }
 };
 
+void exchange_bins(Array<double> &bins, const std::string op)
+{
+#ifdef ASCENT_MPI_ENABLED
+  double *bins_ptr = bins.host_ptr();
+  const int bins_size = bins.size();
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  Array<double> global_bins;
+  global_bins.resize(bins_size);
+  double *global_ptr = global_bins.host_ptr();
+
+  if(op == "sum" || op == "pdf" || op == "avg" ||
+     op == "std" || op == "var" || op == "rms")
+  {
+    MPI_Allreduce(bins_ptr, global_ptr, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
+  }
+  else if(op == "min")
+  {
+    MPI_Allreduce(bins_ptr, global_ptr, bins_size, MPI_DOUBLE, MPI_MIN, mpi_comm);
+  }
+  else if(op == "max")
+  {
+    MPI_Allreduce(bins_ptr, global_ptr, bins_size, MPI_DOUBLE, MPI_MAX, mpi_comm);
+  }
+  bins = global_bins;
+#endif
+}
+
+struct CalcResultsFunctor
+{
+  conduit::Node &m_res;
+  Array<double> &m_bins;
+  const int m_num_bins;
+  const std::string m_op;
+  const double m_empty_val;
+  int m_op_code;
+
+  CalcResultsFunctor() = delete;
+  CalcResultsFunctor(conduit::Node &res,
+                     Array<double> &bins,
+                     const int num_bins,
+                     const std::string op,
+                     const double empty_val)
+    : m_res(res),
+      m_bins(bins),
+      m_num_bins(num_bins),
+      m_op(op),
+      m_empty_val(empty_val)
+  {
+    m_op_code = -1;
+    if(m_op == "min")
+    {
+      m_op_code = 0;
+    }
+    else if(m_op == "max")
+    {
+      m_op_code = 1;
+    }
+    else if(m_op == "sum")
+    {
+      m_op_code = 2;
+    }
+    else if(m_op == "pdf")
+    {
+      m_op_code = 3;
+    }
+    else if(m_op == "avg")
+    {
+      m_op_code = 4;
+    }
+    else if(m_op == "rms")
+    {
+      m_op_code = 5;
+    }
+    else if(m_op == "std")
+    {
+      m_op_code = 6;
+    }
+  }
+
+  template<typename Exec>
+  void operator()(const Exec &)
+  {
+    double *bins_ptr = m_bins.ptr(Exec::memory_space);
+    const int size = m_num_bins;
+    using fp = typename Exec::for_policy;
+    int op_code = m_op_code;
+    const double min_default = std::numeric_limits<double>::max();
+    const double max_default = std::numeric_limits<double>::lowest();
+    const double empty_val = m_empty_val;
+    double pdf_total = 0;
+
+    if(m_op == "pdf")
+    {
+      // we need the total sum to generate a pdf
+      using rp = typename Exec::reduce_policy;
+      RAJA::ReduceSum<rp, double> sum(0.0);
+      RAJA::forall<fp>
+        (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+      {
+        sum += bins_ptr[i * 2];
+      });
+      pdf_total = sum.get();
+    }
+
+    Array<double> results;
+    results.resize(size);
+    double *res_ptr = results.ptr(Exec::memory_space);
+
+    RAJA::forall<fp>
+      (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+    {
+      double result;
+      if(op_code == 0)
+      {
+        // min
+        double val = bins_ptr[i];
+        if(val == min_default)
+        {
+          val = empty_val;
+        }
+        res_ptr[i] = val;
+      }
+      if(op_code == 1)
+      {
+        // max
+        double val = bins_ptr[i];
+        if(val == max_default)
+        {
+          val = empty_val;
+        }
+        res_ptr[i] = val;
+      }
+
+      if(op_code == 2)
+      {
+        // sum
+        double val = bins_ptr[i*2];
+        if(val == max_default)
+        {
+          val = empty_val;
+        }
+        res_ptr[i] = val;
+      }
+      if(op_code == 3)
+      {
+        // pdf
+        double val = bins_ptr[i*2 + 1];
+        if(val == 0)
+        {
+          val = empty_val;
+        }
+        else
+        {
+          val /= pdf_total;
+        }
+        res_ptr[i] = val;
+      }
+
+      if(op_code == 4)
+      {
+        // avg
+        const double sum = bins_ptr[2 * i];
+        const double count = bins_ptr[2 * i + 1];
+        double val;
+        if(count == 0)
+        {
+          val = empty_val;
+        }
+        else
+        {
+          val = sum / count;
+        }
+        res_ptr[i] = val;
+      }
+
+      if(op_code == 5)
+      {
+        // rms
+        const double sum_x = bins_ptr[2 * i];
+        const double n = bins_ptr[2 * i + 1];
+        double val;
+        if(n == 0)
+        {
+          val = empty_val;
+        }
+        else
+        {
+          val = sqrt(sum_x / n);
+        }
+        res_ptr[i] = val;
+      }
+
+      if(op_code == 6)
+      {
+        // std
+        const double sum_x2 = bins_ptr[3 * i];
+        const double sum_x = bins_ptr[3 * i + 1];
+        const double n = bins_ptr[3 * i + 2];
+        double val;
+        if(n == 0)
+        {
+          val = empty_val;
+        }
+        else
+        {
+          val = (sum_x2 / n) - pow(sum_x / n, 2);
+        }
+        res_ptr[i] = val;
+      }
+
+    });
+    m_res["value"].set(m_bins.host_ptr(), num_bins);
+  }
+};
+
 } // namespace detail
 
 conduit::Node data_binning(conduit::Node &dataset,
@@ -649,8 +973,6 @@ conduit::Node data_binning(conduit::Node &dataset,
                            const double empty_bin_val,
                            const std::string &component)
 {
-  conduit::Node res;
-
   bin_axes.print();
 
   // first verify that all variables have matching associations
@@ -667,9 +989,7 @@ conduit::Node data_binning(conduit::Node &dataset,
 
   // expand optional / automatic axes into explicit bins
   conduit::Node axes = detail::create_bins_axes(bin_axes, dataset, topo_name);
-  std::cout<<"DONE BINS\n";
 
-  Array<double> bins = detail::allocate_bins(reduction_op, axes);
 
   //int component_idx = detail::component_str_to_id(dataset,
   //                                                reduction_var,
@@ -683,9 +1003,34 @@ conduit::Node data_binning(conduit::Node &dataset,
                                     axes,
                                     topo_name,
                                     assoc_str,
-                                    component);
+                                    component,
+                                    reduction_var);
 
   exec_dispatch(bindexer);
+
+  // we now have the all of the bin setup, all we have to
+  // do now is the reduction
+  int num_bins;
+  Array<double> bins = detail::allocate_bins(reduction_op, axes, num_bins);
+
+  detail::BinningFunctor binner(bindexer.m_bindexes,
+                                bindexer.m_values,
+                                bins,
+                                reduction_op);
+
+  exec_dispatch(binner);
+  std::cout<<"DONE BINinng\n";
+  // mpi exchange
+  detail::exchange_bins(bins, reduction_op);
+
+  // use the intermediate results to calc the final bin values
+
+  conduit::Node res;
+  detail::CalcResultsFunctor banana(res,
+                                    bins,
+                                    num_bins,
+                                    reduction_op,
+                                    empty_bin_val);
 
   ASCENT_ERROR("not done implementing");
   return res;
