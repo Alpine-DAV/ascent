@@ -73,7 +73,8 @@ class Ascent(Package, CudaPackage):
             description="build openmp support")
     variant("cuda", default=False, description="Build cuda support")
     variant("mfem", default=False, description="Build MFEM filter support")
-    variant("adios", default=False, description="Build Adios filter support")
+    variant("adios2", default=False, description="Build Adios2 filter support")
+    variant("fides", default=False, description="Build Fides filter support")
     variant("dray", default=False, description="Build with Devil Ray support")
 
     # variants for dev-tools (docs, etc)
@@ -141,7 +142,8 @@ class Ascent(Package, CudaPackage):
     depends_on("mfem~threadsafe~openmp~shared~mpi+conduit", when="~shared+mfem~mpi")
 
 
-    depends_on("adios", when="+adios")
+    depends_on("adios2", when="+adios2")
+    depends_on("fides", when="+fides")
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us
@@ -506,15 +508,26 @@ class Ascent(Package, CudaPackage):
             cfg.write("# devil ray not built by spack \n")
 
         #######################
-        # Adios
+        # Adios2
         #######################
 
-        cfg.write("# adios support\n")
+        cfg.write("# adios2 support\n")
 
-        if "+adios" in spec:
-            cfg.write(cmake_cache_entry("ADIOS_DIR", spec['adios'].prefix))
+        if "+adios2" in spec:
+            cfg.write(cmake_cache_entry("ADIOS2_DIR", spec['adios2'].prefix))
         else:
-            cfg.write("# adios not built by spack \n")
+            cfg.write("# adios2 not built by spack \n")
+
+        #######################
+        # Fides
+        #######################
+
+        cfg.write("# Fides support\n")
+
+        if "+fides" in spec:
+            cfg.write(cmake_cache_entry("FIDES_DIR", spec['fides'].prefix))
+        else:
+            cfg.write("# fides not built by spack \n")
 
         cfg.write("##################################\n")
         cfg.write("# end spack generated host-config\n")
