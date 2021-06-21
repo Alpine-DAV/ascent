@@ -208,7 +208,7 @@ void Cache::load(const std::string &dir,
   m_loaded = true;
 }
 
-Cache::~Cache()
+void Cache::save()
 {
   // the session file can be blank during testing,
   // since its not actually opening ascent
@@ -218,6 +218,11 @@ Cache::~Cache()
   {
     m_data.save(m_session_file,"yaml");
   }
+}
+
+Cache::~Cache()
+{
+  save();
 }
 
 void
@@ -247,6 +252,10 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::ArraySum>();
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
+  flow::Workspace::register_filter_type<expressions::Abs>();
+  flow::Workspace::register_filter_type<expressions::Pow>();
+  flow::Workspace::register_filter_type<expressions::Exp>();
+  flow::Workspace::register_filter_type<expressions::Log>();
   flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
@@ -471,6 +480,42 @@ initialize_functions()
   mag_sig["filter_name"] = "magnitude";
   mag_sig["args/arg1/type"] = "vector";
   mag_sig["description"] = "Return the magnitude of the input vector.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &abs_sig = (*functions)["abs"].append();
+  abs_sig["return_type"] = "scalar";
+  abs_sig["filter_name"] = "abs";
+  abs_sig["args/arg1/type"] = "scalar";
+  abs_sig["description"] = "Return the absolute value of the input.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &exp_sig = (*functions)["exp"].append();
+  exp_sig["return_type"] = "double";
+  exp_sig["filter_name"] = "exp";
+  exp_sig["args/arg1/type"] = "scalar";
+  exp_sig["description"] = "Return the base e exponential.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &pow_sig = (*functions)["pow"].append();
+  pow_sig["return_type"] = "double";
+  pow_sig["filter_name"] = "pow";
+  pow_sig["args/arg1/type"] = "scalar";
+  pow_sig["args/arg2/type"] = "scalar";
+  pow_sig["description"] =
+    "Returns base raised to the power exponent."
+    " pow(base, exponent)";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &log_sig = (*functions)["log"].append();
+  log_sig["return_type"] = "double";
+  log_sig["filter_name"] = "log";
+  log_sig["args/arg1/type"] = "scalar";
+  log_sig["description"] =
+    "Returns the natural logarithm of the argument";
 
   // -------------------------------------------------------------
 
@@ -793,7 +838,7 @@ initialize_objects()
   bin_atts["center/type"] = "double";
   bin_atts["value/type"] = "double";
 
-  // objects->save("objects.json", "json");
+  //objects->save("objects.json", "json");
 }
 
 conduit::Node
@@ -897,6 +942,12 @@ void
 ExpressionEval::reset_cache()
 {
   m_cache.m_data.reset();
+}
+
+void
+ExpressionEval::save_cache()
+{
+  m_cache.save();
 }
 
 void ExpressionEval::get_last(conduit::Node &data)

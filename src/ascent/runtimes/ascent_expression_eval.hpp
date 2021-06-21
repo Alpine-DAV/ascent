@@ -91,6 +91,7 @@ struct Cache
   void filter_time(double ftime);
   bool filtered();
   bool loaded();
+  void save();
 
   ~Cache();
 };
@@ -112,6 +113,7 @@ public:
   static void reset_cache();
   static void load_cache(const std::string &dir,
                          const std::string &session);
+  static void save_cache();
 
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
 };

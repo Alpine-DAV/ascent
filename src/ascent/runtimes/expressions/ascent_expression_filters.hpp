@@ -344,6 +344,51 @@ public:
   virtual void execute();
 };
 
+class Abs : public ::flow::Filter
+{
+public:
+  Abs();
+  ~Abs();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+
+class Exp : public ::flow::Filter
+{
+public:
+  Exp();
+  ~Exp();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Log : public ::flow::Filter
+{
+public:
+  Log();
+  ~Log();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Pow : public ::flow::Filter
+{
+public:
+  Pow();
+  ~Pow();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class Axis : public ::flow::Filter
 {
 public:
