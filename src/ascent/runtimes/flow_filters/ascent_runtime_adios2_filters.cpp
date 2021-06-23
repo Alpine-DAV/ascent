@@ -42,12 +42,6 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-/******************************************************
-TODO:
-
- */
-
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_adios2_filters.cpp
@@ -93,6 +87,10 @@ TODO:
 #include <set>
 #include <cstring>
 #include <limits>
+#include <string>
+#include <sstream>
+#include <algorithm>
+#include <iterator>
 
 #include <fides/DataSetReader.h>
 #include <fides/DataSetWriter.h>
@@ -123,7 +121,7 @@ inline ostream& operator<<(ostream& os, const set<T>& s)
     return os;
 }
 
-static fides::io::DataSetWriter *writer = NULL;
+static fides::io::DataSetAppendWriter *writer = NULL;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -169,25 +167,36 @@ bool
 ADIOS2::verify_params(const conduit::Node &params,
                      conduit::Node &info)
 {
-    bool res = true;
-#if 0
-    if (!params.has_child("transport") ||
-        !params["transport"].dtype().is_string())
-    {
-        info["errors"].append() = "missing required entry 'transport'";
-        res = false;
-    }
+  bool res = true;
+  if (!params.has_child("filename") ||
+      !params["filename"].dtype().is_string())
+  {
+    info["errors"].append() = "missing required entry 'filename'";
+    res = false;
+  }
 
+  if (!params.has_child("engine") ||
+      !params["engine"].dtype().is_string())
+  {
+    info["errors"].append() = "missing required entry 'engine'";
+    res = false;
+  }
 
-    if (!params.has_child("filename") ||
-        !params["transport"].dtype().is_string() )
-    {
-        info["errors"].append() = "missing required entry 'filename'";
-        res = false;
-    }
-#endif
-    
-    return res;
+  std::string engineType = params["engine"].as_string();
+  if (engineType != "BPFile" && engineType != "SST")
+  {
+    info["errors"].append() = "unsupported engine type: " + engineType;
+    res = false;
+  }
+
+  std::string fileName = params["filename"].as_string();
+  if (engineType == "SST" && fileName.find("/") != std::string::npos )
+  {
+    info["errors"].append() = "filename with directory not supported for SST engine";
+    res = false;
+  }
+
+  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -195,196 +204,65 @@ void
 ADIOS2::execute()
 {
   ASCENT_INFO("execute");
-    
+
+  std::string engineType = params()["engine"].as_string();
+  std::string fileName   = params()["filename"].as_string();
+
   if (writer == NULL)
-    writer = new fides::io::DataSetWriter("out.bp");
-  
-    if(!input(0).check_type<DataObject>())
+    writer = new fides::io::DataSetAppendWriter(fileName);
+
+  if(!input(0).check_type<DataObject>())
+  {
+    ASCENT_ERROR("ADIOS2 input must be a data object");
+  }
+
+  //If fields set, set the WriteFields attribute.
+  if (params().has_child("fields"))
+  {
+    std::string fields = params()["fields"].as_string();
+    if (!fields.empty())
     {
-        ASCENT_ERROR("ADIOS2 input must be a data object");
+      std::vector<std::string> fieldList;
+
+      std::istringstream iss(fields);
+      std::copy(std::istream_iterator<std::string>(iss),
+                std::istream_iterator<std::string>(),
+                std::back_inserter(fieldList));
+
+      writer->SetWriteFields(fieldList);
     }
+  }
 
-    DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string topo_name = detail::resolve_topology(params(),
-                                                     this->name(),
-                                                     collection);
+  DataObject *data_object = input<DataObject>(0);
+  std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+  std::string topo_name = detail::resolve_topology(params(),
+                                                   this->name(),
+                                                   collection);
 
-    vtkm::cont::PartitionedDataSet pds;
-    vtkm::Id numDS = data.GetNumberOfDomains();
-    for (vtkm::Id i = 0; i < numDS; i++)
-      pds.AppendPartition(data.GetDomain(i));
+  vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
-    writer->Write(pds, "BPFile");
+  vtkm::cont::PartitionedDataSet pds;
+  vtkm::Id numDS = data.GetNumberOfDomains();
+  for (vtkm::Id i = 0; i < numDS; i++)
+    pds.AppendPartition(data.GetDomain(i));
 
-    return;
-
-#if 0    
-    if(!input("in").check_type<Node>())
-    {
-        // error
-        ASCENT_ERROR("adios2 filter requires a conduit::Node input");
-    }
-
-    transportType = params()["transport"].as_string();
-    fileName      = params()["filename"].as_string();
-
-    // get params
-
-    #ifdef ADIOS2_HAVE_MPI
-        adios2::ADIOS adios(mpi_comm, adios2::DebugON);
-    #else
-        adios2::ADIOS adios;
-    #endif
-    adios2::IO adiosWriter = adios.DeclareIO("adiosWriter");
-    // ************************************************************
-    // <-----------
-    //      adios_define_schema_version(adiosGroup, (char*)"1.1");
-    // <-----------
-    // ************************************************************
-
-    //Fetch input data
-    Node *blueprint_data = input<Node>("in");
-
-    NodeConstIterator itr = (*blueprint_data)["coordsets"].children();
-    while (itr.has_next())
-    {
-        const Node &coordSet = itr.next();
-        std::string coordSetType = coordSet["type"].as_string();
-
-        if (coordSetType == "uniform")
-        {
-            UniformMeshSchema(coordSet); // Returns false
-            break;
-        }
-        else if (coordSetType == "rectilinear")
-        {
-            RectilinearMeshSchema(coordSet); // Holds a adios_write
-            break;
-        }
-    }
-
-    if (blueprint_data->has_child("fields"))
-    {
-        const Node &fields = (*blueprint_data)["fields"];
-        NodeConstIterator fields_itr = fields.children();
-
-        while(fields_itr.has_next())
-        {
-            const Node& field = fields_itr.next();
-            std::string field_name = fields_itr.name();
-            FieldVariable(field_name, field); // Has a adios_write
-        }
-    }
-
-/*
-    // I think this comes down but how are the variables coming through?
-    if (transportType == "file")
-    {
-        adios2::Engine adiosWriter = bpIO.Open(fileName, adios2::Mode::Write);
-        //adios_init_noxml(mpi_comm);
-        ////adios_set_max_buffer_size(100);
-        //adios_declare_group(&adiosGroup, "test_data", "iter", adios_stat_default);
-        //adios_select_method(adiosGroup, "MPI", "", "");
-        //adios_open(&adiosFile, "test_data", fileName.c_str(), "w", mpi_comm);
-        adiosWriter.SetEngine("BPReader");
-    }
-    else if ( transportType == "sst" )
-    {
-        ASCENT_ERROR("SST is not enabled at this time");
-        //adiosWriter.SetEngine("SST");
-    }
-    else
-    {
-        ASCENT_ERROR("Transport type: " <<transportType << " not supported!");
-    }
-    //adios_close(adiosFile);
-    //I think I just need to open and close at write. Maybe close here
-    //adiosWriter.Close();
-    //adios2::Engine adiosWriter = bpIO.Open(fileName, adios2::Mode::Write);
-*/
-#endif
+  writer->Write(pds, engineType);
 }
-
-
-#if 0
-//-----------------------------------------------------------------------------
-bool
-ADIOS2::FieldVariable(const string &fieldName, const Node &node)
-{
-    // TODO: we can assuem this is true if verify is true and this is a recti
-    // mesh.
-    if (!node.has_child("values") ||
-        !node.has_child("association") ||
-        !node.has_child("type"))
-        return false;
-
-    const string &fieldType = node["type"].as_string();
-    const string &fieldAssoc = node["association"].as_string();
-
-    if (fieldType != "scalar")
-    {
-        ASCENT_INFO("Field type "
-                    << fieldType
-                    << " not supported for ADIOS2 this time");
-        return false;
-    }
-    if (fieldAssoc != "vertex" && fieldAssoc != "element")
-    {
-        ASCENT_INFO("Field association "
-                    << fieldAssoc
-                    <<" not supported for ADIOS2 this time");
-        return false;
-    }
-
-    const Node &field_values = node["values"];
-    const double *vals = field_values.as_double_ptr();
-
-    /*
-    DataType dt(fieldNode.dtype());
-    cout<<"FIELD "<<fieldName<<" #= "<<dt.number_of_elements()<<endl;
-    cout<<"localDims: "<<dimsToStr(localDims, (fieldAssoc=="vertex"))<<endl;
-    cout<<"globalDims: "<<dimsToStr(globalDims, (fieldAssoc=="vertex"))<<endl;
-    cout<<"offset: "<<dimsToStr(offset, (fieldAssoc=="vertex"))<<endl;
-    */
-
-    
-    /*
-    int64_t varId = adios_define_var(adiosGroup,
-                                     (char*)fieldName.c_str(),
-                                     "",
-                                     adios_double,
-                                     dimsToStr(localDims, (fieldAssoc=="vertex")).c_str(),
-                                     dimsToStr(globalDims, (fieldAssoc=="vertex")).c_str(),
-                                     dimsToStr(offset, (fieldAssoc=="vertex")).c_str());
-    adios_define_var_mesh(adiosGroup,
-                          (char*)fieldName.c_str(),
-                          meshName.c_str());
-    adios_define_var_centering(adiosGroup,
-                               fieldName.c_str(),
-                               (fieldAssoc == "vertex" ? "point" : "cell"));
-    adios_write(adiosFile, fieldName.c_str(), (void*)vals);
-    */
-    return true;
-}
-#endif
 
 //-----------------------------------------------------------------------------
 };
+
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 };

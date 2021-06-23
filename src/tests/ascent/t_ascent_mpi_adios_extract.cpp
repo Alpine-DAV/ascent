@@ -68,7 +68,6 @@ using ascent::Ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
 {
-
     //
     // Set Up MPI
     //
@@ -87,7 +86,8 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     // Create the data.
     //
     Node data, verify_info;
-    create_3d_example_dataset(data,par_rank,par_size);
+    int dims = 32;
+    create_3d_example_dataset(data,dims,par_rank,par_size);
 
 
 
@@ -117,9 +117,9 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     //
 
     conduit::Node extracts;
-    extracts["e1/type"]  = "adios";
+    extracts["e1/type"]  = "adios2";
     // populate some param examples
-    extracts["e1/params/transport"] = "file";
+    extracts["e1/params/engine"] = "BPFile";
     extracts["e1/params/filename"] = output_file;
 
     //
@@ -171,5 +171,3 @@ int main(int argc, char* argv[])
 
     return result;
 }
-
-
