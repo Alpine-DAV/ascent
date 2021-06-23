@@ -82,6 +82,7 @@
 
 
 #cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
+#cmakedefine ASCENT_FIDES_ENABLED     "@FIDES_FOUND@"
 #cmakedefine ASCENT_MFEM_ENABLED      "@MFEM_FOUND@"
 #cmakedefine ASCENT_DRAY_ENABLED      "@DRAY_FOUND@"
 #cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
@@ -103,6 +104,3 @@
 
 
 #endif
-
-
-

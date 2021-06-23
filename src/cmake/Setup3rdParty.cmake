@@ -115,12 +115,11 @@ if (DRAY_DIR)
   include(cmake/thirdparty/SetupDevilRay.cmake)
 endif()
 
-
 ################################
 # Setup ADIOS
 ################################
-if (ADIOS_DIR)
-  include(cmake/thirdparty/SetupADIOS.cmake)
+if (Fides_DIR)
+  include(cmake/thirdparty/SetupFides.cmake)
 endif()
 
 ################################
@@ -129,4 +128,3 @@ endif()
 if (ENABLE_BABELFLOW)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif ()
-
