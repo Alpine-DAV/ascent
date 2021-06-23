@@ -111,7 +111,7 @@ if(VTKM_FOUND)
 endif()
 
 # adios tests
-if(ENABLE_ADIOS2)
+if(ENABLE_FIDES)
    list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
 endif()
 

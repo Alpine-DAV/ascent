@@ -523,7 +523,9 @@ class Ascent(Package, CudaPackage):
         cfg.write("# Fides support\n")
 
         if "+fides" in spec:
-            cfg.write(cmake_cache_entry("FIDES_DIR", spec['fides'].prefix))
+            cfg.write(cmake_cache_entry("ENABLE_FIDES", "ON"))
+            cfg.write(cmake_cache_entry("Fides_DIR", spec['fides'].prefix + '/lib/cmake/fides'))
+            cfg.write(cmake_cache_entry("ADIOS2_DIR", spec['adios2'].prefix + '/lib/cmake/adios2'))
         else:
             cfg.write("# fides not built by spack \n")
 
