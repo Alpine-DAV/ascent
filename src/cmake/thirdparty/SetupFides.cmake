@@ -62,25 +62,16 @@ if(NOT FIDES_DIR)
     MESSAGE(FATAL_ERROR "Fides support needs explicit Fides_DIR")
   endif()
 
+#The Fides cmake is not setting these for some reason.
+#So, we set them explicitly for now.
 set(Fides_DIR ${FIDES_DIR}/lib/cmake/fides)
 set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/fides)
 set(FIDES_LIB_DIR ${FIDES_DIR}/lib)
 set(FIDES_LIBRARIES fides)
 
-MESSAGE(STATUS "*************************************** MEOW **************************************")
-MESSAGE(STATUS "*************************************** MEOW **************************************")
-MESSAGE(STATUS "*************************************** MEOW **************************************")
-MESSAGE(STATUS "Looking for Fides using Fides_DIR = ${Fides_DIR} ${FIDES_DIR}")
 
 find_package(Fides REQUIRED)
-
-
-print_all_variables()
 
 blt_register_library(NAME fides
                      INCLUDES ${FIDES_INCLUDE_DIR}
                      LIBRARIES ${FIDES_LIB_DIRS} ${FIDES_LIBRARIES} )
-
-MESSAGE(STATUS "DONE with Fides stuff. INCLUDE: ${FIDES_INCLUDE_DIR}")
-MESSAGE(STATUS "DONE with Fides stuff. LIB_DIR: ${FIDES_LIB_DIR}")
-MESSAGE(STATUS "DONE with Fides stuff. LIBS: ${FIDES_LIBRARIES}")
