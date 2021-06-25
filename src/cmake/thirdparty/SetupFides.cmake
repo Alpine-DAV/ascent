@@ -72,6 +72,9 @@ set(FIDES_LIBRARIES fides)
 
 find_package(Fides REQUIRED)
 
+message(STATUS "Found Fides")
+set(FIDES_FOUND TRUE)
+
 blt_register_library(NAME fides
                      INCLUDES ${FIDES_INCLUDE_DIR}
                      LIBRARIES ${FIDES_LIB_DIRS} ${FIDES_LIBRARIES} )

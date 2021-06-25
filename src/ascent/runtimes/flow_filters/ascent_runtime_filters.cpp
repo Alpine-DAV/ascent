@@ -82,9 +82,9 @@
     #ifdef ASCENT_BABELFLOW_ENABLED
     #include <ascent_runtime_babelflow_filters.hpp>
     #endif
-//    #if defined(ASCENT_ADIOS2_ENABLED)
+    #ifdef ASCENT_FIDES_ENABLED
     #include <ascent_runtime_adios2_filters.hpp>
-//    #endif
+    #endif
 #endif
 
 
