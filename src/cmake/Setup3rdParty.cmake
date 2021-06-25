@@ -116,9 +116,9 @@ if (DRAY_DIR)
 endif()
 
 ################################
-# Setup ADIOS
+# Setup Fides
 ################################
-if (Fides_DIR)
+if (FIDES_DIR)
   include(cmake/thirdparty/SetupFides.cmake)
 endif()
 

@@ -49,23 +49,28 @@
 ###############################################################################
 
 macro(print_all_variables)
-    message(STATUS "print_all_variables------------------------------------------{")
+    message(STATUS "FIDES: print_all_variables------------------------------------------{")
     get_cmake_property(_variableNames VARIABLES)
     foreach (_variableName ${_variableNames})
         message(STATUS "${_variableName}=${${_variableName}}")
     endforeach()
-    message(STATUS "print_all_variables------------------------------------------}")
+    message(STATUS "FIDES: print_all_variables------------------------------------------}")
 endmacro()
 
 
-if(NOT Fides_DIR)
+if(NOT FIDES_DIR)
     MESSAGE(FATAL_ERROR "Fides support needs explicit Fides_DIR")
-endif()
+  endif()
+
+set(Fides_DIR ${FIDES_DIR}/lib/cmake/fides)
+set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/fides)
+set(FIDES_LIB_DIR ${FIDES_DIR}/lib)
+set(FIDES_LIBRARIES fides)
 
 MESSAGE(STATUS "*************************************** MEOW **************************************")
 MESSAGE(STATUS "*************************************** MEOW **************************************")
 MESSAGE(STATUS "*************************************** MEOW **************************************")
-MESSAGE(STATUS "Looking for Fides using Fides_DIR = ${Fides_DIR}")
+MESSAGE(STATUS "Looking for Fides using Fides_DIR = ${Fides_DIR} ${FIDES_DIR}")
 
 find_package(Fides REQUIRED)
 
@@ -73,5 +78,9 @@ find_package(Fides REQUIRED)
 print_all_variables()
 
 blt_register_library(NAME fides
-                     INCLUDES ${Fides_INCLUDE_DIR}
-                     LIBRARIES ${Fides_LIB_DIRS} ${Fides_LIBRARIES} )
+                     INCLUDES ${FIDES_INCLUDE_DIR}
+                     LIBRARIES ${FIDES_LIB_DIRS} ${FIDES_LIBRARIES} )
+
+MESSAGE(STATUS "DONE with Fides stuff. INCLUDE: ${FIDES_INCLUDE_DIR}")
+MESSAGE(STATUS "DONE with Fides stuff. LIB_DIR: ${FIDES_LIB_DIR}")
+MESSAGE(STATUS "DONE with Fides stuff. LIBS: ${FIDES_LIBRARIES}")
