@@ -190,9 +190,9 @@ register_builtin()
     AscentRuntime::register_filter_type<BFlowIso>("extracts", "bflow_iso");
 #endif
 
-//#if defined(ASCENT_ADIOS2_ENABLED)
+#if defined(ASCENT_ADIOS2_ENABLED)
     AscentRuntime::register_filter_type<ADIOS2>("extracts","ADIOS2");
-//#endif
+#endif
 
 #endif
 
