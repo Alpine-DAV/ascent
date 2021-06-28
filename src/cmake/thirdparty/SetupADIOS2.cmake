@@ -69,6 +69,8 @@ MESSAGE(STATUS "*************************************** MEOW *******************
 MESSAGE(STATUS "*************************************** MEOW **************************************")
 MESSAGE(STATUS "Looking for ADIOS2 using ADIOS2_DIR = ${ADIOS2_DIR}")
 
+
+set (ADIOS2_DIR ${ADIOS2_DIR}/lib/cmake/adios2)
 find_package(ADIOS2 REQUIRED)
 
 #set(ADIOS2_INCLUDE_DIR ${ADIOS2_DIR}/include)

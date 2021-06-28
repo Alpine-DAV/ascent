@@ -119,6 +119,7 @@ endif()
 # Setup Fides
 ################################
 if (FIDES_DIR)
+  include(cmake/thirdparty/SetupADIOS2.cmake)
   include(cmake/thirdparty/SetupFides.cmake)
 endif()
 
