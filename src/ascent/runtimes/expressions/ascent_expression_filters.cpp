@@ -2110,12 +2110,15 @@ Binning::execute()
     empty_bin_val = (*n_empty_bin_val)["value"].to_float64();
   }
 
+
+  std::map<int, Array<int>> bindexes;
   const conduit::Node &n_binning = data_binning(*dataset,
                                                 n_bin_axes,
                                                 reduction_var,
                                                 reduction_op,
                                                 empty_bin_val,
-                                                component);
+                                                component,
+                                                bindexes);
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";

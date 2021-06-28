@@ -311,6 +311,22 @@ template <typename T> class ArrayInternals
     std::cout << "device_ptr = " << m_device << "\n";
   }
 
+  void status()
+  {
+    std::cout << "[array] host_ptr = " << m_host << "\n";
+    std::cout << "[array] device_ptr = " << m_device << "\n";
+    std::cout << "[array] size "<<m_size<<"\n";
+    if(m_cuda_enabled)
+    {
+      if(m_device_dirty)  std::cout << "[array] device dirty \n";
+      else std::cout << "[array] device clean\n";
+    }
+    if(m_host_dirty) std::cout << "[array] host dirty \n";
+    else std::cout << "[array] host clean\n";
+    //bool m_own_host;
+    //bool m_own_device;
+  }
+
   virtual ~ArrayInternals ()
   {
     deallocate_host ();

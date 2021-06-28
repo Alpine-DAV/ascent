@@ -3,6 +3,8 @@
 
 #include <conduit.hpp>
 #include <ascent_exports.h>
+#include <map>
+#include <expressions/ascent_array.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -41,7 +43,8 @@ conduit::Node data_binning(conduit::Node &dataset,
                            const std::string &reduction_var,
                            const std::string &reduction_op,
                            const double empty_bin_val,
-                           const std::string &component);
+                           const std::string &component,
+                           std::map<int,Array<int>> &bindexes);
 
 //-----------------------------------------------------------------------------
 };

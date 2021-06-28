@@ -40,6 +40,7 @@ template <typename T> class Array
   const T *ptr_const(const std::string loc) const;
 
   void summary ();
+  void status();
   void operator= (const Array<T> &other);
   // gets a single value and does not synch data between
   // host and device
