@@ -270,7 +270,7 @@ struct IndexLoc
 {
   RAJA::Index_type idx;
   constexpr IndexLoc() : idx(-1) {}
-  constexpr __host__ __device__ IndexLoc(RAJA::Index_type idx) : idx(idx) {}
+  constexpr ASCENT_EXEC IndexLoc(RAJA::Index_type idx) : idx(idx) {}
 };
 
 struct MaxFunctor

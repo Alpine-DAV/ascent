@@ -29,7 +29,7 @@ struct OpenMPExec
   // erroneous host device warnings
   using reduce_policy = RAJA::cuda_reduce;
 #else
-  using reduce_policy = RAJA::cuda_reduce;
+  using reduce_policy = RAJA::omp_reduce;
 #endif
   using atomic_policy = RAJA::omp_atomic;
   static std::string memory_space;
