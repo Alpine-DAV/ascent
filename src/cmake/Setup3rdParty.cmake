@@ -118,8 +118,7 @@ endif()
 ################################
 # Setup Fides
 ################################
-if (FIDES_DIR)
-  include(cmake/thirdparty/SetupVTKm.cmake)
+if (FIDES_DIR AND VTKM_DIR)
   include(cmake/thirdparty/SetupADIOS2.cmake)
   include(cmake/thirdparty/SetupFides.cmake)
 endif()
