@@ -137,6 +137,20 @@ Array<double> allocate_bins(const std::string reduction_op,
   const int bins_size = num_bins * num_bin_vars;
   Array<double> bins;
   bins.resize(bins_size);
+
+  double init_val = 0.;
+  // init the memory
+  // TODO: i think this is wrong: needs offsets and 0s for counts
+  if(reduction_op == "max")
+  {
+    init_val = std::numeric_limits<double>::lowest();
+  }
+  else if (reduction_op == "min")
+  {
+    init_val = std::numeric_limits<double>::max();
+  }
+  array_memset(bins, init_val);
+
   total_bins = static_cast<int>(num_bins);
   return bins;
 }
@@ -480,6 +494,8 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
   {
     res_ptr[i] = static_cast<double>(accessor[i]);
   });
+  std::cout<<"Cast to float64 "<<mem_space<<"\n";
+  res.status();
   ASCENT_ERROR_CHECK();
   return res;
 }
@@ -550,8 +566,30 @@ struct BinningFunctor
     {
       const int *bindex_ptr = m_bindexes[dom_id].ptr_const(Exec::memory_space);
       const double *values_ptr = m_values[dom_id].ptr_const(Exec::memory_space);
+      std::cout<<"Banananananananananananananananananana\n";
+      m_values[dom_id].status();
+      m_values[dom_id].summary();
+      m_bindexes[dom_id].summary();
+      Array<double> testa = m_values[dom_id];
+      testa.summary();
+      testa.status();
       const int size = m_values[dom_id].size();
       double *bins_ptr = m_bins.ptr(Exec::memory_space);
+        RAJA::forall<fp>
+          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        {
+          if(i == 0)
+          {
+            for(int ii  = 0; ii< size; ++ii) printf("i %d val %f\n", ii,values_ptr[ii]);
+          }
+          const int index = bindex_ptr[i];
+          const double value = values_ptr[i];
+          const int offset = index * 2;
+          printf("binner cell %d bindex %d value %f\n", i,index,value);
+          RAJA::atomicAdd<ap>(bins_ptr + offset, value);
+          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
+        });
+#if 0
       if(m_op == "min")
       {
         RAJA::forall<fp>
@@ -577,9 +615,14 @@ struct BinningFunctor
         RAJA::forall<fp>
           (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
         {
+          if(i == 0)
+          {
+            for(int ii  = 0; ii< size; ++ii) printf("i %d val %f\n", ii,values_ptr[ii]);
+          }
           const int index = bindex_ptr[i];
           const double value = values_ptr[i];
           const int offset = index * 2;
+          printf("binner cell %d bindex %d value %f\n", i,index,value);
           RAJA::atomicAdd<ap>(bins_ptr + offset, value);
           RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
         });
@@ -608,6 +651,12 @@ struct BinningFunctor
           RAJA::atomicAdd<ap>(bins_ptr + offset + 1, value);
           RAJA::atomicAdd<ap>(bins_ptr + offset + 2, 1.);
         });
+      }
+#endif
+      double *host_ptr = m_bins.host_ptr();
+      for(int i = 0; i < m_bins.size(); ++i)
+      {
+        std::cout<<"int results index "<<i<<" "<<host_ptr[i]<<"\n";
       }
     }
   }
@@ -704,6 +753,9 @@ struct BindexingFunctor
           if(axis_name == m_reduction_var)
           {
             m_values[domain_id] = values;
+            std::cout<<"**** VALUES **** \n";
+            values.status();
+            values.summary();
           }
         }
         else // this is a spatatial axis
@@ -856,6 +908,8 @@ struct CalcResultsFunctor
 
     Array<double> results;
     results.resize(size);
+    std::cout<<"Num bins "<<size<<"\n";
+    array_memset(results, m_empty_val);
     double *res_ptr = results.ptr(Exec::memory_space);
 
     RAJA::forall<fp>
@@ -887,11 +941,13 @@ struct CalcResultsFunctor
       {
         // sum
         double val = bins_ptr[i*2];
-        if(val == max_default)
+        double count = bins_ptr[i*2+1];
+        if(count == 0.)
         {
           val = empty_val;
         }
         res_ptr[i] = val;
+        printf("sum bin %i value %f\n", i, val);
       }
       if(op_code == 3)
       {
@@ -961,7 +1017,12 @@ struct CalcResultsFunctor
       }
 
     });
-    m_res["value"].set(m_bins.host_ptr(), num_bins);
+    double *host_ptr = results.host_ptr();
+    for(int i = 0; i < m_num_bins; ++i)
+    {
+      std::cout<<"res bin "<<i<<" "<<host_ptr[i]<<"\n";
+    }
+    m_res["value"].set(results.host_ptr(), m_num_bins);
   }
 };
 
@@ -972,7 +1033,8 @@ conduit::Node data_binning(conduit::Node &dataset,
                            const std::string &reduction_var,
                            const std::string &reduction_op,
                            const double empty_bin_val,
-                           const std::string &component)
+                           const std::string &component,
+                           std::map<int,Array<int>> &bindexes)
 {
   bin_axes.print();
 
@@ -1018,6 +1080,8 @@ conduit::Node data_binning(conduit::Node &dataset,
                                 bindexer.m_values,
                                 bins,
                                 reduction_op);
+  // return the bindexes so we can paint later
+  bindexes = bindexer.m_bindexes;
 
   exec_dispatch(binner);
   std::cout<<"DONE BINinng\n";
@@ -1033,7 +1097,10 @@ conduit::Node data_binning(conduit::Node &dataset,
                                     reduction_op,
                                     empty_bin_val);
 
-  ASCENT_ERROR("not done implementing");
+  exec_dispatch(banana);
+
+  res["association"] = assoc_str;
+  std::cout<<"res "<<res.to_summary_string()<<"\n";
   return res;
 }
 

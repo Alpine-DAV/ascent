@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <conduit.hpp>
+#include <ascent_exports.h>
 
 namespace ascent
 {
@@ -10,7 +11,7 @@ namespace ascent
 bool is_gpu_ptr(const void *ptr);
 void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified);
 
-class AllocationManager
+class ASCENT_API AllocationManager
 {
 public:
 

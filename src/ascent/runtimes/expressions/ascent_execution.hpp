@@ -2,11 +2,12 @@
 #define ASCENT_EXECUTION_HPP
 
 #include <conduit.hpp>
+#include <ascent_exports.h>
 
 namespace ascent
 {
 
-class ExecutionManager
+class ASCENT_API ExecutionManager
 {
 public:
   static conduit::Node info();

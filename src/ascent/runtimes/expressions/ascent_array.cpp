@@ -97,6 +97,11 @@ template <typename T> void Array<T>::summary ()
   m_internals->summary ();
 }
 
+template <typename T> void Array<T>::status()
+{
+  m_internals->status();
+}
+
 template <typename T> T Array<T>::value (const size_t i) const
 {
   return m_internals->get_value (i);
