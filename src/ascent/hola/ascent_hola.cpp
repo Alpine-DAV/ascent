@@ -270,7 +270,6 @@ void relay_blueprint_mesh_read(const Node &options,
     {
        root_protocol = "json";
     }
-    root_protocol = "yaml";
 
     Node root_node;
     relay::io::load(root_fname, root_protocol, root_node);
