@@ -99,37 +99,42 @@ int main(int argc, char **argv)
     int nsteps = 10;
     float time_value = 0.0;
     float delta_time = 0.5;
-    
+
     Node mesh;
+    Node info;
 
     for( int step =0; step < nsteps; step++)
     {
         // call helper that generates a gyre time varying example mesh.
         // gyre ref :https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/examples.html
         tutorial_gyre_example(time_value, mesh);
-    
+
         // update the example cycle
         int cycle = 100 + step * 100;
         mesh["state/cycle"] = cycle;
         std::cout << "time: " << time_value << " cycle: " << cycle << std::endl;
-    
+
         // publish mesh to ascent
         a.publish(mesh);
-    
+
         // update image name
         std::ostringstream oss;
         oss << "out_gyre_" << std::setfill('0') << std::setw(4) << step;
         scenes["s1/image_name"] = oss.str();
-    
+
         // execute the actions
         a.execute(actions);
-    
+
+        // retrieve the info node that contains the query results
+        Node ts_info;
+        a.info(ts_info);
+
+        // add to our running info
+        info["expressions"].update(ts_info["expressions"]);
+
         // update time
         time_value = time_value + delta_time;
     }
-    // retrieve the info node that contains the query results
-    Node info;
-    a.info(info);
 
     // close ascent
     a.close();
@@ -146,7 +151,7 @@ int main(int argc, char **argv)
     Node entropy;
     entropy.set(DataType::float64(nsteps));
     float64 *entropy_vals_ptr = entropy.value();
-    
+
     // get the node that has the time history
     Node &gyre = info["expressions/entropy_of_gyre"];
 
@@ -155,10 +160,9 @@ int main(int argc, char **argv)
     {
         entropy_vals_ptr[i] = gyre[i]["value"].to_float64();
     }
-    
+
     std::cout << "Entropy Result" << std::endl;
     std::cout << entropy.to_yaml() << std::endl;
-    
 }
 
 

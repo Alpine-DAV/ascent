@@ -8,8 +8,9 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2020-09-14-sha602e66
-  cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2020-08-25-sha449ef8
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-05-19-sha1ca78d
+  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-05-19-sha1ca78d
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-05-19-sha1ca78d
 
 
 # only build merge target pr to develop
@@ -43,31 +44,63 @@ stages:
 # include tpls built with uber
 - stage: Main
   jobs:
-  - job: Main_Ubuntu_18
+  - job: Main_Ubuntu
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
-    container: ${{ variables.main_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        minimal:
+        ubuntu_18_minimal:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
-        shared_py36:
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py36_cxx11:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py36_cxx11_bflow:
+          containerImage: ${{ variables.ubuntu_18_tag }}        
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: ON
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py36_cxx14:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++14
+        ubuntu_20_10_shared_py36_cxx11:
+          containerImage: ${{ variables.ubuntu_20_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          BLT_CXX_STD: c++11
+    container: $[ variables['containerImage'] ]
+   
     steps:
       - checkout: self
         clean: boolean
@@ -100,6 +133,8 @@ stages:
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # c++ std
+           export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            # include host config
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
            # extra settings
@@ -163,7 +198,7 @@ stages:
       - task: PublishBuildArtifacts@1
         inputs:
           pathToPublish: $(Build.ArtifactStagingDirectory)
-          artifactName: Ascent_Test_Outputs
+          artifactName: $(Build.DefinitionName)_$(Agent.JobName)
         condition: always()
 
       - script: |
@@ -208,11 +243,11 @@ stages:
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
-  - job: Main_Ubuntu_16_Cuda_10_1
+  - job: Main_Ubuntu_18_Cuda_10_1
     pool:
       vmImage: 'ubuntu-16.04'
     timeoutInMinutes: 0
-    container: ${{ variables.cuda_tag }}
+    container: ${{ variables.ubuntu_18_cuda_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
@@ -221,7 +256,11 @@ stages:
       matrix:
         static:
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Debug
+          CMAKE_BUILD_TYPE: Release
+          ENABLE_BABELFLOW: OFF
+          # static linking unit tests eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
     steps:
       - checkout: self
         clean: boolean
@@ -253,6 +292,8 @@ stages:
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src

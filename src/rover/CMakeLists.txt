@@ -40,7 +40,7 @@
 ##
 ###############################################################################
 
-set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh)
+set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh conduit conduit_relay)
 
 set(rover_headers
     domain.hpp
@@ -138,7 +138,7 @@ install(TARGETS rover
 
 if(MPI_FOUND)
 
-  set(rover_mpi_thirdparty_deps mpi vtkh_lodepng vtkm vtkh_mpi)
+  set(rover_mpi_thirdparty_deps mpi vtkh_lodepng vtkm vtkh_mpi conduit conduit_relay)
 
   blt_add_library(
                   NAME rover_mpi
@@ -157,7 +157,7 @@ if(MPI_FOUND)
                         CXX_STANDARD_REQUIRED YES
                         CXX_EXTENTIONS NO)
 
-                      blt_add_target_compile_flags(TO rover_mpi FLAGS "-D ROVER_PARALLEL")
+                      blt_add_target_compile_flags(TO rover_mpi FLAGS "-DROVER_PARALLEL")
 
   set_target_properties(rover_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
   target_compile_definitions(rover_mpi PRIVATE ROVER_EXPORTS_FLAG)
@@ -174,10 +174,10 @@ if(MPI_FOUND)
           RUNTIME DESTINATION lib
   )
   if(ENABLE_LOGGING)
-    blt_add_target_compile_flags(TO rover_mpi FLAGS " -D ROVER_ENABLE_LOGGING=1")
+    blt_add_target_compile_flags(TO rover_mpi FLAGS " -DROVER_ENABLE_LOGGING=1")
   endif()
   if(OPENMP_FOUND)
-    blt_add_target_compile_flags(TO rover FLAGS " -D ROVER_ENABLE_OPENMP=1")
+    blt_add_target_compile_flags(TO rover FLAGS " -DROVER_ENABLE_OPENMP=1")
   endif()
 
 endif()

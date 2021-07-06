@@ -55,6 +55,7 @@
 // conduit includes
 //-----------------------------------------------------------------------------
 #include <conduit_relay_io.hpp>
+#include <conduit_relay_io_handle.hpp>
 #include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
@@ -149,12 +150,71 @@ public:
         return pattern;
     }
 
+    void gen_domain_to_file_map(int num_domains,
+                                int num_files,
+                                Node &out) const
+    {
+        int num_domains_per_file = num_domains / num_files;
+        int left_overs = num_domains % num_files;
 
+        out["global_domains_per_file"].set(DataType::int32(num_files));
+        out["global_domain_offsets"].set(DataType::int32(num_files));
+        out["global_domain_to_file"].set(DataType::int32(num_domains));
+
+        int32_array v_domains_per_file = out["global_domains_per_file"].value();
+        int32_array v_domains_offsets  = out["global_domain_offsets"].value();
+        int32_array v_domain_to_file   = out["global_domain_to_file"].value();
+
+        // setup domains per file
+        for(int f=0; f < num_files; f++)
+        {
+            v_domains_per_file[f] = num_domains_per_file;
+            if( f < left_overs)
+                v_domains_per_file[f]+=1;
+        }
+
+        // prefix sum to calc offsets
+        for(int f=0; f < num_files; f++)
+        {
+            v_domains_offsets[f] = v_domains_per_file[f];
+            if(f > 0)
+                v_domains_offsets[f] += v_domains_offsets[f-1];
+        }
+
+        // do assignment, create simple map
+        int f_idx = 0;
+        for(int d=0; d < num_domains; d++)
+        {
+            if(d >= v_domains_offsets[f_idx])
+                f_idx++;
+            v_domain_to_file[d] = f_idx;
+        }
+    }
     //-------------------------------------------------------------------//
     std::string GenerateFilePath(int tree_id) const
     {
-        // for now, we only support 1 tree per file.
-        int file_id = tree_id;
+        int file_id = -1;
+
+        if(m_num_trees == m_num_files)
+        {
+            file_id = tree_id;
+        }
+        else if(m_num_files == 1)
+        {
+            file_id = 0;
+        }
+        else
+        {
+            Node d2f_map;
+            gen_domain_to_file_map(m_num_trees,
+                                    m_num_files,
+                                    d2f_map);
+            int num_domains_per_file = m_num_trees / m_num_files;
+            int left_overs = m_num_trees % m_num_files;
+            int32_array v_domain_to_file = d2f_map["global_domain_to_file"].value();
+            file_id = v_domain_to_file[tree_id];
+        }
+
         return Expand(m_file_pattern,file_id);
     }
 
@@ -190,6 +250,8 @@ void relay_blueprint_mesh_read(const Node &options,
 
     // assume hdf5, but check for json file
     std::string root_protocol = "hdf5";
+
+    // we will read only 5 bytes + keep the buffer null termed.
     char buff[6] = {0,0,0,0,0,0};
 
     // heuristic, if json, we expect to see "{" in the first 5 chars of the file.
@@ -223,7 +285,7 @@ void relay_blueprint_mesh_read(const Node &options,
         ASCENT_ERROR("Root file missing 'blueprint_index'");
     }
 
-    NodeConstIterator itr =root_node["blueprint_index"].children();
+    NodeConstIterator itr = root_node["blueprint_index"].children();
     Node verify_info;
     // TODO, for now lets verify the first mesh index
 
@@ -264,15 +326,6 @@ void relay_blueprint_mesh_read(const Node &options,
     int rank = relay::mpi::rank(comm);
     int total_size = relay::mpi::size(comm);
 
-    if(num_domains < total_size)
-    {
-      if(rank == 0)
-      {
-        ASCENT_ERROR("hola: total domains "<<num_domains<<" must be equal to "
-                     <<"or greater than the number of ranks "<<total_size<<".");
-      }
-    }
-
     int read_size = num_domains / total_size;
     int rem = num_domains % total_size;
     if(rank < rem)
@@ -300,21 +353,80 @@ void relay_blueprint_mesh_read(const Node &options,
     domain_end = rank_offset + read_size;
 #endif
 
-
+    relay::io::IOHandle hnd;
     for(int i = domain_start ; i < domain_end; i++)
     {
-        char domain_fmt_buff[64];
-        snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
-        oss.str("");
-        oss << "domain_" << std::string(domain_fmt_buff);
+      char domain_fmt_buff[64];
+      snprintf(domain_fmt_buff, sizeof(domain_fmt_buff), "%06d",i);
+      oss.str("");
+      oss << "domain_" << std::string(domain_fmt_buff);
 
-        string current, next;
-        utils::rsplit_file_path (root_fname, current, next);
-        string domain_file = utils::join_path (next, gen.GenerateFilePath (i));
+      std::string current, next;
+      utils::rsplit_file_path (root_fname, current, next);
+      std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
 
-        relay::io::load(domain_file,
-                        data_protocol,
-                        data[oss.str()]);
+      hnd.open(domain_file, data_protocol);
+
+      // also need the tree path
+      std::string tree_path = gen.GenerateTreePath(i);
+
+      //std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
+      std::string mesh_path = oss.str();
+
+      Node &mesh_out = data[mesh_path];
+
+      // read components of the mesh according to the mesh index
+      // for each child in the index
+      NodeConstIterator outer_itr = mesh_index.children();
+      while(outer_itr.has_next())
+      {
+        const Node &outer = outer_itr.next();
+        std::string outer_name = outer_itr.name();
+
+        // special logic for state, since it was not included in the index
+        if(outer_name == "state" )
+        {
+          // we do need to read the state!
+          if(outer.has_child("path"))
+          {
+            hnd.read(utils::join_path(tree_path,outer["path"].as_string()),
+                     mesh_out[outer_name]);
+          }
+          else
+          {
+             if(outer.has_child("cycle"))
+             {
+                mesh_out[outer_name]["cycle"] = outer["cycle"];
+             }
+
+             if(outer.has_child("time"))
+             {
+               mesh_out[outer_name]["time"] = outer["time"];
+             }
+           }
+        }
+
+        NodeConstIterator itr = outer.children();
+        while(itr.has_next())
+        {
+          const Node &entry = itr.next();
+          // check if it has a path
+          if(entry.has_child("path"))
+          {
+            std::string entry_name = itr.name();
+            std::string entry_path = entry["path"].as_string();
+            std::string fetch_path = utils::join_path(tree_path,
+                                                      entry_path);
+            // some parts may not exist in all domains
+            // only read if they are there
+            if(hnd.has_path(fetch_path))
+            {
+              hnd.read(fetch_path,
+                       mesh_out[outer_name][entry_name]);
+            }
+          }
+        }
+      }
     }
 }
 

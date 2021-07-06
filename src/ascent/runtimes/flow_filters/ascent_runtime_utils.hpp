@@ -54,7 +54,6 @@
 
 #include <conduit.hpp>
 #include <ascent_exports.h>
-#include <flow_graph.hpp>
 #include <string>
 
 //-----------------------------------------------------------------------------
@@ -80,10 +79,9 @@ namespace filters
 // is specified, the output path returns the the file name
 // appended to the default_dir set in the ascent options,
 // which defaults to the current directory
-std::string ASCENT_API output_dir(const std::string file_name,
-                                  flow::Graph &graph);
+std::string ASCENT_API output_dir(const std::string file_name);
 
-std::string ASCENT_API default_dir(flow::Graph &graph);
+std::string ASCENT_API default_dir();
 
 std::string ASCENT_API filter_to_path(const std::string filter_name);
 

@@ -65,6 +65,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -112,6 +113,99 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
+
+//-------------------------------------------------------------------------
+void
+mesh_bp_generate_index(const conduit::Node &mesh,
+                       const std::string &ref_path,
+                       int num_domains,
+                       Node &index_out)
+{
+    if(blueprint::mesh::is_multi_domain(mesh))
+    {
+        NodeConstIterator itr = mesh.children();
+
+        while(itr.has_next())
+        {
+            Node curr_idx;
+            const Node &cld = itr.next();
+            blueprint::mesh::generate_index(cld,
+                                            ref_path,
+                                            num_domains,
+                                            curr_idx);
+            // add any new entries to the running index
+            index_out.update(curr_idx);
+        }
+    }
+    else
+    {
+        blueprint::mesh::generate_index(mesh,
+                                        ref_path,
+                                        num_domains,
+                                        index_out);
+    }
+}
+
+#ifdef ASCENT_MPI_ENABLED
+//-------------------------------------------------------------------------
+void
+mesh_bp_generate_index(const conduit::Node &mesh,
+                       const std::string &ref_path,
+                       Node &index_out,
+                       MPI_Comm comm)
+{
+    int par_rank = relay::mpi::rank(comm);
+    int par_size = relay::mpi::size(comm);
+
+    // we need a list of all possible topos, coordsets, etc
+    // for the blueprint index in the root file.
+    //
+    // across ranks, domains may be sparse
+    //  for example: a topo may only exist in one domain
+    // so we union all local mesh indices, and then
+    // se an all gather and union the results together
+    // to create an accurate global index.
+
+    index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
+    // note:
+    // find global # of domains w/o conduit_blueprint_mpi for now
+    // since we aren't yet linking conduit_blueprint_mpi
+    Node n_src, n_reduce;
+    n_src = local_num_domains;
+
+    mpi::sum_all_reduce(n_src,
+                        n_reduce,
+                        comm);
+
+    index_t global_num_domains = n_reduce.to_int();
+
+    index_out.reset();
+
+    Node local_idx, gather_idx;
+
+    if(local_num_domains > 0)
+    {
+        mesh_bp_generate_index(mesh,
+                               ref_path,
+                               global_num_domains,
+                               local_idx);
+    }
+
+    relay::mpi::all_gather_using_schema(local_idx,
+                                        gather_idx,
+                                        comm);
+
+    NodeConstIterator itr = gather_idx.children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        index_out.update(curr);
+    }
+}
+
+#endif
+
+
 //
 // recalculate domain ids so that we are consistant.
 // Assumes that domains are valid
@@ -188,13 +282,16 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
   // valid single domain
   if(output.number_of_children() == 0)
   {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = blueprint::mesh::verify(data, info);
-    if(is_valid)
+    if(!data.dtype().is_empty())
     {
-      conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
+      // check to see if this is a single valid domain
+      conduit::Node info;
+      bool is_valid = blueprint::mesh::verify(data, info);
+      if(is_valid)
+      {
+        conduit::Node &dest_dom = output.append();
+        dest_dom.set_external(data);
+      }
     }
   }
 
@@ -245,6 +342,7 @@ void filter_fields(const conduit::Node &input,
     const conduit::Node &dom = input.child(d);
     conduit::Node &out_dom = output.append();
     std::set<std::string> topos;
+    std::set<std::string> matsets;
 
     for(int f = 0; f < fields.size(); ++f)
     {
@@ -257,6 +355,13 @@ void filter_fields(const conduit::Node &input,
         const std::string topo = dom[fpath + "/topology"].as_string();
         const std::string tpath = "topologies/" + topo;
         topos.insert(topo);
+
+        // check for matset
+        if(dom.has_path(fpath + "/matset"))
+        {
+          const std::string mopo = dom[fpath + "/matset"].as_string();
+          matsets.insert(mopo);
+        }
 
         if(!out_dom.has_path(tpath))
         {
@@ -301,11 +406,26 @@ void filter_fields(const conduit::Node &input,
       }
     }
 
-    // auto save out ghost fields from subset of topologies
-    Node * meta = graph.workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("ghost_field"))
+    // add nestsets associated with referenced topologies
+    if(dom.has_path("matsets"))
     {
-      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const int num_matts = dom["matsets"].number_of_children();
+      const std::vector<std::string> matt_names = dom["matsets"].child_names();
+      for(int i = 0; i < num_matts; ++i)
+      {
+        const conduit::Node &matt = dom["matsets"].child(i);
+        if(matsets.find(matt_names[i]) != matsets.end())
+        {
+          out_dom["matsets/"+matt_names[i]].set_external(matt);
+        }
+      }
+    }
+
+    // auto save out ghost fields from subset of topologies
+    Node meta = Metadata::n_metadata;
+    if(meta.has_path("ghost_field"))
+    {
+      const conduit::Node ghost_list = meta["ghost_field"];
       const int num_ghosts = ghost_list.number_of_children();
 
       for(int i = 0; i < num_ghosts; ++i)
@@ -488,7 +608,8 @@ void gen_domain_to_file_map(int num_domains,
 void mesh_blueprint_save(const Node &data,
                          const std::string &path,
                          const std::string &file_protocol,
-                         int num_files)
+                         int num_files,
+                         std::string &root_file_out)
 {
     // The assumption here is that everything is multi domain
 
@@ -607,6 +728,7 @@ void mesh_blueprint_save(const Node &data,
 
     global_num_domains = n_reduce.as_int();
 #endif
+
 
     if(global_num_domains == 0)
     {
@@ -835,19 +957,42 @@ void mesh_blueprint_save(const Node &data,
         ASCENT_WARN("Relay: there are no domains to write out");
     }
 
-    // let rank zero write out the root file
+    snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
+
+    oss.str("");
+    oss << path
+        << ".cycle_"
+        << fmt_buff
+        << ".root";
+
+    string root_file = oss.str();
+
+    // return this via out var
+    root_file_out = root_file;
+
+    // --------
+    // create blueprint index
+    // --------
+
+    // all ranks participate in the index gen
+    Node bp_idx;
+#ifdef ASCENT_MPI_ENABLED
+        // mpi tasks may have diff fields, topos, etc
+        //
+        detail::mesh_bp_generate_index(multi_dom,
+                                       "",
+                                       bp_idx["mesh"],
+                                       mpi_comm);
+#else
+        detail::mesh_bp_generate_index(multi_dom,
+                                       "",
+                                       global_num_domains,
+                                       bp_idx["mesh"]);
+#endif
+
+    // let selected rank write out the root file
     if(par_rank == root_file_writer)
     {
-        snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-
-        oss.str("");
-        oss << path
-            << ".cycle_"
-            << fmt_buff
-            << ".root";
-
-        string root_file = oss.str();
-
         string output_dir_base, output_dir_path;
 
         // TODO: Fix for windows
@@ -874,12 +1019,7 @@ void mesh_blueprint_save(const Node &data,
 
 
         Node root;
-        Node &bp_idx = root["blueprint_index"];
-
-        blueprint::mesh::generate_index(multi_dom.child(0),
-                                        "",
-                                        global_num_domains,
-                                        bp_idx["mesh"]);
+        root["blueprint_index"] = bp_idx;
 
         // work around conduit and manually add state fields
         if(multi_dom.child(0).has_path("state/cycle"))
@@ -893,7 +1033,7 @@ void mesh_blueprint_save(const Node &data,
         }
 
         root["protocol/name"]    = file_protocol;
-        root["protocol/version"] = "0.5.1";
+        root["protocol/version"] = "0.6.0";
 
         root["number_of_files"]  = num_files;
         root["number_of_trees"]  = global_num_domains;
@@ -944,7 +1084,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = output_dir(path, graph());
+    path = output_dir(path);
 
     if(params().has_child("protocol"))
     {
@@ -958,6 +1098,10 @@ RelayIOSave::execute()
     }
 
     DataObject *data_object  = input<DataObject>("in");
+    if(!data_object->is_valid())
+    {
+      return;
+    }
     std::shared_ptr<Node> n_input = data_object->as_node();
 
     Node *in = n_input.get();
@@ -990,6 +1134,27 @@ RelayIOSave::execute()
       selected.set_external(*in);
     }
 
+    Node meta = Metadata::n_metadata;
+
+    // Get the cycle and add it so filters don't have to
+    // propagate this
+    int cycle = -1;
+
+    if(meta.has_path("cycle"))
+    {
+      cycle = meta["cycle"].as_int32();
+    }
+    if(cycle != -1)
+    {
+      const int num_domains = selected.number_of_children();
+      for(int i = 0; i < num_domains; ++i)
+      {
+        conduit::Node &dom = selected.child(i);
+        dom["state/cycle"] = cycle;
+      }
+    }
+
+
     int num_files = -1;
 
     if(params().has_path("num_files"))
@@ -997,27 +1162,60 @@ RelayIOSave::execute()
         num_files = params()["num_files"].to_int();
     }
 
+    std::string result_path;
     if(protocol.empty())
     {
         conduit::relay::io::save(selected,path);
+        result_path = path;
     }
-    else if( protocol == "blueprint/mesh/hdf5")
+    else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
     {
-        mesh_blueprint_save(selected,path,"hdf5",num_files);
+        mesh_blueprint_save(selected,
+                            path,
+                            "hdf5",
+                            num_files,
+                            result_path);
     }
-    else if( protocol == "blueprint/mesh/json")
+    else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
-        mesh_blueprint_save(selected,path,"json",num_files);
+        mesh_blueprint_save(selected,
+                            path,
+                            "json",
+                            num_files,
+                            result_path);
+
     }
-    else if( protocol == "blueprint/mesh/yaml")
+    else if( protocol == "blueprint/mesh/yaml" || protocol == "yaml")
     {
-        mesh_blueprint_save(selected,path,"yaml",num_files);
+        mesh_blueprint_save(selected,
+                            path,
+                            "yaml",
+                            num_files,
+                            result_path);
+
     }
     else
     {
         conduit::relay::io::save(selected,path,protocol);
+        result_path = path;
     }
 
+    // add this to the extract results in the registry
+    if(!graph().workspace().registry().has_entry("extract_list"))
+    {
+      conduit::Node *extract_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+    }
+
+    conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+
+    Node &einfo = extract_list->append();
+    einfo["type"] = "relay";
+    if(!protocol.empty())
+        einfo["protocol"] = protocol;
+    einfo["path"] = result_path;
 }
 
 

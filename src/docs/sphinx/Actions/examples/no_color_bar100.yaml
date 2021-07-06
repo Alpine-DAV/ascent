@@ -1,0 +1,18 @@
+#An example of disabling a color table.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          color_table: 
+            annotation: "false"
+      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/no_color_bar"
+      renders: 
+        r1: 
+          image_width: 512
+          image_height: 512
+          image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/no_color_bar"

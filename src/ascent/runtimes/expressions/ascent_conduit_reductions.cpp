@@ -82,31 +82,39 @@ template<typename Function>
 conduit::Node
 type_dispatch(const conduit::Node &values, const Function &func)
 {
+  // check for single component scalar
+  int num_children = values.number_of_children();
+  if(num_children > 1)
+  {
+    ASCENT_ERROR("Internal error: expected scalar array.");
+  }
+  const conduit::Node &vals = num_children == 0 ? values : values.child(0);
   conduit::Node res;
-  const int num_vals = values.dtype().number_of_elements();
-  if(values.dtype().is_float32())
+  const int num_vals = vals.dtype().number_of_elements();
+  if(vals.dtype().is_float32())
   {
-    const conduit::float32 *ptr =  values.as_float32_ptr();
+    const conduit::float32 *ptr =  vals.as_float32_ptr();
     res = func(ptr, num_vals);
   }
-  else if(values.dtype().is_float64())
+  else if(vals.dtype().is_float64())
   {
-    const conduit::float64 *ptr =  values.as_float64_ptr();
+    const conduit::float64 *ptr =  vals.as_float64_ptr();
     res = func(ptr, num_vals);
   }
-  else if(values.dtype().is_int32())
+  else if(vals.dtype().is_int32())
   {
-    const conduit::int32 *ptr =  values.as_int32_ptr();
+    const conduit::int32 *ptr =  vals.as_int32_ptr();
     res = func(ptr, num_vals);
   }
-  else if(values.dtype().is_int64())
+  else if(vals.dtype().is_int64())
   {
-    const conduit::int64 *ptr =  values.as_int64_ptr();
+    const conduit::int64 *ptr =  vals.as_int64_ptr();
     res = func(ptr, num_vals);
   }
   else
   {
-    ASCENT_ERROR("Type dispatch: unsupported array type");
+    ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                  values.schema().to_string());
   }
   return res;
 }
@@ -119,7 +127,8 @@ struct MaxCompare
 
 #ifdef ASCENT_USE_OPENMP
     #pragma omp declare reduction(maximum: struct MaxCompare : \
-        omp_out = omp_in.value > omp_out.value ? omp_in : omp_out)
+        omp_out = omp_in.value > omp_out.value ? omp_in : omp_out) \
+        initializer(omp_priv={std::numeric_limits<double>::lowest(),0})
 #endif
 
 struct MaxFunctor
@@ -159,7 +168,8 @@ struct MinCompare
 
 #ifdef ASCENT_USE_OPENMP
     #pragma omp declare reduction(minimum: struct MinCompare : \
-        omp_out = omp_in.value < omp_out.value ? omp_in : omp_out)
+        omp_out = omp_in.value < omp_out.value ? omp_in : omp_out) \
+        initializer(omp_priv={std::numeric_limits<double>::max(),0})
 #endif
 
 struct MinFunctor

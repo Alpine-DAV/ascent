@@ -17,6 +17,20 @@ compilers:
     environment: {}
     extra_rpaths: []
     flags: {}
+    modules:
+    - gcc/8.3.1
+    operating_system: rhel7
+    paths:
+      cc:  /usr/tce/packages/gcc/gcc-8.3.1/bin/gcc
+      cxx: /usr/tce/packages/gcc/gcc-8.3.1/bin/g++
+      f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+      fc:  /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+    spec: gcc@8.3.1
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
     modules: []
     operating_system: rhel7
     paths:

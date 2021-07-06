@@ -57,6 +57,7 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -89,12 +90,12 @@ TEST(ascent_relay, test_relay)
 
     ASCENT_INFO("Testing relay extract in serial");
 
-
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract");
+    string output_root = output_file + ".cycle_000100.root";
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    remove_test_image(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -127,7 +128,326 @@ TEST(ascent_relay, test_relay)
     ascent.execute(actions);
     ascent.close();
 
+    // make sure the expected root file exists
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_hdf5_2)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract");
+    string output_root = output_file + ".cycle_000100.root";
+
+    // remove old images before rendering
+    remove_test_image(output_root);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "hdf5";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // make sure the expected root file exists
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_json)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial (json)");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_json");
+    string output_root = output_file + ".cycle_000100.root";
+
+    // remove old images before rendering
+    remove_test_image(output_root);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/json";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    actions.save("for_chris.yaml");
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // make sure the expected root file exists
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_json_2)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial (json)");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_json_2");
+    string output_root = output_file + ".cycle_000100.root";
+
+    // remove old images before rendering
+    remove_test_image(output_root);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "json";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    actions.save("for_chris.yaml");
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // make sure the expected root file exists
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_yaml)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial (yaml)");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_yaml");
+    string output_root = output_file + ".cycle_000100.root";
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/yaml";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // make sure the expected root file exists
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_yaml_2)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial (yaml)");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_yaml_2");
+    string output_root = output_file + ".cycle_000100.root";
+
+    // remove old images before rendering
+    remove_test_image(output_root);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "yaml";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // make sure the expected root file exists
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, test_relay_field_select_nestsets)
@@ -151,12 +471,12 @@ TEST(ascent_relay, test_relay_field_select_nestsets)
 
     ASCENT_INFO("Testing relay extract in serial with nestsets");
 
-
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_nestsets");
+    string output_root = output_file + ".cycle_000100.root";
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    remove_test_image(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -491,6 +811,119 @@ TEST(ascent_relay, test_relay_bp_num_files)
         }
     }
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_sparse_topos)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+    ostringstream oss;
+    
+    // three domains with different topos
+    for(index_t d =0; d<4; d++)
+    {
+        std::cout << "i = " << d << std::endl;
+        Node &mesh = data.append();
+        oss.str("");
+        oss << "my_coords_" << d ;
+        std::string c_name = oss.str();
+
+        oss.str("");
+        oss << "my_topo_" << d ;
+        std::string t_name = oss.str();
+
+        oss.str("");
+        oss << "my_field_" << d ;
+        std::string f_name = oss.str();
+
+        // create the coordinate set
+        mesh["coordsets"][c_name]["type"] = "uniform";
+        mesh["coordsets"][c_name]["dims/i"] = 3;
+        mesh["coordsets"][c_name]["dims/j"] = 3;
+        // add origin and spacing to the coordset (optional)
+        mesh["coordsets"][c_name]["origin/x"] = -10.0;
+        mesh["coordsets"][c_name]["origin/y"] = -10.0;
+        mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+        mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+        // add the topology
+        // this case is simple b/c it's implicitly derived from the coordinate set
+        mesh["topologies"][t_name]["type"] = "uniform";
+        // reference the coordinate set by name
+        mesh["topologies"][t_name]["coordset"] = c_name;
+
+        // add a simple element-associated field 
+        mesh["fields"][f_name]["association"] =  "element";
+        // reference the topology this field is defined on by name
+        mesh["fields"][f_name]["topology"] =  t_name;
+        // set the field values, for this case we have 4 elements
+        mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+        float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+        for(int i=0;i<4;i++)
+        {
+            ele_vals_ptr[i] = float64(d);
+        }
+    }
+    
+    data.print();
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract in serial");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_sparse_topos");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+    
+    
+    Node n_root;
+    conduit::relay::io::load(output_file + ".cycle_000000.root","hdf5",n_root);
+    n_root.print();
+}
+
 
 
 

@@ -63,12 +63,13 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_web_interface.hpp> // -- for web_client_root_directory()
-///
+#include <ascent_resources.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -130,6 +131,7 @@ check_color_table_surprises(const conduit::Node &color_table)
   std::vector<std::string> valid_paths;
   valid_paths.push_back("name");
   valid_paths.push_back("reverse");
+  valid_paths.push_back("annotation");
 
   std::vector<std::string> ignore_paths;
   ignore_paths.push_back("control_points");
@@ -184,8 +186,13 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("axis_scale_x");
+  r_valid_paths.push_back("axis_scale_y");
+  r_valid_paths.push_back("axis_scale_z");
   r_valid_paths.push_back("fg_color");
   r_valid_paths.push_back("bg_color");
+  r_valid_paths.push_back("shading");
+  r_valid_paths.push_back("use_original_bounds");
 
   for(int i = 0; i < num_renders; ++i)
   {
@@ -208,23 +215,40 @@ protected:
   // out from under us, which will happen
   std::shared_ptr<VTKHCollection> m_collection;
   std::string m_topo_name;
-  RendererContainer() {};
+  bool m_valid;
+  // we have to keep the data object that spit out
+  // the vtkh collection we are rendering since
+  // this could be a temporary result created by a
+  // pipeline. If we dont' keep it, then it will
+  // be freed before we can render it
+  DataObject m_data;
 public:
+  RendererContainer()
+   : m_valid(false)
+  {};
   RendererContainer(std::string key,
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
                     std::shared_ptr<VTKHCollection> collection,
-                    std::string topo_name)
+                    std::string topo_name,
+                    DataObject &data_object)
     : m_key(key),
       m_registry(r),
       m_collection(collection),
-      m_topo_name(topo_name)
+      m_topo_name(topo_name),
+      m_valid(true),
+      m_data(data_object)
   {
     // we have to keep around the dataset so we bring the
     // whole collection with us
     vtkh::DataSet &data = m_collection->dataset_by_topology(m_topo_name);
     renderer->SetInput(&data);
     m_registry->add<vtkh::Renderer>(m_key,renderer,1);
+  }
+
+  bool is_valid()
+  {
+    return m_valid;
   }
 
   vtkh::Renderer *
@@ -324,6 +348,11 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     parse_camera(render_node["camera"], camera);
     render.SetCamera(camera);
   }
+  if(render_node.has_path("shading"))
+  {
+    bool on = render_node["shading"].as_string() == "enabled";
+    render.SetShadingOn(on);
+  }
 
   if(render_node.has_path("annotations"))
   {
@@ -390,6 +419,27 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     render.SetForegroundColor(color4f);
   }
 
+  float axis_scale_x = 1.f;
+  float axis_scale_y = 1.f;
+  float axis_scale_z = 1.f;
+
+  if(render_node.has_path("axis_scale_x"))
+  {
+    axis_scale_x = render_node["axis_scale_x"].to_float32();
+  }
+
+  if(render_node.has_path("axis_scale_y"))
+  {
+    axis_scale_y = render_node["axis_scale_y"].to_float32();
+  }
+
+  if(render_node.has_path("axis_scale_z"))
+  {
+    axis_scale_z = render_node["axis_scale_z"].to_float32();
+  }
+
+  render.ScaleWorldAnnotations(axis_scale_x, axis_scale_y, axis_scale_z);
+
   return render;
 }
 
@@ -436,6 +486,11 @@ public:
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
 
+  std::string db_path()
+  {
+       return conduit::utils::join_file_path(m_base_path, m_image_name);
+  }
+
   void set_bounds(vtkm::Bounds &bounds)
   {
     if(bounds != m_bounds)
@@ -459,15 +514,25 @@ public:
     }
 
     // add a database path
-    m_db_path = conduit::utils::join_file_path(m_base_path, m_image_name);
+    m_db_path = db_path();
 
+    // note: there is an implicit assumption here that these
+    // resources are static and only need to be generated one
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
         conduit::utils::create_directory(m_db_path);
-        // copy over cinema web resources
-        std::string cinema_root = conduit::utils::join_file_path(web_client_root_directory(),
-                                                                 "cinema");
-        ascent::copy_directory(cinema_root, m_db_path);
+
+        // load cinema web resources from compiled in resource tree
+        Node cinema_rc;
+        ascent::resources::load_compiled_resource_tree("cinema_web",
+                                                        cinema_rc);
+        if(cinema_rc.dtype().is_empty())
+        {
+            ASCENT_ERROR("Failed to load compiled resources for cinema_web");
+        }
+
+        ascent::resources::expand_resource_tree_to_file_system(cinema_rc,
+                                                               m_db_path);
     }
 
     std::stringstream ss;
@@ -511,9 +576,10 @@ public:
 
     for(int i = 0; i < num_renders; ++i)
     {
+      vtkh::Render tmp = render.Copy();
       std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
 
-      render.SetImageName(image_name);
+      tmp.SetImageName(image_name);
       // we have to make a copy of the camera because
       // zoom is additive for some reason
       vtkm::rendering::Camera camera = m_cameras[i];
@@ -525,8 +591,8 @@ public:
         camera.Zoom(vtkm_zoom);
       }
 
-      render.SetCamera(camera);
-      renders->push_back(render);
+      tmp.SetCamera(camera);
+      renders->push_back(tmp);
     }
   }
 
@@ -817,15 +883,17 @@ DefaultRender::execute()
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    Node meta = Metadata::n_metadata;
 
     int cycle = 0;
 
-    if(meta->has_path("cycle"))
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].as_int32();
     }
 
+    // figure out if we need the original bounds for the scene
+    bool needs_original_bounds = false;
     if(params().has_path("renders"))
     {
       const conduit::Node renders_node = params()["renders"];
@@ -833,7 +901,54 @@ DefaultRender::execute()
 
       for(int i = 0; i < num_renders; ++i)
       {
-        const conduit::Node render_node = renders_node.child(i);
+        const conduit::Node &render_node = renders_node.child(i);
+        if(render_node.has_path("use_original_bounds"))
+        {
+          if(render_node["use_original_bounds"].as_string() == "true")
+          {
+            needs_original_bounds = true;
+            break;
+          }
+        }
+      }
+    }
+    else
+    {
+      if(params().has_path("use_original_bounds"))
+      {
+        if(params()["use_original_bounds"].as_string() == "true")
+        {
+          needs_original_bounds = true;
+        }
+      }
+    }
+
+    vtkm::Bounds original_bounds;
+    if(needs_original_bounds)
+    {
+      DataObject *source
+        = graph().workspace().registry().fetch<DataObject>("source_object");
+      original_bounds = source->as_vtkh_collection()->global_bounds();
+    }
+
+
+    if(params().has_path("renders"))
+    {
+      const conduit::Node &renders_node = params()["renders"];
+      const int num_renders = renders_node.number_of_children();
+
+      for(int i = 0; i < num_renders; ++i)
+      {
+        const conduit::Node &render_node = renders_node.child(i);
+        vtkm::Bounds scene_bounds = *bounds;
+        if(render_node.has_path("use_original_bounds"))
+        {
+          if(render_node["use_original_bounds"].as_string() == "true")
+          {
+            scene_bounds = original_bounds;
+          }
+        }
+
         std::string image_name;
 
         bool is_cinema = false;
@@ -860,7 +975,7 @@ DefaultRender::execute()
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
 
-          std::string output_path = default_dir(graph());
+          std::string output_path = default_dir();
 
           if(!render_node.has_path("db_name"))
           {
@@ -872,13 +987,27 @@ DefaultRender::execute()
           {
             detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name, output_path);
           }
+
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
+          // add this to the extract results in the registry
+          if(!graph().workspace().registry().has_entry("extract_list"))
+          {
+            conduit::Node *extract_list = new conduit::Node();
+            graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+          }
+
+          conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+          Node &einfo = extract_list->append();
+          einfo["type"] = "cinema";
+          einfo["path"] = manager.db_path();
 
           int image_width;
           int image_height;
           parse_image_dims(render_node, image_width, image_height);
 
-          manager.set_bounds(*bounds);
+          manager.set_bounds(scene_bounds);
           manager.add_time_step();
           manager.fill_renders(renders, render_node);
           manager.write_metadata();
@@ -890,14 +1019,14 @@ DefaultRender::execute()
           if(render_node.has_path("image_name"))
           {
             image_name = render_node["image_name"].as_string();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else
           {
@@ -909,7 +1038,7 @@ DefaultRender::execute()
           }
 
           vtkh::Render render = detail::parse_render(render_node,
-                                                     *bounds,
+                                                     scene_bounds,
                                                      image_name);
           renders->push_back(render);
         }
@@ -927,11 +1056,21 @@ DefaultRender::execute()
       {
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
+        image_name = output_dir(image_name);
+      }
+
+      vtkm::Bounds scene_bounds = *bounds;
+      if(params().has_path("use_original_bounds"))
+      {
+        if(params()["use_original_bounds"].as_string() == "true")
+        {
+          scene_bounds = original_bounds;
+        }
       }
 
       vtkh::Render render = vtkh::MakeRender(1024,
                                              1024,
-                                             *bounds,
+                                             scene_bounds,
                                              image_name);
 
       renders->push_back(render);
@@ -974,9 +1113,14 @@ VTKHBounds::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    bounds->Include(collection->global_bounds());
+    // data could be the result of a failed pipeline
+    if(data_object->is_valid())
+    {
+      std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+      bounds->Include(collection->global_bounds());
+    }
+
     set_output<vtkm::Bounds>(bounds);
 }
 
@@ -1068,7 +1212,14 @@ AddPlot::execute()
 
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     detail::RendererContainer * cont = input<detail::RendererContainer>(1);
-    scene->AddRenderer(cont);
+
+    // this plot might have been created from a failed pipeline
+    // so check to see if this is valid and only pass it on if
+    // it is
+    if(cont->is_valid())
+    {
+      scene->AddRenderer(cont);
+    }
     set_output<detail::AscentScene>(scene);
 }
 
@@ -1167,6 +1318,16 @@ CreatePlot::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
+
+
+    if(!data_object->is_valid())
+    {
+      // this is trying to render a failed pipeline
+      detail::RendererContainer *container = new detail::RendererContainer();
+      set_output<detail::RendererContainer>(container);
+      return;
+    }
+
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     conduit::Node &plot_params = params();
@@ -1178,16 +1339,26 @@ CreatePlot::execute()
     std::string topo_name;
     if(field_name == "")
     {
+      bool throw_error = false;
       topo_name = detail::resolve_topology(params(),
                                            this->name(),
-                                           collection);
+                                           collection,
+                                           throw_error);
+      // don't crash everything, just warn the user and continue
+      detail::RendererContainer *container = new detail::RendererContainer();
+      set_output<detail::RendererContainer>(container);
     }
     else
     {
       topo_name = collection->field_topology(field_name);
       if(topo_name == "")
       {
-        detail::field_error(field_name, this->name(), collection);
+        bool throw_error = false;
+        detail::field_error(field_name, this->name(), collection, throw_error);
+        // don't crash everything, just warn the user and continue
+        detail::RendererContainer *container = new detail::RendererContainer();
+        set_output<detail::RendererContainer>(container);
+        return;
       }
     }
 
@@ -1254,7 +1425,17 @@ CreatePlot::execute()
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
-      vtkm::cont::ColorTable color_table =  parse_color_table(plot_params["color_table"]);
+      vtkm::cont::ColorTable color_table = parse_color_table(plot_params["color_table"]);
+      if(type != "mesh")
+      {
+        if(plot_params["color_table"].has_path("annotation"))
+        {
+           if(plot_params["color_table/annotation"].as_string() == "false")
+           {
+              renderer->DisableColorBar();
+           }
+        }
+      }
       renderer->SetColorTable(color_table);
     }
 
@@ -1310,11 +1491,14 @@ CreatePlot::execute()
 
     std::string key = this->name() + "_cont";
 
-    detail::RendererContainer *container = new detail::RendererContainer(key,
-                                                                         &graph().workspace().registry(),
-                                                                         renderer,
-                                                                         collection,
-                                                                         topo_name);
+    detail::RendererContainer *container
+      = new detail::RendererContainer(key,
+                                      &graph().workspace().registry(),
+                                      renderer,
+                                      collection,
+                                      topo_name,
+                                      *data_object);
+
     set_output<detail::RendererContainer>(container);
 
 }

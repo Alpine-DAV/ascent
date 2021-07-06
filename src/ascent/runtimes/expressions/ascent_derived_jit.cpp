@@ -51,6 +51,7 @@
 #include "ascent_derived_jit.hpp"
 #include "ascent_array.hpp"
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_blueprint_topologies.hpp"
 #include "ascent_expressions_ast.hpp"
 
 #include <ascent_data_logger.hpp>
@@ -777,7 +778,7 @@ TopologyCode::TopologyCode(const std::string &topo_name,
       if(subelement_shape != "polygonal")
       {
         // shape_size becomes the number of vertices for the subelements
-        this->shape_size = detail::get_num_vertices(shape);
+        this->shape_size = get_num_vertices(shape);
       }
       else
       {
@@ -787,7 +788,7 @@ TopologyCode::TopologyCode(const std::string &topo_name,
     else
     {
       // single shape
-      this->shape_size = detail::get_num_vertices(shape);
+      this->shape_size = get_num_vertices(shape);
     }
   }
   else
@@ -3073,9 +3074,15 @@ JitableFunctions::derived_field()
     // unnecessary if we only want to output on the topology.
     if(!has_topology(dataset, new_topology))
     {
+      std::set<std::string> topo_names = topology_names(dataset);
+      std::string res;
+      for(auto &name : topo_names)
+      {
+        res += name + " ";
+      }
       ASCENT_ERROR(": dataset does not contain topology '"
                    << new_topology << "'"
-                   << " known = " << known_topos(dataset));
+                   << " known = " <<res);
     }
     if(!out_jitable.association.empty() && out_jitable.association != "none")
     {
@@ -3980,7 +3987,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 #ifdef ASCENT_CUDA_ENABLED
     // TODO get the right device_id
     occa::setDevice("mode: 'CUDA', device_id: 0");
-#elif ASCENT_USE_OPENMP
+#elif defined(ASCENT_USE_OPENMP)
     occa::setDevice("mode: 'OpenMP'");
 #else
     occa::setDevice("mode: 'Serial'");

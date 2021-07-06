@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2021, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -61,7 +61,7 @@ a = ascent.Ascent()
 a.open()
 
 # publish mesh to ascent
-a.publish(mesh);
+a.publish(mesh)
 
 # setup actions
 actions = conduit.Node()
@@ -79,7 +79,7 @@ extracts["e1/params/protocol"] = "blueprint/mesh/hdf5"
 print(actions.to_yaml())
 
 # execute the actions
-a.execute(actions);
+a.execute(actions)
 
 # close ascent
 a.close()

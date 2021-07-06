@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
@@ -82,12 +83,15 @@
 #include <runtimes/ascent_data_object.hpp>
 
 #include <dray/dray.hpp>
-#include <dray/data_set.hpp>
+#include <dray/data_model/data_set.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 
-#include <dray/collection.hpp>
+#include <dray/data_model/collection.hpp>
+
 #include <dray/filters/reflect.hpp>
 #include <dray/filters/mesh_boundary.hpp>
+#include <dray/filters/volume_balance.hpp>
+#include <dray/filters/vector_component.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
@@ -208,6 +212,22 @@ dray_color_table_surprises(const conduit::Node &color_table)
   return surprises;
 }
 
+std::string
+dray_load_balance_surprises(const conduit::Node &load_balance)
+{
+  std::string surprises;
+
+  std::vector<std::string> valid_paths;
+  valid_paths.push_back("enabled");
+  valid_paths.push_back("factor");
+  valid_paths.push_back("threshold");
+  valid_paths.push_back("use_prefix");
+
+  surprises += surprise_check(valid_paths, load_balance);
+
+  return surprises;
+}
+
 std::vector<dray::Vec<float,3>>
 planes(const conduit::Node &params, const dray::AABB<3> bounds)
 {
@@ -253,7 +273,73 @@ planes(const conduit::Node &params, const dray::AABB<3> bounds)
   return points;
 }
 
-std::vector<float>
+void
+parse_plane(const conduit::Node &plane, dray::PlaneDetector &plane_d)
+{
+  typedef dray::Vec<float,3> Vec3f;
+
+  if(plane.has_child("center"))
+  {
+      conduit::Node n;
+      plane["center"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      Vec3f vec = {{float(coords[0]), float(coords[1]), float(coords[2])}};
+      plane_d.m_center = vec;
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'center'");
+  }
+
+  if(plane.has_child("up"))
+  {
+      conduit::Node n;
+      plane["up"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      Vec3f vec = {{float(coords[0]), float(coords[1]), float(coords[2])}};
+      vec.normalize();
+      plane_d.m_up = vec;
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'up'");
+  }
+
+  if(plane.has_child("normal"))
+  {
+      conduit::Node n;
+      plane["normal"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      Vec3f vec = {{float(coords[0]), float(coords[1]), float(coords[2])}};
+      vec.normalize();
+      plane_d.m_view  = vec;
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'normal'");
+  }
+
+  if(plane.has_child("width"))
+  {
+      plane_d.m_plane_width = plane["width"].to_float64();
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'width'");
+  }
+
+  if(plane.has_child("height"))
+  {
+      plane_d.m_plane_height = plane["height"].to_float64();
+  }
+  else
+  {
+    ASCENT_ERROR("Plane definition missing 'height'");
+  }
+
+}
+
+void
 parse_camera(const conduit::Node camera_node, dray::Camera &camera)
 {
   typedef dray::Vec<float,3> Vec3f;
@@ -311,25 +397,6 @@ parse_camera(const conduit::Node camera_node, dray::Camera &camera)
       float zoom = camera_node["zoom"].to_float32();
       camera.set_zoom(zoom);
   }
-  //
-  // With a new potential camera position. We need to reset the
-  // clipping plane as not to cut out part of the data set
-  //
-
-  // clipping defaults
-  std::vector<float> clipping(2);
-  clipping[0] = 0.01f;
-  clipping[1] = 1000.f;
-  if(camera_node.has_child("near_plane"))
-  {
-      clipping[0] = camera_node["near_plane"].to_float64();
-  }
-
-  if(camera_node.has_child("far_plane"))
-  {
-      clipping[1] = camera_node["far_plane"].to_float64();
-  }
-  return clipping;
 }
 
 dray::ColorTable
@@ -494,13 +561,10 @@ parse_params(const conduit::Node &params,
   dray::AABB<3> bounds = dcol->bounds();
   camera.reset_to_bounds(bounds);
 
-  std::vector<float> clipping(2);
-  clipping[0] = 0.01f;
-  clipping[1] = 1000.f;
   if(params.has_path("camera"))
   {
     const conduit::Node &n_camera = params["camera"];
-    clipping = detail::parse_camera(n_camera, camera);
+    detail::parse_camera(n_camera, camera);
   }
 
   dray::Range scalar_range = dcol->range(field_name);
@@ -645,6 +709,10 @@ DRayPseudocolor::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
     int comm_id = -1;
@@ -659,11 +727,11 @@ DRayPseudocolor::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -726,7 +794,7 @@ DRayPseudocolor::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
@@ -821,6 +889,10 @@ DRay3Slice::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -828,11 +900,11 @@ DRay3Slice::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -891,7 +963,7 @@ DRay3Slice::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 }
@@ -957,12 +1029,18 @@ DRayVolume::verify_params(const conduit::Node &params,
 
     ignore_paths.push_back("camera");
     ignore_paths.push_back("color_table");
+    ignore_paths.push_back("load_balancing");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
     if(params.has_path("color_table"))
     {
       surprises += detail::dray_color_table_surprises(params["color_table"]);
+    }
+
+    if(params.has_path("load_balancing"))
+    {
+      surprises += detail::dray_load_balance_surprises(params["load_balancing"]);
     }
 
     if(surprises != "")
@@ -983,19 +1061,25 @@ DRayVolume::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
+
+    dray::Collection dataset = *dcol;
 
     dray::Camera camera;
 
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -1025,8 +1109,47 @@ DRayVolume::execute()
       samples = params()["samples"].to_int32();
     }
 
+    if(params().has_path("load_balancing"))
+    {
+      const conduit::Node &load = params()["load_balancing"];
+      bool enabled = true;
+      if(load.has_path("enabled") &&
+         load["enabled"].as_string() == "false")
+      {
+        enabled = false;
+      }
+
+      if(enabled)
+      {
+        float piece_factor = 0.75f;
+        float threshold = 2.0f;
+        bool prefix = true;
+        if(load.has_path("factor"))
+        {
+          piece_factor = load["factor"].to_float32();
+        }
+        if(load.has_path("threshold"))
+        {
+          threshold = load["threshold"].to_float32();
+        }
+
+        if(load.has_path("use_prefix"))
+        {
+          prefix = load["use_prefix"].as_string() != "false";
+        }
+        dray::VolumeBalance balancer;
+        balancer.threshold(threshold);
+        balancer.prefix_balancing(prefix);
+        balancer.piece_factor(piece_factor);
+
+        dataset = balancer.execute(dataset, camera, samples);
+
+      }
+
+    }
+
     std::shared_ptr<dray::Volume> volume
-      = std::make_shared<dray::Volume>(*dcol);
+      = std::make_shared<dray::Volume>(dataset);
 
     volume->color_map() = color_map;
     volume->samples(samples);
@@ -1046,7 +1169,7 @@ DRayVolume::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
@@ -1121,6 +1244,11 @@ DRayReflect::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1145,7 +1273,7 @@ DRayReflect::execute()
 
     dray::Collection output = reflector.execute(*dcol);
 
-    for(int i = 0; i < dcol->size(); ++i)
+    for(int i = 0; i < dcol->local_size(); ++i)
     {
       dray::DataSet dset = dcol->domain(i);
       output.add_domain(dset);
@@ -1201,6 +1329,7 @@ DRayProject2d::verify_params(const conduit::Node &params,
     valid_paths.push_back("fields");
 
     ignore_paths.push_back("camera");
+    ignore_paths.push_back("plane");
     ignore_paths.push_back("fields");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
@@ -1223,6 +1352,11 @@ DRayProject2d::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1230,7 +1364,7 @@ DRayProject2d::execute()
 
     std::string image_name;
 
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
     int width  = 512;
     int height = 512;
 
@@ -1270,13 +1404,19 @@ DRayProject2d::execute()
     dray::AABB<3> bounds = dcol->bounds();
     camera.reset_to_bounds(bounds);
 
-    std::vector<float> clipping(2);
-    clipping[0] = 0.01f;
-    clipping[1] = 1000.f;
-    if(params().has_path("camera"))
+    dray::PlaneDetector plane;
+    bool use_plane = false;
+    if(params().has_path("plane"))
+    {
+      use_plane = true;
+      detail::parse_plane(params()["plane"], plane);
+      plane.m_x_res = width;
+      plane.m_y_res = height;
+    }
+    else if(params().has_path("camera"))
     {
       const conduit::Node &n_camera = params()["camera"];
-      clipping = detail::parse_camera(n_camera, camera);
+      detail::parse_camera(n_camera, camera);
     }
 
     std::vector<dray::ScalarBuffer> buffers;
@@ -1297,7 +1437,15 @@ DRayProject2d::execute()
     }
 
     renderer.field_names(field_names);
-    dray::ScalarBuffer sb = renderer.render(camera);
+    dray::ScalarBuffer sb;
+    if(use_plane)
+    {
+      sb = renderer.render(plane);
+    }
+    else
+    {
+      sb = renderer.render(camera);
+    }
 
     conduit::Node *output = new conduit::Node();
     if(dray::dray::mpi_rank() == 0)
@@ -1310,11 +1458,16 @@ DRayProject2d::execute()
 
       int cycle = 0;
 
-      if(meta->has_path("cycle"))
+      if(meta.has_path("cycle"))
       {
-        cycle = (*meta)["cycle"].as_int32();
+        cycle = meta["cycle"].to_int32();
       }
       dom["state/cycle"] = cycle;
+      if(meta.has_path("time"))
+      {
+        dom["state/time"] =  meta["time"].to_float64();
+      }
+
     }
 
     DataObject *res =  new DataObject(output);
@@ -1401,6 +1554,11 @@ DRayProjectColors2d::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
+    if(!d_input->is_valid())
+    {
+      set_output<DataObject>(d_input);
+      return;
+    }
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
@@ -1410,18 +1568,18 @@ DRayProjectColors2d::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
                          image_name);
 
 
-    const int num_domains = faces.size();
+    const int num_domains = faces.local_size();
 
     dray::Framebuffer framebuffer (camera.get_width(), camera.get_height());
     std::shared_ptr<dray::Surface> surface = std::make_shared<dray::Surface>(faces);
@@ -1450,6 +1608,102 @@ DRayProjectColors2d::execute()
     }
 
     DataObject *res =  new DataObject(image_data);
+    set_output<DataObject>(res);
+
+}
+
+//-----------------------------------------------------------------------------
+DRayVectorComponent::DRayVectorComponent()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayVectorComponent::~DRayVectorComponent()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVectorComponent::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_vector_component";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayVectorComponent::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("component",params, info, true);
+    res &= check_string("output_name",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("component");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVectorComponent::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+      ASCENT_ERROR("dray_vector_component input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    dray::Collection *dcol = data_object->as_dray_collection().get();
+
+    std::string field_name = params()["field"].as_string();
+    // not really doing invalid results for dray atm
+    //if(!collection->has_field(field_name))
+    //{
+    //  // this creates a data object with an invalid soource
+    //  set_output<DataObject>(new DataObject());
+    //  return;
+    //}
+    int component = params()["component"].to_int32();
+    std::string res_name = params()["output_name"].as_string();
+
+    dray::VectorComponent comp;
+
+    comp.field(field_name);
+    comp.component(component);
+    comp.output_name(res_name);
+
+    dray::Collection comp_output = comp.execute(*dcol);
+    dray::Collection *output_ptr = new dray::Collection();
+    *output_ptr = comp_output;
+
+    DataObject *res =  new DataObject(output_ptr);
     set_output<DataObject>(res);
 
 }

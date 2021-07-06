@@ -54,6 +54,7 @@
 #include "expressions/ascent_blueprint_architect.hpp"
 #include "expressions/ascent_derived_jit.hpp"
 #include "expressions/ascent_expression_filters.hpp"
+#include "expressions/ascent_expression_jit_filters.hpp"
 #include "expressions/ascent_expressions_ast.hpp"
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
@@ -217,7 +218,7 @@ Cache::load(const std::string &dir, const std::string &session)
   m_loaded = true;
 }
 
-Cache::~Cache()
+void Cache::save()
 {
   // the session file can be blank during testing,
   // since its not actually opening ascent
@@ -225,6 +226,11 @@ Cache::~Cache()
   {
     m_data.save(m_session_file, "yaml");
   }
+}
+
+Cache::~Cache()
+{
+  save();
 }
 
 void
@@ -253,13 +259,15 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::ArraySum>();
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
+  flow::Workspace::register_filter_type<expressions::Abs>();
+  flow::Workspace::register_filter_type<expressions::Pow>();
+  flow::Workspace::register_filter_type<expressions::Exp>();
+  flow::Workspace::register_filter_type<expressions::Log>();
   flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Topo>();
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
   flow::Workspace::register_filter_type<expressions::Binning>();
-  flow::Workspace::register_filter_type<expressions::PaintBinning>();
-  flow::Workspace::register_filter_type<expressions::BinningMesh>();
   flow::Workspace::register_filter_type<expressions::Entropy>();
   flow::Workspace::register_filter_type<expressions::Pdf>();
   flow::Workspace::register_filter_type<expressions::Cdf>();
@@ -272,12 +280,24 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
   flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
   flow::Workspace::register_filter_type<expressions::Bin>();
+  flow::Workspace::register_filter_type<expressions::Bounds>();
+  flow::Workspace::register_filter_type<expressions::Lineout>();
 
   initialize_functions();
   initialize_objects();
 }
 
-ExpressionEval::ExpressionEval(conduit::Node *data) : m_data(data)
+ExpressionEval::ExpressionEval(conduit::Node *data)
+{
+  // wrap the pointer in a data object we can assume that this
+  // is a valid multidomain dataset
+  conduit::Node *data_node = new conduit::Node();
+  data_node->set_external(*data);
+  m_data_object.reset(data_node);
+}
+
+ExpressionEval::ExpressionEval(DataObject &dataset)
+  : m_data_object(dataset)
 {
 }
 
@@ -471,6 +491,42 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
+  conduit::Node &abs_sig = (*functions)["abs"].append();
+  abs_sig["return_type"] = "scalar";
+  abs_sig["filter_name"] = "abs";
+  abs_sig["args/arg1/type"] = "scalar";
+  abs_sig["description"] = "Return the absolute value of the input.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &exp_sig = (*functions)["exp"].append();
+  exp_sig["return_type"] = "double";
+  exp_sig["filter_name"] = "exp";
+  exp_sig["args/arg1/type"] = "scalar";
+  exp_sig["description"] = "Return the base e exponential.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &pow_sig = (*functions)["pow"].append();
+  pow_sig["return_type"] = "double";
+  pow_sig["filter_name"] = "pow";
+  pow_sig["args/arg1/type"] = "scalar";
+  pow_sig["args/arg2/type"] = "scalar";
+  pow_sig["description"] =
+    "Returns base raised to the power exponent."
+    " pow(base, exponent)";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &log_sig = (*functions)["log"].append();
+  log_sig["return_type"] = "double";
+  log_sig["filter_name"] = "log";
+  log_sig["args/arg1/type"] = "scalar";
+  log_sig["description"] =
+    "Returns the natural logarithm of the argument";
+
+  // -------------------------------------------------------------
+
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
@@ -599,6 +655,15 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
+  conduit::Node &bounds_sig = (*functions)["bounds"].append();
+  bounds_sig["return_type"] = "aabb";
+  bounds_sig["filter_name"] = "bounds";
+  bounds_sig["args/topology/type"] = "string";
+  bounds_sig["args/topology/optional"];
+  bounds_sig["description"] = "Returns the spatial bounds of a mesh.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
   point_and_axis_sig["return_type"] = "bin";
   point_and_axis_sig["filter_name"] = "point_and_axis";
@@ -635,6 +700,20 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &lineout = (*functions)["lineout"].append();
+  lineout["return_type"] = "array";
+  lineout["filter_name"] = "lineout";
+  lineout["args/samples/type"] = "int";
+  lineout["args/start/type"] = "vector";
+  lineout["args/end/type"] = "vector";
+  lineout["args/fields/type"] = "list";
+  lineout["args/fields/optional"];
+  lineout["args/empty_val/type"] = "double";
+  lineout["args/empty_val/optional"];
+  lineout["description"] = "returns a sampled based line out";
+
+  // -------------------------------------------------------------
+
   conduit::Node &quantile_sig = (*functions)["quantile"].append();
   quantile_sig["return_type"] = "double";
   quantile_sig["filter_name"] = "quantile";
@@ -658,7 +737,7 @@ initialize_functions()
 
   quantile_sig["description"] = "Return the `q`-th quantile of the data along \
   the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the \
-  x-axis which 50\% of the data lies below.";
+  x-axis which 50 percent of the data lies below.";
 
   //---------------------------------------------------------------------------
 
@@ -749,16 +828,11 @@ initialize_functions()
   binning_sig["args/empty_val/optional"];
   binning_sig["args/empty_val/description"] =
       "The value that empty bins should have. Defaults to ``0``.";
-  binning_sig["args/topo/type"] = "topo";
-  binning_sig["args/topo/optional"];
-  binning_sig["args/topo/description"] =
-      "Do not specify this in this overload, it will be inferred from "
-      "``reduction_var``.";
-  binning_sig["args/assoc/type"] = "string";
-  binning_sig["args/assoc/optional"];
-  binning_sig["args/assoc/description"] =
-      "Do not specify this in this overload, it will be inferred from "
-      "``reduction_var``.";
+  binning_sig["args/component/type"] = "string";
+  binning_sig["args/component/optional"];
+  binning_sig["args/component/description"] =
+      "the component of a vector field to use for the reduction."
+      " Example 'x' for a field defined as 'velocity/x'";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
   //---------------------------------------------------------------------------
@@ -1124,6 +1198,10 @@ initialize_objects()
   vertex["id/type"] = "jitable";
   vertex["id/description"] = "Domain vertex id.";
 
+  conduit::Node &aabb = (*objects)["aabb/attrs"];
+  aabb["min/type"] = "vector";
+  aabb["max/type"] = "vector";
+
   conduit::Node &vector_atts = (*objects)["vector/attrs"];
   vector_atts["x/type"] = "double";
   vector_atts["y/type"] = "double";
@@ -1143,7 +1221,7 @@ initialize_objects()
   // we give field the attributes of jitable since all fields are jitables
   (*objects)["field/attrs"].update(jitable);
 
-  objects->save("objects.json", "json");
+  //objects->save("objects.json", "json");
 }
 
 conduit::Node
@@ -1162,11 +1240,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node remove;
   w.registry().add<conduit::Node>("remove", &remove, -1);
 
-  w.registry().add<conduit::Node>("dataset", m_data, -1);
+  w.registry().add<DataObject>("dataset", &m_data_object, -1);
   w.registry().add<conduit::Node>("cache", &m_cache.m_data, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
   w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
-  int cycle = get_state_var(*m_data, "cycle").to_int32();
+  int cycle = get_state_var(*m_data_object.as_node().get(), "cycle").to_int32();
   w.registry().add<int>("cycle", &cycle, -1);
 
   try
@@ -1234,10 +1312,12 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // return_val.print();
 
   // remove temporary fields, topologies, and coordsets from the dataset
-  const int num_domains = m_data->number_of_children();
+  #warning "How is adding fields to a data supposed to work with derived expressions??"
+  conduit::Node *dataset = m_data_object.as_node().get();
+  const int num_domains = dataset->number_of_children();
   for(int i = 0; i < num_domains; ++i)
   {
-    conduit::Node &dom = m_data->child(i);
+    conduit::Node &dom = dataset->child(i);
     for(const auto &field_name : remove["fields"].child_names())
     {
       dom["fields"].remove(field_name);
@@ -1253,7 +1333,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   }
 
   // add the sim time
-  conduit::Node n_time = get_state_var(*m_data, "time");
+  conduit::Node n_time = get_state_var(*m_data_object.as_node().get(), "time");
   double time = 0;
   bool valid_time = false;
   if(!n_time.dtype().is_empty())
@@ -1273,8 +1353,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   // 3) only filter if we have state/time
   static bool first_execute = true;
 
-  if(first_execute && !m_cache.filtered() &&
-     time <= m_cache.last_known_time() && valid_time)
+  if(first_execute &&
+     !m_cache.filtered() &&
+     time <= m_cache.last_known_time() &&
+     valid_time)
   {
     // remove all cache entries that occur in the future
     m_cache.filter_time(time);
@@ -1312,7 +1394,12 @@ ExpressionEval::reset_cache()
 }
 
 void
-ExpressionEval::get_last(conduit::Node &data)
+ExpressionEval::save_cache()
+{
+  m_cache.save();
+}
+
+void ExpressionEval::get_last(conduit::Node &data)
 {
   data.reset();
   const int entries = m_cache.m_data.number_of_children();

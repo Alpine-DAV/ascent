@@ -42,8 +42,7 @@
 #
 ###############################################################################
 
-FROM ubuntu:latest
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+FROM ubuntu:18.04
 
 # fetch build env
 RUN apt-get update && apt-get install -y \
@@ -72,9 +71,12 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     openssh-server \
     vim \
-    emacs \
- && rm -rf /var/lib/apt/lists/*
+    emacs 
 
+# nodejs is needed by jupyterlab for widgets
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+RUN apt-get install -y nodejs
+RUN rm -rf /var/lib/apt/lists/*
 
 # add our 'user' with password 'docker'
 RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
@@ -111,11 +113,23 @@ RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
        --spec "%gcc+mpi+mfem ^python@3.6.3" \
        --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
 
-# install jupyter, matplotlib, etc via pip
+# install jupyter, matplotlib, cinema, etc via pip
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
-    jupyter matplotlib bash_kernel scipy scikit-learn torch
+    bash_kernel \
+    jupyter \
+    jupyterlab \
+    matplotlib \
+    pyyaml \
+    cinemasci \
+    scipy \
+    scikit-learn \
+    ipympl
+
+# finish jupyter lab setup
+RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/jupyter \
+    labextension install @jupyter-widgets/jupyterlab-manager
 
 # configure a debug build with cmake
 RUN cd /home/user/ascent && mkdir build-debug
@@ -155,6 +169,8 @@ RUN mkdir /home/user/.jupyter/
 # the password is:
 #  learn
 RUN echo "c.NotebookApp.password = 'sha1:9777986fd066:283f673e1a311e2d5ef58c174eaebf3e1cb536dd'" > /home/user/.jupyter/jupyter_notebook_config.py
+# set bash as default shell
+RUN echo "c.NotebookApp.terminado_settings = { 'shell_command': ['/bin/bash'] }" >> /home/user/.jupyter/jupyter_notebook_config.py
 
 # gen env script that points to spack installs of tpls
 RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python
@@ -165,8 +181,13 @@ RUN echo "export PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> 
 RUN cp /home/user/ascent_docker_setup_env.sh ascent_docker_run_jupyter.sh
 RUN echo "jupyter notebook --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyter.sh
 
+# gen script that allows us to easily run jupyter lab
+RUN cp /home/user/ascent_docker_setup_env.sh ascent_docker_run_jupyterlab.sh
+RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> ascent_docker_run_jupyterlab.sh
+
 #make sure helpers are executable
 RUN chmod 777 /home/user/ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyter.sh
+RUN chmod 777 /home/user/ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyterlab.sh
 RUN chmod 777 /home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/*/cleanup.sh
 
 # open port 8000, for use as http server

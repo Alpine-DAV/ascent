@@ -62,16 +62,21 @@
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_conduit_reductions.hpp"
+#include <ascent_config.h>
 #include <ascent_logging.hpp>
-#include <ascent_runtime_param_check.hpp>
+#include <ascent_data_object.hpp>
+#include <utils/ascent_mpi_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_timer.hpp>
 #include <flow_workspace.hpp>
 
 #include <limits>
-#include <list>
 #include <math.h>
 #include <typeinfo>
+
+#if defined(ASCENT_DRAY_ENABLED)
+#include <dray/queries/lineout.hpp>
+#endif
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -105,16 +110,18 @@ namespace detail
 // attributes like vectors, but since its a base
 // type, its overly burdensome to always set these
 // as the return types in every filter. Thus, do this.
-void
-fill_attrs(conduit::Node &obj)
+void fill_attrs(conduit::Node &obj)
 {
   const std::string type = obj["type"].as_string();
   if(type == "vector")
   {
     double *vals = obj["value"].value();
-    obj["attrs/x"] = vals[0];
-    obj["attrs/y"] = vals[1];
-    obj["attrs/z"] = vals[2];
+    obj["attrs/x/value"] = vals[0];
+    obj["attrs/x/type"] = "double";
+    obj["attrs/y/value"] = vals[1];
+    obj["attrs/y/type"] = "double";
+    obj["attrs/z/value"] = vals[2];
+    obj["attrs/z/type"] = "double";
   }
 }
 
@@ -191,7 +198,6 @@ math_op(const double lhs, const double rhs, const std::string &op)
   }
   else
   {
-    res = 0;
     ASCENT_ERROR("unknown math op " << op << " for type double");
   }
   return res;
@@ -224,7 +230,6 @@ math_op(const int lhs, const int rhs, const std::string &op)
   }
   else
   {
-    res = 0;
     ASCENT_ERROR("unknown math op " << op << " for type int");
   }
   return res;
@@ -260,7 +265,6 @@ comp_op(const double lhs, const double rhs, const std::string &op)
   }
   else
   {
-    res = 0;
     ASCENT_ERROR("unknown comparison op " << op);
   }
   return res;
@@ -285,7 +289,6 @@ logic_op(const bool lhs, const bool rhs, const std::string &op)
   }
   else
   {
-    res = 0;
     ASCENT_ERROR("unknown boolean op " << op);
   }
   return res;
@@ -357,7 +360,12 @@ bool
 Identifier::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = filters::check_string("value", params, info, true);
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required string parameter 'value'";
+    res = false;
+  }
   return res;
 }
 
@@ -414,7 +422,12 @@ bool
 Boolean::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = filters::check_numeric("value", params, info, true);
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
+  }
   return res;
 }
 
@@ -456,7 +469,12 @@ bool
 Integer::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = filters::check_numeric("value", params, info, true);
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
+  }
   return res;
 }
 
@@ -496,7 +514,12 @@ bool
 Double::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = filters::check_numeric("value", params, info, true);
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
+  }
   return res;
 }
 
@@ -536,7 +559,12 @@ bool
 String::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = filters::check_string("value", params, info, true);
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required string parameter 'value'";
+    res = false;
+  }
   return res;
 }
 
@@ -794,7 +822,12 @@ bool
 DotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
-  bool res = filters::check_string("name", params, info, true);
+  bool res = true;
+  if(!params.has_path("name"))
+  {
+    info["errors"].append() = "DotAccess: Missing required parameter 'name'";
+    res = false;
+  }
   return res;
 }
 
@@ -810,6 +843,7 @@ DotAccess::execute()
   // fills attrs for basic types like vectors
   detail::fill_attrs(*n_obj);
 
+  // TODO test accessing non-existant attribute
   if(!n_obj->has_path("attrs/" + name))
   {
     n_obj->print();
@@ -819,101 +853,26 @@ DotAccess::execute()
       std::string attr_yaml = (*n_obj)["attrs"].to_yaml();
       if(attr_yaml == "")
       {
-        ss << " No known attribtues.";
+        ss<<" No known attribtues.";
       }
       else
       {
-        ss << " Known attributes: " << attr_yaml;
+        ss<<" Known attributes: "<<attr_yaml;
       }
     }
     else
     {
-      ss << " No known attributes.";
+      ss<<" No known attributes.";
     }
 
-    ASCENT_ERROR("'" << name << "' is not a valid object attribute for"
-                     << " type '" << (*n_obj)["type"].as_string() << "'."
-                     << ss.str());
+    ASCENT_ERROR("'"<<name << "' is not a valid object attribute for"
+                      <<" type '"<<(*n_obj)["type"].as_string()<<"'."
+                      <<ss.str());
   }
+
   (*output) = (*n_obj)["attrs/" + name];
 
   set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ExpressionList::ExpressionList(const int num_inputs) : Filter()
-{
-  this->num_inputs = num_inputs;
-}
-
-//-----------------------------------------------------------------------------
-ExpressionList::~ExpressionList()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ExpressionList::declare_interface(Node &i)
-{
-  stringstream ss;
-  ss << "expr_list_" << num_inputs;
-  i["type_name"] = ss.str();
-  for(int item_num = 0; item_num < num_inputs; ++item_num)
-  {
-    std::stringstream ss;
-    ss << "item_" << item_num;
-    i["port_names"].append() = ss.str();
-  }
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ExpressionList::execute()
-{
-  conduit::Node *output = new conduit::Node();
-
-  for(int i = 0; i < num_inputs; ++i)
-  {
-    output->append() = *input<Node>(i);
-  }
-
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Filter *
-ExpressionListFilterFactoryMethod(const std::string &filter_type_name)
-{
-  // "expr_list_" is 10 characters long
-  const std::string num_inputs_str =
-      filter_type_name.substr(10, filter_type_name.size() - 10);
-  const int num_inputs = std::stoi(num_inputs_str);
-  return new ExpressionList(num_inputs);
-}
-
-//-----------------------------------------------------------------------------
-std::string
-register_expression_list_filter(flow::Workspace &w, const int num_inputs)
-{
-  std::stringstream ss;
-  ss << "expr_list_" << num_inputs;
-  if(!w.supports_filter_type(ss.str()))
-  {
-    flow::Workspace::register_filter_type(ss.str(),
-                                          ExpressionListFilterFactoryMethod);
-  }
-  return ss.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -1116,8 +1075,9 @@ FieldMin::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1222,8 +1182,9 @@ FieldMax::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1328,8 +1289,9 @@ FieldAvg::execute()
 
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -1380,8 +1342,9 @@ Cycle::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   conduit::Node state = get_state_var(*dataset, "cycle");
   if(!state.dtype().is_number())
@@ -1432,19 +1395,20 @@ History::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  const std::string expr_name = (*input<Node>("expr_name"))["name"].as_string();
+  const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
 
   const conduit::Node *const cache =
       graph().workspace().registry().fetch<Node>("cache");
 
   if(!cache->has_path(expr_name))
   {
-    ASCENT_ERROR("History: unknown identifier " << expr_name);
+    ASCENT_ERROR("History: unknown identifier "<<  expr_name);
   }
   const conduit::Node &history = (*cache)[expr_name];
 
   const conduit::Node *n_absolute_index = input<Node>("absolute_index");
   const conduit::Node *n_relative_index = input<Node>("relative_index");
+
 
   if(!n_absolute_index->dtype().is_empty() &&
      !n_relative_index->dtype().is_empty())
@@ -1452,6 +1416,7 @@ History::execute()
     ASCENT_ERROR(
         "History: Specify only one of relative_index or absolute_index.");
   }
+
 
   const int entries = history.number_of_children();
   if(!n_relative_index->dtype().is_empty())
@@ -1595,6 +1560,198 @@ Magnitude::execute()
 }
 
 //-----------------------------------------------------------------------------
+Abs::Abs() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Abs::~Abs()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Abs::declare_interface(Node &i)
+{
+  i["type_name"] = "abs";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Abs::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Abs::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  if((*arg1)["type"].as_string() == "double")
+  {
+    double res = 0.;
+    res = abs((*arg1)["value"].to_float64());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "double";
+    (*output)["value"] = res;
+    set_output<conduit::Node>(output);
+  }
+  else
+  {
+    int res = 0;
+    res = abs((*arg1)["value"].to_int32());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "int";
+    (*output)["value"] = res;
+    set_output<conduit::Node>(output);
+  }
+}
+
+//-----------------------------------------------------------------------------
+Exp::Exp() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Exp::~Exp()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Exp::declare_interface(Node &i)
+{
+  i["type_name"] = "exp";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Exp::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Exp::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  res = exp((*arg1)["value"].to_float64());
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Log::Log() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Log::~Log()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Log::declare_interface(Node &i)
+{
+  i["type_name"] = "log";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Log::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Log::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  res = log((*arg1)["value"].to_float64());
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Pow::Pow() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Pow::~Pow()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Pow::declare_interface(Node &i)
+{
+  i["type_name"] = "pow";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "arg2";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Pow::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Pow::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
+
+  double res = 0.;
+  double base = (*arg1)["value"].to_float64();
+  double exponent = (*arg2)["value"].to_float64();
+  res = pow(base, exponent);
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 Field::Field() : Filter()
 {
   // empty
@@ -1611,8 +1768,7 @@ void
 Field::declare_interface(Node &i)
 {
   i["type_name"] = "field";
-  i["port_names"].append() = "field_name";
-  i["port_names"].append() = "component";
+  i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
@@ -1629,115 +1785,37 @@ Field::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Field::execute()
 {
-  const conduit::Node *n_field_name = input<Node>("field_name");
-  std::string field_name = (*n_field_name)["value"].as_string();
+  const conduit::Node *arg1 = input<Node>("arg1");
 
-  // optional parameters
-  const conduit::Node *n_component = input<Node>("component");
+  const std::string field = (*arg1)["value"].as_string();
 
   if(!graph().workspace().registry().has_entry("dataset"))
   {
     ASCENT_ERROR("Field: Missing dataset");
   }
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
-  if(!has_field(*dataset, field_name))
+  if(!has_field(*dataset, field))
   {
-    ASCENT_ERROR("Field: dataset does not contain field '"
-                 << field_name << "'"
-                 << " known = " << known_fields(*dataset));
-  }
-
-  std::string component;
-  if(!n_component->dtype().is_empty())
-  {
-    component = (*n_component)["value"].as_string();
-    if(!has_component(*dataset, field_name, component))
+    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+    std::stringstream ss;
+    ss << "[";
+    for(int i = 0; i < names.size(); ++i)
     {
-      ASCENT_ERROR("Field variable '"
-                   << field_name << "'"
-                   << " does not have component '" << component << "'."
-                   << " known components = "
-                   << possible_components(*dataset, field_name));
+      ss << " " << names[i];
     }
-  }
-
-  // if the field only has one component use that
-  const conduit::Node &values =
-      dataset->child(0)["fields/" + field_name + "/values"];
-  if(component.empty() && values.number_of_children() == 1)
-  {
-    component = values.child(0).name();
+    ss << "]";
+    ASCENT_ERROR("Field: dataset does not contain field '"
+                 << field << "'"
+                 << " known = " << ss.str());
   }
 
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field_name;
-  if(!component.empty())
-  {
-    (*output)["component"] = component;
-  }
+  (*output)["value"] = field;
   (*output)["type"] = "field";
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Topo::Topo() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Topo::~Topo()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Topo::declare_interface(Node &i)
-{
-  i["type_name"] = "topo";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Topo::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Topo::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-
-  const std::string topo = (*arg1)["value"].as_string();
-
-  if(!graph().workspace().registry().has_entry("dataset"))
-  {
-    ASCENT_ERROR("Topo: Missing dataset");
-  }
-
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
-
-  if(!has_topology(*dataset, topo))
-  {
-    ASCENT_ERROR("Topo: dataset does not contain topology '"
-                 << topo << "'"
-                 << " known = " << known_topos(*dataset));
-  }
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = topo;
-  (*output)["type"] = "topo";
   set_output<conduit::Node>(output);
 }
 
@@ -1758,7 +1836,7 @@ void
 Axis::declare_interface(Node &i)
 {
   i["type_name"] = "axis";
-  i["port_names"].append() = "var";
+  i["port_names"].append() = "name";
   i["port_names"].append() = "min_val";
   i["port_names"].append() = "max_val";
   i["port_names"].append() = "num_bins";
@@ -1780,9 +1858,7 @@ Axis::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Axis::execute()
 {
-  // axis_var can be a field or a string ('x', 'y', 'z')
-  const conduit::Node *n_axis_var = input<Node>("var");
-  const std::string axis_var = (*n_axis_var)["value"].as_string();
+  const std::string name = (*input<Node>("name"))["value"].as_string();
   // uniform binning
   const conduit::Node *n_min = input<Node>("min_val");
   const conduit::Node *n_max = input<Node>("max_val");
@@ -1796,28 +1872,30 @@ Axis::execute()
   {
     ASCENT_ERROR("Field: Missing dataset");
   }
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
 
-  // verify axis_var
-  if(n_axis_var->has_path("component"))
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!is_scalar_field(*dataset, name) && !is_xyz(name))
   {
-    ASCENT_ERROR("Axis of a field component is not yet implemented, and only "
-                 "works on scalar fields.");
-  }
-  if((*n_axis_var)["type"].as_string() == "string" && !is_xyz(axis_var))
-  {
-    ASCENT_ERROR("Unknown axis_var '"
-                 << axis_var
-                 << "'. If axis_var is specified as a string it must be "
-                    "one of 'x', 'y', 'z'. If it is a field use field('"
-                 << axis_var << "').");
-  }
-  if(!is_scalar_field(*dataset, axis_var) && !is_xyz(axis_var))
-  {
+    std::string known;
+    if(dataset->number_of_children() > 0 )
+    {
+      std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+      std::stringstream ss;
+      ss << "[";
+      for(size_t i = 0; i < names.size(); ++i)
+      {
+        ss << " '" << names[i]<<"'";
+      }
+      ss << "]";
+      known = ss.str();
+    }
+
     ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
                  "contain scalar field '"
-                 << axis_var << "'.");
+                 << name << "'. Possible field names "<<known<<".");
   }
 
   conduit::Node *output;
@@ -1840,9 +1918,9 @@ Axis::execute()
     }
 
     output = new conduit::Node();
-    (*output)["value/" + axis_var + "/bins"].set(
+    (*output)["value/" + name + "/bins"].set(
         conduit::DataType::c_double(bins_len));
-    double *bins = (*output)["value/" + axis_var + "/bins"].value();
+    double *bins = (*output)["value/" + name + "/bins"].value();
 
     for(int i = 0; i < bins_len; ++i)
     {
@@ -1869,13 +1947,13 @@ Axis::execute()
     if(!n_min->dtype().is_empty())
     {
       min_val = (*n_min)["value"].to_float64();
-      (*output)["value/" + axis_var + "/min_val"] = min_val;
+      (*output)["value/" + name + "/min_val"] = min_val;
       min_found = true;
     }
-    else if(!is_xyz(axis_var))
+    else if(!is_xyz(name))
     {
-      min_val = field_min(*dataset, axis_var)["value"].to_float64();
-      (*output)["value/" + axis_var + "/min_val"] = min_val;
+      min_val = field_min(*dataset, name)["value"].to_float64();
+      (*output)["value/" + name + "/min_val"] = min_val;
       min_found = true;
     }
 
@@ -1885,41 +1963,39 @@ Axis::execute()
     {
       max_val = (*n_max)["value"].to_float64();
       max_found = true;
-      (*output)["value/" + axis_var + "/max_val"] = max_val;
+      (*output)["value/" + name + "/max_val"] = max_val;
     }
-    else if(!is_xyz(axis_var))
+    else if(!is_xyz(name))
     {
-      // We add eps because the last bin isn't inclusive
-      max_val = field_max(*dataset, axis_var)["value"].to_float64() + 1.0;
-      double length = max_val - min_val;
-      double eps = length * 1e-8;
-      (*output)["value/" + axis_var + "/max_val"] = max_val + eps;
+      // add 1 because the last bin isn't inclusive
+      max_val = field_max(*dataset, name)["value"].to_float64() + 1.0;
+      (*output)["value/" + name + "/max_val"] = max_val;
       max_found = true;
     }
 
-    (*output)["value/" + axis_var + "/num_bins"] = 256;
+    (*output)["value/" + name + "/num_bins"] = 256;
     if(!n_num_bins->dtype().is_empty())
     {
-      (*output)["value/" + axis_var + "/num_bins"] =
+      (*output)["value/" + name + "/num_bins"] =
           (*n_num_bins)["value"].to_int32();
     }
 
     if(min_found && max_found && min_val >= max_val)
     {
       delete output;
-      ASCENT_ERROR("Axis: axis with axis_var '"
-                   << axis_var << "': min_val (" << min_val
+      ASCENT_ERROR("Axis: axis with name '"
+                   << name << "': min_val (" << min_val
                    << ") must be smaller than max_val (" << max_val << ")");
     }
   }
 
-  (*output)["value/" + axis_var + "/clamp"] = false;
+  (*output)["value/" + name + "/clamp"] = false;
   if(!n_clamp->dtype().is_empty())
   {
-    (*output)["value/" + axis_var + "/clamp"] = (*n_clamp)["value"].to_uint8();
+    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_uint8();
   }
 
-  (*output)["value/" + axis_var];
+  (*output)["value/" + name];
   (*output)["type"] = "axis";
   set_output<conduit::Node>(output);
 }
@@ -1969,8 +2045,9 @@ Histogram::execute()
 
   const std::string field = (*arg1)["value"].as_string();
 
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field))
   {
@@ -2050,9 +2127,8 @@ Binning::declare_interface(Node &i)
   i["port_names"].append() = "reduction_var";
   i["port_names"].append() = "reduction_op";
   i["port_names"].append() = "bin_axes";
-  i["port_names"].append() = "empty_val";
-  i["port_names"].append() = "topo";
-  i["port_names"].append() = "assoc";
+  i["port_names"].append() = "empty_bin_val";
+  i["port_names"].append() = "component";
   i["output_port"] = "true";
 }
 
@@ -2065,117 +2141,151 @@ Binning::verify_params(const conduit::Node &params, conduit::Node &info)
   return res;
 }
 
-//-----------------------------------------------------------------------------
-void
-Binning::execute()
+void binning_interface(const std::string &reduction_var,
+                       const std::string &reduction_op,
+                       const conduit::Node &n_empty_bin_val,
+                       const conduit::Node &n_component,
+                       const conduit::Node &n_axis_list,
+                       conduit::Node &dataset,
+                       conduit::Node &n_binning,
+                       conduit::Node &n_output_axes)
 {
-  // reduction_var can be a field or a string ('x', 'y', 'z')
-  const conduit::Node *n_reduction_var = input<conduit::Node>("reduction_var");
-  const std::string reduction_var = (*n_reduction_var)["value"].as_string();
-  const std::string reduction_op =
-      (*input<Node>("reduction_op"))["value"].as_string();
-  const conduit::Node *n_axes_list = input<Node>("bin_axes");
-  // optional arguments
-  const conduit::Node *n_empty_val = input<conduit::Node>("empty_val");
-  const conduit::Node *n_topo = input<conduit::Node>("topo");
-  const conduit::Node *n_assoc = input<conduit::Node>("assoc");
-
   std::string component = "";
-  if(n_reduction_var->has_path("component"))
+  if(!n_component.dtype().is_empty())
   {
-    component = (*n_reduction_var)["component"].as_string();
+    component = n_component["value"].as_string();
   }
 
-  double empty_val = 0;
-  if(!n_empty_val->dtype().is_empty())
-  {
-    empty_val = (*n_empty_val)["value"].to_float64();
-  }
-
-  std::string topo = "";
-  if(!n_topo->dtype().is_empty())
-  {
-    topo = (*n_topo)["value"].as_string();
-  }
-
-  std::string assoc = "";
-  if(!n_assoc->dtype().is_empty())
-  {
-    assoc = (*n_assoc)["value"].as_string();
-  }
-
-  conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
-
-  // verify n_axes_list and put the values in n_bin_axes
-  conduit::Node n_bin_axes;
-  int num_axes = n_axes_list->number_of_children();
+  // verify n_axes_list and put the values in n_output_axes
+  int num_axes = n_axis_list.number_of_children();
   for(int i = 0; i < num_axes; ++i)
   {
-    const conduit::Node &axis = n_axes_list->child(i);
+    const conduit::Node &axis = n_axis_list.child(i);
     if(axis["type"].as_string() != "axis")
     {
       ASCENT_ERROR("Binning: bin_axes must be a list of axis");
     }
-    n_bin_axes.update(axis["value"]);
-  }
-
-  if(reduction_op == "cdf" && n_bin_axes.number_of_children() > 1)
-  {
-    ASCENT_ERROR("Binning: cdf is only supported on one axis.");
+    n_output_axes.update(axis["value"]);
   }
 
   // verify reduction_var
-  if((*n_reduction_var)["type"].as_string() == "string" &&
-     !is_xyz(reduction_var) && reduction_var != "cnt")
+  if(reduction_var.empty())
   {
-    ASCENT_ERROR("Unknown reduction_var '"
-                 << reduction_var
-                 << "'. If reduction_var is specified as a string it must be "
-                    "one of 'x', 'y', 'z', 'cnt'. If it is a field use field('"
-                 << reduction_var << "').");
-  }
-  if(reduction_var == "cnt")
-  {
-    if(reduction_op != "sum" && reduction_op != "pdf" && reduction_op != "cdf")
+    if(reduction_op != "sum" && reduction_op != "pdf")
     {
-      ASCENT_ERROR("Binning: reduction_var can only be 'cnt' if "
-                   "reduction_op is 'sum', 'pdf', or 'cdf'.");
+      ASCENT_ERROR("Binning: reduction_var can only be left empty if "
+                   "reduction_op is 'sum' or 'pdf'.");
     }
   }
   else if(!is_xyz(reduction_var))
   {
-    bool scalar = is_scalar_field(*dataset, reduction_var);
+    if(!has_field(dataset, reduction_var))
+    {
+      std::string known;
+      if(dataset.number_of_children() > 0 )
+      {
+        std::vector<std::string> names = dataset.child(0)["fields"].child_names();
+        std::stringstream ss;
+        ss << "[";
+        for(size_t i = 0; i < names.size(); ++i)
+        {
+          ss << " '" << names[i]<<"'";
+        }
+        ss << "]";
+        known = ss.str();
+      }
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var
+                   << "' must be a scalar field in the dataset or x/y/z or empty."
+                   << " known = " << known);
+    }
+
+    bool scalar = is_scalar_field(dataset, reduction_var);
     if(!scalar && component == "")
     {
-      ASCENT_ERROR(
-          "Binning: reduction variable '"
-          << reduction_var << "'"
-          << " has multiple components and no 'component' is specified."
-          << " known components = "
-          << possible_components(*dataset, reduction_var));
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " has multiple components and no 'component' is"
+                   << " specified."
+                   << " known components = "
+                   << possible_components(dataset, reduction_var));
+    }
+    if(scalar && component != "")
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " is a scalar(i.e., has not components "
+                   << " but 'component' " << " '"<<component<<"' was"
+                   << " specified. Remove the 'component' argument"
+                   << " or choose a vector variable.");
+    }
+    if(!has_component(dataset, reduction_var, component))
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var << "'"
+                   << " does not have component '"<<component<<"'."
+                   << " known components = "
+                   << possible_components(dataset, reduction_var));
+
     }
   }
 
   // verify reduction_op
   if(reduction_op != "sum" && reduction_op != "min" && reduction_op != "max" &&
-     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "cdf" &&
-     reduction_op != "std" && reduction_op != "var" && reduction_op != "rms")
+     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "std" &&
+     reduction_op != "var" && reduction_op != "rms")
   {
-    ASCENT_ERROR("Unknown reduction_op: '"
-                 << reduction_op
-                 << "'. Known reduction operators are: cnt, sum, min, max, "
-                    "avg, pdf, cdf, std, var, rms");
+    ASCENT_ERROR(
+        "Unknown reduction_op: '"
+        << reduction_op
+        << "'. Known reduction operators are: cnt, sum, min, max, avg, pdf, "
+           "std, var, rms");
   }
 
-  const conduit::Node &n_binning = binning(*dataset,
-                                           n_bin_axes,
-                                           reduction_var,
-                                           reduction_op,
-                                           empty_val,
-                                           component,
-                                           topo,
-                                           assoc);
+  double empty_bin_val = 0;
+  if(!n_empty_bin_val.dtype().is_empty())
+  {
+    empty_bin_val = n_empty_bin_val["value"].to_float64();
+  }
+
+  n_binning = binning(dataset,
+                      n_output_axes,
+                      reduction_var,
+                      reduction_op,
+                      empty_bin_val,
+                      component);
+
+}
+//-----------------------------------------------------------------------------
+void
+Binning::execute()
+{
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
+
+  const std::string reduction_var =
+      (*input<Node>("reduction_var"))["value"].as_string();
+  const std::string reduction_op =
+      (*input<Node>("reduction_op"))["value"].as_string();
+  const conduit::Node *n_axes_list = input<Node>("bin_axes");
+  // optional arguments
+  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_component = input<conduit::Node>("component");
+
+  conduit::Node n_binning;
+  conduit::Node n_bin_axes;
+
+  binning_interface(reduction_var,
+                    reduction_op,
+                    *n_empty_bin_val,
+                    *n_component,
+                    *n_axes_list,
+                    *dataset,
+                    n_binning,
+                    n_bin_axes);
+
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";
@@ -2186,183 +2296,11 @@ Binning::execute()
   (*output)["attrs/reduction_op/value"] = reduction_op;
   (*output)["attrs/reduction_op/type"] = "string";
   (*output)["attrs/bin_axes/value"] = n_bin_axes;
-  (*output)["attrs/bin_axes/type"] = "list";
-  (*output)["attrs/topology/value"] = n_binning["topology"];
-  (*output)["attrs/topology/type"] = "topo";
+  //(*output)["attrs/bin_axes/type"] = "list";
   (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
   set_output<conduit::Node>(output);
-}
 
-//-----------------------------------------------------------------------------
-PaintBinning::PaintBinning() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-PaintBinning::~PaintBinning()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-PaintBinning::declare_interface(Node &i)
-{
-  i["type_name"] = "paint_binning";
-  i["port_names"].append() = "binning";
-  i["port_names"].append() = "name";
-  i["port_names"].append() = "default_val";
-  i["port_names"].append() = "topo";
-  i["port_names"].append() = "assoc";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-PaintBinning::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-PaintBinning::execute()
-{
-  const conduit::Node *binning = input<conduit::Node>("binning");
-  // optional arguments
-  const conduit::Node *n_name = input<conduit::Node>("name");
-  const conduit::Node *n_topo = input<conduit::Node>("topo");
-  const conduit::Node *n_assoc = input<conduit::Node>("assoc");
-  const conduit::Node *n_default = input<conduit::Node>("default_val");
-
-  conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
-
-  std::string name;
-  if(!n_name->dtype().is_empty())
-  {
-    name = (*n_name)["value"].as_string();
-  }
-  else
-  {
-    name = "painted_" + (*binning)["attrs/reduction_var/value"].as_string() +
-           "_" + (*binning)["attrs/reduction_op/value"].as_string();
-    static int painted_field_counter = 0;
-    while(dataset->child(0)["fields"].has_path(
-        name + "_" + std::to_string(painted_field_counter)))
-    {
-      painted_field_counter++;
-    }
-    name += "_" + std::to_string(painted_field_counter);
-
-    conduit::Node *const remove =
-        graph().workspace().registry().fetch<Node>("remove");
-    (*remove)["fields/" + name];
-  }
-  std::string topo;
-  if(!n_topo->dtype().is_empty())
-  {
-    topo = (*n_topo)["value"].as_string();
-  }
-  std::string assoc;
-  if(!n_assoc->dtype().is_empty())
-  {
-    assoc = (*n_assoc)["value"].as_string();
-  }
-  double default_val = 0;
-  if(!n_default->dtype().is_empty())
-  {
-    default_val = (*n_default)["value"].to_float64();
-  }
-
-  paint_binning(*binning, *dataset, name, topo, assoc, default_val);
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = name;
-  (*output)["type"] = "field";
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-BinningMesh::BinningMesh() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-BinningMesh::~BinningMesh()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-BinningMesh::declare_interface(Node &i)
-{
-  i["type_name"] = "binning_mesh";
-  i["port_names"].append() = "binning";
-  i["port_names"].append() = "name";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-BinningMesh::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-BinningMesh::execute()
-{
-  const conduit::Node *binning = input<conduit::Node>("binning");
-  // optional arguments
-  const conduit::Node *n_name = input<conduit::Node>("name");
-
-  conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
-
-  std::string name;
-  if(!n_name->dtype().is_empty())
-  {
-    name = (*n_name)["value"].as_string();
-  }
-  else
-  {
-    name = "binning_mesh_" +
-           (*binning)["attrs/reduction_var/value"].as_string() + "_" +
-           (*binning)["attrs/reduction_op/value"].as_string();
-    static int binning_mesh_counter = 0;
-    while(dataset->child(0)["fields"].has_path(
-        name + "_" + std::to_string(binning_mesh_counter)))
-    {
-      binning_mesh_counter++;
-    }
-    name += "_" + std::to_string(binning_mesh_counter);
-
-    conduit::Node *const remove =
-        graph().workspace().registry().fetch<Node>("remove");
-    (*remove)["fields/" + name];
-    (*remove)["topologies/" + name];
-    (*remove)["coordsets/" + name];
-  }
-
-  conduit::Node &dom0 = dataset->child(0);
-  binning_mesh(*binning, dom0, name);
-  // dom0["state/cycle"] = 100;
-  // dom0["state/domain_id"] = 0;
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = name;
-  (*output)["type"] = "field";
-  set_output<conduit::Node>(output);
 }
 
 //-----------------------------------------------------------------------------
@@ -2720,8 +2658,10 @@ void
 FieldSum::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  const conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_sum(*dataset, field)["value"];
@@ -2765,8 +2705,10 @@ void
 FieldNanCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_nan_count(*dataset, field)["value"];
@@ -2810,8 +2752,10 @@ void
 FieldInfCount::execute()
 {
   std::string field = (*input<Node>("arg1"))["value"].as_string();
-  conduit::Node *dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_inf_count(*dataset, field)["value"];
@@ -2860,615 +2804,6 @@ ArraySum::execute()
 
   set_output<conduit::Node>(output);
 }
-
-//-----------------------------------------------------------------------------
-JitFilter::JitFilter(
-    const int num_inputs,
-    const std::shared_ptr<const JitExecutionPolicy> exec_policy)
-    : Filter(), num_inputs(num_inputs), exec_policy(exec_policy)
-{
-}
-
-//-----------------------------------------------------------------------------
-JitFilter::~JitFilter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-JitFilter::declare_interface(Node &i)
-{
-  stringstream ss;
-  ss << "jit_filter_" << num_inputs << "_" << exec_policy->get_name();
-  i["type_name"] = ss.str();
-  for(int inp_num = 0; inp_num < num_inputs; ++inp_num)
-  {
-    std::stringstream ss;
-    ss << "arg" << inp_num;
-    i["port_names"].append() = ss.str();
-  }
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = filters::check_string("func", params, info, true);
-  res &= filters::check_string("filter_name", params, info, true);
-  if(!params.has_path("inputs"))
-  {
-    info["errors"].append() = "Missing required JitFilter parameter 'inputs'";
-    res = false;
-  }
-  else if(params["inputs"].number_of_children() != num_inputs)
-  {
-    stringstream ss;
-    ss << "Expected parameter 'inputs' to have " << num_inputs
-       << " inputs but it has " << params["inputs"].number_of_children()
-       << " inputs.";
-    info["errors"].append() = ss.str();
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-std::string
-fused_kernel_type(const std::vector<std::string> kernel_types)
-{
-  std::set<std::string> topo_types;
-  for(const auto &kernel_type : kernel_types)
-  {
-    size_t last = 0;
-    size_t next = 0;
-    while((next = kernel_type.find(";", last)) != string::npos)
-    {
-      topo_types.insert(kernel_type.substr(last, next - last));
-      last = next + 1;
-    }
-    topo_types.insert(kernel_type.substr(last));
-  }
-
-  topo_types.erase("default");
-  if(topo_types.empty())
-  {
-    return "default";
-  }
-
-  std::stringstream ss;
-  bool first = true;
-  for(const auto &topo_type : topo_types)
-  {
-    if(!first)
-    {
-      ss << ";";
-    }
-    ss << topo_type;
-    first = false;
-  }
-  return ss.str();
-}
-
-void
-topo_to_jitable(const std::string &topology,
-                const conduit::Node &dataset,
-                Jitable &jitable)
-{
-  for(int i = 0; i < dataset.number_of_children(); ++i)
-  {
-    const conduit::Node &dom = dataset.child(i);
-    std::unique_ptr<Topology> topo = topologyFactory(topology, dom);
-    pack_topology(
-        topology, dom, jitable.dom_info.child(i)["args"], jitable.arrays[i]);
-    const std::string kernel_type = topology + "=" + topo->topo_type;
-    jitable.dom_info.child(i)["kernel_type"] = kernel_type;
-    jitable.kernels[kernel_type];
-  }
-  jitable.topology = topology;
-}
-
-// each jitable has kernels and dom_info
-// dom_info holds number of entries, kernel_type, and args for the dom
-// kernel_type maps to a kernel in kernels
-// each kernel has 3 bodies of code:
-// expr: the main expression being transformed (e.g topo_volume * density[item])
-// for_body: for-loop body that holds code needed for expr
-// kernel_body: code that we already generated but aren't touching (i.e. past
-// for-loops). for_body gets wrapped in a for-loop and added to kernel_body when
-// we need to generate an temporary field.
-void
-JitFilter::execute()
-{
-  const std::string &func = params()["func"].as_string();
-  const std::string &filter_name = params()["filter_name"].as_string();
-  const conduit::Node &inputs = params()["inputs"];
-
-  // don't execute if we just executed
-  if(func == "execute" && input(0).check_type<conduit::Node>())
-  {
-    set_output(input<conduit::Node>(0));
-    return;
-  }
-
-  // create a vector of input_jitables to be fused
-  std::vector<const Jitable *> input_jitables;
-  // keep around the new jitables we create
-  std::list<Jitable> new_jitables;
-
-  conduit::Node *const dataset =
-      graph().workspace().registry().fetch<Node>("dataset");
-  const int num_domains = dataset->number_of_children();
-
-  // registry node that stores temporary arrays
-  conduit::Node *const remove =
-      graph().workspace().registry().fetch<Node>("remove");
-
-  // convert filter's inputs (numbers, topos, fields, binnings, etc.) to jitables
-  for(int i = 0; i < num_inputs; ++i)
-  {
-    const std::string input_fname = inputs.child(i)["filter_name"].as_string();
-    const std::string type = inputs.child(i)["type"].as_string();
-    // A jitable at "compile time" may have been executed at runtime so we
-    // need check_type to get the runtime type to make sure it hasn't executed
-    if(type == "jitable" && input(i).check_type<Jitable>())
-    {
-      // push back an existing jitable
-      input_jitables.push_back(input<Jitable>(i));
-    }
-    else
-    {
-      const conduit::Node *inp = input<conduit::Node>(i);
-      // make a new jitable
-      new_jitables.emplace_back(num_domains);
-      Jitable &jitable = new_jitables.back();
-      input_jitables.push_back(&jitable);
-
-      if(type == "topo")
-      {
-        // topo is special because it can build different kernels for each
-        // domain (kernel types)
-        topo_to_jitable((*inp)["value"].as_string(), *dataset, jitable);
-        jitable.obj = *inp;
-      }
-      else
-      {
-        // default kernel type means we don't need to generate any
-        // topology-specific code.
-        // During kernel fusion the type of the output kernel is the "union" of
-        // the types of the input kernels.
-        Kernel &default_kernel = jitable.kernels["default"];
-        for(int i = 0; i < num_domains; ++i)
-        {
-          jitable.dom_info.child(i)["kernel_type"] = "default";
-        }
-
-        if(type == "int" || type == "double" || type == "bool")
-        {
-          // force everthing to a double
-          for(int i = 0; i < num_domains; ++i)
-          {
-            jitable.dom_info.child(i)["args/" + input_fname] = (*inp)["value"];
-          }
-          default_kernel.expr = "((double)" + input_fname + ")";
-          default_kernel.num_components = 1;
-        }
-        else if(type == "vector")
-        {
-          for(int i = 0; i < num_domains; ++i)
-          {
-            jitable.dom_info.child(i)["args/" + input_fname] = (*inp)["value"];
-          }
-          default_kernel.expr = input_fname;
-          default_kernel.num_components = 3;
-        }
-        // field or a jitable that was executed at runtime
-        else if(type == "field" || type == "jitable")
-        {
-          std::string field_name = (*inp)["value"].as_string();
-          // error checking and dom args information
-          for(int i = 0; i < num_domains; ++i)
-          {
-            const conduit::Node &dom = dataset->child(i);
-            const conduit::Node &field = dom["fields/" + field_name];
-            const std::string &topo_name = field["topology"].as_string();
-            const std::string &assoc_str = field["association"].as_string();
-
-            conduit::Node &cur_dom_info = jitable.dom_info.child(i);
-
-            std::string values_path = "values";
-            if(inp->has_path("component"))
-            {
-              const std::string &component = (*inp)["component"].as_string();
-              values_path += "/" + component;
-              field_name += "_" + component;
-              default_kernel.num_components = 1;
-            }
-            else
-            {
-              const int num_children = field[values_path].number_of_children();
-              default_kernel.num_components = std::max(1, num_children);
-            }
-
-            bool is_float64;
-            if(field[values_path].number_of_children() > 1)
-            {
-              is_float64 = field[values_path].child(0).dtype().is_float64();
-            }
-            else
-            {
-              is_float64 = field[values_path].dtype().is_float64();
-            }
-
-            pack_array(field[values_path],
-                       field_name,
-                       cur_dom_info["args"],
-                       jitable.arrays[i]);
-
-            // update number of entries
-            int entries;
-            std::unique_ptr<Topology> topo = topologyFactory(topo_name, dom);
-            if(assoc_str == "element")
-            {
-              entries = topo->get_num_cells();
-            }
-            else
-            {
-              entries = topo->get_num_points();
-            }
-            cur_dom_info["entries"] = entries;
-
-            // update topology
-            if(!jitable.topology.empty())
-            {
-              if(jitable.topology != topo_name)
-              {
-                ASCENT_ERROR("Field '" << field_name
-                                       << "' is associated with different "
-                                          "topologies on different domains.");
-              }
-            }
-            else
-            {
-              jitable.topology = topo_name;
-            }
-
-            // update association
-            if(!jitable.association.empty())
-            {
-              if(jitable.association != assoc_str)
-              {
-                ASCENT_ERROR(
-                    "Field '"
-                    << field_name
-                    << "' has different associations on different domains.");
-              }
-            }
-            else
-            {
-              jitable.association = assoc_str;
-            }
-
-            // Used to determine if we need to generate an entire derived field
-            // beforehand for things like gradient(field).
-            // obj["value"] will have the name of the field, "value" goes away
-            // as soon as we do something like field + 1, indicating we are no
-            // longer dealing with an original field and will have to generate
-            // it via a for-loop.
-            jitable.obj["value"] = field_name;
-            jitable.obj["type"] = "field";
-          }
-          // We assume that fields don't have different strides/offsets in
-          // different domains (otherwise we might need to compile a kernel for
-          // every domain) so just use the first domain array for codegen
-          if(default_kernel.num_components == 1)
-          {
-            default_kernel.expr = jitable.arrays[0].index(field_name, "item");
-          }
-          else
-          {
-            default_kernel.for_body.insert(
-                "double " + field_name + "_item[" +
-                std::to_string(default_kernel.num_components) + "];\n");
-            for(int i = 0; i < default_kernel.num_components; ++i)
-            {
-              default_kernel.for_body.insert(
-                  field_name + "_item[" + std::to_string(i) + "] = " +
-                  jitable.arrays[0].index(field_name, "item", i) + ";\n");
-            }
-            default_kernel.expr = field_name + "_item";
-          }
-        }
-        else if(type == "binning")
-        {
-          // we need to put the binning in the registry, otherwise it may get
-          // deleted
-          conduit::Node &binning_value = (*remove)["temporaries"].append();
-          binning_value = (*inp)["attrs/value/value"];
-          for(int i = 0; i < num_domains; ++i)
-          {
-            conduit::Node &args = jitable.dom_info.child(i)["args"];
-            // pack the binning array
-            // TODO this is the same for every domain and it's getting copied...
-            pack_array(
-                binning_value, input_fname + "_value", args, jitable.arrays[i]);
-
-            // pack the axes
-            // if axis is a field pack the field
-            const conduit::Node &axes = (*inp)["attrs/bin_axes/value"];
-            for(int i = 0; i < axes.number_of_children(); ++i)
-            {
-              const conduit::Node &axis = axes.child(i);
-              const std::string &axis_name = axis.name();
-              const std::string axis_prefix =
-                  input_fname + "_" + axis_name + "_";
-              if(axis.has_path("num_bins"))
-              {
-                args[axis_prefix + "min_val"] = axis["min_val"];
-                args[axis_prefix + "max_val"] = axis["max_val"];
-                args[axis_prefix + "num_bins"] = axis["num_bins"];
-              }
-              else
-              {
-                pack_array(args["bins"],
-                           axis_prefix + "bins",
-                           args,
-                           jitable.arrays[i]);
-                args[axis_prefix + "bins_len"] =
-                    axis["bins"].dtype().number_of_elements();
-              }
-              args[axis_prefix + "clamp"] = axis["clamp"];
-              if(!is_xyz(axis_name))
-              {
-                if(!has_field(*dataset, axis_name))
-                {
-                  ASCENT_ERROR("Could not find field '"
-                               << axis_name
-                               << "' in the dataset while packing binning.");
-                }
-                const conduit::Node &dom = dataset->child(i);
-                const conduit::Node &values =
-                    dom["fields/" + axis_name + "/values"];
-                pack_array(values, axis_name, args, jitable.arrays[i]);
-              }
-              // we may not need the topology associated with the binning if we
-              // are painting to a different topology so don't pack it here
-            }
-          }
-        }
-        else if(type == "string")
-        {
-          // strings don't get converted to jitables, they are used as arguments
-          // to jitable functions
-          jitable.obj = *inp;
-        }
-        else
-        {
-          ASCENT_ERROR("Cannot convert object of type '" << type
-                                                         << "' to jitable.");
-        }
-      }
-    }
-  }
-
-  // fuse
-  Jitable *out_jitable = new Jitable(num_domains);
-  // fuse jitable variables (e.g. entries, topo, assoc) and args
-  for(const Jitable *input_jitable : input_jitables)
-  {
-    out_jitable->fuse_vars(*input_jitable);
-  }
-
-  // some functions need to pack the topology but don't take it in as an
-  // argument. hack: add a new input jitable to the end with the topology and
-  // fuse it
-  if(func == "gradient" || func == "curl" || func == "recenter" ||
-     (func == "binning_value" && !inputs.has_path("topo")))
-  {
-    new_jitables.emplace_back(num_domains);
-    Jitable &jitable = new_jitables.back();
-    input_jitables.push_back(&jitable);
-
-    std::string topology;
-    if(func == "binning_value")
-    {
-      // if a topology wasn't passed in get the one associated with the binning
-      const int binning_port = inputs["binning/port"].to_int32();
-      const conduit::Node &binning = *input<conduit::Node>(binning_port);
-      topology = binning["attrs/topology/value"].as_string();
-      if(!has_topology(*dataset, topology))
-      {
-        ASCENT_ERROR("binning_value: dataset does not contain the topology "
-                     "associated with the binning '"
-                     << topology
-                     << "'. Try explicitly specifying a topology. known = "
-                     << known_topos(*dataset));
-      }
-    }
-    else
-    {
-      topology = out_jitable->topology;
-    }
-    topo_to_jitable(topology, *dataset, jitable);
-
-    out_jitable->fuse_vars(jitable);
-  }
-
-  if(func == "execute")
-  {
-    // just copy over the existing kernels, no need to fuse
-    out_jitable->kernels = input_jitables[0]->kernels;
-  }
-  else
-  {
-    // These are functions that can just be called in OCCA
-    // filter_name from the function signature : function name in OCCA
-    std::map<std::string, std::string> builtin_funcs = {
-        {"field_field_max", "max"},
-        {"field_sin", "sin"},
-        {"field_sqrt", "sqrt"},
-        {"field_abs", "abs"}};
-    const auto builtin_func_it = builtin_funcs.find(func);
-    // fuse kernels
-    std::unordered_set<std::string> fused_kernel_types;
-    for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
-    {
-      // get the input kernels with the right kernel_type for this domain and
-      // determine the type of the fused kernel
-      std::vector<const Kernel *> input_kernels;
-      std::vector<std::string> input_kernel_types;
-      for(const Jitable *input_jitable : input_jitables)
-      {
-        const std::string kernel_type =
-            input_jitable->dom_info.child(dom_idx)["kernel_type"].as_string();
-        input_kernel_types.push_back(kernel_type);
-        input_kernels.push_back(&(input_jitable->kernels.at(kernel_type)));
-      }
-      const std::string out_kernel_type = fused_kernel_type(input_kernel_types);
-      (*out_jitable).dom_info.child(dom_idx)["kernel_type"] = out_kernel_type;
-      Kernel &out_kernel = out_jitable->kernels[out_kernel_type];
-      const bool not_fused =
-          fused_kernel_types.find(out_kernel_type) == fused_kernel_types.cend();
-
-      // this class knows how to combine kernels and generate jitable functions
-      JitableFunctions jitable_functions(params(),
-                                         input_jitables,
-                                         input_kernels,
-                                         filter_name,
-                                         *dataset,
-                                         dom_idx,
-                                         not_fused,
-                                         *out_jitable,
-                                         out_kernel);
-
-      if(func == "binary_op")
-      {
-        jitable_functions.binary_op();
-      }
-      else if(builtin_func_it != builtin_funcs.cend())
-      {
-        jitable_functions.builtin_functions(builtin_func_it->second);
-      }
-      else if(func == "expr_dot")
-      {
-        jitable_functions.expr_dot();
-      }
-      else if(func == "expr_if")
-      {
-        jitable_functions.expr_if();
-      }
-      else if(func == "derived_field")
-      {
-        jitable_functions.derived_field();
-      }
-      else if(func == "vector")
-      {
-        jitable_functions.vector();
-      }
-      else if(func == "magnitude")
-      {
-        jitable_functions.magnitude();
-      }
-      else if(func == "gradient")
-      {
-        jitable_functions.gradient();
-      }
-      else if(func == "curl")
-      {
-        jitable_functions.curl();
-      }
-      else if(func == "binning_value")
-      {
-        const int binning_port = inputs["binning/port"].to_int32();
-        const conduit::Node &binning = *input<conduit::Node>(binning_port);
-        jitable_functions.binning_value(binning);
-      }
-      else if(func == "rand")
-      {
-        jitable_functions.rand();
-      }
-      else if(func == "recenter")
-      {
-        jitable_functions.recenter();
-      }
-      else
-      {
-        ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
-      }
-      fused_kernel_types.insert(out_kernel_type);
-    }
-  }
-
-  if(exec_policy->should_execute(*out_jitable))
-  {
-    std::string field_name;
-    if(params().has_path("field_name"))
-    {
-      field_name = params()["field_name"].as_string();
-    }
-    else
-    {
-      field_name = filter_name;
-      (*remove)["fields/" + filter_name];
-    }
-    out_jitable->execute(*dataset, field_name);
-    Node *output = new conduit::Node();
-    (*output)["value"] = field_name;
-    (*output)["type"] = "field";
-    set_output<conduit::Node>(output);
-    delete out_jitable;
-  }
-  else
-  {
-    set_output<Jitable>(out_jitable);
-  }
-}
-
-//-----------------------------------------------------------------------------
-class JitFilterFactoryFunctor
-{
-public:
-  static void
-  set(const int num_inputs_,
-      const std::shared_ptr<const JitExecutionPolicy> exec_policy_)
-  {
-    num_inputs = num_inputs_;
-    exec_policy = exec_policy_;
-  }
-  static Filter *
-  JitFilterFactory(const std::string &filter_type_name)
-  {
-    return new JitFilter(num_inputs, exec_policy);
-  }
-
-private:
-  static int num_inputs;
-  static std::shared_ptr<const JitExecutionPolicy> exec_policy;
-};
-
-// apparently I have to do this for the linker to be happy
-int JitFilterFactoryFunctor::num_inputs;
-std::shared_ptr<const JitExecutionPolicy> JitFilterFactoryFunctor::exec_policy;
-
-//-----------------------------------------------------------------------------
-std::string
-register_jit_filter(flow::Workspace &w,
-                    const int num_inputs,
-                    const std::shared_ptr<const JitExecutionPolicy> exec_policy)
-{
-  JitFilterFactoryFunctor::set(num_inputs, exec_policy);
-  std::stringstream ss;
-  ss << "jit_filter_" << num_inputs << "_" << exec_policy->get_name();
-  if(!w.supports_filter_type(ss.str()))
-  {
-    flow::Workspace::register_filter_type(
-        ss.str(), JitFilterFactoryFunctor::JitFilterFactory);
-  }
-  return ss.str();
-}
-
 //-----------------------------------------------------------------------------
 PointAndAxis::PointAndAxis() : Filter()
 {
@@ -3509,10 +2844,11 @@ void
 PointAndAxis::execute()
 {
   conduit::Node &in_binning = *input<Node>("binning");
-  conduit::Node &in_threshold = *input<Node>("threshold");
-  conduit::Node &in_point = *input<Node>("point");
-  conduit::Node &n_miss_val = *input<Node>("miss_value");
-  conduit::Node &n_dir = *input<Node>("direction");
+  conduit::Node &in_axis =  *input<Node>("axis");
+  conduit::Node &in_threshold =  *input<Node>("threshold");
+  conduit::Node &in_point =  *input<Node>("point");
+  conduit::Node &n_miss_val =  *input<Node>("miss_value");
+  conduit::Node &n_dir =  *input<Node>("direction");
   conduit::Node *output = new conduit::Node();
 
   const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
@@ -3527,9 +2863,8 @@ PointAndAxis::execute()
     direction = n_dir["value"].to_int32();
     if(direction != 1 && direction != -1)
     {
-      ASCENT_ERROR("point_and_axis: invalid direction `"
-                   << direction << "'."
-                   << " Valid directions are 1 or -1.");
+      ASCENT_ERROR("point_and_axis: invalid direction `"<<direction<<"'."
+                  <<" Valid directions are 1 or -1.");
     }
   }
 
@@ -3551,8 +2886,8 @@ PointAndAxis::execute()
     if(val > threshold)
     {
       double left = min_val + double(i) * bin_size;
-      double right = min_val + double(i + 1) * bin_size;
-      double center = left + (right - left) / 2.0;
+      double right = min_val + double(i+1) * bin_size;
+      double center = left + (right-left) / 2.0;
       double dist = center - point;
       // skip if distance is behind
       bool behind = dist * double(direction) < 0;
@@ -3581,8 +2916,8 @@ PointAndAxis::execute()
   {
     bin_value = bins[index];
     bin_min = min_val + double(index) * bin_size;
-    bin_max = min_val + double(index + 1) * bin_size;
-    bin_center = bin_min + (bin_max - bin_min) / 2.0;
+    bin_max = min_val + double(index+1) * bin_size;
+    bin_center = bin_min + (bin_max-bin_min) / 2.0;
   }
 
   (*output)["type"] = "bin";
@@ -3639,8 +2974,8 @@ void
 MaxFromPoint::execute()
 {
   conduit::Node &in_binning = *input<Node>("binning");
-  conduit::Node &in_axis = *input<Node>("axis");
-  conduit::Node &in_point = *input<Node>("point");
+  conduit::Node &in_axis =  *input<Node>("axis");
+  conduit::Node &in_point =  *input<Node>("point");
   conduit::Node *output = new conduit::Node();
 
   const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
@@ -3668,10 +3003,11 @@ MaxFromPoint::execute()
     if(val >= max_bin_val)
     {
       double left = min_val + double(i) * bin_size;
-      double right = min_val + double(i + 1) * bin_size;
-      double center = left + (right - left) / 2.0;
+      double right = min_val + double(i+1) * bin_size;
+      double center = left + (right-left) / 2.0;
       double dist = fabs(center - point);
-      if(val > max_bin_val || ((dist < min_dist) && val == max_bin_val))
+      if(val > max_bin_val ||
+         ((dist < min_dist) && val == max_bin_val))
       {
         min_dist = dist;
         max_bin_val = val;
@@ -3688,7 +3024,7 @@ MaxFromPoint::execute()
   {
     loc[2] = dist_value;
   }
-  else if(axis_str == "y")
+  else if (axis_str == "y")
   {
     loc[1] = dist_value;
   }
@@ -3700,7 +3036,7 @@ MaxFromPoint::execute()
   (*output)["type"] = "value_position";
   (*output)["attrs/value/value"] = max_bin_val;
   (*output)["attrs/value/type"] = "double";
-  (*output)["attrs/position/value"].set(loc, 3);
+  (*output)["attrs/position/value"].set(loc,3);
   (*output)["attrs/position/type"] = "vector";
 
   (*output)["value"] = min_dist;
@@ -3745,7 +3081,7 @@ void
 Bin::execute()
 {
   conduit::Node &in_binning = *input<Node>("binning");
-  conduit::Node &in_index = *input<Node>("index");
+  conduit::Node &in_index =  *input<Node>("index");
   conduit::Node *output = new conduit::Node();
 
   const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
@@ -3761,8 +3097,8 @@ Bin::execute()
 
   if(bindex < 0 || bindex >= num_bins)
   {
-    ASCENT_ERROR("bin: invalid bin " << bindex << "."
-                                     << " Number of bins " << num_bins);
+    ASCENT_ERROR("bin: invalid bin "<<bindex<<"."
+                <<" Number of bins "<<num_bins);
   }
 
   const double min_val = axis["min_val"].to_float64();
@@ -3771,8 +3107,8 @@ Bin::execute()
   double *bins = in_binning["attrs/value/value"].value();
 
   double left = min_val + double(bindex) * bin_size;
-  double right = min_val + double(bindex + 1) * bin_size;
-  double center = left + (right - left) / 2.0;
+  double right = min_val + double(bindex+1) * bin_size;
+  double center = left + (right-left) / 2.0;
   double val = bins[bindex];
 
   (*output)["type"] = "bin";
@@ -3791,6 +3127,326 @@ Bin::execute()
 
   set_output<conduit::Node>(output);
 }
+
+//-----------------------------------------------------------------------------
+Lineout::Lineout() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Lineout::~Lineout()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Lineout::declare_interface(Node &i)
+{
+  i["type_name"] = "lineout";
+  i["port_names"].append() = "samples";
+  i["port_names"].append() = "start";
+  i["port_names"].append() = "end";
+  i["port_names"].append() = "fields";
+  i["port_names"].append() = "empty_val";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Lineout::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Lineout::execute()
+{
+
+#if not defined(ASCENT_DRAY_ENABLED)
+  ASCENT_ERROR("Lineout only supported when Devil Ray is built");
+#else
+
+  conduit::Node &n_samples = *input<Node>("samples");
+  int32 samples = n_samples["value"].to_int32();;
+  if(samples < 1)
+  {
+    ASCENT_ERROR("Lineout: samples must be greater than zero: '"<<samples<<"'\n");
+  }
+
+  conduit::Node &n_start = *input<Node>("start");
+  double *p_start = n_start["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> start;
+  start[0] = static_cast<dray::Float>(p_start[0]);
+  start[1] = static_cast<dray::Float>(p_start[1]);
+  start[2] = static_cast<dray::Float>(p_start[2]);
+
+  conduit::Node &n_end= *input<Node>("end");
+  double *p_end = n_end["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> end;
+  end[0] = static_cast<dray::Float>(p_end[0]);
+  end[1] = static_cast<dray::Float>(p_end[1]);
+  end[2] = static_cast<dray::Float>(p_end[2]);
+
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  dray::Collection * collection = data_object->as_dray_collection().get();
+
+  dray::Lineout lineout;
+
+  lineout.samples(samples);
+
+  conduit::Node &n_empty_val = *input<Node>("empty_val");
+  if(!n_empty_val.dtype().is_empty())
+  {
+    double empty_val = n_empty_val["value"].to_float64();
+    lineout.empty_val(empty_val);
+  }
+
+  // figure out the number of fields we will use
+  conduit::Node &n_fields = *input<Node>("fields");
+  const int num_fields = n_fields.number_of_children();
+  if(num_fields > 0)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const conduit::Node &n_field = n_fields.child(i);
+      if(n_field["type"].as_string() != "string")
+      {
+        ASCENT_ERROR("Lineout: field list item is not a string");
+      }
+
+      lineout.add_var(n_field["value"].as_string());
+    }
+  }
+  else
+  {
+    std::set<std::string> field_names;
+    // use all fields
+    for(int i = 0; i < collection->size(); ++i)
+    {
+      dray::DataSet dset = collection->domain(i);
+      std::vector<std::string> d_names = dset.fields();
+      for(int n = 0; n < d_names.size(); ++n)
+      {
+        field_names.insert(d_names[n]);
+      }
+    }
+    gather_strings(field_names);
+  }
+
+
+
+  lineout.add_line(start, end);
+
+  dray::Lineout::Result res = lineout.execute(*collection);
+  (*output)["type"] = "lineout";
+  (*output)["attrs/empty_value/value"] = double(res.m_empty_val);
+  (*output)["attrs/empty_value/type"] = "double";
+  (*output)["attrs/samples/value"] = int(res.m_points_per_line);
+  (*output)["attrs/samples/type"] = "int";
+  // we only have one line so the size of points is the size of everything
+  const int size = res.m_points.size();
+  (*output)["attrs/coordinates/x/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/x/type"] = "array";
+  (*output)["attrs/coordinates/y/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/y/type"] = "array";
+  (*output)["attrs/coordinates/z/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/z/type"] = "array";
+  float64_array x = (*output)["attrs/coordinates/x/value"].value();
+  float64_array y = (*output)["attrs/coordinates/y/value"].value();
+  float64_array z = (*output)["attrs/coordinates/z/value"].value();
+  for(int i = 0; i < size; ++i)
+  {
+    dray::Vec<dray::Float,3> p = res.m_points.get_value(i);
+    x[i] = static_cast<double>(p[0]);
+    y[i] = static_cast<double>(p[1]);
+    z[i] = static_cast<double>(p[2]);
+  }
+
+  const int var_size = res.m_vars.size();
+  for(int v = 0; v < var_size; ++v)
+  {
+    std::string var = res.m_vars[v];
+    (*output)["attrs/vars/"+var+"/value"] = conduit::DataType::float64(size);
+    (*output)["attrs/vars/"+var+"/type"] = "array";
+    float64_array var_array = (*output)["attrs/vars/"+var+"/value"].value();
+    for(int i = 0; i < size; ++i)
+    {
+      var_array[i] = static_cast<double>(res.m_values[v].get_value(i));
+    }
+  }
+
+  set_output<conduit::Node>(output);
+#endif
+
+}
+
+//-----------------------------------------------------------------------------
+Bounds::Bounds() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Bounds::~Bounds()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Bounds::declare_interface(Node &i)
+{
+  i["type_name"] = "bounds";
+  i["port_names"].append() = "topology";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Bounds::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Bounds::execute()
+{
+  conduit::Node &n_topology = *input<Node>("topology");
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  std::set<std::string> topos;
+
+  if(!n_topology.dtype().is_empty())
+  {
+    std::string topo = n_topology["value"].as_string();
+    if(!has_topology(*dataset, topo))
+    {
+      std::set<std::string> names = topology_names(*dataset);
+      std::stringstream msg;
+      msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
+      for(auto &name : names)
+      {
+        msg<<" "<<name;
+      }
+      msg<<" ]";
+      ASCENT_ERROR(msg.str());
+    }
+    topos.insert(topo);
+  }
+  else
+  {
+    topos = topology_names(*dataset);
+  }
+
+  double inf = std::numeric_limits<double>::infinity();
+  double min_vec[3] = {inf, inf, inf};
+  double max_vec[3] = {-inf, -inf, -inf};
+  for(auto &topo_name : topos)
+  {
+    conduit::Node n_aabb = global_bounds(*dataset, topo_name);
+    double *t_min = n_aabb["min_coords"].as_float64_ptr();
+    double *t_max = n_aabb["max_coords"].as_float64_ptr();
+    for(int i = 0; i < 3; ++i)
+    {
+      min_vec[i] = std::min(t_min[i],min_vec[i]);
+      max_vec[i] = std::max(t_max[i],max_vec[i]);
+    }
+  }
+
+  (*output)["type"] = "aabb";
+  (*output)["attrs/min/value"].set(min_vec, 3);
+  (*output)["attrs/min/type"] = "vector";
+  (*output)["attrs/max/value"].set(max_vec, 3);
+  (*output)["attrs/max/type"] = "vector";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Topo::Topo() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Topo::~Topo()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Topo::declare_interface(Node &i)
+{
+  i["type_name"] = "topo";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Topo::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Topo::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::string topo = (*arg1)["value"].as_string();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("Topo: Missing dataset");
+  }
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!has_topology(*dataset, topo))
+  {
+    std::set<std::string> names = topology_names(*dataset);
+    std::stringstream msg;
+    msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
+    for(auto &name : names)
+    {
+      msg<<" "<<name;
+    }
+    msg<<" ]";
+    ASCENT_ERROR(msg.str());
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = topo;
+  (*output)["type"] = "topo";
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions --

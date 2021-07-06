@@ -482,6 +482,158 @@ TEST(ascent_devil_ray, test_scalar_rendering)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_scalar_rendering_plane)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, hola_opts, verify_info;
+    hola_opts["root_file"] = test_data_file("taylor_green.cycle_001860.root");
+    ascent::hola("relay/blueprint/mesh", hola_opts, data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Devil Ray");
+
+    string output_path = prepare_output_dir();
+    string output_file
+      = conduit::utils::join_file_path(output_path,"tout_scalar_renderer_plane");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "dray_project_2d";
+    // filter knobs
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["image_width"] = 512;
+    params["image_height"] = 512;
+
+    double center[3] = {0.5, 0.0, -1.5};
+    double up[3] = {0., 1., 0.};
+    double normal[3] = {0., 0.25, 1.};
+    params["plane/center"].set(center,3);
+    params["plane/up"].set(up,3);
+    params["plane/normal"].set(normal,3);
+    params["plane/width"] = 1.5f;
+    params["plane/height"] = 1.5f;
+
+    params["fields"].append() = "density";
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"] = "pl1";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    std::string msg = "An example of using devil ray scalar rendering using a plane.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_vector_component)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, hola_opts, verify_info;
+    hola_opts["root_file"] = test_data_file("taylor_green.cycle_001860.root");
+    ascent::hola("relay/blueprint/mesh", hola_opts, data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Devil Ray");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_vector_comp");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    pipelines["p1/f1/type"] = "dray_vector_component";
+    // filter knobs
+    conduit::Node &rparams = pipelines["p1/f1/params/"];
+    rparams["field"] = "velocity";
+    rparams["output_name"] = "velocity_x";
+    rparams["component"] = 0;
+
+    conduit::Node extracts;
+    extracts["e1/type"] = "dray_pseudocolor";
+    extracts["e1/pipeline"] = "p1";
+    // filter knobs
+    conduit::Node &params = extracts["e1/params/"];
+    params["field"] = "velocity_x";
+    //params["min_value"] = 0.955;
+    params["log_scale"] = "false";
+    params["image_prefix"] = output_file;
+    params["camera/azimuth"] = -30;
+    params["camera/elevation"] = 35;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.1, "1860"));
+    std::string msg = "An example of using devil ray extract a component of a vector.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

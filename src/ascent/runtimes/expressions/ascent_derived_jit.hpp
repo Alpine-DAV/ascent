@@ -56,6 +56,7 @@
 #include <flow.hpp>
 #include <unordered_map>
 #include <unordered_set>
+#include <memory>
 // Matt: there is a lot of code that needs its own file
 
 //-----------------------------------------------------------------------------

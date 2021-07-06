@@ -56,8 +56,9 @@ Ascent Actions
    ParaViewVisualization
    Queries
    Triggers
-   Expressions
    Examples
+   Expressions
+   Binning
    VTKmColorTables
    DRayColorTables
 ..

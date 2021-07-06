@@ -124,6 +124,8 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicQuery>();
     AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
 
+    AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
+
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
 
@@ -133,6 +135,7 @@ register_builtin()
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
+    AscentRuntime::register_filter_type<VTKHCleanGrid>("transforms","clean_grid");
     AscentRuntime::register_filter_type<VTKHGhostStripper>("transforms","ghost_stripper");
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
     AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
@@ -153,10 +156,19 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
+    AscentRuntime::register_filter_type<VTKHScale>("transforms","scale");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
-    AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
+    AscentRuntime::register_filter_type<VTKHTriangulate>("transforms","triangulate");
+
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
+
+    AscentRuntime::register_filter_type<AddPlot>();
+    AscentRuntime::register_filter_type<CreatePlot>();
+    AscentRuntime::register_filter_type<CreateScene>();
+    AscentRuntime::register_filter_type<ExecScene>();
+#endif
+
 #if defined(ASCENT_DRAY_ENABLED)
     AscentRuntime::register_filter_type<DRayPseudocolor>("extracts", "dray_pseudocolor");
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
@@ -165,12 +177,7 @@ register_builtin()
     AscentRuntime::register_filter_type<DRayProjectColors2d>("transforms",
                                                              "dray_project_colors_2d");
     AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
-#endif
-
-    AscentRuntime::register_filter_type<AddPlot>();
-    AscentRuntime::register_filter_type<CreatePlot>();
-    AscentRuntime::register_filter_type<CreateScene>();
-    AscentRuntime::register_filter_type<ExecScene>();
+    AscentRuntime::register_filter_type<DRayVectorComponent>("transforms", "dray_vector_component");
 #endif
 
 
@@ -181,6 +188,7 @@ register_builtin()
 #if defined(ASCENT_BABELFLOW_ENABLED)
     AscentRuntime::register_filter_type<BFlowPmt>("transforms", "bflow_pmt");
     AscentRuntime::register_filter_type<BFlowCompose>("extracts", "bflow_comp");
+    AscentRuntime::register_filter_type<BFlowIso>("extracts", "bflow_iso");
 #endif
 
 #if defined(ASCENT_ADIOS_ENABLED)

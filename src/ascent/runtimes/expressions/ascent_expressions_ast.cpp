@@ -1,4 +1,5 @@
 #include "ascent_expressions_ast.hpp"
+#include "ascent_expression_jit_filters.hpp"
 #include "ascent_expression_filters.hpp"
 #include "ascent_expressions_parser.hpp"
 #include <array>
@@ -15,6 +16,12 @@
 
 namespace detail
 {
+
+void cast_to_value()
+{
+
+}
+
 std::string
 strip_single_quotes(const std::string str)
 {

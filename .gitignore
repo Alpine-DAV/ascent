@@ -14,3 +14,7 @@ s_env.sh
 _uberenv_test*
 .ipynb_checkpoints
 Untitle*.ipynb
+.spack-db
+.spack-env
+spack-libs
+spack.lock

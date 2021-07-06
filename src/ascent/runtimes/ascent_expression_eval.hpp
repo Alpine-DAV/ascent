@@ -42,6 +42,7 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_expression_eval.hpp
@@ -50,8 +51,9 @@
 
 #ifndef ASCENT_EXPRESSION_EVAL_HPP
 #define ASCENT_EXPRESSION_EVAL_HPP
-#include <ascent_exports.h>
 #include <conduit.hpp>
+#include <ascent_exports.h>
+#include <ascent_data_object.hpp>
 
 #include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
@@ -89,6 +91,7 @@ struct Cache
   void filter_time(double ftime);
   bool filtered();
   bool loaded();
+  void save();
 
   ~Cache();
 };
@@ -98,17 +101,19 @@ static conduit::Node m_function_table;
 class ASCENT_API ExpressionEval
 {
 protected:
-  conduit::Node *m_data;
+  DataObject m_data_object;
   flow::Workspace w;
   static Cache m_cache;
 public:
-  ExpressionEval(conduit::Node *data);
+  ExpressionEval(DataObject &dataset);
+  ExpressionEval(conduit::Node *dataset);
 
   static const conduit::Node &get_cache();
   static void get_last(conduit::Node &data);
   static void reset_cache();
   static void load_cache(const std::string &dir,
                          const std::string &session);
+  static void save_cache();
 
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
 };
@@ -130,7 +135,10 @@ public:
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
+
+
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
+

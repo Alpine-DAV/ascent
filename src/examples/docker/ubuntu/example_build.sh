@@ -56,5 +56,5 @@ echo "cd src/examples/docker/ubuntu/"
 cd src/examples/docker/ubuntu/
 
 # exec docker build to create image
-echo "docker build -t ascent-ubuntu:latest ."
-docker build -t ascent-ubuntu:latest .
+echo "docker build -t alpinedav/ascent:latest ."
+docker build -t alpinedav/ascent:latest .

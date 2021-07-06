@@ -166,6 +166,47 @@ TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
     EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_for_error_reading_actions)
+{
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    Ascent ascent;
+    Node ascent_opts, ascent_actions;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["actions_file"] = "tin_bad_actions.yaml";
+    ascent_opts["exceptions"] = "forward";
+    
+    if(par_rank == 0)
+    {
+        std::ofstream ofs("tin_bad_actions.yaml", std::ofstream::out);
+        ofs  << ":";
+        ofs.close();
+    }
+
+    ascent.open(ascent_opts);
+
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_2d_example_dataset(data,par_rank,par_size);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ascent.publish(data);
+
+    // all tasks should throw an error
+    EXPECT_THROW(ascent.execute(ascent_actions),conduit::Error);
+
+
+    ascent.close();
+
+}
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

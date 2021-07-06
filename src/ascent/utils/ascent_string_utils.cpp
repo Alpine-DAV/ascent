@@ -50,8 +50,11 @@
 
 #include "ascent_string_utils.hpp"
 #include <map>
+#include <ctime>
 #include <sstream>
 #include <stdio.h>
+
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -114,6 +117,20 @@ std::vector<std::string> split(const std::string &s, char delim)
   std::vector<std::string> elems;
   detail::split_string(s, delim, elems);
   return elems;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+timestamp()
+{
+    // create std::string that reps current time
+    time_t t;
+    tm *t_local;
+    time(&t);
+    t_local = localtime(&t);
+    char buff[256];
+    strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", t_local);
+    return std::string(buff);
 }
 
 //-----------------------------------------------------------------------------

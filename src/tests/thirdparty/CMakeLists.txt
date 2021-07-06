@@ -46,7 +46,7 @@
 # Basic TPL Tests
 ################################
 
-IF(VTKH_FOUND)
+IF(VTKH_FOUND AND ENABLE_SERIAL)
     message(STATUS "Adding vtk-h lib unit tests")
     # also add vtkm, i suspect compile flags aren't transitive
     # for some reason, and this can undermine cuda builds
