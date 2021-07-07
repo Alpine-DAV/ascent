@@ -1768,7 +1768,8 @@ void
 Field::declare_interface(Node &i)
 {
   i["type_name"] = "field";
-  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "field_name";
+  i["port_names"].append() = "component";
   i["output_port"] = "true";
 }
 
@@ -1785,9 +1786,11 @@ Field::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Field::execute()
 {
-  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *n_field_name = input<Node>("field_name");
+  std::string field_name = (*n_field_name)["value"].as_string();
 
-  const std::string field = (*arg1)["value"].as_string();
+  // optional parameters
+  const conduit::Node *n_component = input<Node>("component");
 
   if(!graph().workspace().registry().has_entry("dataset"))
   {
@@ -1798,23 +1801,54 @@ Field::execute()
     graph().workspace().registry().fetch<DataObject>("dataset");
   const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
-  if(!has_field(*dataset, field))
+  if(!has_field(*dataset, field_name))
   {
-    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
-    std::stringstream ss;
-    ss << "[";
-    for(int i = 0; i < names.size(); ++i)
+    std::string known;
+    if(dataset->number_of_children() > 0 )
     {
-      ss << " " << names[i];
+      std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+      std::stringstream ss;
+      ss << "[";
+      for(size_t i = 0; i < names.size(); ++i)
+      {
+        ss << " '" << names[i]<<"'";
+      }
+      ss << "]";
+      known = ss.str();
     }
-    ss << "]";
     ASCENT_ERROR("Field: dataset does not contain field '"
-                 << field << "'"
-                 << " known = " << ss.str());
+                 << field_name << "'"
+                 << " known = " << known);
+  }
+
+  std::string component;
+  if(!n_component->dtype().is_empty())
+  {
+    component = (*n_component)["value"].as_string();
+    if(!has_component(*dataset, field_name, component))
+    {
+      ASCENT_ERROR("Field variable '"
+                   << field_name << "'"
+                   << " does not have component '" << component << "'."
+                   << " known components = "
+                   << possible_components(*dataset, field_name));
+    }
+  }
+
+  // if the field only has one component use that
+  const conduit::Node &values =
+      dataset->child(0)["fields/" + field_name + "/values"];
+  if(component.empty() && values.number_of_children() == 1)
+  {
+    component = values.child(0).name();
   }
 
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field;
+  (*output)["value"] = field_name;
+  if(!component.empty())
+  {
+    (*output)["component"] = component;
+  }
   (*output)["type"] = "field";
   set_output<conduit::Node>(output);
 }

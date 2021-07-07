@@ -73,6 +73,8 @@ public:
     {
       delete stmt;
     }
+    stmts->clear();
+    delete stmts;
   }
 };
 

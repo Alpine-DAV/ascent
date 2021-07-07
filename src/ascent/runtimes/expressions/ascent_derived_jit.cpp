@@ -4198,6 +4198,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     ASCENT_DATA_ADD("push_input_args", push_args_timer.elapsed());
 
     flow::Timer kernel_run_timer;
+    std::cout<<"Running kernel "<<kernel_string<<"\n";
     occa_kernel.run();
     ASCENT_DATA_ADD("kernel runtime", kernel_run_timer.elapsed());
 

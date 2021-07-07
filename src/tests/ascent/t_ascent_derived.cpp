@@ -67,6 +67,62 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
+TEST(ascent_expressions, derived_simple)
+{
+  Node n;
+  ascent::about(n);
+
+  Node data;
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  conduit::Node res;
+  std::string expr;
+
+  //expr = "avg(topo('mesh').cell.x)";
+  //res = eval.evaluate(expr);
+  //const double tiny = 1e-10;
+  //std::cout<<std::abs(res["value"].to_float64())<<"\n";
+  //EXPECT_EQ(std::abs(res["value"].to_float64()) < tiny, true);
+  //EXPECT_EQ(res["type"].as_string(), "double");
+
+  //expr = "min_val = min(field('braid')).value\n"
+  //       "max_val = max(field('braid')).value\n"
+  //       "norm_field = (field('braid') - min_val) / (max_val - min_val)\n"
+  //       "not_between_0_1 = not (norm_field >= 0 and norm_field <= 1)\n"
+  //       "sum(not_between_0_1)";
+
+
+  //res = eval.evaluate(expr, "bananas");
+  //res = eval.evaluate(expr);
+  //EXPECT_EQ(res["value"].to_float64(), 0);
+  //EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "builtin_avg = avg(sin(field('radial')))\n"
+         "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
+         "manual_avg = sum(sin(field('radial'))) / num_elements\n"
+         "builtin_avg == manual_avg";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["value"].to_uint8(), 1);
+  EXPECT_EQ(res["type"].as_string(), "bool");
+
+  res.print();
+  Node last;
+  runtime::expressions::ExpressionEval::get_last(last);
+  last.print();
+}
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, derived_expressions)
 {
@@ -127,6 +183,7 @@ TEST(ascent_expressions, derived_expressions)
          "method2 = 2 * field('braid') + 2\n"
          "bool_field = method1 != method2\n"
          "sum(bool_field) == 0";
+
   res = eval.evaluate(expr);
   EXPECT_EQ(res["value"].to_uint8(), 1);
   EXPECT_EQ(res["type"].as_string(), "bool");
@@ -164,6 +221,7 @@ TEST(ascent_expressions, derived_expressions)
   const std::vector<std::vector<long long>> mesh_dims = {
       {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM},
       {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, 0}};
+
   for(const std::string &mesh_type : mesh_types)
   {
     for(const auto &dims : mesh_dims)
@@ -208,8 +266,14 @@ TEST(ascent_expressions, derived_expressions)
              "manual_avg = sum(sin(field('radial'))) / num_elements\n"
              "builtin_avg == manual_avg";
       res = eval.evaluate(expr);
+      res.print();
+      Node last;
+      runtime::expressions::ExpressionEval::get_last(last);
+      last.print();
+      runtime::expressions::ExpressionEval::save_cache();
       EXPECT_EQ(res["value"].to_uint8(), 1);
       EXPECT_EQ(res["type"].as_string(), "bool");
+      exit(0);
 
       // apparently vel is element assoc
       if(dims[2] != 0 && (mesh_type == "uniform" || mesh_type == "rectilinear"))
@@ -261,6 +325,8 @@ TEST(ascent_expressions, derived_expressions)
     }
   }
 }
+//-----------------------------------------------------------------------------
+
 
 TEST(ascent_expressions, braid_sample)
 {
@@ -326,6 +392,7 @@ TEST(ascent_expressions, braid_sample)
 
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
+#endif
 //-----------------------------------------------------------------------------
 
 int

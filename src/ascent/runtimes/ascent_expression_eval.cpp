@@ -1250,6 +1250,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   try
   {
     scan_string(expr.c_str());
+
   }
   catch(const char *msg)
   {
