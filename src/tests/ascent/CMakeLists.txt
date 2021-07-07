@@ -111,7 +111,7 @@ if(VTKM_FOUND)
 endif()
 
 # adios tests
-if(ADIOS_FOUND)
+if(ENABLE_FIDES)
    list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
 endif()
 
@@ -183,5 +183,3 @@ if(FORTRAN_FOUND AND ENABLE_FORTRAN)
 else()
      message(STATUS "Fortran disabled: Skipping ascent fortran interface tests")
 endif()
-
-
