@@ -118,15 +118,15 @@ TEST(ascent_expressions, derived_simple)
          "manual_avg = sum(sin(field('radial'))) / num_elements\n"
          "builtin_avg == manual_avg";
   res = eval.evaluate(expr);
-  EXPECT_EQ(res["value"].to_uint8(), 1);
   EXPECT_EQ(res["type"].as_string(), "bool");
 
-  res.print();
   Node last;
   runtime::expressions::ExpressionEval::get_last(last);
-  last.print();
+  double manual = last["manual_avg/100/value"].to_float64();
+  double builtin = last["builtin_avg/100/value"].to_float64();
+  EXPECT_NEAR(manual, builtin, 1e-8);
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, derived_expressions)
 {
@@ -270,14 +270,14 @@ TEST(ascent_expressions, derived_expressions)
              "manual_avg = sum(sin(field('radial'))) / num_elements\n"
              "builtin_avg == manual_avg";
       res = eval.evaluate(expr);
-      res.print();
+
+      EXPECT_EQ(res["type"].as_string(), "bool");
+
       Node last;
       runtime::expressions::ExpressionEval::get_last(last);
-      last.print();
-      runtime::expressions::ExpressionEval::save_cache();
-      EXPECT_EQ(res["value"].to_uint8(), 1);
-      EXPECT_EQ(res["type"].as_string(), "bool");
-      exit(0);
+      double manual = last["manual_avg/100/value"].to_float64();
+      double builtin = last["builtin_avg/100/value"].to_float64();
+      EXPECT_NEAR(manual, builtin, 1e-8);
 
       // apparently vel is element assoc
       if(dims[2] != 0 && (mesh_type == "uniform" || mesh_type == "rectilinear"))
@@ -331,7 +331,7 @@ TEST(ascent_expressions, derived_expressions)
 }
 //-----------------------------------------------------------------------------
 
-
+#if 0
 TEST(ascent_expressions, braid_sample)
 {
   conduit::Node data, multi_dom;
@@ -397,6 +397,7 @@ TEST(ascent_expressions, braid_sample)
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
 #endif
+
 //-----------------------------------------------------------------------------
 
 int

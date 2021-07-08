@@ -1302,7 +1302,6 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     ASCENT_DATA_ADD("build_graph time", build_graph_timer.elapsed());
     flow::Timer execute_timer;
     w.execute();
-    symbol_table.print();
 
     ASCENT_DATA_ADD("execute time", execute_timer.elapsed());
   }
