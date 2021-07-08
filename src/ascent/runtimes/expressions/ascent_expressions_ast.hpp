@@ -321,10 +321,15 @@ public:
   void visit(const ASTDotAccess &expr) override;
   void visit(const ASTExpressionList &list) override;
 
-  conduit::Node
-  get_output() const
+  conduit::Node get_output() const
   {
     return output;
+  }
+
+  conduit::Node table() const
+  {
+    return symbol_table;
+    //return subexpr_cache;
   }
 
 private:

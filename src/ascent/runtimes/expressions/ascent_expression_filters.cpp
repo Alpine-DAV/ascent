@@ -296,6 +296,23 @@ logic_op(const bool lhs, const bool rhs, const std::string &op)
 
 } // namespace detail
 
+void resolve_symbol_result(flow::Graph &graph,
+                           const conduit::Node *output,
+                           const std::string filter_name)
+{
+  conduit::Node *symbol_table =
+    graph.workspace().registry().fetch<conduit::Node>("symbol_table");
+  const int num_symbols = symbol_table->number_of_children();
+  for(int i = 0; i < num_symbols; ++i)
+  {
+    conduit::Node &symbol = symbol_table->child(i);
+    if(symbol["filter_name"].as_string() == filter_name)
+    {
+      symbol["value"] = output->fetch("value");
+      break;
+    }
+  }
+}
 //-----------------------------------------------------------------------------
 NullArg::NullArg() : Filter()
 {
@@ -393,6 +410,8 @@ Identifier::execute()
   // we need to keep the name to retrieve the chache
   // if history is called.
   (*output)["name"] = i_name;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -686,6 +705,7 @@ BinaryOp::execute()
 
   // std::cout<<" operation "<<op_str<<"\n";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -739,6 +759,7 @@ IfExpr::execute()
     output = n_else;
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -793,6 +814,7 @@ ArrayAccess::execute()
   (*output)["value"] = arr[index];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -872,6 +894,7 @@ DotAccess::execute()
 
   (*output) = (*n_obj)["attrs/" + name];
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -913,6 +936,7 @@ ArrayMin::execute()
   (*output)["value"] = array_min((*input<Node>("arg1"))["value"]);
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -972,6 +996,7 @@ ScalarMin::execute()
     (*output)["type"] = "int";
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1032,6 +1057,7 @@ ScalarMax::execute()
     (*output)["type"] = "int";
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1097,6 +1123,7 @@ FieldMin::execute()
   (*output)["attrs/element/index"] = n_min["index"];
   (*output)["attrs/element/assoc"] = n_min["assoc"];
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1138,6 +1165,7 @@ ArrayMax::execute()
   (*output)["value"] = array_max((*input<Node>("arg1"))["value"]);
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1204,6 +1232,7 @@ FieldMax::execute()
   (*output)["attrs/element/index"] = n_max["index"];
   (*output)["attrs/element/assoc"] = n_max["assoc"];
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1246,6 +1275,7 @@ ArrayAvg::execute()
   (*output)["value"] = sum["value"].to_float64() / sum["count"].to_float64();
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1303,6 +1333,7 @@ FieldAvg::execute()
   (*output)["value"] = n_avg["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1354,6 +1385,7 @@ Cycle::execute()
 
   (*output)["type"] = "int";
   (*output)["value"] = state;
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1459,6 +1491,7 @@ History::execute()
     (*output) = history.child(absolute_index);
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1510,7 +1543,8 @@ Vector::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "vector";
   (*output)["value"].set(vec, 3);
-  ;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1556,6 +1590,8 @@ Magnitude::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1602,6 +1638,8 @@ Abs::execute()
     conduit::Node *output = new conduit::Node();
     (*output)["type"] = "double";
     (*output)["value"] = res;
+
+    resolve_symbol_result(graph(), output, this->name());
     set_output<conduit::Node>(output);
   }
   else
@@ -1611,6 +1649,8 @@ Abs::execute()
     conduit::Node *output = new conduit::Node();
     (*output)["type"] = "int";
     (*output)["value"] = res;
+
+    resolve_symbol_result(graph(), output, this->name());
     set_output<conduit::Node>(output);
   }
 }
@@ -1656,6 +1696,8 @@ Exp::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1700,6 +1742,8 @@ Log::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1748,6 +1792,8 @@ Pow::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1850,6 +1896,8 @@ Field::execute()
     (*output)["component"] = component;
   }
   (*output)["type"] = "field";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2138,6 +2186,8 @@ Histogram::execute()
   (*output)["attrs/num_bins/type"] = "int";
   (*output)["attrs/clamp/value"] = true;
   (*output)["attrs/clamp/type"] = "bool";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2333,6 +2383,8 @@ Binning::execute()
   //(*output)["attrs/bin_axes/type"] = "list";
   (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 
 }
@@ -2381,6 +2433,8 @@ Entropy::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_entropy(*hist)["value"];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2427,6 +2481,8 @@ Pdf::execute()
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
   (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2473,6 +2529,8 @@ Cdf::execute()
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
   (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2541,6 +2599,8 @@ Quantile::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = quantile(*n_cdf, val, interpolation)["value"];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2595,6 +2655,8 @@ BinByIndex::execute()
   const double *bins = (*n_hist)["attrs/value/value"].value();
   (*output)["value"] = bins[bin];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2654,6 +2716,8 @@ BinByValue::execute()
   const double *bins = (*n_hist)["attrs/value/value"].value();
   (*output)["value"] = bins[bin];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2701,6 +2765,7 @@ FieldSum::execute()
   (*output)["value"] = field_sum(*dataset, field)["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2748,6 +2813,7 @@ FieldNanCount::execute()
   (*output)["value"] = field_nan_count(*dataset, field)["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2795,6 +2861,7 @@ FieldInfCount::execute()
   (*output)["value"] = field_inf_count(*dataset, field)["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2836,6 +2903,7 @@ ArraySum::execute()
   (*output)["value"] = array_sum((*input<Node>("arg1"))["value"])["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 //-----------------------------------------------------------------------------
@@ -2968,6 +3036,7 @@ PointAndAxis::execute()
   (*output)["attrs/center/value"] = bin_center;
   (*output)["attrs/center/type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3076,6 +3145,7 @@ MaxFromPoint::execute()
   (*output)["value"] = min_dist;
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3159,6 +3229,7 @@ Bin::execute()
   (*output)["attrs/center/value"] = center;
   (*output)["attrs/center/type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3319,6 +3390,7 @@ Lineout::execute()
     }
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 #endif
 
@@ -3410,6 +3482,7 @@ Bounds::execute()
   (*output)["attrs/max/value"].set(max_vec, 3);
   (*output)["attrs/max/type"] = "vector";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3476,6 +3549,8 @@ Topo::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = topo;
   (*output)["type"] = "topo";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 

@@ -1261,6 +1261,8 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   ASTNode *root_node = get_result();
 
   conduit::Node root;
+  conduit::Node symbol_table;
+
   try
   {
     flow::Timer build_graph_timer;
@@ -1272,6 +1274,9 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     //     w, std::make_shared<const RoundtripPolicy>(), false);
     root_node->accept(&build_graph);
     root = build_graph.get_output();
+
+    symbol_table = build_graph.table();
+    w.registry().add<conduit::Node>("symbol_table", &symbol_table, -1);
     // if root is a derived field add a JitFilter to execute it
     if(root["type"].as_string() == "jitable")
     {
@@ -1292,10 +1297,13 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       root["filter_name"] = "jit_execute";
       root["type"] = "field";
     }
+
     w.graph().save_dot_html("ascent_expressions_graph.html");
     ASCENT_DATA_ADD("build_graph time", build_graph_timer.elapsed());
     flow::Timer execute_timer;
     w.execute();
+    symbol_table.print();
+
     ASCENT_DATA_ADD("execute time", execute_timer.elapsed());
   }
   catch(std::exception &e)
@@ -1314,6 +1322,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   // remove temporary fields, topologies, and coordsets from the dataset
   #warning "How is adding fields to a data supposed to work with derived expressions??"
+  #warning "Need a way to delete the intermediate results during execution"
   conduit::Node *dataset = m_data_object.as_node().get();
   const int num_domains = dataset->number_of_children();
   for(int i = 0; i < num_domains; ++i)
@@ -1366,10 +1375,26 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   m_cache.last_known_time(time);
 
-  std::stringstream cache_entry;
-  cache_entry << expr_name << "/" << cycle;
-
-  m_cache.m_data[cache_entry.str()] = return_val;
+  // add the result to the cache
+  {
+    std::stringstream cache_entry;
+    cache_entry << expr_name << "/" << cycle;
+    m_cache.m_data[cache_entry.str()] = return_val;
+  }
+  // now we might have intermediate symbol, and
+  // we also need to add them to the cache
+  const int num_symbols = symbol_table.number_of_children();
+  for(int i = 0; i < num_symbols; ++i)
+  {
+    const conduit::Node &symbol = symbol_table.child(i);
+    if(symbol.has_path("value"))
+    {
+      const std::string symbol_name = symbol.name();
+      std::stringstream cache_entry;
+      cache_entry << symbol_name << "/" << cycle;
+      m_cache.m_data[cache_entry.str()] = symbol;
+    }
+  }
 
   delete root_node;
   w.reset();

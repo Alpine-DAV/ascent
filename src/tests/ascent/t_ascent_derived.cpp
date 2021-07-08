@@ -109,6 +109,10 @@ TEST(ascent_expressions, derived_simple)
   //EXPECT_EQ(res["value"].to_float64(), 0);
   //EXPECT_EQ(res["type"].as_string(), "double");
 
+  //expr = "bananas = field('braid') + 1\n";
+  //       "bananas + 1";
+  //res = eval.evaluate(expr);
+
   expr = "builtin_avg = avg(sin(field('radial')))\n"
          "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
          "manual_avg = sum(sin(field('radial'))) / num_elements\n"
