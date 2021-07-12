@@ -73,6 +73,12 @@ set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 
+if(OCCA_FOUND AND UMPIRE_FOUND)
+  set(ASCENT_JIT_ENABLED TRUE)
+else()
+  set(ASCENT_JIT_ENABLED FALSE)
+endif()
+
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
     set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
@@ -94,19 +100,15 @@ set(ascent_sources
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
     runtimes/ascent_transmogrifier.cpp
-    runtimes/expressions/ascent_array.cpp
-    runtimes/expressions/ascent_array_internals.cpp
-    runtimes/expressions/ascent_array_internals_base.cpp
-    runtimes/expressions/ascent_array_registry.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_blueprint_topologies.cpp
     runtimes/expressions/ascent_conduit_reductions.cpp
-    runtimes/expressions/ascent_derived_jit.cpp
     runtimes/expressions/ascent_expression_filters.cpp
-    runtimes/expressions/ascent_expression_jit_filters.cpp
     runtimes/expressions/ascent_expressions_ast.cpp
     runtimes/expressions/ascent_expressions_tokens.cpp
     runtimes/expressions/ascent_expressions_parser.cpp
+    runtimes/expressions/ascent_derived_jit.cpp
+    runtimes/expressions/ascent_expression_jit_filters.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
@@ -142,19 +144,15 @@ set(ascent_headers
     runtimes/ascent_empty_runtime.hpp
     runtimes/ascent_expression_eval.hpp
     runtimes/ascent_transmogrifier.hpp
-    runtimes/expressions/ascent_array.hpp
-    runtimes/expressions/ascent_array_internals.hpp
-    runtimes/expressions/ascent_array_internals_base.hpp
-    runtimes/expressions/ascent_array_registry.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_blueprint_topologies.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
-    runtimes/expressions/ascent_derived_jit.hpp
     runtimes/expressions/ascent_expression_filters.hpp
-    runtimes/expressions/ascent_expression_jit_filters.hpp
     runtimes/expressions/ascent_expressions_ast.hpp
     runtimes/expressions/ascent_expressions_tokens.hpp
     runtimes/expressions/ascent_expressions_parser.hpp
+    runtimes/expressions/ascent_derived_jit.hpp
+    runtimes/expressions/ascent_expression_jit_filters.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_metadata.hpp
@@ -183,6 +181,23 @@ set(ascent_headers
     utils/ascent_resources_cinema_web.hpp
     # hola
     hola/ascent_hola.hpp)
+
+if(ASCENT_JIT_ENABLED)
+    list(APPEND ascent_sources runtimes/expressions/ascent_array.cpp)
+    list(APPEND ascent_sources runtimes/expressions/ascent_array_internals.cpp)
+    list(APPEND ascent_sources runtimes/expressions/ascent_array_internals_base.cpp)
+    list(APPEND ascent_sources runtimes/expressions/ascent_array_registry.cpp)
+
+    list(APPEND ascent_headers runtimes/expressions/ascent_array.hpp)
+    list(APPEND ascent_headers runtimes/expressions/ascent_array_internals.hpp)
+    list(APPEND ascent_headers runtimes/expressions/ascent_array_internals_base.hpp)
+    list(APPEND ascent_headers runtimes/expressions/ascent_array_registry.hpp)
+    # this has device calls so we need to tell cmake to use the cuda compiler
+    if(CUDA_FOUND)
+      set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
+      set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
+    endif()
+endif()
 
 if(VTKM_FOUND)
 
@@ -336,10 +351,6 @@ if (ENABLE_SERIAL)
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
     endif()
 
-    if(CUDA_FOUND)
-      set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
-      set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
-    endif()
 
     # install target for serial ascent lib
     install(TARGETS ascent

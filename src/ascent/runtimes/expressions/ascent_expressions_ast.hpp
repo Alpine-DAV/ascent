@@ -1,5 +1,6 @@
 #ifndef ASCENT_RUNTIME_AST
 #define ASCENT_RUNTIME_AST
+
 #include "ascent_derived_jit.hpp"
 #include "flow_workspace.hpp"
 #include <iostream>

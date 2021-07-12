@@ -48,16 +48,23 @@
 ///
 //-----------------------------------------------------------------------------
 
+#include <ascent_config.h>
 #include "ascent_expression_eval.hpp"
 #include "ascent_data_logger.hpp"
-#include "expressions/ascent_array_registry.hpp"
 #include "expressions/ascent_blueprint_architect.hpp"
-#include "expressions/ascent_derived_jit.hpp"
 #include "expressions/ascent_expression_filters.hpp"
-#include "expressions/ascent_expression_jit_filters.hpp"
 #include "expressions/ascent_expressions_ast.hpp"
 #include "expressions/ascent_expressions_parser.hpp"
 #include "expressions/ascent_expressions_tokens.hpp"
+
+// JIT headers
+#include "expressions/ascent_derived_jit.hpp"
+#include "expressions/ascent_expression_jit_filters.hpp"
+
+#ifdef ASCENT_JIT_ENABLED
+// Needed for logging functions
+#include "expressions/ascent_array_registry.hpp"
+#endif
 
 #include <ctime>
 #include <flow_timer.hpp>
@@ -1135,7 +1142,6 @@ initialize_functions()
   recenter_sig["description"] = "Recenter a field from vertex association to "
                                 "element association or vice versa.";
   recenter_sig["jitable"];
-
   //---------------------------------------------------------------------------
 
   count_params();
@@ -1280,22 +1286,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     // if root is a derived field add a JitFilter to execute it
     if(root["type"].as_string() == "jitable")
     {
-      conduit::Node params;
-      params["func"] = "execute";
-      params["filter_name"] = "jit_execute";
-      params["field_name"] = expr_name;
-      conduit::Node &inp = params["inputs/jitable"];
-      inp = root;
-      inp["port"] = 0;
-      w.graph().add_filter(
-          register_jit_filter(
-              w, 1, std::make_shared<const AlwaysExecutePolicy>()),
-          "jit_execute",
-          params);
-      // src, dest, port
-      w.graph().connect(root["filter_name"].as_string(), "jit_execute", 0);
-      root["filter_name"] = "jit_execute";
-      root["type"] = "field";
+      jit_root(root, expr_name);
     }
 
     w.graph().save_dot_html("ascent_expressions_graph.html");
@@ -1397,14 +1388,40 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   delete root_node;
   w.reset();
+#ifdef ASCENT_JIT_ENABLED
   ASCENT_DATA_ADD("Device high water mark", ArrayRegistry::high_water_mark());
   ASCENT_DATA_ADD("Current Device usage ", ArrayRegistry::device_usage());
   ASCENT_DATA_ADD("Current host usage ", ArrayRegistry::host_usage());
   ArrayRegistry::reset_high_water_mark();
+#endif
   ASCENT_DATA_CLOSE();
   return return_val;
 }
 
+void ExpressionEval::jit_root(conduit::Node &root, const std::string &expr_name)
+{
+  // When the root node in the executiuon graph is a jittable
+  // result, we have to complile that kernel and execute it
+  if(root["type"].as_string() == "jitable")
+  {
+    conduit::Node params;
+    params["func"] = "execute";
+    params["filter_name"] = "jit_execute";
+    params["field_name"] = expr_name;
+    conduit::Node &inp = params["inputs/jitable"];
+    inp = root;
+    inp["port"] = 0;
+    w.graph().add_filter(
+        register_jit_filter(
+            w, 1, std::make_shared<const AlwaysExecutePolicy>()),
+        "jit_execute",
+        params);
+    // src, dest, port
+    w.graph().connect(root["filter_name"].as_string(), "jit_execute", 0);
+    root["filter_name"] = "jit_execute";
+    root["type"] = "field";
+  }
+}
 //-----------------------------------------------------------------------------
 const conduit::Node &
 ExpressionEval::get_cache()

@@ -67,10 +67,65 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
+TEST(ascent_jit_expressions, derived_support_test)
+{
+
+  Node data;
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  conduit::Node res;
+  std::string expr;
+
+  expr = "builtin_avg = avg(sin(field('radial')))\n"
+         "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
+         "manual_avg = sum(sin(field('radial'))) / num_elements\n"
+         "builtin_avg == manual_avg";
+
+  bool threw = false;
+  try
+  {
+    res = eval.evaluate(expr);
+  }
+  catch(...)
+  {
+    threw = true;
+  }
+
+  Node n;
+  ascent::about(n);
+  if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
+  {
+    EXPECT_TRUE(threw);
+  }
+  else
+  {
+    EXPECT_FALSE(threw);
+  }
+}
+
 TEST(ascent_expressions, derived_simple)
 {
   Node n;
   ascent::about(n);
+
+  // only run this test if ascent was built with jit support
+  if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
+      return;
+  }
 
   Node data;
   conduit::blueprint::mesh::examples::braid("uniform",
@@ -132,6 +187,12 @@ TEST(ascent_expressions, derived_expressions)
 {
   Node n;
   ascent::about(n);
+  // only run this test if ascent was built with jit support
+  if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
+      return;
+  }
 
   //
   // Create an example mesh.

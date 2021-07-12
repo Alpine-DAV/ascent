@@ -48,6 +48,7 @@
 ///
 //-----------------------------------------------------------------------------
 
+#include <ascent_config.h>
 #include "ascent_derived_jit.hpp"
 #include "ascent_array.hpp"
 #include "ascent_blueprint_architect.hpp"
@@ -61,7 +62,10 @@
 #include <cstring>
 #include <functional>
 #include <limits>
+
+#ifdef ASCENT_JIT_ENABLED
 #include <occa.hpp>
+#endif
 
 #ifdef ASCENT_CUDA_ENABLED
 #include <occa/modes/cuda/utils.hpp>
@@ -140,6 +144,7 @@ type_string(const conduit::DataType &dtype)
 
 using slice_t = std::tuple<size_t, size_t, size_t>;
 
+#ifdef ASCENT_JIT_ENABLED
 void
 get_occa_mem(std::vector<Array<unsigned char>> &buffers,
              const std::vector<slice_t> &slices,
@@ -353,7 +358,7 @@ device_alloc_array(const conduit::Node &array,
   }
   ASCENT_DATA_CLOSE();
 }
-//}}}
+#endif
 
 std::string
 indent_code(const std::string &input_code, const int num_spaces)
@@ -3978,6 +3983,7 @@ Jitable::can_execute() const
 void
 Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
+#ifdef ASCENT_JIT_ENABLED
   ASCENT_DATA_OPEN("jitable_execute");
   // TODO set this during initialization not here
   static bool device_set = false;
@@ -4214,6 +4220,10 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     ASCENT_DATA_CLOSE();
   }
   ASCENT_DATA_CLOSE();
+#else
+  ASCENT_ERROR("JIT compilation for derived fields requires OCCA support"<<
+               " but Ascent was not compiled with OCCA.");
+#endif
 }
 // }}}
 };
