@@ -52,6 +52,7 @@
 #define ASCENT_INSERTION_ORDERED_SET_HPP
 
 #include <vector>
+#include <string>
 #include <unordered_set>
 
 //-----------------------------------------------------------------------------

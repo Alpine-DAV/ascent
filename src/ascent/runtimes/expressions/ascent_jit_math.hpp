@@ -52,6 +52,7 @@
 #define ASCENT_JIT_MATH_HPP
 
 #include "ascent_insertion_ordered_set.hpp"
+#include <string>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
