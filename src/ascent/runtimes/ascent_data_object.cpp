@@ -172,6 +172,40 @@ std::string DataObject::name() const
   return m_name;
 }
 
+void DataObject::reset_all()
+{
+  m_source = Source::INVALID;
+  std::shared_ptr<conduit::Node>  null_low(nullptr);
+  std::shared_ptr<conduit::Node>  null_high(nullptr);
+  m_low_bp = null_low;
+  m_high_bp = null_high;
+
+#if defined(ASCENT_VTKM_ENABLED)
+  std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
+  m_vtkh = null_vtkh;
+#endif
+
+#if defined(ASCENT_DRAY_ENABLED)
+  std::shared_ptr<dray::Collection> null_dray(nullptr);
+  m_dray = null_dray;
+#endif
+}
+
+void DataObject::reset(const Source source)
+{
+  if(source == Source::LOW_BP)
+  {
+    std::shared_ptr<conduit::Node>  low = as_low_order_bp();
+    reset_all();
+    m_source = Source::LOW_BP;
+    m_low_bp = low;
+  }
+  else
+  {
+    ASCENT_ERROR("Not implemented");
+  }
+}
+
 void DataObject::reset(std::shared_ptr<conduit::Node> dataset)
 {
   bool high_order = Transmogrifier::is_high_order(*dataset.get());

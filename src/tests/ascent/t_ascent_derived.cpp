@@ -66,7 +66,7 @@ using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
-
+#if 0
 TEST(ascent_jit_expressions, derived_support_test)
 {
 
@@ -391,8 +391,8 @@ TEST(ascent_expressions, derived_expressions)
   }
 }
 //-----------------------------------------------------------------------------
+#endif
 
-#if 0
 TEST(ascent_expressions, braid_sample)
 {
   conduit::Node data, multi_dom;
@@ -404,35 +404,30 @@ TEST(ascent_expressions, braid_sample)
   data["state/domain_id"] = 0;
   blueprint::mesh::to_multi_domain(data, multi_dom);
 
-  runtime::expressions::register_builtin();
-  runtime::expressions::ExpressionEval eval(&multi_dom);
-
-  conduit::Node res;
-  std::string expr;
-
-  // can't really test random sampling
-  // expr =
-  //     "binning = binning('cnt', 'cdf', [axis(field('braid'),
-  //     num_bins=10)])\n" "if(binning_value(binning) < rand()) then 0 else
-  //     field('braid')";
-  // eval.evaluate(expr, "braid_sample");
-
-  expr =
-      "binning = binning('cnt', 'cdf', [axis(field('braid'), num_bins=10)])\n"
-      "if(binning_value(binning) < 0.5) then 0 else field('braid')";
-  eval.evaluate(expr, "braid_sample");
 
   const std::string output_path = prepare_output_dir();
 
   std::string output_image =
-      conduit::utils::join_file_path(output_path, "tout_braid_cdf_threshold");
+      conduit::utils::join_file_path(output_path, "tout_half_braid_");
 
   conduit::Node actions;
 
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "expression";
+  // filter knobs
+  conduit::Node &expr_params = pipelines["pl1/f1/params"];
+  expr_params["expression"] = "field('braid') / 2.0";
+  expr_params["name"] = "half";
+
+  conduit::Node &add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
   conduit::Node scenes;
   scenes["s1/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/field"] = "braid_sample";
-  scenes["s1/plots/p1/color_table/name"] = "rainbow desaturated";
+  scenes["s1/plots/p1/field"] = "half";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/renders/r1/image_prefix"] = output_image;
 
   conduit::Node &add_plots = actions.append();
@@ -457,7 +452,6 @@ TEST(ascent_expressions, braid_sample)
 
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
-#endif
 
 //-----------------------------------------------------------------------------
 

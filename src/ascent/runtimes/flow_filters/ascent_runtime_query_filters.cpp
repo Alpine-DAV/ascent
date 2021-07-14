@@ -219,7 +219,7 @@ FilterQuery::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
+    //std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
     std::string expression = params()["expression"].as_string();
     std::string name = params()["name"].as_string();
@@ -228,18 +228,21 @@ FilterQuery::execute()
     Node v_info;
 
     // The mere act of a query stores the results
-    runtime::expressions::ExpressionEval eval(n_input.get());
+    //runtime::expressions::ExpressionEval eval(n_input.get());
+    runtime::expressions::ExpressionEval eval(*data_object);
     conduit::Node res = eval.evaluate(expression, name);
 
     // Since queries might add new fields, the blueprint needs to become the source
     if(data_object->source() != DataObject::Source::LOW_BP)
     {
+      data_object->reset(DataObject::Source::LOW_BP);
       // TODO for now always copy the bp...
-      conduit::Node *new_data_object = new conduit::Node(*n_input);
-      data_object->reset(new_data_object);
+      //conduit::Node *new_data_object = new conduit::Node(*n_input);
+      //data_object->reset(new_data_object);
+      //DataObject *new_do = new DataObject(
     }
-
     set_output<DataObject>(data_object);
+
 }
 
 
