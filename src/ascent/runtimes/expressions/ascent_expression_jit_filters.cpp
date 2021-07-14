@@ -696,7 +696,7 @@ ExpressionList::execute()
 {
   conduit::Node *output = new conduit::Node();
 
-  for(int item_num = 0; item_num < 256; ++item_num)
+  for(int item_num = 0; item_num < m_num_inputs; ++item_num)
   {
     std::stringstream ss;
     ss << "item" << item_num;

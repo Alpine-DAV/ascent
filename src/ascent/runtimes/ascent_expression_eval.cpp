@@ -751,7 +751,12 @@ initialize_functions()
   conduit::Node &axis_sig = (*functions)["axis"].append();
   axis_sig["return_type"] = "axis";
   axis_sig["filter_name"] = "axis";
-  axis_sig["args/var/type"] = "field";
+  axis_sig["args/name/type"] = "string";
+  axis_sig["args/name/description"] =
+      "The name of a scalar field on the mesh "
+      "or one of ``'x'``, ``'y'``, or ``'z'``. `name` can also be the empty "
+      "string `''` if `reduction_op` is either `sum` or `pdf` to mean we want "
+      "to count the number of elements in the bin as our reduction variable.";
   // rectilinear binning
   axis_sig["args/bins/type"] = "list";
   axis_sig["args/bins/optional"];
@@ -762,15 +767,20 @@ initialize_functions()
   axis_sig["args/min_val/type"] = "scalar";
   axis_sig["args/min_val/optional"];
   axis_sig["args/min_val/description"] =
-      "Minimum value of the axis (i.e. the value of the first tick).";
+      "Minimum value of the axis (i.e. the value of the first tick). Defaults "
+      "to ``min(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the "
+      "minimum value on the topology.";
   axis_sig["args/max_val/type"] = "scalar";
   axis_sig["args/max_val/optional"];
   axis_sig["args/max_val/description"] =
-      "Maximum value of the axis (i.e. the value of the last tick).";
+      "Maximum value of the axis (i.e. the value of the last tick).Defaults to "
+      "``max(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the "
+      "maximum value on the topology.";
   axis_sig["args/num_bins/type"] = "int";
   axis_sig["args/num_bins/optional"];
   axis_sig["args/num_bins/description"] =
-      "Number of bins on the axis (i.e. the number of ticks minus 1).";
+      "Number of bins on the axis (i.e. the number of ticks minus 1). Defaults "
+      "to ``256``.";
   axis_sig["description"] =
       "Defines a uniform or rectilinear axis. When used for binning the bins "
       "are inclusive on the lower boundary and exclusive on the higher "
@@ -781,8 +791,6 @@ initialize_functions()
   axis_sig["args/clamp/description"] =
       "Defaults to ``False``. If ``True``, values outside the axis should be "
       "put into the bins on the boundaries.";
-  axis_sig["description"] = "Returns a rectilinear or uniform axis object used "
-                            "to define the axes for ``binning``.";
 
   //---------------------------------------------------------------------------
 
@@ -813,8 +821,10 @@ initialize_functions()
   conduit::Node &binning_sig = (*functions)["binning"].append();
   binning_sig["return_type"] = "binning";
   binning_sig["filter_name"] = "binning";
-  binning_sig["args/reduction_var/type"] = "field";
-  binning_sig["args/reduction_var/description"] = "The field being reduced.";
+  binning_sig["args/reduction_var/type"] = "string";
+  binning_sig["args/reduction_var/description"] =
+      "The variable being reduced. Either the name of a scalar field on the "
+      "mesh or one of ``'x'``, ``'y'``, or ``'z'``.";
   binning_sig["args/reduction_op/type"] = "string";
   binning_sig["args/reduction_op/description"] =
       "The reduction operator to use when \
@@ -824,16 +834,15 @@ initialize_functions()
   - sum: sum of values in a bin \n \
   - avg: average of values in a bin \n \
   - pdf: probability distribution function \n \
-  - cdf: cumulative distribution function (only supported with 1 axis)\n \
   - std: standard deviation of values in a bin \n \
   - var: variance of values in a bin \n \
   - rms: root mean square of values in a bin";
   binning_sig["args/bin_axes/type"] = "list";
   binning_sig["args/bin_axes/description"] =
       "List of Axis objects which define the bin axes.";
-  binning_sig["args/empty_val/type"] = "scalar";
-  binning_sig["args/empty_val/optional"];
-  binning_sig["args/empty_val/description"] =
+  binning_sig["args/empty_bin_val/type"] = "scalar";
+  binning_sig["args/empty_bin_val/optional"];
+  binning_sig["args/empty_bin_val/description"] =
       "The value that empty bins should have. Defaults to ``0``.";
   binning_sig["args/component/type"] = "string";
   binning_sig["args/component/optional"];
@@ -843,42 +852,42 @@ initialize_functions()
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
   //---------------------------------------------------------------------------
-
-  conduit::Node &binning_sig2 = (*functions)["binning"].append();
-  binning_sig2["return_type"] = "binning";
-  binning_sig2["filter_name"] = "binning";
-  binning_sig2["args/reduction_var/type"] = "string";
-  binning_sig2["args/reduction_var/description"] =
-      "One of the strings ``'x', 'y', 'z'`` corresponding to a spacial "
-      "coordinate. ``reduction_var`` can be ``'cnt'`` to mean "
-      "\"bin the count\" if ``reduction_op`` is one of ``sum``, ``pdf``, or "
-      "``cdf``.";
-  binning_sig2["args/reduction_op/type"] = "string";
-  binning_sig2["args/bin_axes/type"] = "list";
-  binning_sig2["args/bin_axes/description"] =
-      "List of Axis objects which define the bin axes.";
-  binning_sig2["args/empty_val/type"] = "scalar";
-  binning_sig2["args/empty_val/optional"];
-  binning_sig2["args/topo/type"] = "topo";
-  binning_sig2["args/topo/optional"];
-  binning_sig2["args/topo/description"] =
-      "The topology to bin. Defaults to the "
-      "topology associated with the bin axes. This topology must have "
-      "all the fields used for the axes of ``binning``. It only makes sense "
-      "to specify this when ``bin_axes`` and ``reduction_var`` are a "
-      "subset of ``x``, ``y``, ``z``.";
-  binning_sig2["args/assoc/type"] = "string";
-  binning_sig2["args/assoc/optional"];
-  binning_sig2["args/assoc/description"] =
-      "The association of the resultant field. Defaults to the association "
-      "infered from the bin axes and and reduction variable. It only "
-      "makes sense to specify this when ``bin_axes`` and ``reduction_var`` are "
-      "a subset of ``x``, ``y``, ``z``.";
-  binning_sig2["description"] =
-      "Returns a multidimensional data binning. Same as the above function "
-      "except that ``reduction_var`` should be one of the strings ``'x', 'y', "
-      "'z'`` and the association and topology can be explicitely specified.";
-
+//
+//  conduit::Node &binning_sig2 = (*functions)["binning"].append();
+//  binning_sig2["return_type"] = "binning";
+//  binning_sig2["filter_name"] = "binning";
+//  binning_sig2["args/reduction_var/type"] = "string";
+//  binning_sig2["args/reduction_var/description"] =
+//      "One of the strings ``'x', 'y', 'z'`` corresponding to a spacial "
+//      "coordinate. ``reduction_var`` can be ``'cnt'`` to mean "
+//      "\"bin the count\" if ``reduction_op`` is one of ``sum``, ``pdf``, or "
+//      "``cdf``.";
+//  binning_sig2["args/reduction_op/type"] = "string";
+//  binning_sig2["args/bin_axes/type"] = "list";
+//  binning_sig2["args/bin_axes/description"] =
+//      "List of Axis objects which define the bin axes.";
+//  binning_sig2["args/empty_val/type"] = "scalar";
+//  binning_sig2["args/empty_val/optional"];
+//  binning_sig2["args/topo/type"] = "topo";
+//  binning_sig2["args/topo/optional"];
+//  binning_sig2["args/topo/description"] =
+//      "The topology to bin. Defaults to the "
+//      "topology associated with the bin axes. This topology must have "
+//      "all the fields used for the axes of ``binning``. It only makes sense "
+//      "to specify this when ``bin_axes`` and ``reduction_var`` are a "
+//      "subset of ``x``, ``y``, ``z``.";
+//  binning_sig2["args/assoc/type"] = "string";
+//  binning_sig2["args/assoc/optional"];
+//  binning_sig2["args/assoc/description"] =
+//      "The association of the resultant field. Defaults to the association "
+//      "infered from the bin axes and and reduction variable. It only "
+//      "makes sense to specify this when ``bin_axes`` and ``reduction_var`` are "
+//      "a subset of ``x``, ``y``, ``z``.";
+//  binning_sig2["description"] =
+//      "Returns a multidimensional data binning. Same as the above function "
+//      "except that ``reduction_var`` should be one of the strings ``'x', 'y', "
+//      "'z'`` and the association and topology can be explicitely specified.";
+//
   //---------------------------------------------------------------------------
 
   // this does not jit but binning_value does
