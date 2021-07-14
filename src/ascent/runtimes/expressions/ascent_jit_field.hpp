@@ -44,25 +44,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_derived_jit.hpp
+/// file: ascent_jit_field.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DERVIVED_JIT_HPP
-#define ASCENT_DERVIVED_JIT_HPP
+#ifndef ASCENT_JIT_FIELD_HPP
+#define ASCENT_JIT_FIELD_HPP
 
-#include <ascent.hpp>
-#include <conduit.hpp>
-#include <flow.hpp>
 #include <memory>
-
+#include <string>
 #include "ascent_jit_array.hpp"
-#include "ascent_jit_field.hpp"
-#include "ascent_jit_kernel.hpp"
 #include "ascent_jit_math.hpp"
 #include "ascent_jit_topology.hpp"
-#include "ascent_insertion_ordered_set.hpp"
-// Matt: there is a lot of code that needs its own file
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -82,99 +75,83 @@ namespace runtime
 namespace expressions
 {
 
-class Jitable
+class FieldCode
 {
 public:
-  Jitable(const int num_domains)
-  {
-    for(int i = 0; i < num_domains; ++i)
-    {
-      dom_info.append();
-    }
-    arrays.resize(num_domains);
-  }
+  // if component is -1 use all the field's components
+  FieldCode(const std::string &field_name,
+            const std::string &association,
+            const std::shared_ptr<const TopologyCode> topo_code,
+            const ArrayCode &array_code,
+            const int num_components,
+            const int component);
 
-  void fuse_vars(const Jitable &from);
-  bool can_execute() const;
-  void execute(conduit::Node &dataset, const std::string &field_name);
-  std::string generate_kernel(const int dom_idx,
-                              const conduit::Node &args) const;
+  void gradient(InsertionOrderedSet<std::string> &code) const;
 
-  // map of kernel types (e.g. for different topologies)
-  std::unordered_map<std::string, Kernel> kernels;
-  // stores entries and argument values for each domain
-  conduit::Node dom_info;
-  // Store the array schemas. Used by code generation. We will copy to these
-  // schemas when we execute
-  std::vector<ArrayCode> arrays;
-  std::string topology;
-  std::string association;
-  // metadata used to make the . operator work and store various jitable state
-  conduit::Node obj;
-};
+  void curl(InsertionOrderedSet<std::string> &code) const;
 
-class MemoryRegion
-{
-public:
-  MemoryRegion(const void *start, const void *end);
-  MemoryRegion(const void *start, const size_t size);
-  bool operator<(const MemoryRegion &other) const;
-
-  const unsigned char *start;
-  const unsigned char *end;
-  mutable bool allocated;
-  mutable size_t index;
-};
-
-class JitExecutionPolicy
-{
-public:
-  JitExecutionPolicy();
-  virtual bool should_execute(const Jitable &jitable) const = 0;
-  virtual std::string get_name() const = 0;
-};
-
-class FusePolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-class AlwaysExecutePolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-class RoundtripPolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-// fuse until the number of bytes in args exceeds a threshold
-class InputBytesPolicy final : public JitExecutionPolicy
-{
-public:
-  InputBytesPolicy(const size_t num_bytes);
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
+  void recenter(InsertionOrderedSet<std::string> &code,
+                const std::string &target_association,
+                const std::string &res_name) const;
 
 private:
-  const size_t num_bytes;
+  // Calculate the element associated gradient of a vertex associated field on
+  // a hexahedral mesh
+  void hex_gradient(InsertionOrderedSet<std::string> &code,
+                    const std::string &res_name) const;
+
+  // Calculate the element associated gradient of a vertex associated field on
+  // a quadrilateral mesh
+  void quad_gradient(InsertionOrderedSet<std::string> &code,
+                     const std::string &res_name) const;
+
+  void element_vertex_values(InsertionOrderedSet<std::string> &code,
+                             const std::string &res_name,
+                             const int component,
+                             const bool declare) const;
+
+  void field_idx(InsertionOrderedSet<std::string> &code,
+                 const std::string &index_name,
+                 const std::string &association,
+                 const std::string &res_name,
+                 const bool declare) const;
+
+  void visit_upper(InsertionOrderedSet<std::string> &code,
+                   const std::string &index_name,
+                   const std::string &if_body,
+                   const std::string &else_body,
+                   const int dim) const;
+
+  void visit_lower(InsertionOrderedSet<std::string> &code,
+                   const std::string &index_name,
+                   const std::string &if_body,
+                   const std::string &else_body,
+                   const int dim) const;
+
+  void visit_current(InsertionOrderedSet<std::string> &code,
+                     const std::string &index_name,
+                     const std::string &if_body,
+                     const std::string &else_body,
+                     const int dim) const;
+
+  void visit_vertex_elements(InsertionOrderedSet<std::string> &code,
+                             const std::string &index_name,
+                             const std::string &if_body,
+                             const std::string &else_body,
+                             const int dim) const;
+
+  const std::string field_name;
+  const std::string association;
+  const int num_components;
+  const int component;
+
+  const ArrayCode &array_code;
+
+  const std::shared_ptr<const TopologyCode> topo_code;
+  const MathCode math_code;
 };
 
-void pack_topology(const std::string &topo_name,
-                   const conduit::Node &domain,
-                   conduit::Node &args,
-                   ArrayCode &array);
-void pack_array(const conduit::Node &array,
-                const std::string &name,
-                conduit::Node &args,
-                ArrayCode &array_code);
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

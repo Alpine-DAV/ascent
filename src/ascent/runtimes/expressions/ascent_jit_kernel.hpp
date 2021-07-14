@@ -44,25 +44,15 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_derived_jit.hpp
+/// file: ascent_jit_kernel.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DERVIVED_JIT_HPP
-#define ASCENT_DERVIVED_JIT_HPP
-
-#include <ascent.hpp>
-#include <conduit.hpp>
-#include <flow.hpp>
-#include <memory>
+#ifndef ASCENT_JIT_KERNEL_HPP
+#define ASCENT_JIT_KERNEL_HPP
 
 #include "ascent_jit_array.hpp"
-#include "ascent_jit_field.hpp"
-#include "ascent_jit_kernel.hpp"
-#include "ascent_jit_math.hpp"
-#include "ascent_jit_topology.hpp"
 #include "ascent_insertion_ordered_set.hpp"
-// Matt: there is a lot of code that needs its own file
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -82,99 +72,28 @@ namespace runtime
 namespace expressions
 {
 
-class Jitable
+class Kernel
 {
 public:
-  Jitable(const int num_domains)
-  {
-    for(int i = 0; i < num_domains; ++i)
-    {
-      dom_info.append();
-    }
-    arrays.resize(num_domains);
-  }
+  void fuse_kernel(const Kernel &from);
 
-  void fuse_vars(const Jitable &from);
-  bool can_execute() const;
-  void execute(conduit::Node &dataset, const std::string &field_name);
-  std::string generate_kernel(const int dom_idx,
-                              const conduit::Node &args) const;
+  std::string generate_output(const std::string &output,
+                              bool output_exists) const;
 
-  // map of kernel types (e.g. for different topologies)
-  std::unordered_map<std::string, Kernel> kernels;
-  // stores entries and argument values for each domain
-  conduit::Node dom_info;
-  // Store the array schemas. Used by code generation. We will copy to these
-  // schemas when we execute
-  std::vector<ArrayCode> arrays;
-  std::string topology;
-  std::string association;
-  // metadata used to make the . operator work and store various jitable state
-  conduit::Node obj;
+  std::string generate_loop(const std::string &output,
+                            const ArrayCode &array_code,
+                            const std::string &entries_name) const;
+
+  InsertionOrderedSet<std::string> functions;
+  InsertionOrderedSet<std::string> kernel_body;
+  InsertionOrderedSet<std::string> for_body;
+  std::string expr;
+  // number of components associated with the expression in expr
+  // if the expression is a vector expr will just be the name of a single vector
+  int num_components;
 };
 
-class MemoryRegion
-{
-public:
-  MemoryRegion(const void *start, const void *end);
-  MemoryRegion(const void *start, const size_t size);
-  bool operator<(const MemoryRegion &other) const;
-
-  const unsigned char *start;
-  const unsigned char *end;
-  mutable bool allocated;
-  mutable size_t index;
-};
-
-class JitExecutionPolicy
-{
-public:
-  JitExecutionPolicy();
-  virtual bool should_execute(const Jitable &jitable) const = 0;
-  virtual std::string get_name() const = 0;
-};
-
-class FusePolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-class AlwaysExecutePolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-class RoundtripPolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-// fuse until the number of bytes in args exceeds a threshold
-class InputBytesPolicy final : public JitExecutionPolicy
-{
-public:
-  InputBytesPolicy(const size_t num_bytes);
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-
-private:
-  const size_t num_bytes;
-};
-
-void pack_topology(const std::string &topo_name,
-                   const conduit::Node &domain,
-                   conduit::Node &args,
-                   ArrayCode &array);
-void pack_array(const conduit::Node &array,
-                const std::string &name,
-                conduit::Node &args,
-                ArrayCode &array_code);
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

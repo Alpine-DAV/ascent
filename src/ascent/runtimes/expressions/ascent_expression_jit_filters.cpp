@@ -1,4 +1,5 @@
 #include "ascent_expression_jit_filters.hpp"
+#include "ascent_jit_fusion.hpp"
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_blueprint_topologies.hpp"
 #include <ascent_config.h>
@@ -510,15 +511,15 @@ JitFilter::execute()
           fused_kernel_types.find(out_kernel_type) == fused_kernel_types.cend();
 
       // this class knows how to combine kernels and generate jitable functions
-      JitableFunctions jitable_functions(params(),
-                                         input_jitables,
-                                         input_kernels,
-                                         filter_name,
-                                         *dataset,
-                                         dom_idx,
-                                         not_fused,
-                                         *out_jitable,
-                                         out_kernel);
+      JitableFusion jitable_functions(params(),
+                                      input_jitables,
+                                      input_kernels,
+                                      filter_name,
+                                      *dataset,
+                                      dom_idx,
+                                      not_fused,
+                                      *out_jitable,
+                                      out_kernel);
 
       if(func == "binary_op")
       {

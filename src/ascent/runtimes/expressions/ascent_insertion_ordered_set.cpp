@@ -44,26 +44,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_derived_jit.hpp
+/// file: ascent_insertion_ordered_set.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DERVIVED_JIT_HPP
-#define ASCENT_DERVIVED_JIT_HPP
-
-#include <ascent.hpp>
-#include <conduit.hpp>
-#include <flow.hpp>
-#include <memory>
-
-#include "ascent_jit_array.hpp"
-#include "ascent_jit_field.hpp"
-#include "ascent_jit_kernel.hpp"
-#include "ascent_jit_math.hpp"
-#include "ascent_jit_topology.hpp"
 #include "ascent_insertion_ordered_set.hpp"
-// Matt: there is a lot of code that needs its own file
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -82,99 +67,63 @@ namespace runtime
 namespace expressions
 {
 
-class Jitable
+template<typename T>
+void
+InsertionOrderedSet<T>::insert(const T &item, const bool unique)
 {
-public:
-  Jitable(const int num_domains)
+  if(!unique)
   {
-    for(int i = 0; i < num_domains; ++i)
-    {
-      dom_info.append();
-    }
-    arrays.resize(num_domains);
+    insertion_ordered_data.push_back(item);
   }
+  else if(data_set.find(item) == data_set.end())
+  {
+    data_set.insert(item);
+    insertion_ordered_data.push_back(item);
+  }
+}
 
-  void fuse_vars(const Jitable &from);
-  bool can_execute() const;
-  void execute(conduit::Node &dataset, const std::string &field_name);
-  std::string generate_kernel(const int dom_idx,
-                              const conduit::Node &args) const;
-
-  // map of kernel types (e.g. for different topologies)
-  std::unordered_map<std::string, Kernel> kernels;
-  // stores entries and argument values for each domain
-  conduit::Node dom_info;
-  // Store the array schemas. Used by code generation. We will copy to these
-  // schemas when we execute
-  std::vector<ArrayCode> arrays;
-  std::string topology;
-  std::string association;
-  // metadata used to make the . operator work and store various jitable state
-  conduit::Node obj;
-};
-
-class MemoryRegion
+template<typename T>
+void
+InsertionOrderedSet<T>::insert(std::initializer_list<T> ilist, const bool unique)
 {
-public:
-  MemoryRegion(const void *start, const void *end);
-  MemoryRegion(const void *start, const size_t size);
-  bool operator<(const MemoryRegion &other) const;
+  for(const auto &item : ilist)
+  {
+    insert(item, unique);
+  }
+}
 
-  const unsigned char *start;
-  const unsigned char *end;
-  mutable bool allocated;
-  mutable size_t index;
-};
-
-class JitExecutionPolicy
+template<typename T>
+void
+InsertionOrderedSet<T>::insert(const InsertionOrderedSet<T> &ios, const bool unique)
 {
-public:
-  JitExecutionPolicy();
-  virtual bool should_execute(const Jitable &jitable) const = 0;
-  virtual std::string get_name() const = 0;
-};
+  for(const auto &item : ios.data())
+  {
+    insert(item, unique);
+  }
+}
 
-class FusePolicy final : public JitExecutionPolicy
+template<typename T>
+T
+InsertionOrderedSet<T>::accumulate() const
 {
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
+  T res;
+  for(const auto &item : insertion_ordered_data)
+  {
+    res += item;
+  }
+  return res;
+}
 
-class AlwaysExecutePolicy final : public JitExecutionPolicy
+template<typename T>
+const std::vector<T> &
+InsertionOrderedSet<T>::data() const
 {
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
+  return insertion_ordered_data;
+}
 
-class RoundtripPolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
+template class InsertionOrderedSet<std::string>;
 
-// fuse until the number of bytes in args exceeds a threshold
-class InputBytesPolicy final : public JitExecutionPolicy
-{
-public:
-  InputBytesPolicy(const size_t num_bytes);
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-
-private:
-  const size_t num_bytes;
-};
-
-void pack_topology(const std::string &topo_name,
-                   const conduit::Node &domain,
-                   conduit::Node &args,
-                   ArrayCode &array);
-void pack_array(const conduit::Node &array,
-                const std::string &name,
-                conduit::Node &args,
-                ArrayCode &array_code);
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
@@ -190,9 +139,4 @@ void pack_array(const conduit::Node &array,
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
-//-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
 //-----------------------------------------------------------------------------

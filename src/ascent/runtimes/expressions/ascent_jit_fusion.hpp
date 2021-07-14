@@ -44,25 +44,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_derived_jit.hpp
+/// file: ascent_jit_fusion.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DERVIVED_JIT_HPP
-#define ASCENT_DERVIVED_JIT_HPP
+#ifndef ASCENT_JIT_FUSION_HPP
+#define ASCENT_JIT_FUSION_HPP
 
-#include <ascent.hpp>
+#include <unordered_map>
+#include <string>
 #include <conduit.hpp>
-#include <flow.hpp>
-#include <memory>
-
-#include "ascent_jit_array.hpp"
-#include "ascent_jit_field.hpp"
-#include "ascent_jit_kernel.hpp"
-#include "ascent_jit_math.hpp"
-#include "ascent_jit_topology.hpp"
-#include "ascent_insertion_ordered_set.hpp"
-// Matt: there is a lot of code that needs its own file
+#include "ascent_derived_jit.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -82,99 +74,56 @@ namespace runtime
 namespace expressions
 {
 
-class Jitable
+// handles kernel fusion for various functions
+// calls TopologyCode, FieldCode, etc.
+// i.e., this class knows how to combine kernels and generate jitable functions
+class JitableFusion
 {
 public:
-  Jitable(const int num_domains)
-  {
-    for(int i = 0; i < num_domains; ++i)
-    {
-      dom_info.append();
-    }
-    arrays.resize(num_domains);
-  }
+  JitableFusion(const conduit::Node &params,
+                   const std::vector<const Jitable *> &input_jitables,
+                   const std::vector<const Kernel *> &input_kernels,
+                   const std::string &filter_name,
+                   const conduit::Node &dataset,
+                   const int dom_idx,
+                   const bool not_fused,
+                   Jitable &out_jitable,
+                   Kernel &out_kernel);
 
-  void fuse_vars(const Jitable &from);
-  bool can_execute() const;
-  void execute(conduit::Node &dataset, const std::string &field_name);
-  std::string generate_kernel(const int dom_idx,
-                              const conduit::Node &args) const;
-
-  // map of kernel types (e.g. for different topologies)
-  std::unordered_map<std::string, Kernel> kernels;
-  // stores entries and argument values for each domain
-  conduit::Node dom_info;
-  // Store the array schemas. Used by code generation. We will copy to these
-  // schemas when we execute
-  std::vector<ArrayCode> arrays;
-  std::string topology;
-  std::string association;
-  // metadata used to make the . operator work and store various jitable state
-  conduit::Node obj;
-};
-
-class MemoryRegion
-{
-public:
-  MemoryRegion(const void *start, const void *end);
-  MemoryRegion(const void *start, const size_t size);
-  bool operator<(const MemoryRegion &other) const;
-
-  const unsigned char *start;
-  const unsigned char *end;
-  mutable bool allocated;
-  mutable size_t index;
-};
-
-class JitExecutionPolicy
-{
-public:
-  JitExecutionPolicy();
-  virtual bool should_execute(const Jitable &jitable) const = 0;
-  virtual std::string get_name() const = 0;
-};
-
-class FusePolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-class AlwaysExecutePolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-class RoundtripPolicy final : public JitExecutionPolicy
-{
-public:
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
-};
-
-// fuse until the number of bytes in args exceeds a threshold
-class InputBytesPolicy final : public JitExecutionPolicy
-{
-public:
-  InputBytesPolicy(const size_t num_bytes);
-  bool should_execute(const Jitable &jitable) const override;
-  std::string get_name() const override;
+  void binary_op();
+  void builtin_functions(const std::string &function_name);
+  void expr_dot();
+  void expr_if();
+  void derived_field();
+  void gradient();
+  void curl();
+  void recenter();
+  void magnitude();
+  void vector();
+  void binning_value(const conduit::Node &binning);
+  void rand();
 
 private:
-  const size_t num_bytes;
+  void topo_attrs(const conduit::Node &obj, const std::string &name);
+  void gradient(const int field_port, const int component);
+  void temporary_field(const Kernel &field_kernel,
+                       const std::string &field_name);
+  std::string possible_temporary(const int field_port);
+
+  const conduit::Node &params;
+  const std::vector<const Jitable *> &input_jitables;
+  const std::vector<const Kernel *> &input_kernels;
+  const std::string &filter_name;
+  const conduit::Node &dataset;
+  const int dom_idx;
+  const bool not_fused;
+  Jitable &out_jitable;
+  Kernel &out_kernel;
+  const conduit::Node &inputs;
+  const conduit::Node &domain;
 };
 
-void pack_topology(const std::string &topo_name,
-                   const conduit::Node &domain,
-                   conduit::Node &args,
-                   ArrayCode &array);
-void pack_array(const conduit::Node &array,
-                const std::string &name,
-                conduit::Node &args,
-                ArrayCode &array_code);
+//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
