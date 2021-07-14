@@ -65,10 +65,9 @@
 
 #ifdef ASCENT_JIT_ENABLED
 #include <occa.hpp>
-#endif
-
-#ifdef ASCENT_CUDA_ENABLED
-#include <occa/modes/cuda/utils.hpp>
+  #ifdef ASCENT_CUDA_ENABLED
+    #include <occa/modes/cuda/utils.hpp>
+  #endif
 #endif
 
 //-----------------------------------------------------------------------------
