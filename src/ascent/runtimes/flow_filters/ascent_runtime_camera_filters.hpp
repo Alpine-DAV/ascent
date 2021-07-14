@@ -130,7 +130,7 @@ class Camera
     Matrix          DeviceTransform();
 };
 
-Camera GetCamera(int frame, int nframes, double radius, double *lookat, float *bounds);
+Camera GetCamera(int frame, int nframes, double radius, float *lookat, float *bounds);
 //-----------------------------------------------------------------------------
 //Edge Class
 //-----------------------------------------------------------------------------
@@ -189,9 +189,10 @@ double CalculateNormalCameraDot(double* cameraPositions, Triangle tri);
 
 //Stefan's copied over for simplex
 float calculateMetric(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, int i1, int i2, Camera c);
-float calculateMetricScore(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, double a, int i1, int i2, Camera c);
+float calculateMetricScore(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, double a, int i1, int i2, Camera c, float fmax, float fmin, int xbins, int ybins, int zbins, float diameter);
 
 void AddTriangleFields2(vtkh::DataSet &d);
+vtkh::DataSet* AddTriangleFields(vtkh::DataSet &d, float &xmin, float &xmax, float &ymin, float &ymax, float &zmin, float &zmax, int xbins, int ybins, int zbins);
 vtkh::DataSet* AddTriangleFields(vtkh::DataSet &d);
 
 std::vector<Triangle> GetTrianglesAndArea(vtkh::DataSet &d, double &a);
