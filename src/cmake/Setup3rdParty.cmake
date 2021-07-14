@@ -135,12 +135,12 @@ else()
 message(STATUS "NOOOOOOOOOOOOOOOOOOOOOOOO UMPIRE")
 endif()
 
-
 ################################
-# Setup ADIOS
+# Setup Fides
 ################################
-if (ADIOS_DIR)
-  include(cmake/thirdparty/SetupADIOS.cmake)
+if (FIDES_DIR AND VTKM_DIR)
+  include(cmake/thirdparty/SetupADIOS2.cmake)
+  include(cmake/thirdparty/SetupFides.cmake)
 endif()
 
 ################################
@@ -149,4 +149,3 @@ endif()
 if (ENABLE_BABELFLOW)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif ()
-

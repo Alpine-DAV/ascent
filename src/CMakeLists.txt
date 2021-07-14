@@ -73,6 +73,7 @@ option(ENABLE_UTILS       "Build Utilities"           ON)
 option(ENABLE_LOGGING     "Enabe data logging"        OFF)
 option(ENABLE_DOCS        "Build Documentation"       ON)
 option(ENABLE_MFEM        "Enable MFEM support"       ON)
+option(ENABLE_FIDES       "Build with Fides"          OFF)
 
 option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
 
@@ -181,6 +182,11 @@ include(cmake/SetupIncludes.cmake)
 # Add builtin third party libs
 ################################
 add_subdirectory(thirdparty_builtin)
+
+if(ENABLE_FIDES)
+  find_package(ADIOS2 REQUIRED)
+  find_package(Fides REQUIRED)
+endif()
 
 ################################
 # Add our libs

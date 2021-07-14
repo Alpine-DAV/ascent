@@ -68,10 +68,10 @@ set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
-set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
+set(ASCENT_FIDES_ENABLED ${FIDES_FOUND})
 
 if(OCCA_FOUND AND UMPIRE_FOUND)
   set(ASCENT_JIT_ENABLED TRUE)
@@ -452,10 +452,10 @@ if(MPI_FOUND)
     list(APPEND ascent_sources hola/ascent_hola_mpi.cpp)
 
     # adios support is only in par (mpi ver)
-    if (ADIOS_FOUND)
-       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
-       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
-       list(APPEND ascent_mpi_thirdparty_libs adios)
+    if (ASCENT_FIDES_ENABLED AND MPI_FOUND)
+       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
+       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
+       list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
     endif()
 
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
@@ -560,5 +560,3 @@ install(FILES ${ascent_headers} DESTINATION include/ascent)
 #############################################################
 install(DIRECTORY web_clients/
         DESTINATION share/ascent/web_clients/)
-
-
