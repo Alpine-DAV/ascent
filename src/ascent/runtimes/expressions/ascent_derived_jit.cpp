@@ -788,7 +788,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 #else
     occa::setDevice({{"mode", "Serial"}});
 #endif
-    occa::env::setOccaCacheDir(::ascent::runtime::filters::default_dir());
+    occa::env::setOccaCacheDir(::ascent::runtime::filters::output_dir(".occa"));
     init = true;
   }
   occa::device &device = occa::getDevice();
