@@ -171,10 +171,10 @@ class Ascent(Package, CudaPackage):
     depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
     depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
 
-    depends_on("umpire@1.0.0+cuda+shared", when="+cuda+shared")
-    depends_on("umpire@1.0.0+cuda~shared", when="+cuda~shared")
-    depends_on("umpire@1.0.0~cuda+shared", when="~cuda+shared")
-    depends_on("umpire@1.0.0~cuda~shared", when="~cuda~shared")
+    depends_on("umpire+cuda+shared", when="+cuda+shared")
+    depends_on("umpire+cuda~shared", when="+cuda~shared")
+    depends_on("umpire~cuda+shared", when="~cuda+shared")
+    depends_on("umpire~cuda~shared", when="~cuda~shared")
 
     #######################
     # Documentation related
