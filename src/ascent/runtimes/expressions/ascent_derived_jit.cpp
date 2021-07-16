@@ -54,6 +54,7 @@
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_blueprint_topologies.hpp"
 #include "ascent_expressions_ast.hpp"
+#include <runtimes/flow_filters/ascent_runtime_utils.hpp>
 
 #include <ascent_data_logger.hpp>
 #include <ascent_logging.hpp>
@@ -65,6 +66,8 @@
 
 #ifdef ASCENT_JIT_ENABLED
 #include <occa.hpp>
+#include <occa/utils/env.hpp>
+#include <stdlib.h>
   #ifdef ASCENT_CUDA_ENABLED
     #include <occa/modes/cuda/utils.hpp>
   #endif
@@ -150,24 +153,24 @@ get_occa_mem(std::vector<Array<unsigned char>> &buffers,
     Array<unsigned char> &buf = buffers[std::get<0>(slices[i])];
     size_t buf_offset = std::get<1>(slices[i]);
     size_t buf_size = std::get<2>(slices[i]);
+    unsigned char * ptr;
     if(mode == "Serial" || mode == "OpenMP")
     {
-      unsigned char *ptr = buf.get_host_ptr();
-      occa[i] = occa::cpu::wrapMemory(
-          device, ptr + buf_offset, buf_size * sizeof(unsigned char));
+      ptr = buf.get_host_ptr();
     }
 #ifdef ASCENT_CUDA_ENABLED
     else if(mode == "CUDA")
     {
-      unsigned char *ptr = buf.get_device_ptr();
-      occa[i] = occa::cuda::wrapMemory(
-          device, ptr + buf_offset, buf_size * sizeof(unsigned char));
+      ptr = buf.get_device_ptr();
     }
 #endif
     else
     {
       ASCENT_ERROR("Unknow occa mode " << mode);
     }
+
+    void * v_ptr = (void *)(ptr + buf_offset);
+    occa[i] = device.wrapMemory(v_ptr, buf_size * sizeof(unsigned char));
     ASCENT_DATA_ADD("bytes", buf_size);
     ASCENT_DATA_CLOSE();
   }
@@ -773,19 +776,20 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 #ifdef ASCENT_JIT_ENABLED
   ASCENT_DATA_OPEN("jitable_execute");
   // TODO set this during initialization not here
-  static bool device_set = false;
-  if(!device_set)
+  static bool init = false;
+  if(!init)
   {
     // running this in a loop segfaults...
 #ifdef ASCENT_CUDA_ENABLED
     // TODO get the right device_id
-    occa::setDevice("mode: 'CUDA', device_id: 0");
+    occa::setDevice({{"mode", "CUDA"}, {"device_id", 0}});
 #elif defined(ASCENT_USE_OPENMP)
-    occa::setDevice("mode: 'OpenMP'");
+    occa::setDevice({{"mode", "OpenMP"}});
 #else
-    occa::setDevice("mode: 'Serial'");
+    occa::setDevice({{"mode", "Serial"}});
 #endif
-    device_set = true;
+    occa::env::setOccaCacheDir(::ascent::runtime::filters::default_dir());
+    init = true;
   }
   occa::device &device = occa::getDevice();
   ASCENT_DATA_ADD("occa device", device.mode());

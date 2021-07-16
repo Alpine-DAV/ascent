@@ -452,7 +452,72 @@ TEST(ascent_expressions, braid_sample)
 
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
+#if 0
+TEST(ascent_expressions, multi_topos)
+{
+  conduit::Node multi_dom;
+  conduit::Node &dom1 = multi_dom.append();
+  conduit::blueprint::mesh::examples::braid("structured",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            dom1);
 
+  conduit::Node &dom2 = multi_dom.append();
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            dom2);
+
+  const std::string output_path = prepare_output_dir();
+
+  std::string output_image =
+      conduit::utils::join_file_path(output_path, "tout_vol");
+
+  conduit::Node actions;
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "expression";
+  // filter knobs
+  conduit::Node &expr_params = pipelines["pl1/f1/params"];
+  expr_params["expression"] = "topo('mesh').cell.volume";
+  expr_params["name"] = "vol";
+
+  conduit::Node &add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "vol";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/renders/r1/image_prefix"] = output_image;
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["ascent_info"] = "verbose";
+  ascent_opts["timings"] = "enabled";
+  ascent_opts["runtime/type"] = "ascent";
+
+  ascent.open(ascent_opts);
+  ascent.publish(multi_dom);
+  ascent.execute(actions);
+  ascent.close();
+
+  EXPECT_TRUE(check_test_image(output_image, 0.1));
+}
+#endif
 //-----------------------------------------------------------------------------
 
 int

@@ -166,10 +166,10 @@ class Ascent(Package, CudaPackage):
 
 
     # occa defaults to +cuda so we have to explicit tell it ~cuda
-    depends_on("occa@1.1.0~cuda",        when="+occa~cuda")
-    depends_on("occa@1.1.0~cuda~openmp", when="+occa~cuda~openmp")
-    depends_on("occa@1.1.0+cuda+openmp", when="+occa+cuda+openmp")
-    depends_on("occa@1.1.0+cuda~openmp", when="+occa+cuda~openmp")
+    depends_on("occa@1.1.1~cuda",        when="+occa~cuda")
+    depends_on("occa@1.1.1~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
 
     depends_on("umpire@1.0.0+cuda+shared", when="+cuda+shared")
     depends_on("umpire@1.0.0+cuda~shared", when="+cuda~shared")
