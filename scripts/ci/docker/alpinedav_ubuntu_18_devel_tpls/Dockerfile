@@ -65,9 +65,9 @@ RUN tar -xzf ascent.docker.src.tar.gz
 # bootstrap third party libs using spack and uberenv
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec "%gcc+mpi+mfem+dray+python+babelflow+fides+adios2 ^python@3.6.3 ^libzmq~libsodium" \
+       --spec "%gcc+mpi+mfem+dray+python+occa+babelflow+fides+adios2 ^python@3.6.3 ^libzmq~libsodium" \
        --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18_devel/ \
-       --prefix=/uberenv_libss
+       --prefix=/uberenv_libs
 
 # cleanup the spack build stuff to free up space
 RUN uberenv_libs/spack/bin/spack clean --all
