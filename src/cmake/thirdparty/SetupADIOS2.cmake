@@ -55,7 +55,6 @@ endif()
 
 MESSAGE(STATUS "Looking for ADIOS2 using ADIOS2_DIR = ${ADIOS2_DIR}")
 
-find_package(ADIOS2 REQUIRED)
 
 find_package(ADIOS2 REQUIRED
              NO_DEFAULT_PATH
