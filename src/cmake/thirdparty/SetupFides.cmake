@@ -48,31 +48,34 @@
 #
 ###############################################################################
 
-macro(print_all_variables)
-    message(STATUS "FIDES: print_all_variables------------------------------------------{")
-    get_cmake_property(_variableNames VARIABLES)
-    foreach (_variableName ${_variableNames})
-        message(STATUS "${_variableName}=${${_variableName}}")
-    endforeach()
-    message(STATUS "FIDES: print_all_variables------------------------------------------}")
-endmacro()
-
-
 if(NOT FIDES_DIR)
-    MESSAGE(FATAL_ERROR "Fides support needs explicit Fides_DIR")
-  endif()
+    MESSAGE(FATAL_ERROR "Fides support needs explicit FIDES_DIR")
+endif()
+
+if(NOT VTKM_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs VTK-m (VTKM_DIR not set)")
+endif()
+
+if(NOT ADIOS2_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs ADIOS2 (ADIOS2_DIR not set)")
+endif()
+
+MESSAGE(STATUS "Looking for FIDES using FIDES_DIR = ${FIDES_DIR}")
 
 #The Fides cmake is not setting these for some reason.
 #So, we set them explicitly for now.
-set(Fides_DIR ${FIDES_DIR}/lib/cmake/fides)
-set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/fides)
+#set(Fides_DIR ${FIDES_DIR})
+
+set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/)
 set(FIDES_LIB_DIR ${FIDES_DIR}/lib)
 set(FIDES_LIBRARIES fides)
 
+find_package(Fides REQUIRED
+             NO_DEFAULT_PATH
+             PATHS ${FIDES_DIR}/lib/cmake/fides)
 
-find_package(Fides REQUIRED)
 
-message(STATUS "Found Fides")
+message(STATUS "Found Fides at ${FIDES_DIR}")
 set(FIDES_FOUND TRUE)
 
 blt_register_library(NAME fides

@@ -119,27 +119,27 @@ endif()
 # Setup OCCA
 ################################
 if (OCCA_DIR)
-message(STATUS "OCCA")
   include(cmake/thirdparty/SetupOcca.cmake)
-else()
-message(STATUS "NOOOOOOOOOOOOOOOOOOOOOOOO OCCA")
 endif()
 
 ################################
 # Setup Umpire
 ################################
 if (UMPIRE_DIR)
-message(STATUS "Umpire")
   include(cmake/thirdparty/SetupUmpire.cmake)
-else()
-message(STATUS "NOOOOOOOOOOOOOOOOOOOOOOOO UMPIRE")
+endif()
+
+################################
+# Setup ADIOS2
+################################
+if (ADIOS2_DIR)
+  include(cmake/thirdparty/SetupADIOS2.cmake)
 endif()
 
 ################################
 # Setup Fides
 ################################
-if (FIDES_DIR AND VTKM_DIR)
-  include(cmake/thirdparty/SetupADIOS2.cmake)
+if (FIDES_DIR)
   include(cmake/thirdparty/SetupFides.cmake)
 endif()
 
