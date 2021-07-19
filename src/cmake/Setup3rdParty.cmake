@@ -116,10 +116,16 @@ if (DRAY_DIR)
 endif()
 
 ################################
+# Setup ADIOS2
+################################
+if (ADIOS2_DIR)
+  include(cmake/thirdparty/SetupADIOS2.cmake)
+endif()
+
+################################
 # Setup Fides
 ################################
-if (FIDES_DIR AND VTKM_DIR)
-  include(cmake/thirdparty/SetupADIOS2.cmake)
+if (FIDES_DIR)
   include(cmake/thirdparty/SetupFides.cmake)
 endif()
 
