@@ -1353,6 +1353,7 @@ ScalarGradient::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 ScalarGradient::execute()
 {
+  conduit::Node *output = new conduit::Node();
   const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
   conduit::Node &n_window_length = *input<Node>("window_length");
   #if CYCLE_RECORDED
@@ -1417,7 +1418,9 @@ ScalarGradient::execute()
 
   const int entries = history.number_of_children();
   if(entries < 2) {
-     ASCENT_ERROR("ScalarGradient: cannot calculate gradient until the expression has been evaluated at 2 or more times." );        
+    set_output<conduit::Node>(output);
+    return;
+     // ASCENT_ERROR("ScalarGradient: cannot calculate gradient until the expression has been evaluated at 2 or more times." );        
   }
 
   int first_index = -1, current_index = entries - 1;
@@ -1483,7 +1486,6 @@ ScalarGradient::execute()
   // dy / dx
   double gradient = (current_value - first_value) / window_length;
 
-  conduit::Node *output = new conduit::Node();
   (*output)["value"] = gradient;
   (*output)["type"] = "double";
 
