@@ -508,7 +508,6 @@ class Ascent(Package, CudaPackage):
         #######################
         # Adios2
         #######################
-
         cfg.write("# adios2 support\n")
 
         if "+adios2" in spec:
@@ -519,7 +518,6 @@ class Ascent(Package, CudaPackage):
         #######################
         # Fides
         #######################
-
         cfg.write("# Fides support\n")
 
         if "+fides" in spec:
