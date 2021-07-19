@@ -84,6 +84,8 @@ namespace expressions
 
 class Jitable
 {
+protected:
+  static int m_cuda_device_id;
 public:
   Jitable(const int num_domains)
   {
@@ -93,6 +95,10 @@ public:
     }
     arrays.resize(num_domains);
   }
+
+  static void init_occa();
+  static void set_cuda_device(int device_id);
+
 
   void fuse_vars(const Jitable &from);
   bool can_execute() const;

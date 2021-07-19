@@ -69,7 +69,7 @@
 #include <occa/utils/env.hpp>
 #include <stdlib.h>
   #ifdef ASCENT_CUDA_ENABLED
-    #include <occa/modes/cuda/utils.hpp>
+    #include <cuda_runtime.h>
   #endif
 #endif
 
@@ -90,6 +90,8 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
+
+int Jitable::m_cuda_device_id = -1;
 
 namespace detail
 {
@@ -780,15 +782,7 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
   if(!init)
   {
     // running this in a loop segfaults...
-#ifdef ASCENT_CUDA_ENABLED
-    // TODO get the right device_id
-    occa::setDevice({{"mode", "CUDA"}, {"device_id", 0}});
-#elif defined(ASCENT_USE_OPENMP)
-    occa::setDevice({{"mode", "OpenMP"}});
-#else
-    occa::setDevice({{"mode", "Serial"}});
-#endif
-    occa::env::setOccaCacheDir(::ascent::runtime::filters::output_dir(".occa"));
+    init_occa();
     init = true;
   }
   occa::device &device = occa::getDevice();
@@ -1017,6 +1011,31 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 #endif
 }
 
+void Jitable::init_occa()
+{
+#ifdef ASCENT_JIT_ENABLED
+    // running this in a loop segfaults...
+#ifdef ASCENT_CUDA_ENABLED
+  if(m_cuda_device_id == -1)
+  {
+    // the ascent runtime should tell us what to use, otherwise just
+    // get the current device to tell occa
+    cudaGetDevice(&m_cuda_device_id);
+  }
+  occa::setDevice({{"mode", "CUDA"}, {"device_id", m_cuda_device_id}});
+#elif defined(ASCENT_USE_OPENMP)
+  occa::setDevice({{"mode", "OpenMP"}});
+#else
+  occa::setDevice({{"mode", "Serial"}});
+#endif
+  occa::env::setOccaCacheDir(::ascent::runtime::filters::output_dir(".occa"));
+#endif
+}
+
+void Jitable::set_cuda_device(int device_id)
+{
+  m_cuda_device_id = device_id;
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

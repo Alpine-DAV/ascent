@@ -75,6 +75,7 @@
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
+#include <expressions/ascent_derived_jit.hpp>
 #include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_data_logger.hpp>
@@ -215,6 +216,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
         int device_count = vtkh::CUDADeviceCount();
         int rank_device = m_rank % device_count;
         vtkh::SelectCUDADevice(rank_device);
+#endif
+#if defined(ASCENT_JIT_ENABLED)
+        runtime::expressions::Jitable::set_cuda_device(rank_device);
 #endif
     }
 #endif
@@ -774,7 +778,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     // for MPI case, inspect args, if script is passed via file,
     // read contents on root and broadcast to other tasks
     int comm_id = flow::Workspace::default_mpi_comm();
-    MPI_Comm comm = MPI_Comm_f2c(comm_id);
+    // MPI_Comm comm = MPI_Comm_f2c(comm_id);
     // inject helper that provides the mpi comm handle
 
     py_src_final << "# ascent mpi comm helper function" << std::endl
