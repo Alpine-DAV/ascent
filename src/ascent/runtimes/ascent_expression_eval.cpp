@@ -1317,7 +1317,9 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
 
-  // return_val.print();
+  return_val.print();
+  std::cout<<m_data_object.as_node()->to_summary_string()<<"\n";
+
 
   // remove temporary fields, topologies, and coordsets from the dataset
   #warning "How is adding fields to a data supposed to work with derived expressions??"

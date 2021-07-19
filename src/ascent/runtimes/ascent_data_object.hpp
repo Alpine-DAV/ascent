@@ -90,7 +90,6 @@ public:
   void reset(conduit::Node *dataset);
   void reset(std::shared_ptr<conduit::Node> dataset);
   void reset_all();
-  void reset(const Source source);
   bool is_valid() const { return m_source != Source::INVALID;};
   void name(const std::string n);
   std::string name() const;

@@ -191,21 +191,6 @@ void DataObject::reset_all()
 #endif
 }
 
-void DataObject::reset(const Source source)
-{
-  if(source == Source::LOW_BP)
-  {
-    std::shared_ptr<conduit::Node>  low = as_low_order_bp();
-    reset_all();
-    m_source = Source::LOW_BP;
-    m_low_bp = low;
-  }
-  else
-  {
-    ASCENT_ERROR("Not implemented");
-  }
-}
-
 void DataObject::reset(std::shared_ptr<conduit::Node> dataset)
 {
   bool high_order = Transmogrifier::is_high_order(*dataset.get());
