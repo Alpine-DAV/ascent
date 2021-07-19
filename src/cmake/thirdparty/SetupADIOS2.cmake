@@ -55,8 +55,11 @@ endif()
 
 MESSAGE(STATUS "Looking for ADIOS2 using ADIOS2_DIR = ${ADIOS2_DIR}")
 
-set (ADIOS2_DIR ${ADIOS2_DIR}/lib/cmake/adios2)
 find_package(ADIOS2 REQUIRED)
+
+find_package(ADIOS2 REQUIRED
+             NO_DEFAULT_PATH
+             PATHS ${ADIOS2_DIR}/lib/cmake/adios2)
 
 message(STATUS "FOUND ADIOS2 at ${ADIOS2_DIR}")
 
