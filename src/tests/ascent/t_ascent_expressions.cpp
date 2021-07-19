@@ -67,6 +67,9 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
+#define DEBUG false
+#define CYCLE_RECORDED true
+
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -569,7 +572,7 @@ TEST(ascent_expressions, test_history)
   std::string expr;
 
   // we can't change the input object so keep
-  // givin eval new ones
+  // giving eval new ones
   {
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("1", "val");
@@ -641,6 +644,519 @@ TEST(ascent_expressions, test_history)
   res = eval.evaluate(expr);
   EXPECT_EQ(res["value"].to_float64(), 5); // test the first val
   EXPECT_EQ(res["type"].as_string(), "double");
+}
+
+//-----------------------------------------------------------------------------
+//new
+
+
+TEST(ascent_expressions, test_gradient_scalar)
+{
+  Node n;
+  ascent::about(n);
+
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval::reset_cache();
+
+  conduit::Node res;
+  std::string expr;
+
+  // we can't change the input object so keep
+  // giving eval new ones
+  {
+    multi_dom.child(0)["state/cycle"] = 100;
+    multi_dom.child(0)["state/time"] = 2.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("1", "val");
+    res = eval.evaluate("vector(1,2,3)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 200;
+    multi_dom.child(0)["state/time"] = 4.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("2", "val");
+    res = eval.evaluate("vector(9,3,4)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 300;
+    multi_dom.child(0)["state/time"] = 6.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("3", "val");
+    res = eval.evaluate("vector(3,4,0)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 400;
+    multi_dom.child(0)["state/time"] = 8.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("4", "val");
+    res = eval.evaluate("vector(6,4,8)", "vec");
+  }
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  for(const string &expression : {
+      "gradient(val)", 
+      "gradient(val, window_length=1)",
+      #if CYCLE_RECORDED
+        "gradient(val, window_length=1, window_length_unit='index')",
+      #else
+        "gradient(val, window_length=1, window_length_is_number_of_executions=True)",
+      #endif
+      "gradient(val, window_length=2)",
+      "gradient(val, window_length=5)",
+    }) {
+    res = eval.evaluate(expression);
+    #if DEBUG
+      res.print();
+    #endif
+    EXPECT_EQ(res["value"].to_float64(), 1);
+  }
+
+  for(const string &expression : {
+    #if CYCLE_RECORDED
+        "gradient(val, window_length=2, window_length_unit='time')",
+        "gradient(val, window_length=3, window_length_unit='time')",
+        "gradient(val, window_length=4, window_length_unit='time')",
+        "gradient(val, window_length=10, window_length_unit='time')",
+    #else
+        "gradient(val, window_length=2, window_length_is_number_of_executions=False)",
+        "gradient(val, window_length=3, window_length_is_number_of_executions=False)",
+        "gradient(val, window_length=4, window_length_is_number_of_executions=False)",
+        "gradient(val, window_length=10, window_length_is_number_of_executions=False)",
+    #endif
+    }) {
+    res = eval.evaluate(expression);
+    #if DEBUG
+      res.print();
+    #endif
+    EXPECT_EQ(res["value"].to_float64(), .5);
+  }
+
+#if CYCLE_RECORDED
+  for(const string &expression : {
+      "gradient(val, window_length=100, window_length_unit='cycle')",
+      "gradient(val, window_length=150, window_length_unit='cycle')",
+    }) {
+    res = eval.evaluate(expression);
+    #if DEBUG
+      res.print();
+    #endif
+    EXPECT_EQ(res["value"].to_float64(), .01);
+  }
+#endif
+
+  //fix - todo test exceptions
+  // bool threw = false;
+  // try
+  // {
+  //   expr = "history(val, absolute_index = 10)";
+  //   res = eval.evaluate(expr);
+  // }
+  // catch(...)
+  // {
+  //   threw = true;
+  // }
+  // EXPECT_EQ(threw, true);
+
+  // threw = false;
+  // try
+  // {
+  //   expr = "history(vval, 1)";
+  //   res = eval.evaluate(expr);
+  // }
+  // catch(...)
+  // {
+  //   threw = true;
+  // }
+  // EXPECT_EQ(threw, true);
+}
+
+
+
+
+TEST(ascent_expressions, test_gradient_array)
+{
+  Node n;
+  ascent::about(n);
+
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval::reset_cache();
+
+  conduit::Node res;
+  std::string expr;
+
+  // we can't change the input object so keep
+  // giving eval new ones
+  {
+    multi_dom.child(0)["state/cycle"] = 100;
+    multi_dom.child(0)["state/time"] = 2.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("1", "val");
+    res = eval.evaluate("vector(1,2,3)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 200;
+    multi_dom.child(0)["state/time"] = 4.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("2", "val");
+    res = eval.evaluate("vector(9,3,4)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 300;
+    multi_dom.child(0)["state/time"] = 6.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("3", "val");
+    res = eval.evaluate("vector(3,4,0)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 500;
+    multi_dom.child(0)["state/time"] = 10.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("4", "val");
+    res = eval.evaluate("vector(6,4,8)", "vec");
+  }
+
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+  conduit::float64_array result;
+
+  // confirm it works properly
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_index=0, last_absolute_index=2)", 
+      "gradient_range(val, first_relative_index=1, last_relative_index=3)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+  }
+
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_time=2.0, last_absolute_time=6.0)",
+      "gradient_range(val, first_absolute_time=1.0, last_absolute_time=7.0)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
+  }
+
+
+#if CYCLE_RECORDED
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_cycle=100, last_absolute_cycle=300)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[0.01, 0.01]");
+  }
+#endif
+
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_time=4.0, last_absolute_time=10.0)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[0.5, 0.25]");
+  }
+
+  // confirm it works properly if a single element is returned
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_index=1, last_absolute_index=2)", 
+      "gradient_range(val, first_relative_index=1, last_relative_index=2)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "1.0");
+  }
+
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_time=1.0, last_absolute_time=4.0)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "0.5");
+  }
+
+#if CYCLE_RECORDED
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_cycle=200, last_absolute_cycle=300)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "0.01");
+  }
+#endif
+
+  //confirm that it clamps to the end as expected
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_index=1, last_absolute_index=5)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+  }
+
+  //confirm that it clamps to the beginning as expected
+  for(const string &expression : {
+    "gradient_range(val, first_relative_index=1, last_relative_index=6)",
+  }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+  }
+
+  //confirm that it clamps to the beginning and end as expected
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_time=0.0, last_absolute_time=20.0)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5, 0.25]");
+  }
+
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_cycle=0, last_absolute_cycle=500)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[0.01, 0.01, 0.005]");
+  }
+
+  // confirm it behaves properly with other operators that take an array as input
+  for(const string &expression : {
+      "max(gradient_range(val, first_absolute_index=1, last_absolute_index=3))", 
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["value"]["value"].to_float64(), 1);
+  }
+
+  // fix - would it be better to throw an error?
+  //confirm it returns an empty gradient if there is only a single value
+  for(const string &expression : {
+      "gradient_range(val, first_absolute_index=0, last_absolute_index=0)", 
+      "gradient_range(val, first_relative_index=0, last_relative_index=0)",
+      "gradient_range(val, first_absolute_time=1.0, last_absolute_time=3.0)",
+      "gradient_range(val, first_absolute_time=2.0, last_absolute_time=2.0)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "");
+  }
+
+
+
+
+  // for(const string &expression : {
+  //     "gradient(y_values=history_range(val, first_absolute_index=0, last_absolute_index=2), delta_x_values=[1, 'test'])",
+  //     "gradient(y_values=history_range(val, first_absolute_index=0, last_absolute_index=2), delta_x_values='test')",  
+  //     "gradient(y_values=1, delta_x_values=1)",
+  //   }) {
+  //   bool threw = false;
+  //   try
+  //   {
+  //     res = eval.evaluate(expression);
+  //   }
+  //   catch(...) {
+  //     threw = true;
+  //   }
+  //   EXPECT_EQ(threw, true);
+  // }
+}
+
+TEST(ascent_expressions, test_history_range)
+{
+  Node n;
+  ascent::about(n);
+
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+  // ascent normally adds this but we are doing an end around
+  data["state/domain_id"] = 0;
+  Node multi_dom;
+  blueprint::mesh::to_multi_domain(data, multi_dom);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval::reset_cache();
+
+  conduit::Node res;
+  std::string expr;
+
+  // we can't change the input object so keep
+  // giving eval new ones
+  {
+    multi_dom.child(0)["state/cycle"] = 100;
+    multi_dom.child(0)["state/time"] = 1.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("1", "val");
+    res = eval.evaluate("vector(1,2,3)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 200;
+    multi_dom.child(0)["state/time"] = 2.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("2", "val");
+    res = eval.evaluate("vector(9,3,4)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 300;
+    multi_dom.child(0)["state/time"] = 3.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("3", "val");
+    res = eval.evaluate("vector(3,4,0)", "vec");
+  }
+
+  {
+    multi_dom.child(0)["state/cycle"] = 400;
+    multi_dom.child(0)["state/time"] = 4.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("4", "val");
+    res = eval.evaluate("vector(6,4,8)", "vec");
+  }
+
+  conduit::int32_array result;
+  runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  for(const string &expression : {
+      "history_range(val, first_absolute_index=0, last_absolute_index=2)", 
+      "history_range(val, first_relative_index=1, last_relative_index=3)",
+      "history_range(val, first_absolute_time=1.0, last_absolute_time=3.0)",
+      #if CYCLE_RECORDED
+        "history_range(val, first_absolute_cycle=100, last_absolute_cycle=300)",  
+      #endif
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_int32_array();
+    EXPECT_EQ(result.to_json(), "[1, 2, 3]");
+  }
+
+  for(const string &expression : {
+      "history_range(val, first_absolute_index=1, last_absolute_index=2)", 
+      "history_range(val, first_relative_index=1, last_relative_index=2)",
+      "history_range(val, first_absolute_time=2.0, last_absolute_time=3.0)",
+      #if CYCLE_RECORDED
+        "history_range(val, first_absolute_cycle=200, last_absolute_cycle=300)",
+      #endif
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_int32_array();
+    EXPECT_EQ(result.to_json(), "[2, 3]");
+  }
+
+  //confirm that it clamps to the end as expected
+  for(const string &expression : {
+      "history_range(val, first_absolute_index=1, last_absolute_index=5)",
+      "history_range(val, first_absolute_time=2.0, last_absolute_time=5.0)",
+      #if CYCLE_RECORDED
+        "history_range(val, first_absolute_cycle=200, last_absolute_cycle=500)",
+      #endif
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_int32_array();
+    EXPECT_EQ(result.to_json(), "[2, 3, 4]");
+  }
+
+  //confirm that it clamps to the beginning as expected
+  for(const string &expression : {
+    "history_range(val, first_relative_index=1, last_relative_index=6)",
+    "history_range(val, first_absolute_time=0.0, last_absolute_time=3.0)",
+    #if CYCLE_RECORDED
+      "history_range(val, first_absolute_cycle=0, last_absolute_cycle=300)",
+    #endif
+  }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_int32_array();
+    EXPECT_EQ(result.to_json(), "[1, 2, 3]");
+  }
+
+  for(const string &expression : {
+      "max(history_range(val, first_absolute_index=1, last_absolute_index=3))", 
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["value"]["value"].to_float64(), 4);
+  }
+
+  //fix - todo test exceptions
+  // bool threw = false;
+  // try
+  // {
+  //   expr = "history(val, absolute_index = 10)";
+  //   res = eval.evaluate(expr);
+  // }
+  // catch(...)
+  // {
+  //   threw = true;
+  // }
+  // EXPECT_EQ(threw, true);
+
+  // threw = false;
+  // try
+  // {
+  //   expr = "history(vval, 1)";
+  //   res = eval.evaluate(expr);
+  // }
+  // catch(...)
+  // {
+  //   threw = true;
+  // }
+  // EXPECT_EQ(threw, true);
 }
 
 //-----------------------------------------------------------------------------

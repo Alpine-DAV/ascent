@@ -74,6 +74,9 @@ namespace runtime
 namespace expressions
 {
 
+//new
+conduit::Node array_gradient(const conduit::Node &y_values, const conduit::Node &dx_values, bool is_list = false);
+
 conduit::Node array_max(const conduit::Node &values);
 
 conduit::Node array_min(const conduit::Node &values);
