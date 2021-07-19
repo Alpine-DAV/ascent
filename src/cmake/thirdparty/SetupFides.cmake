@@ -60,18 +60,22 @@ if(NOT ADIOS2_DIR)
     MESSAGE(FATAL_ERROR "Fides support needs ADIOS2 (ADIOS2_DIR not set)")
 endif()
 
+MESSAGE(STATUS "Looking for FIDES using FIDES_DIR = ${FIDES_DIR}")
+
 #The Fides cmake is not setting these for some reason.
 #So, we set them explicitly for now.
-set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/fides)
+#set(Fides_DIR ${FIDES_DIR})
+
+set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/)
 set(FIDES_LIB_DIR ${FIDES_DIR}/lib)
 set(FIDES_LIBRARIES fides)
 
 find_package(Fides REQUIRED
              NO_DEFAULT_PATH
-             PATHS {FIDES_DIR}/lib/cmake/fides)
+             PATHS ${FIDES_DIR}/lib/cmake/fides)
 
 
-message(STATUS "Found Fides")
+message(STATUS "Found Fides at ${FIDES_DIR}")
 set(FIDES_FOUND TRUE)
 
 blt_register_library(NAME fides
