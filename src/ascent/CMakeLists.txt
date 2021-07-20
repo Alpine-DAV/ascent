@@ -360,7 +360,7 @@ endif()
 if(MPI_FOUND)
 
     # req'd libs
-    set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
+    set(ascent_mpi_thirdparty_libs mpi Threads::Threads conduit_relay_mpi)
 
     if (ENABLE_BABELFLOW)
 	    if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
