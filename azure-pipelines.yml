@@ -9,7 +9,7 @@
 #####
 variables:
 
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-07-19-sha3f283e
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-07-19-shaebe45c
   ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-05-19-sha1ca78d
   ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-07-19-sha6688f8
 
