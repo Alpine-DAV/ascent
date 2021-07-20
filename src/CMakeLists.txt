@@ -43,17 +43,6 @@
 ###############################################################################
 
 ################################
-# cmake policy selection
-################################
-# avoid warnings for project commands w/o VERSION
-cmake_policy(SET CMP0048 NEW)
-
-# allow find_packages to use ZZZ_ROOT vars
-if(POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-
-################################
 # Ascent
 ################################
 
@@ -112,6 +101,13 @@ if(POLICY CMP0104)
     cmake_policy(SET CMP0104 OLD)
 endif()
 
+# avoid warnings for project commands w/o VERSION
+cmake_policy(SET CMP0048 NEW)
+
+# allow find_packages to use ZZZ_ROOT vars
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 ################################
 # Populate the cmake gui
