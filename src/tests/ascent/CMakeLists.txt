@@ -111,6 +111,11 @@ if(VTKM_FOUND)
                            t_ascent_mpi_relay_extract)
 endif()
 
+# occa dependent tests
+if(OCCA_FOUND)
+   list(APPEND BASIC_TESTS t_ascent_derived)
+endif()
+
 # adios tests
 if(FIDES_FOUND)
    list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
