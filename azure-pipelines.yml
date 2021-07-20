@@ -192,6 +192,8 @@ stages:
            if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
            if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
            if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
+           if [ $ENABLE_OCCA = 'OFF' ];   then export CMAKE_OPTS="${CMAKE_OPTS} -DOCCA_DIR=IGNORE"; fi
+           if [ $ENABLE_UMPIRE = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=IGNORE"; fi
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            echo ${CMAKE_OPTS}
            # configure
