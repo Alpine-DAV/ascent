@@ -71,6 +71,10 @@ static conduit::Node* low_order(conduit::Node &dataset);
 
 static bool is_high_order(const conduit::Node &doms);
 
+static bool is_poly(const conduit::Node &n);
+
+static conduit::Node* to_poly(conduit::Node &n);
+
 };
 
 //-----------------------------------------------------------------------------

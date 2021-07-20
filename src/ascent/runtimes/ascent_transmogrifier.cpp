@@ -107,6 +107,40 @@ conduit::Node* Transmogrifier::low_order(conduit::Node &dataset)
 #endif
 }
 
+bool Transmogrifier::is_poly(const conduit::Node &n)
+{
+  if (! n.has_child("topologies"))
+  {
+    return false;
+  }
+
+  conduit::NodeConstIterator itr = n["topologies"].children();
+  while (itr.has_next())
+  {
+    const conduit::Node &child = itr.next();
+    if (child.has_child("elements/shape"))
+    {
+      if (child["elements/shape"].as_string() == "polyhedral" || 
+          child["elements/shape"].as_string() == "polygonal")
+      {
+        return true;
+      }
+      if (child["subelements/shape"].as_string() == "polyhedral" || 
+          child["subelements/shape"].as_string() == "polygonal")
+      {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
+{
+  return &n;
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
