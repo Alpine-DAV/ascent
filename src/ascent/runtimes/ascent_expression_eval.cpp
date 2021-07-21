@@ -1352,6 +1352,8 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     }
   }
 
+  //std::cout<<m_data_object.as_node()->to_summary_string()<<"\n";
+
   // add the sim time
   conduit::Node n_time = get_state_var(*m_data_object.as_node().get(), "time");
   double time = 0;
@@ -1476,6 +1478,11 @@ void ExpressionEval::get_last(conduit::Node &data)
       data[cycle.path()].set_external(cycle);
     }
   }
+}
+//-----------------------------------------------------------------------------
+DataObject& ExpressionEval::data_object()
+{
+  return m_data_object;
 }
 //-----------------------------------------------------------------------------
 };

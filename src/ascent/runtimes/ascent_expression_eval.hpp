@@ -108,6 +108,7 @@ protected:
 public:
   ExpressionEval(DataObject &dataset);
   ExpressionEval(conduit::Node *dataset);
+  DataObject& data_object();
 
   static const conduit::Node &get_cache();
   static void get_last(conduit::Node &data);

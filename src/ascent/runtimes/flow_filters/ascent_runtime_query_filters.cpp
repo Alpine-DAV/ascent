@@ -231,10 +231,8 @@ FilterQuery::execute()
     runtime::expressions::ExpressionEval eval(*data_object);
     conduit::Node res = eval.evaluate(expression, name);
 
-    // Two things to consider:
-    // 1) if the end result is a derived field the for sure we want to make
-    //    it available.
-    // 2)
+    // if the end result is a derived field the for sure we want to make
+    // its available.
     bool derived = false;
     if(res.has_path("type"))
     {
@@ -244,9 +242,8 @@ FilterQuery::execute()
       }
     }
 
-
     // Since queries might add new fields, the blueprint needs to become the source
-    if(data_object->source() != DataObject::Source::LOW_BP)
+    if(derived && (data_object->source() != DataObject::Source::LOW_BP))
     {
       // for now always copy the bp if its not the original data source
       // There is one main reasons for this:
@@ -256,7 +253,7 @@ FilterQuery::execute()
       //   that it does not go out of scope
       //   TODO: We could be smarter than this. For example, we could provide a way to map a
       //   new field, if created, back on to the original source (e.g., vtkm)
-      conduit::Node *new_source = new conduit::Node(*data_object->as_low_order_bp());
+      conduit::Node *new_source = new conduit::Node(*eval.data_object().as_low_order_bp());
       DataObject *new_do = new DataObject(new_source);
       set_output<DataObject>(new_do);
     }
