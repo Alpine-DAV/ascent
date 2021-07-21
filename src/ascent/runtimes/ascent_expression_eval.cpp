@@ -992,6 +992,17 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
+  conduit::Node &field_pow_sig = (*functions)["pow"].append();
+  field_pow_sig["return_type"] = "jitable";
+  field_pow_sig["filter_name"] = "field_pow";
+  field_pow_sig["args/arg1/type"] = "field";
+  field_pow_sig["args/arg1/type"] = "scalar";
+  field_pow_sig["description"] =
+      "Return a derived field that is the pow(field,exponent) of a field.";
+  field_pow_sig["jitable"];
+
+  //---------------------------------------------------------------------------
+
   conduit::Node &field_abs_sig = (*functions)["abs"].append();
   field_abs_sig["return_type"] = "jitable";
   field_abs_sig["filter_name"] = "field_abs";
@@ -1317,12 +1328,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
 
-  return_val.print();
-  std::cout<<m_data_object.as_node()->to_summary_string()<<"\n";
+  //return_val.print();
 
 
   // remove temporary fields, topologies, and coordsets from the dataset
-  #warning "How is adding fields to a data supposed to work with derived expressions??"
   #warning "Need a way to delete the intermediate results during execution"
   conduit::Node *dataset = m_data_object.as_node().get();
   const int num_domains = dataset->number_of_children();

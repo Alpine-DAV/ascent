@@ -145,6 +145,8 @@ JitableFusion::binary_op()
                                 rhs_expr,
                                 filter_name,
                                 lhs_kernel.num_components);
+
+          out_kernel.num_components = lhs_kernel.num_components;
         }
         else if(op_str == "-")
         {
@@ -153,6 +155,8 @@ JitableFusion::binary_op()
                                      rhs_expr,
                                      filter_name,
                                      lhs_kernel.num_components);
+
+          out_kernel.num_components = lhs_kernel.num_components;
         }
         else if(op_str == "*")
         {
@@ -161,13 +165,14 @@ JitableFusion::binary_op()
                                  rhs_expr,
                                  filter_name,
                                  lhs_kernel.num_components);
+
+          out_kernel.num_components = 1;
         }
         else
         {
           error = true;
         }
         out_kernel.expr = filter_name;
-        out_kernel.num_components = lhs_kernel.num_components;
       }
       else
       {

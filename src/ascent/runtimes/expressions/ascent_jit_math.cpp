@@ -180,12 +180,11 @@ MathCode::dot_product(InsertionOrderedSet<std::string> &code,
 {
   if(declare)
   {
-    code.insert("double " + res_name + "[" + std::to_string(num_components) +
-                "];\n");
+    code.insert("double " + res_name + " = 0.0;\n");
   }
   for(int i = 0; i < num_components; ++i)
   {
-    code.insert(res_name + "[" + std::to_string(i) + "] = " + a + "[" +
+    code.insert(res_name + " += " + a + "[" +
                 std::to_string(i) + "] * " + b + "[" + std::to_string(i) +
                 "];\n");
   }

@@ -231,13 +231,27 @@ FilterQuery::execute()
     runtime::expressions::ExpressionEval eval(*data_object);
     conduit::Node res = eval.evaluate(expression, name);
 
+    // Two things to consider:
+    // 1) if the end result is a derived field the for sure we want to make
+    //    it available.
+    // 2)
+    bool derived = false;
+    if(res.has_path("type"))
+    {
+      if(res["type"].as_string() == "field")
+      {
+        derived = true;
+      }
+    }
+
+
     // Since queries might add new fields, the blueprint needs to become the source
     if(data_object->source() != DataObject::Source::LOW_BP)
     {
       // for now always copy the bp if its not the original data source
       // There is one main reasons for this:
       //   the data will likely be passed to the vtkh ghost stripper, which could create
-      //   a new data sets with memopry owned by vtkm. Since conduit can't take ownership of
+      //   a new data sets with memory owned by vtkm. Since conduit can't take ownership of
       //   that memory, this data could could go out of scope and that would be bad. To ensure
       //   that it does not go out of scope
       //   TODO: We could be smarter than this. For example, we could provide a way to map a

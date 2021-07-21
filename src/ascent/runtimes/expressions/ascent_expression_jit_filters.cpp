@@ -487,6 +487,7 @@ JitFilter::execute()
         {"field_field_max", "max"},
         {"field_sin", "sin"},
         {"field_sqrt", "sqrt"},
+        {"field_sqrt", "pow"},
         {"field_abs", "abs"}};
     const auto builtin_func_it = builtin_funcs.find(func);
     // fuse kernels
@@ -591,11 +592,15 @@ JitFilter::execute()
       field_name = filter_name;
       (*remove)["fields/" + filter_name];
     }
+
     out_jitable->execute(*dataset, field_name);
+
     Node *output = new conduit::Node();
+
     (*output)["value"] = field_name;
     (*output)["type"] = "field";
     set_output<conduit::Node>(output);
+
     delete out_jitable;
   }
   else
