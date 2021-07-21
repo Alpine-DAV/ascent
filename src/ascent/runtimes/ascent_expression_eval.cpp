@@ -1165,7 +1165,7 @@ initialize_functions()
   //---------------------------------------------------------------------------
 
   count_params();
-  functions->save("functions.json", "json");
+  //functions->save("functions.json", "json");
 }
 
 void

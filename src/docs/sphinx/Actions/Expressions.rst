@@ -1,5 +1,12 @@
+.. _Ascent Expressions Documentation:
+
 Ascent Expressions Documentation
 ================================
+
+.. note:: 
+    ``scalar`` is an alias type for either ``int`` or ``double``.
+
+.. _Ascent Functions Documentation:
 
 Functions
 ---------
@@ -15,7 +22,7 @@ Functions
 
 .. function:: avg(arg1)
 
-    Return the field average of a mesh variable.
+    Return the field average of a field.
 
     :type arg1: field
     :param arg1:
@@ -24,7 +31,7 @@ Functions
 
 .. function:: field_nan_count(arg1)
 
-    Return the number  of NaNs in a mesh variable.
+    Return the number  of NaNs in a field.
 
     :type arg1: field
     :param arg1:
@@ -33,7 +40,7 @@ Functions
 
 .. function:: field_inf_count(arg1)
 
-    Return the number  of -inf and +inf in a mesh variable.
+    Return the number  of -inf and +inf in a field.
 
     :type arg1: field
     :param arg1:
@@ -69,6 +76,17 @@ Functions
     :rtype: double
 
 
+.. function:: max(arg1, arg2)
+
+    Return a derived field that is the max of two fields.
+
+    :type arg1: field
+    :param arg1:
+    :type arg2: scalar
+    :param arg2:
+    :rtype: jitable
+
+
 .. function:: min(arg1)
 
     Return the minimum value from the meshvar. Its position is also stored and is accessible via the `position` function.
@@ -96,6 +114,17 @@ Functions
     :type arg1: array
     :param arg1:
     :rtype: double
+
+
+.. function:: min(arg1, arg2)
+
+    Return a derived field that is the min of two fields.
+
+    :type arg1: field
+    :param arg1:
+    :type arg2: field
+    :param arg2:
+    :rtype: jitable
 
 
 .. function:: sum(arg1)
@@ -136,6 +165,19 @@ Functions
     :rtype: vector
 
 
+.. function:: vector(arg1, arg2, arg3)
+
+    Return a vector field on the mesh.
+
+    :type arg1: field
+    :param arg1:
+    :type arg2: field
+    :param arg2:
+    :type arg3: field
+    :param arg3:
+    :rtype: jitable
+
+
 .. function:: magnitude(arg1)
 
     Return the magnitude of the input vector.
@@ -145,6 +187,15 @@ Functions
     :rtype: double
 
 
+.. function:: magnitude(vector)
+
+    Return a derived field that is the magnitude of a vector field.
+
+    :type vector: field
+    :param vector:
+    :rtype: jitable
+
+
 .. function:: abs(arg1)
 
     Return the absolute value of the input.
@@ -152,6 +203,15 @@ Functions
     :type arg1: scalar
     :param arg1:
     :rtype: scalar
+
+
+.. function:: abs(arg1)
+
+    Return a derived field that is the absolute value of a field.
+
+    :type arg1: field
+    :param arg1:
+    :rtype: jitable
 
 
 .. function:: exp(arg1)
@@ -174,6 +234,15 @@ Functions
     :rtype: double
 
 
+.. function:: pow(arg1)
+
+    Return a derived field that is the pow(field,exponent) of a field.
+
+    :type arg1: scalar
+    :param arg1:
+    :rtype: jitable
+
+
 .. function:: log(arg1)
 
     Returns the natural logarithm of the argument
@@ -185,7 +254,7 @@ Functions
 
 .. function:: histogram(arg1, [num_bins], [min_val], [max_val])
 
-    Return a histogram of the mesh variable. Return a histogram of the mesh variable.
+    Return a histogram of the field.
 
     :type arg1: field
     :param arg1:
@@ -273,13 +342,24 @@ Functions
     :rtype: bin
 
 
-.. function:: field(arg1)
+.. function:: field(field_name, [component])
 
     Return a mesh field given a its name.
 
+    :type field_name: string
+    :param field_name:
+    :type component: string
+    :param component: Used to specify a single component if the field is a vector field.
+    :rtype: field
+
+
+.. function:: topo(arg1)
+
+    Return a mesh topology given a its name.
+
     :type arg1: string
     :param arg1:
-    :rtype: field
+    :rtype: topo
 
 
 .. function:: bounds([topology])
@@ -349,12 +429,12 @@ Functions
     :type q: double
     :param q: Quantile between 0 and 1 inclusive.
     :type interpolation: string
-    :param interpolation: Specifies the interpolation   method to use when the quantile lies between two data points ``i < j``:
+    :param interpolation: Specifies the interpolation   method to use when the quantile lies between two data points ``i < j``: 
 
-       - linear (default): ``i + (j - i) * fraction``, where fraction is the   fractional part of the index surrounded by ``i`` and ``j``.
-       - lower: ``i``.
-       - higher: ``j``.
-       - nearest: ``i`` or ``j``, whichever is nearest.
+       - linear (default): ``i + (j - i) * fraction``, where fraction is the   fractional part of the index surrounded by ``i`` and ``j``. 
+       - lower: ``i``. 
+       - higher: ``j``. 
+       - nearest: ``i`` or ``j``, whichever is nearest. 
        - midpoint: ``(i + j) / 2``
     :rtype: double
 
@@ -378,6 +458,25 @@ Functions
     :rtype: axis
 
 
+.. function:: axis(var, [bins], [min_val], [max_val], [num_bins], [clamp])
+
+    Same as the above function except that ``reduction_var`` should be one of the strings ``'x', 'y', 'z'``
+
+    :type var: string
+    :param var: One of the strings ``'x', 'y', 'z'`` corresponding to a spacial coordinate.
+    :type bins: list
+    :param bins:
+    :type min_val: scalar
+    :param min_val:
+    :type max_val: scalar
+    :param max_val:
+    :type num_bins: int
+    :param num_bins:
+    :type clamp: bool
+    :param clamp:
+    :rtype: axis
+
+
 .. function:: binning(reduction_var, reduction_op, bin_axes, [empty_bin_val], [component])
 
     Returns a multidimensional data binning.
@@ -385,15 +484,15 @@ Functions
     :type reduction_var: string
     :param reduction_var: The variable being reduced. Either the name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``.
     :type reduction_op: string
-    :param reduction_op: The reduction operator to use when   putting values in bins. Available reductions are:
+    :param reduction_op: The reduction operator to use when   putting values in bins. Available reductions are: 
 
-       - min: minimum value in a bin
-       - max: maximum value in a bin
-       - sum: sum of values in a bin
-       - avg: average of values in a bin
-       - pdf: probability distribution function
-       - std: standard deviation of values in a bin
-       - var: variance of values in a bin
+       - min: minimum value in a bin 
+       - max: maximum value in a bin 
+       - sum: sum of values in a bin 
+       - avg: average of values in a bin 
+       - pdf: probability distribution function 
+       - std: standard deviation of values in a bin 
+       - var: variance of values in a bin 
        - rms: root mean square of values in a bin
     :type bin_axes: list
     :param bin_axes: List of Axis objects which define the bin axes.
@@ -403,6 +502,131 @@ Functions
     :param component: the component of a vector field to use for the reduction. Example 'x' for a field defined as 'velocity/x'
     :rtype: binning
 
+
+.. function:: paint_binning(binning, [name], [default_val], [topo], [assoc])
+
+    Paints back the bin values onto an existing mesh by binning the elements of the mesh and creating a new field there the value at each element is the value in the bin it falls into.
+
+    :type binning: binning
+    :param binning: The values in ``binning`` are used to generate the new field.
+    :type name: string
+    :param name: The name of the new field to be generated. If not specified, a name is automatically generated and the field is treated as a temporary and removed from the dataset when the expression is done executing.
+    :type default_val: scalar
+    :param default_val: The value given to elements which do not fall into any of the bins. Defaults to ``0``.
+    :type topo: topo
+    :param topo:  The topology to paint the bin values back onto. Defaults to the topology associated with the bin axes. This topology must have all the fields used for the axes of ``binning``. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``. Additionally, it must be specified in this case since there is not enough info to infer the topology assuming there are multiple topologies in the dataset.
+    :type assoc: topo
+    :param assoc: Defaults to the association infered from the bin axes and and reduction variable. The association of the resultant field. This topology must have all the fields used for the axes of ``binning``. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``.
+    :rtype: field
+
+
+.. function:: binning_mesh(binning, [name])
+
+    A binning with 3 or fewer dimensions will be output as a new element associated field on a new topology on the dataset. This is useful for directly visualizing the binning.
+
+    :type binning: binning
+    :param binning: The values in ``binning`` are used to generate the new field.
+    :type name: string
+    :param name: The name of the new field to be generated, the corresponding topology topology and coordinate sets will be named '``name``_topo' and '``name``_coords' respectively. If not specified, a name is automatically generated and the field is treated as a temporary and removed from the dataset when the expression is done executing.
+    :rtype: field
+
+
+.. function:: sin(arg1)
+
+    Return a derived field that is the sin of a field.
+
+    :type arg1: field
+    :param arg1:
+    :rtype: jitable
+
+
+.. function:: sqrt(arg1)
+
+    Return a derived field that is the square root value of a field.
+
+    :type arg1: field
+    :param arg1:
+    :rtype: jitable
+
+
+.. function:: gradient(field)
+
+    Return a derived field that is the gradient of a field.
+
+    :type field: field
+    :param field:
+    :rtype: jitable
+
+
+.. function:: curl(field)
+
+    Return a derived field that is the curl of a vector field.
+
+    :type field: field
+    :param field:
+    :rtype: jitable
+
+
+.. function:: derived_field(arg1, [topo], [assoc])
+
+    Cast a scalar to a derived field (type `jitable`).
+
+    :type arg1: scalar
+    :param arg1: The scalar to be cast to a derived field.
+    :type topo: string
+    :param topo: The topology to put the derived field onto. The language tries to infer this if not specified.
+    :type assoc: string
+    :param assoc: The association of the derived field. The language tries to infer this if not specified.
+    :rtype: jitable
+
+
+.. function:: derived_field(arg1, [topo], [assoc])
+
+    Used to explicitly specify the topology and association of a derived field (e.g. in case it cannot be inferred or needs to be changed).
+
+    :type arg1: field
+    :param arg1: The scalar to be cast to a derived field.
+    :type topo: string
+    :param topo: The topology to put the derived field onto. The language tries to infer this if not specified.
+    :type assoc: string
+    :param assoc: The association of the derived field. The language tries to infer this if not specified.
+    :rtype: jitable
+
+
+.. function:: binning_value(binning, [default_val], [topo], [assoc])
+
+    Get the value of a vertex or cell in a given binning. In other words, bin the cell and return the value found in that bin of ``binning``.
+
+    :type binning: binning
+    :param binning: The ``binning`` to lookup values in.
+    :type default_val: scalar
+    :param default_val: The value given to elements which do not fall into any of the bins. Defaults to ``0``.
+    :type topo: topo
+    :param topo: The topology to bin. Defaults to the topology associated with the bin axes. This topology must have all the fields used for the axes of ``binning``. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``.
+    :type assoc: topo
+    :param assoc: The association of the resultant field. Defaults to the association infered from the bin axes and and reduction variable. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``.
+    :rtype: jitable
+
+
+.. function:: rand()
+
+    Return a random number between 0 and 1.
+
+    :rtype: jitable
+
+
+.. function:: recenter(field, [mode])
+
+    Recenter a field from vertex association to element association or vice versa.
+
+    :type field: field
+    :param field:
+    :type mode: string
+    :param mode: One of ``'toggle', 'vertex', 'element'``. Defaults to ``'toggle'``.
+    :rtype: jitable
+
+
+.. _Ascent Objects Documentation:
 
 Objects
 -------
@@ -427,6 +651,48 @@ Objects
     :param value:
     :type position: vector
     :param position:
+
+
+.. attribute:: topo
+
+    :type cell: cell
+    :param cell: Holds ``jitable`` cell attributes.
+    :type vertex: vertex
+    :param vertex: Holds ``jitable`` vertex attributes.
+
+
+.. attribute:: cell
+
+    :type x: jitable
+    :param x: Cell x-coordinate.
+    :type y: jitable
+    :param y: Cell y-coordinate.
+    :type z: jitable
+    :param z: Cell z-coordinate.
+    :type dx: jitable
+    :param dx: Cell dx, only defined for rectilinear topologies.
+    :type dy: jitable
+    :param dy: Cell dy, only defined for rectilinear topologies.
+    :type dz: jitable
+    :param dz: Cell dz, only defined for rectilinear topologies.
+    :type id: jitable
+    :param id: Domain cell id.
+    :type volume: jitable
+    :param volume: Cell volume, only defined for 3D topologies
+    :type area: jitable
+    :param area: Cell area, only defined for 2D topologies
+
+
+.. attribute:: vertex
+
+    :type x: jitable
+    :param x: Vertex x-coordinate.
+    :type y: jitable
+    :param y: Vertex y-coordinate.
+    :type z: jitable
+    :param z: Vertex z-coordinate.
+    :type id: jitable
+    :param id: Domain vertex id.
 
 
 .. attribute:: aabb
@@ -457,5 +723,25 @@ Objects
     :param center:
     :type value: double
     :param value:
+
+
+.. attribute:: jitable
+
+    :type x: jitable
+    :param x:
+    :type y: jitable
+    :param y:
+    :type z: jitable
+    :param z:
+
+
+.. attribute:: field
+
+    :type x: jitable
+    :param x:
+    :type y: jitable
+    :param y:
+    :type z: jitable
+    :param z:
 
 

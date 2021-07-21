@@ -1,4 +1,5 @@
 #include "ascent_blueprint_topologies.hpp"
+#include <array>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
