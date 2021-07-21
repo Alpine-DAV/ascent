@@ -888,7 +888,7 @@ GetArea(vtkh::DataSet &vtkhData)
 
       //combine all domain triangles
       local_areas.insert(local_areas.end(), tmp_areas.begin(), tmp_areas.end());
-      for(std::vector<double>::iterator it = local_areas.begin(); it != local_areas.end(); it++)
+      for(std::vector<double>::iterator it = tmp_areas.begin(); it != tmp_areas.end(); it++)
         total_area += *it;
     }
   }
