@@ -182,6 +182,7 @@ TEST(ascent_expressions, derived_simple)
   EXPECT_NEAR(manual, builtin, 1e-8);
 }
 
+#endif
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, derived_expressions)
 {
@@ -391,7 +392,6 @@ TEST(ascent_expressions, derived_expressions)
   }
 }
 //-----------------------------------------------------------------------------
-#endif
 
 TEST(ascent_expressions, braid_sample)
 {
