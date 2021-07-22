@@ -8,9 +8,9 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-06-22-sha1bbf91
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-07-19-sha3f283e
   ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-05-19-sha1ca78d
-  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-05-19-sha1ca78d
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-07-19-sha6688f8
 
 
 # only build merge target pr to develop
@@ -62,6 +62,8 @@ stages:
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
         ubuntu_18_shared_py36_cxx11:
           containerImage: ${{ variables.ubuntu_18_tag }}
@@ -71,6 +73,8 @@ stages:
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
         ubuntu_18_shared_py36_cxx11_bflow:
           containerImage: ${{ variables.ubuntu_18_tag }}
@@ -80,6 +84,19 @@ stages:
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: ON
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py36_cxx11_fides:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: ON
+          ENABLE_FIDES: ON
           BLT_CXX_STD: c++11
         ubuntu_18_shared_py36_cxx14:
           containerImage: ${{ variables.ubuntu_18_tag }}
@@ -89,6 +106,8 @@ stages:
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++14
         ubuntu_20_10_shared_py36_cxx11:
           containerImage: ${{ variables.ubuntu_20_10_tag }}
@@ -98,6 +117,8 @@ stages:
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
     container: $[ variables['containerImage'] ]
 
@@ -139,10 +160,12 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
            # extra settings
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
-           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
-           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
+           if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            echo ${CMAKE_OPTS}
            # configure
