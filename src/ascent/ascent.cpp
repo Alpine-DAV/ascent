@@ -704,6 +704,11 @@ about(conduit::Node &n)
 #else
     n["runtimes/ascent/dray/status"] = "disabled";
 #endif
+#if defined(ASCENT_JIT_ENABLED)
+    n["runtimes/ascent/jit/status"] = "enabled";
+#else
+    n["runtimes/ascent/jit/status"] = "disabled";
+#endif
 #if defined(ASCENT_VTKH_ENABLED)
     // call this vtkm so people don't have to know
     // about vtkh

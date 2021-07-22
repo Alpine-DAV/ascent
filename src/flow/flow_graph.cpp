@@ -640,9 +640,9 @@ Graph::to_dot(std::ostream &os,
     {
         const Node &f= itr.next();
         std::string f_name = itr.name();
-        os << "  "
+        os << "  \""
            << f_name
-           << " [label=\"" << f_name
+           << "\" [label=\"" << f_name
            << "(" << f["type_name"].as_string() << ")"
            << "\"];" << eol;
     }
@@ -652,11 +652,11 @@ Graph::to_dot(std::ostream &os,
     while(itr.has_next())
     {
         const Node &c= itr.next();
-        os << "  "
+        os << "  \""
            << c["src"].as_string()
-           << " -> "
+           << "\" -> \""
            << c["dest"].as_string()
-           << "[ label=\"" << c["port"].as_string() << "\" ]"
+           << "\"[ label=\"" << c["port"].as_string() << "\" ]"
            << ";"
            << eol;
     }

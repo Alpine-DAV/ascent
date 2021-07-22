@@ -63,7 +63,7 @@
 /// See conduit::utils docs for details.
 ///
 //-----------------------------------------------------------------------------
-#define ASCENT_INFO( msg ) CONDUIT_INFO( msg );
+#define ASCENT_INFO( msg ) std::cout << msg;
 
 //-----------------------------------------------------------------------------
 //

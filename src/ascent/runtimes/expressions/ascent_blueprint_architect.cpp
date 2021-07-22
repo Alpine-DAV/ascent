@@ -2546,6 +2546,56 @@ std::set<std::string> topology_names(const conduit::Node &dataset)
 
   return topos;
 }
+conduit::Node
+final_topo_and_assoc(const conduit::Node &dataset,
+                     const conduit::Node &bin_axes,
+                     const std::string &topo_name,
+                     const std::string &assoc_str)
+{
+  std::vector<std::string> axis_names = bin_axes.child_names();
+
+  bool all_xyz = true;
+  for(const std::string &axis_name : axis_names)
+  {
+    all_xyz &= is_xyz(axis_name);
+  }
+  std::string new_topo_name;
+  std::string new_assoc_str;
+  if(all_xyz)
+  {
+    new_topo_name = topo_name;
+    new_assoc_str = assoc_str;
+  }
+  else
+  {
+    const conduit::Node &topo_and_assoc =
+        global_topo_and_assoc(dataset, axis_names);
+    new_topo_name = topo_and_assoc["topo_name"].as_string();
+    new_assoc_str = topo_and_assoc["assoc_str"].as_string();
+    if(!topo_name.empty() && topo_name != new_topo_name)
+    {
+      ASCENT_ERROR(
+          "The specified topology '"
+          << topo_name
+          << "' does not have the required fields specified in the bin axes: "
+          << bin_axes.to_yaml() << "\n Did you mean to use '" << new_topo_name
+          << "'?");
+    }
+    if(!assoc_str.empty() && assoc_str != new_assoc_str)
+    {
+      ASCENT_ERROR(
+          "The specified association '"
+          << assoc_str
+          << "' conflicts with the association of the fields of the bin axes:"
+          << bin_axes.to_yaml() << ". Did you mean to use '" << new_assoc_str
+          << "'?");
+    }
+  }
+  conduit::Node res;
+  res["topo_name"] = new_topo_name;
+  res["assoc_str"] = new_assoc_str;
+  return res;
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

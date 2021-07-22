@@ -163,6 +163,12 @@ void paint_nestsets(const std::string nestset_name,
                     const std::string topo_name,
                     conduit::Node &dom,
                     conduit::Node &field); // field to paint on
+
+conduit::Node
+final_topo_and_assoc(const conduit::Node &dataset,
+                     const conduit::Node &bin_axes,
+                     const std::string &topo_name,
+                     const std::string &assoc_str);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

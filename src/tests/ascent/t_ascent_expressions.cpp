@@ -686,8 +686,8 @@ TEST(ascent_expressions, if_expressions)
   }
   EXPECT_EQ(threw, true);
 }
-
 //-----------------------------------------------------------------------------
+
 TEST(ascent_binning, binning_basic_meshes)
 {
   // the vtkm runtime is currently our only rendering runtime

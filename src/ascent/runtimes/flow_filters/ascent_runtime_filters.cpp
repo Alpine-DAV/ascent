@@ -122,6 +122,7 @@ register_builtin()
 
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
+    AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
 
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
 
