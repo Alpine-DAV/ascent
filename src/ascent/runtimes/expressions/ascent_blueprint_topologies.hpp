@@ -5,6 +5,7 @@
 #include <conduit.hpp>
 #include <memory>
 #include <unordered_set>
+#include <array>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
