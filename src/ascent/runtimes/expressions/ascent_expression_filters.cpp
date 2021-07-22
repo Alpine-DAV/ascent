@@ -1946,7 +1946,7 @@ Axis::execute()
   const conduit::Node *n_max = input<Node>("max_val");
   const conduit::Node *n_num_bins = input<Node>("num_bins");
   // rectilinear binning
-  const conduit::Node *n_bins_list = input<Node>("bins");
+  const conduit::Node *n_bins_list_obj = input<Node>("bins");
   // clamp
   const conduit::Node *n_clamp = input<conduit::Node>("clamp");
 
@@ -1981,9 +1981,9 @@ Axis::execute()
   }
 
   conduit::Node *output;
-
-  if(!n_bins_list->dtype().is_empty())
+  if(!n_bins_list_obj->dtype().is_empty())
   {
+    const conduit::Node &n_bins_list = (*n_bins_list_obj)["value"];
     // ensure none of the uniform binning arguments are passed
     if(!n_min->dtype().is_empty() || !n_max->dtype().is_empty() ||
        !n_num_bins->dtype().is_empty())
@@ -1992,7 +1992,7 @@ Axis::execute()
                    "binning, not both.");
     }
 
-    int bins_len = n_bins_list->number_of_children();
+    int bins_len = n_bins_list.number_of_children();
 
     if(bins_len < 2)
     {
@@ -2006,7 +2006,7 @@ Axis::execute()
 
     for(int i = 0; i < bins_len; ++i)
     {
-      const conduit::Node &bin = n_bins_list->child(i);
+      const conduit::Node &bin = n_bins_list.child(i);
       if(!detail::is_scalar(bin["type"].as_string()))
       {
         delete output;
@@ -2240,11 +2240,21 @@ void binning_interface(const std::string &reduction_var,
     component = n_component["value"].as_string();
   }
 
+  if(!n_axis_list.has_path("type"))
+  {
+    ASCENT_ERROR("Binning: axis list missing object type.");
+  }
+  std::string obj_type = n_axis_list["type"].as_string();
+  if(obj_type != "list")
+  {
+    ASCENT_ERROR("Binning: axis list is not type 'list'."
+                  <<" type is '"<<obj_type<<"'");
+  }
   // verify n_axes_list and put the values in n_output_axes
-  int num_axes = n_axis_list.number_of_children();
+  int num_axes = n_axis_list["value"].number_of_children();
   for(int i = 0; i < num_axes; ++i)
   {
-    const conduit::Node &axis = n_axis_list.child(i);
+    const conduit::Node &axis = n_axis_list["value"].child(i);
     if(axis["type"].as_string() != "axis")
     {
       ASCENT_ERROR("Binning: bin_axes must be a list of axis");

@@ -1387,6 +1387,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   m_cache.last_known_time(time);
 
+  //return_val.print();
   // add the result to the cache
   {
     std::stringstream cache_entry;
