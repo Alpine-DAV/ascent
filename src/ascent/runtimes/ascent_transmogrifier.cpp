@@ -127,11 +127,6 @@ bool Transmogrifier::is_poly(const conduit::Node &n)
       {
         return true;
       }
-      // if (child["subelements/shape"].as_string() == "polyhedral" || 
-      //     child["subelements/shape"].as_string() == "polygonal")
-      // {
-      //   return true;
-      // }
     }
   }
 
