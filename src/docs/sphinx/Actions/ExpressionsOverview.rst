@@ -42,21 +42,28 @@
 .. #
 .. ############################################################################
 
-.. _Expressions:
+.. _ExpressionsOverview:
 
-Expressions
-===========
-Expressions are a way to ask questions and get answers. The output of an
-expression can be categorized into one of the following categories.
+Expressions Overview
+====================
+Expressions are a powerful analysis tool that can both answer questions
+about mesh data and calculate derived quatities. Ascent uses a
+python-like domain specific language (DSL) to execute generic compuations.
+Broadly speaking, the expressions system allows users to mix and match
+two types of computation:
 
-    - Single-Value (e.g a sum reduction via ``sum(field('energy'))``)
-    - Multi-Value (e.g. a data binning via ``binning('braid','max', [axis('x',
-      num_bins=10)])``)
+    - Queries: data summarization (e.g a max reduction via ``max(field('energy'))``)
     - Derived Fields (e.g. ``field('energy') + 1``)
 
-Each expression has two required parameters: an expression and a name.
+Queries
+-------
+Queries are expressions that perform some sort of data reduction from
+problem sized data. The results of queries can be single values,
+such as the maximum value of a field, or could be multi-valued, such
+as a histogram.
 
-Below is an example of a simple query.
+Queries are executed via an action with two parameters: an expression
+and a name.  Below is an example of a simple query.
 
 .. code-block:: yaml
 
@@ -68,9 +75,217 @@ Below is an example of a simple query.
             expression: "cycle()"
             name: "my_cycle"
 
-Queries like the one above will act on the data published to Ascent. Queries
-are also capable of acting on the results of pipelines.
+In the above example, we are asking about the state of the simulation, but
+A more useful query will ask questions of the mesh or variables on the mesh.
+A common query is to find the maximum value of field over time.
 
+.. code-block:: yaml
+
+    -
+      action: "add_queries"
+      queries:
+        q1:
+          params:
+            expression: "max(field('density'))"
+            name: "max_density"
+
+Combining Queries
+^^^^^^^^^^^^^^^^^
+Queries are executed in the same order they are declared, and since the result
+of each query stored, each query can be thought of as an assignment statement in
+a program, with one query building on the previous queries.
+
+.. code-block:: yaml
+
+   -
+     action: "add_queries"
+     queries:
+       q1:
+         params:
+           expression: "1+1"
+           name: "two"
+       q2:
+         params:
+           expression: "two + 1"
+           name: "result"
+
+In the above example, ``q1`` is evaluated and the result is stored in the
+identifier ``two``.
+In ``q2``, the identifier is referenced and the expression evaluates to ``3``.
+
+Query Results
+^^^^^^^^^^^^^
+Every time a query is executed the results are stored and can be accessed
+in three ways:
+
+    - Inside expressions: values can be referenced by name by other expressions
+    - Inside the simulation: query results can be programatically accessed
+    - As a post process: results are stored inside a file called `ascent_session.yaml`
+
+The session file provides a way to acccess and plot the results of queries.
+Session files are commonly processed by python scripts.
+Here is an example of a single time step of the max query:
+
+.. code-block:: yaml
+
+    max_density:
+      10:
+        type: "value_position"
+        attrs:
+          value:
+            value: 1.99993896548026
+            type: "double"
+          position:
+            value: [4.921875, 4.921875, 10.078125]
+            type: "vector"
+          element:
+            rank: 4
+            domain_index: 4
+            index: 285284
+            assoc: "element"
+        time: 0.313751488924026
+
+Query results are index by name and then cycle.
+Additionally, the simulation time for each query is always available.
+In this example, the max query returns both the value and position
+of the element contaning the maximum value.
+
+Query History
+-------------
+Since the results of queries are stored, we can access values from previous
+executions.
+The ``history`` function allows expressions to have a temporal component, which
+is a powerful tool
+when tracking simulation state and adaptively responding to user defined events.
+The history function can be called on any existing query.
+
+The history of a query can be indexed in two ways:
+
+   - ``relative_index``: a positive value that indicates how far back in history
+     to access. If the index exceeds the current history, the value is clamped
+     to the last index. An index of 0 is equivalent to the current time value
+     and an index of 1 is the value of the identifier on the last execution.
+   - ``absolute_index``: the index of the value to access. 0 is the first query
+     result.
+
+Here is an example of a use case for the history function:
+
+.. code-block:: yaml
+
+   -
+     action: "add_queries"
+     queries:
+       q1:
+         params:
+           # get the maximum value of a field
+           expression: "max(field('pressure'))"
+           name: "max_pressure"
+       q2:
+         params:
+           expression: "max_pressure - history(max_pressure, relative_index = 1)
+           > 100"
+           name: "result"
+
+In the above example, `q2` will evaluate to true if the maximum value of
+pressure jumps over 100 units since the last in invocation, possibly indicating
+that an interesting event inside the simulation occurred.
+
+Derived Fields
+--------------
+Derived fields allow users to create new fields on the mesh as a
+result of some arbitrary computation. A simple example of a derived field
+is calculating mass based on cell volume and density, when mass is not
+directly available. Once created, the new field can be manipuated via
+filters or plotted
+
+Derived expressions are just-in-time(JIT) compiled at runtime. That is,
+code is generatated on the fly and the compiler is invoked during to create
+the binary code that is executed. While this can be expensived the first time
+the expression is run, the binary is cached and the cost is amortized over the
+entire simulation run. Additionally, the binary is cached in Ascent's default
+directory (which defaults to the current working directory), so the compile
+time cost can also be amortized over multiple simulation invocations.
+Supported backends include serial, OpenMP, and CUDA.
+
+Derived generation is triggered by using either the `field` function used
+in conjuction with math operations or the `topo` function.
+The expressions filter provides a way to create a derived field
+that is mapped back onto the mesh. Since derived fields transfrom data,
+expressions filters are part of pipeline in Ascent. Here is a examle
+of creating a simple derived field on the mesh:
+
+.. code-block:: yaml
+
+    -
+      action: "add_pipelines"
+      pipelines:
+        pl1:
+          f1:
+            type: "expression"
+            params:
+              expression: "field('density') + 1"
+              name: "density_plus_1"
+
+Subsequent pipeline filters will have access the the variable
+`density_plus_1`.
+
+The `topo` function allows users to access information about the mesh topologies.
+There are several topological attributes accessable through the `topo` function
+including area (if 2d) and volume (if 3d). Here is an example of creating a
+new field on the mesh that has the volume of each cell:
+
+.. code-block:: yaml
+
+    -
+      action: "add_pipelines"
+      pipelines:
+        pl1:
+          f1:
+            type: "expression"
+            params:
+              expression: "topo('mesh').cell.volume"
+              name: "cell_volume"
+
+Using both fields and topological information inside a derived field can help
+calculate quantities such as mass:
+
+.. code-block:: yaml
+
+    -
+      action: "add_pipelines"
+      pipelines:
+        pl1:
+          f1:
+            type: "expression"
+            params:
+              expression: "topo('mesh').cell.volume * field('density')"
+              name: "mass"
+
+
+Combining Queries and Derived Fields
+------------------------------------
+Queries and derived fields can be used together. For example,
+if we want to keep track of the total mesh volume over time
+
+.. code-block:: yaml
+
+    -
+      action: "add_queries"
+      queries:
+        q1:
+          params:
+            expression: "sum(topo('mesh').cell.volume)"
+            name: "total_volume"
+
+In queries, the only restriction is that the result must be
+a single value or object (i.e., a data reduction) so it can
+be stored for access. However, there is no restriction on the results
+of expressions filters and they can be either derived fields or queires.
+
+Queries on Pipeline Results
+---------------------------
+Normally, queries execute on the mesh published to Ascent by the simulation,
+but queries can also consume the results of pipelines.
 The example below demonstrates the use of an expression to find the total area
 of a contour mesh which is output by a pipeline.
 
@@ -94,133 +309,42 @@ of a contour mesh which is output by a pipeline.
             expression: "sum(topo('mesh').cell.area)"
             name: "total_iso_area"
 
+Queries like the one above will act on the data published to Ascent. Queries
+are also capable of acting on the results of pipelines.
 
-Finally queries can themselves be part of a pipeline via the "expression"
-filter. The example below creates a new vector field on the mesh using a
-pipeline. The result of the pipeline then extracted to an HDF5 file.
+Using Queries in Filter Parameters
+----------------------------------
+When running in situ, its often the case that you know what you are interested
+in (e.g., I want to see the top 10% of density), but not know exactly what
+the value range is. To help with that, Ascent can use expressions within filter
+parameters. The following example creates an isovolume of the top 10% of density.
 
 .. code-block:: yaml
 
+    -
+      action: "add_queries"
+      queries:
+        q1:
+          params:
+            expression: "max(field('density')).value"
+            name: "max_density"
+        q2:
+          params:
+            expression: "max_density - min(field('density')).value"
+            name: "d_length"
     -
       action: "add_pipelines"
       pipelines:
         pl1:
           f1:
-            type: "expression"
+            type: "isovolume"
             params:
-              expression: "curl(field('velocity'))"
-              name: "velocity_vorticity"
-    -
-      action: "add_extracts"
-      extracts:
-        e1:
-          pipeline: "pl1"
-          type: "relay"
-          params:
-            path: "vorticity_out"
-            protocol: "blueprint/mesh/hdf5"
+              field: "density"
+              min_value: "max_density - 0.1 * d_length"
+              max_value: "max_density"
 
+Note: not all filter parameters support using expressions.
 
-The results of queries can be accessed by the simulation and serve as a way to
-compose
-complex triggers, i.e., taking actions as a result of a condition.
-Query support is in beta, meaning its a part of Ascent currently under
-development.
-
-Expressions Overview
---------------------
-Expressions are based on a simple python-like language that supports math
-evaluation and function calls.
-
-Basic Data Types
-^^^^^^^^^^^^^^^^
-There are three main integral types in the language:
-
-   - int: ``0``, ``-1``, ``1000``
-   - double: ``1.0``, ``-1.0``, ``2.13e10``
-   - string: ``'this is a string'``
-   - bool: ``True``, ``False``
-
-Operators
-^^^^^^^^^
-The supported math operators follow the standard operator precedence order:
-
-   - ``()``: grouping
-   - ``f(args...)``: function call
-   - ``a.attribute``: attribute reference
-   - ``-``: negation
-   - ``*, /, %``: multiplication, division, modulus (remainder)
-   - ``+, -``: addition, subtraction
-   - ``not, or, and, <, <=, >, >=, !=, ==``: comparisons
-
-Control Flow
-^^^^^^^^^^^^
-The expression language currently supports simple if-then-else semantics.
-
-.. code-block:: yaml
-
-   -
-     action: "add_queries"
-     queries:
-       q1:
-         params:
-           expression: "if cycle() > 100 then 1 else 0"
-           name: "cycle_bigger_than_100"
-
-.. code-block:: yaml
-
-   -
-     action: "add_queries"
-     queries:
-       q1:
-         params:
-           expression: |
-                   energy_max = max(field('energy'))
-                   if energy_max.value > 10 then \
-                        energy_max.position \
-                   else \
-                        vector(0, 0, 0)
-           name: "max_energy_position_above_10"
-
-.. code-block:: yaml
-
-     action: "add_queries"
-     queries:
-       q1:
-         params:
-           expression: |
-             accept_prob = binning('cnt', 'cdf', [axis(field('braid'), num_bins=10)])
-             if(binning_value(accept_prob) < rand()) then 0 else field('braid')
-           name: "cdf_random_sampling"
-
-.. note::
-   Both branches of the if-then-else will be execute.
-
-Functions
-^^^^^^^^^
-The expression system supports functions with both required and optional (named)
-parameters.
-Functions can both accept and return complex objects like histograms or arrays.
-Additionally, function overloading is supported and the overload type is
-resolved by the function parameters.
-
-Objects
-^^^^^^^
-Objects have attributes that can be accessed using the ``.`` operator. For
-example, the ``value_position`` object returned by the ``min`` function has two
-attributes, the ``value`` which holds a double containing the minimum value and
-the ``position`` which holds a vector describing the position of the minimum
-value on the mesh. They would be accessed via ``min(field('braid')).value`` and
-``min(field('braid')).position`` respectively.
-
-The attributes of the various objects are specified in the :ref:`Ascent
-Objects Documentation` section.
-
-.. note::
-   Not all attributes listed in the documentation are available at runtime. For
-   example, the ``topo`` object has attributes ``x``, ``y``, and ``z``, however
-   at runtime something like ``topo('mesh').z`` may throw an error if the
-   topology named 'mesh' has only 2 dimensions.
 
 Derived Fields
 ^^^^^^^^^^^^^^
@@ -318,6 +442,8 @@ strings in YAML. Backslashes (``\``) may be used at the end of a line to split u
 When resolving identifiers, the language will give precedence to identifiers
 defined in the same expression (as shown in this example) before falling back
 to the names of previously defined expressions (see below).
+
+
 
 The Name
 --------

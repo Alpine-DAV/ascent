@@ -701,6 +701,7 @@ ExpressionList::execute()
 {
   conduit::Node *output = new conduit::Node();
 
+  Node &value = (*output)["value"];
   for(int item_num = 0; item_num < m_num_inputs; ++item_num)
   {
     std::stringstream ss;
@@ -710,9 +711,10 @@ ExpressionList::execute()
     {
       break;
     }
-    output->append() = *n_item;
+    //output->append() = *n_item;
+    value.append() = *n_item;
   }
-
+  (*output)["type"] = "list";
   set_output<conduit::Node>(output);
 }
 

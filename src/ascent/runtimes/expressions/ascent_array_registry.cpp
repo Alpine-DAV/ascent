@@ -7,6 +7,8 @@
 #include "ascent_array_registry.hpp"
 
 #include <umpire/Umpire.hpp>
+#include <umpire/strategy/QuickPool.hpp>
+
 
 #include <algorithm>
 #include <iostream>
@@ -107,7 +109,7 @@ int ArrayRegistry::device_allocator_id()
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("DEVICE");
     // we can use the umpire profiling to find a good default size
-    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPool>(
+    auto pooled_allocator = rm.makeAllocator<umpire::strategy::QuickPool>(
                             "GPU_POOL",
                             allocator,
                             1ul * // 1GB default size
@@ -137,7 +139,7 @@ int ArrayRegistry::host_allocator_id()
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("HOST");
     // we can use the umpire profiling to find a good default size
-    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPool>(
+    auto pooled_allocator = rm.makeAllocator<umpire::strategy::QuickPool>(
                             "HOST_POOL",
                             allocator,
                             1ul * // 1GB default size

@@ -54,10 +54,10 @@ Ascent Actions
    Scenes
    Extracts
    ParaViewVisualization
-   Queries
    Triggers
    Examples
-   Expressions
+   ExpressionsOverview
+   expressions/index.rst
    Binning
    VTKmColorTables
    DRayColorTables
