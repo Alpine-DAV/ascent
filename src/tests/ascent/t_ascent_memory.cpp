@@ -107,14 +107,30 @@ TEST(ascent_contour, test_single_contour_3d)
     conduit::Node &add_re = actions.append();
     add_re["action"] = "reset";
 
+    conduit::Node queries;
+    queries["q1/params/expression"] = "max(field('braid'))";
+    queries["q1/params/name"] = "max_braid";
+
+    queries["q2/params/expression"] = "avg(field('braid'))";
+    queries["q2/params/name"] = "avg_braid";
+
+    conduit::Node &add_queries = actions.append();
+    add_queries["action"] = "add_queries";
+    add_queries["queries"] = queries;
     //
     // Run Ascent
     //
 
     int iters = 4500;
+    double time = 0.;
+    double dt = 0.1;
     for(int i = 0; i < iters; ++i)
     {
       std::cout<<"Iter "<<i<<" of "<<iters<<"\n";
+      data["state/time"] = time;
+      time += dt;
+      data["state/cycle"] = i;
+
       Ascent ascent;
 
       Node ascent_opts;

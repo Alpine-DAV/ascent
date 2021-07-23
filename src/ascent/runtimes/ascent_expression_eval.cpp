@@ -1411,6 +1411,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   delete root_node;
   w.reset();
+  std::cout<<"Cache MB "<<m_cache.m_data.total_strided_bytes() / (1024.0*1024.0) <<"\n";
 #ifdef ASCENT_JIT_ENABLED
   ASCENT_DATA_ADD("Device high water mark", ArrayRegistry::high_water_mark());
   ASCENT_DATA_ADD("Current Device usage ", ArrayRegistry::device_usage());
