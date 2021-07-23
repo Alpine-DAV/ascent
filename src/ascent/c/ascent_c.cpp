@@ -97,21 +97,21 @@ ascent_create()
 //---------------------------------------------------------------------------//
 void
 ascent_open(Ascent *c_ascent,
-              conduit_node *c_options)
+            conduit_node *c_options)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_options);
-    v->open(*n);
+    Node &n = conduit::cpp_node_ref(c_options);
+    v->open(n);
 }
 
 //---------------------------------------------------------------------------//
 void
 ascent_publish(Ascent *c_ascent,
-                 conduit_node *c_data)
+               conduit_node *c_data)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_data);
-    v->publish(*n);
+    Node &n = conduit::cpp_node_ref(c_data);
+    v->publish(n);
 }
 
 //---------------------------------------------------------------------------//
@@ -120,8 +120,8 @@ ascent_execute(Ascent *c_ascent,
                conduit_node *c_actions)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_actions);
-    v->execute(*n);
+    Node &n = conduit::cpp_node_ref(c_actions);
+    v->execute(n);
 }
 
 //---------------------------------------------------------------------------//
@@ -130,8 +130,8 @@ ascent_info(Ascent *c_ascent,
             conduit_node *c_out)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_out);
-    v->info(*n);
+    Node &n = conduit::cpp_node_ref(c_out);
+    v->info(n);
 }
 
 //---------------------------------------------------------------------------//
@@ -146,26 +146,31 @@ ascent_close(Ascent *c_ascent)
 void
 ascent_destroy(Ascent *c_ascent)
 {
-   ascent::Ascent *v = cpp_ascent(c_ascent);
+    ascent::Ascent *v = cpp_ascent(c_ascent);
     delete v;
 }
 
-void ASCENT_API ascent_timer_start(char *name)
+//---------------------------------------------------------------------------//
+void
+ascent_timer_start(char *name)
 {
-  ascent::BlockTimer::StartTimer(name);
+    ascent::BlockTimer::StartTimer(name);
 }
 
 //---------------------------------------------------------------------------//
-void ASCENT_API ascent_timer_stop(char *name)
+void
+ascent_timer_stop(char *name)
 {
-  ascent::BlockTimer::StopTimer(name);
+    ascent::BlockTimer::StopTimer(name);
 }
 
 //---------------------------------------------------------------------------//
-void ASCENT_API ascent_timer_write()
+void
+ascent_timer_write()
 {
-  ascent::BlockTimer::WriteLogFile();
+    ascent::BlockTimer::WriteLogFile();
 }
+
 }
 //-----------------------------------------------------------------------------
 // -- end extern C

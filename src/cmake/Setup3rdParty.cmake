@@ -135,11 +135,3 @@ endif()
 if (ENABLE_BABELFLOW)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif ()
-
-################################
-# Make sure we pickup threads
-################################
-if(NOT TARGET Threads)
-  find_package(Threads REQUIRED)
-endif()
-
