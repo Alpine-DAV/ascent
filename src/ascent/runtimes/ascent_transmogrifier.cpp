@@ -55,6 +55,8 @@
 #include "ascent_mfem_data_adapter.hpp"
 #endif
 #include "ascent_logging.hpp"
+#include <conduit_blueprint.hpp>
+#include <algorithm>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -125,20 +127,119 @@ bool Transmogrifier::is_poly(const conduit::Node &n)
       {
         return true;
       }
-      if (child["subelements/shape"].as_string() == "polyhedral" || 
-          child["subelements/shape"].as_string() == "polygonal")
-      {
-        return true;
-      }
+      // if (child["subelements/shape"].as_string() == "polyhedral" || 
+      //     child["subelements/shape"].as_string() == "polygonal")
+      // {
+      //   return true;
+      // }
     }
   }
 
   return false;
 }
 
+// to_poly assumes that the node n is polyhedral
 conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
 {
-  return &n;
+  std::vector<std::string> poly_topos;
+  conduit::Node *res = new conduit::Node;
+  // we know it must have a child "topologies" b/c of the check in is_poly()
+  conduit::NodeConstIterator itr = n["topologies"].children();
+  while (itr.has_next())
+  {
+    const conduit::Node &child = itr.next();
+    if (child.has_child("elements/shape"))
+    {
+      if (child["elements/shape"].as_string() == "polyhedral" || 
+          child["elements/shape"].as_string() == "polygonal")
+      {
+        poly_topos.push_back(child.name());
+      }
+    }
+  }
+
+  std::vector<std::string> coordsets;
+  for (int i = 0; i < poly_topos.size(); i ++)
+  {
+    conduit::Node s2dmap, d2smap, options;
+    coordsets.push_back(n["topologies/" + poly_topos[i] + "/coordset"].as_string());
+    conduit::blueprint::mesh::topology::unstructured::generate_sides(
+      n["topologies/" + poly_topos[i]],
+      (*res)["topologies/" + poly_topos[i]],
+      (*res)["coordsets/" + coordsets[coordsets.size() - 1]],
+      (*res)["fields"],
+      s2dmap,
+      d2smap,
+      options);
+  }
+
+  // we must copy all remaining pieces of the node as well
+
+  // first we examine any children that are not coordsets, topologies, and fields
+  itr = n.children();
+  while (itr.has_next())
+  {
+    const conduit::Node &child = itr.next();
+    std::string name = child.name();
+    if (name != "coordsets" && name != "topologies" && name != "fields")
+    {
+      (*res)[name].set(child);
+    }
+  }
+
+  // next we will look at any coordsets that may have been missed
+  itr = n["coordsets"].children();
+  while (itr.has_next())
+  {
+    const conduit::Node &child = itr.next();
+    std::string name = child.name();
+    // if this coordset is one of the ones we did not copy
+    if (std::find(coordsets.begin(), coordsets.end(), name) == coordsets.end())
+    {
+      (*res)["coordsets/" + name].set(child);
+    }
+  }
+
+  // next we will do the same for topologies
+  itr = n["topologies"].children();
+  while (itr.has_next())
+  {
+    const conduit::Node &child = itr.next();
+    std::string name = child.name();
+    // if the topology is *not* polyhedral
+    if (child.has_child("elements/shape"))
+    {
+      if (!(child["elements/shape"].as_string() == "polyhedral" || 
+                child["elements/shape"].as_string() == "polygonal"))
+      {
+        (*res)["topologies/" + name].set(child);
+      }
+    }
+  }
+
+  // and finally we will copy over any fields that were not copied
+  // first we will figure out which ones were copied/mapped
+  std::vector<std::string> copied_field_names;
+  itr = (*res)["fields"].children();
+  while (itr.has_next())
+  {
+    const conduit::Node &child = itr.next();
+    copied_field_names.push_back(child.name());
+  }
+  // then we will copy over any that were not copied in generate_sides
+  itr = n["fields"].children();
+  while (itr.has_next())
+  {
+    const conduit::Node &child = itr.next();
+    std::string name = child.name();
+    // if the name from "n" is not in "res"
+    if (std::find(copied_field_names.begin(), copied_field_names.end(), name) == copied_field_names.end())
+    {
+      (*res)["fields/" + name].set(child);
+    }
+  }
+
+  return res;
 }
 
 //-----------------------------------------------------------------------------
