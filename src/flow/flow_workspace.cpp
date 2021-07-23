@@ -252,7 +252,8 @@ Workspace::ExecutionPlan::bf_topo_sort_visit(Graph &graph,
 Workspace::Workspace()
 :m_graph(this),
  m_registry(),
- m_timing_info()
+ m_timing_info(),
+ m_enable_timings(false)
 {
 
 }
@@ -339,10 +340,13 @@ Workspace::execute()
             // execute
             f->execute();
 
-            m_timing_info << g_timing_exec_count
-                          << " " << f->name()
-                          << " " << std::fixed << t_flt_exec.elapsed()
-                          <<"\n";
+            if(m_enable_timings)
+            {
+                m_timing_info << g_timing_exec_count
+                              << " " << f->name()
+                              << " " << std::fixed << t_flt_exec.elapsed()
+                              <<"\n";
+            }
 
             // if has output, set output
             if(f->output_port())
@@ -370,16 +374,24 @@ Workspace::execute()
         }
     }
 
-    m_timing_info << g_timing_exec_count
-                  << " [total] "
-                  << std::fixed << t_total_exec.elapsed()
-                  <<"\n";
+    if(m_enable_timings)
+    {
+        m_timing_info << g_timing_exec_count
+                      << " [total] "
+                      << std::fixed << t_total_exec.elapsed()
+                      <<"\n";
+        g_timing_exec_count++;
+    }
 
 
-    g_timing_exec_count++;
 
 }
+//-----------------------------------------------------------------------------
 
+void Workspace::enable_timings(bool enabled)
+{
+  m_enable_timings = enabled;
+}
 
 //-----------------------------------------------------------------------------
 void
