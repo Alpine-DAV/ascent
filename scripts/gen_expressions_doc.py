@@ -29,12 +29,13 @@ parser.add_argument(
 parser.add_argument(
     "objects_json", help="json representation of the object_table conduit node."
 )
-parser.add_argument("output_rst", help="output .rst file")
+
+#parser.add_argument("output_rst", help="output .rst file")
 args = parser.parse_args()
 
-with open(args.output_rst, "w+") as docs:
-    title = "Ascent Expressions Documentation"
-    docs.write(".. _Ascent Expressions Documentation:\n\n")
+with open('expression_functions.rst', "w+") as docs:
+    title = "Expression Functions"
+    docs.write(".. _ExpressionFunctions:\n\n")
     docs.write("{}\n{}\n\n".format(title, "=" * len(title)))
     docs.write(
         ".. note:: \n    ``scalar`` is an alias type for either ``int`` or ``double``.\n\n"
@@ -81,25 +82,32 @@ with open(args.output_rst, "w+") as docs:
                 docs.write(indent("{}".format(params), 4))
                 docs.write(indent("{}\n\n".format(ret), 4))
 
-        # generate objects
-        objs_title = "Objects"
-        docs.write(".. _Ascent Objects Documentation:\n\n")
-        docs.write("{}\n{}\n\n".format(objs_title, "-" * len(objs_title)))
-        with open(args.objects_json) as json_file:
-            objs = json.load(json_file, object_pairs_hook=OrderedDict)
-            for obj_name in objs:
-                attrs = ""
-                for attr_name in objs[obj_name]["attrs"]:
-                    # object type
-                    attr = objs[obj_name]["attrs"][attr_name]
-                    attrs += ":type {}: {}\n".format(attr_name, attr["type"])
-                    # object description
-                    if "description" in attr:
-                        attrs += ":param {}: {}\n".format(
-                            attr_name, attr["description"]
-                        )
-                    else:
-                        attrs += ":param {}:\n".format(attr_name)
 
-                docs.write(".. attribute:: {}\n\n".format(obj_name))
-                docs.write(indent("{}\n\n".format(attrs), 4))
+with open('expression_objects.rst', "w+") as docs:
+    title = "Expression Objects"
+    docs.write(".. _ExpressionsObjects:\n\n")
+    docs.write("{}\n{}\n\n".format(title, "=" * len(title)))
+    #docs.write('
+
+    # generate objects
+    objs_title = "Expression Objects"
+    docs.write(".. _Ascent Objects Documentation:\n\n")
+    docs.write("{}\n{}\n\n".format(objs_title, "-" * len(objs_title)))
+    with open(args.objects_json) as json_file:
+        objs = json.load(json_file, object_pairs_hook=OrderedDict)
+        for obj_name in objs:
+            attrs = ""
+            for attr_name in objs[obj_name]["attrs"]:
+                # object type
+                attr = objs[obj_name]["attrs"][attr_name]
+                attrs += ":type {}: {}\n".format(attr_name, attr["type"])
+                # object description
+                if "description" in attr:
+                    attrs += ":param {}: {}\n".format(
+                        attr_name, attr["description"]
+                    )
+                else:
+                    attrs += ":param {}:\n".format(attr_name)
+
+            docs.write(".. attribute:: {}\n\n".format(obj_name))
+            docs.write(indent("{}\n\n".format(attrs), 4))

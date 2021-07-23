@@ -1226,7 +1226,9 @@ initialize_objects()
 
   conduit::Node &aabb = (*objects)["aabb/attrs"];
   aabb["min/type"] = "vector";
+  vertex["min/description"] = "Min coordinate of an axis-aligned bounding box (aabb)";
   aabb["max/type"] = "vector";
+  vertex["max/description"] = "Max coordinate of an axis-aligned bounding box (aabb)";
 
   conduit::Node &vector_atts = (*objects)["vector/attrs"];
   vector_atts["x/type"] = "double";
