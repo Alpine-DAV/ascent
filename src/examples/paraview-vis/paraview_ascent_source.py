@@ -263,10 +263,8 @@ def extents(originDims, comm, mpi_size, mpi_rank, topology):
         rank = np.arange(mpi_size)
         if np.all(coord == coord[0]):
             # all coordinates are equal
-            extent[2*i] = 0
-            extent[2*i + 1] = size[i] - 1
-            whole_extent[2*i] = extent[2*i]
-            whole_extent[2*i+1] = extent[2*i+1]
+            extent[2*i] = whole_extent[2*i] = 0
+            extent[2*i + 1] = whole_extent[2*i+1] = size[0] - 1
         else:
             indexSort = np.argsort(coord)
             coord = coord[indexSort]
