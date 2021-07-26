@@ -44,9 +44,10 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_mpi_render_2d.cpp
+/// file: t_ascent_render_3d.cpp
 ///
 //-----------------------------------------------------------------------------
+
 
 #include "gtest/gtest.h"
 
@@ -54,91 +55,86 @@
 
 #include <iostream>
 #include <math.h>
-#include <mpi.h>
 
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
+
+
+
 using namespace std;
 using namespace conduit;
-using ascent::Ascent;
+using namespace ascent;
+
+
+index_t EXAMPLE_MESH_SIDE_DIM = 20;
+
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
+TEST(ascent_sampling, test_histsampling_3d)
 {
-    //
-    // Set Up MPI
-    //
-    int par_rank;
-    int par_size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &par_rank);
-    MPI_Comm_size(comm, &par_size);
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
 
-    ASCENT_INFO("Rank "
-                  << par_rank
-                  << " of "
-                  << par_size
-                  << " reporting");
     //
-    // Create the data.
+    // Create an example mesh.
     //
     Node data, verify_info;
-    int dims = 32;
-    create_3d_example_dataset(data,dims,par_rank,par_size);
-
-
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    // make sure the _output dir exists
-    string output_path = "";
-    if(par_rank == 0)
-    {
-        output_path = prepare_output_dir();
-    }
-    else
-    {
-        output_path = output_dir();
-    }
+    ASCENT_INFO("Testing 3D Sampling with Default Pipeline");
 
-    string output_file = conduit::utils::join_file_path(output_path,"tout_adios_extract.bp");
 
-    // remove old files before testing
-    if(conduit::utils::is_file(output_file))
-    {
-        conduit::utils::remove_file(output_file);
-    }
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_sampling_3d");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
 
     //
     // Create the actions.
     //
 
-    conduit::Node extracts;
-    extracts["e1/type"]  = "adios2";
-    // populate some param examples
-    extracts["e1/params/engine"] = "BPFile";
-    extracts["e1/params/filename"] = output_file;
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "histsampling";
+    // filter knobs
+    conduit::Node &sampling_params = pipelines["pl1/f1/params"];
+    sampling_params["field"] = "braid";
+    sampling_params["sample_rate"] = 0.1;
+    sampling_params["bins"] = 32 ;
+    //sampling_params["use_gradient"] = "false";
 
-    //
-    // we can tell adios to do actions with the published data
-    // if we use the same api as ascent all we have to do
-    // is translate it in the adios filter
-    //
-
-    conduit::Node &contour = extracts["e1/params/actions"].append();
-    contour["type"]  = "contour";
-    contour["params/field"] = "radial_vert";
-    contour["params/iso_values"] = 0.3;
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "radial";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
-
-    actions.print();
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
 
     //
     // Run Ascent
@@ -147,16 +143,16 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     Ascent ascent;
 
     Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    ascent_opts["runtime"] = "ascent";
+    ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
 
-    MPI_Barrier(comm);
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of the sampling filter using histogram-based approach.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -165,9 +161,15 @@ int main(int argc, char* argv[])
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
-    MPI_Init(&argc, &argv);
-    result = RUN_ALL_TESTS();
-    MPI_Finalize();
 
+    // allow override of the data size via the command line
+    if(argc == 2)
+    {
+        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
+    }
+
+    result = RUN_ALL_TESTS();
     return result;
 }
+
+

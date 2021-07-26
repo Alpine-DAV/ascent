@@ -1568,6 +1568,15 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
+    bool log_timings = false;
+    if(m_runtime_options.has_child("timings") &&
+       m_runtime_options["timings"].as_string() == "true")
+    {
+      log_timings = true;
+    }
+
+    w.enable_timings(log_timings);
+
     // catch any errors that come up here and forward
     // them up as a conduit error
 
@@ -1624,21 +1633,27 @@ AscentRuntime::Execute(const conduit::Node &actions)
         //w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
-        int cycle = 0;
-        if(Metadata::n_metadata.has_path("cycle"))
+        if(log_timings)
         {
-          cycle = Metadata::n_metadata["cycle"].to_int32();
+          int cycle = 0;
+          if(Metadata::n_metadata.has_path("cycle"))
+          {
+            cycle = Metadata::n_metadata["cycle"].to_int32();
+          }
+          std::stringstream ss;
+          ss<<"cycle_"<<cycle;
+          vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+          vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
         }
-        std::stringstream ss;
-        ss<<"cycle_"<<cycle;
-        vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
-        vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
         // now execute the data flow graph
         w.execute();
 
 #if defined(ASCENT_VTKM_ENABLED)
-        vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        if(log_timings)
+        {
+          vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        }
 #endif
         Node msg;
         this->Info(msg["info"]);

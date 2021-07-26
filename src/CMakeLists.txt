@@ -42,9 +42,6 @@
 #
 ###############################################################################
 
-################################
-# cmake policy selection
-################################
 # avoid warnings for project commands w/o VERSION
 cmake_policy(SET CMP0048 NEW)
 
@@ -72,6 +69,7 @@ option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
 option(ENABLE_DOCS        "Build Documentation"       ON)
 option(ENABLE_MFEM        "Enable MFEM support"       ON)
+option(ENABLE_FIDES       "Build with Fides"          OFF)
 
 option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
 
@@ -106,6 +104,10 @@ if(POLICY CMP0104)
     cmake_policy(SET CMP0104 OLD)
 endif()
 
+# allow find_packages to use ZZZ_ROOT vars
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 ################################
 # Populate the cmake gui
@@ -180,6 +182,11 @@ include(cmake/SetupIncludes.cmake)
 # Add builtin third party libs
 ################################
 add_subdirectory(thirdparty_builtin)
+
+if(ENABLE_FIDES)
+  find_package(ADIOS2 REQUIRED)
+  find_package(Fides REQUIRED)
+endif()
 
 ################################
 # Add our libs

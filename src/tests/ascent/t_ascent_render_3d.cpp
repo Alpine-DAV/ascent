@@ -131,7 +131,7 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -225,7 +225,7 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -298,7 +298,7 @@ TEST(ascent_render_3d, test_render_3d_single_comp_scalar)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -369,7 +369,7 @@ TEST(ascent_render_3d, test_render_3d_points)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -443,7 +443,7 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -521,7 +521,7 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -599,7 +599,7 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -672,7 +672,7 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -744,7 +744,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -817,7 +817,7 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
 
     Node ascent_opts;
     //ascent_opts["ascent_info"] = "verbose";
-    ascent_opts["timings"] = "enabled";
+    ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);

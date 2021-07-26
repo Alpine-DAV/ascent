@@ -44,24 +44,40 @@
 
 ###############################################################################
 #
-# Setup ADIOS
+# Setup Fides
 #
 ###############################################################################
 
-# first Check for ADIOS_DIR
-if(NOT ADIOS2_DIR)
-    MESSAGE(FATAL_ERROR "ADIOS2 support needs explicit ADIOS2_DIR")
+if(NOT FIDES_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs explicit FIDES_DIR")
 endif()
 
-MESSAGE(STATUS "Looking for ADIOS2 using ADIOS2_DIR = ${ADIOS2_DIR}")
+if(NOT VTKM_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs VTK-m (VTKM_DIR not set)")
+endif()
 
+if(NOT ADIOS2_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs ADIOS2 (ADIOS2_DIR not set)")
+endif()
 
-find_package(ADIOS2 REQUIRED
+MESSAGE(STATUS "Looking for FIDES using FIDES_DIR = ${FIDES_DIR}")
+
+#The Fides cmake is not setting these for some reason.
+#So, we set them explicitly for now.
+#set(Fides_DIR ${FIDES_DIR})
+
+set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/)
+set(FIDES_LIB_DIR ${FIDES_DIR}/lib)
+set(FIDES_LIBRARIES fides)
+
+find_package(Fides REQUIRED
              NO_DEFAULT_PATH
-             PATHS ${ADIOS2_DIR}/lib/cmake/adios2)
+             PATHS ${FIDES_DIR}/lib/cmake/fides)
 
-message(STATUS "FOUND ADIOS2 at ${ADIOS2_DIR}")
 
-blt_register_library(NAME adios2
-                     INCLUDES ${ADIOS2_INCLUDE_DIR}
-                     LIBRARIES ${ADIOS2_LIB_DIRS} ${ADIOS2_LIBRARIES} )
+message(STATUS "Found Fides at ${FIDES_DIR}")
+set(FIDES_FOUND TRUE)
+
+blt_register_library(NAME fides
+                     INCLUDES ${FIDES_INCLUDE_DIR}
+                     LIBRARIES ${FIDES_LIB_DIRS} ${FIDES_LIBRARIES} )
