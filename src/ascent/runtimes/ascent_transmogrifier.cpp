@@ -111,21 +111,26 @@ conduit::Node* Transmogrifier::low_order(conduit::Node &dataset)
 
 bool Transmogrifier::is_poly(const conduit::Node &n)
 {
-  if (! n.has_child("topologies"))
+  conduit::Node actual = n.children().next();
+
+  if (! actual.has_child("topologies"))
   {
     return false;
   }
 
-  conduit::NodeConstIterator itr = n["topologies"].children();
+  conduit::NodeConstIterator itr = actual["topologies"].children();
   while (itr.has_next())
   {
-    const conduit::Node &child = itr.next();
-    if (child.has_child("elements/shape"))
+    const conduit::Node &topo = itr.next();
+    if (topo.has_child("elements"))
     {
-      if (child["elements/shape"].as_string() == "polyhedral" || 
-          child["elements/shape"].as_string() == "polygonal")
+      if (topo["elements"].has_child("shape"))
       {
-        return true;
+        if (topo["elements/shape"].as_string() == "polyhedral" || 
+            topo["elements/shape"].as_string() == "polygonal")
+        {
+          return true;
+        }
       }
     }
   }
@@ -136,19 +141,24 @@ bool Transmogrifier::is_poly(const conduit::Node &n)
 // to_poly assumes that the node n is polyhedral
 conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
 {
+  conduit::Node actual = n.children().next();
+
   std::vector<std::string> poly_topos;
   conduit::Node *res = new conduit::Node;
   // we know it must have a child "topologies" b/c of the check in is_poly()
-  conduit::NodeConstIterator itr = n["topologies"].children();
+  conduit::NodeConstIterator itr = actual["topologies"].children();
   while (itr.has_next())
   {
-    const conduit::Node &child = itr.next();
-    if (child.has_child("elements/shape"))
+    const conduit::Node &topo = itr.next();
+    if (topo.has_child("elements"))
     {
-      if (child["elements/shape"].as_string() == "polyhedral" || 
-          child["elements/shape"].as_string() == "polygonal")
+      if (topo["elements"].has_child("shape"))
       {
-        poly_topos.push_back(child.name());
+        if (topo["elements/shape"].as_string() == "polyhedral" || 
+            topo["elements/shape"].as_string() == "polygonal")
+        {
+          poly_topos.push_back(topo.name());
+        }
       }
     }
   }
@@ -157,9 +167,9 @@ conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
   for (int i = 0; i < poly_topos.size(); i ++)
   {
     conduit::Node s2dmap, d2smap, options;
-    coordsets.push_back(n["topologies/" + poly_topos[i] + "/coordset"].as_string());
+    coordsets.push_back(actual["topologies/" + poly_topos[i] + "/coordset"].as_string());
     conduit::blueprint::mesh::topology::unstructured::generate_sides(
-      n["topologies/" + poly_topos[i]],
+      actual["topologies/" + poly_topos[i]],
       (*res)["topologies/" + poly_topos[i]],
       (*res)["coordsets/" + coordsets[coordsets.size() - 1]],
       (*res)["fields"],
@@ -171,7 +181,7 @@ conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
   // we must copy all remaining pieces of the node as well
 
   // first we examine any children that are not coordsets, topologies, and fields
-  itr = n.children();
+  itr = actual.children();
   while (itr.has_next())
   {
     const conduit::Node &child = itr.next();
@@ -183,7 +193,7 @@ conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
   }
 
   // next we will look at any coordsets that may have been missed
-  itr = n["coordsets"].children();
+  itr = actual["coordsets"].children();
   while (itr.has_next())
   {
     const conduit::Node &child = itr.next();
@@ -196,7 +206,7 @@ conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
   }
 
   // next we will do the same for topologies
-  itr = n["topologies"].children();
+  itr = actual["topologies"].children();
   while (itr.has_next())
   {
     const conduit::Node &child = itr.next();
@@ -222,19 +232,22 @@ conduit::Node* Transmogrifier::to_poly(conduit::Node &n)
     copied_field_names.push_back(child.name());
   }
   // then we will copy over any that were not copied in generate_sides
-  itr = n["fields"].children();
+  itr = actual["fields"].children();
   while (itr.has_next())
   {
     const conduit::Node &child = itr.next();
     std::string name = child.name();
-    // if the name from "n" is not in "res"
+    // if the name from "actual" is not in "res"
     if (std::find(copied_field_names.begin(), copied_field_names.end(), name) == copied_field_names.end())
     {
       (*res)["fields/" + name].set(child);
     }
   }
 
-  return res;
+  conduit::Node *actual_return = new conduit::Node;
+  actual_return->append().set(*res);
+
+  return actual_return;
 }
 
 //-----------------------------------------------------------------------------
