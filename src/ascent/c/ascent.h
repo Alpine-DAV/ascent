@@ -93,6 +93,12 @@ void ASCENT_API ascent_info(Ascent *c_ascent, conduit_node *result);
 
 void ASCENT_API ascent_close(Ascent *c_ascent);
 
+void ASCENT_API ascent_timer_start(char *name);
+
+void ASCENT_API ascent_timer_stop(char *name);
+
+void ASCENT_API ascent_timer_write();
+
 
 #ifdef __cplusplus
 }

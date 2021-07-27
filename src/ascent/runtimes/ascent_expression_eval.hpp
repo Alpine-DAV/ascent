@@ -92,6 +92,10 @@ struct Cache
   bool filtered();
   bool loaded();
   void save();
+  // allow saving with an alternative name
+  void save(const std::string &filename);
+  void save(const std::string &filename,
+            const std::vector<std::string> &selection);
 
   ~Cache();
 };
@@ -115,6 +119,11 @@ public:
   static void reset_cache();
   static void load_cache(const std::string &dir,
                          const std::string &session);
+
+  // helpers for saving cache files
+  static void save_cache(const std::string &filename,
+                         const std::vector<std::string> &selection);
+  static void save_cache(const std::string &filename);
   static void save_cache();
 
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
