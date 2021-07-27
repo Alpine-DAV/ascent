@@ -71,9 +71,9 @@ static conduit::Node* low_order(conduit::Node &dataset);
 
 static bool is_high_order(const conduit::Node &doms);
 
-static bool is_poly(const conduit::Node &n);
+static bool is_poly(const conduit::Node &doms);
 
-static conduit::Node* to_poly(conduit::Node &n);
+static void to_poly(conduit::Node &doms, conduit::Node &to_vtkh);
 
 };
 
