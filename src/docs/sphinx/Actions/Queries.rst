@@ -228,7 +228,7 @@ Additionally, you can explicitly override the default session name by using the
     file_name: "saved_by_name_with_selection"
 
 
-Finally, you can save only a set of expressions by means of a selector list:
+Finally, you can save only a subset of expressions using a list:
 
 .. code-block:: yaml
 
@@ -250,5 +250,5 @@ Finally, you can save only a set of expressions by means of a selector list:
       - max_pressure
 
 In this example, there are two queries. The save session action specifies that only
-`max_pressure` expression should be saved inside the file named
+the `max_pressure` expression should be saved inside the file named
 `saved_by_name_with_selection`.
