@@ -90,7 +90,7 @@ class Ascent(Package, CudaPackage):
 
     # use cmake 3.14, newest that provides proper cuda support
     # and we have seen errors with cuda in 3.15
-    depends_on("cmake@3.14.1:3.14.99", type='build')
+    depends_on("cmake@3.14.1:3.14.99,3.16.1:3.16.99,3.18.2:3.18.2", type='build')
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python+shared")
     depends_on("conduit~shared~python", when="~shared")
@@ -143,6 +143,8 @@ class Ascent(Package, CudaPackage):
 
     depends_on("adios", when="+adios")
     depends_on("genten", when="+genten")
+    depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
+    depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
 
     # devil ray variants wit mpi
     # we have to specify both because mfem makes us

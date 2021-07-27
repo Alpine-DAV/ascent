@@ -9,7 +9,8 @@ class Genten(CMakePackage,CudaPackage):
     maintainers = ['mclarsen']
 
     version('master',
-            git='https://gitlab.com/tensors/genten.git',
+#            git='https://gitlab.com/tensors/genten.git',
+            git='https://github.com/mclarsen/genten.git',
             branch='higher-moments-interface',
             submodules=False,
             preferred=True)
@@ -21,7 +22,7 @@ class Genten(CMakePackage,CudaPackage):
     depends_on('blas', when='~cuda')
     depends_on('lapack', when='~cuda')
     depends_on('kokkos+openmp', when='+openmp~cuda')
-    depends_on('kokkos+cuda', when='~openmp+cuda')
+    depends_on('kokkos+cuda+cuda_lambda~wrapper', when='~openmp+cuda')
     depends_on('kokkos', when='~openmp~cuda')
 
     def cmake_args(self):
@@ -34,6 +35,8 @@ class Genten(CMakePackage,CudaPackage):
 
       args.append("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")
       args.append("-DKOKKOS_PATH={0}".format(self.spec['kokkos'].prefix))
+#      if '+cuda' in self.spec:
+#        args.append("-DKokkos_ENABLE_CUDA=ON")
 
       if '~cuda' in self.spec:
         lapack_blas = self.spec['lapack'].libs + self.spec['blas'].libs

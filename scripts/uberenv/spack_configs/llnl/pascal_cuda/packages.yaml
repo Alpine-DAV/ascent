@@ -44,7 +44,8 @@ packages:
   cmake:
     paths:
       cmake@3.14.5: /usr/tce/packages/cmake/cmake-3.14.5/
-    buildable: False
+      cmake@3.16.8: /usr/tce/packages/cmake/cmake-3.16.8/
+    buildable: True
   perl:
     buildable: False
     paths:
@@ -62,6 +63,7 @@ packages:
   mvapich2:
     paths:
       mvapich2@2.2%gcc@4.9.3:  /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      mvapich2@2.3%gcc@8.3.1:  /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-8.3.1
       mvapich2@2.2%intel@17.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
       mvapich2@2.2%clang@4.0.0: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
     buildable: False

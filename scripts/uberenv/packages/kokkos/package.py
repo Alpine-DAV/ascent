@@ -18,6 +18,9 @@ class Kokkos(CMakePackage, CudaPackage):
 
     version('develop', branch='develop')
     version('master',  branch='master')
+    #version('3.4.01', commit='410b15c817cfad64e59d8505acca98e7eaa04827')
+    version('3.4.00', sha256='2e4438f9e4767442d8a55e65d000cc9cde92277d415ab4913a96cd3ad901d317')
+    version('3.3.01', sha256='4919b00bb7b6eb80f6c335a32f98ebe262229d82e72d3bae6dd91aaf3d234c37')
     version('3.2.00', sha256='05e1b4dd1ef383ca56fe577913e1ff31614764e65de6d6f2a163b2bddb60b3e9')
     version('3.1.01', sha256='ff5024ebe8570887d00246e2793667e0d796b08c77a8227fe271127d36eec9dd')
     version('3.1.00', sha256="b935c9b780e7330bcb80809992caa2b66fd387e3a1c261c955d622dae857d878")
