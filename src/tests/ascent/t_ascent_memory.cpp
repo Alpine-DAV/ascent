@@ -73,7 +73,7 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_contour, test_single_contour_3d)
+TEST(ascent_contour, test_memory_over_time)
 {
     // the vtkm runtime is currently our only rendering runtime
     Node n;
@@ -107,16 +107,21 @@ TEST(ascent_contour, test_single_contour_3d)
     conduit::Node &add_re = actions.append();
     add_re["action"] = "reset";
 
-    conduit::Node queries;
-    queries["q1/params/expression"] = "max(field('braid'))";
-    queries["q1/params/name"] = "max_braid";
+    bool add_queries = false;
+    if(add_queries)
+    {
+      conduit::Node queries;
+      queries["q1/params/expression"] = "max(field('braid'))";
+      queries["q1/params/name"] = "max_braid";
 
-    queries["q2/params/expression"] = "avg(field('braid'))";
-    queries["q2/params/name"] = "avg_braid";
+      queries["q2/params/expression"] = "avg(field('braid'))";
+      queries["q2/params/name"] = "avg_braid";
 
-    conduit::Node &add_queries = actions.append();
-    add_queries["action"] = "add_queries";
-    add_queries["queries"] = queries;
+      conduit::Node &add_queries = actions.append();
+      add_queries["action"] = "add_queries";
+      add_queries["queries"] = queries;
+    }
+
     //
     // Run Ascent
     //
@@ -124,6 +129,12 @@ TEST(ascent_contour, test_single_contour_3d)
     int iters = 4500;
     double time = 0.;
     double dt = 0.1;
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+
     for(int i = 0; i < iters; ++i)
     {
       std::cout<<"Iter "<<i<<" of "<<iters<<"\n";
@@ -131,15 +142,10 @@ TEST(ascent_contour, test_single_contour_3d)
       time += dt;
       data["state/cycle"] = i;
 
-      Ascent ascent;
-
-      Node ascent_opts;
-      ascent_opts["runtime/type"] = "ascent";
-      ascent.open(ascent_opts);
       ascent.publish(data);
       ascent.execute(actions);
-      ascent.close();
     }
+    ascent.close();
 }
 
 

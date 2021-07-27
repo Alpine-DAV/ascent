@@ -66,7 +66,7 @@ MESSAGE(STATUS "Looking for Conduit using CONDUIT_DIR = ${CONDUIT_DIR}")
 ###############################################################################
 find_dependency(Conduit REQUIRED
                 NO_DEFAULT_PATH
-                PATHS ${CONDUIT_DIR}/lib/cmake)
+                PATHS ${CONDUIT_DIR}/lib/cmake/conduit)
 
 # if fortran is enabled, make sure conduit was built with fortran support
 if(FORTRAN_FOUND)
