@@ -188,7 +188,7 @@ void Cache::load(const std::string &dir,
   MPI_Comm_rank(mpi_comm, &m_rank);
 #endif
 
-  std::string file_name = session + ".yaml";
+  std::string file_name = session;
   std::string session_file = conduit::utils::join_path(dir, file_name);
   m_session_file = session_file;
 
@@ -196,7 +196,7 @@ void Cache::load(const std::string &dir,
 
   if(m_rank == 0 && exists)
   {
-    m_data.load(session_file, "yaml");
+    m_data.load(session_file + ".yaml", "yaml");
   }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -216,7 +216,39 @@ void Cache::save()
      !m_data.dtype().is_empty()
      && m_session_file != "")
   {
-    m_data.save(m_session_file,"yaml");
+    m_data.save(m_session_file+".yaml","yaml");
+  }
+}
+
+void Cache::save(const std::string &filename)
+{
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  if(m_rank == 0 &&
+     !m_data.dtype().is_empty())
+  {
+    m_data.save(filename+".yaml","yaml");
+  }
+}
+
+void Cache::save(const std::string &filename,
+                 const std::vector<std::string> &selection)
+{
+  conduit::Node data;
+  for(const auto &expr : selection)
+  {
+    if(m_data.has_path(expr))
+    {
+      data[expr].set_external(m_data[expr]);
+    }
+  }
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  // or there might not be match
+  if(m_rank == 0 &&
+     !data.dtype().is_empty())
+  {
+    data.save(filename+".yaml","yaml");
   }
 }
 
@@ -945,6 +977,12 @@ ExpressionEval::reset_cache()
 }
 
 void
+ExpressionEval::save_cache(const std::string &filename)
+{
+  m_cache.save(filename);
+}
+
+void
 ExpressionEval::save_cache()
 {
   m_cache.save();
@@ -965,6 +1003,11 @@ void ExpressionEval::get_last(conduit::Node &data)
       data[cycle.path()].set_external(cycle);
     }
   }
+}
+void ExpressionEval::save_cache(const std::string &filename,
+                                const std::vector<std::string> &selection)
+{
+  m_cache.save(filename, selection);
 }
 //-----------------------------------------------------------------------------
 };

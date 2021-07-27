@@ -1450,6 +1450,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   // to build the graph
   m_connections.reset();
   m_scene_connections.reset();
+  m_save_session_actions.reset();
 
   // execution will be enforced in the following order:
   conduit::Node queries;
@@ -1532,7 +1533,9 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
       }
       else if(action_name == "save_session")
       {
-        runtime::expressions::ExpressionEval::save_cache();
+        // Saving the session will be deferred to after
+        // the workspace executes.
+        m_save_session_actions.append() = action;
       }
       else
       {
@@ -1655,6 +1658,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
           vtkh::DataLogger::GetInstance()->CloseLogEntry();
         }
 #endif
+        if(m_save_session_actions.number_of_children() > 0)
+        {
+          SaveSession();
+        }
+
         Node msg;
         this->Info(msg["info"]);
         ascent::about(msg["about"]);
@@ -2008,6 +2016,54 @@ void AscentRuntime::VerifyGhosts()
 
 }
 
+void AscentRuntime::SaveSession()
+{
+  const int num_actions = m_save_session_actions.number_of_children();
+
+  for(int a = 0; a < num_actions; ++a)
+  {
+    const conduit::Node &action = m_save_session_actions.child(a);
+
+    std::string filename = m_session_name;
+    if(action.has_path("file_name"))
+    {
+      if(!action["file_name"].dtype().is_string())
+      {
+        ASCENT_ERROR("save_session filename must be a string");
+      }
+      filename = action["file_name"].as_string();
+    }
+
+    // allow the user to specify which expressions they want saved out
+    if(action.has_path("expressions"))
+    {
+      std::vector<std::string> expressions_selection;
+      const conduit::Node &elist = action["expressions"];
+      const int num_exprs= elist.number_of_children();
+      if(num_exprs == 0)
+      {
+        ASCENT_ERROR("save_session expression selection must be "
+                     <<" a non-empty list of strings");
+      }
+
+      for(int i = 0; i < num_exprs; ++i)
+      {
+        const conduit::Node &e = elist.child(i);
+        if(!e.dtype().is_string())
+        {
+           ASCENT_ERROR("save_session expression selection list "
+                        <<"values must be a string");
+        }
+        expressions_selection.push_back(e.as_string());
+      }
+      runtime::expressions::ExpressionEval::save_cache(filename, expressions_selection);
+    }
+    else
+    {
+      runtime::expressions::ExpressionEval::save_cache(filename);
+    }
+  } // for each save action
+}
 
 //-----------------------------------------------------------------------------
 };
