@@ -30,3 +30,12 @@ cd alpinedav_ubuntu_20.10_devel_tpls
 cd ..
 
 
+# ubuntu 21.04
+cd alpinedav_ubuntu_21.04_devel
+./build.sh 
+cd ..
+cd alpinedav_ubuntu_21.04_devel_tpls
+./build.sh
+cd ..
+
+
