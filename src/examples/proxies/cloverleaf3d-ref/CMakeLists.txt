@@ -132,7 +132,7 @@ if(MPI_FOUND AND FORTRAN_FOUND)
     # compile errors with the mpi interface
     if(CMAKE_Fortran_COMPILER_VERSION GREATER  "9")
         blt_append_custom_compiler_flag(
-            FLAGS_VAR clover_link_flags
+            FLAGS_VAR clover_compile_flags
             GNU   "-fallow-invalid-boz -fallow-argument-mismatch"
         )
     endif()
