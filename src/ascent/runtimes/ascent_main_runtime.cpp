@@ -289,7 +289,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
        options["web/stream"].as_string() == "true" &&
        m_rank == 0)
     {
-#ifdef ASCENT_WEBERVER_ENABLED
+#ifdef ASCENT_WEBSERVER_ENABLED
         if(options.has_path("web/document_root"))
         {
             m_web_interface.SetDocumentRoot(options["web/document_root"].as_string());

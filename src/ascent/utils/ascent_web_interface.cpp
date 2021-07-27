@@ -103,7 +103,7 @@ web_client_root_directory()
     return web_root;
 }
 
-#ifdef ASCENT_WEBERVER_ENABLED
+#ifdef ASCENT_WEBSERVER_ENABLED
 //-----------------------------------------------------------------------------
 WebInterface::WebInterface()
 :m_enabled(false),
@@ -270,7 +270,7 @@ WebInterface::EncodeImage(const std::string &png_image_path,
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-#else // else #ifdef ASCENT_WEBERVER_ENABLED
+#else // else #ifdef ASCENT_WEBSERVER_ENABLED
 //-----------------------------------------------------------------------------
 // everything web related is stubbed out as a no-op
 // the runtime will issue an error message if folks try to enable web streaming
@@ -315,7 +315,7 @@ WebInterface::PushRenders(const Node &renders)
 {}
 
 //-----------------------------------------------------------------------------
-#endif // end #ifdef ASCENT_WEBERVER_ENABLED
+#endif // end #ifdef ASCENT_WEBSERVER_ENABLED
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

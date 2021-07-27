@@ -93,7 +93,7 @@ public:
     void                            PushRenders(const conduit::Node &renders);
 
 private:
-#ifdef ASCENT_WEBERVER_ENABLED
+#ifdef ASCENT_WEBSERVER_ENABLED
     conduit::relay::web::WebSocket *Connection();
 
     void                            EncodeImage(const std::string &png_file_path,
