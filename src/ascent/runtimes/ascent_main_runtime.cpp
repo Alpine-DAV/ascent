@@ -289,13 +289,17 @@ AscentRuntime::Initialize(const conduit::Node &options)
        options["web/stream"].as_string() == "true" &&
        m_rank == 0)
     {
-
+#ifdef ASCENT_WEBERVER_ENABLED
         if(options.has_path("web/document_root"))
         {
             m_web_interface.SetDocumentRoot(options["web/document_root"].as_string());
         }
 
         m_web_interface.Enable();
+#else
+        ASCENT_ERROR("Ascent was not built with web support,"
+                     "but options[\"web/stream\"] == \"true\"");
+#endif
     }
 
     if(options.has_path("field_filtering"))

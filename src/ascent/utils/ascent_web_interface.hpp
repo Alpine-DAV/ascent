@@ -94,7 +94,7 @@ public:
     void                            PushRenders(const conduit::Node &renders);
 
 private:
-
+#ifdef ASCENT_WEBERVER_ENABLED
     conduit::relay::web::WebSocket *Connection();
 
     void                            EncodeImage(const std::string &png_file_path,
@@ -104,8 +104,9 @@ private:
     int                             m_ms_poll;
     int                             m_ms_timeout;
     std::string                     m_doc_root;
-
+#endif
 };
+
 
 //-----------------------------------------------------------------------------
 };

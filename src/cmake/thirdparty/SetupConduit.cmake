@@ -93,6 +93,21 @@ endif()
 set(CONDUIT_FOUND TRUE)
 set(CONDUIT_INCLUDE_DIRS ${CONDUIT_DIR}/include/conduit)
 
+
+if(NOT CONDUIT_RELAY_WEBSERVER_ENABLED)
+    # older versions of conduit may still have web support but
+    # not export this cmake var, so for now, we also 
+    # check for the web headers
+    if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_web.hpp)
+        set(CONDUIT_RELAY_WEBSERVER_ENABLED TRUE)
+    else()
+        set(CONDUIT_RELAY_WEBSERVER_ENABLED FALSE)
+    endif()
+endif()
+
+message(STATUS "CONDUIT_RELAY_WEBSERVER_ENABLED = ${CONDUIT_RELAY_WEBSERVER_ENABLED}")
+
+
 if(ENABLE_PYTHON)
     find_package(PythonInterp)
     if(PYTHONINTERP_FOUND)
