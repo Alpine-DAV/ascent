@@ -166,6 +166,8 @@ void Transmogrifier::to_poly(conduit::Node &doms, conduit::Node &to_vtkh)
       }
     }
 
+    res.set_external(dom);
+
     std::vector<std::string> coordsets;
     for (int i = 0; i < poly_topos.size(); i ++)
     {
@@ -181,74 +183,74 @@ void Transmogrifier::to_poly(conduit::Node &doms, conduit::Node &to_vtkh)
         options);
     }
 
-    // TODO want to set_external FIRST and then change stuff w/ gen_sides
-    // maybe delete the stuff that is going to get overwritten in the dest
+    // // TODO want to set_external FIRST and then change stuff w/ gen_sides
+    // // maybe delete the stuff that is going to get overwritten in the dest
 
-    // we must copy all remaining pieces of the node as well
+    // // we must copy all remaining pieces of the node as well
 
-    // first we examine any children that are not coordsets, topologies, and fields
-    itr = dom.children();
-    while (itr.has_next())
-    {
-      const conduit::Node &child = itr.next();
-      std::string name = child.name();
-      if (name != "coordsets" && name != "topologies" && name != "fields")
-      {
-        res[name].set_external(child);
-      }
-    }
+    // // first we examine any children that are not coordsets, topologies, and fields
+    // itr = dom.children();
+    // while (itr.has_next())
+    // {
+    //   const conduit::Node &child = itr.next();
+    //   std::string name = child.name();
+    //   if (name != "coordsets" && name != "topologies" && name != "fields")
+    //   {
+    //     res[name].set_external(child);
+    //   }
+    // }
 
-    // next we will look at any coordsets that may have been missed
-    itr = dom["coordsets"].children();
-    while (itr.has_next())
-    {
-      const conduit::Node &child = itr.next();
-      std::string name = child.name();
-      // if this coordset is one of the ones we did not copy
-      if (std::find(coordsets.begin(), coordsets.end(), name) == coordsets.end())
-      {
-        res["coordsets/" + name].set_external(child);
-      }
-    }
+    // // next we will look at any coordsets that may have been missed
+    // itr = dom["coordsets"].children();
+    // while (itr.has_next())
+    // {
+    //   const conduit::Node &child = itr.next();
+    //   std::string name = child.name();
+    //   // if this coordset is one of the ones we did not copy
+    //   if (std::find(coordsets.begin(), coordsets.end(), name) == coordsets.end())
+    //   {
+    //     res["coordsets/" + name].set_external(child);
+    //   }
+    // }
 
-    // next we will do the same for topologies
-    itr = dom["topologies"].children();
-    while (itr.has_next())
-    {
-      const conduit::Node &child = itr.next();
-      std::string name = child.name();
-      // if the topology is *not* polyhedral
-      if (child.has_child("elements/shape"))
-      {
-        if (!(child["elements/shape"].as_string() == "polyhedral" || 
-                  child["elements/shape"].as_string() == "polygonal"))
-        {
-          res["topologies/" + name].set_external(child);
-        }
-      }
-    }
+    // // next we will do the same for topologies
+    // itr = dom["topologies"].children();
+    // while (itr.has_next())
+    // {
+    //   const conduit::Node &child = itr.next();
+    //   std::string name = child.name();
+    //   // if the topology is *not* polyhedral
+    //   if (child.has_child("elements/shape"))
+    //   {
+    //     if (!(child["elements/shape"].as_string() == "polyhedral" || 
+    //               child["elements/shape"].as_string() == "polygonal"))
+    //     {
+    //       res["topologies/" + name].set_external(child);
+    //     }
+    //   }
+    // }
 
-    // and finally we will copy over any fields that were not copied
-    // first we will figure out which ones were copied/mapped
-    std::vector<std::string> copied_field_names;
-    itr = res["fields"].children();
-    while (itr.has_next())
-    {
-      const conduit::Node &child = itr.next();
-      copied_field_names.push_back(child.name());
-    }
-    // then we will copy over any that were not copied in generate_sides
-    itr = dom["fields"].children();
-    while (itr.has_next())
-    {
-      const conduit::Node &child = itr.next();
-      std::string name = child.name();
-      // if the name from "dom" is not in "res"
-      if (std::find(copied_field_names.begin(), copied_field_names.end(), name) == copied_field_names.end())
-      {
-        res["fields/" + name].set_external(child);
-      }
-    }
+    // // and finally we will copy over any fields that were not copied
+    // // first we will figure out which ones were copied/mapped
+    // std::vector<std::string> copied_field_names;
+    // itr = res["fields"].children();
+    // while (itr.has_next())
+    // {
+    //   const conduit::Node &child = itr.next();
+    //   copied_field_names.push_back(child.name());
+    // }
+    // // then we will copy over any that were not copied in generate_sides
+    // itr = dom["fields"].children();
+    // while (itr.has_next())
+    // {
+    //   const conduit::Node &child = itr.next();
+    //   std::string name = child.name();
+    //   // if the name from "dom" is not in "res"
+    //   if (std::find(copied_field_names.begin(), copied_field_names.end(), name) == copied_field_names.end())
+    //   {
+    //     res["fields/" + name].set_external(child);
+    //   }
+    // }
   }
 }
 
