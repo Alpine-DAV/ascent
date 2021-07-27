@@ -305,26 +305,26 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
     }
 
     bool zero_copy = true;
-    conduit::Node *to_vtkh = new conduit::Node;
+    conduit::Node n_poly;
+    conduit::Node *to_vtkh = nullptr;
     
     if (m_low_bp != nullptr)
     {
       if (Transmogrifier::is_poly(*m_low_bp))
       {
-        Transmogrifier::to_poly(*m_low_bp, *to_vtkh);
+        Transmogrifier::to_poly(*m_low_bp, n_poly);
+        to_vtkh = &n_poly;
         zero_copy = false;
       }
       else
       {
-        to_vtkh->set_external(*m_low_bp);
+        to_vtkh = &(*m_low_bp);
       }
     }
 
     // convert to vtkh
     std::shared_ptr<VTKHCollection>
       vtkh_dset(VTKHDataAdapter::BlueprintToVTKHCollection(*to_vtkh, zero_copy));
-
-    delete to_vtkh;
 
     m_vtkh = vtkh_dset;
     
