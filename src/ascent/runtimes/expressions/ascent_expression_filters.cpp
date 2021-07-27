@@ -271,6 +271,7 @@ comp_op(const double lhs, const double rhs, const std::string &op)
   {
     ASCENT_ERROR("unknown comparison op " << op);
   }
+
   return res;
 }
 
@@ -629,6 +630,8 @@ BinaryOp::execute()
   const conduit::Node &lhs = (*n_lhs)["value"];
   const conduit::Node &rhs = (*n_rhs)["value"];
 
+
+
   std::string op_str = params()["op_string"].as_string();
   const std::string l_type = (*n_lhs)["type"].as_string();
   const std::string r_type = (*n_rhs)["type"].as_string();
@@ -675,6 +678,7 @@ BinaryOp::execute()
   }
   else if(detail::is_logic(op_str))
   {
+
     bool b_lhs = lhs.to_uint8();
     bool b_rhs = rhs.to_uint8();
     (*output)["value"] = detail::logic_op(b_lhs, b_rhs, op_str);
@@ -684,6 +688,7 @@ BinaryOp::execute()
   {
     double d_rhs = rhs.to_float64();
     double d_lhs = lhs.to_float64();
+
     (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op_str);
     (*output)["type"] = "bool";
   }
@@ -1196,7 +1201,7 @@ void
 ArrayMax::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_max((*input<Node>("arg1"))["value"]);
+  (*output)["value"] = array_max((*input<Node>("arg1"))["value"])["value"];
   (*output)["type"] = "double";
 
   set_output<conduit::Node>(output);
@@ -1361,7 +1366,6 @@ ScalarGradient::execute()
   #else
   conduit::Node &n_window_length_is_number_of_executions = *input<Node>("window_length_is_number_of_executions");
   #endif
-  // conduit::Node &n_time_path = *input<Node>("time_path");
 
   const conduit::Node *const cache =
       graph().workspace().registry().fetch<Node>("cache");
@@ -1418,6 +1422,8 @@ ScalarGradient::execute()
 
   const int entries = history.number_of_children();
   if(entries < 2) {
+    (*output)["value"] = -std::numeric_limits<double>::infinity();
+    (*output)["type"] = "double";
     set_output<conduit::Node>(output);
     return;
      // ASCENT_ERROR("ScalarGradient: cannot calculate gradient until the expression has been evaluated at 2 or more times." );        
@@ -1480,8 +1486,24 @@ ScalarGradient::execute()
     }
   }
 #endif
-  double first_value = history.child(first_index)["value"].to_float64();
-  double current_value = history.child(current_index)["value"].to_float64();
+  string value_path = "";
+  vector<string> value_paths = {"value", "attrs/value/value"};
+  for(const string &path : value_paths) {
+    if(history.child(current_index).has_path(path)) {
+      value_path = path;
+      break;
+    }
+  }
+  if(value_path.size() == 0) {
+      #if DEBUG
+        cout << "first_index: " << first_index << ", current_index: " << current_index << endl;
+        history.child(current_index).print();
+      #endif
+      ASCENT_ERROR("ScalarGradient: interal error. current index does not have one of the expected value paths");    
+  }
+
+  double first_value = history.child(first_index)[value_path].to_float64();
+  double current_value = history.child(current_index)[value_path].to_float64();
 
   // dy / dx
   double gradient = (current_value - first_value) / window_length;
@@ -1672,14 +1694,26 @@ void set_values_from_history(const string &operator_name, const conduit::Node &h
     bool gradient = (return_history_index || return_simulation_time);
   #endif
 
-  conduit::DataType dtype = history.child(first_index)["value"].dtype();
+  string value_path = "";
+  vector<string> value_paths = {"value", "attrs/value/value"};
+  for(const string &path : value_paths) {
+    if(history.child(first_index).has_path(path)) {
+      value_path = path;
+      break;
+    }
+  }
+  if(value_path.size() == 0) {
+      ASCENT_ERROR("ScalarGradient: interal error. first index does not have one of the expected value paths");    
+  }
+
+  conduit::DataType dtype = history.child(first_index)[value_path].dtype();
 
   if(dtype.is_float32())
   {
     float *array = new float[return_size];
     for(int i = 0; i < return_size; ++i)
     {
-      array[i] = history.child(first_index+i)["value"].to_float32();
+      array[i] = history.child(first_index+i)[value_path].to_float32();
     }
     (*output)["value"].set(array, return_size);
     delete[] array;
@@ -1689,7 +1723,7 @@ void set_values_from_history(const string &operator_name, const conduit::Node &h
     double *array = new double[return_size];
     for(int i = 0; i < return_size; ++i)
     {
-      array[i] = history.child(first_index+i)["value"].to_float64();
+      array[i] = history.child(first_index+i)[value_path].to_float64();
     }
     (*output)["value"].set(array, return_size);
     delete[] array;
@@ -1699,7 +1733,7 @@ void set_values_from_history(const string &operator_name, const conduit::Node &h
     int *array = new int[return_size];
     for(int i = 0; i < return_size; ++i)
     {
-      array[i] = history.child(first_index+i)["value"].to_int32();
+      array[i] = history.child(first_index+i)[value_path].to_int32();
     }
     (*output)["value"].set(array, return_size);
     delete[] array;
@@ -1709,7 +1743,7 @@ void set_values_from_history(const string &operator_name, const conduit::Node &h
     long long *array = new long long[return_size];
     for(int i = 0; i < return_size; ++i)
     {
-      array[i] = history.child(first_index+i)["value"].to_int64();
+      array[i] = history.child(first_index+i)[value_path].to_int64();
     }
     (*output)["value"].set(array, return_size);
     delete[] array;
@@ -1865,6 +1899,10 @@ conduit::Node * range_values_helper(const conduit::Node &history,
   #else
     set_values_from_history(operator_name, history, first_index, return_size, (return_time && (relative || absolute)), (return_time && simulation_time), output);
   #endif
+  #if DEBUG
+    cout << "output: ";
+    output->print();
+  #endif
 
   return output;
 }
@@ -1907,6 +1945,21 @@ ArrayGradient::execute()
     #endif
     operator_name, return_time
   );
+
+  size_t num_array_elems = (*output)["value"].dtype().number_of_elements();
+
+  #if DEBUG
+    cout << "range_values_helper output: ";
+    output->print();
+    cout << "num elems: " << num_array_elems << endl;
+  #endif
+
+  if(num_array_elems < 2) {
+    (*output)["value"] = -std::numeric_limits<double>::infinity();
+    (*output)["type"] = "double";
+    set_output<conduit::Node>(output);
+    return;
+  }
 
   conduit::Node gradient = array_gradient((*output)["value"], (*output)["time"]);
   (*output)["value"] = gradient["value"];

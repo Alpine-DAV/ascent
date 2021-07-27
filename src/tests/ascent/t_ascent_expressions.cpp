@@ -761,7 +761,7 @@ TEST(ascent_expressions, test_gradient_scalar)
   }
 #endif
 
-  //fix - todo test exceptions
+  //todo test exceptions
   // bool threw = false;
   // try
   // {
@@ -970,10 +970,10 @@ TEST(ascent_expressions, test_gradient_array)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value"]["value"].to_float64(), 1);
+    EXPECT_EQ(res["value"].to_float64(), 1);
   }
 
-  // fix - would it be better to throw an error?
+  // tood - would it be better to throw an error?
   //confirm it returns an empty gradient if there is only a single value
   for(const string &expression : {
       "gradient_range(val, first_absolute_index=0, last_absolute_index=0)", 
@@ -982,9 +982,8 @@ TEST(ascent_expressions, test_gradient_array)
       "gradient_range(val, first_absolute_time=2.0, last_absolute_time=2.0)",
     }) {
     res = eval.evaluate(expression);
-    EXPECT_EQ(res["type"].as_string(), "array");
-    result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "");
+    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["value"].to_string(), "\"-inf\"");
   }
 
 
@@ -1038,7 +1037,7 @@ TEST(ascent_expressions, test_history_range)
     multi_dom.child(0)["state/cycle"] = 100;
     multi_dom.child(0)["state/time"] = 1.0;
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    res = eval.evaluate("1", "val");
+    res = eval.evaluate("-1.0", "val");
     res = eval.evaluate("vector(1,2,3)", "vec");
   }
 
@@ -1046,7 +1045,7 @@ TEST(ascent_expressions, test_history_range)
     multi_dom.child(0)["state/cycle"] = 200;
     multi_dom.child(0)["state/time"] = 2.0;
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    res = eval.evaluate("2", "val");
+    res = eval.evaluate("-2.0", "val");
     res = eval.evaluate("vector(9,3,4)", "vec");
   }
 
@@ -1054,7 +1053,7 @@ TEST(ascent_expressions, test_history_range)
     multi_dom.child(0)["state/cycle"] = 300;
     multi_dom.child(0)["state/time"] = 3.0;
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    res = eval.evaluate("3", "val");
+    res = eval.evaluate("-3.0", "val");
     res = eval.evaluate("vector(3,4,0)", "vec");
   }
 
@@ -1062,12 +1061,38 @@ TEST(ascent_expressions, test_history_range)
     multi_dom.child(0)["state/cycle"] = 400;
     multi_dom.child(0)["state/time"] = 4.0;
     runtime::expressions::ExpressionEval eval(&multi_dom);
-    res = eval.evaluate("4", "val");
+    res = eval.evaluate("-4.0", "val");
     res = eval.evaluate("vector(6,4,8)", "vec");
   }
 
-  conduit::int32_array result;
+  conduit::float64_array result;
   runtime::expressions::ExpressionEval eval(&multi_dom);
+
+  for(const string &expression : {
+      "history_range(val, first_absolute_index=0, last_absolute_index=2)", 
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[-1.0, -2.0, -3.0]");
+  }
+
+
+  for(const string &expression : {
+      "max(history_range(val, first_absolute_index=0, last_absolute_index=2))", 
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["value"].as_double(), -1);
+  }
+
+  for(const string &expression : {
+      "max(history_range(val, first_absolute_index=0, last_absolute_index=2)) == -1.0", 
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "bool");
+    EXPECT_EQ(res["value"].to_int8(), 1);
+  }
 
   for(const string &expression : {
       "history_range(val, first_absolute_index=0, last_absolute_index=2)", 
@@ -1079,8 +1104,8 @@ TEST(ascent_expressions, test_history_range)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
-    result = res["value"].as_int32_array();
-    EXPECT_EQ(result.to_json(), "[1, 2, 3]");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[-1.0, -2.0, -3.0]");
   }
 
   for(const string &expression : {
@@ -1093,8 +1118,8 @@ TEST(ascent_expressions, test_history_range)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
-    result = res["value"].as_int32_array();
-    EXPECT_EQ(result.to_json(), "[2, 3]");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[-2.0, -3.0]");
   }
 
   //confirm that it clamps to the end as expected
@@ -1107,8 +1132,8 @@ TEST(ascent_expressions, test_history_range)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
-    result = res["value"].as_int32_array();
-    EXPECT_EQ(result.to_json(), "[2, 3, 4]");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[-2.0, -3.0, -4.0]");
   }
 
   //confirm that it clamps to the beginning as expected
@@ -1121,8 +1146,8 @@ TEST(ascent_expressions, test_history_range)
   }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
-    result = res["value"].as_int32_array();
-    EXPECT_EQ(result.to_json(), "[1, 2, 3]");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[-1.0, -2.0, -3.0]");
   }
 
   for(const string &expression : {
@@ -1130,10 +1155,10 @@ TEST(ascent_expressions, test_history_range)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value"]["value"].to_float64(), 4);
+    EXPECT_EQ(res["value"].to_float64(), -2);
   }
 
-  //fix - todo test exceptions
+  //todo test exceptions
   // bool threw = false;
   // try
   // {
