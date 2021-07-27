@@ -194,13 +194,61 @@ simulation restarts, and it will continue adding to the file from the last time.
 If the restart occurs at a cycle in the past (i.e., if the session was saved at cycle
 200 and the simulation was restarted at cycle 150), all newer entries will be removed.
 
+Default Session Name
+^^^^^^^^^^^^^^^^^^^^
+The default session file name is `ascent_session`,
+ and you can change the session file name with an entry in the
+`ascent_options.yaml` file.
+
+.. code-block:: yaml
+
+   session_name : my_session_name
+
+
+Save Session Action
+^^^^^^^^^^^^^^^^^^^
 If the simulation crashes, there is no promise that the session file will successfully
 written out, so Ascent provides an explicit action to save the session file. Its
 important to note that this involves IO, so its a good idea to only use this actions
-periodically.
+periodically. The save session action always executes after all other actions have finished.
 
 .. code-block:: yaml
 
    -
      action: "save_session"
 
+
+Additionally, you can explicitly override the default session name by using the
+`file_name` parameter:
+
+.. code-block:: yaml
+
+   -
+     action: "save_session"
+    file_name: "saved_by_name_with_selection"
+
+
+Finally, you can save only a set of expressions by means of a selector list:
+
+.. code-block:: yaml
+
+  -
+    action: "add_queries"
+    queries:
+      q1:
+        params:
+          expression: "max(field('p'))"
+          name: "max_pressure"
+      q2:
+        params:
+          expression: "10 + 1"
+          name: "garbage"
+  -
+    action: "save_session"
+    file_name: "saved_by_name_with_selection"
+    expression_list:
+      - max_pressure
+
+In this example, there are two queries. The save session action specifies that only
+`max_pressure` expression should be saved inside the file named
+`saved_by_name_with_selection`.
