@@ -103,6 +103,7 @@ web_client_root_directory()
     return web_root;
 }
 
+#ifdef ASCENT_WEBSERVER_ENABLED
 //-----------------------------------------------------------------------------
 WebInterface::WebInterface()
 :m_enabled(false),
@@ -143,7 +144,6 @@ WebInterface::Enable()
 {
     m_enabled = true;
 }
-
 
 //-----------------------------------------------------------------------------
 WebSocket *
@@ -231,27 +231,6 @@ WebInterface::PushRenders(const Node &renders)
     wsock->send(msg);
 }
 
-// //-----------------------------------------------------------------------------
-// void
-// WebInterface::PushImage(PNGEncoder &png)
-// {
-//     //  Don't do any more work unless we have a valid client connection
-//     // (also handles case where stream is not enabled)
-//     WebSocket *wsock = Connection();
-//
-//     if(wsock == NULL)
-//     {
-//         return;
-//     }
-//     // create message with image data
-//     png.Base64Encode();
-//     Node msg;
-//     msg["type"] = "image";
-//     msg["data"] = "data:image/png;base64," + png.Base64Node().as_string();
-//     // sent the message
-//     wsock->send(msg);
-// }
-
 //-----------------------------------------------------------------------------
 void
 WebInterface::EncodeImage(const std::string &png_image_path,
@@ -289,7 +268,55 @@ WebInterface::EncodeImage(const std::string &png_image_path,
     out["data"] = "data:image/png;base64," + png_data["encoded"].as_string();
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+#else // else #ifdef ASCENT_WEBSERVER_ENABLED
+//-----------------------------------------------------------------------------
+// everything web related is stubbed out as a no-op
+// the runtime will issue an error message if folks try to enable web streaming
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+WebInterface::WebInterface()
+{}
+
+//-----------------------------------------------------------------------------
+WebInterface::~WebInterface()
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetDocumentRoot(const std::string &path)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetPoll(int ms_poll)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetTimeout(int ms_timeout)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::Enable()
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::PushMessage(const Node &msg)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::PushRenders(const Node &renders)
+{}
+
+//-----------------------------------------------------------------------------
+#endif // end #ifdef ASCENT_WEBSERVER_ENABLED
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };
