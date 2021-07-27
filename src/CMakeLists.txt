@@ -183,10 +183,6 @@ include(cmake/SetupIncludes.cmake)
 ################################
 add_subdirectory(thirdparty_builtin)
 
-if(ENABLE_FIDES)
-  find_package(ADIOS2 REQUIRED)
-  find_package(Fides REQUIRED)
-endif()
 
 ################################
 # Add our libs

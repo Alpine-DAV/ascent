@@ -54,8 +54,7 @@
 
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
-
-#include <ascent_png_encoder.hpp>
+#include <ascent_config.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
