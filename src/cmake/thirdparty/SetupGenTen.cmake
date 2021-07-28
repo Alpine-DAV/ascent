@@ -60,7 +60,11 @@ find_package(Genten REQUIRED QUIET)
 
 
 set(GENTEN_FOUND TRUE)
-set(GENTEN_INLCUDE_DIR ${GENTEN_DIR}/include/genten/)
+set(GENTEN_INCLUDE_DIR ${GENTEN_DIR}/include/genten/)
+#blt_register_library(NAME genten
+#                     LIBRARIES genten::genten
+#                     )
 blt_register_library(NAME genten
-                     LIBRARIES genten::genten
+                     LIBRARIES gt_higher_moments
+                     INCLUDES ${GENTEN_INCLUDE_DIR}
                      )
