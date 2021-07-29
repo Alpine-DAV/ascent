@@ -1,6 +1,10 @@
 {
 "package_name" : "ascent",
-"uberenv_package_name" : "uberenv-ascent",
+"package_version" : "develop",
+"package_source_dir" : "../../",
+"spack_build_mode" : "uberenv-pkg",
+"spack_configs_path": "scripts/uberenv_configs/spack_configs",
+"spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/alpine-DAV/spack",
 "mirror_url": "https://www.ascent-dav.org/mirror/ascent/latest/",
 "spack_branch": "ascent/develop",

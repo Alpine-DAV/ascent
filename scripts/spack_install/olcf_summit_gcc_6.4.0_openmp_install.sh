@@ -12,7 +12,7 @@ mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc" \
        --pull \
        --install \
-       --spack-config-dir="scripts/uberenv/spack_configs/olcf/summit_openmp/" \
+       --spack-config-dir="scripts/uberenv_configs/spack_configs/olcf/summit_openmp/" \
        --prefix=${DEST_DIR}
 
 # gen symlinks to important deps
