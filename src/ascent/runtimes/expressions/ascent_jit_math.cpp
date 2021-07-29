@@ -155,11 +155,6 @@ MathCode::cross_product(InsertionOrderedSet<std::string> &code,
     code.insert(res_name + "[1] = " + a + "[2] * " + b + "[0] - " + a +
                 "[0] * " + b + "[2];\n");
   }
-  else if(num_components == 2)
-  {
-    code.insert(res_name + "[0] = 0;\n");
-    code.insert(res_name + "[1] = 0;\n");
-  }
   else
   {
     ASCENT_ERROR("cross_product is not implemented for vectors '"

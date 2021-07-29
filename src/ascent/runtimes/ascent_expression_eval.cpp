@@ -1343,6 +1343,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       jit_root(root, expr_name);
     }
 
+#warning "get rig of this"
     w.graph().save_dot_html("ascent_expressions_graph.html");
     ASCENT_DATA_ADD("build_graph time", build_graph_timer.elapsed());
     flow::Timer execute_timer;

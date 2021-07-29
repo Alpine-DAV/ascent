@@ -360,10 +360,11 @@ added to a field so the result must be a derived field where ``1`` is added to
 each element of ``field('density')``.
 
 Certain functions and object attributes will also generate derived fields. The
-return type of such functions and objects is ``jitable`` in the :ref:`Ascent
-Expressions Documentation`. For example, there is an overload of the ``max``
-function with a return type of ``jitable`` which can be used to take the
-maximum of two fields via ``max(field('energy1'), field('energy2'))``.
+return type of such functions (in :ref:`ExpressionFunctions`)  and
+objects (in :ref:`ExpresssionsObjects`) is ``jitable``. For example, there
+is an overload of the ``max`` function with a return type of ``jitable``
+which can be used to take the maximum of two fields via
+``max(field('energy1'), field('energy2'))``.
 
 .. note::
     For an expression like ``max(field('energy1'), field('energy2'))`` to work,
@@ -529,13 +530,13 @@ If the restart occurs at a cycle in the past (i.e., if the session was saved at 
 
 Default Session Name
 ^^^^^^^^^^^^^^^^^^^^
-The default session file name is `ascent_session`,
- and you can change the session file name with an entry in the
-`ascent_options.yaml` file.
+The default session file name is `ascent_session`, and you can change the session
+file name with an entry in the `ascent_options.yaml` file.
 
 .. code-block:: yaml
 
    session_name : my_session_name
+
 
 If the simulation crashes, there is no promise that the session file will successfully
 written out, so Ascent provides an explicit action to save the session file. Its
