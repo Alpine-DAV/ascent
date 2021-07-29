@@ -85,7 +85,7 @@
 #include <vtkm/cont/Invoker.h>
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <vtkm/cont/DataSetFieldAdd.h>
-
+#include <vtkm/worklet/FieldHistogram.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
@@ -832,7 +832,10 @@ public:
                   FieldType& output) const
   {
     if(numPoints != 3)
-      ASCENT_ERROR("We only play with triangles here");
+    {
+      this->RaiseError("We only play with triangles here");
+      return;
+    }
     // Since you only have triangles, numPoints should always be 3
     // PointType is an abstraction of vtkm::Vec3f, which is {x, y, z} of a point
     using PointType = typename PointVecType::ComponentType;
@@ -923,8 +926,10 @@ public:
                   Triangle& output,
 		  FieldType& local_area) const
   {
-    if(numPoints != 3)
-      ASCENT_ERROR("We only play with triangles here");
+    if(numPoints != 3) 
+    {
+      this->RaiseError("We only play with triangles here");
+    }
     // Since you only have triangles, numPoints should always be 3
     // PointType is an abstraction of vtkm::Vec3f, which is {x, y, z} of a point
     using PointType = typename PointVecType::ComponentType;
@@ -968,8 +973,8 @@ public:
   using ControlSignature = void(CellSetIn cellset,
                                 FieldInPoint points,
                                 FieldOutCell x0, FieldOutCell y0, FieldOutCell z0,
-		                FieldOutCell x1, FieldOutCell y1, FieldOutCell z1,
-		                FieldOutCell x2, FieldOutCell y2, FieldOutCell z2);
+		                            FieldOutCell x1, FieldOutCell y1, FieldOutCell z1,
+            		                FieldOutCell x2, FieldOutCell y2, FieldOutCell z2);
 
   // After VTK-m does it's magic, you need to tell what information you need
   // from the provided inputs from the ControlSignature.
@@ -995,7 +1000,9 @@ public:
 		  FieldType& z2) const
   {
     if(numPoints != 3)
-      ASCENT_ERROR("We only play with triangles here");
+    {
+      this->RaiseError("We only play with triangles here");
+    }
     // Since you only have triangles, numPoints should always be 3
     // PointType is an abstraction of vtkm::Vec3f, which is {x, y, z} of a point
     using PointType = typename PointVecType::ComponentType;
@@ -1014,76 +1021,6 @@ public:
     z2 = points[2][2]; 
   }
 };
-
-void
-AddTriangleFields2(vtkh::DataSet &vtkhData)
-{
-  //Get domain Ids on this rank
-  //will be nonzero even if there is no data
-  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
-//  vtkh::DataSet* newDataSet = new vtkh::DataSet;
-  //if there is data: loop through domains and grab all triangles.
-  if(!vtkhData.IsEmpty())
-  {
-//    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
-    for(int i = 0; i < localDomainIds.size(); i++)
-    {
-      vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
-      //Get Data points
-      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      //Get triangles
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
-
-      int numTris = cellset.GetNumberOfCells();
-      //make vectors and array handles for x,y,z triangle points.
-      std::vector<double> x0(numTris), y0(numTris), z0(numTris), x1(numTris), y1(numTris), z1(numTris), x2(numTris), y2(numTris), z2(numTris);
-      std::vector<double> X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2;
-     
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> x_0 = vtkm::cont::make_ArrayHandle(x0);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> y_0 = vtkm::cont::make_ArrayHandle(y0);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> z_0 = vtkm::cont::make_ArrayHandle(z0);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> x_1 = vtkm::cont::make_ArrayHandle(x1);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> y_1 = vtkm::cont::make_ArrayHandle(y1);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> z_1 = vtkm::cont::make_ArrayHandle(z1);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> x_2 = vtkm::cont::make_ArrayHandle(x2);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> y_2 = vtkm::cont::make_ArrayHandle(y2);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> z_2 = vtkm::cont::make_ArrayHandle(z2);
-      vtkm::cont::Invoker invoker;
-      invoker(GetTriangleFields{}, cellset, coords, x_0, y_0, z_0, x_1, y_1, z_1, x_2, y_2, z_2);
-
-      X0.insert(X0.end(), x0.begin(), x0.end());
-      Y0.insert(Y0.end(), y0.begin(), y0.end());
-      Z0.insert(Z0.end(), z0.begin(), z0.end());
-      X1.insert(X1.end(), x1.begin(), x1.end());
-      Y1.insert(Y1.end(), y1.begin(), y1.end());
-      Z1.insert(Z1.end(), z1.begin(), z1.end());
-      X2.insert(X2.end(), x2.begin(), x2.end());
-      Y2.insert(Y2.end(), y2.begin(), y2.end());
-      Z2.insert(Z2.end(), z2.begin(), z2.end());
-      dataset.AddCellField("X0", X0);
-      dataset.AddCellField("Y0", Y0);
-      dataset.AddCellField("Z0", Z0);
-      dataset.AddCellField("X1", X1);
-      dataset.AddCellField("Y1", Y1);
-      dataset.AddCellField("Z1", Z1);
-      dataset.AddCellField("X2", X2);
-      dataset.AddCellField("Y2", Y2);
-      dataset.AddCellField("Z2", Z2);
-      //dataSetFieldAdd.AddCellField(dataset, "X0", X0);
-      //dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
-      //dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
-      //dataSetFieldAdd.AddCellField(dataset, "X1", X1);
-      //dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
-      //dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
-      //dataSetFieldAdd.AddCellField(dataset, "X2", X2);
-      //dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
-      //dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
-      //newDataSet->AddDomain(dataset,localDomainIds[i]);
-    }
-  }
-  return;
-//  return newDataSet;
-}
 
 int 
 GetBin(float x0, float y0, float z0, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax, int xbins, int ybins, int zbins)
@@ -1129,70 +1066,61 @@ AddTriangleFields(vtkh::DataSet &vtkhData, float &xmin, float &xmax, float &ymin
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
   std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
-  vtkh::DataSet* newDataSet = new vtkh::DataSet;
+  vtkh::DataSet *newDataSet = new vtkh::DataSet;
   //if there is data: loop through domains and grab all triangles.
-  if(!vtkhData.IsEmpty())
+  if (!vtkhData.IsEmpty())
   {
-    vtkm::cont::DataSetFieldAdd dataSetFieldAdd;
-    for(int i = 0; i < localDomainIds.size(); i++)
+    for (int i = 0; i < localDomainIds.size(); i++)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
-      //Get Data points
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      //Get triangles
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
-
-      int numTris = cellset.GetNumberOfCells();
-      //make vectors and array handles for x,y,z triangle points.
-      std::vector<double> x0(numTris), y0(numTris), z0(numTris), x1(numTris), y1(numTris), z1(numTris), x2(numTris), y2(numTris), z2(numTris);
-      std::vector<double> X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2;
-     
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> x_0 = vtkm::cont::make_ArrayHandle(x0);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> y_0 = vtkm::cont::make_ArrayHandle(y0);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> z_0 = vtkm::cont::make_ArrayHandle(z0);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> x_1 = vtkm::cont::make_ArrayHandle(x1);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> y_1 = vtkm::cont::make_ArrayHandle(y1);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> z_1 = vtkm::cont::make_ArrayHandle(z1);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> x_2 = vtkm::cont::make_ArrayHandle(x2);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> y_2 = vtkm::cont::make_ArrayHandle(y2);
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> z_2 = vtkm::cont::make_ArrayHandle(z2);
+    
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> X0;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y0;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Z0;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> X1;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y1;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Z1;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> X2;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y2;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Z2;
       vtkm::cont::Invoker invoker;
-      invoker(GetTriangleFields{}, cellset, coords, x_0, y_0, z_0, x_1, y_1, z_1, x_2, y_2, z_2);
+      invoker(GetTriangleFields{}, cellset, coords, X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2);
 
-      X0.insert(X0.end(), x0.begin(), x0.end());
-      Y0.insert(Y0.end(), y0.begin(), y0.end());
-      Z0.insert(Z0.end(), z0.begin(), z0.end());
-      X1.insert(X1.end(), x1.begin(), x1.end());
-      Y1.insert(Y1.end(), y1.begin(), y1.end());
-      Z1.insert(Z1.end(), z1.begin(), z1.end());
-      X2.insert(X2.end(), x2.begin(), x2.end());
-      Y2.insert(Y2.end(), y2.begin(), y2.end());
-      Z2.insert(Z2.end(), z2.begin(), z2.end());
-      std::vector<double> Bin;
-      if(X0.size())
+      vtkm::cont::ArrayHandle<double> point_bin;
+      if (X0.GetNumberOfValues() > 0)
       {
-	int size = X0.size();
-        for(int i = 0; i < size; i++)
-	{
-          Bin.push_back((double)GetBin(X0[i],Y0[i],Z0[i],xmin,xmax,ymin,ymax,zmin,zmax,xBins,yBins,zBins));
-	}
-      } 
-      dataSetFieldAdd.AddCellField(dataset, "X0", X0);
-      dataSetFieldAdd.AddCellField(dataset, "Y0", Y0);
-      dataSetFieldAdd.AddCellField(dataset, "Z0", Z0);
-      dataSetFieldAdd.AddCellField(dataset, "X1", X1);
-      dataSetFieldAdd.AddCellField(dataset, "Y1", Y1);
-      dataSetFieldAdd.AddCellField(dataset, "Z1", Z1);
-      dataSetFieldAdd.AddCellField(dataset, "X2", X2);
-      dataSetFieldAdd.AddCellField(dataset, "Y2", Y2);
-      dataSetFieldAdd.AddCellField(dataset, "Z2", Z2);
-      dataSetFieldAdd.AddCellField(dataset, "Bin", Bin);
-      newDataSet->AddDomain(dataset,localDomainIds[i]);
+        int size = X0.GetNumberOfValues();
+        point_bin.Allocate(size);
+        auto binPortal = point_bin.WritePortal();
+        auto x0 = X0.ReadPortal();
+        auto y0 = Y0.ReadPortal();
+        auto z0 = Z0.ReadPortal();
+        for (int i = 0; i < size; i++)
+        {
+          auto bin =(double)GetBin(x0.Get(i), y0.Get(i), z0.Get(i), xmin, xmax, ymin, ymax, zmin, zmax, xBins, yBins, zBins);
+          binPortal.Set(i, bin);
+        }
+      }
+      dataset.AddCellField("X0", X0);
+      dataset.AddCellField("Y0", Y0);
+      dataset.AddCellField("Z0", Z0);
+      dataset.AddCellField("X1", X1);
+      dataset.AddCellField("Y1", Y1);
+      dataset.AddCellField("Z1", Z1);
+      dataset.AddCellField("X2", X2);
+      dataset.AddCellField("Y2", Y2);
+      dataset.AddCellField("Z2", Z2);
+      dataset.AddCellField("Bin", point_bin);
+      newDataSet->AddDomain(dataset, localDomainIds[i]);
     }
   }
   return newDataSet;
 }
 
+// TODO: Manish
+// `tris` and `local_areas` can be converted into ArrayHandles
 std::vector<Triangle>
 GetTrianglesAndArea(vtkh::DataSet &vtkhData, double &area)
 {
@@ -1203,40 +1131,37 @@ GetTrianglesAndArea(vtkh::DataSet &vtkhData, double &area)
   std::vector<double> local_areas;
   double total_area = 0.0;
   //if there is data: loop through domains and grab all triangles.
-  if(!vtkhData.IsEmpty())
+  if (!vtkhData.IsEmpty())
   {
-    for(int i = 0; i < localDomainIds.size(); i++)
+    for (int i = 0; i < localDomainIds.size(); i++)
     {
-      vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
-      //Get Data points
+      vtkm::cont::DataSet& dataset = vtkhData.GetDomain(i);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      //Get triangles
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
-      //Get variable
-
-      int numTris = cellset.GetNumberOfCells();
-      std::vector<Triangle> tmp_tris(numTris);
-      std::vector<double> tmp_areas(numTris);
-     
-      vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
-      vtkm::cont::ArrayHandle<double> areas = vtkm::cont::make_ArrayHandle(tmp_areas);
-
+      vtkm::cont::ArrayHandle<Triangle> triangles;
+      vtkm::cont::ArrayHandle<double> areas;
       vtkm::cont::Invoker invoker;
       invoker(ProcessTriangle{}, cellset, coords, triangles, areas);
 
       //combine all domain triangles
-      tris.insert(tris.end(), tmp_tris.begin(), tmp_tris.end());
-      
-      local_areas.insert(local_areas.end(), tmp_areas.begin(), tmp_areas.end());
-      for(std::vector<double>::iterator it = local_areas.begin(); it != local_areas.end(); it++)
-        total_area += *it;
+      // copyWithOffset here?
+      auto trianglesPortal = triangles.ReadPortal();
+      for (auto i = 0; i < trianglesPortal.GetNumberOfValues(); ++i)
+      {
+        tris.push_back(trianglesPortal.Get(i));
+      }
 
-      area = total_area;
+      auto areasPortal = areas.ReadPortal();
+      for (auto i = 0; i < areasPortal.GetNumberOfValues(); ++i)
+      {
+        total_area += areasPortal.Get(i);
+      }
     }
+    area = total_area;
   }
+
   return tris;
 }
-
 
 std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData)
@@ -1368,8 +1293,318 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name, int height, int w
     //cerr << "VTKH Data is empty" << endl;
   return data;
 }
-#endif
 
+template <typename FloatType>
+class CopyWithOffset : public vtkm::worklet::WorkletMapField
+{
+public:
+  using ControlSignature = void(FieldIn src, WholeArrayInOut dest);
+  using ExecutionSignature = void(InputIndex, _1, _2);
+
+  VTKM_CONT
+  CopyWithOffset(const vtkm::Id offset = 0)
+      : Offset(offset)
+  {
+  }
+  template <typename OutArrayType>
+  VTKM_EXEC inline void operator()(const vtkm::Id idx, const FloatType &srcValue, OutArrayType &destArray) const
+  {
+    destArray.Set(idx + this->Offset, srcValue);
+  }
+
+private:
+  vtkm::Id Offset;
+};
+
+template <typename T>
+struct MaxValueWithChecks
+{
+  MaxValueWithChecks(T minValid, T maxValid)
+      : MinValid(minValid),
+        MaxValid(maxValid)
+  {
+  }
+
+  VTKM_EXEC_CONT inline T operator()(const T &a, const T &b) const
+  {
+    if (this->IsValid(a) && this->IsValid(b))
+    {
+      return (a > b) ? a : b;
+    }
+    else if (!this->IsValid(a))
+    {
+      return b;
+    }
+    else if (!this->IsValid(b))
+    {
+      return a;
+    }
+    else
+    {
+      return this->MinValid;
+    }
+  }
+
+  VTKM_EXEC_CONT inline bool IsValid(const T &t) const
+  {
+    return !vtkm::IsNan(t) && t > MinValid && t < MaxValid;
+  }
+
+  T MinValid;
+  T MaxValid;
+};
+
+template <typename SrcType, typename DestType>
+void copyArrayWithOffset(const vtkm::cont::ArrayHandle<SrcType> &src, vtkm::cont::ArrayHandle<DestType> &dest, vtkm::Id offset)
+{
+  vtkm::cont::Invoker invoker;
+  invoker(CopyWithOffset<SrcType>(offset), src, dest);
+}
+
+enum DataCheckFlags
+{
+  CheckNan          = 1 << 0,
+  CheckZero         = 1 << 1,
+  CheckMinExclusive = 1 << 2,
+  CheckMaxExclusive = 1 << 3,
+};
+
+template<typename T>
+struct DataCheckVals
+{
+  T Min;
+  T Max;
+};
+
+inline DataCheckFlags operator|(DataCheckFlags lhs, DataCheckFlags rhs)
+{
+  return static_cast<DataCheckFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+template <typename FloatType>
+struct CopyWithChecksMask : public vtkm::worklet::WorkletMapField
+{
+public:
+  using ControlSignature = void(FieldIn src, FieldOut dest);
+  using ExecutionSignature = void(_1, _2);
+
+  VTKM_CONT
+  CopyWithChecksMask(DataCheckFlags checks, DataCheckVals<FloatType> checkVals)
+      : Checks(checks),
+        CheckVals(checkVals)
+  {
+  }
+
+  VTKM_EXEC inline void operator()(const FloatType &val, vtkm::IdComponent& mask) const
+  {
+    bool passed = true;
+    if(this->HasCheck(CheckNan))
+    {
+      passed = passed && !vtkm::IsNan(val);   
+    }
+    if(this->HasCheck(CheckZero)) 
+    {
+      passed = passed && (val != FloatType(0));
+    }
+    if(this->HasCheck(CheckMinExclusive))
+    {
+      passed = passed && (val > this->CheckVals.Min);
+    }
+    if(this->HasCheck(CheckMaxExclusive))
+    {
+      passed = passed && (val < this->CheckVals.Max);
+    }
+
+    mask = passed ? 1 : 0;
+  }
+  
+  VTKM_EXEC inline bool HasCheck(DataCheckFlags check) const
+  {
+    return (Checks & check) == check;
+  }
+
+  DataCheckFlags Checks;
+  DataCheckVals<FloatType> CheckVals;
+};
+
+template<typename SrcType>
+vtkm::cont::ArrayHandle<SrcType> copyWithChecks(
+  const vtkm::cont::ArrayHandle<SrcType>& src, 
+  DataCheckFlags checks, 
+  DataCheckVals<SrcType> checkVals = DataCheckVals<SrcType>{})
+{
+  vtkm::cont::ArrayHandle<vtkm::IdComponent> mask;
+  vtkm::cont::Invoker invoker;
+  invoker(CopyWithChecksMask<SrcType>(checks, checkVals), src, mask);
+  
+  vtkm::cont::ArrayHandle<SrcType> dest;
+  vtkm::cont::Algorithm::CopyIf(src, mask, dest);
+  return dest;
+}
+
+template <typename T>
+vtkm::cont::ArrayHandle<T>
+GetScalarDataAsArrayHandle(vtkh::DataSet &vtkhData, std::string field_name)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  vtkm::cont::ArrayHandle<T> totalFieldData;
+
+  if (!vtkhData.IsEmpty())
+  {
+    // Loop once to get the total number of items and reserve the vector
+    vtkm::Id totalNumberOfValues = std::accumulate(
+        localDomainIds.begin(),
+        localDomainIds.end(),
+        0,
+        [&](const vtkm::Id &acc, const vtkm::Id domainId)
+        {
+          const vtkm::cont::DataSet &dataset = vtkhData.GetDomain(domainId);
+          const vtkm::cont::Field &field = dataset.GetField(field_name);
+
+          return acc + field.GetData().GetNumberOfValues();
+        });
+
+    totalFieldData.Allocate(totalNumberOfValues);
+    vtkm::Id offset = 0;
+    for (auto &domainId : localDomainIds)
+    {
+      const vtkm::cont::DataSet &dataset = vtkhData.GetDomain(domainId);
+      const vtkm::cont::Field &field = dataset.GetField(field_name);
+      const auto fieldData = field.GetData().AsArrayHandle<vtkm::cont::ArrayHandle<T>>();
+      copyArrayWithOffset(fieldData, totalFieldData, offset);
+      offset += fieldData.GetNumberOfValues();
+    }
+  }
+
+  return totalFieldData;
+}
+
+template <typename FloatType>
+struct TriangleCreator : public vtkm::worklet::WorkletMapField
+{
+public:
+  using ControlSignature = void(
+    FieldIn x0,
+    FieldIn y0,
+    FieldIn z0,
+    FieldIn x1,
+    FieldIn y1,
+    FieldIn z1,
+    FieldIn x2,
+    FieldIn y2,
+    FieldIn z2,
+    FieldOut triangle,
+    FieldOut stencil);
+  using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11);
+
+  VTKM_CONT
+  TriangleCreator()
+  {  }
+
+  VTKM_EXEC void operator()(
+    const FloatType& x0,
+    const FloatType& y0,
+    const FloatType& z0,
+    const FloatType& x1,
+    const FloatType& y1,
+    const FloatType& z1,
+    const FloatType& x2,
+    const FloatType& y2,
+    const FloatType& z2,
+    Triangle& triangle,
+    vtkm::IdComponent& stencil) const
+  {
+    stencil = !vtkm::IsNan(x0);
+    triangle.X[0] = x0;
+    triangle.Y[0] = y0;
+    triangle.Z[0] = z0;
+    triangle.X[1] = x1;
+    triangle.Y[1] = y1;
+    triangle.Z[1] = z1;
+    triangle.X[2] = x2;
+    triangle.Y[2] = y2;
+    triangle.Z[2] = z2;
+  }
+};
+
+// TODO: Check if this is an appropriate sort predicate. This predicate might 
+// be poor because it is not guaranteed that this provides a partial or total 
+// ordering.
+// A bad one can cause Sort to throw an illegal access exception.
+struct TriangleSortLess
+{
+  VTKM_EXEC_CONT bool operator()(const Triangle& t1, const Triangle& t2) const
+  {
+    return t1.X[0] < t2.X[0];
+  }
+};
+
+struct TriangleComparator
+{
+  VTKM_EXEC bool operator()(const Triangle& t1, const Triangle& t2) const
+  {
+    bool result =      this->Compare(t1.X, t2.X);
+    result = result && this->Compare(t1.Y, t2.Y);
+    result = result && this->Compare(t1.Z, t2.Z);
+    return result;
+  }
+
+  VTKM_EXEC bool Compare(const float *v1, const float *v2) const
+  {
+    for(vtkm::IdComponent i = 0; i < 3; ++i) 
+    {
+      if (v1[i] != v2[i])
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
+vtkm::cont::ArrayHandle<Triangle>
+GetUniqueTriangles(vtkh::DataSet *dataset)
+{
+  auto x0 = GetScalarDataAsArrayHandle<float>(*dataset, "X0");
+  auto y0 = GetScalarDataAsArrayHandle<float>(*dataset, "Y0");
+  auto z0 = GetScalarDataAsArrayHandle<float>(*dataset, "Z0");
+  auto x1 = GetScalarDataAsArrayHandle<float>(*dataset, "X1");
+  auto y1 = GetScalarDataAsArrayHandle<float>(*dataset, "Y1");
+  auto z1 = GetScalarDataAsArrayHandle<float>(*dataset, "Z1");
+  auto x2 = GetScalarDataAsArrayHandle<float>(*dataset, "X2");
+  auto y2 = GetScalarDataAsArrayHandle<float>(*dataset, "Y2");
+  auto z2 = GetScalarDataAsArrayHandle<float>(*dataset, "Z2");
+
+  vtkm::cont::ArrayHandle<Triangle> allTriangles;
+  vtkm::cont::ArrayHandle<vtkm::IdComponent> trianglesStencil;
+  vtkm::cont::ArrayHandle<Triangle> triangles;
+  if (x0.GetNumberOfValues() > 0) 
+  {
+    vtkm::cont::Invoker invoker;
+    invoker(
+      TriangleCreator<float>{}, 
+      x0, 
+      y0, 
+      z0, 
+      x1, 
+      y1, 
+      z1, 
+      x2, 
+      y2, 
+      z2, 
+      allTriangles, 
+      trianglesStencil);
+
+    vtkm::cont::Algorithm::CopyIf(allTriangles, trianglesStencil, triangles);
+    vtkm::cont::Algorithm::Sort(triangles, TriangleSortLess());
+    vtkm::cont::Algorithm::Unique(triangles, TriangleComparator());
+  }
+
+  return triangles;
+}
+#endif
 
 Triangle transformTriangle(Triangle t, Camera c, int width, int height)
 {
@@ -1733,7 +1968,7 @@ CalculateNormal(std::vector<float> tri, float normal[3])
   ba[1] = tri[4] - tri[3];
   ba[2] = tri[7] - tri[6];
 */
-  crossProduct(ca, ba, normal);
+  crossProduct(ba, ca, normal);
   if(print)
   {
     cerr << "Triangle: " << tri[0] << " " << tri[1] << " " << tri[2] << endl;
@@ -1768,7 +2003,7 @@ CalculateFlatShading(std::vector<std::vector<float>> triangles, Camera cam)
     viewDirection[1] = cam.position[1] - cam.focus[1];
     viewDirection[2] = cam.position[2] - cam.focus[2];
     normalize(viewDirection);
-    float shade = calcShading(lightDir, viewDirection, normal);
+    float shade = calcShading(viewDirection, lightDir, normal);
     if(shade != shade)
 	    cerr << "shade " << shade << endl;
     shadings[i] = shade;
@@ -1776,6 +2011,88 @@ CalculateFlatShading(std::vector<std::vector<float>> triangles, Camera cam)
   return shadings;
 }
 
+#if defined(ASCENT_VTKM_ENABLED)
+struct FlatShadingCalculator : public vtkm::worklet::WorkletMapField
+{
+  using ControlSignature = void(FieldIn triangles, FieldOut shadings);
+  using ExecutionSignature = void(_1, _2);
+  using Vec3f = vtkm::Vec<vtkm::Float32, 3>;
+
+  VTKM_CONT
+  FlatShadingCalculator(Camera camera)
+      : CamPos(camera.position[0], camera.position[1], camera.position[2]),
+        CamFocus(camera.focus[0], camera.focus[1], camera.focus[2])
+  {
+  }
+
+  VTKM_EXEC inline void operator()(const Triangle& triangle, float& shading) const
+  {
+    Vec3f a = Vec3f(triangle.X[0], triangle.Y[0], triangle.Z[0]);
+    Vec3f b = Vec3f(triangle.X[1], triangle.Y[1], triangle.Z[1]);
+    Vec3f c = Vec3f(triangle.X[2], triangle.Y[2], triangle.Z[2]);
+    Vec3f normal = vtkm::Normal(vtkm::TriangleNormal(a, b, c));
+
+    float centroidX = (a[0] + b[0]+ c[0]) / 3.0f;
+    float centroidY = (a[1] + b[1]+ c[1]) / 3.0f;
+    float centroidZ = (a[2] + b[2]+ c[2]) / 3.0f;
+    
+    Vec3f lightDir = vtkm::Normal(this->CamPos - Vec3f(centroidX, centroidY, centroidZ));
+
+    Vec3f viewDir = vtkm::Normal(this->CamPos - this->CamFocus);
+    shading = this->CalcShading(viewDir, lightDir, normal);
+  }
+
+  VTKM_EXEC inline float CalcShading(const Vec3f& viewDir, const Vec3f& lightDir, const Vec3f& normal) const
+  {
+    float Ka = 0.3;
+    float Kd = 0.7;
+    float Ks = 0;
+    float alpha = 7.5;
+    bool flag;
+    flag = false;
+    float diffuse = 0, specular = 0, shading = 0;
+    diffuse = vtkm::Abs(vtkm::Dot(lightDir, normal));
+    if (diffuse > 1)
+      diffuse = 1;
+    float Rtemp = 2 * (vtkm::Dot(lightDir, normal));
+    Vec3f R {
+      Rtemp * normal[0] - lightDir[0], 
+      Rtemp * normal[1] - lightDir[1], 
+      Rtemp * normal[2] - lightDir[2]
+    };
+    float dot = (vtkm::Dot(R, viewDir));
+    if (dot < 0)
+      flag = true;
+    specular = vtkm::Pow(vtkm::Abs(vtkm::Dot(R, viewDir)), alpha);
+    if (flag)
+    {
+      specular = -specular;
+      flag = false;
+    }
+    if (specular < 0)
+      specular = 0;
+    shading = Kd * diffuse + Ka + Ks * specular;
+    if (shading != shading)
+      shading = 0;
+    if (shading > 1)
+      shading = 1;
+
+    return shading;
+  }
+
+  Vec3f CamPos;
+  Vec3f CamFocus; 
+};
+
+vtkm::cont::ArrayHandle<float>
+CalculateFlatShading(const vtkm::cont::ArrayHandle<Triangle>& triangles, Camera camera)
+{
+  vtkm::cont::ArrayHandle<float> shadings;
+  vtkm::cont::Invoker invoker;
+  invoker(FlatShadingCalculator{camera}, triangles, shadings);
+  return shadings;
+}
+#endif
 
 void fibonacci_sphere(int i, int samples, double* points)
 {
@@ -1907,6 +2224,41 @@ T calcentropy( const T* array, long len, int nBins)
 
   return (entropy * -1.0);
 }
+
+#if defined(ASCENT_VTKM_ENABLED)
+template <typename T>
+struct CalculateEntropy
+{
+  inline VTKM_EXEC_CONT T operator()(const T& hist, const T& len) const
+  {
+    const T prob = hist / len;
+    if (vtkm::Abs(prob) < vtkm::Epsilon<T>())
+    {
+      return T(0);
+    }
+    return prob * vtkm::Log(prob);
+  }
+};
+
+template <typename T>
+T calcentropyMM(const vtkm::cont::ArrayHandle<T>& data, int nBins, T max, T min)
+{
+  vtkm::worklet::FieldHistogram worklet;
+  vtkm::cont::ArrayHandle<vtkm::Id> hist;
+  T stepSize;
+  worklet.Run(data, nBins, min, max, stepSize, hist);
+
+  auto len = vtkm::cont::make_ArrayHandleConstant(
+    static_cast<T>(data.GetNumberOfValues()), 
+    hist.GetNumberOfValues());
+  vtkm::cont::ArrayHandle<T> subEntropies;
+  vtkm::cont::Algorithm::Transform(hist, len, subEntropies, CalculateEntropy<T>{});
+
+  T entropy = vtkm::cont::Algorithm::Reduce(subEntropies, T(0));
+
+  return (entropy * -1.0);
+}
+#endif
 
 //calculate (world space) area without camera
 float
@@ -2075,6 +2427,18 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
 
     if(rank == 0)
     {
+      #if defined(ASCENT_VTKM_ENABLED)
+      //{
+      auto triangles = GetUniqueTriangles(dataset);
+      if (triangles.GetNumberOfValues() > 0) 
+      {
+        auto shadings = CalculateFlatShading(triangles, camera);
+        shading_entropy = calcentropyMM(shadings, 100, 1.0f, 0.0f);
+        //vtkm::cont::printSummary_ArrayHandle(shadings, cerr);
+      }
+      //std::cerr << "V result: " << shading_entropy << "\n";
+      //}
+      #else
       int size = height*width;
       std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
       std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
@@ -2101,14 +2465,19 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
             triangles.push_back(tri);
           }
         }
-        int num_triangles     = triangles.size();
+        std::sort(triangles.begin(), triangles.end());
+        triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
+        int num_triangles = triangles.size();
         //calculate flat shading
         std::vector<float> shadings = CalculateFlatShading(triangles, camera);
         int shadings_size = shadings.size();
         float shadings_arr[shadings_size];
         std::copy(shadings.begin(), shadings.end(), shadings_arr);
         shading_entropy = calcentropyMM(shadings_arr, num_triangles, 100, (float)1, (float)0);
+        //vtkm::cont::printSummary_ArrayHandle(vtkm::cont::make_ArrayHandle(shadings), cerr);
+        //std::cerr << "S result: " << shading_entropy << "\n";
       }
+      #endif
     }
     MPI_Bcast(&shading_entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
     return shading_entropy;
@@ -2607,6 +2976,19 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     MPI_Status status;
     if(rank == 0)
     {
+      #if defined(ASCENT_VTKM_ENABLED)
+      auto field_data = GetScalarDataAsArrayHandle<float>(*dataset, field_name.c_str());
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        DataCheckFlags checks = CheckNan | CheckZero;
+        field_data = copyWithChecks<float>(field_data, checks);
+        entropy = calcentropyMM(field_data, 6, field_max, field_min);
+      } 
+      else
+      {
+        entropy = 0;
+      }
+      #else
       int size = height*width;
       std::vector<float> field_data = GetScalarData<float>(*dataset, field_name.c_str(), height, width);
       std::vector<float> data;
@@ -2625,6 +3007,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
       }
       else
         entropy = 0;
+      #endif
     }
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
@@ -2670,6 +3053,21 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, float diame
     MPI_Status status;
     if(rank == 0)
     {
+      #if defined(ASCENT_VTKM_ENABLED)
+      auto field_data = GetScalarDataAsArrayHandle<float>(*dataset, "depth");
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        // TODO: Manish to understand why do we ignore 0 values?
+        DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
+        DataCheckVals<float> checkVals { .Min = 0, .Max = float(INT_MAX) };
+        field_data = copyWithChecks<float>(field_data, checks, checkVals);
+        entropy = calcentropyMM(field_data, 1000, diameter, float(0));
+      } 
+      else
+      {
+        entropy = 0;
+      }
+      #else
       int size = height*width;
       std::vector<float> depth = GetScalarData<float>(*dataset, "depth", height, width);
       std::vector<float> depth_data;
@@ -2681,14 +3079,15 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, float diame
       {
         for(int i = 0; i < size; i++)
           if(depth[i] == depth[i] && depth[i] < INT_MAX && depth[i] > 0)
-	  {
+	        {
             depth_data.push_back(depth[i]);
-	  }
+	        }
           //depth_data[i] = -FLT_MAX;
         float depth_array[depth_data.size()];
         std::copy(depth_data.begin(), depth_data.end(), depth_array);
         entropy = calcentropyMM(depth_array, depth_data.size(), 1000, diameter, (float) 0.0);
       }
+      #endif
     }
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
@@ -3233,63 +3632,6 @@ calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string fie
   }
   else if (metric == "depth_entropy")
   {
-    score = calculateDepthEntropy(dataset, height, width, diameter);
-  }
-  else if (metric == "max_depth")
-  {
-    score = calculateMaxDepth(dataset, height, width);
-  }
-  else
-    ASCENT_ERROR("This metric is not supported. \n");
-
-  return score;
-}
-
-float
-calculateMetric(vtkh::DataSet* dataset, std::string metric, std::string field_name, std::vector<Triangle> &local_triangles, int height, int width, Camera camera)
-{
-  float score = 0.0;
-
-  if(metric == "data_entropy")
-  {
-    float field_max = 0;
-    float field_min = 0;
-    score = calculateDataEntropy(dataset, height, width, field_name, field_max, field_min);
-  }
-  else if (metric == "visibility_ratio")
-  {
-    float worldspace_local_area = 0.0;
-    score = calculateVisibilityRatio(dataset, local_triangles, worldspace_local_area,  height, width);
-  }
-  else if (metric == "viewpoint_entropy")
-  {
-    score = calculateViewpointEntropy(dataset, local_triangles, height, width, camera);
-  }
-  else if (metric == "i2")
-  {
-    score = calculateI2(dataset, local_triangles, height, width, camera);
-  }
-  else if (metric == "vkl")
-  {
-    float worldspace_local_area = 0;
-    score = calculateVKL(dataset, local_triangles, worldspace_local_area, height, width, camera);
-  }
-  else if (metric == "visible_triangles")
-  {
-    score = calculateVisibleTriangles(dataset, height, width);
-  }
-  else if (metric == "projected_area")
-  {
-    score = calculateProjectedArea(dataset, height, width, camera);
-  }
-  else if (metric == "pb")
-  {
-    int num_local_triangles = local_triangles.size();
-    score = calculatePlemenosAndBenayada(dataset, num_local_triangles, height, width, camera); 
-  }
-  else if (metric == "depth_entropy")
-  {
-    float diameter = FLT_MAX;
     score = calculateDepthEntropy(dataset, height, width, diameter);
   }
   else if (metric == "max_depth")
