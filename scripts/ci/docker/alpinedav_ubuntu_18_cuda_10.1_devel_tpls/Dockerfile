@@ -80,7 +80,7 @@ RUN cd ascent && python scripts/uberenv/uberenv.py \
 RUN uberenv_libs/spack/bin/spack clean --all
 
 # create some helper scripts
-RUN python ascent/scripts/gen_spack_env_script.py cmake mpi python
+RUN python ascent/scripts/gen_spack_env_script.py cmake mpi
 RUN echo "git clone --recursive https://github.com/Alpine-DAV/ascent.git" > clone.sh
 RUN chmod +x clone.sh
 
