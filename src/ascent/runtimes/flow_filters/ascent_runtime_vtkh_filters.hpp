@@ -421,6 +421,29 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHParticleAdvection : public ::flow::Filter
+{
+public:
+    VTKHParticleAdvection();
+    virtual ~VTKHParticleAdvection();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+protected:
+    bool record_trajectories = false;
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHStreamline : public VTKHParticleAdvection
+{
+public:
+  VTKHStreamline();
+  virtual ~VTKHStreamline();
+};
 
 };
 //-----------------------------------------------------------------------------

@@ -77,6 +77,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_threshold
                 t_ascent_slice
                 t_ascent_scale
+                t_ascent_particle_advection
                 t_ascent_patch_amr
                 t_ascent_vector_ops
                 t_ascent_flow_runtime
