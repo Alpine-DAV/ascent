@@ -219,7 +219,6 @@ FilterQuery::execute()
     }
 
     DataObject *data_object = input<DataObject>(0);
-    //std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
     std::string expression = params()["expression"].as_string();
     std::string name = params()["name"].as_string();
@@ -232,16 +231,36 @@ FilterQuery::execute()
     runtime::expressions::ExpressionEval eval(*data_object);
     conduit::Node res = eval.evaluate(expression, name);
 
-    // Since queries might add new fields, the blueprint needs to become the source
-    if(data_object->source() != DataObject::Source::LOW_BP)
+    // if the end result is a derived field the for sure we want to make
+    // its available.
+    bool derived = false;
+    if(res.has_path("type"))
     {
-      data_object->reset(DataObject::Source::LOW_BP);
-      // TODO for now always copy the bp...
-      //conduit::Node *new_data_object = new conduit::Node(*n_input);
-      //data_object->reset(new_data_object);
-      //DataObject *new_do = new DataObject(
+      if(res["type"].as_string() == "field")
+      {
+        derived = true;
+      }
     }
-    set_output<DataObject>(data_object);
+
+    // Since queries might add new fields, the blueprint needs to become the source
+    if(derived && (data_object->source() != DataObject::Source::LOW_BP))
+    {
+      // for now always copy the bp if its not the original data source
+      // There is one main reasons for this:
+      //   the data will likely be passed to the vtkh ghost stripper, which could create
+      //   a new data sets with memory owned by vtkm. Since conduit can't take ownership of
+      //   that memory, this data could could go out of scope and that would be bad. To ensure
+      //   that it does not go out of scope
+      //   TODO: We could be smarter than this. For example, we could provide a way to map a
+      //   new field, if created, back on to the original source (e.g., vtkm)
+      conduit::Node *new_source = new conduit::Node(*eval.data_object().as_low_order_bp());
+      DataObject *new_do = new DataObject(new_source);
+      set_output<DataObject>(new_do);
+    }
+    else
+    {
+      set_output<DataObject>(data_object);
+    }
 
 }
 

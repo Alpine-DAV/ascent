@@ -42,92 +42,106 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_data_object.hpp
+/// file: t_ascent_render_3d.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_DATA_OBJECT_HPP
-#define ASCENT_DATA_OBJECT_HPP
+
+#include "gtest/gtest.h"
 
 #include <ascent.hpp>
-#include <conduit.hpp>
-#include <memory>
+
+#include <iostream>
+#include <math.h>
+
+#include <conduit_blueprint.hpp>
+
+#include "t_config.hpp"
+#include "t_utils.hpp"
+
+
+
+
+using namespace std;
+using namespace conduit;
+using namespace ascent;
+
+
+index_t EXAMPLE_MESH_SIDE_DIM = 20;
+
 
 //-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-// forward declare
-#if defined(ASCENT_DRAY_ENABLED)
-namespace dray
+TEST(ascent_contour, test_single_contour_3d)
 {
-  class Collection;
-} // namespace dray
-#endif
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
 
-namespace ascent
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_ex = actions.append();
+    add_ex["action"] = "execute";
+    // add the scenes
+    conduit::Node &add_re = actions.append();
+    add_re["action"] = "reset";
+
+    //
+    // Run Ascent
+    //
+
+    int iters = 4500;
+    for(int i = 0; i < iters; ++i)
+    {
+      std::cout<<"Iter "<<i<<" of "<<iters<<"\n";
+      Ascent ascent;
+
+      Node ascent_opts;
+      ascent_opts["runtime/type"] = "ascent";
+      ascent.open(ascent_opts);
+      ascent.publish(data);
+      ascent.execute(actions);
+      ascent.close();
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
 {
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+
+    // allow override of the data size via the command line
+    if(argc == 2)
+    {
+        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
+    }
+
+    result = RUN_ALL_TESTS();
+    return result;
+}
 
 
-#if defined(ASCENT_VTKM_ENABLED)
-// forward declare
-class VTKHCollection;
-#endif
-
-
-class DataObject
-{
-public:
-  enum class Source { VTKH, LOW_BP, HIGH_BP, DRAY, INVALID};
-  DataObject();
-  //
-  // Constructors take ownership of pointers
-  //
-
-  DataObject(conduit::Node *dataset);
-  void reset(conduit::Node *dataset);
-  void reset(std::shared_ptr<conduit::Node> dataset);
-  void reset_all();
-  bool is_valid() const { return m_source != Source::INVALID;};
-  void name(const std::string n);
-  std::string name() const;
-
-#if defined(ASCENT_VTKM_ENABLED)
-  DataObject(VTKHCollection *dataset);
-  std::shared_ptr<VTKHCollection> as_vtkh_collection();
-
-  bool                            is_vtkh_coll_exists() const { return m_vtkh != nullptr; }
-  void                            reset_vtkh_collection();
-
-#endif
-#if defined(ASCENT_DRAY_ENABLED)
-  DataObject(dray::Collection *dataset);
-  std::shared_ptr<dray::Collection> as_dray_collection();
-#endif
-  std::shared_ptr<conduit::Node>  as_low_order_bp();
-  std::shared_ptr<conduit::Node>  as_high_order_bp();
-  std::shared_ptr<conduit::Node>  as_node();          // just return the coduit node
-  DataObject::Source              source() const;
-  std::string source_string() const;
-protected:
-  std::shared_ptr<conduit::Node>  m_low_bp;
-  std::shared_ptr<conduit::Node>  m_high_bp;
-#if defined(ASCENT_VTKM_ENABLED)
-  std::shared_ptr<VTKHCollection> m_vtkh;
-#endif
-#if defined(ASCENT_DRAY_ENABLED)
-  std::shared_ptr<dray::Collection> m_dray;
-#endif
-
-  Source m_source;
-  std::string m_name;
-};
-
-//-----------------------------------------------------------------------------
-};
-#endif
-//-----------------------------------------------------------------------------
-// -- end ascent:: --
-//-----------------------------------------------------------------------------

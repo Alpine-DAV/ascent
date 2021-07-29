@@ -42,9 +42,6 @@
 #
 ###############################################################################
 
-################################
-# cmake policy selection
-################################
 # avoid warnings for project commands w/o VERSION
 cmake_policy(SET CMP0048 NEW)
 
@@ -108,6 +105,10 @@ if(POLICY CMP0104)
     cmake_policy(SET CMP0104 OLD)
 endif()
 
+# allow find_packages to use ZZZ_ROOT vars
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 ################################
 # Populate the cmake gui
@@ -183,10 +184,6 @@ include(cmake/SetupIncludes.cmake)
 ################################
 add_subdirectory(thirdparty_builtin)
 
-if(ENABLE_FIDES)
-  find_package(ADIOS2 REQUIRED)
-  find_package(Fides REQUIRED)
-endif()
 
 ################################
 # Add our libs

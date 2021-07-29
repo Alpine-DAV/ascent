@@ -171,10 +171,10 @@ class Ascent(Package, CudaPackage):
     depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
     depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
 
-    depends_on("umpire@1.0.0+cuda+shared", when="+cuda+shared")
-    depends_on("umpire@1.0.0+cuda~shared", when="+cuda~shared")
-    depends_on("umpire@1.0.0~cuda+shared", when="~cuda+shared")
-    depends_on("umpire@1.0.0~cuda~shared", when="~cuda~shared")
+    depends_on("umpire+cuda+shared", when="+cuda+shared")
+    depends_on("umpire+cuda~shared", when="+cuda~shared")
+    depends_on("umpire~cuda+shared", when="~cuda+shared")
+    depends_on("umpire~cuda~shared", when="~cuda~shared")
 
     #######################
     # Documentation related
@@ -540,7 +540,6 @@ class Ascent(Package, CudaPackage):
         # Adios
         # Adios2
         #######################
-
         cfg.write("# adios2 support\n")
 
         if "+adios2" in spec:
@@ -551,13 +550,10 @@ class Ascent(Package, CudaPackage):
         #######################
         # Fides
         #######################
-
         cfg.write("# Fides support\n")
 
         if "+fides" in spec:
-            cfg.write(cmake_cache_entry("ENABLE_FIDES", "ON"))
-            cfg.write(cmake_cache_entry("Fides_DIR", spec['fides'].prefix + '/lib/cmake/fides'))
-            cfg.write(cmake_cache_entry("ADIOS2_DIR", spec['adios2'].prefix + '/lib/cmake/adios2'))
+            cfg.write(cmake_cache_entry("FIDES_DIR", spec['fides'].prefix))
         else:
             cfg.write("# fides not built by spack \n")
 

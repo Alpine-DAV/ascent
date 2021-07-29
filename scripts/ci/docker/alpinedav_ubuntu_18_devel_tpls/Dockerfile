@@ -65,12 +65,17 @@ RUN tar -xzf ascent.docker.src.tar.gz
 # bootstrap third party libs using spack and uberenv
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec "%gcc+mpi+mfem+dray+python+babelflow ^python@3.6.3" \
+       --spec "%gcc+mpi+mfem+dray+python+occa+babelflow+fides+adios2 ^python@3.6.3 ^libzmq~libsodium" \
        --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18_devel/ \
        --prefix=/uberenv_libs
 
 # cleanup the spack build stuff to free up space
 RUN uberenv_libs/spack/bin/spack clean --all
+
+# create some helper scripts
+RUN python ascent/scripts/gen_spack_env_script.py cmake mpi python
+RUN echo "git clone --recursive https://github.com/Alpine-DAV/ascent.git" > clone.sh
+RUN chmod +x clone.sh
 
 # delete copy of source from host (ci will fetch new from repo)
 RUN rm -rf ascent

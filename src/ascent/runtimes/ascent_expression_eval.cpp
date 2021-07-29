@@ -205,7 +205,7 @@ Cache::load(const std::string &dir, const std::string &session)
   MPI_Comm_rank(mpi_comm, &m_rank);
 #endif
 
-  std::string file_name = session + ".yaml";
+  std::string file_name = session;
   std::string session_file = conduit::utils::join_path(dir, file_name);
   m_session_file = session_file;
 
@@ -213,7 +213,7 @@ Cache::load(const std::string &dir, const std::string &session)
 
   if(m_rank == 0 && exists)
   {
-    m_data.load(session_file, "yaml");
+    m_data.load(session_file + ".yaml", "yaml");
   }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -231,7 +231,39 @@ void Cache::save()
   // since its not actually opening ascent
   if(m_rank == 0 && !m_data.dtype().is_empty() && m_session_file != "")
   {
-    m_data.save(m_session_file, "yaml");
+    m_data.save(m_session_file+".yaml","yaml");
+  }
+}
+
+void Cache::save(const std::string &filename)
+{
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  if(m_rank == 0 &&
+     !m_data.dtype().is_empty())
+  {
+    m_data.save(filename+".yaml","yaml");
+  }
+}
+
+void Cache::save(const std::string &filename,
+                 const std::vector<std::string> &selection)
+{
+  conduit::Node data;
+  for(const auto &expr : selection)
+  {
+    if(m_data.has_path(expr))
+    {
+      data[expr].set_external(m_data[expr]);
+    }
+  }
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  // or there might not be match
+  if(m_rank == 0 &&
+     !data.dtype().is_empty())
+  {
+    data.save(filename+".yaml","yaml");
   }
 }
 
@@ -992,6 +1024,17 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
+  conduit::Node &field_pow_sig = (*functions)["pow"].append();
+  field_pow_sig["return_type"] = "jitable";
+  field_pow_sig["filter_name"] = "field_pow";
+  field_pow_sig["args/arg1/type"] = "field";
+  field_pow_sig["args/arg1/type"] = "scalar";
+  field_pow_sig["description"] =
+      "Return a derived field that is the pow(field,exponent) of a field.";
+  field_pow_sig["jitable"];
+
+  //---------------------------------------------------------------------------
+
   conduit::Node &field_abs_sig = (*functions)["abs"].append();
   field_abs_sig["return_type"] = "jitable";
   field_abs_sig["filter_name"] = "field_abs";
@@ -1154,7 +1197,7 @@ initialize_functions()
   //---------------------------------------------------------------------------
 
   count_params();
-  functions->save("functions.json", "json");
+  //functions->save("functions.json", "json");
 }
 
 void
@@ -1215,7 +1258,9 @@ initialize_objects()
 
   conduit::Node &aabb = (*objects)["aabb/attrs"];
   aabb["min/type"] = "vector";
+  vertex["min/description"] = "Min coordinate of an axis-aligned bounding box (aabb)";
   aabb["max/type"] = "vector";
+  vertex["max/description"] = "Max coordinate of an axis-aligned bounding box (aabb)";
 
   conduit::Node &vector_atts = (*objects)["vector/attrs"];
   vector_atts["x/type"] = "double";
@@ -1317,10 +1362,10 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node *n_res = w.registry().fetch<conduit::Node>(filter_name);
   conduit::Node return_val = *n_res;
 
-  // return_val.print();
+  //return_val.print();
+
 
   // remove temporary fields, topologies, and coordsets from the dataset
-  #warning "How is adding fields to a data supposed to work with derived expressions??"
   #warning "Need a way to delete the intermediate results during execution"
   conduit::Node *dataset = m_data_object.as_node().get();
   const int num_domains = dataset->number_of_children();
@@ -1340,6 +1385,8 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
       dom["coordsets"].remove(coords_name);
     }
   }
+
+  //std::cout<<m_data_object.as_node()->to_summary_string()<<"\n";
 
   // add the sim time
   conduit::Node n_time = get_state_var(*m_data_object.as_node().get(), "time");
@@ -1374,6 +1421,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
   m_cache.last_known_time(time);
 
+  //return_val.print();
   // add the result to the cache
   {
     std::stringstream cache_entry;
@@ -1445,6 +1493,12 @@ ExpressionEval::reset_cache()
 }
 
 void
+ExpressionEval::save_cache(const std::string &filename)
+{
+  m_cache.save(filename);
+}
+
+void
 ExpressionEval::save_cache()
 {
   m_cache.save();
@@ -1465,6 +1519,16 @@ void ExpressionEval::get_last(conduit::Node &data)
       data[cycle.path()].set_external(cycle);
     }
   }
+}
+void ExpressionEval::save_cache(const std::string &filename,
+                                const std::vector<std::string> &selection)
+{
+  m_cache.save(filename, selection);
+}
+//-----------------------------------------------------------------------------
+DataObject& ExpressionEval::data_object()
+{
+  return m_data_object;
 }
 //-----------------------------------------------------------------------------
 };

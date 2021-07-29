@@ -182,6 +182,7 @@ TEST(ascent_expressions, derived_simple)
   EXPECT_NEAR(manual, builtin, 1e-8);
 }
 
+#endif
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, derived_expressions)
 {
@@ -391,10 +392,18 @@ TEST(ascent_expressions, derived_expressions)
   }
 }
 //-----------------------------------------------------------------------------
-#endif
 
 TEST(ascent_expressions, braid_sample)
 {
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with jit support
+  if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
+      return;
+  }
+
   conduit::Node data, multi_dom;
   conduit::blueprint::mesh::examples::braid("structured",
                                             EXAMPLE_MESH_SIDE_DIM,
