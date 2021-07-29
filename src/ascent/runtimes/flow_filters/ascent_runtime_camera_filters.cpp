@@ -1529,15 +1529,27 @@ public:
   }
 };
 
-// TODO: Check if this is an appropriate sort predicate. This predicate might 
-// be poor because it is not guaranteed that this provides a partial or total 
-// ordering.
-// A bad one can cause Sort to throw an illegal access exception.
 struct TriangleSortLess
 {
   VTKM_EXEC_CONT bool operator()(const Triangle& t1, const Triangle& t2) const
   {
-    return t1.X[0] < t2.X[0];
+    for(vtkm::IdComponent i = 0; i < 3; ++i)
+    {
+      if(t1.X[i] < t2.X[i])
+        return true;
+      if(t1.X[i] > t2.X[i])
+        return false;
+      if(t1.Y[i] < t2.Y[i])
+        return true;
+      if(t1.Y[i] > t2.Y[i])
+        return false;
+      if(t1.Z[i] < t2.Z[i])
+        return true;
+      if(t1.Z[i] > t2.Z[i])
+        return false;
+    }
+
+    return false;
   }
 };
 
@@ -2428,16 +2440,12 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
     if(rank == 0)
     {
       #if defined(ASCENT_VTKM_ENABLED)
-      //{
       auto triangles = GetUniqueTriangles(dataset);
       if (triangles.GetNumberOfValues() > 0) 
       {
         auto shadings = CalculateFlatShading(triangles, camera);
         shading_entropy = calcentropyMM(shadings, 100, 1.0f, 0.0f);
-        //vtkm::cont::printSummary_ArrayHandle(shadings, cerr);
       }
-      //std::cerr << "V result: " << shading_entropy << "\n";
-      //}
       #else
       int size = height*width;
       std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
@@ -2474,8 +2482,6 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
         float shadings_arr[shadings_size];
         std::copy(shadings.begin(), shadings.end(), shadings_arr);
         shading_entropy = calcentropyMM(shadings_arr, num_triangles, 100, (float)1, (float)0);
-        //vtkm::cont::printSummary_ArrayHandle(vtkm::cont::make_ArrayHandle(shadings), cerr);
-        //std::cerr << "S result: " << shading_entropy << "\n";
       }
       #endif
     }
