@@ -100,6 +100,7 @@
 #include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
+#include <vtkh/filters/Streamline.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/Triangulate.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
@@ -113,6 +114,7 @@
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
 #include <ascent_expression_eval.hpp>
+
 #endif
 
 #include <stdio.h>
@@ -3416,8 +3418,6 @@ VTKHParticleAdvection::execute()
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
 
-    vtkh::ParticleAdvection pa;
-
     int numSeeds = get_int32(params()["num_seeds"], data_object);
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
@@ -3458,14 +3458,31 @@ VTKHParticleAdvection::execute()
       seeds.push_back(vtkm::Particle({x,y,z}, i));
     }
     auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
-    pa.SetStepSize(stepSize);
-    pa.SetNumberOfSteps(numSteps);
-    pa.SetSeeds(seeds);
-    pa.SetField(field_name);
-    pa.SetInput(&data);
-    pa.Update();
 
-    vtkh::DataSet *output = pa.GetOutput();
+
+    vtkh::DataSet *output = nullptr;
+    if (record_trajectories)
+    {
+      vtkh::Streamline sl;
+      sl.SetStepSize(stepSize);
+      sl.SetNumberOfSteps(numSteps);
+      sl.SetSeeds(seeds);
+      sl.SetField(field_name);
+      sl.SetInput(&data);
+      sl.Update();
+      output = sl.GetOutput();
+    }
+    else
+    {
+      vtkh::ParticleAdvection pa;
+      pa.SetStepSize(stepSize);
+      pa.SetNumberOfSteps(numSteps);
+      pa.SetSeeds(seeds);
+      pa.SetField(field_name);
+      pa.SetInput(&data);
+      pa.Update();
+      output = pa.GetOutput();
+    }
 
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
@@ -3483,6 +3500,14 @@ VTKHStreamline::VTKHStreamline()
 :VTKHParticleAdvection()
 {
   record_trajectories = true;
+}
+
+void
+VTKHStreamline::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_streamline";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------

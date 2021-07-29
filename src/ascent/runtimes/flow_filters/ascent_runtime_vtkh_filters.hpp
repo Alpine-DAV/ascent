@@ -443,6 +443,7 @@ class ASCENT_API VTKHStreamline : public VTKHParticleAdvection
 public:
   VTKHStreamline();
   virtual ~VTKHStreamline();
+  virtual void   declare_interface(conduit::Node &i);
 };
 
 };
