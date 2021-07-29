@@ -213,12 +213,18 @@ AscentRuntime::Initialize(const conduit::Node &options)
     if(sel_cuda_device)
     {
 #if defined(ASCENT_VTKM_ENABLED)
+      {
         int device_count = vtkh::CUDADeviceCount();
         int rank_device = m_rank % device_count;
         vtkh::SelectCUDADevice(rank_device);
+      }
 #endif
 #if defined(ASCENT_JIT_ENABLED)
+      {
+        int device_count = runtime::expressions::Jitable::num_cuda_devices();
+        int rank_device = m_rank % device_count;
         runtime::expressions::Jitable::set_cuda_device(rank_device);
+      }
 #endif
     }
 #endif

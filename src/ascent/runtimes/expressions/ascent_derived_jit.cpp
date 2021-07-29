@@ -1031,6 +1031,23 @@ void Jitable::init_occa()
 #endif
 }
 
+int Jitable::num_cuda_devices()
+{
+  int device_count = 0;
+#ifdef ASCENT_CUDA_ENABLED
+  cudaError_t res = cudaGetDeviceCount(&device_count);
+  if(res != cudaSuccess)
+  {
+    std::stringstream msg;
+    msg << "Failed to get CUDA device count" << std::endl
+    << "CUDA Error Message: "
+    << cudaGetErrorString(res);
+    ASCENT_ERROR(msg.str());
+  }
+#endif
+  return device_count;
+}
+
 void Jitable::set_cuda_device(int device_id)
 {
   m_cuda_device_id = device_id;
