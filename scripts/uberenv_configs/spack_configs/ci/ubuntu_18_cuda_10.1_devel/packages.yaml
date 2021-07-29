@@ -55,7 +55,7 @@ packages:
     paths:
       tar: /usr
   conduit:
-    version: [master]
+    version: [develop]
   # python 2 constraints
   py-sphinx:
     version: [1.8.4]

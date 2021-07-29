@@ -1,10 +1,15 @@
 packages:
   all:
+    variants: cuda_arch=70
     compiler: [gcc]
     providers:
       mpi:  [mpich]
       blas: [netlib-lapack]
       lapack: [netlib-lapack]
+  cuda:
+    paths:
+      cuda@11.4: /usr/local/cuda/
+    buildable: False
   netlib-lapack:
     buildable: False
     paths:
