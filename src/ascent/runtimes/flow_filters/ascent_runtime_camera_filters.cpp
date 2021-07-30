@@ -3208,6 +3208,13 @@ calculateVisibleTriangles(vtkh::DataSet *dataset, int height, int width)
     MPI_Status status;
     if(rank == 0)
     {
+      #if defined(ASCENT_VTKM_ENABLED)
+      auto triangles = GetUniqueTriangles(dataset);
+      if (triangles.GetNumberOfValues() > 0) 
+      {
+        num_triangles = triangles.GetNumberOfValues();
+      }
+      #else
       int size = height*width;
       std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
       std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
@@ -3238,6 +3245,7 @@ calculateVisibleTriangles(vtkh::DataSet *dataset, int height, int width)
         triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
         num_triangles = triangles.size();
       }
+      #endif
     }
     MPI_Bcast(&num_triangles, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
@@ -3482,6 +3490,24 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
 
 }
 
+#if defined(ASCENT_VTKM_ENABLED)
+template <typename T>
+T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
+{
+  T depth = -1.0 * std::numeric_limits<T>::max();
+
+  if (depthData.GetNumberOfValues() > 0)
+  {
+    MaxValueWithChecks<T> max{
+        -1.0 * std::numeric_limits<T>::max(),
+        std::numeric_limits<T>::max()};
+    depth = vtkm::cont::Algorithm::Reduce(depthData, depth, max);
+  }
+
+  return depth;
+}
+#endif
+
 float
 calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
 {
@@ -3496,6 +3522,10 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
     MPI_Status status;
     if(rank == 0)
     {
+      #if defined(ASCENT_VTKM_ENABLED)
+      auto depthData = GetScalarDataAsArrayHandle<float>(*dataset, "depth");
+      depth = calculateMaxDepth(depthData);
+      #else
       int size = height*width;
       std::vector<float> depth_data = GetScalarData<float>(*dataset, "depth", height, width);
 //      #ifdef ASCENT_USE_OPENMP
@@ -3505,13 +3535,14 @@ calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
       {
         for(int i = 0; i < size; i++)
           if(depth_data[i] == depth_data[i])
-	  {
+	        {
             if(depth < depth_data[i] && depth_data[i] < INT_MAX)
-	    {
+	          {
               depth = depth_data[i];
-	    }
-	  }
+	          }
+	        }
       }
+      #endif
     }
     MPI_Bcast(&depth, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
   #else
