@@ -59,6 +59,11 @@
 #include <vtkh/DataSet.hpp>
 #endif
 
+#if defined(ASCENT_VTKM_ENABLED)
+#define EXEC_CONT VTKM_EXEC_CONT
+#else
+#define EXEC_COUNT 
+#endif
 
 //-----------------------------------------------------------------------------
 //Misc Functions
@@ -164,7 +169,10 @@ class Triangle
       float          Y[3];
       float          Z[3];
 
+      EXEC_CONT 
       Triangle(){};
+
+      EXEC_CONT 
       Triangle(float x0, float y0, float z0,
 	       float x1, float y1, float z1,
 	       float x2, float y2, float z2)
@@ -173,6 +181,7 @@ class Triangle
         X[1] = x1; Y[1] = y1; Z[1] = z1;
         X[2] = x2; Y[2] = y2; Z[2] = z2;
       }	      
+      
       void printTri();
       float calculateTriArea();
       double findMin(double a, double b, double c);
