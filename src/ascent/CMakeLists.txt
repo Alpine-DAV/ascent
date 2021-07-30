@@ -101,7 +101,7 @@ set(ascent_sources
     runtimes/expressions/ascent_expressions_parser.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
-    runtimes/flow_filters/ascent_runtime_simplex_filters.cpp
+    # runtimes/flow_filters/ascent_runtime_simplex_filters.cpp
     runtimes/flow_filters/ascent_runtime_camera_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
     runtimes/flow_filters/ascent_runtime_relay_filters.cpp
@@ -146,7 +146,7 @@ set(ascent_headers
     runtimes/ascent_flow_runtime.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_camera_filters.hpp
-    runtimes/flow_filters/ascent_runtime_simplex_filters.hpp
+    # runtimes/flow_filters/ascent_runtime_simplex_filters.hpp
     runtimes/flow_filters/ascent_runtime_param_check.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
@@ -181,6 +181,9 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
+        runtimes/flow_filters/ascent_runtime_filters.hpp
+        runtimes/flow_filters/ascent_runtime_simplex_filters.hpp
+        runtimes/flow_filters/ascent_runtime_camera_filters.hpp
         runtimes/ascent_main_runtime.hpp)
 
     set(ascent_vtkh_dep_sources
@@ -192,6 +195,9 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
+        runtimes/flow_filters/ascent_runtime_filters.cpp
+        runtimes/flow_filters/ascent_runtime_simplex_filters.cpp
+        runtimes/flow_filters/ascent_runtime_camera_filters.cpp
         runtimes/ascent_main_runtime.cpp)
 
     foreach( _itm ${ascent_vtkh_dep_headers} )
@@ -373,8 +379,7 @@ if(MPI_FOUND)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
@@ -404,6 +409,9 @@ if(MPI_FOUND)
         if (ENABLE_BABELFLOW)
             list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
         endif()
+
+        set(ascent_device_sources ${ascent_vtkh_dep_sources})
+        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
 
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)

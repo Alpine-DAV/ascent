@@ -59,6 +59,11 @@
 #include <vtkh/DataSet.hpp>
 #endif
 
+#if defined(ASCENT_VTKM_ENABLED)
+#define EXEC_CONT VTKM_EXEC_CONT
+#else
+#define EXEC_COUNT 
+#endif
 
 //-----------------------------------------------------------------------------
 //Misc Functions
@@ -130,7 +135,7 @@ class Camera
     Matrix          DeviceTransform();
 };
 
-Camera GetCamera(int frame, int nframes, double radius, double *lookat, float *bounds);
+Camera GetCamera(int frame, int nframes, double radius, float *lookat, float *bounds);
 //-----------------------------------------------------------------------------
 //Edge Class
 //-----------------------------------------------------------------------------
@@ -164,7 +169,10 @@ class Triangle
       float          Y[3];
       float          Z[3];
 
+      EXEC_CONT 
       Triangle(){};
+
+      EXEC_CONT 
       Triangle(float x0, float y0, float z0,
 	       float x1, float y1, float z1,
 	       float x2, float y2, float z2)
@@ -173,10 +181,12 @@ class Triangle
         X[1] = x1; Y[1] = y1; Z[1] = z1;
         X[2] = x2; Y[2] = y2; Z[2] = z2;
       }	      
+      
       void printTri();
       float calculateTriArea();
       double findMin(double a, double b, double c);
       double findMax(double a, double b, double c);
+      void cutoff(int w, int h);
 };
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -188,10 +198,13 @@ double CalculateNormalCameraDot(double* cameraPositions, Triangle tri);
 
 //Stefan's copied over for simplex
 float calculateMetric(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, int i1, int i2, Camera c);
+float calculateMetricScore(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, double a, int i1, int i2, Camera c, float fmax, float fmin, int xbins, int ybins, int zbins, float diameter);
 
 void AddTriangleFields2(vtkh::DataSet &d);
+vtkh::DataSet* AddTriangleFields(vtkh::DataSet &d, float &xmin, float &xmax, float &ymin, float &ymax, float &zmin, float &zmax, int xbins, int ybins, int zbins);
 vtkh::DataSet* AddTriangleFields(vtkh::DataSet &d);
 
+std::vector<Triangle> GetTrianglesAndArea(vtkh::DataSet &d, double &a);
 std::vector<Triangle> GetTriangles(vtkh::DataSet &d);
 //End Stefan's copied over
 #endif

@@ -47,18 +47,37 @@
 Ascent
 ========
 
-A many-core capable lightweight in-situ visualization and analysis infrastructure for multi-physics HPC simulations.
+A many-core capable flyweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
+
+
+.. figure:: images/ascent_examples_small.png
 
 Introduction
 ============
 
-Ascent is a system designed to meet the in-situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering runtimes that can leverage many-core CPUs and GPUs to render images of simulation meshes.
+.. Ascent is a system designed to meet the in-situ visualization and analysis needs of simulation code teams running multi-physics calculations on many-core HPC architectures. It provides rendering runtimes that can leverage many-core CPUs and GPUs to render images of simulation meshes.
 
-Ascent focuses on ease of use and reduced integration burden for simulation code teams.
+Ascent is an easy-to-use flyweight in situ visualization and analysis library for HPC simulations:
 
-- It does not require GUI or system-graphics libraries.
-- It includes integration examples that demonstrate how to use Ascent inside  three HPC-simulation proxy applications.
-- It provides a built-in web server that supports streaming rendered images directly to a web browser.
+- Supports: Making Pictures, Transforming Data, and Capturing Data for use outside of Ascent
+- Young effort, yet already includes most common visualization operations
+- Provides a simple infrastructure to integrate custom analysis
+- Provides C++, C, Python, and Fortran APIs
+
+Ascent's flyweight design targets next-generation HPC platforms:
+
+- Provides efficient distributed-memory (MPI) and many-core (CUDA or OpenMP) execution 
+- Demonstrated scaling:  In situ filtering and ray tracing across 16,384 GPUs on LLNL's Sierra Cluster
+- Has lower memory requirements than current tools
+- Requires less dependencies than current tools (ex: no OpenGL)
+
+
+Ascent focuses on ease of use and reducing integration burden for simulation code teams:
+
+- Actions are passed to Ascent via YAML files
+- Replay capability helps prototype and test actions
+- It does not require GUI or system-graphics libraries
+- It includes integration examples that demonstrate how to use Ascent inside existing HPC-simulation proxy applications
 
 
 Getting Started

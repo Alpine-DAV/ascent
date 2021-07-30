@@ -56,6 +56,7 @@ Introduction to Ascent
    Tutorial_Intro_Extracts
    Tutorial_Intro_Queries
    Tutorial_Intro_Triggers
+   Tutorial_Intro_Binning
 
 All Intro Examples
 ----------------------
@@ -71,6 +72,7 @@ Tutorial Notebooks
 * Extract Examples:  :download:`06_ascent_extract_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/06_ascent_extract_examples.ipynb>`
 * Query Examples:  :download:`07_ascent_query_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/07_ascent_query_examples.ipynb>`
 * Trigger Examples:  :download:`08_ascent_trigger_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/08_ascent_trigger_examples.ipynb>`
+* Binning Examples:  :download:`09_ascent_binning_examples.ipynb <../../../src/examples/tutorial/ascent_intro/notebooks/09_ascent_binning_examples.ipynb>`
 
 
 C++ Examples
@@ -117,6 +119,9 @@ Query Examples:
 Trigger Examples:
  * :download:`ascent_trigger_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_trigger_example1.cpp>`
 
+Binning Examples:
+ * :download:`ascent_binning_example1.cpp <../../../src/examples/tutorial/ascent_intro/cpp/ascent_binning_example1.cpp>`
+
 
 Python Examples
 ~~~~~~~~~~~~~~~
@@ -158,3 +163,6 @@ Query Examples:
 
 Trigger Examples:
  * :download:`ascent_trigger_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_trigger_example1.py>`
+
+Binning Examples:
+ * :download:`ascent_binning_example1.py <../../../src/examples/tutorial/ascent_intro/python/ascent_binning_example1.py>`

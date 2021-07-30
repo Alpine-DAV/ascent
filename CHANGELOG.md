@@ -4,6 +4,15 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Added Data Binning examples to the Ascent Intro Tutorial
+
+### Fixed
+- Fixed an issue with the Data Binning bin calculation logic
+
+
+
 ## [0.7.0] - Released 2021-03-19
 
 ### Added

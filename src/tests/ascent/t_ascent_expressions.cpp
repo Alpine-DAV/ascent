@@ -690,9 +690,9 @@ TEST(ascent_binning, binning_basic_meshes)
 
   expr = "binning('field', 'max', [axis('z', [-5, 0, 5])])";
   res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 0.0]");
+  EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 7.0]");
 
-  expr = "binning('field', 'max', [axis('z', [-5, 0, 5], clamp=True)])";
+  expr = "binning('field', 'max', [axis('z', [-5, 0, 1], clamp=True)])";
   res = eval.evaluate(expr);
   EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 7.0]");
 

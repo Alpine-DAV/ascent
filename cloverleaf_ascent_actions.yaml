@@ -1,0 +1,26 @@
+- action: add_pipelines
+  pipelines:
+    pl1:
+      f1:
+        type: contour
+        params:
+          field: energy
+          levels: 15
+      f2:
+        type: camera
+        params:
+          field: energy
+          metric: data_entropy 
+          samples: 2
+          sample: 1
+          phi: 1
+          theta: 1
+- action: add_scenes
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: pseudocolor
+          field: energy
+          pipeline: pl1
+      image_prefix: energy_

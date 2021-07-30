@@ -78,29 +78,7 @@
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkh/rendering/RayTracer.hpp>
-#include <vtkh/rendering/Scene.hpp>
-#include <vtkh/rendering/MeshRenderer.hpp>
-#include <vtkh/rendering/PointRenderer.hpp>
-#include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/ScalarRenderer.hpp>
-#include <vtkh/filters/Clip.hpp>
-#include <vtkh/filters/ClipField.hpp>
-#include <vtkh/filters/Gradient.hpp>
-#include <vtkh/filters/GhostStripper.hpp>
-#include <vtkh/filters/IsoVolume.hpp>
-#include <vtkh/filters/MarchingCubes.hpp>
-#include <vtkh/filters/NoOp.hpp>
-#include <vtkh/filters/Lagrangian.hpp>
-#include <vtkh/filters/Log.hpp>
-#include <vtkh/filters/ParticleAdvection.hpp>
-#include <vtkh/filters/Recenter.hpp>
-#include <vtkh/filters/Slice.hpp>
-#include <vtkh/filters/Statistics.hpp>
-#include <vtkh/filters/Threshold.hpp>
-#include <vtkh/filters/VectorMagnitude.hpp>
-#include <vtkh/filters/Histogram.hpp>
-#include <vtkh/filters/HistSampling.hpp>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/raytracing/Camera.h>
 #include <vtkm/cont/ArrayCopy.h>
@@ -432,15 +410,19 @@ CameraSimplex::execute()
     std::string topo_name = collection->field_topology(field_name);
 
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+
+//    std::vector<float> field_data = GetScalarData(dataset, field_name, height, width);
+    float datafield_max = 0;//*max_element(field_data.begin(),field_data.end());
+    float datafield_min = 0;//*min_element(field_data.begin(),field_data.end());
     
-    double triangle_time = 0.;
-    auto triangle_start = high_resolution_clock::now();
     //std::vector<Triangle> triangles;// = GetTriangles2(dataset,field_name);
-    std::vector<Triangle> triangles = GetTriangles(dataset);
+    double worldspace_local_area;
+    std::vector<Triangle> triangles = GetTrianglesAndArea(dataset, worldspace_local_area);
+    //std::vector<Triangle> triangles = GetTriangles(dataset);
     float total_triangles = (float) triangles.size();
-    vtkh::DataSet* data = AddTriangleFields(dataset);
-    auto triangle_stop = high_resolution_clock::now();
-    triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
+    float xmax,xmin,ymax,ymin,zmax,zmin =0.0;
+    int xbins = 4, ybins=4, zbins=4;
+    vtkh::DataSet* data = AddTriangleFields(dataset,xmin,xmax,ymin,ymax,zmin,zmax,xbins,ybins,zbins);
     /*#if ASCENT_MPI_ENABLED
       cout << "Global bounds: " << dataset.GetGlobalBounds() << endl;
       cout << "rank " << rank << " bounds: " << dataset.GetBounds() << endl;
@@ -468,7 +450,7 @@ CameraSimplex::execute()
     vtkmCamera *camera = new vtkmCamera;
     camera->ResetToBounds(dataset.GetGlobalBounds());
     vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
-    double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
+    float focus[3] = {(float)lookat[0],(float)lookat[1],(float)lookat[2]};
 
 /*
     Screen screen;
@@ -498,7 +480,8 @@ CameraSimplex::execute()
     //int numTheta = 100;
     //int numPhi = 100;
 
-/* 
+/*
+
     // Code for 20 images from spiral, must change sample from 0->20 in the yaml file 
     int sample = (int)params()["sample"].as_int64();
     
@@ -520,7 +503,7 @@ CameraSimplex::execute()
 
     vtkh::DataSet *output = tracer.GetOutput();
 
-    float score = calculateMetric(output, metric, field_name,
+    float score = calculateMetricScore(output, metric, field_name,
                  		     triangles, height, width, cam);
 
 */
@@ -530,25 +513,31 @@ CameraSimplex::execute()
     int sample = (int)params()["sample"].as_int64();
     
     int metric_num = 0;
-    string metrics[] = {"data_entropy", "depth_entropy", "max_depth",
+    string metrics[] = {"data_entropy", "depth_entropy" , "max_depth",
 	                  "pb", "projected_area", "viewpoint_entropy", 
 			  "visibility_ratio", "visible_triangles", "vkl"};
     
     for (metric_num ; metric_num < 9 ; metric_num++) {
       metric = metrics[metric_num];
       string filename = metrics[metric_num];
-      filename += "_scores.txt"; 
+      filename += "_normalized_scores.txt";
+
+      string rawfilename = metrics[metric_num];
+      rawfilename += "_raw_scores.txt";
 
       ofstream myfile;
       myfile.open(filename);
-       
+
+      ofstream rawfile;
+      rawfile.open(rawfilename);
+      
       double known_min = DBL_MAX;
       double known_max = -DBL_MAX;
 
-      cout << endl << "Gathering max and min data for: " << metric << endl;
+      cout << endl << "Getting raw scores for: " << metric << endl;
 
       // First loop, find min and max
-      for (int i = 0 ; i < 20 ; ++i) {
+      for (int i = 0 ; i < samples ; ++i) {
 
           Camera cam = GetCamera(i, samples, radius, focus, bounds);  
 
@@ -566,8 +555,10 @@ CameraSimplex::execute()
 
           vtkh::DataSet *output = tracer.GetOutput();
 
-          float score = calculateMetric(output, metric, field_name,
-  		          triangles, height, width, cam);
+	  int xBins = 8, yBins = 8, zBins = 8;
+          float score = calculateMetricScore(output, metric, field_name,
+  		          triangles, worldspace_local_area, height, width, cam,
+			  datafield_max, datafield_min, xBins, yBins, zBins, radius*6);
 
    	  if (score < known_min) {
             known_min = score;
@@ -576,14 +567,18 @@ CameraSimplex::execute()
 	  if (score > known_max) {
             known_max = score;
 	  }
+          
+          rawfile << score << endl;
 
           cout << "Natural score for sample " << i << " is " << score << endl;
       }
 
-      cout << endl << "Writing score file for: " << metric << endl;
+      rawfile.close();
+
+      cout << endl << "Getting normalized scores for: " << metric << endl;
 
       // Second loop, put relative scores in file
-      for (int i = 0 ; i < 20 ; ++i) {
+      for (int i = 0 ; i < samples ; ++i) {
 
           Camera cam = GetCamera(i, samples, radius, focus, bounds);  
 
@@ -601,8 +596,10 @@ CameraSimplex::execute()
 
           vtkh::DataSet *output = tracer.GetOutput();
 
-          float score = calculateMetric(output, metric, field_name,
-	  	          triangles, height, width, cam);
+	  int xBins = 8, yBins = 8, zBins = 8;
+          float score = calculateMetricScore(output, metric, field_name,
+	  	          triangles, worldspace_local_area, height, width, cam,
+			  datafield_max, datafield_min, xBins, yBins, zBins, radius*6);
 
           float relative = (score - known_min) / (known_max - known_min);
 	  float result = relative * 10;
@@ -652,7 +649,7 @@ CameraSimplex::execute()
 
       vtkh::DataSet *output = tracer.GetOutput();
 
-      float score = calculateMetric(output, metric, field_name,
+      float score = calculateMetricScore(output, metric, field_name,
                  		     triangles, height, width, cam);
 
       cout << "Score at (" << winning_i << ", " << winning_j << ") is " << score << endl << endl;
@@ -701,7 +698,7 @@ CameraSimplex::execute()
 
           vtkh::DataSet *output = tracer.GetOutput();
 
-          float score = calculateMetric(output, metric, field_name,
+          float score = calculateMetricScore(output, metric, field_name,
 		       triangles, height, width, cam);
 
           buffer[i][j] = score;
@@ -784,7 +781,7 @@ CameraSimplex::execute()
 
           vtkh::DataSet *output = tracer.GetOutput();
 
-          float score = calculateMetric(output, metric, field_name,
+          float score = calculateMetricScore(output, metric, field_name,
   		          triangles, height, width, cam);
 
    	  if (score < known_min) {
@@ -826,7 +823,7 @@ CameraSimplex::execute()
 
           vtkh::DataSet *output = tracer.GetOutput();
 
-          float score = calculateMetric(output, metric, field_name,
+          float score = calculateMetricScore(output, metric, field_name,
 	  	          triangles, height, width, cam);
 
           float relative = (score - known_min) / (known_max - known_min);
