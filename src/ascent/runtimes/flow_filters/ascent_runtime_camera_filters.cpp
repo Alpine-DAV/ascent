@@ -2631,7 +2631,6 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_t
     // MPI_Status status;
     float global_area       = 0.0;
     float local_area        = 0.0;
-    std::cerr << std::setw(8) << std::fixed;
     #if defined(ASCENT_VTKM_ENABLED)
     auto triangles_AH = vtkm::cont::make_ArrayHandle(local_triangles, vtkm::CopyFlag::Off);
     auto projected_areas = CalculateProjectedTriangleAreas(triangles_AH, camera, width, height, false);
