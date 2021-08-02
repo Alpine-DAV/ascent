@@ -67,9 +67,6 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
-#define DEBUG false
-#define CYCLE_RECORDED true
-
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -647,9 +644,6 @@ TEST(ascent_expressions, test_history)
 }
 
 //-----------------------------------------------------------------------------
-//new
-
-
 TEST(ascent_expressions, test_gradient_scalar)
 {
   Node n;
@@ -683,6 +677,7 @@ TEST(ascent_expressions, test_gradient_scalar)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("1", "val");
     res = eval.evaluate("vector(1,2,3)", "vec");
+    res = eval.evaluate("gradient(val)", "gradient_val");
   }
 
   {
@@ -691,6 +686,7 @@ TEST(ascent_expressions, test_gradient_scalar)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("2", "val");
     res = eval.evaluate("vector(9,3,4)", "vec");
+    res = eval.evaluate("gradient(val)", "gradient_val");
   }
 
   {
@@ -699,6 +695,7 @@ TEST(ascent_expressions, test_gradient_scalar)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("3", "val");
     res = eval.evaluate("vector(3,4,0)", "vec");
+    res = eval.evaluate("gradient(val)", "gradient_val");
   }
 
   {
@@ -707,89 +704,58 @@ TEST(ascent_expressions, test_gradient_scalar)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("4", "val");
     res = eval.evaluate("vector(6,4,8)", "vec");
+    res = eval.evaluate("gradient(val)", "gradient_val");
   }
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
   for(const string &expression : {
       "gradient(val)", 
       "gradient(val, window_length=1)",
-      #if CYCLE_RECORDED
-        "gradient(val, window_length=1, window_length_unit='index')",
-      #else
-        "gradient(val, window_length=1, window_length_is_number_of_executions=True)",
-      #endif
+      "gradient(val, window_length=1, window_length_unit='index')",
       "gradient(val, window_length=2)",
       "gradient(val, window_length=5)",
     }) {
     res = eval.evaluate(expression);
-    #if DEBUG
-      res.print();
-    #endif
     EXPECT_EQ(res["value"].to_float64(), 1);
   }
 
   for(const string &expression : {
-    #if CYCLE_RECORDED
-        "gradient(val, window_length=2, window_length_unit='time')",
-        "gradient(val, window_length=3, window_length_unit='time')",
-        "gradient(val, window_length=4, window_length_unit='time')",
-        "gradient(val, window_length=10, window_length_unit='time')",
-    #else
-        "gradient(val, window_length=2, window_length_is_number_of_executions=False)",
-        "gradient(val, window_length=3, window_length_is_number_of_executions=False)",
-        "gradient(val, window_length=4, window_length_is_number_of_executions=False)",
-        "gradient(val, window_length=10, window_length_is_number_of_executions=False)",
-    #endif
+      "gradient(val, window_length=2, window_length_unit='time')",
+      "gradient(val, window_length=3, window_length_unit='time')",
+      "gradient(val, window_length=4, window_length_unit='time')",
+      "gradient(val, window_length=10, window_length_unit='time')",
     }) {
     res = eval.evaluate(expression);
-    #if DEBUG
-      res.print();
-    #endif
     EXPECT_EQ(res["value"].to_float64(), .5);
   }
 
-#if CYCLE_RECORDED
   for(const string &expression : {
       "gradient(val, window_length=100, window_length_unit='cycle')",
       "gradient(val, window_length=150, window_length_unit='cycle')",
     }) {
     res = eval.evaluate(expression);
-    #if DEBUG
-      res.print();
-    #endif
     EXPECT_EQ(res["value"].to_float64(), .01);
   }
-#endif
 
-  //todo test exceptions
-  // bool threw = false;
-  // try
-  // {
-  //   expr = "history(val, absolute_index = 10)";
-  //   res = eval.evaluate(expr);
-  // }
-  // catch(...)
-  // {
-  //   threw = true;
-  // }
-  // EXPECT_EQ(threw, true);
+  //add one more data point so we can evaluate the gradient of the gradient
+  {
+    multi_dom.child(0)["state/cycle"] = 500;
+    multi_dom.child(0)["state/time"] = 12.0;
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+    res = eval.evaluate("8", "val");
+    res = eval.evaluate("gradient(val)", "gradient_val");
+  }
 
-  // threw = false;
-  // try
-  // {
-  //   expr = "history(vval, 1)";
-  //   res = eval.evaluate(expr);
-  // }
-  // catch(...)
-  // {
-  //   threw = true;
-  // }
-  // EXPECT_EQ(threw, true);
+  //test the gradient of gradient
+  for(const string &expression : {
+      "gradient(gradient_val)", 
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["value"].to_float64(), 3);
+  }
 }
 
-
-
-
+//-----------------------------------------------------------------------------
 TEST(ascent_expressions, test_gradient_array)
 {
   Node n;
@@ -823,6 +789,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("1", "val");
     res = eval.evaluate("vector(1,2,3)", "vec");
+    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");   
   }
 
   {
@@ -831,6 +798,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("2", "val");
     res = eval.evaluate("vector(9,3,4)", "vec");
+    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");   
   }
 
   {
@@ -839,6 +807,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("3", "val");
     res = eval.evaluate("vector(3,4,0)", "vec");
+    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");   
   }
 
   {
@@ -847,6 +816,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("4", "val");
     res = eval.evaluate("vector(6,4,8)", "vec");
+    res = eval.evaluate("gradient(val, window_length=200, window_length_unit='cycle')", "gradient_val");   
   }
 
   runtime::expressions::ExpressionEval eval(&multi_dom);
@@ -873,8 +843,6 @@ TEST(ascent_expressions, test_gradient_array)
     EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
   }
 
-
-#if CYCLE_RECORDED
   for(const string &expression : {
       "gradient_range(val, first_absolute_cycle=100, last_absolute_cycle=300)",
     }) {
@@ -883,7 +851,6 @@ TEST(ascent_expressions, test_gradient_array)
     result = res["value"].as_float64_array();
     EXPECT_EQ(result.to_json(), "[0.01, 0.01]");
   }
-#endif
 
   for(const string &expression : {
       "gradient_range(val, first_absolute_time=4.0, last_absolute_time=10.0)",
@@ -914,7 +881,6 @@ TEST(ascent_expressions, test_gradient_array)
     EXPECT_EQ(result.to_json(), "0.5");
   }
 
-#if CYCLE_RECORDED
   for(const string &expression : {
       "gradient_range(val, first_absolute_cycle=200, last_absolute_cycle=300)",
     }) {
@@ -923,7 +889,6 @@ TEST(ascent_expressions, test_gradient_array)
     result = res["value"].as_float64_array();
     EXPECT_EQ(result.to_json(), "0.01");
   }
-#endif
 
   //confirm that it clamps to the end as expected
   for(const string &expression : {
@@ -973,7 +938,6 @@ TEST(ascent_expressions, test_gradient_array)
     EXPECT_EQ(res["value"].to_float64(), 1);
   }
 
-  // tood - would it be better to throw an error?
   //confirm it returns an empty gradient if there is only a single value
   for(const string &expression : {
       "gradient_range(val, first_absolute_index=0, last_absolute_index=0)", 
@@ -986,26 +950,20 @@ TEST(ascent_expressions, test_gradient_array)
     EXPECT_EQ(res["value"].to_string(), "\"-inf\"");
   }
 
+  //test the gradient of gradient
+  for(const string &expression : {
+      "gradient_range(gradient_val, first_absolute_cycle=200, last_absolute_cycle=500)",
+    }) {
+    res = eval.evaluate(expression);
+    EXPECT_EQ(res["type"].as_string(), "array");
+    result = res["value"].as_float64_array();
+    EXPECT_EQ(result.to_json(), "[0.0, -2.5e-05]");
+  }
 
 
-
-  // for(const string &expression : {
-  //     "gradient(y_values=history_range(val, first_absolute_index=0, last_absolute_index=2), delta_x_values=[1, 'test'])",
-  //     "gradient(y_values=history_range(val, first_absolute_index=0, last_absolute_index=2), delta_x_values='test')",  
-  //     "gradient(y_values=1, delta_x_values=1)",
-  //   }) {
-  //   bool threw = false;
-  //   try
-  //   {
-  //     res = eval.evaluate(expression);
-  //   }
-  //   catch(...) {
-  //     threw = true;
-  //   }
-  //   EXPECT_EQ(threw, true);
-  // }
 }
 
+//-----------------------------------------------------------------------------
 TEST(ascent_expressions, test_history_range)
 {
   Node n;
@@ -1098,9 +1056,7 @@ TEST(ascent_expressions, test_history_range)
       "history_range(val, first_absolute_index=0, last_absolute_index=2)", 
       "history_range(val, first_relative_index=1, last_relative_index=3)",
       "history_range(val, first_absolute_time=1.0, last_absolute_time=3.0)",
-      #if CYCLE_RECORDED
-        "history_range(val, first_absolute_cycle=100, last_absolute_cycle=300)",  
-      #endif
+      "history_range(val, first_absolute_cycle=100, last_absolute_cycle=300)",  
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
@@ -1112,9 +1068,7 @@ TEST(ascent_expressions, test_history_range)
       "history_range(val, first_absolute_index=1, last_absolute_index=2)", 
       "history_range(val, first_relative_index=1, last_relative_index=2)",
       "history_range(val, first_absolute_time=2.0, last_absolute_time=3.0)",
-      #if CYCLE_RECORDED
-        "history_range(val, first_absolute_cycle=200, last_absolute_cycle=300)",
-      #endif
+      "history_range(val, first_absolute_cycle=200, last_absolute_cycle=300)",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
@@ -1126,9 +1080,7 @@ TEST(ascent_expressions, test_history_range)
   for(const string &expression : {
       "history_range(val, first_absolute_index=1, last_absolute_index=5)",
       "history_range(val, first_absolute_time=2.0, last_absolute_time=5.0)",
-      #if CYCLE_RECORDED
-        "history_range(val, first_absolute_cycle=200, last_absolute_cycle=500)",
-      #endif
+      "history_range(val, first_absolute_cycle=200, last_absolute_cycle=500)",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
@@ -1140,9 +1092,7 @@ TEST(ascent_expressions, test_history_range)
   for(const string &expression : {
     "history_range(val, first_relative_index=1, last_relative_index=6)",
     "history_range(val, first_absolute_time=0.0, last_absolute_time=3.0)",
-    #if CYCLE_RECORDED
-      "history_range(val, first_absolute_cycle=0, last_absolute_cycle=300)",
-    #endif
+    "history_range(val, first_absolute_cycle=0, last_absolute_cycle=300)",
   }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
@@ -1158,30 +1108,6 @@ TEST(ascent_expressions, test_history_range)
     EXPECT_EQ(res["value"].to_float64(), -2);
   }
 
-  //todo test exceptions
-  // bool threw = false;
-  // try
-  // {
-  //   expr = "history(val, absolute_index = 10)";
-  //   res = eval.evaluate(expr);
-  // }
-  // catch(...)
-  // {
-  //   threw = true;
-  // }
-  // EXPECT_EQ(threw, true);
-
-  // threw = false;
-  // try
-  // {
-  //   expr = "history(vval, 1)";
-  //   res = eval.evaluate(expr);
-  // }
-  // catch(...)
-  // {
-  //   threw = true;
-  // }
-  // EXPECT_EQ(threw, true);
 }
 
 //-----------------------------------------------------------------------------
@@ -1616,3 +1542,4 @@ main(int argc, char *argv[])
   result = RUN_ALL_TESTS();
   return result;
 }
+
