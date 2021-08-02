@@ -3038,7 +3038,7 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, flo
       #endif
     }
     MPI_Bcast(&vkl, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    return vkl;
+    return (-1.0) * vkl;
   #else
     int size = height*width;
     std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
