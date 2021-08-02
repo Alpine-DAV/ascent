@@ -72,9 +72,9 @@ double ceil441(double f);
 double floor441(double f);
 double nabs(double x);
 double calculateArea(double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2);
-void normalize(double * normal);
-double dotProduct(double* v1, double* v2, int length);
-void crossProduct(double a[3], double b[3], double c[3]);
+template<typename T> EXEC_CONT void normalize(T * normal);
+template<typename T> EXEC_CONT T dotProduct(const T* v1, const T* v2, int length);
+template<typename T> EXEC_CONT void crossProduct(const T a[3], const T b[3], T c[3]);
 double SineParameterize(int curFrame, int nFrames, int ramp);
 void fibonacci_sphere(int i, int samples, double* points);
 
@@ -87,9 +87,9 @@ class Matrix
   public:
     double          A[4][4];
 
-    void            TransformPoint(const double *ptIn, double *ptOut);
-    static Matrix   ComposeMatrices(const Matrix &m1, const Matrix &m2);
-    void            Print(std::ostream &o);
+    EXEC_CONT void   TransformPoint(const double *ptIn, double *ptOut);
+    EXEC_CONT static Matrix ComposeMatrices(const Matrix &m1, const Matrix &m2);
+    EXEC_CONT void   Print(std::ostream &o);
 
 };
 
@@ -129,10 +129,10 @@ class Camera
     double          up[3];
     Screen          screen;
 
-    Matrix          CameraTransform(void);
-    Matrix          ViewTransform(void);
-    Matrix          DeviceTransform(int width, int height);
-    Matrix          DeviceTransform();
+    EXEC_CONT Matrix CameraTransform(void) const;
+    EXEC_CONT Matrix ViewTransform(void) const;
+    EXEC_CONT Matrix DeviceTransform(int width, int height) const;
+    EXEC_CONT Matrix DeviceTransform() const;
 };
 
 Camera GetCamera(int frame, int nframes, double radius, float *lookat, float *bounds);
@@ -182,15 +182,15 @@ class Triangle
         X[2] = x2; Y[2] = y2; Z[2] = z2;
       }	      
       
-      void printTri();
-      float calculateTriArea();
-      double findMin(double a, double b, double c);
-      double findMax(double a, double b, double c);
-      void cutoff(int w, int h);
+      void printTri() const;
+      EXEC_CONT float calculateTriArea() const;
+      EXEC_CONT double findMin(double a, double b, double c) const;
+      EXEC_CONT double findMax(double a, double b, double c) const;
+      EXEC_CONT void cutoff(int w, int h);
 };
 
 #if defined(ASCENT_VTKM_ENABLED)
-Triangle transformTriangle(Triangle t, Camera c);
+EXEC_CONT Triangle transformTriangle(const Triangle& t, const Camera& c, int width, int height);
 std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name );
 double CalculateNormalCameraDot(double* cameraPositions, Triangle tri);
