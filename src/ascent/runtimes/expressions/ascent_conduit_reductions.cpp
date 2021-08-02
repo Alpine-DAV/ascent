@@ -121,7 +121,6 @@ type_dispatch(const conduit::Node &values, const Function &func)
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-//new
 template<typename Function>
 conduit::Node
 type_dispatch(const conduit::Node &values0, const conduit::Node &values1, const bool is_list, const Function &func)
@@ -240,7 +239,6 @@ type_dispatch(const conduit::Node &values0, const conduit::Node &values1, const 
   return res;
 }
 
-//new
 struct GradientFunctor
 {
   template<typename T, typename T2>
@@ -576,6 +574,7 @@ array_histogram(const conduit::Node &values,
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
 
 
 

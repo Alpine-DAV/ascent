@@ -59,8 +59,6 @@
 #include <stdio.h>
 #include <ctime>
 
-#define CYCLE_RECORDED true
-
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #include <conduit_relay_mpi.hpp>
@@ -374,7 +372,6 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
-  //new
   conduit::Node &scalar_gradient_sig = (*functions)["gradient"].append();
   scalar_gradient_sig["return_type"] = "double";
   scalar_gradient_sig["filter_name"] = "scalar_gradient";
@@ -389,18 +386,11 @@ initialize_functions()
   scalar_gradient_sig["args/window_length/description"] = "The number of time points ago to use as the x0 for the gradient calculation. defaults to ``1`` \
     (calculate the gradient from the previous time point to now).";
 
-  #if CYCLE_RECORDED
-    scalar_gradient_sig["args/window_length_unit/type"] =  "string";
-    scalar_gradient_sig["args/window_length_unit/optional"];
-    scalar_gradient_sig["args/window_length_unit/description"] = "Can be one of three values: ``\"index\"``, ``\"time\"`` or ``\"cycle\".`` \
-      Indicates whether the window length is in units of number of expression execution points, simulation time, or simulation cycles. \
-      Defaults to ``index`` (the window_length is in number of expression execution points).";
-  #else
-      scalar_gradient_sig["args/window_length_is_number_of_executions/type"] =  "bool";
-      scalar_gradient_sig["args/window_length_is_number_of_executions/optional"];
-      scalar_gradient_sig["args/window_length_is_number_of_executions/description"] = "Indicates whether units for window_length is iin number of expression executions or simulation time. Default to ``true`` \
-        (the window_length is in the number of times the expression has been evaluated).";
-  #endif
+  scalar_gradient_sig["args/window_length_unit/type"] =  "string";
+  scalar_gradient_sig["args/window_length_unit/optional"];
+  scalar_gradient_sig["args/window_length_unit/description"] = "Can be one of three values: ``\"index\"``, ``\"time\"`` or ``\"cycle\".`` \
+    Indicates whether the window length is in units of number of expression execution points, simulation time, or simulation cycles. \
+    Defaults to ``index`` (the window_length is in number of expression execution points).";
 
   scalar_gradient_sig["description"] = "Return the temporal gradient of the given expression for the current point in time.";
 
@@ -455,64 +445,33 @@ initialize_functions()
   example, ``gradient_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` calculates the temporal gradient of \
   pressure from the first 0.1 units of simulation time.";
 
-  #if CYCLE_RECORDED
-    array_gradient_sig["args/first_absolute_cycle/type"] = "scalar";
-    array_gradient_sig["args/first_absolute_cycle/optional"];
-    array_gradient_sig["args/first_absolute_cycle/description"] =
-        "The first simulation cycle for which to calculate the temporal gradient. For \
-    example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` calculates the temporal gradient of \
-    pressure from the first two cycles.";
+  array_gradient_sig["args/first_absolute_cycle/type"] = "scalar";
+  array_gradient_sig["args/first_absolute_cycle/optional"];
+  array_gradient_sig["args/first_absolute_cycle/description"] =
+      "The first simulation cycle for which to calculate the temporal gradient. For \
+  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` calculates the temporal gradient of \
+  pressure from the first two cycles.";
 
-    array_gradient_sig["args/last_absolute_cycle/type"] = "scalar";
-    array_gradient_sig["args/last_absolute_cycle/optional"];
-    array_gradient_sig["args/last_absolute_cycle/description"] =
-        "The last simulation cycle for which to calculate the temporal gradient. For \
-    example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` calculate the temporal gradient of \
-    pressure from the first two cycles.";
+  array_gradient_sig["args/last_absolute_cycle/type"] = "scalar";
+  array_gradient_sig["args/last_absolute_cycle/optional"];
+  array_gradient_sig["args/last_absolute_cycle/description"] =
+      "The last simulation cycle for which to calculate the temporal gradient. For \
+  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` calculate the temporal gradient of \
+  pressure from the first two cycles.";
 
-    array_gradient_sig["description"] = "As the simulation progresses the expressions \
-    are evaluated repeatedly. The gradient_range function allows you to get the temporal gradient from a range of \
-    previous evaluations. For example, if we want to evaluate the difference \
-    between the original state of the simulation and the current state then we \
-    can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
-    current value: ``gradient(val) - avg(gradient_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
-    you want to evaluate the relative change between the previous states and the \
-    current state: ``gradient(val) - avg(gradient_range(val, first_relative_index=1, last_relative_index=10))``\
-    We can alternatively evaluate the difference between a particular range of time in the simulation, \
-    such as the first 10 seconds, and the current state: ``gradient(val) - avg(gradient_range(val, first_absolute_time=1, last_absolute_index=10))`` \
-    or for the first 10 cycles of the simulation ``gradient(val) - avg(gradient_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n \
-    .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
-    first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
-  #else
-    array_gradient_sig["description"] = "As the simulation progresses the expressions \
-    are evaluated repeatedly. The gradient_range function allows you to get the temporal gradient from a range of \
-    previous evaluations. For example, if we want to evaluate the difference \
-    between the original state of the simulation and the current state then we \
-    can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
-    current value: ``gradient(val) - avg(gradient_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
-    you want to evaluate the relative change between the previous states and the \
-    current state: ``gradient(val) - avg(gradient_range(val, first_relative_index=1, last_relative_index=10))``\
-    We can alternatively evaluate the difference between a particular range of time in the simulation, \
-    such as the first 10 seconds, and the current state: ``gradient(val) - avg(gradient_range(val, first_absolute_time=1, last_relative_index=10))``.\n\n \
-    .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
-    first_relative_index and last_relative_index, or 3). first_absolute_time and last_absolute_time.";
-  #endif
-
-  // //new
-  // conduit::Node &array_gradient_sig = (*functions)["gradient"].append();
-  // array_gradient_sig["return_type"] = "double";
-  // array_gradient_sig["filter_name"] = "array_gradient"; // matches the filter's type_name
-  // array_gradient_sig["args/y_values/type"] = "array"; // arg names match input port names
-  // array_gradient_sig["args/y_values/description"] = "The values for which to calculate the gradient.";
-  // array_gradient_sig["args/delta_x_values/type"] = "anytype";
-  // array_gradient_sig["args/delta_x_values/description"] = "The delta x between for each array value. Can either be \
-  //   a single number (indicating a uniform delta x) or can be an array, providing the \
-  //   change in x from each array element to the next (length(delta_x_values) = length(y_values)-1).";
-  // // array_gradient_sig["args/time_delta/description"] = "The time that has passed between each of the array values. Can either be \
-  // // a single number (indicating a uniform amount of time has passed between each measurement) or can be an array, providing the \
-  // // length of time that has passed between each array element to the next (length(time_delta) = length(array)-1).";
-
-  // array_gradient_sig["description"] = "Return the gradient for each point in an array.";
+  array_gradient_sig["description"] = "As the simulation progresses the expressions \
+  are evaluated repeatedly. The gradient_range function allows you to get the temporal gradient from a range of \
+  previous evaluations. For example, if we want to evaluate the difference \
+  between the original state of the simulation and the current state then we \
+  can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
+  current value: ``gradient(val) - avg(gradient_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
+  you want to evaluate the relative change between the previous states and the \
+  current state: ``gradient(val) - avg(gradient_range(val, first_relative_index=1, last_relative_index=10))``\
+  We can alternatively evaluate the difference between a particular range of time in the simulation, \
+  such as the first 10 seconds, and the current state: ``gradient(val) - avg(gradient_range(val, first_absolute_time=1, last_absolute_index=10))`` \
+  or for the first 10 cycles of the simulation ``gradient(val) - avg(gradient_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n \
+  .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
+  first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
 
   // -------------------------------------------------------------
 
@@ -689,8 +648,6 @@ initialize_functions()
 
   // -------------------------------------------------------------
   
-
-  //new
   conduit::Node &history_sig = (*functions)["history"].append();
   history_sig["return_type"] = "anytype";
   history_sig["filter_name"] = "history";
@@ -783,49 +740,33 @@ initialize_functions()
   example, ``history_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` returns the value of \
   pressure from the first 0.1 units of simulation time.";
 
-  #if CYCLE_RECORDED
-    history_range_sig["args/first_absolute_cycle/type"] = "scalar";
-    history_range_sig["args/first_absolute_cycle/optional"];
-    history_range_sig["args/first_absolute_cycle/description"] =
-        "The first simulation cycle for which to retrieve values. For \
-    example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` returns the value of \
-    pressure from the first two cycles.";
+  history_range_sig["args/first_absolute_cycle/type"] = "scalar";
+  history_range_sig["args/first_absolute_cycle/optional"];
+  history_range_sig["args/first_absolute_cycle/description"] =
+      "The first simulation cycle for which to retrieve values. For \
+  example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` returns the value of \
+  pressure from the first two cycles.";
 
-    history_range_sig["args/last_absolute_cycle/type"] = "scalar";
-    history_range_sig["args/last_absolute_cycle/optional"];
-    history_range_sig["args/last_absolute_cycle/description"] =
-        "The last simulation cycle for which to retrieve values. For \
-    example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` returns the value of \
-    pressure from the first two cycles.";
+  history_range_sig["args/last_absolute_cycle/type"] = "scalar";
+  history_range_sig["args/last_absolute_cycle/optional"];
+  history_range_sig["args/last_absolute_cycle/description"] =
+      "The last simulation cycle for which to retrieve values. For \
+  example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` returns the value of \
+  pressure from the first two cycles.";
 
-    history_range_sig["description"] = "As the simulation progresses the expressions \
-    are evaluated repeatedly. The history_range function allows you to get the value from a range of \
-    previous evaluations. For example, if we want to evaluate the difference \
-    between the original state of the simulation and the current state then we \
-    can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
-    current value: ``val - avg(history_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
-    you want to evaluate the relative change between the previous states and the \
-    current state: ``val - avg(history_range(val, first_relative_index=1, last_relative_index=10))``\
-    We can alternatively evaluate the difference between a particular range of time in the simulation, \
-    such as the first 10 seconds, and the current state: ``val - avg(history_range(val, first_absolute_time=1, last_absolute_index=10))`` \
-    or for the first 10 cycles of the simulation ``val - avg(history_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n \
-    .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
-    first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
-  #else
-    history_range_sig["description"] = "As the simulation progresses the expressions \
-    are evaluated repeatedly. The history_range function allows you to get the value from a range of \
-    previous evaluations. For example, if we want to evaluate the difference \
-    between the original state of the simulation and the current state then we \
-    can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
-    current value: ``val - avg(history_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
-    you want to evaluate the relative change between the previous states and the \
-    current state: ``val - avg(history_range(val, first_relative_index=1, last_relative_index=10))``\
-    We can alternatively evaluate the difference between a particular range of time in the simulation, \
-    such as the first 10 seconds, and the current state: ``val - avg(history_range(val, first_absolute_time=1, last_relative_index=10))``.\n\n \
-    .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
-    first_relative_index and last_relative_index, or 3). first_absolute_time and last_absolute_time.";
-  #endif
-
+  history_range_sig["description"] = "As the simulation progresses the expressions \
+  are evaluated repeatedly. The history_range function allows you to get the value from a range of \
+  previous evaluations. For example, if we want to evaluate the difference \
+  between the original state of the simulation and the current state then we \
+  can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
+  current value: ``val - avg(history_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
+  you want to evaluate the relative change between the previous states and the \
+  current state: ``val - avg(history_range(val, first_relative_index=1, last_relative_index=10))``\
+  We can alternatively evaluate the difference between a particular range of time in the simulation, \
+  such as the first 10 seconds, and the current state: ``val - avg(history_range(val, first_absolute_time=1, last_absolute_index=10))`` \
+  or for the first 10 cycles of the simulation ``val - avg(history_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n \
+  .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
+  first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
 
   // -------------------------------------------------------------
   conduit::Node &entropy_sig = (*functions)["entropy"].append();
@@ -1232,3 +1173,4 @@ void ExpressionEval::get_last(conduit::Node &data)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
