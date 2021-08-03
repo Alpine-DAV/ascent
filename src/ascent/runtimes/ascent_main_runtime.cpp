@@ -746,6 +746,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        // replace file param with source that includes actual script
        params.remove("file");
        params["source"] = n_py_src;
+       // this entry will show up as __file__ in the python filter env
+       params["source_file"] = script_fname;
      }
 
      // inject helper that provides the mpi comm handle
