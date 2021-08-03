@@ -81,6 +81,7 @@
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #endif
+
 using namespace conduit;
 using namespace std;
 
@@ -267,6 +268,7 @@ comp_op(const double lhs, const double rhs, const std::string &op)
   {
     ASCENT_ERROR("unknown comparison op " << op);
   }
+
   return res;
 }
 
@@ -625,6 +627,8 @@ BinaryOp::execute()
   const conduit::Node &lhs = (*n_lhs)["value"];
   const conduit::Node &rhs = (*n_rhs)["value"];
 
+
+
   std::string op_str = params()["op_string"].as_string();
   const std::string l_type = (*n_lhs)["type"].as_string();
   const std::string r_type = (*n_rhs)["type"].as_string();
@@ -671,6 +675,7 @@ BinaryOp::execute()
   }
   else if(detail::is_logic(op_str))
   {
+
     bool b_lhs = lhs.to_uint8();
     bool b_rhs = rhs.to_uint8();
     (*output)["value"] = detail::logic_op(b_lhs, b_rhs, op_str);
@@ -680,6 +685,7 @@ BinaryOp::execute()
   {
     double d_rhs = rhs.to_float64();
     double d_lhs = lhs.to_float64();
+
     (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op_str);
     (*output)["type"] = "bool";
   }
@@ -1192,7 +1198,7 @@ void
 ArrayMax::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_max((*input<Node>("arg1"))["value"]);
+  (*output)["value"] = array_max((*input<Node>("arg1"))["value"])["value"];
   (*output)["type"] = "double";
 
   set_output<conduit::Node>(output);
@@ -1302,6 +1308,556 @@ ArrayAvg::execute()
   conduit::Node sum = array_sum((*input<Node>("arg1"))["value"]);
   (*output)["value"] = sum["value"].to_float64() / sum["count"].to_float64();
   (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+ScalarGradient::ScalarGradient() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ScalarGradient::~ScalarGradient()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ScalarGradient::declare_interface(Node &i)
+{
+  i["type_name"] = "scalar_gradient";
+  i["port_names"].append() = "expr_name";
+  i["port_names"].append() = "window_length";
+  i["port_names"].append() = "window_length_unit";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ScalarGradient::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ScalarGradient::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
+  conduit::Node &n_window_length = *input<Node>("window_length");
+  conduit::Node &n_window_length_unit = *input<Node>("window_length_unit");
+
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<Node>("cache");
+
+  if(!cache->has_path(expr_name))
+  {
+    ASCENT_ERROR("ScalarGradient: unknown identifier "<<  expr_name);
+  }
+
+  // handle the optional inputs
+  double window_length = 1;
+  if(!n_window_length.dtype().is_empty())
+  {
+    window_length = n_window_length["value"].to_float64();
+  }
+  if(window_length < 0)
+  {
+     ASCENT_ERROR("ScalarGradient: window_length must non-negative." );
+  }
+
+  string units = "index";
+  if(!n_window_length_unit.dtype().is_empty())
+  {
+    units = n_window_length_unit["value"].as_string();
+  }
+  bool execution_points = units == "index";
+  bool time = units == "time";
+  bool cycles = units == "cycle";
+  int total = execution_points + time + cycles;
+
+  if(total == 0 && !n_window_length_unit.dtype().is_empty()) {
+     ASCENT_ERROR("ScalarGradient: if a ``window_length_unit`` value is provided, it must be set to either: 1). \"index\", 2). \"time\", or 3). \"cycle\"." );    
+  }
+  if((execution_points || cycles) && window_length < 1) {
+     ASCENT_ERROR("ScalarGradient: window_length must be at least 1 if the window length unit is \"index\" or \"cycle\"." );    
+  }
+ 
+  const conduit::Node &history = (*cache)[expr_name];
+
+  const int entries = history.number_of_children();
+  if(entries < 2) {
+    (*output)["value"] = -std::numeric_limits<double>::infinity();
+    (*output)["type"] = "double";
+    set_output<conduit::Node>(output);
+    return;
+  }
+
+  int first_index = -1, current_index = entries - 1;
+  if(execution_points) {
+    //clamp the first index if the window length has gone too far
+    if(window_length - current_index > 0) {
+      first_index = 0;
+      window_length = current_index;
+    }
+    else {
+      first_index = current_index - window_length;
+    }
+  }
+  else if(time) {
+   string time_path = "time";
+   if(!history.child(current_index).has_path(time_path))
+    {
+      ASCENT_ERROR("ScalarGradient: interal error. current time point does not have the child " + time_path);
+    }
+    const double current_time = history.child(current_index)[time_path].to_float64();
+    const double first_time = current_time - window_length;
+    double time;
+    for(int index = 0; index < entries; index++) {
+      if(history.child(index).has_path(time_path))
+      {
+        time = history.child(index)[time_path].to_float64();
+      }
+      else {
+        ASCENT_ERROR("ScalarGradient: a time point in evaluation window (for the calculation at absolute index: " + to_string(index) + ") does not have the child " + time_path );
+      }
+      if(time >= first_time) {
+        first_index = index;
+        //adjust so our window length is accurate (since we may not have performed a calculation at precisely the requested time)
+        window_length = current_time - time;
+        break;
+      }
+    }
+  }
+  else if(cycles) {
+    vector<string> child_names = history.child_names();
+    if(child_names.size() != entries) {
+      ASCENT_ERROR("ScalarGradient: internal error. number of history entries: " + to_string(entries) + ", but number of history child names: " + to_string(child_names.size()));
+    }
+    const unsigned long long current_cycle = stoull(child_names[current_index]);
+    const unsigned long long first_cycle = current_cycle - window_length;
+    
+    unsigned long long cycle;
+    for(int index = 0; index < entries; index++) {
+      cycle = stoull(child_names[index]);
+      if(cycle >= first_cycle) {
+        first_index = index;
+        //adjust so our window length is accurate (since we may not have performed a calculation at precisely the requested time)
+        window_length = current_cycle - cycle;
+        break;
+      }
+    }
+  }
+
+  string value_path = "";
+  vector<string> value_paths = {"value", "attrs/value/value"};
+  for(const string &path : value_paths) {
+    if(history.child(current_index).has_path(path)) {
+      value_path = path;
+      break;
+    }
+  }
+  if(value_path.size() == 0) {
+      ASCENT_ERROR("ScalarGradient: interal error. current index does not have one of the expected value paths");    
+  }
+
+  double first_value = history.child(first_index)[value_path].to_float64();
+  double current_value = history.child(current_index)[value_path].to_float64();
+
+  // dy / dx
+  double gradient = (current_value - first_value) / window_length;
+
+  (*output)["value"] = gradient;
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+
+//-----------------------------------------------------------------------------
+ArrayGradient::ArrayGradient() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ArrayGradient::~ArrayGradient()
+{
+  // empty
+}
+
+
+// -----------------------------------------------------------------------------
+void
+ArrayGradient::declare_interface(Node &i)
+{
+  i["type_name"] = "gradient_range";
+  i["port_names"].append() = "expr_name";
+  i["port_names"].append() = "first_absolute_index";
+  i["port_names"].append() = "last_absolute_index";
+  i["port_names"].append() = "first_relative_index";
+  i["port_names"].append() = "last_relative_index";
+  i["port_names"].append() = "first_absolute_time";
+  i["port_names"].append() = "last_absolute_time";
+  i["port_names"].append() = "first_absolute_cycle";
+  i["port_names"].append() = "last_absolute_cycle";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ArrayGradient::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+void get_first_and_last_index(const string &operator_name, const conduit::Node &history, const int &entries, 
+  const conduit::Node *n_first_index, const conduit::Node *n_last_index, bool absolute, bool relative, bool simulation_time, bool simulation_cycle, 
+  int &first_index, int &last_index) {
+
+  if(absolute || relative) {
+    first_index = (*n_first_index)["value"].to_int32();
+    last_index = (*n_last_index)["value"].to_int32();
+
+    if(first_index < 0 || last_index < 0)
+    {
+      ASCENT_ERROR(operator_name + ": the first index and last index must both be non-negative integers.");
+    }
+
+    if(first_index > last_index)
+    {
+      ASCENT_ERROR(operator_name + ": the first index must not be greater than the last index.");
+    }
+
+    if(relative) {
+      int relative_first_index = first_index;
+      int relative_last_index = last_index;
+      //when retrieving from m to n cycles ago, where m < n, n will have a lower history index than m
+      first_index = entries - relative_last_index - 1;
+      last_index = entries - relative_first_index - 1;
+      //clamp it to the first cycle
+      if(first_index < 0) {
+        first_index = 0;
+      }
+    }
+    else {
+      //clamp it to the last cycle
+      if(last_index >= entries) {
+        last_index = entries - 1;
+      }
+    }
+  }
+  else if(simulation_time) {
+    double first_time = (*n_first_index)["value"].to_float64();
+    double last_time = (*n_last_index)["value"].to_float64();
+
+    if(first_time < 0 || last_time < 0)
+    {
+        ASCENT_ERROR(operator_name + ": the first_absolute_time and last_absolute_time must both be non-negative.");
+    }
+
+    if(first_time > last_time)
+    {
+        ASCENT_ERROR(operator_name + ": the first_absolute_time must not be greater than the last_absolute_time.");
+    }
+    string time_path = "time";
+
+    double time;
+    for(int index = 0; index < entries; index++) {
+      if(history.child(index).has_path(time_path))
+      {
+        time = history.child(index)[time_path].to_float64();
+      }
+      else {
+        ASCENT_ERROR(operator_name + ": internal error. missing " + time_path + " value for time point in retrieval window (for the calculation at absolute index: " + to_string(index) + ")." );
+        return;               
+      }
+      if(first_index == -1 && time >= first_time) {
+        first_index = index;
+      }
+      else if(time > last_time) {
+        last_index = index - 1;
+        break;
+      }
+    }
+    //clamp it to the last index
+    if(last_index == -1) {
+      last_index = entries - 1;
+    }
+  }
+  else if(simulation_cycle) {
+    long long first_cycle = (*n_first_index)["value"].to_int64();
+    long long last_cycle = (*n_last_index)["value"].to_int64();
+
+    if(first_cycle < 0 || last_cycle < 0)
+    {
+      ASCENT_ERROR(operator_name + ": the first_absolute_cycle and last_absolute_cycle must both be non-negative.");        
+    }
+
+    if(first_cycle > last_cycle)
+    {
+      ASCENT_ERROR(operator_name + ": the first_absolute_cycle must not be greater than the last_absolute_cycle.");
+    }
+
+    vector<string> child_names = history.child_names();
+    if(child_names.size() != entries) {
+      ASCENT_ERROR(operator_name + ": internal error. number of history entries: " + to_string(entries) + ", but number of history child names: " + to_string(child_names.size()));
+    }
+
+    unsigned long long cycle;
+    for(int index = 0; index < entries; index++) {
+      cycle = stoull(child_names[index]);
+      if(first_index == -1 && cycle >= first_cycle) {
+        first_index = index;
+      }
+      else if(cycle > last_cycle) {
+        last_index = index - 1;
+        break;
+      }
+    }
+    //clamp it to the last index
+    if(last_index == -1) {
+      last_index = entries - 1;
+    }
+  }
+}
+
+void set_values_from_history(const string &operator_name, const conduit::Node &history, int first_index, 
+  int return_size, bool return_history_index, bool return_simulation_time, bool return_simulation_cycle, 
+  conduit::Node *output) 
+{
+
+  bool gradient = (return_history_index || return_simulation_time || return_simulation_cycle);
+
+  string value_path = "";
+  vector<string> value_paths = {"value", "attrs/value/value"};
+  for(const string &path : value_paths) {
+    if(history.child(first_index).has_path(path)) {
+      value_path = path;
+      break;
+    }
+  }
+  if(value_path.size() == 0) {
+      ASCENT_ERROR("ScalarGradient: interal error. first index does not have one of the expected value paths");    
+  }
+
+  conduit::DataType dtype = history.child(first_index)[value_path].dtype();
+
+  if(dtype.is_float32())
+  {
+    float *array = new float[return_size];
+    for(int i = 0; i < return_size; ++i)
+    {
+      array[i] = history.child(first_index+i)[value_path].to_float32();
+    }
+    (*output)["value"].set(array, return_size);
+    delete[] array;
+  }
+  else if(dtype.is_float64())
+  {
+    double *array = new double[return_size];
+    for(int i = 0; i < return_size; ++i)
+    {
+      array[i] = history.child(first_index+i)[value_path].to_float64();
+    }
+    (*output)["value"].set(array, return_size);
+    delete[] array;
+  }
+  else if(dtype.is_int32())
+  {
+    int *array = new int[return_size];
+    for(int i = 0; i < return_size; ++i)
+    {
+      array[i] = history.child(first_index+i)[value_path].to_int32();
+    }
+    (*output)["value"].set(array, return_size);
+    delete[] array;
+  }
+  else if(dtype.is_int64())
+  {
+    long long *array = new long long[return_size];
+    for(int i = 0; i < return_size; ++i)
+    {
+      array[i] = history.child(first_index+i)[value_path].to_int64();
+    }
+    (*output)["value"].set(array, return_size);
+    delete[] array;
+  }
+  else {
+    ASCENT_ERROR(operator_name + ": unsupported array type "<< dtype.to_string());
+  }
+  (*output)["type"] = "array";
+
+  if(gradient)
+  {
+    if(return_history_index) {
+      long long *index_array = new long long[return_size];
+      for(int i = 0; i < return_size-1; ++i)
+      {
+          index_array[i] = 1;
+      }
+      (*output)["time"].set(index_array, return_size-1);
+      delete[] index_array;
+    }
+    else if(return_simulation_time) {
+      double *simulation_time_array = new double[return_size];
+      for(int i = 0; i < return_size-1; ++i)
+      {
+        simulation_time_array[i] = history.child(first_index + i + 1)["time"].to_float64() - history.child(first_index + i)["time"].to_float64();
+
+      }
+      (*output)["time"].set(simulation_time_array, return_size-1);
+      delete[] simulation_time_array;
+    }
+    else if(return_simulation_cycle) {
+      vector<string> child_names = history.child_names();
+      long long *cycle_array = new long long[return_size];
+      for(int i = 0; i < return_size-1; ++i)
+      {
+          cycle_array[i] = stoll(child_names[first_index + i + 1]) - stoll(child_names[first_index + i]);
+      }
+      (*output)["time"].set(cycle_array, return_size-1);
+      delete[] cycle_array;
+    }
+  }
+}
+
+
+conduit::Node * range_values_helper(const conduit::Node &history, 
+  const conduit::Node *n_first_absolute_index, const conduit::Node *n_last_absolute_index, 
+  const conduit::Node *n_first_relative_index, const conduit::Node *n_last_relative_index, 
+  const conduit::Node *n_first_absolute_time, const conduit::Node *n_last_absolute_time,
+  const conduit::Node *n_first_absolute_cycle, const conduit::Node *n_last_absolute_cycle,
+  const string &operator_name, bool return_time = false)
+{
+  conduit::Node *output = new conduit::Node();
+
+
+  bool absolute = (!n_first_absolute_index->dtype().is_empty() || !n_last_absolute_index->dtype().is_empty());
+  bool relative = (!n_first_relative_index->dtype().is_empty() || !n_last_relative_index->dtype().is_empty());
+  bool simulation_time = (!n_first_absolute_time->dtype().is_empty() || !n_last_absolute_time->dtype().is_empty());
+  bool simulation_cycle = (!n_first_absolute_cycle->dtype().is_empty() || !n_last_absolute_cycle->dtype().is_empty());
+  int count = absolute + relative + simulation_time + simulation_cycle;
+
+  if(count == 0)
+  {
+    ASCENT_ERROR(
+        operator_name + ": Must specify a selection range, providing either 1). first_absolute_index and last_absolute_index, "
+        "2). first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.");
+  }
+
+  if(count > 1)
+  {
+    ASCENT_ERROR(
+        operator_name + ": Must specify exactly one selection range, providing either 1). first_absolute_index and last_absolute_index, "
+        "2). first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.");
+  }
+
+  const conduit::Node *n_first_index, *n_last_index;
+  int first_index = -1, last_index = -1;
+  if(absolute) {
+    n_first_index = n_first_absolute_index;
+    n_last_index = n_last_absolute_index;
+  }
+  else if(relative) {
+    n_first_index = n_first_relative_index;
+    n_last_index = n_last_relative_index; 
+  }
+  else if(simulation_cycle) {
+    n_first_index = n_first_absolute_cycle;
+    n_last_index = n_last_absolute_cycle;         
+  }
+  else if(simulation_time) {
+    n_first_index = n_first_absolute_time;
+    n_last_index = n_last_absolute_time;     
+  }
+
+  const int entries = history.number_of_children();
+  if(entries <= 0)
+  {
+    ASCENT_ERROR(
+        operator_name + ": no entries collected for expression.");
+  }
+
+  if(!n_first_index->has_path("value"))
+  {
+    ASCENT_ERROR(
+        operator_name + ": internal error. first_index does not have child value");
+  }
+  if(!n_last_index->has_path("value"))
+  {
+    ASCENT_ERROR(
+        operator_name + ": internal error. last_index does not have child value");
+  }
+
+  get_first_and_last_index(operator_name, history, entries, n_first_index, n_last_index, absolute, relative, simulation_time, simulation_cycle, first_index, last_index);
+
+  //the entire range falls outside what has been recorded so far
+  if(first_index < 0 && last_index < 0) {
+    return output;
+  }
+
+  const int return_size = last_index - first_index + 1;
+
+  set_values_from_history(operator_name, history, first_index, return_size, (return_time && (relative || absolute)), (return_time && simulation_time), (return_time && simulation_cycle), output);
+
+  return output;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+ArrayGradient::execute()
+{
+  string operator_name = "ArrayGradient";
+  bool return_time = true;
+
+ const std::string expr_name  = (*input<conduit::Node>("expr_name"))["name"].as_string();
+
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<conduit::Node>("cache");
+
+  if(!cache->has_path(expr_name))
+  {
+    ASCENT_ERROR(operator_name + ": unknown identifier "<<  expr_name);
+  }
+  const conduit::Node &history = (*cache)[expr_name];
+
+  const conduit::Node *n_first_absolute_index = input<conduit::Node>("first_absolute_index");
+  const conduit::Node *n_last_absolute_index = input<conduit::Node>("last_absolute_index");
+  const conduit::Node *n_first_relative_index = input<conduit::Node>("first_relative_index");
+  const conduit::Node *n_last_relative_index = input<conduit::Node>("last_relative_index");
+  const conduit::Node *n_first_absolute_time = input<conduit::Node>("first_absolute_time");
+  const conduit::Node *n_last_absolute_time = input<conduit::Node>("last_absolute_time");
+  const conduit::Node *n_first_absolute_cycle = input<conduit::Node>("first_absolute_cycle");
+  const conduit::Node *n_last_absolute_cycle = input<conduit::Node>("last_absolute_cycle");
+
+  conduit::Node *output = range_values_helper(history, n_first_absolute_index, n_last_absolute_index, 
+      n_first_relative_index, n_last_relative_index, n_first_absolute_time, n_last_absolute_time, 
+      n_first_absolute_cycle, n_last_absolute_cycle,
+    operator_name, return_time
+  );
+
+  size_t num_array_elems = (*output)["value"].dtype().number_of_elements();
+
+  if(num_array_elems < 2) {
+    (*output)["value"] = -std::numeric_limits<double>::infinity();
+    (*output)["type"] = "double";
+    set_output<conduit::Node>(output);
+    return;
+  }
+
+  conduit::Node gradient = array_gradient((*output)["value"], (*output)["time"]);
+  (*output)["value"] = gradient["value"];
+  (*output)["type"] = "array";
 
   set_output<conduit::Node>(output);
 }
@@ -1518,6 +2074,79 @@ History::execute()
 
   set_output<conduit::Node>(output);
 }
+
+
+//-----------------------------------------------------------------------------
+HistoryRange::HistoryRange() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+HistoryRange::~HistoryRange()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+HistoryRange::declare_interface(Node &i)
+{
+  i["type_name"] = "history_range";
+  i["port_names"].append() = "expr_name";
+  i["port_names"].append() = "first_absolute_index";
+  i["port_names"].append() = "last_absolute_index";
+  i["port_names"].append() = "first_relative_index";
+  i["port_names"].append() = "last_relative_index";
+  i["port_names"].append() = "first_absolute_time";
+  i["port_names"].append() = "last_absolute_time";
+  i["port_names"].append() = "first_absolute_cycle";
+  i["port_names"].append() = "last_absolute_cycle";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+HistoryRange::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+HistoryRange::execute()
+{
+  const string operator_name = "HistoryRange";
+  const std::string expr_name  = (*input<conduit::Node>("expr_name"))["name"].as_string();
+
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<conduit::Node>("cache");
+
+  if(!cache->has_path(expr_name))
+  {
+    ASCENT_ERROR(operator_name + ": unknown identifier "<<  expr_name);
+  }
+  const conduit::Node &history = (*cache)[expr_name];
+
+  const conduit::Node *n_first_absolute_index = input<conduit::Node>("first_absolute_index");
+  const conduit::Node *n_last_absolute_index = input<conduit::Node>("last_absolute_index");
+  const conduit::Node *n_first_relative_index = input<conduit::Node>("first_relative_index");
+  const conduit::Node *n_last_relative_index = input<conduit::Node>("last_relative_index");
+  const conduit::Node *n_first_absolute_time = input<conduit::Node>("first_absolute_time");
+  const conduit::Node *n_last_absolute_time = input<conduit::Node>("last_absolute_time");
+  const conduit::Node *n_first_absolute_cycle = input<conduit::Node>("first_absolute_cycle");
+  const conduit::Node *n_last_absolute_cycle = input<conduit::Node>("last_absolute_cycle");
+
+  conduit::Node *output = range_values_helper(history, n_first_absolute_index, n_last_absolute_index, 
+      n_first_relative_index, n_last_relative_index, n_first_absolute_time, n_last_absolute_time, n_first_absolute_cycle, n_last_absolute_cycle, operator_name
+    );
+
+  set_output<conduit::Node>(output);
+}
+
 
 //-----------------------------------------------------------------------------
 Vector::Vector() : Filter()
@@ -3453,3 +4082,4 @@ Bounds::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
