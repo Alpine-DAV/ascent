@@ -132,6 +132,8 @@ TEST(ascent_runtime, test_python_script_extract_from_file)
     std::ofstream ofs;
     ofs.open("t_my_test_script.py");
     ofs << py_script;
+    // in this case __file__ should be defined
+    ofs << "assert __file__ == 't_my_test_script.py'\n";
     ofs.close();
 
 
