@@ -93,6 +93,7 @@
 #include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
+#include <vtkh/filters/MeshQuality.hpp>
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Log.hpp>
@@ -2968,6 +2969,112 @@ VTKHNoOp::execute()
     // and add the result of this operation
     VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
     new_coll->add(*noop_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete noop_output;
+    set_output<DataObject>(res);
+}
+
+
+VTKHMeshQuality::VTKHMeshQuality()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHMeshQuality::~VTKHMeshQuality()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHMeshQuality::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_no_op";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHMeshQuality::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    res = check_string("topology",params, info, false);
+    res &= check_string("metric", params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("topology");
+    valid_paths.push_back("metric");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHMeshQuality::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_no_op input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string metric = params()["metric"].as_string();
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkm::filter::CellMetric metric;
+    vtkh::MeshQuality quali;
+
+    quali.SetInput(&data);
+    quali.cell_metric(field_name);
+
+    quali.Update();
+
+    vtkh::DataSet *q_output = quali.GetOutput();
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*q_output, topo_name);
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete noop_output;
