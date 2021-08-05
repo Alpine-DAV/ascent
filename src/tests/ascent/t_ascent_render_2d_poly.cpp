@@ -184,3 +184,72 @@ TEST(ascent_pipeline, test_render_2d_poly_multi)
     // // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_render_2d_poly_and_nonpoly)
+{
+    //
+    // Create example mesh.
+    //
+    Node data, braid_data, verify_info;
+    index_t nlevels = 5;
+    index_t nz = 1;
+
+    conduit::blueprint::mesh::examples::polytess(nlevels, nz, data);
+
+    conduit::blueprint::mesh::examples::braid("quads", 5,5,1,braid_data);
+
+    data["coordsets/coords_braid"] = braid_data["coordsets/coords"];
+    data["topologies/mesh"] = braid_data["topologies/mesh"];
+    data["topologies/mesh/coordset"] = "coords_braid";
+    data["fields/braid"] = braid_data["fields/braid"];
+    data["fields/radial"] = braid_data["fields/radial"];
+    data["fields/vel"] = braid_data["fields/vel"];
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_2d_poly_and_nopoly");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "level";
+    scenes["s1/image_prefix"] = output_file + "polytess";
+    scenes["s2/plots/p1/type"] = "pseudocolor";
+    scenes["s2/plots/p1/field"] = "braid";
+    scenes["s2/image_prefix"] = output_file + "braid";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    Node ascent_info;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.info(ascent_info);
+    EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
+    ascent_info.print();
+    ascent.close();
+
+    //
+    // // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file + "polytess", 0.001f, "0"));
+    EXPECT_TRUE(check_test_image(output_file + "braid", 0.001f, "0"));
+}
