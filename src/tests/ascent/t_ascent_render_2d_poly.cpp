@@ -66,9 +66,9 @@ TEST(ascent_pipeline, test_render_2d_poly)
     //
     Node data, verify_info;
     index_t nlevels = 10;
-    index_t nz = 2;
+    index_t nz = 1;
 
-    conduit::blueprint::mesh::examples::polytess(nlevels, data);
+    conduit::blueprint::mesh::examples::polytess(nlevels, nz, data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
@@ -103,6 +103,77 @@ TEST(ascent_pipeline, test_render_2d_poly)
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
+    ascent.execute(actions);
+    ascent.info(ascent_info);
+    EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
+    ascent_info.print();
+    ascent.close();
+
+    //
+    // // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_render_2d_poly_multi)
+{
+    //
+    // Create example mesh.
+    //
+    Node root, verify_info;
+    Node &child1 = root.append();
+    Node &child2 = root.append();
+    index_t nlevels = 3;
+    index_t nz = 1;
+
+    conduit::blueprint::mesh::examples::polytess(nlevels, nz, child1);
+    conduit::blueprint::mesh::examples::polytess(nlevels, nz, child2);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(child1, verify_info));
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(child2, verify_info));
+
+    float64 *y_values = child2["coordsets/coords/values/y"].value();
+
+    const int num_elements = child1["coordsets/coords/values/y"].dtype().number_of_elements();
+
+    for (int i = 0; i < num_elements; i ++)
+    {
+        y_values[i] += 10.0f;
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(child2, verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_2d_poly_multi");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "level";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    Node ascent_info;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(root);
     ascent.execute(actions);
     ascent.info(ascent_info);
     EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
