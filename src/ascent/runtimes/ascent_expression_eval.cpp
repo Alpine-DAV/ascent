@@ -302,6 +302,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::BinByValue>();
   flow::Workspace::register_filter_type<expressions::BinByIndex>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
+  flow::Workspace::register_filter_type<expressions::Time>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
@@ -604,6 +605,14 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &time_sig = (*functions)["time"].append();
+  time_sig["return_type"] = "double";
+  time_sig["filter_name"] = "time";
+  time_sig["args"] = conduit::DataType::empty();
+  time_sig["description"] = "Return the current simulation time.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &vector = (*functions)["vector"].append();
   vector["return_type"] = "vector";
   vector["filter_name"] = "vector";
@@ -679,7 +688,7 @@ initialize_functions()
                             "histogram of the mesh variable.";
 
   // -------------------------------------------------------------
-  
+
   conduit::Node &history_sig = (*functions)["history"].append();
   history_sig["return_type"] = "anytype";
   history_sig["filter_name"] = "history";
