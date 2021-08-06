@@ -1382,9 +1382,12 @@ ScalarGradient::execute()
   bool cycles = units == "cycle";
   int total = execution_points + time + cycles;
 
-  if(total == 0 && !n_window_length_unit.dtype().is_empty()) {
-     ASCENT_ERROR("ScalarGradient: if a ``window_length_unit`` value is provided, it must be set to either: 1). \"index\", 2). \"time\", or 3). \"cycle\"." );
+  if(total == 0 && !n_window_length_unit.dtype().is_empty())
+  {
+     ASCENT_ERROR("ScalarGradient: if a ``window_length_unit`` value is provided,"
+                  <<" it must be set to either: 1). \"index\", 2). \"time\", or 3). \"cycle\"." );
   }
+
   if((execution_points || cycles) && window_length < 1) {
      ASCENT_ERROR("ScalarGradient: window_length must be at least 1 if the window length unit is \"index\" or \"cycle\"." );
   }
@@ -1392,25 +1395,30 @@ ScalarGradient::execute()
   const conduit::Node &history = (*cache)[expr_name];
 
   const int entries = history.number_of_children();
-  if(entries < 2) {
+  if(entries < 2)
+  {
     (*output)["value"] = -std::numeric_limits<double>::infinity();
     (*output)["type"] = "double";
     set_output<conduit::Node>(output);
     return;
   }
 
-  int first_index = -1, current_index = entries - 1;
-  if(execution_points) {
+  int first_index = 0, current_index = entries - 1;
+  if(execution_points)
+  {
     //clamp the first index if the window length has gone too far
-    if(window_length - current_index > 0) {
+    if(window_length - current_index > 0)
+    {
       first_index = 0;
       window_length = current_index;
     }
-    else {
+    else
+    {
       first_index = current_index - window_length;
     }
   }
-  else if(time) {
+  else if(time)
+  {
    string time_path = "time";
    if(!history.child(current_index).has_path(time_path))
     {
@@ -1419,12 +1427,14 @@ ScalarGradient::execute()
     const double current_time = history.child(current_index)[time_path].to_float64();
     const double first_time = current_time - window_length;
     double time;
-    for(int index = 0; index < entries; index++) {
+    for(int index = 0; index < entries; index++)
+    {
       if(history.child(index).has_path(time_path))
       {
         time = history.child(index)[time_path].to_float64();
       }
-      else {
+      else
+      {
         ASCENT_ERROR("ScalarGradient: a time point in evaluation window (for the calculation at absolute index: " + to_string(index) + ") does not have the child " + time_path );
       }
       if(time >= first_time) {
@@ -1435,18 +1445,25 @@ ScalarGradient::execute()
       }
     }
   }
-  else if(cycles) {
+  else if(cycles)
+  {
     vector<string> child_names = history.child_names();
-    if(child_names.size() != entries) {
-      ASCENT_ERROR("ScalarGradient: internal error. number of history entries: " + to_string(entries) + ", but number of history child names: " + to_string(child_names.size()));
+    if(child_names.size() != entries)
+    {
+      ASCENT_ERROR("ScalarGradient: internal error. number of history "
+                   <<"entries: " << to_string(entries)
+                   <<", but number of history child names: "
+                   <<to_string(child_names.size()));
     }
     const unsigned long long current_cycle = stoull(child_names[current_index]);
     const unsigned long long first_cycle = current_cycle - window_length;
 
     unsigned long long cycle;
-    for(int index = 0; index < entries; index++) {
+    for(int index = 0; index < entries; index++)
+    {
       cycle = stoull(child_names[index]);
-      if(cycle >= first_cycle) {
+      if(cycle >= first_cycle)
+      {
         first_index = index;
         //adjust so our window length is accurate (since we may not have performed a calculation at precisely the requested time)
         window_length = current_cycle - cycle;
@@ -1457,14 +1474,28 @@ ScalarGradient::execute()
 
   string value_path = "";
   vector<string> value_paths = {"value", "attrs/value/value"};
-  for(const string &path : value_paths) {
-    if(history.child(current_index).has_path(path)) {
+  if(current_index < 0 || current_index >= entries)
+  {
+    ASCENT_ERROR("Scalar gradient: bad current index: "<<current_index);
+  }
+  for(const string &path : value_paths)
+  {
+    if(history.child(current_index).has_path(path))
+    {
       value_path = path;
       break;
     }
   }
-  if(value_path.size() == 0) {
-      ASCENT_ERROR("ScalarGradient: interal error. current index does not have one of the expected value paths");
+
+  if(value_path.size() == 0)
+  {
+    ASCENT_ERROR("ScalarGradient: interal error. current index does not "
+                  <<"have one of the expected value paths");
+  }
+
+  if(first_index < 0 || first_index >= entries)
+  {
+    ASCENT_ERROR("Scalar gradient: bad first index: "<<first_index);
   }
 
   double first_value = history.child(first_index)[value_path].to_float64();
