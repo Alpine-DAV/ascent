@@ -1601,7 +1601,8 @@ void get_first_and_last_index(const string &operator_name,
       }
     }
   }
-  else if(simulation_time) {
+  else if(simulation_time)
+  {
     double first_time = (*n_first_index)["value"].to_float64();
     double last_time = (*n_last_index)["value"].to_float64();
 
@@ -1622,6 +1623,7 @@ void get_first_and_last_index(const string &operator_name,
     {
         ASCENT_ERROR(operator_name + ": the first_absolute_time must not be greater than the last_absolute_time.");
     }
+
     string time_path = "time";
 
     double time;
@@ -1632,7 +1634,6 @@ void get_first_and_last_index(const string &operator_name,
       {
         time = history.child(index)[time_path].to_float64();
         std::cout<<"Time "<<time<<" index "<<index<<"\n";
-
       }
       else
       {
@@ -1641,6 +1642,8 @@ void get_first_and_last_index(const string &operator_name,
                      <<" calculation at absolute index: " + to_string(index) + ")." );
       }
 
+      // I am not totally sure about this logic. Part of the problem is that we
+      // haven't fully specified what we want this behavior to be.
       if(first_index == -1 && time >= first_time)
       {
         first_index = index;
@@ -1655,10 +1658,10 @@ void get_first_and_last_index(const string &operator_name,
         break;
       }
     }
-    //clamp it to the last index
-    if(last_index == -1)
+    //clamp it to the last index to at least the first index
+    if(last_index < first_index)
     {
-      last_index = entries - 1;
+      last_index = first_index;
     }
   }
   else if(simulation_cycle)
@@ -1979,8 +1982,9 @@ ArrayGradient::execute()
   size_t num_array_elems = (*output)["value"].dtype().number_of_elements();
 
   if(num_array_elems < 2) {
-    (*output)["value"] = -std::numeric_limits<double>::infinity();
-    (*output)["type"] = "double";
+    double neg_inf[1] = {-std::numeric_limits<double>::infinity()};
+    (*output)["value"].set(neg_inf,1);
+    (*output)["type"] = "array";
     set_output<conduit::Node>(output);
     return;
   }
@@ -2336,6 +2340,7 @@ HistoryRange::execute()
                                               n_last_absolute_cycle,
                                               operator_name);
 
+  std::cout<<"History range output\n";
   output->print();
   set_output<conduit::Node>(output);
 }
