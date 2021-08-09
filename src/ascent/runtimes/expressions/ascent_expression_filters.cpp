@@ -4276,7 +4276,7 @@ void
 Nan::declare_interface(Node &i)
 {
   i["type_name"] = "nan";
-  i["port_names"].append() = "topology";
+  i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
 
