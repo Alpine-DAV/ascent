@@ -75,6 +75,12 @@ namespace runtime
 namespace filters
 {
 
+void mesh_blueprint_save(const conduit::Node &data,
+                         const std::string &path,
+                         const std::string &file_protocol,
+                         int num_files,
+                         std::string &root_file_out);
+
 //-----------------------------------------------------------------------------
 ///
 /// Filters Related to Conduit Relay IO

@@ -118,6 +118,7 @@ register_builtin()
 {
     AscentRuntime::register_filter_type<BlueprintVerify>();
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
+    AscentRuntime::register_filter_type<Learn>("extracts", "learn");
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
     AscentRuntime::register_filter_type<BasicTrigger>();
