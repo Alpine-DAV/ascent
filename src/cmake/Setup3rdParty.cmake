@@ -94,12 +94,9 @@ if(VTKM_DIR)
 endif()
 
 
-################################
-# Setup HDF5
-################################
-if(HDF5_DIR)
-    include(cmake/thirdparty/SetupHDF5.cmake)
-endif()
+#
+# Note: HDF5 is fully handled by importing conduit
+#
 
 ################################
 # Setup MFEM if enabled
