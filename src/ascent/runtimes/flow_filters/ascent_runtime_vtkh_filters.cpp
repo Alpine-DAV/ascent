@@ -3004,6 +3004,7 @@ VTKHMeshQuality::verify_params(const conduit::Node &params,
 {
     info.reset();
 
+    bool res;
     res = check_string("topology",params, info, false);
     res &= check_string("metric", params, info, true);
 
@@ -3041,6 +3042,8 @@ VTKHMeshQuality::execute()
       return;
     }
 
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
     bool throw_error = false;
     std::string topo_name = detail::resolve_topology(params(),
                                                      this->name(),
@@ -3054,19 +3057,134 @@ VTKHMeshQuality::execute()
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string metric = params()["metric"].as_string();
-
-    std::string topo_name = collection->field_topology(field_name);
-
-    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    std::string smetric = params()["metric"].as_string();
 
     vtkm::filter::CellMetric metric;
+    if(smetric == "volume")
+    {
+      metric = vtkm::filter::CellMetric::VOLUME;
+    }
+    else if(smetric == "jacobian")
+    {
+      metric = vtkm::filter::CellMetric::JACOBIAN;
+    }
+    else if(smetric == "area")
+    {
+      metric = vtkm::filter::CellMetric::AREA;
+    }
+    else if(smetric == "aspectGamma")
+    {
+      metric = vtkm::filter::CellMetric::ASPECT_GAMMA;
+    }
+    else if(smetric == "aspectRatio")
+    {
+      metric = vtkm::filter::CellMetric::ASPECT_RATIO;
+    }
+    else if(smetric == "condition")
+    {
+      metric = vtkm::filter::CellMetric::CONDITION;
+    }
+    else if(smetric == "diagonalRatio")
+    {
+      metric = vtkm::filter::CellMetric::DIAGONAL_RATIO;
+    }
+    else if(smetric == "maxAngle")
+    {
+      metric = vtkm::filter::CellMetric::MAX_ANGLE;
+    }
+    else if(smetric == "maxDiagonal")
+    {
+      metric = vtkm::filter::CellMetric::MAX_DIAGONAL;
+    }
+    else if(smetric == "dimension")
+    {
+      metric = vtkm::filter::CellMetric::DIMENSION;
+    }
+    else if(smetric == "minAngle")
+    {
+      metric = vtkm::filter::CellMetric::MIN_ANGLE;
+    }
+    else if(smetric == "minDiagonal")
+    {
+      metric = vtkm::filter::CellMetric::MIN_DIAGONAL;
+    }
+    else if(smetric == "oddy")
+    {
+      metric = vtkm::filter::CellMetric::ODDY;
+    }
+    else if(smetric == "relativeSizeSquared")
+    {
+      metric = vtkm::filter::CellMetric::RELATIVE_SIZE_SQUARED;
+    }
+    else if(smetric == "scaledJacobian")
+    {
+      metric = vtkm::filter::CellMetric::SCALED_JACOBIAN;
+    }
+    else if(smetric == "shape")
+    {
+      metric = vtkm::filter::CellMetric::SHAPE;
+    }
+    else if(smetric == "shapeAndSize")
+    {
+      metric = vtkm::filter::CellMetric::SHAPE_AND_SIZE;
+    }
+    else if(smetric == "shear")
+    {
+      metric = vtkm::filter::CellMetric::SHEAR;
+    }
+    else if(smetric == "skew")
+    {
+      metric = vtkm::filter::CellMetric::SKEW;
+    }
+    else if(smetric == "stretch")
+    {
+      metric = vtkm::filter::CellMetric::STRETCH;
+    }
+    else if(smetric == "stretch")
+    {
+      metric = vtkm::filter::CellMetric::SKEW;
+    }
+    else if(smetric == "taper")
+    {
+      metric = vtkm::filter::CellMetric::TAPER;
+    }
+    else if(smetric == "warpage")
+    {
+      metric = vtkm::filter::CellMetric::WARPAGE;
+    }
+    else
+    {
+      ASCENT_ERROR("Unknow mesh quality metric '"<<smetric<<"'. Valid values ["
+                   << " area,"
+                   << " aspectGamma,"
+                   << " aspectRatio,"
+                   << " condition,"
+                   << " diagonalRatio,"
+                   << " dimension,"
+                   << " jacobian,"
+                   << " maxAngle,"
+                   << " maxDiagonal,"
+                   << " minAngle,"
+                   << " minDiagonal,"
+                   << " oddy,"
+                   << " relativeSizeSquared,"
+                   << " scaledJacobian,"
+                   << " shape,"
+                   << " shapeAndSize,"
+                   << " shear,"
+                   << " skew,"
+                   << " stretch,"
+                   << " taper"
+                   << " volume,"
+                   << " warpage]");
+
+    }
+
     vtkh::MeshQuality quali;
 
     quali.SetInput(&data);
-    quali.cell_metric(field_name);
+    quali.cell_metric(metric);
 
     quali.Update();
 
@@ -3077,7 +3195,7 @@ VTKHMeshQuality::execute()
     new_coll->add(*q_output, topo_name);
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
-    delete noop_output;
+    delete q_output;
     set_output<DataObject>(res);
 }
 
