@@ -65,7 +65,7 @@ using namespace conduit;
 using ascent::Ascent;
 
 std::string py_script = "\n"
-"# Treat everything is mutli domian so grabe the state of the first\n"
+"# we treat everything as a multi_domain in ascent so grab child 0\n"
 "v = ascent_data().child(0)\n"
 "print(v['state'])\n"
 "\n"
@@ -76,7 +76,7 @@ std::string py_script = "\n"
 "\n";
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mpi_runtime, test_pyhton_script_extract_src)
+TEST(ascent_mpi_runtime, test_python_script_extract_src)
 {
     //
     // Set Up MPI
@@ -193,6 +193,8 @@ TEST(ascent_mpi_runtime, test_python_script_extract_file)
         ofstream script_file;
         script_file.open(script_fname.c_str());
         script_file << py_script;
+        // in this case __file__ should be defined
+        script_file << "assert __file__ == '" << script_fname << "'\n";
         script_file.close();
     }
 

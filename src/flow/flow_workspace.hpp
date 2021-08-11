@@ -179,6 +179,7 @@ public:
         return filter_type_name(&CreateFilter<T>);
     }
 
+    void enable_timings(bool enabled);
 
 private:
 
@@ -192,6 +193,7 @@ private:
     Graph             m_graph;
     Registry          m_registry;
     std::stringstream m_timing_info;
+    bool              m_enable_timings;
 
 };
 

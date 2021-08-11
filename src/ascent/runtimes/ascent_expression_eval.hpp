@@ -53,6 +53,7 @@
 #define ASCENT_EXPRESSION_EVAL_HPP
 #include <conduit.hpp>
 #include <ascent_exports.h>
+#include <ascent_data_object.hpp>
 
 #include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
@@ -90,6 +91,11 @@ struct Cache
   void filter_time(double ftime);
   bool filtered();
   bool loaded();
+  void save();
+  // allow saving with an alternative name
+  void save(const std::string &filename);
+  void save(const std::string &filename,
+            const std::vector<std::string> &selection);
 
   ~Cache();
 };
@@ -99,17 +105,24 @@ static conduit::Node m_function_table;
 class ASCENT_API ExpressionEval
 {
 protected:
-  conduit::Node *m_data;
+  DataObject m_data_object;
   flow::Workspace w;
   static Cache m_cache;
 public:
-  ExpressionEval(conduit::Node *data);
+  ExpressionEval(DataObject &dataset);
+  ExpressionEval(conduit::Node *dataset);
 
   static const conduit::Node &get_cache();
   static void get_last(conduit::Node &data);
   static void reset_cache();
   static void load_cache(const std::string &dir,
                          const std::string &session);
+
+  // helpers for saving cache files
+  static void save_cache(const std::string &filename,
+                         const std::vector<std::string> &selection);
+  static void save_cache(const std::string &filename);
+  static void save_cache();
 
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
 };

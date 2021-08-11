@@ -188,7 +188,7 @@ void Cache::load(const std::string &dir,
   MPI_Comm_rank(mpi_comm, &m_rank);
 #endif
 
-  std::string file_name = session + ".yaml";
+  std::string file_name = session;
   std::string session_file = conduit::utils::join_path(dir, file_name);
   m_session_file = session_file;
 
@@ -196,7 +196,7 @@ void Cache::load(const std::string &dir,
 
   if(m_rank == 0 && exists)
   {
-    m_data.load(session_file, "yaml");
+    m_data.load(session_file + ".yaml", "yaml");
   }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -208,7 +208,7 @@ void Cache::load(const std::string &dir,
   m_loaded = true;
 }
 
-Cache::~Cache()
+void Cache::save()
 {
   // the session file can be blank during testing,
   // since its not actually opening ascent
@@ -216,8 +216,45 @@ Cache::~Cache()
      !m_data.dtype().is_empty()
      && m_session_file != "")
   {
-    m_data.save(m_session_file,"yaml");
+    m_data.save(m_session_file+".yaml","yaml");
   }
+}
+
+void Cache::save(const std::string &filename)
+{
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  if(m_rank == 0 &&
+     !m_data.dtype().is_empty())
+  {
+    m_data.save(filename+".yaml","yaml");
+  }
+}
+
+void Cache::save(const std::string &filename,
+                 const std::vector<std::string> &selection)
+{
+  conduit::Node data;
+  for(const auto &expr : selection)
+  {
+    if(m_data.has_path(expr))
+    {
+      data[expr].set_external(m_data[expr]);
+    }
+  }
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  // or there might not be match
+  if(m_rank == 0 &&
+     !data.dtype().is_empty())
+  {
+    data.save(filename+".yaml","yaml");
+  }
+}
+
+Cache::~Cache()
+{
+  save();
 }
 
 void
@@ -229,6 +266,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::Integer>();
   flow::Workspace::register_filter_type<expressions::Identifier>();
   flow::Workspace::register_filter_type<expressions::History>();
+  flow::Workspace::register_filter_type<expressions::HistoryRange>();
   flow::Workspace::register_filter_type<expressions::BinaryOp>();
   flow::Workspace::register_filter_type<expressions::String>();
   flow::Workspace::register_filter_type<expressions::ExpressionList>();
@@ -244,9 +282,15 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::ArrayMax>();
   flow::Workspace::register_filter_type<expressions::ArrayMin>();
   flow::Workspace::register_filter_type<expressions::ArrayAvg>();
+  flow::Workspace::register_filter_type<expressions::ScalarGradient>();
+  flow::Workspace::register_filter_type<expressions::ArrayGradient>();
   flow::Workspace::register_filter_type<expressions::ArraySum>();
   flow::Workspace::register_filter_type<expressions::Vector>();
   flow::Workspace::register_filter_type<expressions::Magnitude>();
+  flow::Workspace::register_filter_type<expressions::Abs>();
+  flow::Workspace::register_filter_type<expressions::Pow>();
+  flow::Workspace::register_filter_type<expressions::Exp>();
+  flow::Workspace::register_filter_type<expressions::Log>();
   flow::Workspace::register_filter_type<expressions::Field>();
   flow::Workspace::register_filter_type<expressions::Axis>();
   flow::Workspace::register_filter_type<expressions::Histogram>();
@@ -258,18 +302,30 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::BinByValue>();
   flow::Workspace::register_filter_type<expressions::BinByIndex>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
+  flow::Workspace::register_filter_type<expressions::Time>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
   flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
   flow::Workspace::register_filter_type<expressions::Bin>();
   flow::Workspace::register_filter_type<expressions::Bounds>();
+  flow::Workspace::register_filter_type<expressions::Lineout>();
 
   initialize_functions();
   initialize_objects();
 }
 
-ExpressionEval::ExpressionEval(conduit::Node *data) : m_data(data)
+ExpressionEval::ExpressionEval(conduit::Node *data)
+{
+  // wrap the pointer in a data object we can assume that this
+  // is a valid multidomain dataset
+  conduit::Node *data_node = new conduit::Node();
+  data_node->set_external(*data);
+  m_data_object.reset(data_node);
+}
+
+ExpressionEval::ExpressionEval(DataObject &dataset)
+  : m_data_object(dataset)
 {
 }
 
@@ -348,6 +404,110 @@ initialize_functions()
   field_avg_sig["description"] = "Return the field average of a mesh variable.";
 
   // -------------------------------------------------------------
+
+  conduit::Node &scalar_gradient_sig = (*functions)["gradient"].append();
+  scalar_gradient_sig["return_type"] = "double";
+  scalar_gradient_sig["filter_name"] = "scalar_gradient";
+
+  scalar_gradient_sig["args/expr_name/type"] = "anytype";
+  scalar_gradient_sig["args/expr_name/description"] =
+      "`expr_name` should be the name of an expression that was evaluated in "
+      "the past.";
+
+  scalar_gradient_sig["args/window_length/type"] = "scalar";
+  scalar_gradient_sig["args/window_length/optional"];
+  scalar_gradient_sig["args/window_length/description"] = "The number of time points ago to use as the x0 for the gradient calculation. defaults to ``1`` \
+    (calculate the gradient from the previous time point to now).";
+
+  scalar_gradient_sig["args/window_length_unit/type"] =  "string";
+  scalar_gradient_sig["args/window_length_unit/optional"];
+  scalar_gradient_sig["args/window_length_unit/description"] = "Can be one of three values: ``\"index\"``, ``\"time\"`` or ``\"cycle\".`` \
+    Indicates whether the window length is in units of number of expression execution points, simulation time, or simulation cycles. \
+    Defaults to ``index`` (the window_length is in number of expression execution points).";
+
+  scalar_gradient_sig["description"] = "Return the temporal gradient of the given expression for the current point in time.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &array_gradient_sig = (*functions)["gradient_range"].append();
+  array_gradient_sig["return_type"] = "array";
+  array_gradient_sig["filter_name"] = "gradient_range";
+
+  array_gradient_sig["args/expr_name/type"] = "anytype";
+  array_gradient_sig["args/expr_name/description"] =
+      "`expr_name` should be the name of an expression that was evaluated in "
+      "the past.";
+
+  array_gradient_sig["args/first_relative_index/type"] = "int";
+  array_gradient_sig["args/first_relative_index/optional"];
+  array_gradient_sig["args/first_relative_index/description"] = "The the first number of evaluations ago for which to calculate the temporal gradient. \
+  The index is relative, with ``first_relative_index=1`` corresponding to one evaluation ago. Example usage: \
+  gradient_range(pressure, first_relative_index=1, last_relative_index=10). This will calculate the temporal gradient for the previous 10 evaluations.";
+
+  array_gradient_sig["args/last_relative_index/type"] = "int";
+  array_gradient_sig["args/last_relative_index/optional"];
+  array_gradient_sig["args/last_relative_index/description"] = "The the last number of evaluations ago for which to calculate the temporal gradient. \
+  The index is relative, with ``last_relative_index=1`` corresponding to one evaluation ago. Example usage: \
+  gradient_range(pressure, first_relative_index=1, last_relative_index=10). This will calculate the temporal gradient for the previous 10 evaluations.";
+
+  array_gradient_sig["args/first_absolute_index/type"] = "int";
+  array_gradient_sig["args/first_absolute_index/optional"];
+  array_gradient_sig["args/first_absolute_index/description"] =
+      "The first index in the evaluation \
+  history for which to calculate the temporal gradient. This should be less than the number of past evaluations. For \
+  example, ``gradient_range(pressure, first_absolute_index=0, last_absolute_index=10)`` calculates the temporal gradient of pressure from the first 10 times it was evaluated.";
+
+  array_gradient_sig["args/last_absolute_index/type"] = "int";
+  array_gradient_sig["args/last_absolute_index/optional"];
+  array_gradient_sig["args/last_absolute_index/description"] =
+      "The last index in the evaluation \
+  history for which to calculate the temporal gradient. This should be less than the number of past evaluations. For \
+  example, ``gradient_range(pressure, first_absolute_index=0, last_absolute_index=10)`` calculates the temporal gradient of pressure from the first 10 times it was evaluated.";
+
+  array_gradient_sig["args/first_absolute_time/type"] = "scalar";
+  array_gradient_sig["args/first_absolute_time/optional"];
+  array_gradient_sig["args/first_absolute_time/description"] =
+      "The first simulation time for which to calculate the temporal gradient. For \
+  example, ``gradient_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` calculates the temporal gradient of \
+  pressure from the first 0.1 units of simulation time.";
+
+  array_gradient_sig["args/last_absolute_time/type"] = "scalar";
+  array_gradient_sig["args/last_absolute_time/optional"];
+  array_gradient_sig["args/last_absolute_time/description"] =
+      "The last simulation time for which to calculate the temporal gradient. For \
+  example, ``gradient_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` calculates the temporal gradient of \
+  pressure from the first 0.1 units of simulation time.";
+
+  array_gradient_sig["args/first_absolute_cycle/type"] = "scalar";
+  array_gradient_sig["args/first_absolute_cycle/optional"];
+  array_gradient_sig["args/first_absolute_cycle/description"] =
+      "The first simulation cycle for which to calculate the temporal gradient. For \
+  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` calculates the temporal gradient of \
+  pressure from the first two cycles.";
+
+  array_gradient_sig["args/last_absolute_cycle/type"] = "scalar";
+  array_gradient_sig["args/last_absolute_cycle/optional"];
+  array_gradient_sig["args/last_absolute_cycle/description"] =
+      "The last simulation cycle for which to calculate the temporal gradient. For \
+  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` calculate the temporal gradient of \
+  pressure from the first two cycles.";
+
+  array_gradient_sig["description"] = "As the simulation progresses the expressions \
+  are evaluated repeatedly. The gradient_range function allows you to get the temporal gradient from a range of \
+  previous evaluations. For example, if we want to evaluate the difference \
+  between the original state of the simulation and the current state then we \
+  can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
+  current value: ``gradient(val) - avg(gradient_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
+  you want to evaluate the relative change between the previous states and the \
+  current state: ``gradient(val) - avg(gradient_range(val, first_relative_index=1, last_relative_index=10))``\
+  We can alternatively evaluate the difference between a particular range of time in the simulation, \
+  such as the first 10 seconds, and the current state: ``gradient(val) - avg(gradient_range(val, first_absolute_time=1, last_absolute_index=10))`` \
+  or for the first 10 cycles of the simulation ``gradient(val) - avg(gradient_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n \
+  .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
+  first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
+
+  // -------------------------------------------------------------
+
 
   conduit::Node &field_nan_sig = (*functions)["field_nan_count"].append();
   field_nan_sig["return_type"] = "double";
@@ -445,6 +605,14 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &time_sig = (*functions)["time"].append();
+  time_sig["return_type"] = "double";
+  time_sig["filter_name"] = "time";
+  time_sig["args"] = conduit::DataType::empty();
+  time_sig["description"] = "Return the current simulation time.";
+
+  // -------------------------------------------------------------
+
   conduit::Node &vector = (*functions)["vector"].append();
   vector["return_type"] = "vector";
   vector["filter_name"] = "vector";
@@ -460,6 +628,42 @@ initialize_functions()
   mag_sig["filter_name"] = "magnitude";
   mag_sig["args/arg1/type"] = "vector";
   mag_sig["description"] = "Return the magnitude of the input vector.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &abs_sig = (*functions)["abs"].append();
+  abs_sig["return_type"] = "scalar";
+  abs_sig["filter_name"] = "abs";
+  abs_sig["args/arg1/type"] = "scalar";
+  abs_sig["description"] = "Return the absolute value of the input.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &exp_sig = (*functions)["exp"].append();
+  exp_sig["return_type"] = "double";
+  exp_sig["filter_name"] = "exp";
+  exp_sig["args/arg1/type"] = "scalar";
+  exp_sig["description"] = "Return the base e exponential.";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &pow_sig = (*functions)["pow"].append();
+  pow_sig["return_type"] = "double";
+  pow_sig["filter_name"] = "pow";
+  pow_sig["args/arg1/type"] = "scalar";
+  pow_sig["args/arg2/type"] = "scalar";
+  pow_sig["description"] =
+    "Returns base raised to the power exponent."
+    " pow(base, exponent)";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &log_sig = (*functions)["log"].append();
+  log_sig["return_type"] = "double";
+  log_sig["filter_name"] = "log";
+  log_sig["args/arg1/type"] = "scalar";
+  log_sig["description"] =
+    "Returns the natural logarithm of the argument";
 
   // -------------------------------------------------------------
 
@@ -523,6 +727,89 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &history_range_sig = (*functions)["history_range"].append();
+  // history_range_sig["return_type"] = "anytype";
+  history_range_sig["return_type"] = "array";
+  history_range_sig["filter_name"] = "history_range";
+
+  history_range_sig["args/expr_name/type"] = "anytype";
+  history_range_sig["args/expr_name/description"] =
+      "`expr_name` should be the name of an expression that was evaluated in "
+      "the past.";
+
+  history_range_sig["args/first_relative_index/type"] = "int";
+  history_range_sig["args/first_relative_index/optional"];
+  history_range_sig["args/first_relative_index/description"] = "The the first number of evaluations ago for which to retrieve past expression values. \
+  The index is relative, with ``first_relative_index=1`` corresponding to one evaluation ago. Example usage: \
+  history_range(pressure, first_relative_index=1, last_relative_index=10). This will retrieve the value \
+  for the previous 10 evaluations.";
+
+  history_range_sig["args/last_relative_index/type"] = "int";
+  history_range_sig["args/last_relative_index/optional"];
+  history_range_sig["args/last_relative_index/description"] = "The the last number of evaluations ago for which to retrieve past expression values. \
+  The index is relative, with ``last_relative_index=1`` corresponding to one evaluation ago. Example usage: \
+  history_range(pressure, first_relative_index=1, last_relative_index=10). This will retrieve the value \
+  for the previous 10 evaluations.";
+
+  history_range_sig["args/first_absolute_index/type"] = "int";
+  history_range_sig["args/first_absolute_index/optional"];
+  history_range_sig["args/first_absolute_index/description"] =
+      "The first index in the evaluation \
+  history for which to retrieve values. This should be less than the number of past evaluations. For \
+  example, ``history_range(pressure, first_absolute_index=0, last_absolute_index=10)`` returns the value of \
+  pressure from the first 10 times it was evaluated.";
+
+  history_range_sig["args/last_absolute_index/type"] = "int";
+  history_range_sig["args/last_absolute_index/optional"];
+  history_range_sig["args/last_absolute_index/description"] =
+      "The last index in the evaluation \
+  history for which to retrieve values. This should be less than the number of past evaluations. For \
+  example, ``history_range(pressure, first_absolute_index=0, last_absolute_index=10)`` returns the value of \
+  pressure from the first 10 times it was evaluated.";
+
+  history_range_sig["args/first_absolute_time/type"] = "scalar";
+  history_range_sig["args/first_absolute_time/optional"];
+  history_range_sig["args/first_absolute_time/description"] =
+      "The first simulation time for which to retrieve values. For \
+  example, ``history_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` returns the value of \
+  pressure from the first 0.1 units of simulation time.";
+
+  history_range_sig["args/last_absolute_time/type"] = "scalar";
+  history_range_sig["args/last_absolute_time/optional"];
+  history_range_sig["args/last_absolute_time/description"] =
+      "The last simulation time for which to retrieve values. For \
+  example, ``history_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` returns the value of \
+  pressure from the first 0.1 units of simulation time.";
+
+  history_range_sig["args/first_absolute_cycle/type"] = "scalar";
+  history_range_sig["args/first_absolute_cycle/optional"];
+  history_range_sig["args/first_absolute_cycle/description"] =
+      "The first simulation cycle for which to retrieve values. For \
+  example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` returns the value of \
+  pressure from the first two cycles.";
+
+  history_range_sig["args/last_absolute_cycle/type"] = "scalar";
+  history_range_sig["args/last_absolute_cycle/optional"];
+  history_range_sig["args/last_absolute_cycle/description"] =
+      "The last simulation cycle for which to retrieve values. For \
+  example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` returns the value of \
+  pressure from the first two cycles.";
+
+  history_range_sig["description"] = "As the simulation progresses the expressions \
+  are evaluated repeatedly. The history_range function allows you to get the value from a range of \
+  previous evaluations. For example, if we want to evaluate the difference \
+  between the original state of the simulation and the current state then we \
+  can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the \
+  current value: ``val - avg(history_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if \
+  you want to evaluate the relative change between the previous states and the \
+  current state: ``val - avg(history_range(val, first_relative_index=1, last_relative_index=10))``\
+  We can alternatively evaluate the difference between a particular range of time in the simulation, \
+  such as the first 10 seconds, and the current state: ``val - avg(history_range(val, first_absolute_time=1, last_absolute_index=10))`` \
+  or for the first 10 cycles of the simulation ``val - avg(history_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n \
+  .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2). \
+  first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
+
+  // -------------------------------------------------------------
   conduit::Node &entropy_sig = (*functions)["entropy"].append();
   entropy_sig["return_type"] = "double";
   entropy_sig["filter_name"] = "entropy";
@@ -620,6 +907,20 @@ initialize_functions()
   max_from_point_sig["args/point/type"] = "double";
   max_from_point_sig["description"] = "returns the closest max"
     " value from a reference point on an axis";
+
+  // -------------------------------------------------------------
+
+  conduit::Node &lineout = (*functions)["lineout"].append();
+  lineout["return_type"] = "array";
+  lineout["filter_name"] = "lineout";
+  lineout["args/samples/type"] = "int";
+  lineout["args/start/type"] = "vector";
+  lineout["args/end/type"] = "vector";
+  lineout["args/fields/type"] = "list";
+  lineout["args/fields/optional"];
+  lineout["args/empty_val/type"] = "double";
+  lineout["args/empty_val/optional"];
+  lineout["description"] = "returns a sampled based line out";
 
   // -------------------------------------------------------------
 
@@ -726,13 +1027,6 @@ initialize_functions()
   binning_sig["args/component/description"] =
       "the component of a vector field to use for the reduction."
       " Example 'x' for a field defined as 'velocity/x'";
-  binning_sig["args/output/type"] = "string";
-  binning_sig["args/output/optional"];
-  binning_sig["args/output/description"] =
-      "Defaults to ``'none'``. If set to ``'bins'`` a binning with 3 or fewer "
-      "dimensions will be output as a new topology on the dataset. This is "
-      "useful for directly visualizing the binning. If set to ``'mesh'`` the "
-      "bins will be \"painted\" back onto the original mesh as a new field.";
   binning_sig["description"] = "Returns a multidimensional data binning.";
 
   // -------------------------------------------------------------
@@ -775,7 +1069,7 @@ initialize_objects()
   bin_atts["center/type"] = "double";
   bin_atts["value/type"] = "double";
 
-  // objects->save("objects.json", "json");
+  //objects->save("objects.json", "json");
 }
 
 conduit::Node
@@ -786,11 +1080,11 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
     expr_name = expr;
   }
 
-  w.registry().add<conduit::Node>("dataset", m_data, -1);
+  w.registry().add<DataObject>("dataset", &m_data_object, -1);
   w.registry().add<conduit::Node>("cache", &m_cache.m_data, -1);
   w.registry().add<conduit::Node>("function_table", &g_function_table, -1);
   w.registry().add<conduit::Node>("object_table", &g_object_table, -1);
-  int cycle = get_state_var(*m_data, "cycle").to_int32();
+  int cycle = get_state_var(*m_data_object.as_node().get(), "cycle").to_int32();
   w.registry().add<int>("cycle", &cycle, -1);
 
   try
@@ -827,7 +1121,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
   conduit::Node return_val = *n_res;
 
   // add the sim time
-  conduit::Node n_time = get_state_var(*m_data, "time");
+  conduit::Node n_time = get_state_var(*m_data_object.as_node().get(), "time");
   double time = 0;
   bool valid_time = false;
   if(!n_time.dtype().is_empty())
@@ -881,6 +1175,18 @@ ExpressionEval::reset_cache()
   m_cache.m_data.reset();
 }
 
+void
+ExpressionEval::save_cache(const std::string &filename)
+{
+  m_cache.save(filename);
+}
+
+void
+ExpressionEval::save_cache()
+{
+  m_cache.save();
+}
+
 void ExpressionEval::get_last(conduit::Node &data)
 {
   data.reset();
@@ -896,6 +1202,11 @@ void ExpressionEval::get_last(conduit::Node &data)
       data[cycle.path()].set_external(cycle);
     }
   }
+}
+void ExpressionEval::save_cache(const std::string &filename,
+                                const std::vector<std::string> &selection)
+{
+  m_cache.save(filename, selection);
 }
 //-----------------------------------------------------------------------------
 };
@@ -914,3 +1225,4 @@ void ExpressionEval::get_last(conduit::Node &data)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+

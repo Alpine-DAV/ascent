@@ -63,6 +63,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
@@ -215,6 +216,12 @@ protected:
   std::shared_ptr<VTKHCollection> m_collection;
   std::string m_topo_name;
   bool m_valid;
+  // we have to keep the data object that spit out
+  // the vtkh collection we are rendering since
+  // this could be a temporary result created by a
+  // pipeline. If we dont' keep it, then it will
+  // be freed before we can render it
+  DataObject m_data;
 public:
   RendererContainer()
    : m_valid(false)
@@ -223,12 +230,14 @@ public:
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
                     std::shared_ptr<VTKHCollection> collection,
-                    std::string topo_name)
+                    std::string topo_name,
+                    DataObject &data_object)
     : m_key(key),
       m_registry(r),
       m_collection(collection),
       m_topo_name(topo_name),
-      m_valid(true)
+      m_valid(true),
+      m_data(data_object)
   {
     // we have to keep around the dataset so we bring the
     // whole collection with us
@@ -511,7 +520,7 @@ public:
     // note: there is an implicit assumption here that these
     // resources are static and only need to be generated one
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
-    { 
+    {
         conduit::utils::create_directory(m_db_path);
 
         // load cinema web resources from compiled in resource tree
@@ -875,13 +884,13 @@ DefaultRender::execute()
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    Node meta = Metadata::n_metadata;
 
     int cycle = 0;
 
-    if(meta->has_path("cycle"))
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].as_int32();
     }
 
     // figure out if we need the original bounds for the scene
@@ -967,7 +976,7 @@ DefaultRender::execute()
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
 
-          std::string output_path = default_dir(graph());
+          std::string output_path = default_dir();
 
           if(!render_node.has_path("db_name"))
           {
@@ -1011,14 +1020,14 @@ DefaultRender::execute()
           if(render_node.has_path("image_name"))
           {
             image_name = render_node["image_name"].as_string();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else
           {
@@ -1048,7 +1057,7 @@ DefaultRender::execute()
       {
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
-        image_name = output_dir(image_name, graph());
+        image_name = output_dir(image_name);
       }
 
       //check for camera in registery
@@ -1516,11 +1525,14 @@ CreatePlot::execute()
 
     std::string key = this->name() + "_cont";
 
-    detail::RendererContainer *container = new detail::RendererContainer(key,
-                                                                         &graph().workspace().registry(),
-                                                                         renderer,
-                                                                         collection,
-                                                                         topo_name);
+    detail::RendererContainer *container
+      = new detail::RendererContainer(key,
+                                      &graph().workspace().registry(),
+                                      renderer,
+                                      collection,
+                                      topo_name,
+                                      *data_object);
+
     set_output<detail::RendererContainer>(container);
 
 }

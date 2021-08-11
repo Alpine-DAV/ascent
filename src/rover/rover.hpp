@@ -51,6 +51,7 @@
 
 // std includes
 #include <memory>
+#include <conduit.hpp>
 
 namespace rover {
 
@@ -74,6 +75,7 @@ public:
   void execute();
   void about();
   void save_png(const std::string &file_name);
+  void to_blueprint(conduit::Node &dataset);
   void save_png(const std::string &file_name,
                 const float min_val,
                 const float max_val,

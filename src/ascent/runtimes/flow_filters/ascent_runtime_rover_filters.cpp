@@ -65,6 +65,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <flow_graph.hpp>
@@ -83,6 +84,7 @@
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
+#include <ascent_runtime_relay_filters.hpp>
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)
@@ -288,11 +290,11 @@ RoverXRay::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-    int cycle = -1;;
-    if(meta->has_path("cycle"))
+    Node meta = Metadata::n_metadata;
+    int cycle = -1;
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].as_int32();
     }
 
     std::string filename = params()["filename"].as_string();
@@ -300,7 +302,46 @@ RoverXRay::execute()
     {
       filename = expand_family_name(filename, cycle);
     }
-    filename = output_dir(filename, graph());
+
+    filename = output_dir(filename);
+
+    if(params().has_path("blueprint"))
+    {
+
+
+      std::string protocol = params()["blueprint"].as_string();
+      conduit::Node multi_domain;
+      conduit::Node &dom = multi_domain.append();
+      tracer.to_blueprint(dom);
+
+      if(dom.has_path("coordsets"))
+      {
+        int cycle = -1;
+        double time = -1.;
+
+        if(Metadata::n_metadata.has_path("cycle"))
+        {
+          cycle = Metadata::n_metadata["cycle"].to_int32();
+        }
+        if(Metadata::n_metadata.has_path("time"))
+        {
+          time = Metadata::n_metadata["time"].to_float64();
+        }
+
+        if(cycle != -1)
+        {
+          dom["state/cycle"] = cycle;
+        }
+
+        if(time != -1.)
+        {
+          dom["state/time"] = time;
+        }
+      }
+
+      std::string result_path;
+      mesh_blueprint_save(multi_domain, filename, protocol, -1, result_path);
+    }
 
     if(params().has_path("image_params"))
     {
@@ -318,7 +359,7 @@ RoverXRay::execute()
     if(params().has_path("bov_filename"))
     {
       std::string bov_filename = params()["bov_filename"].as_string();
-      bov_filename = output_dir(bov_filename, graph());
+      bov_filename = output_dir(bov_filename);
       if(cycle != -1)
       {
         tracer.save_bov(expand_family_name(bov_filename, cycle));
@@ -491,11 +532,11 @@ RoverVolume::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
-    int cycle = -1;;
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("cycle"))
+    Node meta = Metadata::n_metadata;
+    int cycle = -1;
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].as_int32();
     }
 
     std::string filename = params()["filename"].as_string();
@@ -507,7 +548,7 @@ RoverVolume::execute()
     {
       filename = expand_family_name(filename);
     }
-    filename = output_dir(filename, graph());
+    filename = output_dir(filename);
 
     tracer.save_png(filename);
     tracer.finalize();

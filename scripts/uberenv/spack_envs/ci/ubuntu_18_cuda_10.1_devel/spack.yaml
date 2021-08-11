@@ -3,13 +3,16 @@
 # branch: task/2021_03_update_ascent_and_friends
 spack:
   specs:
-  - ascent+cuda+dray+mfem~shared~openmp cuda_arch=70 ^mpich
+  - ascent@develop+cuda+dray+mfem~shared~openmp cuda_arch=70 ^mpich
   - dray+cuda~shared~openmp~utils~test cuda_arch=70
   - mfem~cuda
   - camp+cuda
-  - vtk-h+cuda~shared~openmp cuda_arch=70
-  - vtk-m+cuda~shared~openmp cuda_arch=70
+  - vtk-h@develop+cuda~shared~openmp cuda_arch=70
+  - vtk-m@1.5.5+cuda~shared~openmp cuda_arch=70
   - cmake@3.14.7~ncurses~openssl
+  config:
+    install_tree: 
+      root: spack-build
   concretization: together
   packages:
     cuda:
@@ -42,21 +45,11 @@ spack:
       externals:
       - prefix: /usr
         spec: sqlite
-    # ncurses:
-    #   buildable: false
-    #   externals:
-    #   - prefix: /usr
-    #     spec: ncurses
     pkg-config:
       buildable: false
       externals:
       - prefix: /usr
         spec: pkg-config
-    # openssl:
-    #   buildable: false
-    #   externals:
-    #   - prefix: /usr
-    #     spec: openssl
     perl:
       buildable: false
       externals:

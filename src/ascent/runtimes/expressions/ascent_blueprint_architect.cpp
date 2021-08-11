@@ -868,7 +868,7 @@ field_histogram(const conduit::Node &dataset,
   double *global_bins = new double[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_SUM, mpi_comm);
 
   delete[] bins;
   bins = global_bins;
@@ -1187,7 +1187,6 @@ populate_homes(const conduit::Node &dom,
   {
     homes_size = num_cells(dom, topo_name);
   }
-
   // each domain has a homes array
   // homes maps each datapoint (or cell) to an index in bins
   res.set(conduit::DataType::c_int(homes_size));
@@ -1734,7 +1733,9 @@ binning(const conduit::Node &dataset,
 }
 
 void
-paint_binning(const conduit::Node &binning, conduit::Node &dataset)
+paint_binning(const conduit::Node &binning,
+              conduit::Node &dataset,
+              const std::string field_name)
 {
   const conduit::Node &bin_axes = binning["attrs/bin_axes/value"];
 
@@ -1787,12 +1788,18 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
     {
       reduction_var = "cnt";
     }
-    const std::string field_name =
+    std::string fname =
         "painted_" + reduction_var + "_" +
         binning["attrs/reduction_op/value"].as_string();
-    dom["fields/" + field_name + "/association"] = assoc_str;
-    dom["fields/" + field_name + "/topology"] = topo_name;
-    dom["fields/" + field_name + "/values"].set(
+
+    if(field_name != "")
+    {
+      fname = field_name;
+    }
+
+    dom["fields/" + fname + "/association"] = assoc_str;
+    dom["fields/" + fname + "/topology"] = topo_name;
+    dom["fields/" + fname + "/values"].set(
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
         dom["fields/" + field_name + "/values"].value();
@@ -1815,7 +1822,9 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
 }
 
 void
-binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
+binning_mesh(const conduit::Node &binning,
+             conduit::Node &mesh,
+             const std::string field_name)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
 
@@ -1865,11 +1874,15 @@ binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
   {
     reduction_var = "cnt";
   }
-  const std::string field_name =
+  std::string fname =
       reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();
-  mesh["fields/" + field_name + "/association"] = "element";
-  mesh["fields/" + field_name + "/topology"] = "binning_topo";
-  mesh["fields/" + field_name + "/values"].set(binning["attrs/value/value"]);
+  if(field_name != "")
+  {
+    fname = field_name;
+  }
+  mesh["fields/" + fname + "/association"] = "element";
+  mesh["fields/" + fname + "/topology"] = "binning_topo";
+  mesh["fields/" + fname + "/values"].set(binning["attrs/value/value"]);
 
   conduit::Node info;
   if(!conduit::blueprint::verify("mesh", mesh, info))

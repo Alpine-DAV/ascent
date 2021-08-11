@@ -133,10 +133,47 @@ void parse_binning(const std::string &expression,
 
 }
 
+// some expressions like lineouts take a list of fields
+void parse_field_list(const std::string &expression,
+                          std::set<std::string> &fields)
+{
+  // this is a string list of the form fields = ['bananas', 'apples']
+  std::regex e ("fields\\s*=\\s*\\[\\s*('[a-zA-Z][a-zA-Z_0-9]*'"
+                "\\s*,\\s*)*\\s*'[a-zA-Z][a-zA-Z_0-9]*'\\s*\\]");
+  std::smatch m;
+
+  std::set<std::string> matches;
+  std::string s = expression;
+  std::string flist;
+  // just get the entire matched experssion
+  if(std::regex_search (s,m,e) == true)
+  {
+    flist = m.str(0);
+  }
+  if(flist != "")
+  {
+    // ok we have a field list now get all the fields
+    std::regex inside_single("'([^\\']*)'");
+    while(std::regex_search (flist,m,inside_single))
+    {
+      // the first element in the match is the whole match
+      // e.g., 'bananas' and the second is the match inside the
+      // quotes = bananas, which is what we want
+      auto it = m.begin();
+      it++;
+      std::string field = *it;
+      fields.insert(field);
+      // move to the next match
+      flist = m.suffix().str();
+    }
+  }
+}
+
 void parse_expression(const std::string &expression,
                       std::set<std::string> &fields)
 {
   parse_binning(expression, fields);
+  parse_field_list(expression, fields);
 
   std::regex e ("field\\('(.*?)'\\)");
   std::smatch m;
@@ -177,6 +214,11 @@ void filter_fields(const conduit::Node &node,
           names[i] == "field1" || // support for composite vector
           names[i] == "field2" ||
           names[i] == "field3" )
+      {
+        fields.insert(child.as_string());
+      }
+      // rover xray
+      if(names[i] == "absorption" || names[i] == "emission")
       {
         fields.insert(child.as_string());
       }

@@ -54,8 +54,7 @@
 
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
-
-#include <ascent_png_encoder.hpp>
+#include <ascent_config.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -94,7 +93,7 @@ public:
     void                            PushRenders(const conduit::Node &renders);
 
 private:
-
+#ifdef ASCENT_WEBSERVER_ENABLED
     conduit::relay::web::WebSocket *Connection();
 
     void                            EncodeImage(const std::string &png_file_path,
@@ -104,8 +103,9 @@ private:
     int                             m_ms_poll;
     int                             m_ms_timeout;
     std::string                     m_doc_root;
-
+#endif
 };
+
 
 //-----------------------------------------------------------------------------
 };

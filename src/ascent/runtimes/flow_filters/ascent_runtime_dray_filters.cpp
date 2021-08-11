@@ -65,6 +65,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
@@ -82,13 +83,15 @@
 #include <runtimes/ascent_data_object.hpp>
 
 #include <dray/dray.hpp>
-#include <dray/data_set.hpp>
+#include <dray/data_model/data_set.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 
-#include <dray/collection.hpp>
+#include <dray/data_model/collection.hpp>
+
 #include <dray/filters/reflect.hpp>
 #include <dray/filters/mesh_boundary.hpp>
 #include <dray/filters/volume_balance.hpp>
+#include <dray/filters/vector_component.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
@@ -724,11 +727,11 @@ DRayPseudocolor::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -791,7 +794,7 @@ DRayPseudocolor::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
@@ -897,11 +900,11 @@ DRay3Slice::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -960,7 +963,7 @@ DRay3Slice::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 }
@@ -1072,11 +1075,11 @@ DRayVolume::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -1166,7 +1169,7 @@ DRayVolume::execute()
     if(dray::dray::mpi_rank() == 0)
     {
       fb.composite_background();
-      image_name = output_dir(image_name, graph());
+      image_name = output_dir(image_name);
       fb.save(image_name);
     }
 
@@ -1361,7 +1364,7 @@ DRayProject2d::execute()
 
     std::string image_name;
 
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
     int width  = 512;
     int height = 512;
 
@@ -1455,11 +1458,16 @@ DRayProject2d::execute()
 
       int cycle = 0;
 
-      if(meta->has_path("cycle"))
+      if(meta.has_path("cycle"))
       {
-        cycle = (*meta)["cycle"].as_int32();
+        cycle = meta["cycle"].to_int32();
       }
       dom["state/cycle"] = cycle;
+      if(meta.has_path("time"))
+      {
+        dom["state/time"] =  meta["time"].to_float64();
+      }
+
     }
 
     DataObject *res =  new DataObject(output);
@@ -1560,11 +1568,11 @@ DRayProjectColors2d::execute()
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
     std::string image_name;
-    conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
-                         meta,
+                         &meta,
                          camera,
                          color_map,
                          field_name,
@@ -1600,6 +1608,102 @@ DRayProjectColors2d::execute()
     }
 
     DataObject *res =  new DataObject(image_data);
+    set_output<DataObject>(res);
+
+}
+
+//-----------------------------------------------------------------------------
+DRayVectorComponent::DRayVectorComponent()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRayVectorComponent::~DRayVectorComponent()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVectorComponent::declare_interface(Node &i)
+{
+    i["type_name"]   = "dray_vector_component";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+DRayVectorComponent::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("component",params, info, true);
+    res &= check_string("output_name",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("component");
+    valid_paths.push_back("output_name");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+DRayVectorComponent::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+      ASCENT_ERROR("dray_vector_component input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    dray::Collection *dcol = data_object->as_dray_collection().get();
+
+    std::string field_name = params()["field"].as_string();
+    // not really doing invalid results for dray atm
+    //if(!collection->has_field(field_name))
+    //{
+    //  // this creates a data object with an invalid soource
+    //  set_output<DataObject>(new DataObject());
+    //  return;
+    //}
+    int component = params()["component"].to_int32();
+    std::string res_name = params()["output_name"].as_string();
+
+    dray::VectorComponent comp;
+
+    comp.field(field_name);
+    comp.component(component);
+    comp.output_name(res_name);
+
+    dray::Collection comp_output = comp.execute(*dcol);
+    dray::Collection *output_ptr = new dray::Collection();
+    *output_ptr = comp_output;
+
+    DataObject *res =  new DataObject(output_ptr);
     set_output<DataObject>(res);
 
 }

@@ -84,8 +84,8 @@
     #ifdef ASCENT_BABELFLOW_ENABLED
     #include <ascent_runtime_babelflow_filters.hpp>
     #endif
-    #if defined(ASCENT_ADIOS_ENABLED)
-    #include <ascent_runtime_adios_filters.hpp>
+    #ifdef ASCENT_FIDES_ENABLED
+    #include <ascent_runtime_adios2_filters.hpp>
     #endif
 #endif
 
@@ -125,6 +125,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
 
+    AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
@@ -179,6 +180,7 @@ register_builtin()
     AscentRuntime::register_filter_type<DRayProjectColors2d>("transforms",
                                                              "dray_project_colors_2d");
     AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
+    AscentRuntime::register_filter_type<DRayVectorComponent>("transforms", "dray_vector_component");
 #endif
 
 
@@ -192,8 +194,8 @@ register_builtin()
     AscentRuntime::register_filter_type<BFlowIso>("extracts", "bflow_iso");
 #endif
 
-#if defined(ASCENT_ADIOS_ENABLED)
-    AscentRuntime::register_filter_type<ADIOS>("extracts","adios");
+#if defined(ASCENT_ADIOS2_ENABLED)
+    AscentRuntime::register_filter_type<ADIOS2>("extracts","ADIOS2");
 #endif
 
 #endif

@@ -58,7 +58,13 @@ MESSAGE(STATUS "Looking for HDF5 using HDF5_DIR = ${HDF5_DIR}")
 
 # CMake's FindHDF5 module uses the HDF5_ROOT env var
 set(HDF5_ROOT ${HDF5_DIR})
-set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
+
+if(NOT WIN32)
+    # use HDF5_ROOT env var for FindHDF5 with older versions of cmake
+    if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+        set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
+    endif()
+endif()
 
 # Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
 # all the info about the hdf5 install

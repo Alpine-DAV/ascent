@@ -68,10 +68,12 @@ set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
 set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
-set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
+set(ASCENT_FIDES_ENABLED ${FIDES_FOUND})
+
+set(ASCENT_WEBSERVER_ENABLED ${CONDUIT_RELAY_WEBSERVER_ENABLED})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
@@ -90,6 +92,7 @@ set(ascent_sources
     # runtimes
     ascent_runtime.cpp
     runtimes/ascent_main_runtime.cpp
+    runtimes/ascent_metadata.cpp
     runtimes/ascent_empty_runtime.cpp
     runtimes/ascent_expression_eval.cpp
     runtimes/ascent_transmogrifier.cpp
@@ -143,6 +146,7 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_parser.hpp
     # flow
     runtimes/ascent_main_runtime.hpp
+    runtimes/ascent_metadata.hpp
     runtimes/ascent_flow_runtime.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_camera_filters.hpp
@@ -379,7 +383,7 @@ if(MPI_FOUND)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp) 
+      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
@@ -397,10 +401,10 @@ if(MPI_FOUND)
     list(APPEND ascent_sources hola/ascent_hola_mpi.cpp)
 
     # adios support is only in par (mpi ver)
-    if (ADIOS_FOUND)
-       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
-       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
-       list(APPEND ascent_mpi_thirdparty_libs adios)
+    if (ASCENT_FIDES_ENABLED AND MPI_FOUND)
+       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
+       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
+       list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
     endif()
 
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
@@ -500,5 +504,3 @@ install(FILES ${ascent_headers} DESTINATION include/ascent)
 #############################################################
 install(DIRECTORY web_clients/
         DESTINATION share/ascent/web_clients/)
-
-

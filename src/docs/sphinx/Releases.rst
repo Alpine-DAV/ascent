@@ -57,6 +57,37 @@ Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
 
+v0.7.1
+-------
+
+* `v0.7.1 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.7.1/ascent-v0.7.1-src-with-blt.tar.gz>`_
+
+Highlights
++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+Preferred dependency versions for ascent@0.7.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* conduit@0.7.2
+* dray@0.1.6
+* vtk-h@0.7.1
+* vtk-m@1.5.5
+
+
+Added
+~~~~~~~~~
+* Added Data Binning examples to the Ascent Intro Tutorial
+
+Fixed
+~~~~~~~~~
+* Fixed an issue with the Data Binning bin calculation logic
+
+Changed
+~~~~~~~~~
+* Updated Ascent to use new conduit, dray, and vtk-h versions
+
+
 
 v0.7.0
 -------

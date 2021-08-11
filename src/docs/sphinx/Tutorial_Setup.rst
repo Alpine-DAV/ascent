@@ -148,8 +148,7 @@ You can copy the tutorial examples from this install and use them as follows:
 LLNL CZ TOSS 3 Install
 +++++++++++++++++++++++
 
-We have a public ascent install on LLNL CZ TOSS 3 Systems. This install was built using the default
-gnu compiler (4.9.3) with OpenMP and MPI support.
+We have a public ascent install on LLNL CZ TOSS 3 Systems. This install includes OpenMP and MPI support.
 
 
 The install is located at ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``.
@@ -158,6 +157,37 @@ You can copy the tutorial examples from this install and use them as follows:
 .. literalinclude:: tutorial_setup_llnl_pascal_openmp_test.sh
    :language: bash
 
+
+Register Ascent's Python as a Jupyter Kernel
++++++++++++++++++++++++++++++++++++++++++++++
+
+.. warning::
+    This works the LLNL LC TOSS3 CZ OpenMP install, we are working on recipes for other HPC centers.
+
+You can register Ascent's Python as a custom Jupyter kernel with Jupyter Hub.
+
+LLNL CZ TOSS 3 Jupyter Kernel Register Example:
+
+.. literalinclude:: tutorial_setup_llnl_pascal_openmp_jhub.sh
+   :language: bash
+
+After you register you will see an option to launch an Ascent kernel in Jupyter Hub:
+
+.. image:: images/llnl_jhub_kernel_select.png
+
+With this kernel you can access Ascent's Python modules or run the tutorial notebooks:
+
+.. image:: images/llnl_jhub_kernel_example.png
+
+
+If you want to remove the registered kernel, you can use:
+
+.. code::
+  
+  # show list of registered kernels
+  jupyter kernelspec list
+  # remove our Ascent custom kernel
+  jupyter kernelspec uninstall ascent_0.7.1 
 
 ..
 .. SC19 Tutorial VM Option
