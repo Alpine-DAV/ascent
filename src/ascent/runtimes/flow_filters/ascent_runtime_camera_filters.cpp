@@ -1269,13 +1269,21 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name, int height, int w
   //if there is data: loop through domains and grab all triangles.
   if(!vtkhData.IsEmpty())
   {
+	  cerr << "local domain size: " << localDomainIds.size() << endl;
+	  for(int i = 0; i < localDomainIds.size(); i++)
+		  cerr << "local domain number: " << localDomainIds[i] << endl;
     for(int i = 0; i < localDomainIds.size(); i++)
     {
-      vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
+	    cerr << "domain i: " << i << endl;
+      vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
+      cerr << "here0" << endl;
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      cerr << "here1" << endl;
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      cerr << "here2" << endl;
       //Get variable
       vtkm::cont::Field field = dataset.GetField(field_name);
+      cerr << "here3" << endl;
       
       long int size = field.GetNumberOfValues();
       
@@ -1283,6 +1291,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name, int height, int w
       using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
       if(field.GetData().IsType<data_d>())
       {
+	      cerr << "they are doubles" << endl;
         vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
         field.GetData().CopyTo(field_data);
         auto portal = field_data.GetPortalConstControl();
@@ -1294,6 +1303,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name, int height, int w
       }
       if(field.GetData().IsType<data_f>())
       {
+	      cerr << "they are floats" << endl;
         vtkm::cont::ArrayHandle<vtkm::Float32> field_data;
         field.GetData().CopyTo(field_data);
         auto portal = field_data.GetPortalConstControl();
@@ -4198,11 +4208,19 @@ AutoCamera::execute()
       auto triangle_start = high_resolution_clock::now();
       #endif
 
+      cerr << "HERE" << endl;
       std::string topo_name = collection->field_topology(field_name);
+      cerr << "HERE2" << endl;
 
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+      cerr << "HERE3" << endl;
+      #if ASCENT_MPI_ENABLED
+      if(rank == 0)
+        dataset.PrintSummary(cerr);
+      #endif
     
       std::vector<double> field_data = GetScalarData<double>(dataset, field_name.c_str(), height, width);
+      cerr << "HERE4" << endl;
       
       float datafield_max = 0.;
       float datafield_min = 0.;
@@ -4211,11 +4229,13 @@ AutoCamera::execute()
         datafield_max = (float)*max_element(field_data.begin(),field_data.end());
         datafield_min = (float)*min_element(field_data.begin(),field_data.end());
       }
+      cerr << "HERE5" << endl;
       //TODO: Need global mins and maxes for parallel. MPI send to rank 0.
 
 
       double worldspace_local_area = 0;
       std::vector<Triangle> triangles = GetTrianglesAndArea(dataset, worldspace_local_area);
+      cerr << "HERE6" << endl;
       int num_local_triangles = triangles.size();
       float xmax = 0.0, xmin = 0.0, ymax = 0.0, ymin = 0.0, zmax = 0.0, zmin = 0.0;
       TriangleBounds(triangles,xmin,xmax,ymin,ymax,zmin,zmax);
@@ -4224,13 +4244,15 @@ AutoCamera::execute()
       int xBins = 8,yBins = 8,zBins = 8;
 
       vtkh::DataSet* data = AddTriangleFields(dataset,xmin,xmax,ymin,ymax,zmin,zmax,xBins,yBins,zBins);
-//      data->PrintSummary(cerr);
+      cerr << "HERE7" << endl;
+      data->PrintSummary(cerr);
 
       #if ASCENT_MPI_ENABLED
       auto triangle_stop = high_resolution_clock::now();
       triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
       double array[world_size] = {0};
       cerr << "world size: " << world_size << endl;
+      cerr << "rank: " << rank << endl;
       array[rank] = triangle_time;
       MPI_Allgather(&triangle_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
       if(rank == 0)
