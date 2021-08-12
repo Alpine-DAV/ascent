@@ -68,6 +68,7 @@
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 #include <ascent_data_object.hpp>
+#include <ascent_metadata.hpp>
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
@@ -4169,11 +4170,11 @@ AutoCamera::execute()
       DataObject *data_object = input<DataObject>(0);
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     //int cycle = params()["state/cycle"].to_int32();
-      conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+      conduit::Node meta = Metadata::n_metadata;
       int cycle = -1;
-      if(meta->has_path("cycle"))
+      if(meta.has_path("cycle"))
       {
-        cycle = (*meta)["cycle"].to_int32();
+        cycle = meta["cycle"].to_int32();
       }
       cerr << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
       std::string field_name = params()["field"].as_string();
