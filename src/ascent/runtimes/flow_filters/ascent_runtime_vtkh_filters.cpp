@@ -2992,7 +2992,7 @@ VTKHMeshQuality::~VTKHMeshQuality()
 void
 VTKHMeshQuality::declare_interface(Node &i)
 {
-    i["type_name"]   = "vtkh_no_op";
+    i["type_name"]   = "mesh_quality";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
 }
