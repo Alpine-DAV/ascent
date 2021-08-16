@@ -4198,6 +4198,8 @@ AutoCamera::execute()
       MPI_Barrier(MPI_COMM_WORLD);
       double triangle_time = 0.;
       auto triangle_start = high_resolution_clock::now();
+      vtkm::cont::Timer tri_timer;
+      tri_timer.Start();
       #endif
 
       std::string topo_name = collection->field_topology(field_name);
@@ -4244,7 +4246,10 @@ AutoCamera::execute()
 
       #if ASCENT_MPI_ENABLED
       cerr << "Rank " << rank << " num loc tri: " << num_local_triangles << " worldspace loc area " << worldspace_local_area << endl;
+      
       auto triangle_stop = high_resolution_clock::now();
+      tri_timer.Stop();
+      vtkm::Float64 total_time = tri_timer.GetElapsedTime();
       triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
       double array[world_size] = {0};
       array[rank] = triangle_time;
@@ -4305,6 +4310,8 @@ AutoCamera::execute()
         MPI_Barrier(MPI_COMM_WORLD);
         #endif
 	auto render_start = high_resolution_clock::now();
+        vtkm::cont::Timer ren_timer;
+        ren_timer.Start();
 
         camera->SetPosition(pos);
         vtkh::ScalarRenderer tracer;
@@ -4325,9 +4332,11 @@ AutoCamera::execute()
         auto render_stop = high_resolution_clock::now();
         double render_time = duration_cast<microseconds>(render_stop - render_start).count();
         #if ASCENT_MPI_ENABLED
+	  ren_timer.Stop();
+          vtkm::Float64 ren_time = ren_timer.GetElapsedTime();
           double array[world_size] = {0};
-          array[rank] = render_time;
-          MPI_Allgather(&render_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+          array[rank] = ren_time;
+          MPI_Allgather(&ren_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
           if(rank == 0)
             MakeFile("renderer_times.txt", array, world_size);
 //          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
@@ -4388,6 +4397,8 @@ AutoCamera::execute()
       MPI_Barrier(MPI_COMM_WORLD);
       #endif
       auto setting_camera_start = high_resolution_clock::now();
+      vtkm::cont::Timer cam_timer;
+      cam_timer.Start();
 
       if(winning_sample == -1)
         ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
@@ -4418,9 +4429,12 @@ AutoCamera::execute()
       setting_camera += duration_cast<microseconds>(setting_camera_end - setting_camera_start).count();
 
       #if ASCENT_MPI_ENABLED
+        cam_timer.Stop();
+        vtkm::Float64 cam_time = cam_timer.GetElapsedTime();
+
         double array2[world_size] = {0};
-        array2[rank] = setting_camera;
-        MPI_Allgather(&setting_camera, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+        array2[rank] = cam_time;
+        MPI_Allgather(&cam_time, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
         if(rank == 0)
           MakeFile("setCam_times.txt", array2, world_size);
 //        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
