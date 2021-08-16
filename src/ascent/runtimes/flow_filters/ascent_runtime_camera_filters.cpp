@@ -1220,6 +1220,7 @@ template< typename T >
 std::vector<T>
 GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int width)
 {
+	cerr << "WE SHOULD NOT BE IN THIS SCALAR DATA FUNC" << endl;
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
   std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
@@ -1230,7 +1231,7 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
   {
     for(int i = 0; i < localDomainIds.size(); i++)
     {
-      vtkm::cont::DataSet dataset = vtkhData.GetDomain(localDomainIds[i]);
+      vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
       //Get variable
@@ -3742,6 +3743,7 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
     // Get the rank of this process
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    cerr << "rank " << rank << " num local triangles " << num_local_triangles << endl;
     // MPI_Status status;
     //Needs total global triangles
     int num_global_triangles = 0;
@@ -4203,14 +4205,29 @@ AutoCamera::execute()
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
     
       std::vector<double> field_data = GetScalarData<double>(dataset, field_name.c_str(), height, width);
+      #if ASCENT_MPI_ENABLED
+        cerr << "rank " << rank << " field size: " << field_data.size() << endl;
+      #endif
       
       float datafield_max = 0.;
       float datafield_min = 0.;
+      #if ASCENT_MPI_ENABLED
+      float local_datafield_max = 0.;
+      float local_datafield_min = 0.;
       if(field_data.size())
-      {
+      { 
+        local_datafield_max = (float)*max_element(field_data.begin(),field_data.end());
+	local_datafield_min = (float)*min_element(field_data.begin(),field_data.end());
+      }
+      MPI_Reduce(&local_datafield_max, &datafield_max, 1, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
+      MPI_Reduce(&local_datafield_min, &datafield_min, 1, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+      #else
+      if(field_data.size())
+      { 
         datafield_max = (float)*max_element(field_data.begin(),field_data.end());
         datafield_min = (float)*min_element(field_data.begin(),field_data.end());
       }
+      #endif
       //TODO: Need global mins and maxes for parallel. MPI send to rank 0.
 
 
@@ -4226,6 +4243,7 @@ AutoCamera::execute()
       vtkh::DataSet* data = AddTriangleFields(dataset,xmin,xmax,ymin,ymax,zmin,zmax,xBins,yBins,zBins);
 
       #if ASCENT_MPI_ENABLED
+      cerr << "Rank " << rank << " num loc tri: " << num_local_triangles << " worldspace loc area " << worldspace_local_area << endl;
       auto triangle_stop = high_resolution_clock::now();
       triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
       double array[world_size] = {0};
