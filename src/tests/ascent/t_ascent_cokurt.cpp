@@ -75,6 +75,7 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_clip, test_clip_sphere)
 {
@@ -139,7 +140,7 @@ TEST(ascent_clip, test_clip_sphere)
       ascent.close();
     }
 }
-
+#endif
 void create_uniform_domain(conduit::Node &dom,
                            double x_min,
                            double x_max,
@@ -253,24 +254,24 @@ TEST(ascent_cokurt, test_field)
     remove_test_image(output_file);
 
     conduit::Node actions;
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f1/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
+    //conduit::Node pipelines;
+    //// pipeline 1
+    //pipelines["pl1/f1/type"] = "slice";
+    //// filter knobs
+    //conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    //slice_params["point/x"] = 0.f;
+    //slice_params["point/y"] = 0.f;
+    //slice_params["point/z"] = 0.f;
 
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
+    //slice_params["normal/x"] = 0.f;
+    //slice_params["normal/y"] = 0.f;
+    //slice_params["normal/z"] = 1.f;
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "var2";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
+    //conduit::Node scenes;
+    //scenes["s1/plots/p1/type"]         = "pseudocolor";
+    //scenes["s1/plots/p1/field"] = "var2";
+    //scenes["s1/plots/p1/pipeline"] = "pl1";
+    //scenes["s1/image_prefix"] = output_file;
 
     conduit::Node extracts;
     extracts["e1/type"] = "learn";
@@ -285,13 +286,13 @@ TEST(ascent_cokurt, test_field)
     add_extracts["extracts"] = extracts;
 
     // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    //conduit::Node &add_pipelines = actions.append();
+    //add_pipelines["action"] = "add_pipelines";
+    //add_pipelines["pipelines"] = pipelines;
+    //// add the scenes
+    //conduit::Node &add_scenes= actions.append();
+    //add_scenes["action"] = "add_scenes";
+    //add_scenes["scenes"] = scenes;
 
     //
     // Run Ascent

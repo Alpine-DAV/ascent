@@ -501,6 +501,7 @@ Learn::execute()
     //Kokkos::initialize();
     for(int i = 0; i < num_domains; ++i)
     {
+      std::cout<<"Number of values "<<field_sizes[i]<<"\n";
       const conduit::Node &dom = n_input->child(i);
 
       // visual debugging data
@@ -534,7 +535,7 @@ Learn::execute()
 
       double *pvecs = new double[num_fields * num_fields];
       double *pvals = new double[num_fields];
-      ComputePrincipalKurtosisVectors(A, field_sizes[0], num_fields, pvecs, pvals);
+      ComputePrincipalKurtosisVectors(A, field_sizes[i], num_fields, pvecs, pvals);
       double * domain_fmms = fmms + num_fields * i;
       compute_fmms(num_fields, pvecs, pvals, domain_fmms);
       delete[] pvecs;
@@ -588,7 +589,7 @@ Learn::execute()
     {
       for(int f = 0; f < num_fields; f++)
       {
-        std::cout<<field_selection[f]<<" average fmms"<<average_fmms[f] <<"\n";
+        std::cout<<field_selection[f]<<" average fmms "<< average_fmms[f] <<"\n";
       }
     }
 
