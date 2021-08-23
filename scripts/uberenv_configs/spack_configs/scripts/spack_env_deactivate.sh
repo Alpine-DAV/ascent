@@ -1,1 +1,0 @@
-spack env deactivate
