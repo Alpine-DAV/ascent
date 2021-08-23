@@ -1,0 +1,213 @@
+spack:
+  specs:
+  - ascent+cuda+dray+mfem
+
+  
+  # ran into an issue building mfem with cuda support
+  # neither dray or ascent use cuda suppor from mfem
+  # so i disabled
+  - mfem+conduit~cuda
+  - dray@develop+cuda+mpi~test~utils
+
+  
+  # w/ static openblas, mfem fails to link due 
+  # to gfortran std deps not propgating
+  - openblas+shared
+  concretization: together
+  config:
+    install_tree: 
+      root: spack-build
+  compilers:
+  - compiler:
+      environment: {unset: []}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel7
+      paths:
+        cc: /usr/tce/bin/gcc
+        cxx: /usr/tce/bin/g++
+        f77: /usr/tce/bin/gfortran
+        fc: /usr/tce/bin/gfortran
+      spec: gcc@4.9.3
+      target: x86_64
+  packages:
+    all:
+      variants: cuda_arch=60 ~shared~openmp~python+cuda
+      compiler: [gcc]
+      target: [ivybridge]
+      providers:
+        blas: [openblas]
+        lapack: [openblas]
+        mpi: [mvapich2]
+      version: []
+      buildable: true
+    cuda:
+      buildable: false
+      externals:
+      - spec: cuda@10.1
+        modules: [cuda/10.1.168]
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    mvapich2:
+      buildable: false
+      externals:
+      - spec: mvapich2@2.3%gcc@4.9.3
+        prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-4.9.3/
+      # Spack may grab one of these for mpi & we don't want to use them
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    openmpi:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    mpich:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    spectrum-mpi:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    charmpp:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    charm:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    intel-mpi:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    intel-parallel-studio:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    fujitsu-mpi:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    mpilander:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    mpt:
+      buildable: false
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    autoconf:
+      buildable: false
+      externals:
+      - spec: autoconf
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    automake:
+      buildable: false
+      externals:
+      - spec: automake
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    bzip2:
+      buildable: false
+      externals:
+      - spec: bzip2
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    cmake:
+      version: [3.14.5]
+      buildable: false
+      externals:
+      - spec: cmake
+        prefix: /usr/tce/packages/cmake/cmake-3.14.5
+      target: []
+      compiler: []
+      providers: {}
+    gettext:
+      buildable: false
+      externals:
+      - spec: gettext
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    libtool:
+      buildable: false
+      externals:
+      - spec: libtool
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    m4:
+      buildable: false
+      externals:
+      - spec: m4
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    perl:
+      buildable: false
+      externals:
+      - spec: perl
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    pkg-config:
+      buildable: false
+      externals:
+      - spec: pkg-config
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}
+    tar:
+      buildable: false
+      externals:
+      - spec: tar
+        prefix: /usr
+      version: []
+      target: []
+      compiler: []
+      providers: {}

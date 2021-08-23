@@ -1,0 +1,59 @@
+packages:
+  all:
+    variants: cuda_arch=60 ~shared~openmp~python+cuda
+    compiler: [gcc, intel, pgi, clang, xl, nag]
+    providers:
+      awk: [gawk]
+      blas: [openblas]
+      daal: [intel-daal]
+      elf: [elfutils]
+      golang: [gcc]
+      ipp: [intel-ipp]
+      java: [jdk]
+      lapack: [openblas]
+      mkl: [intel-mkl]
+      mpe: [mpe2]
+      mpi: [mvapich2]
+      opencl: [pocl]
+      openfoam: [openfoam-com, openfoam-org, foam-extend]
+      pil: [py-pillow]
+      scalapack: [netlib-scalapack]
+      szip: [libszip, libaec]
+      tbb: [intel-tbb]
+      jpeg: [libjpeg-turbo, libjpeg]
+  python:
+    variants: ~dbm
+  cmake:
+    buildable: false
+    externals:
+    - prefix: /usr/tce/packages/cmake/cmake-3.14.5/
+      spec: cmake@3.14.5
+  perl:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: perl
+  pkg-config:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: pkg-config
+# LLNL toss3 CUDA
+  cuda:
+    buildable: false
+    externals:
+    - modules:
+      - cuda/10.1.168
+      spec: cuda@10.1
+# LLNL toss3 mvapich2
+  mvapich2:
+    buildable: false
+    externals:
+    - prefix: /usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
+      spec: mvapich2@2.2%gcc@4.9.3
+    - prefix: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-8.3.1
+      spec: mvapich2@2.3%gcc@8.3.1
+    - prefix: /usr/tce/packages/mvapich2/mvapich2-2.2-intel-17.0.0
+      spec: mvapich2@2.2%intel@17.0.0
+    - prefix: /usr/tce/packages/mvapich2/mvapich2-2.2-clang-4.0.0
+      spec: mvapich2@2.2%clang@4.0.0

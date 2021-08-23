@@ -1,0 +1,52 @@
+packages:
+  all:
+    variants: ~docs~openmp+logging
+    compiler: [clang, gcc, intel, pgi, xl, nag]
+    providers:
+      awk: [gawk]
+      blas: [openblas]
+      daal: [intel-daal]
+      elf: [elfutils]
+      golang: [gcc]
+      ipp: [intel-ipp]
+      java: [jdk]
+      lapack: [openblas]
+      mkl: [intel-mkl]
+      mpe: [mpe2]
+      mpi: [openmpi]
+      opencl: [pocl]
+      openfoam: [openfoam-com, openfoam-org, foam-extend]
+      pil: [py-pillow]
+      scalapack: [netlib-scalapack]
+      szip: [libszip, libaec]
+      tbb: [intel-tbb]
+      jpeg: [libjpeg-turbo, libjpeg]
+# custom variants
+  python:
+    variants: +shared~dbm
+  cmake:
+    buildable: false
+    externals:
+    - prefix: /Users/larsen30/cmake-v3.14.5/
+      spec: cmake@3.14.5
+  hwloc:
+    variants: ~libxml2
+  perl:
+    buildable: false
+    externals:
+    - prefix: /usr/
+      spec: perl
+# CUDA standard MacOS install paths
+  cuda:
+    buildable: false
+    externals:
+    - prefix: /Developer/NVIDIA/CUDA-8.0
+      spec: cuda@8.0
+    - prefix: /Developer/NVIDIA/CUDA-9.0
+      spec: cuda@9.0
+  openmpi:
+    buildable: false
+
+    externals:
+    - prefix: /Users/larsen30/research/gui/openmpi-2.0.4/install_dir/
+      spec: openmpi@2.0.4%clang

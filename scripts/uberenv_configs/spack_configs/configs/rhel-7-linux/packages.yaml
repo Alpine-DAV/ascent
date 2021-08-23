@@ -1,0 +1,50 @@
+packages:
+  all:
+    compiler: [clang, gcc, intel, pgi, xl, nag]
+    providers:
+      awk: [gawk]
+      blas: [openblas]
+      daal: [intel-daal]
+      elf: [elfutils]
+      golang: [gcc]
+      ipp: [intel-ipp]
+      java: [jdk]
+      lapack: [openblas]
+      mkl: [intel-mkl]
+      mpe: [mpe2]
+      mpi: [mpich, openmpi]
+      opencl: [pocl]
+      openfoam: [openfoam-com, openfoam-org, foam-extend]
+      pil: [py-pillow]
+      scalapack: [netlib-scalapack]
+      szip: [libszip, libaec]
+      tbb: [intel-tbb]
+      jpeg: [libjpeg-turbo, libjpeg]
+    variants: ~openmp
+# custom variants
+  python:
+    variants: +shared~dbm
+  cmake:
+    version: [3.9.6]
+    variants: ~openssl~ncurses
+  hwloc:
+    variants: ~libxml2
+  pkg-config:
+    buildable: false
+    externals:
+    - prefix: /usr/
+      spec: pkg-config
+  perl:
+    buildable: false
+    externals:
+    - prefix: /usr/
+      spec: perl
+# CUDA standard MacOS install paths
+  cuda:
+    buildable: false
+
+    externals:
+    - prefix: /Developer/NVIDIA/CUDA-8.0
+      spec: cuda@8.0
+    - prefix: /Developer/NVIDIA/CUDA-9.0
+      spec: cuda@9.0
