@@ -7,7 +7,7 @@
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/alpine-DAV/spack",
 "mirror_url": "https://www.ascent-dav.org/mirror/ascent/latest/",
-"spack_branch": "ascent/develop",
+"spack_branch": "task/2021_08_update_ascent_spack_fork",
 "spack_activate" : { "py-numpy"  : ["+python"],
                      "py-pip"    : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
