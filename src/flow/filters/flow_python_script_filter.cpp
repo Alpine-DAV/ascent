@@ -242,6 +242,33 @@ PyObject* execute_python(PyObject *py_input,
                          << "\n";
 
     FLOW_CHECK_PYTHON_ERROR(py_interp, py_interp->run_script(filter_setup_src_oss.str()));
+    
+    std::string filter_source_file_path = "";
+    
+    if( params.has_child("file") )
+    {
+        filter_source_file_path = params["file"].as_string();
+    }
+    // this is used in the mpi case, where we read the file on one rank
+    // and present the script as "source", but we still want to present
+    // the file name
+    else if (params.has_child("source_file")) 
+    {
+        filter_source_file_path = params["source_file"].as_string();
+    }
+    
+    // inject the file name as __file__ in the module 
+    if( !filter_source_file_path.empty() )
+    {
+        filter_setup_src_oss.str("");
+        filter_setup_src_oss << "\n"
+                             << "if not '_flow_source_file_stack' in globals():\n"
+                             << "    _flow_source_file_stack = []\n"
+                             << "if '__file__' in globals():\n"
+                             << "    _flow_source_file_stack.append(__file__)\n"
+                             << "__file__ = \"" << filter_source_file_path << "\"\n";
+        FLOW_CHECK_PYTHON_ERROR(py_interp, py_interp->run_script(filter_setup_src_oss.str()));
+    }
 
 
     if( params.has_child("source") )
@@ -260,6 +287,14 @@ PyObject* execute_python(PyObject *py_input,
     {
         // bad!, it should at least be python's None
         CONDUIT_ERROR("python_script failed to fetch output");
+    }
+
+    // restore __file__ if changed
+    if( !filter_source_file_path.empty() )
+    {
+        const std::string file_stack_src = "if len(_flow_source_file_stack) > 0:\n"
+                                           "    __file__ = _flow_source_file_stack.pop()\n";
+        FLOW_CHECK_PYTHON_ERROR(py_interp, py_interp->run_script(file_stack_src));
     }
 
     // we need to incref b/c py_res is borrowed, and flow will decref

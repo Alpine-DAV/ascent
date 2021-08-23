@@ -203,8 +203,6 @@ Ascent's build system supports the following CMake options:
 
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*.
 
-* **HDF5_DIR** - Path to a HDF5 install *(optional)*.
-
 * **MFEM_DIR** - Path to a MFEM install *(optional)*.
 
 * **ADIOS_DIR** - Path to a ADIOS install *(optional)*.
@@ -361,15 +359,14 @@ See ``scripts/spack_build_tests/`` for the exact invocations used to test on the
 Building Third Party Dependencies for Development
 --------------------------------------------------
 
-You can use ``bootstrap-env.sh`` (located at the root of the ascent repo) to help setup your development environment on OSX and Linux.
-This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent.
+You can use ``scripts/uberenv/uberenv.py`` to help setup your development environment on OSX and Linux. ``uberenv.py`` leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent.
 Fortran support in is optional, dependencies should build without fortran.
 After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a ascent build.
 
 .. code:: bash
 
     #build third party libs using spack
-    source bootstrap-env.sh
+    python scripts/uberenv/uberenv.py
 
     #copy the generated host-config file into the standard location
     cp uberenv_libs/`hostname`*.cmake host-configs/
@@ -732,7 +729,7 @@ In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
 
 Conduit
 ^^^^^^^
-The version of conduit we use is the master branch. If the ``HDF5_DIR`` is specified in the host config,
+The version of conduit we use is the develop branch. If the ``HDF5_DIR`` is specified in the host config,
 then conduit will build the relay io library.
 Likewise, if the config file has the entry ``ENABLE_MPI=ON``, then conduit will build
 parallel versions of the libraries.

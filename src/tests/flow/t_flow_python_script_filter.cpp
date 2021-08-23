@@ -99,7 +99,9 @@ public:
 
         // the registry will take care of deleting the data
         // when all consuming filters have executed.
-        ASCENT_INFO("exec: " << name() << " result = " << res->to_json());
+        ASCENT_INFO("SrcFilter::execute: " << name()
+                    << " source filter result = "
+                    << res->to_json());
     }
 };
 
@@ -119,7 +121,10 @@ TEST(flow_python_script_filter, simple_execute)
     w.graph().add_filter("src","v",src_params);
 
     Node py_params;
-    py_params["source"] = "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
+    py_params["source"] = "val = flow_input().value() * 2\n"
+                          "print(val)\n"
+                          "assert val == 42\n"
+                          "flow_set_output(val)\n";
 
     w.graph().add_filter("python_script","py", py_params);
 
@@ -134,6 +139,41 @@ TEST(flow_python_script_filter, simple_execute)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(flow_python_script_filter, simple_execute_mock_file_source)
+{
+    flow::filters::register_builtin();
+
+    Workspace::register_filter_type<SrcFilter>();
+
+    Workspace w;
+
+    Node src_params;
+    src_params["value"] = 21;
+
+    w.graph().add_filter("src","v",src_params);
+
+    Node py_params;
+    py_params["source"] = "val = flow_input().value() * 2\n"
+                          "print(val)\n"
+                          "assert val == 42\n"
+                          "print(__file__)\n"
+                          "assert __file__ == 'my_mock_script.py'\n"
+                          "flow_set_output(val)\n";
+
+    py_params["source_file"] = "my_mock_script.py";
+    w.graph().add_filter("python_script","py", py_params);
+
+    // // src, dest, port
+    w.graph().connect("v","py","in");
+    //
+    w.print();
+    //
+    w.execute();
+
+    Workspace::clear_supported_filter_types();
+}
 //-----------------------------------------------------------------------------
 TEST(flow_python_script_filter, simple_execute_echo)
 {
@@ -149,7 +189,10 @@ TEST(flow_python_script_filter, simple_execute_echo)
     w.graph().add_filter("src","v",src_params);
 
     Node py_params;
-    py_params["source"] = "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
+    py_params["source"] = "val = flow_input().value() * 2\n"
+                          "print(val)\n"
+                          "assert val == 42\n"
+                          "flow_set_output(val)\n";
     py_params["echo"] = "true";
 
     w.graph().add_filter("python_script","py", py_params);
@@ -183,13 +226,19 @@ TEST(flow_python_script_filter, simple_execute_file)
 
     ofstream ofs;
     ofs.open(script_fname);
-    ofs << "val = flow_input().value() * 2\nprint(val)\nflow_set_output(val)";
+    ofs << "val = flow_input().value() * 2\n"
+        << "print(val)\n"
+        << "assert val == 42\n"
+        << "print(__file__)\n"
+        << "assert __file__ == '" << script_fname << "'\n"
+        << "flow_set_output(val)\n";
     ofs.close();
+
 
     w.graph().add_filter("src","v",src_params);
 
     Node py_params;
-
+    py_params["interpreter/reset"] = "true";
     py_params["file"] = script_fname;
 
     w.graph().add_filter("python_script","py", py_params);
@@ -200,7 +249,8 @@ TEST(flow_python_script_filter, simple_execute_file)
     w.print();
     //
     w.execute();
-
+    //
+    w.print();
     Workspace::clear_supported_filter_types();
 }
 
@@ -219,7 +269,7 @@ TEST(flow_python_script_filter, simple_execute_bad_file)
     string output_path = prepare_output_dir();
 
     string script_fname = "/blargh/path/to/bad/script.py";
-        
+
     w.graph().add_filter("src","v",src_params);
 
     Node py_params;
@@ -260,6 +310,10 @@ TEST(flow_python_script_filter, exe_override_interface_func_names)
     py_params["interface/set_output"] = "here_is_some_data";
     py_params["interpreter/reset"] = "true";
     py_params["source"] = "val = give_me_data().value() * 2\nprint(val)\nhere_is_some_data(val)";
+
+    py_params["source"] = "val = give_me_data().value() * 2\n"
+                          "print(val)\n"
+                          "here_is_some_data(val)";
 
     w.graph().add_filter("python_script","py", py_params);
 
