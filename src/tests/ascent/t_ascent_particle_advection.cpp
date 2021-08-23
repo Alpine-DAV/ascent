@@ -52,10 +52,8 @@
 #include "gtest/gtest.h"
 
 #include <ascent.hpp>
-
 #include <iostream>
 #include <math.h>
-
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
