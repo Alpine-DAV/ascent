@@ -73,7 +73,7 @@ RUN tar -xzf ascent.docker.src.tar.gz
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
        --spec "%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^cmake@3.14.5~openssl~ncurses" \
-       --spack-config-dir=scripts/uberenv/spack_configs/alpinedav/ubuntu_18_cuda_10.1_devel/ \
+       --spack-config-dir=scripts/uberenv/spack_configs/configs/alpinedav/ubuntu_18_cuda_10.1_devel/ \
        --prefix=/uberenv_libs
 
 # cleanup the spack build stuff to free up space
