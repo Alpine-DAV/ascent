@@ -64,7 +64,7 @@ RUN tar -xzf ascent.docker.src.tar.gz
 # bootstrap third party libs using spack and uberenv
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec "%gcc+mpi+mfem+dray+python+babelflow+fides+adios2 ^python@3.6.3 ^libzmq~libsodium" \
+       --spec "%gcc+mpi+mfem+dray+python+babelflow+fides+adios2 ^libzmq~libsodium" \
        --spack-config-dir=scripts/uberenv_configs/spack_configs/alpinedav/ubuntu_18_devel/ \
        --prefix=/uberenv_libs
 
