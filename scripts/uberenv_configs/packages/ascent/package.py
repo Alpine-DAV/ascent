@@ -28,7 +28,7 @@ def cmake_cache_entry(name, value, vtype=None):
     return 'set({0} "{1}" CACHE {2} "")\n\n'.format(name, value, vtype)
 
 
-class Ascent(Package, CudaPackage):
+class Ascent(CMakePackage, CudaPackage):
     """Ascent is an open source many-core capable lightweight in situ
     visualization and analysis infrastructure for multi-physics HPC
     simulations."""
@@ -177,50 +177,66 @@ class Ascent(Package, CudaPackage):
     conflicts("+shared", when="+cuda",
               msg="Ascent needs to be built with ~shared for CUDA builds.")
 
+    ###################################
+    # build phases used by this package
+    ###################################
+    phases = ['hostconfig', 'cmake', 'build', 'install']
+
     def setup_build_environment(self, env):
         env.set('CTEST_OUTPUT_ON_FAILURE', '1')
 
-    def install(self, spec, prefix):
-        """
-        Build and install Ascent.
-        """
-        with working_dir('spack-build', create=True):
-            py_site_pkgs_dir = None
-            if "+python" in spec:
-                try:
-                    py_site_pkgs_dir = site_packages_dir
-                except NameError:
-                    # spack's site_packages_dir won't exist in a subclass
-                    pass
+    ####################################################################
+    # Note: cmake, build, and install stages are handled by CMakePackage
+    ####################################################################
 
-            host_cfg_fname = self.create_host_config(spec,
-                                                     prefix,
-                                                     py_site_pkgs_dir)
-            cmake_args = []
-            # if we have a static build, we need to avoid any of
-            # spack's default cmake settings related to rpaths
-            # (see: https://github.com/LLNL/spack/issues/2658)
-            if "+shared" in spec:
-                cmake_args.extend(std_cmake_args)
-            else:
-                for arg in std_cmake_args:
-                    if arg.count("RPATH") == 0:
-                        cmake_args.append(arg)
-            if self.spec.satisfies('%cce'):
-                cmake_args.extend(["-DCMAKE_Fortran_FLAGS=-ef"])
-            cmake_args.extend(["-C", host_cfg_fname, "../src"])
-            print("Configuring Ascent...")
-            cmake(*cmake_args)
-            print("Building Ascent...")
-            make()
-            # run unit tests if requested
-            if "+test" in spec and self.run_tests:
-                print("Running Ascent Unit Tests...")
-                make("test")
-            print("Installing Ascent...")
-            make("install")
-            # install copy of host config for provenance
-            install(host_cfg_fname, prefix)
+    # provide cmake args (pass host config as cmake cache file)
+    def cmake_args(self):
+        host_config = self._get_host_config_path(self.spec)
+        options = []
+        options.extend(['-C', host_config, "../spack-src/src/"])
+        return options
+
+    # def install(self, spec, prefix):
+    #     """
+    #     Build and install Ascent.
+    #     """
+    #     with working_dir('spack-build', create=True):
+    #         py_site_pkgs_dir = None
+    #         if "+python" in spec:
+    #             try:
+    #                 py_site_pkgs_dir = site_packages_dir
+    #             except NameError:
+    #                 # spack's site_packages_dir won't exist in a subclass
+    #                 pass
+
+    #         host_cfg_fname = self.create_host_config(spec,
+    #                                                  prefix,
+    #                                                  py_site_pkgs_dir)
+    #         cmake_args = []
+    #         # if we have a static build, we need to avoid any of
+    #         # spack's default cmake settings related to rpaths
+    #         # (see: https://github.com/LLNL/spack/issues/2658)
+    #         if "+shared" in spec:
+    #             cmake_args.extend(std_cmake_args)
+    #         else:
+    #             for arg in std_cmake_args:
+    #                 if arg.count("RPATH") == 0:
+    #                     cmake_args.append(arg)
+    #         if self.spec.satisfies('%cce'):
+    #             cmake_args.extend(["-DCMAKE_Fortran_FLAGS=-ef"])
+    #         cmake_args.extend(["-C", host_cfg_fname, "../src"])
+    #         print("Configuring Ascent...")
+    #         cmake(*cmake_args)
+    #         print("Building Ascent...")
+    #         make()
+    #         # run unit tests if requested
+    #         if "+test" in spec and self.run_tests:
+    #             print("Running Ascent Unit Tests...")
+    #             make("test")
+    #         print("Installing Ascent...")
+    #         make("install")
+    #         # install copy of host config for provenance
+    #         install(host_cfg_fname, prefix)
 
     @run_after('install')
     @on_package_attributes(run_tests=True)
@@ -262,7 +278,22 @@ class Ascent(Package, CudaPackage):
             example = Executable('./ascent_render_example')
             example()
 
-    def create_host_config(self, spec, prefix, py_site_pkgs_dir=None):
+    def _get_host_config_path(self, spec):
+        sys_type = spec.architecture
+        # if on llnl systems, we can use the SYS_TYPE
+        if "SYS_TYPE" in env:
+            sys_type = env["SYS_TYPE"]
+        host_config_path = "{0}-{1}-{2}-conduit-{3}.cmake".format(socket.gethostname(),
+                                                                  sys_type,
+                                                                  spec.compiler,
+                                                                  spec.dag_hash())
+        dest_dir = spec.prefix
+        host_config_path = os.path.abspath(join_path(dest_dir,
+                                                     host_config_path))
+        return host_config_path
+
+
+    def hostconfig(self, spec, prefix):
         """
         This method creates a 'host-config' file that specifies
         all of the options used to configure and build ascent.
@@ -270,16 +301,9 @@ class Ascent(Package, CudaPackage):
         For more details about 'host-config' files see:
             http://ascent.readthedocs.io/en/latest/BuildingAscent.html
 
-        Note:
-          The `py_site_pkgs_dir` arg exists to allow a package that
-          subclasses this package provide a specific site packages
-          dir when calling this function. `py_site_pkgs_dir` should
-          be an absolute path or `None`.
-
-          This is necessary because the spack `site_packages_dir`
-          var will not exist in the base class. For more details
-          on this issue see: https://github.com/spack/spack/issues/6261
         """
+        if not os.path.isdir(spec.prefix):
+            os.mkdir(spec.prefix)
 
         #######################
         # Compiler Info
@@ -293,11 +317,9 @@ class Ascent(Package, CudaPackage):
             f_compiler = env["SPACK_FC"]
 
         #######################################################################
-        # By directly fetching the names of the actual compilers we appear
-        # to doing something evil here, but this is necessary to create a
+        # Directly fetch the names of the actual compilers to create a
         # 'host config' file that works outside of the spack install env.
         #######################################################################
-
         sys_type = spec.architecture
         # if on llnl systems, we can use the SYS_TYPE
         if "SYS_TYPE" in env:
@@ -315,10 +337,9 @@ class Ascent(Package, CudaPackage):
                 msg = 'failed to find CMake (and cmake variant is off)'
                 raise RuntimeError(msg)
             cmake_exe = cmake_exe.path
-
-        host_cfg_fname = "%s-%s-%s-ascent.cmake" % (socket.gethostname(),
-                                                    sys_type,
-                                                    spec.compiler)
+        
+        # get hostconfig name
+        host_cfg_fname = self._get_host_config_path(spec)
 
         cfg = open(host_cfg_fname, "w")
         cfg.write("##################################\n")
@@ -557,7 +578,14 @@ class Ascent(Package, CudaPackage):
         else:
             cfg.write("# fides not built by spack \n")
 
+        #######################
+        # Finish host-config
+        #######################
+
         cfg.write("##################################\n")
         cfg.write("# end spack generated host-config\n")
         cfg.write("##################################\n")
         cfg.close()
+
+        host_cfg_fname = os.path.abspath(host_cfg_fname)
+        tty.info("spack generated ascent host-config file: " + host_cfg_fname)

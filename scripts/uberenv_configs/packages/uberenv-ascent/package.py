@@ -56,11 +56,6 @@ class UberenvAscent(Ascent):
 
     homepage = "https://github.com/alpine-DAV/ascent"
 
-    # these are commented out b/c if they are active they undermine using develop
-    # develop uses the set of deps that we keep healthy
-    # version('0.5.1', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
-    # version('0.5.0', '21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f')
-
     # default to building docs when using uberenv
     variant("doc",
             default=True,
@@ -75,16 +70,7 @@ class UberenvAscent(Ascent):
         url      = "file://" + dummy_tar_path
         return url
 
-    def install(self, spec, prefix):
-        """
-        Build and install Ascent.
-        """
-        with working_dir('spack-build', create=True):
-            host_cfg_fname = self.create_host_config(spec, prefix)
-
-            # place a copy in the spack install dir for the uberenv-conduit package
-            mkdirp(prefix)
-            install(host_cfg_fname,prefix)
-            install(host_cfg_fname,env["SPACK_DEBUG_LOG_DIR"])
-
-
+    ###################################
+    # build phases used by this package
+    ###################################
+    phases = ['hostconfig']
