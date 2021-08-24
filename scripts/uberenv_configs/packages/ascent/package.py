@@ -430,10 +430,13 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write("# python from spack \n")
             cfg.write(cmake_cache_entry("PYTHON_EXECUTABLE",
                       spec['python'].command.path))
-            # only set dest python site packages dir if passed
-            if py_site_pkgs_dir:
+            try:
+                cfg.write("# python module install dir\n")
                 cfg.write(cmake_cache_entry("PYTHON_MODULE_INSTALL_PREFIX",
-                                            py_site_pkgs_dir))
+                          site_packages_dir))
+            except NameError:
+                # spack's  won't exist in a subclass
+                pass
         else:
             cfg.write(cmake_cache_entry("ENABLE_PYTHON", "OFF"))
 
