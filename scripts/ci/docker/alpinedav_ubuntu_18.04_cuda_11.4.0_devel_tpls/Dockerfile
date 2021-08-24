@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2021, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -42,7 +42,7 @@
 #
 ###############################################################################
 
-FROM alpinedav/ascent-ci:ubuntu-18-devel
+FROM alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel
 
 # obtain a copy of ascent source from host env,
 # which we use to call uberenv
@@ -61,20 +61,26 @@ RUN tar -xzf ascent.docker.src.tar.gz
 #RUN git config --global http.sslVerify false
 #RUN echo insecure >> ~/.curlrc
 
-# NOTE: DRAY NEEDS TO BE UPDATED B/C of RAJA API CHANGES
-
 # bootstrap third party libs using spack and uberenv
+
+##########
+# TODO: RE-ENABLE MFEM + DddRAY
+# Last try result: https://github.com/Alpine-DAV/ascent/issues/590
+#
+##########
+#       --spec "%gcc+mpi+cuda+mfem+dray+vtkh~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^dray~openmp ^cmake@3.14.5~openssl~ncurses" \
+
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec "%gcc+mpi+python+babelflow+fides+adios2" \
-       --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/ \
-       --prefix=/uberenv_libs
+       --spec "%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^cmake~openssl~ncurses" \
+       --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_cuda_11.4.0_devel/ \
+       --prefix=/uberenv_libsdd
 
 # cleanup the spack build stuff to free up space
 RUN uberenv_libs/spack/bin/spack clean --all
 
 # create some helper scripts
-RUN python ascent/scripts/gen_spack_env_script.py cmake mpi python
+RUN python ascent/scripts/gen_spack_env_script.py cmake mpi
 RUN echo "git clone --recursive https://github.com/Alpine-DAV/ascent.git" > clone.sh
 RUN chmod +x clone.sh
 
