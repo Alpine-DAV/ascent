@@ -206,6 +206,7 @@ if(CUDA_FOUND)
      #otherwise we let the warning occur. We have to set this in CMAKE_CUDA_FLAGS
      #as it is passed to the device link step, unlike compile_options
      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xnvlink=--suppress-stack-size-warning")
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas --disable-optimizer-constants")
    endif()
 
 endif()
