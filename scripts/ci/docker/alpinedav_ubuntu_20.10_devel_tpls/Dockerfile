@@ -65,7 +65,7 @@ RUN tar -xzf ascent.docker.src.tar.gz
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
        --spec "%gcc+mpi+mfem+dray+python+babelflow+fides+adios2 ^libzmq~libsodium" \
-       --spack-config-dir=scripts/uberenv_configs/spack_configs/alpinedav/ubuntu_18_devel/ \
+       --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/ \
        --prefix=/uberenv_libs
 
 # cleanup the spack build stuff to free up space
