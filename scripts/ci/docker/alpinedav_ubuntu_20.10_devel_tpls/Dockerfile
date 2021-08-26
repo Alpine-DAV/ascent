@@ -61,15 +61,22 @@ RUN tar -xzf ascent.docker.src.tar.gz
 #RUN git config --global http.sslVerify false
 #RUN echo insecure >> ~/.curlrc
 
+#
+# TODO re-enable dray
+#
+
 # bootstrap third party libs using spack and uberenv
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec "%gcc+mpi+mfem+dray+python+babelflow+fides+adios2 ^libzmq~libsodium" \
+       --spec "%gcc+mpi+python+babelflow+fides+adios2" \
        --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/ \
        --prefix=/uberenv_libs
 
 # cleanup the spack build stuff to free up space
 RUN uberenv_libs/spack/bin/spack clean --all
+
+# change perms
+RUN chmod -R a+rX /uberenv_libs
 
 # create some helper scripts
 RUN python ascent/scripts/gen_spack_env_script.py cmake mpi python
