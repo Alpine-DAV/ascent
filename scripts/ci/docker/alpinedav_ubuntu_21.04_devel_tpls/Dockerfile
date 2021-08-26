@@ -75,6 +75,9 @@ RUN cd ascent && python scripts/uberenv/uberenv.py \
 # cleanup the spack build stuff to free up space
 RUN uberenv_libs/spack/bin/spack clean --all
 
+# change perms
+RUN chmod -R a+rX /uberenv_libs
+
 # create some helper scripts
 RUN python ascent/scripts/gen_spack_env_script.py cmake mpi python
 RUN echo "git clone --recursive https://github.com/Alpine-DAV/ascent.git" > clone.sh
