@@ -7,6 +7,7 @@
 #####
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
+
 variables:
   ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-08-27-shaaa55c3
   ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-08-27-shaaa55c3
