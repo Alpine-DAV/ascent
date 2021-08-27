@@ -72,7 +72,7 @@ RUN tar -xzf ascent.docker.src.tar.gz
 
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec "%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^conduit@develop ^vtk-h@develop+cuda ^vtk-m+cuda ^cmake@~openssl~ncurses" \
+       --spec "%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^conduit@develop ^vtk-h@develop+cuda ^vtk-m+cuda ^cmake~openssl~ncurses" \
        --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_cuda_10.1_devel/ \
        --prefix=/uberenv_libs
 
