@@ -8,11 +8,11 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-08-26-sha4798e6
-  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-08-26-sha208956
-  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-08-26-sha4798e6
-  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-08-26-sha4798e6
-  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-08-26-sha4798e6
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-08-27-shaaa55c3
+  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-08-27-shaaa55c3
+  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-08-27-shaaa55c3
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-08-27-shaaa55c3
+  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-08-27-shaaa55c3
 
 
 # only build merge target pr to develop
