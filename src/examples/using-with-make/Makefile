@@ -73,7 +73,7 @@ INC_FLAGS = $(ASCENT_INCLUDE_FLAGS)
 # cuda case:
 # cuda logic isn't reporting the right dep order of dl and rt, so
 # add them to the end here
-LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS) -ldl -lrt
+LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS) # -ldl -lrt
 
 main:
 	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) ascent_render_example.cpp $(LNK_FLAGS) -o ascent_render_example
