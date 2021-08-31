@@ -25,5 +25,6 @@ cp public_env.sh $BASE_DIR/${ASCENT_VERSION}/summit/ascent_summit_setup_env_gcc_
 # change perms to group write
 chgrp -R csc340 $BASE_DIR/${ASCENT_VERSION}
 chmod g+rwX -R $BASE_DIR/${ASCENT_VERSION}
-# this space is already world readable, no need to change world perms
+# world shared no longer means world shared by default, so lets change perms for all
+chmod a+rX -R ${BASE_DIR}/${ASCENT_VERSION}/
 date
