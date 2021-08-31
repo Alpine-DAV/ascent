@@ -32,9 +32,11 @@
 #include "PMT/MergeTree.h"
 #include "PMT/AugmentedMergeTree.h"
 #include "BabelFlow/reduce/SingleTaskGraph.h"
+#include "BabelFlow/reduce/RadixKExchange.h"
+#include "BabelFlow/reduce/RadixKExchangeTaskMap.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
-#include "BabelFlow/DefGraphConnector.h"
+#include "BabelFlow/MultiGraphConnector.h"
 #include "BabelFlow/ModuloMap.h"
 #include "BabelFlow/RelayTask.h"
 
@@ -56,7 +58,8 @@ class ParallelMergeTree {
 public:
   ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, const int32_t *data_size, const int32_t *n_blocks,
                     const int32_t *low, const int32_t *high, int32_t fanin,
-                    FunctionType threshold, MPI_Comm mpi_comm);
+                    FunctionType threshold, MPI_Comm mpi_comm,
+                    const std::vector<uint32_t>& radix_v, bool gen_rel);
 
   void Initialize();
 
@@ -95,10 +98,20 @@ private:
   KWayMerge m_kWayMergeGr;
   KWayTaskMap m_kWayTaskMp;
 
+  std::vector<uint32_t> m_radices;
+  bool m_genRel;
+
+  BabelFlow::SingleTaskGraph m_demuxTaskGr;
+  BabelFlow::ModuloMap m_demuxTaskMp;
+
+  BabelFlow::RadixKExchange m_treeMergeTaskGr;
+  BabelFlow::RadixKExchangeTaskMap m_treeMergeTaskMp;
+
+  BabelFlow::SingleTaskGraph m_relTaskGr;
+  BabelFlow::ModuloMap m_relTaskMp;
+
   BabelFlow::ComposableTaskGraph m_fullGraph;
   BabelFlow::ComposableTaskMap m_fullTaskMap;
-
-  BabelFlow::DefGraphConnector m_defGraphConnector;
 };
 
 
@@ -173,11 +186,17 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   t.id(task & ~KWayMerge::sPrefixMask);
   //t.writeToFile(task & ~sPrefixMask);
   t.persistenceSimplification(1.f);
+
+  // t.writeSegToFile((task & ~KWayMerge::sPrefixMask) + 800000);
+
   t.computeSegmentation(sLocalData);
+
 #ifdef BFLOW_PMT_WRITE_RES
   t.writeToFileBinary(task & ~KWayMerge::sPrefixMask);
   t.writeToFile(task & ~KWayMerge::sPrefixMask);
   //t.writeToHtmlFile(task & ~sPrefixMask);
+  t.writeToHtmlFile((task & ~KWayMerge::sPrefixMask) + 30000);
+  t.writeSegToFile((task & ~KWayMerge::sPrefixMask) + 900000);
 #endif
 
   // Set the final tree as an output so that it could be extracted later
@@ -190,6 +209,255 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   //fprintf(stderr,"WRITING RESULTS performed by %d\n", task & ~sPrefixMask);
   return 1;
 }
+
+////////// For computing relevance //////////
+
+template<typename T>
+class LocalDataField
+{
+public:
+  LocalDataField() : mLabels( nullptr ) {}
+  
+  LocalDataField( AugmentedMergeTree& aug_t ) : mLabels( nullptr )
+  {
+    aug_t.blockBoundary(mLow, mHigh);
+
+    // std::cout << "Data count = " << dataCount() << std::endl;
+    // aug_t.getOrigLow(mLow);
+    // aug_t.getOrigHigh(mHigh);
+
+    setData( aug_t.labels() );
+  }
+
+  ~LocalDataField()
+  {
+    delete[] mLabels;
+  }
+
+  //! The number of segmentation labels in the block
+  GlobalIndexType dataCount() const 
+  { 
+    return ((mHigh[0] - mLow[0])+1) * ((mHigh[1] - mLow[1])+1) * ((mHigh[2] - mLow[2])+1); 
+  }
+
+  template<typename U>
+  void setExtentFromData( const LocalDataField<U>& other_data )
+  {
+    const GlobalIndexType* other_low = other_data.getLow();
+    mLow[0] = other_low[0];
+    mLow[1] = other_low[1];
+    mLow[2] = other_low[2];
+
+    const GlobalIndexType* other_high = other_data.getHigh();
+    mHigh[0] = other_high[0];
+    mHigh[1] = other_high[1];
+    mHigh[2] = other_high[2];
+  }
+
+  void setLow(GlobalIndexType lo[3])
+  {
+    mLow[0] = lo[0];
+    mLow[1] = lo[1];
+    mLow[2] = lo[2];
+  }
+
+  void setHigh(GlobalIndexType hi[3])
+  {
+    mHigh[0] = hi[0];
+    mHigh[1] = hi[1];
+    mHigh[2] = hi[2];
+  }
+
+  const GlobalIndexType* getLow() const { return mLow; }
+
+  const GlobalIndexType* getHigh() const { return mHigh; }
+
+  void setData( void* data )
+  {
+    if( mLabels == nullptr )
+      mLabels = new T[ dataCount() ];
+
+    if( data )
+      memcpy( mLabels, data, dataCount() * sizeof(T) );
+  }
+
+  T operator[]( uint32_t idx )
+  {
+    assert( mLabels );
+
+    return mLabels[idx];
+  }
+
+  T* getData()
+  {
+    return mLabels;
+  }
+
+  //! Serialize the segmentation data as a Payload
+  BabelFlow::Payload serialize()
+  {
+    int32_t buff_sz = 6 * sizeof(GlobalIndexType);
+    buff_sz += dataCount() * sizeof(T);
+
+    char* buff = new char[buff_sz];
+    GlobalIndexType* buff_ptr = (GlobalIndexType*)buff;
+
+    buff_ptr[0] = mLow[0];
+    buff_ptr[1] = mLow[1];
+    buff_ptr[2] = mLow[2];
+
+    buff_ptr[3] = mHigh[0];
+    buff_ptr[4] = mHigh[1];
+    buff_ptr[5] = mHigh[2];
+
+    memcpy( buff + 6 * sizeof(GlobalIndexType), mLabels, dataCount() * sizeof(T) );
+
+    return BabelFlow::Payload( buff_sz, buff );
+  }
+
+  //! Deserialize the segmentation data from the given Payload
+  void deserialize(const BabelFlow::Payload& pl)
+  {
+    uint32_t buff_sz;
+    GlobalIndexType* buff_ptr = (GlobalIndexType*)pl.buffer();
+
+    mLow[0] = buff_ptr[0];
+    mLow[1] = buff_ptr[1];
+    mLow[2] = buff_ptr[2];
+
+    mHigh[0] = buff_ptr[3];
+    mHigh[1] = buff_ptr[4];
+    mHigh[2] = buff_ptr[5];
+
+    setData( pl.buffer() + 6 * sizeof(GlobalIndexType) );
+  }
+
+private:
+  //! The left lower corner of the local block corresponding to this tree
+  GlobalIndexType mLow[3];
+
+  //! The right upper corner of the local block corresponding to this tree
+  GlobalIndexType mHigh[3];
+
+  //! The array of labels
+  T* mLabels;
+};
+
+int demux(std::vector<BabelFlow::Payload> &inputs,
+          std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task)
+{
+  // Decode the tree with the segmentation
+  AugmentedMergeTree aug_t;
+  aug_t.decode(inputs[0]);
+
+  // output[0] = inputs[0];
+
+  // Construct a regular merge tree, without the segmentation field
+  MergeTree mg_t( aug_t );
+
+#ifdef BFLOW_PMT_DEBUG
+  {
+    std::cout << ">> demux -- task = " << task << " :" << std::endl;
+    mg_t.writeToHtmlFile(task + 20000);
+  }
+#endif
+
+  output[0] = mg_t.encode();
+
+  // Extract the segmentation data and put it into a separate data structure
+  LocalDataField<GlobalIndexType> seg_data( aug_t );
+  output[1] = seg_data.serialize();
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )  
+    payl.reset();
+
+  return 1;
+}
+
+int join_merge_tree(std::vector<BabelFlow::Payload> &inputs,
+                    std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task)
+{
+#ifdef BFLOW_PMT_DEBUG
+  {
+    std::cout << ">> join_merge_tree [start] -- task = " << task << " :" << std::endl;
+  }
+#endif
+
+  ///
+  // MergeTree mg_t;
+  // mg_t.decode(inputs[0]);
+  // mg_t.writeToHtmlFile(task + 10000);
+  ///
+
+  merge_trees_algorithm( inputs, output, task );
+
+  ////
+  // std::cout << ">> join_merge_tree [end] -- task = " << task << " :" << std::endl;
+  ////
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )  
+    payl.reset();
+
+  return 1;
+}
+
+int compute_rel_field(std::vector<BabelFlow::Payload> &inputs,
+                      std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task)
+{
+  LocalDataField<GlobalIndexType> seg_data;
+  seg_data.deserialize( inputs[1] );
+
+  MergeTree mg_t;
+  mg_t.decode( inputs[0] );
+
+#ifdef BFLOW_PMT_WRITE_RES
+  {
+    mg_t.writeToHtmlFile(task + 700000);
+    std::cout << ">> compute_rel_field -- task = " << task << " :" << std::endl;
+    std::stringstream ss;
+    ss << "seg_dat_" << task << ".raw";
+    std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+    bofs.write(reinterpret_cast<char *>(seg_data.getData()), seg_data.dataCount()*sizeof(GlobalIndexType));
+    bofs.close();
+
+    // mg_t.writeToHtmlFile( task + 10000 );
+  }
+#endif
+
+  // Compute the relevance field and store it as output for later extraction
+  LocalDataField<FunctionType> rel_data;
+  rel_data.setExtentFromData( seg_data );
+  rel_data.setData( nullptr );
+
+  compute_relevance_field(mg_t, seg_data.getData(), rel_data.getData(), sLocalData, seg_data.dataCount() );
+
+  // float* rel_data_buff = new float[ rel_data.dataCount() ];
+
+  // // Find global min
+  // TreeNode* tree_node = mg_t.getNode( 0 );
+  // while( tree_node->down() )
+  //   tree_node = tree_node->down();
+  
+  // FunctionType global_min = tree_node->value();
+
+  // for( GlobalIndexType i = 0; i < rel_data.dataCount(); ++i )
+
+  output[0] = rel_data.serialize();
+
+  // output[0] = inputs[1];
+
+  // inputs[0].reset();
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )  
+    payl.reset();
+
+  return 1;
+}
+
+/////////////////////////////////////////////
 
 void ParallelMergeTree::ComputeGhostOffsets(uint32_t low[3], uint32_t high[3],
                                             uint32_t& dnx, uint32_t& dny, uint32_t& dnz,
@@ -285,20 +553,41 @@ void ParallelMergeTree::Initialize()
 #endif
 
   m_preProcTaskGr = BabelFlow::SingleTaskGraph( mpi_size );
-  m_preProcTaskMp = BabelFlow::ModuloMap( mpi_size, m_nBlocks[0] * m_nBlocks[1] * m_nBlocks[2] );
+  m_preProcTaskMp = BabelFlow::ModuloMap( mpi_size, num_blocks );
 
   m_kWayMergeGr = KWayMerge( m_nBlocks, m_fanin );
   m_kWayTaskMp = KWayTaskMap( mpi_size, &m_kWayMergeGr );
 
+  m_demuxTaskGr = BabelFlow::SingleTaskGraph( mpi_size, 1, 2, 1 );
+  m_demuxTaskMp = BabelFlow::ModuloMap( mpi_size, num_blocks );
+
+  m_treeMergeTaskGr = BabelFlow::RadixKExchange( mpi_size, m_radices );
+  m_treeMergeTaskMp = BabelFlow::RadixKExchangeTaskMap( mpi_size, &m_treeMergeTaskGr );
+
+  m_relTaskGr = BabelFlow::SingleTaskGraph( mpi_size, 2, 1, 1 );
+  m_relTaskMp = BabelFlow::ModuloMap( mpi_size, num_blocks );
+
   m_preProcTaskGr.setGraphId( 0 );
   m_kWayMergeGr.setGraphId( 1 );
+  m_demuxTaskGr.setGraphId( 2 );
+  m_treeMergeTaskGr.setGraphId( 3 );
+  m_relTaskGr.setGraphId( 4 );
 
   BabelFlow::TaskGraph::registerCallback( 0, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, pre_proc );
+
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::LOCAL_COMP_CB, local_compute );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::JOIN_COMP_CB, join );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::LOCAL_CORR_CB, local_correction );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::WRITE_RES_CB, write_results );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::RELAY_CB, BabelFlow::relay_message );
+
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, demux );
+
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::RadixKExchange::LEAF_TASK_CB, join_merge_tree );
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::RadixKExchange::MID_TASK_CB, join_merge_tree );
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::RadixKExchange::ROOT_TASK_CB, join_merge_tree );
+
+  BabelFlow::TaskGraph::registerCallback( 4, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, compute_rel_field );
 
 #ifdef BFLOW_PMT_DEBUG
   if( my_rank == 0 ) 
@@ -307,24 +596,51 @@ void ParallelMergeTree::Initialize()
   }
 #endif
 
-  m_defGraphConnector = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
-  
-  std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
-  std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr };
-  std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp }; 
+  if (m_genRel)
+  {
+    std::vector<BabelFlow::TaskGraph*> gr_vec{ 
+      &m_preProcTaskGr, 
+      &m_kWayMergeGr,
+      &m_demuxTaskGr,
+      &m_treeMergeTaskGr,
+      &m_relTaskGr
+    };
+    std::vector<BabelFlow::TaskMap*> task_maps{ 
+      &m_preProcTaskMp, 
+      &m_kWayTaskMp,
+      &m_demuxTaskMp,
+      &m_treeMergeTaskMp,
+      &m_relTaskMp
+    };
 
-  m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
-  m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
+    std::vector<BabelFlow::MultiGraphConnector::GraphPair> graph_pairs{{0, 1}, {1, 2}, {2, 3}, {3, 4}, {2, 4}};
+    TaskGraphConnectorPtr connector_ptr(new MultiGraphConnector( gr_vec, graph_pairs ));
+
+    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, connector_ptr );
+    // m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec );
+    m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
+  }
+  else
+  {
+    std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr };
+    std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp };
+
+    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec );
+    m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
+  }
 
   MergeTree::setDimension( m_dataSize );
+
 #ifdef BFLOW_PMT_DEBUG
   if( my_rank == 0 ) 
   {
     m_fullGraph.outputGraphHtml( mpi_size, &m_fullTaskMap, "pmt_gr.html" );
   }
+  // MPI_Barrier(m_comm);
 #endif
 
   m_master.initialize( m_fullGraph, &m_fullTaskMap, m_comm, &m_cMap );
+  // m_master.initialize( m_kWayMergeGr, &m_kWayTaskMp, m_comm, &m_cMap );
  
   m_inputs[m_taskId] = make_local_block( m_dataPtr, m_low, m_high, m_threshold );
 }
@@ -351,6 +667,11 @@ void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr)
   
   // Get the outputs map (maps task IDs to outputs) from the controller
   std::map<BabelFlow::TaskId,std::vector<BabelFlow::Payload> >& outputs = m_master.getAllOutputs();
+
+  ///
+  // std::cout << "outputs.size() = " << outputs.size() << std::endl;
+  // std::cout << "task id = " << outputs.begin()->first << std::endl;
+  ///
   
   // Only one task per rank should have output
   assert(outputs.size() == 1);
@@ -360,16 +681,32 @@ void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr)
   // assert( m_fullGraph.task(m_fullGraph.gId(iter->first)).callbackId() == KWayMerge::WRITE_RES_CB );
   
   AugmentedMergeTree t;
-  t.decode((iter->second)[0]);    // only one output per task
+  LocalDataField<FunctionType> rel_data;
+
+  if (m_genRel)
+  {
+    rel_data.deserialize( (iter->second)[0] );
+  }
+  else
+  {
+    t.decode( (iter->second)[0] );    // only one output per task
+  }
 
   // Copy the segmentation labels into the provided data array -- assume it
   // has enough space (sampleCount() -- the local data size w/o ghost cells)
   uint32_t label_idx = 0;   // runs from 0 to t.sampleCount()
-  for (uint32_t z = dnz; z < zsize - dpz; ++z) {
-    for (uint32_t y = dny; y < ysize - dpy; ++y) {
-      for (uint32_t x = dnx; x < xsize - dpx; ++x) {
+  for (uint32_t z = dnz; z < zsize - dpz; ++z) 
+  {
+    for (uint32_t y = dny; y < ysize - dpy; ++y) 
+    {
+      for (uint32_t x = dnx; x < xsize - dpx; ++x) 
+      {
         uint32_t out_data_idx = x + y * xsize + z * ysize * xsize;
-        output_data_ptr[out_data_idx] = (FunctionType)t.label(label_idx);
+        if (m_genRel)
+          output_data_ptr[out_data_idx] = (FunctionType)rel_data[label_idx];
+        else
+          output_data_ptr[out_data_idx] = (FunctionType)t.label(label_idx);
+
         ++label_idx;
       }
     }
@@ -384,7 +721,9 @@ ParallelMergeTree::ParallelMergeTree( FunctionType *data_ptr,
                                       const int32_t *high, 
                                       int32_t fanin,
                                       FunctionType threshold, 
-                                      MPI_Comm mpi_comm)
+                                      MPI_Comm mpi_comm,
+                                      const std::vector<uint32_t>& radix_v,
+                                      bool gen_rel )
   : m_dataPtr( data_ptr ), m_threshold( threshold ), m_comm( mpi_comm )
 {
   m_taskId = static_cast<uint32_t>(task_id);
@@ -397,6 +736,9 @@ ParallelMergeTree::ParallelMergeTree( FunctionType *data_ptr,
   // Store the local data as a static pointer so that it could be passed later to
   // computeSegmentation function -- probably a better solution is needed
   sLocalData = data_ptr;
+
+  m_radices = radix_v;
+  m_genRel = gen_rel;
 }
 
 
@@ -674,6 +1016,16 @@ void ascent::runtime::filters::BFlowPmt::execute()
     int64_t fanin = p["fanin"].as_int64();
     FunctionType threshold = p["threshold"].as_float64();
     int64_t gen_field = p["gen_segment"].as_int64();
+    int64_t gen_rel = p["rel_field"].as_int64();
+
+    std::vector<uint32_t> radix_v(1);
+    radix_v[0] = comm_size;
+    if( p.has_path("radices") )
+    {
+      conduit::DataArray<int64_t> radices_arr = p["radices"].as_int64_array();
+      radix_v.resize(radices_arr.number_of_elements());
+      for( uint32_t i = 0; i < radix_v.size(); ++i ) radix_v[i] = (uint32_t)radices_arr[i];
+    }
 
     // create ParallelMergeTree instance and run
     ParallelMergeTree pmt(array, 
@@ -681,7 +1033,8 @@ void ascent::runtime::filters::BFlowPmt::execute()
                           data_size,
                           n_blocks,
                           low, high,
-                          fanin, threshold, comm);
+                          fanin, threshold, 
+                          comm, radix_v, gen_rel);
 
     ParallelMergeTree::s_data_size[0] = data_size[0];
     ParallelMergeTree::s_data_size[1] = data_size[1];
@@ -739,7 +1092,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
       data_node["fields/segment/values"].set(seg_data);
 
       // DEBUG -- write raw segment data to disk
-#ifdef BFLOW_PMT_DEBUG
+#ifdef BFLOW_PMT_WRITE_RES
       {
         std::stringstream ss;
         ss << "segment_data_" << rank << "_" << dims[0] << "_" << dims[1] << "_" << dims[2] <<"_low_"<< low[0] << "_"<< low[1] << "_"<< low[2] << ".raw";

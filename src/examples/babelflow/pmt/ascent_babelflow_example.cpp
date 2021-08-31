@@ -16,7 +16,7 @@
 #include <ctime>
 #include <cassert>
 
-// #define BFLOW_PMT_DEBUG
+#define BFLOW_PMT_DEBUG
 
 
 
@@ -115,10 +115,10 @@ int main(int argc, char **argv)
   // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
 
   // set the gloabl data
-  vector<float> global_data(data_size[0]*data_size[1]*data_size[2], 0);
+  vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
   {
-    float mx = -FLT_MAX;
-    float mn = FLT_MAX;
+    double mx = -DBL_MAX;
+    double mn = DBL_MAX;
     ifstream rf(dataset, ios::out | ios::binary);
     if(!rf) {
       cout << "Cannot open file!" << endl;
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 
     for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
     {
-      rf.read( (char *)&global_data[i], sizeof(float));
+      rf.read( (char *)&global_data[i], sizeof(FunctionType));
       mx = std::max( mx, global_data[i] );
       mn = std::min( mn, global_data[i] );
     }
@@ -228,6 +228,40 @@ int main(int argc, char **argv)
   pipelines["pl1/f1/params/threshold"] = threshold_;
   pipelines["pl1/f1/params/in_ghosts"].set_int64_vector(in_ghosts);
   pipelines["pl1/f1/params/gen_segment"] = int64_t(1);    // 1 -- means create a field with segmentation
+  pipelines["pl1/f1/params/rel_field"] = int64_t(1);      // 1 -- means compute the relevance field
+
+  std::vector<int64_t> radix_v{mpi_size};
+  switch (mpi_size)
+  {
+  case 2:
+    radix_v = std::vector<int64_t>{2};
+    break;
+
+  case 4:
+    radix_v = std::vector<int64_t>{2, 2};
+    break;
+
+  case 8:
+    radix_v = std::vector<int64_t>{4, 2};
+    break;
+
+  case 16:
+    radix_v = std::vector<int64_t>{4, 4};
+    break;
+
+  case 32:
+    radix_v = std::vector<int64_t>{4, 8};
+    break;
+
+  case 64:
+    radix_v = std::vector<int64_t>{8, 8};
+    break;
+
+  default:
+    break;
+  }  
+
+  pipelines["pl1/f1/params/radices"].set_int64_vector(radix_v);
 
   // Old parameters that we were using, now automatically computed by the filter
   //pipelines["pl1/f1/params/mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
@@ -247,22 +281,9 @@ int main(int argc, char **argv)
   //  ### task_id.size() = n_jobs
   //  ### data in form of <block_1, block_2, ..., block_n> size of each block is defined by high - low + 1 per dimension
 
-  // extract to save to file the output
-  Node extract;
-  extract["e1/type"] = "relay";
-  extract["e1/pipeline"] = "pl1";
-  extract["e1/params/path"] = "seg";
-  extract["e1/params/protocol"] = "blueprint/mesh/hdf5";
-  extract["e1/params/fields"].append() = "segment";
-
-  // pipelines
+  // action.append()["action"] = "execute";
 
   Node action;
-  Node &add_extract = action.append();
-  add_extract["action"] = "add_extracts";
-  add_extract["extracts"] = extract;
-
-  action.append()["action"] = "execute";
 
   Node &add_pipelines = action.append();
   add_pipelines["action"] = "add_pipelines";
@@ -314,6 +335,7 @@ int main(int argc, char **argv)
   // Do a volume rendering of the segmentation field
   scenes["s1/plots/p1/type"]  = "volume";
   scenes["s1/plots/p1/field"] = "segment";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/plots/p1/color_table/control_points"] = control_points;
   
   scenes["s1/renders/r1/image_width"]  = 512;
@@ -335,6 +357,18 @@ int main(int argc, char **argv)
   //scenes["s2/plots/p1/field"] = "segment";
   //scenes["s2/plots/p1/color_table/name"] = "Jet";
   //scenes["s2/image_name"] = "segmentation";
+
+  // extract to save to file the output
+  Node extract;
+  extract["e1/type"] = "relay";
+  extract["e1/pipeline"] = "pl1";
+  extract["e1/params/path"] = "seg";
+  extract["e1/params/protocol"] = "blueprint/mesh/hdf5";
+  extract["e1/params/fields"].append() = "segment";
+
+  Node &add_extract = action.append();
+  add_extract["action"] = "add_extracts";
+  add_extract["extracts"] = extract;
 
   // print our full actions tree
   if( mpi_rank == 0 )
