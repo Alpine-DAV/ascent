@@ -59,8 +59,8 @@ if(NOT CONDUIT_DIR)
     MESSAGE(FATAL_ERROR "Could not find Conduit. Conduit requires explicit CONDUIT_DIR.")
 endif()
 
-if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit.cmake)
-    MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit.cmake)")
+if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit/conduit.cmake)
+    MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit/conduit.cmake)")
 endif()
 
 ###############################################################################
