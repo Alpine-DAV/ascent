@@ -181,27 +181,64 @@ class Dray(Package, CudaPackage):
         cfg.write("#######\n")
         cfg.write("# using %s compiler spec\n" % spec.compiler)
         cfg.write("#######\n\n")
+        cfg.write("# c compiler used by spack\n")
+        cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", c_compiler))
+        cfg.write("# cpp compiler used by spack\n")
+        cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", cpp_compiler))
+
 
         if "+mpi" in spec:
-            cfg.write(cmake_cache_entry("ENABLE_MPI", "ON"))
             mpicc_path = spec['mpi'].mpicc
             mpicxx_path = spec['mpi'].mpicxx
+            mpifc_path = spec['mpi'].mpifc
             # if we are using compiler wrappers on cray systems
             # use those for mpi wrappers, b/c  spec['mpi'].mpicxx
             # etc make return the spack compiler wrappers
             # which can trip up mpi detection in CMake 3.14
-            if cpp_compiler == "CC":
-                mpicc_path = "cc"
-                mpicxx_path = "CC"
+            if spec['mpi'].mpicc == spack_cc:
+                mpicc_path = c_compiler
+                mpicxx_path = cpp_compiler
+                mpifc_path = f_compiler
+            cfg.write(cmake_cache_entry("ENABLE_MPI", "ON"))
+            cfg.write(cmake_cache_entry("MPI_C_COMPILER", mpicc_path))
+            cfg.write(cmake_cache_entry("MPI_CXX_COMPILER", mpicxx_path))
+            if "+fortran" in spec:
+                cfg.write(cmake_cache_entry("MPI_Fortran_COMPILER",
+                                            mpifc_path))
 
-            cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", mpicc_path))
-            cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", mpicxx_path))
+            mpiexe_bin = join_path(spec['mpi'].prefix.bin, 'mpiexec')
+            if os.path.isfile(mpiexe_bin):
+                # starting with cmake 3.10, FindMPI expects MPIEXEC_EXECUTABLE
+                # vs the older versions which expect MPIEXEC
+                if self.spec["cmake"].satisfies('@3.10:'):
+                    cfg.write(cmake_cache_entry("MPIEXEC_EXECUTABLE",
+                                                mpiexe_bin))
+                else:
+                    cfg.write(cmake_cache_entry("MPIEXEC",
+                                                mpiexe_bin))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
-            cfg.write("# c compiler used by spack\n")
-            cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", c_compiler))
-            cfg.write("# cpp compiler used by spack\n")
-            cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", cpp_compiler))
+
+        # if "+mpi" in spec:
+        #     cfg.write(cmake_cache_entry("ENABLE_MPI", "ON"))
+        #     mpicc_path = spec['mpi'].mpicc
+        #     mpicxx_path = spec['mpi'].mpicxx
+        #     # if we are using compiler wrappers on cray systems
+        #     # use those for mpi wrappers, b/c  spec['mpi'].mpicxx
+        #     # etc make return the spack compiler wrappers
+        #     # which can trip up mpi detection in CMake 3.14
+        #     if cpp_compiler == "CC":
+        #         mpicc_path = "cc"
+        #         mpicxx_path = "CC"
+
+        #     cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", mpicc_path))
+        #     cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", mpicxx_path))
+        # else:
+        #     cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
+        #     cfg.write("# c compiler used by spack\n")
+        #     cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", c_compiler))
+        #     cfg.write("# cpp compiler used by spack\n")
+        #     cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", cpp_compiler))
 
         # use global spack compiler flags
         cppflags = ' '.join(spec.compiler_flags['cppflags'])
