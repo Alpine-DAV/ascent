@@ -70,6 +70,8 @@ RUN tar -xzf ascent.docker.src.tar.gz
 ##########
 #       --spec "%gcc+mpi+cuda+mfem+dray+vtkh~python~openmp~shared ^vtk-h+cuda ^vtk-m+cuda ^dray~openmp ^cmake@3.14.5~openssl~ncurses" \
 
+# +dray+mfem ^hdf5~mpi ^dray@develop
+
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
        --spec="%gcc+mpi+cuda+vtkh~mfem~python~openmp~shared ^conduit@develop ^vtk-h@develop+cuda ^vtk-m+cuda ^cmake~openssl~ncurses" \

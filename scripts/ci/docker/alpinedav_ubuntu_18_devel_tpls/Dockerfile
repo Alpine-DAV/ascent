@@ -61,12 +61,10 @@ RUN tar -xzf ascent.docker.src.tar.gz
 #RUN git config --global http.sslVerify false
 #RUN echo insecure >> ~/.curlrc
 
-# NOTE: DRAY NEEDS TO BE UPDATED B/C of RAJA API CHANGES
-
 # bootstrap third party libs using spack and uberenv
 RUN cd ascent && python scripts/uberenv/uberenv.py \
        -k \
-       --spec="%gcc+mpi+python+babelflow+fides+adios2 ^conduit@develop ^vtk-h@develop" \
+       --spec="%gcc+mpi+python+babelflow+fides+adios2+dray+mfem ^conduit@develop ^vtk-h@develop ^dray@develop" \
        --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/" \
        --prefix="/uberenv_libs"
 
