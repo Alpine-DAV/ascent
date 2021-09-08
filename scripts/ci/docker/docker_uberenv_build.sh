@@ -1,3 +1,6 @@
+#!/bin/bash
+set -ev
+
 # variants
 export SPACK_SPEC="%gcc+mpi+python+babelflow+fides+adios2+dray+mfem"
 # constraints

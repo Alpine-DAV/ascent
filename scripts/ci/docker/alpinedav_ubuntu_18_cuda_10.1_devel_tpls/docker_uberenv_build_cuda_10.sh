@@ -1,3 +1,6 @@
+#!/bin/bash
+set -ev
+
 # variants
 export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem~python~openmp~shared"
 # constraints
