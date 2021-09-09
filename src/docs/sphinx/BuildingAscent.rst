@@ -203,8 +203,6 @@ Ascent's build system supports the following CMake options:
 
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*.
 
-* **HDF5_DIR** - Path to a HDF5 install *(optional)*.
-
 * **MFEM_DIR** - Path to a MFEM install *(optional)*.
 
 * **ADIOS_DIR** - Path to a ADIOS install *(optional)*.
@@ -731,7 +729,7 @@ In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
 
 Conduit
 ^^^^^^^
-The version of conduit we use is the master branch. If the ``HDF5_DIR`` is specified in the host config,
+The version of conduit we use is the develop branch. If the ``HDF5_DIR`` is specified in the host config,
 then conduit will build the relay io library.
 Likewise, if the config file has the entry ``ENABLE_MPI=ON``, then conduit will build
 parallel versions of the libraries.

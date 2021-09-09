@@ -124,6 +124,17 @@ public:
   virtual void execute();
 };
 
+class HistoryRange : public ::flow::Filter
+{
+public:
+  HistoryRange();
+  ~HistoryRange();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class Boolean : public ::flow::Filter
 {
 public:
@@ -184,6 +195,17 @@ class Cycle : public ::flow::Filter
 public:
   Cycle();
   ~Cycle();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Time : public ::flow::Filter
+{
+public:
+  Time();
+  ~Time();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -272,6 +294,28 @@ class ArrayAvg : public ::flow::Filter
 public:
   ArrayAvg();
   ~ArrayAvg();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class ScalarGradient : public ::flow::Filter
+{
+public:
+  ScalarGradient();
+  ~ScalarGradient();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class ArrayGradient : public ::flow::Filter
+{
+public:
+  ArrayGradient();
+  ~ArrayGradient();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
