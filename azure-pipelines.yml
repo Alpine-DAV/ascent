@@ -258,6 +258,10 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
+          # use mpi wrappers in case we are built against mfem that
+          # that requires mpi
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
           cd install/examples/ascent/using-with-cmake
           mkdir _test_build
           cd _test_build

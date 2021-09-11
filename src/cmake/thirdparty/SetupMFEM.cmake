@@ -117,13 +117,9 @@ endif()
 string(REGEX MATCHALL "MFEM_USE_MPI += +YES" mfem_use_mpi ${mfem_cfg_file_txt})
 
 if(mfem_use_mpi STREQUAL "")
-    set(mfem_use_mpi FALSE)
+    set(MFEM_MPI_ENABLED FALSE)
 else()
-    set(mfem_use_mpi TRUE)
-    if(NOT MPI_FOUND)
-        message(FATAL_ERROR "MFEM was build with MPI support (config.mk has MFEM_USE_MPI = YES)"
-                            " but MPI_FOUND=FALSE")
-    endif()
+    set(MFEM_MPI_ENABLED TRUE)
 endif()
 
 #find includes
@@ -154,7 +150,7 @@ if(MFEM_LIBRARIES)
 endif()
 
 # add mpi if mfem uses mpi
-if(mfem_use_mpi)
+if(MFEM_MPI_ENABLED)
     if(NOT MPI_FOUND)
     message(FATAL_ERROR "MFEM was build with MPI support (config.mk has MFEM_USE_MPI = YES)"
                         " but MPI::MPI_CXX target is missing.")

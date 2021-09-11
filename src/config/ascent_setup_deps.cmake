@@ -113,3 +113,9 @@ if(DRAY_DIR)
 endif()
 
 
+###############################################################################
+# MFEM (even serial) may require mpi, if so we need to find mpi
+###############################################################################
+if(ASCENT_MFEM_MPI_ENABLED AND NOT MPI_FOUND)
+    find_package(MPI COMPONENTS CXX)
+endif()
