@@ -8,8 +8,10 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-01-25-sha3769e1
-  cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2021-01-25-sha3769e1
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-08-23-sha0f4625
+  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-08-02-sha99665e
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-08-02-sha99665e
+  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-08-02-sha99665e
 
 
 # only build merge target pr to develop
@@ -25,7 +27,7 @@ stages:
   jobs:
   - job: BLT_Time_Travel_Check
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-latest'
     steps:
       - checkout: self
         clean: boolean
@@ -43,49 +45,95 @@ stages:
 # include tpls built with uber
 - stage: Main
   jobs:
-  - job: Main_Ubuntu_18
+  - job: Main_Ubuntu
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
-    container: ${{ variables.main_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        minimal:
+        ubuntu_18_minimal:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        shared_py36_cxx11:
+        ubuntu_18_shared_py36_cxx11:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        shared_py36_cxx11_bflow:
+        ubuntu_18_shared_py36_cxx11_bflow:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: ON
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        shared_py36_cxx14:
+        ubuntu_18_shared_py36_cxx11_fides:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: ON
+          ENABLE_FIDES: ON
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py36_cxx14:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           BLT_CXX_STD: c++14
+        ubuntu_20_10_shared_py36_cxx11:
+          containerImage: ${{ variables.ubuntu_20_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          BLT_CXX_STD: c++11
+        ubuntu_21_04_shared_py36_cxx11:
+          containerImage: ${{ variables.ubuntu_21_04_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          BLT_CXX_STD: c++11
+    container: $[ variables['containerImage'] ]
+
     steps:
       - checkout: self
         clean: boolean
@@ -124,10 +172,12 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
            # extra settings
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
-           if [ $ENABLE_MFEM  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
-           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
-           if [ $ENABLE_VTKH  = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
+           if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            echo ${CMAKE_OPTS}
            # configure
@@ -183,7 +233,7 @@ stages:
       - task: PublishBuildArtifacts@1
         inputs:
           pathToPublish: $(Build.ArtifactStagingDirectory)
-          artifactName: Ascent_Test_Outputs
+          artifactName: $(Build.DefinitionName)_$(Agent.JobName)
         condition: always()
 
       - script: |
@@ -228,11 +278,11 @@ stages:
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
-  - job: Main_Ubuntu_16_Cuda_10_1
+  - job: Main_Ubuntu_18_Cuda_10_1
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
-    container: ${{ variables.cuda_tag }}
+    container: ${{ variables.ubuntu_18_cuda_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
@@ -241,8 +291,11 @@ stages:
       matrix:
         static:
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Debug
+          CMAKE_BUILD_TYPE: Release
           ENABLE_BABELFLOW: OFF
+          # static linking unit tests eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
     steps:
       - checkout: self
         clean: boolean
@@ -274,6 +327,7 @@ stages:
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
@@ -328,791 +382,3 @@ stages:
           make
         displayName: 'Test vs Install (using-with-make) [build only]'
 
-
-######
-
-
-# # end to end build checks
-# - stage: Full
-#   jobs:
-#   ###############################################################################
-#   # Ubuntu build and test, using spack to build tpls
-#   ###############################################################################
-#   - job: Ubuntu_16
-#     pool:
-#       vmImage: 'ubuntu-16.04'
-#     timeoutInMinutes: 0
-#     variables:
-#       COMPILER_CC: gcc-5
-#       COMPILER_CXX: g++-5
-#       COMPILER_FC: gfortran-5
-#     strategy:
-#       matrix:
-#         shared_minimal:
-#           BUILD_SHARED_LIBS: ON
-#           CMAKE_BUILD_TYPE: Debug
-#           ENABLE_PYTHON: OFF
-#           ENABLE_VTKH: OFF
-#           ENABLE_MFEM: OFF
-#         shared_py27:
-#           BUILD_SHARED_LIBS: ON
-#           CMAKE_BUILD_TYPE: Debug
-#           ENABLE_PYTHON: ON
-#           PYTHON_VERSION: 2.7.14
-#           ENABLE_VTKH: ON
-#           ENABLE_MFEM: ON
-#           ENABLE_BABELFLOW: ON
-#         shared_py36:
-#           BUILD_SHARED_LIBS: ON
-#           CMAKE_BUILD_TYPE: Debug
-#           ENABLE_PYTHON: ON
-#           PYTHON_VERSION: 3.6.3
-#           ENABLE_VTKH: ON
-#           ENABLE_MFEM: ON
-#           ENABLE_BABELFLOW: ON
-#         shared_py37:
-#           BUILD_SHARED_LIBS: ON
-#           CMAKE_BUILD_TYPE: Debug
-#           ENABLE_PYTHON: ON
-#           PYTHON_VERSION: 3.7.6
-#           ENABLE_VTKH: ON
-#           ENABLE_MFEM: ON
-#           ENABLE_BABELFLOW: ON
-#         static_py27:
-#           BUILD_SHARED_LIBS: OFF
-#           CMAKE_BUILD_TYPE: Debug
-#           ENABLE_PYTHON: ON
-#           PYTHON_VERSION: 2.7.14
-#           ENABLE_VTKH: ON
-#           ENABLE_MFEM: ON
-#     steps:
-#       - checkout: self
-#         clean: boolean
-#         submodules: recursive
-#
-#       - script: |
-#            ##################
-#            # setup build env
-#            ##################
-#            # output env
-#            cat etc/*rel*
-#            env
-#            # clean default paths
-#            sudo rm -rf /usr/local/lib/android/
-#            sudo rm -rf /usr/share/miniconda/
-#            # add extra repo and update
-#            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-#            sudo apt-get update
-#            # list pkgs we need
-#            export APT_PKGS=binutils
-#            export APT_PKGS="$APT_PKGS gcc-5"
-#            export APT_PKGS="$APT_PKGS g++-5"
-#            export APT_PKGS="$APT_PKGS gfortran-5"
-#            export APT_PKGS="$APT_PKGS openmpi-bin"
-#            export APT_PKGS="$APT_PKGS libopenmpi-dev"
-#            export APT_PKGS="$APT_PKGS libncurses-dev"
-#            export APT_PKGS="$APT_PKGS libssl-dev"
-#            export APT_PKGS="$APT_PKGS libblas-dev"
-#            export APT_PKGS="$APT_PKGS liblapack-dev"
-#            export APT_PKGS="$APT_PKGS zlib1g-dev"
-#            export APT_PKGS="$APT_PKGS libgdbm-dev"
-#            export APT_PKGS="$APT_PKGS libreadline-dev"
-#            export APT_PKGS="$APT_PKGS libsqlite3-dev"
-#            export APT_PKGS="$APT_PKGS libbz2-dev"
-#            # install pkgs we need
-#            sudo apt-get -y install $APT_PKGS
-#         displayName: 'Prepare build env'
-#
-#       - script: |
-#            #################################
-#            # run uber to build tpls
-#            #################################
-#            #
-#            pwd
-#            # echo system python details
-#            which python
-#            python --version
-#            # setup spack spec
-#            export SPACK_SPEC="%gcc@5+mpi"
-#            # vtkh
-#            if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
-#            # mfem
-#            if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem+dray"; fi
-#            if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem~dray"; fi
-#            # babelflow
-#            if [ $ENABLE_BABELFLOW  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+babelflow"; fi
-#            # python
-#            if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-#            if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-#            echo $SPACK_SPEC
-#            # run uber to build tpls
-#            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_16/
-#         displayName: 'Spack Build Tpls'
-#
-#       - script: |
-#            #################################
-#            # configure
-#            #################################
-#            # setup compiler env vars
-#            export CC=${COMPILER_CC}
-#            export CXX=${COMPILER_CXX}
-#            export FC=${COMPILER_FC}
-#            ${CC} --version
-#            # capture current path
-#            export ROOT_DIR=`pwd`
-#            # find spack generated host config file
-#            export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
-#            echo $HOST_CONFIG
-#            # find spack installed cmake
-#            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-#            export PATH=${CMAKE_BIN_DIR}:$PATH
-#            echo $PATH
-#            which cmake
-#            cmake --version
-#            # prepare build dir
-#            mkdir build
-#            cd build
-#            # setup cmake options
-#            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-#            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-#            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-#            # configure
-#            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-#         displayName: 'Configure with CMake'
-#
-#       - script: |
-#            #################################
-#            # build
-#            #################################
-#            # build
-#            cd build
-#            make VERBOSE=1
-#         displayName: 'Build'
-#
-#       - script: |
-#            #################################
-#            # test
-#            #################################
-#            # find spack installed cmake
-#            export ROOT_DIR=`pwd`
-#            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-#            export PATH=${CMAKE_BIN_DIR}:$PATH
-#            which ctest
-#            cd build
-#            # run ctest
-#            ctest -T test --output-on-failure -V
-#         displayName: 'Run Unit Tests'
-#
-#       - script: |
-#            #################################
-#            # gen img diff report
-#            #################################
-#            # run cmake target to gen report
-#            cd build
-#            make gen_report
-#         displayName: 'Run Gen Test Image Diff Report'
-#         condition: eq(variables['ENABLE_PYTHON'], 'ON')
-#
-#       - task: PublishTestResults@2
-#         inputs:
-#           testResultsFormat: 'cTest'
-#           testResultsFiles: '**/Test.xml'
-#         displayName: 'Unit Test Results'
-#         condition: always()
-#
-#       - task: CopyFiles@2
-#         inputs:
-#           contents: 'build/tests/_output/**'
-#           targetFolder: $(Build.ArtifactStagingDirectory)
-#         condition: always()
-#
-#       - task: PublishBuildArtifacts@1
-#         inputs:
-#           pathToPublish: $(Build.ArtifactStagingDirectory)
-#           artifactName: Ascent_Test_Outputs
-#         condition: always()
-#
-#       - script: |
-#            #################################
-#            # install
-#            #################################
-#            cd build
-#            make install
-#         displayName: 'Install'
-#
-#       - script: |
-#           ###########################
-#           # using with cmake example
-#           ###########################
-#           pwd
-#           ls -l
-#           # find spack installed cmake
-#           export ROOT_DIR=`pwd`
-#           export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-#           export PATH=${CMAKE_BIN_DIR}:$PATH
-#           echo $PATH
-#           which cmake
-#           cd install/examples/ascent/using-with-cmake
-#           mkdir _test_build
-#           cd _test_build
-#           cmake ../
-#           make VERBOSE=1
-#           ./ascent_render_example
-#         displayName: 'Test vs Install (using-with-cmake)'
-#         condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
-#
-#       - script: |
-#           ###########################
-#           # using with make example
-#           ###########################
-#           cat install/share/ascent/ascent_config.mk
-#           pwd
-#           ls -l
-#           cd install/examples/ascent/using-with-make
-#           make
-#           ./ascent_render_example
-#         displayName: 'Test vs Install (using-with-make)'
-#         condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
-#
-#
-#   ###############################################################################
-#   # Ubuntu 18 build and test, using spack to build tpls
-#   #
-#   # Azure doesn't have an Ubuntu 18 dev image, so we are using the
-#   # standard Ubuntu 18 container.
-#   #
-#   ###############################################################################
-#   - job: Ubuntu_18
-#     pool:
-#       vmImage: 'ubuntu-16.04'
-#     container: alpinedav/ascent-ci:ubuntu-18.04-dev
-#     timeoutInMinutes: 0
-#     variables:
-#       COMPILER_CC: gcc
-#       COMPILER_CXX: g++
-#       COMPILER_FC: gfortran
-#     strategy:
-#       matrix:
-#         shared_py36:
-#           BUILD_SHARED_LIBS: ON
-#           CMAKE_BUILD_TYPE: Debug
-#           ENABLE_PYTHON: ON
-#           PYTHON_VERSION: 3.6.3
-#           ENABLE_VTKH: ON
-#           ENABLE_MFEM: ON
-#           ENABLE_BABELFLOW: ON
-#     steps:
-#       - checkout: self
-#         clean: boolean
-#         submodules: recursive
-#
-#       - script: |
-#            ##################
-#            # setup build env
-#            ##################
-#            # output env
-#            cat etc/*rel*
-#            env
-#            sudo apt-get update
-#            # list pkgs we need
-#            export APT_PKGS=binutils
-#            export APT_PKGS="$APT_PKGS gcc"
-#            export APT_PKGS="$APT_PKGS g++"
-#            export APT_PKGS="$APT_PKGS gfortran"
-#            export APT_PKGS="$APT_PKGS python"
-#            export APT_PKGS="$APT_PKGS git"
-#            export APT_PKGS="$APT_PKGS curl"
-#            export APT_PKGS="$APT_PKGS unzip"
-#            export APT_PKGS="$APT_PKGS wget"
-#            export APT_PKGS="$APT_PKGS build-essential"
-#            export APT_PKGS="$APT_PKGS libncurses-dev"
-#            export APT_PKGS="$APT_PKGS libssl-dev"
-#            export APT_PKGS="$APT_PKGS libblas-dev"
-#            export APT_PKGS="$APT_PKGS liblapack-dev"
-#            export APT_PKGS="$APT_PKGS zlib1g-dev"
-#            export APT_PKGS="$APT_PKGS libgdbm-dev"
-#            export APT_PKGS="$APT_PKGS libreadline-dev"
-#            export APT_PKGS="$APT_PKGS libsqlite3-dev"
-#            export APT_PKGS="$APT_PKGS libbz2-dev"
-#            # install pkgs we need
-#            sudo apt-get -y install $APT_PKGS
-#         displayName: 'Prepare build env'
-#
-#       - script: |
-#            #################################
-#            # run uber to build tpls
-#            #################################
-#            #
-#            pwd
-#            # echo system python details
-#            which python
-#            python --version
-#            # setup spack spec
-#            export SPACK_SPEC="%gcc+mpi"
-#            # vtkh
-#            if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
-#            # mfem
-#            if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem+dray"; fi
-#            if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem~dray"; fi
-#            # babelflow
-#            if [ $ENABLE_BABELFLOW  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+babelflow"; fi
-#            # python
-#            if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-#            if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-#            export SPACK_SPEC="${SPACK_SPEC} ^mpich"
-#            echo $SPACK_SPEC
-#            # run uber to build tpls
-#            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_18/
-#         displayName: 'Spack Build Tpls'
-#       - script: |
-#            #################################
-#            # configure
-#            #################################
-#            # setup compiler env vars
-#            export CC=${COMPILER_CC}
-#            export CXX=${COMPILER_CXX}
-#            export FC=${COMPILER_FC}
-#            ${CC} --version
-#            # capture current path
-#            export ROOT_DIR=`pwd`
-#            # find spack generated host config file
-#            export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
-#            echo $HOST_CONFIG
-#            # find spack installed cmake
-#            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-#            export PATH=${CMAKE_BIN_DIR}:$PATH
-#            echo $PATH
-#            which cmake
-#            cmake --version
-#            # prepare build dir
-#            mkdir build
-#            cd build
-#            # setup cmake options
-#            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-#            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-#            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-#            # configure
-#            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-#         displayName: 'Configure with CMake'
-#
-#       - script: |
-#            #################################
-#            # build
-#            #################################
-#            # build
-#            cd build
-#            make VERBOSE=1
-#         displayName: 'Build'
-#
-#       - script: |
-#            #################################
-#            # test
-#            #################################
-#            # find spack installed cmake
-#            export ROOT_DIR=`pwd`
-#            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-#            export PATH=${CMAKE_BIN_DIR}:$PATH
-#            which ctest
-#            cd build
-#            # run ctest
-#            ctest -T test --output-on-failure -V
-#         displayName: 'Run Unit Tests'
-#
-#       - script: |
-#            #################################
-#            # gen img diff report
-#            #################################
-#            # run cmake target to gen report
-#            cd build
-#            make gen_report
-#         displayName: 'Run Gen Test Image Diff Report'
-#         condition: eq(variables['ENABLE_PYTHON'], 'ON')
-#
-#       - task: PublishTestResults@2
-#         inputs:
-#           testResultsFormat: 'cTest'
-#           testResultsFiles: '**/Test.xml'
-#         displayName: 'Unit Test Results'
-#         condition: always()
-#
-#       - task: CopyFiles@2
-#         inputs:
-#           contents: 'build/tests/_output/**'
-#           targetFolder: $(Build.ArtifactStagingDirectory)
-#         condition: always()
-#
-#       - task: PublishBuildArtifacts@1
-#         inputs:
-#           pathToPublish: $(Build.ArtifactStagingDirectory)
-#           artifactName: Ascent_Test_Outputs
-#         condition: always()
-#
-#       - script: |
-#            #################################
-#            # install
-#            #################################
-#            cd build
-#            make install
-#         displayName: 'Install'
-#
-#       - script: |
-#           ###########################
-#           # using with cmake example
-#           ###########################
-#           pwd
-#           ls -l
-#           # find spack installed cmake
-#           export ROOT_DIR=`pwd`
-#           export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-#           export PATH=${CMAKE_BIN_DIR}:$PATH
-#           echo $PATH
-#           which cmake
-#           cd install/examples/ascent/using-with-cmake
-#           mkdir _test_build
-#           cd _test_build
-#           cmake ../
-#           make VERBOSE=1
-#           ./ascent_render_example
-#         displayName: 'Test vs Install (using-with-cmake)'
-#         condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
-#
-#       - script: |
-#           ###########################
-#           # using with make example
-#           ###########################
-#           cat install/share/ascent/ascent_config.mk
-#           pwd
-#           ls -l
-#           cd install/examples/ascent/using-with-make
-#           make
-#           ./ascent_render_example
-#         displayName: 'Test vs Install (using-with-make)'
-#         condition: and(succeeded(), eq(variables['ENABLE_VTKH'], 'ON'))
-#
-#
-#
-#   ###############################################################################
-#   # NVCC Linux build and install, using spack to build tpls
-#   ###############################################################################
-#   - job: Ubuntu_Cuda
-#     pool:
-#       vmImage: 'ubuntu-16.04'
-#     container: alpinedav/ascent-ci:cuda-9.2-dev
-#     timeoutInMinutes: 0
-#     strategy:
-#       matrix:
-#         static_vtkh:
-#           BUILD_SHARED_LIBS: OFF
-#           CMAKE_BUILD_TYPE: Release
-#     steps:
-#       - checkout: self
-#         clean: boolean
-#         submodules: recursive
-#
-#       - script: |
-#            #################################
-#            # setup build env
-#            #################################
-#            # output env
-#            cat etc/*rel*
-#            env
-#            whoami
-#            sudo apt-get update
-#            # list pkgs we need
-#            export APT_PKGS=git
-#            export APT_PKGS="$APT_PKGS python"
-#            export APT_PKGS="$APT_PKGS gfortran"
-#            export APT_PKGS="$APT_PKGS openmpi-bin"
-#            export APT_PKGS="$APT_PKGS libopenmpi-dev"
-#            export APT_PKGS="$APT_PKGS zlib1g-dev"
-#            export APT_PKGS="$APT_PKGS curl"
-#            # install pkgs we need
-#            sudo apt-get -y install $APT_PKGS
-#         displayName: 'Prepare build env'
-#
-#       - script: |
-#            #################################
-#            # run uber to build tpls
-#            #################################
-#            # echo system python details
-#            which python
-#            python --version
-#            # setup spack spec (must be static)
-#            export SPACK_SPEC="%gcc+mpi+cuda+vtkh~python~openmp~shared"
-#            export SPACK_SPEC="${SPACK_SPEC}${SPACK_SHARED_VARIANT} ^vtk-h+cuda${SPACK_SHARED_VARIANT} ^vtk-m+cuda${SPACK_SHARED_VARIANT}"
-#            export SPACK_SPEC="${SPACK_SPEC} ^cmake@3.14.5~openssl~ncurses"
-#            echo $SPACK_SPEC
-#            # run uber to build tpls
-#            python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu_cuda/
-#            # lets cleanup the spack build stuff to free up space
-#            uberenv_libs/spack/bin/spack clean --all
-#         displayName: 'Spack Build Tpls'
-#
-#       - script: |
-#            #################################
-#            # configure
-#            #################################
-#            # setup compiler env vars
-#            export CC=gcc
-#            export CXX=g++
-#            export FC=gfortran
-#            ${CC} --version
-#            # capture current path
-#            export ROOT_DIR=`pwd`
-#            # find spack generated host config file
-#            export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
-#            echo $HOST_CONFIG
-#            # find spack installed cmake
-#            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-#            export PATH=${CMAKE_BIN_DIR}:$PATH
-#            echo $PATH
-#            which cmake
-#            cmake --version
-#            # prepare build dir
-#            mkdir build
-#            cd build
-#            # setup cmake options
-#            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-#            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-#            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-#            # configure
-#            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-#         displayName: 'Configure with CMake'
-#
-#       - script: |
-#            #################################
-#            # build
-#            #################################
-#            # build
-#            cd build
-#            make VERBOSE=1
-#         displayName: 'Build'
-#
-#       - script: |
-#            #################################
-#            # install
-#            #################################
-#            cd build
-#            make install
-#         displayName: 'Install'
-#
-#       - script: |
-#             #################################
-#             # check install
-#             #################################
-#             ls install
-#         displayName: 'Check Install'
-#         failOnStderr: true
-#
-#
-#
-#   ###############################################################################
-#   # Docker build and test case, that leverages our script that calls Docker Build
-#   ###############################################################################
-#   - job: Docker_Ubuntu
-#     pool:
-#       vmImage: 'ubuntu-16.04'
-#     timeoutInMinutes: 0
-#     steps:
-#       - checkout: self
-#         clean: boolean
-#         submodules: recursive
-#
-#       - script: |
-#           ####################
-#           # run docker build
-#           ####################
-#           cd src/examples/docker/ubuntu/ && ./example_build.sh
-#         displayName: 'Docker Build'
-#
-#
-#
-# ###############################################################################
-# ###############################################################################
-# # Disabled tests
-# ###############################################################################
-# ###############################################################################
-#
-# ###############################################################################
-# # Disabled b/c this is currently always testing develop, which
-# # isn't helpful and creates confusing results.
-# ###############################################################################
-#
-# ###############################################################################
-# # Ubuntu build and install, using spack
-# ###############################################################################
-# # - job: Ubuntu_Uberenv_Install
-# #   pool:
-# #     vmImage: 'ubuntu-16.04'
-# #   timeoutInMinutes: 0
-# #   variables:
-# #     COMPILER_CC: gcc-5
-# #     COMPILER_CXX: g++-5
-# #     COMPILER_FC: gfortran-5
-# #   steps:
-# #     - checkout: self
-# #       clean: boolean
-# #       submodules: recursive
-# #
-# #     - script: |
-# #          ##################
-# #          # setup build env
-# #          ##################
-# #          # output env
-# #          env
-# #          # clean default paths
-# #          sudo rm -rf /usr/local/lib/android/
-# #          sudo rm -rf /usr/share/miniconda/
-# #          # add extra repo and update
-# #          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-# #          sudo apt-get update
-# #          # list pkgs we need
-# #          export APT_PKGS=binutils
-# #          export APT_PKGS="$APT_PKGS gcc-5"
-# #          export APT_PKGS="$APT_PKGS g++-5"
-# #          export APT_PKGS="$APT_PKGS gfortran-5"
-# #          export APT_PKGS="$APT_PKGS openmpi-bin"
-# #          export APT_PKGS="$APT_PKGS libopenmpi-dev"
-# #          export APT_PKGS="$APT_PKGS libncurses-dev"
-# #          export APT_PKGS="$APT_PKGS libssl-dev"
-# #          export APT_PKGS="$APT_PKGS libblas-dev"
-# #          export APT_PKGS="$APT_PKGS liblapack-dev"
-# #          export APT_PKGS="$APT_PKGS zlib1g-dev"
-# #          export APT_PKGS="$APT_PKGS libgdbm-dev"
-# #          export APT_PKGS="$APT_PKGS libreadline-dev"
-# #          export APT_PKGS="$APT_PKGS libsqlite3-dev"
-# #          export APT_PKGS="$APT_PKGS libbz2-dev"
-# #          # install pkgs we need
-# #          sudo apt-get -y install $APT_PKGS
-# #       displayName: 'Prepare build env'
-# #
-# #     - script: |
-# #          ################################
-# #          # use uber to build and install
-# #          ################################
-# #          # echo system python details
-# #          which python
-# #          python --version
-# #          # setup spack spec
-# #          export SPACK_SPEC="%gcc@5+mpi"
-# #          # vtkh
-# #          if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
-# #          # mfem
-# #          if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
-# #          if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
-# #          # python
-# #          if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-# #          if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-# #          echo $SPACK_SPEC
-# #          # run uber to build tpls
-# #          python scripts/uberenv/uberenv.py --install --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv/spack_configs/ci/ubuntu/
-# #       displayName: 'Spack Build and Install'
-# #
-# #     - script: |
-# #         ls uberenv_libs/ascent-install
-# #         cat uberenv_libs/ascent-install/*.cmake
-# #       displayName: 'Check Install'
-#
-#
-#
-#
-# ###############################################################################
-# # disable b/c macos recipe needs more work
-# ###############################################################################
-#
-# ###############################################################################
-# # macOS build and test, using spack to build tpls
-# ###############################################################################
-# # - job: macOS
-# #   pool:
-# #     vmImage: 'macOS-10.13'
-# #   timeoutInMinutes: 0
-# #   variables:
-# #     COMPILER_CC: clang
-# #     COMPILER_CXX: clang++
-# #   strategy:
-# #     matrix:
-# #       shared_py27:
-# #         BUILD_SHARED_LIBS: ON
-# #         CMAKE_BUILD_TYPE: Debug
-# #         ENABLE_PYTHON: ON
-# #         PYTHON_VERSION: 2.7.14
-# #         ENABLE_VTKH: ON
-# #         ENABLE_MFEM: ON
-# #       # static_py27:
-# #       #   BUILD_SHARED_LIBS: OFF
-# #       #   CMAKE_BUILD_TYPE: Debug
-# #       #   ENABLE_PYTHON: ON
-# #       #   PYTHON_VERSION: 2.7.14
-# #       #   ENABLE_VTKH: ON
-# #       #   ENABLE_MFEM: ON
-# #   steps:
-# #     - checkout: self
-# #       clean: boolean
-# #       submodules: recursive
-# #
-# #     - script: |
-# #          # echo system python details
-# #          which python
-# #          python --version
-# #          # setup spack spec
-# #          export SPACK_SPEC="%clang~mpi~fortran"
-# #          # vtkh
-# #          if [ $ENABLE_VTKH  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~vtkh"; fi
-# #          # mfem
-# #          if [ $ENABLE_MFEM  = 'ON' ];  then export SPACK_SPEC="${SPACK_SPEC}+mfem"; fi
-# #          if [ $ENABLE_MFEM  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mfem"; fi
-# #          # python
-# #          if [ $ENABLE_PYTHON  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-# #          if [ $ENABLE_PYTHON  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~python"; fi
-# #          export SPACK_SPEC="${SPACK_SPEC} ^conduit~mpi ^py-numpy~blas~lapack"
-# #          echo $SPACK_SPEC
-# #          # run uber to build tpls
-# #          python scripts/uberenv/uberenv.py --pull --spec "${SPACK_SPEC}"
-# #       displayName: 'Spack Build Tpls'
-# #
-# #     - script: |
-# #          # setup compiler env vars
-# #          export CC=${COMPILER_CC}
-# #          export CXX=${COMPILER_CXX}
-# #          ${CC} --version
-# #          # capture current path
-# #          export ROOT_DIR=`pwd`
-# #          # find spack generated host config file
-# #          export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
-# #          echo $HOST_CONFIG
-# #          # find spack installed cmake
-# #          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
-# #          export PATH=${CMAKE_BIN_DIR}:$PATH
-# #          echo $PATH
-# #          which cmake
-# #          cmake --version
-# #          # prepare build dir
-# #          mkdir build
-# #          cd build
-# #          # setup cmake options
-# #          export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-# #          # disable fortran in macOS ci builds b/c we aren't installing gfortran
-# #          export CMAKE_OPTS="-DENABLE_FORTRAN=OFF"
-# #          export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-# #          export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-# #          # configure
-# #          cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
-# #          # build
-# #          make VERBOSE=1
-# #          # test
-# #          env CTEST_OUTPUT_ON_FAILURE=1 make test
-# #          # install
-# #          make install
-# #       displayName: 'Build and Test'
-# #
-# #     - script: |
-# #         cd $(Agent.BuildDirectory)
-# #         pwd
-# #         echo $PATH
-# #         which cmake
-# #       displayName: 'Test vs Install'
-#
-#
-#
-#

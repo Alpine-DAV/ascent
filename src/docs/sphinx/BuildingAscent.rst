@@ -265,7 +265,7 @@ Uberenv Options for Building Third Party Dependencies
   --spec               Spack spec                                     linux: **%gcc**
                                                                       osx: **%clang**
   --spack-config-dir   Folder with Spack settings files               linux: (empty)
-                                                                      osx: ``scripts/uberenv/spack_configs/darwin/``
+                                                                      osx: ``scripts/uberenv_configs/spack_configs/darwin/``
   -k                   Ignore SSL Errors                              **False**
   --install            Fully install ascent not just dependencies     **False**
   --run_tests          Invoke tests during build and against install  **False**
@@ -294,7 +294,7 @@ Default invocation on OSX:
 
     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
                                       --spec %clang \
-                                      --spack-config-dir scripts/uberenv/spack_configs/darwin/
+                                      --spack-config-dir scripts/uberenv_configs/spack_configs/darwin/
 
 
 The uberenv `--install` installs conduit\@master (not just the development dependencies):
