@@ -126,6 +126,17 @@ TEST(ascent_pipeline, test_render_3d_poly)
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_render_3d_poly_multi)
 {
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+    
+    
     //
     // Create example mesh.
     //
