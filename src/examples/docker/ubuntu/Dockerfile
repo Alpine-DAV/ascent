@@ -111,7 +111,7 @@ RUN cd /home/user && tar -xzf ascent.docker.src.tar.gz
 RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
        -k \
        --spec "%gcc+mpi+mfem ^python@3.6.3" \
-       --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
+       --spack-config-dir=scripts/uberenv_configs/spack_configs/docker/ubuntu/
 
 # install jupyter, matplotlib, cinema, etc via pip
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \

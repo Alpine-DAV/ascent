@@ -44,18 +44,16 @@
 
 # Specify the sources of the pure python and compiled portions of our module.
 SET(flow_py_python_sources  py_src/__init__.py py_src/helpers.py)
-#SET(ascent_py_headers        flow_python.hpp)
 SET(flow_py_cpp_sources     flow_python.cpp)
 
 
 # Setup our module
-PYTHON_ADD_HYBRID_MODULE(flow_python
-                         python-modules
-                         flow
-                         setup.py
-                         "${flow_py_python_sources}"
-                         #${flow_py_headers}
-                         ${flow_py_cpp_sources})
+PYTHON_ADD_HYBRID_MODULE(NAME flow_python
+                         DEST_DIR python-modules
+                         PY_MODULE_DIR flow
+                         PY_SETUP_FILE setup.py
+                         PY_SOURCES  "${flow_py_python_sources}"
+                         SOURCES      ${flow_py_cpp_sources})
 
 # link with the proper libs (beyond python)
 target_link_libraries(flow_python ascent_flow)

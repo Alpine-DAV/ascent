@@ -50,7 +50,7 @@ Quick Start
 
 
 Installing Ascent and Third Party Dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The quickest path to install Ascent and its dependencies is via :ref:`uberenv <building_with_uberenv>`:
 
@@ -67,20 +67,20 @@ We also provide spack settings for several well known HPC clusters, here is an e
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv/spack_configs/nersc/cori/"
+    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv_configs/spack_configs/nersc/cori/"
 
 
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
 Public Installs of Ascent
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We also provide public installs of Ascent for the default compilers at a few  DOE HPC centers.
 
 Summary table of public ascent installs:
 
-.. list-table:: 
+.. list-table::
    :widths: 10 15 10 10 50
    :header-rows: 1
 
@@ -119,7 +119,7 @@ See :ref:`tutorial_setup_public_installs` for more details on using these instal
 
 
 Using Ascent in Your Project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The install includes examples that demonstrate how to use Ascent in a CMake-based build system and via a Makefile.
 

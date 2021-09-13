@@ -67,11 +67,13 @@ set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
-set(ASCENT_HDF5_ENABLED ${HDF5_FOUND})
-set(ASCENT_ADIOS_ENABLED ${ADIOS_FOUND})
+set(ASCENT_HDF5_ENABLED ${CONDUIT_RELAY_HDF5_ENABLED})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
+set(ASCENT_FIDES_ENABLED ${FIDES_FOUND})
+
+set(ASCENT_WEBSERVER_ENABLED ${CONDUIT_RELAY_WEBSERVER_ENABLED})
 
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
@@ -273,6 +275,13 @@ endif()
 
 if(CUDA_FOUND)
     list(APPEND ascent_thirdparty_libs cuda_runtime)
+    # record some extra libs for our config.mk
+    # dl and rt
+    set(ASCENT_CUDA_MAKE_EXTRA_LIBS "-ldl -lrt "  CACHE STRING "" FORCE)
+    # pthreads
+    if(CMAKE_THREAD_LIBS_INIT)
+        set(ASCENT_CUDA_MAKE_EXTRA_LIBS "${ASCENT_CUDA_MAKE_EXTRA_LIBS} ${CMAKE_THREAD_LIBS_INIT}"  CACHE STRING "" FORCE)
+    endif()
 endif()
 
 if(OPENMP_FOUND)
@@ -389,10 +398,10 @@ if(MPI_FOUND)
     list(APPEND ascent_sources hola/ascent_hola_mpi.cpp)
 
     # adios support is only in par (mpi ver)
-    if (ADIOS_FOUND)
-       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios_filters.hpp)
-       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios_filters.cpp)
-       list(APPEND ascent_mpi_thirdparty_libs adios)
+    if (ASCENT_FIDES_ENABLED AND MPI_FOUND)
+       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
+       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
+       list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
     endif()
 
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
@@ -489,5 +498,3 @@ install(FILES ${ascent_headers} DESTINATION include/ascent)
 #############################################################
 install(DIRECTORY web_clients/
         DESTINATION share/ascent/web_clients/)
-
-

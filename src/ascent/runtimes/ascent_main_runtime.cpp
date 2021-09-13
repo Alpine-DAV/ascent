@@ -289,13 +289,17 @@ AscentRuntime::Initialize(const conduit::Node &options)
        options["web/stream"].as_string() == "true" &&
        m_rank == 0)
     {
-
+#ifdef ASCENT_WEBSERVER_ENABLED
         if(options.has_path("web/document_root"))
         {
             m_web_interface.SetDocumentRoot(options["web/document_root"].as_string());
         }
 
         m_web_interface.Enable();
+#else
+        ASCENT_ERROR("Ascent was not built with web support,"
+                     "but options[\"web/stream\"] == \"true\"");
+#endif
     }
 
     if(options.has_path("field_filtering"))
@@ -770,6 +774,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        // replace file param with source that includes actual script
        params.remove("file");
        params["source"] = n_py_src;
+       // this entry will show up as __file__ in the python filter env
+       params["source_file"] = script_fname;
      }
 
      // inject helper that provides the mpi comm handle
@@ -1479,6 +1485,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   // to build the graph
   m_connections.reset();
   m_scene_connections.reset();
+  m_save_session_actions.reset();
 
   // execution will be enforced in the following order:
   conduit::Node queries;
@@ -1491,6 +1498,10 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   for (int i = 0; i < actions.number_of_children(); ++i)
   {
       const Node &action = actions.child(i);
+      if(!action.has_path("action"))
+      {
+        ASCENT_ERROR("Malformed actions");
+      }
       string action_name = action["action"].as_string();
 
       if(action_name == "add_pipelines")
@@ -1555,9 +1566,15 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // issues with existing integrations we will just
         // do nothing
       }
+      else if(action_name == "save_session")
+      {
+        // Saving the session will be deferred to after
+        // the workspace executes.
+        m_save_session_actions.append() = action;
+      }
       else
       {
-          ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
+        ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
       }
 
   }
@@ -1589,6 +1606,15 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
+    bool log_timings = false;
+    if(m_runtime_options.has_child("timings") &&
+       m_runtime_options["timings"].as_string() == "true")
+    {
+      log_timings = true;
+    }
+
+    w.enable_timings(log_timings);
+
     // catch any errors that come up here and forward
     // them up as a conduit error
 
@@ -1645,22 +1671,33 @@ AscentRuntime::Execute(const conduit::Node &actions)
         //w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
-        int cycle = 0;
-        if(Metadata::n_metadata.has_path("cycle"))
+        if(log_timings)
         {
-          cycle = Metadata::n_metadata["cycle"].to_int32();
+          int cycle = 0;
+          if(Metadata::n_metadata.has_path("cycle"))
+          {
+            cycle = Metadata::n_metadata["cycle"].to_int32();
+          }
+          std::stringstream ss;
+          ss<<"cycle_"<<cycle;
+          vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+          vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
         }
-        std::stringstream ss;
-        ss<<"cycle_"<<cycle;
-        vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
-        vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
         // now execute the data flow graph
         w.execute();
 
 #if defined(ASCENT_VTKM_ENABLED)
-        vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        if(log_timings)
+        {
+          vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        }
 #endif
+        if(m_save_session_actions.number_of_children() > 0)
+        {
+          SaveSession();
+        }
+
         Node msg;
         this->Info(msg["info"]);
         ascent::about(msg["about"]);
@@ -2014,6 +2051,54 @@ void AscentRuntime::VerifyGhosts()
 
 }
 
+void AscentRuntime::SaveSession()
+{
+  const int num_actions = m_save_session_actions.number_of_children();
+
+  for(int a = 0; a < num_actions; ++a)
+  {
+    const conduit::Node &action = m_save_session_actions.child(a);
+
+    std::string filename = m_session_name;
+    if(action.has_path("file_name"))
+    {
+      if(!action["file_name"].dtype().is_string())
+      {
+        ASCENT_ERROR("save_session filename must be a string");
+      }
+      filename = action["file_name"].as_string();
+    }
+
+    // allow the user to specify which expressions they want saved out
+    if(action.has_path("expressions"))
+    {
+      std::vector<std::string> expressions_selection;
+      const conduit::Node &elist = action["expressions"];
+      const int num_exprs= elist.number_of_children();
+      if(num_exprs == 0)
+      {
+        ASCENT_ERROR("save_session expression selection must be "
+                     <<" a non-empty list of strings");
+      }
+
+      for(int i = 0; i < num_exprs; ++i)
+      {
+        const conduit::Node &e = elist.child(i);
+        if(!e.dtype().is_string())
+        {
+           ASCENT_ERROR("save_session expression selection list "
+                        <<"values must be a string");
+        }
+        expressions_selection.push_back(e.as_string());
+      }
+      runtime::expressions::ExpressionEval::save_cache(filename, expressions_selection);
+    }
+    else
+    {
+      runtime::expressions::ExpressionEval::save_cache(filename);
+    }
+  } // for each save action
+}
 
 //-----------------------------------------------------------------------------
 };
