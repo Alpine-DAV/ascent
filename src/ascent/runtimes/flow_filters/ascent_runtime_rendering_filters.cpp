@@ -340,6 +340,19 @@ vtkh::Render parse_render(const conduit::Node &render_node,
                                          image_height,
                                          bounds,
                                          image_name);
+  Node meta = Metadata::n_metadata;
+  if(meta.has_path("comments"))
+  {
+    const conduit::Node comments_node = meta["comments"];
+    const int num_comments = comments_node.number_of_children();
+    std::vector<std::string> comments;
+    for(int i = 0; i < num_comments; ++i)
+    {
+      comments.push_back(comments_node.child(i).as_string());
+    }
+    render.SetComments(comments);
+  }
+
   //
   // render create a default camera. Now get it and check for
   // values that override the default view
@@ -1104,6 +1117,18 @@ DefaultRender::execute()
                                              1024,
                                              scene_bounds,
                                              image_name);
+      Node meta = Metadata::n_metadata;
+      if(meta.has_path("comments"))
+      {
+        const conduit::Node comments_node = meta["comments"];
+        const int num_comments = comments_node.number_of_children();
+        std::vector<std::string> comments;
+        for(int i = 0; i < num_comments; ++i)
+        {
+          comments.push_back(comments_node.child(i).as_string());
+        }
+        render.SetComments(comments);
+      }
 
       renders->push_back(render);
     }
