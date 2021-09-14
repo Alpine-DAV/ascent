@@ -153,7 +153,6 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHStats>("extracts","statistics");
     AscentRuntime::register_filter_type<VTKHHistogram>("extracts","histogram");
     AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
-    AscentRuntime::register_filter_type<VTKHMeshQuality>("transforms","mesh_quality");
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
     AscentRuntime::register_filter_type<VTKHScale>("transforms","scale");
