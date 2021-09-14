@@ -864,7 +864,6 @@ VTKHSlice::execute()
       point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
 
       offset = get_float32(n_point["y_offset"], data_object);
-      std::cout<<"y offset "<<offset<<"\n";
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
