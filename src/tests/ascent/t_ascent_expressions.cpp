@@ -830,7 +830,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
   }
 
   for(const string &expression : {
@@ -849,7 +849,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[0.01, 0.01]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
   }
 
   for(const string &expression : {
@@ -869,7 +869,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "1.0");
+    EXPECT_EQ(result.to_json(), "0.5");
   }
 
   for(const string &expression : {
@@ -887,7 +887,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "0.01");
+    EXPECT_EQ(result.to_json(), "0.5");
   }
 
   //confirm that it clamps to the end as expected
@@ -897,7 +897,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.25]");
   }
 
   //confirm that it clamps to the beginning as expected
@@ -907,7 +907,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
   }
 
   //confirm that it clamps to the beginning and end as expected
@@ -926,7 +926,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[0.01, 0.01, 0.005]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5, 0.25]");
   }
 
   // confirm it behaves properly with other operators that take an array as input
@@ -935,7 +935,7 @@ TEST(ascent_expressions, test_gradient_array)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value"].to_float64(), 1);
+    EXPECT_EQ(res["value"].to_float64(), 0.5);
   }
 
   //confirm it returns an empty gradient if there is only a single value
@@ -946,7 +946,7 @@ TEST(ascent_expressions, test_gradient_array)
       "gradient_range(val, first_absolute_time=2.0, last_absolute_time=2.0)",
     }) {
     res = eval.evaluate(expression);
-    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["type"].as_string(), "array");
     EXPECT_EQ(res["value"].to_string(), "\"-inf\"");
   }
 
@@ -957,7 +957,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[0.0, -2.5e-05]");
+    EXPECT_EQ(result.to_json(), "[0.0, -0.00125]");
   }
 
 
