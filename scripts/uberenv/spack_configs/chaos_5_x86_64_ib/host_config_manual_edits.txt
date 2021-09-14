@@ -1,5 +1,0 @@
-# extra settings for chaos 5
-
-set(MPIEXEC /usr/bin/srun CACHE PATH "")
-set(MPIEXEC_NUMPROC_FLAG -n CACHE PATH "")
-

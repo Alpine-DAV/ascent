@@ -2879,6 +2879,7 @@ int main(int argc, char *argv[])
    double vec3[3];
    vec3[0] = -0.6; vec3[1] = -0.6; vec3[2] = -0.8;
    scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
+   scenes["s1/renders/r1/image_prefix"] = "lulesh_image";
 
    conduit::Node actions;
    conduit::Node &add_plots = actions.append();
@@ -2891,25 +2892,24 @@ int main(int argc, char *argv[])
    reset_action["action"] = "reset";
 
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
-     {
-        ASCENT_BLOCK_TIMER(LULESH_MAIN_LOOP)
-        TimeIncrement(*locDom) ;
-        LagrangeLeapFrog(*locDom) ;
-     }
+      {
+         ASCENT_BLOCK_TIMER(LULESH_MAIN_LOOP)
+         TimeIncrement(*locDom) ;
+         LagrangeLeapFrog(*locDom) ;
+      }
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          printf("cycle = %d, time = %e, dt=%e\n",
                 locDom->cycle(), double(locDom->time()), double(locDom->deltatime()) ) ;
       }
       //-- begin calls to ascent -- //
-      if ( (locDom->cycle() % 1 == 0) || (locDom->cycle() == 0))
-      {
-            char outFileName[30];
-            sprintf(outFileName,"lulesh_image%03d",locDom->cycle());
-            //
-            // Create the actions.
-            //
-            ascent.publish(locDom->visitNode());
-            ascent.execute(actions);
+      if ( (locDom->cycle() % 1 == 0) || (locDom->cycle() == 0)) {
+         char outFileName[30];
+         sprintf(outFileName,"lulesh_image%03d",locDom->cycle());
+         //
+         // Create the actions.
+         //
+         ascent.publish(locDom->visitNode());
+         ascent.execute(actions);
       }
    }
    ascent.close();

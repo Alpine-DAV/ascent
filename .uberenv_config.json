@@ -1,0 +1,18 @@
+{
+"package_name" : "ascent",
+"package_version" : "develop",
+"package_source_dir" : "../../",
+"spack_build_mode" : "uberenv-pkg",
+"spack_configs_path": "scripts/uberenv_configs/spack_configs/configs",
+"spack_packages_path": "scripts/uberenv_configs/packages",
+"spack_url": "https://github.com/alpine-DAV/spack",
+"mirror_url": "https://www.ascent-dav.org/mirror/ascent/latest/",
+"spack_branch": "ascent/develop",
+"spack_activate" : { "py-numpy"  : ["+python"],
+                     "py-pip"    : ["+python"],
+                     "py-mpi4py" : ["+python", "+mpi"],
+                     "conduit"   : ["+python"],
+                     "py-sphinx" : ["+python", "+doc"],
+                     "py-sphinx-rtd-theme": ["+python","+doc"] },
+"spack_clean_packages" : ["vtkm", "vtkh","conduit"]
+}

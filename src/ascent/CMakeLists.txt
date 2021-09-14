@@ -275,6 +275,13 @@ endif()
 
 if(CUDA_FOUND)
     list(APPEND ascent_thirdparty_libs cuda_runtime)
+    # record some extra libs for our config.mk
+    # dl and rt
+    set(ASCENT_CUDA_MAKE_EXTRA_LIBS "-ldl -lrt "  CACHE STRING "" FORCE)
+    # pthreads
+    if(CMAKE_THREAD_LIBS_INIT)
+        set(ASCENT_CUDA_MAKE_EXTRA_LIBS "${ASCENT_CUDA_MAKE_EXTRA_LIBS} ${CMAKE_THREAD_LIBS_INIT}"  CACHE STRING "" FORCE)
+    endif()
 endif()
 
 if(OPENMP_FOUND)
