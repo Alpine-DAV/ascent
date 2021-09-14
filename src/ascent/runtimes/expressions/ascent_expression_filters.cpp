@@ -1505,9 +1505,6 @@ ScalarGradient::execute()
 
   // dy / dx
   double gradient = (current_value - first_value) / window_length;
-  std::cout << "first "<<first_index<<" current "<<current_index<<" window length "
-            <<window_length<<" "<<current_value<<" - "<<first_value<<" = "
-            << current_value - first_value<<" grad "<<gradient<<"\n";
 
   (*output)["value"] = gradient;
   (*output)["type"] = "double";
@@ -1568,7 +1565,6 @@ void get_first_and_last_index(const string &operator_name,
                               int &last_index)
 {
 
-  std::cout<<"Entries "<<entries<<"\n";
   if(absolute || relative) {
     first_index = (*n_first_index)["value"].to_int32();
     last_index = (*n_last_index)["value"].to_int32();
@@ -1612,16 +1608,18 @@ void get_first_and_last_index(const string &operator_name,
     // Another possible solution to this is to specify relative times
     first_time = std::max(0.0, first_time);
     last_time = std::max(0.0, last_time);
-    std::cout<<"ftime "<<first_time<<" ltime "<<last_time<<"\n";
 
     if(first_time < 0 || last_time < 0)
     {
-        ASCENT_ERROR(operator_name + ": the first_absolute_time and last_absolute_time must both be non-negative.");
+      ASCENT_ERROR(operator_name + ": the first_absolute_time and last_absolute_time "<<
+                   " must both be non-negative.");
     }
 
     if(first_time > last_time)
     {
-        ASCENT_ERROR(operator_name + ": the first_absolute_time must not be greater than the last_absolute_time.");
+      ASCENT_ERROR(operator_name +
+                   ": the first_absolute_time must not be "
+                   <<"greater than the last_absolute_time.");
     }
 
     string time_path = "time";
@@ -1633,7 +1631,6 @@ void get_first_and_last_index(const string &operator_name,
       if(history.child(index).has_path(time_path))
       {
         time = history.child(index)[time_path].to_float64();
-        std::cout<<"Time "<<time<<" index "<<index<<"\n";
       }
       else
       {
@@ -1654,7 +1651,6 @@ void get_first_and_last_index(const string &operator_name,
       }
       if(time > last_time)
       {
-        std::cout<<" breaking since "<<time<<" > "<<last_time<<" index "<<last_index<<"\n";
         break;
       }
     }
@@ -1720,8 +1716,6 @@ void set_values_from_history(const string &operator_name,
 {
 
   bool gradient = (return_history_index || return_simulation_time || return_simulation_cycle);
-  if(gradient) std::cout<<"GRADIENT\n";
-  if(return_simulation_time) std::cout<<"RETURN_TIME\n";
 
   string value_path = "";
   vector<string> value_paths = {"value", "attrs/value/value"};
@@ -1733,8 +1727,6 @@ void set_values_from_history(const string &operator_name,
       break;
     }
   }
-  std::cout<<"Value path "<<value_path<<"\n";
-  std::cout<<history.to_summary_string()<<"\n";
 
 
   if(value_path.size() == 0)
@@ -1826,7 +1818,6 @@ void set_values_from_history(const string &operator_name,
       delete[] cycle_array;
     }
   }
-  output->print();
 }
 
 
@@ -1855,14 +1846,6 @@ range_values_helper(const conduit::Node &history,
     (!n_first_absolute_cycle->dtype().is_empty() || !n_last_absolute_cycle->dtype().is_empty());
 
   int count = absolute + relative + simulation_time + simulation_cycle;
-
-  if(!relative)
-  {
-    std::cout<<"RRR FRI\n";
-    n_first_relative_index->print();
-    std::cout<<"RRR LRI\n";
-    n_last_relative_index->print();
-   }
 
   if(count == 0)
   {
@@ -1937,7 +1920,6 @@ range_values_helper(const conduit::Node &history,
                           first_index,
                           last_index);
 
-  std::cout<<"first index "<<first_index<<" last index "<<last_index<<"\n";
   //the entire range falls outside what has been recorded so far
   if(first_index < 0 && last_index < 0)
   {
@@ -1990,12 +1972,6 @@ ArrayGradient::execute()
   const conduit::Node *n_first_absolute_cycle = input<conduit::Node>("first_absolute_cycle");
   const conduit::Node *n_last_absolute_cycle = input<conduit::Node>("last_absolute_cycle");
 
-  std::cout<<"BANANAS\n";
-  std::cout<<"ARRAY_GRAD\n";
-  std::cout<<"FRI\n";
-  n_first_relative_index->print();
-  std::cout<<"LRI\n";
-  n_last_relative_index->print();
   conduit::Node *output = range_values_helper(history,
                                               n_first_absolute_index,
                                               n_last_absolute_index,
@@ -2012,7 +1988,6 @@ ArrayGradient::execute()
 
   if(num_array_elems < 2)
   {
-    std::cout<<"NONONONO\n";
     double neg_inf[1] = {-std::numeric_limits<double>::infinity()};
     (*output)["value"].set(neg_inf,1);
     (*output)["type"] = "array";
@@ -2027,8 +2002,6 @@ ArrayGradient::execute()
   (*output)["type"] = "array";
 
   set_output<conduit::Node>(output);
-  (*output)["time"].print();
-  std::cout<<"DONE BANANAS\n";//(*output)["time"].print();
 }
 
 //-----------------------------------------------------------------------------
@@ -2375,8 +2348,6 @@ HistoryRange::execute()
                                               n_last_absolute_cycle,
                                               operator_name);
 
-  std::cout<<"History range output\n";
-  output->print();
   set_output<conduit::Node>(output);
 }
 

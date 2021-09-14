@@ -316,6 +316,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHMeshQuality: public ::flow::Filter
+{
+public:
+    VTKHMeshQuality();
+    virtual ~VTKHMeshQuality();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHVectorComponent : public ::flow::Filter
 {
 public:
