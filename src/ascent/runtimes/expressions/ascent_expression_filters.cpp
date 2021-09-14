@@ -1565,7 +1565,8 @@ void get_first_and_last_index(const string &operator_name,
                               int &last_index)
 {
 
-  if(absolute || relative) {
+  if(absolute || relative)
+  {
     first_index = (*n_first_index)["value"].to_int32();
     last_index = (*n_last_index)["value"].to_int32();
 
@@ -1590,9 +1591,11 @@ void get_first_and_last_index(const string &operator_name,
         first_index = 0;
       }
     }
-    else {
+    else
+    {
       //clamp it to the last cycle
-      if(last_index >= entries) {
+      if(last_index >= entries)
+      {
         last_index = entries - 1;
       }
     }
@@ -1645,7 +1648,7 @@ void get_first_and_last_index(const string &operator_name,
       {
         first_index = index;
       }
-      if(time < last_time)
+      if(time <= last_time)
       {
         last_index = index;
       }
@@ -1923,7 +1926,6 @@ range_values_helper(const conduit::Node &history,
   //the entire range falls outside what has been recorded so far
   if(first_index < 0 && last_index < 0)
   {
-    std::cout<<"You get nothing!!!!!\n";
     return output;
   }
 
