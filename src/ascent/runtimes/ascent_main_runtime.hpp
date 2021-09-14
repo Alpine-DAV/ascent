@@ -113,10 +113,14 @@ private:
     int               m_rank;
     conduit::Node     m_ghost_fields; // a list of strings
     std::string       m_default_output_dir;
+
     std::string       m_session_name;
+    conduit::Node     m_save_session_actions;
 
     bool              m_field_filtering;
     std::set<std::string> m_field_list;
+
+    conduit::Node     m_comments;
 
     void              ResetInfo();
 
@@ -146,6 +150,7 @@ private:
     void SourceFieldFilter();
     void PaintNestsets();
     void VerifyGhosts();
+    void SaveSession();
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();

@@ -289,13 +289,17 @@ AscentRuntime::Initialize(const conduit::Node &options)
        options["web/stream"].as_string() == "true" &&
        m_rank == 0)
     {
-
+#ifdef ASCENT_WEBSERVER_ENABLED
         if(options.has_path("web/document_root"))
         {
             m_web_interface.SetDocumentRoot(options["web/document_root"].as_string());
         }
 
         m_web_interface.Enable();
+#else
+        ASCENT_ERROR("Ascent was not built with web support,"
+                     "but options[\"web/stream\"] == \"true\"");
+#endif
     }
 
     if(options.has_path("field_filtering"))
@@ -359,6 +363,34 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
+    // Process the comments.
+    m_comments.reset();
+    if(data.has_path("state/software"))
+    {
+      m_comments.append() = "Software";
+      m_comments.append() = data["state/software"].as_string();
+    }
+    if(data.has_path("state/source"))
+    {
+      m_comments.append() = "Source";
+      m_comments.append() = data["state/source"].as_string();
+    }
+    if(data.has_path("state/title"))
+    {
+      m_comments.append() = "Title";
+      m_comments.append() = data["state/title"].as_string();
+    }
+    if(data.has_path("state/info"))
+    {
+      m_comments.append() = "Description";
+      m_comments.append() = data["state/info"].as_string();
+    }
+    if(data.has_path("state/comment"))
+    {
+      m_comments.append() = "Comment";
+      m_comments.append() = data["state/comment"].as_string();
+    }
+
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
     // filter out default ghost name and
@@ -742,6 +774,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        // replace file param with source that includes actual script
        params.remove("file");
        params["source"] = n_py_src;
+       // this entry will show up as __file__ in the python filter env
+       params["source_file"] = script_fname;
      }
 
      // inject helper that provides the mpi comm handle
@@ -1092,6 +1126,7 @@ AscentRuntime::PopulateMetadata()
   Metadata::n_metadata["refinement_level"] = m_refinement_level;
   Metadata::n_metadata["ghost_field"] = m_ghost_fields;
   Metadata::n_metadata["default_dir"] = m_default_output_dir;
+  Metadata::n_metadata["comments"] = m_comments;
 
 }
 //-----------------------------------------------------------------------------
@@ -1450,6 +1485,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   // to build the graph
   m_connections.reset();
   m_scene_connections.reset();
+  m_save_session_actions.reset();
 
   // execution will be enforced in the following order:
   conduit::Node queries;
@@ -1532,7 +1568,9 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
       }
       else if(action_name == "save_session")
       {
-        runtime::expressions::ExpressionEval::save_cache();
+        // Saving the session will be deferred to after
+        // the workspace executes.
+        m_save_session_actions.append() = action;
       }
       else
       {
@@ -1655,6 +1693,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
           vtkh::DataLogger::GetInstance()->CloseLogEntry();
         }
 #endif
+        if(m_save_session_actions.number_of_children() > 0)
+        {
+          SaveSession();
+        }
+
         Node msg;
         this->Info(msg["info"]);
         ascent::about(msg["about"]);
@@ -2008,6 +2051,54 @@ void AscentRuntime::VerifyGhosts()
 
 }
 
+void AscentRuntime::SaveSession()
+{
+  const int num_actions = m_save_session_actions.number_of_children();
+
+  for(int a = 0; a < num_actions; ++a)
+  {
+    const conduit::Node &action = m_save_session_actions.child(a);
+
+    std::string filename = m_session_name;
+    if(action.has_path("file_name"))
+    {
+      if(!action["file_name"].dtype().is_string())
+      {
+        ASCENT_ERROR("save_session filename must be a string");
+      }
+      filename = action["file_name"].as_string();
+    }
+
+    // allow the user to specify which expressions they want saved out
+    if(action.has_path("expressions"))
+    {
+      std::vector<std::string> expressions_selection;
+      const conduit::Node &elist = action["expressions"];
+      const int num_exprs= elist.number_of_children();
+      if(num_exprs == 0)
+      {
+        ASCENT_ERROR("save_session expression selection must be "
+                     <<" a non-empty list of strings");
+      }
+
+      for(int i = 0; i < num_exprs; ++i)
+      {
+        const conduit::Node &e = elist.child(i);
+        if(!e.dtype().is_string())
+        {
+           ASCENT_ERROR("save_session expression selection list "
+                        <<"values must be a string");
+        }
+        expressions_selection.push_back(e.as_string());
+      }
+      runtime::expressions::ExpressionEval::save_cache(filename, expressions_selection);
+    }
+    else
+    {
+      runtime::expressions::ExpressionEval::save_cache(filename);
+    }
+  } // for each save action
+}
 
 //-----------------------------------------------------------------------------
 };

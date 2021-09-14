@@ -122,26 +122,12 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
-
 ################################
-# Set BLT Options
-################################
-# don't use BLT's all warnings feature
-set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
-
-if (NOT BLT_CXX_STD)
-    set(BLT_CXX_STD "c++11" CACHE STRING "")
-endif()
-
 # Init BLT
 ################################
-# if BLT_SOURCE_DIR is not set - use "blt" as default
-if(NOT BLT_SOURCE_DIR)
-    set(BLT_SOURCE_DIR "blt")
-endif()
-
-# init blt using BLT_SOURCE_DIR
-include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+# This also includes 
+# our BLT defaults
+include(cmake/SetupBLT.cmake)
 
 ################################
 # Basic CMake Setup
@@ -183,10 +169,6 @@ include(cmake/SetupIncludes.cmake)
 ################################
 add_subdirectory(thirdparty_builtin)
 
-if(ENABLE_FIDES)
-  find_package(ADIOS2 REQUIRED)
-  find_package(Fides REQUIRED)
-endif()
 
 ################################
 # Add our libs
