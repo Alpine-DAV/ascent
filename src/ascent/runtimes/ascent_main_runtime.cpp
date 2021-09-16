@@ -375,6 +375,34 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
+    // Process the comments.
+    m_comments.reset();
+    if(data.has_path("state/software"))
+    {
+      m_comments.append() = "Software";
+      m_comments.append() = data["state/software"].as_string();
+    }
+    if(data.has_path("state/source"))
+    {
+      m_comments.append() = "Source";
+      m_comments.append() = data["state/source"].as_string();
+    }
+    if(data.has_path("state/title"))
+    {
+      m_comments.append() = "Title";
+      m_comments.append() = data["state/title"].as_string();
+    }
+    if(data.has_path("state/info"))
+    {
+      m_comments.append() = "Description";
+      m_comments.append() = data["state/info"].as_string();
+    }
+    if(data.has_path("state/comment"))
+    {
+      m_comments.append() = "Comment";
+      m_comments.append() = data["state/comment"].as_string();
+    }
+
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
     // filter out default ghost name and
@@ -758,6 +786,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        // replace file param with source that includes actual script
        params.remove("file");
        params["source"] = n_py_src;
+       // this entry will show up as __file__ in the python filter env
+       params["source_file"] = script_fname;
      }
 
      // inject helper that provides the mpi comm handle
@@ -1108,6 +1138,7 @@ AscentRuntime::PopulateMetadata()
   Metadata::n_metadata["refinement_level"] = m_refinement_level;
   Metadata::n_metadata["ghost_field"] = m_ghost_fields;
   Metadata::n_metadata["default_dir"] = m_default_output_dir;
+  Metadata::n_metadata["comments"] = m_comments;
 
 }
 //-----------------------------------------------------------------------------
@@ -1649,7 +1680,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         // w.print();
         // std::cout<<w.graph().to_dot();
-        //w.graph().save_dot_html("ascent_flow_graph.html");
+        w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         if(log_timings)

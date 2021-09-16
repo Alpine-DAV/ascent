@@ -2115,13 +2115,16 @@ field_min(const conduit::Node &dataset, const std::string &field)
   {
     assoc_str = dataset.child(domain)["fields/" + field + "/association"].as_string();
 
+    const std::string topo_str =
+        dataset.child(domain)["fields/" + field + "/topology"].as_string();
+
     if(assoc_str == "vertex")
     {
-      loc = vert_location(dataset.child(domain), index);
+      loc = vert_location(dataset.child(domain), index, topo_str);
     }
     else if(assoc_str == "element")
     {
-      loc = element_location(dataset.child(domain), index);
+      loc = element_location(dataset.child(domain), index, topo_str);
     }
     else
     {
@@ -2265,13 +2268,16 @@ field_max(const conduit::Node &dataset, const std::string &field)
     const std::string assoc_str =
         dataset.child(domain)["fields/" + field + "/association"].as_string();
 
+    const std::string topo_str =
+        dataset.child(domain)["fields/" + field + "/topology"].as_string();
+
     if(assoc_str == "vertex")
     {
-      loc = vert_location(dataset.child(domain), index);
+      loc = vert_location(dataset.child(domain), index, topo_str);
     }
     else if(assoc_str == "element")
     {
-      loc = element_location(dataset.child(domain), index);
+      loc = element_location(dataset.child(domain), index, topo_str);
     }
     else
     {
