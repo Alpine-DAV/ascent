@@ -439,11 +439,23 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
+  // gradient is an interesting case. Currently function matching picks the first
+  // match and breaks so this if we don't list the most restrictive first, bad
+  // things will happen (get a syntax error or something).
+  conduit::Node &field_gradient_sig = (*functions)["gradient"].append();
+  field_gradient_sig["return_type"] = "jitable";
+  field_gradient_sig["filter_name"] = "gradient";
+  field_gradient_sig["args/field/type"] = "field";
+  field_gradient_sig["description"] =
+      "Return a derived field that is the gradient of a field.";
+  field_gradient_sig["jitable"];
+
+  //---------------------------------------------------------------------------
   conduit::Node &scalar_gradient_sig = (*functions)["gradient"].append();
   scalar_gradient_sig["return_type"] = "double";
   scalar_gradient_sig["filter_name"] = "scalar_gradient";
 
-  scalar_gradient_sig["args/expr_name/type"] = "anytype";
+  scalar_gradient_sig["args/expr_name/type"] = "string";
   scalar_gradient_sig["args/expr_name/description"] =
       "`expr_name` should be the name of an expression that was evaluated in "
       "the past.";
@@ -1274,15 +1286,6 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
 
-  conduit::Node &field_gradient_sig = (*functions)["gradient"].append();
-  field_gradient_sig["return_type"] = "jitable";
-  field_gradient_sig["filter_name"] = "gradient";
-  field_gradient_sig["args/field/type"] = "field";
-  field_gradient_sig["description"] =
-      "Return a derived field that is the gradient of a field.";
-  field_gradient_sig["jitable"];
-
-  //---------------------------------------------------------------------------
 
   conduit::Node &field_curl_sig = (*functions)["curl"].append();
   field_curl_sig["return_type"] = "jitable";

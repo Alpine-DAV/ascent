@@ -1303,7 +1303,8 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
   // get the object
   if(!o_table->has_path(obj_type))
   {
-    ASCENT_ERROR("Cannot get attribute of non-object type: " << obj_type);
+    ASCENT_ERROR("Cannot get attribute of non-object type: '"
+                 << obj_type << "' attribute name: '"<<expr.name<<"'");
   }
   const conduit::Node &o_table_obj = (*o_table)[obj_type];
 

@@ -636,6 +636,54 @@ TopologyCode::tetrahedral_volume(InsertionOrderedSet<std::string> &code,
   code.insert("const double " + res_name + " = " + res_name + "_det / 6.0;\n");
 }
 
+void
+print_vector(InsertionOrderedSet<std::string> &code,
+             const std::string v,
+             const int num_dims)
+{
+  std::stringstream ss;
+  ss<<"printf(\""+v<<" ";
+  for(int i = 0; i < num_dims; ++i)
+  {
+    ss<<"%f ";
+  }
+  ss<<"\\n\", ";
+  for(int i = 0; i < num_dims; ++i)
+  {
+    ss<<v<<"["<<i<<"]";
+    if(i != num_dims-1)
+    {
+      ss<<", ";
+    }
+  }
+  ss<<");\n";
+  code.insert(ss.str());
+}
+
+void
+print_int_vector(InsertionOrderedSet<std::string> &code,
+             const std::string v,
+             const int num_dims)
+{
+  std::stringstream ss;
+  ss<<"printf(\""+v<<" ";
+  for(int i = 0; i < num_dims; ++i)
+  {
+    ss<<"%d ";
+  }
+  ss<<"\\n\", ";
+  for(int i = 0; i < num_dims; ++i)
+  {
+    ss<<v<<"["<<i<<"]";
+    if(i != num_dims-1)
+    {
+      ss<<", ";
+    }
+  }
+  ss<<");\n";
+  code.insert(ss.str());
+}
+
 // 1/2 * |(p2 - p0) X (p3 - p1)|
 void
 TopologyCode::quadrilateral_area(InsertionOrderedSet<std::string> &code,
@@ -647,14 +695,28 @@ TopologyCode::quadrilateral_area(InsertionOrderedSet<std::string> &code,
 {
   math_code.vector_subtract(code, p2, p0, res_name + "_2m0", num_dims);
   math_code.vector_subtract(code, p3, p1, res_name + "_3m1", num_dims);
-  math_code.cross_product(code,
-                          res_name + "_2m0",
-                          res_name + "_3m1",
-                          res_name + "_cross",
-                          num_dims);
-  math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
-  code.insert("const double " + res_name + " = " + res_name +
-              "_cross_mag / 2.0;\n");
+  if(num_dims == 3)
+  {
+    math_code.vector_subtract(code, p2, p0, res_name + "_2m0", num_dims);
+    math_code.vector_subtract(code, p3, p1, res_name + "_3m1", num_dims);
+    math_code.cross_product(code,
+                            res_name + "_2m0",
+                            res_name + "_3m1",
+                            res_name + "_cross",
+                            num_dims);
+    math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
+    code.insert("const double " + res_name + " = " + res_name +
+                "_cross_mag / 2.0;\n");
+  }
+  else if(num_dims ==2)
+  {
+    // 2d cross product is weird so just do it
+    // also, this is the signed area, so take the absolute value
+    // since I am not currently sure how to ensure the winding order
+    code.insert("const double " + res_name + " = abs((" +
+                 res_name + "_2m0[0] * " + res_name + "_3m1[1] - " +
+                 res_name + "_2m0[1] * " + res_name + "_3m1[0] ) / 2.0); \n");
+  }
 }
 
 void
@@ -680,14 +742,26 @@ TopologyCode::triangle_area(InsertionOrderedSet<std::string> &code,
 {
   math_code.vector_subtract(code, p1, p0, res_name + "_1m0", num_dims);
   math_code.vector_subtract(code, p2, p0, res_name + "_2m0", num_dims);
-  math_code.cross_product(code,
-                          res_name + "_1m0",
-                          res_name + "_2m0",
-                          res_name + "_cross",
-                          num_dims);
-  math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
-  code.insert("const double " + res_name + " = " + res_name +
-              "_cross_mag / 2.0;\n");
+  if(num_dims == 3)
+  {
+    math_code.cross_product(code,
+                            res_name + "_1m0",
+                            res_name + "_2m0",
+                            res_name + "_cross",
+                            num_dims);
+    math_code.magnitude(code, res_name + "_cross", res_name + "_cross_mag", 3);
+    code.insert("const double " + res_name + " = " + res_name +
+                "_cross_mag / 2.0;\n");
+  }
+  else if(num_dims == 2)
+  {
+    // 2d cross product is weird so just do it
+    // also, this is the signed area, so take the absolute value
+    // since I am not currently sure how to ensure the winding order
+    code.insert("const double " + res_name + " = abs((" +
+                 res_name + "_1m0[0] * " + res_name + "_2m0[1] - " +
+                 res_name + "_1m0[1] * " + res_name + "_2m0[0] ) / 2.0); \n");
+  }
 }
 
 void
@@ -950,53 +1024,47 @@ TopologyCode::tetrahedral_surface_area(InsertionOrderedSet<std::string> &code,
 void
 TopologyCode::area(InsertionOrderedSet<std::string> &code) const
 {
+  if(num_dims != 2)
+  {
+    ASCENT_ERROR("'.area' is only defined for 2 dimensional meshes, but "
+                 <<" the mesh has topological dims "<<num_dims);
+  }
+
   if(topo_type == "uniform")
   {
-    if(num_dims == 2)
-    {
-      code.insert("const double " + topo_name + "_area = " + topo_name +
+    code.insert("const double " + topo_name + "_area = " + topo_name +
                   "_spacing_dx * " + topo_name + "_spacing_dy;\n");
-    }
-    else
-    {
-      code.insert("const double " + topo_name + "_area = " + topo_name +
-                  "_spacing_dx;\n");
-    }
+    //else
+    //{
+    //  // this was originally returning length which I don't think area
+    //  // should be defined for anything but 3d
+    //  //code.insert("const double " + topo_name + "_area = " + topo_name +
+    //  //            "_spacing_dx;\n");
+    //}
   }
   else if(topo_type == "rectilinear")
   {
     dxdydz(code);
-    if(num_dims == 2)
-    {
-      code.insert("const double " + topo_name + "_area = " + topo_name +
-                  "_dx * " + topo_name + "_dy;\n");
-    }
-    else
-    {
-      code.insert("const double " + topo_name + "_area = " + topo_name +
-                  "_dx;\n");
-    }
+    code.insert("const double " + topo_name + "_area = " + topo_name +
+                "_dx * " + topo_name + "_dy;\n");
+    //else
+    //{
+    //  code.insert("const double " + topo_name + "_area = " + topo_name +
+    //              "_dx;\n");
+    //}
   }
   else if(topo_type == "structured")
   {
     structured_vertex_locs(code);
-    if(num_dims == 2)
-    {
-      quadrilateral_area(code, topo_name + "_vertex_locs", topo_name + "_area");
-    }
-    else if(num_dims == 1)
-    {
-      math_code.vector_subtract(code,
-                                topo_name + "vertex_locs[1]",
-                                topo_name + "vertex_locs[0]",
-                                topo_name + "_area",
-                                1);
-    }
-    else
-    {
-      ASCENT_ERROR("area is not implemented for structured topologies with "
-                   << num_dims << " dimensions.");
-    }
+    quadrilateral_area(code, topo_name + "_vertex_locs", topo_name + "_area");
+    //else if(num_dims == 1)
+    //{
+    //  math_code.vector_subtract(code,
+    //                            topo_name + "vertex_locs[1]",
+    //                            topo_name + "vertex_locs[0]",
+    //                            topo_name + "_area",
+    //                            1);
+    //}
   }
   else if(topo_type == "unstructured")
   {

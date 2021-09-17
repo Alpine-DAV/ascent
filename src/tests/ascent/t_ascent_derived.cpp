@@ -183,6 +183,138 @@ TEST(ascent_expressions, derived_simple)
 }
 
 #endif
+
+
+TEST(ascent_expressions, derived_mesh_specific_paths)
+{
+  // Run on multiple meshes
+  const std::vector<long long> mesh_3d =
+      {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM};
+  const std::vector<long long> mesh_2d =
+      {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, 1};
+
+  const std::vector<std::pair<std::string,std::vector<long long>>> meshes =
+    {
+      {"uniform", mesh_2d},
+      {"uniform", mesh_3d},
+      {"rectilinear", mesh_3d},
+      {"rectilinear", mesh_2d},
+      {"structured", mesh_3d},
+      {"structured", mesh_2d},
+      {"tets", mesh_3d},
+      {"hexs", mesh_3d},
+      {"tris", mesh_2d},
+      {"quads", mesh_2d}
+    };
+
+  for(const auto mesh : meshes)
+  {
+    const std::string mesh_type = mesh.first;
+    const std::vector<long long> dims = mesh.second;
+
+    std::cout<<"Running mesh type "<<mesh_type<<"\n";
+    std::cout<<"Mesh dims "<<dims[0]<<" "<<dims[1]<<" "<<dims[2]<<"\n\n";
+
+    Node data;
+    conduit::blueprint::mesh::examples::braid(
+        mesh_type, dims[0], dims[1], dims[2], data);
+    //std::cout<<data.to_summary_string()<<"\n";
+
+    // ascent normally adds this but we are doing an end around
+    data["state/domain_id"] = 0;
+    Node multi_dom;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+
+    conduit::Node res;
+    std::string expr;
+
+    expr = "min_val = min(field('braid')).value\n"
+           "max_val = max(field('braid')).value\n"
+           "norm_field = (field('braid') - min_val) / (max_val - min_val)\n"
+           "not_between_0_1 = not (norm_field >= 0 and norm_field <= 1)\n"
+           "sum(not_between_0_1)";
+    res = eval.evaluate(expr);
+    EXPECT_EQ(res["value"].to_float64(), 0);
+    EXPECT_EQ(res["type"].as_string(), "double");
+
+    expr = "avg(topo('mesh').cell.x)";
+    res = eval.evaluate(expr);
+    const double tiny = 1e-10;
+    EXPECT_EQ(std::abs(res["value"].to_float64()) < tiny, true);
+    EXPECT_EQ(res["type"].as_string(), "double");
+
+    expr = "builtin_avg = avg(sin(field('radial')))\n"
+           "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
+           "manual_avg = sum(sin(field('radial'))) / num_elements\n"
+           "builtin_avg == manual_avg";
+    res = eval.evaluate(expr);
+
+    EXPECT_EQ(res["type"].as_string(), "bool");
+
+    Node last;
+    runtime::expressions::ExpressionEval::get_last(last);
+    double manual = last["manual_avg/100/value"].to_float64();
+    double builtin = last["builtin_avg/100/value"].to_float64();
+    EXPECT_NEAR(manual, builtin, 1e-8);
+
+    // apparently vel is element assoc
+    if(dims[2] != 1 && (mesh_type == "uniform" || mesh_type == "rectilinear"))
+    {
+      expr = "builtin_vort = curl(field('vel'))\n"
+             "du = gradient(field('vel', 'u'))\n"
+             "dv = gradient(field('vel', 'v'))\n"
+             "dw = gradient(field('vel', 'w'))\n"
+             "w_x = dw.y - dv.z\n"
+             "w_y = du.z - dw.x\n"
+             "w_z = dv.x - du.y\n"
+             "not_eq = not (builtin_vort.x == w_x and\n"
+             "              builtin_vort.y == w_y and\n"
+             "              builtin_vort.z == w_z)\n"
+             "sum(not_eq)";
+      res = eval.evaluate(expr);
+      EXPECT_EQ(res["value"].to_float64(), 0);
+      EXPECT_EQ(res["type"].as_string(), "double");
+    }
+
+    // test the 2d code
+    if(dims[2] == 1 || dims[2] == 0)
+    {
+      expr = "sum(topo('mesh').cell.area)";
+      res = eval.evaluate(expr);
+      EXPECT_NEAR(res["value"].to_float64(), 400.0, 1e-8);
+
+      expr = "topo('mesh').cell.volume";
+      EXPECT_ANY_THROW(eval.evaluate(expr));
+    }
+    else
+    {
+      expr = "sum(topo('mesh').cell.area)";
+      EXPECT_ANY_THROW(eval.evaluate(expr));
+
+      expr = "sum(topo('mesh').cell.volume)";
+      res = eval.evaluate(expr);
+      EXPECT_NEAR(res["value"].to_float64(), 8000.0, 1e-8);
+    }
+
+    if(mesh_type == "uniform" || mesh_type == "rectilinear" ||
+       mesh_type == "structured")
+    {
+      // element to vertex
+      expr = "recenter(field('radial') + 1)";
+      eval.evaluate(expr);
+    }
+
+    // vertex to element
+    expr = "recenter(field('braid'))";
+    eval.evaluate(expr);
+
+  }
+}
+
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, derived_expressions)
 {
@@ -281,6 +413,7 @@ TEST(ascent_expressions, derived_expressions)
   }
   EXPECT_EQ(threw, true);
 
+/*
   // Run on multiple meshes
   const std::vector<std::string> mesh_types = {
       "uniform", "rectilinear", "structured", "tris", "quads", "hexs", "tets"};
@@ -362,8 +495,12 @@ TEST(ascent_expressions, derived_expressions)
 
       if(dims[2] == 0)
       {
-        expr = "topo('mesh').cell.area";
-        eval.evaluate(expr);
+        expr = "sum(topo('mesh').cell.area)";
+        std::cout<<"Mesh type "<<mesh_type<<"\n";
+        std::cout<<"expression "<<expr<<"\n";
+        res = eval.evaluate(expr);
+        res.print();
+        EXPECT_NEAR(res["value"].to_float64(), 400.0, 1e-8);
 
         expr = "topo('mesh').cell.volume";
         EXPECT_ANY_THROW(eval.evaluate(expr));
@@ -390,7 +527,9 @@ TEST(ascent_expressions, derived_expressions)
       eval.evaluate(expr);
     }
   }
+*/
 }
+
 //-----------------------------------------------------------------------------
 
 TEST(ascent_expressions, braid_sample)
@@ -461,6 +600,7 @@ TEST(ascent_expressions, braid_sample)
 
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
+#endif
 #if 0
 TEST(ascent_expressions, multi_topos)
 {
