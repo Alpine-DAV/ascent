@@ -290,6 +290,15 @@ TEST(ascent_expressions, basic_derived_expressions)
 
 TEST(ascent_expressions, derived_mesh_specific_paths)
 {
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with jit support
+  if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
+      return;
+  }
+
   // Run on multiple meshes
   const std::vector<long long> mesh_3d =
       {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM};
@@ -493,9 +502,21 @@ TEST(ascent_expressions, braid_sample)
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
 
-#if 0
 TEST(ascent_expressions, multi_topos)
 {
+  Node n;
+  ascent::about(n);
+  if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
+      return;
+  }
+    // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      return;
+  }
   conduit::Node multi_dom;
   conduit::Node &dom1 = multi_dom.append();
   conduit::blueprint::mesh::examples::braid("structured",
@@ -558,7 +579,6 @@ TEST(ascent_expressions, multi_topos)
 
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
-#endif
 //-----------------------------------------------------------------------------
 
 int
