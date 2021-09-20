@@ -82,22 +82,27 @@ void create_test_data(Node &data)
   data.reset();
   if(par_rank == 0)
   {
-    Node &mesh1 = data.append();
+    Node &mesh = data.append();
     conduit::blueprint::mesh::examples::braid("uniform",
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
-                                              mesh1);
+                                              mesh);
+    mesh["state/domain_id"] = 0;
   }
   else
   {
-    Node &mesh2 = data.append();
+    Node &mesh = data.append();
     conduit::blueprint::mesh::examples::braid("points",
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
-                                              mesh2);
+                                              mesh);
 
+    // add a field that wont exist on both domains
+    mesh["fields/bananas"] = mesh["fields/braid"];
+    mesh["state/domain_id"] = 1;
+    std::cout<<mesh.to_summary_string()<<"\n";
   }
 }
 
@@ -139,7 +144,8 @@ TEST(ascent_mpi_derived, mpi_derived)
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&data);
-  std::string expr = "magnitude(max(field('radial_vert')).position)";
+  std::string expr = "magnitude(max(field('bananas')).position)";
+  //std::string expr = "magnitude(max(field('braid')).position)";
   conduit::Node res = eval.evaluate(expr);
 
   EXPECT_EQ(res["type"].as_string(), "double");

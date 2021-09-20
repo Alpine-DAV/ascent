@@ -710,6 +710,74 @@ has_component(const conduit::Node &dataset,
   return has_comp;
 }
 
+int num_components(const conduit::Node &dataset,
+                   const std::string &field_name)
+{
+  int comps = -1;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/" + field_name + "/values"))
+    {
+      const conduit::Node &vals = dom["fields/" + field_name + "/values"];
+      comps = std::max(comps, int(vals.number_of_children()));
+    }
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  int global_comps;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Allreduce(&comps, &global_comps, 1, MPI_INT, MPI_MAX, mpi_comm);
+  comps = global_comps;
+#endif
+  return comps;
+}
+
+std::string component_name(const conduit::Node &dataset,
+                           const std::string &field_name,
+                           const int component_id)
+{
+  if(component_id <= 0)
+  {
+    ASCENT_ERROR("Invalid component_id "<<component_id
+                 <<". Component id must be greater than zero.");
+  }
+
+
+  int comps = num_components(dataset, field_name);
+  if(comps == -1)
+  {
+    ASCENT_ERROR("Field '"<<field_name<<"' does not exist");
+  }
+
+  if(component_id >= comps)
+  {
+    ASCENT_ERROR("Field '"<<field_name<<"' invalid component_id "
+                 <<component_id<<". Number of components "<<comps);
+  }
+
+  std::string res;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/" + field_name + "/values"))
+    {
+      res = dom["fields/" + field_name + "/values"].child(component_id).name();
+    }
+  }
+
+  std::set<std::string> res_set;
+  res_set.insert(res);
+  gather_strings(res_set);
+  if(res_set.size() != 1)
+  {
+    ASCENT_ERROR("Mismatched component names res_set size "<<res_set.size());
+  }
+
+  res = *res_set.begin();
+  return res;
+}
+
 // TODO If someone names their fields x,y,z things will go wrong
 bool
 is_xyz(const std::string &axis_name)
@@ -2253,6 +2321,7 @@ field_max(const conduit::Node &dataset, const std::string &field)
         max_value = a_max;
         index = res["index"].as_int32();
         domain = i;
+        std::cout<<dom.to_summary_string()<<"\n";
         domain_id = dom["state/domain_id"].to_int32();
       }
     }

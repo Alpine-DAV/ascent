@@ -2716,12 +2716,36 @@ Field::execute()
     }
   }
 
+  // at this point, we know that the field exists.
+  // If the the field has only one component then we
+  // don't require that the name be provide, but the
+  // code will need the name.
+
+
   // if the field only has one component use that
-  const conduit::Node &values =
-      dataset->child(0)["fields/" + field_name + "/values"];
-  if(component.empty() && values.number_of_children() == 1)
+  if(component.empty())
   {
-    component = values.child(0).name();
+
+    int num_comps = num_components(*dataset, field_name);
+    if(num_comps == 1)
+    {
+      const int comp_idx = 0;
+      component = component_name(*dataset, field_name, comp_idx);
+    }
+    else if(num_comps == 0)
+    {
+      // default name for empty path
+      component = "";
+    }
+    else
+    {
+      std::cout<<"Num comps "<<num_comps<<"\n";
+      ASCENT_ERROR("Field variable '"
+                   << field_name << "'"
+                   << " cannot infer component."
+                   << " known components = "
+                   << possible_components(*dataset, field_name));
+    }
   }
 
   conduit::Node *output = new conduit::Node();

@@ -148,6 +148,16 @@ bool has_component(const conduit::Node &dataset,
                    const std::string &field_name,
                    const std::string &component);
 
+// returns -1 if the component does not exist
+// does not check for consistency (i.e, if all the
+// domains has the same number of components)
+int num_components(const conduit::Node &dataset,
+                   const std::string &field_name);
+
+std::string component_name(const conduit::Node &dataset,
+                           const std::string &field_name,
+                           const int component_id);
+
 std::string
 possible_components(const conduit::Node &dataset,
                     const std::string &field_name);
