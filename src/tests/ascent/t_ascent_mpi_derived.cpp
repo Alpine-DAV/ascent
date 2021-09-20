@@ -144,8 +144,9 @@ TEST(ascent_mpi_derived, mpi_derived)
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&data);
+
+
   std::string expr = "magnitude(max(field('bananas')).position)";
-  //std::string expr = "magnitude(max(field('braid')).position)";
   conduit::Node res = eval.evaluate(expr);
 
   EXPECT_EQ(res["type"].as_string(), "double");
@@ -154,6 +155,13 @@ TEST(ascent_mpi_derived, mpi_derived)
   {
     res.print();
   }
+
+  // create an expression that will throw an exception (points volume)
+  // and do an MPI reduction that will hang (reduce) if exceptions aren't
+  // handled correctly
+  expr = "sum(topo('mesh').cell.volume)";
+  res = eval.evaluate(expr);
+
 }
 
 int main(int argc, char* argv[])

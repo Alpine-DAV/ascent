@@ -941,6 +941,16 @@ TopologyCode::volume(InsertionOrderedSet<std::string> &code) const
     //   polyhedron_volume(
     //       code, topo_name + "_vertex_locs", topo_name + "_volume");
     // }
+    else
+    {
+      ASCENT_ERROR("Unsupported unstructured topo_type '"
+                   <<topo_type<<"' with shape '"<<shape
+                   <<"' for volume calculation");
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("Unsupported topo_type '"<<topo_type<<"' for volume calculation");
   }
 }
 
@@ -1087,6 +1097,11 @@ TopologyCode::area(InsertionOrderedSet<std::string> &code) const
                    << shape << "' is not implemented.");
     }
   }
+  else
+  {
+    ASCENT_ERROR("area for topology type '"<<topo_type
+                 <<"' is not implemented.");
+  }
 }
 
 void
@@ -1136,6 +1151,11 @@ TopologyCode::surface_area(InsertionOrderedSet<std::string> &code) const
       ASCENT_ERROR("area for unstructured topology with shape '"
                    << shape << "' is not implemented.");
     }
+  }
+  else
+  {
+    ASCENT_ERROR("surface_area for topology type '"<<topo_type
+                 <<"' is not implemented.");
   }
 }
 // }}}
