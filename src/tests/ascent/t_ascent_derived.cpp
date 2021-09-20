@@ -66,9 +66,18 @@ using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
-#if 0
+
 TEST(ascent_jit_expressions, derived_support_test)
 {
+
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with jit support
+  if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
+      return;
+  }
 
   Node data;
   conduit::blueprint::mesh::examples::braid("uniform",
@@ -103,8 +112,6 @@ TEST(ascent_jit_expressions, derived_support_test)
     threw = true;
   }
 
-  Node n;
-  ascent::about(n);
   if(n["runtimes/ascent/jit/status"].as_string() == "disabled")
   {
     EXPECT_TRUE(threw);
@@ -145,28 +152,26 @@ TEST(ascent_expressions, derived_simple)
   conduit::Node res;
   std::string expr;
 
-  //expr = "avg(topo('mesh').cell.x)";
-  //res = eval.evaluate(expr);
-  //const double tiny = 1e-10;
-  //std::cout<<std::abs(res["value"].to_float64())<<"\n";
-  //EXPECT_EQ(std::abs(res["value"].to_float64()) < tiny, true);
-  //EXPECT_EQ(res["type"].as_string(), "double");
+  expr = "avg(topo('mesh').cell.x)";
+  res = eval.evaluate(expr);
+  const double tiny = 1e-10;
+  std::cout<<std::abs(res["value"].to_float64())<<"\n";
+  EXPECT_EQ(std::abs(res["value"].to_float64()) < tiny, true);
+  EXPECT_EQ(res["type"].as_string(), "double");
 
-  //expr = "min_val = min(field('braid')).value\n"
-  //       "max_val = max(field('braid')).value\n"
-  //       "norm_field = (field('braid') - min_val) / (max_val - min_val)\n"
-  //       "not_between_0_1 = not (norm_field >= 0 and norm_field <= 1)\n"
-  //       "sum(not_between_0_1)";
+  expr = "min_val = min(field('braid')).value\n"
+         "max_val = max(field('braid')).value\n"
+         "norm_field = (field('braid') - min_val) / (max_val - min_val)\n"
+         "not_between_0_1 = not (norm_field >= 0 and norm_field <= 1)\n"
+         "sum(not_between_0_1)";
 
 
-  //res = eval.evaluate(expr, "bananas");
-  //res = eval.evaluate(expr);
-  //EXPECT_EQ(res["value"].to_float64(), 0);
-  //EXPECT_EQ(res["type"].as_string(), "double");
+  res = eval.evaluate(expr, "bananas");
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["value"].to_float64(), 0);
+  EXPECT_EQ(res["type"].as_string(), "double");
 
-  //expr = "bananas = field('braid') + 1\n";
-  //       "bananas + 1";
-  //res = eval.evaluate(expr);
+  res = eval.evaluate(expr);
 
   expr = "builtin_avg = avg(sin(field('radial')))\n"
          "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
@@ -181,10 +186,6 @@ TEST(ascent_expressions, derived_simple)
   double builtin = last["builtin_avg/100/value"].to_float64();
   EXPECT_NEAR(manual, builtin, 1e-8);
 }
-
-#endif
-
-
 
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_derived_expressions)
