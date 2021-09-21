@@ -102,7 +102,7 @@ void create_test_data(Node &data)
     // add a field that wont exist on both domains
     mesh["fields/bananas"] = mesh["fields/braid"];
     mesh["state/domain_id"] = 1;
-    std::cout<<mesh.to_summary_string()<<"\n";
+    //std::cout<<mesh.to_summary_string()<<"\n";
   }
 }
 
@@ -160,7 +160,8 @@ TEST(ascent_mpi_derived, mpi_derived)
   // and do an MPI reduction that will hang (reduce) if exceptions aren't
   // handled correctly
   expr = "sum(topo('mesh').cell.volume)";
-  res = eval.evaluate(expr);
+  // normally the ascent runtime would catch this so we have to catch
+  EXPECT_ANY_THROW(res = eval.evaluate(expr));
 
 }
 

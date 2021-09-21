@@ -57,6 +57,7 @@
 #include <runtimes/flow_filters/ascent_runtime_utils.hpp>
 
 #include <ascent_data_logger.hpp>
+#include <ascent_mpi_utils.hpp>
 #include <ascent_logging.hpp>
 
 #include <cmath>
@@ -776,234 +777,273 @@ void
 Jitable::execute(conduit::Node &dataset, const std::string &field_name)
 {
 #ifdef ASCENT_JIT_ENABLED
-  ASCENT_DATA_OPEN("jitable_execute");
-  // TODO set this during initialization not here
-  static bool init = false;
-  if(!init)
+  // There are a lot of possible code paths that each rank/domain could
+  // follow. All JIT code should not contain any MPI calls, but things
+  // after JIT can call MPI, so its important that we globally catch errors
+  // and halt exectution on any error. Otherwise, we will deadlock
+  conduit::Node errors;
+  try
   {
-    // running this in a loop segfaults...
-    init_occa();
-    init = true;
-  }
-  occa::device &device = occa::getDevice();
-  ASCENT_DATA_ADD("occa device", device.mode());
-  occa::kernel occa_kernel;
-
-  // we need an association and topo so we can put the field back on the mesh
-  if(topology.empty() || topology == "none")
-  {
-    ASCENT_ERROR("Error while executing derived field: Could not infer the "
-                 "topology. Try using the derived_field function to set it "
-                 "explicitely.");
-  }
-  if(association.empty() || association == "none")
-  {
-    ASCENT_ERROR("Error while executing derived field: Could not determine the "
-                 "association. Try using the derived_field function to set it "
-                 "explicitely.");
-  }
-
-  const int num_domains = dataset.number_of_children();
-  for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
-  {
-    ASCENT_DATA_OPEN("domain execute");
-    conduit::Node &dom = dataset.child(dom_idx);
-
-    conduit::Node &cur_dom_info = dom_info.child(dom_idx);
-
-    const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
-
-    if(kernel.expr.empty())
+    ASCENT_DATA_OPEN("jitable_execute");
+    // TODO set this during initialization not here
+    static bool init = false;
+    if(!init)
     {
-      ASCENT_ERROR("Cannot compile a kernel with an empty expr field. This "
-                   "shouldn't happen, call someone.");
+      // running this in a loop segfaults...
+      init_occa();
+      init = true;
+    }
+    occa::device &device = occa::getDevice();
+    ASCENT_DATA_ADD("occa device", device.mode());
+    occa::kernel occa_kernel;
+
+    // we need an association and topo so we can put the field back on the mesh
+    if(topology.empty() || topology == "none")
+    {
+      ASCENT_ERROR("Error while executing derived field: Could not infer the "
+                   "topology. Try using the derived_field function to set it "
+                   "explicitely.");
+    }
+    if(association.empty() || association == "none")
+    {
+      ASCENT_ERROR("Error while executing derived field: Could not determine the "
+                   "association. Try using the derived_field function to set it "
+                   "explicitely.");
     }
 
-    // the final number of entries
-    const int entries = cur_dom_info["entries"].to_int64();
-
-    // pass entries into args just before we need to execute
-    cur_dom_info["args/entries"] = entries;
-
-    // create output array schema and put it in array_map
-    conduit::Schema output_schema;
-
-    // TODO output to the host is always interleaved
-    schemaFactory("interleaved",
-                  conduit::DataType::FLOAT64_ID,
-                  entries,
-                  kernel.num_components,
-                  output_schema);
-
-    arrays[dom_idx].array_map.insert(
-        std::make_pair("output", SchemaBool(output_schema, false)));
-
-    // allocate the output array in conduit
-    conduit::Node &n_output = dom["fields/" + field_name];
-    n_output["association"] = association;
-    n_output["topology"] = topology;
-
-    ASCENT_DATA_OPEN("host output alloc");
-    n_output["values"].set(output_schema);
-    unsigned char *output_ptr =
-        static_cast<unsigned char *>(n_output["values"].data_ptr());
-    // output to the host will always be compact
-    ASCENT_DATA_ADD("bytes", output_schema.total_bytes_compact());
-    ASCENT_DATA_CLOSE();
-
-    // these are reference counted
-    // need to keep the mem in scope or bad things happen
-    std::vector<Array<unsigned char>> array_buffers;
-    // slice is {index in array_buffers, offset, size}
-    std::vector<detail::slice_t> slices;
-    ASCENT_DATA_OPEN("host array alloc");
-    // allocate arrays
-    size_t output_index;
-    conduit::Node new_args;
-    for(const auto &array : arrays[dom_idx].array_map)
+    const int num_domains = dataset.number_of_children();
+    for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
     {
-      if(array.second.codegen_array)
+      ASCENT_DATA_OPEN("domain execute");
+      conduit::Node &dom = dataset.child(dom_idx);
+
+      conduit::Node &cur_dom_info = dom_info.child(dom_idx);
+
+      const Kernel &kernel = kernels.at(cur_dom_info["kernel_type"].as_string());
+
+      if(kernel.expr.empty())
       {
-        // codegen_arrays are false arrays used by the codegen
-        continue;
+        ASCENT_ERROR("Cannot compile a kernel with an empty expr field. This "
+                     "shouldn't happen, call someone.");
       }
-      if(cur_dom_info["args"].has_path(array.first))
+
+      // the final number of entries
+      const int entries = cur_dom_info["entries"].to_int64();
+
+      // pass entries into args just before we need to execute
+      cur_dom_info["args/entries"] = entries;
+
+      // create output array schema and put it in array_map
+      conduit::Schema output_schema;
+
+      // TODO output to the host is always interleaved
+      schemaFactory("interleaved",
+                    conduit::DataType::FLOAT64_ID,
+                    entries,
+                    kernel.num_components,
+                    output_schema);
+
+      arrays[dom_idx].array_map.insert(
+          std::make_pair("output", SchemaBool(output_schema, false)));
+
+      // allocate the output array in conduit
+      conduit::Node &n_output = dom["fields/" + field_name];
+      n_output["association"] = association;
+      n_output["topology"] = topology;
+
+      ASCENT_DATA_OPEN("host output alloc");
+      n_output["values"].set(output_schema);
+      unsigned char *output_ptr =
+          static_cast<unsigned char *>(n_output["values"].data_ptr());
+      // output to the host will always be compact
+      ASCENT_DATA_ADD("bytes", output_schema.total_bytes_compact());
+      ASCENT_DATA_CLOSE();
+
+      // these are reference counted
+      // need to keep the mem in scope or bad things happen
+      std::vector<Array<unsigned char>> array_buffers;
+      // slice is {index in array_buffers, offset, size}
+      std::vector<detail::slice_t> slices;
+      ASCENT_DATA_OPEN("host array alloc");
+      // allocate arrays
+      size_t output_index;
+      conduit::Node new_args;
+      for(const auto &array : arrays[dom_idx].array_map)
       {
-        detail::device_alloc_array(cur_dom_info["args/" + array.first],
-                                   array.second.schema,
-                                   new_args,
-                                   array_buffers,
-                                   slices);
-      }
-      else
-      {
-        // not in args so doesn't point to any data, allocate a temporary
-        if(array.first == "output")
+        if(array.second.codegen_array)
         {
-          output_index = array_buffers.size();
+          // codegen_arrays are false arrays used by the codegen
+          continue;
         }
-        if(array.first == "output" &&
-           (device.mode() == "Serial" || device.mode() == "OpenMP"))
+        if(cur_dom_info["args"].has_path(array.first))
         {
-          // in Serial and OpenMP we don't need a separate output array for
-          // the device, so just pass it conduit's array
-          detail::device_alloc_temporary(array.first,
-                                         array.second.schema,
-                                         new_args,
-                                         array_buffers,
-                                         slices,
-                                         output_ptr);
+          detail::device_alloc_array(cur_dom_info["args/" + array.first],
+                                     array.second.schema,
+                                     new_args,
+                                     array_buffers,
+                                     slices);
         }
         else
         {
-          detail::device_alloc_temporary(array.first,
-                                         array.second.schema,
-                                         new_args,
-                                         array_buffers,
-                                         slices,
-                                         nullptr);
+          // not in args so doesn't point to any data, allocate a temporary
+          if(array.first == "output")
+          {
+            output_index = array_buffers.size();
+          }
+          if(array.first == "output" &&
+             (device.mode() == "Serial" || device.mode() == "OpenMP"))
+          {
+            // in Serial and OpenMP we don't need a separate output array for
+            // the device, so just pass it conduit's array
+            detail::device_alloc_temporary(array.first,
+                                           array.second.schema,
+                                           new_args,
+                                           array_buffers,
+                                           slices,
+                                           output_ptr);
+          }
+          else
+          {
+            detail::device_alloc_temporary(array.first,
+                                           array.second.schema,
+                                           new_args,
+                                           array_buffers,
+                                           slices,
+                                           nullptr);
+          }
         }
       }
+      // copy the non-array types to new_args
+      const int original_num_args = cur_dom_info["args"].number_of_children();
+      for(int i = 0; i < original_num_args; ++i)
+      {
+        const conduit::Node &arg = cur_dom_info["args"].child(i);
+        if(arg.dtype().number_of_elements() == 1 &&
+           arg.number_of_children() == 0 && !arg.dtype().is_string())
+        {
+          new_args[arg.name()] = arg;
+        }
+      }
+      ASCENT_DATA_CLOSE();
+
+      // generate and compile the kernel
+      const std::string kernel_string = generate_kernel(dom_idx, new_args);
+
+      //std::cout << kernel_string << std::endl;
+
+      // store kernels so that we don't have to recompile, even loading a cached
+      // kernel from disk is slow
+      static std::unordered_map<std::string, occa::kernel> kernel_map;
+      try
+      {
+        flow::Timer kernel_compile_timer;
+        auto kernel_it = kernel_map.find(kernel_string);
+        if(kernel_it == kernel_map.end())
+        {
+          occa_kernel = device.buildKernelFromString(kernel_string, "map");
+          kernel_map[kernel_string] = occa_kernel;
+        }
+        else
+        {
+          occa_kernel = kernel_it->second;
+        }
+        ASCENT_DATA_ADD("kernel compile", kernel_compile_timer.elapsed());
+      }
+      catch(const occa::exception &e)
+      {
+        ASCENT_ERROR("Jitable: Expression compilation failed:\n"
+                     << e.what() << "\n\n"
+                     << kernel_string);
+      }
+      catch(...)
+      {
+        ASCENT_ERROR("Jitable: Expression compilation failed with an unknown "
+                     "error.\n\n"
+                     << kernel_string);
+      }
+
+      // pass input arguments
+      occa_kernel.clearArgs();
+      // get occa mem for devices
+      std::vector<occa::memory> array_memories;
+      detail::get_occa_mem(array_buffers, slices, array_memories);
+
+      flow::Timer push_args_timer;
+      const int num_new_args = new_args.number_of_children();
+      for(int i = 0; i < num_new_args; ++i)
+      {
+        const conduit::Node &arg = new_args.child(i);
+        if(arg.dtype().is_integer())
+        {
+          occa_kernel.pushArg(arg.to_int64());
+        }
+        else if(arg.dtype().is_float64())
+        {
+          occa_kernel.pushArg(arg.to_float64());
+        }
+        else if(arg.dtype().is_float32())
+        {
+          occa_kernel.pushArg(arg.to_float32());
+        }
+        else if(arg.has_path("index"))
+        {
+          occa_kernel.pushArg(array_memories[arg["index"].to_int32()]);
+        }
+        else
+        {
+          ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
+        }
+      }
+      ASCENT_DATA_ADD("push_input_args", push_args_timer.elapsed());
+
+      flow::Timer kernel_run_timer;
+      occa_kernel.run();
+      ASCENT_DATA_ADD("kernel runtime", kernel_run_timer.elapsed());
+
+      // copy back
+      flow::Timer copy_back_timer;
+      if(device.mode() != "Serial" && device.mode() != "OpenMP")
+      {
+        array_memories[output_index].copyTo(output_ptr);
+      }
+      ASCENT_DATA_ADD("copy to host", copy_back_timer.elapsed());
+
+      // dom["fields/" + field_name].print();
+      ASCENT_DATA_CLOSE();
     }
-    // copy the non-array types to new_args
-    const int original_num_args = cur_dom_info["args"].number_of_children();
-    for(int i = 0; i < original_num_args; ++i)
-    {
-      const conduit::Node &arg = cur_dom_info["args"].child(i);
-      if(arg.dtype().number_of_elements() == 1 &&
-         arg.number_of_children() == 0 && !arg.dtype().is_string())
-      {
-        new_args[arg.name()] = arg;
-      }
-    }
-    ASCENT_DATA_CLOSE();
-
-    // generate and compile the kernel
-    const std::string kernel_string = generate_kernel(dom_idx, new_args);
-
-    //std::cout << kernel_string << std::endl;
-
-    // store kernels so that we don't have to recompile, even loading a cached
-    // kernel from disk is slow
-    static std::unordered_map<std::string, occa::kernel> kernel_map;
-    try
-    {
-      flow::Timer kernel_compile_timer;
-      auto kernel_it = kernel_map.find(kernel_string);
-      if(kernel_it == kernel_map.end())
-      {
-        occa_kernel = device.buildKernelFromString(kernel_string, "map");
-        kernel_map[kernel_string] = occa_kernel;
-      }
-      else
-      {
-        occa_kernel = kernel_it->second;
-      }
-      ASCENT_DATA_ADD("kernel compile", kernel_compile_timer.elapsed());
-    }
-    catch(const occa::exception &e)
-    {
-      ASCENT_ERROR("Jitable: Expression compilation failed:\n"
-                   << e.what() << "\n\n"
-                   << kernel_string);
-    }
-    catch(...)
-    {
-      ASCENT_ERROR("Jitable: Expression compilation failed with an unknown "
-                   "error.\n\n"
-                   << kernel_string);
-    }
-
-    // pass input arguments
-    occa_kernel.clearArgs();
-    // get occa mem for devices
-    std::vector<occa::memory> array_memories;
-    detail::get_occa_mem(array_buffers, slices, array_memories);
-
-    flow::Timer push_args_timer;
-    const int num_new_args = new_args.number_of_children();
-    for(int i = 0; i < num_new_args; ++i)
-    {
-      const conduit::Node &arg = new_args.child(i);
-      if(arg.dtype().is_integer())
-      {
-        occa_kernel.pushArg(arg.to_int64());
-      }
-      else if(arg.dtype().is_float64())
-      {
-        occa_kernel.pushArg(arg.to_float64());
-      }
-      else if(arg.dtype().is_float32())
-      {
-        occa_kernel.pushArg(arg.to_float32());
-      }
-      else if(arg.has_path("index"))
-      {
-        occa_kernel.pushArg(array_memories[arg["index"].to_int32()]);
-      }
-      else
-      {
-        ASCENT_ERROR("JIT: Unknown argument type of argument: " << arg.name());
-      }
-    }
-    ASCENT_DATA_ADD("push_input_args", push_args_timer.elapsed());
-
-    flow::Timer kernel_run_timer;
-    occa_kernel.run();
-    ASCENT_DATA_ADD("kernel runtime", kernel_run_timer.elapsed());
-
-    // copy back
-    flow::Timer copy_back_timer;
-    if(device.mode() != "Serial" && device.mode() != "OpenMP")
-    {
-      array_memories[output_index].copyTo(output_ptr);
-    }
-    ASCENT_DATA_ADD("copy to host", copy_back_timer.elapsed());
-
-    // dom["fields/" + field_name].print();
     ASCENT_DATA_CLOSE();
   }
-  ASCENT_DATA_CLOSE();
+  catch(conduit::Error &e)
+  {
+    errors.append() = e.what();
+  }
+  catch(std::exception &e)
+  {
+    errors.append() = e.what();
+  }
+  catch(...)
+  {
+    errors.append() = "Unknown error occured in JIT";
+  }
+
+  bool error = errors.number_of_children() > 0;
+  error = global_someone_agrees(error);
+  if(error)
+  {
+    std::set<std::string> error_strs;
+    for(int i = 0; i < errors.number_of_children(); ++i)
+    {
+      error_strs.insert(errors.child(i).as_string());
+    }
+    gather_strings(error_strs);
+    conduit::Node n_errors;
+    for(auto e : error_strs)
+    {
+      n_errors.append() = e;
+    }
+    ASCENT_ERROR("Jit errors: "<<n_errors.to_string());
+  }
+
 #else
   ASCENT_ERROR("JIT compilation for derived fields requires OCCA support"<<
                " but Ascent was not compiled with OCCA.");

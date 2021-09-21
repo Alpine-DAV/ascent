@@ -2321,7 +2321,6 @@ field_max(const conduit::Node &dataset, const std::string &field)
         max_value = a_max;
         index = res["index"].as_int32();
         domain = i;
-        std::cout<<dom.to_summary_string()<<"\n";
         domain_id = dom["state/domain_id"].to_int32();
       }
     }
