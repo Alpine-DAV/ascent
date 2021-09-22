@@ -455,7 +455,8 @@ initialize_functions()
   scalar_gradient_sig["return_type"] = "double";
   scalar_gradient_sig["filter_name"] = "scalar_gradient";
 
-  scalar_gradient_sig["args/expr_name/type"] = "string";
+  //scalar_gradient_sig["args/expr_name/type"] = "string";
+  scalar_gradient_sig["args/expr_name/type"] = "anytype";
   scalar_gradient_sig["args/expr_name/description"] =
       "`expr_name` should be the name of an expression that was evaluated in "
       "the past.";
