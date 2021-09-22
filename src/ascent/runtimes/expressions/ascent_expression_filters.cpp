@@ -2737,15 +2737,6 @@ Field::execute()
       // default name for empty path
       component = "";
     }
-    else
-    {
-      std::cout<<"Num comps "<<num_comps<<"\n";
-      ASCENT_ERROR("Field variable '"
-                   << field_name << "'"
-                   << " cannot infer component."
-                   << " known components = "
-                   << possible_components(*dataset, field_name));
-    }
   }
 
   conduit::Node *output = new conduit::Node();
@@ -4186,7 +4177,7 @@ Lineout::execute()
   }
 
   // figure out the number of fields we will use
-  conduit::Node &n_fields = *input<Node>("fields");
+  conduit::Node &n_fields = (*input<Node>("fields"))["value"];
   const int num_fields = n_fields.number_of_children();
   if(num_fields > 0)
   {

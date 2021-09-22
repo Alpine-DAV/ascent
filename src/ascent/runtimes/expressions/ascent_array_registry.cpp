@@ -139,12 +139,24 @@ int ArrayRegistry::host_allocator_id()
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("HOST");
     // we can use the umpire profiling to find a good default size
-    auto pooled_allocator = rm.makeAllocator<umpire::strategy::QuickPool>(
-                            "HOST_POOL",
-                            allocator,
-                            1ul * // 1GB default size
-                            1024ul * 1024ul * 1024ul + 1);
-    m_host_allocator_id = pooled_allocator.getId();
+    // Matt: something weird happened in the test suite where running multiple
+    // tests resulted is us trying to create this allocator twice, so I added
+    // the check to see if it already exists, which fixed the issue. This
+    // is most likely related to static stuff
+    if(!rm.isAllocator("HOST_POOL"))
+    {
+      auto pooled_allocator = rm.makeAllocator<umpire::strategy::QuickPool>(
+                              "HOST_POOL",
+                              allocator,
+                              1ul * // 1GB default size
+                              1024ul * 1024ul * 1024ul + 1);
+      m_host_allocator_id = pooled_allocator.getId();
+    }
+    else
+    {
+      auto pooled_allocator = rm.getAllocator("HOST_POOL");
+      m_host_allocator_id = pooled_allocator.getId();
+    }
   }
   return m_host_allocator_id;
 }
