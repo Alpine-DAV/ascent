@@ -71,6 +71,7 @@
 #include <stdlib.h>
   #ifdef ASCENT_CUDA_ENABLED
     #include <cuda_runtime.h>
+    #include <cuda.h>
   #endif
 #endif
 
