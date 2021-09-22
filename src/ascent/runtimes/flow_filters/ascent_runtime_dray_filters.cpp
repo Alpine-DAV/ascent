@@ -67,6 +67,7 @@
 #include <ascent_runtime_param_check.hpp>
 #include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
+#include <ascent_resources.hpp>
 #include <ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -92,6 +93,8 @@
 #include <dray/filters/mesh_boundary.hpp>
 #include <dray/filters/volume_balance.hpp>
 #include <dray/filters/vector_component.hpp>
+#include <dray/exports.hpp>
+#include <dray/transform_3d.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
 #include <dray/rendering/slice_plane.hpp>
@@ -123,6 +126,17 @@ namespace filters
 
 namespace detail
 {
+bool is_same(const dray::AABB<3> &b1, const dray::AABB<3> &b2)
+{
+  return
+    b1.m_ranges[0].min() == b2.m_ranges[0].min() &&
+    b1.m_ranges[1].min() == b2.m_ranges[1].min() &&
+    b1.m_ranges[2].min() == b2.m_ranges[2].min() &&
+    b1.m_ranges[0].max() == b2.m_ranges[0].max() &&
+    b1.m_ranges[1].max() == b2.m_ranges[1].max() &&
+    b1.m_ranges[2].max() == b2.m_ranges[2].max();
+}
+
 dray::PointLight default_light(dray::Camera &camera)
 {
   dray::Vec<float32,3> look_at = camera.get_look_at();
@@ -618,6 +632,332 @@ parse_params(const conduit::Node &params,
     image_name = expand_family_name(image_name, cycle);
   }
 }
+
+class DrayCinemaManager
+{
+protected:
+  std::vector<dray::Camera>  m_cameras;
+  std::vector<std::string>   m_image_names;
+  std::vector<float>         m_phi_values;
+  std::vector<float>         m_theta_values;
+  std::vector<float>         m_times;
+  std::string                m_csv;
+
+  dray::AABB<3>              m_bounds;
+  const int                  m_phi;
+  const int                  m_theta;
+  std::string                m_image_name;
+  std::string                m_image_path;
+  std::string                m_db_path;
+  std::string                m_base_path;
+  float                      m_time;
+public:
+  DrayCinemaManager(dray::AABB<3> bounds,
+                    const int phi,
+                    const int theta,
+                    const std::string image_name,
+                    const std::string path)
+    : m_bounds(bounds),
+      m_phi(phi),
+      m_theta(theta),
+      m_image_name(image_name),
+      m_time(0.f)
+  {
+    this->create_cinema_cameras(bounds);
+    m_csv = "phi,theta,time,FILE\n";
+
+    m_base_path = conduit::utils::join_file_path(path, "cinema_databases");
+  }
+
+  DrayCinemaManager()
+    : m_phi(0),
+      m_theta(0)
+  {
+    ASCENT_ERROR("Cannot create un-initialized CinemaManger");
+  }
+
+  std::string db_path()
+  {
+       return conduit::utils::join_file_path(m_base_path, m_image_name);
+  }
+
+  void set_bounds(dray::AABB<3> &bounds)
+  {
+    if(!is_same(bounds, m_bounds))
+    {
+      this->create_cinema_cameras(bounds);
+      m_bounds = bounds;
+    }
+  }
+
+  void add_time_step()
+  {
+    m_times.push_back(m_time);
+
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank == 0 && !conduit::utils::is_directory(m_base_path))
+    {
+        conduit::utils::create_directory(m_base_path);
+    }
+
+    // add a database path
+    m_db_path = db_path();
+
+    // note: there is an implicit assumption here that these
+    // resources are static and only need to be generated one
+    if(rank == 0 && !conduit::utils::is_directory(m_db_path))
+    {
+        conduit::utils::create_directory(m_db_path);
+
+        // load cinema web resources from compiled in resource tree
+        Node cinema_rc;
+        ascent::resources::load_compiled_resource_tree("cinema_web",
+                                                        cinema_rc);
+        if(cinema_rc.dtype().is_empty())
+        {
+            ASCENT_ERROR("Failed to load compiled resources for cinema_web");
+        }
+
+        ascent::resources::expand_resource_tree_to_file_system(cinema_rc,
+                                                               m_db_path);
+    }
+
+    std::stringstream ss;
+    ss<<fixed<<showpoint;
+    ss<<std::setprecision(1)<<m_time;
+    // add a time step path
+    m_image_path = conduit::utils::join_file_path(m_db_path,ss.str());
+
+    if(!conduit::utils::is_directory(m_image_path))
+    {
+        conduit::utils::create_directory(m_image_path);
+    }
+
+    m_time += 1.f;
+  }
+
+/*
+  void fill_renders(std::vector<vtkh::Render> *renders,
+                    const conduit::Node &render_node)
+  {
+    conduit::Node render_copy = render_node;
+
+    // allow zoom to be ajusted
+    conduit::Node zoom;
+    if(render_copy.has_path("camera/zoom"))
+    {
+      zoom = render_copy["camera/zoom"];
+    }
+
+    // cinema is controlling the camera so get
+    // rid of it
+    if(render_copy.has_path("camera"))
+    {
+      render_copy["camera"].reset();
+    }
+
+    std::string tmp_name = "";
+    vtkh::Render render = detail::parse_render(render_copy,
+                                               m_bounds,
+                                               tmp_name);
+    const int num_renders = m_image_names.size();
+
+    for(int i = 0; i < num_renders; ++i)
+    {
+      vtkh::Render tmp = render.Copy();
+      std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
+
+      tmp.SetImageName(image_name);
+      // we have to make a copy of the camera because
+      // zoom is additive for some reason
+      vtkm::rendering::Camera camera = m_cameras[i];
+
+      if(!zoom.dtype().is_empty())
+      {
+        // Allow default zoom to be overridden
+        double vtkm_zoom = zoom_to_vtkm_zoom(zoom.to_float64());
+        camera.Zoom(vtkm_zoom);
+      }
+
+      tmp.SetCamera(camera);
+      renders->push_back(tmp);
+    }
+  }
+*/
+
+  std::string get_string(const float value)
+  {
+    std::stringstream ss;
+    ss<<std::fixed<<std::setprecision(1)<<value;
+    return ss.str();
+  }
+
+  void write_metadata()
+  {
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    if(rank != 0)
+    {
+      return;
+    }
+    conduit::Node meta;
+    meta["type"] = "simple";
+    meta["version"] = "1.1";
+    meta["metadata/type"] = "parametric-image-stack";
+    meta["name_pattern"] = "{time}/{phi}_{theta}_" + m_image_name + ".png";
+
+    conduit::Node times;
+    times["default"] = get_string(m_times[0]);
+    times["label"] = "time";
+    times["type"] = "range";
+    // we have to make sure that this maps to a json array
+    const int t_size = m_times.size();
+    for(int i = 0; i < t_size; ++i)
+    {
+      times["values"].append().set(get_string(m_times[i]));
+    }
+
+    meta["arguments/time"] = times;
+
+    conduit::Node phis;
+    phis["default"] = get_string(m_phi_values[0]);
+    phis["label"] = "phi";
+    phis["type"] = "range";
+    const int phi_size = m_phi_values.size();
+    for(int i = 0; i < phi_size; ++i)
+    {
+      phis["values"].append().set(get_string(m_phi_values[i]));
+    }
+
+    meta["arguments/phi"] = phis;
+
+    conduit::Node thetas;
+    thetas["default"] = get_string(m_theta_values[0]);
+    thetas["label"] = "theta";
+    thetas["type"] = "range";
+    const int theta_size = m_theta_values.size();
+    for(int i = 0; i < theta_size; ++i)
+    {
+      thetas["values"].append().set(get_string(m_theta_values[i]));
+    }
+
+    meta["arguments/theta"] = thetas;
+    meta.save(m_db_path + "/info.json","json");
+
+    // also generate info.js, a simple javascript variant of
+    // info.json that our index.html reads directly to
+    // avoid ajax
+
+    std::ofstream out_js(m_db_path + "/info.js");
+    out_js<<"var info =";
+    meta.to_json_stream(out_js);
+    out_js.close();
+
+    //append current data to our csv file
+    std::stringstream csv;
+
+    csv<<m_csv;
+    std::string current_time = get_string(m_times[t_size - 1]);
+    for(int p = 0; p < phi_size; ++p)
+    {
+      std::string phi = get_string(m_phi_values[p]);
+      for(int t = 0; t < theta_size; ++t)
+      {
+        std::string theta = get_string(m_theta_values[t]);
+        csv<<phi<<",";
+        csv<<theta<<",";
+        csv<<current_time<<",";
+        csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
+      }
+    }
+
+    m_csv = csv.str();
+    std::ofstream out(m_db_path + "/data.csv");
+    out<<m_csv;
+    out.close();
+
+  }
+
+private:
+  void create_cinema_cameras(dray::AABB<3> bounds)
+  {
+    m_cameras.clear();
+    m_image_names.clear();
+    using Vec3f = dray::Vec<float,3>;
+    Vec3f center = bounds.center();
+    Vec3f totalExtent;
+    totalExtent[0] = float(bounds.m_ranges[0].length());
+    totalExtent[1] = float(bounds.m_ranges[1].length());
+    totalExtent[2] = float(bounds.m_ranges[2].length());
+
+    float radius = totalExtent.magnitude() * 2.5 / 2.0;
+
+    const double pi = 3.141592653589793;
+    double phi_inc = 360.0 / double(m_phi);
+    double theta_inc = 180.0 / double(m_theta);
+    for(int p = 0; p < m_phi; ++p)
+    {
+      float phi  =  -180.f + phi_inc * p;
+      m_phi_values.push_back(phi);
+
+      for(int t = 0; t < m_theta; ++t)
+      {
+        float theta = theta_inc * t;
+        if (p == 0)
+        {
+          m_theta_values.push_back(theta);
+        }
+
+        const int i = p * m_theta + t;
+
+        dray::Camera camera;
+        camera.reset_to_bounds(bounds);
+
+        //
+        //  spherical coords start (r=1, theta = 0, phi = 0)
+        //  (x = 0, y = 0, z = 1)
+        //
+
+        Vec3f pos = {{0.f,0.f,1.f}};
+        Vec3f up = {{0.f,1.f,0.f}};
+
+        dray::Matrix<float,4,4> phi_rot;
+        dray::Matrix<float,4,4> theta_rot;
+        dray::Matrix<float,4,4> rot;
+
+        phi_rot = dray::rotate_z(phi);
+        theta_rot = dray::rotate_x(theta);
+        rot = phi_rot * theta_rot;
+
+        up = dray::transform_vector(rot, up);
+        up.normalize();
+
+        pos = dray::transform_point(rot, pos);
+        pos = pos * radius + center;
+
+        camera.set_up(up);
+        camera.set_look_at(center);
+        camera.set_pos(pos);
+        //camera.Zoom(0.2f);
+
+        std::stringstream ss;
+        ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
+
+        m_image_names.push_back(ss.str() + m_image_name);
+        m_cameras.push_back(camera);
+
+      } // theta
+    } // phi
+  }
+
+}; // CinemaManager
 
 }; // namespace detail
 
