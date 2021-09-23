@@ -550,10 +550,10 @@ void
 parse_params(const conduit::Node &params,
              dray::Collection *dcol,
              const conduit::Node *meta,
-             dray::Camera &camera,
+             std::vector<dray::Camera> &cameras,
              dray::ColorMap &color_map,
              std::string &field_name,
-             std::string &image_name)
+             std::vector<std::string> &image_names)
 {
   field_name = params["field"].as_string();
 
@@ -570,15 +570,19 @@ parse_params(const conduit::Node &params,
     height = params["image_height"].to_int32();
   }
 
-  camera.set_width(width);
-  camera.set_height(height);
   dray::AABB<3> bounds = dcol->bounds();
-  camera.reset_to_bounds(bounds);
 
   if(params.has_path("camera"))
   {
     const conduit::Node &n_camera = params["camera"];
+
+    dray::Camera camera;
+    camera.set_width(width);
+    camera.set_height(height);
+    camera.reset_to_bounds(bounds);
+
     detail::parse_camera(n_camera, camera);
+    cameras.push_back(camera);
   }
 
   dray::Range scalar_range = dcol->range(field_name);
@@ -628,8 +632,11 @@ parse_params(const conduit::Node &params,
 
   if(params.has_path("image_prefix"))
   {
-    image_name = params["image_prefix"].as_string();
+
+    std::string image_name = params["image_prefix"].as_string();
     image_name = expand_family_name(image_name, cycle);
+    image_name = output_dir(image_name);
+    image_names.push_back(image_name);
   }
 }
 
@@ -1102,19 +1109,19 @@ DRayPseudocolor::execute()
 
     dray::Collection faces = detail::boundary(*dcol);
 
-    dray::Camera camera;
+    std::vector<dray::Camera> cameras;
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
-    std::string image_name;
+    std::vector<std::string> image_names;
     conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
                          &meta,
-                         camera,
+                         cameras,
                          color_map,
                          field_name,
-                         image_name);
+                         image_names);
 
     bool draw_mesh = false;
     if(params().has_path("draw_mesh"))
@@ -1167,14 +1174,20 @@ DRayPseudocolor::execute()
     {
       annotations = params()["annotations"].as_string() != "false";
     }
-    renderer.screen_annotations(annotations);
-    dray::Framebuffer fb = renderer.render(camera);
 
-    if(dray::dray::mpi_rank() == 0)
+    renderer.screen_annotations(annotations);
+
+    const int num_images = cameras.size();
+    for(int i = 0; i < num_images; ++i)
     {
-      fb.composite_background();
-      image_name = output_dir(image_name);
-      fb.save(image_name);
+      dray::Camera &camera = cameras[i];
+      dray::Framebuffer fb = renderer.render(camera);
+
+      if(dray::dray::mpi_rank() == 0)
+      {
+        fb.composite_background();
+        fb.save(image_names[i]);
+      }
     }
 
 }
@@ -1276,19 +1289,19 @@ DRay3Slice::execute()
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
-    dray::Camera camera;
+    std::vector<dray::Camera> cameras;
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
-    std::string image_name;
+    std::vector<std::string> image_names;
     conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
                          &meta,
-                         camera,
+                         cameras,
                          color_map,
                          field_name,
-                         image_name);
+                         image_names);
 
     dray::AABB<3> bounds = dcol->bounds();
 
@@ -1338,13 +1351,18 @@ DRay3Slice::execute()
     renderer.add(slicer_y);
     renderer.add(slicer_z);
 
-    dray::Framebuffer fb = renderer.render(camera);
 
-    if(dray::dray::mpi_rank() == 0)
+    const int num_images = cameras.size();
+    for(int i = 0; i < num_images; ++i)
     {
-      fb.composite_background();
-      image_name = output_dir(image_name);
-      fb.save(image_name);
+      dray::Camera &camera = cameras[i];
+      dray::Framebuffer fb = renderer.render(camera);
+
+      if(dray::dray::mpi_rank() == 0)
+      {
+        fb.composite_background();
+        fb.save(image_names[i]);
+      }
     }
 }
 
@@ -1450,20 +1468,20 @@ DRayVolume::execute()
 
     dray::Collection dataset = *dcol;
 
-    dray::Camera camera;
+    std::vector<dray::Camera> cameras;
 
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
-    std::string image_name;
+    std::vector<std::string> image_names;
     conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          dcol,
                          &meta,
-                         camera,
+                         cameras,
                          color_map,
                          field_name,
-                         image_name);
+                         image_names);
 
     if(color_map.color_table().number_of_alpha_points() == 0)
     {
@@ -1522,7 +1540,10 @@ DRayVolume::execute()
         balancer.prefix_balancing(prefix);
         balancer.piece_factor(piece_factor);
 
-        dataset = balancer.execute(dataset, camera, samples);
+        // We should have at least one camera so just use that for load
+        // balancing. Matt: this could be bad but right now the only case
+        // we use multiple images for is ciname
+        dataset = balancer.execute(dataset, cameras[0], samples);
 
       }
 
@@ -1544,13 +1565,17 @@ DRayVolume::execute()
     }
     renderer.screen_annotations(annotations);
 
-    dray::Framebuffer fb = renderer.render(camera);
-
-    if(dray::dray::mpi_rank() == 0)
+    const int num_images = cameras.size();
+    for(int i = 0; i < num_images; ++i)
     {
-      fb.composite_background();
-      image_name = output_dir(image_name);
-      fb.save(image_name);
+      dray::Camera &camera = cameras[i];
+      dray::Framebuffer fb = renderer.render(camera);
+
+      if(dray::dray::mpi_rank() == 0)
+      {
+        fb.composite_background();
+        fb.save(image_names[i]);
+      }
     }
 
 }
@@ -1944,20 +1969,26 @@ DRayProjectColors2d::execute()
 
     dray::Collection faces = detail::boundary(*dcol);
 
-    dray::Camera camera;
+    std::vector<dray::Camera> cameras;
     dray::ColorMap color_map("cool2warm");
     std::string field_name;
-    std::string image_name;
+    std::vector<std::string> image_names;
     conduit::Node meta = Metadata::n_metadata;
 
     detail::parse_params(params(),
                          &faces,
                          &meta,
-                         camera,
+                         cameras,
                          color_map,
                          field_name,
-                         image_name);
+                         image_names);
 
+    if(cameras.size() != 1)
+    {
+      ASCENT_ERROR("DrayProjectColors: only one camera is supported (no cinema)");
+    }
+
+    dray::Camera camera = cameras[0];
 
     const int num_domains = faces.local_size();
 
