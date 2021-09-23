@@ -957,7 +957,46 @@ private:
     } // phi
   }
 
-}; // CinemaManager
+}; // DrayCinemaManager
+
+class DrayCinemaDatabases
+{
+private:
+  static std::map<std::string, DrayCinemaManager> m_databases;
+public:
+
+  static bool db_exists(std::string db_name)
+  {
+    auto it = m_databases.find(db_name);
+    return it != m_databases.end();
+  }
+
+  static void create_db(dray::AABB<3> &bounds,
+                        const int phi,
+                        const int theta,
+                        std::string db_name,
+                        std::string path)
+  {
+    if(db_exists(db_name))
+    {
+      ASCENT_ERROR("Creation failed: dray cinema database already exists");
+    }
+
+    m_databases.emplace(std::make_pair(db_name, DrayCinemaManager(bounds, phi, theta, db_name, path)));
+  }
+
+  static DrayCinemaManager& get_db(std::string db_name)
+  {
+    if(!db_exists(db_name))
+    {
+      ASCENT_ERROR("DRAY Cinema db '"<<db_name<<"' does not exist.");
+    }
+
+    return m_databases[db_name];
+  }
+}; // DrayCinemaDatabases
+
+std::map<std::string, DrayCinemaManager> DrayCinemaDatabases::m_databases;
 
 }; // namespace detail
 
@@ -1218,6 +1257,7 @@ DRay3Slice::verify_params(const conduit::Node &params,
     }
     return res;
 }
+
 
 //-----------------------------------------------------------------------------
 void
