@@ -546,99 +546,6 @@ parse_color_table(const conduit::Node &color_table_node)
   return color_table;
 }
 
-void
-parse_params(const conduit::Node &params,
-             dray::Collection *dcol,
-             const conduit::Node *meta,
-             std::vector<dray::Camera> &cameras,
-             dray::ColorMap &color_map,
-             std::string &field_name,
-             std::vector<std::string> &image_names)
-{
-  field_name = params["field"].as_string();
-
-  int width  = 512;
-  int height = 512;
-
-  if(params.has_path("image_width"))
-  {
-    width = params["image_width"].to_int32();
-  }
-
-  if(params.has_path("image_height"))
-  {
-    height = params["image_height"].to_int32();
-  }
-
-  dray::AABB<3> bounds = dcol->bounds();
-
-  if(params.has_path("camera"))
-  {
-    const conduit::Node &n_camera = params["camera"];
-
-    dray::Camera camera;
-    camera.set_width(width);
-    camera.set_height(height);
-    camera.reset_to_bounds(bounds);
-
-    detail::parse_camera(n_camera, camera);
-    cameras.push_back(camera);
-  }
-
-  dray::Range scalar_range = dcol->range(field_name);
-  dray::Range range;
-  if(params.has_path("min_value"))
-  {
-    range.include(params["min_value"].to_float32());
-  }
-  else
-  {
-    range.include(scalar_range.min());
-  }
-
-  if(params.has_path("max_value"))
-  {
-    range.include(params["max_value"].to_float32());
-  }
-  else
-  {
-    range.include(scalar_range.max());
-  }
-
-  color_map.scalar_range(range);
-
-  bool log_scale = false;
-  if(params.has_path("log_scale"))
-  {
-    if(params["log_scale"].as_string() == "true")
-    {
-      log_scale = true;
-    }
-  }
-
-  color_map.log_scale(log_scale);
-
-  if(params.has_path("color_table"))
-  {
-    color_map.color_table(parse_color_table(params["color_table"]));
-  }
-
-  int cycle = 0;
-
-  if(meta->has_path("cycle"))
-  {
-    cycle = (*meta)["cycle"].as_int32();
-  }
-
-  if(params.has_path("image_prefix"))
-  {
-
-    std::string image_name = params["image_prefix"].as_string();
-    image_name = expand_family_name(image_name, cycle);
-    image_name = output_dir(image_name);
-    image_names.push_back(image_name);
-  }
-}
 
 class DrayCinemaManager
 {
@@ -747,54 +654,34 @@ public:
     m_time += 1.f;
   }
 
-/*
-  void fill_renders(std::vector<vtkh::Render> *renders,
-                    const conduit::Node &render_node)
+
+  void fill_cameras(std::vector<dray::Camera> &cameras,
+                    std::vector<std::string> &image_names,
+                    const conduit::Node &n_camera)
   {
-    conduit::Node render_copy = render_node;
+    conduit::Node n_camera_copy = n_camera;
 
     // allow zoom to be ajusted
-    conduit::Node zoom;
-    if(render_copy.has_path("camera/zoom"))
+    float zoom = 1.f;
+    if(n_camera_copy.has_path("zoom"))
     {
-      zoom = render_copy["camera/zoom"];
-    }
-
-    // cinema is controlling the camera so get
-    // rid of it
-    if(render_copy.has_path("camera"))
-    {
-      render_copy["camera"].reset();
+      zoom = n_camera_copy["zoom"].to_float64();
     }
 
     std::string tmp_name = "";
-    vtkh::Render render = detail::parse_render(render_copy,
-                                               m_bounds,
-                                               tmp_name);
     const int num_renders = m_image_names.size();
 
     for(int i = 0; i < num_renders; ++i)
     {
-      vtkh::Render tmp = render.Copy();
+      dray::Camera camera = m_cameras[i];
+      camera.set_zoom(zoom);
+      cameras.push_back(camera);
+
       std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
-
-      tmp.SetImageName(image_name);
-      // we have to make a copy of the camera because
-      // zoom is additive for some reason
-      vtkm::rendering::Camera camera = m_cameras[i];
-
-      if(!zoom.dtype().is_empty())
-      {
-        // Allow default zoom to be overridden
-        double vtkm_zoom = zoom_to_vtkm_zoom(zoom.to_float64());
-        camera.Zoom(vtkm_zoom);
-      }
-
-      tmp.SetCamera(camera);
-      renders->push_back(tmp);
+      image_names.push_back(image_name);
     }
   }
-*/
+
 
   std::string get_string(const float value)
   {
@@ -1005,6 +892,168 @@ public:
 
 std::map<std::string, DrayCinemaManager> DrayCinemaDatabases::m_databases;
 
+
+
+bool check_image_names(const conduit::Node &params, conduit::Node &info)
+{
+  bool res = true;
+  if(!params.has_path("image_prefix") &&
+     !params.has_path("camera/db_name"))
+  {
+    res = false;
+    info.append() = "Devil ray rendering paths must include either "
+                    "a 'image_prefix' (if its a single image) or a "
+                    "'camera/db_name' (if using a cinema camere)";
+  }
+  if(params.has_path("image_prefix") &&
+     params.has_path("camera/db_name"))
+  {
+    res = false;
+    info.append() = "Devil ray rendering paths cannot use both "
+                    "a 'image_prefix' (if its a single image) and a "
+                    "'camera/db_name' (if using a cinema camere)";
+  }
+  return res;
+}
+
+void
+parse_params(const conduit::Node &params,
+             dray::Collection *dcol,
+             const conduit::Node *meta,
+             std::vector<dray::Camera> &cameras,
+             dray::ColorMap &color_map,
+             std::string &field_name,
+             std::vector<std::string> &image_names)
+{
+  field_name = params["field"].as_string();
+
+  int width  = 512;
+  int height = 512;
+
+  if(params.has_path("image_width"))
+  {
+    width = params["image_width"].to_int32();
+  }
+
+  if(params.has_path("image_height"))
+  {
+    height = params["image_height"].to_int32();
+  }
+
+  dray::AABB<3> bounds = dcol->bounds();
+
+  if(params.has_path("camera"))
+  {
+    bool is_cinema = false;
+
+    const conduit::Node &n_camera = params["camera"];
+    if(n_camera.has_path("type"))
+    {
+      if(n_camera["type"].as_string() == "cinema")
+      {
+        is_cinema = true;
+      }
+    }
+
+    if(is_cinema)
+    {
+      if(!n_camera.has_path("phi") || !n_camera.has_path("theta"))
+      {
+        ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
+      }
+
+      int phi = n_camera["phi"].to_int32();
+      int theta = n_camera["theta"].to_int32();
+
+      std::string output_path = default_dir();
+
+      if(!n_camera.has_path("db_name"))
+      {
+        ASCENT_ERROR("Cinema must specify a 'db_name'");
+      }
+
+      std::string db_name = n_camera["db_name"].as_string();
+      bool exists = detail::DrayCinemaDatabases::db_exists(db_name);
+      if(!exists)
+      {
+        detail::DrayCinemaDatabases::create_db(bounds,phi,theta, db_name, output_path);
+      }
+
+      detail::DrayCinemaManager &manager = detail::DrayCinemaDatabases::get_db(db_name);
+      manager.set_bounds(bounds);
+      manager.add_time_step();
+      manager.fill_cameras(cameras, image_names, n_camera);
+      manager.write_metadata();
+    }
+    else
+    {
+      dray::Camera camera;
+      camera.set_width(width);
+      camera.set_height(height);
+      camera.reset_to_bounds(bounds);
+
+      detail::parse_camera(n_camera, camera);
+      cameras.push_back(camera);
+    }
+  }
+
+  int cycle = 0;
+
+  if(meta->has_path("cycle"))
+  {
+    cycle = (*meta)["cycle"].as_int32();
+  }
+
+  if(params.has_path("image_prefix"))
+  {
+
+    std::string image_name = params["image_prefix"].as_string();
+    image_name = expand_family_name(image_name, cycle);
+    image_name = output_dir(image_name);
+    image_names.push_back(image_name);
+  }
+
+  dray::Range scalar_range = dcol->range(field_name);
+  dray::Range range;
+  if(params.has_path("min_value"))
+  {
+    range.include(params["min_value"].to_float32());
+  }
+  else
+  {
+    range.include(scalar_range.min());
+  }
+
+  if(params.has_path("max_value"))
+  {
+    range.include(params["max_value"].to_float32());
+  }
+  else
+  {
+    range.include(scalar_range.max());
+  }
+
+  color_map.scalar_range(range);
+
+  bool log_scale = false;
+  if(params.has_path("log_scale"))
+  {
+    if(params["log_scale"].as_string() == "true")
+    {
+      log_scale = true;
+    }
+  }
+
+  color_map.log_scale(log_scale);
+
+  if(params.has_path("color_table"))
+  {
+    color_map.color_table(parse_color_table(params["color_table"]));
+  }
+
+
+}
+
 }; // namespace detail
 
 //-----------------------------------------------------------------------------
@@ -1039,7 +1088,7 @@ DRayPseudocolor::verify_params(const conduit::Node &params,
     bool res = true;
 
     res &= check_string("field",params, info, true);
-    res &= check_string("image_prefix",params, info, true);
+    res &= detail::check_image_names(params, info);
     res &= check_numeric("min_value",params, info, false);
     res &= check_numeric("max_value",params, info, false);
     res &= check_numeric("image_width",params, info, false);
@@ -1217,14 +1266,14 @@ DRay3Slice::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 DRay3Slice::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
+                          conduit::Node &info)
 {
     info.reset();
 
     bool res = true;
 
     res &= check_string("field",params, info, true);
-    res &= check_string("image_prefix",params, info, true);
+    res &= detail::check_image_names(params, info);
     res &= check_numeric("min_value",params, info, false);
     res &= check_numeric("max_value",params, info, false);
     res &= check_numeric("image_width",params, info, false);
@@ -1351,7 +1400,6 @@ DRay3Slice::execute()
     renderer.add(slicer_y);
     renderer.add(slicer_z);
 
-
     const int num_images = cameras.size();
     for(int i = 0; i < num_images; ++i)
     {
@@ -1398,7 +1446,7 @@ DRayVolume::verify_params(const conduit::Node &params,
     bool res = true;
 
     res &= check_string("field",params, info, true);
-    res &= check_string("image_prefix",params, info, true);
+    res &= detail::check_image_names(params, info);
     res &= check_numeric("min_value",params, info, false);
     res &= check_numeric("max_value",params, info, false);
     res &= check_numeric("image_width",params, info, false);
@@ -1542,7 +1590,7 @@ DRayVolume::execute()
 
         // We should have at least one camera so just use that for load
         // balancing. Matt: this could be bad but right now the only case
-        // we use multiple images for is ciname
+        // we use multiple images for is cinema
         dataset = balancer.execute(dataset, cameras[0], samples);
 
       }
