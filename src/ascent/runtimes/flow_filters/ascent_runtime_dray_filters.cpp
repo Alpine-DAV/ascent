@@ -242,16 +242,13 @@ dray_load_balance_surprises(const conduit::Node &load_balance)
   return surprises;
 }
 
-std::vector<dray::Vec<float,3>>
+dray::Vec<float,3>
 planes(const conduit::Node &params, const dray::AABB<3> bounds)
 {
 
   using Vec3f = dray::Vec<float,3>;
   Vec3f center = bounds.center();
-  Vec3f x_point = center;
-  Vec3f y_point = center;
-  Vec3f z_point = center;
-
+  Vec3f point = center;
 
   const float eps = 1e-5; // ensure that the slice is always inside the data set
   if(params.has_path("x_offset"))
@@ -260,7 +257,7 @@ planes(const conduit::Node &params, const dray::AABB<3> bounds)
     std::max(-1.f, std::min(1.f, offset));
     float t = (offset + 1.f) / 2.f;
     t = std::max(0.f + eps, std::min(1.f - eps, t));
-    x_point[0] = bounds.m_ranges[0].min() + t * (bounds.m_ranges[0].length());
+    point[0] = bounds.m_ranges[0].min() + t * (bounds.m_ranges[0].length());
   }
 
   if(params.has_path("y_offset"))
@@ -269,7 +266,7 @@ planes(const conduit::Node &params, const dray::AABB<3> bounds)
     std::max(-1.f, std::min(1.f, offset));
     float t = (offset + 1.f) / 2.f;
     t = std::max(0.f + eps, std::min(1.f - eps, t));
-    y_point[1] = bounds.m_ranges[1].min() + t * (bounds.m_ranges[1].length());
+    point[1] = bounds.m_ranges[1].min() + t * (bounds.m_ranges[1].length());
   }
 
   if(params.has_path("z_offset"))
@@ -278,13 +275,10 @@ planes(const conduit::Node &params, const dray::AABB<3> bounds)
     std::max(-1.f, std::min(1.f, offset));
     float t = (offset + 1.f) / 2.f;
     t = std::max(0.f + eps, std::min(1.f - eps, t));
-    z_point[2] = bounds.m_ranges[2].min() + t * (bounds.m_ranges[2].length());
+    point[2] = bounds.m_ranges[2].min() + t * (bounds.m_ranges[2].length());
   }
-  std::vector<Vec3f> points;
-  points.push_back(x_point);
-  points.push_back(y_point);
-  points.push_back(z_point);
-  return points;
+
+  return point;
 }
 
 void
@@ -565,20 +559,42 @@ protected:
   std::string                m_db_path;
   std::string                m_base_path;
   float                      m_time;
+
+  std::map<std::string, std::vector<float>> m_additional_params;
+
 public:
+
   DrayCinemaManager(dray::AABB<3> bounds,
                     const int phi,
                     const int theta,
                     const std::string image_name,
-                    const std::string path)
+                    const std::string path,
+                    const std::map<std::string, std::vector<float>> & additional_params
+                    = std::map<std::string,std::vector<float>>())
     : m_bounds(bounds),
       m_phi(phi),
       m_theta(theta),
       m_image_name(image_name),
-      m_time(0.f)
+      m_time(0.f),
+      m_additional_params(additional_params)
   {
+    if(additional_params.size() > 1)
+    {
+      ASCENT_ERROR("only tested with 1 param");
+    }
+
     this->create_cinema_cameras(bounds);
-    m_csv = "phi,theta,time,FILE\n";
+
+    m_csv = "phi,theta,";
+    for(const auto &param : m_additional_params)
+    {
+      m_csv += param.first + ",";
+      if(param.second.size() < 1)
+      {
+        ASCENT_ERROR("Additional cinema parameter must have at least 1 value");
+      }
+    }
+    m_csv +=  "time,FILE\n";
 
     m_base_path = conduit::utils::join_file_path(path, "cinema_databases");
   }
@@ -654,11 +670,15 @@ public:
     m_time += 1.f;
   }
 
+  // if we have an additional parameter then the ordering is
+  // going to be param / phi_theta in the output vectors
 
   void fill_cameras(std::vector<dray::Camera> &cameras,
                     std::vector<std::string> &image_names,
                     const conduit::Node &n_camera)
   {
+    cameras.clear();
+    image_names.clear();
     conduit::Node n_camera_copy = n_camera;
 
     // allow zoom to be ajusted
@@ -668,25 +688,52 @@ public:
       zoom = n_camera_copy["zoom"].to_float64();
     }
 
+
     std::string tmp_name = "";
     const int num_renders = m_image_names.size();
 
-    for(int i = 0; i < num_renders; ++i)
+    if(m_additional_params.size() == 1)
     {
-      dray::Camera camera = m_cameras[i];
-      camera.set_zoom(zoom);
-      cameras.push_back(camera);
+      // enforced to be a max of 1
+      for(const auto &param : m_additional_params)
+      {
+        const int param_size = param.second.size();
+        for(int p = 0; p < param_size; ++p)
+        {
+          const int precision = 2;
+          std::string p_string =  get_string(param.second[p], precision);
+          for(int i = 0; i < num_renders; ++i)
+          {
+            dray::Camera camera = m_cameras[i];
+            camera.set_zoom(zoom);
+            cameras.push_back(camera);
+            // image names do not include the additional parameter so we add it here
+            std::string image_name = p_string + "_" + m_image_names[i];
+            image_name = conduit::utils::join_file_path(m_image_path , image_name);
+            image_names.push_back(image_name);
+          }
+        }
+      }
+    }
+    else
+    {
+      for(int i = 0; i < num_renders; ++i)
+      {
+        dray::Camera camera = m_cameras[i];
+        camera.set_zoom(zoom);
+        cameras.push_back(camera);
+        std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
+        image_names.push_back(image_name);
 
-      std::string image_name = conduit::utils::join_file_path(m_image_path , m_image_names[i]);
-      image_names.push_back(image_name);
+      }
     }
   }
 
 
-  std::string get_string(const float value)
+  std::string get_string(const float value, int precision = 1)
   {
     std::stringstream ss;
-    ss<<std::fixed<<std::setprecision(1)<<value;
+    ss<<std::fixed<<std::setprecision(precision)<<value;
     return ss.str();
   }
 
@@ -705,7 +752,13 @@ public:
     meta["type"] = "simple";
     meta["version"] = "1.1";
     meta["metadata/type"] = "parametric-image-stack";
-    meta["name_pattern"] = "{time}/{phi}_{theta}_" + m_image_name + ".png";
+    std::string name_pattern = "{time}/";
+    for(const auto &param : m_additional_params)
+    {
+      name_pattern += "{" + param.first + "}_";
+    }
+    name_pattern += "{phi}_{theta}_";
+    meta["name_pattern"] = name_pattern + m_image_name + ".png";
 
     conduit::Node times;
     times["default"] = get_string(m_times[0]);
@@ -743,6 +796,28 @@ public:
     }
 
     meta["arguments/theta"] = thetas;
+
+    for(const auto &param : m_additional_params)
+    {
+      // One note here: if the values are normalized, then
+      // bad things will happen with moving meshes. For example,
+      // if a slice is based on some offset and the mesh is moving,
+      // then the same offset will be constantly changing
+      std::string name = param.first;
+      conduit::Node add_param;
+      const int precision = 2;
+      add_param["default"] = get_string(param.second[0],precision);
+      add_param["label"] = name;
+      add_param["type"] = "range";
+      const int param_size = param.second.size();
+      for(int i = 0; i < param_size; ++i)
+      {
+        const int precision = 2;
+        add_param["values"].append().set(get_string(param.second[i],precision));
+      }
+      meta["arguments/"+name] = add_param;
+    }
+
     meta.save(m_db_path + "/info.json","json");
 
     // also generate info.js, a simple javascript variant of
@@ -765,10 +840,35 @@ public:
       for(int t = 0; t < theta_size; ++t)
       {
         std::string theta = get_string(m_theta_values[t]);
-        csv<<phi<<",";
-        csv<<theta<<",";
-        csv<<current_time<<",";
-        csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
+
+        if(m_additional_params.size() > 0)
+        {
+
+          // we are only allowing one currently, enforced
+          // in the constructor
+          for(const auto &param : m_additional_params)
+          {
+            const int precision = 2;
+            const int param_size = param.second.size();
+            for(int i = 0; i < param_size; ++i)
+            {
+              const int precision = 2;
+              std::string param_val = get_string(param.second[i], precision);
+              csv<<phi<<",";
+              csv<<theta<<",";
+              csv<<current_time<<",";
+              csv<<param_val<<",";
+              csv<<current_time<<"/"<<param_val<<"_"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
+            }
+          }
+        }
+        else
+        {
+          csv<<phi<<",";
+          csv<<theta<<",";
+          csv<<current_time<<",";
+          csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
+        }
       }
     }
 
@@ -869,14 +969,21 @@ public:
                         const int phi,
                         const int theta,
                         std::string db_name,
-                        std::string path)
+                        std::string path,
+                        const std::map<std::string, std::vector<float>> & additional_params
+                         = std::map<std::string,std::vector<float>>())
   {
     if(db_exists(db_name))
     {
       ASCENT_ERROR("Creation failed: dray cinema database already exists");
     }
 
-    m_databases.emplace(std::make_pair(db_name, DrayCinemaManager(bounds, phi, theta, db_name, path)));
+    m_databases.emplace(std::make_pair(db_name, DrayCinemaManager(bounds,
+                                                                  phi,
+                                                                  theta,
+                                                                  db_name,
+                                                                  path,
+                                                                  additional_params)));
   }
 
   static DrayCinemaManager& get_db(std::string db_name)
@@ -1298,9 +1405,15 @@ DRay3Slice::verify_params(const conduit::Node &params,
     res &= check_numeric("y_offset",params, info, false);
     res &= check_numeric("z_offset",params, info, false);
 
+    res &= check_numeric("sweep/count",params, info, false);
+    res &= check_string("sweep/axis",params, info, false);
+
     valid_paths.push_back("x_offset");
     valid_paths.push_back("y_offset");
     valid_paths.push_back("z_offset");
+
+    valid_paths.push_back("sweep/count");
+    valid_paths.push_back("sweep/axis");
 
     ignore_paths.push_back("camera");
     ignore_paths.push_back("color_table");
@@ -1344,7 +1457,27 @@ DRay3Slice::execute()
     std::vector<std::string> image_names;
     conduit::Node meta = Metadata::n_metadata;
 
-    detail::parse_params(params(),
+    conduit::Node params_copy = params();
+    bool is_cinema = false;
+    // let it parse everything besides the camera
+    // if we aren't doing cinema
+    if(params_copy.has_path("camera"))
+    {
+      if(params_copy.has_path("camera/type"))
+      {
+        if(params_copy["camera/type"].as_string() == "cinema")
+        {
+          is_cinema = true;
+        }
+      }
+
+      if(is_cinema)
+      {
+        params_copy.remove_child("camera");
+      }
+    }
+
+    detail::parse_params(params_copy,
                          dcol,
                          &meta,
                          cameras,
@@ -1359,7 +1492,196 @@ DRay3Slice::execute()
     Vec3f y_normal({0.f, 1.f, 0.f});
     Vec3f z_normal({0.f, 0.f, 1.f});
 
-    std::vector<Vec3f> points = detail::planes(params(), bounds);
+    int count = 0;
+    int axis = 0;
+    std::vector<float> axis_sweep;
+    bool is_sweep = false;
+
+    if(params().has_path("sweep"))
+    {
+      is_sweep = true;
+      const conduit::Node &n_sweep = params()["sweep"];
+
+      if(!n_sweep.has_path("axis"))
+      {
+        ASCENT_ERROR("Dray 3slice param sweep requires string parameter 'axis'");
+      }
+
+      if(!n_sweep.has_path("count"))
+      {
+        ASCENT_ERROR("Dray 3slice param sweep requires integer parameter 'count'");
+      }
+
+      count = n_sweep["count"].to_int32();
+      if(count < 1)
+      {
+        ASCENT_ERROR("Dray 3slice param sweep integer parameter 'count' "
+                     <<"must be greater than 0.");
+      }
+      std::string s_axis = n_sweep["axis"].as_string();
+      if(s_axis == "x")
+      {
+        axis = 0;
+      }
+      else if (s_axis == "y")
+      {
+        axis = 1;
+      }
+      else if (s_axis == "z")
+      {
+        axis = 2;
+      }
+      else
+      {
+        ASCENT_ERROR("Dray 3slice param 'axis' invalid value '"<<s_axis<<"'"
+                     <<" Valid values are 'x', 'y', or 'z'");
+      }
+
+      // this is kinda weird but lets start here. This supports a count of 1
+      // which will put the value at the center of the range. This method will
+      // always exclude the min and max value, and spread the values out equally.
+      // With an infinite count, then first and last values will converge to
+      // the min and max of the range. My initial assumption is that the extremes
+      // will likely contain the least interesting data.
+      double axis_inc = 1.f / double(count+1);
+      for(int a = 1; a < count+1; ++a)
+      {
+        float val =  axis_inc * a;
+        axis_sweep.push_back(val);
+      }
+
+    }
+
+    if(is_sweep && !is_cinema)
+    {
+      ASCENT_ERROR("3slice sweep only supported with cinema");
+    }
+
+    Vec3f point = detail::planes(params(), bounds);
+
+    struct WorkItem
+    {
+      dray::Camera m_camera;
+      std::string m_image_name;
+      Vec3f m_point;
+    };
+
+    std::vector<WorkItem> work;
+
+    int width  = 512;
+    int height = 512;
+
+    if(params().has_path("image_width"))
+    {
+      width = params()["image_width"].to_int32();
+    }
+
+    if(params().has_path("image_height"))
+    {
+      height = params()["image_height"].to_int32();
+    }
+
+    if(is_cinema)
+    {
+      cameras.clear();
+      image_names.clear();
+
+      const conduit::Node &n_camera = params()["camera"];
+      if(!n_camera.has_path("phi") || !n_camera.has_path("theta"))
+      {
+        ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
+      }
+
+      int phi = n_camera["phi"].to_int32();
+      int theta = n_camera["theta"].to_int32();
+
+      std::string output_path = default_dir();
+
+      if(!n_camera.has_path("db_name"))
+      {
+        ASCENT_ERROR("Cinema must specify a 'db_name'");
+      }
+
+      std::string db_name = n_camera["db_name"].as_string();
+      bool exists = detail::DrayCinemaDatabases::db_exists(db_name);
+
+      if(!exists)
+      {
+        if(!is_sweep)
+        {
+          detail::DrayCinemaDatabases::create_db(bounds,phi,theta, db_name, output_path);
+        }
+        else
+        {
+          std::map<std::string, std::vector<float>> add_params;
+          std::string s_axis = params()["sweep/axis"].as_string() + "_offset";
+          add_params[s_axis] = axis_sweep;
+          detail::DrayCinemaDatabases::create_db(bounds,phi,theta, db_name, output_path, add_params);
+        }
+      }
+
+      detail::DrayCinemaManager &manager = detail::DrayCinemaDatabases::get_db(db_name);
+      manager.set_bounds(bounds);
+      manager.add_time_step();
+      manager.fill_cameras(cameras, image_names, n_camera);
+      manager.write_metadata();
+
+      if(is_sweep)
+      {
+        // we need to match up the image names to the actual
+        // parameters used for 3slice. This is why all of this
+        // code is so ugly. Ultimately this is not the best way to do
+        // this kind of thing (parametric image stack). The better way to
+        // do this is to create composable images (depth buffers), and
+        // this would allow you to compose any combinations of parameters
+        // and not be combinatorial, but we are limited by the kinds of
+        // viewers that LANL makes/supports.
+        const int size = cameras.size();
+        const int sweep_size = size / axis_sweep.size();
+        for(int i = 0; i < size; ++i)
+        {
+          WorkItem work_item;
+          work_item.m_camera = cameras[i];
+          work_item.m_camera.set_width(width);
+          work_item.m_camera.set_height(height);
+          work_item.m_image_name = image_names[i];
+          work_item.m_point = point;
+          int sweep_idx = i / sweep_size;
+          // axis_sweep values are normalized so we have to
+          // un-normalize here
+          float min_val = bounds.m_ranges[axis].min();
+          float value = min_val
+            + bounds.m_ranges[axis].length() * axis_sweep[sweep_idx];
+          work_item.m_point[axis] = value;
+          work.push_back(work_item);
+        }
+      }
+      else
+      {
+        // normal cinema path
+        const int size = cameras.size();
+        for(int i = 0; i < size; ++i)
+        {
+          WorkItem work_item;
+          work_item.m_camera = cameras[i];
+          work_item.m_camera.set_width(width);
+          work_item.m_camera.set_height(height);
+          work_item.m_image_name = image_names[i];
+          work_item.m_point = point;
+          work.push_back(work_item);
+        }
+      }
+    }
+    else
+    {
+      WorkItem work_item;
+      work_item.m_image_name = image_names[0];
+      work_item.m_point = point;
+      work_item.m_camera = cameras[0];
+      work_item.m_camera.set_width(width);
+      work_item.m_camera.set_height(height);
+      work.push_back(work_item);
+    }
 
     std::shared_ptr<dray::SlicePlane> slicer_x
       = std::make_shared<dray::SlicePlane>(*dcol);
@@ -1378,38 +1700,45 @@ DRay3Slice::execute()
     slicer_y->color_map(color_map);
     slicer_z->color_map(color_map);
 
-    slicer_x->point(points[0]);
+    slicer_x->point(point);
     slicer_x->normal(x_normal);
 
-    slicer_y->point(points[1]);
+    slicer_y->point(point);
     slicer_y->normal(y_normal);
 
-    slicer_z->point(points[2]);
+    slicer_z->point(point);
     slicer_z->normal(z_normal);
 
     dray::Renderer renderer;
 
     bool annotations = true;
+
     if(params().has_path("annotations"))
     {
       annotations = params()["annotations"].as_string() != "false";
     }
+
     renderer.screen_annotations(annotations);
 
     renderer.add(slicer_x);
     renderer.add(slicer_y);
     renderer.add(slicer_z);
 
-    const int num_images = cameras.size();
-    for(int i = 0; i < num_images; ++i)
+    const int work_amount = work.size();
+    for(int i = 0; i < work_amount; ++i)
     {
-      dray::Camera &camera = cameras[i];
+
+      slicer_x->point(work[i].m_point);
+      slicer_y->point(work[i].m_point);
+      slicer_z->point(work[i].m_point);
+
+      dray::Camera &camera = work[i].m_camera;
       dray::Framebuffer fb = renderer.render(camera);
 
       if(dray::dray::mpi_rank() == 0)
       {
         fb.composite_background();
-        fb.save(image_names[i]);
+        fb.save(work[i].m_image_name);
       }
     }
 }

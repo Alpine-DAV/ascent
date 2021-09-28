@@ -274,7 +274,6 @@ TEST(ascent_devil_ray, test_pseudocolor_noannots)
     std::string msg = "An example of using devil ray for pseudocolor plot.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-
 //-----------------------------------------------------------------------------
 TEST(ascent_devil_ray, test_3slice)
 {
@@ -343,7 +342,7 @@ TEST(ascent_devil_ray, test_3slice)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_devil_ray, test_3slice_cinema)
+TEST(ascent_devil_ray, test_3slice_cinema_no_sweep)
 {
     Node n;
     ascent::about(n);
@@ -382,12 +381,86 @@ TEST(ascent_devil_ray, test_3slice_cinema)
 
     params["camera/type"] = "cinema";
     params["camera/db_name"] = db_name;
-    params["camera/phi"] = 5;
-    params["camera/theta"] = 5;
+    params["camera/phi"] = 2;
+    params["camera/theta"] = 2;
 
-    params["x_offset"] = 0.;
-    params["y_offset"] = 0.;
-    params["z_offset"] = 0.;
+    params["x_offset"] = 0.7;
+    params["y_offset"] = 0.2;
+    params["z_offset"] = 0.4;
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(conduit::utils::is_file(output_file));
+    std::string msg = "An example of creating a cinema databasev using devil "
+                      " ray for a 3 slice plot.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+TEST(ascent_devil_ray, test_3slice_cinema_sweep)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, hola_opts, verify_info;
+    hola_opts["root_file"] = test_data_file("taylor_green.cycle_001860.root");
+    ascent::hola("relay/blueprint/mesh", hola_opts, data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Devil Ray");
+
+    std::string db_name = "pseudo_3slice_sweep";
+    string output_path = "./cinema_databases/" + db_name;
+    string output_file = conduit::utils::join_file_path(output_path, "info.json");
+    // remove old file before rendering
+    if(conduit::utils::is_file(output_file))
+    {
+        conduit::utils::remove_file(output_file);
+    }
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"] = "dray_3slice";
+    // filter knobs
+    conduit::Node &params = extracts["e1/params/"];
+    params["field"] = "density";
+    params["min_value"] = 0.99;
+    params["max_value"] = 1.0;
+    params["log_scale"] = "false";
+
+    params["camera/type"] = "cinema";
+    params["camera/db_name"] = db_name;
+    params["camera/phi"] = 2;
+    params["camera/theta"] = 2;
+
+    params["sweep/count"] = 2;
+    params["sweep/axis"] = "x";
+    params["x_offset"] = 0.7;
+    params["y_offset"] = 0.2;
+    params["z_offset"] = 0.4;
 
     conduit::Node actions;
     // add the extracts
@@ -777,7 +850,6 @@ TEST(ascent_devil_ray, test_vector_component)
     std::string msg = "An example of using devil ray extract a component of a vector.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
