@@ -4449,7 +4449,7 @@ AutoCamera::execute()
 
       int phi = 100;
       int theta = 100;
-      int sample_rate = 29;
+      int sample_rate = 43;
       int count = 0;
 
 #define FIBONACCI 0
@@ -4690,10 +4690,16 @@ AutoCamera::execute()
       
 	//Camera cam = GetCameraPhiTheta(bounds, radius, j, theta, i, phi, focus);
         //#if SEARCH
-	int phi_pos = (sample*sample_rate)%phi;
-        int round =(int)((sample*sample_rate)/phi)%phi;
-        int theta_pos = (phi_pos + round)%theta;	
-	Camera cam = GetCameraPhiTheta(bounds, radius, theta_pos, theta, phi_pos, phi, focus);
+	//int phi_pos = (sample*sample_rate)%phi;
+        //int round =(int)((sample*sample_rate)/phi)%phi;
+        //int theta_pos = (phi_pos + round)%theta;	
+	//Camera cam = GetCameraPhiTheta(bounds, radius, theta_pos, theta, phi_pos, phi, focus);
+
+	//If not SEARCH
+	int phi_pos = (sample)%phi;
+        int round =(int)((sample)/phi)%phi;
+        int theta_pos = (phi_pos + round)%theta;
+        Camera cam = GetCameraPhiTheta(bounds, radius, theta_pos, theta, phi_pos, phi, focus);
 
         //#endif
         vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
