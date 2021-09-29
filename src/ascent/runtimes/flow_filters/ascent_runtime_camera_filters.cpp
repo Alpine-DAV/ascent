@@ -4494,7 +4494,8 @@ AutoCamera::execute()
 	
 
         vtkh::DataSet *output = tracer.GetOutput();
-//	output->PrintSummary(std::cerr);
+	//output->PrintSummary(std::cerr);
+
 
         auto render_stop = high_resolution_clock::now();
         double render_time = duration_cast<microseconds>(render_stop - render_start).count();
@@ -4517,25 +4518,66 @@ AutoCamera::execute()
         
 	//new
         float data_entropy_score = calculateMetricScore(output, "data_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
+	
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with data entropy: " << data_entropy_score << endl;
+        #endif
 
         float depth_entropy_score = calculateMetricScore(output, "depth_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with depth entropy: " << depth_entropy_score << endl;
+        #endif
         float shading_entropy_score = calculateMetricScore(output, "shading_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with shading entropy: " << shading_entropy_score << endl;
+        #endif
         float max_depth_score = calculateMetricScore(output, "max_depth", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with max depth: " << max_depth_score << endl;
+        #endif
         float projected_area_score = calculateMetricScore(output, "projected_area", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with projected area: " << projected_area_score << endl;
+        #endif
         float pb_score = calculateMetricScore(output, "pb", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with pb: " << pb_score << endl;
+        #endif
         float visible_triangles_score = calculateMetricScore(output, "visible_triangles", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with visible trianges: " << visible_triangles_score << endl;
+        #endif
         float visibility_ratio_score = calculateMetricScore(output, "visibility_ratio", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with visibility ratio: " << visibility_ratio_score << endl;
+        #endif
         float viewpoint_entropy_score = calculateMetricScore(output, "viewpoint_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with viewpoint entropy " << viewpoint_entropy_score << endl;
+        #endif
         float vkl_score = calculateMetricScore(output, "vkl", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
 
+        #if ASCENT_MPI_ENABLED
+	if(rank == 0)
+	  cerr << "rank " << rank << " done with vkl: " << vkl_score << endl;
+        #endif
         float score = data_entropy_score;
 
 	std::cerr << "sample " << sample << " " << metric << " score: " << score << std::endl;
