@@ -214,6 +214,7 @@ if(ASCENT_JIT_ENABLED)
     if(CUDA_FOUND)
       set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
       set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
+      set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
     endif()
 endif()
 
