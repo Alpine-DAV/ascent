@@ -9,11 +9,11 @@
 #####
 
 variables:
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-09-28-shaad0735
-  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-09-28-sha2b9ed6
-  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-09-28-sha2b9ed6
-  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-09-28-shaad0735
-  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-09-28-shaad0735
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-09-29-sha9522a6
+  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-09-29-sha9522a6
+  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-09-29-sha9522a6
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-09-29-sha9522a6
+  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-09-29-sha9522a6
 
 
 # only build merge target pr to develop
