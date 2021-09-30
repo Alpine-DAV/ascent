@@ -283,7 +283,7 @@ BlueprintVerify::execute()
 
 //-----------------------------------------------------------------------------
 Learn::Learn()
-:FILTER()
+:Filter()
 {
 // EMPTY
 }
@@ -303,7 +303,7 @@ Learn::declare_interface(Node &i)
 }
 
 DataBinning::DataBinning()
-:FILTER()
+:Filter()
 {
 // EMPTY
 }
@@ -331,14 +331,94 @@ Learn::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = true;
+    return res;
 }
+
 bool
 DataBinning::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-    if(! params.has_child("protocol") ||
-       ! params["protocol"].dtype().is_string() )
+                           conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+    if(!params.has_path("reduction_op"))
     {
-        info["errors"].append() = "Missing required string parameter 'protocol'";
+      res = false;
+      info["errors"].append() = "Missing 'reduction_op'";
+    }
+
+    if(!params.has_path("var"))
+    {
+      res = false;
+      info["errors"].append() = "Missing 'var'";
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("reduction_op");
+    valid_paths.push_back("empty_bin_val");
+    valid_paths.push_back("output_type");
+    valid_paths.push_back("output_field");
+    valid_paths.push_back("var");
+
+    std::vector<std::string> ignore_paths;
+    ignore_paths.push_back("axes");
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(!params.has_path("output_field"))
+    {
+      res = false;
+      info["errors"].append() = "Missing param 'output_field'";
+    }
+
+    if(!params.has_path("axes"))
+    {
+      res = false;
+      info["errors"].append() = "Missing binning axes";
+    }
+    else if(!params["axes"].dtype().is_list())
+    {
+      res = false;
+      info["errors"].append() = "Axes is not a list";
+    }
+    else
+    {
+      const int num_axes = params["axes"].number_of_children();
+      if(num_axes < 1 || num_axes > 3)
+      {
+        res = false;
+        info["errors"].append() = "Number of axes num be between 1 and 3";
+      }
+      else
+      {
+        for(int i = 0; i < num_axes; ++i)
+        {
+          const conduit::Node &axis = params["axes"].child(i);
+          if(!axis.has_path("num_bins"))
+          {
+            res = false;
+            info["errors"].append() = "Axis missing 'num_bins'";
+          }
+          if(!axis.has_path("var"))
+          {
+            res = false;
+            info["errors"].append() = "Axis missing 'var'";
+          }
+          std::vector<std::string> avalid_paths;
+          avalid_paths.push_back("min_val");
+          avalid_paths.push_back("max_val");
+          avalid_paths.push_back("num_bins");
+          avalid_paths.push_back("clamp");
+          avalid_paths.push_back("var");
+
+          surprises += surprise_check(avalid_paths, axis);
+        }
+      }
+    }
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
     }
 
     return res;
@@ -743,90 +823,7 @@ Learn::execute()
 
     //set_output<DataObject>(d_input);
 }
-=======
-    if(!params.has_path("reduction_op"))
-    {
-      res = false;
-      info["errors"].append() = "Missing 'reduction_op'";
-    }
 
-    if(!params.has_path("var"))
-    {
-      res = false;
-      info["errors"].append() = "Missing 'var'";
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("reduction_op");
-    valid_paths.push_back("empty_bin_val");
-    valid_paths.push_back("output_type");
-    valid_paths.push_back("output_field");
-    valid_paths.push_back("var");
-
-    std::vector<std::string> ignore_paths;
-    ignore_paths.push_back("axes");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(!params.has_path("output_field"))
-    {
-      res = false;
-      info["errors"].append() = "Missing param 'output_field'";
-    }
-
-    if(!params.has_path("axes"))
-    {
-      res = false;
-      info["errors"].append() = "Missing binning axes";
-    }
-    else if(!params["axes"].dtype().is_list())
-    {
-      res = false;
-      info["errors"].append() = "Axes is not a list";
-    }
-    else
-    {
-      const int num_axes = params["axes"].number_of_children();
-      if(num_axes < 1 || num_axes > 3)
-      {
-        res = false;
-        info["errors"].append() = "Number of axes num be between 1 and 3";
-      }
-      else
-      {
-        for(int i = 0; i < num_axes; ++i)
-        {
-          const conduit::Node &axis = params["axes"].child(i);
-          if(!axis.has_path("num_bins"))
-          {
-            res = false;
-            info["errors"].append() = "Axis missing 'num_bins'";
-          }
-          if(!axis.has_path("var"))
-          {
-            res = false;
-            info["errors"].append() = "Axis missing 'var'";
-          }
-          std::vector<std::string> avalid_paths;
-          avalid_paths.push_back("min_val");
-          avalid_paths.push_back("max_val");
-          avalid_paths.push_back("num_bins");
-          avalid_paths.push_back("clamp");
-          avalid_paths.push_back("var");
-
-          surprises += surprise_check(avalid_paths, axis);
-        }
-      }
-    }
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
 
 
 //-----------------------------------------------------------------------------
