@@ -203,8 +203,6 @@ Ascent's build system supports the following CMake options:
 
 * **VTKM_DIR** - Path to an VTK-m install *(optional)*.
 
-* **HDF5_DIR** - Path to a HDF5 install *(optional)*.
-
 * **MFEM_DIR** - Path to a MFEM install *(optional)*.
 
 * **ADIOS_DIR** - Path to a ADIOS install *(optional)*.
@@ -267,7 +265,7 @@ Uberenv Options for Building Third Party Dependencies
   --spec               Spack spec                                     linux: **%gcc**
                                                                       osx: **%clang**
   --spack-config-dir   Folder with Spack settings files               linux: (empty)
-                                                                      osx: ``scripts/uberenv/spack_configs/darwin/``
+                                                                      osx: ``scripts/uberenv_configs/spack_configs/darwin/``
   -k                   Ignore SSL Errors                              **False**
   --install            Fully install ascent not just dependencies     **False**
   --run_tests          Invoke tests during build and against install  **False**
@@ -296,7 +294,7 @@ Default invocation on OSX:
 
     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
                                       --spec %clang \
-                                      --spack-config-dir scripts/uberenv/spack_configs/darwin/
+                                      --spack-config-dir scripts/uberenv_configs/spack_configs/darwin/
 
 
 The uberenv `--install` installs conduit\@master (not just the development dependencies):
@@ -361,15 +359,14 @@ See ``scripts/spack_build_tests/`` for the exact invocations used to test on the
 Building Third Party Dependencies for Development
 --------------------------------------------------
 
-You can use ``bootstrap-env.sh`` (located at the root of the ascent repo) to help setup your development environment on OSX and Linux.
-This script uses ``scripts/uberenv/uberenv.py``, which leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent.
+You can use ``scripts/uberenv/uberenv.py`` to help setup your development environment on OSX and Linux. ``uberenv.py`` leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent.
 Fortran support in is optional, dependencies should build without fortran.
 After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a ascent build.
 
 .. code:: bash
 
     #build third party libs using spack
-    source bootstrap-env.sh
+    python scripts/uberenv/uberenv.py
 
     #copy the generated host-config file into the standard location
     cp uberenv_libs/`hostname`*.cmake host-configs/
@@ -394,7 +391,7 @@ Building with Spack
 
 Currently, we maintain our own fork of Spack for stability. As part of the uberenv python
 script, we automatically clone our
-`Spack fork. <https://github.com/Alpine-DAV/spack/tree/task/2018_04_update_ascent>`_
+`Spack fork. <https://github.com/Alpine-DAV/spack/tree/ascent/develop>`_
 
 .. warning::
   Installing Ascent from the Spack master branch will most likely fail. We build and test spack
@@ -528,23 +525,25 @@ Install ParaView and Ascent
 
   - Patch paraview: ``patch -p1 < paraview-package-momentinvariants.patch``
 
-- Install ParaView (any version >= 5.7.0)
+- Install ParaView (any version >= 5.7.0). When running on Linux we prefer ``mpich``,
+  which can be specified by using ``^mpich``.
 
-  - ``spack install paraview@develop+python3+mpi+osmesa~opengl2^mpich``
+  - ``spack install paraview+python3+mpi+osmesa``
 
-  - for CUDA use: ``spack install paraview@develop+python3+mpi+osmesa~opengl2+cuda^mpich``
+  - for CUDA use: ``spack install paraview+python3+mpi+osmesa+cuda``
 
-- Install Ascent (any version)
+- Install Ascent
 
-  - ``spack install ascent@develop~vtkh^mpich``
+  - ``spack install ascent~vtkh+python``
 
   - If you need ascent built with vtkh you can use ``spack install
-    ascent@develop^mpich``. Note that you need specific versions of
-    ``vtkh`` and ``vtkm`` that work with the latest Ascent.  Those
+    ascent+python``. Note that you need specific versions of
+    ``vtkh`` and ``vtkm`` that work with the version of Ascent built.  Those
     versions can be read from ``scripts/uberenv/project.json``
     by cloning ``spack_url``, branch ``spack_branch``.
     ``paraview-package-momentinvariants.patch`` is already setup to
-    patch ``vtkh`` and ``vthm`` with the correct versions.
+    patch ``vtkh`` and ``vthm`` with the correct versions, but make sure
+    it is not out of date.
 
 - Load required modules: ``spack load conduit;spack load python;spack load py-numpy;spack load py-mpi4py;spack load paraview``
 
@@ -562,7 +561,7 @@ directory. These images can be checked against the images in
 
   - Go to a directory where you intend to run cloverleaf3d integration
     (for ``summit.olcf.ornl.gov`` use a member work directory such as
-    ``cd $MEMBERWORK/csc340``).
+    ``cd $MEMBERWORK/csc340``) so that the compute node can write there.
 
   - Create links to required files for cloverleaf3d:
 
@@ -608,19 +607,24 @@ Setup and run on summit.olcf.ornl.gov
 
 - Configure spack
 
-  - add a file ``~/.spack/packages.yaml`` with the following content:
+  - add a file ``~/.spack/packages.yaml`` with the following content as detailed next.
+    This insures that we use spectrum-mpi as the MPI runtime.
 
     .. code:: yaml
 
           packages:
-           spectrum-mpi:
-             modules:
-               spectrum-mpi@10.3.0.1-20190611: spectrum-mpi/10.3.0.1-20190611
-             buildable: False
-           cuda:
-             modules:
-               cuda@10.1.168: cuda/10.1.168
-             buildable: False
+            spectrum-mpi:
+              buildable: false
+              externals:
+              - modules:
+                - spectrum-mpi/10.3.1.2-20200121
+                spec: spectrum-mpi@10.3.1.2-20200121
+            cuda:
+              buildable: false
+              externals:
+              - modules:
+                - cuda/10.1.168
+                spec: cuda@10.1.168
 
 
   - Load the correct compiler:
@@ -639,7 +643,7 @@ Setup and run on summit.olcf.ornl.gov
     the spack installation on ``$MEMBERWORK/csc340`` and
     compile everything on a compute node.
 
-    - First login to a compute node (for an hour): ``bsub -W 1:00 -nnodes 1 -P CSC340 -Is /bin/bash``
+    - First login to a compute node: ``bsub -W 2:00 -nnodes 1 -P CSC340 -Is /bin/bash``
 
     - Install all spack packages as in :ref:`paraview_install` with ``-j80`` option (there are 84 threads)
 
@@ -725,7 +729,7 @@ In the host config, add ``set(HDF5_DIR "/path/to/hdf5_install" CACHE PATH "")``.
 
 Conduit
 ^^^^^^^
-The version of conduit we use is the master branch. If the ``HDF5_DIR`` is specified in the host config,
+The version of conduit we use is the develop branch. If the ``HDF5_DIR`` is specified in the host config,
 then conduit will build the relay io library.
 Likewise, if the config file has the entry ``ENABLE_MPI=ON``, then conduit will build
 parallel versions of the libraries.
@@ -770,7 +774,8 @@ The code below is minimal, and will only configure the serial device adapter. Fo
     mkdir build
     mkdir install
     cmake -C path_to_host_config/myhost_config.cmake ../ -DCMAKE_INSTALL_PREFIX=path_to_install \
-      -DCMAKE_BUILD_TYPE=Release -DVTKm_USE_64BIT_IDS=OFF -DVTKm_USE_DOUBLE_PRECISION=ON
+      -DCMAKE_BUILD_TYPE=Release -DVTKm_USE_64BIT_IDS=OFF -DVTKm_USE_DOUBLE_PRECISION=ON \
+      -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON -DVTKm_NO_DEPRECATED_VIRTUAL=ON
     make install
 
 

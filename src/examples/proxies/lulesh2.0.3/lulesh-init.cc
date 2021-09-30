@@ -199,6 +199,8 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
       m_ascent_node["state/time"].set_external(&m_time);
       m_ascent_node["state/cycle"].set_external(&m_cycle);
       m_ascent_node["state/domain_id"] = myRank;
+      m_ascent_node["state/software"] = "LULESH 2.0.3";
+      m_ascent_node["state/title"] = "Sedov Blast Simulation";
       m_ascent_node["state/info"] = "In Situ Pseudocolor rendering of Pressure from <br> LULESH Shock-Hydro Proxy Simulation";
 
       m_ascent_node["coordsets/coords/type"] = "explicit";

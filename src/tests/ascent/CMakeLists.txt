@@ -78,6 +78,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_threshold
                 t_ascent_slice
                 t_ascent_scale
+                t_ascent_particle_advection
                 t_ascent_patch_amr
                 t_ascent_vector_ops
                 t_ascent_flow_runtime
@@ -87,8 +88,10 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_log
                 t_ascent_amr
                 t_ascent_queries
+                t_ascent_failed_pipeline
                 t_ascent_triggers
-                t_ascent_hola)
+                t_ascent_hola
+                t_ascent_sampling)
 
 set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_empty_runtime
@@ -111,7 +114,7 @@ if(VTKM_FOUND)
 endif()
 
 # adios tests
-if(ADIOS_FOUND)
+if(FIDES_FOUND)
    list(APPEND MPI_TESTS t_ascent_mpi_adios_extract)
 endif()
 
@@ -183,5 +186,3 @@ if(FORTRAN_FOUND AND ENABLE_FORTRAN)
 else()
      message(STATUS "Fortran disabled: Skipping ascent fortran interface tests")
 endif()
-
-

@@ -131,8 +131,16 @@ def proc_stage(tree, config, stage_name):
             if "matrix" in job["strategy"].keys():
                 for k,v in job["strategy"]["matrix"].items():
                     matrix_ctx = CTX(job_ctx)
+                    if "containerImage" in v.keys():
+                          matrix_ctx.set_container(azure_var_sub(v["containerImage"],
+                                                   config["azure_vars"]))
+                          del v["containerImage"]
+                    else:
+                        matrix_ctx.set_container(job_ctx.container)        
+
                     # change container and name from base ctx
-                    matrix_ctx.set_container(job_ctx.container)
+                    
+                    
                     matrix_entry_name = k
                     matrix_ctx.set_name("{0}-{1}-{2}".format(stage_name,
                                                           job_name,

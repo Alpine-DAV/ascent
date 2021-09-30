@@ -868,7 +868,7 @@ field_histogram(const conduit::Node &dataset,
   double *global_bins = new double[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_SUM, mpi_comm);
 
   delete[] bins;
   bins = global_bins;
@@ -1064,6 +1064,58 @@ global_topo_and_assoc(const conduit::Node &dataset,
   return res;
 }
 
+template<typename T>
+int find_bin(const T* bins, const int size, const T val, bool clamp)
+{
+  int first = 0;
+  int len = size;
+  while(len > 0)
+  {
+    int half = len >> 1;
+    int middle = first + half;
+
+    if(bins[middle] <= val)
+    {
+      first = middle + 1;
+      len -= half + 1;
+    }
+    else
+    {
+      len = half;
+    }
+  }
+
+  // values outside to the left will be 0 and values outside to the right
+  // will be size, that is valid bins go from 1 to size - 1
+  if(clamp)
+  {
+    first = first == 0 ? 1 : first;
+    first = first == size ? size - 1 : first;
+  }
+  else
+  {
+    // make sure that values on the far right edge of the range
+    // falls into the last bin
+    if(first == size && val == bins[first-1])
+    {
+      first--;
+    }
+    // ok, if not in the bins return -1 for not found;
+    if(first == 0 || first >= size)
+    {
+      first = -1;
+    }
+  }
+
+  if(first != -1)
+  {
+    // shift valid bins into the 0 to size - 1 range;
+    first--;
+  }
+
+  return first;
+}
+
 // returns -1 if value lies outside the range
 int
 get_bin_index(const conduit::float64 value, const conduit::Node &axis)
@@ -1072,34 +1124,18 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
   if(axis.has_path("bins"))
   {
     // rectilinear
-    const conduit::float64 *bins_begin = axis["bins"].value();
-    const conduit::float64 *bins_end =
-        bins_begin + axis["bins"].dtype().number_of_elements() - 1;
-    // first element greater than value
-    const conduit::float64 *res = std::upper_bound(bins_begin, bins_end, value);
-    if(clamp)
-    {
-      if(res <= bins_begin)
-      {
-        return 0;
-      }
-      else if(res >= bins_end)
-      {
-        return bins_end - bins_begin - 1;
-      }
-    }
-    else if(res <= bins_begin || res >= bins_end)
-    {
-      return -1;
-    }
-    return (res - 1) - bins_begin;
+    const conduit::float64 *bins = axis["bins"].value();
+    const int num_bins = axis["bins"].dtype().number_of_elements();
+    return find_bin(bins, num_bins, value, clamp);
   }
   // uniform
   const double inv_delta =
       axis["num_bins"].to_float64() /
       (axis["max_val"].to_float64() - axis["min_val"].to_float64());
+
   const int bin_index =
       static_cast<int>((value - axis["min_val"].to_float64()) * inv_delta);
+
   if(clamp)
   {
     if(bin_index < 0)
@@ -1151,7 +1187,6 @@ populate_homes(const conduit::Node &dom,
   {
     homes_size = num_cells(dom, topo_name);
   }
-
   // each domain has a homes array
   // homes maps each datapoint (or cell) to an index in bins
   res.set(conduit::DataType::c_int(homes_size));
@@ -1175,13 +1210,17 @@ populate_homes(const conduit::Node &dom,
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
           const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
+          // don't set anything if we haven't found a bin yet
+          if(homes[i] != -1)
           {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
+            if(bin_index != -1)
+            {
+              homes[i] += bin_index * stride;
+            }
+            else
+            {
+              homes[i] = -1;
+            }
           }
         }
       }
@@ -1191,13 +1230,17 @@ populate_homes(const conduit::Node &dom,
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
           const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
+          // don't set anything if we haven't found a bin yet
+          if(homes[i] != -1)
           {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
+            if(bin_index != -1)
+            {
+              homes[i] += bin_index * stride;
+            }
+            else
+            {
+              homes[i] = -1;
+            }
           }
         }
       }
@@ -1218,13 +1261,17 @@ populate_homes(const conduit::Node &dom,
         }
         const double *loc = n_loc.value();
         const int bin_index = get_bin_index(loc[coord], axis);
-        if(bin_index != -1)
+        // don't set anything if we haven't found a bin yet
+        if(homes[i] != -1)
         {
-          homes[i] += bin_index * stride;
-        }
-        else
-        {
-          homes[i] = -1;
+          if(bin_index != -1)
+          {
+            homes[i] += bin_index * stride;
+          }
+          else
+          {
+            homes[i] = -1;
+          }
         }
       }
     }
@@ -1686,7 +1733,9 @@ binning(const conduit::Node &dataset,
 }
 
 void
-paint_binning(const conduit::Node &binning, conduit::Node &dataset)
+paint_binning(const conduit::Node &binning,
+              conduit::Node &dataset,
+              const std::string field_name)
 {
   const conduit::Node &bin_axes = binning["attrs/bin_axes/value"];
 
@@ -1739,12 +1788,18 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
     {
       reduction_var = "cnt";
     }
-    const std::string field_name =
+    std::string fname =
         "painted_" + reduction_var + "_" +
         binning["attrs/reduction_op/value"].as_string();
-    dom["fields/" + field_name + "/association"] = assoc_str;
-    dom["fields/" + field_name + "/topology"] = topo_name;
-    dom["fields/" + field_name + "/values"].set(
+
+    if(field_name != "")
+    {
+      fname = field_name;
+    }
+
+    dom["fields/" + fname + "/association"] = assoc_str;
+    dom["fields/" + fname + "/topology"] = topo_name;
+    dom["fields/" + fname + "/values"].set(
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
         dom["fields/" + field_name + "/values"].value();
@@ -1767,7 +1822,9 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
 }
 
 void
-binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
+binning_mesh(const conduit::Node &binning,
+             conduit::Node &mesh,
+             const std::string field_name)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
 
@@ -1817,11 +1874,15 @@ binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
   {
     reduction_var = "cnt";
   }
-  const std::string field_name =
+  std::string fname =
       reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();
-  mesh["fields/" + field_name + "/association"] = "element";
-  mesh["fields/" + field_name + "/topology"] = "binning_topo";
-  mesh["fields/" + field_name + "/values"].set(binning["attrs/value/value"]);
+  if(field_name != "")
+  {
+    fname = field_name;
+  }
+  mesh["fields/" + fname + "/association"] = "element";
+  mesh["fields/" + fname + "/topology"] = "binning_topo";
+  mesh["fields/" + fname + "/values"].set(binning["attrs/value/value"]);
 
   conduit::Node info;
   if(!conduit::blueprint::verify("mesh", mesh, info))
@@ -2054,13 +2115,16 @@ field_min(const conduit::Node &dataset, const std::string &field)
   {
     assoc_str = dataset.child(domain)["fields/" + field + "/association"].as_string();
 
+    const std::string topo_str =
+        dataset.child(domain)["fields/" + field + "/topology"].as_string();
+
     if(assoc_str == "vertex")
     {
-      loc = vert_location(dataset.child(domain), index);
+      loc = vert_location(dataset.child(domain), index, topo_str);
     }
     else if(assoc_str == "element")
     {
-      loc = element_location(dataset.child(domain), index);
+      loc = element_location(dataset.child(domain), index, topo_str);
     }
     else
     {
@@ -2204,13 +2268,16 @@ field_max(const conduit::Node &dataset, const std::string &field)
     const std::string assoc_str =
         dataset.child(domain)["fields/" + field + "/association"].as_string();
 
+    const std::string topo_str =
+        dataset.child(domain)["fields/" + field + "/topology"].as_string();
+
     if(assoc_str == "vertex")
     {
-      loc = vert_location(dataset.child(domain), index);
+      loc = vert_location(dataset.child(domain), index, topo_str);
     }
     else if(assoc_str == "element")
     {
-      loc = element_location(dataset.child(domain), index);
+      loc = element_location(dataset.child(domain), index, topo_str);
     }
     else
     {

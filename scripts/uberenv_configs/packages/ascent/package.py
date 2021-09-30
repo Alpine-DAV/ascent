@@ -95,7 +95,6 @@ class Ascent(CMakePackage, CudaPackage):
 
     # Certain CMake versions have been found to break for our use cases
     depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
-#    depends_on("cmake@3.14.1:3.14.99,3.16.1:3.16.99,3.18.2:3.18.2", type='build')
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python")
     depends_on("conduit+mpi", when="+mpi")
@@ -145,7 +144,6 @@ class Ascent(CMakePackage, CudaPackage):
 
     # fides
     depends_on("fides", when="+fides")
-    depends_on("adios", when="+adios")
     depends_on("genten", when="+genten")
     depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
     depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
@@ -566,11 +564,21 @@ class Ascent(CMakePackage, CudaPackage):
         else:
             cfg.write("# devil ray not built by spack \n")
 
+
         #######################
-        # Adios2
+        # Finish host-config
+        #######################
+
+        if "+genten" in spec:
+            cfg.write(cmake_cache_entry("GENTEN_DIR", spec['genten'].prefix))
+        else:
+            cfg.write("# genten not built by spack \n")
         #######################
         cfg.write("# adios2 support\n")
 
+        #######################
+        # Adios2
+        #######################
         if "+adios2" in spec:
             cfg.write(cmake_cache_entry("ADIOS2_DIR", spec['adios2'].prefix))
         else:
@@ -590,15 +598,9 @@ class Ascent(CMakePackage, CudaPackage):
         # Finish host-config
         #######################
 
-        if "+genten" in spec:
-            cfg.write(cmake_cache_entry("GENTEN_DIR", spec['genten'].prefix))
-        else:
-            cfg.write("# genten not built by spack \n")
-
         cfg.write("##################################\n")
         cfg.write("# end spack generated host-config\n")
         cfg.write("##################################\n")
         cfg.close()
 
         host_cfg_fname = os.path.abspath(host_cfg_fname)
-        tty.info("spack generated ascent host-config file: " + host_cfg_fname)

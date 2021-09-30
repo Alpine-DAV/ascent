@@ -71,6 +71,7 @@
 
 #include <flow.hpp>
 #include <ascent_actions_utils.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
@@ -288,13 +289,17 @@ AscentRuntime::Initialize(const conduit::Node &options)
        options["web/stream"].as_string() == "true" &&
        m_rank == 0)
     {
-
+#ifdef ASCENT_WEBSERVER_ENABLED
         if(options.has_path("web/document_root"))
         {
             m_web_interface.SetDocumentRoot(options["web/document_root"].as_string());
         }
 
         m_web_interface.Enable();
+#else
+        ASCENT_ERROR("Ascent was not built with web support,"
+                     "but options[\"web/stream\"] == \"true\"");
+#endif
     }
 
     if(options.has_path("field_filtering"))
@@ -358,6 +363,34 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
+    // Process the comments.
+    m_comments.reset();
+    if(data.has_path("state/software"))
+    {
+      m_comments.append() = "Software";
+      m_comments.append() = data["state/software"].as_string();
+    }
+    if(data.has_path("state/source"))
+    {
+      m_comments.append() = "Source";
+      m_comments.append() = data["state/source"].as_string();
+    }
+    if(data.has_path("state/title"))
+    {
+      m_comments.append() = "Title";
+      m_comments.append() = data["state/title"].as_string();
+    }
+    if(data.has_path("state/info"))
+    {
+      m_comments.append() = "Description";
+      m_comments.append() = data["state/info"].as_string();
+    }
+    if(data.has_path("state/comment"))
+    {
+      m_comments.append() = "Comment";
+      m_comments.append() = data["state/comment"].as_string();
+    }
+
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
     // filter out default ghost name and
@@ -487,6 +520,9 @@ AscentRuntime::CreateDefaultFilters()
                       "verify",
                       0);        // default port
 
+    std::string prev_filter = "verify";
+
+#if defined(ASCENT_VTKM_ENABLED)
     // we can have multiple ghost fields
     std::vector<std::string> ghost_fields;
     const int num_children = m_ghost_fields.number_of_children();
@@ -495,7 +531,6 @@ AscentRuntime::CreateDefaultFilters()
       ghost_fields.push_back(m_ghost_fields.child(i).as_string());
     }
 
-    std::string prev_filter = "verify";
     std::string first_stripper;
     const int num_ghosts = ghost_fields.size();
     for(int i = 0; i < num_ghosts; ++i)
@@ -522,6 +557,7 @@ AscentRuntime::CreateDefaultFilters()
 
       prev_filter = filter_name;
     }
+#endif
 
     // we are creating a series of endpoints to enforce and
     // order of execution. Pipelines using expressions might
@@ -601,9 +637,11 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
           type = type.substr(3);
       }
 
-      if(registered_filter_types()["transforms"].has_child(type))
+      const conduit::Node &n_transforms = registered_filter_types()["transforms"];
+
+      if(n_transforms.has_child(type))
       {
-          filter_name = registered_filter_types()["transforms"][type].as_string();
+          filter_name = n_transforms[type].as_string();
       }
       else
       {
@@ -668,6 +706,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
                                     const std::string extract_name)
 {
   std::string filter_name;
+
+  const conduit::Node &n_extracts = registered_filter_types()["extracts"];
 
   conduit::Node params;
   if(extract.has_path("params")) params = extract["params"];
@@ -734,6 +774,8 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
        // replace file param with source that includes actual script
        params.remove("file");
        params["source"] = n_py_src;
+       // this entry will show up as __file__ in the python filter env
+       params["source_file"] = script_fname;
      }
 
      // inject helper that provides the mpi comm handle
@@ -786,9 +828,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     params["source"] = py_src_final.str();
   }
   // generic extract support
-  else if(registered_filter_types()["extracts"].has_child(extract_type))
+  else if(n_extracts.has_child(extract_type))
   {
-     filter_name = registered_filter_types()["extracts"][extract_type].as_string();
+     filter_name = n_extracts[extract_type].as_string();
   }
   else
   {
@@ -939,6 +981,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 
   std::string prev_filter = plot_source;
 
+#if defined(ASCENT_VTKM_ENABLED)
   const int num_ghosts = m_ghost_fields.number_of_children();
   if(num_ghosts != 0)
   {
@@ -979,7 +1022,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
       }
     }
   } // if stripping ghosts
-
+#endif
   // create an a consistent name
   std::string endpoint_name = pipeline_filter_name + "_plot_source";
 
@@ -1054,8 +1097,8 @@ AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
   const int num_domains = m_source.number_of_children();
-  int cycle = 0;
-  float time = 0.f;
+  int cycle = -1;
+  float time = -1.f;
 
   for(int i = 0; i < num_domains; ++i)
   {
@@ -1070,18 +1113,20 @@ AscentRuntime::PopulateMetadata()
     }
   }
 
-  if(!w.registry().has_entry("metadata"))
+
+  if(cycle != -1)
   {
-    conduit::Node *meta = new conduit::Node();
-    w.registry().add<conduit::Node>("metadata", meta,1);
+    Metadata::n_metadata["cycle"] = cycle;
+  }
+  if(time != -1.f)
+  {
+    Metadata::n_metadata["time"] = time;
   }
 
-  Node *meta = w.registry().fetch<Node>("metadata");
-  (*meta)["cycle"] = cycle;
-  (*meta)["time"] = time;
-  (*meta)["refinement_level"] = m_refinement_level;
-  (*meta)["ghost_field"] = m_ghost_fields;
-  (*meta)["default_dir"] = m_default_output_dir;
+  Metadata::n_metadata["refinement_level"] = m_refinement_level;
+  Metadata::n_metadata["ghost_field"] = m_ghost_fields;
+  Metadata::n_metadata["default_dir"] = m_default_output_dir;
+  Metadata::n_metadata["comments"] = m_comments;
 
 }
 //-----------------------------------------------------------------------------
@@ -1440,6 +1485,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   // to build the graph
   m_connections.reset();
   m_scene_connections.reset();
+  m_save_session_actions.reset();
 
   // execution will be enforced in the following order:
   conduit::Node queries;
@@ -1452,6 +1498,10 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   for (int i = 0; i < actions.number_of_children(); ++i)
   {
       const Node &action = actions.child(i);
+      if(!action.has_path("action"))
+      {
+        ASCENT_ERROR("Malformed actions");
+      }
       string action_name = action["action"].as_string();
 
       if(action_name == "add_pipelines")
@@ -1516,9 +1566,15 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // issues with existing integrations we will just
         // do nothing
       }
+      else if(action_name == "save_session")
+      {
+        // Saving the session will be deferred to after
+        // the workspace executes.
+        m_save_session_actions.append() = action;
+      }
       else
       {
-          ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
+        ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
       }
 
   }
@@ -1550,6 +1606,15 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
 void
 AscentRuntime::Execute(const conduit::Node &actions)
 {
+    bool log_timings = false;
+    if(m_runtime_options.has_child("timings") &&
+       m_runtime_options["timings"].as_string() == "true")
+    {
+      log_timings = true;
+    }
+
+    w.enable_timings(log_timings);
+
     // catch any errors that come up here and forward
     // them up as a conduit error
 
@@ -1603,26 +1668,36 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         // w.print();
         // std::cout<<w.graph().to_dot();
-        //w.graph().save_dot_html("ascent_flow_graph.html");
+        w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
-        Node *meta = w.registry().fetch<Node>("metadata");
-        int cycle = 0;
-        if(meta->has_path("cycle"))
+        if(log_timings)
         {
-          cycle = (*meta)["cycle"].to_int32();
+          int cycle = 0;
+          if(Metadata::n_metadata.has_path("cycle"))
+          {
+            cycle = Metadata::n_metadata["cycle"].to_int32();
+          }
+          std::stringstream ss;
+          ss<<"cycle_"<<cycle;
+          vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+          vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
         }
-        std::stringstream ss;
-        ss<<"cycle_"<<cycle;
-        vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
-        vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
 #endif
         // now execute the data flow graph
         w.execute();
 
 #if defined(ASCENT_VTKM_ENABLED)
-        vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        if(log_timings)
+        {
+          vtkh::DataLogger::GetInstance()->CloseLogEntry();
+        }
 #endif
+        if(m_save_session_actions.number_of_children() > 0)
+        {
+          SaveSession();
+        }
+
         Node msg;
         this->Info(msg["info"]);
         ascent::about(msg["about"]);
@@ -1976,6 +2051,54 @@ void AscentRuntime::VerifyGhosts()
 
 }
 
+void AscentRuntime::SaveSession()
+{
+  const int num_actions = m_save_session_actions.number_of_children();
+
+  for(int a = 0; a < num_actions; ++a)
+  {
+    const conduit::Node &action = m_save_session_actions.child(a);
+
+    std::string filename = m_session_name;
+    if(action.has_path("file_name"))
+    {
+      if(!action["file_name"].dtype().is_string())
+      {
+        ASCENT_ERROR("save_session filename must be a string");
+      }
+      filename = action["file_name"].as_string();
+    }
+
+    // allow the user to specify which expressions they want saved out
+    if(action.has_path("expressions"))
+    {
+      std::vector<std::string> expressions_selection;
+      const conduit::Node &elist = action["expressions"];
+      const int num_exprs= elist.number_of_children();
+      if(num_exprs == 0)
+      {
+        ASCENT_ERROR("save_session expression selection must be "
+                     <<" a non-empty list of strings");
+      }
+
+      for(int i = 0; i < num_exprs; ++i)
+      {
+        const conduit::Node &e = elist.child(i);
+        if(!e.dtype().is_string())
+        {
+           ASCENT_ERROR("save_session expression selection list "
+                        <<"values must be a string");
+        }
+        expressions_selection.push_back(e.as_string());
+      }
+      runtime::expressions::ExpressionEval::save_cache(filename, expressions_selection);
+    }
+    else
+    {
+      runtime::expressions::ExpressionEval::save_cache(filename);
+    }
+  } // for each save action
+}
 
 //-----------------------------------------------------------------------------
 };

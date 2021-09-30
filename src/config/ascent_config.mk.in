@@ -77,7 +77,7 @@ ASCENT_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 ASCENT_PYTHON_LIBS =@ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS@
 ASCENT_PYTHON_LIB_DIR=@ASCENT_CONFIG_MK_PYTHON_LIB_DIR@
 
-ASCENT_CUDA_LIBS = @CUDA_cudadevrt_LIBRARY@ @CUDA_cudart_static_LIBRARY@
+ASCENT_CUDA_LIBS = @CUDA_cudadevrt_LIBRARY@ @CUDA_cudart_static_LIBRARY@ @ASCENT_CUDA_MAKE_EXTRA_LIBS@
 
 # include vars from conduit_config.mk
 include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
@@ -127,8 +127,8 @@ else
                           -lvtkh_compositing \
                           -lvtkh_filters \
                           -lvtkh_core \
-                          -lvtkh_lodepng \
-                          -lvtkh_utils
+                          -lvtkh_utils \
+                          -lvtkh_lodepng
 
     # If using VTKH with mpi
     ASCENT_VTKH_MPI_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \

@@ -58,6 +58,17 @@ Resulting image:
 
 .. image:: examples/tout_vector_component100.png
 
+An example of using the log filter.
+------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_scale100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_scale100.png
+
 An example of creating a render, specifying all camera parameters.
 -------------------------------------------------------------------
 
@@ -146,6 +157,17 @@ Resulting image:
 
 .. image:: examples/tout_render_3d_multi_default_runtime100.png
 
+An example of specifying trigger actions without a trigger trigger actions file.
+---------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_trigger_extract_inline100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_trigger_extract_inline100.png
+
 An example of the interconnecting pipelines.
 ---------------------------------------------
 
@@ -179,6 +201,17 @@ Resulting image:
 
 .. image:: examples/tout_3slice_3d100.png
 
+An example of disabling a color table.
+---------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/no_color_bar100.yaml
+
+Resulting image:
+
+.. image:: examples/no_color_bar100.png
+
 An example of using the volume (unstructured grid) extract with min and max values.
 ------------------------------------------------------------------------------------
 
@@ -189,6 +222,17 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_rover_volume_min_max100.png
+
+An example of filtering fields not present in the actions file.
+----------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_field_filtering100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_field_filtering100.png
 
 An example of using the gradient filter on a element centered fieldand plotting the magnitude.
 -----------------------------------------------------------------------------------------------
@@ -498,6 +542,17 @@ Resulting image:
 
 .. image:: examples/tout_cell_gradient_mag_braid100.png
 
+An example of using queries in filter parameters.
+--------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_filter_params_query100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_filter_params_query100.png
+
 An example of rendering a point field with variable radius.
 ------------------------------------------------------------
 
@@ -571,6 +626,13 @@ YAML actions:
 
 .. literalinclude:: examples/tout_rover_xray_params100.yaml
 
+An example of using devil ray scalar rendering.
+------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_scalar_renderer100.yaml
+
 An example of using a relay extract to save a subset of the data.
 ------------------------------------------------------------------
 
@@ -620,6 +682,13 @@ YAML actions:
 
 .. literalinclude:: examples/tout_dray_volume100.yaml
 
+An example of rendering amr data
+---------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_amr_complex100.yaml
+
 An example of using devil ray for pseudocolor plot.
 ----------------------------------------------------
 
@@ -634,6 +703,13 @@ YAML actions:
 
 .. literalinclude:: examples/tout_hd5f_iso100.yaml
 
+An example of scalar rendering
+-------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_scalar_rendering100.yaml
+
 An example of using an relay extract to save the published mesh to the file system.
 ------------------------------------------------------------------------------------
 
@@ -641,12 +717,40 @@ YAML actions:
 
 .. literalinclude:: examples/tout_hd5f_mesh100.yaml
 
+An example of using devil ray scalar rendering using a plane.
+--------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_scalar_renderer_plane100.yaml
+
+An example of rendering amr data
+---------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_amr_simple100.yaml
+
 An example of quiering the maximum value of a field from the result of a pipeline.
 -----------------------------------------------------------------------------------
 
 YAML actions:
 
 .. literalinclude:: examples/tout_max_pipeline_query100.yaml
+
+An example of using devil ray for pseudocolor plot.
+----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_dray_noannots100.yaml
+
+An example of using devil ray to reflect a data set.
+-----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_reflect100.yaml
 
 
 -
@@ -661,4 +765,11 @@ An example of quiering the maximum value of a field.
 YAML actions:
 
 .. literalinclude:: examples/tout_max_query100.yaml
+
+An example of rendering amr data
+---------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_amr_complex_ghost100.yaml
 

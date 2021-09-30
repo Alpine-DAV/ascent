@@ -94,12 +94,9 @@ if(VTKM_DIR)
 endif()
 
 
-################################
-# Setup HDF5
-################################
-if(HDF5_DIR)
-    include(cmake/thirdparty/SetupHDF5.cmake)
-endif()
+#
+# Note: HDF5 is fully handled by importing conduit
+#
 
 ################################
 # Setup MFEM if enabled
@@ -122,12 +119,17 @@ if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
 
+# Setup ADIOS2
+################################
+if (ADIOS2_DIR)
+  include(cmake/thirdparty/SetupADIOS2.cmake)
+endif()
 
 ################################
-# Setup ADIOS
+# Setup Fides
 ################################
-if (ADIOS_DIR)
-  include(cmake/thirdparty/SetupADIOS.cmake)
+if (FIDES_DIR)
+  include(cmake/thirdparty/SetupFides.cmake)
 endif()
 
 ################################
@@ -136,4 +138,3 @@ endif()
 if (ENABLE_BABELFLOW)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif ()
-

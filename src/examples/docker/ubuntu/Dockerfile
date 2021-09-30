@@ -42,8 +42,7 @@
 #
 ###############################################################################
 
-FROM ubuntu:latest
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
+FROM ubuntu:18.04
 
 # fetch build env
 RUN apt-get update && apt-get install -y \
@@ -75,7 +74,7 @@ RUN apt-get update && apt-get install -y \
     emacs 
 
 # nodejs is needed by jupyterlab for widgets
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
 RUN apt-get install -y nodejs
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -112,7 +111,7 @@ RUN cd /home/user && tar -xzf ascent.docker.src.tar.gz
 RUN cd /home/user/ascent && python scripts/uberenv/uberenv.py \
        -k \
        --spec "%gcc+mpi+mfem ^python@3.6.3" \
-       --spack-config-dir=scripts/uberenv/spack_configs/docker/ubuntu/
+       --spack-config-dir=scripts/uberenv_configs/spack_configs/docker/ubuntu/
 
 # install jupyter, matplotlib, cinema, etc via pip
 RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
@@ -122,6 +121,7 @@ RUN /home/user//ascent/uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     jupyter \
     jupyterlab \
     matplotlib \
+    pyyaml \
     cinemasci \
     scipy \
     scikit-learn \
@@ -169,6 +169,8 @@ RUN mkdir /home/user/.jupyter/
 # the password is:
 #  learn
 RUN echo "c.NotebookApp.password = 'sha1:9777986fd066:283f673e1a311e2d5ef58c174eaebf3e1cb536dd'" > /home/user/.jupyter/jupyter_notebook_config.py
+# set bash as default shell
+RUN echo "c.NotebookApp.terminado_settings = { 'shell_command': ['/bin/bash'] }" >> /home/user/.jupyter/jupyter_notebook_config.py
 
 # gen env script that points to spack installs of tpls
 RUN cd /home/user/ascent && python scripts/gen_spack_env_script.py cmake mpi python

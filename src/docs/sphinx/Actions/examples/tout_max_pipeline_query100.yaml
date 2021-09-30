@@ -6,7 +6,7 @@
     q1: 
       params: 
         expression: "max(field('braid'))"
-        name: "max_braid"
+        name: "max_braid_pipeline"
       pipeline: "pl1"
 - 
   action: "add_pipelines"

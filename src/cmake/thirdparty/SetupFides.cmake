@@ -42,23 +42,42 @@
 #
 ###############################################################################
 
-FROM nvidia/cuda:10.1-devel-ubuntu16.04
-MAINTAINER Cyrus Harrison <cyrush@llnl.gov>
-# add sudo to base cuda devel env
-# so we can install additional packages as
-# non-root, but admin default user on azure pipelines
-RUN apt-get update && apt-get -y install sudo
-# install std packages we need for cuda dev env and test
-RUN apt-get update && apt-get -y install \
-               git \
-               python \
-               gfortran \
-               zlib1g-dev \
-               curl \
-               mpich \
-               libmpich-dev \
-               libblas-dev \
-               liblapack-dev \
-               vim
+###############################################################################
+#
+# Setup Fides
+#
+###############################################################################
+
+if(NOT FIDES_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs explicit FIDES_DIR")
+endif()
+
+if(NOT VTKM_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs VTK-m (VTKM_DIR not set)")
+endif()
+
+if(NOT ADIOS2_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs ADIOS2 (ADIOS2_DIR not set)")
+endif()
+
+MESSAGE(STATUS "Looking for FIDES using FIDES_DIR = ${FIDES_DIR}")
+
+#The Fides cmake is not setting these for some reason.
+#So, we set them explicitly for now.
+#set(Fides_DIR ${FIDES_DIR})
+
+set(FIDES_INCLUDE_DIR ${FIDES_DIR}/include/)
+set(FIDES_LIB_DIR ${FIDES_DIR}/lib)
+set(FIDES_LIBRARIES fides)
+
+find_package(Fides REQUIRED
+             NO_DEFAULT_PATH
+             PATHS ${FIDES_DIR}/lib/cmake/fides)
 
 
+message(STATUS "Found Fides at ${FIDES_DIR}")
+set(FIDES_FOUND TRUE)
+
+blt_register_library(NAME fides
+                     INCLUDES ${FIDES_INCLUDE_DIR}
+                     LIBRARIES ${FIDES_LIB_DIRS} ${FIDES_LIBRARIES} )

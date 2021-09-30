@@ -1,5 +1,6 @@
+#!/bin/bash
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2021, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -41,42 +42,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
+export TAG_BASE=alpinedav/ascent-ci:ubuntu-20.10-devel-tpls
 
-###############################################################################
-#
-# Setup HDF5
-#
-###############################################################################
+date
 
-# first Check for HDF5_DIR
+python ../build_and_tag.py ${TAG_BASE}
 
-if(NOT HDF5_DIR)
-    MESSAGE(FATAL_ERROR "HDF5 support needs explicit HDF5_DIR")
-endif()
-
-MESSAGE(STATUS "Looking for HDF5 using HDF5_DIR = ${HDF5_DIR}")
-
-# CMake's FindHDF5 module uses the HDF5_ROOT env var
-set(HDF5_ROOT ${HDF5_DIR})
-set(ENV{HDF5_ROOT} ${HDF5_ROOT}/bin)
-
-# Use CMake's FindHDF5 module, which uses hdf5's compiler wrappers to extract
-# all the info about the hdf5 install
-include(FindHDF5)
-
-# FindHDF5 sets HDF5_DIR to it's installed CMake info if it exists
-# we want to keep HDF5_DIR as the root dir of the install to be
-# consistent with other packages
-
-set(HDF5_DIR ${HDF5_ROOT} CACHE PATH "" FORCE)
-# not sure why we need to set this, but we do
-#set(HDF5_FOUND TRUE CACHE PATH "" FORCE)
-
-if(NOT HDF5_FOUND)
-    message(FATAL_ERROR "HDF5_DIR is not a path to a valid hdf5 install")
-endif()
-
-blt_register_library(NAME hdf5
-                     INCLUDES ${HDF5_INCLUDE_DIRS}
-                     LIBRARIES ${HDF5_LIBRARIES} )
+date
 

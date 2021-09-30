@@ -145,7 +145,8 @@ TEST(ascent_queries, max_query_pipeline)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent vtkm support disabled: skipping");
+
         return;
     }
     //
@@ -305,8 +306,7 @@ TEST(ascent_queries, filter_params)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
+        ASCENT_INFO("Ascent vtkm support disabled: skipping");
 
         return;
     }
@@ -393,6 +393,78 @@ TEST(ascent_queries, filter_params)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of using queries in filter parameters.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_queries, save_session)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file =
+      conduit::utils::join_file_path(output_path,"tout_save_session");
+
+    string session_file = "ascent_session.yaml";
+    // remove old file
+    if(conduit::utils::is_file(output_file))
+    {
+      conduit::utils::remove_file(output_file);
+    }
+    // make sure we get rid of the session file
+    if(conduit::utils::is_file(session_file))
+    {
+      std::cout<<"Removing session file "<<session_file<<"\n";
+      conduit::utils::remove_file(session_file);
+    }
+
+    //
+    // Create the actions.
+    //
+    Node actions;
+
+    conduit::Node queries;
+    queries["q1/params/expression"] = "min(field('braid')).value";
+    queries["q1/params/name"] = "bananas";
+
+    conduit::Node &add_queries = actions.append();
+    add_queries["action"] = "add_queries";
+    add_queries["queries"] = queries;
+
+    conduit::Node &save_session = actions.append();
+    save_session["action"] = "save_session";
+    actions.print();
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+    Node ascent_opts;
+    // default is now ascent
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+
+
+    ascent.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(session_file));
+    std::string msg = "An example of explicitly saving a session file.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
