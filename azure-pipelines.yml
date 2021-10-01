@@ -336,6 +336,8 @@ stages:
            echo $PATH
            which cmake
            cmake --version
+           # extra cuda setup (req for occa)
+           export LD_LIBRARY_PATH=/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/
            # prepare build dir
            mkdir build
            cd build
