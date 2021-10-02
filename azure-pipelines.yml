@@ -337,7 +337,7 @@ stages:
            which cmake
            cmake --version
            # extra cuda setup (req for occa)
-           export LD_LIBRARY_PATH=/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/
+           export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
            # prepare build dir
            mkdir build
            cd build
@@ -356,6 +356,7 @@ stages:
            # build
            #################################
            # build
+           export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
            cd build
            make VERBOSE=1
         displayName: 'Build'
@@ -381,6 +382,7 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
+          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
           cd install/examples/ascent/using-with-cmake
           mkdir _test_build
           cd _test_build
@@ -395,6 +397,7 @@ stages:
           cat install/share/ascent/ascent_config.mk
           pwd
           ls -l
+          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
           cd install/examples/ascent/using-with-make
           make
         displayName: 'Test vs Install (using-with-make) [build only]'
