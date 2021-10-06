@@ -93,6 +93,8 @@ set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
 
+set(ascent_device_sources )
+
 set(ascent_sources
     # ascent interface
     ascent.cpp
@@ -377,6 +379,13 @@ if (ENABLE_SERIAL)
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
     endif()
 
+    if(ASCENT_JIT_ENABLED)
+        if(CUDA_FOUND)
+            list(APPEND ascent_device_sources runtimes/expressions/ascent_array.cpp)
+            list(APPEND ascent_device_sources runtimes/expressions/ascent_array_internals.cpp)
+            list(APPEND ascent_device_sources runtimes/expressions/ascent_derived_jit.cpp)
+        endif()
+    endif()
 
     # install target for serial ascent lib
     install(TARGETS ascent
