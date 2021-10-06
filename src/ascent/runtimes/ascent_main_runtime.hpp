@@ -120,6 +120,8 @@ private:
     bool              m_field_filtering;
     std::set<std::string> m_field_list;
 
+    conduit::Node     m_comments;
+
     void              ResetInfo();
 
     flow::Workspace w;

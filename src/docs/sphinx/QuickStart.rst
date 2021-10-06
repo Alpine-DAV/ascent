@@ -67,7 +67,7 @@ We also provide spack settings for several well known HPC clusters, here is an e
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv/spack_configs/nersc/cori/"
+    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv_configs/spack_configs/nersc/cori/"
 
 
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.

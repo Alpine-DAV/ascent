@@ -7,11 +7,13 @@
 #####
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
+
 variables:
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-07-19-sha3f283e
-  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-05-19-sha1ca78d
-  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-07-19-sha6688f8
-  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-07-27-sha9dae53
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-09-28-shaad0735
+  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-09-28-sha2b9ed6
+  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-09-28-sha2b9ed6
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-09-28-shaad0735
+  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-09-28-shaad0735
 
 
 # only build merge target pr to develop
@@ -66,7 +68,7 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_py36_cxx11:
+        ubuntu_18_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -77,7 +79,7 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_py36_cxx11_bflow:
+        ubuntu_18_shared_py_cxx11_bflow:
           containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -88,7 +90,7 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_py36_cxx11_fides:
+        ubuntu_18_shared_py_cxx11_fides:
           containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -99,7 +101,7 @@ stages:
           ENABLE_ADIOS2: ON
           ENABLE_FIDES: ON
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_py36_cxx14:
+        ubuntu_18_shared_py_cxx14:
           containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -110,7 +112,7 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++14
-        ubuntu_20_10_shared_py36_cxx11:
+        ubuntu_20_10_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_20_10_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -121,7 +123,7 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        ubuntu_21_04_shared_py36_cxx11:
+        ubuntu_21_04_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_21_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -256,6 +258,10 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
+          # use mpi wrappers in case we are built against mfem that
+          # that requires mpi
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
           cd install/examples/ascent/using-with-cmake
           mkdir _test_build
           cd _test_build
@@ -278,24 +284,33 @@ stages:
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
-  - job: Main_Ubuntu_18_Cuda_10_1
+  - job: Main_Ubuntu_Cuda
     pool:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
-    container: ${{ variables.ubuntu_18_cuda_tag }}
     variables:
       COMPILER_CC: gcc
       COMPILER_CXX: g++
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        static:
+        cuda-10-static:
+          containerImage: ${{ variables.ubuntu_18_cuda_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
           ENABLE_BABELFLOW: OFF
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+        cuda-11.4.0-static:
+          containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          BUILD_SHARED_LIBS: OFF
+          CMAKE_BUILD_TYPE: Release
+          ENABLE_BABELFLOW: OFF
+          # static linking unit tests eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
+    container: $[ variables['containerImage'] ]
     steps:
       - checkout: self
         clean: boolean

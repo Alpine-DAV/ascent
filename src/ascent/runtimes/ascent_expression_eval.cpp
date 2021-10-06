@@ -88,220 +88,220 @@ Cache ExpressionEval::m_cache;
 
 double Cache::last_known_time()
 {
-  double res = 0;
-  if(m_data.has_path("last_known_time"))
-  {
-    res = m_data["last_known_time"].as_float64();
-  }
-  return res;
+double res = 0;
+if(m_data.has_path("last_known_time"))
+{
+res = m_data["last_known_time"].as_float64();
+}
+return res;
 }
 
 bool Cache::filtered()
 {
-  return m_filtered;
+return m_filtered;
 }
 
 void Cache::last_known_time(double time)
 {
-  m_data["last_known_time"] = time;
+m_data["last_known_time"] = time;
 }
 
 void Cache::filter_time(double ftime)
 {
-  const int num_entries = m_data.number_of_children();
-  int removal_count = 0;
-  for(int i = 0; i < num_entries; ++i)
-  {
-    conduit::Node &entry = m_data.child(i);
-    if(entry.name() == "last_known_time" ||
-       entry.name() == "session_cache_info")
-    {
-      continue;
-    }
+const int num_entries = m_data.number_of_children();
+int removal_count = 0;
+for(int i = 0; i < num_entries; ++i)
+{
+conduit::Node &entry = m_data.child(i);
+if(entry.name() == "last_known_time" ||
+entry.name() == "session_cache_info")
+{
+continue;
+}
 
-    bool invalid_time = true;
-    while(invalid_time && entry.number_of_children() > 0)
-    {
-      int last = entry.number_of_children() - 1;
+bool invalid_time = true;
+while(invalid_time && entry.number_of_children() > 0)
+{
+int last = entry.number_of_children() - 1;
 
-      if(!entry.child(last).has_path("time"))
-      {
-        // if there is no time, we can reason about
-        // anything
-        entry.remove(last);
-        removal_count++;
-      }
-      else if(entry.child(last)["time"].to_float64() >= ftime)
-      {
-        entry.remove(last);
-        removal_count++;
-      }
-      else
-      {
-        invalid_time = false;
-      }
-    }
-  }
+if(!entry.child(last).has_path("time"))
+{
+// if there is no time, we can reason about
+// anything
+entry.remove(last);
+removal_count++;
+}
+else if(entry.child(last)["time"].to_float64() >= ftime)
+{
+entry.remove(last);
+removal_count++;
+}
+else
+{
+invalid_time = false;
+}
+}
+}
 
-  // clean up entries with no children
-  bool clean = false;
-  while(!clean)
-  {
-    const int size = m_data.number_of_children();
-    bool removed = false;
-    for(int i = 0; i < size; ++i)
-    {
-      if(m_data.child(i).number_of_children() == 0)
-      {
-        m_data.remove(i);
-        removed = true;
-        break;
-      }
-    }
-    clean = !removed;
-  }
+// clean up entries with no children
+bool clean = false;
+while(!clean)
+{
+const int size = m_data.number_of_children();
+bool removed = false;
+for(int i = 0; i < size; ++i)
+{
+if(m_data.child(i).number_of_children() == 0)
+{
+m_data.remove(i);
+removed = true;
+break;
+}
+}
+clean = !removed;
+}
 
-  time_t t ;
-  char curr_time[100];
-  time( &t );
+time_t t ;
+char curr_time[100];
+time( &t );
 
-  std::strftime(curr_time, sizeof(curr_time), "%A %c", std::localtime(&t));
-  std::stringstream msg;
-  msg<<"Time travel detected at "<< curr_time << '\n';
-  msg<<"Removed all expression cache entries ("<<removal_count<<")"
-     <<" after simulation time "<<ftime<<".";
-  m_data["ascent_cache_info"].append() = msg.str();
-  m_filtered = true;
+std::strftime(curr_time, sizeof(curr_time), "%A %c", std::localtime(&t));
+std::stringstream msg;
+msg<<"Time travel detected at "<< curr_time << '\n';
+msg<<"Removed all expression cache entries ("<<removal_count<<")"
+<<" after simulation time "<<ftime<<".";
+m_data["ascent_cache_info"].append() = msg.str();
+m_filtered = true;
 }
 
 bool Cache::loaded()
 {
-  return m_loaded;
+return m_loaded;
 }
 
 void Cache::load(const std::string &dir,
-                 const std::string &session)
+	 const std::string &session)
 {
-  m_rank = 0;
+m_rank = 0;
 #ifdef ASCENT_MPI_ENABLED
-  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Comm_rank(mpi_comm, &m_rank);
+MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+MPI_Comm_rank(mpi_comm, &m_rank);
 #endif
 
-  std::string file_name = session;
-  std::string session_file = conduit::utils::join_path(dir, file_name);
-  m_session_file = session_file;
+std::string file_name = session;
+std::string session_file = conduit::utils::join_path(dir, file_name);
+m_session_file = session_file;
 
-  bool exists = conduit::utils::is_file(session_file);
+bool exists = conduit::utils::is_file(session_file);
 
-  if(m_rank == 0 && exists)
-  {
-    m_data.load(session_file + ".yaml", "yaml");
-  }
+if(m_rank == 0 && exists)
+{
+m_data.load(session_file + ".yaml", "yaml");
+}
 
 #ifdef ASCENT_MPI_ENABLED
-  if(exists)
-  {
-    conduit::relay::mpi::broadcast_using_schema(m_data, 0, mpi_comm);
-  }
+if(exists)
+{
+conduit::relay::mpi::broadcast_using_schema(m_data, 0, mpi_comm);
+}
 #endif
-  m_loaded = true;
+m_loaded = true;
 }
 
 void Cache::save()
 {
-  // the session file can be blank during testing,
-  // since its not actually opening ascent
-  if(m_rank == 0 &&
-     !m_data.dtype().is_empty()
-     && m_session_file != "")
-  {
-    m_data.save(m_session_file+".yaml","yaml");
-  }
+// the session file can be blank during testing,
+// since its not actually opening ascent
+if(m_rank == 0 &&
+!m_data.dtype().is_empty()
+&& m_session_file != "")
+{
+m_data.save(m_session_file+".yaml","yaml");
+}
 }
 
 void Cache::save(const std::string &filename)
 {
-  // the session file can be blank during testing,
-  // since its not actually opening ascent
-  if(m_rank == 0 &&
-     !m_data.dtype().is_empty())
-  {
-    m_data.save(filename+".yaml","yaml");
-  }
+// the session file can be blank during testing,
+// since its not actually opening ascent
+if(m_rank == 0 &&
+!m_data.dtype().is_empty())
+{
+m_data.save(filename+".yaml","yaml");
+}
 }
 
 void Cache::save(const std::string &filename,
-                 const std::vector<std::string> &selection)
+	 const std::vector<std::string> &selection)
 {
-  conduit::Node data;
-  for(const auto &expr : selection)
-  {
-    if(m_data.has_path(expr))
-    {
-      data[expr].set_external(m_data[expr]);
-    }
-  }
-  // the session file can be blank during testing,
-  // since its not actually opening ascent
-  // or there might not be match
-  if(m_rank == 0 &&
-     !data.dtype().is_empty())
-  {
-    data.save(filename+".yaml","yaml");
-  }
+conduit::Node data;
+for(const auto &expr : selection)
+{
+if(m_data.has_path(expr))
+{
+data[expr].set_external(m_data[expr]);
+}
+}
+// the session file can be blank during testing,
+// since its not actually opening ascent
+// or there might not be match
+if(m_rank == 0 &&
+!data.dtype().is_empty())
+{
+data.save(filename+".yaml","yaml");
+}
 }
 
 Cache::~Cache()
 {
-  save();
+save();
 }
 
 void
 register_builtin()
 {
-  flow::Workspace::register_filter_type<expressions::NullArg>();
-  flow::Workspace::register_filter_type<expressions::Boolean>();
-  flow::Workspace::register_filter_type<expressions::Double>();
-  flow::Workspace::register_filter_type<expressions::Integer>();
-  flow::Workspace::register_filter_type<expressions::Identifier>();
-  flow::Workspace::register_filter_type<expressions::History>();
-  flow::Workspace::register_filter_type<expressions::HistoryRange>();
-  flow::Workspace::register_filter_type<expressions::BinaryOp>();
-  flow::Workspace::register_filter_type<expressions::String>();
-  flow::Workspace::register_filter_type<expressions::ExpressionList>();
-  flow::Workspace::register_filter_type<expressions::IfExpr>();
-  flow::Workspace::register_filter_type<expressions::ScalarMax>();
-  flow::Workspace::register_filter_type<expressions::ScalarMin>();
-  flow::Workspace::register_filter_type<expressions::FieldMax>();
-  flow::Workspace::register_filter_type<expressions::FieldMin>();
-  flow::Workspace::register_filter_type<expressions::FieldAvg>();
-  flow::Workspace::register_filter_type<expressions::FieldNanCount>();
-  flow::Workspace::register_filter_type<expressions::FieldInfCount>();
-  flow::Workspace::register_filter_type<expressions::FieldSum>();
-  flow::Workspace::register_filter_type<expressions::ArrayMax>();
-  flow::Workspace::register_filter_type<expressions::ArrayMin>();
-  flow::Workspace::register_filter_type<expressions::ArrayAvg>();
-  flow::Workspace::register_filter_type<expressions::ScalarGradient>();
-  flow::Workspace::register_filter_type<expressions::ArrayGradient>();
-  flow::Workspace::register_filter_type<expressions::ArraySum>();
-  flow::Workspace::register_filter_type<expressions::Vector>();
-  flow::Workspace::register_filter_type<expressions::Magnitude>();
-  flow::Workspace::register_filter_type<expressions::Abs>();
-  flow::Workspace::register_filter_type<expressions::Pow>();
-  flow::Workspace::register_filter_type<expressions::Exp>();
-  flow::Workspace::register_filter_type<expressions::Log>();
-  flow::Workspace::register_filter_type<expressions::Field>();
-  flow::Workspace::register_filter_type<expressions::Axis>();
-  flow::Workspace::register_filter_type<expressions::Histogram>();
-  flow::Workspace::register_filter_type<expressions::Binning>();
-  flow::Workspace::register_filter_type<expressions::Entropy>();
-  flow::Workspace::register_filter_type<expressions::Pdf>();
-  flow::Workspace::register_filter_type<expressions::Cdf>();
-  flow::Workspace::register_filter_type<expressions::Quantile>();
-  flow::Workspace::register_filter_type<expressions::BinByValue>();
-  flow::Workspace::register_filter_type<expressions::BinByIndex>();
-  flow::Workspace::register_filter_type<expressions::Cycle>();
+flow::Workspace::register_filter_type<expressions::NullArg>();
+flow::Workspace::register_filter_type<expressions::Boolean>();
+flow::Workspace::register_filter_type<expressions::Double>();
+flow::Workspace::register_filter_type<expressions::Integer>();
+flow::Workspace::register_filter_type<expressions::Identifier>();
+flow::Workspace::register_filter_type<expressions::History>();
+flow::Workspace::register_filter_type<expressions::HistoryRange>();
+flow::Workspace::register_filter_type<expressions::BinaryOp>();
+flow::Workspace::register_filter_type<expressions::String>();
+flow::Workspace::register_filter_type<expressions::ExpressionList>();
+flow::Workspace::register_filter_type<expressions::IfExpr>();
+flow::Workspace::register_filter_type<expressions::ScalarMax>();
+flow::Workspace::register_filter_type<expressions::ScalarMin>();
+flow::Workspace::register_filter_type<expressions::FieldMax>();
+flow::Workspace::register_filter_type<expressions::FieldMin>();
+flow::Workspace::register_filter_type<expressions::FieldAvg>();
+flow::Workspace::register_filter_type<expressions::FieldNanCount>();
+flow::Workspace::register_filter_type<expressions::FieldInfCount>();
+flow::Workspace::register_filter_type<expressions::FieldSum>();
+flow::Workspace::register_filter_type<expressions::ArrayMax>();
+flow::Workspace::register_filter_type<expressions::ArrayMin>();
+flow::Workspace::register_filter_type<expressions::ArrayAvg>();
+flow::Workspace::register_filter_type<expressions::ScalarGradient>();
+flow::Workspace::register_filter_type<expressions::ArrayGradient>();
+flow::Workspace::register_filter_type<expressions::ArraySum>();
+flow::Workspace::register_filter_type<expressions::Vector>();
+flow::Workspace::register_filter_type<expressions::Magnitude>();
+flow::Workspace::register_filter_type<expressions::Abs>();
+flow::Workspace::register_filter_type<expressions::Pow>();
+flow::Workspace::register_filter_type<expressions::Exp>();
+flow::Workspace::register_filter_type<expressions::Log>();
+flow::Workspace::register_filter_type<expressions::Field>();
+flow::Workspace::register_filter_type<expressions::Axis>();
+flow::Workspace::register_filter_type<expressions::Histogram>();
+flow::Workspace::register_filter_type<expressions::Binning>();
+flow::Workspace::register_filter_type<expressions::Entropy>();
+flow::Workspace::register_filter_type<expressions::Pdf>();
+flow::Workspace::register_filter_type<expressions::Cdf>();
+flow::Workspace::register_filter_type<expressions::Quantile>();
+flow::Workspace::register_filter_type<expressions::BinByValue>();
+flow::Workspace::register_filter_type<expressions::BinByIndex>();
+flow::Workspace::register_filter_type<expressions::Cycle>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
@@ -393,6 +393,24 @@ initialize_functions()
   array_avg_sig["filter_name"] = "array_avg"; // matches the filter's type_name
   array_avg_sig["args/arg1/type"] = "array"; // arg names match input port names
   array_avg_sig["description"] = "Return the average of an array.";
+
+  // -------------------------------------------------------------
+  conduit::Node &array_replace_sig = (*functions)["replace"].append();
+  array_replace_sig["return_type"] = "array";
+  array_replace_sig["filter_name"] = "replace"; // matches the filter's type_name
+  array_replace_sig["args/arg1/type"] = "array";
+  array_replace_sig["args/find/type"] = "double";
+  array_replace_sig["args/find/description"] = "Value in the array to find and replace.";
+  array_replace_sig["args/replace/type"] = "double";
+  array_replace_sig["args/replace/description"] = "Replacement value.";
+  array_replace_sig["description"] = "Find and replace zero or more values in an array.";
+
+  // -------------------------------------------------------------
+  conduit::Node &nan_sig = (*functions)["nan"].append();
+  nan_sig["return_type"] = "double";
+  nan_sig["filter_name"] = "nan"; // matches the filter's type_name
+  nan_sig["args"] = conduit::DataType::empty();
+  nan_sig["description"] = "Generates a NaN value.";
 
   // -------------------------------------------------------------
 
@@ -488,7 +506,7 @@ initialize_functions()
   array_gradient_sig["args/last_absolute_cycle/optional"];
   array_gradient_sig["args/last_absolute_cycle/description"] =
       "The last simulation cycle for which to calculate the temporal gradient. For \
-  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` calculate the temporal gradient of \
+  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` calculate the temporal gradient of \
   pressure from the first two cycles.";
 
   array_gradient_sig["description"] = "As the simulation progresses the expressions \

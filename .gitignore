@@ -18,3 +18,5 @@ Untitle*.ipynb
 .spack-env
 spack-libs
 spack.lock
+AZEMU-LAUNCH-*.sh
+AZEMU-SCRIPT-*.sh

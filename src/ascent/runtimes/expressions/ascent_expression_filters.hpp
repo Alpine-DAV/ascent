@@ -631,6 +631,28 @@ public:
   virtual void execute();
 };
 
+class Nan : public ::flow::Filter
+{
+public:
+  Nan();
+  ~Nan();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Replace : public ::flow::Filter
+{
+public:
+  Replace();
+  ~Replace();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

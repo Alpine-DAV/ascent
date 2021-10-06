@@ -12,7 +12,7 @@ mkdir -p $DEST_DIR
 python scripts/uberenv/uberenv.py --spec="%gcc +openmp" \
        --pull \
        --install \
-       --spack-config-dir="scripts/uberenv/spack_configs/blueos_3_ppc64le_ib_p9" \
+       --spack-config-dir="scripts/uberenv_configs/spack_configs/blueos_3_ppc64le_ib_p9" \
        --prefix=${DEST_DIR}
 
 # gen symlinks to important deps
