@@ -1,7 +1,10 @@
+#!/bin/bash
+set -ev
+
 # variants
 export SPACK_SPEC="%gcc+mpi+python+babelflow+fides+adios2+dray+mfem"
 # constraints
-export SPACK_SPEC="${SPACK_SPEC} ^conduit@develop ^vtk-h@develop ^dray@develop"
+export SPACK_SPEC="${SPACK_SPEC} ^conduit@develop ^vtk-h@develop ^dray@develop~test~utils"
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/"
 

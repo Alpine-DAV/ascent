@@ -709,7 +709,7 @@ TEST(ascent_expressions, test_gradient_scalar)
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
   for(const string &expression : {
-      "gradient(val)", 
+      "gradient(val)",
       "gradient(val, window_length=1)",
       "gradient(val, window_length=1, window_length_unit='index')",
       "gradient(val, window_length=2)",
@@ -748,7 +748,7 @@ TEST(ascent_expressions, test_gradient_scalar)
 
   //test the gradient of gradient
   for(const string &expression : {
-      "gradient(gradient_val)", 
+      "gradient(gradient_val)",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["value"].to_float64(), 3);
@@ -789,7 +789,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("1", "val");
     res = eval.evaluate("vector(1,2,3)", "vec");
-    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");   
+    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");
   }
 
   {
@@ -798,7 +798,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("2", "val");
     res = eval.evaluate("vector(9,3,4)", "vec");
-    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");   
+    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");
   }
 
   {
@@ -807,7 +807,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("3", "val");
     res = eval.evaluate("vector(3,4,0)", "vec");
-    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");   
+    res = eval.evaluate("gradient(val, window_length=100, window_length_unit='cycle')", "gradient_val");
   }
 
   {
@@ -816,7 +816,7 @@ TEST(ascent_expressions, test_gradient_array)
     runtime::expressions::ExpressionEval eval(&multi_dom);
     res = eval.evaluate("4", "val");
     res = eval.evaluate("vector(6,4,8)", "vec");
-    res = eval.evaluate("gradient(val, window_length=200, window_length_unit='cycle')", "gradient_val");   
+    res = eval.evaluate("gradient(val, window_length=200, window_length_unit='cycle')", "gradient_val");
   }
 
   runtime::expressions::ExpressionEval eval(&multi_dom);
@@ -824,13 +824,13 @@ TEST(ascent_expressions, test_gradient_array)
 
   // confirm it works properly
   for(const string &expression : {
-      "gradient_range(val, first_absolute_index=0, last_absolute_index=2)", 
+      "gradient_range(val, first_absolute_index=0, last_absolute_index=2)",
       "gradient_range(val, first_relative_index=1, last_relative_index=3)",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
   }
 
   for(const string &expression : {
@@ -849,7 +849,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[0.01, 0.01]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
   }
 
   for(const string &expression : {
@@ -863,13 +863,13 @@ TEST(ascent_expressions, test_gradient_array)
 
   // confirm it works properly if a single element is returned
   for(const string &expression : {
-      "gradient_range(val, first_absolute_index=1, last_absolute_index=2)", 
+      "gradient_range(val, first_absolute_index=1, last_absolute_index=2)",
       "gradient_range(val, first_relative_index=1, last_relative_index=2)",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "1.0");
+    EXPECT_EQ(result.to_json(), "0.5");
   }
 
   for(const string &expression : {
@@ -887,7 +887,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "0.01");
+    EXPECT_EQ(result.to_json(), "0.5");
   }
 
   //confirm that it clamps to the end as expected
@@ -897,7 +897,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.25]");
   }
 
   //confirm that it clamps to the beginning as expected
@@ -907,7 +907,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[1.0, 1.0]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5]");
   }
 
   //confirm that it clamps to the beginning and end as expected
@@ -926,27 +926,27 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[0.01, 0.01, 0.005]");
+    EXPECT_EQ(result.to_json(), "[0.5, 0.5, 0.25]");
   }
 
   // confirm it behaves properly with other operators that take an array as input
   for(const string &expression : {
-      "max(gradient_range(val, first_absolute_index=1, last_absolute_index=3))", 
+      "max(gradient_range(val, first_absolute_index=1, last_absolute_index=3))",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value"].to_float64(), 1);
+    EXPECT_EQ(res["value"].to_float64(), 0.5);
   }
 
   //confirm it returns an empty gradient if there is only a single value
   for(const string &expression : {
-      "gradient_range(val, first_absolute_index=0, last_absolute_index=0)", 
+      "gradient_range(val, first_absolute_index=0, last_absolute_index=0)",
       "gradient_range(val, first_relative_index=0, last_relative_index=0)",
       "gradient_range(val, first_absolute_time=1.0, last_absolute_time=3.0)",
       "gradient_range(val, first_absolute_time=2.0, last_absolute_time=2.0)",
     }) {
     res = eval.evaluate(expression);
-    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["type"].as_string(), "array");
     EXPECT_EQ(res["value"].to_string(), "\"-inf\"");
   }
 
@@ -957,7 +957,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
-    EXPECT_EQ(result.to_json(), "[0.0, -2.5e-05]");
+    EXPECT_EQ(result.to_json(), "[0.0, -0.00125]");
   }
 
 
@@ -1027,7 +1027,7 @@ TEST(ascent_expressions, test_history_range)
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
   for(const string &expression : {
-      "history_range(val, first_absolute_index=0, last_absolute_index=2)", 
+      "history_range(val, first_absolute_index=0, last_absolute_index=2)",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
@@ -1037,7 +1037,7 @@ TEST(ascent_expressions, test_history_range)
 
 
   for(const string &expression : {
-      "max(history_range(val, first_absolute_index=0, last_absolute_index=2))", 
+      "max(history_range(val, first_absolute_index=0, last_absolute_index=2))",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");
@@ -1045,7 +1045,7 @@ TEST(ascent_expressions, test_history_range)
   }
 
   for(const string &expression : {
-      "max(history_range(val, first_absolute_index=0, last_absolute_index=2)) == -1.0", 
+      "max(history_range(val, first_absolute_index=0, last_absolute_index=2)) == -1.0",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "bool");
@@ -1053,10 +1053,10 @@ TEST(ascent_expressions, test_history_range)
   }
 
   for(const string &expression : {
-      "history_range(val, first_absolute_index=0, last_absolute_index=2)", 
+      "history_range(val, first_absolute_index=0, last_absolute_index=2)",
       "history_range(val, first_relative_index=1, last_relative_index=3)",
       "history_range(val, first_absolute_time=1.0, last_absolute_time=3.0)",
-      "history_range(val, first_absolute_cycle=100, last_absolute_cycle=300)",  
+      "history_range(val, first_absolute_cycle=100, last_absolute_cycle=300)",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
@@ -1065,7 +1065,7 @@ TEST(ascent_expressions, test_history_range)
   }
 
   for(const string &expression : {
-      "history_range(val, first_absolute_index=1, last_absolute_index=2)", 
+      "history_range(val, first_absolute_index=1, last_absolute_index=2)",
       "history_range(val, first_relative_index=1, last_relative_index=2)",
       "history_range(val, first_absolute_time=2.0, last_absolute_time=3.0)",
       "history_range(val, first_absolute_cycle=200, last_absolute_cycle=300)",
@@ -1081,7 +1081,8 @@ TEST(ascent_expressions, test_history_range)
       "history_range(val, first_absolute_index=1, last_absolute_index=5)",
       "history_range(val, first_absolute_time=2.0, last_absolute_time=5.0)",
       "history_range(val, first_absolute_cycle=200, last_absolute_cycle=500)",
-    }) {
+    })
+  {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "array");
     result = res["value"].as_float64_array();
@@ -1100,8 +1101,9 @@ TEST(ascent_expressions, test_history_range)
     EXPECT_EQ(result.to_json(), "[-1.0, -2.0, -3.0]");
   }
 
+
   for(const string &expression : {
-      "max(history_range(val, first_absolute_index=1, last_absolute_index=3))", 
+      "max(history_range(val, first_absolute_index=1, last_absolute_index=3))",
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");

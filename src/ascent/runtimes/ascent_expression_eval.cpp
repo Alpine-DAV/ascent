@@ -302,6 +302,8 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::BinByValue>();
   flow::Workspace::register_filter_type<expressions::BinByIndex>();
   flow::Workspace::register_filter_type<expressions::Cycle>();
+  flow::Workspace::register_filter_type<expressions::Nan>();
+  flow::Workspace::register_filter_type<expressions::Replace>();
   flow::Workspace::register_filter_type<expressions::Time>();
   flow::Workspace::register_filter_type<expressions::ArrayAccess>();
   flow::Workspace::register_filter_type<expressions::DotAccess>();
@@ -394,6 +396,24 @@ initialize_functions()
   array_avg_sig["filter_name"] = "array_avg"; // matches the filter's type_name
   array_avg_sig["args/arg1/type"] = "array"; // arg names match input port names
   array_avg_sig["description"] = "Return the average of an array.";
+
+  // -------------------------------------------------------------
+  conduit::Node &array_replace_sig = (*functions)["replace"].append();
+  array_replace_sig["return_type"] = "array";
+  array_replace_sig["filter_name"] = "replace"; // matches the filter's type_name
+  array_replace_sig["args/arg1/type"] = "array";
+  array_replace_sig["args/find/type"] = "double";
+  array_replace_sig["args/find/description"] = "Value in the array to find and replace.";
+  array_replace_sig["args/replace/type"] = "double";
+  array_replace_sig["args/replace/description"] = "Replacement value.";
+  array_replace_sig["description"] = "Find and replace zero or more values in an array.";
+
+  // -------------------------------------------------------------
+  conduit::Node &nan_sig = (*functions)["nan"].append();
+  nan_sig["return_type"] = "double";
+  nan_sig["filter_name"] = "nan"; // matches the filter's type_name
+  nan_sig["args"] = conduit::DataType::empty();
+  nan_sig["description"] = "Generates a NaN value.";
 
   // -------------------------------------------------------------
 
@@ -489,7 +509,7 @@ initialize_functions()
   array_gradient_sig["args/last_absolute_cycle/optional"];
   array_gradient_sig["args/last_absolute_cycle/description"] =
       "The last simulation cycle for which to calculate the temporal gradient. For \
-  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` calculate the temporal gradient of \
+  example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` calculate the temporal gradient of \
   pressure from the first two cycles.";
 
   array_gradient_sig["description"] = "As the simulation progresses the expressions \

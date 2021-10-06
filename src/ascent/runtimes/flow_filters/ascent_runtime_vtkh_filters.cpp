@@ -96,9 +96,11 @@
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/filters/Log.hpp>
+#include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
+#include <vtkh/filters/Streamline.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/Triangulate.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
@@ -112,9 +114,11 @@
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
 #include <ascent_expression_eval.hpp>
+
 #endif
 
 #include <stdio.h>
+#include <random>
 
 using namespace conduit;
 using namespace std;
@@ -860,7 +864,6 @@ VTKHSlice::execute()
       point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
 
       offset = get_float32(n_point["y_offset"], data_object);
-      std::cout<<"y offset "<<offset<<"\n";
       std::max(-1.f, std::min(1.f, offset));
       t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
@@ -3316,6 +3319,202 @@ VTKHScale::execute()
     DataObject *res =  new DataObject(new_coll);
     set_output<DataObject>(res);
 }
+
+//-----------------------------------------------------------------------------
+
+VTKHParticleAdvection::VTKHParticleAdvection()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHParticleAdvection::~VTKHParticleAdvection()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHParticleAdvection::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_particle_advection";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHParticleAdvection::verify_params(const conduit::Node &params,
+                                     conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field", params, info, true);
+    res &= check_numeric("num_seeds", params, info, true, true);
+    res &= check_numeric("num_steps", params, info, true, true);
+    res &= check_numeric("step_size", params, info, true, true);
+    res &= check_numeric("seed_bounding_box_xmin", params, info, true, true);
+    res &= check_numeric("seed_bounding_box_xmax", params, info, true, true);
+    res &= check_numeric("seed_bounding_box_ymin", params, info, true, true);
+    res &= check_numeric("seed_bounding_box_ymax", params, info, true, true);
+    res &= check_numeric("seed_bounding_box_zmin", params, info, true, true);
+    res &= check_numeric("seed_bounding_box_zmax", params, info, true, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("num_seeds");
+    valid_paths.push_back("num_steps");
+    valid_paths.push_back("step_size");
+    valid_paths.push_back("seed_bounding_box_xmin");
+    valid_paths.push_back("seed_bounding_box_xmax");
+    valid_paths.push_back("seed_bounding_box_ymin");
+    valid_paths.push_back("seed_bounding_box_ymax");
+    valid_paths.push_back("seed_bounding_box_zmin");
+    valid_paths.push_back("seed_bounding_box_zmax");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHParticleAdvection::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_particle_advection input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+
+    int numSeeds = get_int32(params()["num_seeds"], data_object);
+    int numSteps = get_int32(params()["num_steps"], data_object);
+    float stepSize = get_float32(params()["step_size"], data_object);
+
+    float seedBBox[6];
+    seedBBox[0] = get_float32(params()["seed_bounding_box_xmin"], data_object);
+    seedBBox[1] = get_float32(params()["seed_bounding_box_xmax"], data_object);
+    seedBBox[2] = get_float32(params()["seed_bounding_box_ymin"], data_object);
+    seedBBox[3] = get_float32(params()["seed_bounding_box_ymax"], data_object);
+    seedBBox[4] = get_float32(params()["seed_bounding_box_zmin"], data_object);
+    seedBBox[5] = get_float32(params()["seed_bounding_box_zmax"], data_object);
+
+    float dx = seedBBox[1] - seedBBox[0];
+    float dy = seedBBox[3] - seedBBox[2];
+    float dz = seedBBox[5] - seedBBox[4];
+
+    if (dx < 0 || dy < 0 || dz < 0)
+    {
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    std::random_device device;
+    std::default_random_engine generator(0);
+    float  zero(0), one(1);
+    std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+    //Generate seeds
+
+    std::vector<vtkm::Particle> seeds;
+    for (int i = 0; i < numSeeds; i++)
+    {
+      float x = seedBBox[0] + dx * distribution(generator);
+      float y = seedBBox[2] + dy * distribution(generator);
+      float z = seedBBox[4] + dz * distribution(generator);
+      seeds.push_back(vtkm::Particle({x,y,z}, i));
+    }
+    auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
+
+
+    vtkh::DataSet *output = nullptr;
+    if (record_trajectories)
+    {
+      vtkh::Streamline sl;
+      sl.SetStepSize(stepSize);
+      sl.SetNumberOfSteps(numSteps);
+      sl.SetSeeds(seeds);
+      sl.SetField(field_name);
+      sl.SetInput(&data);
+      sl.Update();
+      output = sl.GetOutput();
+    }
+    else
+    {
+      vtkh::ParticleAdvection pa;
+      pa.SetStepSize(stepSize);
+      pa.SetNumberOfSteps(numSteps);
+      pa.SetSeeds(seeds);
+      pa.SetField(field_name);
+      pa.SetInput(&data);
+      pa.Update();
+      output = pa.GetOutput();
+    }
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHStreamline::VTKHStreamline()
+:VTKHParticleAdvection()
+{
+  record_trajectories = true;
+}
+
+void
+VTKHStreamline::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_streamline";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+VTKHStreamline::~VTKHStreamline()
+{
+// empty
+}
+
 
 //-----------------------------------------------------------------------------
 };
