@@ -68,12 +68,13 @@
 #ifdef ASCENT_JIT_ENABLED
 #include <occa.hpp>
 #include <occa/utils/env.hpp>
-#include <stdlib.h>
-  #ifdef ASCENT_CUDA_ENABLED
-    #include <cuda_runtime.h>
-    #include <cuda.h>
-    #include "driver_types.h"
-  #endif
+#include <stdlib.h>  
+#endif
+
+#ifdef ASCENT_CUDA_ENABLED
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include "driver_types.h"
 #endif
 
 //-----------------------------------------------------------------------------
