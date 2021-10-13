@@ -108,9 +108,11 @@ protected:
   DataObject m_data_object;
   flow::Workspace w;
   static Cache m_cache;
+  void jit_root(conduit::Node &root, const std::string &expr_name);
 public:
   ExpressionEval(DataObject &dataset);
   ExpressionEval(conduit::Node *dataset);
+  DataObject& data_object();
 
   static const conduit::Node &get_cache();
   static void get_last(conduit::Node &data);

@@ -1,9 +1,9 @@
 [submodule "src/blt"]
 	path = src/blt
 	url = https://github.com/LLNL/blt.git
-[submodule "scripts/uberenv"]
-	path = scripts/uberenv
-	url = https://github.com/llnl/uberenv/
 [submodule "scripts/uberenv_configs/spack_configs"]
 	path = scripts/uberenv_configs/spack_configs
 	url = https://github.com/Alpine-DAV/spack_configs.git
+[submodule "scripts/uberenv"]
+	path = scripts/uberenv
+	url = https://github.com/llnl/uberenv/

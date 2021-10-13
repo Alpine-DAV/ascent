@@ -75,8 +75,10 @@
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
+#include <expressions/ascent_derived_jit.hpp>
 #include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
+#include <ascent_data_logger.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkm/cont/Error.h>
@@ -181,6 +183,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     MPI_Comm_rank(comm,&m_rank);
     InfoHandler::m_rank = m_rank;
+    DataLogger::instance()->rank(m_rank);
 #else  // non mpi version
     if(options.has_child("mpi_comm"))
     {
@@ -210,9 +213,18 @@ AscentRuntime::Initialize(const conduit::Node &options)
     if(sel_cuda_device)
     {
 #if defined(ASCENT_VTKM_ENABLED)
+      {
         int device_count = vtkh::CUDADeviceCount();
         int rank_device = m_rank % device_count;
         vtkh::SelectCUDADevice(rank_device);
+      }
+#endif
+#if defined(ASCENT_JIT_ENABLED)
+      {
+        int device_count = runtime::expressions::Jitable::num_cuda_devices();
+        int rank_device = m_rank % device_count;
+        runtime::expressions::Jitable::set_cuda_device(rank_device);
+      }
 #endif
     }
 #endif
@@ -806,7 +818,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     // for MPI case, inspect args, if script is passed via file,
     // read contents on root and broadcast to other tasks
     int comm_id = flow::Workspace::default_mpi_comm();
-    MPI_Comm comm = MPI_Comm_f2c(comm_id);
+    // MPI_Comm comm = MPI_Comm_f2c(comm_id);
     // inject helper that provides the mpi comm handle
 
     py_src_final << "# ascent mpi comm helper function" << std::endl

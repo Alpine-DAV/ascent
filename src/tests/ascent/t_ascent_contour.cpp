@@ -94,6 +94,12 @@ TEST(ascent_contour, test_single_contour_3d)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
+    double * braid = data["fields/braid/values"].as_float64_ptr();
+    braid[0] = 100;
+    // run expression
+    braid[0] = 102;
+    // run expression
+    braid[0] = 103;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 

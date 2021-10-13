@@ -368,7 +368,9 @@ DataBinning::execute()
       n_empty_bin_val = params()["empty_bin_val"];
     }
 
-    conduit::Node n_axes;
+    conduit::Node n_axes_list;
+    n_axes_list["type"] = "list";
+    conduit::Node &n_axes = n_axes_list["value"];
     const int num_axes = params()["axes"].number_of_children();
     for(int i = 0; i < num_axes; ++i)
     {
@@ -402,7 +404,7 @@ DataBinning::execute()
                                    reduction_op,
                                    n_empty_bin_val,
                                    n_component,
-                                   n_axes,
+                                   n_axes_list,
                                    *n_input.get(),
                                    n_binning,
                                    n_output_axes);
