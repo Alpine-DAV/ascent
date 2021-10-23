@@ -59,6 +59,9 @@ RUN cd /home/user/ascent/build-debug && \
     /home/user/uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX=/home/user/ascent/install-debug \
+    -DENABLE_BABELFLOW=OFF \
+    -DADIOS2_DIR=IGNORE \
+    -DFIDES_DIR=IGNORE \
     -C /home/user/uberenv_libs/*.cmake \
     ../src
 
@@ -95,7 +98,7 @@ RUN echo "c.NotebookApp.password = 'sha1:9777986fd066:283f673e1a311e2d5ef58c174e
 RUN echo "c.NotebookApp.terminado_settings = { 'shell_command': ['/bin/bash'] }" >> /home/user/.jupyter/jupyter_notebook_config.py
 
 # gen env script that points to spack installs of tpls
-cd /home/user/ && python ascent/scripts/gen_spack_env_script.py cmake mpi python
+RUN cd /home/user/ && python ascent/scripts/gen_spack_env_script.py cmake mpi python
 RUN cp /home/user/s_env.sh ascent_docker_setup_env.sh
 RUN echo "export PYTHONPATH=/home/user/ascent/install-debug/python-modules/" >> ascent_docker_setup_env.sh
 
