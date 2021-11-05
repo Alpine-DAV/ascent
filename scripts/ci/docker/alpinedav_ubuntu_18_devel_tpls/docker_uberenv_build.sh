@@ -8,14 +8,14 @@ export SPACK_SPEC="${SPACK_SPEC} ^conduit@develop ^vtk-h@develop ^dray@develop~t
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/"
 
-cd /home/user/ascent && python scripts/uberenv/uberenv.py \
+cd ascent && python scripts/uberenv/uberenv.py \
      -k \
      --spec="${SPACK_SPEC}" \
      --spack-config-dir="${SPACK_CONFIG}" \
      --prefix="/uberenv_libs"
 
 # cleanup the spack build stuff to free up space
-/home/user/uberenv_libs/spack/bin/spack clean --all
+/uberenv_libs/spack/bin/spack clean --all
 
 # change perms
-chmod -R a+rX /home/user/uberenv_libs
+chmod -R a+rX /uberenv_libs
