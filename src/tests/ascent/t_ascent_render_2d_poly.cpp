@@ -227,7 +227,7 @@ TEST(ascent_pipeline, test_render_2d_poly_and_nonpoly)
 
     conduit::blueprint::mesh::examples::polytess(nlevels, nz, data);
 
-    conduit::blueprint::mesh::examples::braid("quads", 5,5,1,braid_data);
+    conduit::blueprint::mesh::examples::braid("quads", 5,5,0,braid_data);
 
     data["coordsets/coords_braid"] = braid_data["coordsets/coords"];
     data["topologies/mesh"] = braid_data["topologies/mesh"];
