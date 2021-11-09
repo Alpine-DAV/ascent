@@ -24,6 +24,7 @@ RUN apt-get update && apt-get -y install \
                libcublas10 \
                libcublas-dev \
                unzip \
+               openssh-server \
                vim
 
 

@@ -33,5 +33,6 @@ RUN apt-get update && apt-get -y install \
              libbz2-dev \
              mpich \
              libmpich-dev \
+             openssh-server \
              vim
 
