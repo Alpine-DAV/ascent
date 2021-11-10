@@ -114,6 +114,20 @@ if (DRAY_DIR)
 endif()
 
 ################################
+# Setup OCCA
+################################
+if (OCCA_DIR)
+  include(cmake/thirdparty/SetupOcca.cmake)
+endif()
+
+################################
+# Setup Umpire
+################################
+if (UMPIRE_DIR)
+  include(cmake/thirdparty/SetupUmpire.cmake)
+endif()
+
+################################
 # Setup ADIOS2
 ################################
 if (ADIOS2_DIR)

@@ -54,12 +54,15 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_runtime_options
 		t_ascent_opt_viewpoint
                 t_ascent_utils
+                t_ascent_memory
+                t_ascent_derived
                 t_ascent_empty_runtime
-                t_ascent_error_handling
                 t_ascent_expressions
                 t_ascent_cinema_a
                 t_ascent_render_2d
                 t_ascent_render_3d
+                t_ascent_render_2d_poly
+                t_ascent_render_3d_poly
                 t_ascent_web_flow
                 t_ascent_web_main
                 t_ascent_clip
@@ -95,6 +98,7 @@ set(BASIC_TESTS t_ascent_smoke
 
 set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_empty_runtime
+               t_ascent_mpi_derived
                t_ascent_mpi_expressions
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
@@ -112,6 +116,7 @@ if(VTKM_FOUND)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
                            t_ascent_mpi_relay_extract)
 endif()
+
 
 # adios tests
 if(FIDES_FOUND)

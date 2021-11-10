@@ -186,6 +186,8 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("world_annotations");
+  r_valid_paths.push_back("screen_annotations");
   r_valid_paths.push_back("axis_scale_x");
   r_valid_paths.push_back("axis_scale_y");
   r_valid_paths.push_back("axis_scale_z");
@@ -368,6 +370,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     render.SetShadingOn(on);
   }
 
+  bool annot_all_off = false;
   if(render_node.has_path("annotations"))
   {
     if(!render_node["annotations"].dtype().is_string())
@@ -379,6 +382,35 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     if(annot == "false")
     {
       render.DoRenderAnnotations(false);
+      annot_all_off = true;
+    }
+  }
+
+  if(!annot_all_off && render_node.has_path("world_annotations"))
+  {
+    if(!render_node["world_annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/world_annotations node must be a string value");
+    }
+    const std::string annot = render_node["world_annotations"].as_string();
+    // default is always render world annotations
+    if(annot == "false")
+    {
+      render.DoRenderWorldAnnotations(false);
+    }
+  }
+
+  if(!annot_all_off && render_node.has_path("screen_annotations"))
+  {
+    if(!render_node["screen_annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/screen_annotations node must be a string value");
+    }
+    const std::string annot = render_node["screen_annotations"].as_string();
+    // default is always render screen annotations
+    if(annot == "false")
+    {
+      render.DoRenderScreenAnnotations(false);
     }
   }
 

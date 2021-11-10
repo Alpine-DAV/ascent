@@ -52,8 +52,8 @@
 #define ASCENT_EXPRESSION_FILTERS
 
 #include <ascent.hpp>
-
 #include <flow_filter.hpp>
+#include <flow_graph.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -72,6 +72,17 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
+
+// for multi line statements, we have intermediate symbols:
+// bananas = max(field('pressure'))
+// bananas < 0
+// We want to keep the intermediate results around (e.g., the value of
+// bananas) to put in the cache and for debugging,
+// but we don't know what the value is until we execute the graph.
+// Each filter will call this function to update the return values.
+void resolve_symbol_result(flow::Graph &graph,
+                           const conduit::Node *output,
+                           const std::string filter_name);
 
 // Need to validate the binning input in several places
 // so consolidate this call
@@ -510,6 +521,17 @@ public:
   virtual void execute();
 };
 
+class Topo : public ::flow::Filter
+{
+public:
+  Topo();
+  ~Topo();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class BinByIndex : public ::flow::Filter
 {
 public:
@@ -554,16 +576,6 @@ public:
   virtual void execute();
 };
 
-class ExpressionList : public ::flow::Filter
-{
-public:
-  ExpressionList();
-  ~ExpressionList();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
 
 class Quantile : public ::flow::Filter
 {

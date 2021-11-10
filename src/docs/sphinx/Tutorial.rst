@@ -45,7 +45,7 @@
 Tutorial
 =================
 
-`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2020_12_17_ecp_ascent_intro.pdf>`_
+`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2021_11_05_ascent_intro.pdf>`_
 
 
 This tutorial introduces how to use Ascent, including basics about:
@@ -59,12 +59,11 @@ Ascent installs include standalone C++, Python, and Python-based Jupyter noteboo
 You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
 
-
 Scheduled Tutorials:
- * ECP 2021 Annual Meeting - April 2021, Virtual
-
+ * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
 
 Past Tutorials:
+ * ECP 2021 Annual Meeting - April 2021, Virtual
  * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual
  * ECP 2020 Annual Meeting - Feb 2020, Houston, TX

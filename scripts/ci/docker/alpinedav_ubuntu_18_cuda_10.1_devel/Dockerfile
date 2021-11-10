@@ -20,6 +20,7 @@ RUN apt-get update && apt-get -y install \
                libblas-dev \
                liblapack-dev \
                unzip \
+               openssh-server \ 
                vim
 
 

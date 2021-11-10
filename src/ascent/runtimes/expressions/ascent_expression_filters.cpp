@@ -299,6 +299,23 @@ logic_op(const bool lhs, const bool rhs, const std::string &op)
 
 } // namespace detail
 
+void resolve_symbol_result(flow::Graph &graph,
+                           const conduit::Node *output,
+                           const std::string filter_name)
+{
+  conduit::Node *symbol_table =
+    graph.workspace().registry().fetch<conduit::Node>("symbol_table");
+  const int num_symbols = symbol_table->number_of_children();
+  for(int i = 0; i < num_symbols; ++i)
+  {
+    conduit::Node &symbol = symbol_table->child(i);
+    if(symbol["filter_name"].as_string() == filter_name)
+    {
+      symbol["value"] = output->fetch("value");
+      break;
+    }
+  }
+}
 //-----------------------------------------------------------------------------
 NullArg::NullArg() : Filter()
 {
@@ -396,6 +413,8 @@ Identifier::execute()
   // we need to keep the name to retrieve the chache
   // if history is called.
   (*output)["name"] = i_name;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -693,6 +712,7 @@ BinaryOp::execute()
 
   // std::cout<<" operation "<<op_str<<"\n";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -746,6 +766,7 @@ IfExpr::execute()
     output = n_else;
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -800,6 +821,7 @@ ArrayAccess::execute()
   (*output)["value"] = arr[index];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -879,63 +901,7 @@ DotAccess::execute()
 
   (*output) = (*n_obj)["attrs/" + name];
 
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ExpressionList::ExpressionList() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ExpressionList::~ExpressionList()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ExpressionList::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_list";
-  // We can't have an arbitrary number of input ports so we choose 256
-  for(int item_num = 0; item_num < 256; ++item_num)
-  {
-    std::stringstream ss;
-    ss << "item" << item_num;
-    i["port_names"].append() = ss.str();
-  }
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ExpressionList::execute()
-{
-  conduit::Node *output = new conduit::Node();
-
-  for(int item_num = 0; item_num < 256; ++item_num)
-  {
-    std::stringstream ss;
-    ss << "item" << item_num;
-    const conduit::Node *n_item = input<Node>(ss.str());
-    if(n_item->dtype().is_empty())
-    {
-      break;
-    }
-    output->append() = *n_item;
-  }
-
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -977,6 +943,7 @@ ArrayMin::execute()
   (*output)["value"] = array_min((*input<Node>("arg1"))["value"]);
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1036,6 +1003,7 @@ ScalarMin::execute()
     (*output)["type"] = "int";
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1096,6 +1064,7 @@ ScalarMax::execute()
     (*output)["type"] = "int";
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1161,6 +1130,7 @@ FieldMin::execute()
   (*output)["attrs/element/index"] = n_min["index"];
   (*output)["attrs/element/assoc"] = n_min["assoc"];
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -1202,6 +1172,7 @@ ArrayMax::execute()
   (*output)["value"] = array_max((*input<Node>("arg1"))["value"])["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2002,6 +1973,7 @@ ArrayGradient::execute()
   (*output)["value"] = gradient["value"];
   (*output)["type"] = "array";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2059,6 +2031,7 @@ FieldAvg::execute()
   (*output)["value"] = n_avg["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2110,6 +2083,61 @@ Cycle::execute()
 
   (*output)["type"] = "int";
   (*output)["value"] = state;
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+Time::Time() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Time::~Time()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Time::declare_interface(Node &i)
+{
+  i["type_name"] = "time";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Time::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Time::execute()
+{
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  // we are just getting state so we don't care if its high or low
+  // order
+  const conduit::Node *const dataset = data_object->as_node().get();
+
+  conduit::Node state = get_state_var(*dataset, "time");
+  if(!state.dtype().is_number())
+  {
+    ASCENT_ERROR("Expressions: time() is not a number");
+  }
+
+  (*output)["type"] = "double";
+  (*output)["value"] = state;
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2215,6 +2243,7 @@ History::execute()
     (*output) = history.child(absolute_index);
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2346,7 +2375,8 @@ Vector::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "vector";
   (*output)["value"].set(vec, 3);
-  ;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2392,6 +2422,8 @@ Magnitude::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2438,6 +2470,8 @@ Abs::execute()
     conduit::Node *output = new conduit::Node();
     (*output)["type"] = "double";
     (*output)["value"] = res;
+
+    resolve_symbol_result(graph(), output, this->name());
     set_output<conduit::Node>(output);
   }
   else
@@ -2447,6 +2481,8 @@ Abs::execute()
     conduit::Node *output = new conduit::Node();
     (*output)["type"] = "int";
     (*output)["value"] = res;
+
+    resolve_symbol_result(graph(), output, this->name());
     set_output<conduit::Node>(output);
   }
 }
@@ -2492,6 +2528,8 @@ Exp::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2536,6 +2574,8 @@ Log::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2584,6 +2624,8 @@ Pow::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "double";
   (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2604,7 +2646,8 @@ void
 Field::declare_interface(Node &i)
 {
   i["type_name"] = "field";
-  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "field_name";
+  i["port_names"].append() = "component";
   i["output_port"] = "true";
 }
 
@@ -2621,9 +2664,11 @@ Field::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 Field::execute()
 {
-  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *n_field_name = input<Node>("field_name");
+  std::string field_name = (*n_field_name)["value"].as_string();
 
-  const std::string field = (*arg1)["value"].as_string();
+  // optional parameters
+  const conduit::Node *n_component = input<Node>("component");
 
   if(!graph().workspace().registry().has_entry("dataset"))
   {
@@ -2634,24 +2679,72 @@ Field::execute()
     graph().workspace().registry().fetch<DataObject>("dataset");
   const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
-  if(!has_field(*dataset, field))
+  if(!has_field(*dataset, field_name))
   {
-    std::vector<std::string> names = dataset->child(0)["fields"].child_names();
-    std::stringstream ss;
-    ss << "[";
-    for(int i = 0; i < names.size(); ++i)
+    std::string known;
+    if(dataset->number_of_children() > 0 )
     {
-      ss << " " << names[i];
+      std::vector<std::string> names = dataset->child(0)["fields"].child_names();
+      std::stringstream ss;
+      ss << "[";
+      for(size_t i = 0; i < names.size(); ++i)
+      {
+        ss << " '" << names[i]<<"'";
+      }
+      ss << "]";
+      known = ss.str();
     }
-    ss << "]";
     ASCENT_ERROR("Field: dataset does not contain field '"
-                 << field << "'"
-                 << " known = " << ss.str());
+                 << field_name << "'"
+                 << " known = " << known);
+  }
+
+  std::string component;
+  if(!n_component->dtype().is_empty())
+  {
+    component = (*n_component)["value"].as_string();
+    if(!has_component(*dataset, field_name, component))
+    {
+      ASCENT_ERROR("Field variable '"
+                   << field_name << "'"
+                   << " does not have component '" << component << "'."
+                   << " known components = "
+                   << possible_components(*dataset, field_name));
+    }
+  }
+
+  // at this point, we know that the field exists.
+  // If the the field has only one component then we
+  // don't require that the name be provide, but the
+  // code will need the name.
+
+
+  // if the field only has one component use that
+  if(component.empty())
+  {
+
+    int num_comps = num_components(*dataset, field_name);
+    if(num_comps == 1)
+    {
+      const int comp_idx = 0;
+      component = component_name(*dataset, field_name, comp_idx);
+    }
+    else if(num_comps == 0)
+    {
+      // default name for empty path
+      component = "";
+    }
   }
 
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field;
+  (*output)["value"] = field_name;
+  if(!component.empty())
+  {
+    (*output)["component"] = component;
+  }
   (*output)["type"] = "field";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2700,7 +2793,7 @@ Axis::execute()
   const conduit::Node *n_max = input<Node>("max_val");
   const conduit::Node *n_num_bins = input<Node>("num_bins");
   // rectilinear binning
-  const conduit::Node *n_bins_list = input<Node>("bins");
+  const conduit::Node *n_bins_list_obj = input<Node>("bins");
   // clamp
   const conduit::Node *n_clamp = input<conduit::Node>("clamp");
 
@@ -2735,9 +2828,9 @@ Axis::execute()
   }
 
   conduit::Node *output;
-
-  if(!n_bins_list->dtype().is_empty())
+  if(!n_bins_list_obj->dtype().is_empty())
   {
+    const conduit::Node &n_bins_list = (*n_bins_list_obj)["value"];
     // ensure none of the uniform binning arguments are passed
     if(!n_min->dtype().is_empty() || !n_max->dtype().is_empty() ||
        !n_num_bins->dtype().is_empty())
@@ -2746,7 +2839,7 @@ Axis::execute()
                    "binning, not both.");
     }
 
-    int bins_len = n_bins_list->number_of_children();
+    int bins_len = n_bins_list.number_of_children();
 
     if(bins_len < 2)
     {
@@ -2760,7 +2853,7 @@ Axis::execute()
 
     for(int i = 0; i < bins_len; ++i)
     {
-      const conduit::Node &bin = n_bins_list->child(i);
+      const conduit::Node &bin = n_bins_list.child(i);
       if(!detail::is_scalar(bin["type"].as_string()))
       {
         delete output;
@@ -2940,6 +3033,8 @@ Histogram::execute()
   (*output)["attrs/num_bins/type"] = "int";
   (*output)["attrs/clamp/value"] = true;
   (*output)["attrs/clamp/type"] = "bool";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -2992,11 +3087,21 @@ void binning_interface(const std::string &reduction_var,
     component = n_component["value"].as_string();
   }
 
+  if(!n_axis_list.has_path("type"))
+  {
+    ASCENT_ERROR("Binning: axis list missing object type.");
+  }
+  std::string obj_type = n_axis_list["type"].as_string();
+  if(obj_type != "list")
+  {
+    ASCENT_ERROR("Binning: axis list is not type 'list'."
+                  <<" type is '"<<obj_type<<"'");
+  }
   // verify n_axes_list and put the values in n_output_axes
-  int num_axes = n_axis_list.number_of_children();
+  int num_axes = n_axis_list["value"].number_of_children();
   for(int i = 0; i < num_axes; ++i)
   {
-    const conduit::Node &axis = n_axis_list.child(i);
+    const conduit::Node &axis = n_axis_list["value"].child(i);
     if(axis["type"].as_string() != "axis")
     {
       ASCENT_ERROR("Binning: bin_axes must be a list of axis");
@@ -3135,6 +3240,8 @@ Binning::execute()
   //(*output)["attrs/bin_axes/type"] = "list";
   (*output)["attrs/association/value"] = n_binning["association"];
   (*output)["attrs/association/type"] = "string";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 
 }
@@ -3183,6 +3290,8 @@ Entropy::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = field_entropy(*hist)["value"];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3229,6 +3338,8 @@ Pdf::execute()
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
   (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3275,6 +3386,8 @@ Cdf::execute()
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
   (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3343,6 +3456,8 @@ Quantile::execute()
   conduit::Node *output = new conduit::Node();
   (*output)["value"] = quantile(*n_cdf, val, interpolation)["value"];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3397,6 +3512,8 @@ BinByIndex::execute()
   const double *bins = (*n_hist)["attrs/value/value"].value();
   (*output)["value"] = bins[bin];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3456,6 +3573,8 @@ BinByValue::execute()
   const double *bins = (*n_hist)["attrs/value/value"].value();
   (*output)["value"] = bins[bin];
   (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3503,6 +3622,7 @@ FieldSum::execute()
   (*output)["value"] = field_sum(*dataset, field)["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3550,6 +3670,7 @@ FieldNanCount::execute()
   (*output)["value"] = field_nan_count(*dataset, field)["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3597,6 +3718,7 @@ FieldInfCount::execute()
   (*output)["value"] = field_inf_count(*dataset, field)["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3638,6 +3760,7 @@ ArraySum::execute()
   (*output)["value"] = array_sum((*input<Node>("arg1"))["value"])["value"];
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 //-----------------------------------------------------------------------------
@@ -3770,6 +3893,7 @@ PointAndAxis::execute()
   (*output)["attrs/center/value"] = bin_center;
   (*output)["attrs/center/type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3878,6 +4002,7 @@ MaxFromPoint::execute()
   (*output)["value"] = min_dist;
   (*output)["type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -3961,6 +4086,7 @@ Bin::execute()
   (*output)["attrs/center/value"] = center;
   (*output)["attrs/center/type"] = "double";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
@@ -4048,7 +4174,7 @@ Lineout::execute()
   }
 
   // figure out the number of fields we will use
-  conduit::Node &n_fields = *input<Node>("fields");
+  conduit::Node &n_fields = (*input<Node>("fields"))["value"];
   const int num_fields = n_fields.number_of_children();
   if(num_fields > 0)
   {
@@ -4121,6 +4247,7 @@ Lineout::execute()
     }
   }
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 #endif
 
@@ -4212,9 +4339,79 @@ Bounds::execute()
   (*output)["attrs/max/value"].set(max_vec, 3);
   (*output)["attrs/max/type"] = "vector";
 
+  resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
+//-----------------------------------------------------------------------------
+Topo::Topo() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+Topo::~Topo()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+Topo::declare_interface(Node &i)
+{
+  i["type_name"] = "topo";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+Topo::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+Topo::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::string topo = (*arg1)["value"].as_string();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("Topo: Missing dataset");
+  }
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!has_topology(*dataset, topo))
+  {
+    std::set<std::string> names = topology_names(*dataset);
+    std::stringstream msg;
+    msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
+    for(auto &name : names)
+    {
+      msg<<" "<<name;
+    }
+    msg<<" ]";
+    ASCENT_ERROR(msg.str());
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = topo;
+  (*output)["type"] = "topo";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 Nan::Nan() : Filter()

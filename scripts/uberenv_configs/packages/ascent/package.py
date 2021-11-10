@@ -81,6 +81,9 @@ class Ascent(CMakePackage, CudaPackage):
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
+    variant("dray", default=False, description="Build with Devil Ray support")
+    variant("occa", default=False, description="Build with OCCA support")
+    variant("umpire", default=True, description="Build with OCCA support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
@@ -163,6 +166,17 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("dray~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
     depends_on("dray~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
     depends_on("dray~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+
+    # occa defaults to +cuda so we have to explicit tell it ~cuda
+    depends_on("occa@1.1.1~cuda",        when="+occa~cuda")
+    depends_on("occa@1.1.1~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
+
+    depends_on("umpire+cuda+shared", when="+cuda+shared")
+    depends_on("umpire+cuda~shared", when="+cuda~shared")
+    depends_on("umpire~cuda+shared", when="~cuda+shared")
+    depends_on("umpire~cuda~shared", when="~cuda~shared")
 
     #######################
     # Documentation related
@@ -336,7 +350,7 @@ class Ascent(CMakePackage, CudaPackage):
                 msg = 'failed to find CMake (and cmake variant is off)'
                 raise RuntimeError(msg)
             cmake_exe = cmake_exe.path
-        
+
         # get hostconfig name
         host_cfg_fname = self._get_host_config_path(spec)
 
@@ -561,6 +575,25 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write("# devil ray not built by spack \n")
 
         #######################
+        # OCCA
+        #######################
+        if "+occa" in spec:
+            cfg.write("# occa from spack \n")
+            cfg.write(cmake_cache_entry("OCCA_DIR", spec['occa'].prefix))
+        else:
+            cfg.write("# occa not built by spack \n")
+
+        #######################
+        # Umpire
+        #######################
+        if "+umpire" in spec:
+            cfg.write("# umpire from spack \n")
+            cfg.write(cmake_cache_entry("UMPIRE_DIR", spec['umpire'].prefix))
+        else:
+            cfg.write("# umpire not built by spack \n")
+
+        #######################
+        # Adios
         # Adios2
         #######################
         cfg.write("# adios2 support\n")
