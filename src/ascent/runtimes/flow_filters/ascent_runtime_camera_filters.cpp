@@ -557,12 +557,17 @@ Triangle::calculateTriArea() const
   orthogonal_vec[0] = AC[1]*BC[2] - BC[1]*AC[2];
   orthogonal_vec[1] = AC[0]*BC[2] - BC[0]*AC[2];
   orthogonal_vec[2] = AC[0]*BC[1] - BC[1]*AC[1];
-
+#if defined(ASCENT_VTKM_ENABLED)
   area = vtkm::Sqrt(
     vtkm::Pow(orthogonal_vec[0], 2) +
     vtkm::Pow(orthogonal_vec[1], 2) +
     vtkm::Pow(orthogonal_vec[2], 2)) * 0.5f;
-
+#else
+  area = sqrt(
+    pow(orthogonal_vec[0], 2) +
+    pow(orthogonal_vec[1], 2) +
+    pow(orthogonal_vec[2], 2)) * 0.5f;
+#endif
   /*
   if(print)
   {
