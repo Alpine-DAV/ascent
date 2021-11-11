@@ -3841,7 +3841,6 @@ AutoCamera::execute()
       int width  = 1000;
       int height = 1000;
 
-
       std::string topo_name = collection->field_topology(field_name);
 
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
@@ -3867,6 +3866,7 @@ AutoCamera::execute()
         datafield_max = (float)*max_element(field_data.begin(),field_data.end());
         datafield_min = (float)*min_element(field_data.begin(),field_data.end());
       }
+      #endif
 
 
       double worldspace_local_area = 0;
