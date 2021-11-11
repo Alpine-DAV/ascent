@@ -746,19 +746,19 @@ GetCameraPhiTheta(float* bounds,  double radius, int thetaPos, int numTheta, int
   c.far = zoom*25;
   c.angle = M_PI/6;
 
-  cerr << "radius: " << radius << endl;
+//  cerr << "radius: " << radius << endl;
 
   double theta = (thetaPos / (numTheta - 1.0)) * M_PI * 2.0;
   double phi = (phiPos / (numPhi - 1.0)) * M_PI;
   
-  cerr << "phi: " << phi << " phiPos: " << phiPos << " numPhi: " << numPhi << endl;
-  cerr << "theta: " << theta << " thetaPos: " << thetaPos << " numTheta: " << numTheta << endl;
+//  cerr << "phi: " << phi << " phiPos: " << phiPos << " numPhi: " << numPhi << endl;
+//  cerr << "theta: " << theta << " thetaPos: " << thetaPos << " numTheta: " << numTheta << endl;
   
   double xm = (bounds[0] + bounds[1])/2;
   double ym = (bounds[2] + bounds[3])/2;
   double zm = (bounds[4] + bounds[5])/2;
 
-  cerr << "sin(theta): " << sin(theta) << " cos(phi): " << cos(phi) << " cos(theta): " << cos(theta) << " sin(phi): " << sin(phi) << endl;
+//  cerr << "sin(theta): " << sin(theta) << " cos(phi): " << cos(phi) << " cos(theta): " << cos(theta) << " sin(phi): " << sin(phi) << endl;
   
   c.position[0] = (  zoom*radius * sin(phi) * cos(theta)  + xm );
   c.position[1] = (  zoom*radius * sin(phi) * sin(theta)  + ym );
@@ -766,9 +766,9 @@ GetCameraPhiTheta(float* bounds,  double radius, int thetaPos, int numTheta, int
 
 
   //check lookat vs middle
-  cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
+//  cerr << "xm ym zm : " << xm <<  " " << ym << " " << zm << endl;
 //  cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
-  cerr << "position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
+//  cerr << "position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
   
   c.focus[0] = lookat[0];
   c.focus[1] = lookat[1];
@@ -2281,9 +2281,9 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_tr
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     int num_local_triangles = local_triangles.size();
     float global_area       = 0.0;
-    
-    MPI_Reduce(&worldspace_local_area, &global_area, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
+    MPI_Reduce(&worldspace_local_area, &global_area, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    
     if(rank == 0)
     {
       #if defined(ASCENT_VTKM_ENABLED)
@@ -2338,10 +2338,16 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_tr
       }
       #endif
     }
+
+    MPI_Bcast(&visibility_ratio, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+    //cerr << "visibility_ratio " << visibility_ratio << endl;
     
     return visibility_ratio;
-  #else
+  
+  #else //No MPI
     #if defined(ASCENT_VTKM_ENABLED)
+    float global_area = worldspace_local_area;
     auto triangles = GetUniqueTriangles(dataset);
     if(triangles.GetNumberOfValues() > 0) 
     {
@@ -2349,7 +2355,7 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_tr
       float triangle_area = vtkm::cont::Algorithm::Reduce(triangle_areas, 0.0f);
       visibility_ratio = triangle_area / global_area;
     }
-    #else
+    #else //No VTK-m
     int size = height*width;
     std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
     std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
@@ -2393,9 +2399,9 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_tr
       }
       visibility_ratio = projected_area/worldspace_local_area;
     }
-    #endif //vtkm
+    #endif //VTK-m
     return visibility_ratio;
-  #endif //mpi
+  #endif //MPI
 }
 
 
@@ -2404,7 +2410,7 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
 {
   float shading_entropy = 0.0;
   #if ASCENT_MPI_ENABLED //pass screens among all ranks
-      // Get the number of processes
+    // Get the number of processes
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     // Get the rank of this process
@@ -2471,7 +2477,7 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
       auto shadings = CalculateFlatShading(triangles, camera);
       shading_entropy = calcentropyMM(shadings, 100, 1.0f, 0.0f);
     }
-    #else
+    #else //No VTK-m
     int size = height*width;
     std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
     std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
@@ -2508,9 +2514,9 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
       shading_entropy = calcentropyMM(shadings.data(), num_triangles, 100, (float)1, (float)0);
       
     }
-    #endif
+    #endif //VTK-m
     return shading_entropy;
-  #endif
+  #endif //MPI
 }
 
 float 
@@ -2524,6 +2530,7 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_t
     // Get the rank of this process
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     float global_area       = 0.0;
     float local_area        = 0.0;
     #if defined(ASCENT_VTKM_ENABLED)
@@ -2610,11 +2617,11 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_t
     MPI_Bcast(&viewpoint_entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     return viewpoint_entropy;
-  #else
+  #else //No MPI
     #if defined(ASCENT_VTKM_ENABLED)
     auto triangles_AH = vtkm::cont::make_ArrayHandle(local_triangles, vtkm::CopyFlag::Off);
     auto projected_areas = CalculateProjectedTriangleAreas(triangles_AH, camera, width, height, false);
-    local_area = vtkm::cont::Algorithm::Reduce(projected_areas, 0.0f);
+    float local_area = vtkm::cont::Algorithm::Reduce(projected_areas, 0.0f);
     auto uniqueTriangles = GetUniqueTriangles(dataset);
     if (uniqueTriangles.GetNumberOfValues() > 0) 
     {
@@ -2685,159 +2692,11 @@ calculateViewpointEntropy(vtkh::DataSet* dataset, std::vector<Triangle> &local_t
 
       viewpoint_entropy = (-1.0)*viewpoint_ratio;
     }
-
-    #endif //vtkm
+    #endif//VTK-m
     return viewpoint_entropy;
-  #endif //mpi
+  #endif //MPI
 }
 
-float
-calculateI2(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, int height, int width, Camera camera)
-{
-  float viewpoint_entropy = 0.0;
-  float i2 = 0.0;
-  #if ASCENT_MPI_ENABLED //pass screens among all ranks
-      // Get the number of processes
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    MPI_Barrier(MPI_COMM_WORLD);
-    auto time_start = high_resolution_clock::now(); 
-    vtkm::cont::Timer timer;
-    timer.Start();
-
-      // Get the rank of this process
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // MPI_Status status;
-    if(rank == 0)
-    {
-      int size = height*width;
-      std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
-      std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
-      std::vector<float> z0 = GetScalarData<float>(*dataset, "Z0", height, width);
-      std::vector<float> x1 = GetScalarData<float>(*dataset, "X1", height, width);
-      std::vector<float> y1 = GetScalarData<float>(*dataset, "Y1", height, width);
-      std::vector<float> z1 = GetScalarData<float>(*dataset, "Z1", height, width);
-      std::vector<float> x2 = GetScalarData<float>(*dataset, "X2", height, width);
-      std::vector<float> y2 = GetScalarData<float>(*dataset, "Y2", height, width);
-      std::vector<float> z2 = GetScalarData<float>(*dataset, "Z2", height, width);
-
-      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
-      #ifdef ASCENT_USE_OPENMP
-      #pragma omp declare reduction (merge : std::vector<std::vector<float>> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
-      #pragma omp parallel for reduction(merge:triangles)
-      #endif
-      for(int i = 0; i < size; i++)
-      {
-        if(x0[i] == x0[i]) //!nan
-        {
-          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
-          triangles.push_back(tri);
-        }
-      }
-      std::sort(triangles.begin(), triangles.end());
-      triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
-      int num_triangles     = triangles.size();
-      int num_local_triangles = local_triangles.size();
-      float total_area      = 0.0;
-      float real_total_area = 0.0;
-      float viewpoint_ratio = 0.0;
-      float hz              = 0.0;
-      for(int i = 0; i < num_local_triangles; i++)
-      {
-        Triangle t = transformTriangle(local_triangles[i], camera, width, height);
-        float area = t.calculateTriArea();
-        total_area += area;
-	real_total_area += local_triangles[i].calculateTriArea();
-      }
-      for(int i = 0; i < num_triangles; i++)
-      {
-        float area = calcArea(triangles[i]);
-        if(area != 0.0)
-          viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
-      }
-      for(int i = 0; i < num_local_triangles; i++)
-      {
-        float area = local_triangles[i].calculateTriArea();
-	if(area != 0 && real_total_area != 0)
-          hz += (area/real_total_area)*log((area/real_total_area));
-      }
-      viewpoint_entropy = (-1.0)*viewpoint_ratio;
-
-      hz = (-1.0)*hz;
-      cerr << "viewpiont ent: " << viewpoint_entropy;
-      cerr << "hz: " << hz << endl;
-
-      i2 = hz - viewpoint_entropy;
-      i2 = (-1.0)*i2;
-    }
-    MPI_Bcast(&i2, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    return i2;
-  #else
-    int size = height*width;
-
-    std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
-    std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
-    std::vector<float> z0 = GetScalarData<float>(*dataset, "Z0", height, width);
-    std::vector<float> x1 = GetScalarData<float>(*dataset, "X1", height, width);
-    std::vector<float> y1 = GetScalarData<float>(*dataset, "Y1", height, width);
-    std::vector<float> z1 = GetScalarData<float>(*dataset, "Z1", height, width);
-    std::vector<float> x2 = GetScalarData<float>(*dataset, "X2", height, width);
-    std::vector<float> y2 = GetScalarData<float>(*dataset, "Y2", height, width);
-    std::vector<float> z2 = GetScalarData<float>(*dataset, "Z2", height, width);
-
-    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
-      #ifdef ASCENT_USE_OPENMP
-      #pragma omp declare reduction (merge : std::vector<std::vector<float>> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
-      #pragma omp parallel for reduction(merge:triangles)
-      #endif
-    for(int i = 0; i < size; i++)
-    {
-      if(x0[i] == x0[i]) //!nan
-      {
-        std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
-        triangles.push_back(tri);
-       }
-    }
-    std::sort(triangles.begin(), triangles.end());
-    triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
-    int num_triangles = triangles.size();
-
-    int num_local_triangles = local_triangles.size();
-
-    float total_area      = 0.0;
-    float real_total_area = 0.0;
-    float hz              = 0.0;
-    float viewpoint_ratio = 0.0;
-    for(int i = 0; i < num_local_triangles; i++)
-    {
-      Triangle t = transformTriangle(local_triangles[i], camera, width, height);
-      float area = t.calculateTriArea();
-      total_area += area;
-    }
-
-    for(int i = 0; i < num_triangles; i++)
-    {
-      float area = calcArea(triangles[i]);
-
-      if(area != 0.0)
-        viewpoint_ratio += ((area/total_area)*std::log(area/total_area));
-    }
-    for(int i = 0; i < num_local_triangles; i++)
-    {
-      float area = local_triangles[i].calculateTriArea();
-      if(area != 0 && real_total_area != 0)
-        hz += (area/real_total_area)*log((area/real_total_area));
-    }
-    viewpoint_entropy = (-1.0)*viewpoint_ratio;
-    hz = (-1.0)*hz;
-
-    i2 = hz - viewpoint_entropy;
-    i2 = (-1.0)*i2;
-
-    return i2;
-  #endif
-}
 
 float
 calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, float worldspace_local_area, int height, int width, Camera camera)
@@ -2957,30 +2816,26 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, flo
     MPI_Bcast(&vkl, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     return (-1.0) * vkl;
-  #else
+  #else//no MPI
     #if defined(ASCENT_VTKM_ENABLED)
 
-    auto triangles_AH = vtkm::cont::make_ArrayHandle(local_triangles, vtkm::CopyFlag::Off);
-    auto projected_areas = CalculateProjectedTriangleAreas(triangles_AH, camera, width, height, false);
-    local_area = vtkm::cont::Algorithm::Reduce(projected_areas, 0.0f);
     auto triangles = GetUniqueTriangles(dataset);
     if (triangles.GetNumberOfValues() > 0)
     {
       auto areas = CalculateProjectedTriangleAreas(triangles, camera, width, height, true);
       auto w_areas = CalculateTriangleAreas(triangles);
       auto projected_area = vtkm::cont::Algorithm::Reduce(areas, 0.0f);
-
+     
       vtkm::cont::ArrayHandle<float> sub_entropies;
       vtkm::cont::Algorithm::Transform(
         areas, 
         w_areas,
         sub_entropies, 
         CalculateVKLEntropy<float>{static_cast<float>(projected_area), 
-                                   static_cast<float>(w_total_area)});
+                                   static_cast<float>(worldspace_local_area)});
       vkl = vtkm::cont::Algorithm::Reduce(sub_entropies, 0.0f);
     }
-
-    #else
+    #else //no VTK-m
     int size = height*width;
     std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
     std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
@@ -3040,9 +2895,9 @@ calculateVKL(vtkh::DataSet* dataset, std::vector<Triangle> &local_triangles, flo
       if(area != 0.0 && w_area != 0.0)
         vkl += (area/projected_area)*std::log((area/projected_area)/(w_area/w_total_area));
     }
-    #endif
+    #endif //VTK-m
     return (-1.0)*vkl;
-  #endif
+  #endif //MPI
 }
 
 float
@@ -3056,6 +2911,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
     if(rank == 0)
     {
       #if defined(ASCENT_VTKM_ENABLED)
@@ -3095,7 +2951,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     return entropy;
-  #else
+  #else//no MPI
     #if defined(ASCENT_VTKM_ENABLED)
     auto field_data = GetScalarDataAsArrayHandle<float>(*dataset, field_name.c_str());
     if (field_data.GetNumberOfValues() > 0) 
@@ -3108,7 +2964,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     {
       entropy = 0;
     }
-    #else
+    #else //no VTK-m
     int size = height*width;
     std::vector<float> field_data = GetScalarData<float>(*dataset, field_name.c_str(), height, width);
     std::vector<float> data;
@@ -3128,9 +2984,9 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     }
     else
       entropy = 0;
-    #endif //vtkm
-  #endif //mpi
-  return entropy;
+    #endif//VTK-m
+    return entropy;
+  #endif//MPI
 }
 
 float 
@@ -3146,7 +3002,6 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, float diame
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-    // MPI_Status status;
     if(rank == 0)
     {
       #if defined(ASCENT_VTKM_ENABLED)
@@ -3184,11 +3039,11 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, float diame
       }
       #endif
     }
-    
+
     MPI_Bcast(&entropy, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     return entropy;
-  #else
+  #else //no MPI
     #if defined(ASCENT_VTKM_ENABLED)
     auto field_data = GetScalarDataAsArrayHandle<float>(*dataset, "depth");
     if (field_data.GetNumberOfValues() > 0) 
@@ -3202,7 +3057,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, float diame
     {
       entropy = 0;
     }
-    #else
+    #else //no VTK-m
     int size = height*width;
     std::vector<float> depth = GetScalarData<float>(*dataset, "depth", height, width);
     std::vector<float> depth_data;
@@ -3221,13 +3076,10 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, float diame
       float depth_array[depth_data.size()];
       std::copy(depth_data.begin(), depth_data.end(), depth_array);
       entropy = calcentropyMM(depth_array, depth_data.size(), 1000, diameter, (float) 0.0);
-      //MakeFile
-      std::string file = "depth_data_dump" + std::to_string(COUNT) + ".txt";
-//      MakeFile(file, depth_data.data(), depth_data.size());
     }
-    #endif
-  #endif
-  return entropy;
+    #endif //VTK-m
+    return entropy;
+  #endif //MPI
 }
 
 float
@@ -3282,9 +3134,9 @@ calculateBinEntropy(vtkh::DataSet* dataset, int height, int width, int xBins, in
 //    cerr << "rank " << rank << " metric work time: " << metric_time << " microseconds." << endl;
     double array[world_size] = {0};
     array[rank] = total_time;
-    MPI_Allgather(&total_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-    if(rank == 0)
-      MakeFile("depth_entropy_metric_times.txt", array, world_size);
+    //MPI_Allgather(&total_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+    //if(rank == 0)
+    //  MakeFile("depth_entropy_metric_times.txt", array, world_size);
 
     return entropy;
   #else
@@ -3309,9 +3161,6 @@ calculateBinEntropy(vtkh::DataSet* dataset, int height, int width, int xBins, in
       int bins_minus1 = bins - 1;
     
       entropy = calcentropyMM(bin_array, bin_data.size(), bins, (float)bins_minus1, (float)0);
-      //MakeFile
-      std::string file = "bin_data_dump" + std::to_string(COUNT) + ".txt";
-//      MakeFile(file, bin_data.data(), bin_data.size());
     }
   #endif
   return entropy;
@@ -3414,8 +3263,8 @@ calculateVisibleTriangles(vtkh::DataSet *dataset, int height, int width)
       num_triangles = triangles.size();
     }
     #endif
+    return num_triangles;
   #endif
-  return num_triangles;
 }
 
 
@@ -3482,7 +3331,7 @@ calculateProjectedArea(vtkh::DataSet* dataset, int height, int width, Camera cam
 
     MPI_Bcast(&projected_area, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  #else
+  #else//no MPI
     #if defined(ASCENT_VTKM_ENABLED)
     auto triangles = GetUniqueTriangles(dataset);
     auto projected_areas = CalculateProjectedTriangleAreas(triangles, camera, width, height, true);
@@ -3526,8 +3375,8 @@ calculateProjectedArea(vtkh::DataSet* dataset, int height, int width, Camera cam
         projected_area += area;
       }
     }
-    #endif
-  #endif
+    #endif //VTK-m
+  #endif //MPI
   return projected_area;
 }
 
@@ -3601,12 +3450,14 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
 
   #else
     #if defined(ASCENT_VTKM_ENABLED)
+    float projected_area = 0.0;
+    int num_triangles = 0;
     auto triangles = GetUniqueTriangles(dataset);
     num_triangles = triangles.GetNumberOfValues();
     auto projected_areas = CalculateProjectedTriangleAreas(triangles, camera, width, height, true);
     projected_area = vtkm::cont::Algorithm::Reduce(projected_areas, 0.0f);
     float pixel_ratio = projected_area / static_cast<float>(height * width);
-    float triangle_ratio = static_cast<float>(num_triangles) / static_cast<float>(num_global_triangles);
+    float triangle_ratio = static_cast<float>(num_triangles) / static_cast<float>(num_local_triangles);
     pb_score = pixel_ratio + triangle_ratio;
     #else
     int size = height*width;
@@ -3665,9 +3516,9 @@ T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 
   if (depthData.GetNumberOfValues() > 0)
   {
-    MaxValueWithChecks<T> max{
-        -1.0 * std::numeric_limits<int>::max(),
-        std::numeric_limits<int>::max()};
+    MaxValueWithChecks<float> max{
+      (T)-1.0 * std::numeric_limits<int>::max(),
+      (T)std::numeric_limits<int>::max()};
     depth = vtkm::cont::Algorithm::Reduce(depthData, depth, max);
   }
 
@@ -3678,14 +3529,15 @@ T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 float
 calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
 {
-  float depth = -FLT_MAX;
-  #if ASCENT_MPI_ENABLED
-    // Get the number of processes
-    int world_size;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-    // Get the rank of this process
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+float depth = -FLT_MAX;
+#if ASCENT_MPI_ENABLED
+// Get the number of processes
+int world_size;
+MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+// Get the rank of this process
+int rank;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    
     if(rank == 0)
     {
       #if defined(ASCENT_VTKM_ENABLED)
@@ -3813,13 +3665,8 @@ calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string fie
   {
     score = calculateShadingEntropy(dataset, height, width, camera);
   }
-  else if (metric == "i2")
-  {
-    score = calculateI2(dataset, local_triangles, height, width, camera);
-  }
   else if (metric == "vkl")
   {
-
     score = calculateVKL(dataset, local_triangles, worldspace_local_area, height, width, camera);
   }
   else if (metric == "visible_triangles")
@@ -3955,7 +3802,16 @@ AutoCamera::execute()
       
       #endif  
       // vtkm::cont::SetStderrLogLevel(vtkm::cont::LogLevel::UserVerboseFirst);
+      if(!input(0).check_type<DataObject>())
+      {
+        ASCENT_ERROR("automatic camera input must be a DataObject");
+      }
+
       DataObject *data_object = input<DataObject>(0);
+      if(!data_object->is_valid())
+      {
+        return;
+      }
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     //int cycle = params()["state/cycle"].to_int32();
       conduit::Node meta = Metadata::n_metadata;
@@ -3991,6 +3847,7 @@ AutoCamera::execute()
       std::string topo_name = collection->field_topology(field_name);
 
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+//      dataset.PrintSummary(std::cerr);
     
       std::vector<double> field_data = GetScalarData<double>(dataset, field_name.c_str(), height, width);
       #if ASCENT_MPI_ENABLED
@@ -4039,9 +3896,9 @@ AutoCamera::execute()
       triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
       double array[world_size] = {0};
       array[rank] = total_time;
-      MPI_Allgather(&total_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-      if(rank == 0)
-        MakeFile("processing_times.txt", array, world_size);
+      //MPI_Allgather(&total_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+      //if(rank == 0)
+      //  MakeFile("processing_times.txt", array, world_size);
     #endif
 
       vtkm::Bounds lb = dataset.GetBounds();
@@ -4084,7 +3941,6 @@ AutoCamera::execute()
       //loop through number of camera samples.
       for(int sample = 0; sample < samples; sample++)
       {
-        COUNT = sample;
         cerr<< "Sample: " << count << endl;
     /*================ Scalar Renderer Code ======================*/
     //What it does: Quick ray tracing of data (replaces get triangles and scanline).
@@ -4126,9 +3982,9 @@ AutoCamera::execute()
           vtkm::Float64 ren_time = ren_timer.GetElapsedTime();
           double array[world_size] = {0};
           array[rank] = ren_time;
-          MPI_Allgather(&ren_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-          if(rank == 0)
-            MakeFile("renderer_times.txt", array, world_size);
+          //MPI_Allgather(&ren_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+          //if(rank == 0)
+          //  MakeFile("renderer_times.txt", array, world_size);
 //          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
         #endif
 
@@ -4265,36 +4121,16 @@ AutoCamera::execute()
 
         double array2[world_size] = {0};
         array2[rank] = cam_time;
-        MPI_Allgather(&cam_time, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-        if(rank == 0)
-          MakeFile("setCam_times.txt", array2, world_size);
+        //MPI_Allgather(&cam_time, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+        //if(rank == 0)
+        //  MakeFile("setCam_times.txt", array2, world_size);
 //        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
       #endif
 #endif //FIBONACCI
 
 #if PHITHETA
-      float data_entropy_array[samples];
-      std::string data_entropy_file = "data_entropy_score.txt";
-      float depth_entropy_array[samples];
-      std::string depth_entropy_file = "depth_entropy_score.txt";
-      float max_depth_array[samples];
-      std::string max_depth_file = "max_depth_score.txt";
-      float pb_array[samples];
-      std::string pb_file = "pb_score.txt";
-      float projected_area_array[samples];
-      std::string projected_area_file = "projected_area_score.txt";
-      float shading_entropy_array[samples];
-      std::string shading_entropy_file = "shading_entropy_score.txt";
-      float viewpoint_entropy_array[samples];
-      std::string viewpoint_entropy_file = "viewpoint_entropy_score.txt";
-      float visibility_ratio_array[samples];
-      std::string visibility_ratio_file = "visibility_ratio_score.txt";
-      float visible_triangles_array[samples];
-      std::string visible_triangles_file = "visible_triangles_score.txt";
-      float vkl_array[samples];
-      std::string vkl_file = "vkl_score.txt";
-      float dds_entropy_array[samples];
-      std::string dds_entropy_file = "dds_entropy_score.txt";
+      float metric_array[samples];
+      std::string metric_file = metric + "_score.txt";
       int    winning_phi = -1;
       int    winning_theta = -1;
       int    losing_phi  = -1;
@@ -4304,8 +4140,6 @@ AutoCamera::execute()
       for(int sample = 0; sample < phi*theta; sample++)
       {    
         cerr<< "Sample: " << sample << endl;
-	if(sample >= samples)
-          break;
     /*================ Scalar Renderer Code ======================*/
     //What it does: Quick ray tracing of data (replaces get triangles and scanline).
     //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
@@ -4320,7 +4154,7 @@ AutoCamera::execute()
 	//If not SEARCH
 	int phi_pos = (sample)%phi;
         int round =(int)((sample)/phi)%phi;
-        int theta_pos = (phi_pos + round)%theta;
+        int theta_pos = (round)%theta;
         Camera cam = GetCameraPhiTheta(bounds, radius, theta_pos, theta, phi_pos, phi, focus);
 
         //#endif
@@ -4357,54 +4191,22 @@ AutoCamera::execute()
           vtkm::Float64 ren_time = ren_timer.GetElapsedTime();
           double array[world_size] = {0};
           array[rank] = ren_time;
-          MPI_Allgather(&ren_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+          //MPI_Allgather(&ren_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
   
-          if(rank == 0)
-            MakeFile("renderer_times.txt", array, world_size);
+          //if(rank == 0)
+          //  MakeFile("renderer_times.txt", array, world_size);
 //          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
         #endif
 
 
         cerr << "Starting metric" << endl;
 
-        //original 
-        //float score = calculateMetricScore(output, metric, field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        
-	//new
-        float data_entropy_score = calculateMetricScore(output, "data_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        data_entropy_array[sample] = data_entropy_score;
+        float metric_score = calculateMetricScore(output, metric, field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
+        metric_array[sample] = metric_score;
+	cerr << " done with " << metric << ": " << metric_score << endl;
 
-        float depth_entropy_score = calculateMetricScore(output, "depth_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        depth_entropy_array[sample] = depth_entropy_score;
 
-        float shading_entropy_score = calculateMetricScore(output, "shading_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        shading_entropy_array[sample] = shading_entropy_score;
-
-        float max_depth_score = calculateMetricScore(output, "max_depth", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        max_depth_array[sample] = max_depth_score;
-
-        float projected_area_score = calculateMetricScore(output, "projected_area", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        projected_area_array[sample] = projected_area_score;
-
-        float pb_score = calculateMetricScore(output, "pb", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        pb_array[sample] = pb_score;
-
-        float visible_triangles_score = calculateMetricScore(output, "visible_triangles", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        visible_triangles_array[sample] = visible_triangles_score;
-
-        float visibility_ratio_score = calculateMetricScore(output, "visibility_ratio", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        visibility_ratio_array[sample] = visibility_ratio_score;
-
-        float viewpoint_entropy_score = calculateMetricScore(output, "viewpoint_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        viewpoint_entropy_array[sample] = viewpoint_entropy_score;
-
-        float vkl_score = calculateMetricScore(output, "vkl", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-        vkl_array[sample] = vkl_score;
-
-	float dds_entropy_score =  data_entropy_score + depth_entropy_score + shading_entropy_score;
-	dds_entropy_array[sample] = dds_entropy_score;
-
-        float score = data_entropy_score;
+        float score = metric_score;
 	std::cerr << "sample " << count << " " << metric << " score: " << score << std::endl;
 	cerr << endl;
         delete output;
@@ -4429,33 +4231,14 @@ AutoCamera::execute()
       triangles.clear();
 //    delete data;
 //
-      #if PrintScores
+      //#if PrintScores
       #if ASCENT_MPI_ENABLED
       if(rank == 0)
       {
-        MakeFile(data_entropy_file,data_entropy_array,samples);
-        MakeFile(depth_entropy_file, depth_entropy_array,samples);
-        MakeFile(dds_entropy_file, dds_entropy_array,samples);
-        MakeFile(max_depth_file, max_depth_array,samples);
-        MakeFile(pb_file, pb_array,samples);
-        MakeFile(projected_area_file, projected_area_array,samples);
-        MakeFile(shading_entropy_file, shading_entropy_array,samples);
-        MakeFile(viewpoint_entropy_file, viewpoint_entropy_array,samples);
-        MakeFile(visibility_ratio_file, visibility_ratio_array,samples);
-        MakeFile(visible_triangles_file, visible_triangles_array,samples);
-        MakeFile(vkl_file, vkl_array,samples);
+        MakeFile(metric_file,metric_array,samples);
       }
       #else
-        MakeFile(data_entropy_file,data_entropy_array,samples);
-        MakeFile(depth_entropy_file, depth_entropy_array,samples);
-        MakeFile(max_depth_file, max_depth_array,samples);
-        MakeFile(pb_file, pb_array,samples);
-        MakeFile(projected_area_file, projected_area_array,samples);
-        MakeFile(viewpoint_entropy_file, viewpoint_entropy_array,samples);
-        MakeFile(visibility_ratio_file, visibility_ratio_array,samples);
-        MakeFile(visible_triangles_file, visible_triangles_array,samples);
-        MakeFile(vkl_file, vkl_array,samples);
-      #endif
+        MakeFile(metric_file,metric_array,samples);
       #endif
       
       #if ASCENT_MPI_ENABLED
@@ -4496,9 +4279,9 @@ AutoCamera::execute()
 
         double array2[world_size] = {0};
         array2[rank] = cam_time;
-        MPI_Allgather(&cam_time, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-        if(rank == 0)
-          MakeFile("setCam_times.txt", array2, world_size);
+       // MPI_Allgather(&cam_time, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+       // if(rank == 0)
+       //   MakeFile("setCam_times.txt", array2, world_size);
 //        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
       #endif
 #endif //PHITHETA

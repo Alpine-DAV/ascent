@@ -1362,9 +1362,9 @@ ScalarGradient::execute()
   }
 
   if((execution_points || cycles) && window_length < 1) {
-     ASCENT_ERROR("ScalarGradient: window_length must be at least 1 if the window length unit is \"index\" or \"cycle\"." );    
+     ASCENT_ERROR("ScalarGradient: window_length must be at least 1 if the window length unit is \"index\" or \"cycle\"." );
   }
- 
+
   const conduit::Node &history = (*cache)[expr_name];
 
   const int entries = history.number_of_children();
@@ -1430,7 +1430,7 @@ ScalarGradient::execute()
     }
     const unsigned long long current_cycle = stoull(child_names[current_index]);
     const unsigned long long first_cycle = current_cycle - window_length;
-    
+
     unsigned long long cycle;
     for(int index = 0; index < entries; index++)
     {
@@ -1641,7 +1641,7 @@ void get_first_and_last_index(const string &operator_name,
 
     if(first_cycle < 0 || last_cycle < 0)
     {
-      ASCENT_ERROR(operator_name + ": the first_absolute_cycle and last_absolute_cycle must both be non-negative.");        
+      ASCENT_ERROR(operator_name + ": the first_absolute_cycle and last_absolute_cycle must both be non-negative.");
     }
 
     if(first_cycle > last_cycle)
@@ -1701,6 +1701,7 @@ void set_values_from_history(const string &operator_name,
       break;
     }
   }
+
 
   if(value_path.size() == 0)
   {
@@ -1850,17 +1851,17 @@ range_values_helper(const conduit::Node &history,
   else if(relative)
   {
     n_first_index = n_first_relative_index;
-    n_last_index = n_last_relative_index; 
+    n_last_index = n_last_relative_index;
   }
   else if(simulation_cycle)
   {
     n_first_index = n_first_absolute_cycle;
-    n_last_index = n_last_absolute_cycle;         
+    n_last_index = n_last_absolute_cycle;
   }
   else if(simulation_time)
   {
     n_first_index = n_first_absolute_time;
-    n_last_index = n_last_absolute_time;     
+    n_last_index = n_last_absolute_time;
   }
 
   const int entries = history.number_of_children();
@@ -2073,7 +2074,9 @@ Cycle::execute()
 
   DataObject *data_object =
     graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+  // we are just getting state so we don't care if its high or low
+  // order
+  const conduit::Node *const dataset = data_object->as_node().get();
 
   conduit::Node state = get_state_var(*dataset, "cycle");
   if(!state.dtype().is_number())

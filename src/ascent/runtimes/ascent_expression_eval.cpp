@@ -101,81 +101,81 @@ Cache ExpressionEval::m_cache;
 double
 Cache::last_known_time()
 {
-double res = 0;
-if(m_data.has_path("last_known_time"))
-{
-res = m_data["last_known_time"].as_float64();
-}
-return res;
+  double res = 0;
+  if(m_data.has_path("last_known_time"))
+  {
+    res = m_data["last_known_time"].as_float64();
+  }
+  return res;
 }
 
 bool
 Cache::filtered()
 {
-return m_filtered;
+  return m_filtered;
 }
 
 void
 Cache::last_known_time(double time)
 {
-m_data["last_known_time"] = time;
+  m_data["last_known_time"] = time;
 }
 
 void
 Cache::filter_time(double ftime)
 {
-const int num_entries = m_data.number_of_children();
-int removal_count = 0;
-for(int i = 0; i < num_entries; ++i)
-{
-conduit::Node &entry = m_data.child(i);
-if(entry.name() == "last_known_time" ||
-entry.name() == "session_cache_info")
-{
-continue;
-}
+  const int num_entries = m_data.number_of_children();
+  int removal_count = 0;
+  for(int i = 0; i < num_entries; ++i)
+  {
+    conduit::Node &entry = m_data.child(i);
+    if(entry.name() == "last_known_time" ||
+       entry.name() == "session_cache_info")
+    {
+      continue;
+    }
 
-bool invalid_time = true;
-while(invalid_time && entry.number_of_children() > 0)
-{
-int last = entry.number_of_children() - 1;
+    bool invalid_time = true;
+    while(invalid_time && entry.number_of_children() > 0)
+    {
+      int last = entry.number_of_children() - 1;
 
-if(!entry.child(last).has_path("time"))
-{
-// if there is no time, we can reason about
-// anything
-entry.remove(last);
-removal_count++;
-}
-else if(entry.child(last)["time"].to_float64() >= ftime)
-{
-entry.remove(last);
-removal_count++;
-}
-else
-{
-invalid_time = false;
-}
-}
-}
+      if(!entry.child(last).has_path("time"))
+      {
+        // if there is no time, we can reason about
+        // anything
+        entry.remove(last);
+        removal_count++;
+      }
+      else if(entry.child(last)["time"].to_float64() >= ftime)
+      {
+        entry.remove(last);
+        removal_count++;
+      }
+      else
+      {
+        invalid_time = false;
+      }
+    }
+  }
 
-// clean up entries with no children
-bool clean = false;
-while(!clean)
-{
-const int size = m_data.number_of_children();
-bool removed = false;
-for(int i = 0; i < size; ++i)
-{
-if(m_data.child(i).number_of_children() == 0)
-{
-m_data.remove(i);
-removed = true;
-break;
-}
-}
-clean = !removed;
-}
+  // clean up entries with no children
+  bool clean = false;
+  while(!clean)
+  {
+    const int size = m_data.number_of_children();
+    bool removed = false;
+    for(int i = 0; i < size; ++i)
+    {
+      if(m_data.child(i).number_of_children() == 0)
+      {
+        m_data.remove(i);
+        removed = true;
+        break;
+      }
+    }
+    clean = !removed;
+  }
 
   time_t t;
   char curr_time[100];
@@ -193,36 +193,36 @@ clean = !removed;
 bool
 Cache::loaded()
 {
-return m_loaded;
+  return m_loaded;
 }
 
 void
 Cache::load(const std::string &dir, const std::string &session)
 {
-m_rank = 0;
+  m_rank = 0;
 #ifdef ASCENT_MPI_ENABLED
-MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-MPI_Comm_rank(mpi_comm, &m_rank);
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &m_rank);
 #endif
 
-std::string file_name = session;
-std::string session_file = conduit::utils::join_path(dir, file_name);
-m_session_file = session_file;
+  std::string file_name = session;
+  std::string session_file = conduit::utils::join_path(dir, file_name);
+  m_session_file = session_file;
 
-bool exists = conduit::utils::is_file(session_file);
+  bool exists = conduit::utils::is_file(session_file);
 
-if(m_rank == 0 && exists)
-{
-m_data.load(session_file + ".yaml", "yaml");
-}
+  if(m_rank == 0 && exists)
+  {
+    m_data.load(session_file + ".yaml", "yaml");
+  }
 
 #ifdef ASCENT_MPI_ENABLED
-if(exists)
-{
-conduit::relay::mpi::broadcast_using_schema(m_data, 0, mpi_comm);
-}
+  if(exists)
+  {
+    conduit::relay::mpi::broadcast_using_schema(m_data, 0, mpi_comm);
+  }
 #endif
-m_loaded = true;
+  m_loaded = true;
 }
 
 void Cache::save()
@@ -237,39 +237,39 @@ void Cache::save()
 
 void Cache::save(const std::string &filename)
 {
-// the session file can be blank during testing,
-// since its not actually opening ascent
-if(m_rank == 0 &&
-!m_data.dtype().is_empty())
-{
-m_data.save(filename+".yaml","yaml");
-}
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  if(m_rank == 0 &&
+     !m_data.dtype().is_empty())
+  {
+    m_data.save(filename+".yaml","yaml");
+  }
 }
 
 void Cache::save(const std::string &filename,
-	 const std::vector<std::string> &selection)
+                 const std::vector<std::string> &selection)
 {
-conduit::Node data;
-for(const auto &expr : selection)
-{
-if(m_data.has_path(expr))
-{
-data[expr].set_external(m_data[expr]);
-}
-}
-// the session file can be blank during testing,
-// since its not actually opening ascent
-// or there might not be match
-if(m_rank == 0 &&
-!data.dtype().is_empty())
-{
-data.save(filename+".yaml","yaml");
-}
+  conduit::Node data;
+  for(const auto &expr : selection)
+  {
+    if(m_data.has_path(expr))
+    {
+      data[expr].set_external(m_data[expr]);
+    }
+  }
+  // the session file can be blank during testing,
+  // since its not actually opening ascent
+  // or there might not be match
+  if(m_rank == 0 &&
+     !data.dtype().is_empty())
+  {
+    data.save(filename+".yaml","yaml");
+  }
 }
 
 Cache::~Cache()
 {
-save();
+  save();
 }
 
 void
@@ -652,6 +652,14 @@ initialize_functions()
   cycle_sig["description"] = "Return the current simulation cycle.";
 
   //---------------------------------------------------------------------------
+
+  conduit::Node &time_sig = (*functions)["time"].append();
+  time_sig["return_type"] = "double";
+  time_sig["filter_name"] = "time";
+  time_sig["args"] = conduit::DataType::empty();
+  time_sig["description"] = "Return the current simulation time.";
+
+  // -------------------------------------------------------------
 
   conduit::Node &vector = (*functions)["vector"].append();
   vector["return_type"] = "vector";
