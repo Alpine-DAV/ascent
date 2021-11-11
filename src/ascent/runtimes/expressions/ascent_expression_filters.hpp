@@ -212,6 +212,17 @@ public:
   virtual void execute();
 };
 
+class Time : public ::flow::Filter
+{
+public:
+  Time();
+  ~Time();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class ScalarMax : public ::flow::Filter
 {
 public:
