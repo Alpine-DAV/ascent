@@ -3841,13 +3841,6 @@ AutoCamera::execute()
       int width  = 1000;
       int height = 1000;
 
-      #if ASCENT_MPI_ENABLED
-      MPI_Barrier(MPI_COMM_WORLD);
-      double triangle_time = 0.;
-      auto triangle_start = high_resolution_clock::now();
-      vtkm::cont::Timer tri_timer;
-      tri_timer.Start();
-      #endif
 
       std::string topo_name = collection->field_topology(field_name);
 
@@ -3855,9 +3848,6 @@ AutoCamera::execute()
 //      dataset.PrintSummary(std::cerr);
     
       std::vector<double> field_data = GetScalarData<double>(dataset, field_name.c_str(), height, width);
-      #if ASCENT_MPI_ENABLED
-        cerr << "rank " << rank << " field size: " << field_data.size() << endl;
-      #endif
       
       float datafield_max = 0.;
       float datafield_min = 0.;
@@ -3877,8 +3867,6 @@ AutoCamera::execute()
         datafield_max = (float)*max_element(field_data.begin(),field_data.end());
         datafield_min = (float)*min_element(field_data.begin(),field_data.end());
       }
-      #endif
-      //TODO: Need global mins and maxes for parallel. MPI send to rank 0.
 
 
       double worldspace_local_area = 0;
@@ -3886,28 +3874,13 @@ AutoCamera::execute()
       int num_local_triangles = triangles.size();
       float xmax = 0.0, xmin = 0.0, ymax = 0.0, ymin = 0.0, zmax = 0.0, zmin = 0.0;
       TriangleBounds(triangles,xmin,xmax,ymin,ymax,zmin,zmax);
-      //cerr << "Triangle Bounds:\nX: " << xmin << " - " << xmax << "\nY: " << ymin << " - " << ymax << "\nZ: " << zmin << " - " << zmax << endl;
       
       int xBins = 8,yBins = 8,zBins = 8;
 
       vtkh::DataSet* data = AddTriangleFields(dataset,xmin,xmax,ymin,ymax,zmin,zmax,xBins,yBins,zBins);
 
-      #if ASCENT_MPI_ENABLED
-      cerr << "Rank " << rank << " num loc tri: " << num_local_triangles << " worldspace loc area " << worldspace_local_area << endl;
-      
-      auto triangle_stop = high_resolution_clock::now();
-      tri_timer.Stop();
-      vtkm::Float64 total_time = tri_timer.GetElapsedTime();
-      triangle_time += duration_cast<microseconds>(triangle_stop - triangle_start).count();
-      double array[world_size] = {0};
-      array[rank] = total_time;
-      //MPI_Allgather(&total_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-      //if(rank == 0)
-      //  MakeFile("processing_times.txt", array, world_size);
-    #endif
 
       vtkm::Bounds lb = dataset.GetBounds();
-      //cerr << " local bounds:\n X: " << lb.X.Min << " - " << lb.X.Max << " \nY: " << lb.Y.Min << " - " << lb.Y.Max << " \nZ: " << lb.Z.Min << " - " << lb.Z.Max << endl; 
 
       vtkm::Bounds b = dataset.GetGlobalBounds();
       vtkm::Float32 xb = vtkm::Float32(b.X.Length());
@@ -3916,7 +3889,6 @@ AutoCamera::execute()
       float bounds[6] = {(float)b.X.Max, (float)b.X.Min, 
 	                (float)b.Y.Max, (float)b.Y.Min, 
 	                (float)b.Z.Max, (float)b.Z.Min};
-      //cerr << "global bounds: " << bounds[0] << " " << bounds[1] << " " << bounds[2] << " " << bounds[3] << " " << bounds[4] << " " << bounds[5] << endl;
 
       vtkm::Float32 radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
       float diameter = sqrt(xb*xb + yb*yb + zb*zb)*6.0;
@@ -3925,7 +3897,6 @@ AutoCamera::execute()
       vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
       float focus[3] = {(float)lookat[0],(float)lookat[1],(float)lookat[2]};
 
-      //original
       double winning_score  = -DBL_MAX;
       int    winning_sample = -1;
       double losing_score   = DBL_MAX;
@@ -3948,17 +3919,11 @@ AutoCamera::execute()
       {
         cerr<< "Sample: " << count << endl;
     /*================ Scalar Renderer Code ======================*/
-    //What it does: Quick ray tracing of data (replaces get triangles and scanline).
-    //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
-      
-//        Camera cam = GetCamera(sample, samples, radius, focus, bounds);
+
         Camera cam = GetCamera(sample, samples, radius, focus, bounds);
         vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
                                 (float)cam.position[1],
                                 (float)cam.position[2]};
-        #if ASCENT_MPI_ENABLED
-        MPI_Barrier(MPI_COMM_WORLD);
-        #endif
 	auto render_start = high_resolution_clock::now();
         vtkm::cont::Timer ren_timer;
         ren_timer.Start();
@@ -3970,98 +3935,12 @@ AutoCamera::execute()
         tracer.SetInput(data); //vtkh dataset by toponame
         tracer.SetCamera(*camera);
         tracer.Update();
-        //camera->GetViewUp().Print();
-//	cerr << "Camera for " << count << endl;
-//        camera->Print();
-	
-	
 
         vtkh::DataSet *output = tracer.GetOutput();
 	//output->PrintSummary(std::cerr);
 
-
-        auto render_stop = high_resolution_clock::now();
-        double render_time = duration_cast<microseconds>(render_stop - render_start).count();
-        #if ASCENT_MPI_ENABLED
-	  ren_timer.Stop();
-          vtkm::Float64 ren_time = ren_timer.GetElapsedTime();
-          double array[world_size] = {0};
-          array[rank] = ren_time;
-          //MPI_Allgather(&ren_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-          //if(rank == 0)
-          //  MakeFile("renderer_times.txt", array, world_size);
-//          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
-        #endif
-
-
-        cerr << "Starting metric" << endl;
-
-        //original 
-        //float score = calculateMetricScore(output, metric, field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
+        float score = calculateMetricScore(output, metric, field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
         
-	//new
-        float data_entropy_score = calculateMetricScore(output, "data_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-	
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with data entropy: " << data_entropy_score << endl;
-        #endif
-
-        float depth_entropy_score = calculateMetricScore(output, "depth_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with depth entropy: " << depth_entropy_score << endl;
-        #endif
-        float shading_entropy_score = calculateMetricScore(output, "shading_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with shading entropy: " << shading_entropy_score << endl;
-        #endif
-        float max_depth_score = calculateMetricScore(output, "max_depth", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with max depth: " << max_depth_score << endl;
-        #endif
-        float projected_area_score = calculateMetricScore(output, "projected_area", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with projected area: " << projected_area_score << endl;
-        #endif
-        float pb_score = calculateMetricScore(output, "pb", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with pb: " << pb_score << endl;
-        #endif
-        float visible_triangles_score = calculateMetricScore(output, "visible_triangles", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with visible trianges: " << visible_triangles_score << endl;
-        #endif
-        float visibility_ratio_score = calculateMetricScore(output, "visibility_ratio", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with visibility ratio: " << visibility_ratio_score << endl;
-        #endif
-        float viewpoint_entropy_score = calculateMetricScore(output, "viewpoint_entropy", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with viewpoint entropy " << viewpoint_entropy_score << endl;
-        #endif
-        float vkl_score = calculateMetricScore(output, "vkl", field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
-
-        #if ASCENT_MPI_ENABLED
-	if(rank == 0)
-	  cerr << "rank " << rank << " done with vkl: " << vkl_score << endl;
-        #endif
-        float score = data_entropy_score;
 
 	std::cerr << "sample " << sample << " " << metric << " score: " << score << std::endl;
 	cerr << endl;
@@ -4084,23 +3963,12 @@ AutoCamera::execute()
       } //end of sample loop
       triangles.clear();
 //    delete data;
-//
-      #if ASCENT_MPI_ENABLED
-      MPI_Barrier(MPI_COMM_WORLD);
-      #endif
-      auto setting_camera_start = high_resolution_clock::now();
-      vtkm::cont::Timer cam_timer;
-      cam_timer.Start();
 
       if(winning_sample == -1)
         ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
       cerr << metric << " winning_sample " << winning_sample << " score: " << winning_score << endl;
       cerr << metric << " losing_sample " << losing_sample << " score: " << losing_score << endl;
-     // Camera best_c = GetCamera(cycle, 100, radius, focus, bounds);
-      //Camera best_c = GetCamera(losing_sample, samples, radius, focus, bounds);
       Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
-//      cerr << "Writing out camera: " << sample2 << endl; 
-//      Camera best_c = GetCamera(sample2, samples, radius, focus, bounds);
     
       vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
@@ -4116,21 +3984,7 @@ AutoCamera::execute()
         graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
       }
 
-      auto setting_camera_end = high_resolution_clock::now();
-      double setting_camera = 0.;
-      setting_camera += duration_cast<microseconds>(setting_camera_end - setting_camera_start).count();
 
-      #if ASCENT_MPI_ENABLED
-        cam_timer.Stop();
-        vtkm::Float64 cam_time = cam_timer.GetElapsedTime();
-
-        double array2[world_size] = {0};
-        array2[rank] = cam_time;
-        //MPI_Allgather(&cam_time, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-        //if(rank == 0)
-        //  MakeFile("setCam_times.txt", array2, world_size);
-//        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
-      #endif
 #endif //FIBONACCI
 
 #if PHITHETA
