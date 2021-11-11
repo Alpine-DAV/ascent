@@ -901,7 +901,7 @@ GetArea(vtkh::DataSet &vtkhData)
       int numTris = cellset.GetNumberOfCells();
       std::vector<double> tmp_areas(numTris);
      
-      vtkm::cont::ArrayHandle<double> areas = vtkm::cont::make_ArrayHandle(tmp_areas);
+      vtkm::cont::ArrayHandle<double> areas = vtkm::cont::make_ArrayHandle(tmp_areas, vtkm::CopyFlag::Off);
       vtkm::cont::Invoker invoker;
       invoker(CalculateArea{}, cellset, coords, areas);
 
@@ -1203,8 +1203,8 @@ GetTriangles(vtkh::DataSet &vtkhData)
       std::vector<Triangle> tmp_tris(numTris);
       std::vector<double> tmp_areas(numTris);
 
-      vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris);
-      vtkm::cont::ArrayHandle<double> areas = vtkm::cont::make_ArrayHandle(tmp_areas);
+      vtkm::cont::ArrayHandle<Triangle> triangles = vtkm::cont::make_ArrayHandle(tmp_tris, vtkm::CopyFlag::Off);
+      vtkm::cont::ArrayHandle<double> areas = vtkm::cont::make_ArrayHandle(tmp_areas, vtkm::CopyFlag::Off);
 
       vtkm::cont::Invoker invoker;
       invoker(ProcessTriangle{}, cellset, coords, triangles, areas);
@@ -1245,8 +1245,8 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
       //  cerr << "THEY ARE A FLOAT" << endl;
       //else
       //  cerr << "THE DATA IS NOT FLOAT" << endl;      
-      field.GetData().CopyTo(field_data);
-      auto portal = field_data.GetPortalConstControl();
+      field.GetData().AsArrayHandle(field_data);
+      auto portal = field_data.ReadPortal();
 
       for(int i = 0; i < size; i++)
       {
@@ -1285,8 +1285,8 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name, int height, int w
       if(field.GetData().IsType<data_d>())
       {
         vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
-        field.GetData().CopyTo(field_data);
-        auto portal = field_data.GetPortalConstControl();
+        field.GetData().AsArrayHandle(field_data);
+        auto portal = field_data.ReadPortal();
 
         for(int i = 0; i < size; i++)
         {
@@ -1296,8 +1296,8 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name, int height, int w
       if(field.GetData().IsType<data_f>())
       {
         vtkm::cont::ArrayHandle<vtkm::Float32> field_data;
-        field.GetData().CopyTo(field_data);
-        auto portal = field_data.GetPortalConstControl();
+        field.GetData().AsArrayHandle(field_data);
+        auto portal = field_data.ReadPortal();
 
         for(int i = 0; i < size; i++)
         {
@@ -3931,8 +3931,8 @@ AutoCamera::execute()
       int sample_rate = 43;
       int count = 0;
 
-#define FIBONACCI 0
-#define PHITHETA 1
+#define FIBONACCI 1
+#define PHITHETA 0
 #define PrintTimes 1
 #define PrintScores 1
 

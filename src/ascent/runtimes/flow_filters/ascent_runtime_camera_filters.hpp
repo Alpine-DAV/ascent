@@ -62,7 +62,7 @@
 #if defined(ASCENT_VTKM_ENABLED)
 #define EXEC_CONT VTKM_EXEC_CONT
 #else
-#define EXEC_COUNT 
+#define EXEC_CONT 
 #endif
 
 //-----------------------------------------------------------------------------
