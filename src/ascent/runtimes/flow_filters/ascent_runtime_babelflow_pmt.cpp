@@ -32,11 +32,16 @@
 #include "PMT/MergeTree.h"
 #include "PMT/AugmentedMergeTree.h"
 #include "BabelFlow/reduce/SingleTaskGraph.h"
+#include "BabelFlow/reduce/RadixKExchange.h"
+#include "BabelFlow/reduce/RadixKExchangeTaskMap.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
 #include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/ModuloMap.h"
 #include "BabelFlow/RelayTask.h"
+
+#include "StreamStat/StreamingStatistic.h"
+#include "StreamStat/StreamingStatisticFactory.h"
 
 #include <iomanip>
 #include <iostream>
@@ -45,6 +50,7 @@
 #include <sstream>
 #include <float.h>
 #include <climits>
+#include <memory>
 
 
 // #define BFLOW_PMT_DEBUG
@@ -56,7 +62,9 @@ class ParallelMergeTree {
 public:
   ParallelMergeTree(FunctionType *data_ptr, int32_t task_id, const int32_t *data_size, const int32_t *n_blocks,
                     const int32_t *low, const int32_t *high, int32_t fanin,
-                    FunctionType threshold, MPI_Comm mpi_comm);
+                    FunctionType threshold, MPI_Comm mpi_comm,
+                    const std::vector<uint32_t>& radix_v,
+                    const std::vector<uint32_t>& stat_types_v);
 
   void Initialize();
 
@@ -95,10 +103,16 @@ private:
   KWayMerge m_kWayMergeGr;
   KWayTaskMap m_kWayTaskMp;
 
+  BabelFlow::RadixKExchange m_treeStatsGr;
+  BabelFlow::RadixKExchangeTaskMap m_treeStatsMp;
+
   BabelFlow::ComposableTaskGraph m_fullGraph;
   BabelFlow::ComposableTaskMap m_fullTaskMap;
 
-  BabelFlow::DefGraphConnector m_defGraphConnector;
+  BabelFlow::DefGraphConnector m_defGraphConnector_1;
+  BabelFlow::DefGraphConnector m_defGraphConnector_2;
+
+  std::vector<uint32_t> m_radices;
 };
 
 
@@ -180,6 +194,8 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   //t.writeToHtmlFile(task & ~sPrefixMask);
 #endif
 
+  t.writeToHtmlFile(task & ~KWayMerge::sPrefixMask);
+
   // Set the final tree as an output so that it could be extracted later
   output[0] = t.encode();
 
@@ -190,6 +206,551 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
   //fprintf(stderr,"WRITING RESULTS performed by %d\n", task & ~sPrefixMask);
   return 1;
 }
+
+//////////// Streaming statistics //////////////////
+
+template<typename T>
+static inline void serialize_elem( char*& buff, T val )
+{
+  memcpy( buff, &val, sizeof(T) );
+  buff += sizeof(T);
+}
+
+template<typename T>
+static inline void deserialize_elem( char*& buff, T& val )
+{
+  memcpy( &val, buff, sizeof(T) );
+  buff += sizeof(T);
+}
+
+class StatisticsMap
+{
+public:
+  using StreamingStatisticPtr = std::shared_ptr<Statistics::StreamingStatistic>;
+  using StatisticsVec = std::vector<StreamingStatisticPtr>;
+
+  static std::vector<Statistics::StreamingStatisticType> sRequestedStats;
+
+  StatisticsMap() 
+  {
+    mLow[0] = mLow[1] = mLow[2] = 0;
+    mHigh[0] = mHigh[1] = mHigh[2] = 0;
+  }
+
+  StatisticsMap( GlobalIndexType low[3], GlobalIndexType high[3] ) 
+  {
+    setLow( low );
+    setHigh( high );
+  }
+
+  ~StatisticsMap() {}
+
+  StatisticsVec& getAndInitStatsVec( GlobalIndexType id ) 
+  {
+    StatisticsVec& stats_vec = mStats[id];
+    if( stats_vec.size() == 0 )
+    {
+      stats_vec.resize( StatisticsMap::sRequestedStats.size() );
+      for( unsigned int j = 0; j < StatisticsMap::sRequestedStats.size(); ++j )
+        stats_vec[j] = 
+          StreamingStatisticPtr( mStatsFac.make_statistic( StatisticsMap::sRequestedStats[j] ) );
+    }
+    return stats_vec;
+  }
+
+  StatisticsVec& getStatsVec( GlobalIndexType id ) 
+  {
+    return mStats[id];
+  }
+
+  void setStatsVec( GlobalIndexType id, const StatisticsVec& stats_vec )
+  {
+    mStats[id] = stats_vec;
+  }
+
+  std::unordered_map<GlobalIndexType, StatisticsVec>::const_iterator beginIter() const
+  {
+    return mStats.begin();
+  }
+
+  std::unordered_map<GlobalIndexType, StatisticsVec>::const_iterator endIter() const
+  {
+    return mStats.end();
+  }
+
+  void setLow( GlobalIndexType low[3] )
+  {
+    mLow[0] = low[0];
+    mLow[1] = low[1];
+    mLow[2] = low[2];
+  }
+
+  void setHigh( GlobalIndexType high[3] )
+  {
+    mHigh[0] = high[0];
+    mHigh[1] = high[1];
+    mHigh[2] = high[2];
+  }
+
+  void getBoundary( GlobalIndexType low[3], GlobalIndexType high[3] ) const
+  {
+    low[0] = mLow[0];
+    low[1] = mLow[1];
+    low[2] = mLow[2];
+
+    high[0] = mHigh[0];
+    high[1] = mHigh[1];
+    high[2] = mHigh[2];
+  }
+
+  void mergeBoundary( GlobalIndexType low[3], GlobalIndexType high[3] )
+  {
+    mLow[0] = std::min( mLow[0], low[0] );
+    mLow[1] = std::min( mLow[1], low[1] );
+    mLow[2] = std::min( mLow[2], low[2] );
+
+    mHigh[0] = std::max( mHigh[0], high[0] );
+    mHigh[1] = std::max( mHigh[1], high[1] );
+    mHigh[2] = std::max( mHigh[2], high[2] );
+  }
+
+  bool coordsWithinBoundary( GlobalIndexType coords[3] ) const
+  {
+    bool within[3] = {
+      mLow[0] <= coords[0] && coords[0] <= mHigh[0],
+      mLow[1] <= coords[1] && coords[1] <= mHigh[1],
+      mLow[2] <= coords[2] && coords[2] <= mHigh[2]
+    };
+
+    return within[0] && within[1] && within[2];
+  }
+
+  //! Serialize the statistics map data as a Payload
+  BabelFlow::Payload serialize()
+  {
+    // Calculate total size
+    int32_t buff_sz = 6 * sizeof(GlobalIndexType);    // mLow[3] and mHigh[3]
+
+    auto iter = mStats.begin();
+    auto end_iter = mStats.end();
+    
+    buff_sz += sizeof(uint32_t);                      // num elems in map
+
+    for( ; iter != end_iter; ++iter )
+    {
+        buff_sz += sizeof(GlobalIndexType);           // map key
+        buff_sz += sizeof(uint32_t);                  // num elems in stat vec
+
+        for( auto& stat_ptr : iter->second )
+        {
+          buff_sz += sizeof(uint32_t);                // elem buff size
+          buff_sz += sizeof(uint32_t);                // elem type
+
+          int32_t stat_buff_sz = 0;
+          char* stat_buff_ptr = nullptr;
+          stat_ptr->serialize( stat_buff_sz, stat_buff_ptr, false );
+          buff_sz += stat_buff_sz;                    // elem buff
+        }
+    }
+
+    char* full_buff = new char[buff_sz];
+
+    GlobalIndexType* tbuff = (GlobalIndexType*)full_buff;
+    tbuff[0] = mLow[0];
+    tbuff[1] = mLow[1];
+    tbuff[2] = mLow[2];
+    tbuff[3] = mHigh[0];
+    tbuff[4] = mHigh[1];
+    tbuff[5] = mHigh[2];
+
+    char* buff_ptr = full_buff + 6 * sizeof(GlobalIndexType);
+    
+    serialize_elem<uint32_t>( buff_ptr, mStats.size() );
+
+    iter = mStats.begin();
+    end_iter = mStats.end();
+
+    for( ; iter != end_iter; ++iter )
+    {
+        serialize_elem<GlobalIndexType>( buff_ptr, iter->first );
+        serialize_elem<uint32_t>( buff_ptr, iter->second.size() );
+
+        for( auto& stat_ptr : iter->second )
+        {
+          int32_t stat_buff_sz = 0;
+          char* stat_buff_ptr = nullptr;
+          stat_ptr->serialize( stat_buff_sz, stat_buff_ptr, false );
+
+          serialize_elem<uint32_t>( buff_ptr, stat_buff_sz );
+          serialize_elem<uint32_t>( buff_ptr, stat_ptr->type() );
+
+          stat_ptr->serialize( stat_buff_sz, buff_ptr, false );
+          buff_ptr += stat_buff_sz;
+        }
+    }
+
+    return BabelFlow::Payload( buff_sz, full_buff );
+  }
+
+  //! Deserialize the statistics data from the given Payload
+  void deserialize(const BabelFlow::Payload& pl)
+  {
+    uint32_t buff_sz;
+    GlobalIndexType* tbuff = (GlobalIndexType*)pl.buffer();
+    mLow[0] = tbuff[0];
+    mLow[1] = tbuff[1];
+    mLow[2] = tbuff[2];
+    mHigh[0] = tbuff[3];
+    mHigh[1] = tbuff[4];
+    mHigh[2] = tbuff[5];
+
+    char* buff_ptr = pl.buffer() + 6 * sizeof(GlobalIndexType);
+
+    uint32_t map_sz = 0;
+    deserialize_elem<uint32_t>( buff_ptr, map_sz );
+
+    for( uint32_t i = 0; i < map_sz; ++i )
+    {
+      GlobalIndexType feat_id;
+      deserialize_elem<GlobalIndexType>( buff_ptr, feat_id );
+
+      StatisticsVec& stats_vec = mStats[feat_id];
+
+      uint32_t stat_vec_sz = 0;
+      deserialize_elem<uint32_t>( buff_ptr, stat_vec_sz );
+      
+      stats_vec.resize( stat_vec_sz );
+      for( uint32_t j = 0; j < stats_vec.size(); ++j )
+      {
+        uint32_t stat_buff_sz = 0;
+        deserialize_elem<uint32_t>( buff_ptr, stat_buff_sz );
+
+        uint32_t stat_type = 0;
+        deserialize_elem<uint32_t>( buff_ptr, stat_type );
+
+        stats_vec[j] = 
+          StreamingStatisticPtr( mStatsFac.make_statistic( Statistics::StreamingStatisticType( stat_type ) ) );
+
+        stats_vec[j]->deserialize( stat_buff_sz, buff_ptr );
+        buff_ptr += stat_buff_sz;
+      }
+
+    }
+  }
+
+private:
+  GlobalIndexType mLow[3];
+  GlobalIndexType mHigh[3];
+  std::unordered_map<GlobalIndexType, StatisticsVec> mStats;
+
+  Statistics::Factory mStatsFac;
+};
+
+std::vector<Statistics::StreamingStatisticType> StatisticsMap::sRequestedStats;
+
+void split_stats( const StatisticsMap& stats_map, std::vector<StatisticsMap>& out_stats_map )
+{
+  // Got over stats map, for each feature:
+  //   Translate feature label (id) to location
+  //   Determine in which part of the full extent the feature location belongs
+  //   Add the statistic to that part stat map
+
+  // Split extent
+  GlobalIndexType low[3];
+  GlobalIndexType high[3];
+
+  stats_map.getBoundary( low, high );
+
+  // Compute splitting delta
+  uint32_t num_outs = out_stats_map.size();
+  GlobalIndexType extent[3] = 
+  {
+    (high[0] - low[0]) + 1,
+    (high[1] - low[1]) + 1,
+    (high[2] - low[2]) + 1
+  };
+  int delta[3] = {0, 0, 0};
+  GlobalIndexType max_extent = std::max( std::max( extent[0], extent[1] ), extent[2] );
+  if( extent[0] == max_extent )
+  {
+    delta[0] = max_extent / num_outs;
+  }
+  else if( extent[1] == max_extent )
+  {
+    delta[1] = max_extent / num_outs;
+  }
+  else
+  {
+    delta[2] = max_extent / num_outs;
+  }
+
+  // Set extents for each output map according to the delta
+  for( unsigned int i = 0; i < num_outs; ++i )
+  {
+    GlobalIndexType l[3] = {low[0] + delta[0]*i, low[1] + delta[1]*i, low[2] + delta[2]*i};
+    GlobalIndexType h[3] = {high[0], high[1], high[2]};
+    if( delta[0] )
+    {
+      h[0] = low[0] + delta[0]*(i + 1) - 1;
+    }
+    else if( delta[1] )
+    {
+      h[1] = low[1] + delta[1]*(i + 1) - 1;
+    }
+    else
+    {
+      h[2] = low[2] + delta[2]*(i + 1) - 1;
+    }
+
+    out_stats_map[i].setLow(l);
+    out_stats_map[i].setHigh(h);
+  }
+
+  // Split given statistic map according to feature locations -- belonging to each one of
+  // the output extents
+  auto iter = stats_map.beginIter();
+  auto end_iter = stats_map.endIter();
+
+  for( ; iter != end_iter; ++iter )
+  {
+    GlobalIndexType feat_label = iter->first;
+
+    // Convert the feature id (index in the global data) to coords
+    GlobalIndexType coords[3];
+    coords[0] = feat_label % MergeTree::sDimension[0];
+    coords[1] = (feat_label / MergeTree::sDimension[0]) % MergeTree::sDimension[1];
+    coords[2] = feat_label / (MergeTree::sDimension[0] * MergeTree::sDimension[1]);
+    
+    for( unsigned int i = 0; i < num_outs; ++i )
+    {
+      if( out_stats_map[i].coordsWithinBoundary( coords ) )
+      {
+        out_stats_map[i].getStatsVec( feat_label ) = iter->second;
+        break;
+      }
+    }
+  }
+}
+
+void merge_stat_maps( StatisticsMap& merged_stats_map, std::vector<BabelFlow::Payload> &inputs )
+{
+  if( inputs.size() == 1 )
+  {
+    merged_stats_map.deserialize( inputs[0] );
+    return;
+  } 
+
+  for( unsigned int i = 0; i < inputs.size(); ++i )
+  {
+    StatisticsMap in_map;
+    in_map.deserialize( inputs[i] );
+
+    GlobalIndexType low[3];
+    GlobalIndexType high[3];
+
+    in_map.getBoundary( low, high );
+
+    if( i == 0 )
+    {
+      merged_stats_map.setLow( low );
+      merged_stats_map.setHigh( high );
+    }
+    else
+    {
+      merged_stats_map.mergeBoundary( low, high );
+    }
+
+    auto iter = in_map.beginIter();
+    auto end_iter = in_map.endIter();
+
+    for( ; iter != end_iter; ++iter )
+    {
+      GlobalIndexType feat_label = iter->first;
+
+      StatisticsMap::StatisticsVec& sv = merged_stats_map.getStatsVec( feat_label );
+      if( sv.size() == 0 )
+      {
+        sv = iter->second;
+      }
+      else
+      {
+        assert( sv.size() == iter->second.size() );
+        // Merge statistics
+        for( unsigned int i = 0; i < sv.size(); ++i )
+          sv[i]->add( iter->second[i].get() );
+      }
+    }
+  }
+}
+
+int compute_loc_stats( std::vector<BabelFlow::Payload> &inputs,
+                       std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task )
+{
+  // Decode the tree with the segmentation
+  AugmentedMergeTree aug_t;
+  aug_t.decode(inputs[0]);
+
+  // Construct a regular merge tree, without the segmentation field
+  // MergeTree mg_t( aug_t );
+
+  GlobalIndexType low[3];
+  GlobalIndexType high[3];
+
+  aug_t.blockBoundary( low, high );
+
+  GlobalIndexType extent[3] = 
+  {
+    (high[0] - low[0]) + 1,
+    (high[1] - low[1]) + 1,
+    (high[2] - low[2]) + 1
+  };
+
+  // Compute statistics on the local data
+  StatisticsMap stats_map;
+  stats_map.setHigh( MergeTree::sDimension );
+  
+  for( unsigned int i = 0; i < aug_t.sampleCount(); ++i )
+  {
+    GlobalIndexType coords[3];
+
+    // Set the spatial coords
+    coords[0] = i % extent[0];
+    coords[1] = (i / extent[0]) % extent[1];
+    coords[2] = i / (extent[0] * extent[1]);
+
+    coords[0] += low[0];
+    coords[1] += low[1];
+    coords[2] += low[2];
+
+    // TODO: Skip data on the boundary (coords[0] == low[0] or high[0])
+
+    StatisticsMap::StatisticsVec& stats_vec = stats_map.getAndInitStatsVec( aug_t.label(i) );
+
+    // Add the feature to all the statistics
+    for( unsigned int j = 0; j < stats_vec.size(); ++j )
+      stats_vec[j]->add( sLocalData[i] );
+  }
+
+  // Write out stats_map (debug)
+#ifdef BFLOW_PMT_DEBUG
+  {
+    std::stringstream ss;
+    ss << "stream_stat_comp_" << task << ".txt";
+    std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+
+    auto iter = stats_map.beginIter();
+    auto end_iter = stats_map.endIter();
+
+    for( ; iter != end_iter; ++iter )
+    {
+      bofs << iter->first << "  --  ";
+      const StatisticsMap::StatisticsVec& stats_vec = iter->second;
+      for( auto& stat_ptr : stats_vec )
+        bofs << stat_ptr->value() << "  ";
+      bofs << std::endl;
+    }
+    bofs.close();
+  }
+#endif
+
+  std::vector<StatisticsMap> out_stats_map( output.size() );
+  split_stats( stats_map, out_stats_map );
+
+  // Got over outputs, serialize stats map
+  for( unsigned int i = 0; i < output.size(); ++i )
+    output[i] = out_stats_map[i].serialize();
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )
+    payl.reset();
+
+  return 1;
+}
+
+int merge_stats( std::vector<BabelFlow::Payload> &inputs,
+                 std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task )
+{
+  // --Next layer:
+  // Go over input stats map and merge the statistics together
+  // Go over the merged stats map and repeat step from layer #1
+
+  StatisticsMap merged_stats_map;
+  merge_stat_maps( merged_stats_map, inputs );
+
+  // Write out merged_stats_map
+#ifdef BFLOW_PMT_DEBUG
+  {
+    std::stringstream ss;
+    ss << "stream_stat_merge_" << task << ".txt";
+    std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+
+    auto iter = merged_stats_map.beginIter();
+    auto end_iter = merged_stats_map.endIter();
+
+    for( ; iter != end_iter; ++iter )
+    {
+      bofs << iter->first << "  --  ";
+      const StatisticsMap::StatisticsVec& stats_vec = iter->second;
+      for( auto& stat_ptr : stats_vec )
+        bofs << stat_ptr->value() << "  ";
+      bofs << std::endl;
+    }
+    bofs.close();
+  }
+#endif
+
+  std::vector<StatisticsMap> out_stats_map( output.size() );
+  split_stats( merged_stats_map, out_stats_map );
+
+  // Got over outputs, serialize stats map
+  for( unsigned int i = 0; i < output.size(); ++i )
+    output[i] = out_stats_map[i].serialize();
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )
+    payl.reset();
+  
+  return 1;  
+}
+
+int write_stats( std::vector<BabelFlow::Payload> &inputs,
+                 std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task )
+{
+  // --Final layer:
+  // Merge input stats maps
+  // Write them out to output (HDF5?)
+  assert( inputs.size() > 0 );
+
+  StatisticsMap merged_stats_map;
+  merge_stat_maps( merged_stats_map, inputs );
+
+  // Write out merged_stats_map
+  std::stringstream ss;
+  ss << "stream_stat_" << task << ".txt";
+  std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+
+  auto iter = merged_stats_map.beginIter();
+  auto end_iter = merged_stats_map.endIter();
+
+  for( ; iter != end_iter; ++iter )
+  {
+    bofs << iter->first << "  --  ";
+    const StatisticsMap::StatisticsVec& stats_vec = iter->second;
+    for( auto& stat_ptr : stats_vec )
+      bofs << stat_ptr->value() << "  ";
+    bofs << std::endl;
+  }
+
+  bofs.close();
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )
+    payl.reset();
+  
+  return 1;
+}
+
+/////////////////////////////////////////////////
 
 void ParallelMergeTree::ComputeGhostOffsets(uint32_t low[3], uint32_t high[3],
                                             uint32_t& dnx, uint32_t& dny, uint32_t& dnz,
@@ -290,15 +851,24 @@ void ParallelMergeTree::Initialize()
   m_kWayMergeGr = KWayMerge( m_nBlocks, m_fanin );
   m_kWayTaskMp = KWayTaskMap( mpi_size, &m_kWayMergeGr );
 
+  m_treeStatsGr = BabelFlow::RadixKExchange( mpi_size, m_radices );
+  m_treeStatsMp = BabelFlow::RadixKExchangeTaskMap( mpi_size, &m_treeStatsGr );
+
   m_preProcTaskGr.setGraphId( 0 );
   m_kWayMergeGr.setGraphId( 1 );
+  m_treeStatsGr.setGraphId( 2 );
 
   BabelFlow::TaskGraph::registerCallback( 0, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, pre_proc );
+  
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::LOCAL_COMP_CB, local_compute );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::JOIN_COMP_CB, join );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::LOCAL_CORR_CB, local_correction );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::WRITE_RES_CB, write_results );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::RELAY_CB, BabelFlow::relay_message );
+
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::LEAF_TASK_CB, compute_loc_stats );
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::MID_TASK_CB, merge_stats );
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, write_stats );
 
 #ifdef BFLOW_PMT_DEBUG
   if( my_rank == 0 ) 
@@ -307,15 +877,30 @@ void ParallelMergeTree::Initialize()
   }
 #endif
 
-  m_defGraphConnector = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
+  if( StatisticsMap::sRequestedStats.size() )
+  {
+    m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
+    m_defGraphConnector_2 = BabelFlow::DefGraphConnector( &m_kWayMergeGr, 1, &m_treeStatsGr, 2 );
+
+    std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector_1, &m_defGraphConnector_2 };
+    std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr, &m_treeStatsGr };
+    std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp, &m_treeStatsMp }; 
+
+    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
+    m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
+  }
+  else
+  {
+    m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
+
+    std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector_1 };
+    std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr };
+    std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp }; 
+
+    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
+    m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
+  }
   
-  std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
-  std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr };
-  std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp }; 
-
-  m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
-  m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
-
   MergeTree::setDimension( m_dataSize );
 #ifdef BFLOW_PMT_DEBUG
   if( my_rank == 0 ) 
@@ -384,7 +969,9 @@ ParallelMergeTree::ParallelMergeTree( FunctionType *data_ptr,
                                       const int32_t *high, 
                                       int32_t fanin,
                                       FunctionType threshold, 
-                                      MPI_Comm mpi_comm)
+                                      MPI_Comm mpi_comm,
+                                      const std::vector<uint32_t>& radix_v,
+                                      const std::vector<uint32_t>& stat_types_v )
   : m_dataPtr( data_ptr ), m_threshold( threshold ), m_comm( mpi_comm )
 {
   m_taskId = static_cast<uint32_t>(task_id);
@@ -397,6 +984,14 @@ ParallelMergeTree::ParallelMergeTree( FunctionType *data_ptr,
   // Store the local data as a static pointer so that it could be passed later to
   // computeSegmentation function -- probably a better solution is needed
   sLocalData = data_ptr;
+
+  m_radices = radix_v;
+
+  StatisticsMap::sRequestedStats.resize( stat_types_v.size() );
+  for( uint32_t i = 0; i < StatisticsMap::sRequestedStats.size(); ++i )
+  {
+    StatisticsMap::sRequestedStats[i] = Statistics::StreamingStatisticType( stat_types_v[i] );
+  }
 }
 
 
@@ -675,13 +1270,32 @@ void ascent::runtime::filters::BFlowPmt::execute()
     FunctionType threshold = p["threshold"].as_float64();
     int64_t gen_field = p["gen_segment"].as_int64();
 
+    std::vector<uint32_t> radix_v(1);
+    radix_v[0] = comm_size;
+    if( p.has_path("radices") )
+    {
+      conduit::DataArray<int64_t> radices_arr = p["radices"].as_int64_array();
+      radix_v.resize(radices_arr.number_of_elements());
+      for( uint32_t i = 0; i < radix_v.size(); ++i ) radix_v[i] = (uint32_t)radices_arr[i];
+    }
+
+    std::vector<uint32_t> stream_stat_v;
+    if( p.has_path("stream_stat_types") )
+    {
+      assert( !gen_field );
+      conduit::DataArray<int64_t> stat_types_arr = p["stream_stat_types"].as_int64_array();
+      stream_stat_v.resize( stat_types_arr.number_of_elements() );
+      for( uint32_t i = 0; i < stream_stat_v.size(); ++i ) stream_stat_v[i] = (uint32_t)stat_types_arr[i];
+    }
+
     // create ParallelMergeTree instance and run
     ParallelMergeTree pmt(array, 
                           task_id,
                           data_size,
                           n_blocks,
                           low, high,
-                          fanin, threshold, comm);
+                          fanin, threshold, comm,
+                          radix_v, stream_stat_v);
 
     ParallelMergeTree::s_data_size[0] = data_size[0];
     ParallelMergeTree::s_data_size[1] = data_size[1];

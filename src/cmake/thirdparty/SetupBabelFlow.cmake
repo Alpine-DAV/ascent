@@ -55,3 +55,20 @@ message(STATUS "FOUND PMT at ${PMT_DIR}")
 blt_register_library( NAME pmt
                       INCLUDES ${PMT_INCLUDE_DIRS}
                       LIBRARIES  pmt)
+
+## Find also StreamingStatistics library
+
+if(NOT StreamStat_DIR)
+    MESSAGE(FATAL_ERROR "StreamingStatistics support needs explicit StreamStat_DIR")
+endif()
+
+set(StreamStat_DIR ${StreamStat_DIR}/lib/cmake)
+MESSAGE(STATUS "Looking for StreamingStatistics using STREAMSTAT_DIR = ${StreamStat_DIR}")
+
+find_package(StreamStat REQUIRED)
+
+message(STATUS "FOUND StreamStat at ${StreamStat_DIR}")
+
+blt_register_library( NAME streamstat
+                      INCLUDES ${StreamStat_INCLUDE_DIRS}
+                      LIBRARIES StreamingStatistics)

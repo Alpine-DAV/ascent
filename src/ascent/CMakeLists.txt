@@ -445,9 +445,11 @@ if(MPI_FOUND)
 
       list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+      list(APPEND ascent_mpi_thirdparty_libs StreamStat::StreamingStatistics)
       add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
       include_directories(${BABELFLOW_INCLUDE_DIRS})
       include_directories(${PMT_INCLUDE_DIRS})
+      include_directories(${StreamStat_INCLUDE_DIRS})
     endif ()
 
     # hola mpi support is only in par (mpi ver)
