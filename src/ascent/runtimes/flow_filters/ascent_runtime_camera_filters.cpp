@@ -2357,8 +2357,8 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_tr
     if(triangles.GetNumberOfValues() > 0) 
     {
       auto triangle_areas = CalculateTriangleAreas(triangles);
-      float triangle_area = vtkm::cont::Algorithm::Reduce(triangle_areas, 0.0f);
-      visibility_ratio = triangle_area / global_area;
+      auto triangle_area = vtkm::cont::Algorithm::Reduce(triangle_areas, 0.0f);
+      visibility_ratio = (float)triangle_area / global_area;
     }
     #else //No VTK-m
     int size = height*width;
@@ -3515,7 +3515,8 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
 
 #if defined(ASCENT_VTKM_ENABLED)
 template <typename T>
-T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
+float calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
+//T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 {
   T depth = -1.0 * (T)std::numeric_limits<int>::max();
 
