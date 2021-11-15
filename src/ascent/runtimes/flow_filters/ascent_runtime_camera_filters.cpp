@@ -3517,12 +3517,12 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
 template <typename T>
 T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 {
-  T depth = -1.0 * std::numeric_limits<int>::max();
+  T depth = -1.0 * (T)std::numeric_limits<int>::max();
 
   if (depthData.GetNumberOfValues() > 0)
   {
     MaxValueWithChecks<float> max{
-      (T)-1.0 * std::numeric_limits<int>::max(),
+      -1.0 * (T)std::numeric_limits<int>::max(),
       (T)std::numeric_limits<int>::max()};
     depth = vtkm::cont::Algorithm::Reduce(depthData, depth, max);
   }
@@ -3779,9 +3779,9 @@ AutoCamera::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("metric");
     valid_paths.push_back("samples");
-    valid_paths.push_back("sample");
-    valid_paths.push_back("phi");
-    valid_paths.push_back("theta");
+//    valid_paths.push_back("sample");
+//    valid_paths.push_back("phi");
+//    valid_paths.push_back("theta");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -3834,9 +3834,9 @@ AutoCamera::execute()
         ASCENT_ERROR("Unknown field '"<<field_name<<"'");
       }
       int samples = (int)params()["samples"].as_int64();
-      int sample2 = (int)params()["sample"].as_int64();
-      int c_phi = (int)params()["phi"].as_int64();
-      int c_theta = (int)params()["theta"].as_int64();
+      //int sample2 = (int)params()["sample"].as_int64();
+      //int c_phi = (int)params()["phi"].as_int64();
+      //int c_theta = (int)params()["theta"].as_int64();
     //TODO:Get the height and width of the image from Ascent
       int width  = 1000;
       int height = 1000;
