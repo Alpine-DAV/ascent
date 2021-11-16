@@ -122,9 +122,12 @@ conduit::Node binning(const conduit::Node &dataset,
                       const std::string &component);
 
 void ASCENT_API paint_binning(const conduit::Node &binning,
-                              conduit::Node &dataset);
+                              conduit::Node &dataset,
+                              const std::string field_name = "");
 
-void ASCENT_API binning_mesh(const conduit::Node &binning, conduit::Node &mesh);
+void ASCENT_API binning_mesh(const conduit::Node &binning,
+                             conduit::Node &mesh,
+                             const std::string field_name = "");
 
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
@@ -145,6 +148,16 @@ bool has_component(const conduit::Node &dataset,
                    const std::string &field_name,
                    const std::string &component);
 
+// returns -1 if the component does not exist
+// does not check for consistency (i.e, if all the
+// domains has the same number of components)
+int num_components(const conduit::Node &dataset,
+                   const std::string &field_name);
+
+std::string component_name(const conduit::Node &dataset,
+                           const std::string &field_name,
+                           const int component_id);
+
 std::string
 possible_components(const conduit::Node &dataset,
                     const std::string &field_name);
@@ -160,6 +173,12 @@ void paint_nestsets(const std::string nestset_name,
                     const std::string topo_name,
                     conduit::Node &dom,
                     conduit::Node &field); // field to paint on
+
+conduit::Node
+final_topo_and_assoc(const conduit::Node &dataset,
+                     const conduit::Node &bin_axes,
+                     const std::string &topo_name,
+                     const std::string &assoc_str);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

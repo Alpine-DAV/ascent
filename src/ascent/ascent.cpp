@@ -699,6 +699,16 @@ about(conduit::Node &n)
 #endif
     // we will always have the main runtime available
     n["runtimes/ascent/status"] = "enabled";
+#if defined(ASCENT_DRAY_ENABLED)
+    n["runtimes/ascent/dray/status"] = "enabled";
+#else
+    n["runtimes/ascent/dray/status"] = "disabled";
+#endif
+#if defined(ASCENT_JIT_ENABLED)
+    n["runtimes/ascent/jit/status"] = "enabled";
+#else
+    n["runtimes/ascent/jit/status"] = "disabled";
+#endif
 #if defined(ASCENT_VTKH_ENABLED)
     // call this vtkm so people don't have to know
     // about vtkh

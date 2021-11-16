@@ -1,4 +1,4 @@
 name: ascent
 repo_url:  https://github.com/Alpine-DAV/ascent.git
-repo_branch: 2020_12_update_vtkm
+repo_branch: task/2021_07_update_uberenv
 default_container:  alpinedav/ascent-ci:ubuntu-18-devel

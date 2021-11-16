@@ -52,8 +52,7 @@
 #include "ascent_runtime_utils.hpp"
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
-
-#include <flow_workspace.hpp>
+#include <ascent_metadata.hpp>
 
 #include <algorithm>
 
@@ -77,8 +76,7 @@ namespace runtime
 namespace filters
 {
 
-std::string output_dir(const std::string file_name,
-                       flow::Graph &graph)
+std::string output_dir(const std::string file_name)
 {
   std::string output_path;
 
@@ -86,9 +84,8 @@ std::string output_dir(const std::string file_name,
   conduit::utils::rsplit_file_path(file_name, file, base_path);
   if(base_path == "")
   {
-    Node * meta = graph.workspace().registry().fetch<Node>("metadata");
-    std::string default_dir = (*meta)["default_dir"].as_string();
-    output_path = conduit::utils::join_file_path(default_dir, file);
+    std::string dir = default_dir();
+    output_path = conduit::utils::join_file_path(dir, file);
   }
   else
   {
@@ -97,11 +94,13 @@ std::string output_dir(const std::string file_name,
   return output_path;
 }
 
-std::string default_dir(flow::Graph &graph)
+std::string default_dir()
 {
-  Node * meta = graph.workspace().registry().fetch<Node>("metadata");
-  std::string dir = (*meta)["default_dir"].as_string();
-  return dir;
+  if(Metadata::n_metadata.has_path("default_dir"))
+  {
+    return Metadata::n_metadata["default_dir"].as_string();
+  }
+  else return ".";
 }
 
 std::string filter_to_path(const std::string filter_name)

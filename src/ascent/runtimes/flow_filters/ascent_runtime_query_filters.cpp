@@ -153,7 +153,6 @@ BasicQuery::execute()
       set_output<DataObject>(data_object);
       return;
     }
-    std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
     std::string expression = params()["expression"].as_string();
     std::string name = params()["name"].as_string();
@@ -162,13 +161,107 @@ BasicQuery::execute()
     Node v_info;
 
     // The mere act of a query stores the results
-    runtime::expressions::ExpressionEval eval(n_input.get());
+    runtime::expressions::ExpressionEval eval(*data_object);
     conduit::Node res = eval.evaluate(expression, name);
 
     // we never actually use the output port
     // since we only use it to chain ordering
     conduit::Node *dummy =  new conduit::Node();
     set_output<conduit::Node>(dummy);
+}
+
+//-----------------------------------------------------------------------------
+FilterQuery::FilterQuery()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+FilterQuery::~FilterQuery()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+FilterQuery::declare_interface(Node &i)
+{
+    i["type_name"]   = "expression";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+FilterQuery::verify_params(const conduit::Node &params,
+                            conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("expression",params, info, true);
+    res &= check_string("name",params, info, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("expression");
+    valid_paths.push_back("name");
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+FilterQuery::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("Query input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+
+    std::string expression = params()["expression"].as_string();
+    std::string name = params()["name"].as_string();
+    conduit::Node actions;
+
+    Node v_info;
+
+    // The mere act of a query stores the results
+    //runtime::expressions::ExpressionEval eval(n_input.get());
+    runtime::expressions::ExpressionEval eval(*data_object);
+    conduit::Node res = eval.evaluate(expression, name);
+
+    // if the end result is a derived field the for sure we want to make
+    // its available.
+    bool derived = false;
+    if(res.has_path("type"))
+    {
+      if(res["type"].as_string() == "field")
+      {
+        derived = true;
+      }
+    }
+
+    // Since queries might add new fields, the blueprint needs to become the source
+    if(derived && (data_object->source() != DataObject::Source::LOW_BP))
+    {
+      // for now always copy the bp if its not the original data source
+      // There is one main reasons for this:
+      //   the data will likely be passed to the vtkh ghost stripper, which could create
+      //   a new data sets with memory owned by vtkm. Since conduit can't take ownership of
+      //   that memory, this data could could go out of scope and that would be bad. To ensure
+      //   that it does not go out of scope
+      //   TODO: We could be smarter than this. For example, we could provide a way to map a
+      //   new field, if created, back on to the original source (e.g., vtkm)
+      conduit::Node *new_source = new conduit::Node(*eval.data_object().as_low_order_bp());
+      DataObject *new_do = new DataObject(new_source);
+      set_output<DataObject>(new_do);
+    }
+    else
+    {
+      set_output<DataObject>(data_object);
+    }
+
 }
 
 

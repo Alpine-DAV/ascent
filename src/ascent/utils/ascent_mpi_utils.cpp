@@ -142,17 +142,20 @@ void gather_strings(std::set<std::string> &string_set)
   conduit::Node n_strings;
   for(auto &name : string_set)
   {
-    n_strings[name] = 0;
+    n_strings.append() = name;
   }
   conduit::Node res;
+  // this is going to give us a list (one item for each rank) of
+  // lists (of string for each rank).
   conduit::relay::mpi::all_gather_using_schema(n_strings, res, mpi_comm);
-  int num_children = res.number_of_children();
-  for(int i = 0; i < num_children; ++i)
+  int ranks = res.number_of_children();
+  for(int r = 0; r < ranks; ++r)
   {
-    std::vector<std::string> res_names = res.child(i).child_names();
-    for(auto &str : res_names)
+    const conduit::Node &n_rank = res.child(r);
+    const int num_children = n_rank.number_of_children();
+    for(int i = 0; i < num_children; ++i)
     {
-      string_set.insert(str);
+      string_set.insert(n_rank.child(i).as_string());
     }
   }
 #endif

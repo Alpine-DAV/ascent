@@ -156,6 +156,19 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+class DRayVectorComponent : public ::flow::Filter
+{
+public:
+    DRayVectorComponent();
+    virtual ~DRayVectorComponent();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --

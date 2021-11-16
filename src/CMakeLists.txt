@@ -42,9 +42,6 @@
 #
 ###############################################################################
 
-################################
-# cmake policy selection
-################################
 # avoid warnings for project commands w/o VERSION
 cmake_policy(SET CMP0048 NEW)
 
@@ -52,7 +49,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.7.0")
+project(ascent VERSION "0.7.1")
 
 ################################
 # Build Options
@@ -70,8 +67,10 @@ option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
+option(ENABLE_LOGGING     "Enabe data logging"        OFF)
 option(ENABLE_DOCS        "Build Documentation"       ON)
 option(ENABLE_MFEM        "Enable MFEM support"       ON)
+option(ENABLE_FIDES       "Build with Fides"          OFF)
 
 option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
 
@@ -106,6 +105,10 @@ if(POLICY CMP0104)
     cmake_policy(SET CMP0104 OLD)
 endif()
 
+# allow find_packages to use ZZZ_ROOT vars
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 ################################
 # Populate the cmake gui
@@ -120,26 +123,12 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
-
 ################################
-# Set BLT Options
-################################
-# don't use BLT's all warnings feature
-set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
-
-if (NOT BLT_CXX_STD)
-    set(BLT_CXX_STD "c++11" CACHE STRING "")
-endif()
-
 # Init BLT
 ################################
-# if BLT_SOURCE_DIR is not set - use "blt" as default
-if(NOT BLT_SOURCE_DIR)
-    set(BLT_SOURCE_DIR "blt")
-endif()
-
-# init blt using BLT_SOURCE_DIR
-include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+# This also includes 
+# our BLT defaults
+include(cmake/SetupBLT.cmake)
 
 ################################
 # Basic CMake Setup
@@ -180,6 +169,7 @@ include(cmake/SetupIncludes.cmake)
 # Add builtin third party libs
 ################################
 add_subdirectory(thirdparty_builtin)
+
 
 ################################
 # Add our libs

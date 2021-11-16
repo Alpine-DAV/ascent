@@ -79,12 +79,13 @@ extern int ascentdebug;
     TRBRACKET = 280,               /* TRBRACKET  */
     TCOMMA = 281,                  /* TCOMMA  */
     TDOT = 282,                    /* TDOT  */
-    TPLUS = 283,                   /* TPLUS  */
-    TMINUS = 284,                  /* TMINUS  */
-    TMUL = 285,                    /* TMUL  */
-    TDIV = 286,                    /* TDIV  */
-    TMOD = 287,                    /* TMOD  */
-    TNEG = 288                     /* TNEG  */
+    TENDEXPR = 283,                /* TENDEXPR  */
+    TPLUS = 284,                   /* TPLUS  */
+    TMINUS = 285,                  /* TMINUS  */
+    TMUL = 286,                    /* TMUL  */
+    TDIV = 287,                    /* TDIV  */
+    TMOD = 288,                    /* TMOD  */
+    TNEG = 289                     /* TNEG  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -96,6 +97,7 @@ union YYSTYPE
 #line 21 "parser.y"
 
  ASTNode                     *node;
+ ASTBlock                    *block;
  ASTExpression               *expr;
  ASTIdentifier               *ident;
  ASTString                   *string_literal;
@@ -107,7 +109,7 @@ union YYSTYPE
  std::string                 *string;
  int token;
 
-#line 111 "ascent_expressions_parser.hpp"
+#line 113 "ascent_expressions_parser.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -122,8 +124,8 @@ int ascentparse (void);
 /* "%code provides" blocks.  */
 #line 16 "parser.y"
 
-  ASTExpression *get_result();
+  ASTNode *get_result();
 
-#line 128 "ascent_expressions_parser.hpp"
+#line 130 "ascent_expressions_parser.hpp"
 
 #endif /* !YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED  */

@@ -44,6 +44,9 @@
 #define rover_png_encoder_h
 
 #include <string>
+// thirdparty includes
+#include <vtkh/utils/PNGEncoder.hpp>
+
 namespace rover {
 
 class PNGEncoder
@@ -73,15 +76,8 @@ public:
 
   void           Save(const std::string &filename);
 
-  void          *PngBuffer();
-  size_t         PngBufferSize();
-
-
-  void           Cleanup();
-
 private:
-  unsigned char *m_buffer;
-  size_t         m_buffer_size;
+  vtkh::PNGEncoder m_encoder;
 };
 
 } // namespace rover

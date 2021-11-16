@@ -251,9 +251,9 @@ Using the Jupyter Extract for interactive Python analysis
 
 Ascent's Jupyter extract provides a path for interactive analysis and visualization in Jupyter Notebook. The Jupyter extract is an extension of the Python extract that allows tweaking of analysis methods as the simulation runs.
 
-In this demo we provide two example Jupyter Notebooks with code and instructions under ``examples/ascent/tutorial/jupyter_extract/notebooks`` and demonstrate how to connect them with Ascent.
+In this demo we provide two example Jupyter Notebooks with code and instructions under ``examples/tutorial/cloverleaf_demos/jupyter_extract/notebooks`` and demonstrate how to connect them with Ascent.
 
-First you will need to install the ``ascent_jupyter_bridge`` python module located in your source directory under ``src/ascent/ascent_jupyter_bridge``. Navigate to that directory and make sure you have ``pip`` installed then run the following commands:
+First you will need to install the ``ascent_jupyter_bridge`` python module located in your source directory under ``src/ascent/python/ascent_jupyter_bridge``. Navigate to that directory and make sure you have ``pip`` installed then run the following commands:
 
 .. code::
 
@@ -275,7 +275,7 @@ Then edit the ``ascent_actions.yaml`` file to request that Ascent run the Jupyte
 .. literalinclude:: ../../../src/examples/tutorial/cloverleaf_demos/jupyter_extract/ascent_actions.yaml
    :language: yaml
 
-(Also available in install directory: `examples/ascent/tutorial/cloverleaf_demos/jupyter_extract/ascent_actions.yaml`)
+(Also available in install directory: `examples/tutorial/cloverleaf_demos/jupyter_extract/ascent_actions.yaml`)
 
 Finally, run Cloverleaf3D:
 
@@ -283,7 +283,7 @@ Finally, run Cloverleaf3D:
 
    mpiexec -n 2 ./cloverleaf3d_par
 
-After the simulation has progressed a number of timesteps it will wait for a connection from Jupyter Notebook. To connect to a demo notebook make sure you are in ``examples/ascent/tutorial/jupyter_extract/notebooks`` and run:
+After the simulation has progressed a number of timesteps it will wait for a connection from Jupyter Notebook. To connect to a demo notebook make sure you are in ``examples/tutorial/jupyter_extract/notebooks`` and run:
 
 .. code::
 

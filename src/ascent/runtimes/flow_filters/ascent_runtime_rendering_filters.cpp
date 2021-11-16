@@ -63,6 +63,7 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
@@ -185,6 +186,8 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("world_annotations");
+  r_valid_paths.push_back("screen_annotations");
   r_valid_paths.push_back("axis_scale_x");
   r_valid_paths.push_back("axis_scale_y");
   r_valid_paths.push_back("axis_scale_z");
@@ -215,6 +218,12 @@ protected:
   std::shared_ptr<VTKHCollection> m_collection;
   std::string m_topo_name;
   bool m_valid;
+  // we have to keep the data object that spit out
+  // the vtkh collection we are rendering since
+  // this could be a temporary result created by a
+  // pipeline. If we dont' keep it, then it will
+  // be freed before we can render it
+  DataObject m_data;
 public:
   RendererContainer()
    : m_valid(false)
@@ -223,12 +232,14 @@ public:
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
                     std::shared_ptr<VTKHCollection> collection,
-                    std::string topo_name)
+                    std::string topo_name,
+                    DataObject &data_object)
     : m_key(key),
       m_registry(r),
       m_collection(collection),
       m_topo_name(topo_name),
-      m_valid(true)
+      m_valid(true),
+      m_data(data_object)
   {
     // we have to keep around the dataset so we bring the
     // whole collection with us
@@ -329,6 +340,19 @@ vtkh::Render parse_render(const conduit::Node &render_node,
                                          image_height,
                                          bounds,
                                          image_name);
+  Node meta = Metadata::n_metadata;
+  if(meta.has_path("comments"))
+  {
+    const conduit::Node comments_node = meta["comments"];
+    const int num_comments = comments_node.number_of_children();
+    std::vector<std::string> comments;
+    for(int i = 0; i < num_comments; ++i)
+    {
+      comments.push_back(comments_node.child(i).as_string());
+    }
+    render.SetComments(comments);
+  }
+
   //
   // render create a default camera. Now get it and check for
   // values that override the default view
@@ -345,6 +369,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     render.SetShadingOn(on);
   }
 
+  bool annot_all_off = false;
   if(render_node.has_path("annotations"))
   {
     if(!render_node["annotations"].dtype().is_string())
@@ -356,6 +381,35 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     if(annot == "false")
     {
       render.DoRenderAnnotations(false);
+      annot_all_off = true;
+    }
+  }
+
+  if(!annot_all_off && render_node.has_path("world_annotations"))
+  {
+    if(!render_node["world_annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/world_annotations node must be a string value");
+    }
+    const std::string annot = render_node["world_annotations"].as_string();
+    // default is always render world annotations
+    if(annot == "false")
+    {
+      render.DoRenderWorldAnnotations(false);
+    }
+  }
+
+  if(!annot_all_off && render_node.has_path("screen_annotations"))
+  {
+    if(!render_node["screen_annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/screen_annotations node must be a string value");
+    }
+    const std::string annot = render_node["screen_annotations"].as_string();
+    // default is always render screen annotations
+    if(annot == "false")
+    {
+      render.DoRenderScreenAnnotations(false);
     }
   }
 
@@ -510,7 +564,7 @@ public:
     // note: there is an implicit assumption here that these
     // resources are static and only need to be generated one
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
-    { 
+    {
         conduit::utils::create_directory(m_db_path);
 
         // load cinema web resources from compiled in resource tree
@@ -874,13 +928,13 @@ DefaultRender::execute()
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    Node meta = Metadata::n_metadata;
 
     int cycle = 0;
 
-    if(meta->has_path("cycle"))
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].as_int32();
     }
 
     // figure out if we need the original bounds for the scene
@@ -966,7 +1020,7 @@ DefaultRender::execute()
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
 
-          std::string output_path = default_dir(graph());
+          std::string output_path = default_dir();
 
           if(!render_node.has_path("db_name"))
           {
@@ -1010,14 +1064,14 @@ DefaultRender::execute()
           if(render_node.has_path("image_name"))
           {
             image_name = render_node["image_name"].as_string();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else
           {
@@ -1047,7 +1101,7 @@ DefaultRender::execute()
       {
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
-        image_name = output_dir(image_name, graph());
+        image_name = output_dir(image_name);
       }
 
       vtkm::Bounds scene_bounds = *bounds;
@@ -1063,6 +1117,18 @@ DefaultRender::execute()
                                              1024,
                                              scene_bounds,
                                              image_name);
+      Node meta = Metadata::n_metadata;
+      if(meta.has_path("comments"))
+      {
+        const conduit::Node comments_node = meta["comments"];
+        const int num_comments = comments_node.number_of_children();
+        std::vector<std::string> comments;
+        for(int i = 0; i < num_comments; ++i)
+        {
+          comments.push_back(comments_node.child(i).as_string());
+        }
+        render.SetComments(comments);
+      }
 
       renders->push_back(render);
     }
@@ -1482,11 +1548,14 @@ CreatePlot::execute()
 
     std::string key = this->name() + "_cont";
 
-    detail::RendererContainer *container = new detail::RendererContainer(key,
-                                                                         &graph().workspace().registry(),
-                                                                         renderer,
-                                                                         collection,
-                                                                         topo_name);
+    detail::RendererContainer *container
+      = new detail::RendererContainer(key,
+                                      &graph().workspace().registry(),
+                                      renderer,
+                                      collection,
+                                      topo_name,
+                                      *data_object);
+
     set_output<detail::RendererContainer>(container);
 
 }

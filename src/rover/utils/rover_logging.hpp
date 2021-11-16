@@ -63,7 +63,7 @@ protected:
 #define ROVER_ERROR(msg)
 
 #define ROVER_DATA_OPEN(name)
-#define ROVER_DATA_CLOSE(name)
+#define ROVER_DATA_CLOSE(name) (void)name;
 #define ROVER_DATA_ADD(key,value)
 #endif
 } // namespace rover

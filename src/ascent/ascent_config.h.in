@@ -82,10 +82,14 @@
 
 
 #cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
+#cmakedefine ASCENT_FIDES_ENABLED     "@FIDES_FOUND@"
 #cmakedefine ASCENT_MFEM_ENABLED      "@MFEM_FOUND@"
 #cmakedefine ASCENT_DRAY_ENABLED      "@DRAY_FOUND@"
 #cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
 #cmakedefine ASCENT_PYTHON_ENABLED    "@PYTHON_FOUND@"
+#cmakedefine ASCENT_JIT_ENABLED      "@ASCENT_JIT_ENABLED@"
+#cmakedefine ASCENT_WEBSERVER_ENABLED "@ASCENT_WEBSERVER_ENABLED@"
+
 //-----------------------------------------------------------------------------
 //
 // #define platform check helpers
@@ -103,6 +107,3 @@
 
 
 #endif
-
-
-

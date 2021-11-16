@@ -52,8 +52,8 @@
 #define ASCENT_EXPRESSION_FILTERS
 
 #include <ascent.hpp>
-
 #include <flow_filter.hpp>
+#include <flow_graph.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -72,6 +72,28 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
+
+// for multi line statements, we have intermediate symbols:
+// bananas = max(field('pressure'))
+// bananas < 0
+// We want to keep the intermediate results around (e.g., the value of
+// bananas) to put in the cache and for debugging,
+// but we don't know what the value is until we execute the graph.
+// Each filter will call this function to update the return values.
+void resolve_symbol_result(flow::Graph &graph,
+                           const conduit::Node *output,
+                           const std::string filter_name);
+
+// Need to validate the binning input in several places
+// so consolidate this call
+void binning_interface(const std::string &reduction_var,
+                       const std::string &reduction_op,
+                       const conduit::Node &n_empty_bin_val,
+                       const conduit::Node &n_component,
+                       const conduit::Node &n_axis_list,
+                       conduit::Node &dataset,
+                       conduit::Node &n_binning,
+                       conduit::Node &n_output_axes);
 
 //-----------------------------------------------------------------------------
 ///
@@ -107,6 +129,17 @@ class History : public ::flow::Filter
 public:
   History();
   ~History();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class HistoryRange : public ::flow::Filter
+{
+public:
+  HistoryRange();
+  ~HistoryRange();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -173,6 +206,17 @@ class Cycle : public ::flow::Filter
 public:
   Cycle();
   ~Cycle();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Time : public ::flow::Filter
+{
+public:
+  Time();
+  ~Time();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -267,6 +311,28 @@ public:
   virtual void execute();
 };
 
+class ScalarGradient : public ::flow::Filter
+{
+public:
+  ScalarGradient();
+  ~ScalarGradient();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class ArrayGradient : public ::flow::Filter
+{
+public:
+  ArrayGradient();
+  ~ArrayGradient();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class FieldSum : public ::flow::Filter
 {
 public:
@@ -327,6 +393,51 @@ class Magnitude : public ::flow::Filter
 public:
   Magnitude();
   ~Magnitude();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Abs : public ::flow::Filter
+{
+public:
+  Abs();
+  ~Abs();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+
+class Exp : public ::flow::Filter
+{
+public:
+  Exp();
+  ~Exp();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Log : public ::flow::Filter
+{
+public:
+  Log();
+  ~Log();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Pow : public ::flow::Filter
+{
+public:
+  Pow();
+  ~Pow();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -421,6 +532,17 @@ public:
   virtual void execute();
 };
 
+class Topo : public ::flow::Filter
+{
+public:
+  Topo();
+  ~Topo();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class BinByIndex : public ::flow::Filter
 {
 public:
@@ -465,16 +587,6 @@ public:
   virtual void execute();
 };
 
-class ExpressionList : public ::flow::Filter
-{
-public:
-  ExpressionList();
-  ~ExpressionList();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
 
 class Quantile : public ::flow::Filter
 {
@@ -525,6 +637,39 @@ class Bounds : public ::flow::Filter
 public:
   Bounds();
   ~Bounds();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Lineout : public ::flow::Filter
+{
+public:
+  Lineout();
+  ~Lineout();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Nan : public ::flow::Filter
+{
+public:
+  Nan();
+  ~Nan();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Replace : public ::flow::Filter
+{
+public:
+  Replace();
+  ~Replace();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
