@@ -533,7 +533,6 @@ Ascent::close()
     {
         if(m_runtime != NULL)
         {
-            m_runtime->Cleanup();
             delete m_runtime;
             m_runtime = NULL;
         }
