@@ -3549,7 +3549,7 @@ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     {
       #if defined(ASCENT_VTKM_ENABLED)
       auto depthData = GetScalarDataAsArrayHandle<float>(*dataset, "depth");
-      depth = calculateMaxDepth(depthData);
+      depth = (float)calculateMaxDepth(depthData);
       #else
       int size = height*width;
       std::vector<float> depth_data = GetScalarData<float>(*dataset, "depth", height, width);
