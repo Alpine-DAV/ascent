@@ -3523,7 +3523,7 @@ T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 
   if (depthData.GetNumberOfValues() > 0)
   {
-    MaxValueWithChecks<float> max{
+    MaxValueWithChecks<T> max{
       -1.0 * (T)std::numeric_limits<int>::max(),
       (T)std::numeric_limits<int>::max()};
     depth = vtkm::cont::Algorithm::Reduce(depthData, depth, max);
