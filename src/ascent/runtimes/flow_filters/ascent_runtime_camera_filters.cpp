@@ -98,6 +98,7 @@
 #include <math.h>
 #include <fstream>
 #include <iostream>
+#include <functional>
 
 #ifdef ASCENT_USE_OPENMP
 #include <thread>
@@ -2357,7 +2358,7 @@ calculateVisibilityRatio(vtkh::DataSet* dataset, std::vector<Triangle> &local_tr
     if(triangles.GetNumberOfValues() > 0) 
     {
       auto triangle_areas = CalculateTriangleAreas(triangles);
-      float triangle_area = vtkm::cont::Algorithm::Reduce(triangle_areas, 0.0f);
+      float triangle_area = vtkm::cont::Algorithm::Reduce(triangle_areas, 0.0f, std::plus<float>());
       //auto triangle_area = vtkm::cont::Algorithm::Reduce(triangle_areas, 0.0f);
       visibility_ratio = (float)triangle_area / global_area;
     }
