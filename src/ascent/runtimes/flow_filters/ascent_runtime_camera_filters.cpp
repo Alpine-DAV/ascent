@@ -3516,11 +3516,10 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
 
 #if defined(ASCENT_VTKM_ENABLED)
 template <typename T>
-float calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
-//T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
+T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 {
-  float depth = -1.0 * (T)std::numeric_limits<int>::max();
-  //T depth = -1.0 * (T)std::numeric_limits<int>::max();
+  //float depth = -1.0 * (T)std::numeric_limits<int>::max();
+  T depth = -1.0 * (T)std::numeric_limits<int>::max();
 
   if (depthData.GetNumberOfValues() > 0)
   {
