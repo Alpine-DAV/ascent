@@ -68,15 +68,13 @@
 //-----------------------------------------------------------------------------
 //Misc Functions
 //-----------------------------------------------------------------------------
-double ceil441(double f);
-double floor441(double f);
-double nabs(double x);
-double calculateArea(double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2);
+float nabs(float x);
+float calculateArea(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2);
 template<typename T> EXEC_CONT void normalize(T * normal);
 template<typename T> EXEC_CONT T dotProduct(const T* v1, const T* v2, int length);
 template<typename T> EXEC_CONT void crossProduct(const T a[3], const T b[3], T c[3]);
-double SineParameterize(int curFrame, int nFrames, int ramp);
-void fibonacci_sphere(int i, int samples, double* points);
+float SineParameterize(int curFrame, int nFrames, int ramp);
+void fibonacci_sphere(int i, int samples, float* points);
 
 //-----------------------------------------------------------------------------
 //Matrix Class
@@ -93,28 +91,6 @@ class Matrix
 
 };
 
-
-
-//-----------------------------------------------------------------------------
-//Screen Class
-//-----------------------------------------------------------------------------
-class Screen
-{
-  public:
-      int           width, height;
-      double*       zBuff;
-      double*       values;
-      double        visible;
-      double        occluded;
-      int*          triScreen;
-      double**      triCamera;
-
-      void zBufferInitialize();
-      void triScreenInitialize();
-      void triCameraInitialize();
-      void valueInitialize();
-};
-
 //-----------------------------------------------------------------------------
 //Camera Class
 //-----------------------------------------------------------------------------
@@ -127,7 +103,6 @@ class Camera
     double          position[3];
     double          focus[3];
     double          up[3];
-    Screen          screen;
 
     EXEC_CONT Matrix CameraTransform(void) const;
     EXEC_CONT Matrix ViewTransform(void) const;
@@ -135,26 +110,7 @@ class Camera
     EXEC_CONT Matrix DeviceTransform() const;
 };
 
-Camera GetCamera(int frame, int nframes, double radius, float *lookat, float *bounds);
-//-----------------------------------------------------------------------------
-//Edge Class
-//-----------------------------------------------------------------------------
-
-class Edge{
-  public:
-	double x1, x2, y1, y2, z1, z2, slope, b, minY, maxY, value1, value2; //as in y = mx + b
-	bool   vertical, relevant; //find the vertical line, horizontal line and hypotenuse. relevant = hypotenuse; not relevant = horizontal
-	Edge(){}
-	Edge (double x_1, double y_1, double z_1, double x_2, double y_2, double z_2, double v_1, double v_2);
-	double findX(double y);
-	double interpolate(double a, double b, double C, double D, double fa, double fb, double x);
-	double findZ(double y);
-	double findValue(double y);
-	bool   applicableY(double y);
-};
-
-
-
+Camera GetCamera(int frame, int nframes, float radius, float *lookat, float *bounds);
 
 
 //-----------------------------------------------------------------------------
@@ -184,8 +140,8 @@ class Triangle
       
       void printTri() const;
       EXEC_CONT float calculateTriArea() const;
-      EXEC_CONT double findMin(double a, double b, double c) const;
-      EXEC_CONT double findMax(double a, double b, double c) const;
+      EXEC_CONT float findMin(float a, float b, float c) const;
+      EXEC_CONT float findMax(float a, float b, float c) const;
       EXEC_CONT void cutoff(int w, int h);
 };
 
@@ -195,18 +151,6 @@ std::vector<Triangle>
 GetTriangles(vtkh::DataSet &vtkhData, std::string field_name );
 double CalculateNormalCameraDot(double* cameraPositions, Triangle tri);
 
-
-//Stefan's copied over for simplex
-float calculateMetric(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, int i1, int i2, Camera c);
-float calculateMetricScore(vtkh::DataSet* d, std::string s1, std::string s2, std::vector<Triangle> &t, double a, int i1, int i2, Camera c, float fmax, float fmin, int xbins, int ybins, int zbins, float diameter);
-
-void AddTriangleFields2(vtkh::DataSet &d);
-vtkh::DataSet* AddTriangleFields(vtkh::DataSet &d, float &xmin, float &xmax, float &ymin, float &ymax, float &zmin, float &zmax, int xbins, int ybins, int zbins);
-vtkh::DataSet* AddTriangleFields(vtkh::DataSet &d);
-
-std::vector<Triangle> GetTrianglesAndArea(vtkh::DataSet &d, double &a);
-std::vector<Triangle> GetTriangles(vtkh::DataSet &d);
-//End Stefan's copied over
 #endif
 
 //-----------------------------------------------------------------------------

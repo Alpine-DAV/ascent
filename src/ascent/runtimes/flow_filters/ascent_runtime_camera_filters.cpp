@@ -323,113 +323,6 @@ Camera::DeviceTransform(int width, int height) const
 }
 
 
-//Edge Class Functions
-
-
-Edge::Edge (double x_1, double y_1, double z_1,  double x_2, double y_2, double z_2, double v_1, double v_2)
-{
-  x1 = x_1;
-  x2 = x_2;
-  y1 = y_1;
-  y2 = y_2;
-  z1 = z_1;
-  z2 = z_2;
-  value1  = v_1;
-  value2  = v_2;
-
-  // find relationship of y1 and y2 for min and max bounds of the line
-  if (y1 < y2)
-    minY = y1;
-  else
-    minY = y2;
-  if (y1 > y2)
-    maxY = y1;
-  else
-    maxY = y2;
-
-  if (x2 - x1 == 0)
-  { //if vertical, return x
-    vertical = true;
-    slope = x1;
-  }
-  else
-  {
-    vertical = false;
-    slope = (y2 - y1)/(x2 - x1); //slope is 0 if horizontal, else it has a slope
-  }
-  b = y1 - slope*x1;
-  if (y2 - y1 == 0) //if horizontal disregard
-    relevant = false;
-  else
-    relevant = true;
-}
-
-//find x on the line of y1 and y2 and given y with ymin <= y <= ymax.
-double
-Edge::findX(double y){
-  if (vertical == true){
-    return slope;
-  }
-  else{
-    if (slope == 0)
-      return 0;
-    else{
-      double x = (y - b)/slope;
-      return x;
-    }
-  }
-}
-
-	//A = y1, B = y2, fX = interpolated point, X = desired point, fA = value at A, fB = value at B
-	//(x-A)/(B-A) ratio of y between y1 and y2
-	//interpolate finds the value (z or rgb or norm vector) at y between y1 and y2.
-double
-Edge::interpolate(double a, double b, double C, double D, double fa, double fb, double x)
-{
-  double A, B, fA, fB;
-  if(C < D)
-  {
-    A = a;
-    B = b;
-    fA = fa;
-    fB = fb;
-  }
-  else
-  {
-    A = b;
-    B = a;
-    fA = fb;
-    fB = fa;
-  }
-  double fX = fA + ((x - A)/(B - A))*(fB-fA);
-  return fX;
-}
-
-double
-Edge::findZ(double y)
-{
-  double z = interpolate(y1, y2, x1, x2, z1, z2, y);
-  return z;
-}
-
-double
-Edge::findValue(double y)
-{
-  double value = interpolate(y1, y2, x1, x2, value1, value2, y);
-  return value;
-}
-
-
-bool
-Edge::applicableY(double y)
-{
-  if (y >= minY && y <= maxY)
-    return true;
-  else if (nabs(minY - y) < 0.00001 || nabs(maxY - y) < 0.00001)
-    return true;
-  else
-    return false;
-}
 
 //Matrix Class Functions
 void
@@ -483,47 +376,6 @@ Matrix::TransformPoint(const double *ptIn, double *ptOut)
            + ptIn[3]*A[3][3];
 }
 
-
-//Screen Class Functions
-void 
-Screen::zBufferInitialize()
-{
-  zBuff = new double[width*height];
-  int i;
-  for (i = 0; i < width*height; i++)
-    zBuff[i] = -1.0;
-}
-
-void 
-Screen::triScreenInitialize()
-{
-  triScreen = new int[width*height];
-  int i;
-  for (i = 0; i < width*height; i++)
-    triScreen[i] = -1;
-}
-
-void 
-Screen::triCameraInitialize()
-{
-  triCamera = new double*[width*height];
-  int i;
-  double* position = new double[3];
-  position[0] = 0;
-  position[1] = 0;
-  position[2] = 0;
-  for (i = 0; i < width*height; i++)
-    triCamera[i] = position;
-}
-
-void 
-Screen::valueInitialize()
-{
-  values = new double[width*height];
-  int i;
-  for (i = 0; i < width*height; i++)
-    values[i] = 0.0;
-}
 
 //Triangle Class 
 
@@ -597,10 +449,10 @@ Triangle::cutoff(int width, int height)
   if(Y[2] > height) Y[2] = height;
 }
 
-double
-Triangle::findMin(double a, double b, double c) const
+float
+Triangle::findMin(float a, float b, float c) const
 {
-  double min = a;
+  float min = a;
   if (b < min)
     min = b;
   if (c < min)
@@ -608,10 +460,10 @@ Triangle::findMin(double a, double b, double c) const
   return min;
 }
 
-double
-Triangle::findMax(double a, double b, double c) const
+float
+Triangle::findMax(float a, float b, float c) const
 {
-  double max = a;
+  float max = a;
   if (b > max)
     max = b;
   if (c > max)
@@ -643,28 +495,18 @@ findMin(float a, float b, float c)
 
 
 //Misc Functions
-double ceil441(double f)
-{
-  return ceil(f-0.00001);
-}
-
-double floor441(double f)
-{
-  return floor(f+0.00001);
-}
-
-double nabs(double x)
+float nabs(float x)
 {
   if (x < 0)
     x = (x*(-1));
   return x;
 }
 
-double calculateArea(double x0, double y0, double z0, double x1, double y1, double z1, double x2, double y2, double z2)
+float calculateArea(float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2)
 {
-  double area = 0.0;
-  double AC[3];
-  double BC[3];
+  float area = 0.0;
+  float AC[3];
+  float BC[3];
 
   AC[0] = x1 - x0;
   AC[1] = y1 - y0;
@@ -674,7 +516,7 @@ double calculateArea(double x0, double y0, double z0, double x1, double y1, doub
   BC[1] = y2 - y0;
   BC[2] = z2 - z0;
 
-  double orthogonal_vec[3];
+  float orthogonal_vec[3];
 
   orthogonal_vec[0] = AC[1]*BC[2] - BC[1]*AC[2];
   orthogonal_vec[1] = AC[0]*BC[2] - BC[0]*AC[2];
@@ -717,50 +559,50 @@ void crossProduct(const T a[3], const T b[3], T output[3])
 }
 
 
-double SineParameterize(int curFrame, int nFrames, int ramp)
+float SineParameterize(int curFrame, int nFrames, int ramp)
 {
   int nNonRamp = nFrames-2*ramp;
-  double height = 1./(nNonRamp + 4*ramp/M_PI);
+  float height = 1./(nNonRamp + 4*ramp/M_PI);
   if (curFrame < ramp)
   {
-    double factor = 2*height*ramp/M_PI;
-    double eval = cos(M_PI/2*((double)curFrame)/ramp);
+    float factor = 2*height*ramp/M_PI;
+    float eval = cos(M_PI/2*((float)curFrame)/ramp);
     return (1.-eval)*factor;
   }
   else if (curFrame > nFrames-ramp)
   {
     int amount_left = nFrames-curFrame;
-    double factor = 2*height*ramp/M_PI;
-    double eval =cos(M_PI/2*((double)amount_left/ramp));
+    float factor = 2*height*ramp/M_PI;
+    float eval =cos(M_PI/2*((float)amount_left/ramp));
     return 1. - (1-eval)*factor;
   }
-  double amount_in_quad = ((double)curFrame-ramp);
-  double quad_part = amount_in_quad*height;
-  double curve_part = height*(2*ramp)/M_PI;
+  float amount_in_quad = ((float)curFrame-ramp);
+  float quad_part = amount_in_quad*height;
+  float curve_part = height*(2*ramp)/M_PI;
   return quad_part+curve_part;
 }
 
 
 Camera
-GetCameraPhiTheta(float* bounds,  double radius, int thetaPos, int numTheta, int phiPos, int numPhi, float *lookat)
+GetCameraPhiTheta(float* bounds,  float radius, int thetaPos, int numTheta, int phiPos, int numPhi, float *lookat)
 {
   Camera c;
-  double zoom = 3.0;
+  float zoom = 3.0;
   c.near = zoom/20;
   c.far = zoom*25;
   c.angle = M_PI/6;
 
 //  cerr << "radius: " << radius << endl;
 
-  double theta = (thetaPos / (numTheta - 1.0)) * M_PI * 2.0;
-  double phi = (phiPos / (numPhi - 1.0)) * M_PI;
+  float theta = (thetaPos / (numTheta - 1.0)) * M_PI * 2.0;
+  float phi = (phiPos / (numPhi - 1.0)) * M_PI;
   
 //  cerr << "phi: " << phi << " phiPos: " << phiPos << " numPhi: " << numPhi << endl;
 //  cerr << "theta: " << theta << " thetaPos: " << thetaPos << " numTheta: " << numTheta << endl;
   
-  double xm = (bounds[0] + bounds[1])/2;
-  double ym = (bounds[2] + bounds[3])/2;
-  double zm = (bounds[4] + bounds[5])/2;
+  float xm = (bounds[0] + bounds[1])/2;
+  float ym = (bounds[2] + bounds[3])/2;
+  float zm = (bounds[4] + bounds[5])/2;
 
 //  cerr << "sin(theta): " << sin(theta) << " cos(phi): " << cos(phi) << " cos(theta): " << cos(theta) << " sin(phi): " << sin(phi) << endl;
   
@@ -784,13 +626,13 @@ GetCameraPhiTheta(float* bounds,  double radius, int thetaPos, int numTheta, int
 }
 
 Camera
-GetCamera(int frame, int nframes, double radius, float* lookat, float *bounds)
+GetCamera(int frame, int nframes, float radius, float* lookat, float *bounds)
 {
-//  double t = SineParameterize(frame, nframes, nframes/10);
-  double points[3];
+//  float t = SineParameterize(frame, nframes, nframes/10);
+  float points[3];
   fibonacci_sphere(frame, nframes, points);
   Camera c;
-  double zoom = 3.0;
+  float zoom = 3.0;
   c.near = zoom/8;
   c.far = zoom*5;
   c.angle = M_PI/6;
@@ -1078,6 +920,50 @@ GetBin(float x0, float y0, float z0, float xmin, float xmax, float ymin, float y
     cerr << "id: " << id << endl;
   }
   return id;
+}
+
+
+vtkh::DataSet*
+AddTriangleFields(vtkh::DataSet &vtkhData)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  vtkh::DataSet *newDataSet = new vtkh::DataSet;
+  //if there is data: loop through domains and grab all triangles.
+  if (!vtkhData.IsEmpty())
+  {
+    for (int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+    
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> X0;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y0;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Z0;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> X1;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y1;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Z1;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> X2;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y2;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> Z2;
+      vtkm::cont::Invoker invoker;
+      invoker(GetTriangleFields{}, cellset, coords, X0, Y0, Z0, X1, Y1, Z1, X2, Y2, Z2);
+
+      dataset.AddCellField("X0", X0);
+      dataset.AddCellField("Y0", Y0);
+      dataset.AddCellField("Z0", Z0);
+      dataset.AddCellField("X1", X1);
+      dataset.AddCellField("Y1", Y1);
+      dataset.AddCellField("Z1", Z1);
+      dataset.AddCellField("X2", X2);
+      dataset.AddCellField("Y2", Y2);
+      dataset.AddCellField("Z2", Z2);
+      newDataSet->AddDomain(dataset, localDomainIds[i]);
+    }
+  }
+  return newDataSet;
 }
 
 vtkh::DataSet*
@@ -2079,22 +1965,22 @@ CalculateFlatShading(const vtkm::cont::ArrayHandle<Triangle>& triangles, Camera 
 }
 #endif
 
-void fibonacci_sphere(int i, int samples, double* points)
+void fibonacci_sphere(int i, int samples, float* points)
 {
   int rnd = 1;
   //if randomize:
   //    rnd = random.random() * samples
 
-  double offset = 2./samples;
-  double increment = M_PI * (3. - sqrt(5.));
+  float offset = 2./samples;
+  float increment = M_PI * (3. - sqrt(5.));
 
-  double y = ((i * offset) - 1) + (offset / 2);
-  double r = sqrt(1 - pow(y,2));
+  float y = ((i * offset) - 1) + (offset / 2);
+  float r = sqrt(1 - pow(y,2));
 
-  double phi = ((i + rnd) % samples) * increment;
+  float phi = ((i + rnd) % samples) * increment;
 
-  double x = cos(phi) * r;
-  double z = sin(phi) * r;
+  float x = cos(phi) * r;
+  float z = sin(phi) * r;
 
   points[0] = x;
   points[1] = y;
@@ -3517,7 +3403,6 @@ calculatePlemenosAndBenayada(vtkh::DataSet *dataset, int num_local_triangles, in
 template <typename T>
 T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 {
-  //float depth = -1.0 * (T)std::numeric_limits<int>::max();
   T depth = -1.0 * (T)std::numeric_limits<int>::max();
 
   if (depthData.GetNumberOfValues() > 0)
@@ -3535,14 +3420,14 @@ T calculateMaxDepth(const vtkm::cont::ArrayHandle<T> &depthData)
 float
 calculateMaxDepth(vtkh::DataSet *dataset, int height, int width)
 {
-float depth = -FLT_MAX;
-#if ASCENT_MPI_ENABLED
-// Get the number of processes
-int world_size;
-MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-// Get the rank of this process
-int rank;
-MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  float depth = -FLT_MAX;
+  #if ASCENT_MPI_ENABLED
+  // Get the number of processes
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  // Get the rank of this process
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     
     if(rank == 0)
     {
@@ -3640,7 +3525,7 @@ calculateMaxSilhouette(vtkh::DataSet *dataset, int height, int width)
 }
 */
 float
-calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, std::vector<Triangle> &local_triangles, double worldspace_local_area, int height, int width, Camera camera, float field_max, float field_min, int xBins, int yBins, int zBins, float diameter)
+calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, std::vector<Triangle> &local_triangles, double worldspace_local_area, int height, int width, Camera camera, float field_max, float field_min, float diameter)
 {
   float score = 0.0;
 
@@ -3659,13 +3544,9 @@ calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string fie
   else if (metric == "dds_entropy")
   {
     float shading_score = calculateShadingEntropy(dataset, height, width, camera);
-    cerr << "shading score: " << shading_score << endl;
     float data_score = calculateDataEntropy(dataset, height, width, field_name, field_max, field_min);
-    cerr << "data_score: " << data_score << endl;
     float depth_score = calculateDepthEntropy(dataset, height, width, diameter);
     score = shading_score+data_score+depth_score;
-    cerr << "depth_score: " << depth_score << endl;
-    cerr << "dds_score: " << score << endl;
   }
   else if (metric == "shading_entropy")
   {
@@ -3688,10 +3569,10 @@ calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string fie
     int num_local_triangles = local_triangles.size();
     score = calculatePlemenosAndBenayada(dataset, num_local_triangles, height, width, camera); 
   }
-  else if (metric == "bin_entropy")
+  /*else if (metric == "bin_entropy")
   {
     score = calculateBinEntropy(dataset, height, width, xBins, yBins, zBins);
-  }
+  }*/
   else if (metric == "depth_entropy")
   {
     score = calculateDepthEntropy(dataset, height, width, diameter);
@@ -3780,9 +3661,6 @@ AutoCamera::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("metric");
     valid_paths.push_back("samples");
-//    valid_paths.push_back("sample");
-//    valid_paths.push_back("phi");
-//    valid_paths.push_back("theta");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -3819,14 +3697,13 @@ AutoCamera::execute()
         return;
       }
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-    //int cycle = params()["state/cycle"].to_int32();
+      //int cycle = params()["state/cycle"].to_int32();
       conduit::Node meta = Metadata::n_metadata;
       int cycle = -1;
       if(meta.has_path("cycle"))
       {
         cycle = meta["cycle"].to_int32();
       }
-      cerr << "=====USING CAMERA PIPELINE===== CYCLE: " << cycle << endl;
       std::string field_name = params()["field"].as_string();
       std::string metric     = params()["metric"].as_string();
 
@@ -3835,17 +3712,14 @@ AutoCamera::execute()
         ASCENT_ERROR("Unknown field '"<<field_name<<"'");
       }
       int samples = (int)params()["samples"].as_int64();
-      //int sample2 = (int)params()["sample"].as_int64();
-      //int c_phi = (int)params()["phi"].as_int64();
-      //int c_theta = (int)params()["theta"].as_int64();
-    //TODO:Get the height and width of the image from Ascent
+      //TODO:Get the height and width of the image from Ascent
       int width  = 1000;
       int height = 1000;
 
       std::string topo_name = collection->field_topology(field_name);
 
       vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-//      dataset.PrintSummary(std::cerr);
+      //dataset.PrintSummary(std::cerr);
     
       std::vector<double> field_data = GetScalarData<double>(dataset, field_name.c_str(), height, width);
       
@@ -3873,12 +3747,8 @@ AutoCamera::execute()
       double worldspace_local_area = 0;
       std::vector<Triangle> triangles = GetTrianglesAndArea(dataset, worldspace_local_area);
       int num_local_triangles = triangles.size();
-      float xmax = 0.0, xmin = 0.0, ymax = 0.0, ymin = 0.0, zmax = 0.0, zmin = 0.0;
-      TriangleBounds(triangles,xmin,xmax,ymin,ymax,zmin,zmax);
-      
-      int xBins = 8,yBins = 8,zBins = 8;
 
-      vtkh::DataSet* data = AddTriangleFields(dataset,xmin,xmax,ymin,ymax,zmin,zmax,xBins,yBins,zBins);
+      vtkh::DataSet* data = AddTriangleFields(dataset);
 
 
       vtkm::Bounds lb = dataset.GetBounds();
@@ -3898,25 +3768,22 @@ AutoCamera::execute()
       vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
       float focus[3] = {(float)lookat[0],(float)lookat[1],(float)lookat[2]};
 
-      double winning_score  = -DBL_MAX;
+      float winning_score  = -DBL_MAX;
       int    winning_sample = -1;
-      double losing_score   = DBL_MAX;
+      float losing_score   = DBL_MAX;
       int    losing_sample  = -1;
 
       int count = 0;
 
 #define FIBONACCI 1
 #define PHITHETA 0
-#define PrintTimes 1
-#define PrintScores 1
 
 #if FIBONACCI
 
       //loop through number of camera samples.
       for(int sample = 0; sample < samples; sample++)
       {
-        cerr<< "Sample: " << count << endl;
-    /*================ Scalar Renderer Code ======================*/
+      /*================ Scalar Renderer Code ======================*/
 
         Camera cam = GetCamera(sample, samples, radius, focus, bounds);
         vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
@@ -3937,14 +3804,15 @@ AutoCamera::execute()
         vtkh::DataSet *output = tracer.GetOutput();
 	//output->PrintSummary(std::cerr);
 
-        float score = calculateMetricScore(output, metric, field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
+        float score = calculateMetricScore(output, metric, field_name, 
+		      triangles, worldspace_local_area, height, width, 
+		      cam, datafield_max, datafield_min, diameter);
         
 
-	std::cerr << "sample " << sample << " " << metric << " score: " << score << std::endl;
 	cerr << endl;
         delete output;
 
-    /*================ End Scalar Renderer  ======================*/
+      /*================ End Scalar Renderer  ======================*/
 
 	//original
         if(winning_score < score)
@@ -3964,21 +3832,15 @@ AutoCamera::execute()
 
       if(winning_sample == -1)
         ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-      cerr << metric << " winning_sample " << winning_sample << " score: " << winning_score << endl;
-      cerr << metric << " losing_sample " << losing_sample << " score: " << losing_score << endl;
       Camera best_c = GetCamera(winning_sample, samples, radius, focus, bounds);
     
       vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
 				    (float)best_c.position[2]}; 
       camera->SetPosition(pos);
-      //camera->GetViewUp().Print();
-      //camera->Print();
-
 
       if(!graph().workspace().registry().has_entry("camera"))
       {
-      //cerr << "making camera in registry" << endl;
         graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
       }
 
@@ -3989,8 +3851,6 @@ AutoCamera::execute()
       int phi = 100;
       int theta = 100;
       //int sample_rate = 43;
-      float metric_array[samples];
-      std::string metric_file = metric + "_score.txt";
       int    winning_phi = -1;
       int    winning_theta = -1;
       int    losing_phi  = -1;
@@ -3999,31 +3859,15 @@ AutoCamera::execute()
       //loop through number of camera samples.
       for(int sample = 0; sample < phi*theta; sample++)
       {    
-        cerr<< "Sample: " << sample << endl;
     /*================ Scalar Renderer Code ======================*/
-    //What it does: Quick ray tracing of data (replaces get triangles and scanline).
-    //What we need: z buffer, any other important buffers (tri ids, scalar values, etc.)
-      
-	//Camera cam = GetCameraPhiTheta(bounds, radius, j, theta, i, phi, focus);
-        //#if SEARCH
-	//int phi_pos = (sample*sample_rate)%phi;
-        //int round =(int)((sample*sample_rate)/phi)%phi;
-        //int theta_pos = (phi_pos + round)%theta;	
-	//Camera cam = GetCameraPhiTheta(bounds, radius, theta_pos, theta, phi_pos, phi, focus);
-
-	//If not SEARCH
 	int phi_pos = (sample)%phi;
         int round =(int)((sample)/phi)%phi;
         int theta_pos = (round)%theta;
         Camera cam = GetCameraPhiTheta(bounds, radius, theta_pos, theta, phi_pos, phi, focus);
 
-        //#endif
         vtkm::Vec<vtkm::Float32, 3> pos{(float)cam.position[0],
                                 (float)cam.position[1],
                                 (float)cam.position[2]};
-        #if ASCENT_MPI_ENABLED
-        MPI_Barrier(MPI_COMM_WORLD);
-        #endif
 	auto render_start = high_resolution_clock::now();
         vtkm::cont::Timer ren_timer;
         ren_timer.Start();
@@ -4035,40 +3879,18 @@ AutoCamera::execute()
         tracer.SetInput(data); //vtkh dataset by toponame
         tracer.SetCamera(*camera);
         tracer.Update();
-        //camera->GetViewUp().Print();
-//	cerr << "Camera for " << count << endl;
-//        camera->Print();
 	
 	
 
         vtkh::DataSet *output = tracer.GetOutput();
-//	output->PrintSummary(std::cerr);
-
-        auto render_stop = high_resolution_clock::now();
-        double render_time = duration_cast<microseconds>(render_stop - render_start).count();
-        #if ASCENT_MPI_ENABLED
-	  ren_timer.Stop();
-          vtkm::Float64 ren_time = ren_timer.GetElapsedTime();
-          double array[world_size] = {0};
-          array[rank] = ren_time;
-          //MPI_Allgather(&ren_time, 1, MPI_DOUBLE, array, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-  
-          //if(rank == 0)
-          //  MakeFile("renderer_times.txt", array, world_size);
-//          cerr << "rank: " << rank << " ScalarRenderer time: " << render_time  << " microseconds " << endl;
-        #endif
+	//output->PrintSummary(std::cerr);
 
 
-        cerr << "Starting metric" << endl;
-
-        float metric_score = calculateMetricScore(output, metric, field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, xBins, yBins, zBins, diameter);
+        float metric_score = calculateMetricScore(output, metric, field_name, triangles, worldspace_local_area, height, width, cam, datafield_max, datafield_min, diameter);
         metric_array[sample] = metric_score;
-	cerr << " done with " << metric << ": " << metric_score << endl;
-
 
         float score = metric_score;
-	std::cerr << "sample " << count << " " << metric << " score: " << score << std::endl;
-	cerr << endl;
+
         delete output;
 
     /*================ End Scalar Renderer  ======================*/
@@ -4090,30 +3912,10 @@ AutoCamera::execute()
       } //end of phi*theta loop
       triangles.clear();
 //    delete data;
-//
-      //#if PrintScores
-      #if ASCENT_MPI_ENABLED
-      if(rank == 0)
-      {
-        MakeFile(metric_file,metric_array,samples);
-      }
-      #else
-        MakeFile(metric_file,metric_array,samples);
-      #endif
-      
-      #if ASCENT_MPI_ENABLED
-      MPI_Barrier(MPI_COMM_WORLD);
-      #endif
-      auto setting_camera_start = high_resolution_clock::now();
-      vtkm::cont::Timer cam_timer;
-      cam_timer.Start();
 
       if(winning_phi == -1 || winning_theta == -1)
         ASCENT_ERROR("Something went terribly wrong; No camera position was chosen");
-      cerr << metric << " winning_phi and winning_theta: (" << winning_phi << ", " << winning_theta << ") score: " << winning_score << endl;
-      cerr << metric << " losing_phi and losing_theta: (" << losing_phi << ", " << losing_theta  << ") score: " << losing_score << endl;
       Camera best_c = GetCameraPhiTheta(bounds, radius, winning_theta, theta, winning_phi, phi, focus);
-//      cerr << "Writing out camera: " << sample2 << endl; 
     
       vtkm::Vec<vtkm::Float32, 3> pos{(float)best_c.position[0], 
 	                            (float)best_c.position[1], 
@@ -4125,39 +3927,17 @@ AutoCamera::execute()
 
       if(!graph().workspace().registry().has_entry("camera"))
       {
-      //cerr << "making camera in registry" << endl;
         graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
       }
 
-      auto setting_camera_end = high_resolution_clock::now();
-      double setting_camera = 0.;
-      setting_camera += duration_cast<microseconds>(setting_camera_end - setting_camera_start).count();
 
-      #if ASCENT_MPI_ENABLED
-        cam_timer.Stop();
-        vtkm::Float64 cam_time = cam_timer.GetElapsedTime();
-
-        double array2[world_size] = {0};
-        array2[rank] = cam_time;
-       // MPI_Allgather(&cam_time, 1, MPI_DOUBLE, array2, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-       // if(rank == 0)
-       //   MakeFile("setCam_times.txt", array2, world_size);
-//        cerr << "rank: " << rank << " Setting Camera time: " << setting_camera  << " microseconds " << endl;
-      #endif
 #endif //PHITHETA
 
     //This breaks everything
     //TODO:Figure out where to delete it, probably after where it's grabbed. 
-/*
-#if ASCENT_MPI_ENABLED
-    if(rank == 0)
-      camera->Print();
-#endif
-*/
 
     #endif //vtkm enabled
     set_output<DataObject>(input<DataObject>(0));
-    cerr << "========END CAMERA PIPELINE=======" << endl;
     return;
 }
 
