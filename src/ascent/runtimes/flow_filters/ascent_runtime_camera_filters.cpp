@@ -108,7 +108,6 @@
 //#include <opencv2/imgproc/imgproc.hpp>
 //#include <opencv2/imgcodecs.hpp>
 
-using namespace conduit;
 using namespace std;
 using namespace std::chrono;
 
@@ -3744,7 +3743,7 @@ AutoCamera::~AutoCamera()
 
 //-----------------------------------------------------------------------------
 void
-AutoCamera::declare_interface(Node &i)
+AutoCamera::declare_interface(conduit::Node &i)
 {
     i["type_name"]   = "auto_camera";
     i["port_names"].append() = "in";
