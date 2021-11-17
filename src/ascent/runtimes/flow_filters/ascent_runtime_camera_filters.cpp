@@ -3903,9 +3903,9 @@ AutoCamera::execute()
       double losing_score   = DBL_MAX;
       int    losing_sample  = -1;
 
-      int phi = 100;
-      int theta = 100;
-      int sample_rate = 43;
+      //int phi = 100;
+      //int theta = 100;
+      //int sample_rate = 43;
       int count = 0;
 
 #define FIBONACCI 1
