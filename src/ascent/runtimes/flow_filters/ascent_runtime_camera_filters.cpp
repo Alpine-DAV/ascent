@@ -3903,9 +3903,6 @@ AutoCamera::execute()
       double losing_score   = DBL_MAX;
       int    losing_sample  = -1;
 
-      //int phi = 100;
-      //int theta = 100;
-      //int sample_rate = 43;
       int count = 0;
 
 #define FIBONACCI 1
@@ -3989,6 +3986,9 @@ AutoCamera::execute()
 #endif //FIBONACCI
 
 #if PHITHETA
+      int phi = 100;
+      int theta = 100;
+      //int sample_rate = 43;
       float metric_array[samples];
       std::string metric_file = metric + "_score.txt";
       int    winning_phi = -1;
