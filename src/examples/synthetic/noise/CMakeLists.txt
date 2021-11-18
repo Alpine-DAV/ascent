@@ -63,17 +63,13 @@ else()
    set(noise_openmp_flags "")
 endif()
 
-set(opencv_flags "-L/home/users/marsagli/Camera/opencv-3.4.8/install/lib")
-
 if (ENABLE_SERIAL)
     blt_add_executable(
         NAME        noise_ser
         SOURCES     ${noise_sources}
         DEPENDS_ON  ${noise_deps}
         OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
-
     
-    #blt_add_target_compile_flags(TO noise_ser FLAGS "${opencv_flags}")
     blt_add_target_compile_flags(TO noise_ser FLAGS "${noise_openmp_flags}")
     
     # install target for noise example
@@ -100,7 +96,6 @@ if(MPI_FOUND)
         DEPENDS_ON  ${noise_par_deps}
         OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-
     blt_add_target_compile_flags(TO noise_par FLAGS "-DPARALLEL  ${noise_openmp_flags}")
 
     # install target for mpi noise example
@@ -110,6 +105,7 @@ if(MPI_FOUND)
             ARCHIVE DESTINATION examples/ascent/synthetic/noise
             RUNTIME DESTINATION examples/ascent/synthetic/noise
     )
+
 
 endif()
 

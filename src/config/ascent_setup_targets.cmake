@@ -63,6 +63,7 @@ if(ASCENT_SERIAL_ENABLED)
     set_property(TARGET ascent::ascent
                  PROPERTY INTERFACE_LINK_LIBRARIES
                  ascent)
+
     # try to include conduit with new exports
     if(TARGET conduit::conduit)
         set_property(TARGET ascent::ascent
