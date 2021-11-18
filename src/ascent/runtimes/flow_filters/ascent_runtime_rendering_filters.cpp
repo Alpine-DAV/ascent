@@ -1136,31 +1136,31 @@ DefaultRender::execute()
                                   *bounds,
                                   image_name);
 
-      vtkm::Bounds scene_bounds = *bounds;
-      if(params().has_path("use_original_bounds"))
-      {
-        if(params()["use_original_bounds"].as_string() == "true")
+        vtkm::Bounds scene_bounds = *bounds;
+        if(params().has_path("use_original_bounds"))
         {
-          scene_bounds = original_bounds;
+          if(params()["use_original_bounds"].as_string() == "true")
+          {
+            scene_bounds = original_bounds;
+          }
         }
-      }
 
-      vtkh::Render render = vtkh::MakeRender(1024,
-                                             1024,
-                                             scene_bounds,
-                                             image_name);
-      Node meta = Metadata::n_metadata;
-      if(meta.has_path("comments"))
-      {
-        const conduit::Node comments_node = meta["comments"];
-        const int num_comments = comments_node.number_of_children();
-        std::vector<std::string> comments;
-        for(int i = 0; i < num_comments; ++i)
+        vtkh::Render render = vtkh::MakeRender(1024,
+                                               1024,
+                                               scene_bounds,
+                                               image_name);
+        Node meta = Metadata::n_metadata;
+        if(meta.has_path("comments"))
         {
-          comments.push_back(comments_node.child(i).as_string());
+          const conduit::Node comments_node = meta["comments"];
+          const int num_comments = comments_node.number_of_children();
+          std::vector<std::string> comments;
+          for(int i = 0; i < num_comments; ++i)
+          {
+            comments.push_back(comments_node.child(i).as_string());
+          }
+          render.SetComments(comments);
         }
-        render.SetComments(comments);
-      }
 
       }
       renders->push_back(render);
