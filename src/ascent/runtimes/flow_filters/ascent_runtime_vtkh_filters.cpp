@@ -256,7 +256,7 @@ VTKHMarchingCubes::execute()
         std::string use = params()["use_contour_tree"].as_string();
         if(use == "true")
         {
-          ;//marcher.SetUseContourTree(true);
+          marcher.SetUseContourTree(true);
         }
       }
     }
