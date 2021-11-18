@@ -124,7 +124,6 @@ set(ascent_sources
     runtimes/expressions/ascent_expression_jit_filters.cpp
     runtimes/ascent_flow_runtime.cpp
     runtimes/flow_filters/ascent_runtime_filters.cpp
-    # runtimes/flow_filters/ascent_runtime_simplex_filters.cpp
     runtimes/flow_filters/ascent_runtime_camera_filters.cpp
     runtimes/flow_filters/ascent_runtime_param_check.cpp
     runtimes/flow_filters/ascent_runtime_relay_filters.cpp
@@ -181,7 +180,6 @@ set(ascent_headers
     runtimes/ascent_flow_runtime.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_camera_filters.hpp
-    # runtimes/flow_filters/ascent_runtime_simplex_filters.hpp
     runtimes/flow_filters/ascent_runtime_param_check.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
@@ -236,7 +234,6 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/flow_filters/ascent_runtime_filters.hpp
-        runtimes/flow_filters/ascent_runtime_simplex_filters.hpp
         runtimes/flow_filters/ascent_runtime_camera_filters.hpp
         runtimes/ascent_main_runtime.hpp)
 
@@ -250,7 +247,6 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/flow_filters/ascent_runtime_filters.cpp
-        runtimes/flow_filters/ascent_runtime_simplex_filters.cpp
         runtimes/flow_filters/ascent_runtime_camera_filters.cpp
         runtimes/ascent_main_runtime.cpp)
 
