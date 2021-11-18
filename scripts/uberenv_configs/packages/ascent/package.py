@@ -130,7 +130,7 @@ class Ascent(CMakePackage, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@develop",             when="+vtkh")
+    #depends_on("vtk-h@develop",             when="+vtkh")
     depends_on("vtk-h~openmp",      when="+vtkh~openmp")
     depends_on("vtk-h+cuda+openmp", when="+vtkh+cuda+openmp")
     depends_on("vtk-h+cuda~openmp", when="+vtkh+cuda~openmp")
