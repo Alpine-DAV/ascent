@@ -361,7 +361,6 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   {
     vtkm::rendering::Camera camera = render.GetCamera();
     parse_camera(render_node["camera"], camera);
-    camera.Print();
     render.SetCamera(camera);
   }
   if(render_node.has_path("shading"))
