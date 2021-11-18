@@ -156,7 +156,7 @@ TEST(ascent_contour, test_single_contour_3d)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of the optimal viewpoint filter with 10 samples.";
+    std::string msg = "An example of the contour filter with a single iso value.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
