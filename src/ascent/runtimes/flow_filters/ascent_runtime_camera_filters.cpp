@@ -146,6 +146,7 @@ MakeFile(std::string filename, double *array, int size)
 } 
 //Camera Class Functions
 
+EXEC_CONT
 Matrix
 Camera::CameraTransform(void) const
 {
@@ -219,6 +220,7 @@ Camera::CameraTransform(void) const
 
 };
 
+EXEC_CONT
 Matrix
 Camera::ViewTransform(void) const
 {
@@ -257,6 +259,7 @@ Camera::ViewTransform(void) const
 };
 
 
+EXEC_CONT
 Matrix
 Camera::DeviceTransform() const
 { //(double x, double y, double z){
@@ -290,6 +293,7 @@ Camera::DeviceTransform() const
   return device;
 }
 
+EXEC_CONT
 Matrix
 Camera::DeviceTransform(int width, int height) const
 { //(double x, double y, double z){
@@ -325,6 +329,7 @@ Camera::DeviceTransform(int width, int height) const
 
 
 //Matrix Class Functions
+EXEC_CONT
 void
 Matrix::Print(ostream &o)
 {
@@ -339,6 +344,7 @@ Matrix::Print(ostream &o)
 }
 
 //multiply two matrices
+EXEC_CONT
 Matrix
 Matrix::ComposeMatrices(const Matrix &M1, const Matrix &M2)
 {
@@ -355,6 +361,7 @@ Matrix::ComposeMatrices(const Matrix &M1, const Matrix &M2)
 }
 
 //multiply vector by matrix
+EXEC_CONT
 void
 Matrix::TransformPoint(const double *ptIn, double *ptOut)
 {
@@ -387,6 +394,7 @@ Triangle::printTri() const
   cerr << "Z: " << Z[0] << " " << Z[1] << " " << Z[2] << endl;
 }
 
+EXEC_CONT
 float
 Triangle::calculateTriArea() const
 {
@@ -431,6 +439,7 @@ Triangle::calculateTriArea() const
   return area;
 }
 
+EXEC_CONT
 void
 Triangle::cutoff(int width, int height)
 {
@@ -449,6 +458,7 @@ Triangle::cutoff(int width, int height)
   if(Y[2] > height) Y[2] = height;
 }
 
+EXEC_CONT
 float
 Triangle::findMin(float a, float b, float c) const
 {
@@ -460,6 +470,7 @@ Triangle::findMin(float a, float b, float c) const
   return min;
 }
 
+EXEC_CONT
 float
 Triangle::findMax(float a, float b, float c) const
 {
@@ -530,6 +541,7 @@ float calculateArea(float x0, float y0, float z0, float x1, float y1, float z1, 
 }
 
 template<typename T>
+EXEC_CONT
 void normalize(T * normal) 
 {
   T total = pow(normal[0], 2.0) + pow(normal[1], 2.0) + pow(normal[2], 2.0);
@@ -540,6 +552,7 @@ void normalize(T * normal)
 }
 
 template<typename T>
+EXEC_CONT
 T dotProduct(const T* v1, const T* v2, int length)
 {
   T dotproduct = 0;	
@@ -551,6 +564,7 @@ T dotProduct(const T* v1, const T* v2, int length)
 }
 
 template<typename T>
+EXEC_CONT
 void crossProduct(const T a[3], const T b[3], T output[3])
 {
   output[0] = ((a[1]*b[2]) - (a[2]*b[1])); //ay*bz-az*by
