@@ -543,6 +543,8 @@ written out, so Ascent provides an explicit action to save the session file. Its
 important to note that this involves IO, so its a good idea to only use this actions
 periodically.
 
+.. _ExpressionsSaveSession:
+
 Save Session Action
 ^^^^^^^^^^^^^^^^^^^
 If the simulation crashes, there is no promise that the session file will successfully
