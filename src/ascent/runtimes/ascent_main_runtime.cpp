@@ -68,6 +68,7 @@
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
+#include <conduit_blueprint_mpi.hpp>
 #endif
 
 #include <flow.hpp>
@@ -349,15 +350,53 @@ AscentRuntime::ResetInfo()
     m_info["registered_filter_types"] = registered_filter_types();
 }
 
+
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::AddPublishedMeshInfo()
 {
     m_info["published_mesh_info"] = "COMING SOON!";
-    // for now, use stripped bp index
-    // add size of data for each rank
+    conduit::Node n_index, n_per_rank_tbytes;
+    index_t src_tbytes = m_source.total_bytes_compact();
+    index_t all_tbytes = src_tbytes;
+
+    //
+    // TODO: STRIP INDEX? (We don't need the "path" entires)
+    //
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+
+    blueprint::mpi::mesh::generate_index(m_source,
+                                         "",
+                                         m_info["published_mesh_info/index"],
+                                         mpi_comm);
+
+    Node n_src, n_reduce;
+    n_src = src_tbytes;
+    // all reduce to get total number of bytes across mpi tasks
+    conduit::relay::mpi::sum_all_reduce(n_src,
+                                        n_reduce,
+                                        mpi_comm);
+    all_tbytes = n_reduce.value();
+    m_info["published_mesh_info/total_bytes_compact"] = all_tbytes;
     
-    // total_bytes_compact()
+    // all gather to get per rank total bytes
+    conduit::relay::mpi::all_gather(n_src,
+                                    m_info["published_mesh_info/total_bytes_compact_per_rank"],
+                                    mpi_comm);
+
+#else
+    // TODO: use better index gen?
+    blueprint::mesh::generate_index(m_source[0],
+                                    "",
+                                    1,
+                                    m_info["published_mesh_info/index"]);
+    // these are the same
+    m_info["published_mesh_info/total_bytes_compact"] = all_tbytes;
+    m_info["published_mesh_info/total_bytes_compact_per_rank"] = src_tbytes;
+#endif
+
 }
 
 
