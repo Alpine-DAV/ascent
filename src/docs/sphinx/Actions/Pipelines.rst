@@ -665,17 +665,17 @@ The camera filter also requires a scene to execute the final rendering with the 
 A user can specify the number of camera samples (``samples``) to consider when determining the best camera placement. 
 The user also specifies the field data (``field``) the VQ metric will operate on, as well as the VQ metric (``metric``). 
 The current VQ metrics and respective keywords are:
- Data Entropy : ``data_entropy``
-Depth Entropy : ``depth_entropy``
-DDS Entropy : ``dds_entropy``
-Max Depth : ``max_depth``
-PB : ``pb``
-Projected Area : ``projected_area``
-Shading Entropy : ``shading_entropy``
-Viewpoint Entropy : ``viewpoint_entropy``
-Visibility Ratio : ``visibility_ratio``
-Visible Triangles : ``visible_triangles``
-VKL : ``vkl``
+  Data Entropy : ``data_entropy``
+  Depth Entropy : ``depth_entropy``
+  DDS Entropy : ``dds_entropy``
+  Max Depth : ``max_depth``
+  PB : ``pb``
+  Projected Area : ``projected_area``
+  Shading Entropy : ``shading_entropy``
+  Viewpoint Entropy : ``viewpoint_entropy``
+  Visibility Ratio : ``visibility_ratio``
+  Visible Triangles : ``visible_triangles``
+  VKL : ``vkl``
 
 Usage Recommendation:
 Automatically producing quality camera placements is a difficult task, and not all of the available VQ metrics consistently produce viewpoints that users want to see or find insightful.
