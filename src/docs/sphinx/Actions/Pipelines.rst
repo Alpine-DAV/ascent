@@ -686,6 +686,7 @@ The code below creates a pipeline that first applies a contour filter and then a
 
 
 .. code-block:: c++
+
     conduit::Node pipelines;
     // pipeline 1 & 2
     pipelines["pl1/f1/type"] = "contour";
@@ -717,6 +718,8 @@ The code below creates a pipeline that first applies a contour filter and then a
 
     The default camera placement for this example.
 
+
+
 .. _dataentropycam:
 
 ..  figure:: ../images/cam_dataentropy.png
@@ -725,5 +728,5 @@ The code below creates a pipeline that first applies a contour filter and then a
 
     The camera placement chosen by the VQ metric Data Entropy for this example.
     Note: this rendering has a zoom of 3 whereas the default rendering has a zoom of 1. 
-   This example and implementation of the other VQ metrics can be found in `opt_viewpoint test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_opt_viewpoint.cpp>`_.
+    This example and implementation of the other VQ metrics can be found in `opt_viewpoint test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_opt_viewpoint.cpp>`_.
 
