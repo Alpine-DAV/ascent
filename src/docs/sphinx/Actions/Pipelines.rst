@@ -651,3 +651,79 @@ accurate but slower point based gradients (default).
   params["output_name"] = "my_q";        // (required) name of the output field
   params["use_cell_gradient"] = "false"; // (optional)
 
+
+Automatic Camera
+~~~~~~~~~~~~~~~~
+
+The camera filter is used to automatically choose a camera placement for rendering, basing the decision on a user-chosen viewpoint quality (VQ) metric.
+The camera filter requires a triangular mesh and scalar field data, and works in conjunction with other filters, taking as input the previous filter’s output.
+The camera filter then analyzes the given data using the user-chosen metric and number of considered cameras.
+The number of cameras is chosen by the user and the respective camera placements are determined using Fibonacci’s Lattice, a method for placing points around a unit sphere, and the camera is pointed at the center of the data.
+The camera filter also requires a scene to execute the final rendering with the determined camera placement.
+
+
+A user can specify the number of camera samples (``samples``) to consider when determining the best camera placement. 
+The user also specifies the field data (``field``) the VQ metric will operate on, as well as the VQ metric (``metric``). 
+The current VQ metrics and respective keywords are:
+ Data Entropy : ``data_entropy``
+Depth Entropy : ``depth_entropy``
+DDS Entropy : ``dds_entropy``
+Max Depth : ``max_depth``
+PB : ``pb``
+Projected Area : ``projected_area``
+Shading Entropy : ``shading_entropy``
+Viewpoint Entropy : ``viewpoint_entropy``
+Visibility Ratio : ``visibility_ratio``
+Visible Triangles : ``visible_triangles``
+VKL : ``vkl``
+
+Usage Recommendation:
+Automatically producing quality camera placements is a difficult task, and not all of the available VQ metrics consistently produce viewpoints that users want to see or find insightful.
+If users do not have a prior preference, we recommend using the VQ metric DDS Entropy, which is the sum of Data Entropy, Depth Entropy, and Shading Entropy.
+Marsaglia et al. \cite{marsaglialdav} performed a user study that showed that out of the available VQ metrics, DDS Entropy produces viewpoints that scientific experts prefer.
+
+The code below creates a pipeline that first applies a contour filter and then applies the camera filter before declaring a scene. 
+
+
+.. code-block:: c++
+    conduit::Node pipelines;
+    // pipeline 1 & 2
+    pipelines["pl1/f1/type"] = "contour";
+    pipelines["pl1/f2/type"] = "camera";
+    // contour knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "braid";
+    contour_params["levels"] = 5;
+    //camera knobs
+    conduit::Node &camera_params = pipelines["pl1/f2/params"];
+    camera_params["field"] = "braid";
+    camera_params["metric"] = "data_entropy";
+    int64 samples = 10;
+    camera_params["samples"] = samples;
+
+    //scene knobs
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+
+.. _defaultcam:
+
+..  figure:: ../images/cam_default.png
+    :scale: 50 %
+    :align: center
+
+    The default camera placement for this example.
+
+.. _dataentropycam:
+
+..  figure:: ../images/cam_dataentropy.png
+    :scale: 50 %
+    :align: center
+
+    The camera placement chosen by the VQ metric Data Entropy for this example.
+    Note: this rendering has a zoom of 3 whereas the default rendering has a zoom of 1. 
+   This example and implementation of the other VQ metrics can be found in `opt_viewpoint test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_opt_viewpoint.cpp>`_.
+
