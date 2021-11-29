@@ -366,12 +366,7 @@ AscentRuntime::AddPublishedMeshInfo()
 #ifdef ASCENT_MPI_ENABLED
     int comm_id = flow::Workspace::default_mpi_comm();
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
-
-    blueprint::mpi::mesh::generate_index(m_source,
-                                         "",
-                                         m_info["published_mesh_info/index"],
-                                         mpi_comm);
-
+  
     Node n_src, n_reduce;
     n_src = src_tbytes;
     // all reduce to get total number of bytes across mpi tasks
@@ -379,20 +374,40 @@ AscentRuntime::AddPublishedMeshInfo()
                                         n_reduce,
                                         mpi_comm);
     all_tbytes = n_reduce.value();
+
     m_info["published_mesh_info/total_bytes_compact"] = all_tbytes;
-    
     // all gather to get per rank total bytes
     conduit::relay::mpi::all_gather(n_src,
                                     m_info["published_mesh_info/total_bytes_compact_per_rank"],
                                     mpi_comm);
 
+    index_t num_domains =  blueprint::mpi::mesh::number_of_domains(m_source,
+                                                                   mpi_comm);
+    m_info["published_mesh_info/number_of_domains"] = num_domains;
+
+    // if we have domains, then also provde the index
+    if(num_domains > 0)
+    {
+      blueprint::mpi::mesh::generate_index(m_source,
+                                           "",
+                                           m_info["published_mesh_info/index"],
+                                           mpi_comm);
+    }
+
 #else
-    // TODO: use better index gen?
-    blueprint::mesh::generate_index(m_source[0],
-                                    "",
-                                    1,
-                                    m_info["published_mesh_info/index"]);
-    // these are the same
+
+    // if we have domains, then also provde the index
+    index_t num_domains =  blueprint::mesh::number_of_domains(m_source);
+    m_info["published_mesh_info/number_of_domains"] = num_domains;
+    if(num_domains > 0)
+    {
+      // if we have domains, then also provde the index
+      blueprint::mesh::generate_index(m_source[0],
+                                      "",
+                                      1,
+                                      m_info["published_mesh_info/index"]);
+    }
+
     m_info["published_mesh_info/total_bytes_compact"] = all_tbytes;
     m_info["published_mesh_info/total_bytes_compact_per_rank"] = src_tbytes;
 #endif
