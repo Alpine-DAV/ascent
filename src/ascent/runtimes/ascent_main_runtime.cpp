@@ -355,7 +355,6 @@ AscentRuntime::ResetInfo()
 void
 AscentRuntime::AddPublishedMeshInfo()
 {
-    m_info["published_mesh_info"] = "COMING SOON!";
     conduit::Node n_index, n_per_rank_tbytes;
     index_t src_tbytes = m_source.total_bytes_compact();
     index_t all_tbytes = src_tbytes;
