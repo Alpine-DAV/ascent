@@ -67,13 +67,23 @@ Related docs: :ref:`extracts_relay`
    :language: python
    :lines: 45-
 
-VisIt 2.13 or newer, when built with Conduit support, can visualize meshes from these files.
+How can you use these files?
+
+You can use them as input to Ascent :ref:`utils_replay`, which allows you to run Ascent outside of a simulation code.
+
+You can also visualize meshes from these files using VisIt 2.13 or newer.
 
 ..  figure:: Tutorial_Output/out_extract_visit_braid_all.png
     :scale: 50 %
     :align: center
     
     Exported Mesh Rendered in VisIt
+
+
+VisIt can also export Blueprint HDF5 files, which can be used as input to Ascent Replay.
+
+Blueprint files help bridge in situ and post hoc workflows.
+
 
 Exporting selected fields from input mesh data to Blueprint HDF5 files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
