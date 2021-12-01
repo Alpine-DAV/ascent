@@ -22,9 +22,6 @@
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the disclaimer (as noted below) in the
 #   documentation and/or other materials provided with the distribution.
-include(cmake/thirdparty/SetupUmpire.cmake)
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
 #   be used to endorse or promote products derived from this software without
 #   specific prior written permission.
 #
@@ -72,12 +69,13 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################
 # Umpire
 ################################
+include(cmake/thirdparty/SetupRAJA.cmake)
 include(cmake/thirdparty/SetupUmpire.cmake)
 
 ################################
 # Raja
 ################################
-include(cmake/thirdparty/SetupRAJA.cmake)
+#include(cmake/thirdparty/SetupRAJA.cmake)
 
 ################################################################
 ################################################################
