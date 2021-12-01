@@ -100,8 +100,8 @@ ascent_open(Ascent *c_ascent,
               conduit_node *c_options)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_options);
-    v->open(*n);
+    Node  &n = conduit::cpp_node_ref(c_options); 
+    v->open(n);
 }
 
 //---------------------------------------------------------------------------//
@@ -110,8 +110,8 @@ ascent_publish(Ascent *c_ascent,
                  conduit_node *c_data)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_data);
-    v->publish(*n);
+    Node  &n = conduit::cpp_node_ref(c_data);
+    v->publish(n);
 }
 
 //---------------------------------------------------------------------------//
@@ -120,8 +120,8 @@ ascent_execute(Ascent *c_ascent,
                conduit_node *c_actions)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_actions);
-    v->execute(*n);
+    Node  &n = conduit::cpp_node_ref(c_actions);
+    v->execute(n);
 }
 
 //---------------------------------------------------------------------------//
@@ -130,8 +130,8 @@ ascent_info(Ascent *c_ascent,
             conduit_node *c_out)
 {
     ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node  *n = static_cast<Node*>(c_out);
-    v->info(*n);
+    Node  &n = conduit::cpp_node_ref(c_out);
+    v->info(n);
 }
 
 //---------------------------------------------------------------------------//
