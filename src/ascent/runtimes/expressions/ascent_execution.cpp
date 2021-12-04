@@ -4,9 +4,11 @@
 
 namespace ascent
 {
-// set the default exection env
+// set the default execution env
 #ifdef ASCENT_USE_CUDA
 std::string ExecutionManager::m_exec = "cuda";
+#elif defined(ASCENT_USE_HIP)
+std::string ExecutionManager::m_exec = "hip";
 #elif defined(ASCENT_USE_OPENMP)
 std::string ExecutionManager::m_exec = "openmp";
 #else
@@ -20,6 +22,9 @@ ExecutionManager::info()
   res["backends"].append() = "serial";
 #ifdef ASCENT_USE_CUDA
   res["backends"].append() = "cuda";
+#endif
+#ifdef ASCENT_USE_HIP
+  res["backends"].append() = "hip";
 #endif
 #if defined(ASCENT_USE_OPENMP)
   res["backends"].append() = "openmp";
@@ -49,6 +54,13 @@ ExecutionManager::execution(const std::string exec)
   if(exec == "cuda")
   {
     ASCENT_ERROR("Cuda backend support not built");
+  }
+#endif
+
+#ifndef ASCENT_USE_HIP
+  if(exec == "hip")
+  {
+    ASCENT_ERROR("HIP backend support not built");
   }
 #endif
 

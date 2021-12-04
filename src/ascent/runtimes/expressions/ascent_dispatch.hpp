@@ -275,6 +275,13 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
     dispatch_memory_mesh(n_coords,n_topo, func, exec);
   }
 #endif
+#ifdef ASCENT_USE_HIP
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    dispatch_memory_mesh(n_coords,n_topo, func, exec);
+  }
+#endif
   else
   {
     //TODO: log error this could hang things
@@ -309,6 +316,13 @@ exec_dispatch_array(Array<T> &array, Function &func)
     func(array, exec);
   }
 #endif
+#ifdef ASCENT_USE_HIP
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    func(array, exec);
+  }
+#endif
   else
   {
     //TODO: log error this could hang things
@@ -340,6 +354,13 @@ exec_dispatch(Function &func)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
+    func(exec);
+  }
+#endif
+#ifdef ASCENT_USE_HIP
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
     func(exec);
   }
 #endif

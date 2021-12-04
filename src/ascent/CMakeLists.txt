@@ -80,6 +80,7 @@ endif()
 
 set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 set(ASCENT_USE_CUDA ${CUDA_FOUND})
+set(ASCENT_USE_HIP  ${HIP_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")

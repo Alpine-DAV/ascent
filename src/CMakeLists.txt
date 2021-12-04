@@ -67,6 +67,7 @@ option(ENABLE_PYTHON      "Build Python Support"      ON)
 option(ENABLE_MPI         "Build MPI Support"         ON)
 option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
+option(ENABLE_HIP         "Build HIP Support"         OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)

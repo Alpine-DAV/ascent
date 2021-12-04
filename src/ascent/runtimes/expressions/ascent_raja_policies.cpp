@@ -8,6 +8,10 @@ namespace ascent
 std::string CudaExec::memory_space = "device";
 #endif
 
+#ifdef ASCENT_USE_HIP
+std::string HipExec::memory_space = "device";
+#endif
+
 #if defined(ASCENT_USE_OPENMP)
 std::string OpenMPExec::memory_space = "host";
 #endif

@@ -218,6 +218,13 @@ exec_dispatch(const conduit::Node &field, std::string component, const Function 
     res = dispatch_memory(field, component, func, exec);
   }
 #endif
+#ifdef ASCENT_USE_CUDA
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    res = dispatch_memory(field, component, func, exec);
+  }
+#endif
   else
   {
     ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<

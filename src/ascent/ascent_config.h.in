@@ -72,6 +72,7 @@
 // defs for general openmp/cuda support
 #cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
 #cmakedefine ASCENT_USE_CUDA          "@CUDA_FOUND@"
+#cmakedefine ASCENT_USE_HIP           "@HIP_FOUND@"
 
 // defs for runtime support based on which 3rd-party libs we have
 

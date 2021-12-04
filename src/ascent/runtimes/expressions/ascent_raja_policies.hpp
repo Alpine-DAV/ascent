@@ -19,6 +19,17 @@ struct CudaExec
 };
 #endif
 
+#ifdef ASCENT_USE_HIP
+#define HIP_BLOCK_SIZE 256
+struct HipExec
+{
+  using for_policy = RAJA::hip_exec<HIP_BLOCK_SIZE>;
+  using reduce_policy = RAJA::hip_reduce;
+  using atomic_policy = RAJA::hip_atomic;
+  static std::string memory_space;
+};
+#endif
+
 #if defined(ASCENT_USE_OPENMP)
 struct OpenMPExec
 {
@@ -56,6 +67,10 @@ struct SerialExec
 using for_policy = RAJA::cuda_exec<BLOCK_SIZE>;
 using reduce_policy = RAJA::cuda_reduce;
 using atomic_policy = RAJA::cuda_atomic;
+#elif defined(ASCENT_USE_HIP)
+using for_policy = RAJA::hip_exec<HIP_BLOCK_SIZE>;
+using reduce_policy = RAJA::hip_reduce;
+using atomic_policy = RAJA::hip_atomic;
 #elif defined(ASCENT_USE_OPENMP)
 using for_policy = RAJA::omp_parallel_for_exec;
 using reduce_policy = RAJA::omp_reduce;
