@@ -52,3 +52,9 @@ cd alpinedav_ubuntu_18.04_cuda_11.4.0_devel_tpls
 ./build.sh
 cd ..
 
+#
+# ubuntu 20.04 rocm 4.5.0
+#
+cd alpinedav_ubuntu_20.04_rocm_4.5.0_devel
+./build.sh 
+
