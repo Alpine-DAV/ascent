@@ -2825,7 +2825,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
       {
         DataCheckFlags checks = CheckNan | CheckZero;
         field_data = copyWithChecks<float>(field_data, checks);
-        entropy = calcentropyMM(field_data, 6, field_max, field_min);
+        entropy = calcentropyMM(field_data, 1000, field_max, field_min);
       } 
       else
       {
@@ -2846,7 +2846,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
             data.push_back(field_data[i]);
         float field_array[data.size()];
         std::copy(data.begin(), data.end(), field_array);
-        entropy = calcentropyMM(field_array, data.size(), 6, field_max, field_min);
+        entropy = calcentropyMM(field_array, data.size(), 1000, field_max, field_min);
       }
       else
         entropy = 0;
@@ -2863,7 +2863,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
     {
       DataCheckFlags checks = CheckNan | CheckZero;
       field_data = copyWithChecks<float>(field_data, checks);
-      entropy = calcentropyMM(field_data, 6, field_max, field_min);
+      entropy = calcentropyMM(field_data, 1000, field_max, field_min);
     } 
     else
     {
@@ -2885,7 +2885,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
           data.push_back(field_data[i]);
       float field_array[data.size()];
       std::copy(data.begin(), data.end(), field_array);
-      entropy = calcentropyMM(field_array, data.size(), 6, field_max, field_min);
+      entropy = calcentropyMM(field_array, data.size(), 1000, field_max, field_min);
     }
     else
       entropy = 0;
