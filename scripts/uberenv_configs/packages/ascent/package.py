@@ -131,7 +131,6 @@ class Ascent(CMakePackage, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h",             when="+vtkh")
     depends_on("vtk-h~openmp",      when="+vtkh~openmp")
     depends_on("vtk-h+cuda+openmp", when="+vtkh+cuda+openmp")
     depends_on("vtk-h+cuda~openmp", when="+vtkh+cuda~openmp")
@@ -150,7 +149,6 @@ class Ascent(CMakePackage, CudaPackage):
 
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
-    depends_on("dray",        when="+dray")
     depends_on("dray+mpi+shared+cuda",        when="+dray+mpi+cuda+shared")
     depends_on("dray+mpi+shared+openmp",      when="+dray+mpi+openmp+shared")
     depends_on("dray+mpi+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
@@ -169,11 +167,10 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("dray~mpi~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
 
     # occa defaults to +cuda so we have to explicit tell it ~cuda
-    depends_on("occa@1.1.1",        when="+occa")
-    depends_on("occa~cuda",        when="+occa~cuda")
-    depends_on("occa~cuda~openmp", when="+occa~cuda~openmp")
-    depends_on("occa+cuda+openmp", when="+occa+cuda+openmp")
-    depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
+    depends_on("occa@1.1.1~cuda",        when="+occa~cuda")
+    depends_on("occa@1.1.1~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
 
     depends_on("umpire+cuda+shared", when="+cuda+shared")
     depends_on("umpire+cuda~shared", when="+cuda~shared")
