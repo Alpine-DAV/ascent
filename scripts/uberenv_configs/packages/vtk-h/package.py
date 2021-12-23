@@ -39,7 +39,7 @@ class VtkH(Package, CudaPackage):
     maintainers = ['cyrush']
 
     version('develop', branch='develop', submodules=True)
-    version('0.7.2', branch='task/2021_10_jameskress_update_threshold', submodules=True)
+    version('0.8.0', sha256="8366ebfe094c258555f343ba1f9bbad1d8e4804f844768b639f6ff13a6390f29")
     version('0.7.1', sha256="f28f7e6fb0f854a2293265b67cbdfb350b42c13ac08ffffe9cd246f3fe9fb77a")
     version('0.7.0', sha256="1b3c15c1340c5f66edcc2962ffe2f0d86e155f45a4932cf9c407261c203fbc19")
     version('0.6.9', sha256="8111f59c3528f02cb3c5083c17a1737dff9472266b156732794612471f3393c7")
