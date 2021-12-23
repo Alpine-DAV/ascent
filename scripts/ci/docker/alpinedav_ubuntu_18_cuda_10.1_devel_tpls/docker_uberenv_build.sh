@@ -4,7 +4,7 @@ set -ev
 # variants
 export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa~python~openmp~shared"
 # constraints
-export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^dray@develop~openmp+cuda ^mfem~cuda cuda_arch=none ^hypre~cuda cuda_arch=none ^conduit@develop ^vtk-h@develop+cuda ^vtk-m+cuda ^cmake~openssl~ncurses"
+export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^dray~openmp+cuda ^mfem~cuda cuda_arch=none ^hypre~cuda cuda_arch=none ^conduit ^vtk-h+cuda ^vtk-m+cuda ^cmake~openssl~ncurses"
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_cuda_10.1_devel/"
 
