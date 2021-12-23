@@ -1,6 +1,6 @@
 #!/bin/bash
 ################
-
+set -ev
 #
 # ubuntu 18
 #
