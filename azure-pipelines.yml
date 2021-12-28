@@ -308,7 +308,7 @@ stages:
           make VERBOSE=1
           mpiexec -n 2 ./ascent_mpi_render_example
         displayName: 'Test vs Install (using-with-cmake-mpi)'
-        condition:  and(succeeded(),eq(variables['ENABLE_MPI'], 'ON'))
+        condition: and(succeeded(),eq(variables['ENABLE_VTKH'], 'ON'))
 
 
   - job: Main_Ubuntu_Cuda
