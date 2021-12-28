@@ -283,6 +283,32 @@ stages:
           ./ascent_render_example
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
+     - script: |
+          ################################
+          # using with cmake mpi example
+          ###############################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          # use mpi wrappers in case we are built against mfem that
+          # that requires mpi
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
+          cd install/examples/conduit/using-with-cmake-mpi
+          rm -rf _test_build
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+          mpiexec -n 2 ./ascent_mpi_render_example
+        displayName: 'Test vs Install (using-with-cmake-mpi)'
+        condition:  and(succeeded(),eq(variables['ENABLE_MPI'], 'ON'))
+
 
   - job: Main_Ubuntu_Cuda
     pool:
