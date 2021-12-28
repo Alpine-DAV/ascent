@@ -283,7 +283,8 @@ stages:
           ./ascent_render_example
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
-     - script: |
+
+      - script: |
           ################################
           # using with cmake mpi example
           ###############################
