@@ -492,7 +492,7 @@ TEST(ascent_expressions, braid_sample)
 
   Node ascent_opts;
   ascent_opts["ascent_info"] = "verbose";
-  ascent_opts["timings"] = "enabled";
+  ascent_opts["timings"] = "true";
   ascent_opts["runtime/type"] = "ascent";
 
   ascent.open(ascent_opts);
@@ -570,7 +570,7 @@ TEST(ascent_expressions, multi_topos)
 
   Node ascent_opts;
   ascent_opts["ascent_info"] = "verbose";
-  ascent_opts["timings"] = "enabled";
+  ascent_opts["timings"] = "true";
   ascent_opts["runtime/type"] = "ascent";
 
   ascent.open(ascent_opts);
