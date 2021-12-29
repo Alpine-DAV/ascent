@@ -40,7 +40,7 @@ if(ENABLE_MPI)
     # in these cases, we need to set FOUND_MPI = TRUE,
     # since the rest of our cmake logic to include MPI uses FOUND_MPI
     if(NOT ENABLE_FIND_MPI)
-        set(FOUND_MPI ON CACHE BOOL "")
+        set(MPI_FOUND ON CACHE BOOL "")
     endif()
 endif()
 
