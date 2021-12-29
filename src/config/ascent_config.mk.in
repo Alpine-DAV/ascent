@@ -235,15 +235,15 @@ ifeq ($(ASCENT_ADIOS2_DIR),)
    # not set, do not include in config.mk
 else
     ASCENT_ADIOS2_LIB_FLAGS = -L $(ASCENT_ADIOS2_DIR)/lib \
-                                -l adios2_cxx11_mpi \
-                                -l adios2_cxx11     \
-                                -l adios2_core_mpi  \
-                                -l libadios2_core   \
-                                -l adios2_taustubs  \
-                                -l adios2_evpath    \
-                                -l adios2_ffs       \
-                                -l adios2_atl       \
-                                -l adios2_dill
+                                -ladios2_cxx11_mpi \
+                                -ladios2_cxx11     \
+                                -ladios2_core_mpi  \
+                                -llibadios2_core   \
+                                -ladios2_taustubs  \
+                                -ladios2_evpath    \
+                                -ladios2_ffs       \
+                                -ladios2_atl       \
+                                -ladios2_dill
 endif
 
 
