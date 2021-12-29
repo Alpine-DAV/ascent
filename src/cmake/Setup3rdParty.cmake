@@ -143,6 +143,6 @@ endif()
 ################################
 # Setup Babelflow
 ################################
-if (BABELFLOW_DIR or BabelFlow_DIR)
+if (BABELFLOW_DIR OR BabelFlow_DIR)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif()
