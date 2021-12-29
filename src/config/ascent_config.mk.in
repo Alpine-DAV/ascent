@@ -243,7 +243,7 @@ else
                                 -ladios2_cxx11_mpi \
                                 -ladios2_cxx11     \
                                 -ladios2_core_mpi  \
-                                -llibadios2_core   \
+                                -ladios2_core   \
                                 -ladios2_taustubs  \
                                 -ladios2_evpath    \
                                 -ladios2_ffs       \
