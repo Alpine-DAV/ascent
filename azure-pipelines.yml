@@ -322,7 +322,7 @@ stages:
           ls -l
           cd install/examples/ascent/using-with-make-mpi
           make
-          mpiexec -n 2 ./ascent_render_example
+          mpiexec -n 2 ./ascent_mpi_render_example
         displayName: 'Test vs Install (using-with-make-mpi)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
