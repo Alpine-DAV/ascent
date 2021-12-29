@@ -168,10 +168,10 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("dray~mpi~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
 
     # occa defaults to +cuda so we have to explicit tell it ~cuda
-    depends_on("occa@1.1.1~cuda",        when="+occa~cuda")
-    depends_on("occa@1.1.1~cuda~openmp", when="+occa~cuda~openmp")
-    depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
-    depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
+    depends_on("occa~cuda",        when="+occa~cuda")
+    depends_on("occa~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
 
     depends_on("umpire+cuda+shared", when="+cuda+shared")
     depends_on("umpire+cuda~shared", when="+cuda~shared")
