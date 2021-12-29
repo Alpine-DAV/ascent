@@ -446,7 +446,7 @@ if(MPI_FOUND)
     # req'd libs
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi conduit_blueprint_mpi)
 
-    if (ENABLE_BABELFLOW)
+    if (BABELFLOW_FOUND)
       if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
         add_compile_definitions("BABELFLOW_DEBUG")
       endif()
@@ -482,7 +482,7 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
-        if (ENABLE_BABELFLOW)
+        if (BABELFLOW_FOUND)
             list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
         endif()
 

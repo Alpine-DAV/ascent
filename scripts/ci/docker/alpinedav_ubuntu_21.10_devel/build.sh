@@ -1,5 +1,6 @@
+#!/bin/bash
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2015-2021, Lawrence Livermore National Security, LLC.
 #
 # Produced at the Lawrence Livermore National Laboratory
 #
@@ -41,28 +42,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ###############################################################################
-
-###############################################################################
-#
-# Setup ADIOS
-#
-###############################################################################
-
-# first Check for ADIOS_DIR
-if(NOT ADIOS2_DIR)
-    MESSAGE(FATAL_ERROR "ADIOS2 support needs explicit ADIOS2_DIR")
-endif()
-
-MESSAGE(STATUS "Looking for ADIOS2 using ADIOS2_DIR = ${ADIOS2_DIR}")
-
-set(ADIOS2_DIR_ORIG ${ADIOS2_DIR})
-
-find_package(ADIOS2 REQUIRED
-             NO_DEFAULT_PATH
-             PATHS ${ADIOS2_DIR}/lib/cmake/adios2)
-
-message(STATUS "FOUND ADIOS2 at ${ADIOS2_DIR}")
-
-blt_register_library(NAME adios2
-                     INCLUDES ${ADIOS2_INCLUDE_DIR}
-                     LIBRARIES ${ADIOS2_LIB_DIRS} ${ADIOS2_LIBRARIES} )
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-21.10-devel
+# exec docker build to create image
+echo "docker build -t ${TAG_NAME} ."
+docker build -t ${TAG_NAME} .

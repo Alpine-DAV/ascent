@@ -167,7 +167,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     # add the hola mpi test which uses 8 ranks
     add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
 
-  if(ENABLE_BABELFLOW)
+  if(BABELFLOW_FOUND)
     # add the babelflow pmt mpi test
     add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
     if(DRAY_FOUND)

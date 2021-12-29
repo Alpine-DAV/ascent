@@ -57,7 +57,7 @@ if(MFEM_FOUND)
   add_subdirectory(proxies/laghos)
 endif()
 
-if(ENABLE_BABELFLOW)
+if(BABELFLOW_FOUND)
   add_subdirectory(babelflow/pmt)
   add_subdirectory(babelflow/comp)
   add_subdirectory(babelflow/iso)
@@ -67,4 +67,8 @@ endif()
 install(DIRECTORY using-with-cmake using-with-make python tutorial 
         DESTINATION examples/ascent)
 
+if(MPI_FOUND)
+    install(DIRECTORY using-with-cmake-mpi using-with-make-mpi
+            DESTINATION examples/ascent)
+endif()
 
