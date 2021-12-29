@@ -37,8 +37,8 @@ class Parallelmergetree(CMakePackage):
 
     variant("shared", default=True, description="Build ParallelMergeTree as shared libs")
 
-    # The C++ headers of gcc-11 don't provide <algorithm> as side effect of others
-    @when('%gcc@11:')
+    # The C++ headers of gcc-10+ don't provide <algorithm> as side effect of others
+    @when('%gcc@10:')
     def setup_build_environment(self, env):
         env.append_flags('CXXFLAGS', '-include algorithm')
 
