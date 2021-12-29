@@ -38,31 +38,31 @@ RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/jupyter \
     labextension install @jupyter-widgets/jupyterlab-manager
 
 # configure a debug build with cmake
-RUN cd /ascent && mkdir build-debug 
-RUN cd /ascent/build-debug && \
+RUN cd /ascent && mkdir build 
+RUN cd /ascent/build && \
     /uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_INSTALL_PREFIX=/ascent/install-debug \
-    -DBABELFLOW_DIRR=IGNORE \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/ascent/install \
+    -DBABELFLOW_DIR=IGNORE \
     -DADIOS2_DIR=IGNORE \
     -DFIDES_DIR=IGNORE \
     -C /uberenv_libs/*.cmake \
     ../src
 
 # build, test, and install ascent
-RUN cd /ascent/build-debug && make
-# RUN cd /ascent/build-debug && env CTEST_OUTPUT_ON_FAILURE=1 make test
-RUN cd /ascent/build-debug && make install
+RUN cd /ascent/build && make
+RUN cd /ascent/build && env CTEST_OUTPUT_ON_FAILURE=1 make test
+RUN cd /ascent/build && make install
 
 
 # install ascent bridge kernel into jupyter
-RUN cd /ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
+RUN cd /ascent/install/share/ascent/ascent_jupyter_bridge/ && \
     /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     -r requirements.txt
 
-RUN cd /ascent/install-debug/share/ascent/ascent_jupyter_bridge/ && \
+RUN cd /ascent/install/share/ascent/ascent_jupyter_bridge/ && \
     /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
