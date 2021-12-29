@@ -292,7 +292,7 @@ stages:
           ls -l
           # find spack installed cmake
           export ROOT_DIR=`pwd`
-          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
@@ -300,7 +300,7 @@ stages:
           # that requires mpi
           export CC=/usr/bin/mpicc
           export CXX=/usr/bin/mpicxx
-          cd install/examples/conduit/using-with-cmake-mpi
+          cd install/examples/ascent/using-with-cmake-mpi
           rm -rf _test_build
           mkdir _test_build
           cd _test_build
