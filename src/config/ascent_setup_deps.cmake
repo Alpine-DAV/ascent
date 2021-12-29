@@ -76,16 +76,14 @@ find_dependency(Conduit REQUIRED
 if(NOT VTKH_DIR)
     set(VTKH_DIR ${ASCENT_VTKH_DIR})
 endif()
-###############################################################################
-# Setup VTKH if VTKM_DIR is set
-###############################################################################
+
 if(VTKH_DIR)
     if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
         MESSAGE(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
     endif()
 
     ###############################################################################
-    # Import vtk-h CMake targets
+    # Import CMake targets
     ###############################################################################
     find_dependency(VTKh REQUIRED
                    NO_DEFAULT_PATH
@@ -105,13 +103,12 @@ if(DRAY_DIR)
     endif()
 
     ###############################################################################
-    # Import Devil Ray CMake targets
+    # Import CMake targets
     ###############################################################################
     find_dependency(DRay REQUIRED
                    NO_DEFAULT_PATH
                    PATHS ${DRAY_DIR}/lib/cmake/)
 endif()
-
 
 ###############################################################################
 # Setup Umpire
@@ -122,15 +119,95 @@ endif()
 
 if(UMPIRE_DIR)
   if(NOT EXISTS ${UMPIRE_DIR}/share/umpire/cmake/)
-    MESSAGE(FATAL_ERROR "Could not find Umpire CMake include file (${UMPIRE_DIR}/share/umpire/cmake/umpire-config.cmake)")
-    endif()
+    MESSAGE(FATAL_ERROR "Could not find Umpire CMake include file (${UMPIRE_DIR}/share/umpire/cmake)")
+  endif()
 
-    ###############################################################################
-    # Import Devil Ray CMake targets
-    ###############################################################################
-    find_dependency(Umpire REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${UMPIRE_DIR}/share/umpire/cmake/)
+  ###############################################################################
+  # Import CMake targets
+  ###############################################################################
+  find_dependency(Umpire REQUIRED
+                  NO_DEFAULT_PATH
+                  PATHS ${UMPIRE_DIR}/share/umpire/cmake/)
+endif()
+
+###############################################################################
+# Setup Adios2
+###############################################################################
+if(NOT ADIOS2_DIR)
+  set(ADIOS2_DIR ${ASCENT_ADIOS2_DIR})
+endif()
+
+if(ADIOS2_DIR)
+  if(NOT EXISTS ${ADIOS2_DIR}/lib/cmake/adios2)
+    MESSAGE(FATAL_ERROR "Could not find ADIOS2 CMake include file (${ADIOS2_DIR}/lib/cmake/adios2)")
+  endif()
+
+  ###############################################################################
+  # Import CMake targets
+  ###############################################################################
+  find_dependency(ADIOS2 REQUIRED
+                  NO_DEFAULT_PATH
+                  PATHS ${ADIOS2_DIR}/lib/cmake/adios2)
+endif()
+
+###############################################################################
+# Setup Fides
+###############################################################################
+if(NOT FIDES_DIR)
+  set(FIDES_DIR ${ASCENT_FIDES_DIR})
+endif()
+
+if(FIDES_DIR)
+  if(NOT EXISTS ${FIDES_DIR}/lib/cmake/fides)
+    MESSAGE(FATAL_ERROR "Could not find FIDES CMake include file (${FIDES_DIR}/lib/cmake/fides)")
+  endif()
+
+  ###############################################################################
+  # Import CMake targets
+  ###############################################################################
+  find_dependency(Fides REQUIRED
+                  NO_DEFAULT_PATH
+                  PATHS ${FIDES_DIR}/lib/cmake/fides)
+endif()
+
+###############################################################################
+# Setup BabelFlow
+###############################################################################
+if(NOT BABELFLOW_DIR)
+  set(BABELFLOW_DIR ${ASCENT_BABELFLOW_DIR})
+endif()
+
+if(BABELFLOW_DIR)
+  if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake)
+    MESSAGE(FATAL_ERROR "Could not find BabelFLow CMake include file (${BABELFLOW_DIR}/lib/cmake)")
+  endif()
+
+  ###############################################################################
+  # Import CMake targets
+  ###############################################################################
+  find_dependency(BabelFlow REQUIRED
+                  NO_DEFAULT_PATH
+                  PATHS ${BABELFLOW_DIR}/lib/cmake)
+endif()
+
+###############################################################################
+# Setup PMT
+###############################################################################
+if(NOT PMT_DIR)
+  set(PMT_DIR ${ASCENT_PMT_DIR})
+endif()
+
+if(PMT_DIR)
+  if(NOT EXISTS ${PMT_DIR}/lib/cmake)
+    MESSAGE(FATAL_ERROR "Could not find PMT CMake include file ( ${PMT_DIR}/lib/cmake)")
+  endif()
+
+  ###############################################################################
+  # Import CMake targets
+  ###############################################################################
+  find_dependency(PMT REQUIRED
+                  NO_DEFAULT_PATH
+                  PATHS  ${PMT_DIR}/lib/cmake)
 endif()
 
 
