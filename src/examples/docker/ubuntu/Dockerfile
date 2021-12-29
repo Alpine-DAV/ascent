@@ -43,7 +43,7 @@ RUN cd /ascent/build-debug && \
     /uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX=/ascent/install-debug \
-    -DENABLE_BABELFLOW=OFF \
+    -DBABELFLOW_DIRR=IGNORE \
     -DADIOS2_DIR=IGNORE \
     -DFIDES_DIR=IGNORE \
     -C /uberenv_libs/*.cmake \
