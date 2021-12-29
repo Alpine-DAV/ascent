@@ -2,9 +2,7 @@
 set -ev
 
 # variants
-# NOTE: fides needs a new release for vtk-m 1.7.0
-#       pmt 1.1.0 failed to build
-export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa"
+export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC}"
 # config
