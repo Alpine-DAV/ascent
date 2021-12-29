@@ -230,6 +230,11 @@ ASCENT_UMPIRE_LIB_FLAGS = $(if $(ASCENT_UMPIRE_DIR),-L $(ASCENT_UMPIRE_DIR)/lib 
 ##########
 # FIDES + ADIOS2 (mpi only)
 ##########
+
+#!!!!!
+# Note: This does not handle ADIOS2 transitive deps, so it may not work for static builds
+#!!!!!
+
 ASCENT_FIDES_LIB_FLAGS = $(if $(ASCENT_FIDES_DIR),-L $(ASCENT_FIDES_DIR)/lib -lfides)
 ifeq ($(ASCENT_ADIOS2_DIR),)
    # not set, do not include in config.mk
