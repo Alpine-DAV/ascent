@@ -68,7 +68,7 @@ install(DIRECTORY using-with-cmake using-with-make python tutorial
         DESTINATION examples/ascent)
 
 if(MPI_FOUND)
-    install(DIRECTORY using-with-cmake-mpi
+    install(DIRECTORY using-with-cmake-mpi using-with-make-mpi
             DESTINATION examples/ascent)
 endif()
 

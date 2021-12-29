@@ -48,8 +48,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent/ascent.hpp>
-#include <conduit/conduit_blueprint.hpp>
+#include <ascent.hpp>
+#include <conduit_blueprint.hpp>
 
 #include <iostream>
 
