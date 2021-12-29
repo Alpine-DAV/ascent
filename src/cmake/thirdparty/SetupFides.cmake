@@ -62,6 +62,8 @@ endif()
 
 MESSAGE(STATUS "Looking for FIDES using FIDES_DIR = ${FIDES_DIR}")
 
+set(FIDES_DIR_ORIG ${FIDES_DIR})
+
 #The Fides cmake is not setting these for some reason.
 #So, we set them explicitly for now.
 #set(Fides_DIR ${FIDES_DIR})

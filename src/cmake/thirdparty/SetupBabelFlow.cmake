@@ -61,12 +61,15 @@ endif()
 
 MESSAGE(STATUS "Looking for BabelFlow using BABELFLOW_DIR = ${BABELFLOW_DIR}")
 
+set(BABELFLOW_DIR_ORIG ${BABELFLOW_DIR})
 
 find_package(BabelFlow REQUIRED
              NO_DEFAULT_PATH
              PATHS ${BABELFLOW_DIR}/lib/cmake/)
 
 message(STATUS "FOUND BabelFlow at ${BABELFLOW_DIR}")
+
+set(BABELFLOW_FOUND TRUE)
 
 blt_register_library( NAME babelflow
                       INCLUDES ${BabelFlow_INCLUDE_DIRS}
@@ -78,6 +81,8 @@ if(NOT PMT_DIR)
 endif()
 
 MESSAGE(STATUS "Looking for ParallelMergeTree using PMT_DIR = ${PMT_DIR}")
+
+set(PMT_DIR_ORIG ${PMT_DIR})
 
 find_package(PMT REQUIRED
              NO_DEFAULT_PATH

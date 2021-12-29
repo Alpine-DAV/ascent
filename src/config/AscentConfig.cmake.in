@@ -89,19 +89,19 @@ if(NOT ASCENT_FOUND)
 
     ##################################################
     # advertise if babelflow + pmt support is enabled
-    set(ASCENT_BABELFLOW_ENABLED @BabelFlow_FOUND@)
-    set(ASCENT_BABELFLOW_DIR "@BabelFlow_DIR@")
+    set(ASCENT_BABELFLOW_ENABLED @BABELFLOW_FOUND@)
+    set(ASCENT_BABELFLOW_DIR "@BABELFLOW_DIR_ORIG@")
 
     set(ASCENT_PMT_ENABLED @PMT_FOUND@)
-    set(ASCENT_PMT_DIR "@PMT_DIR@")
+    set(ASCENT_PMT_DIR "@PMT_DIR_ORIG@")
 
     ##################################################
     # advertise if fides and adios2 support is enabled
     set(ASCENT_FIDES_ENABLED @FIDES_FOUND@)
-    set(ASCENT_FIDES_DIR "@FIDES_DIR@")
+    set(ASCENT_FIDES_DIR "@FIDES_DIR_ORIG@")
 
     set(ASCENT_ADIOS2_ENABLED @ADIOS2_FOUND@)
-    set(ASCENT_ADIOS2_DIR "@ADIOS2_DIR@")
+    set(ASCENT_ADIOS2_DIR "@ADIOS2_DIR_ORIG@")
 
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
