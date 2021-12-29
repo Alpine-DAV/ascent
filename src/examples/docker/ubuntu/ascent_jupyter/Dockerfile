@@ -39,10 +39,10 @@ RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> /home/user/ascent_docker
 #make sure helpers are executable
 RUN sudo chmod 777 /home/user/ascent_docker_run_jupyter.sh 
 RUN sudo chmod 777 /home/user/ascent_docker_run_jupyterlab.sh
-RUN sudo chmod 777 /ascent/install-debug/examples/ascent/tutorial/ascent_intro/*/cleanup.sh
+RUN sudo chmod 777 /ascent/install/examples/ascent/tutorial/ascent_intro/*/cleanup.sh
 
 # open port 8888, for use by jupyter notebook http server
 EXPOSE 8888
 
 # launch jupyter lab
-CMD sudo service ssh start && cd /ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/ && /home/user/ascent_docker_run_jupyterlab.sh
+CMD sudo service ssh start && cd /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/ && /home/user/ascent_docker_run_jupyterlab.sh

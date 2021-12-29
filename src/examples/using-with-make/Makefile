@@ -53,12 +53,12 @@
 #
 # From within an ascent install:
 #  make 
-#  ./example
+#  ./ascent_render_example
 #
 # Which corresponds to:
 #
-#  make ASCENT_DIR=../../../ 
-#  ./example
+#  make ASCENT_DIR=../../../
+#  ./ascent_render_example
 #
 ###############################################################################
 
@@ -69,7 +69,7 @@ include $(ASCENT_DIR)/share/ascent/ascent_config.mk
 
 # make sure to enable c++11 support (conduit's interface now requires it)
 CXX_FLAGS = -std=c++11
-INC_FLAGS = $(ASCENT_INCLUDE_FLAGS) 
+INC_FLAGS = $(ASCENT_INCLUDE_FLAGS)
 LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
 
 main:
@@ -78,9 +78,5 @@ main:
 
 clean:
 	rm -f ascent_render_example
-
-
-# TODO: Add mpi render example
-
 
 

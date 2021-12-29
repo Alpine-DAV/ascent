@@ -48,8 +48,8 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent/ascent.hpp>
-#include <conduit/conduit_blueprint.hpp>
+#include <ascent.hpp>
+#include <conduit_blueprint.hpp>
 
 #include <iostream>
 
@@ -88,8 +88,6 @@ int main(int argc, char **argv)
     Node &add_act = actions.append();
     add_act["action"] = "add_scenes";
     add_act["scenes"] = scenes;
-
-    actions.append()["action"] = "execute";
 
     // execute
     a.execute(actions);
