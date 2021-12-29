@@ -57,7 +57,7 @@ if(MFEM_FOUND)
   add_subdirectory(proxies/laghos)
 endif()
 
-if(ENABLE_BABELFLOW)
+if(BABELFLOW_FOUND)
   add_subdirectory(babelflow/pmt)
   add_subdirectory(babelflow/comp)
   add_subdirectory(babelflow/iso)

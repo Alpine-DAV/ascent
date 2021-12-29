@@ -446,7 +446,7 @@ if(MPI_FOUND)
     # req'd libs
     set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
 
-    if (ENABLE_BABELFLOW)
+    if (BABELFLOW_FOUND)
       if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
         add_compile_definitions("BABELFLOW_DEBUG")
       endif()

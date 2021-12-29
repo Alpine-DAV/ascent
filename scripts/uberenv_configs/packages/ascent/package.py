@@ -509,8 +509,7 @@ class Ascent(CMakePackage, CudaPackage):
             # BABELFLOW (also depends on mpi)
             ###################################
             if "+babelflow" in spec:
-                cfg.write(cmake_cache_entry("ENABLE_BABELFLOW", "ON"))
-                cfg.write(cmake_cache_entry("BabelFlow_DIR",
+                cfg.write(cmake_cache_entry("BABELFLOW_DIR",
                                             spec['babelflow'].prefix))
                 cfg.write(cmake_cache_entry("PMT_DIR",
                                             spec['parallelmergetree'].prefix))

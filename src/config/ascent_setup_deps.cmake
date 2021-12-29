@@ -139,7 +139,7 @@ endif()
 
 if(ADIOS2_DIR)
   if(NOT EXISTS ${ADIOS2_DIR})
-    MESSAGE(FATAL_ERROR "Could not find ADIOS2 CMake include file (${ADIOS2_DIR})")
+    MESSAGE(FATAL_ERROR "Could not find ADIOS2 CMake include info (${ADIOS2_DIR})")
   endif()
 
   ###############################################################################
@@ -159,7 +159,7 @@ endif()
 
 if(FIDES_DIR)
   if(NOT EXISTS ${FIDES_DIR}/lib/cmake/fides)
-    MESSAGE(FATAL_ERROR "Could not find FIDES CMake include file (${FIDES_DIR}/lib/cmake/fides)")
+    MESSAGE(FATAL_ERROR "Could not find FIDES CMake include info (${FIDES_DIR}/lib/cmake/fides)")
   endif()
 
   ###############################################################################
@@ -178,8 +178,8 @@ if(NOT BABELFLOW_DIR)
 endif()
 
 if(BABELFLOW_DIR)
-  if(NOT EXISTS ${BABELFLOW_DIR})
-    MESSAGE(FATAL_ERROR "Could not find BabelFLow CMake include file (${BABELFLOW_DIR})")
+  if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake)
+    MESSAGE(FATAL_ERROR "Could not find BabelFLow CMake include info (${BABELFLOW_DIR}/lib/cmake)")
   endif()
 
   ###############################################################################
@@ -187,7 +187,7 @@ if(BABELFLOW_DIR)
   ###############################################################################
   find_dependency(BabelFlow REQUIRED
                   NO_DEFAULT_PATH
-                  PATHS ${BABELFLOW_DIR})
+                  PATHS ${BABELFLOW_DIR}/lib/cmake)
 endif()
 
 ###############################################################################
@@ -198,8 +198,8 @@ if(NOT PMT_DIR)
 endif()
 
 if(PMT_DIR)
-  if(NOT EXISTS ${PMT_DIR})
-    MESSAGE(FATAL_ERROR "Could not find PMT CMake include file ( ${PMT_DIR})")
+  if(NOT EXISTS ${PMT_DIR}/lib/cmake)
+    MESSAGE(FATAL_ERROR "Could not find PMT CMake include info (${PMT_DIR}/lib/cmake)")
   endif()
 
   ###############################################################################
@@ -207,7 +207,7 @@ if(PMT_DIR)
   ###############################################################################
   find_dependency(PMT REQUIRED
                   NO_DEFAULT_PATH
-                  PATHS  ${PMT_DIR})
+                  PATHS  ${PMT_DIR}/lib/cmake)
 endif()
 
 
