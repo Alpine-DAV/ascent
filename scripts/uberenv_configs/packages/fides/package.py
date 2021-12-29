@@ -30,10 +30,9 @@ class Fides(CMakePackage):
     depends_on("vtk-m", when="+vtk-m")
 
     # Fix missing implict includes
-    @when('%gcc@10:')
+    @when('%gcc@7:')
     def setup_build_environment(self, env):
         env.append_flags('CXXFLAGS', '-include limits -include numeric')
-
 
     def cmake_args(self):
         spec = self.spec
