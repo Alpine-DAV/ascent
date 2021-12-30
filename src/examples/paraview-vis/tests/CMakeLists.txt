@@ -1,3 +1,9 @@
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
+
 cmake_minimum_required(VERSION 3.10)
 project(AscentParaViewTests)
 
