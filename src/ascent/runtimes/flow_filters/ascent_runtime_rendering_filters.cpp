@@ -182,7 +182,13 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("type");
   r_valid_paths.push_back("phi");
+  r_valid_paths.push_back("phi_range");
+  r_valid_paths.push_back("dphi");
+  r_valid_paths.push_back("phi_num_angles");
   r_valid_paths.push_back("theta");
+  r_valid_paths.push_back("theta_range");
+  r_valid_paths.push_back("dtheta");
+  r_valid_paths.push_back("theta_num_angles");
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
@@ -499,8 +505,12 @@ protected:
   std::string                          m_csv;
 
   vtkm::Bounds                         m_bounds;
-  const int                            m_phi;
-  const int                            m_theta;
+  int                                  m_phi;
+  float                                m_phi_min;
+  float                                m_phi_inc;
+  int                                  m_theta;
+  float                                m_theta_min;
+  float                                m_theta_inc;
   std::string                          m_image_name;
   std::string                          m_image_path;
   std::string                          m_db_path;
@@ -508,16 +518,81 @@ protected:
   float                                m_time;
 public:
   CinemaManager(vtkm::Bounds bounds,
-                const int phi,
-                const int theta,
+                const conduit::Node &render_node,
                 const std::string image_name,
                 const std::string path)
     : m_bounds(bounds),
-      m_phi(phi),
-      m_theta(theta),
       m_image_name(image_name),
       m_time(0.f)
   {
+    // Handle phi.
+    if(render_node.has_path("phi"))
+    {
+      m_phi_min = -180.0;
+      m_phi = render_node["phi"].as_int32();
+      m_phi_inc = 360.0 / double(m_phi);
+    }
+    else if(render_node.has_path("phi_range") && render_node.has_path("dphi"))
+    {
+      const double *phi_range = render_node["phi_range"].as_float64_ptr();
+      if (phi_range[0] >= phi_range[1])
+      {
+        ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
+      }
+      m_phi_min = phi_range[0];
+      m_phi_inc = render_node["dphi"].to_float64();
+      m_phi =  int(floor((phi_range[1] - phi_range[0] + 1.0e-6) / m_phi_inc)) + 1;
+    }
+    else if(render_node.has_path("phi_range") && render_node.has_path("phi_num_angles"))
+    {
+      const double *phi_range = render_node["phi_range"].as_float64_ptr();
+      if (phi_range[0] >= phi_range[1])
+      {
+        ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
+      }
+      m_phi_min = phi_range[0];
+      m_phi = render_node["phi_num_angles"].as_int32();
+      m_phi_inc =  (phi_range[1] - phi_range[0]) / double(m_phi - 1);
+    }
+    else
+    {
+      ASCENT_ERROR("Cinema camera must specify phi or phi_range");
+    }
+
+    // Handle theta.
+    if(render_node.has_path("theta"))
+    {
+      m_theta_min = 0.0;
+      m_theta = render_node["theta"].as_int32();
+      m_theta_inc = 180.0 / double(m_theta);
+    }
+    else if(render_node.has_path("theta_range") && render_node.has_path("dtheta"))
+    {
+      const double *theta_range = render_node["theta_range"].as_float64_ptr();
+      if (theta_range[0] >= theta_range[1])
+      {
+        ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+      }
+      m_theta_min = theta_range[0];
+      m_theta_inc = render_node["dtheta"].to_float64();
+      m_theta =  int(floor((theta_range[1] - theta_range[0] + 1.0e-6) / m_theta_inc)) + 1;
+    }
+    else if(render_node.has_path("theta_range") && render_node.has_path("theta_num_angles"))
+    {
+      const double *theta_range = render_node["theta_range"].as_float64_ptr();
+      if (theta_range[0] >= theta_range[1])
+      {
+        ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+      }
+      m_theta_min = theta_range[0];
+      m_theta = render_node["theta_num_angles"].as_int32();
+      m_theta_inc =  (theta_range[1] - theta_range[0]) / double(m_theta - 1);
+    }
+    else
+    {
+      ASCENT_ERROR("Cinema camera must specify theta or theta_range");
+    }
+
     this->create_cinema_cameras(bounds);
     m_csv = "phi,theta,time,FILE\n";
 
@@ -525,8 +600,6 @@ public:
   }
 
   CinemaManager()
-    : m_phi(0),
-      m_theta(0)
   {
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
@@ -751,17 +824,14 @@ private:
 
     vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 2.5 / 2.0;
 
-    const double pi = 3.141592653589793;
-    double phi_inc = 360.0 / double(m_phi);
-    double theta_inc = 180.0 / double(m_theta);
     for(int p = 0; p < m_phi; ++p)
     {
-      float phi  =  -180.f + phi_inc * p;
+      float phi =  float(m_phi_min + m_phi_inc * double(p));
       m_phi_values.push_back(phi);
 
       for(int t = 0; t < m_theta; ++t)
       {
-        float theta = theta_inc * t;
+        float theta = float(m_theta_min + m_theta_inc * double(t));
         if (p == 0)
         {
           m_theta_values.push_back(theta);
@@ -824,8 +894,7 @@ public:
   }
 
   static void create_db(vtkm::Bounds bounds,
-                        const int phi,
-                        const int theta,
+                        const conduit::Node &render_node,
                         std::string db_name,
                         std::string path)
   {
@@ -834,7 +903,7 @@ public:
       ASCENT_ERROR("Creation failed: cinema database already exists");
     }
 
-    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name, path)));
+    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, render_node, db_name, path)));
   }
 
   static CinemaManager& get_db(std::string db_name)
@@ -1008,13 +1077,6 @@ DefaultRender::execute()
 
         if(is_cinema)
         {
-          if(!render_node.has_path("phi") || !render_node.has_path("theta"))
-          {
-            ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
-          }
-          int phi = render_node["phi"].to_int32();
-          int theta = render_node["theta"].to_int32();
-
           if(!render_node.has_path("db_name"))
           {
             ASCENT_ERROR("Cinema must specify a 'db_name'");
@@ -1030,7 +1092,7 @@ DefaultRender::execute()
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
-            detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name, output_path);
+            detail::CinemaDatabases::create_db(*bounds,render_node, db_name, output_path);
           }
 
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
