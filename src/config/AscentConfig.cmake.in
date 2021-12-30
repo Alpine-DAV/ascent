@@ -79,6 +79,30 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_DRAY_ENABLED @DRAY_FOUND@)
     set(ASCENT_DRAY_DIR "@DRAY_DIR@")
 
+    # advertise if occa support is enabled
+    set(ASCENT_OCCA_ENABLED @OCCA_FOUND@)
+    set(ASCENT_OCCA_DIR "@OCCA_DIR@")
+
+    # advertise if umpire support is enabled
+    set(ASCENT_UMPIRE_ENABLED @UMPIRE_FOUND@)
+    set(ASCENT_UMPIRE_DIR "@UMPIRE_DIR@")
+
+    ##################################################
+    # advertise if babelflow + pmt support is enabled
+    set(ASCENT_BABELFLOW_ENABLED @BABELFLOW_FOUND@)
+    set(ASCENT_BABELFLOW_DIR "@BABELFLOW_DIR_ORIG@")
+
+    set(ASCENT_PMT_ENABLED @PMT_FOUND@)
+    set(ASCENT_PMT_DIR "@PMT_DIR_ORIG@")
+
+    ##################################################
+    # advertise if fides and adios2 support is enabled
+    set(ASCENT_FIDES_ENABLED @FIDES_FOUND@)
+    set(ASCENT_FIDES_DIR "@FIDES_DIR_ORIG@")
+
+    set(ASCENT_ADIOS2_ENABLED @ADIOS2_FOUND@)
+    set(ASCENT_ADIOS2_DIR "@ADIOS2_DIR_ORIG@")
+
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
     set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
