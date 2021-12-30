@@ -408,7 +408,7 @@ AscentRuntime::Publish(const conduit::Node &data)
     // filter out default ghost name and
     // check if user provided ghost names are actually there
     VerifyGhosts();
-    // if nestsets are present, agument current ghost fields
+    // if nestsets are present, augment current ghost fields
     // for zones masked by finer levels. If no ghosts are present
     // we create them
     PaintNestsets();
@@ -1301,6 +1301,20 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     }
 
     std::string renders_name = names[i] + "_renders";
+
+    if(!flow::Workspace::supports_filter_type("default_render"))
+    {
+        Node n_about;
+        ascent::about(n_about);
+        // this will always show "enabled"
+        n_about["runtimes/ascent"].remove_child("status");
+
+        ASCENT_ERROR("Cannot create scene (" << names[i] << ")"
+                     " because Ascent was not compiled with"
+                     " rendering support." << std::endl
+                     << "Ascent Configuration Details:"
+                     << n_about["runtimes/ascent"].to_yaml());
+    }
 
     w.graph().add_filter("default_render",
                           renders_name,
