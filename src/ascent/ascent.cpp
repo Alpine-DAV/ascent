@@ -743,15 +743,15 @@ about(conduit::Node &n)
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)
-    n["runtimes/ascent/mfem"] = "enabled";
+    n["runtimes/ascent/mfem/status"] = "enabled";
 #else
-    n["runtimes/ascent/mfem"] = "disabled";
+    n["runtimes/ascent/mfem/status"] = "disabled";
 #endif
 
 #if defined(ASCENT_HDF5_ENABLED)
-    n["runtimes/ascent/hdf5"] = "enabled";
+    n["runtimes/ascent/hdf5/status"] = "enabled";
 #else
-    n["runtimes/ascent/hdf5"] = "disabled";
+    n["runtimes/ascent/hdf5/status"] = "disabled";
 #endif
 
 
