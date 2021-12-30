@@ -1,4 +1,4 @@
-# Copyright 2019 Lawrence Livermore National Security, LLC and other
+# Copyright (c) Lawrence Livermore National Security, LLC and other
 # Bridge Kernel Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause

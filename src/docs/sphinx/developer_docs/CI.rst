@@ -18,14 +18,23 @@ To speed up our CI testing we use Docker containers with pre-built third party l
 
   You will need to be logged into DockerHub to successfully push, the process may ask for your DockerHub username and password. Example Push Command: ``alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2020-08-25-sha449ef8``
 
- * To change which Docker Image is used by Azure, edit ``azure-pipelines.yml`` and change `container_tag` variable. ::
+ * To change which Docker Image is used by Azure, edit ``azure-pipelines.yml`` and change `container_tag` variable.
 
-#####
-# TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
-#####
-variables:
-  main_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2020-08-25-sha784de7
-  cuda_tag : alpinedav/ascent-ci:ubuntu-16-cuda-10.1-devel-tpls_2020-08-25-sha449ef8
+.. code-block:: yaml
+
+  #####
+  # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
+  #####
+
+  variables:
+    ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-12-29-shadee81a
+    ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-12-29-shadee81a
+    ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-12-29-shadee81a
+    ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-12-29-shadee81a
+    ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-12-29-shadee81a
+    ubuntu_21_10_tag: alpinedav/ascent-ci:ubuntu-21.10-devel-tpls_2021-12-29-shadee81a
+
+
 
 When the PR is merged, the azure changes will be merged and PRs to develop will use now the new containers.
 
