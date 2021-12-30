@@ -19,13 +19,13 @@ Using triggers to render when events occur
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_trigger_example1.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_trigger_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_trigger_example1.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 **Output**
 

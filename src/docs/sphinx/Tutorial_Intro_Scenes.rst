@@ -19,13 +19,13 @@ Using multiple scenes to render different variables
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example1.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example1.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_scene_ex1_render_var1.png
     :scale: 50 %
@@ -47,13 +47,13 @@ Rendering multiple plots to a single image
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example2.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example2.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example2.py
    :language: python
-   :lines: 45-
+   :lines: 7-
    
 ..  figure:: Tutorial_Output/out_scene_ex2_render_two_plots.png
     :scale: 50 %
@@ -70,13 +70,13 @@ Related docs: :ref:`scenes_renders`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example3.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example3.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example3.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_scene_ex3_view1.png
     :scale: 50 %
@@ -101,13 +101,13 @@ Related docs: :ref:`scenes_color_tables`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_scene_example4.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example4.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_scene_example4.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_scene_ex4_render_viridis.png
     :scale: 50 %

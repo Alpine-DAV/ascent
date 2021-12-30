@@ -18,7 +18,7 @@ Creating key-value entries
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example1.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 **Output**
 
@@ -29,7 +29,7 @@ Creating key-value entries
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example1.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 **Output**
 
@@ -44,19 +44,19 @@ Creating a path hierarchy
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example2.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 **Output**
 
 .. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example2.txt
-   :language: json
+   :language: yaml
 
    
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example2.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example2.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 **Output**
 
@@ -71,18 +71,18 @@ Setting array data
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example3.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 **Output**
 
 .. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example3.txt
-   :language: json
+   :language: yaml
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example3.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example3.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 **Output**
 
@@ -97,18 +97,18 @@ Zero-copy vs deep copy of array data
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/conduit_example4.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 **Output**
 
 .. literalinclude:: Tutorial_Output/out_txt_cpp_conduit_example4.txt
-   :language: json
+   :language: yaml
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/conduit_example4.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 **Output**
 

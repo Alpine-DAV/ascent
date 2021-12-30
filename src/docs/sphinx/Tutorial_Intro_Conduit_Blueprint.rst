@@ -26,13 +26,13 @@ Creating a uniform grid with a single field
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example1.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/blueprint_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/blueprint_example1.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_ascent_render_uniform.png
     :scale: 50 %
@@ -49,13 +49,13 @@ Creating an unstructured tet mesh with fields
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example2.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/blueprint_example2.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/blueprint_example2.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_ascent_render_tets.png
     :scale: 50 %
@@ -72,13 +72,13 @@ Related docs: `Braid <https://llnl-conduit.readthedocs.io/en/latest/blueprint_me
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/blueprint_example3.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/blueprint_example3.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/blueprint_example3.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_ascent_render_braid_tv_0019.png
     :scale: 50 %

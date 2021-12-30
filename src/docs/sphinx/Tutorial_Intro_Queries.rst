@@ -19,13 +19,13 @@ Extracting mesh cycle and entropy of a time varying mesh
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_query_example1.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_query_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_query_example1.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 **Output**
 

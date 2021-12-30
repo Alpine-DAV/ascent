@@ -53,6 +53,7 @@ your path:
 
 To verify success, you can echo your path and the paths of the libraries should appear at the
 front of the path.
+
 .. _utils_replay:
 
 Replay
@@ -91,7 +92,7 @@ Using Ascent
 The ``relay`` extract saves out Conduit Blueprint HDF5 files that replay consumes.
 Simply add the extract to the actions in the code or actions file. The ``relay`` extract can
 also sub-select the fields that are saved to reduce the total data set size. For more information see
-the :ref:`relay` section.
+the :ref:`extracts_relay` section.
 
 .. code-block:: c++
 

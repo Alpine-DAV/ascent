@@ -17,6 +17,9 @@ two types of computation:
     - Queries: data summarization (e.g a max reduction via ``max(field('energy'))``)
     - Derived Fields (e.g. ``field('energy') + 1``)
 
+
+.. _queries:
+
 Queries
 -------
 Queries are expressions that perform some sort of data reduction from

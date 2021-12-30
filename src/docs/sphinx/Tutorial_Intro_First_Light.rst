@@ -19,13 +19,13 @@ To start, we run a basic "First Light" example to generate an image. This exampl
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_first_light_example.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python Source <../../../src/examples/tutorial/ascent_intro/python/ascent_first_light_example.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_first_light_example.py
    :language: python
-   :lines: 53-
+   :lines: 15-
 
 ..  figure:: Tutorial_Output/out_first_light_render_3d.png
     :scale: 50 %

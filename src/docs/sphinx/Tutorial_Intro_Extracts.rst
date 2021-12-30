@@ -21,13 +21,13 @@ Related docs: :ref:`extracts_relay`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example1.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example1.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example1.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 How can you use these files?
 
@@ -56,13 +56,13 @@ Related docs: :ref:`extracts_relay`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example2.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example2.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_extract_visit_braid_one.png
     :scale: 50 %
@@ -78,13 +78,13 @@ Related docs: :ref:`extracts_relay`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example3.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example3.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_extract_visit_braid_contour.png
     :scale: 50 %
@@ -100,13 +100,13 @@ Related docs: :ref:`actions_cinema`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example4.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 :download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example4.py>`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example4.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 ..  figure:: Tutorial_Output/out_extracts_cinema_snap.png
     :scale: 50 %
@@ -124,7 +124,7 @@ Related docs: :ref:`extracts_python`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_extract_example5.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 **Output**
 
@@ -134,7 +134,7 @@ Related docs: :ref:`extracts_python`
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_extract_example5.py
    :language: python
-   :lines: 45-
+   :lines: 7-
 
 **Output**
 

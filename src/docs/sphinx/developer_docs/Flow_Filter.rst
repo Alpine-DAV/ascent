@@ -38,7 +38,7 @@ as well. ``verify_params`` alerts users to input errors and unexpected parameter
 .. note::
 
     Developing a flow filter requires a working knowledge of the Conduit API.
-    In the :ref:`tutorials` section under ``Conduit Examples``, there are several
+    In the :ref:`tutorial_intro` section under ``Conduit Examples``, there are several
     examples of basic Conduit usage. More Conduit tutorial resources can be found in the
     `Conduit documentation <https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp.html>`_.
 
@@ -182,7 +182,7 @@ These helper functions return ``false`` if the parameter check fails.
 
 Surprises
 +++++++++
-A common user error is to set a parameter at the wrong path.
+A common user error is to set a parameter at the wrong path.z
 For example the filter expects a parameter ``field`` but the user
 adds the path ``field_name``, the verification will fail and complain about a
 missing parameter. In order to provide a better error message, we provide
