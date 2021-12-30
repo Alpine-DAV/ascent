@@ -80,17 +80,18 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_py_cxx11_bflow:
-          containerImage: ${{ variables.ubuntu_18_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: ON
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          BLT_CXX_STD: c++11
+        # this is off until #822 is worked out
+        # ubuntu_18_shared_py_cxx11_bflow:
+        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_VTKH: ON
+        #   ENABLE_MFEM: ON
+        #   ENABLE_BABELFLOW: ON
+        #   ENABLE_ADIOS2: OFF
+        #   ENABLE_FIDES: OFF
+        #   BLT_CXX_STD: c++11
         ubuntu_18_shared_py_cxx11_fides:
           containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
