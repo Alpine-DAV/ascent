@@ -1,3 +1,9 @@
+.. ###############################################################################
+.. # Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+.. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+.. # other details. No copyright assignment is required to contribute to Ascent.
+.. ###############################################################################
+
 # Ascent Noise Example
 
 The noise application generates a synthetic data set based open simplex noise which is a public domain n-dimensional smooth noise function. This is similar to Ken Perlin's simplex noise, but this algorithm does not come with any of the accociated patent issues. The code included here is a *c* port of the java implementation and can be found on [github](https://github.com/smcameron/open-simplex-noise-in-c). The java version can be found [here](https://gist.github.com/KdotJPG/b1270127455a94ac5d19).

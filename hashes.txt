@@ -1,3 +1,3 @@
-vtkm branch='master' commit='d2d1c854adc8c0518802f153b48afd17646b6252'
-vtkh branch='develop' commit='62a923e847f8fb3d6c44c64c6164f9fba995f748'
+vtkm branch='master' commit='d5143ad7ed2e55025cec2f49fb3f0ab46045a8e2'
+vtkh branch='develop' commit='be86a73f6dc53176e076002f9520bc37b16b5119'
 blt  branch='develop' commit='86a7d6b5ee93d8b7b3233a3e54a4f06f8d8308d3'

@@ -97,12 +97,15 @@ class Ascent(CMakePackage, CudaPackage):
 
     # Certain CMake versions have been found to break for our use cases
     depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
-    depends_on("conduit")
+    # NOTE: With Old CONCRETIZER, dep on conduit with no variants
+    # causes a conflict (since conduit defailts python o off)
+    #depends_on("conduit")
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python")
     depends_on("conduit+fortran", when="+fortran")
     depends_on("conduit+mpi", when="+mpi")
     depends_on("conduit~mpi", when="~mpi")
+
 
     #######################
     # Python

@@ -1,7 +1,9 @@
-# Copyright 2019 Lawrence Livermore National Security, LLC and other
-# Bridge Kernel Project Developers. See the top-level LICENSE file for details.
-#
-# SPDX-License-Identifier: BSD-3-Clause
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
+
 
 # parts of this are from nb_connect_existing
 from __future__ import print_function
