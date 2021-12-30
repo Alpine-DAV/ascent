@@ -15,7 +15,7 @@ Currently, Ascent provides two main utilities:
 * ``replay`` : a set of programs that replays simulation data saved by Ascent
   or exported by VisIt to Ascent.
 
-Generate Spack Eviromnent Script
+Generate Spack Environment Script
 --------------------------------
 The uberenv spack-based build installs libraries into
 difficult to locate paths. The ``gen_spack_env_script.py`` is a utility program that

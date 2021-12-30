@@ -34,8 +34,6 @@ class UberenvAscent(Ascent):
         url      = "file://" + dummy_tar_path
         return url
 
-    depends_on("conduit+python", when="+python")
-
     ###################################
     # build phases used by this package
     ###################################
