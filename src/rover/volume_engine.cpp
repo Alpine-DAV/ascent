@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include <volume_engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 namespace rover {

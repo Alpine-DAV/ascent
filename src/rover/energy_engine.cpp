@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include <energy_engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 #include <vtkm/cont/DefaultTypes.h>
