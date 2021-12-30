@@ -1,4 +1,4 @@
-# Copyright 2013-2020 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -16,13 +16,13 @@ class Occa(Package):
        using run-time compilation for device kernels.
     """
 
-    homepage = "http://libocca.org"
+    homepage = "https://libocca.org"
     git      = 'https://github.com/libocca/occa.git'
 
     maintainers = ['v-dobrev', 'dmed256']
 
     version('develop')
-    version('1.1.1', commit='c42d2fd6ac8010cf31dbc325b0457fbe889a8e72')
+    version('1.2.0', tag='v1.2.0')
     version('1.1.0', tag='v1.1.0')
     version('1.0.9', tag='v1.0.9')
     version('1.0.8', tag='v1.0.8')

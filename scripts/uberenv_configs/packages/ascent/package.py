@@ -97,11 +97,12 @@ class Ascent(CMakePackage, CudaPackage):
 
     # Certain CMake versions have been found to break for our use cases
     depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
+    depends_on("conduit")
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python")
+    depends_on("conduit+fortran", when="+fortran")
     depends_on("conduit+mpi", when="+mpi")
     depends_on("conduit~mpi", when="~mpi")
-    depends_on("conduit@develop")
 
     #######################
     # Python
@@ -130,7 +131,7 @@ class Ascent(CMakePackage, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@develop",             when="+vtkh")
+    depends_on("vtk-h",      when="+vtkh")
     depends_on("vtk-h~openmp",      when="+vtkh~openmp")
     depends_on("vtk-h+cuda+openmp", when="+vtkh+cuda+openmp")
     depends_on("vtk-h+cuda~openmp", when="+vtkh+cuda~openmp")
@@ -149,29 +150,28 @@ class Ascent(CMakePackage, CudaPackage):
 
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
-    depends_on("dray@develop",        when="+dray")
-    depends_on("dray+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
-    depends_on("dray+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
-    depends_on("dray+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+    depends_on("dray+mpi+shared+cuda",        when="+dray+mpi+cuda+shared")
+    depends_on("dray+mpi+shared+openmp",      when="+dray+mpi+openmp+shared")
+    depends_on("dray+mpi+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
 
-    depends_on("dray+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
-    depends_on("dray+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
-    depends_on("dray+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+    depends_on("dray+mpi~shared+cuda",        when="+dray+mpi+cuda~shared")
+    depends_on("dray+mpi~shared+openmp",      when="+dray+mpi+openmp~shared")
+    depends_on("dray+mpi~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
 
     # devil ray variants without mpi
-    depends_on("dray~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
-    depends_on("dray~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
-    depends_on("dray~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
+    depends_on("dray~mpi+shared+cuda",        when="+dray~mpi+cuda+shared")
+    depends_on("dray~mpi+shared+openmp",      when="+dray~mpi+openmp+shared")
+    depends_on("dray~mpi+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
 
-    depends_on("dray~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
-    depends_on("dray~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
-    depends_on("dray~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+    depends_on("dray~mpi~shared+cuda",        when="+dray~mpi+cuda~shared")
+    depends_on("dray~mpi~shared+openmp",      when="+dray~mpi+openmp~shared")
+    depends_on("dray~mpi~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
 
     # occa defaults to +cuda so we have to explicit tell it ~cuda
-    depends_on("occa@1.1.1~cuda",        when="+occa~cuda")
-    depends_on("occa@1.1.1~cuda~openmp", when="+occa~cuda~openmp")
-    depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
-    depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
+    depends_on("occa~cuda",        when="+occa~cuda")
+    depends_on("occa~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
 
     depends_on("umpire+cuda+shared", when="+cuda+shared")
     depends_on("umpire+cuda~shared", when="+cuda~shared")
