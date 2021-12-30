@@ -81,6 +81,9 @@ class Ascent(CMakePackage, CudaPackage):
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
+    variant("dray", default=False, description="Build with Devil Ray support")
+    variant("occa", default=False, description="Build with OCCA support")
+    variant("umpire", default=True, description="Build with OCCA support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
@@ -94,11 +97,12 @@ class Ascent(CMakePackage, CudaPackage):
 
     # Certain CMake versions have been found to break for our use cases
     depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
+    depends_on("conduit")
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python")
+    depends_on("conduit+fortran", when="+fortran")
     depends_on("conduit+mpi", when="+mpi")
     depends_on("conduit~mpi", when="~mpi")
-    depends_on("conduit@develop")
 
     #######################
     # Python
@@ -127,7 +131,7 @@ class Ascent(CMakePackage, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@develop",             when="+vtkh")
+    depends_on("vtk-h",      when="+vtkh")
     depends_on("vtk-h~openmp",      when="+vtkh~openmp")
     depends_on("vtk-h+cuda+openmp", when="+vtkh+cuda+openmp")
     depends_on("vtk-h+cuda~openmp", when="+vtkh+cuda~openmp")
@@ -146,23 +150,33 @@ class Ascent(CMakePackage, CudaPackage):
 
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
-    depends_on("dray@develop",        when="+dray")
-    depends_on("dray+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
-    depends_on("dray+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
-    depends_on("dray+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+    depends_on("dray+mpi+shared+cuda",        when="+dray+mpi+cuda+shared")
+    depends_on("dray+mpi+shared+openmp",      when="+dray+mpi+openmp+shared")
+    depends_on("dray+mpi+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
 
-    depends_on("dray+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
-    depends_on("dray+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
-    depends_on("dray+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+    depends_on("dray+mpi~shared+cuda",        when="+dray+mpi+cuda~shared")
+    depends_on("dray+mpi~shared+openmp",      when="+dray+mpi+openmp~shared")
+    depends_on("dray+mpi~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
 
     # devil ray variants without mpi
-    depends_on("dray~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
-    depends_on("dray~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
-    depends_on("dray~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
+    depends_on("dray~mpi+shared+cuda",        when="+dray~mpi+cuda+shared")
+    depends_on("dray~mpi+shared+openmp",      when="+dray~mpi+openmp+shared")
+    depends_on("dray~mpi+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
 
-    depends_on("dray~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
-    depends_on("dray~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
-    depends_on("dray~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+    depends_on("dray~mpi~shared+cuda",        when="+dray~mpi+cuda~shared")
+    depends_on("dray~mpi~shared+openmp",      when="+dray~mpi+openmp~shared")
+    depends_on("dray~mpi~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+
+    # occa defaults to +cuda so we have to explicit tell it ~cuda
+    depends_on("occa~cuda",        when="+occa~cuda")
+    depends_on("occa~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
+
+    depends_on("umpire+cuda+shared", when="+cuda+shared")
+    depends_on("umpire+cuda~shared", when="+cuda~shared")
+    depends_on("umpire~cuda+shared", when="~cuda+shared")
+    depends_on("umpire~cuda~shared", when="~cuda~shared")
 
     #######################
     # Documentation related
@@ -336,7 +350,7 @@ class Ascent(CMakePackage, CudaPackage):
                 msg = 'failed to find CMake (and cmake variant is off)'
                 raise RuntimeError(msg)
             cmake_exe = cmake_exe.path
-        
+
         # get hostconfig name
         host_cfg_fname = self._get_host_config_path(spec)
 
@@ -495,8 +509,7 @@ class Ascent(CMakePackage, CudaPackage):
             # BABELFLOW (also depends on mpi)
             ###################################
             if "+babelflow" in spec:
-                cfg.write(cmake_cache_entry("ENABLE_BABELFLOW", "ON"))
-                cfg.write(cmake_cache_entry("BabelFlow_DIR",
+                cfg.write(cmake_cache_entry("BABELFLOW_DIR",
                                             spec['babelflow'].prefix))
                 cfg.write(cmake_cache_entry("PMT_DIR",
                                             spec['parallelmergetree'].prefix))
@@ -561,6 +574,25 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write("# devil ray not built by spack \n")
 
         #######################
+        # OCCA
+        #######################
+        if "+occa" in spec:
+            cfg.write("# occa from spack \n")
+            cfg.write(cmake_cache_entry("OCCA_DIR", spec['occa'].prefix))
+        else:
+            cfg.write("# occa not built by spack \n")
+
+        #######################
+        # Umpire
+        #######################
+        if "+umpire" in spec:
+            cfg.write("# umpire from spack \n")
+            cfg.write(cmake_cache_entry("UMPIRE_DIR", spec['umpire'].prefix))
+        else:
+            cfg.write("# umpire not built by spack \n")
+
+        #######################
+        # Adios
         # Adios2
         #######################
         cfg.write("# adios2 support\n")

@@ -101,7 +101,7 @@ endif()
 ################################
 # Setup MFEM if enabled
 ################################
-if (MFEM_DIR AND ENABLE_MFEM)
+if (MFEM_DIR)
   include(cmake/thirdparty/SetupMFEM.cmake)
 endif()
 
@@ -110,6 +110,20 @@ endif()
 ################################
 if (DRAY_DIR)
   include(cmake/thirdparty/SetupDevilRay.cmake)
+endif()
+
+################################
+# Setup OCCA
+################################
+if (OCCA_DIR)
+  include(cmake/thirdparty/SetupOcca.cmake)
+endif()
+
+################################
+# Setup Umpire
+################################
+if (UMPIRE_DIR)
+  include(cmake/thirdparty/SetupUmpire.cmake)
 endif()
 
 ################################
@@ -129,6 +143,6 @@ endif()
 ################################
 # Setup Babelflow
 ################################
-if (ENABLE_BABELFLOW)
+if (BABELFLOW_DIR OR BabelFlow_DIR)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
-endif ()
+endif()

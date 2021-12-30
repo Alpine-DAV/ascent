@@ -43,7 +43,6 @@
 #define rover_vtkm_typedefs_h
 
 #include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/DeviceAdapterListTag.h>
 #include <vtkm/cont/Timer.h>
 #include <vtkm/cont/ColorTable.h>
 #include <vtkm/rendering/raytracing/Camera.h>

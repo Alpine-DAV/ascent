@@ -148,6 +148,16 @@ bool has_component(const conduit::Node &dataset,
                    const std::string &field_name,
                    const std::string &component);
 
+// returns -1 if the component does not exist
+// does not check for consistency (i.e, if all the
+// domains has the same number of components)
+int num_components(const conduit::Node &dataset,
+                   const std::string &field_name);
+
+std::string component_name(const conduit::Node &dataset,
+                           const std::string &field_name,
+                           const int component_id);
+
 std::string
 possible_components(const conduit::Node &dataset,
                     const std::string &field_name);
@@ -163,6 +173,12 @@ void paint_nestsets(const std::string nestset_name,
                     const std::string topo_name,
                     conduit::Node &dom,
                     conduit::Node &field); // field to paint on
+
+conduit::Node
+final_topo_and_assoc(const conduit::Node &dataset,
+                     const conduit::Node &bin_axes,
+                     const std::string &topo_name,
+                     const std::string &assoc_str);
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

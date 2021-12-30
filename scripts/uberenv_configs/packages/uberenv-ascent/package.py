@@ -56,19 +56,23 @@ class UberenvAscent(Ascent):
 
     homepage = "https://github.com/alpine-DAV/ascent"
 
+    # default to building python when using uberenv
+    variant("python",
+            default=True,
+            description="Build Python Support")
+
     # default to building docs when using uberenv
     variant("doc",
             default=True,
-            description="Build deps needed to create Conduit's Docs")
-
-    # in upstream spack package
-    depends_on("cmake@3.14.1:3.14.5", when="+cmake")
+            description="Build deps needed to build Docs")
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
         dummy_tar_path = pjoin(dummy_tar_path,"uberenv-ascent.tar.gz")
         url      = "file://" + dummy_tar_path
         return url
+
+    depends_on("conduit+python", when="+python")
 
     ###################################
     # build phases used by this package

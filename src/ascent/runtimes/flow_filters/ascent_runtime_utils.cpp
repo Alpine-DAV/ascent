@@ -96,8 +96,11 @@ std::string output_dir(const std::string file_name)
 
 std::string default_dir()
 {
-  std::string default_dir = Metadata::n_metadata["default_dir"].as_string();
-  return default_dir;
+  if(Metadata::n_metadata.has_path("default_dir"))
+  {
+    return Metadata::n_metadata["default_dir"].as_string();
+  }
+  else return ".";
 }
 
 std::string filter_to_path(const std::string filter_name)

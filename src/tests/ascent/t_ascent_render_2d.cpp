@@ -68,6 +68,57 @@ using namespace ascent;
 index_t EXAMPLE_MESH_SIDE_DIM = 50;
 
 //-----------------------------------------------------------------------------
+// this test checks that we get an exception when ascent was compiled
+// w/o any rendering support
+//-----------------------------------------------------------------------------
+TEST(ascent_render_2d, test_render_2d_default_runtime_non_rendering_support)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built *NOT* with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "enabled")
+    {
+        ASCENT_INFO("Ascent vtkm support enabled, skipping this test");
+        return;
+    }
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("quads",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               0,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //
+    // Create the actions.
+    //
+    Node actions;
+
+    conduit::Node scenes;
+    scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+    scenes["scene1/plots/plt1/field"] = "braid";
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    EXPECT_THROW(ascent.execute(actions),conduit::Error);
+    ascent.close();
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_render_2d, test_render_2d_default_runtime)
 {
     // the vtkm runtime is currently our only rendering runtime
@@ -216,7 +267,7 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
     conduit::blueprint::mesh::examples::braid("quads",
                                                EXAMPLE_MESH_SIDE_DIM,
                                                EXAMPLE_MESH_SIDE_DIM,
-                                               1,
+                                               0,
                                                data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
@@ -281,7 +332,7 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
     conduit::blueprint::mesh::examples::braid("uniform",
                                                EXAMPLE_MESH_SIDE_DIM,
                                                EXAMPLE_MESH_SIDE_DIM,
-                                               1,
+                                               0,
                                                data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));

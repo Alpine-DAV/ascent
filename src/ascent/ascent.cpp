@@ -533,7 +533,6 @@ Ascent::close()
     {
         if(m_runtime != NULL)
         {
-            m_runtime->Cleanup();
             delete m_runtime;
             m_runtime = NULL;
         }
@@ -704,6 +703,11 @@ about(conduit::Node &n)
 #else
     n["runtimes/ascent/dray/status"] = "disabled";
 #endif
+#if defined(ASCENT_JIT_ENABLED)
+    n["runtimes/ascent/jit/status"] = "enabled";
+#else
+    n["runtimes/ascent/jit/status"] = "disabled";
+#endif
 #if defined(ASCENT_VTKH_ENABLED)
     // call this vtkm so people don't have to know
     // about vtkh
@@ -739,15 +743,15 @@ about(conduit::Node &n)
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)
-    n["runtimes/ascent/mfem"] = "enabled";
+    n["runtimes/ascent/mfem/status"] = "enabled";
 #else
-    n["runtimes/ascent/mfem"] = "disabled";
+    n["runtimes/ascent/mfem/status"] = "disabled";
 #endif
 
 #if defined(ASCENT_HDF5_ENABLED)
-    n["runtimes/ascent/hdf5"] = "enabled";
+    n["runtimes/ascent/hdf5/status"] = "enabled";
 #else
-    n["runtimes/ascent/hdf5"] = "disabled";
+    n["runtimes/ascent/hdf5/status"] = "disabled";
 #endif
 
 
