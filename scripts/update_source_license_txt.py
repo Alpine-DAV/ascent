@@ -107,7 +107,6 @@ def update_lic(lic_file_old,lic_file_new,modify_files):
                       "../scripts",
                       "../host-configs",
                       "../config-build.sh",
-                      "../bootstrap-env.sh",
                       "../package.py"]:
 
         if os.path.isdir(root_path):
@@ -121,6 +120,8 @@ def update_lic(lic_file_old,lic_file_new,modify_files):
     up_cnt    = {}
     updated   = []
     for f in all_files:
+        if not os.path.isfile(f):
+            continue
         curr_txt =  open(f).read()
         for k,v in patterns.items():
             full_old_lic = v["full"]
