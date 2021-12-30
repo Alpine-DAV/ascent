@@ -174,8 +174,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
-    vtkh::Initialize();
 #if defined(ASCENT_VTKM_ENABLED)
+    vtkh::Initialize();
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
