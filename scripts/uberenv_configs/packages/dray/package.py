@@ -186,26 +186,26 @@ class Dray(Package, CudaPackage):
         cfg.write("# using %s compiler spec\n" % spec.compiler)
         cfg.write("#######\n\n")
 
-        if "+mpi" in spec:
-            cfg.write(cmake_cache_entry("ENABLE_MPI", "ON"))
-            mpicc_path = spec['mpi'].mpicc
-            mpicxx_path = spec['mpi'].mpicxx
-            # if we are using compiler wrappers on cray systems
-            # use those for mpi wrappers, b/c  spec['mpi'].mpicxx
-            # etc make return the spack compiler wrappers
-            # which can trip up mpi detection in CMake 3.14
-            if cpp_compiler == "CC":
-                mpicc_path = "cc"
-                mpicxx_path = "CC"
+# Include path to cmake for reference
+        cfg.write("# cmake from spack \n")
+        cfg.write("# cmake executable path: %s\n\n" % cmake_exe)
 
-            cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", mpicc_path))
-            cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", mpicxx_path))
+        #######################
+        # Compiler Settings
+        #######################
+        cfg.write("#######\n")
+        cfg.write("# using %s compiler spec\n" % spec.compiler)
+        cfg.write("#######\n\n")
+        cfg.write("# c compiler used by spack\n")
+        cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", c_compiler))
+        cfg.write("# cpp compiler used by spack\n")
+        cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", cpp_compiler))
+
+        # shared vs static libs
+        if "+shared" in spec:
+            cfg.write(cmake_cache_entry("BUILD_SHARED_LIBS", "ON"))
         else:
-            cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
-            cfg.write("# c compiler used by spack\n")
-            cfg.write(cmake_cache_entry("CMAKE_C_COMPILER", c_compiler))
-            cfg.write("# cpp compiler used by spack\n")
-            cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", cpp_compiler))
+            cfg.write(cmake_cache_entry("BUILD_SHARED_LIBS", "OFF"))
 
         # use global spack compiler flags
         cppflags = ' '.join(spec.compiler_flags['cppflags'])
@@ -219,10 +219,43 @@ class Dray(Package, CudaPackage):
         if cxxflags:
             cfg.write(cmake_cache_entry("CMAKE_CXX_FLAGS", cxxflags))
         fflags = ' '.join(spec.compiler_flags['fflags'])
-        if self.spec.satisfies('%cce'):
-            fflags += " -ef"
-        if fflags:
-            cfg.write(cmake_cache_entry("CMAKE_Fortran_FLAGS", fflags))
+
+
+        #######################
+        # MPI
+        #######################
+
+        cfg.write("# MPI Support\n")
+
+        if "+mpi" in spec:
+            mpicc_path = spec['mpi'].mpicc
+            mpicxx_path = spec['mpi'].mpicxx
+            mpifc_path = spec['mpi'].mpifc
+            # if we are using compiler wrappers on cray systems
+            # use those for mpi wrappers, b/c  spec['mpi'].mpicxx
+            # etc make return the spack compiler wrappers
+            # which can trip up mpi detection in CMake 3.14
+            if cpp_compiler == "CC":
+                mpicc_path = "cc"
+                mpicxx_path = "CC"
+                mpifc_path = "ftn"
+            cfg.write(cmake_cache_entry("ENABLE_MPI", "ON"))
+            cfg.write(cmake_cache_entry("MPI_C_COMPILER", mpicc_path))
+            cfg.write(cmake_cache_entry("MPI_CXX_COMPILER", mpicxx_path))
+            cfg.write(cmake_cache_entry("MPI_Fortran_COMPILER", mpifc_path))
+            mpiexe_bin = join_path(spec['mpi'].prefix.bin, 'mpiexec')
+            if os.path.isfile(mpiexe_bin):
+                # starting with cmake 3.10, FindMPI expects MPIEXEC_EXECUTABLE
+                # vs the older versions which expect MPIEXEC
+                if self.spec["cmake"].satisfies('@3.10:'):
+                    cfg.write(cmake_cache_entry("MPIEXEC_EXECUTABLE",
+                                                mpiexe_bin))
+                else:
+                    cfg.write(cmake_cache_entry("MPIEXEC",
+                                                mpiexe_bin))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
+
 
         #######################
         # Backends
