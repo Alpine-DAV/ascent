@@ -20,6 +20,7 @@ C and C++ Libraries
 """""""""""""""""""
 - *gtest*:  From BLT - (BSD Style License)
 - *lodepng*: thirdparty_builtin/lodepng/LICENSE (BSD Style License)
+- *rover*: src/rover (BSD Style License)
 
 Python Libraries
 """""""""""""""""""

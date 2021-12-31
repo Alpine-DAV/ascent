@@ -84,11 +84,53 @@ Ascent Documentation
 ======================
 
 .. toctree::
+   :maxdepth: 1
+   :hidden:
 
    QuickStart
-   Ascent
-   developer_docs/index.rst
+
+.. toctree::
+   :caption: Tutorial
+   :maxdepth: 1
+   :hidden:
+
    Tutorial
+   Tutorial_Setup
+   Tutorial_Intro
+   Tutorial_CloverLeaf_Demos
+
+
+.. toctree::
+   :caption: User Documentation
+   :maxdepth: 1
+   :hidden:
+
+   Overview
+   ExampleIntegrations
+   BuildingAscent
+   AscentAPI
+   Actions/index
+   Utilities
+   GPU_notes
+
+
+.. toctree::
+   :caption: Developer Documentation
+   :maxdepth: 1
+   :hidden:
+
+   developer_docs/Contributing
+   developer_docs/Overview
+   developer_docs/BuildEnvironment
+   developer_docs/VTKh_Filter
+   developer_docs/Flow_Filter
+   developer_docs/CI
+
+.. toctree::
+   :caption: Resources
+   :maxdepth: 1
+   :hidden:
+
    Releases
    Publications
    Licenses

@@ -5,8 +5,8 @@
 .. ###############################################################################
 
 
-Tutorial
-=================
+Tutorial Overview
+==================
 
 `Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2021_11_05_ascent_intro.pdf>`_
 
@@ -22,10 +22,10 @@ Ascent installs include standalone C++, Python, and Python-based Jupyter noteboo
 You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
 
-Scheduled Tutorials:
- * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
+.. Scheduled Tutorials:
 
 Past Tutorials:
+ * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
  * ECP 2021 Annual Meeting - April 2021, Virtual
  * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual
@@ -33,9 +33,4 @@ Past Tutorials:
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO
  * ECP 2019 Annual Meeting - Jan 2019, Houston, TX
  * ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX
-
-.. toctree::
-   Tutorial_Setup
-   Tutorial_Intro
-   Tutorial_CloverLeaf_Demos
 

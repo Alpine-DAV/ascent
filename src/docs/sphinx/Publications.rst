@@ -11,6 +11,14 @@ Publications and Presentations
 Publications
 ------------
 
+- `Automated In Situ Computational Steering Using Ascent’s Capable Yes-No Machine <https://doi.org/10.1145/3490138.3490144>`_ Presented at the `ISAV 2021 Workshop <https://dav.lbl.gov/events/ISAV2021/>`_, held in conjunction with SC 21, on November 15th 2021, Virtual Event.
+
+- `Trigger Happy: Assessing the Viability of Trigger-Based In Situ Analysis <https://doi.org/10.1109/LDAV53230.2021.00010>`_ Presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2021 <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 25rd 2021 Virtual Event.
+
+
+- `Trigger Happy: Assessing the Viability of Trigger-Based In Situ Analysis <https://doi.org/10.1109/LDAV53230.2021.00010>`_ Presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2021 <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 25rd 2021 Virtual Event.
+
+
 - `JIT’s Complicated: A Comprehensive System For Derived Field Generation <https://doi.org/10.1145/3426462.3426467>`_  Presented at the `ISAV 2020 Workshop <https://dav.lbl.gov/events/ISAV2020/>`_, held in conjunction with SC 20, on November 12th 2020, Virtual Event.
 
 - `Interactive In Situ Visualization and Analysis using Ascent and Jupyter <https://dl.acm.org/doi/pdf/10.1145/3364228.3364232>`_  Presented at the `ISAV 2019 Workshop <https://dav.lbl.gov/events/ISAV2019/>`_, held in conjunction with SC 19, on November 18h 2019 in Denver, CO.
@@ -35,6 +43,9 @@ Publications
 Tutorials
 -------------
 
+- `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
+- ECP 2021 Annual Meeting - April 2021, Virtual
+- `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
 - `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual Event.
 - ECP 2020 Annual Meeting - Feb 2020, Houston, TX
 - In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2020, Houston, TX.
