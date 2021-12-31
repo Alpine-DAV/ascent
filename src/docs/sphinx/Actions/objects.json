@@ -1,0 +1,236 @@
+
+{
+  "histogram": 
+  {
+    "attrs": 
+    {
+      "value": 
+      {
+        "type": "array"
+      },
+      "min_val": 
+      {
+        "type": "double"
+      },
+      "max_val": 
+      {
+        "type": "double"
+      },
+      "num_bins": 
+      {
+        "type": "int"
+      },
+      "clamp": 
+      {
+        "type": "bool"
+      }
+    }
+  },
+  "value_position": 
+  {
+    "attrs": 
+    {
+      "value": 
+      {
+        "type": "double"
+      },
+      "position": 
+      {
+        "type": "vector"
+      }
+    }
+  },
+  "topo": 
+  {
+    "attrs": 
+    {
+      "cell": 
+      {
+        "type": "cell",
+        "description": "Holds ``jitable`` cell attributes."
+      },
+      "vertex": 
+      {
+        "type": "vertex",
+        "description": "Holds ``jitable`` vertex attributes."
+      }
+    }
+  },
+  "cell": 
+  {
+    "attrs": 
+    {
+      "x": 
+      {
+        "type": "jitable",
+        "description": "Cell x-coordinate."
+      },
+      "y": 
+      {
+        "type": "jitable",
+        "description": "Cell y-coordinate."
+      },
+      "z": 
+      {
+        "type": "jitable",
+        "description": "Cell z-coordinate."
+      },
+      "dx": 
+      {
+        "type": "jitable",
+        "description": "Cell dx, only defined for rectilinear topologies."
+      },
+      "dy": 
+      {
+        "type": "jitable",
+        "description": "Cell dy, only defined for rectilinear topologies."
+      },
+      "dz": 
+      {
+        "type": "jitable",
+        "description": "Cell dz, only defined for rectilinear topologies."
+      },
+      "id": 
+      {
+        "type": "jitable",
+        "description": "Domain cell id."
+      },
+      "volume": 
+      {
+        "type": "jitable",
+        "description": "Cell volume, only defined for 3D topologies"
+      },
+      "area": 
+      {
+        "type": "jitable",
+        "description": "Cell area, only defined for 2D topologies"
+      }
+    },
+    "jitable": null
+  },
+  "vertex": 
+  {
+    "attrs": 
+    {
+      "x": 
+      {
+        "type": "jitable",
+        "description": "Vertex x-coordinate."
+      },
+      "y": 
+      {
+        "type": "jitable",
+        "description": "Vertex y-coordinate."
+      },
+      "z": 
+      {
+        "type": "jitable",
+        "description": "Vertex z-coordinate."
+      },
+      "id": 
+      {
+        "type": "jitable",
+        "description": "Domain vertex id."
+      },
+      "min": 
+      {
+        "description": "Min coordinate of an axis-aligned bounding box (aabb)"
+      },
+      "max": 
+      {
+        "description": "Max coordinate of an axis-aligned bounding box (aabb)"
+      }
+    },
+    "jitable": null
+  },
+  "aabb": 
+  {
+    "attrs": 
+    {
+      "min": 
+      {
+        "type": "vector"
+      },
+      "max": 
+      {
+        "type": "vector"
+      }
+    }
+  },
+  "vector": 
+  {
+    "attrs": 
+    {
+      "x": 
+      {
+        "type": "double"
+      },
+      "y": 
+      {
+        "type": "double"
+      },
+      "z": 
+      {
+        "type": "double"
+      }
+    }
+  },
+  "bin": 
+  {
+    "attrs": 
+    {
+      "min": 
+      {
+        "type": "double"
+      },
+      "max": 
+      {
+        "type": "double"
+      },
+      "center": 
+      {
+        "type": "double"
+      },
+      "value": 
+      {
+        "type": "double"
+      }
+    }
+  },
+  "jitable": 
+  {
+    "attrs": 
+    {
+      "x": 
+      {
+        "type": "jitable"
+      },
+      "y": 
+      {
+        "type": "jitable"
+      },
+      "z": 
+      {
+        "type": "jitable"
+      }
+    }
+  },
+  "field": 
+  {
+    "attrs": 
+    {
+      "x": 
+      {
+        "type": "jitable"
+      },
+      "y": 
+      {
+        "type": "jitable"
+      },
+      "z": 
+      {
+        "type": "jitable"
+      }
+    }
+  }
+}

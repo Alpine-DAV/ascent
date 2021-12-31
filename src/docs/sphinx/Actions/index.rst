@@ -19,9 +19,13 @@ Ascent Actions
    Triggers
    Examples
    ExpressionsOverview
-   expressions/index.rst
+   expression_objects
    Binning
    VTKmColorTables
    DRayColorTables
 ..
+
+.. future:
+.. expression_functions
+.. expression_object
 

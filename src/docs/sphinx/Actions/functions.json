@@ -1,0 +1,1453 @@
+
+{
+  "avg": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "array_avg",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "array"
+        }
+      },
+      "description": "Return the average of an array.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "double",
+      "filter_name": "field_avg",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return the field average of a field.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "replace": 
+  [
+    
+    {
+      "return_type": "array",
+      "filter_name": "replace",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "array"
+        },
+        "find": 
+        {
+          "type": "double",
+          "description": "Value in the array to find and replace."
+        },
+        "replace": 
+        {
+          "type": "double",
+          "description": "Replacement value."
+        }
+      },
+      "description": "Find and replace zero or more values in an array.",
+      "req_count": 3,
+      "opt_count": 0
+    }
+  ],
+  "nan": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "nan",
+      "args": null,
+      "description": "Generates a NaN value.",
+      "req_count": 0,
+      "opt_count": 0
+    }
+  ],
+  "gradient": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "gradient",
+      "args": 
+      {
+        "field": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a derived field that is the gradient of a field.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "double",
+      "filter_name": "scalar_gradient",
+      "args": 
+      {
+        "expr_name": 
+        {
+          "type": "anytype",
+          "description": "`expr_name` should be the name of an expression that was evaluated in the past."
+        },
+        "window_length": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The number of time points ago to use as the x0 for the gradient calculation. defaults to ``1``     (calculate the gradient from the previous time point to now)."
+        },
+        "window_length_unit": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "Can be one of three values: ``\"index\"``, ``\"time\"`` or ``\"cycle\".``     Indicates whether the window length is in units of number of expression execution points, simulation time, or simulation cycles.     Defaults to ``index`` (the window_length is in number of expression execution points)."
+        }
+      },
+      "description": "Return the temporal gradient of the given expression for the current point in time.",
+      "req_count": 1,
+      "opt_count": 2
+    }
+  ],
+  "gradient_range": 
+  [
+    
+    {
+      "return_type": "array",
+      "filter_name": "gradient_range",
+      "args": 
+      {
+        "expr_name": 
+        {
+          "type": "anytype",
+          "description": "`expr_name` should be the name of an expression that was evaluated in the past."
+        },
+        "first_relative_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The the first number of evaluations ago for which to calculate the temporal gradient.   The index is relative, with ``first_relative_index=1`` corresponding to one evaluation ago. Example usage:   gradient_range(pressure, first_relative_index=1, last_relative_index=10). This will calculate the temporal gradient for the previous 10 evaluations."
+        },
+        "last_relative_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The the last number of evaluations ago for which to calculate the temporal gradient.   The index is relative, with ``last_relative_index=1`` corresponding to one evaluation ago. Example usage:   gradient_range(pressure, first_relative_index=1, last_relative_index=10). This will calculate the temporal gradient for the previous 10 evaluations."
+        },
+        "first_absolute_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The first index in the evaluation   history for which to calculate the temporal gradient. This should be less than the number of past evaluations. For   example, ``gradient_range(pressure, first_absolute_index=0, last_absolute_index=10)`` calculates the temporal gradient of pressure from the first 10 times it was evaluated."
+        },
+        "last_absolute_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The last index in the evaluation   history for which to calculate the temporal gradient. This should be less than the number of past evaluations. For   example, ``gradient_range(pressure, first_absolute_index=0, last_absolute_index=10)`` calculates the temporal gradient of pressure from the first 10 times it was evaluated."
+        },
+        "first_absolute_time": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The first simulation time for which to calculate the temporal gradient. For   example, ``gradient_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` calculates the temporal gradient of   pressure from the first 0.1 units of simulation time."
+        },
+        "last_absolute_time": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The last simulation time for which to calculate the temporal gradient. For   example, ``gradient_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` calculates the temporal gradient of   pressure from the first 0.1 units of simulation time."
+        },
+        "first_absolute_cycle": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The first simulation cycle for which to calculate the temporal gradient. For   example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` calculates the temporal gradient of   pressure from the first two cycles."
+        },
+        "last_absolute_cycle": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The last simulation cycle for which to calculate the temporal gradient. For   example, ``gradient_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` calculate the temporal gradient of   pressure from the first two cycles."
+        }
+      },
+      "description": "As the simulation progresses the expressions   are evaluated repeatedly. The gradient_range function allows you to get the temporal gradient from a range of   previous evaluations. For example, if we want to evaluate the difference   between the original state of the simulation and the current state then we   can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the   current value: ``gradient(val) - avg(gradient_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if   you want to evaluate the relative change between the previous states and the   current state: ``gradient(val) - avg(gradient_range(val, first_relative_index=1, last_relative_index=10))``  We can alternatively evaluate the difference between a particular range of time in the simulation,   such as the first 10 seconds, and the current state: ``gradient(val) - avg(gradient_range(val, first_absolute_time=1, last_absolute_index=10))``   or for the first 10 cycles of the simulation ``gradient(val) - avg(gradient_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n   .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2).   first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.",
+      "req_count": 1,
+      "opt_count": 8
+    }
+  ],
+  "field_nan_count": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "field_nan_count",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return the number  of NaNs in a field.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "field_inf_count": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "field_inf_count",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return the number  of -inf and +inf in a field.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "max": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "scalar_max",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        },
+        "arg2": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return the maximum of two scalars.",
+      "req_count": 2,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "value_position",
+      "filter_name": "field_max",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return the maximum value from the meshvar. Its position is also stored and is accessible via the `position` function.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "double",
+      "filter_name": "array_max",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "array"
+        }
+      },
+      "description": "Return the maximum of an array.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "field_field_max",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        },
+        "arg2": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return a derived field that is the max of two fields.",
+      "jitable": null,
+      "req_count": 2,
+      "opt_count": 0
+    }
+  ],
+  "min": 
+  [
+    
+    {
+      "return_type": "value_position",
+      "filter_name": "field_min",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return the minimum value from the meshvar. Its position is also stored and is accessible via the `position` function.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "double",
+      "filter_name": "scalar_min",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        },
+        "arg2": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return the minimum of two scalars.",
+      "req_count": 2,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "double",
+      "filter_name": "array_min",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "array"
+        }
+      },
+      "description": "Return the minimum of an array.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "field_field_min",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        },
+        "arg2": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a derived field that is the min of two fields.",
+      "jitable": null,
+      "req_count": 2,
+      "opt_count": 0
+    }
+  ],
+  "sum": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "field_sum",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return the sum of a field.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "double",
+      "filter_name": "array_sum",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "array"
+        }
+      },
+      "description": "Return the sum of an array.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "cycle": 
+  [
+    
+    {
+      "return_type": "int",
+      "filter_name": "cycle",
+      "args": null,
+      "description": "Return the current simulation cycle.",
+      "req_count": 0,
+      "opt_count": 0
+    }
+  ],
+  "time": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "time",
+      "args": null,
+      "description": "Return the current simulation time.",
+      "req_count": 0,
+      "opt_count": 0
+    }
+  ],
+  "vector": 
+  [
+    
+    {
+      "return_type": "vector",
+      "filter_name": "vector",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        },
+        "arg2": 
+        {
+          "type": "scalar"
+        },
+        "arg3": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return the 3D position vector for the input value.",
+      "req_count": 3,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "vector",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        },
+        "arg2": 
+        {
+          "type": "field"
+        },
+        "arg3": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a vector field on the mesh.",
+      "jitable": null,
+      "req_count": 3,
+      "opt_count": 0
+    }
+  ],
+  "magnitude": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "magnitude",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "vector"
+        }
+      },
+      "description": "Return the magnitude of the input vector.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "magnitude",
+      "args": 
+      {
+        "vector": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a derived field that is the magnitude of a vector field.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "abs": 
+  [
+    
+    {
+      "return_type": "scalar",
+      "filter_name": "abs",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return the absolute value of the input.",
+      "req_count": 1,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "field_abs",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a derived field that is the absolute value of a field.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "exp": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "exp",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return the base e exponential.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "pow": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "pow",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        },
+        "arg2": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Returns base raised to the power exponent. pow(base, exponent)",
+      "req_count": 2,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "field_pow",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return a derived field that is the pow(field,exponent) of a field.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "log": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "log",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Returns the natural logarithm of the argument",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "histogram": 
+  [
+    
+    {
+      "return_type": "histogram",
+      "filter_name": "histogram",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        },
+        "num_bins": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "defaults to ``256``"
+        },
+        "min_val": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "defaults to ``min(arg1)``"
+        },
+        "max_val": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "defaults to ``max(arg1)``"
+        }
+      },
+      "description": "Return a histogram of the field.",
+      "req_count": 1,
+      "opt_count": 3
+    }
+  ],
+  "history": 
+  [
+    
+    {
+      "return_type": "anytype",
+      "filter_name": "history",
+      "args": 
+      {
+        "expr_name": 
+        {
+          "type": "anytype",
+          "description": "`expr_name` should be the name of an expression that was evaluated in the past."
+        },
+        "relative_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The number of evaluations   ago. This should be less than the number of past evaluations. For example,   ``history(pressure, relative_index=1)`` returns the value of pressure one   evaluation ago."
+        },
+        "absolute_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The index in the evaluation   history. This should be less than the number of past evaluations. For   example, ``history(pressure, absolute_index=0)`` returns the value of   pressure from the first time it was evaluated."
+        }
+      },
+      "description": "As the simulation progresses the expressions   are evaluated repeatedly. The history function allows you to get the value of   previous evaluations. For example, if we want to evaluate the difference   between the original state of the simulation and the current state then we   can use an absolute index of 0 to compare the initial value with the   current value: ``val - history(val, absolute_index=0)``. Another example is if   you want to evaluate the relative change between the previous state and the   current state: ``val - history(val, relative_index=1)``.\n\n   .. note:: Exactly one of ``relative_index`` or ``absolute_index`` must be   passed. If the argument name is not specified ``relative_index`` will be   used.",
+      "req_count": 1,
+      "opt_count": 2
+    }
+  ],
+  "history_range": 
+  [
+    
+    {
+      "return_type": "array",
+      "filter_name": "history_range",
+      "args": 
+      {
+        "expr_name": 
+        {
+          "type": "anytype",
+          "description": "`expr_name` should be the name of an expression that was evaluated in the past."
+        },
+        "first_relative_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The the first number of evaluations ago for which to retrieve past expression values.   The index is relative, with ``first_relative_index=1`` corresponding to one evaluation ago. Example usage:   history_range(pressure, first_relative_index=1, last_relative_index=10). This will retrieve the value   for the previous 10 evaluations."
+        },
+        "last_relative_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The the last number of evaluations ago for which to retrieve past expression values.   The index is relative, with ``last_relative_index=1`` corresponding to one evaluation ago. Example usage:   history_range(pressure, first_relative_index=1, last_relative_index=10). This will retrieve the value   for the previous 10 evaluations."
+        },
+        "first_absolute_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The first index in the evaluation   history for which to retrieve values. This should be less than the number of past evaluations. For   example, ``history_range(pressure, first_absolute_index=0, last_absolute_index=10)`` returns the value of   pressure from the first 10 times it was evaluated."
+        },
+        "last_absolute_index": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "The last index in the evaluation   history for which to retrieve values. This should be less than the number of past evaluations. For   example, ``history_range(pressure, first_absolute_index=0, last_absolute_index=10)`` returns the value of   pressure from the first 10 times it was evaluated."
+        },
+        "first_absolute_time": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The first simulation time for which to retrieve values. For   example, ``history_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` returns the value of   pressure from the first 0.1 units of simulation time."
+        },
+        "last_absolute_time": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The last simulation time for which to retrieve values. For   example, ``history_range(pressure, first_absolute_time=0, last_absolute_time=0.1)`` returns the value of   pressure from the first 0.1 units of simulation time."
+        },
+        "first_absolute_cycle": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The first simulation cycle for which to retrieve values. For   example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cycle=1)`` returns the value of   pressure from the first two cycles."
+        },
+        "last_absolute_cycle": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The last simulation cycle for which to retrieve values. For   example, ``history_range(pressure, first_absolute_cycle=0, last_absolute_cyclee=1)`` returns the value of   pressure from the first two cycles."
+        }
+      },
+      "description": "As the simulation progresses the expressions   are evaluated repeatedly. The history_range function allows you to get the value from a range of   previous evaluations. For example, if we want to evaluate the difference   between the original state of the simulation and the current state then we   can use an first absolute index of 0 and a last absolute index of 10 to compare the initial values with the   current value: ``val - avg(history_range(val, first_absolute_index=0, last_absolute_index=10)``. Another example is if   you want to evaluate the relative change between the previous states and the   current state: ``val - avg(history_range(val, first_relative_index=1, last_relative_index=10))``  We can alternatively evaluate the difference between a particular range of time in the simulation,   such as the first 10 seconds, and the current state: ``val - avg(history_range(val, first_absolute_time=1, last_absolute_index=10))``   or for the first 10 cycles of the simulation ``val - avg(history_range(val, first_absolute_cycle=0, last_absolute_cycle=9))``.\n\n   .. note:: Exactly one of the following pairs of values must be provided: 1). first_absolute_index and last_absolute_index, 2).   first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.",
+      "req_count": 1,
+      "opt_count": 8
+    }
+  ],
+  "entropy": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "entropy",
+      "args": 
+      {
+        "hist": 
+        {
+          "type": "histogram"
+        }
+      },
+      "description": "Return the Shannon entropy given a histogram of the field.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "pdf": 
+  [
+    
+    {
+      "return_type": "histogram",
+      "filter_name": "pdf",
+      "args": 
+      {
+        "hist": 
+        {
+          "type": "histogram"
+        }
+      },
+      "description": "Return the probability distribution function (pdf) from a histogram.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "cdf": 
+  [
+    
+    {
+      "return_type": "histogram",
+      "filter_name": "cdf",
+      "args": 
+      {
+        "hist": 
+        {
+          "type": "histogram"
+        }
+      },
+      "description": "Return the cumulative distribution function (cdf) from a histogram.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "bin": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "bin_by_index",
+      "args": 
+      {
+        "hist": 
+        {
+          "type": "histogram"
+        },
+        "bin": 
+        {
+          "type": "int"
+        }
+      },
+      "description": "Return the value of the bin at index `bin` of a histogram.",
+      "req_count": 2,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "double",
+      "filter_name": "bin_by_value",
+      "args": 
+      {
+        "hist": 
+        {
+          "type": "histogram"
+        },
+        "val": 
+        {
+          "type": "scalar"
+        }
+      },
+      "description": "Return the value of the bin with axis-value `val` on the histogram.",
+      "req_count": 2,
+      "opt_count": 0
+    },
+    
+    {
+      "return_type": "bin",
+      "filter_name": "bin",
+      "args": 
+      {
+        "binning": 
+        {
+          "type": "binning"
+        },
+        "index": 
+        {
+          "type": "int"
+        }
+      },
+      "description": "returns a bin from a binning by index",
+      "req_count": 2,
+      "opt_count": 0
+    }
+  ],
+  "field": 
+  [
+    
+    {
+      "return_type": "field",
+      "filter_name": "field",
+      "args": 
+      {
+        "field_name": 
+        {
+          "type": "string"
+        },
+        "component": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "Used to specify a single component if the field is a vector field."
+        }
+      },
+      "description": "Return a mesh field given a its name.",
+      "req_count": 1,
+      "opt_count": 1
+    }
+  ],
+  "topo": 
+  [
+    
+    {
+      "return_type": "topo",
+      "filter_name": "topo",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "string"
+        }
+      },
+      "description": "Return a mesh topology given a its name.",
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "bounds": 
+  [
+    
+    {
+      "return_type": "aabb",
+      "filter_name": "bounds",
+      "args": 
+      {
+        "topology": 
+        {
+          "type": "string",
+          "optional": null
+        }
+      },
+      "description": "Returns the spatial bounds of a mesh.",
+      "req_count": 0,
+      "opt_count": 1
+    }
+  ],
+  "point_and_axis": 
+  [
+    
+    {
+      "return_type": "bin",
+      "filter_name": "point_and_axis",
+      "args": 
+      {
+        "binning": 
+        {
+          "type": "binning"
+        },
+        "axis": 
+        {
+          "type": "string"
+        },
+        "threshold": 
+        {
+          "type": "double"
+        },
+        "point": 
+        {
+          "type": "double"
+        },
+        "miss_value": 
+        {
+          "type": "scalar",
+          "optional": null
+        },
+        "direction": 
+        {
+          "type": "int",
+          "optional": null
+        }
+      },
+      "description": "returns the first values in a binning that exceeds a threshold from the given point.",
+      "req_count": 4,
+      "opt_count": 2
+    }
+  ],
+  "max_from_point": 
+  [
+    
+    {
+      "return_type": "value_position",
+      "filter_name": "max_from_point",
+      "args": 
+      {
+        "binning": 
+        {
+          "type": "binning"
+        },
+        "axis": 
+        {
+          "type": "string"
+        },
+        "point": 
+        {
+          "type": "double"
+        }
+      },
+      "description": "returns the closest max value from a reference point on an axis",
+      "req_count": 3,
+      "opt_count": 0
+    }
+  ],
+  "lineout": 
+  [
+    
+    {
+      "return_type": "array",
+      "filter_name": "lineout",
+      "args": 
+      {
+        "samples": 
+        {
+          "type": "int"
+        },
+        "start": 
+        {
+          "type": "vector"
+        },
+        "end": 
+        {
+          "type": "vector"
+        },
+        "fields": 
+        {
+          "type": "list",
+          "optional": null
+        },
+        "empty_val": 
+        {
+          "type": "double",
+          "optional": null
+        }
+      },
+      "description": "returns a sampled based line out",
+      "req_count": 3,
+      "opt_count": 2
+    }
+  ],
+  "quantile": 
+  [
+    
+    {
+      "return_type": "double",
+      "filter_name": "quantile",
+      "args": 
+      {
+        "cdf": 
+        {
+          "type": "histogram",
+          "description": "CDF of a histogram."
+        },
+        "q": 
+        {
+          "type": "double",
+          "description": "Quantile between 0 and 1 inclusive."
+        },
+        "interpolation": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "Specifies the interpolation   method to use when the quantile lies between two data points ``i < j``: \n\n   - linear (default): ``i + (j - i) * fraction``, where fraction is the   fractional part of the index surrounded by ``i`` and ``j``. \n   - lower: ``i``. \n   - higher: ``j``. \n   - nearest: ``i`` or ``j``, whichever is nearest. \n   - midpoint: ``(i + j) / 2``"
+        }
+      },
+      "description": "Return the `q`-th quantile of the data along   the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the   x-axis which 50 percent of the data lies below.",
+      "req_count": 2,
+      "opt_count": 1
+    }
+  ],
+  "axis": 
+  [
+    
+    {
+      "return_type": "axis",
+      "filter_name": "axis",
+      "args": 
+      {
+        "name": 
+        {
+          "type": "string",
+          "description": "The name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``. `name` can also be the empty string `''` if `reduction_op` is either `sum` or `pdf` to mean we want to count the number of elements in the bin as our reduction variable."
+        },
+        "bins": 
+        {
+          "type": "list",
+          "optional": null,
+          "description": "A strictly increasing list of scalars containing the values for each tick. Used to specify a rectilinear axis."
+        },
+        "min_val": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "Minimum value of the axis (i.e. the value of the first tick). Defaults to ``min(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the minimum value on the topology."
+        },
+        "max_val": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "Maximum value of the axis (i.e. the value of the last tick).Defaults to ``max(name)`` for fields and for ``'x'``, ``'y'``, or ``'z'`` the maximum value on the topology."
+        },
+        "num_bins": 
+        {
+          "type": "int",
+          "optional": null,
+          "description": "Number of bins on the axis (i.e. the number of ticks minus 1). Defaults to ``256``."
+        },
+        "clamp": 
+        {
+          "type": "bool",
+          "optional": null,
+          "description": "Defaults to ``False``. If ``True``, values outside the axis should be put into the bins on the boundaries."
+        }
+      },
+      "description": "Defines a uniform or rectilinear axis. When used for binning the bins are inclusive on the lower boundary and exclusive on the higher boundary of each bin. Either specify only ``bins`` or a subset of the ``min_val``, ``max_val``, ``num_bins`` options.",
+      "req_count": 1,
+      "opt_count": 5
+    },
+    
+    {
+      "return_type": "axis",
+      "filter_name": "axis",
+      "args": 
+      {
+        "var": 
+        {
+          "type": "string",
+          "description": "One of the strings ``'x', 'y', 'z'`` corresponding to a spacial coordinate."
+        },
+        "bins": 
+        {
+          "type": "list",
+          "optional": null
+        },
+        "min_val": 
+        {
+          "type": "scalar",
+          "optional": null
+        },
+        "max_val": 
+        {
+          "type": "scalar",
+          "optional": null
+        },
+        "num_bins": 
+        {
+          "type": "int",
+          "optional": null
+        },
+        "clamp": 
+        {
+          "type": "bool",
+          "optional": null
+        }
+      },
+      "description": "Same as the above function except that ``reduction_var`` should be one of the strings ``'x', 'y', 'z'``",
+      "req_count": 1,
+      "opt_count": 5
+    }
+  ],
+  "binning": 
+  [
+    
+    {
+      "return_type": "binning",
+      "filter_name": "binning",
+      "args": 
+      {
+        "reduction_var": 
+        {
+          "type": "string",
+          "description": "The variable being reduced. Either the name of a scalar field on the mesh or one of ``'x'``, ``'y'``, or ``'z'``."
+        },
+        "reduction_op": 
+        {
+          "type": "string",
+          "description": "The reduction operator to use when   putting values in bins. Available reductions are: \n\n   - min: minimum value in a bin \n   - max: maximum value in a bin \n   - sum: sum of values in a bin \n   - avg: average of values in a bin \n   - pdf: probability distribution function \n   - std: standard deviation of values in a bin \n   - var: variance of values in a bin \n   - rms: root mean square of values in a bin"
+        },
+        "bin_axes": 
+        {
+          "type": "list",
+          "description": "List of Axis objects which define the bin axes."
+        },
+        "empty_bin_val": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The value that empty bins should have. Defaults to ``0``."
+        },
+        "component": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "the component of a vector field to use for the reduction. Example 'x' for a field defined as 'velocity/x'"
+        }
+      },
+      "description": "Returns a multidimensional data binning.",
+      "req_count": 3,
+      "opt_count": 2
+    }
+  ],
+  "paint_binning": 
+  [
+    
+    {
+      "return_type": "field",
+      "filter_name": "paint_binning",
+      "args": 
+      {
+        "binning": 
+        {
+          "type": "binning",
+          "description": "The values in ``binning`` are used to generate the new field."
+        },
+        "name": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "The name of the new field to be generated. If not specified, a name is automatically generated and the field is treated as a temporary and removed from the dataset when the expression is done executing."
+        },
+        "default_val": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The value given to elements which do not fall into any of the bins. Defaults to ``0``."
+        },
+        "topo": 
+        {
+          "type": "topo",
+          "optional": null,
+          "description": " The topology to paint the bin values back onto. Defaults to the topology associated with the bin axes. This topology must have all the fields used for the axes of ``binning``. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``. Additionally, it must be specified in this case since there is not enough info to infer the topology assuming there are multiple topologies in the dataset."
+        },
+        "assoc": 
+        {
+          "type": "topo",
+          "optional": null,
+          "description": "Defaults to the association infered from the bin axes and and reduction variable. The association of the resultant field. This topology must have all the fields used for the axes of ``binning``. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``."
+        }
+      },
+      "description": "Paints back the bin values onto an existing mesh by binning the elements of the mesh and creating a new field there the value at each element is the value in the bin it falls into.",
+      "req_count": 1,
+      "opt_count": 4
+    }
+  ],
+  "binning_mesh": 
+  [
+    
+    {
+      "return_type": "field",
+      "filter_name": "binning_mesh",
+      "args": 
+      {
+        "binning": 
+        {
+          "type": "binning",
+          "description": "The values in ``binning`` are used to generate the new field."
+        },
+        "name": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "The name of the new field to be generated, the corresponding topology topology and coordinate sets will be named '``name``_topo' and '``name``_coords' respectively. If not specified, a name is automatically generated and the field is treated as a temporary and removed from the dataset when the expression is done executing."
+        }
+      },
+      "description": "A binning with 3 or fewer dimensions will be output as a new element associated field on a new topology on the dataset. This is useful for directly visualizing the binning.",
+      "req_count": 1,
+      "opt_count": 1
+    }
+  ],
+  "sin": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "field_sin",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a derived field that is the sin of a field.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "sqrt": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "field_sqrt",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a derived field that is the square root value of a field.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "curl": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "curl",
+      "args": 
+      {
+        "field": 
+        {
+          "type": "field"
+        }
+      },
+      "description": "Return a derived field that is the curl of a vector field.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 0
+    }
+  ],
+  "derived_field": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "derived_field",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "scalar",
+          "description": "The scalar to be cast to a derived field."
+        },
+        "topo": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "The topology to put the derived field onto. The language tries to infer this if not specified."
+        },
+        "assoc": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "The association of the derived field. The language tries to infer this if not specified."
+        }
+      },
+      "description": "Cast a scalar to a derived field (type `jitable`).",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 2
+    },
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "derived_field",
+      "args": 
+      {
+        "arg1": 
+        {
+          "type": "field",
+          "description": "The scalar to be cast to a derived field."
+        },
+        "topo": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "The topology to put the derived field onto. The language tries to infer this if not specified."
+        },
+        "assoc": 
+        {
+          "type": "string",
+          "optional": null,
+          "description": "The association of the derived field. The language tries to infer this if not specified."
+        }
+      },
+      "description": "Used to explicitly specify the topology and association of a derived field (e.g. in case it cannot be inferred or needs to be changed).",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 2
+    }
+  ],
+  "binning_value": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "binning_value",
+      "args": 
+      {
+        "binning": 
+        {
+          "type": "binning",
+          "description": "The ``binning`` to lookup values in."
+        },
+        "default_val": 
+        {
+          "type": "scalar",
+          "optional": null,
+          "description": "The value given to elements which do not fall into any of the bins. Defaults to ``0``."
+        },
+        "topo": 
+        {
+          "type": "topo",
+          "optional": null,
+          "description": "The topology to bin. Defaults to the topology associated with the bin axes. This topology must have all the fields used for the axes of ``binning``. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``."
+        },
+        "assoc": 
+        {
+          "type": "topo",
+          "optional": null,
+          "description": "The association of the resultant field. Defaults to the association infered from the bin axes and and reduction variable. It only makes sense to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, ``z``."
+        }
+      },
+      "description": "Get the value of a vertex or cell in a given binning. In other words, bin the cell and return the value found in that bin of ``binning``.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 3
+    }
+  ],
+  "rand": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "rand",
+      "description": "Return a random number between 0 and 1.",
+      "jitable": null,
+      "args": null,
+      "req_count": 0,
+      "opt_count": 0
+    }
+  ],
+  "recenter": 
+  [
+    
+    {
+      "return_type": "jitable",
+      "filter_name": "recenter",
+      "args": 
+      {
+        "field": 
+        {
+          "type": "field"
+        },
+        "mode": 
+        {
+          "type": "string",
+          "optional": "string",
+          "description": "One of ``'toggle', 'vertex', 'element'``. Defaults to ``'toggle'``."
+        }
+      },
+      "description": "Recenter a field from vertex association to element association or vice versa.",
+      "jitable": null,
+      "req_count": 1,
+      "opt_count": 1
+    }
+  ]
+}
