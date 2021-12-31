@@ -105,11 +105,6 @@ include(cmake/CMakeBasics.cmake)
 include(cmake/VTKmDeviceSymbols.cmake)
 
 ################################
-# Set a default build type
-################################
-include(cmake/AscentBuildType.cmake)
-
-################################
 # Setup Fortran Support
 ################################
 include(cmake/SetupFortran.cmake)
