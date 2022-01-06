@@ -529,12 +529,12 @@ public:
     if(render_node.has_path("phi"))
     {
       m_phi_min = -180.0;
-      m_phi = render_node["phi"].as_int32();
+      m_phi = render_node["phi"].to_int32();
       m_phi_inc = 360.0 / double(m_phi);
     }
     else if(render_node.has_path("phi_range") && render_node.has_path("dphi"))
     {
-      const double *phi_range = render_node["phi_range"].as_float64_ptr();
+      float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
       if (phi_range[0] >= phi_range[1])
       {
         ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
@@ -545,13 +545,13 @@ public:
     }
     else if(render_node.has_path("phi_range") && render_node.has_path("phi_num_angles"))
     {
-      const double *phi_range = render_node["phi_range"].as_float64_ptr();
+      float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
       if (phi_range[0] >= phi_range[1])
       {
         ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
       }
       m_phi_min = phi_range[0];
-      m_phi = render_node["phi_num_angles"].as_int32();
+      m_phi = render_node["phi_num_angles"].to_int32();
       m_phi_inc =  (phi_range[1] - phi_range[0]) / double(m_phi - 1);
     }
     else
@@ -563,12 +563,12 @@ public:
     if(render_node.has_path("theta"))
     {
       m_theta_min = 0.0;
-      m_theta = render_node["theta"].as_int32();
+      m_theta = render_node["theta"].to_int32();
       m_theta_inc = 180.0 / double(m_theta);
     }
     else if(render_node.has_path("theta_range") && render_node.has_path("dtheta"))
     {
-      const double *theta_range = render_node["theta_range"].as_float64_ptr();
+      float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
       if (theta_range[0] >= theta_range[1])
       {
         ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
@@ -579,13 +579,13 @@ public:
     }
     else if(render_node.has_path("theta_range") && render_node.has_path("theta_num_angles"))
     {
-      const double *theta_range = render_node["theta_range"].as_float64_ptr();
+      float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
       if (theta_range[0] >= theta_range[1])
       {
         ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
       }
       m_theta_min = theta_range[0];
-      m_theta = render_node["theta_num_angles"].as_int32();
+      m_theta = render_node["theta_num_angles"].to_int32();
       m_theta_inc =  (theta_range[1] - theta_range[0]) / double(m_theta - 1);
     }
     else
@@ -1003,7 +1003,7 @@ DefaultRender::execute()
 
     if(meta.has_path("cycle"))
     {
-      cycle = meta["cycle"].as_int32();
+      cycle = meta["cycle"].to_int32();
     }
 
     // figure out if we need the original bounds for the scene
