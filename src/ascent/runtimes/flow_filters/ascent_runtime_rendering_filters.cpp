@@ -191,6 +191,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("dtheta");
   r_valid_paths.push_back("theta_num_angles");
   r_valid_paths.push_back("theta_angles");
+  r_valid_paths.push_back("phi_theta_positions");
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
@@ -528,96 +529,113 @@ public:
       m_image_name(image_name),
       m_time(0.f)
   {
-    // Handle phi.
-    if(render_node.has_path("phi"))
+    if(render_node.has_path("phi_theta_positions"))
     {
-      m_phi_min = -180.0;
-      m_phi = render_node["phi"].to_int32();
-      m_phi_inc = 360.0 / double(m_phi);
-      this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
-    }
-    else if(render_node.has_path("phi_angles"))
-    {
-      float64_accessor phi_angles = render_node["phi_angles"].as_float64_accessor();
-      for(int p = 0; p < phi_angles.number_of_elements(); ++p)
+      float64_accessor phi_theta_positions = render_node["phi_theta_positions"].as_float64_accessor();
+      if (phi_theta_positions.number_of_elements() % 2 != 0)
       {
-        m_phi_values.push_back(phi_angles[p]);
+        ASCENT_ERROR("Cinema camera phi_theta_positions must have an even number of values");
       }
-    }
-    else if(render_node.has_path("phi_range") && render_node.has_path("dphi"))
-    {
-      float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
-      if (phi_range[0] >= phi_range[1])
+      for(int p = 0; p < phi_theta_positions.number_of_elements(); p = p + 2)
       {
-        ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
+        std::tuple<float,float> angles(phi_theta_positions[p], phi_theta_positions[p+1]);
+        m_camera_angles.push_back(angles);
       }
-      m_phi_min = phi_range[0];
-      m_phi_inc = render_node["dphi"].to_float64();
-      m_phi =  int(floor((phi_range[1] - phi_range[0] + 1.0e-6) / m_phi_inc)) + 1;
-      this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
-    }
-    else if(render_node.has_path("phi_range") && render_node.has_path("phi_num_angles"))
-    {
-      float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
-      if (phi_range[0] >= phi_range[1])
-      {
-        ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
-      }
-      m_phi_min = phi_range[0];
-      m_phi = render_node["phi_num_angles"].to_int32();
-      m_phi_inc =  (phi_range[1] - phi_range[0]) / double(m_phi - 1);
-      this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
     }
     else
     {
-      ASCENT_ERROR("Cinema camera must specify phi or phi_range");
-    }
+      // Handle phi.
+      if(render_node.has_path("phi"))
+      {
+        m_phi_min = -180.0;
+        m_phi = render_node["phi"].to_int32();
+        m_phi_inc = 360.0 / double(m_phi);
+        this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
+      }
+      else if(render_node.has_path("phi_angles"))
+      {
+        float64_accessor phi_angles = render_node["phi_angles"].as_float64_accessor();
+        for(int p = 0; p < phi_angles.number_of_elements(); ++p)
+        {
+          m_phi_values.push_back(phi_angles[p]);
+        }
+      }
+      else if(render_node.has_path("phi_range") && render_node.has_path("dphi"))
+      {
+        float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
+        if (phi_range[0] >= phi_range[1])
+        {
+          ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
+        }
+        m_phi_min = phi_range[0];
+        m_phi_inc = render_node["dphi"].to_float64();
+        m_phi =  int(floor((phi_range[1] - phi_range[0] + 1.0e-6) / m_phi_inc)) + 1;
+        this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
+      }
+      else if(render_node.has_path("phi_range") && render_node.has_path("phi_num_angles"))
+      {
+        float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
+        if (phi_range[0] >= phi_range[1])
+        {
+          ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
+        }
+        m_phi_min = phi_range[0];
+        m_phi = render_node["phi_num_angles"].to_int32();
+        m_phi_inc =  (phi_range[1] - phi_range[0]) / double(m_phi - 1);
+        this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
+      }
+      else
+      {
+        ASCENT_ERROR("Cinema camera must specify phi or phi_range");
+      }
 
-    // Handle theta.
-    if(render_node.has_path("theta"))
-    {
-      m_theta_min = 0.0;
-      m_theta = render_node["theta"].to_int32();
-      m_theta_inc = 180.0 / double(m_theta);
-      this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
-    }
-    else if(render_node.has_path("theta_angles"))
-    {
-      float64_accessor theta_angles = render_node["theta_angles"].as_float64_accessor();
-      for(int t = 0; t < theta_angles.number_of_elements(); ++t)
+      // Handle theta.
+      if(render_node.has_path("theta"))
       {
-        m_theta_values.push_back(theta_angles[t]);
+        m_theta_min = 0.0;
+        m_theta = render_node["theta"].to_int32();
+        m_theta_inc = 180.0 / double(m_theta);
+        this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
       }
-    }
-    else if(render_node.has_path("theta_range") && render_node.has_path("dtheta"))
-    {
-      float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
-      if (theta_range[0] >= theta_range[1])
+      else if(render_node.has_path("theta_angles"))
       {
-        ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+        float64_accessor theta_angles = render_node["theta_angles"].as_float64_accessor();
+        for(int t = 0; t < theta_angles.number_of_elements(); ++t)
+        {
+          m_theta_values.push_back(theta_angles[t]);
+        }
       }
-      m_theta_min = theta_range[0];
-      m_theta_inc = render_node["dtheta"].to_float64();
-      m_theta =  int(floor((theta_range[1] - theta_range[0] + 1.0e-6) / m_theta_inc)) + 1;
-      this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
-    }
-    else if(render_node.has_path("theta_range") && render_node.has_path("theta_num_angles"))
-    {
-      float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
-      if (theta_range[0] >= theta_range[1])
+      else if(render_node.has_path("theta_range") && render_node.has_path("dtheta"))
       {
-        ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+        float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
+        if (theta_range[0] >= theta_range[1])
+        {
+          ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+        }
+        m_theta_min = theta_range[0];
+        m_theta_inc = render_node["dtheta"].to_float64();
+        m_theta =  int(floor((theta_range[1] - theta_range[0] + 1.0e-6) / m_theta_inc)) + 1;
+        this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
       }
-      m_theta_min = theta_range[0];
-      m_theta = render_node["theta_num_angles"].to_int32();
-      m_theta_inc =  (theta_range[1] - theta_range[0]) / double(m_theta - 1);
-      this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
+      else if(render_node.has_path("theta_range") && render_node.has_path("theta_num_angles"))
+      {
+        float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
+        if (theta_range[0] >= theta_range[1])
+        {
+          ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+        }
+        m_theta_min = theta_range[0];
+        m_theta = render_node["theta_num_angles"].to_int32();
+        m_theta_inc =  (theta_range[1] - theta_range[0]) / double(m_theta - 1);
+        this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
+      }
+      else
+      {
+        ASCENT_ERROR("Cinema camera must specify theta or theta_range");
+      }
+
+      this->create_cinema_angles();
     }
-    else
-    {
-      ASCENT_ERROR("Cinema camera must specify theta or theta_range");
-    }
-    this->create_cinema_angles();
 
     this->create_cinema_cameras(bounds);
     m_csv = "phi,theta,time,FILE\n";
@@ -777,29 +795,36 @@ public:
 
     meta["arguments/time"] = times;
 
-    conduit::Node phis;
-    phis["default"] = get_string(m_phi_values[0]);
-    phis["label"] = "phi";
-    phis["type"] = "range";
     const int phi_size = m_phi_values.size();
-    for(int i = 0; i < phi_size; ++i)
+    if (phi_size > 0)
     {
-      phis["values"].append().set(get_string(m_phi_values[i]));
+      conduit::Node phis;
+      phis["default"] = get_string(m_phi_values[0]);
+      phis["label"] = "phi";
+      phis["type"] = "range";
+      for(int i = 0; i < phi_size; ++i)
+      {
+        phis["values"].append().set(get_string(m_phi_values[i]));
+      }
+
+      meta["arguments/phi"] = phis;
     }
 
-    meta["arguments/phi"] = phis;
-
-    conduit::Node thetas;
-    thetas["default"] = get_string(m_theta_values[0]);
-    thetas["label"] = "theta";
-    thetas["type"] = "range";
     const int theta_size = m_theta_values.size();
-    for(int i = 0; i < theta_size; ++i)
+    if (theta_size > 0)
     {
-      thetas["values"].append().set(get_string(m_theta_values[i]));
+      conduit::Node thetas;
+      thetas["default"] = get_string(m_theta_values[0]);
+      thetas["label"] = "theta";
+      thetas["type"] = "range";
+      for(int i = 0; i < theta_size; ++i)
+      {
+        thetas["values"].append().set(get_string(m_theta_values[i]));
+      }
+
+      meta["arguments/theta"] = thetas;
     }
 
-    meta["arguments/theta"] = thetas;
     meta.save(m_db_path + "/info.json","json");
 
     // also generate info.js, a simple javascript variant of
@@ -816,17 +841,14 @@ public:
 
     csv<<m_csv;
     std::string current_time = get_string(m_times[t_size - 1]);
-    for(int p = 0; p < phi_size; ++p)
+    for(int a = 0; a < m_camera_angles.size(); ++a)
     {
-      std::string phi = get_string(m_phi_values[p]);
-      for(int t = 0; t < theta_size; ++t)
-      {
-        std::string theta = get_string(m_theta_values[t]);
-        csv<<phi<<",";
-        csv<<theta<<",";
-        csv<<current_time<<",";
-        csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
-      }
+      std::string phi = get_string(std::get<0>(m_camera_angles[a]));
+      std::string theta = get_string(std::get<1>(m_camera_angles[a]));
+      csv<<phi<<",";
+      csv<<theta<<",";
+      csv<<current_time<<",";
+      csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
     }
 
     m_csv = csv.str();
