@@ -463,13 +463,15 @@ TEST(ascent_cinema_a, test_phi_theta_positions)
     scenes["scene1/plots/plt1/field"] = "braid";
     // setup required cinema params
     scenes["scene1/renders/r1/type"] = "cinema";
-    scenes["scene1/renders/r1/phi_theta_positions"].set({   0.,   0.,
-                                                         -180.,  90.,
-                                                          -90.,  90.,
-                                                            0.,  90.,
-                                                           90.,  90.,
-                                                          180.,  90.,
-                                                            0., 180.});
+    conduit::Node positions;
+    positions.append().set({   0.,   0.});
+    positions.append().set({-180.,  90.});
+    positions.append().set({ -90.,  90.});
+    positions.append().set({   0.,  90.});
+    positions.append().set({  90.,  90.});
+    positions.append().set({ 180.,  90.});
+    positions.append().set({   0., 180.});
+    scenes["scene1/renders/r1/phi_theta_positions"] = positions;
     scenes["scene1/renders/r1/db_name"] = "test_db5";
     //scenes["scene1/renders/r1/annotations"] = "false";
     scenes["scene1/renders/r1/camera/zoom"] = 1.0; // no zoom

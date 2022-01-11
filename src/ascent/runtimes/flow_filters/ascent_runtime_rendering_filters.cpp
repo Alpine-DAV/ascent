@@ -205,10 +205,31 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("shading");
   r_valid_paths.push_back("use_original_bounds");
 
+  std::vector<std::string> r_ignore_paths;
+  r_ignore_paths.push_back("phi_theta_positions");
+
   for(int i = 0; i < num_renders; ++i)
   {
     const conduit::Node &render_node = renders_node.child(i);
-    surprises += surprise_check(r_valid_paths, render_node);
+    surprises += surprise_check(r_valid_paths, r_ignore_paths, render_node);
+
+    if(render_node.has_path("phi_theta_positions"))
+    {
+      const conduit::Node &phi_theta_positions = render_node["phi_theta_positions"];
+      const int num_positions = phi_theta_positions.number_of_children();
+      for(int i = 0; i < num_positions; ++i)
+      {
+        const conduit::Node &position = phi_theta_positions.child(i);
+        std::stringstream ss;
+        ss << "[" << i << "]";
+        if (position.name() != ss.str()) 
+        {
+          surprises += "Surprise parameter '";
+          surprises += position.name();
+          surprises += "'\n";
+        }
+      }
+    }
   }
   return surprises;
 }
@@ -531,14 +552,15 @@ public:
   {
     if(render_node.has_path("phi_theta_positions"))
     {
-      float64_accessor phi_theta_positions = render_node["phi_theta_positions"].as_float64_accessor();
-      if (phi_theta_positions.number_of_elements() % 2 != 0)
+      const conduit::Node &positions = render_node["phi_theta_positions"];
+      for (int p = 0; p < positions.number_of_children(); ++p)
       {
-        ASCENT_ERROR("Cinema camera phi_theta_positions must have an even number of values");
-      }
-      for(int p = 0; p < phi_theta_positions.number_of_elements(); p = p + 2)
-      {
-        std::tuple<float,float> angles(phi_theta_positions[p], phi_theta_positions[p+1]);
+        float64_accessor phi_theta = positions[p].as_float64_accessor();
+        if (phi_theta.number_of_elements() != 2)
+        {
+          ASCENT_ERROR("Cinema camera phi_theta_positions must be an array of tuples");
+        }
+        std::tuple<float,float> angles(phi_theta[0], phi_theta[1]);
         m_camera_angles.push_back(angles);
       }
     }
