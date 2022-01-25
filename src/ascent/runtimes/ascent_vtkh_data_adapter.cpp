@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -70,7 +32,9 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayHandleExtractComponent.h>
+#include <vtkm/cont/CoordinateSystem.h>
 #include <vtkh/DataSet.hpp>
+
 // other ascent includes
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
@@ -1739,11 +1703,12 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
 
-    vtkm::cont::VariantArrayHandle coordsHandle(coords.GetData());
+    vtkm::cont::UnknownArrayHandle coordsHandle(coords.GetData());
 
-    if(coordsHandle.IsType<Coords32>())
+    if(vtkm::cont::IsType<Coords32>(coordsHandle))
     {
-      Coords32 points = coordsHandle.Cast<Coords32>();
+      Coords32 points;
+      coordsHandle.AsArrayHandle(points);
 
       auto x_handle = points.GetArray(0);
       auto y_handle = points.GetArray(1);
@@ -1776,7 +1741,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(coordsHandle.IsType<CoordsVec32>())
     {
-      CoordsVec32 points = coordsHandle.Cast<CoordsVec32>();
+      CoordsVec32 points;
+      coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float32 *points_ptr = (vtkm::Float32*)vtkh::GetVTKMPointer(points);
@@ -1817,7 +1783,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(vtkm::cont::IsType<Coords64>(coordsHandle))
     {
-      Coords64 points = coordsHandle.Cast<Coords64>();
+      Coords64 points;
+      coordsHandle.AsArrayHandle(points);
 
       auto x_handle = points.GetArray(0);
       auto y_handle = points.GetArray(1);
@@ -1848,7 +1815,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(coordsHandle.IsType<CoordsVec64>())
     {
-     CoordsVec64 points = vtkm::cont::Cast<CoordsVec64>(coordsHandle);
+      CoordsVec64 points;
+      coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(points);
@@ -2090,14 +2058,15 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   output[path + "/association"] = conduit_name;
   output[path + "/topology"] = topo_name;
 
-  vtkm::cont::VariantArrayHandle dyn_handle = field.GetData();
+  vtkm::cont::UnknownArrayHandle dyn_handle = field.GetData();
   //
   // this can be literally anything. Lets do some exhaustive casting
   //
   if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2111,7 +2080,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float64>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float64>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2125,7 +2095,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int8>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2139,7 +2110,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2153,14 +2125,16 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int64>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int64>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ASCENT_ERROR("Conduit int64 and vtkm::Int64 are different. Cannot convert vtkm::Int64\n");
     //output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2174,7 +2148,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt8>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2188,37 +2163,43 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else

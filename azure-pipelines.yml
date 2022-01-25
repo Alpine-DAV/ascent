@@ -9,11 +9,12 @@
 #####
 
 variables:
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-09-29-sha9522a6
-  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-09-29-sha9522a6
-  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-09-29-sha5a19c0
-  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-09-29-sha9522a6
-  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-09-29-sha9522a6
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-12-29-shadee81a
+  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-12-29-shadee81a
+  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-12-29-shadee81a
+  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-12-29-shadee81a
+  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-12-29-shadee81a
+  ubuntu_21_10_tag: alpinedav/ascent-ci:ubuntu-21.10-devel-tpls_2021-12-29-shadee81a
 
 
 # only build merge target pr to develop
@@ -79,17 +80,18 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_py_cxx11_bflow:
-          containerImage: ${{ variables.ubuntu_18_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: ON
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          BLT_CXX_STD: c++11
+        # this is off until #822 is worked out
+        # ubuntu_18_shared_py_cxx11_bflow:
+        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_VTKH: ON
+        #   ENABLE_MFEM: ON
+        #   ENABLE_BABELFLOW: ON
+        #   ENABLE_ADIOS2: OFF
+        #   ENABLE_FIDES: OFF
+        #   BLT_CXX_STD: c++11
         ubuntu_18_shared_py_cxx11_fides:
           containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
@@ -134,6 +136,18 @@ stages:
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           BLT_CXX_STD: c++11
+        ubuntu_21_10_shared_py_cxx11:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          BLT_CXX_STD: c++11
+
     container: $[ variables['containerImage'] ]
 
     steps:
@@ -180,7 +194,8 @@ stages:
            if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
            if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
            if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
+           if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBABELFLOW_DIR=IGNORE"; fi
+           if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBabelFlow_DIR=IGNORE"; fi
            echo ${CMAKE_OPTS}
            # configure
            cmake ${CMAKE_OPTS} ../src
@@ -284,6 +299,48 @@ stages:
         displayName: 'Test vs Install (using-with-make)'
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
+      - script: |
+          ################################
+          # using with cmake mpi example
+          ###############################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          # use mpi wrappers in case we are built against mfem that
+          # that requires mpi
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
+          cd install/examples/ascent/using-with-cmake-mpi
+          rm -rf _test_build
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+          mpiexec -n 2 ./ascent_mpi_render_example
+        displayName: 'Test vs Install (using-with-cmake-mpi)'
+        condition: and(succeeded(),eq(variables['ENABLE_VTKH'], 'ON'))
+
+      - script: |
+          ################################
+          # using with make mpi example
+          ################################
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
+          cat install/share/ascent/ascent_config.mk
+          pwd
+          ls -l
+          cd install/examples/ascent/using-with-make-mpi
+          make
+          mpiexec -n 2 ./ascent_mpi_render_example
+        displayName: 'Test vs Install (using-with-make-mpi)'
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
+
+
   - job: Main_Ubuntu_Cuda
     pool:
       vmImage: 'ubuntu-latest'
@@ -337,7 +394,7 @@ stages:
            which cmake
            cmake --version
            # extra cuda setup (req for occa)
-           export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
            # prepare build dir
            mkdir build
            cd build
@@ -345,7 +402,6 @@ stages:
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_BABELFLOW=$ENABLE_BABELFLOW"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
@@ -356,7 +412,7 @@ stages:
            # build
            #################################
            # build
-           export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
            cd build
            make VERBOSE=1
         displayName: 'Build'

@@ -23,4 +23,11 @@ PackageName: Bridge Kernel
 PackageHomePage: https://github.com/LLNL/bridge-kernel
 PackageLicenseDeclared: BSD-3-Clause
 
+PackageName: Rover
+PackageHomePage: https://github.com/llnl/rover
+PackageLicenseDeclared: BSD-3-Clause
 
+
+PackageName: Lodepng
+PackageHomePage: https://github.com/lvandeve/lodepng
+PackageLicenseDeclared: zlib License
