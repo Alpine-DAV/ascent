@@ -89,10 +89,9 @@ class VtkH(Package, CudaPackage):
     def install(self, spec, prefix):
         with working_dir('spack-build', create=True):
 
-            cmake_args = ["../src",
-                          "-DENABLE_TESTS=OFF",
-                          "-DBUILD_TESTING=OFF"]
-
+            cmake_args = ["../src"]
+                          # "-DENABLE_TESTS=OFF",
+                          # "-DBUILD_TESTING=OFF"]
             # # shared vs static libs logic
             # # force static when building with cuda
             # if "+cuda" in spec:
@@ -102,7 +101,6 @@ class VtkH(Package, CudaPackage):
             #         cmake_args.append('-DBUILD_SHARED_LIBS=ON')
             #     else:
             #         cmake_args.append('-DBUILD_SHARED_LIBS=OFF')
-
             # # mpi support
             # if "+mpi" in spec:
             #     mpicc = spec['mpi'].mpicc
@@ -121,14 +119,15 @@ class VtkH(Package, CudaPackage):
             # if "+logging" in spec:
             #     cmake_args.append("-DENABLE_LOGGING=ON")
 
-            if "+contourtree" in spec:
-                cmake_args.append("-DENABLE_FILTER_CONTOUR_TREE=ON")
+            # if "+contourtree" in spec:
+            #     cmake_args.append("-DENABLE_FILTER_CONTOUR_TREE=ON")
 
             # use release, instead of release with debug symbols b/c vtkh libs
             # can overwhelm compilers with too many symbols
+
             for arg in std_cmake_args:
                 if arg.count("CMAKE_BUILD_TYPE") == 0:
-                    cmake_args.extend(std_cmake_args)
+                    cmake_args.append(std_cmake_args)
             cmake_args.append("-DCMAKE_BUILD_TYPE=Release")
             cmake(*cmake_args)
             make()
