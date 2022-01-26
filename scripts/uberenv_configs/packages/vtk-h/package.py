@@ -138,7 +138,7 @@ class VtkH(Package, CudaPackage):
 
             install(host_cfg_fname, prefix)
 
-    def create_host_config(self, spec, prefix, py_site_pkgs_dir=None):
+    def create_host_config(self, spec, prefix):
         """
         This method creates a 'host-config' file that specifies
         all of the options used to configure and build vtkh.
