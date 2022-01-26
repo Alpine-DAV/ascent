@@ -88,51 +88,42 @@ class VtkH(Package, CudaPackage):
 
     def install(self, spec, prefix):
         with working_dir('spack-build', create=True):
+
             cmake_args = ["../src",
-                          "-DVTKM_DIR={0}".format(spec["vtk-m"].prefix),
                           "-DENABLE_TESTS=OFF",
                           "-DBUILD_TESTING=OFF"]
 
-            # shared vs static libs logic
-            # force static when building with cuda
-            if "+cuda" in spec:
-                cmake_args.append('-DBUILD_SHARED_LIBS=OFF')
-            else:
-                if "+shared" in spec:
-                    cmake_args.append('-DBUILD_SHARED_LIBS=ON')
-                else:
-                    cmake_args.append('-DBUILD_SHARED_LIBS=OFF')
+            # # shared vs static libs logic
+            # # force static when building with cuda
+            # if "+cuda" in spec:
+            #     cmake_args.append('-DBUILD_SHARED_LIBS=OFF')
+            # else:
+            #     if "+shared" in spec:
+            #         cmake_args.append('-DBUILD_SHARED_LIBS=ON')
+            #     else:
+            #         cmake_args.append('-DBUILD_SHARED_LIBS=OFF')
 
-            # mpi support
-            if "+mpi" in spec:
-                mpicc = spec['mpi'].mpicc
-                mpicxx = spec['mpi'].mpicxx
-                cmake_args.extend(["-DMPI_C_COMPILER={0}".format(mpicc),
-                                   "-DMPI_CXX_COMPILER={0}".format(mpicxx)])
-                mpiexe_bin = join_path(spec['mpi'].prefix.bin, 'mpiexec')
-                if os.path.isfile(mpiexe_bin):
-                    cmake_args.append("-DMPIEXEC={0}".format(mpiexe_bin))
+            # # mpi support
+            # if "+mpi" in spec:
+            #     mpicc = spec['mpi'].mpicc
+            #     mpicxx = spec['mpi'].mpicxx
+            #     cmake_args.extend(["-DMPI_C_COMPILER={0}".format(mpicc),
+            #                        "-DMPI_CXX_COMPILER={0}".format(mpicxx)])
+            #     mpiexe_bin = join_path(spec['mpi'].prefix.bin, 'mpiexec')
+            #     if os.path.isfile(mpiexe_bin):
+            #         cmake_args.append("-DMPIEXEC={0}".format(mpiexe_bin))
 
-            # openmp support
-            if "+openmp" in spec:
-                cmake_args.append("-DENABLE_OPENMP=ON")
+            # # openmp support
+            # if "+openmp" in spec:
+            #     cmake_args.append("-DENABLE_OPENMP=ON")
 
-            # build with logging
-            if "+logging" in spec:
-                cmake_args.append("-DENABLE_LOGGING=ON")
+            # # build with logging
+            # if "+logging" in spec:
+            #     cmake_args.append("-DENABLE_LOGGING=ON")
 
             if "+contourtree" in spec:
                 cmake_args.append("-DENABLE_FILTER_CONTOUR_TREE=ON")
 
-            # cuda support
-            if "+cuda" in spec:
-                cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
-                cmake_args.append("-DENABLE_CUDA:BOOL=ON")
-                cmake_args.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(
-                                  env["SPACK_CXX"]))
-            else:
-                cmake_args.append("-DVTKm_ENABLE_CUDA:BOOL=OFF")
-                cmake_args.append("-DENABLE_CUDA:BOOL=OFF")
             # use release, instead of release with debug symbols b/c vtkh libs
             # can overwhelm compilers with too many symbols
             for arg in std_cmake_args:
@@ -210,6 +201,9 @@ class VtkH(Package, CudaPackage):
         else:
             cfg.write(cmake_cache_entry("BUILD_SHARED_LIBS", "OFF"))
 
+        cfg.write(cmake_cache_entry("ENABLE_TESTS", "OFF"))
+        cfg.write(cmake_cache_entry("BUILD_TESTING", "OFF"))
+
         #######################################################################
         # Core Dependencies
         #######################################################################
@@ -234,7 +228,6 @@ class VtkH(Package, CudaPackage):
         #######################
         # Serial
         #######################
-
         if "+serial" in spec:
             cfg.write(cmake_cache_entry("ENABLE_SERIAL", "ON"))
         else:
@@ -286,19 +279,27 @@ class VtkH(Package, CudaPackage):
         #######################
         # CUDA
         #######################
-
         cfg.write("# CUDA Support\n")
 
         if "+cuda" in spec:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "ON"))
+            cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","ON"))
+            cfg.write(cmake_cache_entry("CMAKE_CUDA_HOST_COMPILER",env["SPACK_CXX"]))
         else:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "OFF"))
+            cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","OFF"))
 
         cfg.write("##################################\n")
         cfg.write("# end spack generated host-config\n")
         cfg.write("##################################\n")
         cfg.close()
 
+        # contour tree
+        if "+contourtree" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE","ON"))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE","ON"))
+
         host_cfg_fname = os.path.abspath(host_cfg_fname)
-        tty.info("spack generated conduit host-config file: " + host_cfg_fname)
+        tty.info("spack generated host-config file: " + host_cfg_fname)
         return host_cfg_fname
