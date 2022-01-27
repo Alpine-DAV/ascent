@@ -43,6 +43,17 @@ class Genten(CMakePackage,CudaPackage):
         lapack_blas_flags = '-DLAPACK_LIBS=%s' % ';'.join(lapack_blas.libraries)
         args.append(lapack_blas_flags)
 
+      if '+cuda' in spec:
+          cublas_lib = find_libraries("libcublas", spec['cuda'].libs.directories[0],
+                                      shared='+shared' in self.spec, recursive=False)
+
+          cusolver_lib = find_libraries("libcusolver", spec['cuda'].libs.directories[0],
+                                        shared='+shared' in self.spec, recursive=False)
+          #these are the names used in genten's cmake build system
+          args.append('-DCUDA_CUBLAS_LIBRARIES="{0}'.format(cublas_lib))
+          args.append('-DCUDA_cusolver_LIBRARY="{0}'.format(cusolver_lib))
+
+
       return args
 
     def cmake_install(self, spec, prefix):
