@@ -231,11 +231,6 @@ class VtkH(CMakePackage, CudaPackage):
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "OFF"))
             cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","OFF"))
 
-        cfg.write("##################################\n")
-        cfg.write("# end spack generated host-config\n")
-        cfg.write("##################################\n")
-        cfg.close()
-
         #######################################################################
         # Core Dependencies
         #######################################################################
@@ -278,6 +273,11 @@ class VtkH(CMakePackage, CudaPackage):
             cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE","ON"))
         else:
             cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE","ON"))
+
+        cfg.write("##################################\n")
+        cfg.write("# end spack generated host-config\n")
+        cfg.write("##################################\n")
+        cfg.close()
 
         host_cfg_fname = os.path.abspath(host_cfg_fname)
         tty.info("spack generated host-config file: " + host_cfg_fname)
