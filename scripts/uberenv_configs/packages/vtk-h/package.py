@@ -61,12 +61,15 @@ class VtkH(CMakePackage, CudaPackage):
 
     variant("shared", default=True, description="Build vtk-h as shared libs")
     variant("mpi", default=True, description="build mpi support")
+    # set to false for systems that implicitly link mpi
+    variant('blt_find_mpi', default=True, description='Use BLT CMake Find MPI logic')
     variant("serial", default=True, description="build serial (non-mpi) libraries")
     variant("cuda", default=False, description="build cuda support")
     variant("openmp", default=(sys.platform != 'darwin'),
             description="build openmp support")
     variant("logging", default=False, description="Build vtk-h with logging enabled")
     variant("contourtree", default=False, description="Enable contour tree support")
+    
 
     # Certain CMake versions have been found to break for our use cases
     depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
@@ -215,6 +218,10 @@ class VtkH(CMakePackage, CudaPackage):
                 else:
                     cfg.write(cmake_cache_entry("MPIEXEC",
                                                 mpiexe_bin))
+           if "+blt_find_mpi" in spec:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "ON"))
+            else:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "OFF"))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
 
