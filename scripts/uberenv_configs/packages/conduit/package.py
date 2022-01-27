@@ -73,6 +73,8 @@ class Conduit(CMakePackage):
 
     # variants for comm and i/o
     variant("mpi", default=True, description="Build Conduit MPI Support")
+    # set to false for systems that implicitly link mpi
+    variant('blt_find_mpi', default=True, description='Use BLT CMake Find MPI logic')
     variant("hdf5", default=True, description="Build Conduit HDF5 support")
     variant("hdf5_compat", default=True,
             description="Build Conduit with HDF5 1.8.x (compatibility mode)")
@@ -501,6 +503,10 @@ class Conduit(CMakePackage):
                 else:
                     cfg.write(cmake_cache_entry("MPIEXEC",
                                                 mpiexe_bin))
+            if "+blt_find_mpi" in spec:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "ON"))
+            else:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "OFF"))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
 

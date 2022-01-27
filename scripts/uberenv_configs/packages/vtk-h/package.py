@@ -69,7 +69,6 @@ class VtkH(CMakePackage, CudaPackage):
             description="build openmp support")
     variant("logging", default=False, description="Build vtk-h with logging enabled")
     variant("contourtree", default=False, description="Enable contour tree support")
-    
 
     # Certain CMake versions have been found to break for our use cases
     depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
