@@ -212,48 +212,6 @@ class Ascent(CMakePackage, CudaPackage):
         options.extend(['-C', host_config, "../spack-src/src/"])
         return options
 
-    # def install(self, spec, prefix):
-    #     """
-    #     Build and install Ascent.
-    #     """
-    #     with working_dir('spack-build', create=True):
-    #         py_site_pkgs_dir = None
-    #         if "+python" in spec:
-    #             try:
-    #                 py_site_pkgs_dir = site_packages_dir
-    #             except NameError:
-    #                 # spack's site_packages_dir won't exist in a subclass
-    #                 pass
-
-    #         host_cfg_fname = self.create_host_config(spec,
-    #                                                  prefix,
-    #                                                  py_site_pkgs_dir)
-    #         cmake_args = []
-    #         # if we have a static build, we need to avoid any of
-    #         # spack's default cmake settings related to rpaths
-    #         # (see: https://github.com/LLNL/spack/issues/2658)
-    #         if "+shared" in spec:
-    #             cmake_args.extend(std_cmake_args)
-    #         else:
-    #             for arg in std_cmake_args:
-    #                 if arg.count("RPATH") == 0:
-    #                     cmake_args.append(arg)
-    #         if self.spec.satisfies('%cce'):
-    #             cmake_args.extend(["-DCMAKE_Fortran_FLAGS=-ef"])
-    #         cmake_args.extend(["-C", host_cfg_fname, "../src"])
-    #         print("Configuring Ascent...")
-    #         cmake(*cmake_args)
-    #         print("Building Ascent...")
-    #         make()
-    #         # run unit tests if requested
-    #         if "+test" in spec and self.run_tests:
-    #             print("Running Ascent Unit Tests...")
-    #             make("test")
-    #         print("Installing Ascent...")
-    #         make("install")
-    #         # install copy of host config for provenance
-    #         install(host_cfg_fname, prefix)
-
     @run_after('install')
     @on_package_attributes(run_tests=True)
     def check_install(self):

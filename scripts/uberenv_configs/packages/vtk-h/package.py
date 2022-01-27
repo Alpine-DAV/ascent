@@ -27,7 +27,7 @@ def cmake_cache_entry(name, value, vtype=None):
     return 'set({0} "{1}" CACHE {2} "")\n\n'.format(name, value, vtype)
 
 
-class VtkH(Package, CudaPackage):
+class VtkH(CMakePackage, CudaPackage):
     """VTK-h is a toolkit of scientific visualization algorithms for emerging
     processor architectures. VTK-h brings together several projects like VTK-m
     and DIY2 to provide a toolkit with hybrid parallel capabilities."""
@@ -86,27 +86,44 @@ class VtkH(Package, CudaPackage):
     depends_on("vtk-m+cuda~tbb+openmp~shared", when="+cuda+openmp~shared")
     depends_on("vtk-m+cuda~tbb~openmp~shared", when="+cuda~openmp~shared")
 
-    def install(self, spec, prefix):
-        with working_dir('spack-build', create=True):
-            cmake_args = ["../src"]
-            for arg in std_cmake_args:
-                if arg.count("CMAKE_BUILD_TYPE") == 0:
-                    cmake_args.append(arg)
-            cmake_args.append("-DCMAKE_BUILD_TYPE=Release")
-            cmake(*cmake_args)
-            make()
-            make("install")
+    ###################################
+    # build phases used by this package
+    ###################################
+    phases = ['hostconfig', 'cmake', 'build', 'install']
 
-            host_cfg_fname = self.create_host_config(spec,
-                                                     prefix)
+    ####################################################################
+    # Note: cmake, build, and install stages are handled by CMakePackage
+    ####################################################################
 
-            install(host_cfg_fname, prefix)
+    # provide cmake args (pass host config as cmake cache file)
+    def cmake_args(self):
+        host_config = self._get_host_config_path(self.spec)
+        options = []
+        options.extend(['-C', host_config, "../spack-src/src/"])
+        return options
 
-    def create_host_config(self, spec, prefix):
+    def _get_host_config_path(self, spec):
+        sys_type = spec.architecture
+        # if on llnl systems, we can use the SYS_TYPE
+        if "SYS_TYPE" in env:
+            sys_type = env["SYS_TYPE"]
+        host_config_path = "{0}-{1}-{2}-vtkh-{3}.cmake".format(socket.gethostname(),
+                                                               sys_type,
+                                                               spec.compiler,
+                                                               spec.dag_hash())
+        dest_dir = spec.prefix
+        host_config_path = os.path.abspath(join_path(dest_dir,
+                                                     host_config_path))
+        return host_config_path
+
+    def hostconfig(self, spec, prefix):
         """
         This method creates a 'host-config' file that specifies
         all of the options used to configure and build vtkh.
         """
+        
+        if not os.path.isdir(spec.prefix):
+            os.mkdir(spec.prefix)
 
         #######################
         # Compiler Info
@@ -131,9 +148,8 @@ class VtkH(Package, CudaPackage):
 
         cmake_exe = spec['cmake'].command.path
 
-        host_cfg_fname = "%s-%s-%s-vtkh.cmake" % (socket.gethostname(),
-                                                  sys_type,
-                                                  spec.compiler)
+        # get hostconfig name
+        host_cfg_fname = self._get_host_config_path(spec)
 
         cfg = open(host_cfg_fname, "w")
         cfg.write("##################################\n")
@@ -265,4 +281,3 @@ class VtkH(Package, CudaPackage):
 
         host_cfg_fname = os.path.abspath(host_cfg_fname)
         tty.info("spack generated host-config file: " + host_cfg_fname)
-        return host_cfg_fname
