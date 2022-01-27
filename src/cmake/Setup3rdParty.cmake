@@ -108,3 +108,11 @@ endif()
 if (BABELFLOW_DIR OR BabelFlow_DIR)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif()
+
+
+################################
+# Setup GenTen
+################################
+if (GENTEN_DIR)
+  include(cmake/thirdparty/SetupGenTen.cmake)
+endif()

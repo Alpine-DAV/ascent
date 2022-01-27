@@ -39,6 +39,7 @@ set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 set(ASCENT_FIDES_ENABLED ${FIDES_FOUND})
+set(ASCENT_GENTEN_ENABLED ${GENTEN_FOUND})
 
 
 if(OCCA_FOUND AND UMPIRE_FOUND)
@@ -234,6 +235,11 @@ if(DRAY_FOUND)
   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
 endif()
 
+if(GENTEN_FOUND)
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_genten_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
+endif()
+
 ##############################
 # optional features
 #############################
@@ -315,6 +321,10 @@ endif()
 
 if(DRAY_FOUND)
     list(APPEND ascent_thirdparty_libs dray)
+endif()
+
+if(GENTEN_FOUND)
+    list(APPEND ascent_thirdparty_libs genten)
 endif()
 
 
