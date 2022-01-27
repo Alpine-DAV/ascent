@@ -183,43 +183,6 @@ class VtkH(CMakePackage, CudaPackage):
         cfg.write(cmake_cache_entry("ENABLE_TESTS", "OFF"))
         cfg.write(cmake_cache_entry("BUILD_TESTING", "OFF"))
 
-        #######################################################################
-        # Core Dependencies
-        #######################################################################
-
-        #######################
-        # VTK-h (and deps)
-        #######################
-
-        cfg.write("# vtk-m support \n")
-
-        if "+openmp" in spec:
-            cfg.write("# enable openmp support\n")
-            cfg.write(cmake_cache_entry("ENABLE_OPENMP", "ON"))
-
-        cfg.write("# vtk-m from spack\n")
-        cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtk-m'].prefix))
-
-        #######################################################################
-        # Optional Dependencies
-        #######################################################################
-
-        #######################
-        # Serial
-        #######################
-        if "+serial" in spec:
-            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "ON"))
-        else:
-            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "OFF"))
-
-        #######################
-        # Logging
-        #######################
-        if "+logging" in spec:
-            cfg.write(cmake_cache_entry("ENABLE_LOGGING", "ON"))
-        else:
-            cfg.write(cmake_cache_entry("ENABLE_LOGGING", "OFF"))
-
         #######################
         # MPI
         #######################
@@ -272,6 +235,43 @@ class VtkH(CMakePackage, CudaPackage):
         cfg.write("# end spack generated host-config\n")
         cfg.write("##################################\n")
         cfg.close()
+
+        #######################################################################
+        # Core Dependencies
+        #######################################################################
+
+        #######################
+        # VTK-h (and deps)
+        #######################
+
+        cfg.write("# vtk-m support \n")
+
+        if "+openmp" in spec:
+            cfg.write("# enable openmp support\n")
+            cfg.write(cmake_cache_entry("ENABLE_OPENMP", "ON"))
+
+        cfg.write("# vtk-m from spack\n")
+        cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtk-m'].prefix))
+
+        #######################################################################
+        # Optional Dependencies
+        #######################################################################
+
+        #######################
+        # Serial
+        #######################
+        if "+serial" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "ON"))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_SERIAL", "OFF"))
+
+        #######################
+        # Logging
+        #######################
+        if "+logging" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_LOGGING", "ON"))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_LOGGING", "OFF"))
 
         # contour tree
         if "+contourtree" in spec:
