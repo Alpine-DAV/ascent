@@ -64,6 +64,8 @@ class Ascent(CMakePackage, CudaPackage):
     variant('test', default=True, description='Enable Ascent unit tests')
 
     variant("mpi", default=True, description="Build Ascent MPI Support")
+    # set to false for systems that implicitly link mpi
+    variant('blt_find_mpi', default=True, description='Use BLT CMake Find MPI logic')
     variant("serial", default=True, description="build serial (non-mpi) libraries")
 
     # variants for language support
@@ -81,6 +83,7 @@ class Ascent(CMakePackage, CudaPackage):
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
+    variant("genten", default=False, description="Build with GenTen support")
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("occa", default=False, description="Build with OCCA support")
     variant("umpire", default=True, description="Build with OCCA support")
@@ -151,6 +154,11 @@ class Ascent(CMakePackage, CudaPackage):
     # fides
     depends_on("fides", when="+fides")
 
+    # genten
+    depends_on("genten", when="+genten")
+    depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
+    depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
+
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
     depends_on("dray+mpi+shared+cuda",        when="+dray+mpi+cuda+shared")
@@ -211,48 +219,6 @@ class Ascent(CMakePackage, CudaPackage):
         options = []
         options.extend(['-C', host_config, "../spack-src/src/"])
         return options
-
-    # def install(self, spec, prefix):
-    #     """
-    #     Build and install Ascent.
-    #     """
-    #     with working_dir('spack-build', create=True):
-    #         py_site_pkgs_dir = None
-    #         if "+python" in spec:
-    #             try:
-    #                 py_site_pkgs_dir = site_packages_dir
-    #             except NameError:
-    #                 # spack's site_packages_dir won't exist in a subclass
-    #                 pass
-
-    #         host_cfg_fname = self.create_host_config(spec,
-    #                                                  prefix,
-    #                                                  py_site_pkgs_dir)
-    #         cmake_args = []
-    #         # if we have a static build, we need to avoid any of
-    #         # spack's default cmake settings related to rpaths
-    #         # (see: https://github.com/LLNL/spack/issues/2658)
-    #         if "+shared" in spec:
-    #             cmake_args.extend(std_cmake_args)
-    #         else:
-    #             for arg in std_cmake_args:
-    #                 if arg.count("RPATH") == 0:
-    #                     cmake_args.append(arg)
-    #         if self.spec.satisfies('%cce'):
-    #             cmake_args.extend(["-DCMAKE_Fortran_FLAGS=-ef"])
-    #         cmake_args.extend(["-C", host_cfg_fname, "../src"])
-    #         print("Configuring Ascent...")
-    #         cmake(*cmake_args)
-    #         print("Building Ascent...")
-    #         make()
-    #         # run unit tests if requested
-    #         if "+test" in spec and self.run_tests:
-    #             print("Running Ascent Unit Tests...")
-    #             make("test")
-    #         print("Installing Ascent...")
-    #         make("install")
-    #         # install copy of host config for provenance
-    #         install(host_cfg_fname, prefix)
 
     @run_after('install')
     @on_package_attributes(run_tests=True)
@@ -326,11 +292,7 @@ class Ascent(CMakePackage, CudaPackage):
         #######################
         c_compiler = env["SPACK_CC"]
         cpp_compiler = env["SPACK_CXX"]
-        f_compiler = None
-
-        if self.compiler.fc:
-            # even if this is set, it may not exist so do one more sanity check
-            f_compiler = env["SPACK_FC"]
+        f_compiler = env["SPACK_FC"]
 
         #######################################################################
         # Directly fetch the names of the actual compilers to create a
@@ -380,12 +342,11 @@ class Ascent(CMakePackage, CudaPackage):
         cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", cpp_compiler))
 
         cfg.write("# fortran compiler used by spack\n")
-        if "+fortran" in spec and f_compiler is not None:
+        if "+fortran" in spec:
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "ON"))
             cfg.write(cmake_cache_entry("CMAKE_Fortran_COMPILER",
                                         f_compiler))
         else:
-            cfg.write("# no fortran compiler found\n\n")
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "OFF"))
 
         # shared vs static libs
@@ -507,7 +468,11 @@ class Ascent(CMakePackage, CudaPackage):
                 else:
                     cfg.write(cmake_cache_entry("MPIEXEC",
                                                 mpiexe_bin))
-
+            # find mpi support
+            if "+blt_find_mpi" in spec:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "ON"))
+            else:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "OFF"))
             ###################################
             # BABELFLOW (also depends on mpi)
             ###################################

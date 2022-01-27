@@ -92,15 +92,13 @@ if(MPI_FOUND AND FORTRAN_FOUND)
 
     # these flags are needeed for gfortran 10 to avoid
     # compile errors with the mpi interface
-    if(CMAKE_Fortran_COMPILER_VERSION GREATER  "9")
-        blt_append_custom_compiler_flag(
-            FLAGS_VAR clover_compile_flags
-            GNU   "-fallow-invalid-boz -fallow-argument-mismatch"
-        )
+    if(CMAKE_Fortran_COMPILER_VERSION GREATER  "9" AND Fortran_COMPILER_FAMILY_IS_GNU)
+	list(APPEND clover_compile_flags "-fallow-invalid-boz")
+	list(APPEND clover_compile_flags "-fallow-argument-mismatch")
     endif()
 
-    blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS "${clover_compile_flags}")
-    blt_add_target_link_flags(TO cloverleaf3d_par FLAGS "${clover_link_flags}")
+    blt_add_target_compile_flags(TO cloverleaf3d_par FLAGS ${clover_compile_flags}) 
+    blt_add_target_link_flags(TO cloverleaf3d_par FLAGS ${clover_link_flags})
 
 
     # install target for clover mpi
