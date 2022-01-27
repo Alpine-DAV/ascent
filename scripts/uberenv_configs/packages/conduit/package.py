@@ -172,6 +172,8 @@ class Conduit(CMakePackage):
     # Tentative patch for fj compiler
     # Cmake will support fj compiler and this patch will be removed
     patch('fj_flags.patch', when='%fj')
+    # patch for newer gcc
+    patch('bpparametis.patch', when='@0.8.1')
 
     # Add missing include for numeric_limits
     # https://github.com/LLNL/conduit/pull/773
