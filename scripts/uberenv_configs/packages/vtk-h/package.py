@@ -218,7 +218,7 @@ class VtkH(CMakePackage, CudaPackage):
                 else:
                     cfg.write(cmake_cache_entry("MPIEXEC",
                                                 mpiexe_bin))
-           if "+blt_find_mpi" in spec:
+            if "+blt_find_mpi" in spec:
                 cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "ON"))
             else:
                 cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "OFF"))
