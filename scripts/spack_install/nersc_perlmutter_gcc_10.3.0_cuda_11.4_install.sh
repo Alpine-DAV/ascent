@@ -10,7 +10,8 @@ export BASE_DIR=INSTALL
 #/project/projectdirs/alpine/software/ascent/
 export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/perlmutter/cuda/gnu
 mkdir -p $DEST_DIR
-python3 scripts/uberenv/uberenv.py --spec="%gcc~blt_find_mpi ^hdf5~mpi ^vtk-h~blt_find_mpi ^cmake~openssl~ncurses" \
+# ^vtk-h~blt_find_mpi
+python3 scripts/uberenv/uberenv.py --spec="%gcc~vtkh~blt_find_mpi+genten ^kokkos+wrapper  ^hdf5~mpi ^cmake~openssl~ncurses" \
        --pull \
        --install \
        --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/nersc/perlmutter_gcc_10.3.0_cuda_11.4/" \

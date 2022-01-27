@@ -22,7 +22,7 @@ class Genten(CMakePackage,CudaPackage):
     depends_on('blas', when='~cuda')
     depends_on('lapack', when='~cuda')
     depends_on('kokkos+openmp', when='+openmp~cuda')
-    depends_on('kokkos+cuda+cuda_lambda~wrapper', when='~openmp+cuda')
+    depends_on('kokkos+cuda+cuda_lambda', when='~openmp+cuda')
     depends_on('kokkos', when='~openmp~cuda')
 
     def cmake_args(self):
