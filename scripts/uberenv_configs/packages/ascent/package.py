@@ -83,6 +83,7 @@ class Ascent(CMakePackage, CudaPackage):
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
+    variant("genten", default=False, description="Build with GenTen support")
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("occa", default=False, description="Build with OCCA support")
     variant("umpire", default=True, description="Build with OCCA support")
@@ -152,6 +153,11 @@ class Ascent(CMakePackage, CudaPackage):
 
     # fides
     depends_on("fides", when="+fides")
+
+    # genten
+    depends_on("genten", when="+genten")
+    depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
+    depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
 
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
