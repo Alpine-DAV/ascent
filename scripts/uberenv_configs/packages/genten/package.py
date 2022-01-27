@@ -45,10 +45,10 @@ class Genten(CMakePackage,CudaPackage):
 
       if '+cuda' in spec:
           cublas_lib = find_libraries("libcublas", spec['cuda'].libs.directories[0],
-                                      shared='+shared' in self.spec, recursive=False)
+                                      shared='+shared' in spec, recursive=False)
 
           cusolver_lib = find_libraries("libcusolver", spec['cuda'].libs.directories[0],
-                                        shared='+shared' in self.spec, recursive=False)
+                                        shared='+shared' in spec, recursive=False)
           #these are the names used in genten's cmake build system
           args.append('-DCUDA_CUBLAS_LIBRARIES="{0}'.format(cublas_lib))
           args.append('-DCUDA_cusolver_LIBRARY="{0}'.format(cusolver_lib))
