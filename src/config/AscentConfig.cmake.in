@@ -65,6 +65,10 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_ADIOS2_ENABLED @ADIOS2_FOUND@)
     set(ASCENT_ADIOS2_DIR "@ADIOS2_DIR_ORIG@")
 
+    # advertise if genten support is enabled
+    set(ASCENT_GENTEN_ENABLED @GENTEN_FOUND@)
+    set(ASCENT_GENTEN_DIR "@GENTEN_DIR@")
+
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
     set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")

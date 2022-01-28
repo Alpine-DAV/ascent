@@ -153,7 +153,7 @@ TEST(ascent_cokurt, test_field)
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
-    conduit::Node &extracts = add_extracts["extracts"]
+    conduit::Node &extracts = add_extracts["extracts"];
     extracts["e1/type"] = "learn";
     extracts["e1/params/threshold"] = 0.1;
     extracts["e1/params/fields"].append() = "var1";

@@ -184,44 +184,7 @@ namespace detail
 
 } //  namespace detail
 
-//-----------------------------------------------------------------------------
-BlueprintVerify::BlueprintVerify()
-:Filter()
-{
-// empty
-}
 
-//-----------------------------------------------------------------------------
-BlueprintVerify::~BlueprintVerify()
-{
-// empty
-}
-
-//-----------------------------------------------------------------------------
-void
-BlueprintVerify::declare_interface(Node &i)
-{
-    i["type_name"]   = "blueprint_verify";
-    i["port_names"].append() = "in";
-    i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-BlueprintVerify::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    if(! params.has_child("protocol") ||
-       ! params["protocol"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'protocol'";
-    }
-
-    return res;
-}
 
 //-----------------------------------------------------------------------------
 Learn::Learn()
@@ -440,7 +403,7 @@ Learn::execute()
       double *pvals = new double[num_fields];
       ComputePrincipalKurtosisVectors(A, field_sizes[i], num_fields, pvecs, pvals);
       double * domain_fmms = fmms + num_fields * i;
-      compute_fmms(num_fields, pvecs, pvals, domain_fmms);
+      detail::compute_fmms(num_fields, pvecs, pvals, domain_fmms);
       delete[] pvecs;
       delete[] pvals;
     } // ends domain loop

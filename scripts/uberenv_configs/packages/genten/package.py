@@ -9,8 +9,9 @@ class Genten(CMakePackage,CudaPackage):
     maintainers = ['mclarsen']
 
     version('master',
-#            git='https://gitlab.com/tensors/genten.git',
-            git='https://github.com/mclarsen/genten.git',
+            #git='https://gitlab.com/tensors/genten.git',
+            #git='https://github.com/mclarsen/genten.git',
+            git='https://github.com/Alpine-DAV/genten.git',
             branch='higher-moments-interface',
             submodules=False,
             preferred=True)
@@ -35,8 +36,6 @@ class Genten(CMakePackage,CudaPackage):
 
       args.append("-DCMAKE_POSITION_INDEPENDENT_CODE=ON")
       args.append("-DKOKKOS_PATH={0}".format(self.spec['kokkos'].prefix))
-#      if '+cuda' in self.spec:
-#        args.append("-DKokkos_ENABLE_CUDA=ON")
 
       if '~cuda' in self.spec:
         lapack_blas = self.spec['lapack'].libs + self.spec['blas'].libs
@@ -44,13 +43,12 @@ class Genten(CMakePackage,CudaPackage):
         args.append(lapack_blas_flags)
 
       if '+cuda' in self.spec:
+          #point cmake at cuda math libs
           cublas_lib = find_libraries("libcublas", self.spec['cuda'].libs.directories[0],
                                       shared='+shared' in self.spec, recursive=False)
 
           cusolver_lib = find_libraries("libcusolver", self.spec['cuda'].libs.directories[0],
                                         shared='+shared' in self.spec, recursive=False)
-          #these are the names used in genten's cmake build system
-          #args.append('-DCUDA_CUBLAS_LIBRARIES="{0}'.format(cublas_lib))
           args.append('-DCUDA_cublas_LIBRARY="{0}'.format(cublas_lib))
           args.append('-DCUDA_cusolver_LIBRARY="{0}'.format(cusolver_lib))
 

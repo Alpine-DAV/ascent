@@ -581,6 +581,15 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write("# fides not built by spack \n")
 
         #######################
+        # GenTen
+        #######################
+        cfg.write("# GenTen support\n")
+        if "+genten" in spec:
+            cfg.write(cmake_cache_entry("GENTEN_DIR", spec['genten'].prefix))
+        else:
+            cfg.write("# genten not built by spack \n")
+
+        #######################
         # Finish host-config
         #######################
 
