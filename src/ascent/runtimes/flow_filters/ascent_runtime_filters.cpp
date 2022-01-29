@@ -50,6 +50,10 @@
 #endif
 
 
+#if defined(ASCENT_GENTEN_ENABLED)
+   #include <ascent_runtime_genten_filters.hpp>
+#endif
+
 
 using namespace flow;
 
@@ -81,6 +85,10 @@ register_builtin()
     AscentRuntime::register_filter_type<BlueprintVerify>();
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
+
+#if defined(ASCENT_GENTEN_ENABLED)
+    AscentRuntime::register_filter_type<Learn>("extracts","learn");
+#endif
 
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
