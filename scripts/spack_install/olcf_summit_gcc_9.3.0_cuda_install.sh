@@ -5,11 +5,11 @@ set -e
 #
 date
 # run spack install, this will install ascent@develop
-export ASCENT_VERSION=2021_08_31
+export ASCENT_VERSION=0.8.0
 export BASE_DIR=$WORLDWORK/csc340/software/ascent
 export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/summit/cuda/gnu
 mkdir -p $DEST_DIR
-python3 scripts/uberenv/uberenv.py --spec="%gcc ^conduit@develop ^vtk-h@develop" \
+python3 scripts/uberenv/uberenv.py --spec="%gcc" \
        --pull \
        --install \
        --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0/" \
