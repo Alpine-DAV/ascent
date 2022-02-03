@@ -26,6 +26,7 @@ RUN apt-get update && apt-get -y install \
              libssl-dev \
              libblas-dev \
              liblapack-dev \
+             liblapacke-dev \
              zlib1g-dev \
              libgdbm-dev \
              libreadline-dev \

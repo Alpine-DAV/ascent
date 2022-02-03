@@ -2,7 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM alpinedav/ascent-ci:ubuntu-20.10-devel
+FROM alpinedav/ascent-ci:ubuntu-20.04-devel
 
 # obtain a copy of ascent source from host env,
 # which we use to call uberenv

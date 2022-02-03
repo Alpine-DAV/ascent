@@ -12,7 +12,7 @@ variables:
   ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2021-12-29-shadee81a
   ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2021-12-29-shadee81a
   ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2021-12-29-shadee81a
-  ubuntu_20_10_tag: alpinedav/ascent-ci:ubuntu-20.10-devel-tpls_2021-12-29-shadee81a
+  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_ZZZZZZZZ
   ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2021-12-29-shadee81a
   ubuntu_21_10_tag: alpinedav/ascent-ci:ubuntu-21.10-devel-tpls_2021-12-29-shadee81a
 
@@ -68,6 +68,7 @@ stages:
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
         ubuntu_18_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_18_tag }}
@@ -79,6 +80,7 @@ stages:
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
         # this is off until #822 is worked out
         # ubuntu_18_shared_py_cxx11_bflow:
@@ -102,6 +104,19 @@ stages:
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: ON
           ENABLE_FIDES: ON
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py_cxx11_genten:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: ON
+          ENABLE_FIDES: ON
+          ENABLE_GENTEN: ON
           BLT_CXX_STD: c++11
         ubuntu_18_shared_py_cxx14:
           containerImage: ${{ variables.ubuntu_18_tag }}
@@ -113,6 +128,7 @@ stages:
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++14
         ubuntu_20_10_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_20_10_tag }}
@@ -124,6 +140,7 @@ stages:
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
         ubuntu_21_04_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_21_04_tag }}
@@ -135,6 +152,7 @@ stages:
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
         ubuntu_21_10_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_21_10_tag }}
@@ -146,6 +164,7 @@ stages:
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
     container: $[ variables['containerImage'] ]
@@ -196,6 +215,7 @@ stages:
            if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBABELFLOW_DIR=IGNORE"; fi
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBabelFlow_DIR=IGNORE"; fi
+           if [ $ENABLE_GENTEN = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DGENTEN_DIR=IGNORE"; fi 
            echo ${CMAKE_OPTS}
            # configure
            cmake ${CMAKE_OPTS} ../src

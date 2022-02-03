@@ -2,7 +2,7 @@
 set -ev
 
 # variants
-export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow"
+export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow+genten"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC}"
 # config

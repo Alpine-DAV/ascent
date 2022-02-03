@@ -2,7 +2,7 @@
 set -ev
 
 # variants
-export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa~python~openmp~shared"
+export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa+genten~python~openmp~shared"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^dray~openmp+cuda ^mfem~cuda cuda_arch=none ^hypre~cuda cuda_arch=none  ^vtk-h+cuda ^vtk-m+cuda ^cmake~openssl~ncurses"
 # config
