@@ -130,8 +130,8 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++14
-        ubuntu_20_10_shared_py_cxx11:
-          containerImage: ${{ variables.ubuntu_20_10_tag }}
+        ubuntu_20_04_shared_py_cxx11:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
