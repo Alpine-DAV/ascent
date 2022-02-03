@@ -92,7 +92,7 @@ if(MPI_FOUND AND FORTRAN_FOUND)
 
     # these flags are needeed for gfortran 10 to avoid
     # compile errors with the mpi interface
-    if(CMAKE_Fortran_COMPILER_VERSION GREATER  "9" AND Fortran_COMPILER_FAMILY_IS_GNU)
+    if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10" AND Fortran_COMPILER_FAMILY_IS_GNU)
 	list(APPEND clover_compile_flags "-fallow-invalid-boz")
 	list(APPEND clover_compile_flags "-fallow-argument-mismatch")
     endif()
