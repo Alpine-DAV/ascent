@@ -7,6 +7,9 @@ FROM ubuntu:20.04
 # so we can install additional packages as
 # non-root, but admin default user on azure pipelines
 RUN apt-get update && apt-get -y install sudo
+RUN apt-get update && apt-get -y install wget gnupg
+# tzdata install wants to ask questions, so handled as sep case
+RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 # install std packages
 RUN apt-get update && apt-get -y install \
              binutils \
