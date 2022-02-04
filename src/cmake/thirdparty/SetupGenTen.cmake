@@ -15,6 +15,9 @@ endif()
 
 MESSAGE(STATUS "Looking for GenTen using GENTEN_DIR = ${GENTEN_DIR}")
 
+
+set(GENTEN_DIR_ORIG ${GENTEN_DIR})
+
 set(Genten_DIR ${GENTEN_DIR}/lib64/cmake/Genten/)
 
 find_package(Genten REQUIRED QUIET)
