@@ -199,3 +199,10 @@ endif()
 if(ASCENT_MFEM_MPI_ENABLED AND NOT MPI_FOUND)
     find_package(MPI COMPONENTS CXX)
 endif()
+
+###############################################################################
+# OCCA + CUDA will require targets from CUDAToolkit
+###############################################################################
+if(ASCENT_CUDA_ENABLED AND ASCENT_OCCA_ENABLED)
+  find_package(CUDAToolkit REQUIRED)
+endif()
