@@ -364,6 +364,12 @@ if (ENABLE_SERIAL)
         endif()
     endif()
 
+    if(GENTEN_FOUND)
+        if(CUDA_FOUND)
+            list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
+        endif()
+    endif()
+
     # install target for serial ascent lib
     install(TARGETS ascent
             EXPORT  ascent
@@ -394,6 +400,8 @@ if (ENABLE_SERIAL)
                           vtkm_worklet
                           vtkm_source
                           vtkm_cont
+                          vtkm_cont_testing
+                          vtkm_lodepng
                           vtkmdiympi_nompi
                           )
 
@@ -526,6 +534,8 @@ if(MPI_FOUND)
                           vtkm_worklet
                           vtkm_source
                           vtkm_cont
+                          vtkm_cont_testing
+                          vtkm_lodepng
                           vtkmdiympi_nompi
                           )
 

@@ -9,8 +9,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Preferred dependency versions for ascent@0.8.0 (WIP)
 - conduit@0.8.0
 - dray@0.1.8
-- vtk-h@0.8.0
-- vtk-m@1.7.0
+- vtk-h@0.8.1
+- vtk-m@1.7.1
 
 
 ### Added

@@ -24,6 +24,9 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_INSTALL_PREFIX "@ASCENT_INSTALL_PREFIX@")
     set(ASCENT_CONDUIT_DIR  "@CONDUIT_DIR@")
 
+    # advertise if cuda is enabled
+    set(ASCENT_CUDA_ENABLED "@ENABLE_CUDA@")
+
     # advertise if fortran support is enabled
     set(ASCENT_FORTRAN_ENABLED @ENABLE_FORTRAN@)
 
