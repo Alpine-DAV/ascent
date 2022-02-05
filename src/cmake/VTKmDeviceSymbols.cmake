@@ -20,6 +20,7 @@ function(source_objects binary_dir sources rover targets locations)
     #message(STATUS "looking for location of target ${item}")
     set(props_to_search IMPORTED_LOCATION
                         IMPORTED_LOCATION_RELEASE
+                        IMPORTED_LOCATION_RELWITHDEBINFO
                         IMPORTED_LOCATION_MINSIZEREL
                         IMPORTED_LOCATION_DEBUG)
     foreach(prop IN LISTS props_to_search)
