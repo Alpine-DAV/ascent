@@ -7,4 +7,4 @@ source /usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/ascent_toss_3
 #
 # Register Ascent's Python with Jupyter Hub
 #
-python -m ipykernel install --user --name ascent_0.7.1 --display-name "Ascent 0.7.1 Python"
+python -m ipykernel install --user --name ascent_kernel --display-name "Ascent Kernel"

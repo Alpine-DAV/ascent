@@ -10,6 +10,23 @@
 Quick Start
 ================================
 
+Running Ascent via Docker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The easiest way to try out Ascent is via our Docker container. If you have Docker installed you can obtain a Docker image with a ready-to-use ascent install from `Docker Hub <https://hub.docker.com/r/alpinedav/ascent/>`_. This image also includes a Jupyter install to support running Ascent's tutorial notebooks.
+
+
+To start the Jupyter server and run the tutorial notebooks, run:
+
+.. code::
+
+    docker run -p 8888:8888 -t -i alpinedav/ascent-jupyter
+
+(The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
+
+This container automatically launches a Jupyter Notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``learn``
+
+
 
 Installing Ascent and Third Party Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,11 +42,11 @@ The quickest path to install Ascent and its dependencies is via :ref:`uberenv <b
 
 After this completes, ``build/ascent-install`` will contain an Ascent install.
 
-We also provide spack settings for several well known HPC clusters, here is an example of how to use our settings for NERSC's Cori System:
+We also provide spack settings for several well known HPC clusters, here is an example of how to use our settings for OLCF's Summit System:
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv_configs/spack_configs/nersc/cori/"
+    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0_cuda_11.0.3/"
 
 
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
@@ -52,29 +69,23 @@ Summary table of public ascent installs:
      - Runtime
      - Install Path
 
-   * - LLNL LC
-     - CZ TOSS 3 (Pascal)
-     - gcc 4.9.3
-     - OpenMP
-     - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
-
-   * - NERSC
-     - Cori
-     - gcc 8.2.0
-     - OpenMP
-     - ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install/``
-
    * - OLCF
      - Summit
-     - gcc 6.4.0
+     - gcc 9.3.0
      - OpenMP
      - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
 
    * - OLCF
      - Summit
-     - gcc 6.4.0
-     - CUDA
+     - gcc 9.3.0
+     - CUDA 11.0.3
      - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
+
+   * - LLNL LC
+     - CZ TOSS 3 (Pascal)
+     - gcc 4.9.3
+     - OpenMP
+     - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
 
 
 See :ref:`tutorial_setup_public_installs` for more details on using these installs.
@@ -91,10 +102,22 @@ CMake-based build system example (see: ``examples/ascent/using-with-cmake``):
    :lines: 6-
 
 
+CMake-based build system example with MPI (see: ``examples/ascent/using-with-cmake-mpi``):
+
+.. literalinclude:: ../../examples/using-with-cmake-mpi/CMakeLists.txt
+   :lines: 6-
+
+
 Makefile-based build system example (see: ``examples/ascent/using-with-make``):
 
 .. literalinclude:: ../../examples/using-with-make/Makefile
    :lines: 6-
+
+Makefile-based build system example with MPI (see: ``examples/ascent/using-with-make-mpi``):
+
+.. literalinclude:: ../../examples/using-with-make-mpi/Makefile
+   :lines: 6-
+
 
 
 
