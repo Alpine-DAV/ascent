@@ -505,15 +505,6 @@ class Conduit(CMakePackage):
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
 
-        ###########################
-        # Relay Web Server Support
-        ###########################
-        cfg.write("# relay webserver support \n")
-        if "+relay_webserver" in spec:
-            cfg.write(cmake_cache_entry("ENABLE_RELAY_WEBSERVER", "ON")
-        else:
-            cfg.write(cmake_cache_entry("ENABLE_RELAY_WEBSERVER", "OFF")
-
         #######################
         # ZFP
         #######################
