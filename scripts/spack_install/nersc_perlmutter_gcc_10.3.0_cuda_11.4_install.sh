@@ -5,13 +5,13 @@ set -e
 #
 date
 # run spack install, this will install ascent@develop
-export ASCENT_VERSION=2022_01_27
+export ASCENT_VERSION=0.8.0
 export BASE_DIR=$PSCRATCH/ASCENT_INSTALL 
 #/project/projectdirs/alpine/software/ascent/
 export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/
 mkdir -p $DEST_DIR
 # ^vtk-h~blt_find_mpi
-python3 scripts/uberenv/uberenv.py --spec="%gcc~blt_find_mpi+genten ^conduit~blt_find_mpi ^vtk-h@develop~blt_find_mpi ^kokkos+wrapper  ^hdf5~mpi ^cmake~openssl~ncurses" \
+python3 scripts/uberenv/uberenv.py --spec="%gcc~blt_find_mpi ^conduit~blt_find_mpi ^vtk-h~blt_find_mpi ^hdf5~mpi ^cmake~openssl~ncurses" \
        --pull \
        --install \
        --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/nersc/perlmutter_gcc_10.3.0_cuda_11.4/" \
