@@ -82,7 +82,6 @@ class Conduit(CMakePackage):
     variant("silo", default=False, description="Build Conduit Silo support")
     variant("adios", default=False, description="Build Conduit ADIOS support")
     variant("parmetis", default=True, description="Build Conduit Parmetis support")
-    variant("relay_webserver", default=True, description="Build Conduit Relay Webserver support")
 
     # zfp compression
     variant("zfp", default=False, description="Build Conduit ZFP support")
