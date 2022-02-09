@@ -82,6 +82,7 @@ class Conduit(CMakePackage):
     variant("silo", default=False, description="Build Conduit Silo support")
     variant("adios", default=False, description="Build Conduit ADIOS support")
     variant("parmetis", default=True, description="Build Conduit Parmetis support")
+    variant("relay_webserver", default=True, description="Build Conduit Relay Webserver support")
 
     # zfp compression
     variant("zfp", default=False, description="Build Conduit ZFP support")
@@ -503,6 +504,15 @@ class Conduit(CMakePackage):
                 cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "OFF"))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
+
+        ###########################
+        # Relay Web Server Support
+        ###########################
+        cfg.write("# relay webserver support \n")
+        if "+relay_webserver" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_RELAY_WEBSERVER", "ON")
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_RELAY_WEBSERVER", "OFF")
 
         #######################
         # ZFP
