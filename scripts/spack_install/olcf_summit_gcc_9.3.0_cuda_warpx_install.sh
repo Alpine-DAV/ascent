@@ -8,6 +8,7 @@ date
 export ASCENT_VERSION=0.8.0
 #export BASE_DIR=/gpfs/alpine/proj-shared/aph114/ascent/
 #export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/summit/cuda/gnu
+
 export BASE_DIR=/ccs/home/cyrush/WORKSCRATCH
 export DEST_DIR=$BASE_DIR/ASCENT_INSTALL/{$ASCENT_VERSION}
 mkdir -p $DEST_DIR
