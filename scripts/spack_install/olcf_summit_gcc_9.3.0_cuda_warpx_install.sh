@@ -14,7 +14,7 @@ mkdir -p $DEST_DIR
 python3 scripts/uberenv/uberenv.py --spec="%gcc" \
        --pull \
        --install \
-       --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0_warpx/" \
+       --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0_cuda_11.0.3_warpx/" \
        --prefix=${DEST_DIR}
 
 # gen symlinks to important deps
