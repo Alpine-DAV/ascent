@@ -8,13 +8,14 @@ date
 export ASCENT_VERSION=0.8.0
 #export BASE_DIR=/gpfs/alpine/proj-shared/aph114/ascent/
 #export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/summit/cuda/gnu
+
 export BASE_DIR=/ccs/home/cyrush/WORKSCRATCH
 export DEST_DIR=$BASE_DIR/ASCENT_INSTALL/{$ASCENT_VERSION}
 mkdir -p $DEST_DIR
-python3 scripts/uberenv/uberenv.py --spec="%gcc" \
+python3 scripts/uberenv/uberenv.py --spec="%gcc~test" \
        --pull \
        --install \
-       --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0_warpx/" \
+       --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0_cuda_11.0.3_warpx/" \
        --prefix=${DEST_DIR}
 
 # gen symlinks to important deps
