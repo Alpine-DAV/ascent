@@ -164,8 +164,7 @@ namespace detail
       {
         info.print();
       }
-      
-      output.print();
+
       conduit::relay::io::blueprint::save_mesh(output,
                                                output_path + "_small",
                                                "hdf5");
