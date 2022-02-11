@@ -429,7 +429,7 @@ endif()
 if(MPI_FOUND)
 
     # req'd libs
-    set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi)
+    set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi conduit_relay_mpi_io)
 
     if (BABELFLOW_FOUND)
       if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")

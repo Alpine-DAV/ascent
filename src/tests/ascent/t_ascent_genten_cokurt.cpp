@@ -144,10 +144,11 @@ TEST(ascent_cokurt, test_field)
 {
     conduit::Node data;
     build_data_set(data);
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_genten");
 
-    // remove old images before rendering
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_genten_spatial_metric");
+
+   // remove old images before rendering
     remove_test_image(output_file);
 
     conduit::Node actions;
@@ -158,6 +159,7 @@ TEST(ascent_cokurt, test_field)
     extracts["e1/params/threshold"] = 0.1;
     extracts["e1/params/fields"].append() = "var1";
     extracts["e1/params/fields"].append() = "var2";
+    extracts["e1/params/path"] = output_file;
 
     //
     // Run Ascent
@@ -169,6 +171,43 @@ TEST(ascent_cokurt, test_field)
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_cokurt, test_single_domain)
+{
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              20,
+                                              20,
+                                              20,
+                                              mesh);
+
+    mesh["fields/braid2"].set(mesh["fields/braid"]);
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_genten_single_domain_spatial_metric");
+
+    conduit::Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    extracts["e1/type"] = "learn";
+    extracts["e1/params/threshold"] = 0.1;
+    extracts["e1/params/fields"].append() = "braid";
+    extracts["e1/params/fields"].append() = "braid2";
+    extracts["e1/params/path"] = output_file;
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(mesh);
     ascent.execute(actions);
     ascent.close();
 }
