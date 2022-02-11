@@ -60,33 +60,46 @@ We also provide public installs of Ascent for the default compilers at a few  DO
 Summary table of public ascent installs:
 
 .. list-table::
-   :widths: 10 15 10 10 50
+   :widths: 10 15 10 10 20 50
    :header-rows: 1
 
    * - Site
      - System
      - Compiler
      - Runtime
+     - Modules
      - Install Path
 
    * - OLCF
      - Summit
      - gcc 9.3.0
-     - OpenMP
-     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
+     - CUDA 11.0.3
+     -  ``gcc/9.3.0`` ``cuda/11.0.3``
+     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
 
    * - OLCF
      - Summit
      - gcc 9.3.0
-     - CUDA 11.0.3
-     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
+     - OpenMP
+     - ``gcc/9.3.0``
+     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
+
+   * - NERSC
+     - Permutter
+     - gcc 9.3.0
+     - CUDA 11.4.0
+     - ``PrgEnv-gnu`` ``cpe-cuda/21.12``  ``cudatoolkit/21.9_11.4``
+     - ``/global/cfs/cdirs/alpine/software/ascent/current/perlmutter/cuda/gnu/ascent-install/``
 
    * - LLNL LC
      - CZ TOSS 3 (Pascal)
      - gcc 4.9.3
      - OpenMP
+     - (none)
      - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
 
+
+`Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
 
 See :ref:`tutorial_setup_public_installs` for more details on using these installs.
 

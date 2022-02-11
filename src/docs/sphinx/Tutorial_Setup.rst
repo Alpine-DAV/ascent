@@ -67,51 +67,57 @@ The url (http://localhost:8888) and password (``learn``) are the same as above.
 Using Public Installs of Ascent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. NERSC Cori Install
-.. +++++++++++++++++++++++
-..
-.. We have a public ascent install for use on NERSC's Cori System. This install was built using the default
-.. gnu compiler (8.2.0) with OpenMP and MPI support. You need to use ``module load gcc`` to build and run the installed examples.
-..
-..
-.. The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
-.. You can copy the tutorial examples from this install and use them as follows:
-..
-.. .. literalinclude:: tutorial_setup_nersc_cori_test.sh
-..    :language: bash
+This section provides info about public installs we provide on several HPC machines.
 
-OLCF Summit Install
+Additionally, here is a `link to the scripts used to build our public installs <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_ .
+
+OLCF Summit Installs
 +++++++++++++++++++++++
 
-We have two public ascents install for use on OLCF's Summit System. One install was built using gcc 9.3.0 with OpenMP and MPI support. You need to use `module load gcc/9.3.0` to build and run the installed examples.
-
 .. warning::
-    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
+    These installs exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
 
 
-This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
+* Build Details: gcc 9.3.0 with OpenMP and MPI support
+* Modules: ``gcc/9.3.0``
+* Location: ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
+
 You can copy the tutorial examples from this install and use them as follows:
 
 .. literalinclude:: tutorial_setup_olcf_summit_openmp_test.sh
    :language: bash
 
+* Build Details: gcc 9.3.0 with CUDA 11.0.3 and MPI support
+* Modules: ``gcc/9.3.0`` ``cuda/11.0.3``
+* Location: ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
 
-The second was built gcc 9.3.0 with CUDA 11.0.3 and MPI support. You need to use ``module load gcc/9.3.0`` and ``module load cuda/11.0.3`` to build and run the installed examples.
-
-This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``.
 You can copy the tutorial examples from this install and use them as follows:
 
 .. literalinclude:: tutorial_setup_olcf_summit_cuda_test.sh
    :language: bash
 
 
+NERSC Perlmuter Install
++++++++++++++++++++++++
+
+* Build Details: gcc 10.3.0 with CUDA 11.4.0 and MPI support
+* Modules: ``PrgEnv-gnu`` ``cpe-cuda/21.12``  ``cudatoolkit/21.9_11.4``
+* Location: ``/global/cfs/cdirs/alpine/software/ascent/current/perlmutter/cuda/gnu/ascent-install/``
+
+
+You can copy the tutorial examples from this install and use them as follows:
+
+.. literalinclude:: tutorial_setup_nersc_perlmutter_test.sh
+   :language: bash
+
+
 LLNL CZ TOSS 3 Install
 +++++++++++++++++++++++
 
-We have a public ascent install on LLNL CZ TOSS 3 Systems. This install includes OpenMP and MPI support.
+* Build Details: gcc 4.9.3 with OpenMP and MPI support
+* Modules: (none)
+* Location: ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``
 
-
-The install is located at ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``.
 You can copy the tutorial examples from this install and use them as follows:
 
 .. literalinclude:: tutorial_setup_llnl_pascal_openmp_test.sh

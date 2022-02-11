@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
+# source helper script that loads modules, sets python paths, and ASCENT_DIR env var
 #
 source /project/projectdirs/alpine/software/ascent/current/cori/ascent_cori_setup_env_gcc.sh
 
