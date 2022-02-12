@@ -25,7 +25,7 @@ def shexe(cmd):
 def main():
     opts = parse_args()
     print(json.dumps(opts,indent=2))
-    shexe("scripts/git_archive_all.py --prefix ascent-v{0} ascent-v{0}-src-with-blt.tar.gz".format(opts["ver"]))
+    shexe("python scripts/git_archive_all.py --prefix ascent-v{0} ascent-v{0}-src-with-blt.tar.gz".format(opts["ver"]))
     shexe("shasum -a 256 ascent-v{0}-src-with-blt.tar.gz".format(opts["ver"]))
 
 
