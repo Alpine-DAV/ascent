@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
+# source helper script that loads modules, sets python paths, and ASCENT_DIR env var
 #
 source /gpfs/alpine/csc340/world-shared/software/ascent/current/summit/ascent_summit_setup_env_gcc_openmp.sh
 
