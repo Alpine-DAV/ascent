@@ -3,7 +3,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-export TAG_BASE=alpinedav/ascent:ascent-jupyter-ubuntu-18
+export TAG_BASE=alpinedav/ascent-jupyter:ascent-jupyter-ubuntu-18
 
 date
 
