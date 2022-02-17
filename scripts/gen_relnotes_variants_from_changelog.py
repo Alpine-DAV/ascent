@@ -91,7 +91,7 @@ def sphinx_translate_ticks(l):
 
 def gen_github_entry(release_id,src):
     txt  = "# {0} Release Highlights\n\n".format(release_id)
-    txt += "(adapted from Ascent's [Changelog](https://github.com/Alpine-DAV/ascent/blob/develop/CHANGELOG.md)\n"
+    txt += "(adapted from Ascent's [Changelog](https://github.com/Alpine-DAV/ascent/blob/develop/CHANGELOG.md) )\n"
     sub_open = False
     active_rel = ""
     for l in src.split("\n"):

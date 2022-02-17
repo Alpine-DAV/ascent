@@ -29,3 +29,4 @@ cp public_env.sh $BASE_DIR/${ASCENT_VERSION}/perlmutter/ascent_permutter_setup_e
 # change perms to world readable
 chmod a+rX -R /global/cfs/cdirs/alpine/software/ascent/${ASCENT_VERSION}
 date
+
