@@ -24,9 +24,7 @@ rm -f public_env.sh
 python3 scripts/spack_install/gen_public_install_env_script.py ${DEST_DIR} PrgEnv-gnu cpe-cuda/21.12  cudatoolkit/21.9_11.4 
 chmod a+x public_env.sh
 cp public_env.sh $BASE_DIR/${ASCENT_VERSION}/ascent_permutter_setup_env_gcc_cuda.sh
-# change perms to group write
-chgrp -R csc340 $BASE_DIR/${ASCENT_VERSION}
-chmod g+rwX -R $BASE_DIR/${ASCENT_VERSION}
-# world shared no longer means world shared by default, so lets change perms for all
-chmod a+rX -R ${BASE_DIR}/${ASCENT_VERSION}/
+# change perms to world readable
+chmod a+rX -R /project/projectdirs/alpine/software/ascent/${ASCENT_VERSION}/
 date
+
