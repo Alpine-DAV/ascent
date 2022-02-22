@@ -6,7 +6,6 @@ set -e
 date
 # run spack install, this will install ascent@develop
 export ASCENT_VERSION=0.8.0
-#export BASE_DIR=$PSCRATCH/ASCENT_INSTALL
 #/project/projectdirs/alpine/software/ascent/
 # CFS is the new name for /project/
 export BASE_DIR=/global/cfs/cdirs/alpine/software/ascent/ 
