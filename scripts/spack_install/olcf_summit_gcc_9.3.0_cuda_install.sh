@@ -6,7 +6,10 @@ set -e
 date
 # run spack install, this will install ascent@develop
 export ASCENT_VERSION=0.8.0
+# alpine group space
 export BASE_DIR=$WORLDWORK/csc340/software/ascent
+# alpine ums space
+export BASE_DIR=/sw/summit/ums/ums010/ascent
 export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/summit/cuda/gnu
 mkdir -p $DEST_DIR
 python3 scripts/uberenv/uberenv.py --spec="%gcc~test" \
