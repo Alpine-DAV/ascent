@@ -44,6 +44,8 @@
 // mpi
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#include "conduit_relay_mpi_io.hpp"
+#include "conduit_relay_mpi_io_blueprint.hpp"
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -85,61 +87,87 @@ namespace filters
 namespace detail
 {
     void write_metric(conduit::Node &input,
-                      const std::string topo,
+                      const std::string &topo,
+                      const std::string &output_path,
                       std::vector<std::vector<std::pair<std::string,double>>> &mesh_data)
     {
+      bool all_good = true;
       conduit::Node output;
-      for(int i = 0; i < input.number_of_children(); ++i)
+      for(int i = 0; i < input.number_of_children() && all_good; ++i)
       {
+          
+         // create the "small" version, which is a single element mesh per domain
+         // this is a uniform grid that spans the spatial extends of the input mesh.
+         //
+          
         conduit::Node &dom = input.child(i);
         conduit::Node &out_dom = output.append();
         out_dom["state"] = dom["state"];
         out_dom["topologies"] = dom["topologies"];
         std::string coords_name = dom["topologies/"+topo+"/coordset"].as_string();
         conduit::Node &in_coords = dom["coordsets/"+coords_name];
-        double in_i = in_coords["dims/i"].to_float64();
-        double in_j = in_coords["dims/j"].to_float64();
-        double in_k = in_coords["dims/k"].to_float64();
 
-        conduit::Node &out_coords = out_dom["coordsets/"+coords_name];
-        out_coords["type"] = "uniform";
-        out_coords["dims/i"] = 2;
-        out_coords["dims/j"] = 2;
-        out_coords["dims/k"] = 2;
-        out_coords["origin"] = in_coords["origin"];
-        out_coords["spacing/dx"] = in_i * in_coords["spacing/dx"].to_float64();
-        out_coords["spacing/dy"] = in_j * in_coords["spacing/dy"].to_float64();
-        out_coords["spacing/dz"] = in_k * in_coords["spacing/dz"].to_float64();
-
-
-        std::vector<std::pair<std::string,double>> &dom_scalars = mesh_data[i];
-        for(int s = 0; s < dom_scalars.size(); ++s)
+        // check type:
+        if(in_coords["type"].as_string() == "uniform")
         {
-          std::string field_name = dom_scalars[s].first;
-          conduit::Node &field = out_dom["fields/"+field_name];
-          field["association"] = "element";
-          field["topology"] = topo;
-          field["values"].set(conduit::DataType::float64(1));
-          conduit::float64_array array = field["values"].value();
-          array[0] = dom_scalars[s].second;;
+            double in_i = in_coords["dims/i"].to_float64();
+            double in_j = in_coords["dims/j"].to_float64();
+            double in_k = in_coords["dims/k"].to_float64();
+
+            conduit::Node &out_coords = out_dom["coordsets/"+coords_name];
+            out_coords["type"] = "uniform";
+            out_coords["dims/i"] = 2;
+            out_coords["dims/j"] = 2;
+            out_coords["dims/k"] = 2;
+            out_coords["origin"] = in_coords["origin"];
+            out_coords["spacing/dx"] = in_i * in_coords["spacing/dx"].to_float64();
+            out_coords["spacing/dy"] = in_j * in_coords["spacing/dy"].to_float64();
+            out_coords["spacing/dz"] = in_k * in_coords["spacing/dz"].to_float64();
+            
+            std::vector<std::pair<std::string,double>> &dom_scalars = mesh_data[i];
+            for(int s = 0; s < dom_scalars.size(); ++s)
+            {
+              std::string field_name = dom_scalars[s].first;
+              conduit::Node &field = out_dom["fields/"+field_name];
+              field["association"] = "element";
+              field["topology"] = topo;
+              field["values"].set(conduit::DataType::float64(1));
+              conduit::float64_array array = field["values"].value();
+              array[0] = dom_scalars[s].second;;
+            }
+
+            if(mpi_rank() == 0 && i ==0)
+            {
+              out_dom.print();
+            }
+
         }
-        if(mpi_rank() == 0 && i ==0)
+        else
         {
-          out_dom.print();
+            // error, unsupported type for "small output"
+            // TODO: add support for creating small for arb types
+            all_good = false;
         }
+
       }
+      
+      
+
+      if(!global_agreement(all_good))
+      {
+        return;
+      }
+
       conduit::Node info;
       bool is_valid = blueprint::mesh::verify(output, info);
       if(!is_valid && mpi_rank() == 0)
       {
         info.print();
       }
-      std::string result_path;
-      mesh_blueprint_save(output,
-                          "small_spatial_metric",
-                          "hdf5",
-                          100,
-                          result_path);
+
+      conduit::relay::io::blueprint::save_mesh(output,
+                                               output_path + "_small",
+                                               "hdf5");
     }
 
 
@@ -214,6 +242,7 @@ Learn::verify_params(const conduit::Node &params,
                      conduit::Node &info)
 {
     info.reset();
+    // TODO: Anything goes right now :-)
     bool res = true;
     return res;
 }
@@ -265,6 +294,14 @@ Learn::execute()
     {
       ASCENT_ERROR("Learn: missing field list");
     }
+
+    std::string output_path ="spatial_metric";
+
+    if(params().has_path("path"))
+    {
+      output_path = params()["path"].as_string();
+    }
+    
     const int num_fields = field_selection.size();
 
     std::string assoc =  "";
@@ -551,14 +588,16 @@ Learn::execute()
       info.print();
     }
 
-    //  For scalability this is not necessary
-    //  debugging only
-    std::string result_path;
-    mesh_blueprint_save(*n_input,
-                        "spatial_metric",
-                        "hdf5",
-                        200,
-                        result_path);
+#ifdef ASCENT_MPI_ENABLED
+    conduit::relay::mpi::io::blueprint::save_mesh(*n_input,
+                                                  output_path,
+                                                  "hdf5",
+                                                  mpi_comm);
+#else
+    conduit::relay::io::blueprint::save_mesh(*n_input,
+                                             output_path,
+                                             "hdf5");
+#endif
 
     // add in the spatial metric
     for(int i = 0; i < num_domains; ++i)
@@ -570,7 +609,7 @@ Learn::execute()
       domain_data.push_back(metric);
     }
 
-    detail::write_metric(*n_input, topo, mesh_data);
+    detail::write_metric(*n_input, topo, output_path,mesh_data);
 
     delete[] fmms;
     debug.close();
