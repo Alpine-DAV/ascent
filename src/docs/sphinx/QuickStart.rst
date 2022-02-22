@@ -75,14 +75,14 @@ Summary table of public ascent installs:
      - gcc 9.3.0
      - CUDA 11.0.3
      -  ``gcc/9.3.0`` ``cuda/11.0.3``
-     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
+     - ``/sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/``
 
    * - OLCF
      - Summit
      - gcc 9.3.0
      - OpenMP
      - ``gcc/9.3.0``
-     - ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
+     - ``/sw/summit/ums/ums010/ascent/current/summit/openmp/gnu/ascent-install/``
 
    * - NERSC
      - Permutter

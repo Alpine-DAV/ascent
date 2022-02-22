@@ -49,8 +49,8 @@ To add the proper paths to Python and MPI to your environment, run:
 
     source ascent_docker_setup_env.sh
 
-The ascent source code is at ``/home/user/ascent/src/``, and the install is at ``/home/user/ascent/install-debug/``.
-The tutorial examples are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/``.
+The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install/``.
+The tutorial examples are at ``/ascent/install/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/``.
 
 
 You can also launch the a Jupyter Notebook server from this image using the following:
@@ -74,13 +74,10 @@ Additionally, here is a `link to the scripts used to build our public installs <
 OLCF Summit Installs
 +++++++++++++++++++++++
 
-.. warning::
-    These installs exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
-
 
 * Build Details: gcc 9.3.0 with OpenMP and MPI support
 * Modules: ``gcc/9.3.0``
-* Location: ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``
+* Location: ``/sw/summit/ums/ums010/ascent/current/summit/openmp/gnu/ascent-install/``
 
 You can copy the tutorial examples from this install and use them as follows:
 
@@ -89,7 +86,7 @@ You can copy the tutorial examples from this install and use them as follows:
 
 * Build Details: gcc 9.3.0 with CUDA 11.0.3 and MPI support
 * Modules: ``gcc/9.3.0`` ``cuda/11.0.3``
-* Location: ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``
+* Location: ``/sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/``
 
 You can copy the tutorial examples from this install and use them as follows:
 
