@@ -2,7 +2,7 @@
 #
 # source helper script that loads modules, sets python paths, and ASCENT_DIR env var
 #
-source /project/projectdirs/alpine/software/ascent/current/cori/ascent_permutter_setup_env_gcc_cuda.sh
+source /global/cfs/cdirs/alpine/software/ascent/current/cori/ascent_permutter_setup_env_gcc_cuda.sh
 
 #
 # make your own dir to hold the tutorial examples
