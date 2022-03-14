@@ -1016,7 +1016,9 @@ void ascent::runtime::filters::BFlowPmt::execute()
     int64_t fanin = p["fanin"].as_int64();
     FunctionType threshold = p["threshold"].as_float64();
     int64_t gen_field = p["gen_segment"].as_int64();
-    int64_t gen_rel = p["rel_field"].as_int64();
+    int64_t gen_rel = 0;
+    if( p.has_path("rel_field") )
+      gen_rel = p["rel_field"].as_int64();
 
     std::vector<uint32_t> radix_v(1);
     radix_v[0] = comm_size;
