@@ -31,9 +31,12 @@
 #include "PMT/LocalCorrectionAlgorithm.h"
 #include "PMT/MergeTree.h"
 #include "PMT/AugmentedMergeTree.h"
+#include "PMT/FullNeighborhood.h"
 #include "BabelFlow/reduce/SingleTaskGraph.h"
 #include "BabelFlow/reduce/RadixKExchange.h"
 #include "BabelFlow/reduce/RadixKExchangeTaskMap.h"
+#include "BabelFlow/reduce/KWayReduction.h"
+#include "BabelFlow/reduce/KWayReductionTaskMap.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
 #include "BabelFlow/DefGraphConnector.h"
@@ -43,6 +46,12 @@
 #include "StreamStat/StreamingStatistic.h"
 #include "StreamStat/StreamingStatisticFactory.h"
 
+#include "TopologyFileParser/StatHandle.h"
+#include "TopologyFileParser/FeatureElement.h"
+#include "TopologyFileParser/ClanHandle.h"
+#include "TopologyFileParser/IndexHandle.h"
+#include "TopologyFileParser/FeatureElement.h"
+
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
@@ -51,6 +60,7 @@
 #include <float.h>
 #include <climits>
 #include <memory>
+#include <bitset>
 
 
 // #define BFLOW_PMT_DEBUG
@@ -106,11 +116,15 @@ private:
   BabelFlow::RadixKExchange m_treeStatsGr;
   BabelFlow::RadixKExchangeTaskMap m_treeStatsMp;
 
+  BabelFlow::KWayReduction m_gatherTaskGr;
+  BabelFlow::KWayReductionTaskMap m_gatherTaskMp; 
+
   BabelFlow::ComposableTaskGraph m_fullGraph;
   BabelFlow::ComposableTaskMap m_fullTaskMap;
 
   BabelFlow::DefGraphConnector m_defGraphConnector_1;
   BabelFlow::DefGraphConnector m_defGraphConnector_2;
+  BabelFlow::DefGraphConnector m_defGraphConnector_3;
 
   std::vector<uint32_t> m_radices;
 };
@@ -124,6 +138,12 @@ uint32_t ParallelMergeTree::s_data_size[3];
 // Static ptr for local data to be passed to computeSegmentation()
 FunctionType* sLocalData = NULL;
 
+// Local merge tree - saved for merging in later stages
+MergeTree* sLocalMergeTree = nullptr;
+
+extern void compute_block_boundary(GlobalIndexType new_low[3], 
+                                   GlobalIndexType new_high[3],
+                                   std::vector<MergeTree>& trees);
 
 int local_compute(std::vector<BabelFlow::Payload> &inputs,
                   std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task) {
@@ -191,10 +211,8 @@ int write_results(std::vector<BabelFlow::Payload> &inputs,
 #ifdef BFLOW_PMT_WRITE_RES
   t.writeToFileBinary(task & ~KWayMerge::sPrefixMask);
   t.writeToFile(task & ~KWayMerge::sPrefixMask);
-  //t.writeToHtmlFile(task & ~sPrefixMask);
-#endif
-
   t.writeToHtmlFile(task & ~KWayMerge::sPrefixMask);
+#endif
 
   // Set the final tree as an output so that it could be extracted later
   output[0] = t.encode();
@@ -438,6 +456,8 @@ public:
     }
   }
 
+  size_t mapSize() const { return mStats.size(); }
+
 private:
   GlobalIndexType mLow[3];
   GlobalIndexType mHigh[3];
@@ -445,6 +465,67 @@ private:
 
   Statistics::Factory mStatsFac;
 };
+
+class StatTreeCombined
+{
+public:
+  StatTreeCombined() {}
+
+  StatTreeCombined(const MergeTree& mt) : mTree(mt) {}
+
+  BabelFlow::Payload serialize()
+  {
+    BabelFlow::Payload stat_map_payl = mStatMap.serialize();
+    BabelFlow::Payload tree_payl = mTree.encode();
+
+    int32_t buff_sz = 2 * sizeof(uint32_t) + stat_map_payl.size() + tree_payl.size();
+    char* full_buff = new char[buff_sz];
+    char* buff_ptr = full_buff;
+    
+    serialize_elem<uint32_t>( buff_ptr, stat_map_payl.size() );
+    serialize_elem<uint32_t>( buff_ptr, tree_payl.size() );
+    
+    memcpy( buff_ptr, stat_map_payl.buffer(), stat_map_payl.size() );
+    buff_ptr += stat_map_payl.size();
+
+    memcpy( buff_ptr, tree_payl.buffer(), tree_payl.size() );
+    buff_ptr += tree_payl.size();
+    
+    stat_map_payl.reset();
+    tree_payl.reset();
+
+    return BabelFlow::Payload( buff_sz, full_buff );
+  }
+
+  void deserialize(const BabelFlow::Payload& pl)
+  {
+    char* buff_ptr = pl.buffer();
+
+    uint32_t stat_map_sz = 0, tree_sz = 0;
+    deserialize_elem<uint32_t>( buff_ptr, stat_map_sz );
+    deserialize_elem<uint32_t>( buff_ptr, tree_sz );
+
+    mStatMap.deserialize( BabelFlow::Payload( stat_map_sz, buff_ptr ) );
+    mTree.decode( BabelFlow::Payload( tree_sz, buff_ptr + stat_map_sz ) );
+  }
+
+  void demux(const BabelFlow::Payload& pl, BabelFlow::Payload& stat_pl, BabelFlow::Payload& tree_pl)
+  {
+    char* buff_ptr = pl.buffer();
+
+    uint32_t stat_map_sz = 0, tree_sz = 0;
+    deserialize_elem<uint32_t>( buff_ptr, stat_map_sz );
+    deserialize_elem<uint32_t>( buff_ptr, tree_sz );
+
+    stat_pl = BabelFlow::Payload( stat_map_sz, buff_ptr );
+    tree_pl = BabelFlow::Payload( tree_sz, buff_ptr + stat_map_sz );
+  }
+
+  StatisticsMap mStatMap;
+  MergeTree     mTree;
+};
+
+// void StatTreeCombined::demux
 
 std::vector<Statistics::StreamingStatisticType> StatisticsMap::sRequestedStats;
 
@@ -591,19 +672,26 @@ int compute_loc_stats( std::vector<BabelFlow::Payload> &inputs,
   aug_t.decode(inputs[0]);
 
   // Construct a regular merge tree, without the segmentation field
-  // MergeTree mg_t( aug_t );
+  sLocalMergeTree = new MergeTree( aug_t );
 
   GlobalIndexType low[3];
   GlobalIndexType high[3];
 
   aug_t.blockBoundary( low, high );
 
-  GlobalIndexType extent[3] = 
+  // The boundary of this block wrt. the global domain
+  BoundaryType block_boundary_type = aug_t.blockBoundaryType();
+
+  // std::cout << "task " << task << "  boundary " << std::bitset<8>(block_boundary_type.t) << std::endl;
+
+  LocalIndexType local_extent[3] = 
   {
     (high[0] - low[0]) + 1,
     (high[1] - low[1]) + 1,
     (high[2] - low[2]) + 1
   };
+
+  FullNeighborhood neighborhood( local_extent );
 
   // Compute statistics on the local data
   StatisticsMap stats_map;
@@ -611,18 +699,29 @@ int compute_loc_stats( std::vector<BabelFlow::Payload> &inputs,
   
   for( unsigned int i = 0; i < aug_t.sampleCount(); ++i )
   {
-    GlobalIndexType coords[3];
+    FullNeighborhood::iterator it = neighborhood.begin( i );
 
-    // Set the spatial coords
-    coords[0] = i % extent[0];
-    coords[1] = (i / extent[0]) % extent[1];
-    coords[2] = i / (extent[0] * extent[1]);
+    // Get the boundary type of the current point but ignore all boundary
+    // flags that are due to the global boundary
+    BoundaryType origin_boundary_type = it.originBoundaryType();
+    origin_boundary_type.ignore( block_boundary_type );
 
-    coords[0] += low[0];
-    coords[1] += low[1];
-    coords[2] += low[2];
+    // LocalIndexType coords[3];
 
-    // TODO: Skip data on the boundary (coords[0] == low[0] or high[0])
+    // // Set the spatial local coords
+    // coords[0] = i % local_extent[0];
+    // coords[1] = (i / local_extent[0]) % extent[1];
+    // coords[2] = i / (local_extent[0] * local_extent[1]);
+
+    // std::cout << "i " << i << "  " << std::bitset<8>(origin_boundary_type.t) << std::endl;
+
+    // Skip data on local boundaries so that it is not counted twice
+    // only HIGH_?_BOUNDARY will be counted
+    if( origin_boundary_type.isBoundary() &&
+        ( origin_boundary_type.contains( BoundaryType( LOW_X_BOUNDARY ) ) ||
+          origin_boundary_type.contains( BoundaryType( LOW_Y_BOUNDARY ) ) || 
+          origin_boundary_type.contains( BoundaryType( LOW_Z_BOUNDARY ) ) ) )
+      continue;
 
     StatisticsMap::StatisticsVec& stats_vec = stats_map.getAndInitStatsVec( aug_t.label(i) );
 
@@ -750,6 +849,321 @@ int write_stats( std::vector<BabelFlow::Payload> &inputs,
   return 1;
 }
 
+int init_tree_stats( std::vector<BabelFlow::Payload> &inputs,
+                     std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task )
+{
+  StatTreeCombined stat_tree_combined( *sLocalMergeTree );
+  merge_stat_maps( stat_tree_combined.mStatMap, inputs );
+
+  // Got over outputs, serialize stats map
+  for( unsigned int i = 0; i < output.size(); ++i )
+    output[i] = stat_tree_combined.serialize();
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )
+    payl.reset();
+
+  delete sLocalMergeTree;
+
+  return 1;
+}
+
+/////
+int merge_trees_algorithm(std::vector<Payload>& inputs, MergeTree& join_tree, TaskId task)
+{
+  std::vector<Payload> temp_outs(1);
+  std::vector<MergeTree> input_trees(inputs.size());
+
+  for(unsigned int i = 0; i < inputs.size(); ++i)
+    input_trees[i].decode( inputs[i] );
+  
+  // Compute the bounding box of the combined boxes of the input trees. We
+  // enforce that this should always be a box
+  BabelFlow::GlobalIndexType new_high[3], new_low[3];
+  compute_block_boundary( new_low, new_high, input_trees );
+
+  // New tree being constructed using input trees
+  // MergeTree join_tree;
+  join_tree.low( new_low );
+  join_tree.high( new_high );
+
+  // std::map<GlobalIndexType, TreeNode*> nodes_map;
+  std::unordered_map<BabelFlow::GlobalIndexType,BabelFlow::LocalIndexType> tree_map;
+
+  for( MergeTree& mt : input_trees )
+  {
+    for( const TreeNode& node : mt.nodes() )
+    {
+      if( tree_map.find(node.id()) == tree_map.end() )
+      {
+        TreeNode* new_node = join_tree.addNode( node.id(), node.value(), node.boundary() );
+        tree_map[node.id()] = new_node->index();
+      }
+    }
+
+    std::map<BabelFlow::GlobalIndexType, BabelFlow::GlobalIndexType> edge_map;
+    mt.createEdgeMap(edge_map);
+    for(auto& p : edge_map)
+    {
+      auto iter_edge_1 = tree_map.find(p.first);
+      auto iter_edge_2 = tree_map.find(p.second);
+      assert(iter_edge_1 != tree_map.end());
+      assert(iter_edge_2 != tree_map.end());
+      TreeNode* upper = join_tree.getNode(iter_edge_1->second);
+      TreeNode* lower = join_tree.getNode(iter_edge_2->second);
+
+      join_tree.addEdge(upper, lower);
+    }
+  }
+
+  ///
+  // join_tree.writeToHtmlFile(task + 7700000);
+  ///
+
+  // for(Payload& payl : outputs)
+  //   payl = join_tree.encode();
+
+  return 1;
+}
+/////
+
+void merge_tree_stats_helper( std::vector<BabelFlow::Payload> &inputs,
+                              StatTreeCombined& stat_tree_combined, BabelFlow::TaskId task )
+{
+  std::vector<BabelFlow::Payload> stats_input_v( inputs.size() );
+  std::vector<BabelFlow::Payload> trees_input_v( inputs.size() );
+
+  for( int i = 0; i < inputs.size(); ++i )
+    stat_tree_combined.demux( inputs[i], stats_input_v[i], trees_input_v[i] );
+
+  merge_stat_maps( stat_tree_combined.mStatMap, stats_input_v );
+  merge_trees_algorithm( trees_input_v, stat_tree_combined.mTree, task );
+}
+
+int merge_tree_stats( std::vector<BabelFlow::Payload> &inputs,
+                      std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task )
+{
+  StatTreeCombined stat_tree_combined;
+
+  merge_tree_stats_helper( inputs, stat_tree_combined, task );
+
+  // Got over outputs, serialize stats map
+  for( unsigned int i = 0; i < output.size(); ++i )
+    output[i] = stat_tree_combined.serialize();
+
+   // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )
+    payl.reset();
+  
+  return 1;
+}
+
+int write_stats_topo( std::vector<BabelFlow::Payload> &inputs,
+                      std::vector<BabelFlow::Payload> &output, BabelFlow::TaskId task )
+{
+  StatTreeCombined stat_tree_combined;
+
+  merge_tree_stats_helper( inputs, stat_tree_combined, task );
+
+  // Handles for topology file format
+  TopologyFileFormat::StatHandle stat_handle;
+  TopologyFileFormat::ClanHandle clan_handle;
+  TopologyFileFormat::FamilyHandle family_handle;
+  TopologyFileFormat::SimplificationHandle simp_handle;
+  TopologyFileFormat::FeatureElementData features;
+
+  FunctionType life[2];
+  FunctionType low, high;
+
+  // Initialize the bounds
+  low = 10e20;
+  high = -10e20;
+
+  uint32_t tree_sz = stat_tree_combined.mTree.nodes().size();
+
+  assert( tree_sz == stat_tree_combined.mStatMap.mapSize() );
+
+  // Create enough FeatureElements
+  features.resize( tree_sz, 
+                   TopologyFileFormat::FeatureElement(TopologyFileFormat::SINGLE_REPRESENTATIVE) );
+
+  for( BabelFlow::LocalIndexType i = 0; i < tree_sz; ++i )
+  {
+    TreeNode* node = stat_tree_combined.mTree.getNode(i);
+
+    life[0] = life[1] = node->value();
+    if( node->down() != NULL )    // Not a local minimum
+      life[0] = node->down()->value();
+
+    if( life[0] > life[1] )
+      std::swap( life[0], life[1] );
+
+    features[i].addLink( (node->down() == NULL) ? BabelFlow::LNULL : node->down()->index() );
+    features[i].direction( 0 );   // Direction == 0 means it's a merge tree
+    features[i].lifeTime( life[0], life[1] );
+
+    low = std::min( low, life[0] );
+    high = std::max( high, life[1] );
+  }
+
+  // Set the overall function range of the clan
+  family_handle.range( low, high );
+
+  // Name the attribute
+  family_handle.variableName( "Attribute0" );
+
+  // Now assemble the simplification sequence
+  FunctionType range[2];
+
+  // Set the features as data from the simplification handle
+  simp_handle.setData( &features );
+
+  // Set the range
+  simp_handle.setRange( low, high );
+
+  // We have merge trees in which case we always only have a single represetative
+  simp_handle.fileType( TopologyFileFormat::SINGLE_REPRESENTATIVE );
+  
+  simp_handle.metric( "Threshold" );
+
+  // Set the encoding
+  simp_handle.encoding( false );
+
+  // Add the simplification handle to the family
+  family_handle.add( simp_handle );
+
+  TopologyFileFormat::Data<double> stats_arr( tree_sz );
+
+  // std::cout << "Stats:" << std::endl;
+  for( BabelFlow::LocalIndexType i = 0; i < tree_sz; ++i )
+  {
+    TreeNode* node = stat_tree_combined.mTree.getNode(i);
+    StatisticsMap::StatisticsVec& sv = stat_tree_combined.mStatMap.getStatsVec( node->id() );
+    
+    assert( sv.size() > 0 );
+    
+    stats_arr[i] = sv[0]->value();
+    stat_handle.stat( sv[0]->typeName() );
+
+    // std::cout << node->id() << "  " << sv[0]->value() << std::endl;
+  }
+
+  stat_handle.aggregated( true );
+  stat_handle.species( "species" );
+  stat_handle.encoding( false );
+  stat_handle.setData( &stats_arr );
+
+  family_handle.add( stat_handle );
+
+  // Finally, we attach the family to the clan
+  clan_handle.add( family_handle );
+
+  // and write the file
+  char full_name[200];
+  sprintf( full_name, "%s.family", "stats-tree" );
+  clan_handle.write(full_name);
+
+  // Write out merged_stats_map
+  // std::stringstream ss;
+  // ss << "stream_stat_" << task << ".txt";
+  // std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+
+  // auto iter = merged_stats_map.beginIter();
+  // auto end_iter = merged_stats_map.endIter();
+
+  // for( ; iter != end_iter; ++iter )
+  // {
+  //   bofs << iter->first << "  --  ";
+  //   const StatisticsMap::StatisticsVec& stats_vec = iter->second;
+  //   for( auto& stat_ptr : stats_vec )
+  //     bofs << stat_ptr->value() << "  ";
+  //   bofs << std::endl;
+  // }
+
+  // bofs.close();
+
+  // Deleting input data
+  for( BabelFlow::Payload& payl : inputs )
+    payl.reset();
+  
+  return 1;
+}
+
+  // StatisticsMap merged_stats_map;
+  // merge_stat_maps( merged_stats_map, inputs );
+
+  // // Handles for topology file format
+  // TopologyFileFormat::StatHandle stat_handle;
+  // TopologyFileFormat::ClanHandle clan_handle;
+  // TopologyFileFormat::FamilyHandle family_handle;
+  // TopologyFileFormat::IndexHandle idx_handle;
+
+  // TopologyFileFormat::Data<double> stats_arr( merged_stats_map.mapSize() );
+  // TopologyFileFormat::Data<BabelFlow::GlobalIndexType> idx_arr( merged_stats_map.mapSize() );
+
+  // auto iter = merged_stats_map.beginIter();
+  // auto end_iter = merged_stats_map.endIter();
+  // int i = 0;
+
+  // std::cout << "Stats:" << std::endl;
+  // for( ; iter != end_iter; ++iter, ++i )
+  // {
+  //   GlobalIndexType feat_label = iter->first;
+
+  //   StatisticsMap::StatisticsVec& sv = merged_stats_map.getStatsVec( feat_label );
+  //   assert( sv.size() > 0 );
+  //   stats_arr[i] = sv[0]->value();
+  //   idx_arr[i] = feat_label;
+
+  //   stat_handle.stat( sv[0]->typeName() );
+
+  //   std::cout << feat_label << "  " << sv[0]->value() << std::endl;
+  // }
+
+  // stat_handle.aggregated( true );
+  // stat_handle.species( "species" );
+  // stat_handle.encoding( false );
+  // stat_handle.setData( &stats_arr );
+
+  // family_handle.add( stat_handle );
+
+  // // idx_handle.setData( &idx_arr );
+
+  // // family_handle.add( idx_handle );
+
+  // // Finally, we attach the family to the clan
+  // clan_handle.add( family_handle );
+
+  // // and write the file
+  // char full_name[200];
+  // sprintf( full_name, "%s.family", "stats" );
+  // clan_handle.write(full_name);
+
+  // // Write out merged_stats_map
+  // // std::stringstream ss;
+  // // ss << "stream_stat_" << task << ".txt";
+  // // std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+
+  // // auto iter = merged_stats_map.beginIter();
+  // // auto end_iter = merged_stats_map.endIter();
+
+  // // for( ; iter != end_iter; ++iter )
+  // // {
+  // //   bofs << iter->first << "  --  ";
+  // //   const StatisticsMap::StatisticsVec& stats_vec = iter->second;
+  // //   for( auto& stat_ptr : stats_vec )
+  // //     bofs << stat_ptr->value() << "  ";
+  // //   bofs << std::endl;
+  // // }
+
+  // // bofs.close();
+
+  // // Deleting input data
+  // for( BabelFlow::Payload& payl : inputs )
+  //   payl.reset();
+  
+  // return 1;
+
 /////////////////////////////////////////////////
 
 void ParallelMergeTree::ComputeGhostOffsets(uint32_t low[3], uint32_t high[3],
@@ -854,9 +1268,14 @@ void ParallelMergeTree::Initialize()
   m_treeStatsGr = BabelFlow::RadixKExchange( mpi_size, m_radices );
   m_treeStatsMp = BabelFlow::RadixKExchangeTaskMap( mpi_size, &m_treeStatsGr );
 
+  uint32_t blks[3] = { uint32_t(mpi_size), 1, 1 };
+  m_gatherTaskGr = BabelFlow::KWayReduction( blks, m_fanin );
+  m_gatherTaskMp = BabelFlow::KWayReductionTaskMap( mpi_size, &m_gatherTaskGr );
+
   m_preProcTaskGr.setGraphId( 0 );
   m_kWayMergeGr.setGraphId( 1 );
   m_treeStatsGr.setGraphId( 2 );
+  m_gatherTaskGr.setGraphId( 3 );
 
   BabelFlow::TaskGraph::registerCallback( 0, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, pre_proc );
   
@@ -868,7 +1287,16 @@ void ParallelMergeTree::Initialize()
 
   BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::LEAF_TASK_CB, compute_loc_stats );
   BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::MID_TASK_CB, merge_stats );
-  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, write_stats );
+  // BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, write_stats );
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, merge_stats );
+
+  // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::LEAF_TASK_CB, BabelFlow::relay_message );
+  // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::MID_TASK_CB,  merge_stats );
+  // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::ROOT_TASK_CB, write_stats_topo );
+
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::LEAF_TASK_CB, init_tree_stats );
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::MID_TASK_CB,  merge_tree_stats );
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::ROOT_TASK_CB, write_stats_topo );
 
 #ifdef BFLOW_PMT_DEBUG
   if( my_rank == 0 ) 
@@ -881,10 +1309,15 @@ void ParallelMergeTree::Initialize()
   {
     m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
     m_defGraphConnector_2 = BabelFlow::DefGraphConnector( &m_kWayMergeGr, 1, &m_treeStatsGr, 2 );
+    m_defGraphConnector_3 = BabelFlow::DefGraphConnector( &m_treeStatsGr, 2, &m_gatherTaskGr, 3 );
 
-    std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector_1, &m_defGraphConnector_2 };
-    std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr, &m_treeStatsGr };
-    std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp, &m_treeStatsMp }; 
+    std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ 
+      &m_defGraphConnector_1, 
+      &m_defGraphConnector_2,
+      &m_defGraphConnector_3
+    };
+    std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr, &m_treeStatsGr, &m_gatherTaskGr };
+    std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp, &m_treeStatsMp, &m_gatherTaskMp }; 
 
     m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
     m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
@@ -929,7 +1362,7 @@ void ParallelMergeTree::ExtractSegmentation(FunctionType* output_data_ptr)
   
   // Output data includes ghost cells so we have to embed the smaller segmentation
   // part in the output data. The first step is to intialize all output
-  std::fill( output_data_ptr, output_data_ptr + xsize*ysize*zsize, (FunctionType)GNULL );
+  std::fill( output_data_ptr, output_data_ptr + xsize*ysize*zsize, (FunctionType)BabelFlow::GNULL );
   
   uint32_t dnx, dny, dnz, dpx, dpy, dpz;
   ParallelMergeTree::ComputeGhostOffsets( m_low, m_high, dnx, dny, dnz, dpx, dpy, dpz );
@@ -1382,7 +1815,7 @@ void ascent::runtime::filters::BFlowPmt::execute()
       data_node["fields/segment/topology"] = field_node["topology"].as_string();
       conduit::DataArray<double> array_mag = field_node["values"].as_float64_array();
 
-      std::vector<FunctionType> seg_data(array_mag.number_of_elements(), (FunctionType)GNULL);
+      std::vector<FunctionType> seg_data(array_mag.number_of_elements(), (FunctionType)BabelFlow::GNULL);
 
       data_node["fields/segment/values"].set(seg_data);
       d_input->reset_vtkh_collection();
