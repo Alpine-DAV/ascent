@@ -6,7 +6,10 @@ set -e
 date
 # run spack install, this will install ascent@develop
 export ASCENT_VERSION=0.8.0_warpx
-export BASE_DIR=/gpfs/alpine/proj-shared/aph114/ascent/
+# warpx space
+#export BASE_DIR=/gpfs/alpine/proj-shared/aph114/ascent/
+# alpine ums space
+export BASE_DIR=/sw/summit/ums/ums010/ascent
 export DEST_DIR=$BASE_DIR/${ASCENT_VERSION}/summit/cuda/gnu
 # for testing:
 #export BASE_DIR=/ccs/home/cyrush/WORKSCRATCH
