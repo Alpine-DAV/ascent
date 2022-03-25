@@ -58,6 +58,7 @@
 #endif
 using namespace conduit;
 using namespace std;
+//#include<Kokkos_Core.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -125,6 +126,9 @@ AscentRuntime::~AscentRuntime()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+
+
+
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
@@ -137,6 +141,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
+    std::cerr << "Before VTKh::Initialize" << std::endl;
     vtkh::Initialize();
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
 #endif
@@ -157,7 +162,11 @@ AscentRuntime::Initialize(const conduit::Node &options)
                      "correct version of ascent?");
     }
 
-#endif
+    vtkh::Initialize();
+
+#endif //end non-mpi
+
+
     // set a info handler so we only display messages on rank 0;
     conduit::utils::set_info_handler(InfoHandler::info_handler);
 #ifdef VTKM_CUDA
@@ -192,6 +201,16 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 #endif
 
+
+#ifdef VTKM_KOKKOS_HIP
+    std::cerr << "Before VTKh::selectKokkosDevice(HIP)" << std::endl;
+    vtkh::SelectKokkosDevice(1);
+#endif
+//TODO: Figure out how to get device index for kokkos cuda
+#ifdef VTKM_KOKKOS_CUDA
+    std::cerr << "Before VTKh::selectKokkosDevice(Cuda)" << std::endl;
+    vtkh::SelectKokkosDevice(1);
+#endif
 
 #ifdef ASCENT_MFEM_ENABLED
     if(options.has_path("refinement_level"))
