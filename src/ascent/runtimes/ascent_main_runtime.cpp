@@ -58,7 +58,6 @@
 #endif
 using namespace conduit;
 using namespace std;
-//#include<Kokkos_Core.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -141,7 +140,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
-    std::cerr << "Before VTKh::Initialize" << std::endl;
     vtkh::Initialize();
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
 #endif
@@ -203,12 +201,12 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
 
 #ifdef VTKM_KOKKOS_HIP
-    std::cerr << "Before VTKh::selectKokkosDevice(HIP)" << std::endl;
     vtkh::SelectKokkosDevice(1);
 #endif
-//TODO: Figure out how to get device index for kokkos cuda
 #ifdef VTKM_KOKKOS_CUDA
-    std::cerr << "Before VTKh::selectKokkosDevice(Cuda)" << std::endl;
+    //TODO: Figure out how to get device index for kokkos cuda
+    //int device_count = vtkh::CUDADeviceCount();
+    //int rank_device = m_rank % device_count;
     vtkh::SelectKokkosDevice(1);
 #endif
 
