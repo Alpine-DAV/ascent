@@ -125,9 +125,6 @@ AscentRuntime::~AscentRuntime()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-
-
-
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
@@ -163,7 +160,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
     vtkh::Initialize();
 
 #endif //end non-mpi
-
 
     // set a info handler so we only display messages on rank 0;
     conduit::utils::set_info_handler(InfoHandler::info_handler);
