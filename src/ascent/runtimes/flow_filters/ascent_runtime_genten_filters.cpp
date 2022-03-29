@@ -201,7 +201,7 @@ namespace detail
        //Normalise
        for(int i = 0; i<nfields; i++)
        {
-         fmms[i] = std::abs(fmms[i]) / sum_eigvals;
+	 fmms[i] = std::abs(fmms[i]) / (sum_eigvals + 1e-18);
        }
 
        //If everything is correct sum of fmms should be close to 1.0
@@ -379,7 +379,8 @@ Learn::execute()
     std::stringstream d_name;
     d_name<<"rank_"<<rank;
     std::ofstream debug;
-    debug.open(d_name.str());
+    //debug.open(d_name.str());
+    debug.open(d_name.str(),std::ios::out | std::ios::app);
     //debug<<"Field size "<<field_size<<"\n";
 
     const int num_domains = n_input->number_of_children();
@@ -456,7 +457,7 @@ Learn::execute()
     for(int i = 0; i < num_domains; ++i)
     {
 
-      if(norm_eigv[i] > 1e-18)
+//    if(norm_eigv[i] > 1e-18)
       {
 
         int offset = i * num_fields;
@@ -507,7 +508,7 @@ Learn::execute()
     for(int i = 0; i < num_domains; ++i)
     {
       spatial_metric[i] = 0.0;
-      if(norm_eigv[i] > 1e-18)
+//    if(norm_eigv[i] > 1e-18)
       {
 
       double * domain_fmms = fmms + num_fields * i;
@@ -543,8 +544,6 @@ Learn::execute()
     global_max = max_metric;
 
 #ifdef ASCENT_MPI_ENABLED
-    MPI_Reduce(&min_metric, &global_min, 1, MPI_DOUBLE, MPI_MIN, 0,mpi_comm);
-    MPI_Reduce(&max_metric, &global_max, 1, MPI_DOUBLE, MPI_MAX, 0,mpi_comm);
 #endif
     if(rank == 0)
     {
@@ -581,6 +580,7 @@ Learn::execute()
       }
     }
 
+#if 0
     conduit::Node info;
     bool is_valid = blueprint::mesh::verify(*n_input, info);
     if(!is_valid && rank == 0)
@@ -611,6 +611,8 @@ Learn::execute()
 
     detail::write_metric(*n_input, topo, output_path,mesh_data);
 
+#endif
+
     delete[] fmms;
     debug.close();
     // TODO:
@@ -640,8 +642,3 @@ Learn::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-
