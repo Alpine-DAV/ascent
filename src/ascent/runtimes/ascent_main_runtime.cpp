@@ -157,7 +157,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
                      "correct version of ascent?");
     }
 
+#if defined(ASCENT_VTKM_ENABLED)
     vtkh::Initialize();
+#endif
 
 #endif //end non-mpi
 
