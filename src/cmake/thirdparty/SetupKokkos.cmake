@@ -30,6 +30,7 @@ if(KOKKOS_DIR)
                  NO_DEFAULT_PATH
                  COMPONENTS separable_compilation
                  PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
-         MESSAGE("FOUND KOKKOS PACKAGE:${KOKKOS_CMAKE_CONFIG_DIR}")
+     MESSAGE("FOUND KOKKOS PACKAGE:${KOKKOS_CMAKE_CONFIG_DIR}")
+     set(KOKKOS_FOUND TRUE)
 endif()
 
