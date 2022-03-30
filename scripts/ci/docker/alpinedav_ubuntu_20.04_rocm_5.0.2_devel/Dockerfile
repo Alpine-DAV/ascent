@@ -18,7 +18,7 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 RUN wget -q -O - http://repo.radeon.com/rocm/rocm.gpg.key \
   | sudo apt-key add -
 
-RUN echo 'deb [arch=amd64] http://repo.radeon.com/rocm/apt/4.5.0/ ubuntu main' \
+RUN echo 'deb [arch=amd64] http://repo.radeon.com/rocm/apt/5.0.2/ ubuntu main' \
   | sudo tee /etc/apt/sources.list.d/rocm.list
 
 RUN echo 'export PATH=/opt/rocm/llvm/bin:/opt/rocm/bin:/opt/rocm/profiler/bin:/opt/rocm/opencl/bin:$PATH' \
