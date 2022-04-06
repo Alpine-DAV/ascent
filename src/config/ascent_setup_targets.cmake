@@ -77,7 +77,7 @@ if(ASCENT_MPI_ENABLED)
 
         set_property(TARGET ascent::ascent_mpi
                      APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-                     conduit conduit_relay conduit_relay_mpi conduit_blueprint)
+                     conduit conduit_relay conduit_relay_mpi conduit_blueprint conduit_blueprint_mpi)
     endif()
 
     if(ASCENT_VTKH_ENABLED)
