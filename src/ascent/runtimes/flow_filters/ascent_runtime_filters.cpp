@@ -83,6 +83,7 @@ void
 register_builtin()
 {
     AscentRuntime::register_filter_type<BlueprintVerify>();
+    AscentRuntime::register_filter_type<BlueprintFlatten>("extracts","flatten");
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
