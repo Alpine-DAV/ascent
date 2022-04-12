@@ -520,25 +520,33 @@ if(MPI_FOUND)
       set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
 
       set(targets_to_link rover
-                          vtkh_rendering_mpi
-                          vtkh_compositing_mpi
-                          vtkh_filters_mpi
-                          vtkh_core_mpi
-                          vtkh_lodepng
-                          vtkh_utils_mpi
-                          vtkm_io
-                          vtkm_rendering
-                          vtkm_filter_common
-                          vtkm_filter_contour
-                          vtkm_filter_gradient
-                          vtkm_filter_extra
-                          vtkm_worklet
-                          vtkm_source
-                          vtkm_cont
-                          vtkm_cont_testing
-                          vtkm_lodepng
-                          vtkmdiympi_nompi
-                          )
+        vtkh_rendering_mpi
+        vtkh_compositing_mpi
+        vtkh_filters_mpi
+        vtkh_core_mpi
+        vtkh_utils_mpi
+        vtkmdiympi
+        vtkm_io
+        vtkm_rendering
+        vtkm_filter_common
+        vtkm_filter_contour
+        vtkm_filter_gradient
+        vtkm_filter_extra
+        vtkm_worklet
+        vtkm_source
+        vtkm_cont
+        vtkm_lodepng
+      )
+      if(VTKm_ENABLE_MPI AND NOT VTKm_ENABLE_DIY_NOMPI)
+        list(APPEND targets_to_link vtkmdiympi)
+      else()
+        list(APPEND targets_to_link vtkmdiympi_nompi)
+      endif()
+
+      if(ENABLE_TESTS)
+        list(APPEND targets_to_link
+          vtkm_cont_testing)
+      endif()
 
       source_objects(${binary_dir}
                      "${ascent_device_sources}"
