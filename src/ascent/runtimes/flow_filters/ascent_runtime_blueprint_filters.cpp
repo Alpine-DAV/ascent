@@ -207,11 +207,11 @@ BlueprintPartition::verify_params(const conduit::Node &params,
     info.reset();
     bool res = true;
 
-//    if(params.has_child("selections") )
-//    {
-//        const int num_selections = params["selections"].number_of_children();
-//	  if(num_selections 
-//    }
+    if(! params.has_child("target") ||
+       ! params["target"].dtype().is_int() )
+    {
+        info["errors"].append() = "Missing required int parameter 'target'";
+    }
 
     return res;
 }
@@ -232,18 +232,13 @@ BlueprintPartition::execute()
     conduit::Node n_output;
     
     conduit::Node n_options = params();
-    //if(params().has_child("selections"))
-    //{
-    //    conduit::Node n_selections = params()["selections"];
-    //    n_options.append(n_selections);
-    //}
 
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-//    conduit::blueprint::mpi::mesh::partition(*n_input,
-//		    			     n_options,
-//					     n_output,
-//					     mpi_comm);
+    conduit::blueprint::mpi::mesh::partition(*n_input,
+		    			     n_options,
+					     n_output,
+					     mpi_comm);
 #else
     conduit::blueprint::mesh::partition(*n_input,
 		     		        n_options,

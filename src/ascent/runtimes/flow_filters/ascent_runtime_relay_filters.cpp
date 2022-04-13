@@ -1269,7 +1269,17 @@ bool
 BlueprintFlatten::verify_params(const conduit::Node &params,
                            conduit::Node &info)
 {
-    return verify_io_params(params,info);
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("protocol") ||
+       ! params["protocol"].dtype().is_int() )
+    {
+        info["errors"].append() = "Missing required string parameter 'protocol'";
+    }
+
+    return res;
+    //return verify_io_params(params,info);
 }
 
 
@@ -1330,10 +1340,10 @@ BlueprintFlatten::execute()
     Node output;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-//    blueprint::mpi::mesh::flatten(selected,
-//		                  params(),
-//				  output,
-//  				  mpi_comm);
+    blueprint::mpi::mesh::flatten(selected,
+		                  params(),
+				  output,
+  				  mpi_comm);
 #else
     blueprint::mesh::flatten(selected,
 		             params(),
