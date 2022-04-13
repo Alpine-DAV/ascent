@@ -386,25 +386,32 @@ if (ENABLE_SERIAL)
       set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
 
       set(targets_to_link rover
-                          vtkh_rendering
-                          vtkh_compositing
-                          vtkh_filters
-                          vtkh_core
-                          vtkh_lodepng
-                          vtkh_utils
-                          vtkm_io
-                          vtkm_rendering
-                          vtkm_filter_common
-                          vtkm_filter_contour
-                          vtkm_filter_gradient
-                          vtkm_filter_extra
-                          vtkm_worklet
-                          vtkm_source
-                          vtkm_cont
-                          vtkm_cont_testing
-                          vtkm_lodepng
-                          vtkmdiympi_nompi
-                          )
+        vtkh_rendering
+        vtkh_compositing
+        vtkh_filters
+        vtkh_core
+        vtkh_lodepng
+        vtkh_utils
+        vtkmdiympi_nompi
+        vtkm_io
+        vtkm_rendering
+        vtkm_filter_common
+        vtkm_filter_contour
+        vtkm_filter_gradient
+        vtkm_filter_extra
+        vtkm_worklet
+        vtkm_source
+        vtkm_cont
+        vtkm_lodepng
+      )
+
+      if(ENABLE_TESTS)
+        if (NOT TARGET vtkm_cont_testing)
+          message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
+        endif ()
+        list(APPEND targets_to_link
+          vtkm_cont_testing)
+      endif()
 
       source_objects(${binary_dir}
                      "${ascent_device_sources}"
@@ -519,13 +526,13 @@ if(MPI_FOUND)
 
       set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
 
-      set(targets_to_link rover
+      set(targets_to_link
+        rover
         vtkh_rendering_mpi
         vtkh_compositing_mpi
         vtkh_filters_mpi
         vtkh_core_mpi
         vtkh_utils_mpi
-        vtkmdiympi
         vtkm_io
         vtkm_rendering
         vtkm_filter_common
@@ -537,13 +544,18 @@ if(MPI_FOUND)
         vtkm_cont
         vtkm_lodepng
       )
-      if(VTKm_ENABLE_MPI AND NOT VTKm_ENABLE_DIY_NOMPI)
-        list(APPEND targets_to_link vtkmdiympi)
-      else()
+
+      if(TARGET vtkmdiympi_nompi)
         list(APPEND targets_to_link vtkmdiympi_nompi)
+      endif()
+      if(TARGET vtkmdiympi)
+        list(APPEND targets_to_link vtkmdiympi)
       endif()
 
       if(ENABLE_TESTS)
+        if (NOT TARGET vtkm_cont_testing)
+          message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
+        endif ()
         list(APPEND targets_to_link
           vtkm_cont_testing)
       endif()
