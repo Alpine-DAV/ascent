@@ -4,10 +4,6 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
-# Always build rover as a static PIC lib
-set(BUILD_SHARED_LIBS OFF)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh conduit conduit_relay)
 
 set(rover_headers

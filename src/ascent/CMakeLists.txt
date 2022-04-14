@@ -415,7 +415,7 @@ if (ENABLE_SERIAL)
 
       source_objects(${binary_dir}
                      "${ascent_device_sources}"
-                     "${CMAKE_BINARY_DIR}/lib/librover.a"
+                     "$<TARGET_FILE:rover>"
                      "${targets_to_link}"
                      locations_on_disk)
 
@@ -562,7 +562,7 @@ if(MPI_FOUND)
 
       source_objects(${binary_dir}
                      "${ascent_device_sources}"
-                     "${CMAKE_BINARY_DIR}/lib/librover_mpi.a"
+                     "$<TARGET_FILE:rover_mpi>"
                      "${targets_to_link}"
                      locations_on_disk)
 
