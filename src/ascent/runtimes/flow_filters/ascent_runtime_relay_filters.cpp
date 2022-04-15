@@ -22,6 +22,7 @@
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mesh.hpp>
+#include <conduit_relay_io_csv.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -1272,10 +1273,10 @@ BlueprintFlatten::verify_params(const conduit::Node &params,
     info.reset();
     bool res = true;
 
-    if(! params.has_child("protocol") ||
-       ! params["protocol"].dtype().is_int() )
+    if(! params.has_child("path") ||
+       ! params["path"].dtype().is_string() )
     {
-        info["errors"].append() = "Missing required string parameter 'protocol'";
+        info["errors"].append() = "Missing required string parameter 'path'";
     }
 
     return res;
@@ -1350,49 +1351,33 @@ BlueprintFlatten::execute()
 			     output);
 
 #endif
-    int num_files = -1;
-
-    if(params().has_path("num_files"))
-    {
-        num_files = params()["num_files"].to_int();
-    }
 
     std::string result_path;
-    if(protocol.empty())
-    {
-        conduit::relay::io::save(selected,path);
-        result_path = path;
-    }
-    else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
-    {
-        mesh_blueprint_save(selected,
-                            path,
-                            "hdf5",
-                            num_files,
-                            result_path);
-    }
-    else if( protocol == "blueprint/mesh/json" || protocol == "json")
-    {
-        mesh_blueprint_save(selected,
-                            path,
-                            "json",
-                            num_files,
-                            result_path);
+    int rank = 0;
+    int root = 0;
+ 
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
 
-    }
-    else if( protocol == "blueprint/mesh/yaml" || protocol == "yaml")
+    if(rank == root)
     {
-        mesh_blueprint_save(selected,
-                            path,
-                            "yaml",
-                            num_files,
-                            result_path);
-
-    }
-    else
-    {
-        conduit::relay::io::save(selected,path,protocol);
-        result_path = path;
+        if(protocol.empty())
+        {
+            path = path + ".csv";
+            conduit::relay::io::save(selected,path,params());
+            result_path = path;
+        }
+        else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
+        {
+            conduit::relay::io::save(selected,path,protocol);
+        }
+        else
+        {
+            path = path + ".csv";
+            conduit::relay::io::write_csv(selected,path,params());
+            result_path = path;
+        }
     }
 
     // add this to the extract results in the registry
@@ -1407,7 +1392,7 @@ BlueprintFlatten::execute()
     conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
 
     Node &einfo = extract_list->append();
-    einfo["type"] = "relay";
+    einfo["type"] = "flatten";
     if(!protocol.empty())
         einfo["protocol"] = protocol;
     einfo["path"] = result_path;
