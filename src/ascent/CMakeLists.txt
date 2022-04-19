@@ -187,6 +187,10 @@ if(ASCENT_JIT_ENABLED)
       set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
       set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
     endif()
+    list(APPEND ascent_device_sources
+      runtimes/expressions/ascent_array.cpp
+      runtimes/expressions/ascent_array_internals.cpp
+      runtimes/expressions/ascent_derived_jit.cpp)
 endif()
 
 if(VTKM_FOUND)
@@ -212,6 +216,11 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
+
+    set(ascent_vtkm_device_sources
+        ${ascent_vtkh_dep_sources}
+        runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
+    list(APPEND ascent_device_sources ${ascent_vtkm_device_sources})
 
     foreach( _itm ${ascent_vtkh_dep_headers} )
         list(APPEND ascent_headers ${_itm})
@@ -239,6 +248,7 @@ endif()
 if(GENTEN_FOUND)
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_genten_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
+    list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
 endif()
 
 ##############################
@@ -351,24 +361,7 @@ if (ENABLE_SERIAL)
     endif()
 
     if(VTKM_FOUND)
-        set(ascent_device_sources ${ascent_vtkh_dep_sources})
-        list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
-
-        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
-    endif()
-
-    if(ASCENT_JIT_ENABLED)
-        if(CUDA_FOUND)
-            list(APPEND ascent_device_sources runtimes/expressions/ascent_array.cpp)
-            list(APPEND ascent_device_sources runtimes/expressions/ascent_array_internals.cpp)
-            list(APPEND ascent_device_sources runtimes/expressions/ascent_derived_jit.cpp)
-        endif()
-    endif()
-
-    if(GENTEN_FOUND)
-        if(CUDA_FOUND)
-            list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
-        endif()
+        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
 
     # install target for serial ascent lib
@@ -380,7 +373,8 @@ if (ENABLE_SERIAL)
     )
 
 
-    if(VTKM_FOUND AND CUDA_FOUND)
+    # Static linking CUDA
+    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
       set(locations_on_disk "")
 
       set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
@@ -509,7 +503,7 @@ if(MPI_FOUND)
     endif()
 
     if(VTKM_FOUND)
-        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
+        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
     blt_add_target_compile_flags(TO ascent_mpi FLAGS "-DASCENT_MPI_ENABLED")
 
@@ -521,9 +515,9 @@ if(MPI_FOUND)
             RUNTIME DESTINATION lib
     )
 
-    if(VTKM_FOUND AND CUDA_FOUND)
+    # Static linking CUDA
+    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
       set(locations_on_disk "")
-
       set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
 
       set(targets_to_link
