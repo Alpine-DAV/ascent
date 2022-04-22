@@ -102,14 +102,18 @@ TEST(ascent_flatten, test_mpi_flatten_2D_multi_dom)
     ascent.execute(actions);
     ascent.close();
 
-    //A directory called tout_flatten_multi_dom_serial.csv 
-    EXPECT_TRUE(conduit::utils::is_directory(output_dir));
-    //Two files in above directory:
-    //vertex_data.csv
-    //element_data.csv
-    EXPECT_TRUE(conduit::utils::is_file(output_vertex));
-    EXPECT_TRUE(conduit::utils::is_file(output_element));
-
+    //Root writes the files so a non-root rank could
+    //check before files have been written and fail test
+    if(rank == 0)
+    {
+    	//A directory called tout_flatten_multi_dom_serial.csv 
+    	EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+    	//Two files in above directory:
+    	//vertex_data.csv
+    	//element_data.csv
+    	EXPECT_TRUE(conduit::utils::is_file(output_vertex));
+    	EXPECT_TRUE(conduit::utils::is_file(output_element));
+    }
 }
 
 
