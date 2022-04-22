@@ -1311,7 +1311,6 @@ BlueprintFlatten::execute()
     std::shared_ptr<Node> n_input = data_object->as_node();
 
     Node *in = n_input.get();
-
     Node selected;
     if(params().has_path("fields"))
     {
@@ -1364,6 +1363,7 @@ BlueprintFlatten::execute()
     {
         if(protocol.empty())
         {
+            //path = path;
             path = path + ".csv";
             conduit::relay::io::save(output,path);
             result_path = path;
