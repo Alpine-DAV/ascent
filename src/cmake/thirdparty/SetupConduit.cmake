@@ -121,6 +121,6 @@ blt_register_library( NAME conduit
 if(MPI_FOUND)
     blt_register_library( NAME conduit_relay_mpi
                           INCLUDES ${CONDUIT_INCLUDE_DIRS}
-                          LIBRARIES  conduit_relay_mpi)
+                          LIBRARIES  conduit_relay_mpi conduit_blueprint_mpi)
 endif()
 

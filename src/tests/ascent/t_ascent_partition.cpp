@@ -79,12 +79,12 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     pipelines["pl1/f1/params/target"] = target;
     
     //add the extract
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    conduit::Node &extracts = add_extracts["extracts"];
-    extracts["e1/type"] = "flatten";
-    extracts["e1/pipeline"] = "pl1";
-    extracts["e1/params/path"] = output_base;
+//    conduit::Node &add_extracts = actions.append();
+//    add_extracts["action"] = "add_extracts";
+//    conduit::Node &extracts = add_extracts["extracts"];
+//    extracts["e1/type"] = "flatten";
+//    extracts["e1/pipeline"] = "pl1";
+//    extracts["e1/params/path"] = output_base;
 
 
     actions.print();
@@ -98,11 +98,9 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     ascent_opts["runtime"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
-    cerr << "Before Ascent.execute()" << endl;
     ascent.execute(actions);
-    cerr << "After Ascent.execute()" << endl;
     ascent.close();
-cerr << "HERE IN TEST" << endl;
+
     //A directory called tout_partition_multi_dom_serial.csv 
     EXPECT_TRUE(conduit::utils::is_directory(output_dir));
     //Two files in above directory:
