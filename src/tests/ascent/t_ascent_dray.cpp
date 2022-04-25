@@ -233,7 +233,7 @@ TEST(ascent_devil_ray, test_pseudocolor_noannots)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.1, "1860"));
-    std::string msg = "An example of using devil ray for pseudocolor plot.";
+    std::string msg = "An example of using devil ray for pseudocolor plot with no annotations.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
@@ -299,7 +299,7 @@ TEST(ascent_devil_ray, test_3slice)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.1, "1860"));
-    std::string msg = "An example of using devil ray for pseudocolor plot.";
+    std::string msg = "An example of using devil ray for a three sliced pseudocolor plot.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
@@ -371,7 +371,7 @@ TEST(ascent_devil_ray, test_3slice_cinema_no_sweep)
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
-    std::string msg = "An example of creating a cinema databasev using devil "
+    std::string msg = "An example of creating a cinema database using devil "
                       " ray for a 3 slice plot.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -445,7 +445,7 @@ TEST(ascent_devil_ray, test_3slice_cinema_sweep)
 
     // check that we created an image
     EXPECT_TRUE(conduit::utils::is_file(output_file));
-    std::string msg = "An example of creating a cinema databasev using devil "
+    std::string msg = "An example of creating a cinema database using devil "
                       " ray for a 3 slice plot.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
