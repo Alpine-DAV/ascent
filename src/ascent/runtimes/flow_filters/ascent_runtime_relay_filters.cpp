@@ -22,7 +22,6 @@
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mesh.hpp>
-#include <conduit_relay_io_csv.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes

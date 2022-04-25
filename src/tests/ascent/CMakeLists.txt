@@ -64,6 +64,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_derived
                t_ascent_mpi_expressions
 	       t_ascent_mpi_flatten
+	       t_ascent_mpi_partition
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics

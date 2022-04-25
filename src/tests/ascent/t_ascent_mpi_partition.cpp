@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <mpi.h>
 
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
@@ -40,17 +41,26 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     //
     Node data, verify_info;
 
+    //
+    //Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
     // use spiral , with 7 domains
     conduit::blueprint::mesh::examples::spiral(7,data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing blueprint partition of multi-domain mesh in serial");
+    ASCENT_INFO("Testing blueprint partition of multi-domain mesh with MPI");
 
     string output_path = prepare_output_dir();
     std::ostringstream oss;
 
-    oss << "tout_partition_multi_dom_serial";
+    oss << "tout_partition_multi_dom_mpi";
     string output_base = conduit::utils::join_file_path(output_path,
                                                         oss.str());
     oss << ".csv";
@@ -94,23 +104,28 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
 
     Node ascent_opts;
     ascent_opts["runtime"] = "ascent";
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
 
-    //A directory called tout_partition_multi_dom_serial.csv 
-    EXPECT_TRUE(conduit::utils::is_directory(output_dir));
-    //Two files in above directory:
-    //vertex_data.csv
-    //element_data.csv
-    EXPECT_TRUE(conduit::utils::is_file(output_vertex));
-    EXPECT_TRUE(conduit::utils::is_file(output_element));
-    Node read_csv;
-    conduit::relay::io::load(output_vertex,read_csv);
+    int root = 0;
+    if(par_rank == root)
+    {
+        //A directory called tout_partition_multi_dom_serial.csv 
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        //Two files in above directory:
+        //vertex_data.csv
+        //element_data.csv
+        EXPECT_TRUE(conduit::utils::is_file(output_vertex));
+        EXPECT_TRUE(conduit::utils::is_file(output_element));
+        Node read_csv;
+        conduit::relay::io::load(output_vertex,read_csv);
 
-    int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
-    EXPECT_TRUE(num_doms == target);
+        int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
+        EXPECT_TRUE(num_doms == target);
+    }
 }
 
 
@@ -120,8 +135,10 @@ int main(int argc, char* argv[])
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
+    MPI_Init(&argc, &argv);
 
     result = RUN_ALL_TESTS();
+    MPI_Finalize();
     return result;
 }
 

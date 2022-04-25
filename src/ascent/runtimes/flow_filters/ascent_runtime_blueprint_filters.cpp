@@ -229,28 +229,23 @@ BlueprintPartition::execute()
     DataObject *d_input = input<DataObject>(0);
     std::shared_ptr<conduit::Node> n_input = d_input->as_node();
 
-    conduit::Node n_output;
+    conduit::Node *n_output = new conduit::Node();
     
     conduit::Node n_options = params();
-//    std::cerr << "before partition:" << std::endl;
-//    n_input->print();
 
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     conduit::blueprint::mpi::mesh::partition(*n_input,
 		    			     n_options,
-					     n_output,
+					     *n_output,
 					     mpi_comm);
 #else
     conduit::blueprint::mesh::partition(*n_input,
 		     		        n_options,
-					n_output);
+					*n_output);
 #endif
-//    std::cerr << "after partition:" << std::endl;
-//    n_output.print();
-    DataObject *d_output = new DataObject(&n_output);
+    DataObject *d_output = new DataObject(n_output);
     set_output<DataObject>(d_output);
- //   set_output<DataObject>(d_input);
 }
 //-----------------------------------------------------------------------------
 DataBinning::DataBinning()
