@@ -79,12 +79,12 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     pipelines["pl1/f1/params/target"] = target;
     
     //add the extract
-//    conduit::Node &add_extracts = actions.append();
-//    add_extracts["action"] = "add_extracts";
-//    conduit::Node &extracts = add_extracts["extracts"];
-//    extracts["e1/type"] = "flatten";
-//    extracts["e1/pipeline"] = "pl1";
-//    extracts["e1/params/path"] = output_base;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    extracts["e1/type"] = "flatten";
+    extracts["e1/pipeline"] = "pl1";
+    extracts["e1/params/path"] = output_base;
 
 
     actions.print();
@@ -110,9 +110,9 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     EXPECT_TRUE(conduit::utils::is_file(output_element));
     Node read_csv;
     conduit::relay::io::load(output_vertex,read_csv);
+
     int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
-    //TODO: EDGE CASES???
-    EXPECT_TRUE(num_doms <= target);
+    EXPECT_TRUE(num_doms == target);
 }
 
 
