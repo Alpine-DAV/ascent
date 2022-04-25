@@ -19,6 +19,7 @@ its dependencies.
 Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
+
 v0.8.0
 ---------------------------------
 
