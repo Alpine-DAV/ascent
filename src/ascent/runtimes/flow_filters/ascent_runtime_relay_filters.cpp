@@ -1368,15 +1368,10 @@ BlueprintFlatten::execute()
             conduit::relay::io::save(output,path);
             result_path = path;
         }
-        else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
-        {
-            conduit::relay::io::save(output,path,protocol);
-        }
         else
         {
-            path = path + ".csv";
-            conduit::relay::io::save(output,path);
-            result_path = path;
+            conduit::relay::io::save(output,path,protocol);
+	    result_path = path;
         }
     }
 
