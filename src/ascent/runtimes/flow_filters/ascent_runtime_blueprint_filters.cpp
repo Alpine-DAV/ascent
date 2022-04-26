@@ -21,6 +21,7 @@
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
+#include <conduit_blueprint_mesh.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -37,6 +38,8 @@
 // mpi
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#include <conduit_blueprint_mpi_mesh.hpp>
+#include <conduit_blueprint_mpi.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -174,6 +177,76 @@ BlueprintVerify::execute()
     set_output<DataObject>(d_input);
 }
 
+//-----------------------------------------------------------------------------
+BlueprintPartition::BlueprintPartition()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+BlueprintPartition::~BlueprintPartition()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+BlueprintPartition::declare_interface(Node &i)
+{
+    i["type_name"]   = "blueprint_data_partition";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+BlueprintPartition::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("target") ||
+       ! params["target"].dtype().is_int() )
+    {
+        info["errors"].append() = "Missing required int parameter 'target'";
+    }
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+BlueprintPartition::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("blueprint_data_partition input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
+    conduit::Node *n_output = new conduit::Node();
+    
+    conduit::Node n_options = params();
+
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    conduit::blueprint::mpi::mesh::partition(*n_input,
+		    			     n_options,
+					     *n_output,
+					     mpi_comm);
+#else
+    conduit::blueprint::mesh::partition(*n_input,
+		     		        n_options,
+					*n_output);
+#endif
+    DataObject *d_output = new DataObject(n_output);
+    set_output<DataObject>(d_output);
+}
 //-----------------------------------------------------------------------------
 DataBinning::DataBinning()
 :Filter()

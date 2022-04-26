@@ -83,6 +83,7 @@ void
 register_builtin()
 {
     AscentRuntime::register_filter_type<BlueprintVerify>();
+    AscentRuntime::register_filter_type<BlueprintFlatten>("extracts","flatten");
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
 
@@ -95,6 +96,8 @@ register_builtin()
     AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
 
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
+    
+    AscentRuntime::register_filter_type<BlueprintPartition>("transforms","partition");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
