@@ -53,20 +53,18 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     oss << "tout_partition_multi_dom_serial";
     string output_base = conduit::utils::join_file_path(output_path,
                                                         oss.str());
-    oss << ".csv";
-    string output_dir = conduit::utils::join_file_path(output_path,
-                                                        oss.str());
-    std::ostringstream voss,eoss;
-    voss << "vertex_data.csv";
-    string output_vertex = conduit::utils::join_file_path(output_dir,
-		    					   voss.str());
-    eoss << "element_data.csv";
-    string output_element = conduit::utils::join_file_path(output_dir,
-		    					    eoss.str());
-    // remove existing directory
-    if(utils::is_directory(output_dir))
+    std::ostringstream ossjson;
+    ossjson << "tout_partition_multi_dom_serial_json";
+    string output_json = conduit::utils::join_file_path(output_base,
+		    					ossjson.str());
+    // remove existing file
+    if(utils::is_file(output_base))
     {
-        utils::remove_directory(output_dir);
+        utils::remove_file(output_base);
+    }
+    if(utils::is_file(output_json))
+    {
+        utils::remove_file(output_json);
     }
 
     conduit::Node actions;
@@ -82,7 +80,7 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     conduit::Node &extracts = add_extracts["extracts"];
-    extracts["e1/type"] = "flatten";
+    extracts["e1/type"] = "relay";
     extracts["e1/pipeline"] = "pl1";
     extracts["e1/params/path"] = output_base;
 
@@ -99,15 +97,12 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     ascent.execute(actions);
     ascent.close();
 
-    //A directory called tout_partition_multi_dom_serial.csv 
-    EXPECT_TRUE(conduit::utils::is_directory(output_dir));
-    //Two files in above directory:
-    //vertex_data.csv
-    //element_data.csv
-    EXPECT_TRUE(conduit::utils::is_file(output_vertex));
-    EXPECT_TRUE(conduit::utils::is_file(output_element));
+    //Two files in _output directory:
+    //tout_partition_multi_dom_serial
+    //tout_partition_multi_dom_serial_json
+    EXPECT_TRUE(conduit::utils::is_file(output_base));
     Node read_csv;
-    conduit::relay::io::load(output_vertex,read_csv);
+    conduit::relay::io::load(output_base,read_csv);
 
     int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
     EXPECT_TRUE(num_doms == target);
