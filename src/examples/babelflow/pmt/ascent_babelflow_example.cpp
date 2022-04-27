@@ -112,8 +112,6 @@ int main(int argc, char **argv)
   high[1] = std::min(low[1] + block_size[1], data_size[1] - 1);
   high[2] = std::min(low[2] + block_size[2], data_size[2] - 1);
 
-
-
   // for testing purpose: every rank has whole data
   // in practice, Only assign the corresponding block(s) to each rank
   // The user should define block_data or that should come from the simulation\
@@ -179,6 +177,10 @@ int main(int argc, char **argv)
 
   mesh["topologies/topo/type"] = "uniform";
   mesh["topologies/topo/coordset"] = "coords";
+  mesh["topologies/topo/elements/origin/i"] = low[0];
+  mesh["topologies/topo/elements/origin/j"] = low[1];
+  if (num_z > 1)
+    mesh["topologies/topo/elements/origin/k"] = low[2];
   mesh["fields/braids/association"] = "vertex";
   mesh["fields/braids/topology"] = "topo";
   mesh["fields/braids/values"].set_external(block_data);
