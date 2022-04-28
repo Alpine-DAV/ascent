@@ -23,9 +23,8 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 
 
 Scheduled Tutorials:
-* `In Situ Analysis and Visualization with ParaView Catalyst and Ascent 
-<https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx> @ ISC 2022`_ - May 2022, Hamburg, Germany 
-* ECP 2022 Annual Meeting - May 2022, Virtual
+ * `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany 
+ * ECP 2022 Annual Meeting - May 2022, Virtual
 
 
 Past Tutorials:
