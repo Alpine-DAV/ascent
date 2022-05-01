@@ -16,6 +16,7 @@ Currently supported extracts include:
 
     * Python : use a python script with NumPy to analyze mesh data
     * Relay : leverages Conduit's Relay library to do parallel I/O
+    * HTG : write a VTK HTG (HyperTreeGrid) file
     * ADIOS : use ADIOS to send data to a separate resource
 
 .. _extracts_python:
@@ -150,6 +151,65 @@ the number of files written (aggregating multiple domains per file) using the
 
 Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
 strings that indicate which fields should be saved.
+
+.. code-block:: c++
+
+    extracts["e1/params/fields"].append("density");
+    extracts["e1/params/fields"].append("pressure");
+
+.. _extracts_htg:
+
+HTG
+---
+HTG extracts save data to the file system as a VTK HyperTreeGrid.
+HyperTreeGrid is a tree based uniform grid for element based data.
+The current implementation writes out binary trees from uniform grids.
+As such there are a number of limitations on the type of data it writes out.
+These include the following:
+
+    * The mesh must be a uniform grid.
+    * The mesh must have a pwer of 2 number of elements in each direction.
+    * The mesh dimensions must be the same in each direction.
+    * The fields must be element based.
+
+The extract also takes a ``blank_value`` parameter that specifies a field value that indicates that the cell is empty.
+
+.. code-block:: c++
+
+    conduit::Node data;
+    conduit::blueprint::mesh::examples::basic("uniform", 33, 33, 33, data);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "htg";
+
+    extracts["e1/params/path"] = "basic_mesh33x33x33";
+    extracts["e1/params/blank_value"] = -10000.;
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+In this example, the field is saved to the file system in ``basic_mesh33x33x33.htg``.
+
+Additionally, HTG supports saving out only a subset of the data.
+The fields parameters is a list of strings that indicate which fields should be saved.
 
 .. code-block:: c++
 
