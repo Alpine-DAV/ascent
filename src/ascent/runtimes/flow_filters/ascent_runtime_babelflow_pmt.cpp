@@ -983,6 +983,29 @@ int write_stats_topo( std::vector<BabelFlow::Payload> &inputs,
 
   assert( tree_sz == stat_tree_combined.mStatMap.mapSize() );
 
+#ifdef BFLOW_PMT_DEBUG
+  {
+    // Write out merged_stats_map
+    std::stringstream ss;
+    ss << "stream_stat_" << task << ".txt";
+    std::ofstream bofs(ss.str(), std::ios::out | std::ios::binary);
+
+    auto iter = stat_tree_combined.mStatMap.beginIter();
+    auto end_iter = stat_tree_combined.mStatMap.endIter();
+
+    for( ; iter != end_iter; ++iter )
+    {
+      bofs << iter->first << "  --  ";
+      const StatisticsMap::StatisticsVec& stats_vec = iter->second;
+      for( auto& stat_ptr : stats_vec )
+        bofs << stat_ptr->value() << "  ";
+      bofs << std::endl;
+    }
+
+    bofs.close();
+  }
+#endif
+
   // Create enough FeatureElements
   features.resize( tree_sz, 
                    TopologyFileFormat::FeatureElement(TopologyFileFormat::SINGLE_REPRESENTATIVE) );
