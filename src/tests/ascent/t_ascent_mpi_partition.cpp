@@ -69,7 +69,8 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     ossjson << "tout_partition_multi_dom_mpi_json";
     string output_json = conduit::utils::join_file_path(output_base,
 		    					ossjson.str());
-    // remove existing directory
+
+    // remove existing files
     if(par_rank == root)
     {
     	if(utils::is_file(output_base))

@@ -116,3 +116,10 @@ endif()
 if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
+
+################################
+# Setup Kokkos
+################################
+if (KOKKOS_DIR)
+  include(cmake/thirdparty/SetupKokkos.cmake)
+endif()

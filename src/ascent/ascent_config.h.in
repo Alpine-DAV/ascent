@@ -52,6 +52,7 @@
 #cmakedefine ASCENT_JIT_ENABLED       "@ASCENT_JIT_ENABLED@"
 #cmakedefine ASCENT_WEBSERVER_ENABLED "@ASCENT_WEBSERVER_ENABLED@"
 #cmakedefine ASCENT_GENTEN_ENABLED    "@GENTEN_FOUND@"
+#cmakedefine ASCENT_KOKKOS_ENABLED    "@KOKKOS_FOUND@"
 
 //-----------------------------------------------------------------------------
 //
