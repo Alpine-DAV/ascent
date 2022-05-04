@@ -674,6 +674,10 @@ HTGIOSave::verify_params(const conduit::Node &params,
 void
 HTGIOSave::execute()
 {
+  
+#if ASCENT_MPI_ENABLED
+    ASCENT_ERROR("htg extract only supports serial execution"<<endl);  
+#endif
     std::string path;
     path = params()["path"].as_string();
     path = output_dir(path);
