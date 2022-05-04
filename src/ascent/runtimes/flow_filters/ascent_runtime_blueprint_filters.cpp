@@ -235,10 +235,20 @@ BlueprintPartition::execute()
 
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-    conduit::blueprint::mpi::mesh::partition(*n_input,
-		    			     n_options,
-					     *n_output,
-					     mpi_comm);
+    if(params().has_child("distributed") && 
+       params()["distributed"].as_string() == "false" )
+    {
+        conduit::blueprint::mesh::partition(*n_input,
+		     		            n_options,
+					    *n_output);
+    }
+    else
+    {
+        conduit::blueprint::mpi::mesh::partition(*n_input,
+		    			         n_options,
+					         *n_output,
+					         mpi_comm);
+    }
 #else
     conduit::blueprint::mesh::partition(*n_input,
 		     		        n_options,
