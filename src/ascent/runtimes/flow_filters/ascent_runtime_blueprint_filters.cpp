@@ -213,6 +213,22 @@ BlueprintPartition::verify_params(const conduit::Node &params,
         info["errors"].append() = "Missing required int parameter 'target'";
     }
 
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("target");
+    valid_paths.push_back("selections");
+    valid_paths.push_back("fields");
+    valid_paths.push_back("mapping");
+    valid_paths.push_back("merge_tolerance");
+    valid_paths.push_back("distributed");
+    
+    std::string surprises = surprise_check(valid_paths, params);
+    
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
     return res;
 }
 
