@@ -654,7 +654,7 @@ selections locally so they can be restributed among ranks
 before being combined into the target number of domains.
 
 
-.. figure:: partition.png
+.. figure:: examples/partition.png
     :width: 800px
     :align: center
 
