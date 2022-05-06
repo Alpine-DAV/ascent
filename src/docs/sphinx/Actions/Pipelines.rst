@@ -662,7 +662,7 @@ before being combined into the target number of domains.
 
 
 Options
-~~~~~~
++++++++
 The ``partition()`` functions accept a node containing options. The options node
 can be empty and all options are optional. If no options are given, each input mesh
 domain will be fully selected. It is more useful to pass selections as part of the
@@ -741,7 +741,7 @@ count domains are combined first. Additionally, Ascent provides an optional bool
 
 
 Selections
-~~~~~~~~~~~
+++++++++++
 Selections can be specified in the options for the ``partition()`` function to
 select regions of interest that will participate in mesh partitioning. If
 selections are not used then all elements from the input meshes will be
