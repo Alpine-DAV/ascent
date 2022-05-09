@@ -1283,7 +1283,7 @@ BlueprintFlatten::verify_params(const conduit::Node &params,
     valid_paths.push_back("protocol");
     valid_paths.push_back("fields");
 
-    std::string surprises = surprises_check(valid_paths, params);
+    std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
     {
