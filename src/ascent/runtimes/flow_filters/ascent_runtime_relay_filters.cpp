@@ -1278,6 +1278,19 @@ BlueprintFlatten::verify_params(const conduit::Node &params,
         info["errors"].append() = "Missing required string parameter 'path'";
     }
 
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("path");
+    valid_paths.push_back("protocol");
+    valid_paths.push_back("fields");
+
+    std::string surprises = surprises_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+        res = false;
+	info["error"].append() = surprises;
+    }
+
     return res;
     //return verify_io_params(params,info);
 }
