@@ -290,7 +290,7 @@ endif()
 ##################
 
 set(ascent_thirdparty_libs
-    conduit
+    conduit::conduit
     ascent_flow
     ascent_lodepng)
 
@@ -311,9 +311,9 @@ endif()
 
 if(MFEM_FOUND)
     list(APPEND ascent_thirdparty_libs mfem)
-    # workaround for MPI headers
-    if(ENABLE_MPI)
-        list(APPEND ascent_thirdparty_libs mpi)
+    # mfem may require MPI, even for serial builds
+    if(MFEM_MPI_ENABLED)
+        list(APPEND ascent_thirdparty_libs ${ascent_blt_mpi_deps})
     endif()
 endif()
 
@@ -329,7 +329,7 @@ if(CUDA_FOUND)
 endif()
 
 if(OPENMP_FOUND)
-    list(APPEND ascent_thirdparty_libs openmp)
+    list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
 endif()
 
 if(DRAY_FOUND)
@@ -433,7 +433,7 @@ endif()
 if(MPI_FOUND)
 
     # req'd libs
-    set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi conduit_relay_mpi_io)
+    set(ascent_mpi_thirdparty_libs ${ascent_blt_mpi_deps} conduit::conduit_mpi)
 
     if (BABELFLOW_FOUND)
       if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
@@ -468,6 +468,7 @@ if(MPI_FOUND)
        list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
     endif()
 
+    # this combines our mpi specific deps to the broader list of ascent deps
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
