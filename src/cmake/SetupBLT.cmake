@@ -42,10 +42,10 @@ include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 if(ENABLE_MPI)
     # on some platforms (mostly cray systems) folks skip mpi
     # detection in BLT by setting ENABLE_FIND_MPI = OFF
-    # in these cases, we need to set FOUND_MPI = TRUE,
-    # since the rest of our cmake logic to include MPI uses FOUND_MPI
+    # in these cases, we need to set MPI_FOUND = TRUE,
+    # since the rest of our cmake logic to include MPI uses MPI_FOUND
     if(NOT ENABLE_FIND_MPI)
-        set(FOUND_MPI ON CACHE BOOL "")
+        set(MPI_FOUND ON CACHE BOOL "")
     endif()
 
     # adjust MPI from BLT
@@ -82,8 +82,10 @@ if(ENABLE_OPENMP)
         # older cmake, we use BLT's openmp support, it uses 
         # the name openmp
         set(ascent_blt_openmp_deps openmp CACHE STRING "")
+        set(ASCENT_USE_CMAKE_OPENMP_TARGETS FALSE CACHE BOOL "")
     else()
         if(TARGET OpenMP::OpenMP_CXX)
+            set(ASCENT_USE_CMAKE_OPENMP_TARGETS TRUE CACHE BOOL "")
             message(STATUS "Using OpenMP CMake imported target: OpenMP::OpenMP_CXX")
             # newer cmake we openmp targets directly
             set(ascent_blt_openmp_deps OpenMP::OpenMP_CXX CACHE STRING "")
@@ -123,3 +125,32 @@ endif()
 if(TARGET style)
     blt_set_target_folder( TARGET style FOLDER blt)
 endif()
+
+
+####################################################
+# finish export of blt builtin tpl targets
+####################################################
+set(BLT_TPL_DEPS_EXPORTS)
+
+blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUDA)
+blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENABLE_HIP)
+
+if(ENABLE_MPI AND NOT ASCENT_USE_CMAKE_MPI_TARGETS)
+    list(APPEND BLT_TPL_DEPS_EXPORTS openmp)
+endif()
+
+if(ENABLE_MPI AND NOT ASCENT_USE_CMAKE_OPENMP_TARGETS)
+    list(APPEND BLT_TPL_DEPS_EXPORTS openmp)
+endif()
+
+foreach(dep ${BLT_TPL_DEPS_EXPORTS})
+    # If the target is EXPORTABLE, add it to the export set
+    get_target_property(_is_imported ${dep} IMPORTED)
+    if(NOT ${_is_imported})
+        install(TARGETS              ${dep}
+                EXPORT               ascent
+                DESTINATION          lib)
+        # Namespace target to avoid conflicts
+        set_target_properties(${dep} PROPERTIES EXPORT_NAME ascent::blt_tpl_exports_${dep})
+    endif()
+endforeach()
