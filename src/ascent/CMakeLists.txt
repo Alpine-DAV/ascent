@@ -280,7 +280,7 @@ endif()
 ##################
 
 set(ascent_thirdparty_libs
-    conduit
+    conduit::conduit
     ascent_flow
     ascent_lodepng)
 
@@ -319,7 +319,7 @@ if(CUDA_FOUND)
 endif()
 
 if(OPENMP_FOUND)
-    list(APPEND ascent_thirdparty_libs openmp)
+    list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
 endif()
 
 if(DRAY_FOUND)
@@ -432,7 +432,7 @@ endif()
 if(MPI_FOUND)
 
     # req'd libs
-    set(ascent_mpi_thirdparty_libs mpi conduit_relay_mpi conduit_relay_mpi_io)
+    set(ascent_mpi_thirdparty_libs ${ascent_blt_mpi_deps} conduit::conduit_mpi)
 
     if (BABELFLOW_FOUND)
       if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")

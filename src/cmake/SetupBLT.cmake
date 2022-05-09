@@ -136,12 +136,14 @@ blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUD
 blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENABLE_HIP)
 
 if(ENABLE_MPI AND NOT ASCENT_USE_CMAKE_MPI_TARGETS)
+    list(APPEND BLT_TPL_DEPS_EXPORTS mpi)
+endif()
+
+if(ENABLE_OPENMP AND NOT ASCENT_USE_CMAKE_OPENMP_TARGETS)
     list(APPEND BLT_TPL_DEPS_EXPORTS openmp)
 endif()
 
-if(ENABLE_MPI AND NOT ASCENT_USE_CMAKE_OPENMP_TARGETS)
-    list(APPEND BLT_TPL_DEPS_EXPORTS openmp)
-endif()
+#message(FATAL_ERROR ${BLT_TPL_DEPS_EXPORTS})
 
 foreach(dep ${BLT_TPL_DEPS_EXPORTS})
     # If the target is EXPORTABLE, add it to the export set
