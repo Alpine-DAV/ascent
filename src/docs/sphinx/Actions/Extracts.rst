@@ -111,7 +111,7 @@ through a new instance of Ascent. We call this technique Inception.
 Relay
 -----
 Relay extracts save data to the file system. Currently, Relay supports saving data to Blueprint HDF5, YAML, or JSON files.
-By default, Relay saves the published mesh data to the file system, but is a pipeline is specified, then the result of the
+By default, Relay saves the published mesh data to the file system, but if a pipeline is specified, then the result of the
 pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
 
 .. code-block:: c++
@@ -215,6 +215,20 @@ The fields parameters is a list of strings that indicate which fields should be 
 
     extracts["e1/params/fields"].append("density");
     extracts["e1/params/fields"].append("pressure");
+
+
+.. _extracts_flatten:
+
+Flatten
+-------
+Flatten extracts save data to the file system. Currently, Flatten supports saving data to Blueprint HDF5, YAML, CSV (default), or JSON files.
+By default, Flatten saves the published mesh data to the file system, but if a pipeline is specified, then the result of the
+pipeline is saved. 
+Flatten transforms the data from Blueprint Meshes to Blueprint Tables. 
+This extract generates two files: one for vertex data and one for element data. 
+
+This extract requires a ``path`` for the location of the resulting files. 
+Optional parameters include ``protocol`` for the type of output file (default is CSV), and ``fields``, which specifies the fields to be included in the files (default is all present fields). 
 
 ADIOS
 -----
