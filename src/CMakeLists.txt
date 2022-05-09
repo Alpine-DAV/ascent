@@ -50,10 +50,6 @@ else()
   cmake_minimum_required(VERSION 3.9)
 endif()
 
-if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  message(FATAL_ERROR "Static libraries are required when building with CUDA")
-endif()
-
 if(ENABLE_CUDA)
     # ask politely a few times for SEPARABLE COMPILATION
     set (CMAKE_CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "" )

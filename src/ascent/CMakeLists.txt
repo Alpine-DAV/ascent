@@ -189,6 +189,10 @@ if(ASCENT_JIT_ENABLED)
       set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
       set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
     endif()
+    list(APPEND ascent_device_sources
+      runtimes/expressions/ascent_array.cpp
+      runtimes/expressions/ascent_array_internals.cpp
+      runtimes/expressions/ascent_derived_jit.cpp)
 endif()
 
 if(VTKM_FOUND)
@@ -214,6 +218,11 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
+
+    set(ascent_vtkm_device_sources
+        ${ascent_vtkh_dep_sources}
+        runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
+    list(APPEND ascent_device_sources ${ascent_vtkm_device_sources})
 
     foreach( _itm ${ascent_vtkh_dep_headers} )
         list(APPEND ascent_headers ${_itm})
@@ -241,6 +250,7 @@ endif()
 if(GENTEN_FOUND)
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_genten_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
+    list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
 endif()
 
 ##############################
@@ -353,24 +363,7 @@ if (ENABLE_SERIAL)
     endif()
 
     if(VTKM_FOUND)
-        set(ascent_device_sources ${ascent_vtkh_dep_sources})
-        list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
-
-        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
-    endif()
-
-    if(ASCENT_JIT_ENABLED)
-        if(CUDA_FOUND)
-            list(APPEND ascent_device_sources runtimes/expressions/ascent_array.cpp)
-            list(APPEND ascent_device_sources runtimes/expressions/ascent_array_internals.cpp)
-            list(APPEND ascent_device_sources runtimes/expressions/ascent_derived_jit.cpp)
-        endif()
-    endif()
-
-    if(GENTEN_FOUND)
-        if(CUDA_FOUND)
-            list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
-        endif()
+        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
 
     # install target for serial ascent lib
@@ -382,35 +375,43 @@ if (ENABLE_SERIAL)
     )
 
 
-    if(VTKM_FOUND AND CUDA_FOUND)
+    # Static linking CUDA
+    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
       set(locations_on_disk "")
 
       set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
 
       set(targets_to_link rover
-                          vtkh_rendering
-                          vtkh_compositing
-                          vtkh_filters
-                          vtkh_core
-                          vtkh_lodepng
-                          vtkh_utils
-                          vtkm_io
-                          vtkm_rendering
-                          vtkm_filter_common
-                          vtkm_filter_contour
-                          vtkm_filter_gradient
-                          vtkm_filter_extra
-                          vtkm_worklet
-                          vtkm_source
-                          vtkm_cont
-                          vtkm_cont_testing
-                          vtkm_lodepng
-                          vtkmdiympi_nompi
-                          )
+        vtkh_rendering
+        vtkh_compositing
+        vtkh_filters
+        vtkh_core
+        vtkh_lodepng
+        vtkh_utils
+        vtkmdiympi_nompi
+        vtkm_io
+        vtkm_rendering
+        vtkm_filter_common
+        vtkm_filter_contour
+        vtkm_filter_gradient
+        vtkm_filter_extra
+        vtkm_worklet
+        vtkm_source
+        vtkm_cont
+        vtkm_lodepng
+      )
+
+      if(ENABLE_TESTS)
+        if (NOT TARGET vtkm_cont_testing)
+          message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
+        endif ()
+        list(APPEND targets_to_link
+          vtkm_cont_testing)
+      endif()
 
       source_objects(${binary_dir}
                      "${ascent_device_sources}"
-                     "${CMAKE_BINARY_DIR}/lib/librover.a"
+                     "$<TARGET_FILE:rover>"
                      "${targets_to_link}"
                      locations_on_disk)
 
@@ -504,7 +505,7 @@ if(MPI_FOUND)
     endif()
 
     if(VTKM_FOUND)
-        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
+        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
     blt_add_target_compile_flags(TO ascent_mpi FLAGS "-DASCENT_MPI_ENABLED")
 
@@ -516,35 +517,48 @@ if(MPI_FOUND)
             RUNTIME DESTINATION lib
     )
 
-    if(VTKM_FOUND AND CUDA_FOUND)
+    # Static linking CUDA
+    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
       set(locations_on_disk "")
-
       set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
 
-      set(targets_to_link rover
-                          vtkh_rendering_mpi
-                          vtkh_compositing_mpi
-                          vtkh_filters_mpi
-                          vtkh_core_mpi
-                          vtkh_lodepng
-                          vtkh_utils_mpi
-                          vtkm_io
-                          vtkm_rendering
-                          vtkm_filter_common
-                          vtkm_filter_contour
-                          vtkm_filter_gradient
-                          vtkm_filter_extra
-                          vtkm_worklet
-                          vtkm_source
-                          vtkm_cont
-                          vtkm_cont_testing
-                          vtkm_lodepng
-                          vtkmdiympi_nompi
-                          )
+      set(targets_to_link
+        rover
+        vtkh_rendering_mpi
+        vtkh_compositing_mpi
+        vtkh_filters_mpi
+        vtkh_core_mpi
+        vtkh_utils_mpi
+        vtkm_io
+        vtkm_rendering
+        vtkm_filter_common
+        vtkm_filter_contour
+        vtkm_filter_gradient
+        vtkm_filter_extra
+        vtkm_worklet
+        vtkm_source
+        vtkm_cont
+        vtkm_lodepng
+      )
+
+      if(TARGET vtkmdiympi_nompi)
+        list(APPEND targets_to_link vtkmdiympi_nompi)
+      endif()
+      if(TARGET vtkmdiympi)
+        list(APPEND targets_to_link vtkmdiympi)
+      endif()
+
+      if(ENABLE_TESTS)
+        if (NOT TARGET vtkm_cont_testing)
+          message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
+        endif ()
+        list(APPEND targets_to_link
+          vtkm_cont_testing)
+      endif()
 
       source_objects(${binary_dir}
                      "${ascent_device_sources}"
-                     "${CMAKE_BINARY_DIR}/lib/librover_mpi.a"
+                     "$<TARGET_FILE:rover_mpi>"
                      "${targets_to_link}"
                      locations_on_disk)
 

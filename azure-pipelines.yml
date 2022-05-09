@@ -387,6 +387,13 @@ stages:
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+        cuda-11.4.0-shared:
+          containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Release
+          ENABLE_BABELFLOW: OFF
+          # shared linking unit tests shouldn't eat disk space,
+          ENABLE_TESTS: ON
     container: $[ variables['containerImage'] ]
     steps:
       - checkout: self
