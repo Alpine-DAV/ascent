@@ -39,63 +39,67 @@ if (ENABLE_SERIAL)
     set(apcomp_deps )
 
     if(ENABLE_OPENMP)
-        list(APPEND apcomp_deps ${apcomp_blt_openmp_deps})
+        list(APPEND apcomp_deps ${ascent_blt_openmp_deps})
     endif()
 
-    blt_add_library(
-      NAME apcomp
-      SOURCES ${apcomp_sources}
-      HEADERS ${apcomp_headers}
-      DEPENDS_ON ${apcomp_deps}
-      )
+    blt_add_library(NAME apcomp
+                    SOURCES ${apcomp_sources}
+                    HEADERS ${apcomp_headers}
+                    DEPENDS_ON ${apcomp_deps}
+                    )
 
-    target_compile_definitions(apcomp PRIVATE APCOMP_COMPILING_FLAG)
+    # extra defs and props
+    target_compile_definitions(apcomp PRIVATE ASCENT_EXPORTS_FLAG)
     if(ENABLE_OPENMP)
         target_compile_definitions(apcomp PRIVATE APCOMP_USE_OPENMP)
     endif()
+    set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
-    target_include_directories(apcomp PUBLIC $<INSTALL_INTERFACE:include>)
+    # build includes
+    # this allows us to include as <apcomp/header.hpp>
+    target_include_directories(apcomp PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
+    # install includes
+    # setup exported target to point to proper include dir
+    target_include_directories(apcomp PUBLIC $<INSTALL_INTERFACE:include/ascent/apcomp>)
 
-    # Install libraries
+    # install target
     install(TARGETS apcomp
-      EXPORT ${APComp_EXPORT_NAME}
-      ARCHIVE DESTINATION ${APComp_INSTALL_LIB_DIR}
-      LIBRARY DESTINATION ${APComp_INSTALL_LIB_DIR}
-      RUNTIME DESTINATION ${APComp_INSTALL_BIN_DIR}
-      )
+            EXPORT  ascent
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION lib
+    )
 
-    # Install headers
-    install(FILES ${apcomp_headers}
-      DESTINATION ${APComp_INSTALL_INCLUDE_DIR}/apcomp)
+    install(FILES ${apcomp_headers} DESTINATION include/ascent/apcomp)
+
 endif()
 
 #------------------------------------------------------------------------------
 # Handle parallel library
 #------------------------------------------------------------------------------
-set(apcomp_mpi_headers
-  internal/DirectSendCompositor.hpp
-  internal/MPICollect.hpp
-  internal/RadixKCompositor.hpp
-  internal/apcomp_diy_collect.hpp
-  internal/apcomp_diy_image_block.hpp
-  internal/apcomp_diy_utils.hpp
-  )
-
-list(APPEND apcomp_mpi_headers ${apcomp_headers})
-
-set(apcomp_mpi_sources
-  internal/DirectSendCompositor.cpp
-  internal/RadixKCompositor.cpp
-  )
-
-list(APPEND apcomp_mpi_sources ${apcomp_sources})
-
 if (MPI_FOUND)
+    set(apcomp_mpi_headers
+      internal/DirectSendCompositor.hpp
+      internal/MPICollect.hpp
+      internal/RadixKCompositor.hpp
+      internal/apcomp_diy_collect.hpp
+      internal/apcomp_diy_image_block.hpp
+      internal/apcomp_diy_utils.hpp
+      )
 
-    set(apcomp_mpi_deps ${apcomp_blt_mpi_deps})
+    list(APPEND apcomp_mpi_headers ${apcomp_headers})
+
+    set(apcomp_mpi_sources
+      internal/DirectSendCompositor.cpp
+      internal/RadixKCompositor.cpp
+      )
+
+    list(APPEND apcomp_mpi_sources ${apcomp_sources})
+
+    set(apcomp_mpi_deps ${ascent_blt_mpi_deps})
 
     if(ENABLE_OPENMP)
-         list(APPEND apcomp_mpi_deps ${apcomp_blt_openmp_deps})
+         list(APPEND apcomp_mpi_deps ${ascent_blt_openmp_deps})
     endif()
 
 
@@ -106,27 +110,30 @@ if (MPI_FOUND)
         DEPENDS_ON ${apcomp_mpi_deps}
     )
 
-    #this is a workaround for a cmake issue linking an interface header only library statically
-    target_include_directories(apcomp_mpi PRIVATE $<TARGET_PROPERTY:apcompdiy,INTERFACE_INCLUDE_DIRECTORIES>)
-    target_include_directories(apcomp_mpi PUBLIC $<INSTALL_INTERFACE:include>)
+    # build includes
+    # this allows us to include as <apcomp/header.hpp>
+    target_include_directories(apcomp_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
+    target_include_directories(apcomp_mpi PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/internal/diy/include/>)
+    # install includes
+    # setup exported target to point to proper include dir
+    target_include_directories(apcomp_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/>)
 
+    # extra defs and props
     target_compile_definitions(apcomp_mpi PRIVATE APCOMP_PARALLEL)
-    target_compile_definitions(apcomp_mpi PRIVATE APCOMP_COMPILING_FLAG)
-
+    target_compile_definitions(apcomp_mpi PRIVATE ASCENT_EXPORTS_FLAG)
     if(ENABLE_OPENMP)
       target_compile_definitions(apcomp_mpi PRIVATE APCOMP_USE_OPENMP)
     endif()
 
 
-    # Install libraries
+    # install target
     install(TARGETS apcomp_mpi
-            EXPORT ${APComp_EXPORT_NAME}
-            ARCHIVE DESTINATION ${APComp_INSTALL_LIB_DIR}
-            LIBRARY DESTINATION ${APComp_INSTALL_LIB_DIR}
-            RUNTIME DESTINATION ${APComp_INSTALL_BIN_DIR})
+            EXPORT  ascent
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION lib
+    )
 
-    # Install headers
-    install(FILES ${apcomp_mpi_headers}
-            DESTINATION ${APComp_INSTALL_INCLUDE_DIR}/apcomp)
+    install(FILES  ${apcomp_mpi_headers} DESTINATION include/ascent/apcomp)
 
 endif()

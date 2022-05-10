@@ -1,67 +1,74 @@
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+
 #include <string>
 #include <vector>
 
+#include <apcomp/apcomp_exports.h>
 // stolen from llnl/conduit
 
 namespace apcomp
 {
-std::string  file_path_separator();
+std::string  APCOMP_API file_path_separator();
 
-void split_string(const std::string &str,
+void APCOMP_API split_string(const std::string &str,
                   const std::string &sep,
                   std::string &curr,
                   std::string &next);
 
-void split_string(const std::string &str,
+void APCOMP_API split_string(const std::string &str,
                   char sep,
                   std::vector<std::string> &sv);
 
-void rsplit_string(const std::string &str,
+void APCOMP_API rsplit_string(const std::string &str,
                    const std::string &sep,
                    std::string &curr,
                    std::string &next);
 
-void split_path(const std::string &path,
+void APCOMP_API split_path(const std::string &path,
                 std::string &curr,
                 std::string &next);
 
-void rsplit_path(const std::string &path,
+void APCOMP_API rsplit_path(const std::string &path,
                  std::string &curr,
                  std::string &next);
 
-std::string join_path(const std::string &left,
+std::string APCOMP_API join_path(const std::string &left,
                       const std::string &right);
 
-void split_file_path(const std::string &path,
+void APCOMP_API split_file_path(const std::string &path,
                      std::string &curr,
                      std::string &next);
 
-void split_file_path(const std::string &path,
+void APCOMP_API split_file_path(const std::string &path,
                      const std::string &sep,
                      std::string &curr,
                      std::string &next);
 
-void rsplit_file_path(const std::string &path,
+void APCOMP_API rsplit_file_path(const std::string &path,
                       std::string &curr,
                       std::string &next);
 
-void rsplit_file_path(const std::string &path,
+void APCOMP_API rsplit_file_path(const std::string &path,
                       const std::string &sep,
                       std::string &curr,
                       std::string &next);
 
 std::string
-join_file_path(const std::string &left,
+APCOMP_API join_file_path(const std::string &left,
                const std::string &right);
 
-bool is_file(const std::string &path);
+bool APCOMP_API is_file(const std::string &path);
 
-bool is_directory(const std::string &path);
+bool APCOMP_API is_directory(const std::string &path);
 
-bool remove_file(const std::string &path);
+bool APCOMP_API remove_file(const std::string &path);
 
-bool remove_directory(const std::string &path);
+bool APCOMP_API remove_directory(const std::string &path);
 
-bool create_directory(const std::string &path);
+bool APCOMP_API create_directory(const std::string &path);
 
 } // namespace apcomp

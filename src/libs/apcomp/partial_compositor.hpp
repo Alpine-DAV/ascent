@@ -4,7 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#define APCOMP_PARTIAL_COMPOSITOR_HPP
+#ifndef APCOMP_PARTIAL_COMPOSITOR_HPP
 #define APCOMP_PARTIAL_COMPOSITOR_HPP
 
 #include <vector>
