@@ -29,7 +29,7 @@ set(apcomp_deps conduit::conduit ascent)
 # note: this should come in automatically
 #       but not going to temp fate 
 if(ENABLE_OPENMP)
-  set(apcomp_deps ${ascent_blt_openmp_deps})
+  list(APPEND apcomp_deps ${ascent_blt_openmp_deps})
 endif()
 
 ################################
