@@ -13,11 +13,11 @@
 # Handle legacy usage of ADIOS2_DIR
 if (ADIOS2_DIR AND NOT ADIOS2_ROOT)
   # If find_package(ADIOS2) has already been called this will fail
-  if (NOT EXISTS ${ADIOS2_DIR}/lib/cmake/adios2)
+  if (NOT EXISTS ${ADIOS2_DIR}/include)
     get_filename_component(tmp "${ADIOS2_DIR}" DIRECTORY)
     get_filename_component(tmp "${tmp}" DIRECTORY)
     get_filename_component(tmp "${tmp}" DIRECTORY)
-    if (EXISTS ${tmp}/lib/cmake/adios2)
+    if (EXISTS ${tmp}/include)
       set(ADIOS2_ROOT "${tmp}" CACHE PATH "")
     else ()
       message(FATAL_ERROR "Could not determine ADIOS2_ROOT from ADIOS2_DIR")
@@ -38,7 +38,7 @@ set(ADIOS2_DIR_ORIG ${ADIOS2_ROOT})
 
 find_package(ADIOS2 REQUIRED
              NO_DEFAULT_PATH
-             PATHS ${ADIOS2_ROOT}/lib/cmake/adios2)
+             PATHS ${ADIOS2_ROOT})
 
 # ADIOS2_DIR is set by find_package
 message(STATUS "FOUND ADIOS2 at ${ADIOS2_DIR}")
