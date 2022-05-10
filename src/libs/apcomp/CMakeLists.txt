@@ -1,6 +1,6 @@
-#==============================================================================
-# See License.txt
-#==============================================================================
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 
 set(apcomp_headers
   apcomp.hpp
@@ -35,6 +35,10 @@ set(apcomp_sources
   utils/lodepng.cpp
   )
 
+
+#------------------------------------------------------------------------------
+# serial (non mpi) apcomp lib
+#------------------------------------------------------------------------------
 if (ENABLE_SERIAL)
     set(apcomp_deps )
 
@@ -75,7 +79,7 @@ if (ENABLE_SERIAL)
 endif()
 
 #------------------------------------------------------------------------------
-# Handle parallel library
+# parallel apcomp_mpi lib
 #------------------------------------------------------------------------------
 if (MPI_FOUND)
     set(apcomp_mpi_headers
