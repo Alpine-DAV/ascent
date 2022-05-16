@@ -42,13 +42,27 @@ if(PYTHON_FOUND)
     endforeach()
 endif()
 
+# builtin libs vars for config.mk gen
+if(ENABLE_APCOMP)
+    set(ASCENT_APCOMP_ENABLED "TRUE")
+endif()
 
-# generated the config.mk
+# generate the config.mk
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
 
 # install the config.mk
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk" DESTINATION share/ascent)
+
+
+# install optional libs config info
+if(ENABLE_APCOMP)
+    # generate the config.mk
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/apcomp_config.mk.in"
+                    "${CMAKE_CURRENT_BINARY_DIR}/apcomp_config.mk")
+    # install the config.mk
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/apcomp_config.mk" DESTINATION share/ascent)
+endif()
 
 
 ###############################################################################
