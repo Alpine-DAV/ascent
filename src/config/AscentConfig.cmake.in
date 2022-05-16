@@ -33,6 +33,9 @@ if(NOT ASCENT_FOUND)
     # advertise if fortran support is enabled
     set(ASCENT_FORTRAN_ENABLED @ENABLE_FORTRAN@)
 
+    # advertise if apcomp is enabled
+    set(ASCENT_APCOMP_ENABLED @ENABLE_APCOMP@)
+
     # advertise if vtk-h support is enabled
     set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
     set(ASCENT_VTKH_DIR "@VTKH_DIR@")

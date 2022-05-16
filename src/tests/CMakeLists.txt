@@ -21,6 +21,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # add tpl smoke tests, so they run before we run the ascent tests
 add_subdirectory("thirdparty")
 
+# add apcomp tests
+if(ENABLE_APCOMP)
+    add_subdirectory("apcomp")
+endif()
+
 # add flow tests
 add_subdirectory("flow")
 
