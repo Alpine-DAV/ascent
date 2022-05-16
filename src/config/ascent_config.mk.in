@@ -198,8 +198,6 @@ ASCENT_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(ASCENT_MPI_LIBS) )
 # (builtin lib installed by ascent)
 # Include make vars from the apcomp config.mk file
 ifeq ($(ASCENT_APCOMP_ENABLED),"TRUE")
-   # not set, do not include config
-else
    include $(ASCENT_DIR)/share/ascent/apcomp_config.mk
    ASCENT_LINK_RPATH += $(APCOMP_LINK_RPATH)
 endif
