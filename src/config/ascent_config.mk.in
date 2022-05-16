@@ -1,3 +1,4 @@
+
 ###############################################################################
 # Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
@@ -16,7 +17,8 @@
 #  ASCENT_MPI_LIB_FLAGS
 ######
 #
-# For us in another Makefile build system
+#
+# For use in another Makefile build system
 ############################################################################
 
 
@@ -24,6 +26,10 @@ ASCENT_DIR = @ASCENT_INSTALL_PREFIX@
 
 ASCENT_CONDUIT_DIR = @CONDUIT_DIR@
 
+# optional built in libs
+ASCENT_APCOMP_ENABLED = @ENABLE_APCOMP@
+
+# thirdparty libs
 ASCENT_VTKH_DIR      = @VTKH_DIR@
 ASCENT_VTKM_DIR      = @VTKM_DIR@
 ASCENT_VTKM_VERSION  = @VTKm_VERSION@
@@ -36,6 +42,7 @@ ASCENT_ADIOS2_DIR    = @ADIOS2_DIR_ORIG@
 ASCENT_BABELFLOW_DIR = @BABELFLOW_DIR_ORIG@
 ASCENT_PMT_DIR       = @PMT_DIR_ORIG@
 ASCENT_GENTEN_DIR    = @GENTEN_DIR_ORIG@
+
 
 ASCENT_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
 
@@ -164,9 +171,9 @@ else
 endif
 
 ##########
-# MFEM
+# DRay
 ##########
-# Include make vars from the mfem config.mk file
+# Include make vars from the dray config.mk file
 ifeq ($(ASCENT_DRAY_DIR),)
    # not set, do not include config
 else
@@ -182,6 +189,19 @@ ASCENT_MFEM_LIB_FLAGS = $(if $(ASCENT_MFEM_DIR),-L $(ASCENT_MFEM_DIR)/lib -lmfem
 #
 # If mfem was built with MPI support, add ASCENT_MPI_LIBS to avoid errors with static serial builds
 ASCENT_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(ASCENT_MPI_LIBS) )
+
+
+
+##########
+# apcomp
+##########
+# (builtin lib installed by ascent)
+# Include make vars from the apcomp config.mk file
+ifeq ($(ASCENT_APCOMP_ENABLED),"TRUE")
+   include $(ASCENT_DIR)/share/ascent/apcomp_config.mk
+   ASCENT_LINK_RPATH += $(APCOMP_LINK_RPATH)
+endif
+
 
 ##########
 # OCCA
@@ -242,9 +262,13 @@ ASCENT_GENTEN_LIB_FLAGS = $(if $(ASCENT_GENTEN_DIR),-L $(ASCENT_GENTEN_DIR)/lib 
 # -lkokkoscore
 
 
+
 #######################
 # Ascent Include Flags
 #######################
+
+# apcomp is not in ascent interface, so it is not needed here
+
 ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
                        -I $(ASCENT_DIR)/include/ascent
 
@@ -258,7 +282,7 @@ ASCENT_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT) \
                    -lascent \
                    -lascent_flow \
                    -lascent_lodepng \
-                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                   -lrover $(DRAY_LIB_FLAGS) $(APCOMP_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda with a non-GPU sim
 ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
@@ -266,7 +290,7 @@ ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
                        -lascent_mpi \
                        -lascent_flow \
                        -lascent_lodepng \
-                       -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                       -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_MPI_LIB_FLAGS) $(APCOMP_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda where the linking code
 # performs a device link (resolving all cuda symbols)
@@ -274,4 +298,4 @@ ASCENT_MPI_CUDA_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                             -lascent_mpi \
                             -lascent_flow \
                             -lascent_lodepng \
-                            -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                            -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_MPI_LIB_FLAGS) $(APCOMP_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)

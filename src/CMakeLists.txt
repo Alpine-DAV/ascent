@@ -27,6 +27,9 @@ option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+# Note: Default to OFF until Dray is pulled in.
+option(ENABLE_APCOMP      "Build AP Compositor"       OFF)
+
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
 option(ENABLE_LOGGING     "Enabe data logging"        OFF)
@@ -129,6 +132,8 @@ add_subdirectory(thirdparty_builtin)
 ################################
 # Add our libs
 ################################
+add_subdirectory(libs)
+
 add_subdirectory(flow)
 
 if(VTKM_FOUND)
