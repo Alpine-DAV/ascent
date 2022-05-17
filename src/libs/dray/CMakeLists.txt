@@ -434,3 +434,6 @@ endmacro(install_headers_with_directory)
 
 install_headers_with_directory(dray_headers)
 
+
+add_subdirectory(utilities)
+
