@@ -93,6 +93,13 @@ test_data_file(const std::string &file_name)
 }
 
 
+inline std::string
+dray_baselines_dir()
+{
+    string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
+    return conduit::utils::join_file_path(res,"dray");
+}
+
 
 
 //-----------------------------------------------------------------------------

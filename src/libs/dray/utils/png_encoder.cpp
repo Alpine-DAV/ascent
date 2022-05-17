@@ -45,7 +45,7 @@ PNGEncoder::encode(const uint8 *rgba_in,
                                           &rgba_flip[0],
                                           width,
                                           height,
-                                          LCT_RGBA, // these settings match those for
+                                          lpng::LCT_RGBA, // these settings match those for
                                           8);       // lodepng_encode32_file
 
   delete [] rgba_flip;
@@ -89,7 +89,7 @@ PNGEncoder::encode(const float32 *rgba_in,
                                           &rgba_flip[0],
                                           width,
                                           height,
-                                          LCT_RGBA, // these settings match those for
+                                          lpng::LCT_RGBA, // these settings match those for
                                           8);       // lodepng_encode32_file
 
   delete [] rgba_flip;
@@ -111,9 +111,9 @@ PNGEncoder::save(const std::string &filename)
       return;
   }
 
-  unsigned error = lodepng_save_file(m_buffer,
-                                     m_buffer_size,
-                                     filename.c_str());
+  unsigned error = lpng::lodepng_save_file(m_buffer,
+                                           m_buffer_size,
+                                           filename.c_str());
   if(error)
   {
     std::cerr<<"Error saving PNG buffer to file: " << filename<<"\n";

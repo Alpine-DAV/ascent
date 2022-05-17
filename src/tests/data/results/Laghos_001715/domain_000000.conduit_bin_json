@@ -1,0 +1,90 @@
+
+{
+  "coordsets": 
+  {
+    "coords": 
+    {
+      "type": {"dtype":"char8_str", "number_of_elements": 9, "offset": 0, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "values": 
+      {
+        "x": {"dtype":"float64", "number_of_elements": 315, "offset": 9, "stride": 8, "element_bytes": 8, "endianness": "little"},
+        "y": {"dtype":"float64", "number_of_elements": 315, "offset": 2529, "stride": 8, "element_bytes": 8, "endianness": "little"},
+        "z": {"dtype":"float64", "number_of_elements": 315, "offset": 5049, "stride": 8, "element_bytes": 8, "endianness": "little"}
+      }
+    }
+  },
+  "topologies": 
+  {
+    "main": 
+    {
+      "type": {"dtype":"char8_str", "number_of_elements": 13, "offset": 7569, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "coordset": {"dtype":"char8_str", "number_of_elements": 7, "offset": 7582, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "elements": 
+      {
+        "shape": {"dtype":"char8_str", "number_of_elements": 4, "offset": 7589, "stride": 1, "element_bytes": 1, "endianness": "little"},
+        "connectivity": {"dtype":"int32", "number_of_elements": 1344, "offset": 7593, "stride": 4, "element_bytes": 4, "endianness": "little"}
+      },
+      "grid_function": {"dtype":"char8_str", "number_of_elements": 11, "offset": 12969, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "boundary_topology": {"dtype":"char8_str", "number_of_elements": 9, "offset": 12980, "stride": 1, "element_bytes": 1, "endianness": "little"}
+    },
+    "boundary": 
+    {
+      "type": {"dtype":"char8_str", "number_of_elements": 13, "offset": 12989, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "coordset": {"dtype":"char8_str", "number_of_elements": 7, "offset": 13002, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "elements": 
+      {
+        "shape": {"dtype":"char8_str", "number_of_elements": 5, "offset": 13009, "stride": 1, "element_bytes": 1, "endianness": "little"},
+        "connectivity": {"dtype":"int32", "number_of_elements": 992, "offset": 13014, "stride": 4, "element_bytes": 4, "endianness": "little"}
+      }
+    }
+  },
+  "fields": 
+  {
+    "mesh_nodes": 
+    {
+      "basis": {"dtype":"char8_str", "number_of_elements": 9, "offset": 16982, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "topology": {"dtype":"char8_str", "number_of_elements": 5, "offset": 16991, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "values": 
+      {
+        "v0": {"dtype":"float64", "number_of_elements": 1885, "offset": 16996, "stride": 8, "element_bytes": 8, "endianness": "little"},
+        "v1": {"dtype":"float64", "number_of_elements": 1885, "offset": 32076, "stride": 8, "element_bytes": 8, "endianness": "little"},
+        "v2": {"dtype":"float64", "number_of_elements": 1885, "offset": 47156, "stride": 8, "element_bytes": 8, "endianness": "little"}
+      }
+    },
+    "element_attribute": 
+    {
+      "association": {"dtype":"char8_str", "number_of_elements": 8, "offset": 62236, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "topology": {"dtype":"char8_str", "number_of_elements": 5, "offset": 62244, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "values": {"dtype":"int32", "number_of_elements": 168, "offset": 62249, "stride": 4, "element_bytes": 4, "endianness": "little"}
+    },
+    "boundary_attribute": 
+    {
+      "association": {"dtype":"char8_str", "number_of_elements": 8, "offset": 62921, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "topology": {"dtype":"char8_str", "number_of_elements": 9, "offset": 62929, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "values": {"dtype":"int32", "number_of_elements": 248, "offset": 62938, "stride": 4, "element_bytes": 4, "endianness": "little"}
+    },
+    "Density": 
+    {
+      "basis": {"dtype":"char8_str", "number_of_elements": 12, "offset": 63930, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "topology": {"dtype":"char8_str", "number_of_elements": 5, "offset": 63942, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "values": {"dtype":"float64", "number_of_elements": 1344, "offset": 63947, "stride": 8, "element_bytes": 8, "endianness": "little"}
+    },
+    "Specific Internal Energy": 
+    {
+      "basis": {"dtype":"char8_str", "number_of_elements": 12, "offset": 74699, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "topology": {"dtype":"char8_str", "number_of_elements": 5, "offset": 74711, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "values": {"dtype":"float64", "number_of_elements": 1344, "offset": 74716, "stride": 8, "element_bytes": 8, "endianness": "little"}
+    },
+    "Velocity": 
+    {
+      "basis": {"dtype":"char8_str", "number_of_elements": 9, "offset": 85468, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "topology": {"dtype":"char8_str", "number_of_elements": 5, "offset": 85477, "stride": 1, "element_bytes": 1, "endianness": "little"},
+      "values": 
+      {
+        "v0": {"dtype":"float64", "number_of_elements": 1885, "offset": 85482, "stride": 8, "element_bytes": 8, "endianness": "little"},
+        "v1": {"dtype":"float64", "number_of_elements": 1885, "offset": 100562, "stride": 8, "element_bytes": 8, "endianness": "little"},
+        "v2": {"dtype":"float64", "number_of_elements": 1885, "offset": 115642, "stride": 8, "element_bytes": 8, "endianness": "little"}
+      }
+    }
+  }
+}
