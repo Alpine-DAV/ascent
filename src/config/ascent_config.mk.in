@@ -28,6 +28,7 @@ ASCENT_CONDUIT_DIR = @CONDUIT_DIR@
 
 # optional built in libs
 ASCENT_APCOMP_ENABLED = @ENABLE_APCOMP@
+ASCENT_DRAY_ENABLED   = @ENABLE_DRAY@
 
 # thirdparty libs
 ASCENT_VTKH_DIR      = @VTKH_DIR@
@@ -202,6 +203,16 @@ ifeq ($(ASCENT_APCOMP_ENABLED),"TRUE")
    ASCENT_LINK_RPATH += $(APCOMP_LINK_RPATH)
 endif
 
+##########
+# dray
+##########
+# (builtin lib installed by ascent)
+# Include make vars from the apcomp config.mk file
+ifeq ($(ASCENT_DRAY_ENABLED),"TRUE")
+   include $(ASCENT_DIR)/share/ascent/dray_config.mk
+   ASCENT_LINK_RPATH += $(DRAY_LINK_RPATH)
+endif
+
 
 ##########
 # OCCA
@@ -267,7 +278,7 @@ ASCENT_GENTEN_LIB_FLAGS = $(if $(ASCENT_GENTEN_DIR),-L $(ASCENT_GENTEN_DIR)/lib 
 # Ascent Include Flags
 #######################
 
-# apcomp is not in ascent interface, so it is not needed here
+# apcomp and dray are not in ascent interface, they are not needed here
 
 ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
                        -I $(ASCENT_DIR)/include/ascent

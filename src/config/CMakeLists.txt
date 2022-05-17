@@ -47,12 +47,18 @@ if(ENABLE_APCOMP)
     set(ASCENT_APCOMP_ENABLED "TRUE")
 endif()
 
+if(ENABLE_DRAY)
+    set(ASCENT_DRAY_ENABLED "TRUE")
+endif()
+
+
 # generate the config.mk
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
 
 # install the config.mk
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk" DESTINATION share/ascent)
+
 
 
 # install optional libs config info
@@ -62,6 +68,14 @@ if(ENABLE_APCOMP)
                     "${CMAKE_CURRENT_BINARY_DIR}/apcomp_config.mk")
     # install the config.mk
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/apcomp_config.mk" DESTINATION share/ascent)
+endif()
+
+if(ENABLE_DRAY)
+    # generate the config.mk
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/dray_config.mk.in"
+                    "${CMAKE_CURRENT_BINARY_DIR}/dray_config.mk")
+    # install the config.mk
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dray_config.mk" DESTINATION share/ascent)
 endif()
 
 
