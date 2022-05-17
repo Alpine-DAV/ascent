@@ -6,10 +6,12 @@
 #ifndef DRAY_UNSTRUCTURED_FIELD_HPP
 #define DRAY_UNSTRUCTURED_FIELD_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/grid_function.hpp>
 #include <dray/data_model/field.hpp>
-#include <dray/exports.hpp>
 #include <dray/vec.hpp>
 #include <dray/error.hpp>
 

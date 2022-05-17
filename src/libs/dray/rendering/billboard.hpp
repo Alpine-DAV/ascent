@@ -8,7 +8,9 @@
 
 #include <vector>
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array.hpp>
 #include <dray/vec.hpp>
 #include <dray/ray.hpp>

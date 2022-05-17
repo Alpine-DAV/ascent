@@ -6,7 +6,9 @@
 #ifndef DRAY_TEXTURE2D_HPP
 #define DRAY_TEXTURE2D_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array.hpp>
 #include <dray/vec.hpp>
 #include <dray/rendering/device_texture2d.hpp>

@@ -117,7 +117,8 @@ TEST (dray_slice, dray_slice)
 
   fb.save (output_file);
   //dray::stats::StatStore::write_point_stats ("locate_stats");
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
 }
 
 
@@ -192,5 +193,6 @@ TEST (dray_slice, dray_three_slice)
 
   fb.save (output_file);
   //dray::stats::StatStore::write_point_stats ("locate_stats");
-  EXPECT_TRUE (check_test_image (output_file));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
 }

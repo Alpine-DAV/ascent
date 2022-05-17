@@ -1,10 +1,12 @@
 #ifndef DRAY_APPSTATS_HPP
 #define DRAY_APPSTATS_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array.hpp>
 #include <dray/ray.hpp>
 #include <dray/types.hpp>
-#include <dray/exports.hpp>
 
 #include <iostream>
 #include <vector>

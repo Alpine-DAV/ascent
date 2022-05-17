@@ -56,7 +56,8 @@ TEST (dray_volume_render, dray_volume_render_simple)
   fb.composite_background();
 
   fb.save (output_file);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
 }
 
 TEST (dray_volume_render, dray_volume_render_triple)
@@ -103,5 +104,6 @@ TEST (dray_volume_render, dray_volume_render_triple)
   fb.composite_background();
 
   fb.save (output_file);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
 }

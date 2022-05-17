@@ -6,7 +6,9 @@
 #ifndef DRAY_PLANE_DETECTOR_HPP
 #define DRAY_PLANE_DETECTOR_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/types.hpp>
 #include <dray/vec.hpp>
 

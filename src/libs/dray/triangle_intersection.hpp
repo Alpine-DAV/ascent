@@ -6,7 +6,9 @@
 #ifndef DRAY_TRIANGLE_INTERSECTION_HPP
 #define DRAY_TRIANGLE_INTERSECTION_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/ray_hit.hpp>
 #include <dray/vec.hpp>
 

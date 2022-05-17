@@ -6,10 +6,12 @@
 #ifndef DRAY_ELEM_ATTR
 #define DRAY_ELEM_ATTR
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/types.hpp>
 #include <dray/math.hpp>
 #include <dray/vec.hpp>
-#include <dray/exports.hpp>
 
 #include <sstream>
 

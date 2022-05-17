@@ -6,10 +6,12 @@
 #ifndef DRAY_DEVICE_FIELD_HPP
 #define DRAY_DEVICE_FIELD_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/grid_function.hpp>
 #include <dray/data_model/unstructured_field.hpp>
-#include <dray/exports.hpp>
 #include <dray/vec.hpp>
 
 namespace dray

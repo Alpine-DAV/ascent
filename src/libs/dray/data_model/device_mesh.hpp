@@ -6,6 +6,9 @@
 #ifndef DRAY_DEVICE_MESH_HPP
 #define DRAY_DEVICE_MESH_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/data_model/subref.hpp>
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/grid_function.hpp>
@@ -13,7 +16,6 @@
 #include <dray/aabb.hpp>
 #include <dray/array_utils.hpp>
 #include <dray/device_bvh.hpp>
-#include <dray/exports.hpp>
 #include <dray/location.hpp>
 #include <dray/subdivision_search.hpp>
 #include <dray/vec.hpp>

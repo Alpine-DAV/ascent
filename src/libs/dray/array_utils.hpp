@@ -6,8 +6,10 @@
 #ifndef DRAY_ARRAY_UTILS_HPP
 #define DRAY_ARRAY_UTILS_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array.hpp>
-#include <dray/exports.hpp>
 #include <dray/error_check.hpp>
 #include <dray/policies.hpp>
 #include <dray/types.hpp>

@@ -6,9 +6,12 @@
 #ifndef DRAY_RANDOM_HPP
 #define DRAY_RANDOM_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array.hpp>
 #include <dray/types.hpp>
-#include <dray/exports.hpp>
+
 
 #include <stdlib.h>
 #include <time.h>

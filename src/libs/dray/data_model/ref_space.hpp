@@ -6,8 +6,10 @@
 #ifndef DRAY_REF_SPACE
 #define DRAY_REF_SPACE
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/types.hpp>
-#include <dray/exports.hpp>
 #include <dray/data_model/elem_attr.hpp>
 #include <dray/data_model/subref.hpp>
 

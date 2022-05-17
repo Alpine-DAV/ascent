@@ -47,6 +47,19 @@ if(ASCENT_SERIAL_ENABLED)
                      APPEND PROPERTY INTERFACE_LINK_LIBRARIES
                      vtkh)
     endif()
+
+    if(ASCENT_DRAY_ENABLED)
+        # create convenience target that bundles all reg dray deps (dray::dray)
+        add_library(dray::dray INTERFACE IMPORTED)
+
+        set_property(TARGET dray::dray
+                     APPEND PROPERTY
+                     INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
+
+        set_property(TARGET dray::dray
+                     PROPERTY INTERFACE_LINK_LIBRARIES
+                     dray)
+     endif()
 endif()
 
 # and if mpi enabled, a convenience target mpi case (ascent::cascent_mpi)
@@ -86,6 +99,19 @@ if(ASCENT_MPI_ENABLED)
                      vtkh_mpi)
     endif()
 
+
+    if(ASCENT_DRAY_ENABLED)
+        # create convenience target that bundles all reg dray deps (dray::dray)
+        add_library(dray::dray_mpi INTERFACE IMPORTED)
+
+        set_property(TARGET dray::dray_mpi
+                     APPEND PROPERTY
+                     INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
+
+        set_property(TARGET dray::dray_mpi
+                     PROPERTY INTERFACE_LINK_LIBRARIES
+                     dray_mpi)
+     endif()
 
 endif()
 

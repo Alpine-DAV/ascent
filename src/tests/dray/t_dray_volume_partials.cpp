@@ -71,7 +71,8 @@ TEST (dray_volume_partials, dray_volume_partials)
                                            camera.get_height ());
 
   volume->save(output_file, partials, c_width, c_height);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
 }
 
 TEST (dray_volume_partials, dray_empty_check)
@@ -130,5 +131,6 @@ TEST (dray_volume_partials, dray_empty_check)
                                            camera.get_height ());
 
   volume->save(output_file, partials, c_width, c_height);
-  EXPECT_TRUE (check_test_image (output_file));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
 }

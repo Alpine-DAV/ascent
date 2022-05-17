@@ -2,10 +2,41 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
+# adjust cmake options into proper defs for generate dray_config.h
+
+if(ENABLE_LOGGING)
+    set(DRAY_ENABLE_LOGGING TRUE)
+    message(STATUS "DRay Logging enabled")
+endif() 
+
+if(DRAY_USE_DOUBLE_PRECISION)
+    # this option is used directly in config.h
+    message(STATUS "DRay using double precision")
+endif()
+
+if(ENABLE_OPENMP)
+    set(DRAY_OPENMP_ENABLED TRUE)
+    message(STATUS "DRay OpenMP Support Enabled")
+endif()
+
+if(DRAY_ENABLE_STATS)
+    set(DRAY_STATS TRUE)
+    message(STATUS "DRay Stats enabled")
+endif()
+
+
+# create the headr
+
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/dray_config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/dray_config.h")
+
+
 
 # devil ray headers
 
 set(dray_headers dray.hpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/dray_config.h
+                 dray_exports.h
                  array.hpp
                  aabb.hpp
                  additional_color_tables.hpp
@@ -16,7 +47,6 @@ set(dray_headers dray.hpp
                  color_map.hpp
                  color_table.hpp
                  dray_node_to_dataset.hpp
-                 exports.hpp
                  error.hpp
                  error_check.hpp
                  halton.hpp
@@ -140,9 +170,7 @@ set(dray_headers dray.hpp
                  synthetic/affine_radial.hpp
                  synthetic/spiral_sample.hpp
                  synthetic/tet_sphere_sample.hpp
-                 # mfem related headers
-                 utils/mfem_utils.hpp
-                 mfem2dray.hpp
+
 )
 
 # devil ray sources
@@ -240,9 +268,6 @@ set(dray_sources dray.cpp
                  synthetic/affine_radial.cpp
                  synthetic/spiral_sample.cpp
                  synthetic/tet_sphere_sample.cpp
-                 # mfem related sources
-                 utils/mfem_utils.cpp
-                 mfem2dray.cpp
 )
 
 
@@ -253,9 +278,16 @@ set(dray_thirdparty_libs
     RAJA
     umpire
     conduit::conduit
-    mfem
     ascent_lodepng)
 
+if(MFEM_FOUND)
+    list(APPEND dray_thirdparty_libs mfem)
+    list(APPEND dray_headers utils/mfem_utils.hpp
+                             mfem2dray.hpp)
+
+    list(APPEND dray_sources utils/mfem_utils.cpp
+                             mfem2dray.cpp)
+endif()
 
 ################################################
 # openmp support
@@ -269,50 +301,27 @@ endif()
 ################################################
 if(ENABLE_CUDA)
     list(APPEND dray_thirdparty_libs cuda)
+    # Building the BVH requires us to propagate bounding boxes in a tree
+    # from the bottom up. This means one thread can update aabbs in a node
+    # before terminating and letting another thread take over processing
+    # of the sub-tree. That said, there are no promises about which thread,
+    # and apparently there is no cache coherence between L1 caches so the
+    # other thread can might not get the updated data, destroying entire
+    # subtrees of the bvh. This doesn't happen vary often, but does happen.
+    # This compile flags disables L1 cache for this source file, preventing
+    # the issue. This line is the culmination of 10 hours of debugging,
+    # during which I questioned my own reality (ML). Slight optimization
+    # would be to move the one function to another file.
+    set_source_files_properties(linear_bvh_builder.cpp PROPERTIES COMPILE_FLAGS "-Xptxas -dlcm=cg")
 endif()
 
 ################################################
 # hip support
 ################################################
 if(ENABLE_HIP)
-  list(APPEND dray_thirdparty_libs blt::hip)
+    #TODO FIX
+    list(APPEND dray_thirdparty_libs blt::hip)
 endif()
-
-
-# TODO HANDLE SPECIAL FLAGS IN SETUP CUDA
-#
-# if(ENABLE_CUDA)
-#
-#   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-constexpr")
-#
-#   if(NOT CUDA_ARCH)
-#     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_60,code=sm_60")
-#   else()
-#     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch ${CUDA_ARCH}")
-#   endif()
-#   # make sure we propagate host compilers flags
-#   #if(ENABLE_OPENMP)
-#   #  list(APPEND dray_cuda_flags "-Xcompiler -fopenmp")
-#   #endif()
-#
-#   # enable flag to run on the CPU without rebuilding everything
-#   if(DEBUG_CPU_ONLY)
-#     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DDEBUG_CPU_ONLY")
-#   endif()
-#
-#   # Building the BVH requires us to propagate bounding boxes in a tree
-#   # from the bottom up. This means one thread can update aabbs in a node
-#   # before terminating and letting another thread take over processing
-#   # of the sub-tree. That said, there are no promises about which thread,
-#   # and apparently there is no cache coherence between L1 caches so the
-#   # other thread can might not get the updated data, destroying entire
-#   # subtrees of the bvh. This doesn't happen vary often, but does happen.
-#   # This compile flags disables L1 cache for this source file, preventing
-#   # the issue. This line is the culmination of 10 hours of debugging,
-#   # during which I questioned my own reality (ML). Slight optimization
-#   # would be to move the one function to another file.
-#   set_source_files_properties(linear_bvh_builder.cpp PROPERTIES COMPILE_FLAGS "-Xptxas -dlcm=cg")
-# endif()
 
 
 #################################e#######
@@ -325,37 +334,20 @@ if(ENABLE_SERIAL)
                     DEPENDS_ON ${dray_thirdparty_libs} apcomp
     )
 
-    ########################################
-    # Compiling flags
-    ########################################
-    if(ENABLE_LOGGING)
-        blt_add_target_compile_flags(TO dray FLAGS " -D DRAY_ENABLE_LOGGING=1")
-        message(STATUS "DRay Logging enabled")
-    endif()
+    # build time only defs
+    target_compile_definitions(dray PRIVATE ASCENT_EXPORTS_FLAG)
 
-    if(DRAY_USE_DOUBLE_PRECISION)
-        blt_add_target_compile_flags(TO dray FLAGS " -D DRAY_DOUBLE_PRECISION=1")
-        message(STATUS "DRay Using double precision")
-    endif()
-
-    if(ENABLE_OPENMP)
-        blt_add_target_compile_flags(TO dray FLAGS " -D DRAY_OPENMP_ENABLED=1")
-        message(STATUS "DRay OpenMP enabled")
-    endif()
-
-    if(ENABLE_STATS)
-        blt_add_target_compile_flags(TO dray FLAGS " -D DRAY_STATS=1")
-        message(STATUS "DRay Stats enabled")
-    endif()
-
-    get_target_property(DRAY_MAIN_CFLAGS dray COMPILE_OPTIONS)
-    message("-- DRay Target compiler flags are: ${DRAY_MAIN_CFLAGS}")
+    # TODO SYMBOL VIS
+    # set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
     # build includes
     # this allows us to include as <dray/header.hpp>
     target_include_directories(dray PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
+    target_include_directories(dray PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/>)
 
-    
+    # install includes
+    # setup exported target to point to proper include dir
+    target_include_directories(dray PUBLIC $<INSTALL_INTERFACE:include/ascent/dray>)
 
     install(TARGETS dray
             EXPORT ascent
@@ -366,53 +358,34 @@ if(ENABLE_SERIAL)
 endif()
 
 if(MPI_FOUND)
-  ########################################
-  # MPI Devil Ray
-  ########################################
-  set(dray_mpi_deps ${dray_blt_mpi_deps}
-                    ${dray_thirdparty_libs}
-                    ${ascent_blt_mpi_deps}
-                    conduit::conduit_mpi apcomp_mpi)
-
-  blt_add_library(NAME dray_mpi
-                  SOURCES ${dray_sources}
-                  HEADERS ${dray_headers}
-                  DEPENDS_ON ${dray_mpi_deps})
-
     ########################################
-    # Compiling flags
+    # MPI Devil Ray
     ########################################
-    if(ENABLE_LOGGING)
-        blt_add_target_compile_flags(TO dray_mpi FLAGS " -D DRAY_ENABLE_LOGGING=1")
-        message(STATUS "DRay MPI Logging enabled")
-    endif() 
+    set(dray_mpi_deps ${dray_blt_mpi_deps}
+                      ${dray_thirdparty_libs}
+                      ${ascent_blt_mpi_deps}
+                      conduit::conduit_mpi apcomp_mpi)
 
-    if(DRAY_USE_DOUBLE_PRECISION)
-        blt_add_target_compile_flags(TO dray_mpi FLAGS " -D DRAY_DOUBLE_PRECISION=1")
-        message(STATUS "DRay MPI using double precision")
-    endif()
+    blt_add_library(NAME dray_mpi
+                    SOURCES ${dray_sources}
+                    HEADERS ${dray_headers}
+                    DEPENDS_ON ${dray_mpi_deps})
 
-    if(ENABLE_OPENMP)
-        blt_add_target_compile_flags(TO dray_mpi FLAGS " -D DRAY_OPENMP_ENABLED=1")
-    endif()
-
-    if(ENABLE_STATS)
-        blt_add_target_compile_flags(TO dray_mpi FLAGS " -D DRAY_STATS=1")
-        message(STATUS "DRay MPI Stats enabled")
-    endif()
-
-    # build time defs
+    # build time only defs
+    target_compile_definitions(dray_mpi PRIVATE ASCENT_EXPORTS_FLAG)
     target_compile_definitions(dray_mpi PRIVATE DRAY_MPI_ENABLED)
 
+    # TODO SYMBOL VIS
+    # set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  
     # build includes
     # this allows us to include as <dray/header.hpp>
-    target_include_directories(dray PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
+    target_include_directories(dray_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
+    target_include_directories(dray_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/>)
 
-    # TODO: install interface includes
-    #target_include_directories(dray PUBLIC $<INSTALL_INTERFACE:ZZZZZZ>)
-
-    get_target_property(DRAY_MPI_MAIN_CFLAGS dray_mpi COMPILE_OPTIONS)
-    message("-- DRay MPI Target compiler flags are: ${DRAY_MPI_MAIN_CFLAGS}")
+    # install includes
+    # setup exported target to point to proper include dir
+    target_include_directories(dray_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/dray>)
 
     install(TARGETS dray_mpi
             EXPORT ascent
@@ -435,5 +408,9 @@ endmacro(install_headers_with_directory)
 install_headers_with_directory(dray_headers)
 
 
-add_subdirectory(utilities)
+if(ENABLE_UTILS)
+   message(status "Dray Utilities Enabled")
+   add_subdirectory(utilities)
+endif()
+
 

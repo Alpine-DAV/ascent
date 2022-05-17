@@ -6,6 +6,9 @@
 #ifndef DRAY_ELEMENT_HPP
 #define DRAY_ELEMENT_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/data_model/bernstein_basis.hpp>
 #include <dray/data_model/subpatch.hpp>
 #include <dray/data_model/dof_access.hpp>
@@ -13,7 +16,6 @@
 #include <dray/data_model/subref.hpp>
 #include <dray/data_model/ref_space.hpp>
 #include <dray/aabb.hpp>
-#include <dray/exports.hpp>
 #include <dray/range.hpp>
 #include <dray/types.hpp>
 #include <dray/vec.hpp>

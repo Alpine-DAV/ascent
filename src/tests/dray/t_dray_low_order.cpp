@@ -26,7 +26,8 @@
 
 int EXAMPLE_MESH_SIDE_DIM = 20;
 
-void render_2d(conduit::Node &data, std::string name)
+// note: dray diff tolerance was 0.2f prior to import
+void render_2d(conduit::Node &data, std::string name, double diff_perc = 0.05)
 {
   std::string output_path = prepare_output_dir ();
   std::string output_file =
@@ -62,13 +63,15 @@ void render_2d(conduit::Node &data, std::string name)
   fb.composite_background();
 
   fb.save(output_file);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(), diff_perc));
   fb.save_depth (output_file + "_depth");
   dray::stats::StatStore::write_ray_stats (c_width, c_height);
 }
 
 
-void render_3d(conduit::Node &data, std::string name)
+// note: dray diff tolerance was 0.2f prior to import
+void render_3d(conduit::Node &data, std::string name, double diff_perc = 0.05)
 {
 
   std::string output_path = prepare_output_dir ();
@@ -110,7 +113,8 @@ void render_3d(conduit::Node &data, std::string name)
   fb.composite_background();
 
   fb.save(output_file);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(), diff_perc));
   fb.save_depth (output_file + "_depth");
   dray::stats::StatStore::write_ray_stats (c_width, c_height);
 }
@@ -152,6 +156,8 @@ TEST (dray_low_order, dray_explicit_hexs)
 
   render_3d(data, "explicit_hexs");
 }
+
+
 TEST (dray_low_order, dray_explicit_tets)
 {
 
@@ -161,8 +167,8 @@ TEST (dray_low_order, dray_explicit_tets)
                                              EXAMPLE_MESH_SIDE_DIM,
                                              EXAMPLE_MESH_SIDE_DIM,
                                              data);
-
-  render_3d(data, "explicit_tets");
+  // note: dray diff tolerance was 0.2f prior to import
+  render_3d(data, "explicit_tets", 0.2);
 }
 
 TEST (dray_low_order, dray_explicit_tris)

@@ -7,19 +7,3 @@ Devil Ray is licensed under the BSD-3-Clause license
 Copyrights and patents in the Devil Ray project are retained by contributors.
 No copyright assignment is required to contribute to Devil Ray.
 
-SPDX usage
-------------
-
-Individual files contain SPDX tags instead of the full license text.
-This enables machine processing of license information based on the SPDX
-License Identifiers that are available here: https://spdx.org/licenses/
-
-Files  contain the following text in the license header:
-
-    SPDX-License-Identifier: (BSD-3-Clause)
-
-External Packages
--------------------
-Devil Ray bundles its external dependencies in src/thirdparty_builtin.  These
-packages are covered by various permissive licenses. See the license included
-with each package for full details.

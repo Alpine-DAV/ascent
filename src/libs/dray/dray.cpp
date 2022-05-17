@@ -6,7 +6,8 @@
 #include <dray/dray.hpp>
 #include <dray/array_registry.hpp>
 #include <dray/utils/data_logger.hpp>
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
 #include <dray/error.hpp>
 #include <iostream>
 #include <apcomp/apcomp.hpp>

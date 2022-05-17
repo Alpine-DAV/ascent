@@ -6,8 +6,11 @@
 #ifndef DRAY_BINOMIAL_HPP
 #define DRAY_BINOMIAL_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array.hpp>
-#include <dray/exports.hpp>
+
 
 #include <assert.h>
 

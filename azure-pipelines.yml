@@ -64,6 +64,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
@@ -77,6 +78,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -102,6 +104,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -115,6 +118,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -128,6 +132,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -141,6 +146,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -154,6 +160,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -167,6 +174,7 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -180,10 +188,28 @@ stages:
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
           ENABLE_APCOMP: ON
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: OFF
           # ENABLE MFEM logic here CONTROLS BOTH
           # DRAY AND MFEM in this test, its off for this case
           # b/c Dray will bring in external apcomp
+          ENABLE_MFEM: OFF
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+
+        ubuntu_21_10_shared_py_cxx11_dray:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_DRAY: ON
+          ENABLE_APCOMP: ON
+          ENABLE_VTKH: OFF
+          # ENABLE MFEM logic here CONTROLS BOTH
+          # external DRAY AND MFEM (WIP to straighen this out)
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
@@ -232,6 +258,7 @@ stages:
            # extra settings
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
            if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
            if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi

@@ -6,7 +6,9 @@
 #ifndef DRAY_DOF_ACCESS_HPP
 #define DRAY_DOF_ACCESS_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/types.hpp>
 #include <dray/vec.hpp>
 

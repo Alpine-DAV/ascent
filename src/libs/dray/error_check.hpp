@@ -6,7 +6,9 @@
 #ifndef DRAY_ERROR_CHECK_HPP
 #define DRAY_ERROR_CHECK_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <iostream>
 
 namespace dray

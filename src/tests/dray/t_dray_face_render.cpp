@@ -58,7 +58,8 @@ TEST (dray_faces, dray_impeller_faces)
   dray::Framebuffer fb = renderer.render(camera);
 
   fb.save(output_file);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
   fb.save_depth (output_file + "_depth");
   dray::stats::StatStore::write_ray_stats (c_width, c_height);
 }
@@ -99,7 +100,8 @@ TEST (dray_faces, dray_triangles)
   dray::Framebuffer fb = renderer.render(camera);
 
   fb.save(output_file);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
   fb.save_depth (output_file + "_depth");
   dray::stats::StatStore::write_ray_stats (c_width, c_height);
 }
@@ -166,6 +168,7 @@ TEST (dray_faces, dray_warbly_faces)
   dray::Framebuffer fb = renderer.render(camera);
 
   fb.save(output_file);
-  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir()));
+  // note: dray diff tolerance was 0.2f prior to import
+  EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
   dray::stats::StatStore::write_ray_stats (c_width, c_height);
 }

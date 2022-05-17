@@ -3,6 +3,10 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 
+
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/filters/isosurfacing.hpp>
 #include <dray/error.hpp>
 #include <dray/dispatcher.hpp>
@@ -10,7 +14,6 @@
 
 #include <RAJA/RAJA.hpp>
 #include <dray/policies.hpp>
-#include <dray/exports.hpp>
 
 #include <dray/data_model/unstructured_mesh.hpp>
 #include <dray/data_model/mesh.hpp>

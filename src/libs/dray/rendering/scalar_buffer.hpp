@@ -6,8 +6,10 @@
 #ifndef DRAY_SCALAR_BUFFER_HPP
 #define DRAY_SCALAR_BUFFER_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array.hpp>
-#include <dray/exports.hpp>
 #include <dray/types.hpp>
 #include <dray/vec.hpp>
 

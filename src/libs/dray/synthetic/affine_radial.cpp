@@ -3,6 +3,9 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/synthetic/affine_radial.hpp>
 
 #include <dray/data_model/elem_attr.hpp>
@@ -16,7 +19,7 @@
 
 #include <RAJA/RAJA.hpp>
 #include <dray/policies.hpp>
-#include <dray/exports.hpp>
+
 
 namespace dray
 {

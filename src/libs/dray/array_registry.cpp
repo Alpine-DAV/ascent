@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array_internals_base.hpp>
 #include <dray/array_registry.hpp>
 

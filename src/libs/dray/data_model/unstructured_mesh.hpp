@@ -6,11 +6,13 @@
 #ifndef DRAY_UNSTRUCTURED_MESH_HPP
 #define DRAY_UNSTRUCTURED_MESH_HPP
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/data_model/mesh.hpp>
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/grid_function.hpp>
 #include <dray/aabb.hpp>
-#include <dray/exports.hpp>
 #include <dray/linear_bvh_builder.hpp>
 #include <dray/location.hpp>
 #include <dray/newton_solver.hpp>

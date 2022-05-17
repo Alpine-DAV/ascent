@@ -3,10 +3,12 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 
-#ifndef DRAY_POLICIECS_HPP
-#define DRAY_POLICIECS_HPP
+#ifndef DRAY_POLICIES_HPP
+#define DRAY_POLICIES_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 
 #include <RAJA/RAJA.hpp>
 

@@ -6,9 +6,11 @@
 #ifndef DRAY_ARRAY_INTERNALS
 #define DRAY_ARRAY_INTERNALS
 
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/array_internals_base.hpp>
 #include <dray/array_registry.hpp>
-#include <dray/exports.hpp>
 #include <dray/math.hpp>
 
 #include <umpire/Umpire.hpp>

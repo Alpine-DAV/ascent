@@ -6,7 +6,9 @@
 #ifndef DRAY_RANGE_HPP
 #define DRAY_RANGE_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/math.hpp>
 
 #include <assert.h>

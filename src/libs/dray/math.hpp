@@ -6,7 +6,9 @@
 #ifndef DRAY_MATH_HPP
 #define DRAY_MATH_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/types.hpp>
 
 // include math so we can use functions defined

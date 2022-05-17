@@ -6,7 +6,9 @@
 #ifndef DRAY_INTEGER_UTILS_HPP
 #define DRAY_INTEGER_UTILS_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/types.hpp>
 
 namespace dray

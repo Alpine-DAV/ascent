@@ -101,6 +101,7 @@ dray_baselines_dir()
 }
 
 
+// NOTE: Devil Ray diff tolerance was 0.2f at time of great amalgamation 
 
 //-----------------------------------------------------------------------------
 inline bool

@@ -9,7 +9,9 @@
 #ifndef DRAY_VEC_HPP
 #define DRAY_VEC_HPP
 
-#include <dray/exports.hpp>
+#include <dray/dray_config.h>
+#include <dray/dray_exports.h>
+
 #include <dray/math.hpp>
 #include <dray/types.hpp>
 
