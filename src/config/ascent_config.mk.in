@@ -35,7 +35,7 @@ ASCENT_VTKH_DIR      = @VTKH_DIR@
 ASCENT_VTKM_DIR      = @VTKM_DIR@
 ASCENT_VTKM_VERSION  = @VTKm_VERSION@
 ASCENT_MFEM_DIR      = @MFEM_DIR@
-ASCENT_DRAY_DIR      = @DRAY_DIR@
+
 ASCENT_OCCA_DIR      = @OCCA_DIR@
 ASCENT_UMPIRE_DIR    = @UMPIRE_DIR@
 ASCENT_FIDES_DIR     = @FIDES_DIR_ORIG@
@@ -44,6 +44,13 @@ ASCENT_BABELFLOW_DIR = @BABELFLOW_DIR_ORIG@
 ASCENT_PMT_DIR       = @PMT_DIR_ORIG@
 ASCENT_GENTEN_DIR    = @GENTEN_DIR_ORIG@
 
+
+# builtin vs external
+ifeq ($(ASCENT_DRAY_ENABLED),"TRUE")
+    # don't set, we will use built-in dray
+else
+    ASCENT_DRAY_DIR      = @DRAY_DIR@
+endif()
 
 ASCENT_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
 
@@ -172,7 +179,7 @@ else
 endif
 
 ##########
-# DRay
+# DRay (EXTERNAL)
 ##########
 # Include make vars from the dray config.mk file
 ifeq ($(ASCENT_DRAY_DIR),)
@@ -204,10 +211,10 @@ ifeq ($(ASCENT_APCOMP_ENABLED),"TRUE")
 endif
 
 ##########
-# dray
+# Dray (builtin)
 ##########
 # (builtin lib installed by ascent)
-# Include make vars from the apcomp config.mk file
+# Include make vars from the dray config.mk file
 ifeq ($(ASCENT_DRAY_ENABLED),"TRUE")
    include $(ASCENT_DIR)/share/ascent/dray_config.mk
    ASCENT_LINK_RPATH += $(DRAY_LINK_RPATH)
