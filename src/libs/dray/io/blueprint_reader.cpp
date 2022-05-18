@@ -7,12 +7,16 @@
 #include <dray/error.hpp>
 #include <dray/io/blueprint_reader.hpp>
 #include <dray/io/blueprint_low_order.hpp>
-#include <dray/mfem2dray.hpp>
+
 #include <dray/data_model/unstructured_mesh.hpp>
 #include <dray/data_model/unstructured_field.hpp>
 #include <dray/utils/data_logger.hpp>
 
+#ifdef DRAY_MFEM_ENABLED
+#include <dray/mfem2dray.hpp>
 #include <mfem/fem/conduitdatacollection.hpp>
+#endif
+
 // conduit includes
 #include <conduit.hpp>
 #include <conduit_blueprint.hpp>
@@ -296,6 +300,10 @@ bool is_high_order(const conduit::Node &domain)
 template <typename T>
 DataSet bp_ho_2dray (const conduit::Node &n_dataset)
 {
+#ifndef DRAY_MFEM_ENABLED
+    DRAY_ERROR("High-order Blueprint import requires MFEM, but DRay lacks"
+               " MFEM support (MFEM_FOUND=FALSE)");
+#else
   mfem::Mesh *mfem_mesh_ptr = mfem::ConduitDataCollection::BlueprintMeshToMesh (n_dataset);
   mfem::Geometry::Type geom_type = mfem_mesh_ptr->GetElementBaseGeometry(0);
 
@@ -395,6 +403,7 @@ DataSet bp_ho_2dray (const conduit::Node &n_dataset)
   DRAY_LOG_CLOSE();
   delete mfem_mesh_ptr;
   return dataset;
+#endif
 }
 
 //-----------------------------------------------------------------------------

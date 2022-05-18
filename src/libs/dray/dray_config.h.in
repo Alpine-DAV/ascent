@@ -6,8 +6,8 @@
 #ifndef DRAY_CONFIG_H
 #define DRAY_CONFIG_H
 
-
 // config time defines
+#cmakedefine DRAY_MFEM_ENABLED
 #cmakedefine DRAY_OPENMP_ENABLED
 #cmakedefine DRAY_ENABLE_LOGGING
 #cmakedefine DRAY_USE_DOUBLE_PRECISION

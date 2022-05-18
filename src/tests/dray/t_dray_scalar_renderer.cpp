@@ -19,6 +19,17 @@
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
 void setup_camera (dray::Camera &camera)
 {
   camera.set_width (512);
@@ -35,6 +46,12 @@ void setup_camera (dray::Camera &camera)
 
 TEST (dray_scalar_renderer, dray_scalars)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+ 
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "slice_scalars");
@@ -73,6 +90,12 @@ TEST (dray_scalar_renderer, dray_scalars)
 
 TEST (dray_scalar_renderer, dray_triple_surface)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string root_file = std::string(ASCENT_T_DATA_DIR) + "tripple_point/field_dump.cycle_006700.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file =
@@ -109,6 +132,12 @@ TEST (dray_scalar_renderer, dray_triple_surface)
 
 TEST (dray_scalar_renderer, dray_triple_plane)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string root_file = std::string(ASCENT_T_DATA_DIR) + "tripple_point/field_dump.cycle_006700.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file =

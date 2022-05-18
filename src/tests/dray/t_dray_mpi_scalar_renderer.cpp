@@ -20,6 +20,17 @@
 
 #include <mpi.h>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
 void setup_camera (dray::Camera &camera)
 {
   camera.set_width (512);
@@ -36,6 +47,12 @@ void setup_camera (dray::Camera &camera)
 
 TEST (dray_scalar_renderer, dray_triple_surface)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   MPI_Comm comm = MPI_COMM_WORLD;
   dray::dray::mpi_comm(MPI_Comm_c2f(comm));
 

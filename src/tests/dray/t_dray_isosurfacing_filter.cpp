@@ -24,6 +24,18 @@
 #include <dray/utils/data_logger.hpp>
 #include <dray/error.hpp>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
+
 
 TEST (dray_isosurface_filter, dray_isosurface_filter_analytic)
 {
@@ -132,7 +144,13 @@ TEST (dray_isosurface_filter, dray_isosurface_filter_analytic)
 
 
 TEST (dray_isosurface_filter, dray_isosurface_filter_tg_velx_density)
-{
+{ 
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+  
   using dray::Float;
 
   std::string output_path = prepare_output_dir ();

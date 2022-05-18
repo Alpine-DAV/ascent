@@ -14,6 +14,18 @@
 #include <dray/rendering/slice_plane.hpp>
 #include <dray/utils/appstats.hpp>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
+
 dray::PointLight default_light(dray::Camera &camera)
 {
   dray::Vec<float32,3> look_at = camera.get_look_at();
@@ -65,6 +77,12 @@ void setup_camera_three_slice(dray::Camera &camera)
 
 TEST (dray_slice, dray_slice)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "slice");
@@ -124,6 +142,12 @@ TEST (dray_slice, dray_slice)
 
 TEST (dray_slice, dray_three_slice)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+    
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "three_slice");

@@ -412,15 +412,29 @@ stages:
           ENABLE_PYTHON: ON
           ENABLE_DRAY: ON
           ENABLE_APCOMP: ON
+          ENABLE_MFEM: ON
           ENABLE_VTKH: OFF
-          # ENABLE MFEM logic here CONTROLS BOTH
-          # external DRAY AND MFEM (WIP to straighen this out)
-          ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
           ENABLE_ADIOS2: OFF
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
+
+        ubuntu_21_10_shared_py_cxx11_dray_no_mfem:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_DRAY: ON
+          ENABLE_APCOMP: ON
+          ENABLE_MFEM: OFF
+          ENABLE_VTKH: OFF
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+
 
     container: $[ variables['containerImage'] ]
 

@@ -17,8 +17,26 @@
 #include <dray/rendering/contour.hpp>
 #include <dray/rendering/volume.hpp>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
+
 TEST (dray_multi_render, dray_simple)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "multi_render");

@@ -15,8 +15,24 @@
 #include <dray/rendering/renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
 TEST (dray_isosurface, simple)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "isosurface_simple");
@@ -66,6 +82,12 @@ TEST (dray_isosurface, simple)
 
 TEST (dray_isosurface, complex)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+  
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "isosurface");

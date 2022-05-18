@@ -23,8 +23,26 @@
 #include <fstream>
 #include <stdlib.h>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
+
 TEST (dray_subset, dray_subset_basic)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "taylor_green_2d.cycle_000050.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file = conduit::utils::join_file_path (output_path, "subset");

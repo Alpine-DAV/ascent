@@ -24,10 +24,6 @@ if(ENABLE_SERIAL)
                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                        )
 
-    if(DRAY_ENABLE_STATS)
-        target_compile_definitions(point_location PRIVATE "DRAY_STATS")
-    endif()
-
     ################################################
     # scalar renderer furnace
     ################################################
@@ -36,10 +32,6 @@ if(ENABLE_SERIAL)
                        DEPENDS_ON ${furnace_thirdparty_libs}
                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                        )
-
-    if(DRAY_ENABLE_STATS)
-        target_compile_definitions(scalar_renderer PRIVATE "DRAY_STATS")
-    endif()
 
     configure_file(point_config.yaml ${CMAKE_CURRENT_BINARY_DIR}/point_config.yaml COPYONLY)
 
@@ -52,10 +44,6 @@ if(ENABLE_SERIAL)
                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                        )
 
-    if(DRAY_ENABLE_STATS)
-        target_compile_definitions(surface_intersection PRIVATE "DRAY_STATS")
-    endif()
-
     configure_file(intersection_config.yaml ${CMAKE_CURRENT_BINARY_DIR}/intersection_config.yaml COPYONLY)
 
     ################################################
@@ -66,10 +54,6 @@ if(ENABLE_SERIAL)
                       DEPENDS_ON ${furnace_thirdparty_libs}
                       OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                       )
-
-    if(DRAY_ENABLE_STATS)
-        target_compile_definitions(volume_rendering PRIVATE "DRAY_STATS")
-    endif()
 
     #configure_file(point_config.yaml ${CMAKE_CURRENT_BINARY_DIR}/point_config.yaml COPYONLY)
 
@@ -99,10 +83,6 @@ if(MPI_FOUND)
 
     target_compile_definitions(point_location_mpi PRIVATE "MPI_ENABLED")
 
-    if(DRAY_ENABLE_STATS)
-        target_compile_definitions(point_location_mpi PRIVATE "DRAY_STATS")
-    endif()
-
     ################################################
     # scalar renderer furnace
     ################################################
@@ -113,10 +93,6 @@ if(MPI_FOUND)
                        )
 
     target_compile_definitions(scalar_renderer_mpi PRIVATE "MPI_ENABLED")
-
-    if(ENABLE_STATS)
-        target_compile_definitions(scalar_renderer_mpi PRIVATE "DRAY_STATS")
-    endif()
 
     ################################################
     # surface intersection furnace
@@ -129,10 +105,6 @@ if(MPI_FOUND)
 
     target_compile_definitions(surface_intersection_mpi PRIVATE "MPI_ENABLED")
 
-    if(ENABLE_STATS)
-        target_compile_definitions(surface_intersection_mpi PRIVATE "DRAY_STATS")
-    endif()
-
     ################################################
     # volume intersection furnace
     ################################################
@@ -143,9 +115,5 @@ if(MPI_FOUND)
                        )
 
     target_compile_definitions(volume_rendering_mpi PRIVATE "MPI_ENABLED")
-
-    if(ENABLE_STATS)
-        target_compile_definitions(volume_rendering_mpi PRIVATE "DRAY_STATS")
-    endif()
 
 endif()

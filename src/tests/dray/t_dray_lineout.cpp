@@ -18,9 +18,25 @@
 #include <stdlib.h>
 
 using namespace dray;
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
 
 TEST (dray_scalar_renderer, dray_scalars)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+  
   std::string output_path = prepare_output_dir ();
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "taylor_green.cycle_001860.root";
@@ -46,6 +62,12 @@ TEST (dray_scalar_renderer, dray_scalars)
 
 TEST (dray_locate_2d, dray_locate)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+  
   std::string output_path = prepare_output_dir ();
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "taylor_green_2d.cycle_000050.root";
@@ -70,6 +92,12 @@ TEST (dray_locate_2d, dray_locate)
 
 TEST (dray_locate_2d, dray_lineout_partial_failure)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+  
   std::string output_path = prepare_output_dir ();
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "taylor_green_2d.cycle_000050.root";
@@ -91,6 +119,12 @@ TEST (dray_locate_2d, dray_lineout_partial_failure)
 
 TEST (dray_locate_2d, dray_lineout_failure)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+  
   std::string output_path = prepare_output_dir ();
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "taylor_green_2d.cycle_000050.root";

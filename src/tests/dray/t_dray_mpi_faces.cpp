@@ -18,8 +18,25 @@
 #include <fstream>
 #include <mpi.h>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
 TEST (dray_volume_render, dray_volume_render_multidom)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   MPI_Comm comm = MPI_COMM_WORLD;
   dray::dray::mpi_comm(MPI_Comm_c2f(comm));
 

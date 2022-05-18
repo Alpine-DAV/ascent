@@ -22,8 +22,25 @@
 #include <fstream>
 #include <stdlib.h>
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
 TEST (dray_faces, dray_impeller_faces)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "impeller_p2_000000.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file =
@@ -66,6 +83,12 @@ TEST (dray_faces, dray_impeller_faces)
 
 TEST (dray_faces, dray_triangles)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+  
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "esher_000000.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file =
@@ -108,6 +131,12 @@ TEST (dray_faces, dray_triangles)
 
 TEST (dray_faces, dray_warbly_faces)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "warbly_cube/warbly_cube_000000.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file =

@@ -27,6 +27,17 @@
 
 using namespace dray;
 
+//---------------------------------------------------------------------------//
+bool
+mfem_enabled()
+{
+#ifdef DRAY_MFEM_ENABLED
+    return true;
+#else
+    return false;
+#endif
+}
+
 
 TEST (dray_lines, dray_crop_lines_no_crop)
 {
@@ -91,6 +102,12 @@ TEST (dray_lines, dray_crop_lines_corners)
 
 TEST (dray_lines, dray_world_annotator_lines)
 {
+  if(!mfem_enabled())
+  {
+    std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
+    return;
+  }
+
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "impeller_p2_000000.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file = conduit::utils::join_file_path (output_path, "lines_test");

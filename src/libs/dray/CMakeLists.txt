@@ -4,6 +4,12 @@
 
 # adjust cmake options into proper defs for generate dray_config.h
 
+
+if(MFEM_FOUND)
+    set(DRAY_MFEM_ENABLED TRUE)
+    message(STATUS "DRay MFEM Support Enabled")
+endif()
+
 if(ENABLE_LOGGING)
     set(DRAY_ENABLE_LOGGING TRUE)
     message(STATUS "DRay Logging enabled")
@@ -74,7 +80,6 @@ set(dray_headers dray.hpp
                  vec.hpp
                  warning.hpp
                  io/obj_reader.hpp
-                 io/mfem_reader.hpp
                  io/blueprint_reader.hpp
                  io/blueprint_low_order.hpp
                  import_order_policy.hpp
@@ -208,7 +213,6 @@ set(dray_sources dray.cpp
                  binomial.cpp
 
                  io/obj_reader.cpp
-                 io/mfem_reader.cpp
                  io/blueprint_reader.cpp
                  io/blueprint_low_order.cpp
 
@@ -282,10 +286,12 @@ set(dray_thirdparty_libs
 
 if(MFEM_FOUND)
     list(APPEND dray_thirdparty_libs mfem)
-    list(APPEND dray_headers utils/mfem_utils.hpp
+    list(APPEND dray_headers io/mfem_reader.hpp
+                             utils/mfem_utils.hpp
                              mfem2dray.hpp)
 
-    list(APPEND dray_sources utils/mfem_utils.cpp
+    list(APPEND dray_sources io/mfem_reader.cpp
+                             utils/mfem_utils.cpp
                              mfem2dray.cpp)
 endif()
 
