@@ -67,9 +67,19 @@ include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
 # setup rpath helper
 ASCENT_LINK_RPATH = -Wl,-rpath,$(ASCENT_DIR)/lib $(CONDUIT_LINK_RPATH)
 
+
 # two steps are used b/c there are commas in the linker commands
 # which will undermine parsing of the makefile
-ASCENT_PYTHON_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_PYTHON_LIB_DIR)
+
+# in some cases full path to python lib is used instead of lib dir
+# + lib. For rpath, make sure python lib dir is set otherwise we will
+# get a malformed rpath command and the linker will be unhappy.
+ifeq ($(ASCENT_PYTHON_LIB_DIR),)
+   # not set, do not include config.mk
+else
+   ASCENT_PYTHON_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_PYTHON_LIB_DIR)
+endif
+
 ASCENT_OCCA_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_OCCA_DIR)/lib
 ASCENT_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_UMPIRE_DIR)/lib
 ASCENT_VTKH_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_VTKH_DIR)/lib
