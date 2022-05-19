@@ -50,7 +50,7 @@ ifeq ($(ASCENT_DRAY_ENABLED),"TRUE")
     # don't set, we will use built-in dray
 else
     ASCENT_DRAY_DIR      = @DRAY_DIR@
-endif()
+endif
 
 ASCENT_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
 
