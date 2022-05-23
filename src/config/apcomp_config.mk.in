@@ -33,6 +33,6 @@ APCOMP_MPI_LIB_FLAGS = -L $(APCOMP_DIR)/lib \
                        -lapcomp_mpi \
                        $(APCOMP_OPENMP_LINK_FLAGS)
 
-APCOMP_LINK_RPATH = -Wl,-rpath,$(APCOMP_DIR))/lib
+APCOMP_LINK_RPATH = -Wl,-rpath,$(APCOMP_DIR)/lib
 
 

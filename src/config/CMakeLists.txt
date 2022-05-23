@@ -44,11 +44,60 @@ endif()
 
 # builtin libs vars for config.mk gen
 if(ENABLE_APCOMP)
-    set(ASCENT_APCOMP_ENABLED "TRUE")
+    set(ASCENT_APCOMP_ENABLED TRUE)
 endif()
 
 if(ENABLE_DRAY)
-    set(ASCENT_DRAY_ENABLED "TRUE")
+    set(ASCENT_DRAY_ENABLED TRUE)
+endif()
+
+# When disabled, TPL dirs may be not be empty, the may be set to INGORE, etc
+# While CMake knows to ignore these type of vals make does not,
+# so we regularize with explicit vars
+
+if(VTKH_DIR)
+    set(ASCENT_VTKH_DIR ${VTKH_DIR} )
+endif()
+
+if(ASCENT_VTKM_DIR)
+    set(ASCENT_VTKM_DIR ${VTKM_DIR} )
+    set(ASCENT_VTKM_VERSION  ${VTKm_VERSION@} )
+endif()
+
+if(MFEM_DIR)
+    set(ASCENT_MFEM_DIR ${MFEM_DIR} )
+endif()
+
+if(DRAY_DIR)
+    set(ASCENT_DRAY_DIR ${DRAY_DIR} )
+endif()
+
+if(OCCA_DIR)
+    set(ASCENT_OCCA_DIR ${OCCA_DIR} )
+endif()
+
+if(UMPIRE_DIR)
+    set(ASCENT_UMPIRE_DIR ${UMPIRE_DIR} )
+endif()
+
+if(FIDES_DIR_ORIG)
+    set(ASCENT_FIDES_DIR ${FIDES_DIR_ORIG} )
+endif()
+
+if(ADIOS2_DIR_ORIG)
+    set(ASCENT_ADIOS2_DIR ${ADIOS2_DIR_ORIG} )
+endif()
+
+if(BABELFLOW_DIR_ORIG)
+    set(ASCENT_BABELFLOW_DIR ${BABELFLOW_DIR_ORIG} )
+endif()
+
+if(PMT_DIR_ORIG)
+    set(ASCENT_PMT_DIR ${PMT_DIR_ORIG} )
+endif()
+
+if(GENTEN_DIR_ORIG)
+    set(ASCENT_GENTEN_DIR ${GENTEN_DIR_ORIG} )
 endif()
 
 

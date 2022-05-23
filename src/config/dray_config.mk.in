@@ -28,7 +28,7 @@ DRAY_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 
 DRAY_CONDUIT_DIR = @CONDUIT_DIR@
 
-DRAY_MFEM_DIR = @MFEM_DIR@
+DRAY_MFEM_DIR = @ASCENT_MFEM_DIR@
 
 DRAY_RAJA_DIR = @RAJA_DIR@
 
@@ -94,10 +94,19 @@ DRAY_APCOMP_MPI_LIB_FLAGS=-L $(DRAY_APCOMP_DIR)/lib \
 ##########
 # MFEM
 ##########
-include $(DRAY_MFEM_DIR)/share/mfem/config.mk
+
+##########
+# MFEM
+##########
+# Include make vars from the mfem config.mk file
+ifeq ($(DRAY_MFEM_DIR),)
+   # not set, do not include config.mk
+else
+   include $(DRAY_MFEM_DIR)/share/mfem/config.mk
+endif
 
 # MFEM isn't in the interface, so we don't need include flags
-DRAY_MFEM_LIB_FLAGS = $(if $(ASCENT_MFEM_DIR),-L $(ASCENT_MFEM_DIR)/lib -lmfem $(MFEM_EXT_LIBS))
+DRAY_MFEM_LIB_FLAGS = $(if $(DRAY_MFEM_DIR),-L $(DRAY_MFEM_DIR)/lib -lmfem $(MFEM_EXT_LIBS))
 
 # if we build mfem w/ mpi support (which we do to support laghos) serial static builds need to
 # link mpi, or fail due to unresolved symbols
