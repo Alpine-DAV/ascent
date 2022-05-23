@@ -8,7 +8,7 @@ endif()
 
 message(STATUS "Looking for Umpire in: ${UMPIRE_DIR}")
 
-
+set(UMPIRE_ORIG_DIR ${UMPIRE_DIR})
 find_package(umpire REQUIRED
              NO_DEFAULT_PATH
              PATHS ${UMPIRE_DIR}/share/umpire/cmake)

@@ -76,8 +76,12 @@ if(OCCA_DIR)
     set(ASCENT_OCCA_DIR ${OCCA_DIR} )
 endif()
 
-if(UMPIRE_DIR)
-    set(ASCENT_UMPIRE_DIR ${UMPIRE_DIR} )
+if(RAJA_ORIG_DIR)
+    set(ASCENT_RAJA_DIR ${RAJA_ORIG_DIR} )
+endif()
+
+if(UMPIRE_ORIG_DIR)
+    set(ASCENT_UMPIRE_DIR ${UMPIRE_ORIG_DIR} )
 endif()
 
 if(FIDES_DIR_ORIG)

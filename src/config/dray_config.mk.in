@@ -19,7 +19,6 @@
 # For use in another Makefile build system
 ############################################################################
 
-
 DRAY_DIR = @ASCENT_INSTALL_PREFIX@
 
 DRAY_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
@@ -27,14 +26,10 @@ DRAY_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
 DRAY_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 
 DRAY_CONDUIT_DIR = @CONDUIT_DIR@
-
-DRAY_MFEM_DIR = @ASCENT_MFEM_DIR@
-
-DRAY_RAJA_DIR = @RAJA_DIR@
-
-DRAY_UMPIRE_DIR = @UMPIRE_DIR@
-
-DRAY_APCOMP_DIR = @ASCENT_INSTALL_PREFIX@
+DRAY_MFEM_DIR    = @ASCENT_MFEM_DIR@
+DRAY_RAJA_DIR    = @ASCENT_RAJA_DIR@
+DRAY_UMPIRE_DIR  = @ASCENT_UMPIRE_DIR@
+DRAY_APCOMP_DIR  = @ASCENT_INSTALL_PREFIX@
 
 # include vars from conduit_config.mk
 include $(DRAY_CONDUIT_DIR)/share/conduit/conduit_config.mk

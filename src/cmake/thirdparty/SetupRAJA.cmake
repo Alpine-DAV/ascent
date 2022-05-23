@@ -7,7 +7,7 @@ if (NOT RAJA_DIR)
   message(FATAL_ERROR "Must specify 'RAJA_DIR'")
 endif()
 
-set(RAJA_BASE_DIR ${RAJA_DIR})
+set(RAJA_DIR_ORIG ${RAJA_DIR})
 find_dependency(RAJA REQUIRED
                 NO_DEFAULT_PATH
                 PATHS ${RAJA_DIR}/share/raja/cmake)
