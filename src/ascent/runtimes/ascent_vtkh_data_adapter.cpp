@@ -1893,16 +1893,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       vtkm::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
       using Structured2D = vtkm::cont::CellSetStructured<2>;
       using Structured3D = vtkm::cont::CellSetStructured<3>;
-      if(dyn_cells.CanConvert<Structured2D()>())
+      if(dyn_cells.CanConvert<Structured2D>())
       {
-        Structured2D cells = dyn_cells.Cast<Structured2D>();
+        Structured2D cells = dyn_cells.AsCellSet<Structured2D>();
         vtkm::Id2 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
       }
-      else if(dyn_cells.CanConvert<Structured3D()>())
+      else if(dyn_cells.CanConvert<Structured3D>())
       {
-        Structured3D cells = dyn_cells.Cast<Structured3D>();
+        Structured3D cells = dyn_cells.AsCellSet<Structured3D>();
         vtkm::Id3 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
@@ -1923,9 +1923,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       using SingleType = vtkm::cont::CellSetSingleType<>;
       using MixedType = vtkm::cont::CellSetExplicit<>;
 
-      if(dyn_cells.CanConvert<SingleType()>())
+      if(dyn_cells.CanConvert<SingleType>())
       {
-        SingleType cells = dyn_cells.Cast<SingleType>();
+        SingleType cells = dyn_cells.AsCellSet<SingleType>();
         vtkm::UInt8 shape_id = cells.GetCellShape(0);
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
@@ -1949,7 +1949,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       {
         // If we are here, the we know that the cell set is explicit,
         // but only a single cell shape
-        auto cells = dyn_cells.Cast<vtkm::cont::CellSetExplicit<>>();
+        auto cells = dyn_cells.AsCellSet<vtkm::cont::CellSetExplicit<>>();
         auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagCell(),
                                            vtkm::TopologyElementTagPoint());
 
@@ -1977,7 +1977,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       {
         ASCENT_ERROR("Mixed explicit types not implemented");
         data_set.PrintSummary(std::cout);
-        MixedType cells = dyn_cells.Cast<MixedType>();
+        MixedType cells = dyn_cells.AsCellSet<MixedType>();
       }
 
     }
