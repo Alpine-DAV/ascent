@@ -4,7 +4,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
-set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh conduit conduit_relay)
+set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh conduit::conduit)
 
 set(rover_headers
     domain.hpp
@@ -102,7 +102,12 @@ install(TARGETS rover
 
 if(MPI_FOUND)
 
-  set(rover_mpi_thirdparty_deps mpi vtkh_lodepng vtkm vtkh_mpi conduit conduit_relay)
+  set(rover_mpi_thirdparty_deps ${ascent_blt_mpi_deps}
+                                vtkh_lodepng
+                                vtkm
+                                vtkh_mpi
+                                conduit::conduit
+                                conduit::conduit_mpi)
 
   blt_add_library(
                   NAME rover_mpi

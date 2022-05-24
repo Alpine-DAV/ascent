@@ -201,8 +201,18 @@ if(ASCENT_MFEM_MPI_ENABLED AND NOT MPI_FOUND)
 endif()
 
 ###############################################################################
+# Find OpenMP if ascent is using it and it hasn't been found yet
+###############################################################################
+if(ASCENT_OPENMP_ENABLED AND OPENMP_FOUND)
+  find_package(OpenMP REQUIRED)
+endif()
+
+###############################################################################
 # OCCA + CUDA will require targets from CUDAToolkit
 ###############################################################################
 if(ASCENT_CUDA_ENABLED AND ASCENT_OCCA_ENABLED)
   find_package(CUDAToolkit REQUIRED)
 endif()
+
+
+

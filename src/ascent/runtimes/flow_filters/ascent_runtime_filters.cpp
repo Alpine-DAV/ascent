@@ -21,6 +21,7 @@
 #include <flow_workspace.hpp>
 
 #include <ascent_runtime_relay_filters.hpp>
+#include <ascent_runtime_htg_filters.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
 #include <ascent_runtime_trigger_filters.hpp>
 #include <ascent_runtime_query_filters.hpp>
@@ -86,6 +87,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BlueprintFlatten>("extracts","flatten");
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
+    AscentRuntime::register_filter_type<HTGIOSave>("extracts","htg");
 
 #if defined(ASCENT_GENTEN_ENABLED)
     AscentRuntime::register_filter_type<Learn>("extracts","learn");
