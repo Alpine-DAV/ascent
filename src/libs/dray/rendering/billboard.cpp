@@ -272,6 +272,7 @@ struct DeviceBillboard
     return lerp(x0, x1, dy);
   }
 
+  DRAY_EXEC
   float32 alpha(const Ray &ray, const RayHit &hit) const
   {
     if(hit.m_hit_idx == -1)
