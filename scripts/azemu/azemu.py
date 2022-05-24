@@ -172,7 +172,11 @@ def proc_matrix_entry(steps,
     ctx.print_esc(tag = "azure global scope vars", txt = config["azure_vars"])
     ctx.print_esc("matrix env vars")
     for k,v in env_vars.items():
-        ctx.print("export {0}={1}".format(k,v))
+        if v:
+            v_shell = "ON"
+        else:
+            v_shell = "OFF"
+        ctx.print("export {0}={1}".format(k,v_shell))
     ctx.print("")
     proc_steps(steps, config, ctx)
 
