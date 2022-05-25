@@ -138,6 +138,7 @@ Ascent Documentation
    :hidden:
 
    Releases
+   Citing
    Publications
    Licenses
 

@@ -11,13 +11,11 @@ Publications and Presentations
 Publications
 ------------
 
+- `Ascent: A Flyweight In Situ Library for Exascale Simulations <https://doi.org/10.1007/978-3-030-81627-8_12>`_  In: Childs, H., Bennett, J.C., Garth, C. (eds) In Situ Visualization for Computational Science. Mathematics and Visualization. Springer, Cham.
+
 - `Automated In Situ Computational Steering Using Ascent’s Capable Yes-No Machine <https://doi.org/10.1145/3490138.3490144>`_ Presented at the `ISAV 2021 Workshop <https://dav.lbl.gov/events/ISAV2021/>`_, held in conjunction with SC 21, on November 15th 2021, Virtual Event.
 
 - `Trigger Happy: Assessing the Viability of Trigger-Based In Situ Analysis <https://doi.org/10.1109/LDAV53230.2021.00010>`_ Presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2021 <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 25rd 2021 Virtual Event.
-
-
-- `Trigger Happy: Assessing the Viability of Trigger-Based In Situ Analysis <https://doi.org/10.1109/LDAV53230.2021.00010>`_ Presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2021 <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 25rd 2021 Virtual Event.
-
 
 - `JIT’s Complicated: A Comprehensive System For Derived Field Generation <https://doi.org/10.1145/3426462.3426467>`_  Presented at the `ISAV 2020 Workshop <https://dav.lbl.gov/events/ISAV2020/>`_, held in conjunction with SC 20, on November 12th 2020, Virtual Event.
 
@@ -43,6 +41,8 @@ Publications
 Tutorials
 -------------
 
+- `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany
+- ECP 2022 Annual Meeting - May 2022, Virtual
 - `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
 - ECP 2021 Annual Meeting - April 2021, Virtual
 - `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
@@ -67,3 +67,9 @@ Presentations
 .. note::
 
   This list also includes work related to Strawman, Ascent's predecessor.
+
+Acknowledgements
+=================
+
+This research was supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of the U.S. Department of Energy Office of Science and the National Nuclear Security Administration. This work performed under the auspices of the U.S. Department of Energy by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
+
