@@ -115,6 +115,8 @@ struct DeviceRasterBuffer
   {
   }
 
+
+  DRAY_EXEC
   void write_pixel(const int x,
                    const int y,
                    const Vec<float32,4> &color,
@@ -169,6 +171,11 @@ public:
   RasterBuffer(Framebuffer &fb)
     : m_fb(fb)
   {
+    init();
+  }
+
+  void init()
+  {
     // copy the current state of the framebuffer into the
     // packed int64 buffer
     const int size = m_fb.depths().size();
@@ -185,6 +192,7 @@ public:
       int_ptr[i] = packed.raw;
     });
   }
+
 
   // write the altered contents back
   // into the original framebuffer

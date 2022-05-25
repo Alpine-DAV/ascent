@@ -64,6 +64,7 @@ public:
   // all three rendering methods use linear interpolation to determine the depth of a given pixel
 };
 
+DRAY_EXEC
 void crop_line_to_bounds(
 	Vec<int32, 2> &p1, 
 	Vec<int32, 2> &p2, 

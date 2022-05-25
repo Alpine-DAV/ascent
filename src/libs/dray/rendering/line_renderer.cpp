@@ -16,6 +16,7 @@ namespace dray
 {
 
 // returns true if the line cross through the view
+DRAY_EXEC
 bool crop_matt(Vec<float32, 3> &p1, Vec<float32, 3> &p2)
 {
   // this is clipping line segments in 3d space after its be transformed
@@ -54,6 +55,7 @@ bool crop_matt(Vec<float32, 3> &p1, Vec<float32, 3> &p2)
   return true;
 }
 
+DRAY_EXEC
 void crop_line_to_bounds(Vec<int32, 2> &p1, Vec<int32, 2> &p2, int32 width, int32 height)
 {
   // booleans to record if p1 and p2 are within bounds or not
@@ -124,10 +126,14 @@ void crop_line_to_bounds(Vec<int32, 2> &p1, Vec<int32, 2> &p2, int32 width, int3
   {
     if (p1_ok || p2_ok)
     {
+      // CANT CALL THIS ON DEVICE,       
+      // TODO SOME SORT OF DEVICE ABORT?
+      /*
       fprintf(stderr, "line cropping has determined that the current line "
                       "never crosses the screen, yet at least one of the "
                       "endpoints is simultaneously on the screen, which is a contradiction.\n");
       exit(1);
+      */
     }
     // then we can return the following so that while loops in render will complete quickly
     p1[0] = -1;

@@ -81,6 +81,7 @@ float32 blerp(const float32 s,
   return lerp(x0, x1, dy);
 }
 
+DRAY_EXEC
 float32 sample_texture(const int32 &x,
                        const int32 &y,
                        const AABB<2> &pbox,
