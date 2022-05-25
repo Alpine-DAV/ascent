@@ -836,6 +836,8 @@ stages:
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            # always skip external dray for these tests
            export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"
+           # always skip occa for these tests
+           export CMAKE_OPTS="${CMAKE_OPTS} -DOCCA_DIR=IGNORE"
 
            # always include raja and umpire
            export RAJA_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/raja*/`
