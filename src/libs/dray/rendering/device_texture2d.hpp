@@ -40,6 +40,8 @@ struct DeviceTexture2D
     st_min[1] = clamp(int32(t*m_height), 0, m_height - 1);
     st_max[0] = clamp(st_min[0]+1, 0, m_width - 1);
     st_max[1] = clamp(st_min[1]+1, 0, m_height - 1);
+    
+    // cant use this on device :-)
     //std::cout<<"Coords "<<s<<" "<<t<<" box "<<st_min<<"-"<<st_max<<"\n";
 
     Vec<T,4> vals;
