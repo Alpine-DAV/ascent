@@ -101,6 +101,13 @@ ASCENT_LINK_RPATH += $(if $(ASCENT_GENTEN_DIR), $(ASCENT_GENTEN_RPATH_FLAGS_VALU
 # Linking Flags
 #################
 
+#### CUDA
+ifeq ($(ASCENT_CUDA_LIBS),)
+   # not set, do not include config.mk
+else
+    ASCENT_CUDA_LIB_FLAGS = $(ASCENT_CUDA_LIBS)
+endif
+
 ##########
 # Conduit
 ##########
@@ -161,12 +168,12 @@ else
                             -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
                             -lvtkmdiympi_nompi
 
+# vtk-m cuda extras
 ifeq ($(ASCENT_CUDA_LIBS),)
    # not set, do not include config.mk
 else
     ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
     ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
-    ASCENT_CUDA_LIB_FLAGS = $(ASCENT_CUDA_LIBS)
 endif
 
 endif

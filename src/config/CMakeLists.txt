@@ -59,9 +59,9 @@ if(VTKH_DIR)
     set(ASCENT_VTKH_DIR ${VTKH_DIR} )
 endif()
 
-if(ASCENT_VTKM_DIR)
+if(VTKM_DIR)
     set(ASCENT_VTKM_DIR ${VTKM_DIR} )
-    set(ASCENT_VTKM_VERSION  ${VTKm_VERSION@} )
+    set(ASCENT_VTKM_VERSION  ${VTKm_VERSION} )
 endif()
 
 if(MFEM_DIR)
