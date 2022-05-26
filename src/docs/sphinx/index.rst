@@ -10,7 +10,7 @@
 Ascent
 ========
 
-A many-core capable flyweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
+`Ascent <http://github.com/alpine-dav/ascent>`_ is a many-core capable flyweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
 
 
 .. figure:: images/ascent_examples_small.png
