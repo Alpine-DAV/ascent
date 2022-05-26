@@ -38,7 +38,7 @@ option(ENABLE_DOCS        "Build Documentation"       ON)
 
 # DRay Specific Options
 option(DRAY_ENABLE_STATS          "Enable stats"         ON)
-option(DRAY_USE_DOUBLE_PRECISION  "Use double precision" OFF)
+option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
 
 # Cuda Specific Options
 option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
