@@ -419,7 +419,7 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
-        ubuntu_21_10_shared_py_cxx11_dray:
+        ubuntu_21_10_shared_py_cxx11_dray_double:
           containerImage: ${{ variables.ubuntu_21_10_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
