@@ -27,9 +27,13 @@ option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+# builtin libs: dray, apcomp, vtkh
+
 option(ENABLE_DRAY        "Build Devil Ray Support"   OFF)
 # Note: ENABLE_DRAY reqs ENABLE_APCOMP
 option(ENABLE_APCOMP      "Build AP Compositor"       OFF)
+option(ENABLE_VTKH        "Build VTK-h "              OFF)
+
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
@@ -39,6 +43,10 @@ option(ENABLE_DOCS        "Build Documentation"       ON)
 # DRay Specific Options
 option(DRAY_ENABLE_STATS          "Enable stats"         ON)
 option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
+
+# VTK-h Sepcific Options 
+
+option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
 
 # Cuda Specific Options
 option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
