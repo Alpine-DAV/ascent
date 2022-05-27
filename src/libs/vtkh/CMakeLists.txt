@@ -161,7 +161,7 @@ if (ENABLE_SERIAL)
   install(TARGETS vtkh EXPORT ascent)
 endif()
 
-if (ENABLE_MPI)
+if (MPI_FOUND)
   add_library(vtkh_mpi INTERFACE)
   target_link_libraries(vtkh_mpi INTERFACE
                         vtkh_core_mpi
