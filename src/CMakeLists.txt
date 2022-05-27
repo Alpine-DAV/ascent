@@ -153,7 +153,7 @@ add_subdirectory(libs)
 
 add_subdirectory(flow)
 
-if(VTKM_FOUND)
+if(VTKH_FOUND or ENABLE_VTKH)
   add_subdirectory(rover)
 endif()
 
