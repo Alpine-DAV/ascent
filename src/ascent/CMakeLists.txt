@@ -386,7 +386,6 @@ if (ENABLE_SERIAL)
         vtkh_compositing
         vtkh_filters
         vtkh_core
-        vtkh_lodepng
         vtkh_utils
         vtkmdiympi_nompi
         vtkm_io
