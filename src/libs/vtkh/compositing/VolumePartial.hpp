@@ -106,7 +106,7 @@ struct VolumePartial
     // Gather the unique pixels into the output
     //
     const int total_pixels = static_cast<int>(partials.size());
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < total_pixels; ++i)

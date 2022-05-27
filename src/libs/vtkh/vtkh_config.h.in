@@ -1,6 +1,16 @@
+// Copyright 2019 Lawrence Livermore National Security, LLC and other
+// Devil Ray Developers. See the top-level COPYRIGHT file for details.
+//
+// SPDX-License-Identifier: (BSD-3-Clause)
+
 #ifndef VTK_H_CONFIG_HPP
 #define VTK_H_CONFIG_HPP
 
-#cmakedefine VTK_H_ENABLE_FILTER_CONTOUR_TREE "${VTKH_ENABLE_FILTER_CONTOUR_TREE}"
+// config time defines
+#cmakedefine VTKH_ENABLE_FILTER_CONTOUR_TREE
+#cmakedefine VTKH_OPENMP_ENABLED
+#cmakedefine VTKH_CUDA_ENABLED
+#cmakedefine VTKH_KOKKOS_ENABLED
+#cmakedefine VTKH_ENABLE_LOGGING
 
 #endif

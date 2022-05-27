@@ -1,6 +1,6 @@
 #include <vtkh/utils/Mutex.hpp>
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
 #include <omp.h>
 #else
 #include <thread>
@@ -11,7 +11,7 @@ namespace vtkh
 {
 struct Mutex::InternalsType
 {
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
   omp_lock_t lock;
 #else
   std::mutex lock;
@@ -21,7 +21,7 @@ struct Mutex::InternalsType
 //Mutex class for both openmp and std::mutex
 
 //openMP version
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
 Mutex::Mutex()
   : m_internals(new InternalsType)
 {

@@ -163,7 +163,7 @@ void vtkm_to_partials(vtkm::rendering::PartialVector32 &vtkm_partials,
     auto colors = vtkm_partials[i].Buffer.Buffer.ReadPortal();
 
     const int offset = offsets[i];
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int p = 0; p < size; ++p)
@@ -342,7 +342,7 @@ void partials_to_canvas(std::vector<VolumePartial<float>> &partials,
   auto colors = canvas.GetColorBuffer().WritePortal();
   auto depths = canvas.GetDepthBuffer().WritePortal();
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int p = 0; p < size; ++p)

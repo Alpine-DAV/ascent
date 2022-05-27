@@ -115,7 +115,7 @@ struct VTKH_API PayloadImage
       m_depths.resize(s_dx * s_dy);
 
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
       for(int y = start_y; y < end_y; ++y)
@@ -152,7 +152,7 @@ struct VTKH_API PayloadImage
       const int start_x = m_bounds.X.Min - image.m_bounds.X.Min;
       const int start_y = m_bounds.Y.Min - image.m_bounds.Y.Min;
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
       for(int y = 0; y < s_dy; ++y)

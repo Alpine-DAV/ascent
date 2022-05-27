@@ -89,7 +89,7 @@ struct AbsorptionPartial
     const int size = static_cast<int>(partials.size());
     AbsorptionPartial<FloatType> bg;
     bg.m_bins = background;
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)

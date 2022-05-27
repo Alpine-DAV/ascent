@@ -21,7 +21,7 @@ public:
     assert(front.m_bounds.Y.Max == back.m_bounds.Y.Max);
     const int size = static_cast<int>(front.m_pixels.size() / 4);
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -125,7 +125,7 @@ void CombineImages(const std::vector<vtkh::Image> &images, std::vector<Pixel> &p
 
     const int image_size = images[i].GetNumberOfPixels();
     const int offset = i * image_size;
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int j = 0; j < image_size; ++j)
@@ -148,7 +148,7 @@ void ZBufferBlend(std::vector<vtkh::Image> &images)
   const int num_images = static_cast<int>(images.size());
   std::vector<Pixel> pixels;
   CombineImages(images, pixels);
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
   for(int i = 0; i < image_pixels; ++i)
@@ -166,7 +166,7 @@ void ZBufferBlend(std::vector<vtkh::Image> &images)
   }
 
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
   for(int i = 0; i < image_pixels; ++i)

@@ -37,8 +37,8 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
                width*4);
     }
  
-    vtkh::LodePNGState state;
-    vtkh::lodepng_state_init(&state);
+    lpng::LodePNGState state;
+    lpng::lodepng_state_init(&state);
     // use less aggressive compression
     state.encoder.zlibsettings.btype = 2;
     state.encoder.zlibsettings.use_lz77 = 0;
@@ -71,7 +71,7 @@ PNGEncoder::Encode(const float *rgba_in,
 
     for(int x = 0; x < width; ++x)
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
         for (int y = 0; y < height; ++y)
@@ -84,8 +84,8 @@ PNGEncoder::Encode(const float *rgba_in,
             rgba_flip[outOffset + 3] = (unsigned char)(rgba_in[inOffset + 3] * 255.f);
         }
 
-    vtkh::LodePNGState state;
-    vtkh::lodepng_state_init(&state);
+    lpng::LodePNGState state;
+    lpng::lodepng_state_init(&state);
     // use less aggressive compression
     state.encoder.zlibsettings.btype = 2;
     state.encoder.zlibsettings.use_lz77 = 0;
@@ -123,8 +123,8 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
                width*4);
     }
  
-    vtkh::LodePNGState state;
-    vtkh::lodepng_state_init(&state);
+    lpng::LodePNGState state;
+    lpng::lodepng_state_init(&state);
     // use less aggressive compression
     state.encoder.zlibsettings.btype = 2;
     state.encoder.zlibsettings.use_lz77 = 0;
@@ -135,12 +135,12 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
     }
     if(comments.size() > 1)
     {
-        vtkh::lodepng_info_init(&state.info_png);
+        lpng::lodepng_info_init(&state.info_png);
         // Comments are in pairs with a key and a value, using
         // comments.size()-1 ensures that we don't use the last
         // comment if the length of the vector isn't a multiple of 2.
         for (int i = 0; i < comments.size()-1; i += 2)
-            vtkh::lodepng_add_text(&state.info_png, comments[i].c_str(),
+            lpng::lodepng_add_text(&state.info_png, comments[i].c_str(),
                                                     comments[i+1].c_str());
     }
 
@@ -173,7 +173,7 @@ PNGEncoder::Encode(const float *rgba_in,
 
     for(int x = 0; x < width; ++x)
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
         for (int y = 0; y < height; ++y)
@@ -186,8 +186,8 @@ PNGEncoder::Encode(const float *rgba_in,
             rgba_flip[outOffset + 3] = (unsigned char)(rgba_in[inOffset + 3] * 255.f);
         }
 
-    vtkh::LodePNGState state;
-    vtkh::lodepng_state_init(&state);
+    lpng::LodePNGState state;
+    lpng::lodepng_state_init(&state);
     // use less aggressive compression
     state.encoder.zlibsettings.btype = 2;
     state.encoder.zlibsettings.use_lz77 = 0;
@@ -203,7 +203,7 @@ PNGEncoder::Encode(const float *rgba_in,
         // comments.size()-1 ensures that we don't use the last
         // comment if the length of the vector isn't a multiple of 2.
         for (int i = 0; i < comments.size()-1; i += 2)
-            vtkh::lodepng_add_text(&state.info_png, comments[i].c_str(),
+            lpng::lodepng_add_text(&state.info_png, comments[i].c_str(),
                                                     comments[i+1].c_str());
     }
 
@@ -232,9 +232,9 @@ PNGEncoder::Save(const std::string &filename)
         return;
     }
 
-    unsigned error = lodepng_save_file(m_buffer,
-                                       m_buffer_size,
-                                       filename.c_str());
+    unsigned error = lpng::lodepng_save_file(m_buffer,
+                                             m_buffer_size,
+                                             filename.c_str());
     if(error)
     {
         std::cerr<<"Error saving PNG buffer to file: " << filename<<"\n";

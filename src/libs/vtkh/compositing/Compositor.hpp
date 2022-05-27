@@ -56,7 +56,7 @@ public:
     {
         unsigned char *ubytes = new unsigned char[size];
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
         for(int i = 0; i < size; ++i)

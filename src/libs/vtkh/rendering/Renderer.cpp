@@ -257,7 +257,7 @@ Renderer::ImageToCanvas(Image &image, vtkm::rendering::Canvas &canvas, bool get_
   const int color_size = size * 4;
   float* color_buffer = &GetVTKMPointer(canvas.GetColorBuffer())[0][0];
   float one_over_255 = 1.f / 255.f;
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < color_size; ++i)

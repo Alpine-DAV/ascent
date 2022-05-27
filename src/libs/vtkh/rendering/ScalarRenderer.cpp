@@ -345,7 +345,7 @@ PayloadImage * ScalarRenderer::Convert(Result &result)
     float* buffer = GetVTKMPointer(scalar);
     buffers.push_back(buffer);
   }
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
   for(size_t x = 0; x < size; ++x)

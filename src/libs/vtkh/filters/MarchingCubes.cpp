@@ -1,7 +1,7 @@
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/Error.hpp>
 
-#ifdef VTK_H_ENABLE_FILTER_CONTOUR_TREE
+#ifdef VTKH_ENABLE_FILTER_CONTOUR_TREE
 #include <vtkh/filters/ContourTree.hpp>
 #endif
 
@@ -77,7 +77,7 @@ void MarchingCubes::PreExecute()
   {
     if(m_use_contour_tree)
     {
-#ifdef VTK_H_ENABLE_FILTER_CONTOUR_TREE
+#ifdef VTKH_ENABLE_FILTER_CONTOUR_TREE
       // Run contour tree every time.
       vtkh::ContourTree contour_tree;
       contour_tree.SetInput(this->m_input);

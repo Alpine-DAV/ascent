@@ -93,7 +93,7 @@ struct VTKH_API Image
       m_pixels.resize(size * 4);
       m_depths.resize(size);
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
       #pragma omp parallel for
 #endif
       for(int i = 0; i < size; ++i)
@@ -154,7 +154,7 @@ struct VTKH_API Image
         bg_color[i] = static_cast<unsigned char>(color[i] * 255.f);
       }
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
       #pragma omp parallel for
 #endif
       for(int i = 0; i < size; ++i)
@@ -199,7 +199,7 @@ struct VTKH_API Image
 
 
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
       for(int y = start_y; y < end_y; ++y)
@@ -262,7 +262,7 @@ struct VTKH_API Image
       const int start_x = m_bounds.X.Min - image.m_bounds.X.Min;
       const int start_y = m_bounds.Y.Min - image.m_bounds.Y.Min;
 
-#ifdef VTKH_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
       for(int y = 0; y < s_dy; ++y)

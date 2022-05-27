@@ -18,7 +18,7 @@
 if(ENABLE_PYTHON)
     include(cmake/thirdparty/SetupPython.cmake)
     message(STATUS "Using Python Include: ${PYTHON_INCLUDE_DIRS}")
-    include_directories(${PYTHON_INCLUDE_DIRS})aa
+    include_directories(${PYTHON_INCLUDE_DIRS})
     # if we don't find python, throw a fatal error
     if(NOT PYTHON_FOUND)
         message(FATAL_ERROR "ENABLE_PYTHON is true, but Python wasn't found.")
