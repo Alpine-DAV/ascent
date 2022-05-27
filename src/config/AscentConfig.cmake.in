@@ -38,6 +38,7 @@ if(NOT ASCENT_FOUND)
 
     # advertise if vtk-h support is enabled
     set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
+
     set(ASCENT_VTKH_DIR "@VTKH_DIR@")
     set(ASCENT_VTKM_DIR "@VTKM_DIR@")
 
