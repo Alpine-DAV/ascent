@@ -30,7 +30,6 @@ endif()
 ################################
 include(cmake/thirdparty/SetupConduit.cmake)
 
-
 ################################################################
 ################################################################
 #
@@ -39,6 +38,19 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 
+################################
+# Umpire
+################################
+if(UMPIRE_DIR) # optional for now
+    include(cmake/thirdparty/SetupUmpire.cmake)
+endif()
+
+################################
+# RAJA
+################################
+if(RAJA_DIR)  # optional for now
+    include(cmake/thirdparty/SetupRAJA.cmake)
+endif()
 
 ################################
 # VTKm and supporting libs
@@ -54,7 +66,6 @@ if(VTKM_DIR)
     ################################
     include(cmake/thirdparty/SetupVTKh.cmake)
 endif()
-
 
 #
 # Note: HDF5 is fully handled by importing conduit

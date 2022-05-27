@@ -1,4 +1,4 @@
 name: ascent
 repo_url:  https://github.com/Alpine-DAV/ascent.git
-repo_branch: task/2021_07_update_uberenv
+repo_branch: task/2022_05_amalgamate_dray
 default_container:  alpinedav/ascent-ci:ubuntu-18-devel

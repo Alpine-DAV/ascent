@@ -26,6 +26,12 @@ if(ENABLE_APCOMP)
     add_subdirectory("apcomp")
 endif()
 
+# add dray tests
+if(ENABLE_DRAY)
+    add_subdirectory("dray")
+endif()
+
+
 # add flow tests
 add_subdirectory("flow")
 

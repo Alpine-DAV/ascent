@@ -9,3 +9,9 @@ if(ENABLE_APCOMP)
     add_subdirectory(apcomp)
 endif()
 
+################################
+# Add dray
+################################
+if(ENABLE_DRAY)
+    add_subdirectory(dray)
+endif()

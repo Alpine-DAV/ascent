@@ -27,21 +27,22 @@ ASCENT_DIR = @ASCENT_INSTALL_PREFIX@
 ASCENT_CONDUIT_DIR = @CONDUIT_DIR@
 
 # optional built in libs
-ASCENT_APCOMP_ENABLED = @ENABLE_APCOMP@
+ASCENT_APCOMP_ENABLED = @ASCENT_APCOMP_ENABLED@
+ASCENT_DRAY_ENABLED   = @ASCENT_DRAY_ENABLED@
 
 # thirdparty libs
-ASCENT_VTKH_DIR      = @VTKH_DIR@
-ASCENT_VTKM_DIR      = @VTKM_DIR@
-ASCENT_VTKM_VERSION  = @VTKm_VERSION@
-ASCENT_MFEM_DIR      = @MFEM_DIR@
-ASCENT_DRAY_DIR      = @DRAY_DIR@
-ASCENT_OCCA_DIR      = @OCCA_DIR@
-ASCENT_UMPIRE_DIR    = @UMPIRE_DIR@
-ASCENT_FIDES_DIR     = @FIDES_DIR_ORIG@
-ASCENT_ADIOS2_DIR    = @ADIOS2_DIR_ORIG@
-ASCENT_BABELFLOW_DIR = @BABELFLOW_DIR_ORIG@
-ASCENT_PMT_DIR       = @PMT_DIR_ORIG@
-ASCENT_GENTEN_DIR    = @GENTEN_DIR_ORIG@
+ASCENT_VTKH_DIR      = @ASCENT_VTKH_DIR@
+ASCENT_VTKM_DIR      = @ASCENT_VTKM_DIR@
+ASCENT_VTKM_VERSION  = @ASCENT_VTKM_VERSION@
+ASCENT_MFEM_DIR      = @ASCENT_MFEM_DIR@
+ASCENT_DRAY_DIR      = @ASCENT_DRAY_DIR@
+ASCENT_OCCA_DIR      = @ASCENT_OCCA_DIR@
+ASCENT_UMPIRE_DIR    = @ASCENT_UMPIRE_DIR@
+ASCENT_FIDES_DIR     = @ASCENT_FIDES_DIR@
+ASCENT_ADIOS2_DIR    = @ASCENT_ADIOS2_DIR@
+ASCENT_BABELFLOW_DIR = @ASCENT_BABELFLOW_DIR@
+ASCENT_PMT_DIR       = @ASCENT_PMT_DIR@
+ASCENT_GENTEN_DIR    = @ASCENT_GENTEN_DIR@
 
 
 ASCENT_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
@@ -59,9 +60,19 @@ include $(ASCENT_CONDUIT_DIR)/share/conduit/conduit_config.mk
 # setup rpath helper
 ASCENT_LINK_RPATH = -Wl,-rpath,$(ASCENT_DIR)/lib $(CONDUIT_LINK_RPATH)
 
+
 # two steps are used b/c there are commas in the linker commands
 # which will undermine parsing of the makefile
-ASCENT_PYTHON_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_PYTHON_LIB_DIR)
+
+# in some cases full path to python lib is used instead of lib dir
+# + lib. For rpath, make sure python lib dir is set otherwise we will
+# get a malformed rpath command and the linker will be unhappy.
+ifeq ($(ASCENT_PYTHON_LIB_DIR),)
+   # not set, do not include config.mk
+else
+   ASCENT_PYTHON_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_PYTHON_LIB_DIR)
+endif
+
 ASCENT_OCCA_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_OCCA_DIR)/lib
 ASCENT_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_UMPIRE_DIR)/lib
 ASCENT_VTKH_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_VTKH_DIR)/lib
@@ -89,6 +100,13 @@ ASCENT_LINK_RPATH += $(if $(ASCENT_GENTEN_DIR), $(ASCENT_GENTEN_RPATH_FLAGS_VALU
 #################
 # Linking Flags
 #################
+
+#### CUDA
+ifeq ($(ASCENT_CUDA_LIBS),)
+   # not set, do not include config.mk
+else
+    ASCENT_CUDA_LIB_FLAGS = $(ASCENT_CUDA_LIBS)
+endif
 
 ##########
 # Conduit
@@ -150,12 +168,12 @@ else
                             -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
                             -lvtkmdiympi_nompi
 
+# vtk-m cuda extras
 ifeq ($(ASCENT_CUDA_LIBS),)
    # not set, do not include config.mk
 else
     ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
     ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
-    ASCENT_CUDA_LIB_FLAGS = $(ASCENT_CUDA_LIBS)
 endif
 
 endif
@@ -171,7 +189,7 @@ else
 endif
 
 ##########
-# DRay
+# DRay (EXTERNAL)
 ##########
 # Include make vars from the dray config.mk file
 ifeq ($(ASCENT_DRAY_DIR),)
@@ -191,15 +209,14 @@ ASCENT_MFEM_LIB_FLAGS = $(if $(ASCENT_MFEM_DIR),-L $(ASCENT_MFEM_DIR)/lib -lmfem
 ASCENT_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(ASCENT_MPI_LIBS) )
 
 
-
 ##########
-# apcomp
+# Dray (builtin)
 ##########
 # (builtin lib installed by ascent)
-# Include make vars from the apcomp config.mk file
-ifeq ($(ASCENT_APCOMP_ENABLED),"TRUE")
-   include $(ASCENT_DIR)/share/ascent/apcomp_config.mk
-   ASCENT_LINK_RPATH += $(APCOMP_LINK_RPATH)
+# Include make vars from the dray config.mk file
+ifeq ($(ASCENT_DRAY_ENABLED),TRUE)
+   include $(ASCENT_DIR)/share/ascent/dray_config.mk
+   ASCENT_LINK_RPATH += $(DRAY_LINK_RPATH)
 endif
 
 
@@ -267,7 +284,7 @@ ASCENT_GENTEN_LIB_FLAGS = $(if $(ASCENT_GENTEN_DIR),-L $(ASCENT_GENTEN_DIR)/lib 
 # Ascent Include Flags
 #######################
 
-# apcomp is not in ascent interface, so it is not needed here
+# apcomp and dray are not in ascent interface, they are not needed here
 
 ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
                        -I $(ASCENT_DIR)/include/ascent
@@ -282,7 +299,7 @@ ASCENT_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT) \
                    -lascent \
                    -lascent_flow \
                    -lascent_lodepng \
-                   -lrover $(DRAY_LIB_FLAGS) $(APCOMP_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda with a non-GPU sim
 ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
@@ -290,7 +307,7 @@ ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
                        -lascent_mpi \
                        -lascent_flow \
                        -lascent_lodepng \
-                       -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_MPI_LIB_FLAGS) $(APCOMP_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                       -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda where the linking code
 # performs a device link (resolving all cuda symbols)
@@ -298,4 +315,4 @@ ASCENT_MPI_CUDA_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                             -lascent_mpi \
                             -lascent_flow \
                             -lascent_lodepng \
-                            -lrover_mpi $(DRAY_LINK_RPATH) $(DRAY_MPI_LIB_FLAGS) $(APCOMP_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                            -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)

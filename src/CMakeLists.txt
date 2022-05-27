@@ -27,13 +27,22 @@ option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
-# Note: Default to OFF until Dray is pulled in.
+option(ENABLE_DRAY        "Build Devil Ray Support"   OFF)
+# Note: ENABLE_DRAY reqs ENABLE_APCOMP
 option(ENABLE_APCOMP      "Build AP Compositor"       OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
-option(ENABLE_LOGGING     "Enabe data logging"        OFF)
+option(ENABLE_LOGGING     "Enable data logging"       OFF)
 option(ENABLE_DOCS        "Build Documentation"       ON)
+
+# DRay Specific Options
+option(DRAY_ENABLE_STATS          "Enable stats"         ON)
+option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
+
+# Cuda Specific Options
+option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
+
 
 #####################################################
 # Note: Third party libs like MFEM, FIDES, etc are 

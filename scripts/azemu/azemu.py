@@ -13,6 +13,9 @@ locally using docker.
 """
 
 import yaml
+import os
+import stat
+
 
 class CTX:
     def __init__(self,ctx=None):
@@ -50,10 +53,12 @@ class CTX:
         print("[creating: {0}".format(self.script_file()))
         f = open(self.script_file(),"w",newline='\n')
         f.write(self.gen_script())
+        os.chmod(self.script_file(), stat.S_IRWXU  | stat.S_IRWXG  | stat.S_IRWXO )
 
         print("[creating: {0}".format(self.launch_file()))
         f= open(self.launch_file(),"w",newline='\n')
         f.write(self.gen_launch())
+        os.chmod(self.launch_file(), stat.S_IRWXU  | stat.S_IRWXG  | stat.S_IRWXO )
 
     def script_file(self):
         return "AZEMU-SCRIPT-" + self.name + ".sh"
@@ -103,6 +108,14 @@ def azure_var_sub(txt, azure_vars):
         txt = txt.replace(pat + key + " }}",azure_vars[key])
     return txt
 
+def sanitize_var(v):
+    if type(v)==bool:
+        if v:
+            return "ON"
+        else:
+            return "OFF"
+    return v
+
 def proc_root(tree, config):
     azure_vars = {}
     for k,v in tree.items():
@@ -130,7 +143,7 @@ def proc_stage(tree, config, stage_name):
         if "variables" in job.keys():
             job_ctx.print_esc("job env vars")
             for k,v in job["variables"].items():
-                job_ctx.print("export {0}={1}".format(k,v))
+                job_ctx.print("export {0}={1}".format(k,sanitize_var(v)))
         steps = job["steps"]
         if "strategy" in job.keys():
             if "matrix" in job["strategy"].keys():
@@ -172,7 +185,7 @@ def proc_matrix_entry(steps,
     ctx.print_esc(tag = "azure global scope vars", txt = config["azure_vars"])
     ctx.print_esc("matrix env vars")
     for k,v in env_vars.items():
-        ctx.print("export {0}={1}".format(k,v))
+        ctx.print("export {0}={1}".format(k,sanitize_var(v)))
     ctx.print("")
     proc_steps(steps, config, ctx)
 
