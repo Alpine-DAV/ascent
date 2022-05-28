@@ -142,7 +142,7 @@ if(ASCENT_MPI_ENABLED)
              # create convenience target that bundles all reg deps
              add_library(vtkh::vtkh_mpi INTERFACE IMPORTED)
 
-             set_property(TARGET vtkh::vtkh_mpi)
+             set_property(TARGET vtkh::vtkh_mpi
                           APPEND PROPERTY
                           INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
 
