@@ -67,8 +67,7 @@ VTKH_LIB_FLAGS=-L $(VTKH_DIR)/lib \
                   -lvtkh_compositing \
                   -lvtkh_filters \
                   -lvtkh_core \
-                  -lvtkh_utils \
-                  -lvtkh_lodepng $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
+                  -lvtkh_utils $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
 
 
 # If using VTKH with mpi
@@ -77,7 +76,6 @@ VTKH_MPI_LIB_FLAGS=-L $(VTKH_DIR)/lib \
                       -lvtkh_compositing_mpi \
                       -lvtkh_filters_mpi \
                       -lvtkh_core_mpi \
-                      -lvtkh_lodepng \
                       -lvtkh_utils_mpi $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
 
 
