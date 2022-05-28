@@ -76,7 +76,7 @@ VTKH_MPI_LIB_FLAGS=-L $(VTKH_DIR)/lib \
                       -lvtkh_rendering_mpi \
                       -lvtkh_compositing_mpi \
                       -lvtkh_filters_mpi \
-                      -lvtkh_core_mpi \ 
+                      -lvtkh_core_mpi \
                       -lvtkh_utils_mpi \
                       -lascent_lodepng $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
 
