@@ -400,6 +400,12 @@ if (ENABLE_SERIAL)
         vtkm_lodepng
       )
 
+      if(ENABLE_VTKH)
+          list(APPEND targets_to_link ascent_lodepng)
+      elseif(VTKH_FOUND)
+          list(APPEND targets_to_link vtkh_lodepng)
+      endif()
+
       if(ENABLE_TESTS)
         if (NOT TARGET vtkm_cont_testing)
           message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
@@ -540,6 +546,12 @@ if(MPI_FOUND)
         vtkm_cont
         vtkm_lodepng
       )
+
+      if(ENABLE_VTKH)
+          list(APPEND targets_to_link ascent_lodepng)
+      elseif(VTKH_FOUND)
+          list(APPEND targets_to_link vtkh_lodepng)
+      endif()
 
       if(TARGET vtkmdiympi_nompi)
         list(APPEND targets_to_link vtkmdiympi_nompi)
