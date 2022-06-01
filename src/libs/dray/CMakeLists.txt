@@ -367,8 +367,7 @@ if(MPI_FOUND)
     ########################################
     # MPI Devil Ray
     ########################################
-    set(dray_mpi_deps ${dray_blt_mpi_deps}
-                      ${dray_thirdparty_libs}
+    set(dray_mpi_deps ${dray_thirdparty_libs}
                       ${ascent_blt_mpi_deps}
                       conduit::conduit_mpi apcomp_mpi)
 

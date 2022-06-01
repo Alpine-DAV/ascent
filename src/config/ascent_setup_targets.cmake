@@ -63,6 +63,23 @@ if(ASCENT_SERIAL_ENABLED)
                          dray)
         endif()
      endif()
+
+     if(ASCENT_VTKH_ENABLED)
+         # we may still have external, so guard
+         if(NOT TARGET vtkh::vtkh)
+             # create convenience target that bundles all reg deps
+             add_library(vtkh::vtkh INTERFACE IMPORTED)
+
+             set_property(TARGET vtkh::vtkh
+                          APPEND PROPERTY
+                          INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
+
+             set_property(TARGET vtkh::vtkh
+                          PROPERTY INTERFACE_LINK_LIBRARIES
+                          vtkh)
+         endif()
+      endif()
+     
 endif()
 
 # and if mpi enabled, a convenience target mpi case (ascent::cascent_mpi)
@@ -118,6 +135,22 @@ if(ASCENT_MPI_ENABLED)
                          dray_mpi)
          endif()
      endif()
+
+     if(ASCENT_VTKH_ENABLED)
+         # we may still have external, so guard
+         if(NOT TARGET vtkh::vtkh_mpi)
+             # create convenience target that bundles all reg deps
+             add_library(vtkh::vtkh_mpi INTERFACE IMPORTED)
+
+             set_property(TARGET vtkh::vtkh_mpi
+                          APPEND PROPERTY
+                          INTERFACE_INCLUDE_DIRECTORIES "${ASCENT_INSTALL_PREFIX}/include/")
+
+             set_property(TARGET vtkh::vtkh_mpi
+                          PROPERTY INTERFACE_LINK_LIBRARIES
+                          vtkh_mpi)
+         endif()
+      endif()
 
  endif()
 

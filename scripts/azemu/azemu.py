@@ -118,6 +118,7 @@ def sanitize_var(v):
 
 def proc_root(tree, config):
     azure_vars = {}
+    print(tree)
     for k,v in tree.items():
         if k == "variables":
             config["azure_vars"] = v
@@ -240,7 +241,11 @@ def proc_steps(steps, config, ctx):
 def main():
     azurep_yaml_file = "azure-pipelines.yml"
     config_yaml_file = "azemu-config.yaml"
+    # pipelines file is a symlink, on windows we need to 
+    # handle this case
     root   = yaml.load(open(azurep_yaml_file), Loader=yaml.Loader)
+    if os.path.isfile(root):
+        root   = yaml.load(open(root), Loader=yaml.Loader)
     config = yaml.load(open(config_yaml_file), Loader=yaml.Loader)
     proc_root(root, config)
 

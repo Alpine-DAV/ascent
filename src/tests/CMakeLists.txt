@@ -31,6 +31,10 @@ if(ENABLE_DRAY)
     add_subdirectory("dray")
 endif()
 
+# add vtkh tests
+if(ENABLE_VTKH)
+    add_subdirectory("vtkh")
+endif()
 
 # add flow tests
 add_subdirectory("flow")

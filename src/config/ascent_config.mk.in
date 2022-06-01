@@ -29,6 +29,7 @@ ASCENT_CONDUIT_DIR = @CONDUIT_DIR@
 # optional built in libs
 ASCENT_APCOMP_ENABLED = @ASCENT_APCOMP_ENABLED@
 ASCENT_DRAY_ENABLED   = @ASCENT_DRAY_ENABLED@
+ASCENT_VTKH_ENABLED   = @ASCENT_VTKH_ENABLED@
 
 # thirdparty libs
 ASCENT_VTKH_DIR      = @ASCENT_VTKH_DIR@
@@ -178,6 +179,8 @@ endif
 
 endif
 
+
+
 ##########
 # MFEM
 ##########
@@ -213,12 +216,28 @@ ASCENT_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(ASCENT_MPI_LIBS) )
 # Dray (builtin)
 ##########
 # (builtin lib installed by ascent)
-# Include make vars from the dray config.mk file
+# Include make vars from the dray_config.mk file
 ifeq ($(ASCENT_DRAY_ENABLED),TRUE)
    include $(ASCENT_DIR)/share/ascent/dray_config.mk
    ASCENT_LINK_RPATH += $(DRAY_LINK_RPATH)
 endif
 
+##########
+# VTK-h (builtin)
+##########
+# (builtin lib installed by ascent)
+# Include make vars from the vtkh_config.mk file
+ifeq ($(ASCENT_VTKH_ENABLED),TRUE)
+   include $(ASCENT_DIR)/share/ascent/vtkh_config.mk
+   ASCENT_LINK_RPATH += $(VTKH_LINK_RPATH)
+
+   ifeq ($(ASCENT_CUDA_LIBS),)
+      # not set, do not include config.mk
+   else
+       ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
+       ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
+   endif  
+endif
 
 ##########
 # OCCA
@@ -284,7 +303,7 @@ ASCENT_GENTEN_LIB_FLAGS = $(if $(ASCENT_GENTEN_DIR),-L $(ASCENT_GENTEN_DIR)/lib 
 # Ascent Include Flags
 #######################
 
-# apcomp and dray are not in ascent interface, they are not needed here
+# vtk, apcomp, and dray are not in ascent interface, they are not needed here
 
 ASCENT_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
                        -I $(ASCENT_DIR)/include/ascent
@@ -299,7 +318,7 @@ ASCENT_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT) \
                    -lascent \
                    -lascent_flow \
                    -lascent_lodepng \
-                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS)  $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda with a non-GPU sim
 ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
@@ -307,7 +326,7 @@ ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
                        -lascent_mpi \
                        -lascent_flow \
                        -lascent_lodepng \
-                       -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                       -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS)  $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_MPI_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda where the linking code
 # performs a device link (resolving all cuda symbols)
@@ -315,4 +334,4 @@ ASCENT_MPI_CUDA_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                             -lascent_mpi \
                             -lascent_flow \
                             -lascent_lodepng \
-                            -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                            -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_MPI_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)

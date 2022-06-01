@@ -15,3 +15,11 @@ endif()
 if(ENABLE_DRAY)
     add_subdirectory(dray)
 endif()
+
+
+################################
+# Add VTK-h
+################################
+if(ENABLE_VTKH)
+    add_subdirectory(vtkh)
+endif()

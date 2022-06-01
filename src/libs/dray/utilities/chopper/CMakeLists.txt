@@ -34,4 +34,4 @@ if(MPI_FOUND)
 
 endif()
 
-configure_file(chopper_config.yaml ${CMAKE_CURRENT_BINARY_DIR}/chopper_config.yaml @ONLY])
+configure_file(chopper_config.yaml ${CMAKE_CURRENT_BINARY_DIR}/chopper_config.yaml @ONLY)

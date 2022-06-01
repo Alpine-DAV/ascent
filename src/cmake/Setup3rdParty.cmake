@@ -9,7 +9,7 @@
 ################################
 
 ###############################################################################
-# gtest, fruit, mpi,cuda, openmp, sphinx and doxygen are handled by blt
+# gtest, fruit, mpi, cuda, openmp, sphinx and doxygen are handled by blt
 ###############################################################################
 
 ################################
@@ -53,6 +53,20 @@ if(RAJA_DIR)  # optional for now
 endif()
 
 ################################
+# Setup Kokkos
+################################
+if (KOKKOS_DIR)
+  include(cmake/thirdparty/SetupKokkos.cmake)
+endif()
+
+################################
+# Setup OCCA
+################################
+if (OCCA_DIR)
+  include(cmake/thirdparty/SetupOcca.cmake)
+endif()
+
+################################
 # VTKm and supporting libs
 ################################
 if(VTKM_DIR)
@@ -64,7 +78,9 @@ if(VTKM_DIR)
     ################################
     # VTKh
     ################################
-    include(cmake/thirdparty/SetupVTKh.cmake)
+    if(VTKH_DIR)  # builtin vs external logic
+        include(cmake/thirdparty/SetupVTKh.cmake)
+    endif()
 endif()
 
 #
@@ -85,12 +101,6 @@ if (DRAY_DIR)
   include(cmake/thirdparty/SetupDevilRay.cmake)
 endif()
 
-################################
-# Setup OCCA
-################################
-if (OCCA_DIR)
-  include(cmake/thirdparty/SetupOcca.cmake)
-endif()
 
 ################################
 # Setup Umpire
@@ -128,9 +138,3 @@ if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
 
-################################
-# Setup Kokkos
-################################
-if (KOKKOS_DIR)
-  include(cmake/thirdparty/SetupKokkos.cmake)
-endif()

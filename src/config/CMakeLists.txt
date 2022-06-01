@@ -51,6 +51,10 @@ if(ENABLE_DRAY)
     set(ASCENT_DRAY_ENABLED TRUE)
 endif()
 
+if(ENABLE_VTKH)
+    set(ASCENT_VTKH_ENABLED TRUE)
+endif()
+
 # When disabled, TPL dirs may be not be empty, the may be set to INGORE, etc
 # While CMake knows to ignore these type of vals make does not,
 # so we regularize with explicit vars
@@ -129,6 +133,15 @@ if(ENABLE_DRAY)
                     "${CMAKE_CURRENT_BINARY_DIR}/dray_config.mk")
     # install the config.mk
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dray_config.mk" DESTINATION share/ascent)
+endif()
+
+
+if(ENABLE_VTKH)
+    # generate the config.mk
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/vtkh_config.mk.in"
+                    "${CMAKE_CURRENT_BINARY_DIR}/vtkh_config.mk")
+    # install the config.mk
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vtkh_config.mk" DESTINATION share/ascent)
 endif()
 
 
