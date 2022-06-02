@@ -116,6 +116,7 @@ Ascent Documentation
    BuildingAscent
    AscentAPI
    Actions/index
+   FeatureMap
    Utilities
    GPU_notes
 
