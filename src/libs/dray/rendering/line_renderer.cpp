@@ -55,7 +55,7 @@ bool crop_matt(Vec<float32, 3> &p1, Vec<float32, 3> &p2)
   return true;
 }
 
-DRAY_EXEC
+DRAY_LAMBDA
 void crop_line_to_bounds(Vec<int32, 2> &p1, Vec<int32, 2> &p2, int32 width, int32 height)
 {
   // booleans to record if p1 and p2 are within bounds or not

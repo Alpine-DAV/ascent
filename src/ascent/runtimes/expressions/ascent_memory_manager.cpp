@@ -4,6 +4,7 @@
 
 #include <umpire/Umpire.hpp>
 #include <umpire/util/MemoryResourceTraits.hpp>
+#include <umpire/strategy/DynamicPoolList.hpp>
 
 #include <conduit.hpp>
 
@@ -76,7 +77,8 @@ AllocationManager::umpire_device_allocator_id()
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("DEVICE");
     // we can use the umpire profiling to find a good default size
-    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPool>(
+
+    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPoolList>(
                             "GPU_POOL",
                             allocator,
                             1ul * // 1GB default size
@@ -94,7 +96,7 @@ AllocationManager::umpire_host_allocator_id()
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("HOST");
     // we can use the umpire profiling to find a good default size
-    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPool>(
+    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPoolList>(
                             "HOST_POOL",
                             allocator,
                             1ul * // 1GB default size
@@ -143,8 +145,8 @@ AllocationManager::umpire_device_allocator_id(int id)
   need_device = true;
 #endif
 
-  bool is_device = resource == umpire::MemoryResourceTraits::resource_type::DEVICE;
-  bool is_host = resource == umpire::MemoryResourceTraits::resource_type::HOST;
+  bool is_device = resource == umpire::MemoryResourceTraits::resource_type::device;
+  bool is_host = resource == umpire::MemoryResourceTraits::resource_type::host;
 
   if(is_device && need_device)
   {
