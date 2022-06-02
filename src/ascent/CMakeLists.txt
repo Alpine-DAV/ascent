@@ -219,9 +219,10 @@ list(APPEND ascent_device_sources
             runtimes/expressions/ascent_blueprint_architect.cpp)
   # TODO THIS MIGHT BE HANDLED LATER
   # tell cmake to compiler these files with nvcc
+
+if(CUDA_FOUND)
   set_source_files_properties(${ascent_device_sources}  PROPERTIES LANGUAGE CUDA)
 endif()
-
 
 if(ASCENT_JIT_ENABLED)
     list(APPEND ascent_sources runtimes/expressions/ascent_array.cpp)
@@ -347,6 +348,10 @@ set(ascent_thirdparty_libs
 ##################
 if(OCCA_FOUND)
     list(APPEND ascent_thirdparty_libs occa)
+endif()
+
+if(RAJA_FOUND)
+    list(APPEND ascent_thirdparty_libs RAJA)
 endif()
 
 if(UMPIRE_FOUND)

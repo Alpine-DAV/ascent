@@ -36,13 +36,10 @@ namespace runtime
 namespace expressions
 {
 
-<<<<<<< HEAD
-conduit::Node field_reduction_max(const conduit::Node &field, std::string component = "");
-=======
+
 conduit::Node array_gradient(const conduit::Node &y_values, const conduit::Node &dx_values, bool is_list = false);
 
-conduit::Node array_max(const conduit::Node &values);
->>>>>>> develop
+conduit::Node field_reduction_max(const conduit::Node &field, std::string component = "");
 
 conduit::Node field_reduction_min(const conduit::Node &field, std::string component = "");
 

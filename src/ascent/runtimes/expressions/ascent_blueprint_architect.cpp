@@ -511,7 +511,7 @@ struct VertexFunctor
 
     // always output 3 components
     m_vertices.resize(size * 3);
-    double *verts_ptr = m_vertices.ptr(Exec::memory_space);
+    double *verts_ptr = m_vertices.get_ptr(Exec::memory_space);
     std::cout<<"**** VertexFunctor Mem space "<<Exec::memory_space<<"\n";
 
     RAJA::forall<fp>
@@ -542,7 +542,7 @@ struct CentroidFunctor
 
     // one component for each dim
     m_centroids.resize(size * mesh.m_dims);
-    double *centroids_ptr = m_centroids.ptr(Exec::memory_space);
+    double *centroids_ptr = m_centroids.get_ptr(Exec::memory_space);
     std::cout<<"Mem space "<<Exec::memory_space<<"\n";
 
     RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type cell_idx)

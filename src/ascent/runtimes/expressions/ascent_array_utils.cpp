@@ -40,7 +40,7 @@ struct MemsetFunctor
 
     using fp = typename Exec::for_policy;
 
-    T *array_ptr = array.ptr(Exec::memory_space);
+    T *array_ptr = array.get_ptr(Exec::memory_space);
 
     RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
     {

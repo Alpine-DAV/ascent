@@ -416,11 +416,11 @@ void calc_bindex(const Array<double> &values,
   using fp = typename Exec::for_policy;
 
   const int size = values.size();
-  const double *values_ptr = values.ptr_const(mem_space);
-  int *bindex_ptr = bindexes.ptr(mem_space);
+  const double *values_ptr = values.get_ptr_const(mem_space);
+  int *bindex_ptr = bindexes.get_ptr(mem_space);
   double *bins_node_ptr = const_cast<double*>(axis["bins"].as_float64_ptr());
   Array<double> bins( bins_node_ptr, axis["bins"].dtype().number_of_elements());
-  const double *bins_ptr = bins.ptr_const(mem_space);
+  const double *bins_ptr = bins.get_ptr_const(mem_space);
   const int bins_size = bins.size();
   bool clamp = axis["clamp"].to_int32() == 1;
   std::cout<<"**** bindex size "<<size<<"\n";
@@ -488,7 +488,7 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
   Array<double> res;
   const int size = accessor.m_size;
   res.resize(size);
-  double *res_ptr = res.ptr(mem_space);
+  double *res_ptr = res.get_ptr(mem_space);
 
   RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
   {
@@ -564,9 +564,9 @@ struct BinningFunctor
 
     for(auto dom_id : m_domain_ids)
     {
-      const int *bindex_ptr = m_bindexes[dom_id].ptr_const(Exec::memory_space);
-      const double *values_ptr = m_values[dom_id].ptr_const(Exec::memory_space);
-      std::cout<<"Banananananananananananananananananana\n";
+      const int *bindex_ptr = m_bindexes[dom_id].get_ptr_const(Exec::memory_space);
+      const double *values_ptr = m_values[dom_id].get_ptr_const(Exec::memory_space);
+      // std::cout<<"Banananananananananananananananananana\n";
       m_values[dom_id].status();
       m_values[dom_id].summary();
       m_bindexes[dom_id].summary();
@@ -574,7 +574,7 @@ struct BinningFunctor
       testa.summary();
       testa.status();
       const int size = m_values[dom_id].size();
-      double *bins_ptr = m_bins.ptr(Exec::memory_space);
+      double *bins_ptr = m_bins.get_ptr(Exec::memory_space);
         RAJA::forall<fp>
           (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
         {
@@ -653,7 +653,7 @@ struct BinningFunctor
         });
       }
 #endif
-      double *host_ptr = m_bins.host_ptr();
+      double *host_ptr = m_bins.get_host_ptr();
       for(int i = 0; i < m_bins.size(); ++i)
       {
         std::cout<<"int results index "<<i<<" "<<host_ptr[i]<<"\n";
@@ -725,7 +725,7 @@ struct BindexingFunctor
       bindexes.resize(homes_size);
       array_memset(bindexes, 0);
 
-      int *bins_ptr = bindexes.ptr(Exec::memory_space);
+      int *bins_ptr = bindexes.get_ptr(Exec::memory_space);
 
       bool do_once = true;
       // either vertex locations or centroids based on the
@@ -792,7 +792,7 @@ struct BindexingFunctor
 
       // debug
       int bsize = bindexes.size();
-      int *b_ptr = bindexes.host_ptr();
+      int *b_ptr = bindexes.get_host_ptr();
       for(int i = 0; i < bsize; ++i)
       {
         std::cout<<"Index "<<i<<" bin "<<b_ptr[i]<<"\n";
@@ -805,12 +805,12 @@ struct BindexingFunctor
 void exchange_bins(Array<double> &bins, const std::string op)
 {
 #ifdef ASCENT_MPI_ENABLED
-  double *bins_ptr = bins.host_ptr();
+  double *bins_ptr = bins.get_host_ptr();
   const int bins_size = bins.size();
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   Array<double> global_bins;
   global_bins.resize(bins_size);
-  double *global_ptr = global_bins.host_ptr();
+  double *global_ptr = global_bins.get_host_ptr();
 
   if(op == "sum" || op == "pdf" || op == "avg" ||
      op == "std" || op == "var" || op == "rms")
@@ -884,7 +884,7 @@ struct CalcResultsFunctor
   template<typename Exec>
   void operator()(const Exec &)
   {
-    double *bins_ptr = m_bins.ptr(Exec::memory_space);
+    double *bins_ptr = m_bins.get_ptr(Exec::memory_space);
     const int size = m_num_bins;
     using fp = typename Exec::for_policy;
     int op_code = m_op_code;
@@ -910,7 +910,7 @@ struct CalcResultsFunctor
     results.resize(size);
     std::cout<<"Num bins "<<size<<"\n";
     array_memset(results, m_empty_val);
-    double *res_ptr = results.ptr(Exec::memory_space);
+    double *res_ptr = results.get_ptr(Exec::memory_space);
 
     RAJA::forall<fp>
       (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
@@ -1017,12 +1017,12 @@ struct CalcResultsFunctor
       }
 
     });
-    double *host_ptr = results.host_ptr();
+    double *host_ptr = results.get_host_ptr();
     for(int i = 0; i < m_num_bins; ++i)
     {
       std::cout<<"res bin "<<i<<" "<<host_ptr[i]<<"\n";
     }
-    m_res["value"].set(results.host_ptr(), m_num_bins);
+    m_res["value"].set(results.get_host_ptr(), m_num_bins);
   }
 };
 

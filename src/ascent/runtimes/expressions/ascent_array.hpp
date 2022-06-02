@@ -37,6 +37,10 @@ template <typename T> class Array
   T *get_device_ptr ();
   const T *get_host_ptr_const () const;
   const T *get_device_ptr_const () const;
+
+  T *get_ptr(const std::string loc);
+  const T *get_ptr_const(const std::string loc) const;
+
   void summary ();
   void status();
   void operator= (const Array<T> &other);

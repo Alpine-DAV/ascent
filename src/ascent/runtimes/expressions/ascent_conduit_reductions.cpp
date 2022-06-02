@@ -391,6 +391,14 @@ struct GradientFunctor
 };
 
 ////////////////////////////////////////////////////////////////////////////////////
+
+struct IndexLoc
+{
+  RAJA::Index_type idx;
+  constexpr IndexLoc() : idx(-1) {}
+  constexpr ASCENT_EXEC IndexLoc(RAJA::Index_type idx) : idx(idx) {}
+};
+
 struct MaxFunctor
 {
   template<typename T, typename Exec>
@@ -588,7 +596,7 @@ struct HistogramFunctor
 
     Array<double> bins(nb, num_bins);
 
-    double *bins_ptr = bins.ptr(Exec::memory_space);
+    double *bins_ptr = bins.get_ptr(Exec::memory_space);
 
     using fp = typename Exec::for_policy;
     using ap = typename Exec::atomic_policy;
@@ -606,7 +614,7 @@ struct HistogramFunctor
     ASCENT_ERROR_CHECK();
 
     // synch the values back to the host
-    (void)  bins.host_ptr();
+    (void)  bins.get_host_ptr();
     res["bin_size"] = (m_max_val - m_min_val) / double(m_num_bins);
 
     return res;

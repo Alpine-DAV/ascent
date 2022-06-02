@@ -69,6 +69,31 @@ template <typename T> const T *Array<T>::get_device_ptr_const () const
   return m_internals->get_device_ptr_const ();
 }
 
+
+template <typename T> T *Array<T>::get_ptr (const std::string loc)
+{
+  if(loc == "device")
+  {
+    return m_internals->get_device_ptr ();
+  }
+  else
+  {
+    return m_internals->get_host_ptr ();
+  }
+}
+
+template <typename T> const T *Array<T>::get_ptr_const (const std::string loc) const
+{
+  if(loc == "device")
+  {
+    return m_internals->get_device_ptr_const();
+  }
+  else
+  {
+    return m_internals->get_host_ptr_const();
+  }
+}
+
 template <typename T> void Array<T>::summary ()
 {
   m_internals->summary ();
