@@ -1,45 +1,7 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 ###############################################################################
@@ -66,7 +28,7 @@ MESSAGE(STATUS "Looking for Conduit using CONDUIT_DIR = ${CONDUIT_DIR}")
 ###############################################################################
 find_dependency(Conduit REQUIRED
                 NO_DEFAULT_PATH
-                PATHS ${CONDUIT_DIR}/lib/cmake)
+                PATHS ${CONDUIT_DIR}/lib/cmake/conduit)
 
 # if fortran is enabled, make sure conduit was built with fortran support
 if(FORTRAN_FOUND)
@@ -92,6 +54,21 @@ endif()
 
 set(CONDUIT_FOUND TRUE)
 set(CONDUIT_INCLUDE_DIRS ${CONDUIT_DIR}/include/conduit)
+
+
+if(NOT CONDUIT_RELAY_WEBSERVER_ENABLED)
+    # older versions of conduit may still have web support but
+    # not export this cmake var, so for now, we also 
+    # check for the web headers
+    if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_web.hpp)
+        set(CONDUIT_RELAY_WEBSERVER_ENABLED TRUE)
+    else()
+        set(CONDUIT_RELAY_WEBSERVER_ENABLED FALSE)
+    endif()
+endif()
+
+message(STATUS "CONDUIT_RELAY_WEBSERVER_ENABLED = ${CONDUIT_RELAY_WEBSERVER_ENABLED}")
+
 
 if(ENABLE_PYTHON)
     find_package(PythonInterp)
@@ -144,6 +121,6 @@ blt_register_library( NAME conduit
 if(MPI_FOUND)
     blt_register_library( NAME conduit_relay_mpi
                           INCLUDES ${CONDUIT_INCLUDE_DIRS}
-                          LIBRARIES  conduit_relay_mpi)
+                          LIBRARIES  conduit_relay_mpi conduit_blueprint_mpi)
 endif()
 

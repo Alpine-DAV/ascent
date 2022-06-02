@@ -4,13 +4,91 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+
 ## Unreleased
 
+### Added
+- Added pipeline `partition` from Conduit Blueprint
+- Added extract `flatten` from Conduit Blueprint
+
+## [0.8.0] - Released 2022-02-11
+
+### Preferred dependency versions for ascent@0.8.0
+- conduit@0.8.2
+- dray@0.1.8
+- vtk-h@0.8.1
+- vtk-m@1.7.1
+
+
+### Added
+- Added OCCA Derived Field Generation support
+- Added more math expressions
+- Added a time expression
+- Added Cinema rendering support for Devil Ray 
+- Added `streamline` and `particle_advection` transforms 
+- Added history gradient expressions
+- Added the ability save named sessions
+- Added new options to specify Cinema rendering parameters
+- Added the ability save subsets of expression results to session files
+- Added the ability to add comments to PNG files that Ascent creates
+- Added timings out control option to Ascent (and Flow)
+- Added support to render Polygonal nd Polyhedral Meshes 
+- Added option to turn of world annotations
+- Added FIDES Support
+- Added Spack and Uberenv support for building on Perlmutter
+
 ### Fixed
-- Issue MPI hang if actions files (yaml or json) fail to parse.
+- Fixed a bug where ascent timings files were written out twice
+- Fixed a bug where the relay extract protocol was always hdf5, regardless of what was requested
+- Various fixes to paraview_ascent_source.py
+
+### Changed
+- Python CMake detection logic now prefers Python 3
+- Changed Ascent's C-API to use Conduit's C-API object helper methods
+- CMake, Spack, and uberenv changes to support newer versions of Cuda, CMake, etc
+- Updated to use VTK-m 1.7.0
+- Make Ascent Webserver support optional, linked to if Conduit Relay Web support exists
+- Simplified the relay extract protocol params, for example can now use `hdf5` instead of `blueprint/mesh/hdf5`
+- Updated Spack and Uberenv support for building on Summit
+
+## [0.7.1] - Released 2021-05-20
+
+### Preferred dependency versions for ascent@0.7.1
+- conduit@0.7.2
+- dray@0.1.6
+- vtk-h@0.7.1
+- vtk-m@1.5.5
 
 
+### Added
+- Added Data Binning examples to the Ascent Intro Tutorial
 
+### Fixed
+- Fixed an issue with the Data Binning bin calculation logic
+
+### Changed
+- Updated Ascent to use new conduit, dray, and vtk-h versions
+
+
+## [0.7.0] - Released 2021-03-19
+
+### Added
+- Added partial failure tolerance (i.e., if there are multiple plots the failure of one doesn't prevent the others from rendering)
+- Added the ability to use expressions as parameters to filters, e.g., `iso contour value = "(max(field('density')) - min(field('density)) / 2")`
+- Added orthogonal projections for scalar images (projecting onto a 2d plane)
+- Added a `triangulate` transform
+- Added option to build Ascent with only Devil Ray support
+
+### Fixed
+- Fixed a MPI hang if actions files (yaml or json) fail to parse
+- Fixed several minor issues with saving and reading Mesh Blueprint file sets
+- Fixed a field association bug with Data Binning
+- Fixed a 2D AMR mesh rendering issue
+
+### Changed
+- To better support installs that are relocated on the file system, Cinema database file resources are now compiled into the Ascent library.
+- Updated to use Babelflow (1.0.1) and Parallel Merge Tree (1.0.2).
 
 ## [0.6.0] - Released 2020-11-06
 
@@ -70,8 +148,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Alpine-DAV/ascent/compare/v0.3.0...v0.4.0
-

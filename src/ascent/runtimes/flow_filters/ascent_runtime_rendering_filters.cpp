@@ -1,44 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory //
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -63,12 +26,13 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_runtime_param_check.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_web_interface.hpp> // -- for web_client_root_directory()
-///
+#include <ascent_resources.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -181,10 +145,21 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("type");
   r_valid_paths.push_back("phi");
+  r_valid_paths.push_back("phi_range");
+  r_valid_paths.push_back("dphi");
+  r_valid_paths.push_back("phi_num_angles");
+  r_valid_paths.push_back("phi_angles");
   r_valid_paths.push_back("theta");
+  r_valid_paths.push_back("theta_range");
+  r_valid_paths.push_back("dtheta");
+  r_valid_paths.push_back("theta_num_angles");
+  r_valid_paths.push_back("theta_angles");
+  r_valid_paths.push_back("phi_theta_positions");
   r_valid_paths.push_back("db_name");
   r_valid_paths.push_back("render_bg");
   r_valid_paths.push_back("annotations");
+  r_valid_paths.push_back("world_annotations");
+  r_valid_paths.push_back("screen_annotations");
   r_valid_paths.push_back("axis_scale_x");
   r_valid_paths.push_back("axis_scale_y");
   r_valid_paths.push_back("axis_scale_z");
@@ -193,10 +168,31 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("shading");
   r_valid_paths.push_back("use_original_bounds");
 
+  std::vector<std::string> r_ignore_paths;
+  r_ignore_paths.push_back("phi_theta_positions");
+
   for(int i = 0; i < num_renders; ++i)
   {
     const conduit::Node &render_node = renders_node.child(i);
-    surprises += surprise_check(r_valid_paths, render_node);
+    surprises += surprise_check(r_valid_paths, r_ignore_paths, render_node);
+
+    if(render_node.has_path("phi_theta_positions"))
+    {
+      const conduit::Node &phi_theta_positions = render_node["phi_theta_positions"];
+      const int num_positions = phi_theta_positions.number_of_children();
+      for(int i = 0; i < num_positions; ++i)
+      {
+        const conduit::Node &position = phi_theta_positions.child(i);
+        std::stringstream ss;
+        ss << "[" << i << "]";
+        if (position.name() != ss.str()) 
+        {
+          surprises += "Surprise parameter '";
+          surprises += position.name();
+          surprises += "'\n";
+        }
+      }
+    }
   }
   return surprises;
 }
@@ -215,6 +211,12 @@ protected:
   std::shared_ptr<VTKHCollection> m_collection;
   std::string m_topo_name;
   bool m_valid;
+  // we have to keep the data object that spit out
+  // the vtkh collection we are rendering since
+  // this could be a temporary result created by a
+  // pipeline. If we dont' keep it, then it will
+  // be freed before we can render it
+  DataObject m_data;
 public:
   RendererContainer()
    : m_valid(false)
@@ -223,12 +225,14 @@ public:
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
                     std::shared_ptr<VTKHCollection> collection,
-                    std::string topo_name)
+                    std::string topo_name,
+                    DataObject &data_object)
     : m_key(key),
       m_registry(r),
       m_collection(collection),
       m_topo_name(topo_name),
-      m_valid(true)
+      m_valid(true),
+      m_data(data_object)
   {
     // we have to keep around the dataset so we bring the
     // whole collection with us
@@ -329,6 +333,19 @@ vtkh::Render parse_render(const conduit::Node &render_node,
                                          image_height,
                                          bounds,
                                          image_name);
+  Node meta = Metadata::n_metadata;
+  if(meta.has_path("comments"))
+  {
+    const conduit::Node comments_node = meta["comments"];
+    const int num_comments = comments_node.number_of_children();
+    std::vector<std::string> comments;
+    for(int i = 0; i < num_comments; ++i)
+    {
+      comments.push_back(comments_node.child(i).as_string());
+    }
+    render.SetComments(comments);
+  }
+
   //
   // render create a default camera. Now get it and check for
   // values that override the default view
@@ -345,6 +362,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     render.SetShadingOn(on);
   }
 
+  bool annot_all_off = false;
   if(render_node.has_path("annotations"))
   {
     if(!render_node["annotations"].dtype().is_string())
@@ -356,6 +374,35 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     if(annot == "false")
     {
       render.DoRenderAnnotations(false);
+      annot_all_off = true;
+    }
+  }
+
+  if(!annot_all_off && render_node.has_path("world_annotations"))
+  {
+    if(!render_node["world_annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/world_annotations node must be a string value");
+    }
+    const std::string annot = render_node["world_annotations"].as_string();
+    // default is always render world annotations
+    if(annot == "false")
+    {
+      render.DoRenderWorldAnnotations(false);
+    }
+  }
+
+  if(!annot_all_off && render_node.has_path("screen_annotations"))
+  {
+    if(!render_node["screen_annotations"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/screen_annotations node must be a string value");
+    }
+    const std::string annot = render_node["screen_annotations"].as_string();
+    // default is always render screen annotations
+    if(annot == "false")
+    {
+      render.DoRenderScreenAnnotations(false);
     }
   }
 
@@ -439,14 +486,19 @@ class CinemaManager
 protected:
   std::vector<vtkm::rendering::Camera> m_cameras;
   std::vector<std::string>             m_image_names;
+  std::vector<std::tuple<float,float>> m_camera_angles;
   std::vector<float>                   m_phi_values;
   std::vector<float>                   m_theta_values;
   std::vector<float>                   m_times;
   std::string                          m_csv;
 
   vtkm::Bounds                         m_bounds;
-  const int                            m_phi;
-  const int                            m_theta;
+  int                                  m_phi;
+  float                                m_phi_min;
+  float                                m_phi_inc;
+  int                                  m_theta;
+  float                                m_theta_min;
+  float                                m_theta_inc;
   std::string                          m_image_name;
   std::string                          m_image_path;
   std::string                          m_db_path;
@@ -454,16 +506,122 @@ protected:
   float                                m_time;
 public:
   CinemaManager(vtkm::Bounds bounds,
-                const int phi,
-                const int theta,
+                const conduit::Node &render_node,
                 const std::string image_name,
                 const std::string path)
     : m_bounds(bounds),
-      m_phi(phi),
-      m_theta(theta),
       m_image_name(image_name),
       m_time(0.f)
   {
+    if(render_node.has_path("phi_theta_positions"))
+    {
+      const conduit::Node &positions = render_node["phi_theta_positions"];
+      for (int p = 0; p < positions.number_of_children(); ++p)
+      {
+        float64_accessor phi_theta = positions[p].as_float64_accessor();
+        if (phi_theta.number_of_elements() != 2)
+        {
+          ASCENT_ERROR("Cinema camera phi_theta_positions must be an array of tuples");
+        }
+        std::tuple<float,float> angles(phi_theta[0], phi_theta[1]);
+        m_camera_angles.push_back(angles);
+      }
+    }
+    else
+    {
+      // Handle phi.
+      if(render_node.has_path("phi"))
+      {
+        m_phi_min = -180.0;
+        m_phi = render_node["phi"].to_int32();
+        m_phi_inc = 360.0 / double(m_phi);
+        this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
+      }
+      else if(render_node.has_path("phi_angles"))
+      {
+        float64_accessor phi_angles = render_node["phi_angles"].as_float64_accessor();
+        for(int p = 0; p < phi_angles.number_of_elements(); ++p)
+        {
+          m_phi_values.push_back(phi_angles[p]);
+        }
+      }
+      else if(render_node.has_path("phi_range") && render_node.has_path("dphi"))
+      {
+        float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
+        if (phi_range[0] >= phi_range[1])
+        {
+          ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
+        }
+        m_phi_min = phi_range[0];
+        m_phi_inc = render_node["dphi"].to_float64();
+        m_phi =  int(floor((phi_range[1] - phi_range[0] + 1.0e-6) / m_phi_inc)) + 1;
+        this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
+      }
+      else if(render_node.has_path("phi_range") && render_node.has_path("phi_num_angles"))
+      {
+        float64_accessor phi_range = render_node["phi_range"].as_float64_accessor();
+        if (phi_range[0] >= phi_range[1])
+        {
+          ASCENT_ERROR("Cinema camera phi_range[0] must be less that phi_range[1]");
+        }
+        m_phi_min = phi_range[0];
+        m_phi = render_node["phi_num_angles"].to_int32();
+        m_phi_inc =  (phi_range[1] - phi_range[0]) / double(m_phi - 1);
+        this->create_angles_from_range(m_phi_values, m_phi_min, m_phi_inc, m_phi);
+      }
+      else
+      {
+        ASCENT_ERROR("Cinema camera must specify phi or phi_range");
+      }
+
+      // Handle theta.
+      if(render_node.has_path("theta"))
+      {
+        m_theta_min = 0.0;
+        m_theta = render_node["theta"].to_int32();
+        m_theta_inc = 180.0 / double(m_theta);
+        this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
+      }
+      else if(render_node.has_path("theta_angles"))
+      {
+        float64_accessor theta_angles = render_node["theta_angles"].as_float64_accessor();
+        for(int t = 0; t < theta_angles.number_of_elements(); ++t)
+        {
+          m_theta_values.push_back(theta_angles[t]);
+        }
+      }
+      else if(render_node.has_path("theta_range") && render_node.has_path("dtheta"))
+      {
+        float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
+        if (theta_range[0] >= theta_range[1])
+        {
+          ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+        }
+        m_theta_min = theta_range[0];
+        m_theta_inc = render_node["dtheta"].to_float64();
+        m_theta =  int(floor((theta_range[1] - theta_range[0] + 1.0e-6) / m_theta_inc)) + 1;
+        this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
+      }
+      else if(render_node.has_path("theta_range") && render_node.has_path("theta_num_angles"))
+      {
+        float64_accessor theta_range = render_node["theta_range"].as_float64_accessor();
+        if (theta_range[0] >= theta_range[1])
+        {
+          ASCENT_ERROR("Cinema camera theta_range[0] must be less that theta_range[1]");
+        }
+        m_theta_min = theta_range[0];
+        m_theta = render_node["theta_num_angles"].to_int32();
+        m_theta_inc =  (theta_range[1] - theta_range[0]) / double(m_theta - 1);
+        this->create_angles_from_range(m_theta_values, m_theta_min, m_theta_inc, m_theta);
+      }
+      else
+      {
+        ASCENT_ERROR("Cinema camera must specify theta or theta_range");
+      }
+
+      this->create_cinema_angles();
+    }
+
     this->create_cinema_cameras(bounds);
     m_csv = "phi,theta,time,FILE\n";
 
@@ -471,8 +629,6 @@ public:
   }
 
   CinemaManager()
-    : m_phi(0),
-      m_theta(0)
   {
     ASCENT_ERROR("Cannot create un-initialized CinemaManger");
   }
@@ -507,13 +663,23 @@ public:
     // add a database path
     m_db_path = db_path();
 
+    // note: there is an implicit assumption here that these
+    // resources are static and only need to be generated one
     if(rank == 0 && !conduit::utils::is_directory(m_db_path))
     {
         conduit::utils::create_directory(m_db_path);
-        // copy over cinema web resources
-        std::string cinema_root = conduit::utils::join_file_path(web_client_root_directory(),
-                                                                 "cinema");
-        ascent::copy_directory(cinema_root, m_db_path);
+
+        // load cinema web resources from compiled in resource tree
+        Node cinema_rc;
+        ascent::resources::load_compiled_resource_tree("cinema_web",
+                                                        cinema_rc);
+        if(cinema_rc.dtype().is_empty())
+        {
+            ASCENT_ERROR("Failed to load compiled resources for cinema_web");
+        }
+
+        ascent::resources::expand_resource_tree_to_file_system(cinema_rc,
+                                                               m_db_path);
     }
 
     std::stringstream ss;
@@ -614,29 +780,36 @@ public:
 
     meta["arguments/time"] = times;
 
-    conduit::Node phis;
-    phis["default"] = get_string(m_phi_values[0]);
-    phis["label"] = "phi";
-    phis["type"] = "range";
     const int phi_size = m_phi_values.size();
-    for(int i = 0; i < phi_size; ++i)
+    if (phi_size > 0)
     {
-      phis["values"].append().set(get_string(m_phi_values[i]));
+      conduit::Node phis;
+      phis["default"] = get_string(m_phi_values[0]);
+      phis["label"] = "phi";
+      phis["type"] = "range";
+      for(int i = 0; i < phi_size; ++i)
+      {
+        phis["values"].append().set(get_string(m_phi_values[i]));
+      }
+
+      meta["arguments/phi"] = phis;
     }
 
-    meta["arguments/phi"] = phis;
-
-    conduit::Node thetas;
-    thetas["default"] = get_string(m_theta_values[0]);
-    thetas["label"] = "theta";
-    thetas["type"] = "range";
     const int theta_size = m_theta_values.size();
-    for(int i = 0; i < theta_size; ++i)
+    if (theta_size > 0)
     {
-      thetas["values"].append().set(get_string(m_theta_values[i]));
+      conduit::Node thetas;
+      thetas["default"] = get_string(m_theta_values[0]);
+      thetas["label"] = "theta";
+      thetas["type"] = "range";
+      for(int i = 0; i < theta_size; ++i)
+      {
+        thetas["values"].append().set(get_string(m_theta_values[i]));
+      }
+
+      meta["arguments/theta"] = thetas;
     }
 
-    meta["arguments/theta"] = thetas;
     meta.save(m_db_path + "/info.json","json");
 
     // also generate info.js, a simple javascript variant of
@@ -653,17 +826,14 @@ public:
 
     csv<<m_csv;
     std::string current_time = get_string(m_times[t_size - 1]);
-    for(int p = 0; p < phi_size; ++p)
+    for(int a = 0; a < m_camera_angles.size(); ++a)
     {
-      std::string phi = get_string(m_phi_values[p]);
-      for(int t = 0; t < theta_size; ++t)
-      {
-        std::string theta = get_string(m_theta_values[t]);
-        csv<<phi<<",";
-        csv<<theta<<",";
-        csv<<current_time<<",";
-        csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
-      }
+      std::string phi = get_string(std::get<0>(m_camera_angles[a]));
+      std::string theta = get_string(std::get<1>(m_camera_angles[a]));
+      csv<<phi<<",";
+      csv<<theta<<",";
+      csv<<current_time<<",";
+      csv<<current_time<<"/"<<phi<<"_"<<theta<<"_"<<m_image_name<<".png\n";
     }
 
     m_csv = csv.str();
@@ -674,6 +844,30 @@ public:
   }
 
 private:
+  void create_angles_from_range(std::vector<float> &angles, const float min,
+                                const float inc, const int n_angles)
+  {
+    for(int a = 0; a < n_angles; ++a)
+    {
+      float angle =  float(min + inc * double(a));
+      angles.push_back(angle);
+
+    } // angles
+  }
+
+  void create_cinema_angles()
+  {
+    for(int p = 0; p < m_phi_values.size(); ++p) 
+    {
+      for(int t = 0; t < m_theta_values.size(); ++t)
+      {
+        std::tuple<float,float> angles(m_phi_values[p], m_theta_values[t]);
+        m_camera_angles.push_back(angles);
+
+      } // theta
+    } // phi
+  }
+
   void create_cinema_cameras(vtkm::Bounds bounds)
   {
     m_cameras.clear();
@@ -687,62 +881,47 @@ private:
 
     vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 2.5 / 2.0;
 
-    const double pi = 3.141592653589793;
-    double phi_inc = 360.0 / double(m_phi);
-    double theta_inc = 180.0 / double(m_theta);
-    for(int p = 0; p < m_phi; ++p)
+    for(int a = 0; a < m_camera_angles.size(); ++a)
     {
-      float phi  =  -180.f + phi_inc * p;
-      m_phi_values.push_back(phi);
+      vtkm::rendering::Camera camera;
+      camera.ResetToBounds(bounds);
 
-      for(int t = 0; t < m_theta; ++t)
-      {
-        float theta = theta_inc * t;
-        if (p == 0)
-        {
-          m_theta_values.push_back(theta);
-        }
+      //
+      //  spherical coords start (r=1, theta = 0, phi = 0)
+      //  (x = 0, y = 0, z = 1)
+      //
 
-        const int i = p * m_theta + t;
+      vtkmVec3f pos(0.f,0.f,1.f);
+      vtkmVec3f up(0.f,1.f,0.f);
 
-        vtkm::rendering::Camera camera;
-        camera.ResetToBounds(bounds);
+      vtkm::Matrix<vtkm::Float32,4,4> phi_rot;
+      vtkm::Matrix<vtkm::Float32,4,4> theta_rot;
+      vtkm::Matrix<vtkm::Float32,4,4> rot;
 
-        //
-        //  spherical coords start (r=1, theta = 0, phi = 0)
-        //  (x = 0, y = 0, z = 1)
-        //
+      const float phi = std::get<0>(m_camera_angles[a]);
+      const float theta = std::get<1>(m_camera_angles[a]);
 
-        vtkmVec3f pos(0.f,0.f,1.f);
-        vtkmVec3f up(0.f,1.f,0.f);
+      phi_rot = vtkm::Transform3DRotateZ(phi);
+      theta_rot = vtkm::Transform3DRotateX(theta);
+      rot = vtkm::MatrixMultiply(phi_rot, theta_rot);
 
-        vtkm::Matrix<vtkm::Float32,4,4> phi_rot;
-        vtkm::Matrix<vtkm::Float32,4,4> theta_rot;
-        vtkm::Matrix<vtkm::Float32,4,4> rot;
+      up = vtkm::Transform3DVector(rot, up);
+      vtkm::Normalize(up);
 
-        phi_rot = vtkm::Transform3DRotateZ(phi);
-        theta_rot = vtkm::Transform3DRotateX(theta);
-        rot = vtkm::MatrixMultiply(phi_rot, theta_rot);
+      pos = vtkm::Transform3DPoint(rot, pos);
+      pos = pos * radius + center;
 
-        up = vtkm::Transform3DVector(rot, up);
-        vtkm::Normalize(up);
+      camera.SetViewUp(up);
+      camera.SetLookAt(center);
+      camera.SetPosition(pos);
 
-        pos = vtkm::Transform3DPoint(rot, pos);
-        pos = pos * radius + center;
+      std::stringstream ss;
+      ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
 
-        camera.SetViewUp(up);
-        camera.SetLookAt(center);
-        camera.SetPosition(pos);
-        //camera.Zoom(0.2f);
+      m_image_names.push_back(ss.str() + m_image_name);
+      m_cameras.push_back(camera);
 
-        std::stringstream ss;
-        ss<<get_string(phi)<<"_"<<get_string(theta)<<"_";
-
-        m_image_names.push_back(ss.str() + m_image_name);
-        m_cameras.push_back(camera);
-
-      } // theta
-    } // phi
+    } // angles
   }
 
 }; // CinemaManager
@@ -760,8 +939,7 @@ public:
   }
 
   static void create_db(vtkm::Bounds bounds,
-                        const int phi,
-                        const int theta,
+                        const conduit::Node &render_node,
                         std::string db_name,
                         std::string path)
   {
@@ -770,7 +948,7 @@ public:
       ASCENT_ERROR("Creation failed: cinema database already exists");
     }
 
-    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, phi, theta, db_name, path)));
+    m_databases.emplace(std::make_pair(db_name, CinemaManager(bounds, render_node, db_name, path)));
   }
 
   static CinemaManager& get_db(std::string db_name)
@@ -864,13 +1042,13 @@ DefaultRender::execute()
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
-    Node * meta = graph().workspace().registry().fetch<Node>("metadata");
+    Node meta = Metadata::n_metadata;
 
     int cycle = 0;
 
-    if(meta->has_path("cycle"))
+    if(meta.has_path("cycle"))
     {
-      cycle = (*meta)["cycle"].as_int32();
+      cycle = meta["cycle"].to_int32();
     }
 
     // figure out if we need the original bounds for the scene
@@ -944,19 +1122,12 @@ DefaultRender::execute()
 
         if(is_cinema)
         {
-          if(!render_node.has_path("phi") || !render_node.has_path("theta"))
-          {
-            ASCENT_ERROR("Cinema must have 'phi' and 'theta'");
-          }
-          int phi = render_node["phi"].to_int32();
-          int theta = render_node["theta"].to_int32();
-
           if(!render_node.has_path("db_name"))
           {
             ASCENT_ERROR("Cinema must specify a 'db_name'");
           }
 
-          std::string output_path = default_dir(graph());
+          std::string output_path = default_dir();
 
           if(!render_node.has_path("db_name"))
           {
@@ -966,7 +1137,7 @@ DefaultRender::execute()
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
-            detail::CinemaDatabases::create_db(*bounds,phi,theta, db_name, output_path);
+            detail::CinemaDatabases::create_db(*bounds,render_node, db_name, output_path);
           }
 
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
@@ -1000,14 +1171,14 @@ DefaultRender::execute()
           if(render_node.has_path("image_name"))
           {
             image_name = render_node["image_name"].as_string();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
-            image_name = output_dir(image_name, graph());
+            image_name = output_dir(image_name);
           }
           else
           {
@@ -1037,6 +1208,7 @@ DefaultRender::execute()
       {
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
+        image_name = output_dir(image_name);
       }
 
       vtkm::Bounds scene_bounds = *bounds;
@@ -1052,6 +1224,18 @@ DefaultRender::execute()
                                              1024,
                                              scene_bounds,
                                              image_name);
+      Node meta = Metadata::n_metadata;
+      if(meta.has_path("comments"))
+      {
+        const conduit::Node comments_node = meta["comments"];
+        const int num_comments = comments_node.number_of_children();
+        std::vector<std::string> comments;
+        for(int i = 0; i < num_comments; ++i)
+        {
+          comments.push_back(comments_node.child(i).as_string());
+        }
+        render.SetComments(comments);
+      }
 
       renders->push_back(render);
     }
@@ -1471,11 +1655,14 @@ CreatePlot::execute()
 
     std::string key = this->name() + "_cont";
 
-    detail::RendererContainer *container = new detail::RendererContainer(key,
-                                                                         &graph().workspace().registry(),
-                                                                         renderer,
-                                                                         collection,
-                                                                         topo_name);
+    detail::RendererContainer *container
+      = new detail::RendererContainer(key,
+                                      &graph().workspace().registry(),
+                                      renderer,
+                                      collection,
+                                      topo_name,
+                                      *data_object);
+
     set_output<detail::RendererContainer>(container);
 
 }

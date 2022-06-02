@@ -1,51 +1,9 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
-
-################################
-# cmake policy selections
-################################
 # avoid warnings for project commands w/o VERSION
 cmake_policy(SET CMP0048 NEW)
 
@@ -53,7 +11,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.6.0")
+project(ascent VERSION "0.8.0")
 
 ################################
 # Build Options
@@ -69,12 +27,36 @@ option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+# builtin libs: dray, apcomp, vtkh
+
+option(ENABLE_DRAY        "Build Devil Ray Support"   OFF)
+# Note: ENABLE_DRAY reqs ENABLE_APCOMP
+option(ENABLE_APCOMP      "Build AP Compositor"       OFF)
+option(ENABLE_VTKH        "Build VTK-h "              OFF)
+
+
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
+option(ENABLE_LOGGING     "Enable data logging"       OFF)
 option(ENABLE_DOCS        "Build Documentation"       ON)
-option(ENABLE_MFEM        "Enable MFEM support"       ON)
 
-option(ENABLE_BABELFLOW   "Enable BabelFlow runtime"  OFF)
+# DRay Specific Options
+option(DRAY_ENABLE_STATS          "Enable stats"         ON)
+option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
+
+# VTK-h Sepcific Options 
+
+option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
+
+# Cuda Specific Options
+option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
+
+
+#####################################################
+# Note: Third party libs like MFEM, FIDES, etc are 
+#       enabled when you provide MFEM_DIR, etc
+#####################################################
+
 
 if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
   message(FATAL_ERROR "No libraries are built. "
@@ -88,10 +70,25 @@ else()
   cmake_minimum_required(VERSION 3.9)
 endif()
 
-if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  message(FATAL_ERROR "Static libraries are required when building with CUDA")
+if(ENABLE_CUDA)
+    # ask politely a few times for SEPARABLE COMPILATION
+    set (CMAKE_CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "" )
+    set (CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "" )
 endif()
 
+################################
+# cmake policy selection
+################################
+# cmake 3.18+ use CMP0104 OLD to manually specify cuda flags
+#https://cmake.org/cmake/help/latest/policy/CMP0104.html
+if(POLICY CMP0104)
+    cmake_policy(SET CMP0104 OLD)
+endif()
+
+# allow find_packages to use ZZZ_ROOT vars
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 ################################
 # Populate the cmake gui
@@ -106,26 +103,12 @@ if(ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
-
 ################################
-# Set BLT Options
-################################
-# don't use BLT's all warnings feature
-set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
-
-if (NOT BLT_CXX_STD)
-    set(BLT_CXX_STD "c++11" CACHE STRING "")
-endif()
-
 # Init BLT
 ################################
-# if BLT_SOURCE_DIR is not set - use "blt" as default
-if(NOT BLT_SOURCE_DIR)
-    set(BLT_SOURCE_DIR "blt")
-endif()
-
-# init blt using BLT_SOURCE_DIR
-include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+# This also includes 
+# our BLT defaults
+include(cmake/SetupBLT.cmake)
 
 ################################
 # Basic CMake Setup
@@ -136,11 +119,6 @@ include(cmake/CMakeBasics.cmake)
 # Helpers for  VTKm device symbols
 ##################################
 include(cmake/VTKmDeviceSymbols.cmake)
-
-################################
-# Set a default build type
-################################
-include(cmake/AscentBuildType.cmake)
 
 ################################
 # Setup Fortran Support
@@ -167,12 +145,15 @@ include(cmake/SetupIncludes.cmake)
 ################################
 add_subdirectory(thirdparty_builtin)
 
+
 ################################
 # Add our libs
 ################################
+add_subdirectory(libs)
+
 add_subdirectory(flow)
 
-if(VTKM_FOUND)
+if(VTKH_FOUND OR ENABLE_VTKH)
   add_subdirectory(rover)
 endif()
 

@@ -1,0 +1,38 @@
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
+
+###############################################################################
+# file: apcomp_config.mk
+###############################################################################
+#
+# A CMake-generated Make include file Defines the following Make variables:
+#
+######
+#  APCOMP_INCLUDE_FLAGS
+#  APCOMP_LIB_FLAGS
+#  APCOMP_MPI_LIB_FLAGS
+######
+#
+#
+# For use in another Makefile build system
+###############################################################################
+
+APCOMP_DIR = @ASCENT_INSTALL_PREFIX@
+APCOMP_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
+APCOMP_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
+
+APCOMP_INCLUDE_FLAGS = -I $(APCOMP_DIR)/include/ascent
+APCOMP_LIB_FLAGS = -L $(APCOMP_DIR)/lib \
+                   -lapcomp \
+                   $(APCOMP_OPENMP_LINK_FLAGS)
+
+APCOMP_MPI_LIB_FLAGS = -L $(APCOMP_DIR)/lib \
+                       -lapcomp_mpi \
+                       $(APCOMP_OPENMP_LINK_FLAGS)
+
+APCOMP_LINK_RPATH = -Wl,-rpath,$(APCOMP_DIR)/lib
+
+

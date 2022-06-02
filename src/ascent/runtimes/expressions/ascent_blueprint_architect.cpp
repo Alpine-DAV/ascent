@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -793,6 +755,74 @@ has_component(const conduit::Node &dataset,
   return has_comp;
 }
 
+int num_components(const conduit::Node &dataset,
+                   const std::string &field_name)
+{
+  int comps = -1;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/" + field_name + "/values"))
+    {
+      const conduit::Node &vals = dom["fields/" + field_name + "/values"];
+      comps = std::max(comps, int(vals.number_of_children()));
+    }
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  int global_comps;
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  MPI_Allreduce(&comps, &global_comps, 1, MPI_INT, MPI_MAX, mpi_comm);
+  comps = global_comps;
+#endif
+  return comps;
+}
+
+std::string component_name(const conduit::Node &dataset,
+                           const std::string &field_name,
+                           const int component_id)
+{
+  if(component_id <= 0)
+  {
+    ASCENT_ERROR("Invalid component_id "<<component_id
+                 <<". Component id must be greater than zero.");
+  }
+
+
+  int comps = num_components(dataset, field_name);
+  if(comps == -1)
+  {
+    ASCENT_ERROR("Field '"<<field_name<<"' does not exist");
+  }
+
+  if(component_id >= comps)
+  {
+    ASCENT_ERROR("Field '"<<field_name<<"' invalid component_id "
+                 <<component_id<<". Number of components "<<comps);
+  }
+
+  std::string res;
+  for(int i = 0; i < dataset.number_of_children(); ++i)
+  {
+    const conduit::Node &dom = dataset.child(i);
+    if(dom.has_path("fields/" + field_name + "/values"))
+    {
+      res = dom["fields/" + field_name + "/values"].child(component_id).name();
+    }
+  }
+
+  std::set<std::string> res_set;
+  res_set.insert(res);
+  gather_strings(res_set);
+  if(res_set.size() != 1)
+  {
+    ASCENT_ERROR("Mismatched component names res_set size "<<res_set.size());
+  }
+
+  res = *res_set.begin();
+  return res;
+}
+
 // TODO If someone names their fields x,y,z things will go wrong
 bool
 is_xyz(const std::string &axis_name)
@@ -951,7 +981,7 @@ field_histogram(const conduit::Node &dataset,
   double *global_bins = new double[num_bins];
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce(bins, global_bins, num_bins, MPI_INT, MPI_SUM, mpi_comm);
+  MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_SUM, mpi_comm);
 
   delete[] bins;
   bins = global_bins;
@@ -1151,6 +1181,58 @@ global_topo_and_assoc(const conduit::Node &dataset,
   return res;
 }
 
+template<typename T>
+int find_bin(const T* bins, const int size, const T val, bool clamp)
+{
+  int first = 0;
+  int len = size;
+  while(len > 0)
+  {
+    int half = len >> 1;
+    int middle = first + half;
+
+    if(bins[middle] <= val)
+    {
+      first = middle + 1;
+      len -= half + 1;
+    }
+    else
+    {
+      len = half;
+    }
+  }
+
+  // values outside to the left will be 0 and values outside to the right
+  // will be size, that is valid bins go from 1 to size - 1
+  if(clamp)
+  {
+    first = first == 0 ? 1 : first;
+    first = first == size ? size - 1 : first;
+  }
+  else
+  {
+    // make sure that values on the far right edge of the range
+    // falls into the last bin
+    if(first == size && val == bins[first-1])
+    {
+      first--;
+    }
+    // ok, if not in the bins return -1 for not found;
+    if(first == 0 || first >= size)
+    {
+      first = -1;
+    }
+  }
+
+  if(first != -1)
+  {
+    // shift valid bins into the 0 to size - 1 range;
+    first--;
+  }
+
+  return first;
+}
+
 // returns -1 if value lies outside the range
 int
 get_bin_index(const conduit::float64 value, const conduit::Node &axis)
@@ -1159,34 +1241,18 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
   if(axis.has_path("bins"))
   {
     // rectilinear
-    const conduit::float64 *bins_begin = axis["bins"].value();
-    const conduit::float64 *bins_end =
-        bins_begin + axis["bins"].dtype().number_of_elements() - 1;
-    // first element greater than value
-    const conduit::float64 *res = std::upper_bound(bins_begin, bins_end, value);
-    if(clamp)
-    {
-      if(res <= bins_begin)
-      {
-        return 0;
-      }
-      else if(res >= bins_end)
-      {
-        return bins_end - bins_begin - 1;
-      }
-    }
-    else if(res <= bins_begin || res >= bins_end)
-    {
-      return -1;
-    }
-    return (res - 1) - bins_begin;
+    const conduit::float64 *bins = axis["bins"].value();
+    const int num_bins = axis["bins"].dtype().number_of_elements();
+    return find_bin(bins, num_bins, value, clamp);
   }
   // uniform
   const double inv_delta =
       axis["num_bins"].to_float64() /
       (axis["max_val"].to_float64() - axis["min_val"].to_float64());
+
   const int bin_index =
       static_cast<int>((value - axis["min_val"].to_float64()) * inv_delta);
+
   if(clamp)
   {
     if(bin_index < 0)
@@ -1238,7 +1304,6 @@ populate_homes(const conduit::Node &dom,
   {
     homes_size = num_cells(dom, topo_name);
   }
-
   // each domain has a homes array
   // homes maps each datapoint (or cell) to an index in bins
   res.set(conduit::DataType::c_int(homes_size));
@@ -1262,13 +1327,17 @@ populate_homes(const conduit::Node &dom,
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
           const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
+          // don't set anything if we haven't found a bin yet
+          if(homes[i] != -1)
           {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
+            if(bin_index != -1)
+            {
+              homes[i] += bin_index * stride;
+            }
+            else
+            {
+              homes[i] = -1;
+            }
           }
         }
       }
@@ -1278,13 +1347,17 @@ populate_homes(const conduit::Node &dom,
         for(int i = 0; i < values.number_of_elements(); ++i)
         {
           const int bin_index = get_bin_index(values[i], axis);
-          if(bin_index != -1)
+          // don't set anything if we haven't found a bin yet
+          if(homes[i] != -1)
           {
-            homes[i] += bin_index * stride;
-          }
-          else
-          {
-            homes[i] = -1;
+            if(bin_index != -1)
+            {
+              homes[i] += bin_index * stride;
+            }
+            else
+            {
+              homes[i] = -1;
+            }
           }
         }
       }
@@ -1305,13 +1378,17 @@ populate_homes(const conduit::Node &dom,
         }
         const double *loc = n_loc.value();
         const int bin_index = get_bin_index(loc[coord], axis);
-        if(bin_index != -1)
+        // don't set anything if we haven't found a bin yet
+        if(homes[i] != -1)
         {
-          homes[i] += bin_index * stride;
-        }
-        else
-        {
-          homes[i] = -1;
+          if(bin_index != -1)
+          {
+            homes[i] += bin_index * stride;
+          }
+          else
+          {
+            homes[i] = -1;
+          }
         }
       }
     }
@@ -2275,7 +2352,9 @@ binning(const conduit::Node &dataset,
 }
 
 void
-paint_binning(const conduit::Node &binning, conduit::Node &dataset)
+paint_binning(const conduit::Node &binning,
+              conduit::Node &dataset,
+              const std::string field_name)
 {
   const conduit::Node &bin_axes = binning["attrs/bin_axes/value"];
 
@@ -2328,12 +2407,18 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
     {
       reduction_var = "cnt";
     }
-    const std::string field_name =
+    std::string fname =
         "painted_" + reduction_var + "_" +
         binning["attrs/reduction_op/value"].as_string();
-    dom["fields/" + field_name + "/association"] = assoc_str;
-    dom["fields/" + field_name + "/topology"] = topo_name;
-    dom["fields/" + field_name + "/values"].set(
+
+    if(field_name != "")
+    {
+      fname = field_name;
+    }
+
+    dom["fields/" + fname + "/association"] = assoc_str;
+    dom["fields/" + fname + "/topology"] = topo_name;
+    dom["fields/" + fname + "/values"].set(
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
         dom["fields/" + field_name + "/values"].value();
@@ -2355,6 +2440,7 @@ paint_binning(const conduit::Node &binning, conduit::Node &dataset)
   }
 }
 
+// TODO RESOLVE
 void
 binning_mesh2(const conduit::Node &binning, conduit::Node &mesh)
 {
@@ -2421,7 +2507,9 @@ binning_mesh2(const conduit::Node &binning, conduit::Node &mesh)
 }
 
 void
-binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
+binning_mesh(const conduit::Node &binning,
+             conduit::Node &mesh,
+             const std::string field_name)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
 
@@ -2471,11 +2559,15 @@ binning_mesh(const conduit::Node &binning, conduit::Node &mesh)
   {
     reduction_var = "cnt";
   }
-  const std::string field_name =
+  std::string fname =
       reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();
-  mesh["fields/" + field_name + "/association"] = "element";
-  mesh["fields/" + field_name + "/topology"] = "binning_topo";
-  mesh["fields/" + field_name + "/values"].set(binning["attrs/value/value"]);
+  if(field_name != "")
+  {
+    fname = field_name;
+  }
+  mesh["fields/" + fname + "/association"] = "element";
+  mesh["fields/" + fname + "/topology"] = "binning_topo";
+  mesh["fields/" + fname + "/values"].set(binning["attrs/value/value"]);
 
   conduit::Node info;
   if(!conduit::blueprint::verify("mesh", mesh, info))
@@ -2711,13 +2803,16 @@ field_min(const conduit::Node &dataset, const std::string &field)
   {
     assoc_str = dataset.child(domain)["fields/" + field + "/association"].as_string();
 
+    const std::string topo_str =
+        dataset.child(domain)["fields/" + field + "/topology"].as_string();
+
     if(assoc_str == "vertex")
     {
-      loc = vert_location(dataset.child(domain), index);
+      loc = vert_location(dataset.child(domain), index, topo_str);
     }
     else if(assoc_str == "element")
     {
-      loc = element_location(dataset.child(domain), index);
+      loc = element_location(dataset.child(domain), index, topo_str);
     }
     else
     {
@@ -2862,13 +2957,16 @@ field_max(const conduit::Node &dataset, const std::string &field)
     const std::string assoc_str =
         dataset.child(domain)["fields/" + field + "/association"].as_string();
 
+    const std::string topo_str =
+        dataset.child(domain)["fields/" + field + "/topology"].as_string();
+
     if(assoc_str == "vertex")
     {
-      loc = vert_location(dataset.child(domain), index);
+      loc = vert_location(dataset.child(domain), index, topo_str);
     }
     else if(assoc_str == "element")
     {
-      loc = element_location(dataset.child(domain), index);
+      loc = element_location(dataset.child(domain), index, topo_str);
     }
     else
     {
@@ -3226,6 +3324,56 @@ vertices(const conduit::Node &domain, const std::string topo)
   return func.m_vertices;
 }
 
+conduit::Node
+final_topo_and_assoc(const conduit::Node &dataset,
+                     const conduit::Node &bin_axes,
+                     const std::string &topo_name,
+                     const std::string &assoc_str)
+{
+  std::vector<std::string> axis_names = bin_axes.child_names();
+
+  bool all_xyz = true;
+  for(const std::string &axis_name : axis_names)
+  {
+    all_xyz &= is_xyz(axis_name);
+  }
+  std::string new_topo_name;
+  std::string new_assoc_str;
+  if(all_xyz)
+  {
+    new_topo_name = topo_name;
+    new_assoc_str = assoc_str;
+  }
+  else
+  {
+    const conduit::Node &topo_and_assoc =
+        global_topo_and_assoc(dataset, axis_names);
+    new_topo_name = topo_and_assoc["topo_name"].as_string();
+    new_assoc_str = topo_and_assoc["assoc_str"].as_string();
+    if(!topo_name.empty() && topo_name != new_topo_name)
+    {
+      ASCENT_ERROR(
+          "The specified topology '"
+          << topo_name
+          << "' does not have the required fields specified in the bin axes: "
+          << bin_axes.to_yaml() << "\n Did you mean to use '" << new_topo_name
+          << "'?");
+    }
+    if(!assoc_str.empty() && assoc_str != new_assoc_str)
+    {
+      ASCENT_ERROR(
+          "The specified association '"
+          << assoc_str
+          << "' conflicts with the association of the fields of the bin axes:"
+          << bin_axes.to_yaml() << ". Did you mean to use '" << new_assoc_str
+          << "'?");
+    }
+  }
+  conduit::Node res;
+  res["topo_name"] = new_topo_name;
+  res["assoc_str"] = new_assoc_str;
+  return res;
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

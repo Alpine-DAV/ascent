@@ -1,8 +1,15 @@
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
+
 set(install_files
   ascent_actions.json
   expandingVortex.vti
   paraview_ascent_source.py
-  paraview-package-momentinvariants.patch)
+  paraview-package-momentinvariants.patch
+  summit-moment-invariants.lsf)
 
 set(configure_files
   paraview-vis-cloverleaf3d-momentinvariants.py.in

@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -52,8 +14,8 @@
 #define ASCENT_EXPRESSION_FILTERS
 
 #include <ascent.hpp>
-
 #include <flow_filter.hpp>
+#include <flow_graph.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -72,6 +34,28 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
+
+// for multi line statements, we have intermediate symbols:
+// bananas = max(field('pressure'))
+// bananas < 0
+// We want to keep the intermediate results around (e.g., the value of
+// bananas) to put in the cache and for debugging,
+// but we don't know what the value is until we execute the graph.
+// Each filter will call this function to update the return values.
+void resolve_symbol_result(flow::Graph &graph,
+                           const conduit::Node *output,
+                           const std::string filter_name);
+
+// Need to validate the binning input in several places
+// so consolidate this call
+void binning_interface(const std::string &reduction_var,
+                       const std::string &reduction_op,
+                       const conduit::Node &n_empty_bin_val,
+                       const conduit::Node &n_component,
+                       const conduit::Node &n_axis_list,
+                       conduit::Node &dataset,
+                       conduit::Node &n_binning,
+                       conduit::Node &n_output_axes);
 
 //-----------------------------------------------------------------------------
 ///
@@ -107,6 +91,17 @@ class History : public ::flow::Filter
 public:
   History();
   ~History();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class HistoryRange : public ::flow::Filter
+{
+public:
+  HistoryRange();
+  ~HistoryRange();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -173,6 +168,17 @@ class Cycle : public ::flow::Filter
 public:
   Cycle();
   ~Cycle();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Time : public ::flow::Filter
+{
+public:
+  Time();
+  ~Time();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -267,6 +273,28 @@ public:
   virtual void execute();
 };
 
+class ScalarGradient : public ::flow::Filter
+{
+public:
+  ScalarGradient();
+  ~ScalarGradient();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class ArrayGradient : public ::flow::Filter
+{
+public:
+  ArrayGradient();
+  ~ArrayGradient();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class FieldSum : public ::flow::Filter
 {
 public:
@@ -327,6 +355,51 @@ class Magnitude : public ::flow::Filter
 public:
   Magnitude();
   ~Magnitude();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Abs : public ::flow::Filter
+{
+public:
+  Abs();
+  ~Abs();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+
+class Exp : public ::flow::Filter
+{
+public:
+  Exp();
+  ~Exp();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Log : public ::flow::Filter
+{
+public:
+  Log();
+  ~Log();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Pow : public ::flow::Filter
+{
+public:
+  Pow();
+  ~Pow();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -421,6 +494,17 @@ public:
   virtual void execute();
 };
 
+class Topo : public ::flow::Filter
+{
+public:
+  Topo();
+  ~Topo();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
 class BinByIndex : public ::flow::Filter
 {
 public:
@@ -465,16 +549,6 @@ public:
   virtual void execute();
 };
 
-class ExpressionList : public ::flow::Filter
-{
-public:
-  ExpressionList();
-  ~ExpressionList();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
 
 class Quantile : public ::flow::Filter
 {
@@ -525,6 +599,39 @@ class Bounds : public ::flow::Filter
 public:
   Bounds();
   ~Bounds();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Lineout : public ::flow::Filter
+{
+public:
+  Lineout();
+  ~Lineout();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Nan : public ::flow::Filter
+{
+public:
+  Nan();
+  ~Nan();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class Replace : public ::flow::Filter
+{
+public:
+  Replace();
+  ~Replace();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);

@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -103,6 +65,7 @@ web_client_root_directory()
     return web_root;
 }
 
+#ifdef ASCENT_WEBSERVER_ENABLED
 //-----------------------------------------------------------------------------
 WebInterface::WebInterface()
 :m_enabled(false),
@@ -143,7 +106,6 @@ WebInterface::Enable()
 {
     m_enabled = true;
 }
-
 
 //-----------------------------------------------------------------------------
 WebSocket *
@@ -231,27 +193,6 @@ WebInterface::PushRenders(const Node &renders)
     wsock->send(msg);
 }
 
-// //-----------------------------------------------------------------------------
-// void
-// WebInterface::PushImage(PNGEncoder &png)
-// {
-//     //  Don't do any more work unless we have a valid client connection
-//     // (also handles case where stream is not enabled)
-//     WebSocket *wsock = Connection();
-//
-//     if(wsock == NULL)
-//     {
-//         return;
-//     }
-//     // create message with image data
-//     png.Base64Encode();
-//     Node msg;
-//     msg["type"] = "image";
-//     msg["data"] = "data:image/png;base64," + png.Base64Node().as_string();
-//     // sent the message
-//     wsock->send(msg);
-// }
-
 //-----------------------------------------------------------------------------
 void
 WebInterface::EncodeImage(const std::string &png_image_path,
@@ -289,7 +230,55 @@ WebInterface::EncodeImage(const std::string &png_image_path,
     out["data"] = "data:image/png;base64," + png_data["encoded"].as_string();
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+#else // else #ifdef ASCENT_WEBSERVER_ENABLED
+//-----------------------------------------------------------------------------
+// everything web related is stubbed out as a no-op
+// the runtime will issue an error message if folks try to enable web streaming
+//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+WebInterface::WebInterface()
+{}
+
+//-----------------------------------------------------------------------------
+WebInterface::~WebInterface()
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetDocumentRoot(const std::string &path)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetPoll(int ms_poll)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::SetTimeout(int ms_timeout)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::Enable()
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::PushMessage(const Node &msg)
+{}
+
+//-----------------------------------------------------------------------------
+void
+WebInterface::PushRenders(const Node &renders)
+{}
+
+//-----------------------------------------------------------------------------
+#endif // end #ifdef ASCENT_WEBSERVER_ENABLED
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };

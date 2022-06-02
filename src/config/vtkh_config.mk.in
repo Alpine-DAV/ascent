@@ -1,0 +1,84 @@
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
+
+###############################################################################
+# file: vtkh_config.mk
+###############################################################################
+#
+# A CMake-generated Make include file Defines the following Make variables:
+#
+######
+#  VTKH_INCLUDE_FLAGS
+#  VTKH_LIB_FLAGS
+#  VTKH_MPI_LIB_FLAGS
+######
+#
+# For use in another Makefile build system
+############################################################################
+
+VTKH_DIR = @ASCENT_INSTALL_PREFIX@
+
+VTKH_VTKM_DIR = @ASCENT_VTKM_DIR@
+VTKH_VTKM_VERSION = @ASCENT_VTKM_VERSION@
+
+VTKH_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
+
+VTKH_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
+
+
+##########
+# VTKM
+##########
+
+# include flags
+VTKM_VTKM_INCLUDE_FLAGS = -I $(VTKH_VTKM_DIR)/include/
+
+# lib flags
+VTKH_VTKM_LIB_FLAGS = -L $(VTKH_VTKM_DIR)/lib \
+                        -lvtkm_rendering-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_filter_contour-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_filter_gradient-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_filter_extra-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_filter_common-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_worklet-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_source-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_io-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_lodepng-$(VTKH_VTKM_VERSION) \
+                        -lvtkm_cont-$(VTKH_VTKM_VERSION) \
+                        -lvtkmdiympi_nompi
+
+
+#########################
+# VTKH Include Flags
+#########################
+VTKH_INCLUDE_FLAGS = -I $(VTKH_DIR)/include/ $(VTKM_VTKM_INCLUDE_FLAGS)
+
+
+####################
+# VTKH Lib Flags
+####################
+
+# If using VTKH without mpi
+VTKH_LIB_FLAGS=-L $(VTKH_DIR)/lib \
+                  -lvtkh_rendering \
+                  -lvtkh_compositing \
+                  -lvtkh_filters \
+                  -lvtkh_core \
+                  -lvtkh_utils \
+                  -lascent_lodepng $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
+
+
+# If using VTKH with mpi
+VTKH_MPI_LIB_FLAGS=-L $(VTKH_DIR)/lib \
+                      -lvtkh_rendering_mpi \
+                      -lvtkh_compositing_mpi \
+                      -lvtkh_filters_mpi \
+                      -lvtkh_core_mpi \
+                      -lvtkh_utils_mpi \
+                      -lascent_lodepng $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
+
+
+

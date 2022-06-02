@@ -1,3 +1,9 @@
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+
 #ifndef rover_loggin_h
 #define rover_loggin_h
 
@@ -63,7 +69,7 @@ protected:
 #define ROVER_ERROR(msg)
 
 #define ROVER_DATA_OPEN(name)
-#define ROVER_DATA_CLOSE(name)
+#define ROVER_DATA_CLOSE(name) (void)name;
 #define ROVER_DATA_ADD(key,value)
 #endif
 } // namespace rover

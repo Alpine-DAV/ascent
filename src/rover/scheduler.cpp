@@ -1,44 +1,9 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2018, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-749865
-//
-// All rights reserved.
-//
-// This file is part of Rover.
-//
-// Please also read rover/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+
 
 #include <assert.h>
 #include <fstream>
@@ -50,6 +15,10 @@
 #include <vtkm_typedefs.hpp>
 #include <ray_generators/camera_generator.hpp>
 #include <rover_exceptions.hpp>
+
+#include <conduit.hpp>
+#include <conduit_relay.hpp>
+#include <conduit_blueprint.hpp>
 
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
@@ -635,6 +604,93 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
   }
 }
 
+template<typename FloatType>
+void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
+{
+  int height = 0;
+  int width = 0;
+  m_ray_generator->get_dims(height, width);
+  assert( height > 0 );
+  assert( width > 0 );
+  ROVER_INFO("Saving blueprint file " << height << " "<<width);
+
+  const std::string topo_name = "image_topo";
+  const std::string coord_name = "image_coords";
+
+  const int num_channels = m_result.get_num_channels();
+
+  conduit::Node &n_topo = dataset["topologies/"+topo_name];
+  n_topo["coordset"] = coord_name;
+  n_topo["type"] = "uniform";
+
+  conduit::Node &n_coords = dataset["coordsets/"+coord_name];
+  n_coords["type"] = "uniform";
+  n_coords["dims/i"] = num_channels + 1;
+  n_coords["dims/j"] = width + 1;
+  n_coords["dims/k"] = height + 1;
+
+  // probably want to match the physical dims of the detector
+  n_coords["origin/x"] = 0;
+  n_coords["origin/y"] = 0;
+  n_coords["origin/z"] = 0;
+
+  // scale the group spacing so we get more squarish data set
+  n_coords["spacing/dx"] = float(width) / float(num_channels);
+  n_coords["spacing/dy"] = 1.f;
+  n_coords["spacing/dz"] = 1.f;
+  n_coords["labels"].append() = "groups";
+  n_coords["labels"].append() = "width";
+  n_coords["labels"].append() = "height";
+
+
+  if(m_render_settings.m_render_mode == energy)
+  {
+    std::vector<int> shape = {num_channels, width, height};
+    std::vector<int> strides = {1, num_channels, num_channels * width};
+
+    if(m_result.has_intensity(0))
+    {
+      conduit::Node &n_int = dataset["fields/intensities"];
+      n_int["topology"] = topo_name;
+      n_int["association"] = "element";
+      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_intensities();
+      FloatType *ints_buffer = get_vtkm_ptr(ints);
+      // can't set external since this goes out of scope
+      n_int["values"].set(ints_buffer, ints.GetNumberOfValues());
+
+      n_int["shape"].set(shape);
+      n_int["strides"].set(strides);
+      n_int["labels"].append() = "groups";
+      n_int["labels"].append() = "width";
+      n_int["labels"].append() = "height";
+    }
+
+    if(m_result.has_optical_depth(0))
+    {
+      conduit::Node &n_op = dataset["fields/optical_depth"];
+      n_op["topology"] = topo_name;
+      n_op["association"] = "element";
+      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_optical_depths();
+      FloatType *ints_buffer = get_vtkm_ptr(ints);
+      // can't set external since this goes out of scope
+      n_op["values"].set(ints_buffer, ints.GetNumberOfValues());
+
+      n_op["shape"].set(shape);
+      n_op["strides"].set(strides);
+
+      n_op["labels"].append() = "groups";
+      n_op["labels"].append() = "width";
+      n_op["labels"].append() = "height";
+    }
+  }
+
+  //conduit::relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
+  conduit::Node info;
+  if(!conduit::blueprint::verify("mesh",dataset, info))
+  {
+    info.print();
+  }
+}
 
 //
 // Explicit instantiation

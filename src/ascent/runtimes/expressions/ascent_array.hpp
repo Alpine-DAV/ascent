@@ -1,7 +1,8 @@
-// Copyright 2019 Lawrence Livermore National Security, LLC and other
-// Devil Ray Developers. See the top-level COPYRIGHT file for details.
-//
-// SPDX-License-Identifier: (BSD-3-Clause)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #ifndef ASCENT_ARRAY_HPP
 #define ASCENT_ARRAY_HPP
@@ -31,24 +32,23 @@ template <typename T> class Array
   void resize (const size_t size);
   // zero copy a pointer provided by an external source
   void set (T *data, const size_t size);
-  T *host_ptr ();
-  T *device_ptr ();
-  const T *host_ptr_const () const;
-  const T *device_ptr_const () const;
 
-  T *ptr(const std::string loc);
-  const T *ptr_const(const std::string loc) const;
-
+  T *get_host_ptr ();
+  T *get_device_ptr ();
+  const T *get_host_ptr_const () const;
+  const T *get_device_ptr_const () const;
   void summary ();
   void status();
   void operator= (const Array<T> &other);
+
   // gets a single value and does not synch data between
   // host and device
-  T value (const size_t i) const;
+  T get_value (const size_t i) const;
+  
   Array<T> copy ();
 
   protected:
-  std::shared_ptr<ArrayInternals<T>> m_internals;
+    std::shared_ptr<ArrayInternals<T>> m_internals;
 };
 
 } // namespace runtime

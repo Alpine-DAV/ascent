@@ -1,0 +1,3 @@
+export LD_LIBRARY_PATH=/mnt/disk2TB/proj/ascent/install/lib:$LD_LIBRARY_PATH
+mpirun -np 4 ./cloverleaf3d_par
+

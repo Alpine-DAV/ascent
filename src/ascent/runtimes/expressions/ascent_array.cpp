@@ -1,7 +1,8 @@
-// Copyright 2019 Lawrence Livermore National Security, LLC and other
-// Devil Ray Developers. See the top-level COPYRIGHT file for details.
-//
-// SPDX-License-Identifier: (BSD-3-Clause)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include "ascent_array.hpp"
 #include "ascent_array_internals.hpp"
@@ -48,46 +49,22 @@ template <typename T> void Array<T>::resize (const size_t size)
   m_internals->resize (size);
 }
 
-template <typename T> T *Array<T>::ptr (const std::string loc)
-{
-  if(loc == "device")
-  {
-    return m_internals->get_device_ptr ();
-  }
-  else
-  {
-    return m_internals->get_host_ptr ();
-  }
-}
-
-template <typename T> const T *Array<T>::ptr_const (const std::string loc) const
-{
-  if(loc == "device")
-  {
-    return m_internals->get_device_ptr_const();
-  }
-  else
-  {
-    return m_internals->get_host_ptr_const();
-  }
-}
-
-template <typename T> T *Array<T>::host_ptr ()
+template <typename T> T *Array<T>::get_host_ptr ()
 {
   return m_internals->get_host_ptr ();
 }
 
-template <typename T> T *Array<T>::device_ptr ()
+template <typename T> T *Array<T>::get_device_ptr ()
 {
   return m_internals->get_device_ptr ();
 }
 
-template <typename T> const T *Array<T>::host_ptr_const () const
+template <typename T> const T *Array<T>::get_host_ptr_const () const
 {
   return m_internals->get_host_ptr_const ();
 }
 
-template <typename T> const T *Array<T>::device_ptr_const () const
+template <typename T> const T *Array<T>::get_device_ptr_const () const
 {
   return m_internals->get_device_ptr_const ();
 }
@@ -97,17 +74,18 @@ template <typename T> void Array<T>::summary ()
   m_internals->summary ();
 }
 
+
 template <typename T> void Array<T>::status()
 {
   m_internals->status();
 }
 
-template <typename T> T Array<T>::value (const size_t i) const
+template <typename T> T Array<T>::get_value (const size_t i) const
 {
   return m_internals->get_value (i);
 }
 
-// Type Explicit instatiations
+// Type Explicit instantiations
 template class Array<unsigned char>;
 template class Array<int>;
 template class Array<long long int>;

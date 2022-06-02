@@ -1,46 +1,9 @@
-.. ############################################################################
-.. # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
-.. #
-.. # Produced at the Lawrence Livermore National Laboratory
-.. #
-.. # LLNL-CODE-716457
-.. #
-.. # All rights reserved.
-.. #
-.. # This file is part of Ascent.
-.. #
-.. # For details, see: http://ascent.readthedocs.io/.
-.. #
-.. # Please also read ascent/LICENSE
-.. #
-.. # Redistribution and use in source and binary forms, with or without
-.. # modification, are permitted provided that the following conditions are met:
-.. #
-.. # * Redistributions of source code must retain the above copyright notice,
-.. #   this list of conditions and the disclaimer below.
-.. #
-.. # * Redistributions in binary form must reproduce the above copyright notice,
-.. #   this list of conditions and the disclaimer (as noted below) in the
-.. #   documentation and/or other materials provided with the distribution.
-.. #
-.. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
-.. #   be used to endorse or promote products derived from this software without
-.. #   specific prior written permission.
-.. #
-.. # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-.. # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.. # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.. # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-.. # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.. # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.. # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-.. # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-.. # POSSIBILITY OF SUCH DAMAGE.
-.. #
-.. ############################################################################
+.. ###############################################################################
+.. # Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+.. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+.. # other details. No copyright assignment is required to contribute to Ascent.
+.. ###############################################################################
+
 
 CloverLeaf3D Ascent Demos
 ==========================
@@ -251,9 +214,9 @@ Using the Jupyter Extract for interactive Python analysis
 
 Ascent's Jupyter extract provides a path for interactive analysis and visualization in Jupyter Notebook. The Jupyter extract is an extension of the Python extract that allows tweaking of analysis methods as the simulation runs.
 
-In this demo we provide two example Jupyter Notebooks with code and instructions under ``examples/ascent/tutorial/jupyter_extract/notebooks`` and demonstrate how to connect them with Ascent.
+In this demo we provide two example Jupyter Notebooks with code and instructions under ``examples/tutorial/cloverleaf_demos/jupyter_extract/notebooks`` and demonstrate how to connect them with Ascent.
 
-First you will need to install the ``ascent_jupyter_bridge`` python module located in your source directory under ``src/ascent/ascent_jupyter_bridge``. Navigate to that directory and make sure you have ``pip`` installed then run the following commands:
+First you will need to install the ``ascent_jupyter_bridge`` python module located in your source directory under ``src/ascent/python/ascent_jupyter_bridge``. Navigate to that directory and make sure you have ``pip`` installed then run the following commands:
 
 .. code::
 
@@ -275,7 +238,7 @@ Then edit the ``ascent_actions.yaml`` file to request that Ascent run the Jupyte
 .. literalinclude:: ../../../src/examples/tutorial/cloverleaf_demos/jupyter_extract/ascent_actions.yaml
    :language: yaml
 
-(Also available in install directory: `examples/ascent/tutorial/cloverleaf_demos/jupyter_extract/ascent_actions.yaml`)
+(Also available in install directory: `examples/tutorial/cloverleaf_demos/jupyter_extract/ascent_actions.yaml`)
 
 Finally, run Cloverleaf3D:
 
@@ -283,7 +246,7 @@ Finally, run Cloverleaf3D:
 
    mpiexec -n 2 ./cloverleaf3d_par
 
-After the simulation has progressed a number of timesteps it will wait for a connection from Jupyter Notebook. To connect to a demo notebook make sure you are in ``examples/ascent/tutorial/jupyter_extract/notebooks`` and run:
+After the simulation has progressed a number of timesteps it will wait for a connection from Jupyter Notebook. To connect to a demo notebook make sure you are in ``examples/tutorial/jupyter_extract/notebooks`` and run:
 
 .. code::
 

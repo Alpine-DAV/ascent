@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2018, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://software.llnl.gov/ascent/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -68,6 +30,7 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
+
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, verbose_msgs)
 {
@@ -180,7 +143,6 @@ TEST(ascent_runtime_options, test_errors)
     Node n;
     // these will error to std::out, but we want to check they dont cras
     ascent.publish(n);
-    ascent.publish(n);
     ascent.close();
 
     Node open_opts;
@@ -188,7 +150,6 @@ TEST(ascent_runtime_options, test_errors)
     ascent.open(open_opts);
     ascent.close();
 
-    EXPECT_THROW(ascent.publish(n),conduit::Error);
     EXPECT_THROW(ascent.publish(n),conduit::Error);
     ascent.close();
 
@@ -870,6 +831,67 @@ TEST(ascent_runtime_options, test_field_filtering_binning)
     std::string bin2 = "binning('braid', 'sum', [axis('bananas', [0, 2.5, 5, 7.5, 10])])";
     queries["e2/params/expression"] = bin2;
     queries["e2/params/name"] = "binnning2";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_queries = actions.append();
+    add_queries["action"] = "add_queries";
+    add_queries["queries"] = queries;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_field_filtering_lineout)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with dray support
+    if(n["runtimes/ascent/dray/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent Devil Ray  support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    data["fields/bananas"] = data["fields/braid"];
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    data["state/cycle"] = 100;
+    data["state/time"] = 1.3;
+    data["state/domain_id"] = 0;
+
+    ASCENT_INFO("Testing filtering field list");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node queries;
+
+    std::string lineout = "lineout(10, vector(0,1,1), vector(5,5,5), fields = ['braid', 'bananas'])";
+    queries["e1/params/expression"] = lineout;
+    queries["e1/params/name"] = "binnning";
 
     conduit::Node actions;
     // add the extracts

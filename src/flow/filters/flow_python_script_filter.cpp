@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -242,6 +204,33 @@ PyObject* execute_python(PyObject *py_input,
                          << "\n";
 
     FLOW_CHECK_PYTHON_ERROR(py_interp, py_interp->run_script(filter_setup_src_oss.str()));
+    
+    std::string filter_source_file_path = "";
+    
+    if( params.has_child("file") )
+    {
+        filter_source_file_path = params["file"].as_string();
+    }
+    // this is used in the mpi case, where we read the file on one rank
+    // and present the script as "source", but we still want to present
+    // the file name
+    else if (params.has_child("source_file")) 
+    {
+        filter_source_file_path = params["source_file"].as_string();
+    }
+    
+    // inject the file name as __file__ in the module 
+    if( !filter_source_file_path.empty() )
+    {
+        filter_setup_src_oss.str("");
+        filter_setup_src_oss << "\n"
+                             << "if not '_flow_source_file_stack' in globals():\n"
+                             << "    _flow_source_file_stack = []\n"
+                             << "if '__file__' in globals():\n"
+                             << "    _flow_source_file_stack.append(__file__)\n"
+                             << "__file__ = \"" << filter_source_file_path << "\"\n";
+        FLOW_CHECK_PYTHON_ERROR(py_interp, py_interp->run_script(filter_setup_src_oss.str()));
+    }
 
 
     if( params.has_child("source") )
@@ -260,6 +249,14 @@ PyObject* execute_python(PyObject *py_input,
     {
         // bad!, it should at least be python's None
         CONDUIT_ERROR("python_script failed to fetch output");
+    }
+
+    // restore __file__ if changed
+    if( !filter_source_file_path.empty() )
+    {
+        const std::string file_stack_src = "if len(_flow_source_file_stack) > 0:\n"
+                                           "    __file__ = _flow_source_file_stack.pop()\n";
+        FLOW_CHECK_PYTHON_ERROR(py_interp, py_interp->run_script(file_stack_src));
     }
 
     // we need to incref b/c py_res is borrowed, and flow will decref

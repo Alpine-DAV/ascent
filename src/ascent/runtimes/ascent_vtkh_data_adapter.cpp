@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -70,7 +32,9 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayHandleExtractComponent.h>
+#include <vtkm/cont/CoordinateSystem.h>
 #include <vtkh/DataSet.hpp>
+
 // other ascent includes
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
@@ -577,8 +541,6 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
 
     }
 
-    res->cycle(cycle);
-    res->time(time);
     for(auto dset_it : datasets)
     {
       res->add(dset_it.second, dset_it.first);
@@ -1673,7 +1635,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
   if(is_uniform)
   {
-    auto points = coords.GetData().Cast<vtkm::cont::ArrayHandleUniformPointCoordinates>();
+    auto points = coords.GetData().AsArrayHandle<vtkm::cont::ArrayHandleUniformPointCoordinates>();
     auto portal = points.ReadPortal();
 
     auto origin = portal.GetOrigin();
@@ -1700,23 +1662,16 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                                     vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
                                                     vtkm::cont::ArrayHandle<vtkm::FloatDefault>> Cartesian;
 
-    typedef vtkm::cont::ArrayHandle<vtkm::FloatDefault> HandleType;
-    typedef typename HandleType::template ExecutionTypes<vtkm::cont::DeviceAdapterTagSerial>::PortalConst PortalType;
-    typedef typename vtkm::cont::ArrayPortalToIterators<PortalType>::IteratorType IteratorType;
-
-    const auto points = coords.GetData().Cast<Cartesian>();
+    const auto points = coords.GetData().AsArrayHandle<Cartesian>();
     auto portal = points.ReadPortal();
     auto x_portal = portal.GetFirstPortal();
     auto y_portal = portal.GetSecondPortal();
     auto z_portal = portal.GetThirdPortal();
 
-    IteratorType x_iter = vtkm::cont::ArrayPortalToIterators<PortalType>(x_portal).GetBegin();
-    IteratorType y_iter = vtkm::cont::ArrayPortalToIterators<PortalType>(y_portal).GetBegin();
-    IteratorType z_iter = vtkm::cont::ArrayPortalToIterators<PortalType>(z_portal).GetBegin();
     // work around for conduit not accepting const pointers
-    vtkm::FloatDefault *x_ptr = const_cast<vtkm::FloatDefault*>(&(*x_iter));
-    vtkm::FloatDefault *y_ptr = const_cast<vtkm::FloatDefault*>(&(*y_iter));
-    vtkm::FloatDefault *z_ptr = const_cast<vtkm::FloatDefault*>(&(*z_iter));
+    vtkm::FloatDefault *x_ptr = const_cast<vtkm::FloatDefault*>(x_portal.GetArray());
+    vtkm::FloatDefault *y_ptr = const_cast<vtkm::FloatDefault*>(y_portal.GetArray());
+    vtkm::FloatDefault *z_ptr = const_cast<vtkm::FloatDefault*>(z_portal.GetArray());
 
     output["topologies/"+topo_name+"/coordset"] = coords_name;
     output["topologies/"+topo_name+"/type"] = "rectilinear";
@@ -1748,11 +1703,12 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
 
-    vtkm::cont::VariantArrayHandle coordsHandle(coords.GetData());
+    vtkm::cont::UnknownArrayHandle coordsHandle(coords.GetData());
 
-    if(coordsHandle.IsType<Coords32>())
+    if(vtkm::cont::IsType<Coords32>(coordsHandle))
     {
-      Coords32 points = coordsHandle.Cast<Coords32>();
+      Coords32 points;
+      coordsHandle.AsArrayHandle(points);
 
       auto x_handle = points.GetArray(0);
       auto y_handle = points.GetArray(1);
@@ -1785,7 +1741,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(coordsHandle.IsType<CoordsVec32>())
     {
-      CoordsVec32 points = coordsHandle.Cast<CoordsVec32>();
+      CoordsVec32 points;
+      coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float32 *points_ptr = (vtkm::Float32*)vtkh::GetVTKMPointer(points);
@@ -1826,7 +1783,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(vtkm::cont::IsType<Coords64>(coordsHandle))
     {
-      Coords64 points = coordsHandle.Cast<Coords64>();
+      Coords64 points;
+      coordsHandle.AsArrayHandle(points);
 
       auto x_handle = points.GetArray(0);
       auto y_handle = points.GetArray(1);
@@ -1857,7 +1815,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(coordsHandle.IsType<CoordsVec64>())
     {
-     CoordsVec64 points = vtkm::cont::Cast<CoordsVec64>(coordsHandle);
+      CoordsVec64 points;
+      coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(points);
@@ -2099,14 +2058,15 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   output[path + "/association"] = conduit_name;
   output[path + "/topology"] = topo_name;
 
-  vtkm::cont::VariantArrayHandle dyn_handle = field.GetData();
+  vtkm::cont::UnknownArrayHandle dyn_handle = field.GetData();
   //
   // this can be literally anything. Lets do some exhaustive casting
   //
   if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2120,7 +2080,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float64>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float64>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2134,7 +2095,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int8>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2148,7 +2110,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2162,14 +2125,16 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int64>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int64>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ASCENT_ERROR("Conduit int64 and vtkm::Int64 are different. Cannot convert vtkm::Int64\n");
     //output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2183,7 +2148,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt8>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2197,37 +2163,43 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else
@@ -2247,8 +2219,6 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
   node.reset();
 
   bool success = true;
-  const int cycle = collection->cycle();
-  const double time = collection->time();
   // we have to re-merge the domains so all domains with the same
   // domain id end up in a single domain
   std::map<int, std::map<std::string,vtkm::cont::DataSet>> domain_map;
@@ -2262,8 +2232,6 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
 
       conduit::Node &dom = node.append();
       dom["state/domain_id"] = (int) domain_id;
-      dom["state/cycle"] = cycle;
-      dom["state/time"] = time;
 
       for(auto topo_it : domain_it.second)
       {

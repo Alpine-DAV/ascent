@@ -1,45 +1,7 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 ###############################################################################
@@ -111,6 +73,17 @@ else()
     message(STATUS "Found MFEM_USE_CONDUIT = YES in MFEM config.mk")
 endif()
 
+
+# see if mfem was built with mpi support, if so we need to propgate mpi deps
+# even for serial case
+string(REGEX MATCHALL "MFEM_USE_MPI += +YES" mfem_use_mpi ${mfem_cfg_file_txt})
+
+if(mfem_use_mpi STREQUAL "")
+    set(MFEM_MPI_ENABLED FALSE)
+else()
+    set(MFEM_MPI_ENABLED TRUE)
+endif()
+
 #find includes
 find_path(MFEM_INCLUDE_DIRS mfem.hpp
           PATHS ${MFEM_DIR}/include
@@ -138,6 +111,14 @@ if(MFEM_LIBRARIES)
                                       MFEM_LIBRARIES MFEM_INCLUDE_DIRS)
 endif()
 
+# add mpi if mfem uses mpi
+if(MFEM_MPI_ENABLED)
+    if(NOT MPI_FOUND)
+    message(FATAL_ERROR "MFEM was build with MPI support (config.mk has MFEM_USE_MPI = YES)"
+                        " but MPI::MPI_CXX target is missing.")
+    endif()
+    list(APPEND MFEM_LIBRARIES MPI::MPI_CXX)
+endif()
 
 if(NOT MFEM_FOUND)
     message(FATAL_ERROR "MFEM_FOUND is not a path to a valid MFEM install")

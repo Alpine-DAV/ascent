@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -133,10 +95,47 @@ void parse_binning(const std::string &expression,
 
 }
 
+// some expressions like lineouts take a list of fields
+void parse_field_list(const std::string &expression,
+                          std::set<std::string> &fields)
+{
+  // this is a string list of the form fields = ['bananas', 'apples']
+  std::regex e ("fields\\s*=\\s*\\[\\s*('[a-zA-Z][a-zA-Z_0-9]*'"
+                "\\s*,\\s*)*\\s*'[a-zA-Z][a-zA-Z_0-9]*'\\s*\\]");
+  std::smatch m;
+
+  std::set<std::string> matches;
+  std::string s = expression;
+  std::string flist;
+  // just get the entire matched experssion
+  if(std::regex_search (s,m,e) == true)
+  {
+    flist = m.str(0);
+  }
+  if(flist != "")
+  {
+    // ok we have a field list now get all the fields
+    std::regex inside_single("'([^\\']*)'");
+    while(std::regex_search (flist,m,inside_single))
+    {
+      // the first element in the match is the whole match
+      // e.g., 'bananas' and the second is the match inside the
+      // quotes = bananas, which is what we want
+      auto it = m.begin();
+      it++;
+      std::string field = *it;
+      fields.insert(field);
+      // move to the next match
+      flist = m.suffix().str();
+    }
+  }
+}
+
 void parse_expression(const std::string &expression,
                       std::set<std::string> &fields)
 {
   parse_binning(expression, fields);
+  parse_field_list(expression, fields);
 
   std::regex e ("field\\('(.*?)'\\)");
   std::smatch m;
@@ -177,6 +176,11 @@ void filter_fields(const conduit::Node &node,
           names[i] == "field1" || // support for composite vector
           names[i] == "field2" ||
           names[i] == "field3" )
+      {
+        fields.insert(child.as_string());
+      }
+      // rover xray
+      if(names[i] == "absorption" || names[i] == "emission")
       {
         fields.insert(child.as_string());
       }

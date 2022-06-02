@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -59,12 +21,14 @@
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
+#include <conduit_blueprint_mesh.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_metadata.hpp>
 #include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -78,6 +42,7 @@
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
+#include <conduit_blueprint_mpi_mesh.hpp>
 #endif
 
 // std includes
@@ -281,13 +246,16 @@ bool clean_mesh(const conduit::Node &data, conduit::Node &output)
   // valid single domain
   if(output.number_of_children() == 0)
   {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = blueprint::mesh::verify(data, info);
-    if(is_valid)
+    if(!data.dtype().is_empty())
     {
-      conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
+      // check to see if this is a single valid domain
+      conduit::Node info;
+      bool is_valid = blueprint::mesh::verify(data, info);
+      if(is_valid)
+      {
+        conduit::Node &dest_dom = output.append();
+        dest_dom.set_external(data);
+      }
     }
   }
 
@@ -338,6 +306,7 @@ void filter_fields(const conduit::Node &input,
     const conduit::Node &dom = input.child(d);
     conduit::Node &out_dom = output.append();
     std::set<std::string> topos;
+    std::set<std::string> matsets;
 
     for(int f = 0; f < fields.size(); ++f)
     {
@@ -350,6 +319,13 @@ void filter_fields(const conduit::Node &input,
         const std::string topo = dom[fpath + "/topology"].as_string();
         const std::string tpath = "topologies/" + topo;
         topos.insert(topo);
+
+        // check for matset
+        if(dom.has_path(fpath + "/matset"))
+        {
+          const std::string mopo = dom[fpath + "/matset"].as_string();
+          matsets.insert(mopo);
+        }
 
         if(!out_dom.has_path(tpath))
         {
@@ -394,11 +370,26 @@ void filter_fields(const conduit::Node &input,
       }
     }
 
-    // auto save out ghost fields from subset of topologies
-    Node * meta = graph.workspace().registry().fetch<Node>("metadata");
-    if(meta->has_path("ghost_field"))
+    // add nestsets associated with referenced topologies
+    if(dom.has_path("matsets"))
     {
-      const conduit::Node ghost_list = (*meta)["ghost_field"];
+      const int num_matts = dom["matsets"].number_of_children();
+      const std::vector<std::string> matt_names = dom["matsets"].child_names();
+      for(int i = 0; i < num_matts; ++i)
+      {
+        const conduit::Node &matt = dom["matsets"].child(i);
+        if(matsets.find(matt_names[i]) != matsets.end())
+        {
+          out_dom["matsets/"+matt_names[i]].set_external(matt);
+        }
+      }
+    }
+
+    // auto save out ghost fields from subset of topologies
+    Node meta = Metadata::n_metadata;
+    if(meta.has_path("ghost_field"))
+    {
+      const conduit::Node ghost_list = meta["ghost_field"];
       const int num_ghosts = ghost_list.number_of_children();
 
       for(int i = 0; i < num_ghosts; ++i)
@@ -1057,7 +1048,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = output_dir(path, graph());
+    path = output_dir(path);
 
     if(params().has_child("protocol"))
     {
@@ -1107,6 +1098,27 @@ RelayIOSave::execute()
       selected.set_external(*in);
     }
 
+    Node meta = Metadata::n_metadata;
+
+    // Get the cycle and add it so filters don't have to
+    // propagate this
+    int cycle = -1;
+
+    if(meta.has_path("cycle"))
+    {
+      cycle = meta["cycle"].as_int32();
+    }
+    if(cycle != -1)
+    {
+      const int num_domains = selected.number_of_children();
+      for(int i = 0; i < num_domains; ++i)
+      {
+        conduit::Node &dom = selected.child(i);
+        dom["state/cycle"] = cycle;
+      }
+    }
+
+
     int num_files = -1;
 
     if(params().has_path("num_files"))
@@ -1120,7 +1132,7 @@ RelayIOSave::execute()
         conduit::relay::io::save(selected,path);
         result_path = path;
     }
-    else if( protocol == "blueprint/mesh/hdf5")
+    else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
     {
         mesh_blueprint_save(selected,
                             path,
@@ -1128,20 +1140,20 @@ RelayIOSave::execute()
                             num_files,
                             result_path);
     }
-    else if( protocol == "blueprint/mesh/json")
+    else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "hdf5",
+                            "json",
                             num_files,
                             result_path);
 
     }
-    else if( protocol == "blueprint/mesh/yaml")
+    else if( protocol == "blueprint/mesh/yaml" || protocol == "yaml")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "hdf5",
+                            "yaml",
                             num_files,
                             result_path);
 
@@ -1230,6 +1242,169 @@ RelayIOLoad::execute()
     set_output<Node>(res);
 
 }
+//-----------------------------------------------------------------------------
+BlueprintFlatten::BlueprintFlatten()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+BlueprintFlatten::~BlueprintFlatten()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+BlueprintFlatten::declare_interface(Node &i)
+{
+    i["type_name"]   = "false";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+BlueprintFlatten::verify_params(const conduit::Node &params,
+                           conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("path") ||
+       ! params["path"].dtype().is_string() )
+    {
+        info["errors"].append() = "Missing required string parameter 'path'";
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("path");
+    valid_paths.push_back("protocol");
+    valid_paths.push_back("fields");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+        res = false;
+	info["error"].append() = surprises;
+    }
+
+    return res;
+    //return verify_io_params(params,info);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+BlueprintFlatten::execute()
+{
+    std::string path, protocol;
+    path = params()["path"].as_string();
+    path = output_dir(path);
+
+    if(params().has_child("protocol"))
+    {
+        protocol = params()["protocol"].as_string();
+    }
+
+    if(!input("in").check_type<DataObject>())
+    {
+        // error
+        ASCENT_ERROR("Blueprint flatten requires a DataObject input");
+    }
+
+    DataObject *data_object  = input<DataObject>("in");
+    if(!data_object->is_valid())
+    {
+      return;
+    }
+    std::shared_ptr<Node> n_input = data_object->as_node();
+
+    Node *in = n_input.get();
+    Node selected;
+    if(params().has_path("fields"))
+    {
+      std::vector<std::string> field_selection;
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("Blueprint flatten field selection list must be non-empty");
+      }
+      for(int i = 0; i < num_fields; ++i)
+      {
+        const conduit::Node &f = flist.child(i);
+        if(!f.dtype().is_string())
+        {
+           ASCENT_ERROR("Blueprint flatten field selection list values must be a string");
+        }
+        field_selection.push_back(f.as_string());
+      }
+      detail::filter_fields(*in, selected, field_selection, graph());
+    }
+    else
+    {
+      // select all fields
+      selected.set_external(*in);
+    }
+    Node output;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    blueprint::mpi::mesh::flatten(selected,
+		                  params(),
+				  output,
+  				  mpi_comm);
+#else
+    blueprint::mesh::flatten(selected,
+		             params(),
+			     output);
+
+#endif
+
+    std::string result_path;
+    int rank = 0;
+    int root = 0;
+ 
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    if(rank == root)
+    {
+        if(protocol.empty())
+        {
+            //path = path;
+            path = path + ".csv";
+            conduit::relay::io::save(output,path);
+            result_path = path;
+        }
+        else
+        {
+            conduit::relay::io::save(output,path,protocol);
+	    result_path = path;
+        }
+    }
+
+    // add this to the extract results in the registry
+    if(!graph().workspace().registry().has_entry("extract_list"))
+    {
+      conduit::Node *extract_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+    }
+
+    conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+
+    Node &einfo = extract_list->append();
+    einfo["type"] = "flatten";
+    if(!protocol.empty())
+        einfo["protocol"] = protocol;
+    einfo["path"] = result_path;
+}
+
 
 //-----------------------------------------------------------------------------
 };

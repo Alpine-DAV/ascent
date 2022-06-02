@@ -1,46 +1,6 @@
-###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-include(cmake/thirdparty/SetupUmpire.cmake)
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 ################################
@@ -48,7 +8,7 @@ include(cmake/thirdparty/SetupUmpire.cmake)
 ################################
 
 ###############################################################################
-# gtest, fruit, mpi,cuda, openmp, sphinx and doxygen are handled by blt
+# gtest, fruit, mpi, cuda, openmp, sphinx and doxygen are handled by blt
 ###############################################################################
 
 ################################
@@ -69,16 +29,6 @@ endif()
 ################################
 include(cmake/thirdparty/SetupConduit.cmake)
 
-################################
-# Umpire
-################################
-include(cmake/thirdparty/SetupUmpire.cmake)
-
-################################
-# Raja
-################################
-include(cmake/thirdparty/SetupRAJA.cmake)
-
 ################################################################
 ################################################################
 #
@@ -87,6 +37,38 @@ include(cmake/thirdparty/SetupRAJA.cmake)
 ################################################################
 ################################################################
 
+#
+# TODO: Post Rajafy branch, I think we need more logic if
+#       we want RAJA and Umpire to remain optional.
+#
+
+################################
+# Umpire
+################################
+if(UMPIRE_DIR) # optional for now
+    include(cmake/thirdparty/SetupUmpire.cmake)
+endif()
+
+################################
+# RAJA
+################################
+if(RAJA_DIR)  # optional for now
+    include(cmake/thirdparty/SetupRAJA.cmake)
+endif()
+
+################################
+# Setup Kokkos
+################################
+if (KOKKOS_DIR)
+  include(cmake/thirdparty/SetupKokkos.cmake)
+endif()
+
+################################
+# Setup OCCA
+################################
+if (OCCA_DIR)
+  include(cmake/thirdparty/SetupOcca.cmake)
+endif()
 
 ################################
 # VTKm and supporting libs
@@ -100,21 +82,19 @@ if(VTKM_DIR)
     ################################
     # VTKh
     ################################
-    include(cmake/thirdparty/SetupVTKh.cmake)
+    if(VTKH_DIR)  # builtin vs external logic
+        include(cmake/thirdparty/SetupVTKh.cmake)
+    endif()
 endif()
 
-
-################################
-# Setup HDF5
-################################
-if(HDF5_DIR)
-    include(cmake/thirdparty/SetupHDF5.cmake)
-endif()
+#
+# Note: HDF5 is fully handled by importing conduit
+#
 
 ################################
 # Setup MFEM if enabled
 ################################
-if (MFEM_DIR AND ENABLE_MFEM)
+if (MFEM_DIR)
   include(cmake/thirdparty/SetupMFEM.cmake)
 endif()
 
@@ -127,16 +107,38 @@ endif()
 
 
 ################################
-# Setup ADIOS
+# Setup Umpire
 ################################
-if (ADIOS_DIR)
-  include(cmake/thirdparty/SetupADIOS.cmake)
+if (UMPIRE_DIR)
+  include(cmake/thirdparty/SetupUmpire.cmake)
+endif()
+
+################################
+# Setup ADIOS2
+################################
+if (ADIOS2_DIR)
+  include(cmake/thirdparty/SetupADIOS2.cmake)
+endif()
+
+################################
+# Setup Fides
+################################
+if (FIDES_DIR)
+  include(cmake/thirdparty/SetupFides.cmake)
 endif()
 
 ################################
 # Setup Babelflow
 ################################
-if (ENABLE_BABELFLOW)
+if (BABELFLOW_DIR OR BabelFlow_DIR)
     include(cmake/thirdparty/SetupBabelFlow.cmake)
-endif ()
+endif()
+
+
+################################
+# Setup GenTen
+################################
+if (GENTEN_DIR)
+  include(cmake/thirdparty/SetupGenTen.cmake)
+endif()
 

@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -53,6 +15,7 @@
 #define ASCENT_EXPRESSION_EVAL_HPP
 #include <conduit.hpp>
 #include <ascent_exports.h>
+#include <ascent_data_object.hpp>
 
 #include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
@@ -90,6 +53,11 @@ struct Cache
   void filter_time(double ftime);
   bool filtered();
   bool loaded();
+  void save();
+  // allow saving with an alternative name
+  void save(const std::string &filename);
+  void save(const std::string &filename,
+            const std::vector<std::string> &selection);
 
   ~Cache();
 };
@@ -99,17 +67,26 @@ static conduit::Node m_function_table;
 class ASCENT_API ExpressionEval
 {
 protected:
-  conduit::Node *m_data;
+  DataObject m_data_object;
   flow::Workspace w;
   static Cache m_cache;
+  void jit_root(conduit::Node &root, const std::string &expr_name);
 public:
-  ExpressionEval(conduit::Node *data);
+  ExpressionEval(DataObject &dataset);
+  ExpressionEval(conduit::Node *dataset);
+  DataObject& data_object();
 
   static const conduit::Node &get_cache();
   static void get_last(conduit::Node &data);
   static void reset_cache();
   static void load_cache(const std::string &dir,
                          const std::string &session);
+
+  // helpers for saving cache files
+  static void save_cache(const std::string &filename,
+                         const std::vector<std::string> &selection);
+  static void save_cache(const std::string &filename);
+  static void save_cache();
 
   conduit::Node evaluate(const std::string expr, std::string exp_name = "");
 };

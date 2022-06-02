@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -50,6 +12,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_data_object.hpp"
+#include "ascent_metadata.hpp"
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include "ascent_vtkh_collection.hpp"
@@ -57,7 +20,7 @@
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-#include <dray/collection.hpp>
+#include <dray/data_model/collection.hpp>
 #include <dray/io/blueprint_reader.hpp>
 #endif
 
@@ -71,6 +34,40 @@
 namespace ascent
 {
 
+namespace detail
+{
+
+void add_metadata(conduit::Node &dataset)
+{
+    int cycle = -1;
+    double time = -1.;
+
+    if(Metadata::n_metadata.has_path("cycle"))
+    {
+      cycle = Metadata::n_metadata["cycle"].to_int32();
+    }
+    if(Metadata::n_metadata.has_path("time"))
+    {
+      time = Metadata::n_metadata["time"].to_float64();
+    }
+
+    const int num_domains = dataset.number_of_children();
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = dataset.child(i);
+      if(cycle != -1)
+      {
+        dom["state/cycle"] = cycle;
+      }
+      if(time != -1.0)
+      {
+        dom["state/time"] = time;
+      }
+    }
+}
+
+} // namespace detail
+
 DataObject::DataObject()
   : m_low_bp(nullptr),
     m_high_bp(nullptr),
@@ -82,7 +79,7 @@ DataObject::DataObject()
 #endif
     m_source(Source::INVALID)
 {
-
+  m_name = "default";
 }
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -95,7 +92,7 @@ DataObject::DataObject(VTKHCollection *dataset)
 #endif
     m_source(Source::VTKH)
 {
-
+  m_name = "default";
 }
 #endif
 
@@ -109,7 +106,7 @@ DataObject::DataObject(dray::Collection *dataset)
     m_dray(dataset),
     m_source(Source::DRAY)
 {
-
+  m_name = "default";
 }
 #endif
 
@@ -124,6 +121,66 @@ DataObject::DataObject(conduit::Node *dataset)
 #endif
 {
   reset(dataset);
+  m_name = "default";
+}
+
+void DataObject::name(const std::string n)
+{
+  m_name = n;
+}
+
+std::string DataObject::name() const
+{
+  return m_name;
+}
+
+void DataObject::reset_all()
+{
+  m_source = Source::INVALID;
+  std::shared_ptr<conduit::Node>  null_low(nullptr);
+  std::shared_ptr<conduit::Node>  null_high(nullptr);
+  m_low_bp = null_low;
+  m_high_bp = null_high;
+
+#if defined(ASCENT_VTKM_ENABLED)
+  std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
+  m_vtkh = null_vtkh;
+#endif
+
+#if defined(ASCENT_DRAY_ENABLED)
+  std::shared_ptr<dray::Collection> null_dray(nullptr);
+  m_dray = null_dray;
+#endif
+}
+
+void DataObject::reset(std::shared_ptr<conduit::Node> dataset)
+{
+  bool high_order = Transmogrifier::is_high_order(*dataset.get());
+
+  std::shared_ptr<conduit::Node>  null_low(nullptr);
+  std::shared_ptr<conduit::Node>  null_high(nullptr);
+  m_low_bp = null_low;
+  m_high_bp = null_high;
+
+#if defined(ASCENT_VTKM_ENABLED)
+  std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
+  m_vtkh = null_vtkh;
+#endif
+
+#if defined(ASCENT_DRAY_ENABLED)
+  std::shared_ptr<dray::Collection> null_dray(nullptr);
+  m_dray = null_dray;
+#endif
+  if(high_order)
+  {
+    m_high_bp = dataset;
+    m_source = Source::HIGH_BP;
+  }
+  else
+  {
+    m_low_bp = dataset;
+    m_source = Source::LOW_BP;
+  }
 }
 
 void DataObject::reset(conduit::Node *dataset)
@@ -174,8 +231,6 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
   {
     if(m_source == Source::HIGH_BP)
     {
-
-      //std::shared_ptr<dray::Collection> dray(DRayCollection::blueprint_to_dray(*m_high_bp));
       std::shared_ptr<dray::Collection> collection(new dray::Collection());
       const int num_domains = m_high_bp->number_of_children();
       for(int i = 0; i < num_domains; ++i)
@@ -189,7 +244,18 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
     }
     else
     {
-      ASCENT_ERROR("converting from low order to devil ray is not currenlty supported");
+      // attempt to conver this to low order and go
+      std::shared_ptr<conduit::Node> low_order = as_low_order_bp();
+      std::shared_ptr<dray::Collection> collection(new dray::Collection());
+      const int domains = low_order->number_of_children();
+      for(int i = 0; i < domains; ++i)
+      {
+        dray::DataSet dset = dray::BlueprintReader::blueprint_to_dray(low_order->child(i));
+        collection->add_domain(dset);
+      }
+
+      m_dray = collection;
+      return m_dray;
     }
 
   }
@@ -220,11 +286,29 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
     }
 
     bool zero_copy = true;
+    conduit::Node n_poly;
+    conduit::Node *to_vtkh = nullptr;
+    
+    if (m_low_bp != nullptr)
+    {
+      if (Transmogrifier::is_poly(*m_low_bp))
+      {
+        Transmogrifier::to_poly(*m_low_bp, n_poly);
+        to_vtkh = &n_poly;
+        zero_copy = false;
+      }
+      else
+      {
+        to_vtkh = &(*m_low_bp);
+      }
+    }
+
     // convert to vtkh
     std::shared_ptr<VTKHCollection>
-      vtkh_dset(VTKHDataAdapter::BlueprintToVTKHCollection(*m_low_bp, zero_copy));
+      vtkh_dset(VTKHDataAdapter::BlueprintToVTKHCollection(*to_vtkh, zero_copy));
 
-     m_vtkh = vtkh_dset;
+    m_vtkh = vtkh_dset;
+    
     return m_vtkh;
   }
 
@@ -264,6 +348,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
     bool zero_copy = true;
     VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, true);
 
+    detail::add_metadata(*out_data);
     std::shared_ptr<conduit::Node> bp(out_data);
     m_low_bp = bp;
   }
@@ -306,6 +391,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
     bool zero_copy = true;
     VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, true);
 
+    detail::add_metadata(*out_data);
     std::shared_ptr<conduit::Node> bp(out_data);
     m_low_bp = bp;
   }

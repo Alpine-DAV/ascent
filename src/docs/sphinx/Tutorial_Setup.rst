@@ -1,46 +1,8 @@
-.. ############################################################################
-.. # Copyright (c) 2015-2017, Lawrence Livermore National Security, LLC.
-.. #
-.. # Produced at the Lawrence Livermore National Laboratory
-.. #
-.. # LLNL-CODE-716457
-.. #
-.. # All rights reserved.
-.. #
-.. # This file is part of Ascent.
-.. #
-.. # For details, see: http://ascent.readthedocs.io/.
-.. #
-.. # Please also read ascent/LICENSE
-.. #
-.. # Redistribution and use in source and binary forms, with or without
-.. # modification, are permitted provided that the following conditions are met:
-.. #
-.. # * Redistributions of source code must retain the above copyright notice,
-.. #   this list of conditions and the disclaimer below.
-.. #
-.. # * Redistributions in binary form must reproduce the above copyright notice,
-.. #   this list of conditions and the disclaimer (as noted below) in the
-.. #   documentation and/or other materials provided with the distribution.
-.. #
-.. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
-.. #   be used to endorse or promote products derived from this software without
-.. #   specific prior written permission.
-.. #
-.. # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-.. # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.. # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.. # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-.. # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.. # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.. # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-.. # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-.. # POSSIBILITY OF SUCH DAMAGE.
-.. #
-.. ############################################################################
+.. ###############################################################################
+.. # Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+.. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+.. # other details. No copyright assignment is required to contribute to Ascent.
+.. ###############################################################################
 
 .. _tutorial_setup:
 
@@ -65,7 +27,7 @@ To directly start the Jupyter Notebook server and run the tutorial notebooks, ru
 
 .. code::
 
-    docker run -p 8000:8000 -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent-jupyter
+    docker run -p 8888:8888 -t -i alpinedav/ascent-jupyter
 
 (The ``-p`` is used to forward ports between the container and your host machine, we use these ports to allow web servers on the container to serve data to the host.)
 
@@ -76,7 +38,7 @@ To start the base image and explore the install and tutorial examples with bash,
 
 .. code::
 
-    docker run -p 8000:8000 -p 8888:8888 -p 10000:10000 -t -i alpinedav/ascent
+    docker run -p 8888:8888 -t -i alpinedav/ascent
 
 
 You will now be at a bash prompt in you container.
@@ -87,8 +49,8 @@ To add the proper paths to Python and MPI to your environment, run:
 
     source ascent_docker_setup_env.sh
 
-The ascent source code is at ``/home/user/ascent/src/``, and the install is at ``/home/user/ascent/install-debug/``.
-The tutorial examples are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/home/user/ascent/install-debug/examples/ascent/tutorial/ascent_intro/notebooks/``.
+The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install/``.
+The tutorial examples are at ``/ascent/install/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/``.
 
 
 You can also launch the a Jupyter Notebook server from this image using the following:
@@ -105,59 +67,90 @@ The url (http://localhost:8888) and password (``learn``) are the same as above.
 Using Public Installs of Ascent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NERSC Cori Install
+This section provides info about public installs we provide on several HPC machines.
+
+Additionally, here is a `link to the scripts used to build our public installs <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_ .
+
+OLCF Summit Installs
 +++++++++++++++++++++++
 
-We have a public ascent install for use on NERSC's Cori System. This install was built using the default
-gnu compiler (8.2.0) with OpenMP and MPI support. You need to use ``module load gcc`` to build and run the installed examples.
 
+* Build Details: gcc 9.3.0 with OpenMP and MPI support
+* Modules: ``gcc/9.3.0``
+* Location: ``/sw/summit/ums/ums010/ascent/current/summit/openmp/gnu/ascent-install/``
 
-The install is located at ``/project/projectdirs/alpine/software/ascent/current/cori/gnu/ascent-install``.
-You can copy the tutorial examples from this install and use them as follows:
-
-.. literalinclude:: tutorial_setup_nersc_cori_test.sh
-   :language: bash
-
-OLCF Summit Install
-+++++++++++++++++++++++
-
-We have two public ascents install for use on OLCF's Summit System. One install was built using the default
-gnu compiler (6.4.0) with OpenMP and MPI support. You need to use `module load gcc` to build and run the installed examples.
-
-.. warning::
-    This install exists on a file system that is occasionally purged. We are looking for a better place to put our world accessable installs.
-
-
-This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/openmp/gnu/ascent-install/``.
 You can copy the tutorial examples from this install and use them as follows:
 
 .. literalinclude:: tutorial_setup_olcf_summit_openmp_test.sh
    :language: bash
 
+* Build Details: gcc 9.3.0 with CUDA 11.0.3 and MPI support
+* Modules: ``gcc/9.3.0`` ``cuda/11.0.3``
+* Location: ``/sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/``
 
-The second was built using the default
-gnu compiler (6.4.0) with CUDA and MPI support. You need to use ``module load gcc`` and ``module load cuda`` to build and run the installed examples.
-
-This install is located at ``/gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/``.
 You can copy the tutorial examples from this install and use them as follows:
 
 .. literalinclude:: tutorial_setup_olcf_summit_cuda_test.sh
    :language: bash
 
 
+NERSC Perlmuter Install
++++++++++++++++++++++++
+
+* Build Details: gcc 10.3.0 with CUDA 11.4.0 and MPI support
+* Modules: ``PrgEnv-gnu`` ``cpe-cuda/21.12``  ``cudatoolkit/21.9_11.4``
+* Location: ``/global/cfs/cdirs/alpine/software/ascent/current/perlmutter/cuda/gnu/ascent-install/``
+
+
+You can copy the tutorial examples from this install and use them as follows:
+
+.. literalinclude:: tutorial_setup_nersc_perlmutter_test.sh
+   :language: bash
+
+
 LLNL CZ TOSS 3 Install
 +++++++++++++++++++++++
 
-We have a public ascent install on LLNL CZ TOSS 3 Systems. This install was built using the default
-gnu compiler (4.9.3) with OpenMP and MPI support.
+* Build Details: gcc 4.9.3 with OpenMP and MPI support
+* Modules: (none)
+* Location: ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``
 
-
-The install is located at ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``.
 You can copy the tutorial examples from this install and use them as follows:
 
 .. literalinclude:: tutorial_setup_llnl_pascal_openmp_test.sh
    :language: bash
 
+
+Register Ascent's Python as a Jupyter Kernel
++++++++++++++++++++++++++++++++++++++++++++++
+
+.. warning::
+    This works the LLNL LC TOSS3 CZ OpenMP install, we are working on recipes for other HPC centers.
+
+You can register Ascent's Python as a custom Jupyter kernel with Jupyter Hub.
+
+LLNL CZ TOSS 3 Jupyter Kernel Register Example:
+
+.. literalinclude:: tutorial_setup_llnl_pascal_openmp_jhub.sh
+   :language: bash
+
+After you register you will see an option to launch an Ascent kernel in Jupyter Hub:
+
+.. image:: images/llnl_jhub_kernel_select.png
+
+With this kernel you can access Ascent's Python modules or run the tutorial notebooks:
+
+.. image:: images/llnl_jhub_kernel_example.png
+
+
+If you want to remove the registered kernel, you can use:
+
+.. code::
+  
+  # show list of registered kernels
+  jupyter kernelspec list
+  # remove our Ascent custom kernel
+  jupyter kernelspec uninstall ascent_kernel
 
 ..
 .. SC19 Tutorial VM Option

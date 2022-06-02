@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -266,13 +228,169 @@ field_dispatch(const conduit::Node &field, const Function &func)
   return res;
 }
 
-struct IndexLoc
+////////////////////////////////////////////////////////////////////////////////////
+
+// TODO THIS NEEDS TO BE RAJAFIED
+template<typename Function>
+conduit::Node
+type_dispatch(const conduit::Node &values0, const conduit::Node &values1, const bool is_list, const Function &func)
 {
-  RAJA::Index_type idx;
-  constexpr IndexLoc() : idx(-1) {}
-  constexpr ASCENT_EXEC IndexLoc(RAJA::Index_type idx) : idx(idx) {}
+  // check for single component scalar
+  int num_children0 = values0.number_of_children();
+  int num_children1 = values1.number_of_children();
+  if(num_children0 > 1 || num_children1 > 1)
+  {
+    ASCENT_ERROR("Internal error: expected scalar array.");
+  }
+  const conduit::Node &vals0 = num_children0 == 0 ? values0 : values0.child(0);
+  const conduit::Node &vals1 = num_children1 == 0 ? values1 : values1.child(0);
+
+  conduit::Node res;
+  const int num_vals0 = vals0.dtype().number_of_elements();
+  const int num_vals1 = vals1.dtype().number_of_elements();
+
+  if(vals0.dtype().is_float32())
+  {
+    const conduit::float32 *ptr0 =  vals0.as_float32_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else if(vals0.dtype().is_float64())
+  {
+    const conduit::float64 *ptr0 =  vals0.as_float64_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else if(vals0.dtype().is_int32())
+  {
+    const conduit::int32 *ptr0 =  vals0.as_int32_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else if(vals0.dtype().is_int64())
+  {
+    const conduit::int64 *ptr0 =  vals0.as_int64_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("Type dispatch: unsupported array type for array0: "<<
+                  values0.schema().to_string());
+  }
+  return res;
+}
+
+// TODO THIS NEEDS TO BE RAJAFIED
+struct GradientFunctor
+{
+  template<typename T, typename T2>
+  conduit::Node operator()(const T* y_values, const T2* dx_values, const int &size_y_values, const int &size_dx_values) const
+  {
+    bool single_dx = (size_dx_values == 1);
+
+    if(!single_dx && size_dx_values < (size_y_values-1)) {
+        ASCENT_ERROR("Must either supply a single uniform delta_x value, or provide at least len(y_values)-1 delta_x values (indicating the delta_x from each y value to the next).");                
+    }
+
+    int num_gradients = size_y_values-1;
+    double *gradients = new double[num_gradients];
+
+    if(single_dx) {    
+    #ifdef ASCENT_USE_OPENMP
+        #pragma omp parallel for
+    #endif
+        for(int v = 0; v < num_gradients; ++v)
+        {
+            gradients[v] = ( (y_values[v+1] - y_values[v]) / (double) *dx_values);
+        }
+    }
+    else {
+    #ifdef ASCENT_USE_OPENMP
+        #pragma omp parallel for
+    #endif
+        for(int v = 0; v < num_gradients; ++v)
+        {
+            gradients[v] = ( (y_values[v+1] - y_values[v]) / (double) dx_values[v]);
+        }
+    }
+
+    conduit::Node res;
+    res["value"].set(gradients, num_gradients);
+    res["count"] = num_gradients;
+    return res;
+  }
 };
 
+////////////////////////////////////////////////////////////////////////////////////
 struct MaxFunctor
 {
   template<typename T, typename Exec>
@@ -300,6 +418,7 @@ struct MaxFunctor
     return res;
   }
 };
+
 
 struct MinFunctor
 {
@@ -500,6 +619,14 @@ struct HistogramFunctor
 //-----------------------------------------------------------------------------
 
 conduit::Node
+
+// TODO THIS NEEDS TO BE PORTED TO RAJA
+array_gradient(const conduit::Node &y_values, const conduit::Node &dx_values, const bool is_list)
+{
+  return detail::type_dispatch(y_values, dx_values, is_list, detail::GradientFunctor());
+}
+
+conduit::Node
 field_reduction_max(const conduit::Node &field, std::string component)
 {
   return detail::exec_dispatch(field, component, detail::MaxFunctor());
@@ -606,3 +733,4 @@ array_sum(const conduit::Node &array, const std::string exec_loc, std::string co
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+

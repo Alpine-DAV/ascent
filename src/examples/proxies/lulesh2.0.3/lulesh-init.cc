@@ -199,6 +199,8 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
       m_ascent_node["state/time"].set_external(&m_time);
       m_ascent_node["state/cycle"].set_external(&m_cycle);
       m_ascent_node["state/domain_id"] = myRank;
+      m_ascent_node["state/software"] = "LULESH 2.0.3";
+      m_ascent_node["state/title"] = "Sedov Blast Simulation";
       m_ascent_node["state/info"] = "In Situ Pseudocolor rendering of Pressure from <br> LULESH Shock-Hydro Proxy Simulation";
 
       m_ascent_node["coordsets/coords/type"] = "explicit";
@@ -228,6 +230,10 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
       m_ascent_node["fields/q/association"] = "element";
       m_ascent_node["fields/q/topology"]    = "mesh";
       m_ascent_node["fields/q/values"].set_external(m_q);
+
+      m_ascent_node["fields/elem_mass/association"] = "element";
+      m_ascent_node["fields/elem_mass/topology"]    = "mesh";
+      m_ascent_node["fields/elem_mass/values"].set_external(m_elemMass);
 
       m_ascent_node["fields/velocity/association"] = "vertex";
       m_ascent_node["fields/velocity/topology"]    = "mesh";
