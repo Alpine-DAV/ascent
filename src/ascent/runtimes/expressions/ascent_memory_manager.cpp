@@ -183,9 +183,9 @@ AllocationManager::conduit_host_allocator_id()
       = conduit::utils::register_allocator(HostAllocator::alloc,
                                            HostAllocator::free);
 
-    std::cout<<"Created host allocator "<<m_conduit_host_allocator_id<<"\n";
+    //std::cout<<"Created host allocator "<<m_conduit_host_allocator_id<<"\n";
   }
-  std::cout<<"conduit host allocator "<<m_conduit_host_allocator_id<<"\n";
+  //std::cout<<"conduit host allocator "<<m_conduit_host_allocator_id<<"\n";
   return m_conduit_host_allocator_id;
 }
 
@@ -198,7 +198,7 @@ AllocationManager::conduit_device_allocator_id()
       = conduit::utils::register_allocator(DeviceAllocator::alloc,
                                              DeviceAllocator::free);
 
-    std::cout<<"Created device allocator "<<m_conduit_device_allocator_id<<"\n";
+    //std::cout<<"Created device allocator "<<m_conduit_device_allocator_id<<"\n";
   }
   return m_conduit_device_allocator_id;
 }
@@ -221,7 +221,7 @@ size_t HostAllocator::m_free_count = 0;
 void *
 HostAllocator::alloc(size_t items, size_t item_size)
 {
-  std::cout<<"Bananas allocate\n";
+  //std::cout<<"Bananas allocate\n";
   m_total_bytes_alloced += items * item_size;
   m_alloc_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
@@ -233,7 +233,7 @@ HostAllocator::alloc(size_t items, size_t item_size)
 void
 HostAllocator::free(void *data_ptr)
 {
-  std::cout<<"free bananas\n";
+  //std::cout<<"free bananas\n";
   m_free_count++;
 
   auto &rm = umpire::ResourceManager::getInstance ();

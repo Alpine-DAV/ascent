@@ -269,28 +269,28 @@ public:
 #ifdef ASCENT_USE_CUDA
     if(is_gpu_ptr(ptr))
     {
-      std::cout<<"already a gpu pointer\n";
+      //std::cout<<"already a gpu pointer\n";
       return ptr;
     }
     else
     {
-      std::string d_path = "device_"+leaf_path;
-      std::cout<<"leaf_path '"<<leaf_path<<"' device _path '"<<d_path<<"'\n";
-      std::cout<<"size "<<m_sizes[component]<<"\n";
+      //std::string d_path = "device_"+leaf_path;
+      //std::cout<<"leaf_path '"<<leaf_path<<"' device _path '"<<d_path<<"'\n";
+      //std::cout<<"size "<<m_sizes[component]<<"\n";
       if(!m_field.has_path(d_path))
       {
-        std::cout<<"Creating device pointer\n";
+        //std::cout<<"Creating device pointer\n";
         conduit::Node &n_device = m_field[d_path];
         n_device.set_allocator(AllocationManager::conduit_device_allocator_id());
-        std::cout<<"setting...\n";
+        //std::cout<<"setting...\n";
         n_device.set(ptr, m_sizes[component]);
-        std::cout<<"set\n";
+        //std::cout<<"set\n";
       }
-      else std::cout<<"already device_values\n";
+      //else std::cout<<"already device_values\n";
       return conduit_ptr<T>(m_field[d_path]);
     }
 #else
-    std::cout<<"just returning ptr\n";
+    //std::cout<<"just returning ptr\n";
     return ptr;
 #endif
   }
@@ -307,23 +307,23 @@ public:
     bool is_host_accessible =  !is_gpu || (is_gpu && is_unified);
     if(is_unified)
     {
-      std::cout<<"Unified\n";
+      //std::cout<<"Unified\n";
     }
 
     if(is_gpu)
     {
-      std::cout<<"gpu\n";
+      //std::cout<<"gpu\n";
     }
 
     if(is_gpu_ptr(ptr))
     {
-      std::cout<<"gpu banans\n";
+      //std::cout<<"gpu banans\n";
     }
 
-    std::cout<<"bananas\n";
+    //std::cout<<"bananas\n";
     if(is_host_accessible)
     {
-      std::cout<<"already a host pointer\n";
+      //std::cout<<"already a host pointer\n";
       return ptr;
     }
     else
@@ -331,16 +331,16 @@ public:
       std::string h_path = "host_" + leaf_path;
       if(!m_field.has_path(h_path))
       {
-        std::cout<<"Creating host pointer\n";
+        //std::cout<<"Creating host pointer\n";
         conduit::Node &n_host = m_field[h_path];
         n_host.set_allocator(AllocationManager::conduit_host_allocator_id());
         n_host.set(ptr, m_sizes[component]);
       }
-      else std::cout<<"already host_values\n";
+      //else std::cout<<"already host_values\n";
       return conduit_ptr<T>(m_field[h_path]);
     }
 #else
-    std::cout<<"just returning ptr\n";
+    //std::cout<<"just returning ptr\n";
     return ptr;
 #endif
   }
@@ -354,7 +354,7 @@ public:
       ASCENT_ERROR("Invalid location: '"<<location<<"'");
     }
 
-    std::cout<<"SDKF:SDKFH\n";
+    //std::cout<<"SDKF:SDKFH\n";
 
     std::string leaf_path;
     if(location == "device")
@@ -389,7 +389,7 @@ public:
     }
 
     std::string leaf_path = component_path(comp_idx);
-    std::cout<<"giving out access "<<leaf_path<<" "<<location<<"\n";
+    //std::cout<<"giving out access "<<leaf_path<<" "<<location<<"\n";
 
     const T* ptr = location == "device" ? device_ptr_const(comp_idx) : host_ptr_const(comp_idx);
     return MemoryAccessor<T>(ptr, m_field[leaf_path].dtype());

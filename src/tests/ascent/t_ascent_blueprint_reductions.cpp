@@ -96,8 +96,13 @@ void device_conversion(Node &host_data, Node &device_data)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, max)
+TEST(ascent_blueprint_reductions, max_gpu)
 {
+
+#ifndef ASCENT_USE_CUDA
+  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+  return;
+#endif
 
     Node n;
     ascent::about(n);
@@ -191,6 +196,11 @@ TEST(ascent_blueprint_reductions, min)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, max_already_gpu)
 {
+  #ifndef ASCENT_USE_CUDA
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
+  #endif
+  
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
     // device pointers
@@ -229,6 +239,10 @@ TEST(ascent_blueprint_reductions, max_already_gpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, max_already_gpu_rectilinear)
 {
+#ifndef ASCENT_USE_CUDA
+  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+  return;
+#endif
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
     // device pointers
@@ -266,6 +280,11 @@ TEST(ascent_blueprint_reductions, max_already_gpu_rectilinear)
 
 TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
 {
+#ifndef ASCENT_USE_CUDA
+  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+  return;
+#endif
+
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
     // device pointers
@@ -337,6 +356,11 @@ TEST(ascent_blueprint_reductions, ave)
 
 TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
 {
+  #ifndef ASCENT_USE_CUDA
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
+  #endif
+  
     Node n;
     ascent::about(n);
 
@@ -368,8 +392,13 @@ TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, histogram)
+TEST(ascent_blueprint_reductions, histogram_cuda)
 {
+  #ifndef ASCENT_USE_CUDA
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
+  #endif
+
     // the vtkm runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);

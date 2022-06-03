@@ -512,7 +512,7 @@ struct VertexFunctor
     // always output 3 components
     m_vertices.resize(size * 3);
     double *verts_ptr = m_vertices.get_ptr(Exec::memory_space);
-    std::cout<<"**** VertexFunctor Mem space "<<Exec::memory_space<<"\n";
+    //std::cout<<"**** VertexFunctor Mem space "<<Exec::memory_space<<"\n";
 
     RAJA::forall<fp>
       (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type point_idx)
@@ -543,7 +543,7 @@ struct CentroidFunctor
     // one component for each dim
     m_centroids.resize(size * mesh.m_dims);
     double *centroids_ptr = m_centroids.get_ptr(Exec::memory_space);
-    std::cout<<"Mem space "<<Exec::memory_space<<"\n";
+    //std::cout<<"Mem space "<<Exec::memory_space<<"\n";
 
     RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type cell_idx)
     {
@@ -1530,7 +1530,7 @@ create_bins_axes(conduit::Node &bin_axes,
   {
     const conduit::Node &axis = bin_axes.child(i);
     const std::string axis_name = axis.name();
-    std::cout<<"Axis name "<<axis_name<<"\n";
+    //std::cout<<"Axis name "<<axis_name<<"\n";
     if(axis.has_path("bins"))
     {
       // we have explicit bins, so just use them
@@ -1577,12 +1577,12 @@ create_bins_axes(conduit::Node &bin_axes,
       {
         max_val = max_coords[axis_id];
       }
-      std::cout<<"spatial axis "<<axis_id<<"\n";
+      //std::cout<<"spatial axis "<<axis_id<<"\n";
     }
     else
     {
       // this is a field, so
-      std::cout<<"filed\n";
+      //std::cout<<"fieldn";
       if(!has_min)
       {
         min_val = field_min(dataset, axis_name)["value"].as_float64();
@@ -1639,9 +1639,9 @@ binning2(const conduit::Node &dataset,
   const std::string topo_name = topo_and_assoc["topo_name"].as_string();
   const std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
 
-  std::cout<<"Creating BINS\n";
+  //std::cout<<"Creating BINS\n";
   conduit::Node axes = create_bins_axes(bin_axes, dataset, topo_name);
-  std::cout<<"DONE BINS\n";
+  //std::cout<<"DONE BINS\n";
 
   const int num_axes = axes.number_of_children();
 
@@ -1651,7 +1651,7 @@ binning2(const conduit::Node &dataset,
   {
     num_bins *= axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
   }
-  std::cout<<"Total bins "<<num_bins<<"\n";
+  //std::cout<<"Total bins "<<num_bins<<"\n";
 
   // we might need additional space to keep track of statistics,
   // i.e., we might need to keep track of the bin sum and counts for
@@ -1670,7 +1670,7 @@ binning2(const conduit::Node &dataset,
   Array<double> bins;
   bins.resize(bins_size);
 
-  std::cout<<"total bins allocation "<<bins_size<<"\n";
+  //std::cout<<"total bins allocation "<<bins_size<<"\n";
 
   for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
   {

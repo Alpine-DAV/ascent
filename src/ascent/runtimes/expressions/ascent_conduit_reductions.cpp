@@ -160,7 +160,7 @@ exec_dispatch(const conduit::Node &field, std::string component, const Function 
 
   conduit::Node res;
   const std::string exec_policy = ExecutionManager::execution();
-  std::cout<<"Exec policy "<<exec_policy<<"\n";
+  //std::cout<<"Exec policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")
   {
     SerialExec exec;

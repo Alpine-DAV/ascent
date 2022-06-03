@@ -119,7 +119,7 @@ Array<double> allocate_bins(const std::string reduction_op,
   {
     num_bins *= axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
   }
-  std::cout<<"Total bins "<<num_bins<<"\n";
+  //std::cout<<"Total bins "<<num_bins<<"\n";
 
   // we might need additional space to keep track of statistics,
   // i.e., we might need to keep track of the bin sum and counts for
@@ -314,7 +314,7 @@ create_bins_axes(conduit::Node &bin_axes,
   {
     const conduit::Node &axis = bin_axes.child(i);
     const std::string axis_name = axis.name();
-    std::cout<<"Axis name "<<axis_name<<"\n";
+    //std::cout<<"Axis name "<<axis_name<<"\n";
     res[axis_name + "/clamp"] = axis["clamp"];
     if(axis.has_path("bins"))
     {
@@ -362,12 +362,12 @@ create_bins_axes(conduit::Node &bin_axes,
       {
         max_val = max_coords[axis_id];
       }
-      std::cout<<"spatial axis "<<axis_id<<"\n";
+      //std::cout<<"spatial axis "<<axis_id<<"\n";
     }
     else
     {
       // this is a field, so
-      std::cout<<"this is a field\n";
+      //std::cout<<"this is a field\n";
       if(!has_min)
       {
         min_val = field_min(dataset, axis_name)["value"].as_float64();
@@ -423,7 +423,7 @@ void calc_bindex(const Array<double> &values,
   const double *bins_ptr = bins.get_ptr_const(mem_space);
   const int bins_size = bins.size();
   bool clamp = axis["clamp"].to_int32() == 1;
-  std::cout<<"**** bindex size "<<size<<"\n";
+  //std::cout<<"**** bindex size "<<size<<"\n";
 
   RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
   {
@@ -494,7 +494,7 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
   {
     res_ptr[i] = static_cast<double>(accessor[i]);
   });
-  std::cout<<"Cast to float64 "<<mem_space<<"\n";
+  //std::cout<<"Cast to float64 "<<mem_space<<"\n";
   res.status();
   ASCENT_ERROR_CHECK();
   return res;
@@ -578,14 +578,14 @@ struct BinningFunctor
         RAJA::forall<fp>
           (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
         {
-          if(i == 0)
-          {
-            for(int ii  = 0; ii< size; ++ii) printf("i %d val %f\n", ii,values_ptr[ii]);
-          }
+          // if(i == 0)
+          // {
+          //   for(int ii  = 0; ii< size; ++ii)printf("i %d val %f\n", ii,values_ptr[ii]);
+          // }
           const int index = bindex_ptr[i];
           const double value = values_ptr[i];
           const int offset = index * 2;
-          printf("binner cell %d bindex %d value %f\n", i,index,value);
+          //printf("binner cell %d bindex %d value %f\n", i,index,value);
           RAJA::atomicAdd<ap>(bins_ptr + offset, value);
           RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
         });
@@ -654,10 +654,10 @@ struct BinningFunctor
       }
 #endif
       double *host_ptr = m_bins.get_host_ptr();
-      for(int i = 0; i < m_bins.size(); ++i)
-      {
-        std::cout<<"int results index "<<i<<" "<<host_ptr[i]<<"\n";
-      }
+      // for(int i = 0; i < m_bins.size(); ++i)
+      // {
+      //   /std::cout<<"int results index "<<i<<" "<<host_ptr[i]<<"\n";
+      // }
     }
   }
 };
@@ -721,7 +721,7 @@ struct BindexingFunctor
       // are in fact domain ids
       const int domain_id = dom["state/domain_id"].to_int32();
       Array<int> &bindexes = m_bindexes[domain_id];
-      std::cout<<"*** Homes size "<<homes_size<<"\n";
+      //std::cout<<"*** Homes size "<<homes_size<<"\n";
       bindexes.resize(homes_size);
       array_memset(bindexes, 0);
 
@@ -740,7 +740,7 @@ struct BindexingFunctor
         if(dom.has_path("fields/" + axis_name))
         {
           Array<double> values;
-          std::cout<<"**** Casting field to double\n";
+          //std::cout<<"**** Casting field to double\n";
           conduit::Node &field = dom["fields/"+axis_name];
           values = cast_field_values(field, m_component, Exec());
           detail::calc_bindex(values,
@@ -753,7 +753,7 @@ struct BindexingFunctor
           if(axis_name == m_reduction_var)
           {
             m_values[domain_id] = values;
-            std::cout<<"**** VALUES **** \n";
+            //std::cout<<"**** VALUES **** \n";
             values.status();
             values.summary();
           }
@@ -766,17 +766,17 @@ struct BindexingFunctor
             do_once = false;
             if(m_assoc == "vertex")
             {
-              std::cout<<"**** Getting vertices\n";
+              //std::cout<<"**** Getting vertices\n";
               spatial_values = vertices(dom, m_topo_name);
             }
             else
             {
-              std::cout<<"**** Getting centroids\n";
+              //std::cout<<"**** Getting centroids\n";
               spatial_values = centroids(dom, m_topo_name);
             }
-            std::cout<<"*** spatial values "<<spatial_values.size()<<"\n";
+            //std::cout<<"*** spatial values "<<spatial_values.size()<<"\n";
           }
-          std::cout<<"Spatial axis "<<axis_name<<"\n";
+          //std::cout<<"Spatial axis "<<axis_name<<"\n";
           int comp = detail::spatial_component(axis_name);
           detail::calc_bindex(spatial_values,
                               3, // number of components
@@ -791,12 +791,12 @@ struct BindexingFunctor
       }
 
       // debug
-      int bsize = bindexes.size();
-      int *b_ptr = bindexes.get_host_ptr();
-      for(int i = 0; i < bsize; ++i)
-      {
-        std::cout<<"Index "<<i<<" bin "<<b_ptr[i]<<"\n";
-      }
+      // int bsize = bindexes.size();
+      // int *b_ptr = bindexes.get_host_ptr();
+      // for(int i = 0; i < bsize; ++i)
+      // {
+      //   std::cout<<"Index "<<i<<" bin "<<b_ptr[i]<<"\n";
+      // }
 
     }
   }
@@ -908,7 +908,7 @@ struct CalcResultsFunctor
 
     Array<double> results;
     results.resize(size);
-    std::cout<<"Num bins "<<size<<"\n";
+    //std::cout<<"Num bins "<<size<<"\n";
     array_memset(results, m_empty_val);
     double *res_ptr = results.get_ptr(Exec::memory_space);
 
@@ -947,7 +947,7 @@ struct CalcResultsFunctor
           val = empty_val;
         }
         res_ptr[i] = val;
-        printf("sum bin %i value %f\n", i, val);
+        //printf("sum bin %i value %f\n", i, val);
       }
       if(op_code == 3)
       {
@@ -1017,11 +1017,11 @@ struct CalcResultsFunctor
       }
 
     });
-    double *host_ptr = results.get_host_ptr();
-    for(int i = 0; i < m_num_bins; ++i)
-    {
-      std::cout<<"res bin "<<i<<" "<<host_ptr[i]<<"\n";
-    }
+    // double *host_ptr = results.get_host_ptr();
+    // for(int i = 0; i < m_num_bins; ++i)
+    // {
+    //   //std::cout<<"res bin "<<i<<" "<<host_ptr[i]<<"\n";
+    // }
     m_res["value"].set(results.get_host_ptr(), m_num_bins);
   }
 };
@@ -1084,7 +1084,7 @@ conduit::Node data_binning(conduit::Node &dataset,
   bindexes = bindexer.m_bindexes;
 
   exec_dispatch(binner);
-  std::cout<<"DONE BINinng\n";
+  //std::cout<<"DONE BINinng\n";
   // mpi exchange
   detail::exchange_bins(bins, reduction_op);
 
@@ -1100,7 +1100,7 @@ conduit::Node data_binning(conduit::Node &dataset,
   exec_dispatch(banana);
 
   res["association"] = assoc_str;
-  std::cout<<"res "<<res.to_summary_string()<<"\n";
+  //std::cout<<"res "<<res.to_summary_string()<<"\n";
   return res;
 }
 
