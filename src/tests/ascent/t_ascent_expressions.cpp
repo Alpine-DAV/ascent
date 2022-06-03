@@ -786,7 +786,7 @@ TEST(ascent_expressions, test_gradient_array)
   // times:  [2.0, 4.0, 6.0, 10.0]
   // vals:   [1,   2,   3 ,  4]
   // vecs:   [(1,2,3), (9,3,4), (3,4,0), (6,4,8)]
-  
+
 
   runtime::expressions::ExpressionEval eval(&multi_dom);
   conduit::float64_array result;
@@ -898,13 +898,28 @@ TEST(ascent_expressions, test_gradient_array)
     EXPECT_EQ(result.to_json(), "[0.5, 0.5, 0.25]");
   }
 
+  // NOTE: min, max of an array return a conduit node with both
+  // `value` and `index`, I think they are tagged wrong as "double"
+  // other parts of the expr system depend on this, but
+  // its not direclty tested.
+
   // confirm it behaves properly with other operators that take an array as input
   for(const string &expression : {
       "max(gradient_range(val, first_absolute_index=1, last_absolute_index=3))",
     }) {
     res = eval.evaluate(expression);
+    res.print();
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value"].to_float64(), 0.5);
+    EXPECT_EQ(res["value/value"].to_float64(), 0.5);
+  }
+
+  for(const string &expression : {
+      "min(gradient_range(val, first_absolute_index=1, last_absolute_index=3))",
+    }) {
+    res = eval.evaluate(expression);
+    res.print();
+    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["value/value"].to_float64(), 0.25);
   }
 
   //confirm it returns an empty gradient if there is only a single value
@@ -1009,14 +1024,30 @@ TEST(ascent_expressions, test_history_range)
       "max(history_range(val, first_absolute_index=0, last_absolute_index=2))",
     }) {
     res = eval.evaluate(expression);
+    res.print();
+
+    // NOTE: min, max of an array return a conduit node with both
+    // `value` and `index`, I think they are tagged wrong as "double"
+    // other parts of the expr system depend on this, but
+    // its not direclty tested.
+    // result looks like this:
+    // value:
+    //   value: -1.0
+    //   index: 0
+    // type: "double"
+    // time: 4.0
+
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value"].as_double(), -1);
+    EXPECT_EQ(res["value/value"].as_double(), -1);
   }
+
+  // NOTE: EQUALS -1 wont work b/c the result of max is value + index.
 
   for(const string &expression : {
       "max(history_range(val, first_absolute_index=0, last_absolute_index=2)) == -1.0",
     }) {
     res = eval.evaluate(expression);
+    res.print();
     EXPECT_EQ(res["type"].as_string(), "bool");
     EXPECT_EQ(res["value"].to_int8(), 1);
   }
@@ -1076,7 +1107,7 @@ TEST(ascent_expressions, test_history_range)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value"].to_float64(), -2);
+    EXPECT_EQ(res["value/value"].to_float64(), -2);
   }
 
 }

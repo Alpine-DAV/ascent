@@ -686,7 +686,7 @@ array_max(const conduit::Node &array, const std::string exec_loc, std::string co
   fake_field["values"].set_external(array);
 
   conduit::Node res = field_reduction_max(fake_field, component);
-  // restore the original exectution env
+  // restore the original execution env
   ExecutionManager::execution(orig);
   return res;
 }
@@ -702,9 +702,12 @@ array_min(const conduit::Node &array, const std::string exec_loc, std::string co
   fake_field["values"].set_external(array);
 
   conduit::Node res = field_reduction_min(fake_field, component);
-  // restore the original exectution env
+  // restore the original execution env
   ExecutionManager::execution(orig);
+  // NOTE: preserving old return behavior, we only return result value not index
+  // return res["value"];
   return res;
+
 }
 
 conduit::Node
@@ -718,8 +721,10 @@ array_sum(const conduit::Node &array, const std::string exec_loc, std::string co
   fake_field["values"].set_external(array);
 
   conduit::Node res = field_reduction_sum(fake_field, component);
-  // restore the original exectution env
+  // restore the original execution env
   ExecutionManager::execution(orig);
+  // NOTE: preserving old return behavior, we only return result value not count
+  // return res["value"];
   return res;
 }
 //-----------------------------------------------------------------------------
