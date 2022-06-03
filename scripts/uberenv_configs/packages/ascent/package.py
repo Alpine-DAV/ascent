@@ -481,6 +481,10 @@ class Ascent(CMakePackage, CudaPackage):
                                             spec['babelflow'].prefix))
                 cfg.write(cmake_cache_entry("PMT_DIR",
                                             spec['parallelmergetree'].prefix))
+                cfg.write(cmake_cache_entry("StreamStat_DIR",
+                                            spec['streamstat'].prefix))
+                cfg.write(cmake_cache_entry("TopoFileParser_DIR",
+                                            spec['talass'].prefix))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
 
