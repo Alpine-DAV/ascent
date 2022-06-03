@@ -24,6 +24,10 @@ namespace runtime
 namespace expressions
 {
 
+// ============================================================================
+// NOTE THIS IS AN INCOMPLETE RAJA VERSION OF BINNING , IT IS NOT IN USE YET
+// ============================================================================
+
 // bin_axes lists of axes are in the form:
 //  axis_name:
 //    num_bins : int (required if explicit bins are not given

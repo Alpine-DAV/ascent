@@ -1440,22 +1440,6 @@ update_bin(double *bins,
   }
 }
 
-void init_bins(Array<double> &bins,
-               const std::string reduction_op)
-{
-  double init_val = 0.;
-  if(reduction_op == "max")
-  {
-    init_val = std::numeric_limits<double>::lowest();
-  }
-  else
-  {
-    init_val = std::numeric_limits<double>::max();
-  }
-
-  array_memset(bins, init_val);
-
-}
 
 void init_bins(double *bins,
                const int size,
@@ -1487,135 +1471,11 @@ void init_bins(double *bins,
 
 }
 
-int coord_axis_to_int(const std::string coord)
-{
-  int axis = -1;
-  if(coord == "x")
-  {
-    axis = 0;
-  }
-  else if(coord == "y")
-  {
-    axis = 1;
-  }
-  else if(coord == "z")
-  {
-    axis = 2;
-  }
-  if(axis == -1)
-  {
-    ASCENT_ERROR("Unknown coord axis '"<<coord
-                 <<"'. This should not happen");
-  }
-  return axis;
-}
-// Create a set of explicit bins for all axes
-conduit::Node
-create_bins_axes(conduit::Node &bin_axes,
-                 const conduit::Node &dataset,
-                 std::string topo_name)
-{
 
-  // we are most likely to have some spatial bins so just calculate
-  // the global bounds
-  const conduit::Node &bounds = global_bounds(dataset, topo_name);
-  const double *min_coords = bounds["min_coords"].value();
-  const double *max_coords = bounds["max_coords"].value();
-
-  bin_axes.print();
-  conduit::Node res;
-
-  const int num_axes = bin_axes.number_of_children();
-  for(int i = 0; i < num_axes; ++i)
-  {
-    const conduit::Node &axis = bin_axes.child(i);
-    const std::string axis_name = axis.name();
-    //std::cout<<"Axis name "<<axis_name<<"\n";
-    if(axis.has_path("bins"))
-    {
-      // we have explicit bins, so just use them
-      // TODO: we could check and sort the bins
-      // just in case there was a typo
-      res[axis_name] = axis;
-      continue;
-    }
-
-    // ok, we need to create a uniform binning for this
-    // axis. So figure out the mins and maxs
-    if(!axis.has_path("num_bins"))
-    {
-      ASCENT_ERROR("Axis missing num_bins and explicit bins");
-    }
-
-    const int num_bins = axis["num_bins"].to_int32();
-    if(num_bins < 1)
-    {
-      ASCENT_ERROR("Binning: There must be at least one bin for axis '"<<
-                   axis_name<<"'");
-    }
-
-    double min_val, max_val;
-    bool has_min = axis.has_path("min_val");
-    bool has_max = axis.has_path("max_val");
-    if(has_min)
-    {
-      min_val = axis["min_val"].as_float64();
-    }
-    if(has_min)
-    {
-      max_val = axis["max_val"].as_float64();
-    }
-
-    if(is_xyz(axis_name))
-    {
-      int axis_id = coord_axis_to_int(axis_name);
-      if(!has_min)
-      {
-        min_val = min_coords[axis_id];
-      }
-      if(!has_min)
-      {
-        max_val = max_coords[axis_id];
-      }
-      //std::cout<<"spatial axis "<<axis_id<<"\n";
-    }
-    else
-    {
-      // this is a field, so
-      //std::cout<<"fieldn";
-      if(!has_min)
-      {
-        min_val = field_min(dataset, axis_name)["value"].as_float64();
-      }
-      if(!has_max)
-      {
-        max_val = field_max(dataset, axis_name)["value"].as_float64();
-      }
-    }
-
-    if(min_val > max_val)
-    {
-      ASCENT_ERROR("Binning: axis '"<<axis_name<<"' has invalid bounds "
-                   <<"min "<<min_val<<" max "<<max_val);
-    }
-
-    const int divs = num_bins + 1;
-    res[axis_name +"/bins"].set(conduit::DataType::float64(divs));
-    double *bins = res[axis_name +"/bins"].value();
-    const double delta = (max_val - min_val) / double(num_bins);
-    bins[0] = min_val;
-
-    for(int j = 1; j < divs - 1; ++j)
-    {
-      bins[j] = min_val + j * delta;
-    }
-
-
-  }
-  res.print();
-  return res;
-}
-
+//
+// NOTE THERE IS A RAJA VERSION IN ascent_data_binning
+// that we want to supercede this one, it needs more work.
+//
 
 conduit::Node
 binning(const conduit::Node &dataset,
@@ -1683,6 +1543,19 @@ binning(const conduit::Node &dataset,
   size_t num_bins = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
+    conduit::Node &axis = bin_axes.child(axis_index);
+    const std::string axis_name = axis.name();
+
+    if(!bin_axes.child(axis_index).has_child("min_val"))
+    {
+      axis["min_val"] = field_min(dataset, axis_name)["value"].as_float64();
+    }
+    if(!axis.has_child("max_val"))
+    {
+      // TODO: FIXME THE BASELINES REQUIRE +1 here, not good.
+      axis["max_val"] = field_max(dataset, axis_name)["value"].as_float64() + 1.0;
+    }
+
     if(bin_axes.child(axis_index).has_path("num_bins"))
     {
       // uniform axis
