@@ -91,16 +91,14 @@ ASCENT_API
 conduit::Node global_bounds(const conduit::Node &dataset,
                             const std::string &topo_name);
 
-ASCENT_API
-conduit::Node binning(const conduit::Node &dataset,
-                      conduit::Node &bin_axes,
-                      const std::string &reduction_var,
-                      const std::string &reduction_op,
-                      const double empty_bin_val,
-                      const std::string &component);
+//
+// NOTE: ascent_data_binning contains a RAJA version
+// of binning that needs more work, but should eventually
+// supercede these versions
+// 
 
 ASCENT_API
-conduit::Node binning2(const conduit::Node &dataset,
+conduit::Node binning(const conduit::Node &dataset,
                       conduit::Node &bin_axes,
                       const std::string &reduction_var,
                       const std::string &reduction_op,
@@ -116,7 +114,6 @@ void ASCENT_API binning_mesh(const conduit::Node &binning,
                              conduit::Node &mesh,
                              const std::string field_name = "");
 
-void ASCENT_API binning_mesh2(const conduit::Node &binning, conduit::Node &mesh);
 
 ASCENT_API
 conduit::Node get_state_var(const conduit::Node &dataset,

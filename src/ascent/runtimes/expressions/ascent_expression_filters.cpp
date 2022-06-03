@@ -3162,6 +3162,16 @@ void binning_interface(const std::string &reduction_var,
                       empty_bin_val,
                       component);
 
+  // // TODO THIS IS THE RAJA VERSION
+  // std::map<int, Array<int>> bindexes;
+  // n_binning = data_binning(dataset,
+  //                          n_output_axes,
+  //                          reduction_var,
+  //                          reduction_op,
+  //                          empty_bin_val,
+  //                          component,
+  //                          bindexes);
+
 }
 //-----------------------------------------------------------------------------
 void
@@ -3193,16 +3203,6 @@ Binning::execute()
                     n_binning,
                     n_bin_axes);
 
-
-  // TODO RESULT OF MERGE, FIND LATEST VER
-  // std::map<int, Array<int>> bindexes;
-  // const conduit::Node &n_binning = data_binning(*dataset,
-  //                                               n_bin_axes,
-  //                                               reduction_var,
-  //                                               reduction_op,
-  //                                               empty_bin_val,
-  //                                               component,
-  //                                               bindexes);
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "binning";

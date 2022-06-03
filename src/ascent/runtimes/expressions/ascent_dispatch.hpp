@@ -145,7 +145,6 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
     }
     else
     {
-      //std::cout<<"bad coords "<<n_coords.to_summary_string()<<" \n";
       n_coords.schema().print();
       n_coords.print();
       std::cout<<"bad coords "<<n_coords.to_summary_string()<<" \n";
@@ -255,7 +254,7 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
 
   const std::string exec_policy = ExecutionManager::execution();
 
-  std::cout<<"Mesh Exec policy "<<exec_policy<<"\n";
+  //std::cout<<"Mesh Exec policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")
   {
     SerialExec exec;
@@ -289,7 +288,7 @@ exec_dispatch_array(Array<T> &array, Function &func)
 {
   const std::string exec_policy = ExecutionManager::execution();
 
-  std::cout<<"Array Exec policy "<<exec_policy<<"\n";
+  //std::cout<<"Array Exec policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")
   {
     SerialExec exec;
@@ -323,7 +322,7 @@ exec_dispatch(Function &func)
 {
   const std::string exec_policy = ExecutionManager::execution();
 
-  std::cout<<"Exec only policy "<<exec_policy<<"\n";
+  //std::cout<<"Exec only policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")
   {
     SerialExec exec;

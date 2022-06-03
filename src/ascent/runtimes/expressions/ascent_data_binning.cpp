@@ -384,6 +384,16 @@ create_bins_axes(conduit::Node &bin_axes,
                    <<"min "<<min_val<<" max "<<max_val);
     }
 
+    // if we had to calc them, propgate our min and max vals
+    if(!has_min)
+    {
+      bin_axes.child(i)["min_val"] = min_val;
+    }
+    if(!has_max)
+    {
+      bin_axes.child(i)["max_val"] = max_val;
+    }
+
     const int divs = num_bins + 1;
     res[axis_name +"/bins"].set(conduit::DataType::float64(divs));
     double *bins = res[axis_name +"/bins"].value();
@@ -589,7 +599,6 @@ struct BinningFunctor
           RAJA::atomicAdd<ap>(bins_ptr + offset, value);
           RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
         });
-#if 0
       if(m_op == "min")
       {
         RAJA::forall<fp>
@@ -622,7 +631,7 @@ struct BinningFunctor
           const int index = bindex_ptr[i];
           const double value = values_ptr[i];
           const int offset = index * 2;
-          printf("binner cell %d bindex %d value %f\n", i,index,value);
+          // printf("binner cell %d bindex %d value %f\n", i,index,value);
           RAJA::atomicAdd<ap>(bins_ptr + offset, value);
           RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
         });
@@ -652,7 +661,7 @@ struct BinningFunctor
           RAJA::atomicAdd<ap>(bins_ptr + offset + 2, 1.);
         });
       }
-#endif
+
       double *host_ptr = m_bins.get_host_ptr();
       // for(int i = 0; i < m_bins.size(); ++i)
       // {
