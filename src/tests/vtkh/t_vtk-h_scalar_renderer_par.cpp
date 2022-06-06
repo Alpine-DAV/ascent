@@ -11,7 +11,7 @@
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkm/io/writer/VTKDataSetWriter.h>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>

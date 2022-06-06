@@ -53,7 +53,7 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/Actor.h>
 #include <iostream>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 //-----------------------------------------------------------------------------
 TEST(vtkm_smoke, headers_work)

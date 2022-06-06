@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>

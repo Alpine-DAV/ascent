@@ -12,7 +12,7 @@
 
 
 #include "gtest/gtest.h"
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <ascent.hpp>
 #include <runtimes/ascent_vtkh_data_adapter.hpp>
