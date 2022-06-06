@@ -11,7 +11,7 @@
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/rendering/LineRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
 #include <vtkm/cont/DataSetFieldAdd.h>

@@ -15,6 +15,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 # for t_utils.hpp
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+#for t_test_utils.hpp
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vtkh")
 ################################
 # Unit Tests
 ################################
@@ -55,4 +57,3 @@ if(PYTHON_FOUND)
                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                       COMMENT "Generating html summary of image compare tests (tests/_output/tout_img_report.html)")
 endif()
-

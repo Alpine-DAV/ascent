@@ -51,10 +51,9 @@
 #include "gtest/gtest.h"
 
 #include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/testing/MakeTestDataSet.h>
 #include <vtkm/rendering/Actor.h>
 #include <iostream>
-
+#include "t_vtkm_test_utils.hpp"
 
 //-----------------------------------------------------------------------------
 TEST(vtkm_smoke, headers_work)
@@ -71,8 +70,7 @@ TEST(vtkm_smoke, basic_use_serial)
       = vtkm::cont::GetRuntimeDeviceTracker();
     device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet data = maker.Make3DExplicitDataSet2();
+    vtkm::cont::DataSet data = Make3DExplicitDataSet2();
     //
     // work around for a problem adding scalar fields of size 1
     // to Actors
@@ -119,8 +117,7 @@ TEST(vtkm_smoke, basic_use_openmp)
       = vtkm::cont::GetRuntimeDeviceTracker();
     device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet data = maker.Make3DExplicitDataSet2();
+    vtkm::cont::DataSet data = Make3DExplicitDataSet2();
     //
     // work around for a problem adding scalar fields of size 1
     // to Actors
@@ -168,8 +165,7 @@ TEST(vtkm_smoke, basic_use_cuda)
       = vtkm::cont::GetRuntimeDeviceTracker();
     device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet data = maker.Make3DExplicitDataSet2();
+    vtkm::cont::DataSet data = Make3DExplicitDataSet2();
     //
     // work around for a problem adding scalar fields of size 1
     // to Actors
