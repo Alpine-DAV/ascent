@@ -213,6 +213,22 @@ BlueprintPartition::verify_params(const conduit::Node &params,
         info["errors"].append() = "Missing required int parameter 'target'";
     }
 
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("target");
+    valid_paths.push_back("selections");
+    valid_paths.push_back("fields");
+    valid_paths.push_back("mapping");
+    valid_paths.push_back("merge_tolerance");
+    valid_paths.push_back("distributed");
+    
+    std::string surprises = surprise_check(valid_paths, params);
+    
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
     return res;
 }
 
@@ -235,10 +251,20 @@ BlueprintPartition::execute()
 
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-    conduit::blueprint::mpi::mesh::partition(*n_input,
-		    			     n_options,
-					     *n_output,
-					     mpi_comm);
+    if(params().has_child("distributed") && 
+       params()["distributed"].as_string() == "false" )
+    {
+        conduit::blueprint::mesh::partition(*n_input,
+		     		            n_options,
+					    *n_output);
+    }
+    else
+    {
+        conduit::blueprint::mpi::mesh::partition(*n_input,
+		    			         n_options,
+					         *n_output,
+					         mpi_comm);
+    }
 #else
     conduit::blueprint::mesh::partition(*n_input,
 		     		        n_options,

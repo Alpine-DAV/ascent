@@ -27,10 +27,30 @@ option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+# builtin libs: dray, apcomp, vtkh
+
+option(ENABLE_DRAY        "Build Devil Ray Support"   OFF)
+# Note: ENABLE_DRAY reqs ENABLE_APCOMP
+option(ENABLE_APCOMP      "Build AP Compositor"       OFF)
+option(ENABLE_VTKH        "Build VTK-h "              OFF)
+
+
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
-option(ENABLE_LOGGING     "Enabe data logging"        OFF)
+option(ENABLE_LOGGING     "Enable data logging"       OFF)
 option(ENABLE_DOCS        "Build Documentation"       ON)
+
+# DRay Specific Options
+option(DRAY_ENABLE_STATS          "Enable stats"         ON)
+option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
+
+# VTK-h Sepcific Options 
+
+option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
+
+# Cuda Specific Options
+option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
+
 
 #####################################################
 # Note: Third party libs like MFEM, FIDES, etc are 
@@ -48,10 +68,6 @@ if(ENABLE_CUDA)
   cmake_minimum_required(VERSION 3.14)
 else()
   cmake_minimum_required(VERSION 3.9)
-endif()
-
-if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  message(FATAL_ERROR "Static libraries are required when building with CUDA")
 endif()
 
 if(ENABLE_CUDA)
@@ -133,9 +149,11 @@ add_subdirectory(thirdparty_builtin)
 ################################
 # Add our libs
 ################################
+add_subdirectory(libs)
+
 add_subdirectory(flow)
 
-if(VTKM_FOUND)
+if(VTKH_FOUND OR ENABLE_VTKH)
   add_subdirectory(rover)
 endif()
 

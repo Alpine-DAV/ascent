@@ -110,6 +110,10 @@ class Test_Ascent_Render(unittest.TestCase):
         self.assertTrue(os.path.isfile(ofile))
 
     def test_delete_scene(self):
+        # if we don't have ascent, simply return
+        info = ascent.about()
+        if info["runtimes/ascent/vtkm/status"] != "enabled":
+             return
         # exec again, but this time remove a scene
         # tests regression related to internal book keeping
         # with graph setup

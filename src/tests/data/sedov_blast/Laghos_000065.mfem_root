@@ -1,0 +1,42 @@
+{
+  "dsets": {
+    "main": {
+      "cycle": 65,
+      "domains": 1,
+      "fields": {
+        "Density": {
+          "path": "Laghos_000065/Density.%06d",
+          "tags": {
+            "assoc": "nodes",
+            "comps": "1"
+          }
+        },
+        "Specific Internal Energy": {
+          "path": "Laghos_000065/Specific Internal Energy.%06d",
+          "tags": {
+            "assoc": "nodes",
+            "comps": "1"
+          }
+        },
+        "Velocity": {
+          "path": "Laghos_000065/Velocity.%06d",
+          "tags": {
+            "assoc": "nodes",
+            "comps": "3"
+          }
+        }
+      },
+      "mesh": {
+        "format": "0",
+        "path": "Laghos_000065/mesh.%06d",
+        "tags": {
+          "max_lods": "32",
+          "spatial_dim": "3",
+          "topo_dim": "3"
+        }
+      },
+      "time": 0.20590957571047608,
+      "time_step": 0
+    }
+  }
+}

@@ -1,4 +1,5 @@
 name: ascent
 repo_url:  https://github.com/Alpine-DAV/ascent.git
-repo_branch: task/2021_07_update_uberenv
+# to do mod azemu to find current branch via git cmds
+repo_branch: task/2022_06_amalgamate_vtk-h
 default_container:  alpinedav/ascent-ci:ubuntu-18-devel

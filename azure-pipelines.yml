@@ -48,7 +48,7 @@ stages:
 # include tpls built with uber
 - stage: Main
   jobs:
-  - job: Main_Ubuntu
+  - job: Ubuntu
     pool:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
@@ -63,6 +63,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
@@ -75,6 +77,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -99,6 +103,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -111,6 +117,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -123,6 +131,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -135,6 +145,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -147,6 +159,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -159,6 +173,8 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
@@ -166,6 +182,275 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
+  
+    container: $[ variables['containerImage'] ]
+  
+    steps:
+      - checkout: self
+        clean: boolean
+        submodules: recursive
+  
+      - script: |
+           #################################
+           # configure
+           #################################
+           # setup compiler env vars
+           export CC=${COMPILER_CC}
+           export CXX=${COMPILER_CXX}
+           export FC=${COMPILER_FC}
+           ${CC} --version
+           # capture current path
+           export ROOT_DIR=`pwd`
+           # find spack generated host config file
+           export HOST_CONFIG=`ls /uberenv_libs/*.cmake`
+           echo $HOST_CONFIG
+           # find spack installed cmake
+           export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+           export PATH=${CMAKE_BIN_DIR}:$PATH
+           echo $PATH
+           which cmake
+           cmake --version
+           # prepare build dir
+           mkdir build
+           cd build
+           # setup cmake options
+           export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # c++ std
+           export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
+           # include host config
+           export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
+           # extra settings
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
+           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
+           if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
+           if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBABELFLOW_DIR=IGNORE"; fi
+           if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBabelFlow_DIR=IGNORE"; fi
+           if [ $ENABLE_GENTEN = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DGENTEN_DIR=IGNORE"; fi
+           echo ${CMAKE_OPTS}
+           # configure
+           cmake ${CMAKE_OPTS} ../src
+        displayName: 'Configure with CMake'
+  
+      - script: |
+           #################################
+           # build
+           #################################
+           # build
+           cd build
+           make VERBOSE=1
+        displayName: 'Build'
+  
+      - script: |
+           #################################
+           # test
+           #################################
+           # find spack installed cmake
+           export ROOT_DIR=`pwd`
+           export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+           export PATH=${CMAKE_BIN_DIR}:$PATH
+           which ctest
+           cd build
+           # run ctest
+           ctest -T test --output-on-failure -V
+        displayName: 'Run Unit Tests'
+  
+      - script: |
+           #################################
+           # gen img diff report
+           #################################
+           # run cmake target to gen report
+           cd build
+           make gen_report
+        displayName: 'Run Gen Test Image Diff Report'
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
+  
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'cTest'
+          testResultsFiles: '**/Test.xml'
+        displayName: 'Unit Test Results'
+        condition: always()
+  
+      - task: CopyFiles@2
+        inputs:
+          contents: 'build/tests/_output/**'
+          targetFolder: $(Build.ArtifactStagingDirectory)
+        condition: always()
+  
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: $(Build.DefinitionName)_$(Agent.JobName)
+        condition: always()
+  
+      - script: |
+           #################################
+           # install
+           #################################
+           cd build
+           make install
+        displayName: 'Install'
+  
+      - script: |
+          ###########################
+          # using with cmake example
+          ###########################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          # use mpi wrappers in case we are built against mfem that
+          # that requires mpi
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
+          cd install/examples/ascent/using-with-cmake
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+          ./ascent_render_example
+        displayName: 'Test vs Install (using-with-cmake)'
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
+  
+      - script: |
+          ###########################
+          # using with make example
+          ###########################
+          cat install/share/ascent/ascent_config.mk
+          pwd
+          ls -l
+          cd install/examples/ascent/using-with-make
+          make
+          ./ascent_render_example
+        displayName: 'Test vs Install (using-with-make)'
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
+  
+      - script: |
+          ################################
+          # using with cmake mpi example
+          ###############################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          # use mpi wrappers in case we are built against mfem that
+          # that requires mpi
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
+          cd install/examples/ascent/using-with-cmake-mpi
+          rm -rf _test_build
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+          mpiexec -n 2 ./ascent_mpi_render_example
+        displayName: 'Test vs Install (using-with-cmake-mpi)'
+        condition: and(succeeded(),eq(variables['ENABLE_VTKH'], 'ON'))
+  
+      - script: |
+          ################################
+          # using with make mpi example
+          ################################
+          export CC=/usr/bin/mpicc
+          export CXX=/usr/bin/mpicxx
+          cat install/share/ascent/ascent_config.mk
+          pwd
+          ls -l
+          cd install/examples/ascent/using-with-make-mpi
+          make
+          mpiexec -n 2 ./ascent_mpi_render_example
+        displayName: 'Test vs Install (using-with-make-mpi)'
+        condition: eq(variables['ENABLE_VTKH'], 'ON')
+
+  - job: Ubuntu_Amalgamation
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 0
+    variables:
+      COMPILER_CC: gcc
+      COMPILER_CXX: g++
+      COMPILER_FC: gfortran
+    strategy:
+      matrix:
+
+        ubuntu_21_10_shared_py_cxx11_apcomp:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_APCOMP: ON
+          ENABLE_DRAY: OFF
+          ENABLE_DRAY_DOUBLE: OFF
+          ENABLE_MFEM: OFF
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+
+        ubuntu_21_10_shared_py_cxx11_dray:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_DRAY: ON
+          ENABLE_DRAY_DOUBLE: OFF
+          ENABLE_APCOMP: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+
+        ubuntu_21_10_shared_py_cxx11_dray_double:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_DRAY: ON
+          ENABLE_DRAY_DOUBLE: ON
+          ENABLE_APCOMP: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+
+        ubuntu_21_10_shared_py_cxx11_dray_no_mfem:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_VTKH: ON
+          ENABLE_DRAY: ON
+          ENABLE_DRAY_DOUBLE: OFF
+          ENABLE_APCOMP: ON
+          ENABLE_MFEM: OFF
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+
 
     container: $[ variables['containerImage'] ]
 
@@ -207,9 +492,25 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
            # extra settings
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
+           # Always ignore spack built version of DRAY
+           export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"
+           # Always ignore spack built version of VTK-h
+           export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"
+           #
+           # we need to provide RAJA + Umpire
+           #
+           export RAJA_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/raja*/`
+           export UMPIRE_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/umpire*/`
+           export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=${UMPIRE_DIR}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=${RAJA_DIR}"
+
+           # dray double perc option
+           if [ $ENABLE_DRAY_DOUBLE  = 'ON' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAY_USE_DOUBLE_PRECISION=ON"; fi
+           # other tpl options
            if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
-           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"; fi
-           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
            if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
            if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
@@ -361,7 +662,7 @@ stages:
         condition: eq(variables['ENABLE_VTKH'], 'ON')
 
 
-  - job: Main_Ubuntu_Cuda
+  - job: Ubuntu_Cuda
     pool:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
@@ -375,6 +676,7 @@ stages:
           containerImage: ${{ variables.ubuntu_18_cuda_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
+          ENABLE_APCOMP: OFF
           ENABLE_BABELFLOW: OFF
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
@@ -383,10 +685,147 @@ stages:
           containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
+          ENABLE_APCOMP: OFF
           ENABLE_BABELFLOW: OFF
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+          ## on hold until we get new CI container
+          # cuda-11.4.0-shared:
+          # containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          # BUILD_SHARED_LIBS: ON
+          # CMAKE_BUILD_TYPE: Release
+          # ENABLE_BABELFLOW: OFF
+          # # shared linking unit tests shouldn't eat disk space,
+          # ENABLE_TESTS: ON
+    container: $[ variables['containerImage'] ]
+    steps:
+      - checkout: self
+        clean: boolean
+        submodules: recursive
+  
+      - script: |
+           #################################
+           # configure
+           #################################
+           # setup compiler env vars
+           export CC=${COMPILER_CC}
+           export CXX=${COMPILER_CXX}
+           export FC=${COMPILER_FC}
+           ${CC} --version
+           # capture current path
+           export ROOT_DIR=`pwd`
+           # find spack generated host config file
+           export HOST_CONFIG=`ls /uberenv_libs/*.cmake`
+           echo $HOST_CONFIG
+           # find spack installed cmake
+           export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+           export PATH=${CMAKE_BIN_DIR}:$PATH
+           echo $PATH
+           which cmake
+           cmake --version
+           # extra cuda setup (req for occa)
+           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
+           # prepare build dir
+           mkdir build
+           cd build
+           # setup cmake options
+           export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=$ENABLE_APCOMP"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # configure
+           cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
+        displayName: 'Configure with CMake'
+  
+      - script: |
+           #################################
+           # build
+           #################################
+           # build
+           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
+           cd build
+           make VERBOSE=1
+        displayName: 'Build'
+  
+  
+      - script: |
+           #################################
+           # install
+           #################################
+           cd build
+           make install
+        displayName: 'Install'
+  
+      - script: |
+          ###########################
+          # using with cmake example
+          ###########################
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+          cd install/examples/ascent/using-with-cmake
+          mkdir _test_build
+          cd _test_build
+          cmake ../
+          make VERBOSE=1
+        displayName: 'Test vs Install (using-with-cmake) [build only]'
+  
+      - script: |
+          ###########################
+          # using with make example
+          ###########################
+          cat install/share/ascent/ascent_config.mk
+          pwd
+          ls -l
+          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+          cd install/examples/ascent/using-with-make
+          make
+        displayName: 'Test vs Install (using-with-make) [build only]'
+
+  - job: Ubuntu_Cuda_Amalgamation
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 0
+    variables:
+      COMPILER_CC: gcc
+      COMPILER_CXX: g++
+      COMPILER_FC: gfortran
+    strategy:
+      matrix:
+        cuda-11.4.0-static:
+          containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          BUILD_SHARED_LIBS: OFF
+          CMAKE_BUILD_TYPE: Release
+          ENABLE_DRAY: ON
+          ENABLE_MFEM: ON
+          # static linking unit tests eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
+        cuda-11.4.0-static_no_mfem:
+          containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          BUILD_SHARED_LIBS: OFF
+          CMAKE_BUILD_TYPE: Release
+          ENABLE_DRAY: ON
+          ENABLE_MFEM: OFF
+          # static linking unit tests eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
+          ## on hold until we get new CI container
+          # cuda-11.4.0-shared_dray:
+          # containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          # BUILD_SHARED_LIBS: ON
+          # ENABLE_MFEM: ON
+          # CMAKE_BUILD_TYPE: Release
+          # # shared linking unit tests shouldn't eat disk space,
+          # ENABLE_TESTS: ON
     container: $[ variables['containerImage'] ]
     steps:
       - checkout: self
@@ -420,6 +859,22 @@ stages:
            cd build
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+           # always skip external vtkh for these tests
+           export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"
+           # always skip external dray for these tests
+           export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"
+
+           # always include raja and umpire
+           export RAJA_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/raja*/`
+           export UMPIRE_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/umpire*/`
+           export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=${UMPIRE_DIR}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=${RAJA_DIR}"
+
+           # always build vtkh, dray,and apcomp
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=TRUE"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=TRUE"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=TRUE"
+           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
