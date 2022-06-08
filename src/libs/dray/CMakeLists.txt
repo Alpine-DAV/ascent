@@ -161,6 +161,7 @@ set(dray_headers dray.hpp
                  data_model/mesh.hpp
 
                  filters/mesh_boundary.hpp
+                 filters/mesh_threshold.hpp
                  filters/reflect.hpp
                  filters/redistribute.hpp
                  filters/subset.hpp
@@ -259,6 +260,7 @@ set(dray_sources dray.cpp
                  data_model/unstructured_field.cpp
                  # filters
                  filters/mesh_boundary.cpp
+                 filters/mesh_threshold.cpp
                  filters/reflect.cpp
                  filters/redistribute.cpp
                  filters/subset.cpp
