@@ -1047,4 +1047,100 @@ BlueprintLowOrder::import_uniform(const conduit::Node &n_coords,
   return res;
 }
 
+// Rearrange dray Conduit node to one that conforms to Blueprint.
+void
+BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
+{
+    dray_rep.print();
+
+    // Add the coordinates.
+    const conduit::Node &mgf = dray_rep["meshes/mesh/grid_function"];
+    int npts = mgf["values_size"].to_int();
+    const conduit::Node &values = mgf["values"];
+    auto coords_ptr = reinterpret_cast<Float *>(const_cast<void*>(values.data_ptr()));
+    n["coordsets/coords/type"] = "explicit";
+    n["coordsets/coords/values/x"].set_external(coords_ptr, npts, 0, 3 * sizeof(Float));
+    n["coordsets/coords/values/y"].set_external(coords_ptr, npts, sizeof(Float), 3 * sizeof(Float));
+    n["coordsets/coords/values/z"].set_external(coords_ptr, npts, 2*sizeof(Float), 3 * sizeof(Float));
+
+    // Add the topology
+    int dofs_per_element = mgf["dofs_per_element"].to_int();
+    if(dofs_per_element == 8)
+    {
+        conduit::Node &n_topo = n["topologies/topology"];
+        n_topo["coordset"] = "coords";
+        n_topo["type"] = "unstructured";
+        n_topo["elements/shape"] = "hex";
+#if 1
+        // node reordering seems to be needed.
+        int conn_size = mgf["conn_size"].to_int();
+        int nelem = mgf["num_elemements"].to_int();
+        auto conn_ptr = reinterpret_cast<int *>(const_cast<void*>(mgf["conn"].data_ptr()));
+        n_topo["elements/connectivity"].set(conduit::DataType::int32(nelem * 8));
+        auto newconn_ptr = reinterpret_cast<int *>(const_cast<void*>(n_topo["elements/connectivity"].data_ptr()));
+        const int reorder[] = {0,1,3,2,4,5,7,6};
+        for(int i = 0; i < nelem; i++)
+        {
+            int *cell_src = conn_ptr + 8 * i;
+            int *cell_dest = newconn_ptr + 8 * i;
+
+            //std::cout << "cell " << i << " = {";
+            //for(int j = 0; j < 8; j++)
+            //    std::cout << cell_src[j] << ", ";
+            //std::cout << "}" << std::endl;
+
+            for(int j = 0; j < 8; j++)
+                cell_dest[j] = cell_src[reorder[j]];
+        }
+#else
+        n_topo["elements/connectivity"].set_external_node(mgf["conn"]);
+#endif
+    }
+    else if(dofs_per_element == 4)
+    {
+        conduit::Node &n_topo = n["topologies/topology"];
+        n_topo["coordset"] = "coords";
+        n_topo["type"] = "unstructured";
+        n_topo["elements/shape"] = "tet";
+        n_topo["elements/connectivity"].set_external_node(mgf["conn"]);
+    }
+
+    // Do fields.
+    const conduit::Node &n_fields = dray_rep["fields"];
+    conduit::Node &n_outfields = n["fields"];
+    for(conduit::index_t i = 0; i < n_fields.number_of_children(); i++)
+    {
+        const conduit::Node &n_field = n_fields[i];
+        const conduit::Node &n_gf = n_field["grid_function"];
+        dofs_per_element = n_gf["dofs_per_element"].to_int();
+        int phys_dim = n_gf["phys_dim"].to_int();
+
+        conduit::Node &n_outfield = n_outfields[n_field.name()];
+        n_outfield["topology"] = "topology";
+        if(dofs_per_element == 1)
+            n_outfield["association"] = "element";
+        else
+            n_outfield["association"] = "vertex";
+        if(phys_dim == 1)
+        {
+            n_outfield["values"].set_external_node(n_gf["values"]);
+        }
+        else if(phys_dim == 2)
+        {
+            auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
+            n_outfield["values/x"].set_external(ptr, npts, 0, 2 * sizeof(Float));
+            n_outfield["values/y"].set_external(ptr, npts, sizeof(Float), 2 * sizeof(Float));
+        }
+        else if(phys_dim == 3)
+        {
+            auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
+            n_outfield["values/x"].set_external(ptr, npts, 0, 3 * sizeof(Float));
+            n_outfield["values/y"].set_external(ptr, npts, sizeof(Float), 3 * sizeof(Float));
+            n_outfield["values/z"].set_external(ptr, npts, 2*sizeof(Float), 3 * sizeof(Float));
+        }
+    }
+
+    n.print();
+}
+
 } // namespace dray
