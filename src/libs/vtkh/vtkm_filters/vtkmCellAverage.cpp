@@ -1,5 +1,5 @@
 #include "vtkmCellAverage.hpp"
-#include <vtkm/filter/CellAverage.h>
+#include <vtkm/filter/field_conversion/CellAverage.h>
 
 namespace vtkh
 {
@@ -9,7 +9,7 @@ vtkmCellAverage::Run(vtkm::cont::DataSet &input,
                      std::string output_field_name,
                      vtkm::filter::FieldSelection map_fields)
 {
-  vtkm::filter::CellAverage avg;
+  vtkm::filter::field_conversion::CellAverage avg;
   avg.SetOutputFieldName(output_field_name);
   avg.SetFieldsToPass(map_fields);
   avg.SetActiveField(field_name);

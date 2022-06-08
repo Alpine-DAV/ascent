@@ -3,7 +3,9 @@
 #include <vtkh/Logger.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 
-#include <vtkm/worklet/FieldHistogram.h>
+//TODO: Header for new Histogram filter
+//#include <vtkm/filter/density_estimate/Histogram.h>
+#include <vtkm/filter/density_estimate/worklet/FieldHistogram.h>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -31,6 +33,7 @@ struct HistoFunctor
     T min_range = static_cast<T>(m_range.Min);
     T max_range = static_cast<T>(m_range.Max);
 
+    //TODO:Rewrite using vtkm::filter::density_estimate::Histogram
     vtkm::worklet::FieldHistogram worklet;
     worklet.Run(array,m_num_bins,min_range,max_range,bin_delta,m_bins);
     m_bin_delta = static_cast<vtkm::Float64>(bin_delta);
