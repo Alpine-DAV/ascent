@@ -8,6 +8,7 @@
 #include <dray/data_model/unstructured_field.hpp>
 #include <dray/data_model/unstructured_mesh.hpp>
 #include <dray/dispatcher.hpp>
+#include <dray/policies.hpp>
 
 #include <iostream>
 
@@ -22,21 +23,39 @@ namespace
 
 template<typename FieldElemType>
 static dray::UnstructuredField<OUT_ELEM_TYPE_DEF>
-compute_cell_average(const dray::UnstructuredField<FieldElemType> &in_field,
+compute_cell_average(dray::UnstructuredField<FieldElemType> &in_field,
                      const std::string &name)
 {
   using OutElemType = OUT_ELEM_TYPE_DEF;
 
-  // Host implementation for now
-  const auto nvalues = in_field.get_num_elem();
+  // Retrieve important input information
+  constexpr auto ncomp = FieldElemType::get_ncomp();
+  dray::GridFunction<ncomp> in_gf = in_field.get_dof_data();
+  auto *in_data_ptr = in_gf.m_values.get_device_ptr();
+  auto *in_idx_ptr = in_gf.m_ctrl_idx.get_device_ptr();
+
+  // Create output array
+  const auto nvalues = in_field.get_num_elem() * ncomp;
   dray::Array<dray::Vec<dray::Float, OutElemType::get_ncomp()>> out_data;
   out_data.resize(nvalues);
-  auto *out_data_ptr = out_data.get_host_ptr();
+
+  // Execute parallel algorithm
+  auto *out_data_ptr = out_data.get_device_ptr();
   const RAJA::RangeSegment range(0, nvalues);
-  RAJA::forall<RAJA::seq_exec>(range,
-    [=](int i)
+  const auto ndof = in_gf.m_el_dofs;
+  RAJA::forall<dray::for_policy>(range,
+    [=] DRAY_LAMBDA (int i)
     {
-      out_data_ptr[i][0] = 1;
+      const auto offset = i * ndof;
+      out_data_ptr[i] = 0.;
+      for(int j = 0; j < ndof; j++)
+      {
+        for(int k = 0; k < ncomp; k++)
+        {
+          out_data_ptr[i][k] += in_data_ptr[offset + j][k];
+        }
+      }
+      out_data_ptr[i] /= dray::Float(ndof);
     });
 
   // Build return value
