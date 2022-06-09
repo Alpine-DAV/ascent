@@ -101,7 +101,7 @@ These tables provides an inventory of Ascent's features and the programming and 
 
    * - VTK-h Log
      - Transform
-     - VTK-m (OpenMP, Cuda, Kokkos) + MPI
+     - VTK-m (OpenMP, Cuda, Kokkos)
      - VTK-h and VTK-m APIs
      - `VTKHLog <https://github.com/Alpine-DAV/ascent/blob/deef65e39f3b2792a40281439c4f614488349c0b/src/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L177>`_
 
@@ -143,7 +143,7 @@ These tables provides an inventory of Ascent's features and the programming and 
 
    * - VTK-h No Op 
      - Transform
-     - VTK-m (OpenMP, Cuda, Kokkos) + MPI
+     - None 
      - VTK-h and VTK-m APIs
      - `VTKHNoOp <https://github.com/Alpine-DAV/ascent/blob/deef65e39f3b2792a40281439c4f614488349c0b/src/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L268>`_
 
