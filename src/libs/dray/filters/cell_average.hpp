@@ -2,6 +2,7 @@
 #define DRAY_CELL_AVERAGE_HPP
 
 #include <dray/data_model/collection.hpp>
+#include <dray/error.hpp>
 
 #include <string>
 
@@ -10,8 +11,17 @@ namespace dray
 
 class CellAverage
 {
+protected:
+  std::string in_field;
+  std::string out_field;
 public:
-    Collection execute(Collection &input, const std::string &in_field, std::string out_field = "");    
+  CellAverage();
+  ~CellAverage();
+
+  void set_field(const std::string &name);
+  void set_output_field(const std::string &name);
+
+  Collection execute(Collection &);
 };
 
 }
