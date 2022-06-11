@@ -4,7 +4,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 set -ev
 
-export TAG_NAME=alpinedav/ascent-ci:ubuntu-20.04-rocm-5.0.2-devel
+export TAG_NAME=alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel
 
 # exec docker build to create image
 echo "docker build -t ${TAG_NAME} ."
