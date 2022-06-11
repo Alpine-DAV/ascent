@@ -6,6 +6,7 @@
 #include <dray/data_model/elem_ops.hpp>
 #include <dray/data_model/mesh.hpp>
 #include <dray/data_model/mesh_utils.hpp>
+#include <dray/filters/subset.hpp>
 #include <dray/utils/data_logger.hpp>
 
 #include <dray/policies.hpp>
@@ -435,6 +436,20 @@ GOAL: Turn [0,0,0,1,1,0,1,0,0,1]
     });
     DRAY_ERROR_CHECK();
 }
+/*
+template <typename MeshType>
+MeshType
+selected_elements(const MeshType &mesh, const Array<int32> &elem_list)
+{
+    int32 nelem = elem_list.size();
+    int32 *elem_list_ptr = elem_list.get_device_ptr();
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
+    {
+        if(elem_mask_ptr[elid])
+            elem_list_ptr[offsets_ptr[elid]] = elid;
+    });
+}
+*/
 
 // Applies a threshold operation on a mesh.
 struct ThresholdFunctor
@@ -487,6 +502,12 @@ std::cout << "opertor()" << std::endl;
     std::cout << "}" << std::endl;
 #endif
 
+    // Use the element mask to subset the data.
+    dray::Subset subset;
+    m_output = subset.execute(m_input, elem_mask);
+
+#if 0
+
     Array<int32> elem_list;
     old_element_list(elem_mask, elem_list);
 #if 1
@@ -496,6 +517,10 @@ std::cout << "opertor()" << std::endl;
     std::cout << "}" << std::endl;
 #endif
 
+    // Now that we have the list of elements to preserve, we need to be able to
+    // use it to determine which dofs out of each grid function we'll need.
+    m_output = selected_elements(mesh, elem_list);
+#endif
 
 #if 0
         // Make the mesh dataset, keeping only the cells in m_elid
