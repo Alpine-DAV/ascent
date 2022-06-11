@@ -306,48 +306,134 @@ void
 determine_ids(UnstructuredMesh<MElemT> &mesh, UnstructuredField<MElemT> &thresh_field,
     Array<int32> &m_elid, Array<int32> &m_dofid)
 */
-template <typename MeshType, typename FieldType>
+template <typename FieldType>
 void
-determine_ids(MeshType &mesh, FieldType &thresh_field,
-    Array<int32> &m_elid, Array<int32> &m_dofid)
+determine_elements_to_keep(FieldType &thresh_field,
+    Range &range, bool return_all_in_range, Array<int32> &elem_mask)
 {
-// TODO: write this.
-#if 0
-    if(thresh_field->order() == 0)
+    std::cout << "***determine_ids" << std::endl;
+
+    //auto gf = thresh_field.get_dof_data();
+    int32 nelem = thresh_field.get_dof_data().get_num_elem();
+
+    elem_mask.resize(nelem);
+    std::cout << "nelem=" << nelem << std::endl;
+
+    const auto thresh_ptr = thresh_field.get_dof_data().m_values.get_device_ptr();
+    const auto conn_ptr = thresh_field.get_dof_data().m_ctrl_idx.get_device_ptr();
+    const auto elem_mask_ptr = elem_mask.get_device_ptr();
+
+    if(thresh_field.order() == 0)
     {
-        // cell-centered.
-
-        // dofs is a GridFunction.
-        auto dofs = thresh_field->get_dof_data();
-
-        m_elid.resize(dofs.get_num_elem());
-        cout << "dofs.get_num_elem()=" << dofs.get_num_elem() << endl;
-
-
-        int32 n = dofs.get_num_elem();
-        for(int32 elem = 0; elem < n; elem++)
+    std::cout << "***cell-centered" << std::endl;
+        // cell-centered. This means that the grid function contains m_ctrl_idx
+        // that contains a list of 0..Ncells-1 values that we need to check to
+        // decide whether to keep the cell.
+        RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
         {
-            Range node_range;
-            get_elt_node_range(coeff, elem, &node_range);
-        }
-
+            elem_mask_ptr[elid] = thresh_ptr[elid][0] >= range.min() && 
+                                  thresh_ptr[elid][0] <= range.max();
+        });
+        DRAY_ERROR_CHECK();
     }
     else
     {
-        // node/dof-centered.
+    std::cout << "***point-centered" << std::endl;
+    std::cout << "***return_all_in_range=" << return_all_in_range << std::endl;
+    std::cout << "***nelem=" << nelem << std::endl;
+    std::cout << "***range=" << range.min() << ", " << range.max() << std::endl;
+
+        // node/dof-centered. Each cell contains a list of dofs it uses.
+        auto el_dofs = thresh_field.get_dof_data().m_el_dofs;
+    std::cout << "***el_dofs=" << el_dofs << std::endl;
+        if(return_all_in_range)
+        {
+            // Keep if all values are in range.
+            RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
+            {
+                // Examine all dof values for this cell and see whether we should
+                // keep the cell.
+                int32 keep = 1;
+                int32 start = elid * el_dofs;
+                for(int j = 0; j < el_dofs; j++)
+                {
+                    int32 dofid = conn_ptr[start + j];
+                    keep &= thresh_ptr[dofid][0] >= range.min() && 
+                            thresh_ptr[dofid][0] <= range.max();
+                }
+                elem_mask_ptr[elid] = keep;
+            });
+            DRAY_ERROR_CHECK();
+        }
+        else
+        {
+            // Keep if any values are in range.
+            RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
+            {
+                // Examine all dof values for this cell and see whether we should
+                // keep the cell.
+                int32 keep = 0;
+                int32 start = elid * el_dofs;
+                for(int j = 0; j < el_dofs; j++)
+                {
+                    int32 dofid = conn_ptr[start + j];
+                    keep |= thresh_ptr[dofid][0] >= range.min() && 
+                            thresh_ptr[dofid][0] <= range.max();
+                }
+                elem_mask_ptr[elid] = keep;
+            });
+            DRAY_ERROR_CHECK();
+        }
     }
+}
 
-    // create the base grid func
-    GridFunction<1> gf;
-    gf.m_values    = values;
-    gf.m_ctrl_idx  = ctrl_idx;
-    gf.m_el_dofs   = num_dofs_per_elem;
-    gf.m_size_el   = num_elems;
-    gf.m_size_ctrl = ctrl_idx.size();
+// Take the element mask and produce a condensed array of old element ids that
+// are being preserved.
+void
+old_element_list(Array<int32> &elem_mask, Array<int32> &elem_list)
+{
+/**
+GOAL: Turn [0,0,0,1,1,0,1,0,0,1]
+      into [3,4,6,9]
 
-    std::shared_ptr<Field> field;
-    field = std::make_shared<UnstructuredField<HexScalar_P0>>(gf, order, field_name);
-#endif
+      step 1: count 1's in input to get count.
+
+      step 2: prefix sum: [0,0,0,1,1,0,1,0,0,1]
+                 offsets= [0,0,0,1,2,2,3,3,3,4]
+
+      step 3: assignment: store index i into dest if elem_mask[i] == 1
+*/
+
+    // Step 1
+    RAJA::ReduceSum<reduce_policy, int32> sum(0);
+    int32 nelem = elem_mask.size();
+    int32 *elem_mask_ptr = elem_mask.get_device_ptr();
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
+    {
+        sum += elem_mask_ptr[elid];
+    });
+    DRAY_ERROR_CHECK();
+    int32 count = sum.get();
+
+    // Step 2.
+    Array<int32> offsets;
+    offsets.resize(nelem);
+    int32 *offsets_ptr = offsets.get_device_ptr();
+    RAJA::operators::safe_plus<int32> plus{};
+    RAJA::exclusive_scan<for_policy>(RAJA::make_span(elem_mask_ptr, nelem),
+                                     RAJA::make_span(offsets_ptr, nelem),
+                                     plus);
+    DRAY_ERROR_CHECK();
+
+    // Step 3.
+    elem_list.resize(count);
+    int32 *elem_list_ptr = elem_list.get_device_ptr();
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
+    {
+        if(elem_mask_ptr[elid])
+            elem_list_ptr[offsets_ptr[elid]] = elid;
+    });
+    DRAY_ERROR_CHECK();
 }
 
 // Applies a threshold operation on a mesh.
@@ -359,10 +445,6 @@ struct ThresholdFunctor
 
   // Output dataset produced by the functor.
   DataSet m_output;
-
-  // Internal storage to pass set of element and dof ids to different stages.
-  Array<int32> m_elid;
-  Array<int32> m_dofid;
 
   // Threshold attributes.
   std::string m_field_name;
@@ -393,9 +475,28 @@ struct ThresholdFunctor
   void operator()(MeshType &mesh, ScalarField &field)
   {
     DRAY_LOG_OPEN("mesh_threshold");
+std::cout << "opertor()" << std::endl;
 
-    // Figure out which dofs and cells to keep from the input field.
-    determine_ids(mesh, field, m_elid, m_dofid);
+    // Figure out which elements to keep based on the input field.
+    Array<int32> elem_mask;
+    determine_elements_to_keep(field, m_range, m_return_all_in_range, elem_mask);
+#if 0
+    std::cout << "elem_mask={";
+    for(size_t i = 0; i < elem_mask.size(); i++)
+        std::cout << ", " << elem_mask.get_value(i);
+    std::cout << "}" << std::endl;
+#endif
+
+    Array<int32> elem_list;
+    old_element_list(elem_mask, elem_list);
+#if 1
+    std::cout << "elem_list={";
+    for(size_t i = 0; i < elem_list.size(); i++)
+        std::cout << ", " << elem_list.get_value(i);
+    std::cout << "}" << std::endl;
+#endif
+
+
 #if 0
         // Make the mesh dataset, keeping only the cells in m_elid
         m_output = threshold_execute(mesh, m_elid);
@@ -441,13 +542,13 @@ MeshThreshold::~MeshThreshold()
 void
 MeshThreshold::set_upper_threshold(Float value)
 {
-  m_range.set_min(value);
+  m_range.set_max(value);
 }
 
 void
 MeshThreshold::set_lower_threshold(Float value)
 {
-  m_range.set_max(value);
+  m_range.set_min(value);
 }
 
 void

@@ -54,10 +54,12 @@ TEST (dray_mesh_threshold, structured)
   dray::Collection dataset;
   dataset.add_domain(domain);
 
+  // point-centered, any in range.
   dray::MeshThreshold tf;
-  tf.set_lower_threshold(0.);
-  tf.set_upper_threshold(4.);
+  tf.set_lower_threshold(-10.);
+  tf.set_upper_threshold(0.);
   tf.set_field("braid");
+  tf.set_all_in_range(false);
   auto tfdataset = tf.execute(dataset);
 
   // Write the original data.
@@ -71,4 +73,23 @@ TEST (dray_mesh_threshold, structured)
   dray_collection_to_blueprint(tfdataset, tfdata);
   //tfdata.print();
   //dray::BlueprintReader::save_blueprint("structured_out", tfdata);
+
+#if 0
+  // point-centered, all in range.
+  tf.set_all_in_range(true);
+  tfdataset = tf.execute(dataset);
+
+  // cell-centered, all in range.
+  tf.set_field("radial");
+  tf.set_all_in_range(false);
+  tfdataset = tf.execute(dataset);
+
+
+  // cell-centered, all in range.
+  tf.set_field("radial");
+  tf.set_all_in_range(true);
+  tfdataset = tf.execute(dataset);
+
+
+#endif
 }
