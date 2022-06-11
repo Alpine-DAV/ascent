@@ -2,7 +2,9 @@
 set -ev
 
 # variants
-export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow+genten"
+# genten disabled, wait for genten master to gain cokurt
+#export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow+genten"
+export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC}"
 # config
