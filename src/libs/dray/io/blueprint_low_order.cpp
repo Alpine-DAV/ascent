@@ -1053,8 +1053,11 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
 {
     dray_rep.print();
 
+    const conduit::Node &meshes = dray_rep["meshes"];
+    const conduit::Node &mesh = meshes[0];
+
     // Add the coordinates.
-    const conduit::Node &mgf = dray_rep["meshes/mesh/grid_function"];
+    const conduit::Node &mgf = mesh["grid_function"];
     int npts = mgf["values_size"].to_int();
     const conduit::Node &values = mgf["values"];
     auto coords_ptr = reinterpret_cast<Float *>(const_cast<void*>(values.data_ptr()));
