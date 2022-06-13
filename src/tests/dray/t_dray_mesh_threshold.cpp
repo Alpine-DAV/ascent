@@ -78,7 +78,7 @@ TEST (dray_mesh_threshold, structured)
   dray::BlueprintReader::save_blueprint("structured", inputdata);
 
   // point-centered, any in range.
-  dray::MeshThreshold tf;
+  dray::Threshold tf;
   tf.set_lower_threshold(-10.);
   tf.set_upper_threshold(0.);
   tf.set_field("braid");
