@@ -2,9 +2,10 @@
 set -ev
 
 # variants
-# genten disabled, wait for genten master to gain cokurt
-#export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow+genten"
-export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow"
+# (~python) python disabled, spack checksum fetch issues with multiple version (3.9 and 3.8)
+# (~genten) genten disabled, wait for genten master to gain cokurt
+# use vtk-m 1.8 rc branch
+export SPACK_SPEC="%gcc+mpi~python+dray+mfem+occa+fides+adios2+babelflow~genten ^vtk-m@1.8.0-rc1"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC}"
 # config
