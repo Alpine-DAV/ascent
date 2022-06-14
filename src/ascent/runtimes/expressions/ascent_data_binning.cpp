@@ -490,7 +490,7 @@ void calc_bindex(const Array<double> &values,
     }
     bindex_ptr[i] = bin_value;
   });
-  ASCENT_ERROR_CHECK();
+  ASCENT_DEVICE_ERROR_CHECK();
 }
 
 template<typename T, typename Exec>
@@ -512,7 +512,7 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
   });
   //std::cout<<"Cast to float64 "<<mem_space<<"\n";
   res.status();
-  ASCENT_ERROR_CHECK();
+  ASCENT_DEVICE_ERROR_CHECK();
   return res;
 }
 

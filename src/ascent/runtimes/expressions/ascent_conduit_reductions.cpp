@@ -411,7 +411,7 @@ struct MaxFunctor
       const T val = accessor[i];
       reducer.maxloc(val,i);
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = reducer.get();
@@ -440,7 +440,7 @@ struct MinFunctor
       const T val = accessor[i];
       reducer.minloc(val,i);
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = reducer.get();
@@ -465,7 +465,7 @@ struct SumFunctor
       const T val = accessor[i];
       sum += val;
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = sum.get();
@@ -495,7 +495,7 @@ struct NanFunctor
       }
       count += is_nan;
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = count.get();
@@ -538,7 +538,7 @@ struct InfFunctor
       }
       count += is;
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
 
     conduit::Node res;
     res["value"] = count.get();
@@ -604,7 +604,7 @@ struct HistogramFunctor
       int old = RAJA::atomicAdd<ap> (&(bins_ptr[bin_index]), 1.);
 
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
 
     // synch the values back to the host
     (void)  bins.get_host_ptr();

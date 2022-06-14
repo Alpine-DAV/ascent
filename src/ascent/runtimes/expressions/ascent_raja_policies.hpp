@@ -111,9 +111,9 @@ inline void cuda_error_check(const char *file, const int line )
     //exit( -1 );
   }
 }
-#define ASCENT_ERROR_CHECK() cuda_error_check(__FILE__,__LINE__);
+#define ASCENT_RAJA_ERROR_CHECK(() cuda_error_check(__FILE__,__LINE__);
 #else
-#define ASCENT_ERROR_CHECK()
+#define ASCENT_RAJA_ERROR_CHECK(()
 #endif
 
 

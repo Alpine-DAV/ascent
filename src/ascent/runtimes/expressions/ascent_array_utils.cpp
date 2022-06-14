@@ -46,7 +46,7 @@ struct MemsetFunctor
     {
       array_ptr[i] = value;
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
 
   }
 };

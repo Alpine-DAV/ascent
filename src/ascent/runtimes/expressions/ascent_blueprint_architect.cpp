@@ -524,7 +524,7 @@ struct VertexFunctor
       verts_ptr[offset + 1] = vert[1];
       verts_ptr[offset + 2] = vert[2];
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
   }
 };
 
@@ -574,7 +574,7 @@ struct CentroidFunctor
       }
 
     });
-    ASCENT_ERROR_CHECK();
+    ASCENT_DEVICE_ERROR_CHECK();
   }
 };
 
