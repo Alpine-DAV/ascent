@@ -155,7 +155,8 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
     res = ascent::runtime::expressions::array_max(input["values"],ExecutionManager::preferred_cpu_device());
     std::cout << "RESULT:" << std::endl;
     res.print();
-    EXPECT_EQ(res.to_float64(), 5.0);
+    EXPECT_EQ(res["value"].to_float64(), 5.0);
+    EXPECT_EQ(res["index"].to_int64(), 5);
 
     std::cout << "[min]" << std::endl;
     std::cout << "input" << std::endl;
@@ -164,7 +165,8 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
     res = ascent::runtime::expressions::array_min(input["values"],ExecutionManager::preferred_cpu_device());
     std::cout << "RESULT:" << std::endl;
     res.print();
-    EXPECT_EQ(res.to_float64(), 0.0);
+    EXPECT_EQ(res["value"].to_float64(), 0.0);
+    EXPECT_EQ(res["index"].to_int64(), 0);
 
     std::cout << "[sum]" << std::endl;
     std::cout << "input" << std::endl;
@@ -173,7 +175,8 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
     res = ascent::runtime::expressions::array_sum(input["values"],ExecutionManager::preferred_cpu_device());
     std::cout << "RESULT:" << std::endl;
     res.print();
-    EXPECT_EQ(res.to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+    EXPECT_EQ(res["value"].to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+    EXPECT_EQ(res["count"].to_int64(), 6);
 }
 
 //-----------------------------------------------------------------------------
@@ -193,7 +196,8 @@ TEST(ascent_blueprint_reductions, array_tests_cuda)
     res = ascent::runtime::expressions::array_max(input["values"],"cuda");
     std::cout << "RESULT:" << std::endl;
     res.print();
-    EXPECT_EQ(res.to_float64(), 5.0);
+    EXPECT_EQ(res["value"].to_float64(), 5.0);
+    EXPECT_EQ(res["index"].to_int64(), 5);
 
     std::cout << "[min]" << std::endl;
     std::cout << "input" << std::endl;
@@ -202,7 +206,8 @@ TEST(ascent_blueprint_reductions, array_tests_cuda)
     res = ascent::runtime::expressions::array_min(input["values"],"cuda");
     std::cout << "RESULT:" << std::endl;
     res.print();
-    EXPECT_EQ(res.to_float64(), 0.0);
+    EXPECT_EQ(res["value"].to_float64(), 0.0);
+    EXPECT_EQ(res["index"].to_int64(), 0);
 
     std::cout << "[sum]" << std::endl;
     std::cout << "input" << std::endl;
@@ -211,7 +216,8 @@ TEST(ascent_blueprint_reductions, array_tests_cuda)
     res = ascent::runtime::expressions::array_sum(input["values"],"cuda");
     std::cout << "RESULT:" << std::endl;
     res.print();
-    EXPECT_EQ(res.to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+    EXPECT_EQ(res["value"].to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+    EXPECT_EQ(res["count"].to_int64(), 6);
 }
 
 
