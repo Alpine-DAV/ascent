@@ -307,6 +307,8 @@ TEST(ascent_expressions, functional_correctness)
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
 
+  multi_dom.print();
+
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
@@ -317,6 +319,48 @@ TEST(ascent_expressions, functional_correctness)
   res = eval.evaluate(expr);
   EXPECT_EQ(res["value"].as_float64(), 25);
   EXPECT_EQ(res["type"].as_string(), "vector");
+
+  expr = "histogram(field('ele_example'),num_bins=3)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"[5.0, 5.0, 6.0]");
+
+  expr = "histogram(field('ele_example'),num_bins=3).value";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].to_yaml(),"[5.0, 5.0, 6.0]");
+  EXPECT_EQ(res["type"].as_string(), "array");
+
+  expr = "max(histogram(field('ele_example'),num_bins=3).value)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].as_float64(), 6.0);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "min(histogram(field('ele_example'),num_bins=3).value)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].as_float64(), 5.0);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "sum(histogram(field('ele_example'),num_bins=3).value)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].as_float64(), 16.0);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "entropy(histogram(field('ele_example'),num_bins=3))";
+  res = eval.evaluate(expr);
+  res.print();
+
+  expr = "pdf(histogram(field('ele_example'),num_bins=3))";
+  res = eval.evaluate(expr);
+  res.print();
+
+  expr = "cdf(histogram(field('ele_example'),num_bins=3))";
+  res = eval.evaluate(expr);
+  res.print();
+
 
   expr = "entropy(histogram(field('ele_example')))";
   res = eval.evaluate(expr);
@@ -910,7 +954,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     res.print();
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value/value"].to_float64(), 0.5);
+    EXPECT_EQ(res["value"].to_float64(), 0.5);
   }
 
   for(const string &expression : {
@@ -919,7 +963,7 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate(expression);
     res.print();
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value/value"].to_float64(), 0.25);
+    EXPECT_EQ(res["value"].to_float64(), 0.25);
   }
 
   //confirm it returns an empty gradient if there is only a single value
@@ -1025,20 +1069,8 @@ TEST(ascent_expressions, test_history_range)
     }) {
     res = eval.evaluate(expression);
     res.print();
-
-    // NOTE: min, max of an array return a conduit node with both
-    // `value` and `index`, I think they are tagged wrong as "double"
-    // other parts of the expr system depend on this, but
-    // its not direclty tested.
-    // result looks like this:
-    // value:
-    //   value: -1.0
-    //   index: 0
-    // type: "double"
-    // time: 4.0
-
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value/value"].as_double(), -1);
+    EXPECT_EQ(res["value"].as_double(), -1);
   }
 
   // NOTE: EQUALS -1 wont work b/c the result of max is value + index.
@@ -1107,7 +1139,7 @@ TEST(ascent_expressions, test_history_range)
     }) {
     res = eval.evaluate(expression);
     EXPECT_EQ(res["type"].as_string(), "double");
-    EXPECT_EQ(res["value/value"].to_float64(), -2);
+    EXPECT_EQ(res["value"].to_float64(), -2);
   }
 
 }

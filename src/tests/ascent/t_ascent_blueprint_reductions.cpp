@@ -221,6 +221,7 @@ TEST(ascent_blueprint_reductions, field_max_tiny_cpu)
     ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
     gen_tiny_cpu_example_input_mesh(dataset);
+    std::cout << "field_max_tiny_cpu -- input:" << std::endl;
     dataset.print();
 
     Node res = runtime::expressions::field_max(dataset,"field");
@@ -236,6 +237,7 @@ TEST(ascent_blueprint_reductions, field_min_tiny_cpu)
     ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
     gen_tiny_cpu_example_input_mesh(dataset);
+    std::cout << "field_min_tiny_cpu -- input:" << std::endl;
     dataset.print();
 
     Node res = runtime::expressions::field_min(dataset,"field");
@@ -244,12 +246,14 @@ TEST(ascent_blueprint_reductions, field_min_tiny_cpu)
     EXPECT_EQ(res.fetch_existing("index").to_int32(), 0);
 }
 
+
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_sum_tiny_cpu)
 {
     ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
     gen_tiny_cpu_example_input_mesh(dataset);
+    std::cout << "field_sum_tiny_cpu -- input:" << std::endl;
     dataset.print();
 
     Node res = runtime::expressions::field_sum(dataset,"field");
@@ -259,6 +263,54 @@ TEST(ascent_blueprint_reductions, field_sum_tiny_cpu)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_histogram_tiny_cpu)
+{
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    Node dataset;
+    gen_tiny_cpu_example_input_mesh(dataset);
+    std::cout << "field_histogram_tiny_cpu -- input:" << std::endl;
+    dataset.print();
+    {
+        double min_val = 0.f;
+        double max_val = 3.f;
+        int num_bins = 1;
+      
+        Node res = runtime::expressions::field_histogram(dataset,"field",min_val, max_val, num_bins);
+        res.print();
+
+        Node expected;
+        expected.set({4.0});
+
+        float64_accessor res_vals = res["value"].value();
+        float64_accessor expected_vals = expected.value();
+
+        for(int i = 0; i < num_bins; ++i)
+        {
+            EXPECT_EQ(res_vals[i], expected_vals[i]);
+        }
+    }
+
+    {
+        double min_val = 0.f;
+        double max_val = 3.f;
+        int num_bins = 2;
+      
+        Node res = runtime::expressions::field_histogram(dataset,"field",min_val, max_val, num_bins);
+        res.print();
+
+        Node expected;
+        expected.set({2.0,2.0});
+
+        float64_accessor res_vals = res["value"].value();
+        float64_accessor expected_vals = expected.value();
+
+        for(int i = 0; i < num_bins; ++i)
+        {
+            EXPECT_EQ(res_vals[i], expected_vals[i]);
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_max_braid_cpu)
@@ -274,7 +326,7 @@ TEST(ascent_blueprint_reductions, field_max_braid_cpu)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, field_min_cpu)
+TEST(ascent_blueprint_reductions, field_min_braid_cpu)
 {
     ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
@@ -287,7 +339,7 @@ TEST(ascent_blueprint_reductions, field_min_cpu)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, field_sum_cpu)
+TEST(ascent_blueprint_reductions, field_sum_braid_cpu)
 {
     ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
@@ -300,7 +352,7 @@ TEST(ascent_blueprint_reductions, field_sum_cpu)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, field_ave_cpu)
+TEST(ascent_blueprint_reductions, field_ave_braid_cpu)
 {
     ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
@@ -312,7 +364,7 @@ TEST(ascent_blueprint_reductions, field_ave_cpu)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, field_histogram_cpu)
+TEST(ascent_blueprint_reductions, field_histogram_braid_cpu)
 {
     ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
@@ -388,7 +440,6 @@ TEST(ascent_blueprint_reductions, field_histogram_gpu)
       EXPECT_EQ(counts[i], vals[i]);
     }
 
-    //EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
 }
 
 //-----------------------------------------------------------------------------
@@ -496,12 +547,12 @@ main(int argc, char *argv[])
 
   ::testing::InitGoogleTest(&argc, argv);
 
-  // TODO, do we need this here, or in specific tests
+  // TODO, do we need this here, or in specific tests ?
 
   // this is normally set in ascent::Initialize, but we
   // have to set it here so that we do the right thing with
   // device pointers
-  //AllocationManager::set_conduit_mem_handlers();
+  AllocationManager::set_conduit_mem_handlers();
 
   result = RUN_ALL_TESTS();
   return result;

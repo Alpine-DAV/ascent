@@ -392,13 +392,6 @@ struct GradientFunctor
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-struct IndexLoc
-{
-  RAJA::Index_type idx;
-  constexpr IndexLoc() : idx(-1) {}
-  constexpr ASCENT_EXEC IndexLoc(RAJA::Index_type idx) : idx(idx) {}
-};
-
 struct MaxFunctor
 {
   template<typename T, typename Exec>
@@ -411,7 +404,7 @@ struct MaxFunctor
     using fp = typename Exec::for_policy;
     using rp = typename Exec::reduce_policy;
 
-    RAJA::ReduceMaxLoc<rp, T, IndexLoc> reducer(identity, IndexLoc());
+    RAJA::ReduceMaxLoc<rp, T> reducer(identity,-1);
 
     RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
     {
@@ -422,7 +415,7 @@ struct MaxFunctor
 
     conduit::Node res;
     res["value"] = reducer.get();
-    res["index"] = reducer.getLoc().idx;
+    res["index"] = reducer.getLoc();
     return res;
   }
 };
@@ -440,7 +433,7 @@ struct MinFunctor
     using fp = typename Exec::for_policy;
     using rp = typename Exec::reduce_policy;
 
-    RAJA::ReduceMinLoc<rp, T, IndexLoc> reducer(identity, IndexLoc());
+    RAJA::ReduceMinLoc<rp, T> reducer(identity, -1);
 
     RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
 
@@ -451,7 +444,7 @@ struct MinFunctor
 
     conduit::Node res;
     res["value"] = reducer.get();
-    res["index"] = reducer.getLoc().idx;
+    res["index"] = reducer.getLoc();
     return res;
   }
 };
@@ -628,55 +621,61 @@ struct HistogramFunctor
 
 conduit::Node
 
-// TODO THIS NEEDS TO BE PORTED TO RAJA
-array_gradient(const conduit::Node &y_values, const conduit::Node &dx_values, const bool is_list)
+
+array_gradient(const conduit::Node &y_values,
+               const conduit::Node &dx_values,
+               const bool is_list)
 {
+  // TODO THIS NEEDS TO BE PORTED TO RAJA ?
   return detail::type_dispatch(y_values, dx_values, is_list, detail::GradientFunctor());
 }
 
+
 conduit::Node
-field_reduction_max(const conduit::Node &field, std::string component)
+field_reduction_max(const conduit::Node &field, const std::string &component)
 {
   return detail::exec_dispatch(field, component, detail::MaxFunctor());
 }
 
 conduit::Node
-field_reduction_min(const conduit::Node &field, const std::string component)
+field_reduction_min(const conduit::Node &field, const std::string &component)
 {
   return detail::exec_dispatch(field, component, detail::MinFunctor());
 }
 
 conduit::Node
-field_reduction_sum(const conduit::Node &field, const std::string component)
+field_reduction_sum(const conduit::Node &field, const std::string &component)
 {
   return detail::exec_dispatch(field, component, detail::SumFunctor());
 }
 
 conduit::Node
-field_reduction_nan_count(const conduit::Node &field, std::string component)
+field_reduction_nan_count(const conduit::Node &field, const std::string &component)
 {
   return detail::exec_dispatch(field, component, detail::NanFunctor());
 }
 
 conduit::Node
-field_reduction_inf_count(const conduit::Node &field, std::string component)
+field_reduction_inf_count(const conduit::Node &field, const std::string &component)
 {
   return detail::exec_dispatch(field, component, detail::InfFunctor());
 }
 
 conduit::Node
 field_reduction_histogram(const conduit::Node &field,
-                const double &min_value,
-                const double &max_value,
-                const int &num_bins,
-                std::string component)
+                          const double &min_value,
+                          const double &max_value,
+                          const int &num_bins,
+                          const std::string &component)
 {
   detail::HistogramFunctor histogram(min_value, max_value, num_bins);
   return detail::exec_dispatch(field, component, histogram);
 }
 
 conduit::Node
-array_max(const conduit::Node &array, const std::string exec_loc, std::string component)
+array_max(const conduit::Node &array,
+          const std::string &exec_loc,
+          const std::string &component)
 {
   // keep the original so we can set it back
   const std::string orig = ExecutionManager::execution();
@@ -688,11 +687,14 @@ array_max(const conduit::Node &array, const std::string exec_loc, std::string co
   conduit::Node res = field_reduction_max(fake_field, component);
   // restore the original execution env
   ExecutionManager::execution(orig);
+
   return res;
 }
 
 conduit::Node
-array_min(const conduit::Node &array, const std::string exec_loc, std::string component)
+array_min(const conduit::Node &array,
+          const std::string &exec_loc,
+          const std::string &component)
 {
   // keep the original so we can set it back
   const std::string orig = ExecutionManager::execution();
@@ -704,14 +706,13 @@ array_min(const conduit::Node &array, const std::string exec_loc, std::string co
   conduit::Node res = field_reduction_min(fake_field, component);
   // restore the original execution env
   ExecutionManager::execution(orig);
-  // NOTE: preserving old return behavior, we only return result value not index
-  // return res["value"];
   return res;
-
 }
 
 conduit::Node
-array_sum(const conduit::Node &array, const std::string exec_loc, std::string component)
+array_sum(const conduit::Node &array,
+          const std::string &exec_loc,
+          const std::string &component)
 {
   // keep the original so we can set it back
   const std::string orig = ExecutionManager::execution();
@@ -723,8 +724,7 @@ array_sum(const conduit::Node &array, const std::string exec_loc, std::string co
   conduit::Node res = field_reduction_sum(fake_field, component);
   // restore the original execution env
   ExecutionManager::execution(orig);
-  // NOTE: preserving old return behavior, we only return result value not count
-  // return res["value"];
+
   return res;
 }
 //-----------------------------------------------------------------------------

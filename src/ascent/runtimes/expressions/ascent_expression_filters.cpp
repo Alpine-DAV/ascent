@@ -905,7 +905,7 @@ ArrayMin::execute()
 {
   conduit::Node *output = new conduit::Node();
   std::string exec = ExecutionManager::preferred_cpu_device();
-  (*output)["value"] = array_min((*input<Node>("arg1"))["value"], exec);
+  (*output)["value"] = array_min((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
@@ -1135,7 +1135,7 @@ ArrayMax::execute()
 {
   conduit::Node *output = new conduit::Node();
   std::string exec = ExecutionManager::preferred_cpu_device();
-  (*output)["value"] = array_max((*input<Node>("arg1"))["value"], exec);
+  (*output)["value"] = array_max((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
@@ -3264,7 +3264,7 @@ Entropy::execute()
   }
 
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field_entropy(*hist)["value"];
+  (*output)["value"] = histogram_entropy(*hist)["value"];
   (*output)["type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
@@ -3309,7 +3309,7 @@ Pdf::execute()
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] = field_pdf(*hist)["value"];
+  (*output)["attrs/value/value"] = histogram_pdf(*hist)["value"];
   (*output)["attrs/value/type"] = "array";
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
@@ -3357,7 +3357,7 @@ Cdf::execute()
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] = field_cdf(*hist)["value"];
+  (*output)["attrs/value/value"] = histogram_cdf(*hist)["value"];
   (*output)["attrs/value/type"] = "array";
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];

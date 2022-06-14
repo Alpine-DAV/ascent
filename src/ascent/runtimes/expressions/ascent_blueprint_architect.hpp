@@ -79,13 +79,13 @@ conduit::Node field_histogram(const conduit::Node &dataset,
                               const int &num_bins);
 
 ASCENT_API
-conduit::Node field_entropy(const conduit::Node &hist);
+conduit::Node histogram_entropy(const conduit::Node &hist);
 
 ASCENT_API
-conduit::Node field_pdf(const conduit::Node &hist);
+conduit::Node histogram_pdf(const conduit::Node &hist);
 
 ASCENT_API
-conduit::Node field_cdf(const conduit::Node &hist);
+conduit::Node histogram_cdf(const conduit::Node &hist);
 
 ASCENT_API
 conduit::Node global_bounds(const conduit::Node &dataset,

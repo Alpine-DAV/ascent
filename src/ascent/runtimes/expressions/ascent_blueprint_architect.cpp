@@ -2030,12 +2030,13 @@ binning_mesh(const conduit::Node &binning,
 }
 
 conduit::Node
-field_entropy(const conduit::Node &hist)
+histogram_entropy(const conduit::Node &hist)
 {
-  const double *hist_bins = hist["attrs/value/value"].value();
-  const int num_bins = hist["attrs/num_bins/value"].to_int32();
+  hist.print();
+  const double *hist_bins = hist.fetch_existing("attrs/value/value").value();
+  const int num_bins = hist.fetch_existing("attrs/num_bins/value").to_int32();
   std::string exec = ExecutionManager::preferred_cpu_device();
-  double sum = array_sum(hist["attrs/value/value"], exec)["value"].to_float64();
+  double sum = array_sum(hist.fetch_existing("attrs/value/value"), exec)["value"].to_float64();
   double entropy = 0;
 
 #ifdef ASCENT_USE_OPENMP
@@ -2056,49 +2057,50 @@ field_entropy(const conduit::Node &hist)
 }
 
 conduit::Node
-field_pdf(const conduit::Node &hist)
+histogram_pdf(const conduit::Node &hist)
 {
-  const double *hist_bins = hist["attrs/value/value"].value();
-  const int num_bins = hist["attrs/num_bins/value"].to_int32();
-  double min_val = hist["attrs/min_val/value"].to_float64();
-  double max_val = hist["attrs/max_val/value"].to_float64();
+  const double *hist_bins = hist.fetch_existing("attrs/value/value").value();
+  const int num_bins = hist.fetch_existing("attrs/num_bins/value").to_int32();
+  double min_val = hist.fetch_existing("attrs/min_val/value").to_float64();
+  double max_val = hist.fetch_existing("attrs/max_val/value").to_float64();
 
   std::string exec = ExecutionManager::preferred_cpu_device();
-  double sum = array_sum(hist["attrs/value/value"], exec)["value"].to_float64();
+  double sum = array_sum(hist.fetch_existing("attrs/value/value"), exec)["value"].to_float64();
 
-  double *pdf = new double[num_bins]();
-
+  conduit::Node res;
+  res["value"].set(conduit::DataType::c_double(num_bins));
+  double *pdf_vals = res["value"].value();
+  
 #ifdef ASCENT_USE_OPENMP
 #pragma omp parallel for
 #endif
   for(int b = 0; b < num_bins; ++b)
   {
-    pdf[b] = hist_bins[b] / sum;
+    pdf_vals[b] = hist_bins[b] / sum;
   }
 
-  conduit::Node res;
-  res["value"].set(pdf, num_bins);
   res["min_val"] = min_val;
   res["max_val"] = max_val;
   res["num_bins"] = num_bins;
-  delete[] pdf;
   return res;
 }
 
 conduit::Node
-field_cdf(const conduit::Node &hist)
+histogram_cdf(const conduit::Node &hist)
 {
-  const double *hist_bins = hist["attrs/value/value"].value();
-  const int num_bins = hist["attrs/num_bins/value"].to_int32();
-  double min_val = hist["attrs/min_val/value"].to_float64();
-  double max_val = hist["attrs/max_val/value"].to_float64();
+  const double *hist_bins = hist.fetch_existing("attrs/value/value").value();
+  const int num_bins = hist.fetch_existing("attrs/num_bins/value").to_int32();
+  double min_val = hist.fetch_existing("attrs/min_val/value").to_float64();
+  double max_val = hist.fetch_existing("attrs/max_val/value").to_float64();
 
   std::string exec = ExecutionManager::preferred_cpu_device();
-  double sum = array_sum(hist["attrs/value/value"],exec)["value"].to_float64();
+  double sum = array_sum(hist.fetch_existing("attrs/value/value"),exec)["value"].to_float64();
 
   double rolling_cdf = 0;
 
-  double *cdf = new double[num_bins]();
+  conduit::Node res;
+  res["value"].set(conduit::DataType::c_double(num_bins));
+  double *cdf = res["value"].value();
 
   // TODO can this be parallel?
   for(int b = 0; b < num_bins; ++b)
@@ -2107,12 +2109,10 @@ field_cdf(const conduit::Node &hist)
     cdf[b] = rolling_cdf;
   }
 
-  conduit::Node res;
-  res["value"].set(cdf, num_bins);
   res["min_val"] = min_val;
   res["max_val"] = max_val;
   res["num_bins"] = num_bins;
-  delete[] cdf;
+
   return res;
 }
 
