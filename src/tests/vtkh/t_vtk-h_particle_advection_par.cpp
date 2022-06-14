@@ -14,7 +14,7 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/DataSetFieldAdd.h>
 #include <vtkm/cont/CellSetSingleType.h>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 #include <iostream>
 #include <mpi.h>
 

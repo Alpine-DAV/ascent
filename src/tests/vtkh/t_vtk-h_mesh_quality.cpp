@@ -5,13 +5,13 @@
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
+#include "t_vtkm_test_utils.hpp"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/MeshQuality.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include <vtkm/cont/testing/MakeTestDataSet.h>
 
 
 #include <iostream>
@@ -26,8 +26,7 @@ TEST(vtkh_mesh_quality, vtkh_volume)
   const int base_size = 32;
   const int num_blocks = 2;
 
-  vtkm::cont::testing::MakeTestDataSet maker;
-  data_set.AddDomain(maker.Make3DExplicitDataSet5(),0);
+  data_set.AddDomain(Make3DExplicitDataSet5(),0);
 
   vtkh::MeshQuality quali;
   quali.SetInput(&data_set);
@@ -67,9 +66,8 @@ TEST(vtkh_mesh_quality, vtkh_not_supported)
   const int base_size = 32;
   const int num_blocks = 2;
 
-  vtkm::cont::testing::MakeTestDataSet maker;
-  data_set.AddDomain(maker.Make3DExplicitDataSet5(),0);
-  data_set.AddDomain(maker.Make3DUniformDataSet0(),1);
+  data_set.AddDomain(Make3DExplicitDataSet5(),0);
+  data_set.AddDomain(Make3DUniformDataSet0(),1);
 
   vtkh::MeshQuality quali;
   quali.SetInput(&data_set);
