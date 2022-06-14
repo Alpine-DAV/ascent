@@ -1,11 +1,6 @@
-#include <dray/filters/mesh_threshold.hpp>
+#include <dray/filters/threshold.hpp>
 
 #include <dray/dispatcher.hpp>
-#include <dray/data_model/elem_attr.hpp>
-#include <dray/data_model/elem_utils.hpp>
-#include <dray/data_model/elem_ops.hpp>
-#include <dray/data_model/mesh.hpp>
-#include <dray/data_model/mesh_utils.hpp>
 #include <dray/filters/subset.hpp>
 #include <dray/utils/data_logger.hpp>
 
