@@ -64,8 +64,6 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
-          ENABLE_APCOMP: OFF
-          ENABLE_DRAY: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
@@ -78,13 +76,11 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
-          ENABLE_APCOMP: OFF
-          ENABLE_DRAY: OFF
-          ENABLE_VTKH: OFF
-          ENABLE_MFEM: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
+          ENABLE_ADIOS2: ON
+          ENABLE_FIDES: ON
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
         # ubuntu_18_shared_py_cxx11:
