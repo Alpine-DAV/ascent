@@ -273,7 +273,7 @@ structured_conn(const Vec<int32,3> point_dims,
   const int32 verts_per_elem = is_3d ? 8 : 4;
 
   Array<int32> conn;
-  conn.resize(n_verts * verts_per_elem);
+  conn.resize(n_elems * verts_per_elem);
   int32 *conn_ptr = conn.get_host_ptr();
 
   for(int32 i = 0; i < n_elems; ++i)
@@ -1051,7 +1051,7 @@ BlueprintLowOrder::import_uniform(const conduit::Node &n_coords,
 void
 BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
 {
-    dray_rep.print();
+    //dray_rep.print();
 
     const conduit::Node &meshes = dray_rep["meshes"];
     const conduit::Node &mesh = meshes[0];
@@ -1077,7 +1077,7 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
 #if 1
         // node reordering seems to be needed.
         int conn_size = mgf["conn_size"].to_int();
-        int nelem = mgf["num_elemements"].to_int();
+        int nelem = mgf["num_elements"].to_int();
         auto conn_ptr = reinterpret_cast<int *>(const_cast<void*>(mgf["conn"].data_ptr()));
         n_topo["elements/connectivity"].set(conduit::DataType::int32(nelem * 8));
         auto newconn_ptr = reinterpret_cast<int *>(const_cast<void*>(n_topo["elements/connectivity"].data_ptr()));
@@ -1120,10 +1120,15 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
 
         conduit::Node &n_outfield = n_outfields[n_field.name()];
         n_outfield["topology"] = "topology";
+        int nvalues = n_gf["values_size"].to_int();
         if(dofs_per_element == 1)
+        {
             n_outfield["association"] = "element";
+        }
         else
+        {
             n_outfield["association"] = "vertex";
+        }
         if(phys_dim == 1)
         {
             n_outfield["values"].set_external_node(n_gf["values"]);
@@ -1131,19 +1136,19 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
         else if(phys_dim == 2)
         {
             auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
-            n_outfield["values/x"].set_external(ptr, npts, 0, 2 * sizeof(Float));
-            n_outfield["values/y"].set_external(ptr, npts, sizeof(Float), 2 * sizeof(Float));
+            n_outfield["values/x"].set_external(ptr, nvalues, 0, 2 * sizeof(Float));
+            n_outfield["values/y"].set_external(ptr, nvalues, sizeof(Float), 2 * sizeof(Float));
         }
         else if(phys_dim == 3)
         {
             auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
-            n_outfield["values/x"].set_external(ptr, npts, 0, 3 * sizeof(Float));
-            n_outfield["values/y"].set_external(ptr, npts, sizeof(Float), 3 * sizeof(Float));
-            n_outfield["values/z"].set_external(ptr, npts, 2*sizeof(Float), 3 * sizeof(Float));
+            n_outfield["values/x"].set_external(ptr, nvalues, 0, 3 * sizeof(Float));
+            n_outfield["values/y"].set_external(ptr, nvalues, sizeof(Float), 3 * sizeof(Float));
+            n_outfield["values/z"].set_external(ptr, nvalues, 2*sizeof(Float), 3 * sizeof(Float));
         }
     }
 
-    n.print();
+    //n.print();
 }
 
 } // namespace dray
