@@ -71,11 +71,11 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_no_py:
+        ubuntu_18_shared_debug_cxx11:
           containerImage: ${{ variables.ubuntu_18_tag_minimal }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
+          ENABLE_PYTHON: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
