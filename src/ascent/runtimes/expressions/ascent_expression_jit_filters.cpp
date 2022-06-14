@@ -164,7 +164,7 @@ JitFilter::execute()
   // There are a lot of possible code paths that each rank/domain could
   // follow. All JIT code should not contain any MPI calls, but things
   // after JIT can call MPI, so its important that we globally catch errors
-  // and halt exectution on any error. Otherwise, we will deadlock
+  // and halt execution on any error. Otherwise, we will deadlock
   conduit::Node errors;
   try
   {

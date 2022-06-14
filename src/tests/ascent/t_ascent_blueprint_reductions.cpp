@@ -53,6 +53,7 @@
 #include <runtimes/expressions/ascent_blueprint_architect.hpp>
 #include <runtimes/expressions/ascent_execution.hpp>
 #include <runtimes/expressions/ascent_memory_manager.hpp>
+#include <runtimes/expressions/ascent_conduit_reductions.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -61,7 +62,6 @@
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
-
 
 
 using namespace std;
@@ -95,333 +95,281 @@ void device_conversion(Node &host_data, Node &device_data)
   }
 }
 
-//-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, max_gpu)
+void gen_tiny_cpu_example_input_mesh(conduit::Node &out)
 {
-
-#ifndef ASCENT_USE_CUDA
-  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
-  return;
-#endif
-
-    Node n;
-    ascent::about(n);
-
-    //
     // Create example mesh.
-    //
+    out.reset();
+    Node &dom = out.append();
+    Node verify_info;
+
+    conduit::blueprint::mesh::examples::basic("quads",3,3,0,dom);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(dom,verify_info));
+
+    // everything expects a multi-domain data set and expects that there
+    // are domain ids
+    dom["state/domain_id"] = 0;
+    out.print();
+}
+
+
+void gen_braid_cpu_example_input_mesh(conduit::Node &out)
+{
+    // Create example mesh.
+    out.reset();
+    Node &dom = out.append();
     Node data, verify_info;
     conduit::blueprint::mesh::examples::braid("hexs",
                                                EXAMPLE_MESH_SIDE_DIM,
                                                EXAMPLE_MESH_SIDE_DIM,
                                                EXAMPLE_MESH_SIDE_DIM,
-                                               data);
+                                               dom);
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(dom,verify_info));
 
-    ExecutionManager::execution("cuda");
-    // everything expects a mutli-domain data set and expects that there
+    // everything expects a multi-domain data set and expects that there
     // are domain ids
-    data["state/domain_id"] = 0;
+    dom["state/domain_id"] = 0;
+}
+
+void gen_braid_already_gpu_example_input_mesh(conduit::Node &out)
+{
+    // Create example mesh.
+    Node cpu_dataset;
+    gen_braid_cpu_example_input_mesh(cpu_dataset);
+
+    // now get the data on the gpu
+    out.reset();
+    device_conversion(cpu_dataset.child(0), out.append());
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, array_tests_cpu)
+{
+    conduit::Node input, res;
+
+    std::cout << "[max]" << std::endl;
+    std::cout << "input" << std::endl;
+    input["values"].parse("[0,1,2,3,4,5]","yaml");
+    input.print();
+    res = ascent::runtime::expressions::array_max(input["values"],ExecutionManager::preferred_cpu_device());
+    std::cout << "RESULT:" << std::endl;
+    res.print();
+    EXPECT_EQ(res.to_float64(), 5.0);
+
+    std::cout << "[min]" << std::endl;
+    std::cout << "input" << std::endl;
+    input["values"].parse("[0,1,2,3,4,5]","yaml");
+    input.print();
+    res = ascent::runtime::expressions::array_min(input["values"],ExecutionManager::preferred_cpu_device());
+    std::cout << "RESULT:" << std::endl;
+    res.print();
+    EXPECT_EQ(res.to_float64(), 0.0);
+
+    std::cout << "[sum]" << std::endl;
+    std::cout << "input" << std::endl;
+    input["values"].parse("[0,1,2,3,4,5]","yaml");
+    input.print();
+    res = ascent::runtime::expressions::array_sum(input["values"],ExecutionManager::preferred_cpu_device());
+    std::cout << "RESULT:" << std::endl;
+    res.print();
+    EXPECT_EQ(res.to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, array_tests_cuda)
+{
+#ifndef ASCENT_USE_CUDA
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
+#endif
+
+    conduit::Node input, res;
+
+    std::cout << "[max]" << std::endl;
+    std::cout << "input" << std::endl;
+    input["values"].parse("[0,1,2,3,4,5]","yaml");
+    input.print();
+    res = ascent::runtime::expressions::array_max(input["values"],"cuda");
+    std::cout << "RESULT:" << std::endl;
+    res.print();
+    EXPECT_EQ(res.to_float64(), 5.0);
+
+    std::cout << "[min]" << std::endl;
+    std::cout << "input" << std::endl;
+    input["values"].parse("[0,1,2,3,4,5]","yaml");
+    input.print();
+    res = ascent::runtime::expressions::array_min(input["values"],"cuda");
+    std::cout << "RESULT:" << std::endl;
+    res.print();
+    EXPECT_EQ(res.to_float64(), 0.0);
+
+    std::cout << "[sum]" << std::endl;
+    std::cout << "input" << std::endl;
+    input["values"].parse("[0,1,2,3,4,5]","yaml");
+    input.print();
+    res = ascent::runtime::expressions::array_sum(input["values"],"cuda");
+    std::cout << "RESULT:" << std::endl;
+    res.print();
+    EXPECT_EQ(res.to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_max_tiny_cpu)
+{
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
-    dataset.append().set_external(data);
+    gen_tiny_cpu_example_input_mesh(dataset);
+    dataset.print();
+
+    Node res = runtime::expressions::field_max(dataset,"field");
+    res.print();
+    EXPECT_NEAR(res.fetch_existing("value").to_float64(),  3, 0.0001);
+    EXPECT_EQ(res.fetch_existing("index").to_int32(), 3);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_min_tiny_cpu)
+{
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    Node dataset;
+    gen_tiny_cpu_example_input_mesh(dataset);
+    dataset.print();
+
+    Node res = runtime::expressions::field_min(dataset,"field");
+    res.print();
+    EXPECT_NEAR(res.fetch_existing("value").to_float64(),  0, 0.0001);
+    EXPECT_EQ(res.fetch_existing("index").to_int32(), 0);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_sum_tiny_cpu)
+{
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    Node dataset;
+    gen_tiny_cpu_example_input_mesh(dataset);
+    dataset.print();
+
+    Node res = runtime::expressions::field_sum(dataset,"field");
+    res.print();
+    EXPECT_NEAR(res.fetch_existing("value").to_float64(),  1.0+2.0+3.0, 0.0001);
+    EXPECT_EQ(res.fetch_existing("count").to_int32(), 4);
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_max_braid_cpu)
+{
+    //ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    Node dataset;
+    gen_braid_cpu_example_input_mesh(dataset);
 
     Node res = runtime::expressions::field_max(dataset,"braid");
     res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
-    EXPECT_EQ(res["index"].to_int32(), 817);
+    EXPECT_NEAR(res.fetch_existing("value").to_float64(),  9.98820080464372, 0.0001);
+    EXPECT_EQ(res.fetch_existing("index").to_int32(), 817);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, sum)
+TEST(ascent_blueprint_reductions, field_min_cpu)
 {
-
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    data["state/domain_id"] = 0;
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
-    dataset.append().set_external(data);
-
-    Node res = runtime::expressions::field_sum(dataset,"braid");
-    res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  -1082.59582227314, 0.0001);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, min)
-{
-
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    data["state/domain_id"] = 0;
-    Node dataset;
-    dataset.append().set_external(data);
+    gen_braid_cpu_example_input_mesh(dataset);
 
     Node res = runtime::expressions::field_min(dataset,"braid");
     res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  -9.7849527094773894, 0.0001);
+    EXPECT_NEAR(res.fetch_existing("value").to_float64(),  -9.7849527094773894, 0.0001);
     EXPECT_EQ(res["index"].to_int32(), 10393);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, max_already_gpu)
+TEST(ascent_blueprint_reductions, field_sum_cpu)
 {
-  #ifndef ASCENT_USE_CUDA
-    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
-    return;
-  #endif
-  
-    // this is normally set in ascent::Initialize, but we
-    // have to set it here so that we do the right thing with
-    // device pointers
-    AllocationManager::set_conduit_mem_handlers();
-
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    data["state/domain_id"] = 0;
-    Node device_data;
-    device_conversion(data, device_data);
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    // work aournd data we need
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
-    dataset.append().set_external(device_data);
+    gen_braid_cpu_example_input_mesh(dataset);
 
-    Node res = runtime::expressions::field_max(dataset,"braid");
+    Node res = runtime::expressions::field_sum(dataset,"braid");
     res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
-    EXPECT_EQ(res["index"].to_int32(), 817);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, max_already_gpu_rectilinear)
-{
-#ifndef ASCENT_USE_CUDA
-  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
-  return;
-#endif
-    // this is normally set in ascent::Initialize, but we
-    // have to set it here so that we do the right thing with
-    // device pointers
-    AllocationManager::set_conduit_mem_handlers();
-
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("rectilinear",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    data["state/domain_id"] = 0;
-    Node device_data;
-    device_conversion(data, device_data);
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    // work aournd data we need
-    Node dataset;
-    dataset.append().set_external(device_data);
-
-    Node res = runtime::expressions::field_max(dataset,"braid");
-    res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
-    EXPECT_EQ(res["index"].to_int32(), 817);
-}
-
-TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
-{
-#ifndef ASCENT_USE_CUDA
-  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
-  return;
-#endif
-
-    // this is normally set in ascent::Initialize, but we
-    // have to set it here so that we do the right thing with
-    // device pointers
-    AllocationManager::set_conduit_mem_handlers();
-
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    data["state/domain_id"] = 0;
-    Node device_data;
-    device_conversion(data, device_data);
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    // work aournd data we need
-    Node dataset;
-    dataset.append().set_external(device_data);
-
-    Node res = runtime::expressions::field_max(dataset,"radial");
-    res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  173.205080756888, 0.0001);
-    // Its not obvious to me that the zone would be 0, so if this fails,
-    // go check things
-    EXPECT_EQ(res["index"].to_int32(), 0);
+    EXPECT_NEAR(res.fetch_existing("value").to_float64(),  -1082.59582227314, 0.0001);
 }
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, ave)
+TEST(ascent_blueprint_reductions, field_ave_cpu)
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    data["state/domain_id"] = 0;
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
-    dataset.append().set_external(data);
+    gen_braid_cpu_example_input_mesh(dataset);
 
     Node res = runtime::expressions::field_avg(dataset,"braid");
     res.print();
-    EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
+    EXPECT_NEAR(res.fetch_existing("value").to_float64(),  -0.0330382025840188, 0.001);
 }
+
 //-----------------------------------------------------------------------------
-
-TEST(ascent_blueprint_reductions, max_already_gpu_histogram)
+TEST(ascent_blueprint_reductions, field_histogram_cpu)
 {
-  #ifndef ASCENT_USE_CUDA
-    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
-    return;
-  #endif
-  
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    data["state/domain_id"] = 0;
-    Node device_data;
-    device_conversion(data, device_data);
-
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    // work aournd data we need
+    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
     Node dataset;
-    dataset.append().set_external(device_data);
+    gen_braid_cpu_example_input_mesh(dataset);
 
-    const int num_bins = 64;
-    Node res = runtime::expressions::field_histogram(dataset,"braid", -10, 10, num_bins);
+    const double min_val = -10.f;
+    const double max_val = 10.f;
+    constexpr int num_bins = 16;
+    Node res = runtime::expressions::field_histogram(dataset,"braid",min_val, max_val, num_bins);
     res.print();
-    EXPECT_NEAR(res["value"].as_float64_ptr()[0], 8.0, 0.0001);
+    // right now everything is stored using doubles
+    double counts[num_bins] = { 126.0,  524.0, 1035.0, 1582.0,
+                               2207.0, 2999.0, 3548.0, 4378.0,
+                               4361.0, 3583.0, 2983.0, 2459.0,
+                               1646.0,  858.0,  379.0,  100.0};
+
+    double *vals = res["value"].as_float64_ptr();
+    for(int i = 0; i < num_bins; ++i)
+    {
+      EXPECT_EQ(counts[i], vals[i]);
+    }
+
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, histogram_cuda)
+TEST(ascent_blueprint_reductions, field_max_gpu)
 {
-  #ifndef ASCENT_USE_CUDA
+
+#ifndef ASCENT_USE_CUDA
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
-  #endif
-
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-
-    //
-    // Create example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               EXAMPLE_MESH_SIDE_DIM,
-                                               data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+#endif
 
     ExecutionManager::execution("cuda");
 
-    // everything expects a mutli-domain data set and expects that there
-    // are domain ids
-    data["state/domain_id"] = 0;
     Node dataset;
-    dataset.append().set_external(data);
+    gen_braid_cpu_example_input_mesh(dataset);
+
+    Node res = runtime::expressions::field_max(dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
+    EXPECT_EQ(res["index"].to_int32(), 817);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_histogram_gpu)
+{
+  #ifndef ASCENT_USE_CUDA
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
+  #endif
+
+    ExecutionManager::execution("cuda");
+
+    Node dataset;
+    gen_braid_cpu_example_input_mesh(dataset);
 
     const double min_val = -10.f;
     const double max_val = 10.f;
@@ -443,6 +391,104 @@ TEST(ascent_blueprint_reductions, histogram_cuda)
     //EXPECT_NEAR(res["value"].to_float64(),  -0.0330382025840188, 0.001);
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_max_already_gpu)
+{
+  #ifndef ASCENT_USE_CUDA
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
+  #endif
+
+    ExecutionManager::execution("cuda");
+
+    // this is normally set in ascent::Initialize, but we
+    // have to set it here so that we do the right thing with
+    // device pointers
+    AllocationManager::set_conduit_mem_handlers();
+
+    Node gpu_dataset;
+    gen_braid_already_gpu_example_input_mesh(gpu_dataset);
+
+    Node res = runtime::expressions::field_max(gpu_dataset,"braid");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
+    EXPECT_EQ(res["index"].to_int32(), 817);
+}
+
+// //-----------------------------------------------------------------------------
+// TEST(ascent_blueprint_reductions, field_max_already_gpu_rectilinear)
+// {
+// #ifndef ASCENT_USE_CUDA
+//   ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+//   return;
+// #endif
+//
+//     ExecutionManager::execution("cuda");
+//
+//     // this is normally set in ascent::Initialize, but we
+//     // have to set it here so that we do the right thing with
+//     // device pointers
+//     AllocationManager::set_conduit_mem_handlers();
+//
+//     Node gpu_dataset;
+//     gen_braid_already_gpu_example_input_mesh(gpu_dataset);
+//
+//     Node res = runtime::expressions::field_max(gpu_dataset,"braid");
+//     res.print();
+//     EXPECT_NEAR(res["value"].to_float64(),  9.98820080464372, 0.0001);
+//     EXPECT_EQ(res["index"].to_int32(), 817);
+// }
+
+TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
+{
+#ifndef ASCENT_USE_CUDA
+  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+  return;
+#endif
+
+    ExecutionManager::execution("cuda");
+    // this is normally set in ascent::Initialize, but we
+    // have to set it here so that we do the right thing with
+    // device pointers
+    AllocationManager::set_conduit_mem_handlers();
+
+    Node gpu_dataset;
+    gen_braid_already_gpu_example_input_mesh(gpu_dataset);
+
+    Node res = runtime::expressions::field_max(gpu_dataset,"radial");
+    res.print();
+    EXPECT_NEAR(res["value"].to_float64(),  173.205080756888, 0.0001);
+    // Its not obvious to me that the zone would be 0, so if this fails,
+    // go check things
+    EXPECT_EQ(res["index"].to_int32(), 0);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_blueprint_reductions, field_histogram_already_gpu)
+{
+  #ifndef ASCENT_USE_CUDA
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
+  #endif
+
+    ExecutionManager::execution("cuda");
+    // this is normally set in ascent::Initialize, but we
+    // have to set it here so that we do the right thing with
+    // device pointers
+    AllocationManager::set_conduit_mem_handlers();
+
+    Node gpu_dataset;
+    gen_braid_already_gpu_example_input_mesh(gpu_dataset);
+
+    const int num_bins = 64;
+    Node res = runtime::expressions::field_histogram(gpu_dataset,"braid", -10, 10, num_bins);
+    res.print();
+    EXPECT_NEAR(res["value"].as_float64_ptr()[0], 8.0, 0.0001);
+}
+
+
+//-----------------------------------------------------------------------------
 int
 main(int argc, char *argv[])
 {
@@ -450,10 +496,12 @@ main(int argc, char *argv[])
 
   ::testing::InitGoogleTest(&argc, argv);
 
+  // TODO, do we need this here, or in specific tests
+
   // this is normally set in ascent::Initialize, but we
   // have to set it here so that we do the right thing with
   // device pointers
-  AllocationManager::set_conduit_mem_handlers();
+  //AllocationManager::set_conduit_mem_handlers();
 
   result = RUN_ALL_TESTS();
   return result;
