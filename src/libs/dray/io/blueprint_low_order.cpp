@@ -1055,6 +1055,8 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
 
     const conduit::Node &meshes = dray_rep["meshes"];
     const conduit::Node &mesh = meshes[0];
+    std::string type_name(mesh["type_name"].as_string());
+    bool _2D = type_name.find("2D") == 0;
 
     // Add the coordinates.
     const conduit::Node &mgf = mesh["grid_function"];
@@ -1104,7 +1106,18 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
         conduit::Node &n_topo = n["topologies/topology"];
         n_topo["coordset"] = "coords";
         n_topo["type"] = "unstructured";
-        n_topo["elements/shape"] = "tet";
+        if(_2D)
+            n_topo["elements/shape"] = "quad";
+        else
+            n_topo["elements/shape"] = "tet";
+        n_topo["elements/connectivity"].set_external_node(mgf["conn"]);
+    }
+    else if(dofs_per_element == 3)
+    {
+        conduit::Node &n_topo = n["topologies/topology"];
+        n_topo["coordset"] = "coords";
+        n_topo["type"] = "unstructured";
+        n_topo["elements/shape"] = "tri";
         n_topo["elements/connectivity"].set_external_node(mgf["conn"]);
     }
 
