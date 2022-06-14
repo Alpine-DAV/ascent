@@ -18,9 +18,22 @@ public:
   CellAverage();
   ~CellAverage();
 
+  /**
+   @brief Set the field name you wish to operate on
+  */
   void set_field(const std::string &name);
+  /**
+   @brief Set the field name for the resulting cell-centered field.
+          If empty (default), execute will use the same name for the output
+          field as the input field.
+  */
   void set_output_field(const std::string &name);
 
+  /**
+   @brief Compute the cell average value for the given field
+   @return A collection with datasets containing the resulting
+           cell-centered field.
+  */
   Collection execute(Collection &);
 };
 

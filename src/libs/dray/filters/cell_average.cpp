@@ -4,172 +4,145 @@
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/elem_attr.hpp>
 #include <dray/data_model/field.hpp>
-#include <dray/data_model/mesh.hpp>
 #include <dray/data_model/unstructured_field.hpp>
-#include <dray/data_model/unstructured_mesh.hpp>
+#include <dray/array.hpp>
+#include <dray/array_utils.hpp>
 #include <dray/dispatcher.hpp>
 #include <dray/policies.hpp>
 
+#include <memory>
 #include <iostream>
 
+// Start internal implementation
 namespace
 {
 
-// I'm not sure the best way todo this... using a macro for now
-#define OUT_ELEM_TYPE_DEF dray::Element<FieldElemType::get_dim(), \
-                                        FieldElemType::get_ncomp(), \
-                                        FieldElemType::get_etype(), \
-                                        dray::Order::Constant>
+using namespace dray;
 
 template<typename FieldElemType>
-static dray::UnstructuredField<OUT_ELEM_TYPE_DEF>
-compute_cell_average(dray::UnstructuredField<FieldElemType> &in_field,
+static std::shared_ptr<Field>
+compute_cell_average(const UnstructuredField<FieldElemType> &in_field,
                      const std::string &name)
 {
-  using OutElemType = OUT_ELEM_TYPE_DEF;
+  using OutElemType = Element<FieldElemType::get_dim(),
+                              FieldElemType::get_ncomp(),
+                              FieldElemType::get_etype(),
+                              Order::Constant>;
+  using VecType = Vec<Float, OutElemType::get_ncomp()>;
 
   // Retrieve important input information
   constexpr auto ncomp = FieldElemType::get_ncomp();
-  dray::GridFunction<ncomp> in_gf = in_field.get_dof_data();
-  auto *in_data_ptr = in_gf.m_values.get_device_ptr();
-  auto *in_idx_ptr = in_gf.m_ctrl_idx.get_device_ptr();
+  const GridFunction<ncomp> &in_gf = in_field.get_dof_data();
+  const auto *in_data_ptr = in_gf.m_values.get_device_ptr_const();
+  const auto *in_idx_ptr = in_gf.m_ctrl_idx.get_device_ptr_const();
 
   // Create output array
-  const auto nvalues = in_field.get_num_elem() * ncomp;
-  dray::Array<dray::Vec<dray::Float, OutElemType::get_ncomp()>> out_data;
+  const auto nelem = in_field.get_num_elem();
+  const auto nvalues = nelem * ncomp;
+  Array<VecType> out_data;
   out_data.resize(nvalues);
+  auto *out_data_ptr = out_data.get_device_ptr();
 
   // Execute parallel algorithm
-  auto *out_data_ptr = out_data.get_device_ptr();
-  const RAJA::RangeSegment range(0, nvalues);
+  const RAJA::RangeSegment range(0, nelem);
   const auto ndof = in_gf.m_el_dofs;
-  RAJA::forall<dray::for_policy>(range,
+  RAJA::forall<for_policy>(range,
     [=] DRAY_LAMBDA (int i)
     {
-      const auto offset = i * ndof;
-      out_data_ptr[i] = 0.;
-      for(int j = 0; j < ndof; j++)
+      const int idx_idx = i * ndof;
+      Float sum[ncomp];
+      // Initialize with value at dof=0
+      for(int c = 0; c < ncomp; c++)
       {
-        for(int k = 0; k < ncomp; k++)
+        const int idx = in_idx_ptr[idx_idx];
+        sum[c] = in_data_ptr[idx][c];
+      }
+
+      // Sum the values at each dof
+      for(int dof = 1; dof < ndof; dof++)
+      {
+        const int idx = in_idx_ptr[idx_idx + dof];
+        for(int c = 0; c < ncomp; c++)
         {
-          out_data_ptr[i][k] += in_data_ptr[offset + j][k];
+          sum[c] = sum[c] + in_data_ptr[idx][c];
         }
       }
-      out_data_ptr[i] /= dray::Float(ndof);
+
+      // Divide by ndof for the average
+      for(int c = 0; c < ncomp; c++)
+      {
+        out_data_ptr[i][c] = sum[c] / Float(ndof);
+      }
     });
+  DRAY_ERROR_CHECK();
 
   // Build return value
-  dray::GridFunction<OutElemType::get_ncomp()> out_gf;
+  GridFunction<OutElemType::get_ncomp()> out_gf;
   out_gf.m_el_dofs = 1;
-  out_gf.m_size_el = nvalues;
+  out_gf.m_size_el = nelem;
+  out_gf.m_values = out_data;
   // Q: Do we need conn for this?
-  out_gf.m_size_ctrl = nvalues;
-  out_gf.m_values = std::move(out_data);
-  dray::UnstructuredField<OutElemType> out_field(out_gf, dray::Order::Constant, name);
-  return out_field;
+  out_gf.m_size_ctrl = nelem;
+  out_gf.m_ctrl_idx = array_counting(nelem, 0, 1);
+  return std::make_shared<UnstructuredField<OutElemType>>(out_gf, Order::Constant, name);
 }
-
-#undef OUT_ELEM_TYPE_DEF
-
-#if 0
-template<typename MeshElemType, typename FieldElemType>
-static dray::UnstructuredField<FieldElemType>
-compute_cell_averages(dray::UnstructuredMesh<MeshElemType> mesh,
-                      dray::UnstructuredField<FieldElemType> field)
-{
-  dray::DeviceField<FieldElemType> in_field(field);
-  dray::DeviceMesh<MeshElemType> in_mesh(mesh);
-
-  dray::Array<
-
-  // Here's what I want to write
-  auto elements = mesh.get_dof_data().m_values;
-  auto values = field.get_dof_data().m_values;
-  const int Nelem = mesh.cells();
-  const int Nper_elem = MeshType::ElementType::get_ncomp();
-  double *output = new double[Nelem];
-  for(int i = 0; i < Nelem; i++)
-  {
-    const auto element = elements[i];
-    for(int j = 0; j < Nper_elem; j++)
-    {
-      output[i] += values[element[j]][0];
-    }
-    output[i] = output[i] / double(Nper_elem);
-  }
-
-  std::cout << "Result:\n";
-  for(int i = 0; i < Nelem; i++)
-  {
-    std::cout << "  " << output[i] << "\n";
-  }
-  std::cout << std::endl;
-  delete[] output;
-}
-#endif
 
 struct CellAverageFunctor
 {
   CellAverageFunctor() = delete;
-  CellAverageFunctor(dray::DataSet input,
-                     const std::string &in_field,
-                     const std::string &out_field);
+  CellAverageFunctor(const std::string &name);
   ~CellAverageFunctor() = default;
 
-  dray::DataSet execute();
+  std::shared_ptr<Field> output() { return m_output; }
 
-  // This method gets invoked by dispatch, which will have converted the Mesh
-  // into a concrete derived type like UnstructuredMesh<Hex_P1> so this method
-  // is able to call methods on the derived type with no virtual calls.
-  template<typename MeshType, typename ScalarField>
-  void operator()(MeshType &mesh, ScalarField &field);
+  // This method gets invoked by dispatch with a concrete field
+  // type like UnstructuredField<T>.
+  template<typename FieldType>
+  void operator()(FieldType &field);
 
-  dray::DataSet m_input;
-  dray::DataSet m_output;
-  std::string m_ifield;
-  std::string m_ofield;
+  std::shared_ptr<Field> m_output;
+  std::string m_name;
 };
 
-CellAverageFunctor::CellAverageFunctor(dray::DataSet input,
-                                       const std::string &in_field,
-                                       const std::string &out_field)
-  : m_input(input), m_output(input), m_ifield(in_field), m_ofield(out_field)
+CellAverageFunctor::CellAverageFunctor(const std::string &name)
+  : m_output(), m_name(name)
 {
+  // Do nothing
 }
 
-dray::DataSet
-CellAverageFunctor::execute()
-{
-  // This iterates over the product of possible mesh and scalar field types
-  // to call the operator() function that can operate on concrete types.
-  dray::Field *field = m_input.field(m_ifield);
-  if(field != nullptr && field->components() == 1)
-  {
-    dispatch(m_input.mesh(), field, *this);
-  }
-  return m_output;
-}
-
-template<typename MeshType, typename FieldType>
+template<typename FieldType>
 inline void
-CellAverageFunctor::operator()(MeshType &mesh, FieldType &field)
+CellAverageFunctor::operator()(FieldType &field)
 {
-  std::cout << "Dispatched!" << std::endl;
-  conduit::Node n_mesh;
-  mesh.to_node(n_mesh);
-  n_mesh.print();
-
-  conduit::Node n_field;
-  field.to_node(n_field);
-  n_field.print();
-
-  auto out_field = compute_cell_average(field, m_ofield);
-  conduit::Node n_out_field;
-  out_field.to_node(n_out_field);
-  std::cout << "Out Field:" << std::endl;
-  n_out_field.print();
+  m_output = compute_cell_average(field, m_name);
 }
 
+/**
+  @brief Need to ensure the output field created by this filter is on
+         the output dataset. This means we cannot copy any field from
+         the input that has out_name as its name.
+*/
+DataSet
+initialize_output_domain(DataSet &domain, const std::string &out_name)
+{
+  DataSet retval(domain);
+
+  retval.clear_fields();
+  const int nfields = domain.number_of_fields();
+  for(int i = 0; i < nfields; i++)
+  {
+    const auto ptr = domain.field_shared(i);
+    if(ptr->name() == out_name)
+    {
+      // Skip the field with the same name as out_field
+      continue;
+    }
+    retval.add_field(ptr);
+  }
+  return retval;
+}
+
+// End internal implementation
 }
 
 // Public interface
@@ -208,17 +181,36 @@ CellAverage::execute(Collection &input)
             << "' because it does not exist in the given collection.");
   }
 
-  if(out_field.empty())
+  // Default output name to input name.
+  // If the user set a custom output name then use that.
+  std::string out_name(in_field);
+  if(!out_field.empty())
   {
-    out_field = in_field;
+    out_name = out_field;
   }
 
   Collection output;
-  const int N = input.local_size();
-  for(int i = 0; i < N; i++)
+  auto domains = input.domains();
+  for(DataSet &domain : domains)
   {
-    CellAverageFunctor impl(input.domain(i), in_field, out_field);
-    output.add_domain(impl.execute());
+    DataSet out_dom = initialize_output_domain(domain, out_name);
+    if(domain.has_field(in_field))
+    {
+      Field *field = domain.field(in_field);
+      CellAverageFunctor cellavg(out_name);
+      try
+      {
+        // Covers Scalars and 3D vectors
+        dispatch(field, cellavg);
+      }
+      catch(const DRayError &dre)
+      {
+        // Covers 2D / 3D vectors
+        dispatch_vector(field, cellavg);
+      }
+      out_dom.add_field(cellavg.output());
+    }
+    output.add_domain(out_dom);
   }
   return output;
 }
