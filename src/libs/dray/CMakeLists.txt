@@ -160,6 +160,7 @@ set(dray_headers dray.hpp
                  data_model/unstructured_mesh.hpp
                  data_model/mesh.hpp
 
+                 filters/clipfield.hpp
                  filters/mesh_boundary.hpp
                  filters/threshold.hpp
                  filters/reflect.hpp
@@ -259,6 +260,7 @@ set(dray_sources dray.cpp
                  data_model/mesh_utils.cpp
                  data_model/unstructured_field.cpp
                  # filters
+                 filters/clipfield.cpp
                  filters/mesh_boundary.cpp
                  filters/threshold.cpp
                  filters/reflect.cpp
