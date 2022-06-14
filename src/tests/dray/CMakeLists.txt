@@ -62,6 +62,7 @@ set(BASIC_TESTS t_dray_smoke
                 #t_dray_crazy_quad
                 #t_dray_triangle
                 #t_dray_element
+                t_dray_mesh_threshold
 )
 
 set(MPI_TESTS t_dray_mpi_smoke

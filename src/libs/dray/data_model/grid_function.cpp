@@ -14,7 +14,7 @@ template <int32 PhysDim>
 void GridFunction<PhysDim>::to_node(conduit::Node &n_gf)
 {
   n_gf["dofs_per_element"] = m_el_dofs;
-  n_gf["num_elemements"] = m_size_el;
+  n_gf["num_elements"] = m_size_el;
   n_gf["values_size"] = m_values.size();
   n_gf["conn_size"] = m_size_ctrl;
   n_gf["phys_dim"] = PhysDim;
@@ -37,7 +37,7 @@ void GridFunction<PhysDim>::from_node(const conduit::Node &n_gf)
   }
 
   int32 el_dofs = n_gf["dofs_per_element"].to_int32();
-  int32 size_el = n_gf["num_elemements"].to_int32();
+  int32 size_el = n_gf["num_elements"].to_int32();
   int32 size_ctrl = n_gf["conn_size"].to_int32();
 
   resize(size_el, el_dofs, size_ctrl);
