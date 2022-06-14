@@ -1107,10 +1107,34 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
         n_topo["coordset"] = "coords";
         n_topo["type"] = "unstructured";
         if(_2D)
+        {
             n_topo["elements/shape"] = "quad";
+            // node reordering seems to be needed.
+            int conn_size = mgf["conn_size"].to_int();
+            int nelem = mgf["num_elements"].to_int();
+            auto conn_ptr = reinterpret_cast<int *>(const_cast<void*>(mgf["conn"].data_ptr()));
+            n_topo["elements/connectivity"].set(conduit::DataType::int32(nelem * 4));
+            auto newconn_ptr = reinterpret_cast<int *>(const_cast<void*>(n_topo["elements/connectivity"].data_ptr()));
+            const int reorder[] = {0,1,3,2};
+            for(int i = 0; i < nelem; i++)
+            {
+                int *cell_src = conn_ptr + 4 * i;
+                int *cell_dest = newconn_ptr + 4 * i;
+
+                //std::cout << "cell " << i << " = {";
+                //for(int j = 0; j < 4; j++)
+                //    std::cout << cell_src[j] << ", ";
+                //std::cout << "}" << std::endl;
+
+                for(int j = 0; j < 4; j++)
+                    cell_dest[j] = cell_src[reorder[j]];
+            }
+        }
         else
+        {
             n_topo["elements/shape"] = "tet";
-        n_topo["elements/connectivity"].set_external_node(mgf["conn"]);
+            n_topo["elements/connectivity"].set_external_node(mgf["conn"]);
+        }
     }
     else if(dofs_per_element == 3)
     {

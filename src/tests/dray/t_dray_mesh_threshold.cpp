@@ -18,8 +18,8 @@
 
 int EXAMPLE_MESH_SIDE_DIM = 20;
 
-#define DEBUG_TEST
-#define GENERATE_BASELINES
+//#define DEBUG_TEST
+//#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -148,7 +148,6 @@ blueprint_plugin_error_handler(const std::string &msg,
 }
 #endif
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST (dray_mesh_threshold, structured)
 {
@@ -286,7 +285,7 @@ TEST (dray_mesh_threshold, tets)
   tfdataset = tf.execute(dataset);
   handle_test("tets_radial", tfdataset);
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST (dray_mesh_threshold, tris)
 {
@@ -331,4 +330,50 @@ TEST (dray_mesh_threshold, tris)
   tf.set_upper_threshold(90.);
   tfdataset = tf.execute(dataset);
   handle_test("tris_radial", tfdataset);
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_mesh_threshold, quads)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("quads",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             0,
+                                             data);
+  dray::DataSet domain = dray::BlueprintLowOrder::import(data);
+  dray::Collection dataset;
+  dataset.add_domain(domain);
+#ifdef DEBUG_TEST
+  // Write the original data.
+  conduit::Node inputdata;
+  dray_collection_to_blueprint(dataset, inputdata);
+  //inputdata.print();
+  dray::BlueprintReader::save_blueprint("quads", inputdata);
+#endif
+  conduit::Node tfdata;
+
+  // point-centered, any in range.
+  dray::Threshold tf;
+  tf.set_lower_threshold(-10.);
+  tf.set_upper_threshold(0.);
+  tf.set_field("braid");
+  tf.set_all_in_range(false);
+  auto tfdataset = tf.execute(dataset);
+  handle_test("quads_braid_any", tfdataset);
+
+  // point-centered, all in range.
+  tf.set_all_in_range(true);
+  tfdataset = tf.execute(dataset);
+  handle_test("quads_braid_all", tfdataset);
+
+  // cell-centered
+  tf.set_field("radial");
+  tf.set_lower_threshold(0.);
+  tf.set_upper_threshold(90.);
+  tfdataset = tf.execute(dataset);
+  handle_test("quads_radial", tfdataset);
 }
