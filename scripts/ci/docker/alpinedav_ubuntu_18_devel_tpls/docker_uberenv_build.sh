@@ -1,11 +1,12 @@
 #!/bin/bash
-set -ev
+#set -ev
 
 # variants
-# (~python) python disabled, spack checksum fetch issues with multiple version (3.9 and 3.8)
-# (~genten) genten disabled, wait for genten master to gain cokurt
-# use vtk-m 1.8 rc branch
-export SPACK_SPEC="%gcc+mpi~python+dray+mfem+occa+fides+adios2+babelflow~genten ^vtk-m@1.8.0-rc1"
+# TODO:
+# (+python) python currently disabled, spack checksum fetch issues with multiple versions (3.9 and 3.8)
+# (+genten) genten currently disabled, wait for genten master to gain cokurt
+# (^vtk-m@1.8.0-rc1) use vtk-m 1.8 rc branch  (currently 1.7.1)
+export SPACK_SPEC="%gcc+mpi~python+dray+mfem+occa+fides+adios2+babelflow~genten ^vtk-m@1.7.1"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC}"
 # config
