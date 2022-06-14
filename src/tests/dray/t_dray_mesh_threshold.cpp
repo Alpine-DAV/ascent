@@ -19,7 +19,7 @@
 int EXAMPLE_MESH_SIDE_DIM = 20;
 
 #define DEBUG_TEST
-//#define GENERATE_BASELINES
+#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -148,6 +148,7 @@ blueprint_plugin_error_handler(const std::string &msg,
 }
 #endif
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST (dray_mesh_threshold, structured)
 {
@@ -192,4 +193,142 @@ TEST (dray_mesh_threshold, structured)
   tf.set_upper_threshold(90.);
   tfdataset = tf.execute(dataset);
   handle_test("structured_radial", tfdataset);
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_mesh_threshold, hexs)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("hexs",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             data);
+  dray::DataSet domain = dray::BlueprintLowOrder::import(data);
+  dray::Collection dataset;
+  dataset.add_domain(domain);
+#ifdef DEBUG_TEST
+  // Write the original data.
+  conduit::Node inputdata;
+  dray_collection_to_blueprint(dataset, inputdata);
+  //inputdata.print();
+  dray::BlueprintReader::save_blueprint("hexs", inputdata);
+#endif
+  conduit::Node tfdata;
+
+  // point-centered, any in range.
+  dray::Threshold tf;
+  tf.set_lower_threshold(-10.);
+  tf.set_upper_threshold(0.);
+  tf.set_field("braid");
+  tf.set_all_in_range(false);
+  auto tfdataset = tf.execute(dataset);
+  handle_test("hexs_braid_any", tfdataset);
+
+  // point-centered, all in range.
+  tf.set_all_in_range(true);
+  tfdataset = tf.execute(dataset);
+  handle_test("hexs_braid_all", tfdataset);
+
+  // cell-centered
+  tf.set_field("radial");
+  tf.set_lower_threshold(0.);
+  tf.set_upper_threshold(90.);
+  tfdataset = tf.execute(dataset);
+  handle_test("hexs_radial", tfdataset);
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_mesh_threshold, tets)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("tets",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             data);
+  dray::DataSet domain = dray::BlueprintLowOrder::import(data);
+  dray::Collection dataset;
+  dataset.add_domain(domain);
+#ifdef DEBUG_TEST
+  // Write the original data.
+  conduit::Node inputdata;
+  dray_collection_to_blueprint(dataset, inputdata);
+  //inputdata.print();
+  dray::BlueprintReader::save_blueprint("tets", inputdata);
+#endif
+  conduit::Node tfdata;
+
+  // point-centered, any in range.
+  dray::Threshold tf;
+  tf.set_lower_threshold(-10.);
+  tf.set_upper_threshold(0.);
+  tf.set_field("braid");
+  tf.set_all_in_range(false);
+  auto tfdataset = tf.execute(dataset);
+  handle_test("tets_braid_any", tfdataset);
+
+  // point-centered, all in range.
+  tf.set_all_in_range(true);
+  tfdataset = tf.execute(dataset);
+  handle_test("tets_braid_all", tfdataset);
+
+  // cell-centered
+  tf.set_field("radial");
+  tf.set_lower_threshold(0.);
+  tf.set_upper_threshold(90.);
+  tfdataset = tf.execute(dataset);
+  handle_test("tets_radial", tfdataset);
+}
+#endif
+//-----------------------------------------------------------------------------
+TEST (dray_mesh_threshold, tris)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("tris",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             0,
+                                             data);
+  dray::DataSet domain = dray::BlueprintLowOrder::import(data);
+  dray::Collection dataset;
+  dataset.add_domain(domain);
+#ifdef DEBUG_TEST
+  // Write the original data.
+  conduit::Node inputdata;
+  dray_collection_to_blueprint(dataset, inputdata);
+  //inputdata.print();
+  dray::BlueprintReader::save_blueprint("tris", inputdata);
+#endif
+  conduit::Node tfdata;
+
+  // point-centered, any in range.
+  dray::Threshold tf;
+  tf.set_lower_threshold(-10.);
+  tf.set_upper_threshold(0.);
+  tf.set_field("braid");
+  tf.set_all_in_range(false);
+  auto tfdataset = tf.execute(dataset);
+  handle_test("tris_braid_any", tfdataset);
+
+  // point-centered, all in range.
+  tf.set_all_in_range(true);
+  tfdataset = tf.execute(dataset);
+  handle_test("tris_braid_all", tfdataset);
+
+  // cell-centered
+  tf.set_field("radial");
+  tf.set_lower_threshold(0.);
+  tf.set_upper_threshold(90.);
+  tfdataset = tf.execute(dataset);
+  handle_test("tris_radial", tfdataset);
 }
