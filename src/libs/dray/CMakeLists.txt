@@ -163,6 +163,7 @@ set(dray_headers dray.hpp
                  filters/cell_average.hpp
                  filters/mesh_boundary.hpp
                  filters/mesh_threshold.hpp
+                 filters/point_average.hpp
                  filters/reflect.hpp
                  filters/redistribute.hpp
                  filters/subset.hpp
@@ -263,6 +264,7 @@ set(dray_sources dray.cpp
                  filters/cell_average.cpp
                  filters/mesh_boundary.cpp
                  filters/mesh_threshold.cpp
+                 filters/point_average.cpp
                  filters/reflect.cpp
                  filters/redistribute.cpp
                  filters/subset.cpp
