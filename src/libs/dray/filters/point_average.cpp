@@ -103,31 +103,27 @@ compute_point_average(const UnstructuredMesh<MeshElemType> &in_mesh,
 struct PointAverageFunctor
 {
   PointAverageFunctor() = delete;
-  PointAverageFunctor(const std::string &name);
+  PointAverageFunctor(Mesh *mesh, Field *field, const std::string &name);
   ~PointAverageFunctor() = default;
 
-  std::shared_ptr<Field> output() { return m_output; }
+  inline void execute() { dispatch(m_mesh, *this); }
+  inline std::shared_ptr<Field> output() { return m_output; }
 
-  // This method gets invoked by dispatch with a concrete field
-  // type like UnstructuredField<T>.
-  template<typename MeshType, typename FieldType>
-  void operator()(MeshType &mesh, FieldType &field);
+  template<typename MeshType>
+  void operator()(MeshType &mesh);
 
   std::shared_ptr<Field> m_output;
   std::string m_name;
+  Mesh *m_mesh;
+  Field *m_field;
 };
 
-PointAverageFunctor::PointAverageFunctor(const std::string &name)
-  : m_output(), m_name(name)
+PointAverageFunctor::PointAverageFunctor(Mesh *mesh,
+                                         Field *field,
+                                         const std::string &name)
+  : m_output(), m_name(name), m_mesh(mesh), m_field(field)
 {
   // Do nothing
-}
-
-template<typename MeshType, typename FieldType>
-inline void
-PointAverageFunctor::operator()(MeshType &mesh, FieldType &field)
-{
-  m_output = compute_point_average(mesh, field, m_name);
 }
 
 /**
@@ -153,6 +149,52 @@ initialize_output_domain(DataSet &domain, const std::string &out_name)
     retval.add_field(ptr);
   }
   return retval;
+}
+
+template<typename MeshType>
+struct PointAverageFunctorInner
+{
+  PointAverageFunctorInner() = delete;
+  PointAverageFunctorInner(PointAverageFunctor*, MeshType *mesh);
+  ~PointAverageFunctorInner();
+
+  template<typename FieldType>
+  void operator()(FieldType &);
+
+  PointAverageFunctor *m_parent;
+  MeshType *m_mesh;
+};
+
+template<typename MeshType>
+PointAverageFunctorInner<MeshType>::PointAverageFunctorInner(PointAverageFunctor *pa,
+                                                             MeshType *mesh)
+  : m_parent(pa), m_mesh(mesh)
+{
+  // Do nothing
+}
+
+template<typename MeshType>
+PointAverageFunctorInner<MeshType>::~PointAverageFunctorInner()
+{
+  // Do nothing
+}
+
+template<typename MeshType>
+template<typename FieldType>
+void
+PointAverageFunctorInner<MeshType>::operator()(FieldType &field)
+{
+  m_parent->m_output = compute_point_average(*m_mesh, field, m_parent->m_name);
+}
+
+// NOTE: This is PointAverageFunctor, not PointAverageFunctorInner
+//        Needs PointAverageFunctorInner definition.
+template<typename MeshType>
+inline void
+PointAverageFunctor::operator()(MeshType &mesh)
+{
+  PointAverageFunctorInner<MeshType> inner(this, &mesh);
+  dispatch(m_field, inner);
 }
 
 // End internal implementation
@@ -233,8 +275,8 @@ PointAverage::execute(Collection &input)
       }
 
       Field *field = domain.field(in_field);
-      PointAverageFunctor pointavg(out_name);
-      dispatch(mesh, field, pointavg);
+      PointAverageFunctor pointavg(mesh, field, out_name);
+      pointavg.execute();
       out_dom.add_field(pointavg.output());
     }
     output.add_domain(out_dom);
