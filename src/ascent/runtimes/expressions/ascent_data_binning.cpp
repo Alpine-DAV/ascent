@@ -241,7 +241,7 @@ verify_topo_and_assoc(const conduit::Node &dataset,
   if(assoc_str.empty())
   {
 
-    error_msg.append() = "Could not determine the associate from the given "
+    error_msg.append() = "Could not determine the association from the given "
                           "reduction_var and axes. Try supplying a field.";
     error = true;
   }

@@ -108,7 +108,7 @@ public:
   // no default constructor
   MemoryInterface() = delete;
 
-  MemoryInterface(const conduit::Node &field, const std::string path = "values")
+  MemoryInterface(const conduit::Node &field, const std::string &path = "values")
     : m_field(const_cast<conduit::Node&>(field)),
       m_path(path)
   {
@@ -147,8 +147,6 @@ public:
     if(!types_match)
     {
       std::string schema = m_field.schema().to_yaml();
-      //m_field.print();
-      //TODO: log error can't throw exception here
       ASCENT_ERROR("Field type does not match conduit type: "<<schema);
     }
   }
@@ -163,7 +161,7 @@ public:
     return m_components;
   }
 
-  T value(const index_t idx, const std::string component)
+  T value(const index_t idx, const std::string &component)
   {
     int comp_idx = resolve_component(component);
     // TODO: log error component and index
@@ -228,7 +226,7 @@ public:
     return ptr;
   }
 
-  int resolve_component(const std::string component)
+  int resolve_component(const std::string &component)
   {
     int component_idx = 0;
 
@@ -347,14 +345,12 @@ public:
 
   // can make string param that specifies the device
   // TODO: this will not be the way to access ptrs going forward
-  const T *ptr_const(const std::string location = "device")
+  const T *ptr_const(const std::string &location = "device")
   {
     if(location != "host" && location != "device")
     {
       ASCENT_ERROR("Invalid location: '"<<location<<"'");
     }
-
-    //std::cout<<"SDKF:SDKFH\n";
 
     std::string leaf_path;
     if(location == "device")
