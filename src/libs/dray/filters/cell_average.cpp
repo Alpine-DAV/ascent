@@ -203,7 +203,7 @@ CellAverage::execute(Collection &input)
         // Covers Scalars and 3D vectors
         dispatch(field, cellavg);
       }
-      catch(const DRayError &dre)
+      catch(const DRayError &)
       {
         // Covers 2D / 3D vectors
         dispatch_vector(field, cellavg);
