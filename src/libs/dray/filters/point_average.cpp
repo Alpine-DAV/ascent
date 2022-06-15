@@ -59,7 +59,7 @@ compute_point_average(const UnstructuredMesh<MeshElemType> &in_mesh,
   // Is there a good way to zero initialize?
   const RAJA::RangeSegment range_points(0, nvalues);
   RAJA::forall<for_policy>(range_points,
-    [=](int i)
+    [=] DRAY_LAMBDA (int i)
     {
       for(int c = 0; c < ncomp; c++)
       {
@@ -71,7 +71,7 @@ compute_point_average(const UnstructuredMesh<MeshElemType> &in_mesh,
   // For each cell, add the cell value to the output point array
   const RAJA::RangeSegment range_cells(0, nelem);
   RAJA::forall<for_policy>(range_cells,
-    [=](int i)
+    [=] DRAY_LAMBDA (int i)
     {
       const int conn_idx = i * ndof;
       const int in_data_idx = in_idx_ptr[i];
@@ -89,7 +89,7 @@ compute_point_average(const UnstructuredMesh<MeshElemType> &in_mesh,
 
   // For each point, divide by the number of cells that touch that point
   RAJA::forall<for_policy>(range_points,
-    [=](int i)
+    [=] DRAY_LAMBDA (int i)
     {
       for(int c = 0; c < ncomp; c++)
       {
