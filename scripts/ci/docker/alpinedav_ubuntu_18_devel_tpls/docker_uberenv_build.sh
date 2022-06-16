@@ -1,12 +1,11 @@
 #!/bin/bash
-set -ev
+#set -ev
 
 # variants
 # TODO:
-# (+python) python currently disabled, spack checksum fetch issues with multiple versions (3.9 and 3.8)
 # (+genten) genten currently disabled, wait for genten master to gain cokurt
 # (^vtk-m@1.8.0-rc1) use vtk-m 1.8 rc branch  (currently 1.7.1)
-export SPACK_SPEC="%gcc+mpi~python+dray+mfem+occa+fides+adios2+babelflow~genten"
+export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow~genten"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC} ^vtk-m@1.7.1"
 # config
@@ -23,3 +22,6 @@ cd ascent && python scripts/uberenv/uberenv.py \
 
 # change perms
 chmod -R a+rX /uberenv_libs
+
+# back to where we started
+cd ../

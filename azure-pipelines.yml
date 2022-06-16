@@ -9,8 +9,7 @@
 #####
 
 variables:
-  ubuntu_18_tag_minimal:  alpinedav/ascent-ci:ubuntu-18-devel-tpls_2022-06-13-sha49ee14
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2022-02-03-sha8b9553
+  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2022-06-16-sha0bc393
   ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2022-02-04-shad5f629
   ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-02-04-sha5f8e8c
   ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-02-03-sha8b9553
@@ -60,7 +59,7 @@ stages:
     strategy:
       matrix:
         ubuntu_18_minimal:
-          containerImage: ${{ variables.ubuntu_18_tag_minimal }}
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
@@ -71,32 +70,20 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_debug_cxx11:
-          containerImage: ${{ variables.ubuntu_18_tag_minimal }}
+        ubuntu_18_shared_py_cxx11:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: OFF
+          ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
           ENABLE_VTKH: ON
           ENABLE_MFEM: ON
           ENABLE_BABELFLOW: OFF
-          ENABLE_ADIOS2: ON
-          ENABLE_FIDES: ON
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        # ubuntu_18_shared_py_cxx11:
-        #   containerImage: ${{ variables.ubuntu_18_tag }}
-        #   BUILD_SHARED_LIBS: ON
-        #   CMAKE_BUILD_TYPE: Debug
-        #   ENABLE_PYTHON: ON
-        #   ENABLE_APCOMP: OFF
-        #   ENABLE_DRAY: OFF
-        #   ENABLE_VTKH: ON
-        #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: OFF
-        #   ENABLE_ADIOS2: OFF
-        #   ENABLE_FIDES: OFF
-        #   ENABLE_GENTEN: OFF
-        #   BLT_CXX_STD: c++11
         # # this is off until #822 is worked out
         # # ubuntu_18_shared_py_cxx11_bflow:
         # #   containerImage: ${{ variables.ubuntu_18_tag }}
