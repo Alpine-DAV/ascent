@@ -70,6 +70,7 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
+        # base test
         ubuntu_18_shared_py_cxx11:
           containerImage: ${{ variables.ubuntu_18_tag }}
           BUILD_SHARED_LIBS: ON
