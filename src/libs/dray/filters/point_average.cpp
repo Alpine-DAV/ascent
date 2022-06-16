@@ -93,7 +93,8 @@ compute_point_average(const GridFunction<3> &in_mesh_gf,
     {
       for(int c = 0; c < ncomp; c++)
       {
-        out_data_ptr[i][c] = out_data_ptr[i][c] / ncells_data[i];
+        out_data_ptr[i][c] = (ncells_data[i] != 0) ? out_data_ptr[i][c] / ncells_data[i]
+                                                   : out_data_ptr[i][c];
       }
     });
 
