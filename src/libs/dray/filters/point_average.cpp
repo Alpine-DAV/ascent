@@ -3,6 +3,7 @@
 #include <dray/data_model/data_set.hpp>
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/elem_attr.hpp>
+#include <dray/data_model/mesh_utils.hpp>
 #include <dray/data_model/unstructured_field.hpp>
 #include <dray/data_model/unstructured_mesh.hpp>
 #include <dray/array.hpp>
@@ -19,9 +20,10 @@ namespace
 
 using namespace dray;
 
-template<typename MeshElemType, typename FieldElemType>
+// Could template off of Mesh GridFunction dimension but it always seems to be 3.
+template<typename FieldElemType>
 static std::shared_ptr<Field>
-compute_point_average(const UnstructuredMesh<MeshElemType> &in_mesh,
+compute_point_average(const GridFunction<3> &in_mesh_gf,
                       const UnstructuredField<FieldElemType> &in_field,
                       const std::string &name)
 {
@@ -32,10 +34,8 @@ compute_point_average(const UnstructuredMesh<MeshElemType> &in_mesh,
   using VecType = Vec<Float, OutElemType::get_ncomp()>;
 
   // Retrieve important input information
-  constexpr auto dim = MeshElemType::get_ncomp();
   constexpr auto ncomp = FieldElemType::get_ncomp();
   const GridFunction<ncomp> &in_field_gf = in_field.get_dof_data();
-  const GridFunction<dim> &in_mesh_gf = in_mesh.get_dof_data();
   const auto *in_data_ptr = in_field_gf.m_values.get_device_ptr_const();
   const auto *in_idx_ptr = in_field_gf.m_ctrl_idx.get_device_ptr_const();
   const auto *in_conn_ptr = in_mesh_gf.m_ctrl_idx.get_device_ptr_const();
@@ -100,32 +100,6 @@ compute_point_average(const UnstructuredMesh<MeshElemType> &in_mesh,
   return std::make_shared<UnstructuredField<OutElemType>>(out_gf, Order::Linear, name);
 }
 
-struct PointAverageFunctor
-{
-  PointAverageFunctor() = delete;
-  PointAverageFunctor(Mesh *mesh, Field *field, const std::string &name);
-  ~PointAverageFunctor() = default;
-
-  inline void execute() { dispatch(m_mesh, *this); }
-  inline std::shared_ptr<Field> output() { return m_output; }
-
-  template<typename MeshType>
-  void operator()(MeshType &mesh);
-
-  std::shared_ptr<Field> m_output;
-  std::string m_name;
-  Mesh *m_mesh;
-  Field *m_field;
-};
-
-PointAverageFunctor::PointAverageFunctor(Mesh *mesh,
-                                         Field *field,
-                                         const std::string &name)
-  : m_output(), m_name(name), m_mesh(mesh), m_field(field)
-{
-  // Do nothing
-}
-
 /**
   @brief Need to ensure the output field created by this filter is on
          the output dataset. This means we cannot copy any field from
@@ -151,50 +125,47 @@ initialize_output_domain(DataSet &domain, const std::string &out_name)
   return retval;
 }
 
-template<typename MeshType>
-struct PointAverageFunctorInner
+struct PointAverageFunctor
 {
-  PointAverageFunctorInner() = delete;
-  PointAverageFunctorInner(PointAverageFunctor*, MeshType *mesh);
-  ~PointAverageFunctorInner();
+  PointAverageFunctor() = delete;
+  PointAverageFunctor(Mesh *mesh, Field *field, const std::string &name);
+  ~PointAverageFunctor() = default;
+
+  void execute();
+  inline std::shared_ptr<Field> output() { return m_output; }
 
   template<typename FieldType>
-  void operator()(FieldType &);
+  void operator()(FieldType &mesh);
 
-  PointAverageFunctor *m_parent;
-  MeshType *m_mesh;
+  std::shared_ptr<Field> m_output;
+  std::string m_name;
+  Mesh *m_mesh;
+  Field *m_field;
+  GridFunction<3> *m_mesh_gf;
 };
 
-template<typename MeshType>
-PointAverageFunctorInner<MeshType>::PointAverageFunctorInner(PointAverageFunctor *pa,
-                                                             MeshType *mesh)
-  : m_parent(pa), m_mesh(mesh)
+PointAverageFunctor::PointAverageFunctor(Mesh *mesh,
+                                         Field *field,
+                                         const std::string &name)
+  : m_output(), m_name(name), m_mesh(mesh), m_field(field), m_mesh_gf(nullptr)
 {
   // Do nothing
 }
 
-template<typename MeshType>
-PointAverageFunctorInner<MeshType>::~PointAverageFunctorInner()
+void
+PointAverageFunctor::execute()
 {
-  // Do nothing
+  GridFunction<3> gf = detail::get_dof_data(m_mesh);
+  m_mesh_gf = &gf;
+  dispatch(m_field, *this);
+  m_mesh_gf = nullptr;
 }
 
-template<typename MeshType>
 template<typename FieldType>
 void
-PointAverageFunctorInner<MeshType>::operator()(FieldType &field)
+PointAverageFunctor::operator()(FieldType &field)
 {
-  m_parent->m_output = compute_point_average(*m_mesh, field, m_parent->m_name);
-}
-
-// NOTE: This is PointAverageFunctor, not PointAverageFunctorInner
-//        Needs PointAverageFunctorInner definition.
-template<typename MeshType>
-inline void
-PointAverageFunctor::operator()(MeshType &mesh)
-{
-  PointAverageFunctorInner<MeshType> inner(this, &mesh);
-  dispatch(m_field, inner);
+  m_output = compute_point_average(*m_mesh_gf, field, m_name);
 }
 
 // End internal implementation
