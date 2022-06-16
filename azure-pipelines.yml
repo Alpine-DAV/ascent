@@ -85,102 +85,102 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        # # this is off until #822 is worked out
-        # # ubuntu_18_shared_py_cxx11_bflow:
-        # #   containerImage: ${{ variables.ubuntu_18_tag }}
-        # #   BUILD_SHARED_LIBS: ON
-        # #   CMAKE_BUILD_TYPE: Debug
-        # #   ENABLE_PYTHON: ON
-        # #   ENABLE_VTKH: ON
-        # #   ENABLE_MFEM: ON
-        # #   ENABLE_BABELFLOW: ON
-        # #   ENABLE_ADIOS2: OFF
-        # #   ENABLE_FIDES: OFF
-        # #   BLT_CXX_STD: c++11
-        # ubuntu_18_shared_py_cxx11_fides:
+        # this is off until #822 is worked out
+        # ubuntu_18_shared_py_cxx11_bflow:
         #   containerImage: ${{ variables.ubuntu_18_tag }}
         #   BUILD_SHARED_LIBS: ON
         #   CMAKE_BUILD_TYPE: Debug
         #   ENABLE_PYTHON: ON
-        #   ENABLE_APCOMP: OFF
-        #   ENABLE_DRAY: OFF
         #   ENABLE_VTKH: ON
         #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: OFF
-        #   ENABLE_ADIOS2: ON
-        #   ENABLE_FIDES: ON
-        #   ENABLE_GENTEN: OFF
-        #   BLT_CXX_STD: c++11
-        # ubuntu_18_shared_py_cxx11_genten:
-        #   containerImage: ${{ variables.ubuntu_18_tag }}
-        #   BUILD_SHARED_LIBS: ON
-        #   CMAKE_BUILD_TYPE: Debug
-        #   ENABLE_PYTHON: ON
-        #   ENABLE_APCOMP: OFF
-        #   ENABLE_DRAY: OFF
-        #   ENABLE_VTKH: ON
-        #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: OFF
-        #   ENABLE_ADIOS2: ON
-        #   ENABLE_FIDES: ON
-        #   ENABLE_GENTEN: ON
-        #   BLT_CXX_STD: c++11
-        # ubuntu_18_shared_py_cxx14:
-        #   containerImage: ${{ variables.ubuntu_18_tag }}
-        #   BUILD_SHARED_LIBS: ON
-        #   CMAKE_BUILD_TYPE: Debug
-        #   ENABLE_PYTHON: ON
-        #   ENABLE_APCOMP: OFF
-        #   ENABLE_DRAY: OFF
-        #   ENABLE_VTKH: ON
-        #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: OFF
+        #   ENABLE_BABELFLOW: ON
         #   ENABLE_ADIOS2: OFF
         #   ENABLE_FIDES: OFF
-        #   ENABLE_GENTEN: OFF
-        #   BLT_CXX_STD: c++14
-        # ubuntu_20_04_shared_py_cxx11:
-        #   containerImage: ${{ variables.ubuntu_20_04_tag }}
-        #   BUILD_SHARED_LIBS: ON
-        #   CMAKE_BUILD_TYPE: Debug
-        #   ENABLE_PYTHON: ON
-        #   ENABLE_APCOMP: OFF
-        #   ENABLE_DRAY: OFF
-        #   ENABLE_VTKH: ON
-        #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: OFF
-        #   ENABLE_ADIOS2: OFF
-        #   ENABLE_FIDES: OFF
-        #   ENABLE_GENTEN: OFF
         #   BLT_CXX_STD: c++11
-        # ubuntu_21_04_shared_py_cxx11:
-        #   containerImage: ${{ variables.ubuntu_21_04_tag }}
-        #   BUILD_SHARED_LIBS: ON
-        #   CMAKE_BUILD_TYPE: Debug
-        #   ENABLE_PYTHON: ON
-        #   ENABLE_APCOMP: OFF
-        #   ENABLE_DRAY: OFF
-        #   ENABLE_VTKH: ON
-        #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: OFF
-        #   ENABLE_ADIOS2: OFF
-        #   ENABLE_FIDES: OFF
-        #   ENABLE_GENTEN: OFF
-        #   BLT_CXX_STD: c++11
-        # ubuntu_21_10_shared_py_cxx11:
-        #   containerImage: ${{ variables.ubuntu_21_10_tag }}
-        #   BUILD_SHARED_LIBS: ON
-        #   CMAKE_BUILD_TYPE: Debug
-        #   ENABLE_PYTHON: ON
-        #   ENABLE_APCOMP: OFF
-        #   ENABLE_DRAY: OFF
-        #   ENABLE_VTKH: ON
-        #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: OFF
-        #   ENABLE_ADIOS2: OFF
-        #   ENABLE_FIDES: OFF
-        #   ENABLE_GENTEN: OFF
-        #   BLT_CXX_STD: c++11
+        ubuntu_18_shared_py_cxx11_fides:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: ON
+          ENABLE_FIDES: ON
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py_cxx11_genten:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: ON
+          ENABLE_FIDES: ON
+          ENABLE_GENTEN: ON
+          BLT_CXX_STD: c++11
+        ubuntu_18_shared_py_cxx14:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++14
+        ubuntu_20_04_shared_py_cxx11:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+        ubuntu_21_04_shared_py_cxx11:
+          containerImage: ${{ variables.ubuntu_21_04_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
+        ubuntu_21_10_shared_py_cxx11:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_APCOMP: OFF
+          ENABLE_DRAY: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++11
   
     container: $[ variables['containerImage'] ]
   

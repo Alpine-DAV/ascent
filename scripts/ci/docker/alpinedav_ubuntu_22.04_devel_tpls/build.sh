@@ -4,7 +4,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 set -ev
 
-export TAG_BASE=alpinedav/ascent-ci:ubuntu-21.10-devel-tpls
+export TAG_BASE=alpinedav/ascent-ci:ubuntu-22.04-devel-tpls
 
 date
 
