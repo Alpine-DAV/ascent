@@ -9,7 +9,7 @@ export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow~genten"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC} ^vtk-m@1.7.1"
 # config
-export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/"
+export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/"
 
 cd ascent && python scripts/uberenv/uberenv.py \
      -k \
