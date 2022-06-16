@@ -15,7 +15,7 @@ RUN apt-get update && apt-get -y install \
              gcc \
              g++ \
              gfortran \
-             python \
+             python-is-python3 \
              perl \
              git \
              git-lfs \
