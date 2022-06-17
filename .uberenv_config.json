@@ -10,7 +10,6 @@
 "spack_url_YEAH": "https://github.com/alpine-DAV/spack",
 "spack_branch_YEAH": "task/2022_06_ascent_update_spack",
 "spack_activate" : { "py-numpy"  : ["+python"],
-                     "py-pip"    : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
                      "py-sphinx" : ["+python", "+doc"],
