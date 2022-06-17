@@ -15,6 +15,8 @@ RUN apt-get update && apt-get -y install \
              gcc \
              g++ \
              gfortran \
+             python3 \
+             python3-dev \
              python-is-python3 \
              perl \
              git \
