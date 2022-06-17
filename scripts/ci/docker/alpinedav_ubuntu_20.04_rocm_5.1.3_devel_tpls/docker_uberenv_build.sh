@@ -9,7 +9,7 @@
 # (^vtk-h+rocm) rocm support isn't in vtk-h pkg yet
 export SPACK_SPEC="%gcc+mpi+cuda+vtkh~dray+mfem+occa~genten~python~openmp~shared"
 # constraints
-export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^kokkos+wrapper ^mfem~rocm ^hypre~rocm ^vtk-h ^vtk-m+rocm@1.7.1"
+export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^kokkos+rocm ^mfem~rocm ^hypre~rocm ^vtk-h ^vtk-m+rocm@1.7.1"
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_20.04_rocm_5.1.3_devel/"
 
