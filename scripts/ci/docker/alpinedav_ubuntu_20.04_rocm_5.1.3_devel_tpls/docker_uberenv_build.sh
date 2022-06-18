@@ -7,7 +7,7 @@
 # (+dray) rocm support isn't in dray pkg, we need to move to intl ver and +raja opt
 # (^vtk-m@1.8.0-rc1) use vtk-m 1.8 rc branch  (currently 1.7.1)
 # (^vtk-h+rocm) rocm support isn't in vtk-h pkg yet
-export SPACK_SPEC="%gcc+mpi+cuda+vtkh~dray+mfem+occa~genten~python~openmp~shared"
+export SPACK_SPEC="%gcc+mpi+vtkh~dray+mfem+occa~genten~python~openmp~shared"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^kokkos+rocm ^mfem~rocm ^hypre~rocm ^vtk-h ^vtk-m+rocm@1.7.1"
 # config

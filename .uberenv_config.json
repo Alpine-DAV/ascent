@@ -6,13 +6,10 @@
 "spack_configs_path": "scripts/uberenv_configs/spack_configs/configs",
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/spack/spack",
-"spack_branch": "develop",
-"spack_url_YEAH": "https://github.com/alpine-DAV/spack",
-"spack_branch_YEAH": "task/2022_06_ascent_update_spack",
+"spack_commit": "13b609b4b673dcff10de9032670210869ce35398",
 "spack_activate" : { "py-numpy"  : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
                      "py-sphinx" : ["+python", "+doc"],
-                     "py-sphinx-rtd-theme": ["+python","+doc"] },
-"spack_clean_packages" : ["vtkm", "vtkh","conduit"]
+                     "py-sphinx-rtd-theme": ["+python","+doc"] }
 }
