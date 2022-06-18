@@ -7,7 +7,7 @@
 # (^vtk-m@1.8.0-rc1) use vtk-m 1.8 rc branch  (currently 1.7.1)
 export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa~genten~python~openmp~shared"
 # constraints
-export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^dray~openmp+cuda ^kokkos+wrapper ^mfem~cuda ^hypre~cuda ^vtk-h+cuda ^vtk-m+cuda~kokkos@1.7.1"
+export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^dray~openmp+cuda ^kokkos+wrapper ^mfem~cuda~petsc ^hypre~cuda ^vtk-h+cuda ^vtk-m+cuda~kokkos@1.7.1"
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_cuda_11.4.0_devel/"
 
