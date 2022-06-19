@@ -1,16 +1,15 @@
 #!/bin/bash
-#set -ev
+set -ev
 
 # variants
 # TODO:
 # (+genten) genten currently disabled, wait for genten master to gain cokurt
 # (^vtk-m@1.8.0-rc1) use vtk-m 1.8 rc branch  (currently 1.7.1)
 # (+dray ^dray~openmp+cuda) issue with umpire linking (solve in amlaga tests?)
-export SPACK_SPEC="%gcc+mpi+cuda+vtkh~dray+mfem+occa~genten~python~openmp~shared"
+export SPACK_SPEC="%gcc+mpi+cuda+vtkh~dray+mfem+occa~genten~python~openmp~shared cuda_arch=70"
 # constraints
-export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^mfem~cuda~petsc~sundials~slep ^hypre~cuda ^vtk-h+cuda ^vtk-m+cuda~kokkos@1.7.1"
+export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^mfem~cuda~petsc~sundials~slepc ^hypre~cuda ^vtk-h+cuda  cuda_arch=70 ^vtk-m+cuda~kokkos@1.7.1 cuda_arch=70"
 # config
-export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^dray~openmp+cuda c ^hypre~cuda ^vtk-h+cuda ^vtk-m+cuda~kokkos@1.7.1"
 cd ascent && python scripts/uberenv/uberenv.py \
      -k \
      --spec="${SPACK_SPEC}" \

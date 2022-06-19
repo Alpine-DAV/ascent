@@ -11,9 +11,9 @@
 variables:
   ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-06-16-sha5d06e4
   ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-06-17-sha456e35
-  # on hold until we get spack working on 22.04 
+  # on hold until we get spack working on 22.04
   #ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls_2022-06-16-sha368151
-  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-06-17-shae47200
+  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-06-18-sha9744fd
 
 
 
