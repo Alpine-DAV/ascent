@@ -85,10 +85,30 @@ namespace dray
 
   using ScalarDP = ReadDofPtr<Vec<Float, 1>>;
 
+  // NOTE: When I tested this filter against the low-order conduit
+  //       braid example (isoval=1), the epsilon was too large to
+  //       compute a valid isosurface. This caused a crash in
+  //       reconstruct_isopatch(ShapeHex,...) because it would try
+  //       to write 5 edges to a stack array of size 4.
+  template <typename T> DRAY_EXEC T iso_epsilon ()
+  {
+    return epsilon<T>();
+  }
+
+  template <> DRAY_EXEC float32 iso_epsilon<float32> ()
+  {
+    return 1e-8f;
+  }
+
+  template <> DRAY_EXEC float64 iso_epsilon<float64> ()
+  {
+    return 1e-16f;
+  }
+
   DRAY_EXEC int8 isosign(Float value, Float isovalue)
   {
-    return (value < isovalue - epsilon<Float>() ? -1
-            : value > isovalue + epsilon<Float>() ? +1
+    return (value < isovalue - iso_epsilon<Float>() ? -1
+            : value > isovalue + iso_epsilon<Float>() ? +1
             : +1);  // Symbolic perturbation
   }
 
@@ -761,8 +781,36 @@ namespace dray
     uint8 edge_ids[4];
     uint8 split_counter = 0;
     for (uint8 e = 0; e < 12; ++e)
+    {
       if ((cut_edges & (1u<<e)))
+      {
+#ifdef DEBUG_ISOSURFACE_FILTER
+        if(split_counter >= 4)
+        {
+          split_counter++;
+          continue;
+        }
+#endif
         edge_ids[split_counter++] = e;
+      }
+    }
+#ifdef DEBUG_ISOSURFACE_FILTER
+    if(split_counter > 4)
+    {
+      std::cout << "ERROR: split_counter=" << split_counter;
+                << "\nEdge cases: \n  ";
+      for(uint8 e = 0; e < 12; ++e)
+      {
+        std::cout << int(cut_edges & (1u<<e)) << " ";
+      }
+      std::cout << "\nPoint values: \n  ";
+      for(uint8 dof = 0; dof < 8; ++dof)
+      {
+        std::cout << in[dof][0] << " ";
+      }
+      std::cout << std::endl;
+    }
+#endif
 
     // Corners of the patch live on cell edges.
     Vec<Float, 3> corners[4];
