@@ -8,7 +8,7 @@ set -ev
 # (+dray ^dray~openmp+cuda) issue with umpire linking (solve in amlaga tests?)
 export SPACK_SPEC="%gcc+mpi+cuda+vtkh~dray+mfem+occa~genten~python~openmp~shared cuda_arch=70"
 # constraints
-export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^mfem~cuda~petsc~sundials~slepc ^hypre~cuda ^vtk-h+cuda  cuda_arch=70 ^vtk-m+cuda~kokkos@1.7.1 cuda_arch=70"
+export SPACK_SPEC="${SPACK_SPEC} ^raja@0.14.0 ^hdf5~mpi ^mfem~cuda~petsc~sundials~slepc ^hypre~cuda ^vtk-h+cuda  cuda_arch=70 ^vtk-m+cuda~kokkos@1.7.1 cuda_arch=70"
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_cuda_11.4.0_devel/"
 
