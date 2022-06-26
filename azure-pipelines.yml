@@ -9,12 +9,11 @@
 #####
 
 variables:
-  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-06-24-sha775687
-  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-06-24-sha775687
+  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-06-25-sha1ff352
+  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-06-25-sha1ff352
   # on hold until we get spack working on 22.04
   #ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls_
-  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:
-
+  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-06-25-sha1ff352
 
 
 # only build merge target pr to develop
@@ -111,8 +110,8 @@ stages:
           ENABLE_FIDES: ON
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        # TODO: genten disabled until we have code in main repor
-        # and spack pkg in spack develop
+        # TODO: genten disabled until we have code in main repo
+        #       and spack pkg in spack develop
         # ubuntu_18_shared_py_cxx11_genten:
         #   containerImage: ${{ variables.ubuntu_18_tag }}
         #   BUILD_SHARED_LIBS: ON
@@ -155,6 +154,7 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
+        # TODO: Disabled until we have spack 22.04 path foward
         # ubuntu_22_04_shared_py_cxx14:
         #   containerImage: ${{ variables.ubuntu_22_04_tag }}
         #   BUILD_SHARED_LIBS: ON
@@ -374,7 +374,7 @@ stages:
     strategy:
       matrix:
 
-        ubuntu_22_04_shared_py_cxx11_apcomp:
+        ubuntu_20_04_shared_py_cxx11_apcomp:
           containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -390,7 +390,7 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
-        ubuntu_22_04_shared_py_cxx11_dray:
+        ubuntu_20_04_shared_py_cxx11_dray:
           containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -406,7 +406,7 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
-        ubuntu_22_04_shared_py_cxx11_dray_double:
+        ubuntu_20_04_shared_py_cxx11_dray_double:
           containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -422,7 +422,7 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
-        ubuntu_22_04_shared_py_cxx11_dray_no_mfem:
+        ubuntu_20_04_shared_py_cxx11_dray_no_mfem:
           containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -668,7 +668,7 @@ stages:
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
-          ## on hold until we get new CI container
+          ## TODO on hold until we get new CI container with shared VTK-m build
           # cuda-11.4.0-shared:
           # containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
           # BUILD_SHARED_LIBS: ON
