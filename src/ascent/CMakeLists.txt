@@ -419,6 +419,12 @@ if (ENABLE_SERIAL)
                     vtkm_lodepng
                     )
 
+        if(UMPIRE_FOUND)
+            list(APPEND imported_targets_to_link umpire)
+        endif()
+
+        # TODO device link raja in rajaify branch
+
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES  ${ascent_device_sources}
                        TARGETS ${internal_targets_to_link}
@@ -578,6 +584,12 @@ if(MPI_FOUND)
         if(TARGET vtkmdiympi)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
+
+        if(UMPIRE_FOUND)
+            list(APPEND imported_targets_to_link umpire)
+        endif()
+
+        # TODO device link raja in rajaify branch
 
       source_objects(BINARY_DIR ${binary_dir}
                      SOURCES  ${ascent_device_sources}
