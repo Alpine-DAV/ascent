@@ -259,7 +259,7 @@ def proc_config(config):
     if config["repo_branch"] == "<CURRENT>":
         rcode,rout = shexe("git rev-parse --abbrev-ref HEAD",ret_output=True,echo=True)
         if rcode == 0:
-            config["repo_branch"] = rout
+            config["repo_branch"] = rout.strip()
         else:
             print("[error finding current git branch]")
             sys.exit(-1)
