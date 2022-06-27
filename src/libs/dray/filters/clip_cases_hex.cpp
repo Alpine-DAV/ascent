@@ -130,7 +130,6 @@ unsigned char clipShapesHex[] = {
  // Case #4: (cloned #1)
  // Case #5: Unique case #4
   ST_PNT, 0, NOCOLOR, 2, EI, EL, 
-  ST_PNT, 1, NOCOLOR, 4, EA, EB, EC, ED
   ST_TET, COLOR0, P7, ED, P3, N0,
   ST_TET, COLOR0, P7, EI, ED, N0,
   ST_TET, COLOR0, P7, P4, EI, N0,
@@ -147,6 +146,7 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR0, P5, P1, EA, N0,
   ST_TET, COLOR0, P5, EA, EI, N0,
   ST_TET, COLOR0, P5, EI, P4, N0,
+  ST_PNT, 1, COLOR1, 4, EA, EB, EC, ED
   ST_TET, COLOR1, ED, EI, P0, N0,
   ST_TET, COLOR1, EI, EA, P0, N0,
   ST_TET, COLOR1, EC, P2, EL, N0,
@@ -241,7 +241,6 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR1, P2, EC, EB, EL,
  // Case #21: Unique case #8
   ST_PNT, 0, NOCOLOR, 4, EE, EH, EL, EL, 
-  ST_PNT, 1, NOCOLOR, 4, EA, EB, EC, ED
   ST_TET, COLOR0, P3, P7, EH, N0,
   ST_TET, COLOR0, P3, EH, ED, N0,
   ST_TET, COLOR0, P5, P6, EL, N0,
@@ -257,6 +256,7 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR0, P7, EL, P6, N0,
   ST_TET, COLOR0, EA, EE, P5, N0,
   ST_TET, COLOR0, EA, P5, P1, N0,
+  ST_PNT, 1, COLOR1, 4, EA, EB, EC, ED
   ST_TET, COLOR1, ED, EH, P4, N0,
   ST_TET, COLOR1, ED, P4, P0, N0,
   ST_TET, COLOR1, P2, EB, EL, N0,
@@ -301,9 +301,6 @@ unsigned char clipShapesHex[] = {
  // Case #25: (cloned #7)
  // Case #26: Unique case #10
   ST_PNT, 0, NOCOLOR, 6, EB, EC, EK, EH, EE, EJ,
-  ST_PNT, 1, NOCOLOR, 6, P3, ED, EI, P4, EH, EK,
-  ST_PNT, 2, NOCOLOR, 6, P3, ED, EA, P1, EB, EC,
-  ST_PNT, 3, NOCOLOR, 6, EA, P1, EJ, EE, P4, EI,
   ST_TET, COLOR0, P0, EA, ED, EI,
   ST_TET, COLOR0, P7, EH, EK, N0,
   ST_TET, COLOR0, P6, P2, EB, N0,
@@ -317,6 +314,9 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR0, P6, EK, EC, N0,
   ST_TET, COLOR0, P6, EC, P2, N0,
   ST_TET, COLOR0, P5, EJ, EE, N0,
+  ST_PNT, 1, COLOR1, 6, P3, ED, EI, P4, EH, EK,
+  ST_PNT, 2, COLOR1, 6, P3, ED, EA, P1, EB, EC,
+  ST_PNT, 3, COLOR1, 6, EA, P1, EJ, EE, P4, EI,
   ST_TET, COLOR1, N1, P3, EK, N0,
   ST_TET, COLOR1, N1, EK, EH, N0,
   ST_TET, COLOR1, N1, EH, P4, N0,
@@ -369,8 +369,6 @@ unsigned char clipShapesHex[] = {
  // Case #29: (cloned #23)
  // Case #30: Unique case #12
   ST_PNT, 0, NOCOLOR, 5, EL, EJ, EK, EH, EE,
-  ST_PNT, 1, NOCOLOR, 6, P3, ED, EI, P4, EH, EK,
-  ST_PNT, 2, NOCOLOR, 6, EA, P1, EJ, EE, P4, EI,
   ST_TET, COLOR0, P0, EA, ED, EI,
   ST_TET, COLOR0, P7, EH, EK, N0,
   ST_TET, COLOR0, EL, EJ, P5, N0,
@@ -381,6 +379,8 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR0, EK, EL, P6, N0,
   ST_TET, COLOR0, EK, P6, P7, N0,
   ST_TET, COLOR0, P5, EJ, EE, N0,
+  ST_PNT, 1, COLOR1, 6, P3, ED, EI, P4, EH, EK,
+  ST_PNT, 2, COLOR1, 6, EA, P1, EJ, EE, P4, EI,
   ST_TET, COLOR1, N1, ED, P3, N0,
   ST_TET, COLOR1, N1, P3, EK, N0,
   ST_TET, COLOR1, N1, EK, EH, N0,
@@ -456,14 +456,14 @@ unsigned char clipShapesHex[] = {
  // Case #59: (cloned #31)
  // Case #60: Unique case #14
   ST_PNT, 0, NOCOLOR, 4, P2, P3, P4, P5,
-  ST_PNT, 1, NOCOLOR, 6, ED, P3, EK, EH, P4, EI,
-  ST_PNT, 2, NOCOLOR, 6, EB, P2, EL, EF, P5, EJ,
   ST_TET, COLOR0, ED, EI, P0, EJ,
   ST_TET, COLOR0, ED, P0, P1, EJ,
   ST_TET, COLOR0, ED, P1, EB, EJ,
   ST_TET, COLOR0, P7, EH, EK, EF,
   ST_TET, COLOR0, EK, EL, P6, EF,
   ST_TET, COLOR0, EK, P6, P7, EF,
+  ST_PNT, 1, COLOR1, 6, ED, P3, EK, EH, P4, EI,
+  ST_PNT, 2, COLOR1, 6, EB, P2, EL, EF, P5, EJ,
   ST_TET, COLOR1, N1, ED, P3, N0,
   ST_TET, COLOR1, N1, P3, EK, N0,
   ST_TET, COLOR1, N1, EK, EH, N0,
@@ -490,11 +490,11 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR1, EK, EF, EH, N0,
  // Case #61: Unique case #15
   ST_PNT, 0, NOCOLOR, 6, P0, P2, P3, P4, EF, EH, 
-  ST_PNT, 1, NOCOLOR, 6, EB, P2, EL, EF, P5, EJ,
   ST_TET, COLOR0, P7, EH, EK, EF,
   ST_TET, COLOR0, EK, EL, P6, EF,
   ST_TET, COLOR0, EK, P6, P7, EF,
   ST_TET, COLOR0, EA, P1, EB, EJ,
+  ST_PNT, 1, COLOR1, 6, EB, P2, EL, EF, P5, EJ,
   ST_TET, COLOR1, P0, P3, EK, N0,
   ST_TET, COLOR1, P0, EK, EH, N0,
   ST_TET, COLOR1, P0, EH, P4, N0,
