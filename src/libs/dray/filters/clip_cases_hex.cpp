@@ -13,11 +13,11 @@ int numClipShapesHex[256] = {
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 64 - 71
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 72 - 79
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 80 - 87
-  0, 0, 51, 37, 0, 0, 0, 0,  // cases 88 - 95
+  0, 0, 51, 37, 0, 0, 0, 26,  // cases 88 - 95
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 96 - 103
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 104 - 111
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 112 - 119
-  0, 0, 0, 0, 0, 0, 0, 0,  // cases 120 - 127
+  0, 0, 0, 0, 0, 23, 0, 18,  // cases 120 - 127
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 128 - 135
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 136 - 143
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 144 - 151
@@ -33,7 +33,7 @@ int numClipShapesHex[256] = {
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 224 - 231
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 232 - 239
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 240 - 247
-  0, 0, 0, 0, 0, 0, 0, 0 // cases 248 - 255
+  0, 0, 0, 0, 0, 0, 0, 13 // cases 248 - 255
 };
 
 int clipShapesHex[256] = {
@@ -48,11 +48,11 @@ int clipShapesHex[256] = {
   2905, 2905, 2905, 2905, 2905, 2905, 2905, 2905,  // cases 64 - 71
   2905, 2905, 2905, 2905, 2905, 2905, 2905, 2905,  // cases 72 - 79
   2905, 2905, 2905, 2905, 2905, 2905, 2905, 2905,  // cases 80 - 87
-  2905, 2905, 2905, 3288, 0, 0, 0, 0,  // cases 88 - 95
-  0, 0, 0, 0, 0, 0, 0, 0,  // cases 96 - 103
-  0, 0, 0, 0, 0, 0, 0, 0,  // cases 104 - 111
-  0, 0, 0, 0, 0, 0, 0, 0,  // cases 112 - 119
-  0, 0, 0, 0, 0, 0, 0, 0,  // cases 120 - 127
+  2905, 2905, 2905, 3288, 3562, 3562, 3562, 3562,  // cases 88 - 95
+  3752, 3752, 3752, 3752, 3752, 3752, 3752, 3752,  // cases 96 - 103
+  3752, 3752, 3752, 3752, 3752, 3752, 3752, 3752,  // cases 104 - 111
+  3752, 3752, 3752, 3752, 3752, 3752, 3752, 3752,  // cases 112 - 119
+  3752, 3752, 3752, 3752, 3752, 3752, 3917, 3917,  // cases 120 - 127
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 128 - 135
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 136 - 143
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 144 - 151
@@ -68,12 +68,12 @@ int clipShapesHex[256] = {
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 224 - 231
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 232 - 239
   0, 0, 0, 0, 0, 0, 0, 0,  // cases 240 - 247
-  0, 0, 0, 0, 0, 0, 0, 0 // cases 248 - 255
+  0, 0, 0, 0, 0, 0, 0, 4048 // cases 248 - 255
 };
 
 unsigned char clipShapesHex[] = {
  // Case #0: Unique case #1
-  ST_PNT, 0, NOCOLOR, 8, P0, P1, P2, P3, P4, P5, P6, P7,
+  ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7,
   ST_TET, COLOR0, P3, P4, P0, N0,
   ST_TET, COLOR0, P3, P7, P4, N0,
   ST_TET, COLOR0, P2, P1, P5, N0,
@@ -82,7 +82,7 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR0, P3, P1, P2, N0,
   ST_TET, COLOR0, P7, P5, P4, N0,
   ST_TET, COLOR0, P7, P6, P5, N0,
-  ST_TET, COLOR0, P3, P6, P7, N0
+  ST_TET, COLOR0, P3, P6, P7, N0,
   ST_TET, COLOR0, P3, P2, P6, N0,
   ST_TET, COLOR0, P0, P4, P5, N0,
   ST_TET, COLOR0, P0, P5, P1, N0,
@@ -623,7 +623,7 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR0, P2, EC, EB, EL,
   ST_PNT, 0, COLOR1, 5, P0, P1, P3, P4, P6,
   ST_PNT, 1, COLOR1, 6, P1, EB, EL, P6, EF, EJ,
-  ST_PNT, 2, COLOR1, 6, P4, EE, EF, P6, EG, EH, P4,
+  ST_PNT, 2, COLOR1, 6, P4, EE, EF, P6, EG, EH,
   ST_PNT, 3, COLOR1, 6, P3, EC, EL, P6, EG, EK,
   ST_TET, COLOR1, P0, P3, EK, N0,
   ST_TET, COLOR1, P0, EK, EH, N0,
@@ -655,4 +655,121 @@ unsigned char clipShapesHex[] = {
   ST_TET, COLOR1, EG, EH, EK, N0,
   ST_TET, COLOR1, EC, EB, EL, N0,
   ST_TET, COLOR1, EF, EJ, EE, N0,
+ // Case #92: (cloned #30)
+ // Case #93: (cloned #61)
+ // Case #94: (cloned #91)
+ // Case #95: Unique case #19
+  ST_TET, COLOR0, EK, EH, EG, P7,
+  ST_TET, COLOR0, EE, EJ, EF, P5,
+  ST_PNT, 0, COLOR1, 6, P0, P1, P2, P3, P4, P6,
+  ST_PNT, 1, COLOR1, 6, P4, EE, EF, P6, EG, EH, 
+  ST_TET, COLOR1, P0, P3, EK, N0,
+  ST_TET, COLOR1, P0, EK, EH, N0,
+  ST_TET, COLOR1, P0, EH, P4, N0,
+  ST_TET, COLOR1, P2, P1, EJ, N0,
+  ST_TET, COLOR1, P2, EJ, EF, N0,
+  ST_TET, COLOR1, P2, EF, P6, N0,
+  ST_TET, COLOR1, P3, P0, P1, N0,
+  ST_TET, COLOR1, P3, P1, P2, N0,
+  ST_TET, COLOR1, N1, EG, P6, N0,
+  ST_TET, COLOR1, N1, P6, EF, N0,
+  ST_TET, COLOR1, N1, EF, EE, N0,
+  ST_TET, COLOR1, N1, EE, P4, N0,
+  ST_TET, COLOR1, N1, P4, EH, N0,
+  ST_TET, COLOR1, N1, EH, EG, N0,
+  ST_TET, COLOR1, P2, P6, EG, N0,
+  ST_TET, COLOR1, P2, EG, EK, N0,
+  ST_TET, COLOR1, P2, EK, P3, N0,
+  ST_TET, COLOR1, P0, P4, EE, N0,
+  ST_TET, COLOR1, P0, EE, EJ, N0,
+  ST_TET, COLOR1, P0, EJ, P1, N0,
+  ST_TET, COLOR1, EH, EK, EG, N0,
+  ST_TET, COLOR1, EF, EJ, EE, N0,
+ // Case #96: (cloned #3)
+ // Case #97: (cloned #21)
+ // Case #98: (cloned #7)
+ // Case #99: (cloned #23)
+ // Case #100: (cloned #7)
+ // Case #101: (cloned #30)
+ // Case #102: (cloned #15)
+ // Case #103: (cloned #31)
+ // Case #104: (cloned #21)
+ // Case #105: (cloned #60)
+ // Case #106: (cloned #30)
+ // Case #107: (cloned #61)
+ // Case #108: (cloned #23)
+ // Case #109: (cloned #61)
+ // Case #110: (cloned #31)
+ // Case #111: (cloned #63)
+ // Case #112: (cloned #7)
+ // Case #113: (cloned #23)
+ // Case #114: (cloned #27)
+ // Case #115: (cloned #31)
+ // Case #116: (cloned #23)
+ // Case #117: (cloned #61)
+ // Case #118: (cloned #31)
+ // Case #119: (cloned #63)
+ // Case #120: (cloned #30)
+ // Case #121: (cloned #61)
+ // Case #122: (cloned #91)
+ // Case #123: (cloned #95)
+ // Case #124: (cloned #61)
+ // Case #125: Unique case #20
+  ST_TET, COLOR0, EH, EG, EK, P7,
+  ST_TET, COLOR0, EA, EB, EJ, P1,
+  ST_PNT, 0, COLOR1, 6, P1, P2, P3, P4, P5, P6,
+  ST_TET, COLOR1, P0, P3, EK, N0,
+  ST_TET, COLOR1, P0, EK, EH, N0,
+  ST_TET, COLOR1, P0, EH, P4, N0,
+  ST_TET, COLOR1, P6, P2, EB, N0,
+  ST_TET, COLOR1, P6, EB, EJ, N0,
+  ST_TET, COLOR1, P6, EJ, P5, N0,
+  ST_TET, COLOR1, P3, P0, EA, N0,
+  ST_TET, COLOR1, P3, EA, EB, N0,
+  ST_TET, COLOR1, P3, EB, P2, N0,
+  ST_TET, COLOR1, P5, P4, EH, N0,
+  ST_TET, COLOR1, P5, EH, EG, N0,
+  ST_TET, COLOR1, P5, EG, P6, N0,
+  ST_TET, COLOR1, P2, P6, EG, N0,
+  ST_TET, COLOR1, P2, EG, EK, N0,
+  ST_TET, COLOR1, P2, EK, P3, N0,
+  ST_TET, COLOR1, P4, P5, EJ, N0,
+  ST_TET, COLOR1, P4, EJ, EA, N0,
+  ST_TET, COLOR1, P4, EA, P0, N0,
+  ST_TET, COLOR1, EA, EJ, EB, N0,
+  ST_TET, COLOR1, EH, EK, EG, N0,
+ // Case #126: (cloned #95)
+ // Case #127: Unique case #21
+  ST_TET, COLOR0, EH, EG, EK, P7,
+  ST_PNT, 0, COLOR1, 7, P0, P1, P2, P3, P4, P5, P6, 
+  ST_TET, COLOR1, P0, P3, EK, N0,
+  ST_TET, COLOR1, P0, EK, EH, N0,
+  ST_TET, COLOR1, P0, EH, P4, N0,
+  ST_TET, COLOR1, P2, P1, P5, N0,
+  ST_TET, COLOR1, P2, P5, P6, N0,
+  ST_TET, COLOR1, P3, P0, P1, N0,
+  ST_TET, COLOR1, P3, P1, P2, N0,
+  ST_TET, COLOR1, P5, P4, EH, N0,
+  ST_TET, COLOR1, P5, EH, EG, N0,
+  ST_TET, COLOR1, P5, EG, P6, N0,
+  ST_TET, COLOR1, P2, P6, EG, N0,
+  ST_TET, COLOR1, P2, EG, EK, N0,
+  ST_TET, COLOR1, P2, EK, P3, N0,
+  ST_TET, COLOR1, P0, P4, P5, N0,
+  ST_TET, COLOR1, P0, P5, P1, N0,
+  ST_TET, COLOR1, EH, EK, EG, N0,
+ // Case #255: Unique case #22
+  ST_PNT, 0, COLOR1, 8, P0, P1, P2, P3, P4, P5, P6, P7,
+  ST_TET, COLOR1, P3, P4, P0, N0,
+  ST_TET, COLOR1, P3, P7, P4, N0,
+  ST_TET, COLOR1, P2, P1, P5, N0,
+  ST_TET, COLOR1, P2, P5, P6, N0,
+  ST_TET, COLOR1, P3, P0, P1, N0,
+  ST_TET, COLOR1, P3, P1, P2, N0,
+  ST_TET, COLOR1, P7, P5, P4, N0,
+  ST_TET, COLOR1, P7, P6, P5, N0,
+  ST_TET, COLOR1, P3, P6, P7, N0,
+  ST_TET, COLOR1, P3, P2, P6, N0,
+  ST_TET, COLOR1, P0, P4, P5, N0,
+  ST_TET, COLOR1, P0, P5, P1, N0,
 };
