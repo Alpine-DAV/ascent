@@ -55,7 +55,6 @@ compute_distance_fields(UnstructuredMesh<MeshElemType> &mesh,
                         const std::vector<VecType> &normals)
 {
   // Setup points / normals as arrays
-  std::cout << "Calculating distance..." << std::endl;
   const int nplanes = static_cast<int>(points.size());
   Array<VecType> arr_points(points.data(), nplanes);
   Array<VecType> arr_normals(normals.data(), nplanes);
@@ -221,7 +220,6 @@ ExtractSlice::execute(Collection &input)
     for(auto &dist_field : dist_fields)
     {
       working_domain.add_field(dist_field);
-      std::cout << dist_field->name() << std::endl;
     }
     working_collection.add_domain(working_domain);
   }
