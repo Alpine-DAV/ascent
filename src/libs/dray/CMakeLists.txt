@@ -162,6 +162,7 @@ set(dray_headers dray.hpp
 
                  filters/cell_average.hpp
                  filters/extract_slice.hpp
+                 filters/extract_three_slice.hpp
                  filters/mesh_boundary.hpp
                  filters/point_average.hpp
                  filters/threshold.hpp
@@ -264,6 +265,7 @@ set(dray_sources dray.cpp
                  # filters
                  filters/cell_average.cpp
                  filters/extract_slice.cpp
+                 filters/extract_three_slice.cpp
                  filters/mesh_boundary.cpp
                  filters/point_average.cpp
                  filters/threshold.cpp
