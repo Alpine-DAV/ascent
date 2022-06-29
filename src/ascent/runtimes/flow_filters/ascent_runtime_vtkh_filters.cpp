@@ -2009,11 +2009,11 @@ VTKHRecenter::execute()
 
     if(association == "vertex")
     {
-      recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::POINTS);
     }
     if(association == "element")
     {
-      recenter.SetResultAssoc(vtkm::cont::Field::Association::Cells);
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::CELL_SET);
     }
 
     recenter.Update();
