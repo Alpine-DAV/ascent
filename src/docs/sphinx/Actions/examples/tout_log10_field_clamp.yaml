@@ -1,0 +1,26 @@
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "contour"
+        params:
+          field: "e"
+          levels: 10
+      f2:
+        type: "log10"
+        params:
+          field: "e"
+          output_name: "log_energy"
+          clamp_min_value: 1.10e+07
+
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "log_energy"
+          pipeline: "pl1"
+      image_prefix: "log_energy_%04d"
