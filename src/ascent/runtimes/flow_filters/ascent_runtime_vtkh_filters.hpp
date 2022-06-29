@@ -187,6 +187,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHLog10: public ::flow::Filter
+{
+public:
+    VTKHLog10();
+    virtual ~VTKHLog10();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHRecenter: public ::flow::Filter
 {
 public:
