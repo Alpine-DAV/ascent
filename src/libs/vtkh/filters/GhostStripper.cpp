@@ -250,11 +250,14 @@ bool CanStrip(vtkm::cont::Field  &ghost_field,
                                               VTKM_DEFAULT_STORAGE_LIST{}),
          valid_flags);
 
-  vtkm::UInt8 res = vtkm::cont::Algorithm::Reduce(valid_flags,
-                                                  vtkm::UInt8(0),
-                                                  vtkm::Maximum());
+  vtkm::Vec<vtkm::Id,2> baseline = {-1, -1};
+  auto resMinMax = vtkm::cont::Algorithm::Reduce(valid_flags,
+                                                 baseline,
+                                                 detail::MinMaxIgnore());
+
   VTKH_DATA_CLOSE();
 
+  vtkm::UInt8 res = resMinMax[1];
   bool can_strip = res == 0;
   if(can_strip)
   {
