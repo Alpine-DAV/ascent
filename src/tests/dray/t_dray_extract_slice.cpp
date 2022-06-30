@@ -437,17 +437,17 @@ read_connectivity(UnstructuredMesh<METype> &mesh)
   std::cout << std::endl;
 }
 
-template <class RotatedIndexT>
-static void
-print_edge(const RotatedIndexT &wheel, int edge, int p)
-{
-  std::cout << "Edge " << edge << ":";
-  for (int i = 0; i <= p; ++i)
-  {
-    std::cout << " " << wheel.linearize(i);
-  }
-  std::cout << std::endl;
-}
+// template <class RotatedIndexT>
+// static void
+// print_edge(const RotatedIndexT &wheel, int edge, int p)
+// {
+//   std::cout << "Edge " << edge << ":";
+//   for (int i = 0; i <= p; ++i)
+//   {
+//     std::cout << " " << wheel.linearize(i);
+//   }
+//   std::cout << std::endl;
+// }
 
 TEST(dray_extract_slice, tets)
 {
@@ -468,18 +468,25 @@ TEST(dray_extract_slice, tets)
 
   const int p = 5;
   const eops::TetFlat hlin{p};
-  print_edge(eops::RotatedIdx3<0,1,2, eops::TetFlat>(0,0,0, hlin), 0, p);
-  print_edge(eops::RotatedIdx3<1,0,2, eops::TetFlat>(p,0,0, hlin), 1, p);
-  print_edge(eops::RotatedIdx3<1,0,2, eops::TetFlat>(0,0,0, hlin), 2, p);
+  // print_edge(eops::RotatedIdx3<0,1,2, eops::TetFlat>(0,0,0, hlin), 0, p);
+  // print_edge(eops::RotatedIdx3<1,0,2, eops::TetFlat>(p,0,0, hlin), 1, p);
+  // print_edge(eops::RotatedIdx3<1,0,2, eops::TetFlat>(0,0,0, hlin), 2, p);
 
   Collection c = make_test_mesh(TestCase::Tet);
   DataSet ds = c.domain(0);
-  auto lambda = [](auto mesh) {
-    read_connectivity(mesh);
-  };
-  dispatch(ds.mesh(), lambda);
+
+  conduit::Node n_input;
+  dray_collection_to_blueprint(c, n_input);
+  dray::BlueprintReader::save_blueprint("input_tets", n_input);
 
   ExtractSlice slicer;
-  slicer.add_plane({-0.5, -0.5, -0.5}, {0, 0, 1});
+  slicer.add_plane({-5, -5, -5}, {0, 0, 1});
   auto output = slicer.execute(c);
+
+  Collection tris = output.first;
+  std::cout << tris.local_size() << std::endl;
+  std::cout << tris.domain(0).number_of_fields() << std::endl;
+  conduit::Node n_tris;
+  dray_collection_to_blueprint(output.first, n_tris);
+  dray::BlueprintReader::save_blueprint("output_tets_tris", n_tris);
 }
