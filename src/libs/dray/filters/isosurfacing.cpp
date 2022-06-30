@@ -929,6 +929,8 @@ namespace dray
     {
       // Fast-path for linear mesh/field types.
       MarchingCubes filter;
+      filter.set_field(m_iso_field_name);
+      filter.set_isovalue(m_iso_value);
       out_collxn_first = filter.execute(collxn);
     }
     else

@@ -17,16 +17,7 @@ namespace
 
 using namespace dray;
 
-template<typename Shape>
-struct cell_table {};
-
-template<>
-struct cell_table<ShapeTet>
-{
-  const static int num_triangles[] = {
-    0, 1, 1, 2, 1, 2, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0
-  };
-  const static int triangle_table[] = {
+static const int8 tet_triangle_table[7*16] = {
 #define X -1
     X, X, X, X, X, X, X,
     0, 3, 2, X, X, X, X,
@@ -45,20 +36,24 @@ struct cell_table<ShapeTet>
     2, 3, 0, X, X, X, X,
     X, X, X, X, X, X, X
 #undef X
-  };
-  const static std::pair<uint8, uint8> edge_table[] = {
-    {0, 1},
-    {1, 2},
-    {0, 2},
-    {0, 3},
-    {1, 3},
-    {2, 3}
-  };
-
-  static const int *get_triangle_edges(uint32 flags) { return triangle_table + flags*7; }
-  static int get_num_triangles(uint32 flags) { return num_triangles[flags]; }
-  static std::pair<uint8, uint8> get_edge(int edge) { return edge_table[edge]; }
 };
+
+static const int8 tet_num_triangles[16] = {
+  0, 1, 1, 2, 1, 2, 2, 1, 1, 2, 2, 1, 2, 1, 1, 0
+};
+
+static const int8 tet_edge_table[12] = {
+  0, 1,
+  1, 2,
+  0, 2,
+  0, 3,
+  1, 3,
+  2, 3
+};
+
+static const int8 *get_triangle_edges(uint32 flags) { return tet_triangle_table + flags*7; }
+static int get_num_triangles(uint32 flags) { return static_cast<int>(tet_num_triangles[flags]); }
+static std::pair<int8, int8> get_edge(int edge) { return {tet_edge_table[edge*2], tet_edge_table[edge*2 + 1]}; }
 
 struct MarchingCubesFunctor
 {
@@ -93,7 +88,6 @@ MarchingCubesFunctor::operator()(UnstructuredMesh<METype> &mesh,
   // static_assert(FEType::get_P() == Order::Linear);
 
   DeviceField<FEType> dfield(field);
-  using TableType = cell_table<ShapeTet>;
   const auto ndofs = 4;
   const int nelem = mesh.cells();
 
@@ -115,7 +109,7 @@ MarchingCubesFunctor::operator()(UnstructuredMesh<METype> &mesh,
       {
         info |= (rdp[i][0] > m_isovalue) << i;
       }
-      num_triangles_ptr[eid] = TableType::get_num_triangles(info);
+      num_triangles_ptr[eid] = get_num_triangles(info);
       cut_info_ptr[eid] = info;
     });
 
@@ -131,10 +125,10 @@ MarchingCubesFunctor::operator()(UnstructuredMesh<METype> &mesh,
       [=](int eid) {
         const ReadDofPtr<Vec<Float, 1>> rdp = dfield.get_elem(eid).read_dof_ptr();
         Float *weights_offset = weights_ptr + offsets_ptr[eid] * 3;
-        const int *edges = TableType::get_triangle_edges(cut_info_ptr[eid]);
+        const int8 *edges = get_triangle_edges(cut_info_ptr[eid]);
         while(*edges != -1)
         {
-          const auto edge = TableType::get_edge(*edges++);
+          const auto edge = get_edge(*edges++);
           const Float v0 = rdp[edge.first][0];
           const Float v1 = rdp[edge.second][0];
           *weights_offset++ = (m_isovalue - v0) / (v1 - v0);
@@ -146,6 +140,9 @@ MarchingCubesFunctor::operator()(UnstructuredMesh<METype> &mesh,
   Array<Vec<Float, 3>> new_pts_array;
   new_pts_array.resize(total_triangles * 3);
   Vec<Float, 3> *new_pts_ptr = new_pts_array.get_device_ptr();
+  Array<Vec<Float, 1>> new_field_array;
+  new_field_array.resize(total_triangles * 3);
+  Vec<Float, 1> *new_field_ptr = new_field_array.get_device_ptr();
 
   DeviceMesh<METype> dmesh(mesh);
   // Build output mesh
@@ -154,13 +151,14 @@ MarchingCubesFunctor::operator()(UnstructuredMesh<METype> &mesh,
       const ReadDofPtr<Vec<Float, 3>> rdp = dmesh.get_elem(eid).read_dof_ptr();
       Float *weights_offset = weights_ptr + offsets_ptr[eid] * 3;
       Vec<Float, 3> *new_pts_offset = new_pts_ptr + offsets_ptr[eid] * 3;
-      const int *edges = TableType::get_triangle_edges(cut_info_ptr[eid]);
+      Vec<Float, 1> *new_field_offset = new_field_ptr + offsets_ptr[eid] * 3;
+      const int8 *edges = get_triangle_edges(cut_info_ptr[eid]);
       while(*edges != -1)
       {
-        std::pair<uint8, uint8> e[3];
-        e[0] = TableType::get_edge(*edges++);
-        e[1] = TableType::get_edge(*edges++);
-        e[2] = TableType::get_edge(*edges++);
+        std::pair<int8, int8> e[3];
+        e[0] = get_edge(*edges++);
+        e[1] = get_edge(*edges++);
+        e[2] = get_edge(*edges++);
         for(int ei = 0; ei < 3; ei++)
         {
           const Float weight = *weights_offset;
@@ -170,11 +168,21 @@ MarchingCubesFunctor::operator()(UnstructuredMesh<METype> &mesh,
           {
             pt[vi] = (1. - weight) * rdp[edge.first][vi] + weight * rdp[edge.second][vi];
           }
+          (*new_field_offset)[0] = m_isovalue;
+          new_field_offset++;
           weights_offset++;
           new_pts_offset++;
         }
       }
     });
+
+  GridFunction<1> out_field_gf;
+  out_field_gf.m_ctrl_idx = array_counting(total_triangles * 3, 0, 1);
+  out_field_gf.m_values = new_field_array;
+  out_field_gf.m_el_dofs = 3;
+  out_field_gf.m_size_el = total_triangles;
+  out_field_gf.m_size_ctrl = total_triangles * 3;
+  m_output.add_field(std::make_shared<UnstructuredField<Element<2, 1, ElemType::Simplex, Order::Linear>>>(out_field_gf, 1, "example"));
   
   GridFunction<3> out_mesh_gf;
   out_mesh_gf.m_ctrl_idx = array_counting(total_triangles * 3, 0, 1);
@@ -183,12 +191,13 @@ MarchingCubesFunctor::operator()(UnstructuredMesh<METype> &mesh,
   out_mesh_gf.m_size_el = total_triangles;
   out_mesh_gf.m_size_ctrl = total_triangles * 3;
   m_output.add_mesh(std::make_shared<UnstructuredMesh<Tri_P1>>(out_mesh_gf, 1));
+  std::cout << m_output.number_of_fields() << std::endl;
 }
 
 template<typename Functor>
 void dispatch_3d_linear(Mesh *mesh, Field *field, Functor &func)
 {
-  if (!dispatch_mesh_field((HexMesh_P1*)0, mesh, field, func) &&
+  if (/*!dispatch_mesh_field((HexMesh_P1*)0, mesh, field, func) && */
       !dispatch_mesh_field((TetMesh_P1*)0, mesh, field, func))
   {
     ::dray::detail::cast_mesh_failed(mesh, __FILE__, __LINE__);
@@ -252,6 +261,8 @@ MarchingCubes::execute(Collection &c)
     dispatch_3d_linear(domain.mesh(), domain.field(m_field), func);
     output.add_domain(func.m_output);
   }
+  std::cout << output.local_size() << std::endl;
+  std::cout << output.domain(0).number_of_fields() << std::endl;
   return output;
 }
 
