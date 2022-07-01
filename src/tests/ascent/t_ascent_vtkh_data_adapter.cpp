@@ -6,16 +6,16 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_render_3d.cpp
+/// file: t_ascent_vtkh_data_adapter.cpp
 ///
 //-----------------------------------------------------------------------------
 
 
 #include "gtest/gtest.h"
+#include "t_vtkm_test_utils.hpp"
 
 #include <ascent.hpp>
 #include <runtimes/ascent_vtkh_data_adapter.hpp>
-#include <vtkm/cont/testing/MakeTestDataSet.h>
 #include <iostream>
 #include <math.h>
 
@@ -23,8 +23,6 @@
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
-
-
 
 
 using namespace std;
@@ -47,8 +45,7 @@ TEST(ascent_data_adapter, vtkm_uniform_2d_to_blueprint)
         return;
     }
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet ds = maker.Make2DUniformDataSet0();
+    vtkm::cont::DataSet ds = Make2DUniformDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
@@ -72,8 +69,7 @@ TEST(ascent_data_adapter, vtkm_uniform_3d_to_blueprint)
         return;
     }
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet ds = maker.Make3DUniformDataSet0();
+    vtkm::cont::DataSet ds = Make3DUniformDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
@@ -96,8 +92,7 @@ TEST(ascent_data_adapter, vtkm_rectilinear_3d_to_blueprint)
         return;
     }
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet ds = maker.Make3DRectilinearDataSet0();
+    vtkm::cont::DataSet ds = Make3DRectilinearDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
@@ -121,8 +116,7 @@ TEST(ascent_data_adapter, vtkm_rectilinear_2d_to_blueprint)
         return;
     }
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet ds = maker.Make2DRectilinearDataSet0();
+    vtkm::cont::DataSet ds = Make2DRectilinearDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
@@ -145,8 +139,7 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
         return;
     }
 
-    vtkm::cont::testing::MakeTestDataSet maker;
-    vtkm::cont::DataSet ds = maker.Make3DExplicitDataSetCowNose();
+    vtkm::cont::DataSet ds = Make3DExplicitDataSetCowNose();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";

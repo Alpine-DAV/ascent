@@ -21,6 +21,7 @@
 #include <flow_workspace.hpp>
 
 #include <ascent_runtime_relay_filters.hpp>
+#include <ascent_runtime_htg_filters.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
 #include <ascent_runtime_trigger_filters.hpp>
 #include <ascent_runtime_query_filters.hpp>
@@ -51,6 +52,10 @@
 #endif
 
 
+#if defined(ASCENT_GENTEN_ENABLED)
+   #include <ascent_runtime_genten_filters.hpp>
+#endif
+
 
 using namespace flow;
 
@@ -80,14 +85,22 @@ void
 register_builtin()
 {
     AscentRuntime::register_filter_type<BlueprintVerify>();
+    AscentRuntime::register_filter_type<BlueprintFlatten>("extracts","flatten");
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<RelayIOLoad>();
+    AscentRuntime::register_filter_type<HTGIOSave>("extracts","htg");
+
+#if defined(ASCENT_GENTEN_ENABLED)
+    AscentRuntime::register_filter_type<Learn>("extracts","learn");
+#endif
 
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
     AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
 
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
+    
+    AscentRuntime::register_filter_type<BlueprintPartition>("transforms","partition");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();

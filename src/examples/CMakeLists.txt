@@ -15,7 +15,7 @@ add_subdirectory(proxies/cloverleaf3d-ref)
 add_subdirectory(synthetic/noise)
 add_subdirectory(paraview-vis)
 
-if(MFEM_FOUND)
+if(MFEM_FOUND AND MFEM_MPI_ENABLED)
   add_subdirectory(proxies/laghos)
 endif()
 

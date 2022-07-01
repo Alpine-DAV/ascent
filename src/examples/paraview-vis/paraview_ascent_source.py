@@ -177,7 +177,7 @@ def ascent_to_vtk(node, topology=None, extent=None):
                 cellType = vtkConstants.VTK_QUAD
             elif (shape == "point"):
                 npoints = 1
-                cellType = vtkConstants.VTK_PIXEL
+                cellType = vtkConstants.VTK_VERTEX
             else:
                 print("Error: Shape '%s' not implemented" % shape)
                 return None

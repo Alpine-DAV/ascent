@@ -1,0 +1,29 @@
+{
+  "dsets": {
+    "main": {
+      "cycle": 0,
+      "domains": 1,
+      "fields": {
+        "bananas": {
+          "path": "CrazyQuadData_000000/bananas.%06d",
+          "tags": {
+            "assoc": "nodes",
+            "comps": "1",
+            "lod": "20"
+          }
+        }
+      },
+      "mesh": {
+        "format": "0",
+        "path": "CrazyQuadData_000000/mesh.%06d",
+        "tags": {
+          "max_lods": "32",
+          "spatial_dim": "2",
+          "topo_dim": "2"
+        }
+      },
+      "time": 0,
+      "time_step": 0
+    }
+  }
+}

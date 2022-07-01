@@ -28,6 +28,12 @@ find_library(OCCA_LIBRARIES LIBRARIES NAMES occa
              NO_SYSTEM_ENVIRONMENT_PATH
              NO_CMAKE_SYSTEM_PATH)
 
+# also search for cudatoolkit
+if(ENABLE_CUDA)
+  find_package(CUDAToolkit REQUIRED)
+  list(APPEND OCCA_LIBRARIES CUDA::cuda_driver)
+endif()
+
 blt_register_library(NAME occa
                      INCLUDES ${OCCA_INCLUDE_DIRS}
                      LIBRARIES ${OCCA_LIBRARIES})

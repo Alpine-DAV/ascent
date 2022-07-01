@@ -73,6 +73,20 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
+//-----------------------------------------------------------------------------
+class ASCENT_API BlueprintFlatten : public ::flow::Filter
+{
+public:
+    BlueprintFlatten();
+   ~BlueprintFlatten();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 
 };
 //-----------------------------------------------------------------------------

@@ -19,6 +19,7 @@ RUN apt-get update && apt-get -y install \
                libmpich-dev \
                libblas-dev \
                liblapack-dev \
+               liblapacke-dev \
                unzip \
                openssh-server \ 
                vim

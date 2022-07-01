@@ -20,6 +20,67 @@ Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
 
+v0.8.0
+---------------------------------
+
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.8.0/ascent-v0.8.0-src-with-blt.tar.gz>`__
+
+* Docker Containers
+   * ``alpinedav/ascent:0.8.0``
+   * ``alpinedav/ascent-jupyter:0.8.0``
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Preferred dependency versions for ascent@0.8.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * conduit@0.8.2
+ * dray@0.1.8
+ * vtk-h@0.8.1
+ * vtk-m@1.7.1
+
+Added
+~~~~~
+
+ * Added OCCA Derived Field Generation support
+ * Added more math expressions
+ * Added a time expression
+ * Added Cinema rendering support for Devil Ray
+ * Added ``streamline`` and ``particle_advection`` transforms
+ * Added history gradient expressions
+ * Added the ability save named sessions
+ * Added new options to specify Cinema rendering parameters
+ * Added the ability save subsets of expression results to session files
+ * Added the ability to add comments to PNG files that Ascent creates
+ * Added timings out control option to Ascent (and Flow)
+ * Added support to render Polygonal nd Polyhedral Meshes
+ * Added option to turn of world annotations
+ * Added FIDES Support
+ * Added Spack and Uberenv support for building on Perlmutter
+
+Fixed
+~~~~~
+
+ * Fixed a bug where ascent timings files were written out twice
+ * Fixed a bug where the relay extract protocol was always hdf5, regardless of what was requested
+ * Various fixes to paraview_ascent_source.py
+
+Changed
+~~~~~~~
+
+ * Python CMake detection logic now prefers Python 3
+ * Changed Ascent's C-API to use Conduit's C-API object helper methods
+ * CMake, Spack, and uberenv changes to support newer versions of Cuda, CMake, etc
+ * Updated to use VTK-m 1.7.0
+ * Make Ascent Webserver support optional, linked to if Conduit Relay Web support exists
+ * Simplified the relay extract protocol params, for example can now use ``hdf5`` instead of ``blueprint/mesh/hdf5``
+ * Updated Spack and Uberenv support for building on Summit
+
+
 v0.7.1
 -------
 

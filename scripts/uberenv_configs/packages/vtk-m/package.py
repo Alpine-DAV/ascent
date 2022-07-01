@@ -27,6 +27,7 @@ class VtkM(CMakePackage, CudaPackage):
 
     version('master', branch='master')
     version('release', branch='release')
+    version('1.7.1', sha256="7ea3e945110b837a8c2ba49b41e45e1a1d8d0029bb472b291f7674871dbbbb63")
     version('1.7.0', sha256="a86667ac22057462fc14495363cfdcc486da125b366cb568ec23c86946439be4")
     version('1.6.0', sha256="14e62d306dd33f82eb9ddb1d5cee987b7a0b91bf08a7a02ca3bce3968c95fd76")
     version('1.5.5', commit="d2d1c854adc8c0518802f153b48afd17646b6252")

@@ -35,6 +35,9 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_divergence
                 t_ascent_vorticity
                 t_ascent_relay
+                t_ascent_htg
+		t_ascent_flatten
+		t_ascent_partition
                 t_ascent_clip_with_field
                 t_ascent_contour
                 t_ascent_iso_volume
@@ -62,6 +65,8 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_empty_runtime
                t_ascent_mpi_derived
                t_ascent_mpi_expressions
+	       t_ascent_mpi_flatten
+	       t_ascent_mpi_partition
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics
@@ -92,6 +97,10 @@ endif()
 
 if(DRAY_FOUND)
     list(APPEND BASIC_TESTS t_ascent_dray)
+endif()
+
+if(GENTEN_FOUND)
+    list(APPEND BASIC_TESTS t_ascent_genten_cokurt)
 endif()
 
 

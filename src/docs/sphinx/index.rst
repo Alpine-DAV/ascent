@@ -10,10 +10,24 @@
 Ascent
 ========
 
-A many-core capable flyweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
+`Ascent <http://github.com/alpine-dav/ascent>`_ is a many-core capable flyweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
 
 
 .. figure:: images/ascent_examples_small.png
+
+
+Learn how to use Ascent with Docker + Jupyter
+==============================================
+
+If you have Docker, an easy way to learn about Ascent is to run our prebuilt Docker container:
+
+.. code::
+
+    docker run -p 8888:8888 -t -i alpinedav/ascent-jupyter
+
+
+Then open http://localhost:8888 in your browser to connect to the Jupyter Server in the container.
+The password for the Jupyter server is: ``learn``.  From here, you can run Ascent's Python Tutorial Notebook examples. For more details see our :doc:`Ascent Tutorial <Tutorial>`.
 
 Introduction
 ============
@@ -67,18 +81,10 @@ http://github.com/llnl/ascent/issues
 
 help@ascent-dav.org
 
-Contributors
-============
 
-- Cyrus Harrison (LLNL)
-- Matt Larsen (LLNL)
-- Eric Brugger (LLNL)
-- Jim Eliot (AWE)
-- Kevin Griffin (LLNL)
-- Hank Childs (LBL and UO)
-- Utkarsh Ayachit (Kitware, Inc)
-- Sudhanshu Sane (UO)
-- Seif Ibrahim (LLNL, UCSB)
+**Contributors**
+
+https://github.com/Alpine-DAV/ascent/graphs/contributors
 
 Ascent Documentation
 ======================
@@ -132,6 +138,7 @@ Ascent Documentation
    :hidden:
 
    Releases
+   Citing
    Publications
    Licenses
 

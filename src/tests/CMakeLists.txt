@@ -15,11 +15,28 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 # for t_utils.hpp
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+#for t_test_utils.hpp
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vtkh")
 ################################
 # Unit Tests
 ################################
 # add tpl smoke tests, so they run before we run the ascent tests
 add_subdirectory("thirdparty")
+
+# add apcomp tests
+if(ENABLE_APCOMP)
+    add_subdirectory("apcomp")
+endif()
+
+# add dray tests
+if(ENABLE_DRAY)
+    add_subdirectory("dray")
+endif()
+
+# add vtkh tests
+if(ENABLE_VTKH)
+    add_subdirectory("vtkh")
+endif()
 
 # add flow tests
 add_subdirectory("flow")
@@ -40,4 +57,3 @@ if(PYTHON_FOUND)
                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                       COMMENT "Generating html summary of image compare tests (tests/_output/tout_img_report.html)")
 endif()
-
