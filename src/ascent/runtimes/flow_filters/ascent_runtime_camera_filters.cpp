@@ -87,7 +87,7 @@
 #include <vtkm/cont/Timer.h>
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <vtkm/cont/DataSetFieldAdd.h>
-#include <vtkm/worklet/FieldHistogram.h>
+#include <vtkm/filter/density_estimate/worklet/FieldHistogram.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
@@ -755,7 +755,7 @@ GetArea(vtkh::DataSet &vtkhData)
       //Get Data points
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       //Get triangles
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
       //Get variable
 
       int numTris = cellset.GetNumberOfCells();
@@ -951,7 +951,7 @@ AddTriangleFields(vtkh::DataSet &vtkhData)
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
     
       vtkm::cont::ArrayHandle<vtkm::FloatDefault> X0;
       vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y0;
@@ -994,7 +994,7 @@ AddTriangleFields(vtkh::DataSet &vtkhData, float &xmin, float &xmax, float &ymin
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomain(i);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
     
       vtkm::cont::ArrayHandle<vtkm::FloatDefault> X0;
       vtkm::cont::ArrayHandle<vtkm::FloatDefault> Y0;
@@ -1057,7 +1057,7 @@ GetTrianglesAndArea(vtkh::DataSet &vtkhData, double &area)
     {
       vtkm::cont::DataSet& dataset = vtkhData.GetDomain(i);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
       vtkm::cont::ArrayHandle<Triangle> triangles;
       vtkm::cont::ArrayHandle<double> areas;
       vtkm::cont::Invoker invoker;
@@ -1100,7 +1100,7 @@ GetTriangles(vtkh::DataSet &vtkhData)
       //Get Data points
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
       //Get triangles
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
       //Get variable
 
       int numTris = cellset.GetNumberOfCells();
@@ -1137,7 +1137,7 @@ GetScalarData(vtkh::DataSet &vtkhData, std::string field_name, int height, int w
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
       //Get variable
       vtkm::cont::Field field = dataset.GetField(field_name);
       
@@ -1178,7 +1178,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name, int height, int w
     {
       vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
       vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      vtkm::cont::DynamicCellSet cellset = dataset.GetCellSet();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
       //Get variable
       vtkm::cont::Field field = dataset.GetField(field_name);
       
