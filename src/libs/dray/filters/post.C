@@ -1,5 +1,5 @@
-int numClipCasesPh = 256;
-int numClipShapesPh[256] = {
+int numClipCasesHex = 256;
+int numClipShapesHex[256] = {
   13, 18, 18, 20, 18, 28, 20, 23,  // cases 0 - 7
   18, 20, 28, 23, 20, 23, 23, 21,  // cases 8 - 15
   18, 20, 28, 23, 23, 30, 30, 25,  // cases 16 - 23
@@ -33,7 +33,7 @@ int numClipShapesPh[256] = {
   21, 23, 23, 20, 23, 26, 20, 18,  // cases 240 - 247
   23, 20, 26, 18, 20, 18, 18, 13 // cases 248 - 255
 };
-int clipShapesPh[256] = {
+int startClipShapesHex[256] = {
   0, 84, 197, 310, 434, 547, 717, 841,  // cases 0 - 7
   982, 1095, 1219, 1389, 1530, 1654, 1795, 1936,  // cases 8 - 15
   2064, 2177, 2301, 2471, 2612, 2754, 2938, 3122,  // cases 16 - 23
@@ -67,7 +67,7 @@ int clipShapesPh[256] = {
   40116, 40244, 40385, 40526, 40650, 40791, 40955, 41079,  // cases 240 - 247
   41192, 41333, 41457, 41621, 41734, 41858, 41971, 42084 // cases 248 - 255
 };
-unsigned char clipShapesPh[] = {
+unsigned char clipShapesHex[] = {
  // Case #0: Unique case #1
   ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
   ST_TET, COLOR0, P3, P4, P0, N0,
