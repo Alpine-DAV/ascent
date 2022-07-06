@@ -6,12 +6,12 @@
         type: "contour"
         params:
           field: "e"
-          levels: 10
+          levels: 5
       f2:
-        type: "log10"
+        type: "log2"
         params:
           field: "e"
-          output_name: "log10_energy"
+          output_name: "log2_energy"
           clamp_min_value: 1.0
 -
   action: "add_scenes"
@@ -20,10 +20,10 @@
       plots:
         p1:
           type: "pseudocolor"
-          field: "log10_energy"
+          field: "log2_energy"
           pipeline: "pl1"
       renders:
         r1:
-          image_prefix: "contour_log10_energy_%04d"
+          image_prefix: "contour_log2_energy_%04d"
           camera:
             azimuth: 135
