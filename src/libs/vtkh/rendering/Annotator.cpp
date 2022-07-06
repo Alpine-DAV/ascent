@@ -10,7 +10,7 @@ Annotator::Annotator(vtkm::rendering::Canvas &canvas,
     m_camera(camera),
     m_bounds(bounds)
 {
-  m_is_3d = m_camera.GetMode() == vtkm::rendering::Camera::MODE_3D;
+  m_is_3d = m_camera.GetMode() == vtkm::rendering::Camera::Mode::ThreeD;
   m_world_annotator = m_canvas.CreateWorldAnnotator();
   // add defualt color bar positions
   vtkm::Bounds p1(vtkm::Range(0.84, 0.92), vtkm::Range(+0.1, +0.8), vtkm::Range(0, 0));
