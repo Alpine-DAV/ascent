@@ -629,6 +629,64 @@ static inline Array<int32> array_compact_indices (const Array<T> src, int32 &out
   return dest_indices;
 }
 
+// Takes the given array and returns an array with the values sorted
+// with all duplicate values removed. The given array WILL BE MODIFIED.
+template<typename T>
+static inline Array<T>
+array_unique_values_inplace(Array<T> &temp_array)
+{
+  // Sort the array
+  T *temp_ptr = temp_array.get_device_ptr();
+  RAJA::sort<for_policy>(RAJA::make_span(temp_ptr, temp_array.size()));
+  DRAY_ERROR_CHECK();
+
+  // Create a mask of values to keep
+  Array<uint8> mask_array;
+  mask_array.resize(temp_array.size());
+  uint8 *mask_ptr = mask_array.get_device_ptr();
+  mask_ptr[0] = 1;
+  RAJA::forall<for_policy>(RAJA::RangeSegment(1, temp_array.size()),
+    [=] DRAY_LAMBDA (int idx) {
+      mask_ptr[idx] = temp_ptr[idx] != temp_ptr[idx-1];
+    });
+  DRAY_ERROR_CHECK();
+
+  // Create offsets array and get the size of our final output array
+  Array<uint32> offsets_array;
+  offsets_array.resize(mask_array.size());
+  uint32 *offsets_ptr = offsets_array.get_device_ptr();
+  RAJA::exclusive_scan<for_policy>(RAJA::make_span(mask_ptr, mask_array.size()),
+                                   RAJA::make_span(offsets_ptr, offsets_array.size()),
+                                   RAJA::operators::plus<uint32>{});
+  DRAY_ERROR_CHECK();
+  const uint32 final_size = offsets_array.get_value(offsets_array.size() - 1) + mask_array.get_value(mask_array.size() - 1);
+
+  // Build the output array
+  Array<T> retval_array;
+  retval_array.resize(final_size);
+  T *retval_ptr = retval_array.get_device_ptr();
+  RAJA::forall<for_policy>(RAJA::RangeSegment(0, offsets_array.size()),
+    [=] DRAY_LAMBDA (int idx) {
+      const auto offset = offsets_ptr[idx];
+      if(mask_ptr[idx])
+      {
+        retval_ptr[offset] = temp_ptr[idx];
+      }
+    });
+  DRAY_ERROR_CHECK();
+  return retval_array;
+}
+
+// Copies the given array then calls array_unqiue_values_inplace
+// on the temp array. The input to this function is unmodified
+template<typename T>
+static inline Array<T>
+array_unique_values(const Array<T> &input)
+{
+  Array<T> temp_array;
+  array_copy(temp_array, input);
+  return array_unique_values_inplace(temp_array);
+}
 
 #ifdef DRAY_CUDA_ENABLED
 inline __device__ Vec<float32, 4> const_get_vec4f (const Vec<float32, 4> *const data)
