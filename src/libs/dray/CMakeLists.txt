@@ -160,6 +160,7 @@ set(dray_headers dray.hpp
                  data_model/unstructured_mesh.hpp
                  data_model/mesh.hpp
 
+                 filters/internal/marching_cubes_lookup_tables.hpp
                  filters/cell_average.hpp
                  filters/extract_slice.hpp
                  filters/extract_three_slice.hpp
