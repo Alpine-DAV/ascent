@@ -11,10 +11,6 @@
 #include <dray/filters/extract_three_slice.hpp>
 #include <dray/io/blueprint_low_order.hpp>
 #include <dray/io/blueprint_reader.hpp>
-#include <dray/io/mfem_reader.hpp>
-#include <dray/synthetic/tet_sphere_sample.hpp>
-#include <dray/dispatcher.hpp>
-//#include <dray/data_model/elem_ops.hpp>
 
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_blueprint.hpp>
@@ -253,35 +249,81 @@ test_result(dray::DataSet dset, const std::string &name, const float *ans, const
   }
 }
 
-#if 0
 TEST(dray_extract_slice, tets)
 {
   using namespace dray;
-  Collection collection = make_test_mesh(TestCase::Tet);
-  conduit::Node n_tmp;
-  collection.domain(0).to_node(n_tmp);
-  n_tmp.print();
+  Collection c = make_test_mesh(TestCase::Tet);
+  DataSet ds = c.domain(0);
 
+  // Test that we can make one slice
   ExtractSlice slicer;
   slicer.add_plane({-5., -5., -5.}, {0., 0., 1.});
-  auto tris_quads = slicer.execute(collection);
-  Collection tris = tris_quads.first;
-  Collection quads = tris_quads.second;
+  // Should only have tris
+  Collection tris = slicer.execute(c).first;
+  conduit::Node n_tris;
 
-  conduit::Node n_tris, n_quads;
+  using MeshType = Element<2, 3, ElemType::Simplex, Order::Linear>;
+  using ScalarFieldType = Element<2, 1, ElemType::Simplex, Order::Linear>;
+  using VecFieldType = Element<2, 3, ElemType::Simplex, Order::Linear>;
+  // There should only be 9 points but currently some points get
+  // double / quadruple counted when included by multiple quads
+  const int SZ = 25;
+  const float ans_z[SZ] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f,
+                           1.f, 1.f, 1.f, 1.f, 1.f, 1.f,
+                           1.f, 1.f, 1.f, 1.f, 1.f, 1.f,
+                           1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
+  test_mesh<MeshType>(tris.domain(0), 2, -5.f, SZ);
+  test_result<ScalarFieldType>(tris.domain(0), "simple", ans_z, SZ);
+  test_result<VecFieldType>(tris.domain(0), "simple_vec", ans_z, SZ);
+
+  // Test that we can make multiple slices, also test ExtractThreeSlice makes the same answer
+  slicer.clear();
+  slicer.add_plane({-5., -5., -5.}, {1., 0., 0.});
+  slicer.add_plane({-5., -5., -5.}, {0., 1., 0.});
+  slicer.add_plane({-5., -5., -5.}, {0., 0., 1.});
+  ExtractThreeSlice three_slicer;
+  three_slicer.set_point({-5., -5., -5.});
+  tris = slicer.execute(c).first;
+  Collection tris_three = three_slicer.execute(c).first;
+
   dray_collection_to_blueprint(tris, n_tris);
-  dray_collection_to_blueprint(quads, n_quads);
   dray::BlueprintReader::save_blueprint("output_tet_tris", n_tris);
-  dray::BlueprintReader::save_blueprint("output_tet_quads", n_quads);
+  n_tris.save("output_tets_tris.yaml");
+
+  const int SX = 25;
+  const float ans_x[SX] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
+                           1.0, 1.0, 0.0, 1.0, 2.0, 2.0,
+                           3.0, 3.0, 2.0, 2.0, 3.0, 3.0,
+                           2.0, 3.0, 4.0, 4.0, 4.0, 4.0, 4.0};
+  test_mesh<MeshType>(tris.domain(0), 0, -5.f, SX);
+  test_result<ScalarFieldType>(tris.domain(0), "simple", ans_x, SX);
+  test_result<ScalarFieldType>(tris_three.domain(0), "simple", ans_x, SX);
+  test_result<VecFieldType>(tris.domain(0), "simple_vec", ans_x, SX);
+  test_result<VecFieldType>(tris_three.domain(0), "simple_vec", ans_x, SX);
+
+  const int SY = 25;
+  const float ans_y[SY] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
+                           1.0, 1.0, 0.0, 1.0, 2.0, 2.0,
+                           3.0, 3.0, 2.0, 2.0, 3.0, 3.0,
+                           2.0, 3.0, 4.0, 4.0, 4.0, 4.0, 4.0};
+  test_mesh<MeshType>(tris.domain(1), 1, -5.f, SY);
+  test_result<ScalarFieldType>(tris.domain(1), "simple", ans_y, SY);
+  test_result<ScalarFieldType>(tris_three.domain(1), "simple", ans_y, SY);
+  test_result<VecFieldType>(tris.domain(1), "simple_vec", ans_y, SY);
+  test_result<VecFieldType>(tris_three.domain(1), "simple_vec", ans_y, SY);
+
+  // Same Z as before
+  test_mesh<MeshType>(tris.domain(2), 2, -5.f, SZ);
+  test_result<ScalarFieldType>(tris.domain(2), "simple", ans_z, SZ);
+  test_result<ScalarFieldType>(tris_three.domain(2), "simple", ans_z, SZ);
+  test_result<VecFieldType>(tris.domain(2), "simple_vec", ans_z, SZ);
+  test_result<VecFieldType>(tris_three.domain(2), "simple_vec", ans_z, SZ);
 }
 
 TEST(dray_extract_slice, hexes)
 {
   using namespace dray;
   Collection collection = make_test_mesh(TestCase::Hex);
-  // conduit::Node n_tmp;
-  // collection.domain(0).to_node(n_tmp);
-  // n_tmp.print();
 
   // Test that we can make one slice
   ExtractSlice slicer;
@@ -336,157 +378,4 @@ TEST(dray_extract_slice, hexes)
   test_result<ScalarFieldType>(quads_three.domain(2), "simple", ans_z, 16);
   test_result<VecFieldType>(quads.domain(2), "simple_vec", ans_z, 16);
   test_result<VecFieldType>(quads_three.domain(2), "simple_vec", ans_z, 16);
-}
-
-TEST(dray_extract_slice, single_hex)
-{
-  using namespace dray;
-  DataSet domain;
-  {
-    GridFunction<3> mesh_gf;
-    mesh_gf.resize(1, 8, 8);
-    int32 *conn = mesh_gf.m_ctrl_idx.get_host_ptr();
-    for(int i = 0; i < 8; i++)
-    {
-      conn[i] = i;
-    }
-    Vec<Float, 3> *points = mesh_gf.m_values.get_host_ptr();
-    points[0] = {0, 0, 0};
-    points[1] = {1, 0, 0};
-    points[2] = {0, 1, 0};
-    points[3] = {1, 1, 0};
-    points[4] = {0, 0, 1};
-    points[5] = {1, 0, 1};
-    points[6] = {0, 1, 1};
-    points[7] = {1, 1, 1};
-
-    using MeshElemType = Element<3, 3, ElemType::Tensor, Order::Linear>;
-    std::shared_ptr<Mesh> mesh = std::make_shared<UnstructuredMesh<MeshElemType>>(mesh_gf, 1);
-    domain.add_mesh(mesh);
-
-    GridFunction<1> braid_gf;
-    braid_gf.m_el_dofs = 8;
-    braid_gf.m_size_el = 1;
-    braid_gf.m_size_ctrl = 8;
-    braid_gf.m_ctrl_idx = mesh_gf.m_ctrl_idx;
-    braid_gf.m_values.resize(8);
-    Vec<Float, 1> *braid = braid_gf.m_values.get_host_ptr();
-    braid[0] = { 0.999936f};
-    braid[1] = {-0.947823f};
-    braid[2] = { 1.7136f};
-    braid[3] = {-0.571105f};
-    braid[4] = { 0.999795f};
-    braid[5] = {-0.948017f};
-    braid[6] = { 1.71352f};
-    braid[7] = {-0.571308f};
-    using FieldElemType = Element<3, 1, ElemType::Tensor, Order::Linear>;
-    std::shared_ptr<Field> field = std::make_shared<UnstructuredField<FieldElemType>>(braid_gf, 1, "braid");
-    domain.add_field(field);
-  }
-
-  Collection collection;
-  collection.add_domain(domain);
-
-  conduit::Node n_input;
-  dray_collection_to_blueprint(collection, n_input);
-  dray::BlueprintReader::save_blueprint("input_single_hex", n_input);
-
-  // Extract the isosurface
-  dray::Vec<dray::Float, 3> origin{0.5, 0.5, 0.5};
-  dray::Vec<dray::Float, 3> normal{1., 0., 0.};
-  dray::ExtractSlice slice;
-  slice.add_plane(origin, normal);
-  normal[0] = 0.; normal[1] = 1.; normal[2] = 0.;
-  slice.add_plane(origin, normal);
-  normal[0] = 0.; normal[1] = 0.; normal[2] = 1.;
-  slice.add_plane(origin, normal);
-  auto tris_quads = slice.execute(collection);
-  conduit::Node n_tris;
-  conduit::Node n_quads;
-  dray_collection_to_blueprint(tris_quads.first, n_tris);
-  dray_collection_to_blueprint(tris_quads.second, n_quads);
-  dray::BlueprintReader::save_blueprint("output_single_hex_tris", n_tris);
-  dray::BlueprintReader::save_blueprint("output_single_hex_quads", n_quads);
-}
-#endif
-
-using namespace dray;
-
-template<typename METype>
-static void
-read_connectivity(UnstructuredMesh<METype> &mesh)
-{
-  GridFunction<3> gf = mesh.get_dof_data();
-  DeviceGridFunction<3> dgf(gf);
-  auto dofs = dgf.get_rdp(0);
-  std::cout << "dofs per elem: " << gf.m_el_dofs << "\n"
-            << "mesh type: " << mesh.type_name() << std::endl;
-  const auto nelem = gf.m_size_el;
-  const auto ndofs = gf.m_el_dofs;
-  int idx = 0;
-  for(int e = 0; e < 1; ++e)
-  {
-    std::cout << e << ": ";
-    for(int dof = 0; dof < ndofs; ++dof, ++idx)
-    {
-      std::cout << "(" << dofs[idx][0] << "," << dofs[idx][1]
-                << "," << dofs[idx][2] << "), ";
-    }
-    std::cout << "\n";
-  }
-  std::cout << std::endl;
-}
-
-// template <class RotatedIndexT>
-// static void
-// print_edge(const RotatedIndexT &wheel, int edge, int p)
-// {
-//   std::cout << "Edge " << edge << ":";
-//   for (int i = 0; i <= p; ++i)
-//   {
-//     std::cout << " " << wheel.linearize(i);
-//   }
-//   std::cout << std::endl;
-// }
-
-TEST(dray_extract_slice, tets)
-{
-  using dray::detail::cartesian_to_tet_idx;
-  for(int p = 1; p < 6; p++)
-  {
-    std::cout << "Cartesian to tet_p" << p << ":"
-              << "\n(0,0,0): " << cartesian_to_tet_idx(0, 0, 0, p)
-              << "\n(p,0,0): " << cartesian_to_tet_idx(p, 0, 0, p)
-              << "\n(0,p,0): " << cartesian_to_tet_idx(0, p, 0, p)
-              << "\n(0,0,p): " << cartesian_to_tet_idx(0, 0, p, p)
-              << "\n(p,p,0): " << cartesian_to_tet_idx(p, p, 0, p)
-              << "\n(p,0,p): " << cartesian_to_tet_idx(p, 0, p, p)
-              << "\n(0,p,p): " << cartesian_to_tet_idx(0, p, p, p)
-              << "\n(p,p,p): " << cartesian_to_tet_idx(p, p, p, p)
-              << std::endl;
-  }
-
-  const int p = 5;
-  const eops::TetFlat hlin{p};
-  // print_edge(eops::RotatedIdx3<0,1,2, eops::TetFlat>(0,0,0, hlin), 0, p);
-  // print_edge(eops::RotatedIdx3<1,0,2, eops::TetFlat>(p,0,0, hlin), 1, p);
-  // print_edge(eops::RotatedIdx3<1,0,2, eops::TetFlat>(0,0,0, hlin), 2, p);
-
-  Collection c = make_test_mesh(TestCase::Tet);
-  DataSet ds = c.domain(0);
-
-  conduit::Node n_input;
-  dray_collection_to_blueprint(c, n_input);
-  dray::BlueprintReader::save_blueprint("input_tets", n_input);
-
-  ExtractSlice slicer;
-  slicer.add_plane({-5, -5, -5}, {0, 0, 1});
-  auto output = slicer.execute(c);
-
-  Collection tris = output.first;
-  std::cout << tris.local_size() << std::endl;
-  std::cout << tris.domain(0).number_of_fields() << std::endl;
-  conduit::Node n_tris;
-  dray_collection_to_blueprint(output.first, n_tris);
-  dray::BlueprintReader::save_blueprint("output_tets_tris", n_tris);
 }
