@@ -156,6 +156,40 @@ PointAverageFunctor::PointAverageFunctor(Mesh *mesh,
 void
 PointAverageFunctor::execute()
 {
+  // NOTE: detail::get_dof_data is returning an invalid gf causing
+  // terminate called after throwing an instance of 'umpire::out_of_memory_error'
+  // what():  ! Umpire runtime_error [/home/cdl/Development/llnl/umpire/src/umpire/alloc/MallocAllocator.hpp:45]: malloc( bytes = 18446744065656473168 ) failed.
+  //   Backtrace: 29 frames
+  //   0 0x7ffff6e69413 No dladdr: /tmp/builds/ascent/lib/libdray.so(+0x7bb413) [0x7ffff6e69413]
+  //   1 0x7ffff6e6a565 No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN6umpire4util10backtracerINS0_12trace_alwaysEE13get_backtraceERNS0_9backtraceE+0x27) [0x7ffff6e6a565]
+  //   2 0x7ffff6e6e07d No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZNK6umpire13runtime_error7messageB5cxx11Ev+0x47) [0x7ffff6e6e07d]
+  //   3 0x7ffff73fd054 No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN6umpire5alloc15MallocAllocator8allocateEm+0x834) [0x7ffff73fd054]
+  //   4 0x7ffff73fd6c3 No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN6umpire8resource21DefaultMemoryResourceINS_5alloc15MallocAllocatorEE8allocateEm+0x33) [0x7ffff73fd6c3]
+  //   5 0x7ffff73bdcb6 No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN6umpire8strategy9QuickPool8allocateEm+0x8e6) [0x7ffff73bdcb6]
+  //   6 0x7ffff6e1e246 No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN6umpire9Allocator8allocateEm+0x3a2) [0x7ffff6e1e246]
+  //   7 0x7ffff6e51cd9 No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN4dray14ArrayInternalsINS_3VecIfLi1EEEE13allocate_hostEv+0x7b) [0x7ffff6e51cd9]
+  //   8 0x7ffff6e36889 No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN4dray14ArrayInternalsINS_3VecIfLi1EEEE12get_host_ptrEv+0x25) [0x7ffff6e36889]
+  //   9 0x7ffff6e259cc No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN4dray5ArrayINS_3VecIfLi1EEEE12get_host_ptrEv+0x20) [0x7ffff6e259cc]
+  //   10 0x7ffff71f5311 No dladdr: /tmp/builds/ascent/lib/libdray.so(+0xb47311) [0x7ffff71f5311]
+  //   11 0x7ffff71dce56 No dladdr: /tmp/builds/ascent/lib/libdray.so(+0xb2ee56) [0x7ffff71dce56]
+  //   12 0x7ffff71d488b No dladdr: /tmp/builds/ascent/lib/libdray.so(+0xb2688b) [0x7ffff71d488b]
+  //   13 0x7ffff71d3778 No dladdr: /tmp/builds/ascent/lib/libdray.so(+0xb25778) [0x7ffff71d3778]
+  //   14 0x7ffff71d2f68 No dladdr: /tmp/builds/ascent/lib/libdray.so(+0xb24f68) [0x7ffff71d2f68]
+  //   15 0x7ffff71d25b7 No dladdr: /tmp/builds/ascent/lib/libdray.so(+0xb245b7) [0x7ffff71d25b7]
+  //   16 0x7ffff71d2bea No dladdr: /tmp/builds/ascent/lib/libdray.so(_ZN4dray12PointAverage7executeERNS_10CollectionE+0x4cc) [0x7ffff71d2bea]
+  //   17 0x555555563cb5 No dladdr: /tmp/builds/ascent/tests/dray/t_dray_point_average(+0xfcb5) [0x555555563cb5]
+  //   18 0x7ffff626de1a No dladdr: /tmp/builds/ascent/lib/libgtestd.so(_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc+0xa3) [0x7ffff626de1a]
+  //   19 0x7ffff624f8de No dladdr: /tmp/builds/ascent/lib/libgtestd.so(_ZN7testing4Test3RunEv+0xee) [0x7ffff624f8de]
+  //   20 0x7ffff6250275 No dladdr: /tmp/builds/ascent/lib/libgtestd.so(_ZN7testing8TestInfo3RunEv+0x10f) [0x7ffff6250275]
+  //   21 0x7ffff6250988 No dladdr: /tmp/builds/ascent/lib/libgtestd.so(_ZN7testing9TestSuite3RunEv+0x12c) [0x7ffff6250988]
+  //   22 0x7ffff625c47f No dladdr: /tmp/builds/ascent/lib/libgtestd.so(_ZN7testing8internal12UnitTestImpl11RunAllTestsEv+0x3f9) [0x7ffff625c47f]
+  //   23 0x7ffff626edd8 No dladdr: /tmp/builds/ascent/lib/libgtestd.so(_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS0_12UnitTestImplEbEET0_PT_MS4_FS3_vEPKc+0xa7) [0x7ffff626edd8]
+  //   24 0x7ffff625ae17 No dladdr: /tmp/builds/ascent/lib/libgtestd.so(_ZN7testing8UnitTest3RunEv+0xc9) [0x7ffff625ae17]
+  //   25 0x7ffff64ac9ba No dladdr: /tmp/builds/ascent/lib/libgtest_maind.so(_Z13RUN_ALL_TESTSv+0x11) [0x7ffff64ac9ba]
+  //   26 0x7ffff64ac949 No dladdr: /tmp/builds/ascent/lib/libgtest_maind.so(main+0x3f) [0x7ffff64ac949]
+  //   27 0x7ffff5075c87 No dladdr: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xe7) [0x7ffff5075c87]
+  //   28 0x555555561b4a No dladdr: /tmp/builds/ascent/tests/dray/t_dray_point_average(+0xdb4a) [0x555555561b4a]
+
   GridFunction<3> gf = detail::get_dof_data(m_mesh);
   m_mesh_gf = &gf;
   dispatch(m_field, *this);
