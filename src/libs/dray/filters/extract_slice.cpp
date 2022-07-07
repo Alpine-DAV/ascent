@@ -68,7 +68,6 @@ compute_distance_fields(UnstructuredMesh<MeshElemType> &mesh,
 
   // Create return values
   std::vector<GridFunction<1>> out_gfs(nplanes);
-  std::vector<Vec<Float, 1>*> out_data_ptrs(nplanes);
   for(int p = 0; p < nplanes; p++)
   {
     out_gfs[p].m_el_dofs = mesh_gf.m_el_dofs;
@@ -76,34 +75,15 @@ compute_distance_fields(UnstructuredMesh<MeshElemType> &mesh,
     out_gfs[p].m_size_ctrl = mesh_gf.m_size_ctrl;
     out_gfs[p].m_ctrl_idx = mesh_gf.m_ctrl_idx;
     out_gfs[p].m_values.resize(mesh_gf.m_values.size());
-    out_data_ptrs[p] = out_gfs[p].m_values.get_device_ptr();
   }
 
   const RAJA::RangeSegment range(0, npts);
-  // TODO: Benchmark which is faster, loop p inside kernel or outside kernel
-#if 1
-  RAJA::forall<for_policy>(range,
-    [=](int i)
-    {
-      const Float x = mesh_data_ptr[i][0];
-      const Float y = mesh_data_ptr[i][1];
-      const Float z = mesh_data_ptr[i][2];
-      for(int p = 0; p < nplanes; p++)
-      {
-        const Float px = points_ptr[p][0];
-        const Float py = points_ptr[p][1];
-        const Float pz = points_ptr[p][2];
-        const Float nx = normals_ptr[p][0];
-        const Float ny = normals_ptr[p][1];
-        const Float nz = normals_ptr[p][2];
-        out_data_ptrs[p][i][0] = ((x - px) * nx) + ((y - py) * ny) + ((z - pz) * nz);
-      }
-    });
-#else
   for(int p = 0; p < nplanes; p++)
   {
+    // Grab the current device pointer for capture
+    Vec<Float, 1> *out_data_ptr = out_gfs[p].m_values.get_device_ptr();
     RAJA::forall<for_policy>(range,
-      [=](int i)
+      [=] DRAY_LAMBDA (int i)
       {
         const Float x = mesh_data_ptr[i][0];
         const Float y = mesh_data_ptr[i][1];
@@ -114,10 +94,9 @@ compute_distance_fields(UnstructuredMesh<MeshElemType> &mesh,
         const Float nx = normals_ptr[p][0];
         const Float ny = normals_ptr[p][1];
         const Float nz = normals_ptr[p][2];
-        out_data_ptrs[p][i] = ((x - px) * nx) + ((y - py) * ny) + ((z - pz) * nz);
+        out_data_ptr[i][0] = ((x - px) * nx) + ((y - py) * ny) + ((z - pz) * nz);
       });
   }
-#endif
   DRAY_ERROR_CHECK();
 
   using FieldElemType = Element<MeshElemType::get_dim(),

@@ -297,10 +297,12 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   // Determine triangle cases and number of triangles
   DeviceField<FEType> dfield(field);
   const auto elem_range = RAJA::RangeSegment(0, nelem);
+  // TODO: Debug CUDA failure
+  // terminate called after throwing an instance of 'std::runtime_error'
+  //   what():  campCudaErrchk(cudaStreamSynchronize(stream)) an illegal memory access was encountered /home/cdl/Programs/camp-develop/include/camp/resource/cuda.hpp:172
   RAJA::forall<for_policy>(elem_range,
     [=] DRAY_LAMBDA (int eid) {
       const ReadDofPtr<Vec<Float, 1>> rdp = dfield.get_elem(eid).read_dof_ptr();
-      const int32 *ctrl_idx_ptr = rdp.m_offset_ptr;
       uint32 info = 0u;
       for(int i = 0; i < ndofs; i++)
       {
@@ -344,12 +346,13 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   const uint64 *unique_edges_ptr = m_unique_edges_array.get_device_ptr_const();
 
   // Compute new mesh connectivity
+  const auto unique_edges_size = m_unique_edges_array.size();
   m_conn_array.resize(edge_ids_array.size());
   int32 *conn_ptr = m_conn_array.get_device_ptr();
   RAJA::forall<for_policy>(RAJA::RangeSegment(0, edge_ids_array.size()),
-    [=](int idx) {
+    [=] DRAY_LAMBDA (int idx) {
       const uint64 edge_id = edge_ids_ptr[idx];
-      conn_ptr[idx] = binary_search(unique_edges_ptr, m_unique_edges_array.size(), edge_id);
+      conn_ptr[idx] = binary_search(unique_edges_ptr, unique_edges_size, edge_id);
     });
   DRAY_ERROR_CHECK();
 

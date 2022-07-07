@@ -643,8 +643,12 @@ array_unique_values_inplace(Array<T> &temp_array)
   // Create a mask of values to keep
   Array<uint8> mask_array;
   mask_array.resize(temp_array.size());
+  {
+    // Set the first value in the array
+    uint8 *mask_ptr = mask_array.get_host_ptr();
+    mask_ptr[0] = 1;
+  }
   uint8 *mask_ptr = mask_array.get_device_ptr();
-  mask_ptr[0] = 1;
   RAJA::forall<for_policy>(RAJA::RangeSegment(1, temp_array.size()),
     [=] DRAY_LAMBDA (int idx) {
       mask_ptr[idx] = temp_ptr[idx] != temp_ptr[idx-1];

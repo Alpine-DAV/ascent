@@ -897,7 +897,11 @@ namespace dray
     {
       Mesh *mesh = ds.mesh();
       Field *field = ds.field(m_iso_field_name);
-      if(mesh->order() != 1 || field->order() != 1)
+
+      // TODO: Enable Hexes when lookup tables are added
+      if(mesh->order() != 1 || field->order() != 1
+         || mesh->type_name().find("Tensor") != std::string::npos
+         || field->type_name().find("Tensor") != std::string::npos)
       {
         retval = false;
         break;

@@ -56,6 +56,8 @@ const int8 lookup_table[lookup_size] = {
 
 }//namespace tet
 
+// TODO: Define HEX lookup table and functions
+
 #undef X
 
 inline Array<int8>
