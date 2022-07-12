@@ -268,7 +268,7 @@ else
                                 -ladios2_cxx11     \
                                 -ladios2_core_mpi  \
                                 -ladios2_core   \
-                                -ladios2_taustubs  \
+                                -ladios2_perfstubs \
                                 -ladios2_evpath    \
                                 -ladios2_ffs       \
                                 -ladios2_atl       \

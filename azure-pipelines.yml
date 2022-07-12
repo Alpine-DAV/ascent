@@ -9,12 +9,11 @@
 #####
 
 variables:
-  ubuntu_18_tag : alpinedav/ascent-ci:ubuntu-18-devel-tpls_2022-02-03-sha8b9553
-  ubuntu_18_cuda_tag : alpinedav/ascent-ci:ubuntu-18-cuda-10.1-devel-tpls_2022-02-04-shad5f629
-  ubuntu_18_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-02-04-sha5f8e8c
-  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-02-03-sha8b9553
-  ubuntu_21_04_tag: alpinedav/ascent-ci:ubuntu-21.04-devel-tpls_2022-02-03-sha76e396
-  ubuntu_21_10_tag: alpinedav/ascent-ci:ubuntu-21.10-devel-tpls_2022-02-03-sha76e396
+  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-06-25-sha1ff352
+  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-06-25-sha1ff352
+  # TODO - on hold until we get spack working on 22.04
+  #ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls_
+  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-06-26-shac2d7b0
 
 
 # only build merge target pr to develop
@@ -59,12 +58,10 @@ stages:
     strategy:
       matrix:
         ubuntu_18_minimal:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
-          ENABLE_APCOMP: OFF
-          ENABLE_DRAY: OFF
           ENABLE_VTKH: OFF
           ENABLE_MFEM: OFF
           ENABLE_BABELFLOW: OFF
@@ -72,8 +69,9 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
+        # base test
         ubuntu_18_shared_py_cxx11:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -86,7 +84,7 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        # this is off until #822 is worked out
+        # TODO: babelflow disabled until #822 is worked out
         # ubuntu_18_shared_py_cxx11_bflow:
         #   containerImage: ${{ variables.ubuntu_18_tag }}
         #   BUILD_SHARED_LIBS: ON
@@ -99,7 +97,7 @@ stages:
         #   ENABLE_FIDES: OFF
         #   BLT_CXX_STD: c++11
         ubuntu_18_shared_py_cxx11_fides:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -112,22 +110,24 @@ stages:
           ENABLE_FIDES: ON
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        ubuntu_18_shared_py_cxx11_genten:
-          containerImage: ${{ variables.ubuntu_18_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_APCOMP: OFF
-          ENABLE_DRAY: OFF
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: OFF
-          ENABLE_ADIOS2: ON
-          ENABLE_FIDES: ON
-          ENABLE_GENTEN: ON
-          BLT_CXX_STD: c++11
+        # TODO: genten disabled until we have code in main repo
+        #       and spack pkg in spack develop
+        # ubuntu_18_shared_py_cxx11_genten:
+        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_APCOMP: OFF
+        #   ENABLE_DRAY: OFF
+        #   ENABLE_VTKH: ON
+        #   ENABLE_MFEM: ON
+        #   ENABLE_BABELFLOW: OFF
+        #   ENABLE_ADIOS2: ON
+        #   ENABLE_FIDES: ON
+        #   ENABLE_GENTEN: ON
+        #   BLT_CXX_STD: c++11
         ubuntu_18_shared_py_cxx14:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -154,34 +154,21 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-        ubuntu_21_04_shared_py_cxx11:
-          containerImage: ${{ variables.ubuntu_21_04_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_APCOMP: OFF
-          ENABLE_DRAY: OFF
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: OFF
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          ENABLE_GENTEN: OFF
-          BLT_CXX_STD: c++11
-        ubuntu_21_10_shared_py_cxx11:
-          containerImage: ${{ variables.ubuntu_21_10_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_APCOMP: OFF
-          ENABLE_DRAY: OFF
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: OFF
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          ENABLE_GENTEN: OFF
-          BLT_CXX_STD: c++11
+        # TODO: Disabled until we have spack 22.04 path foward
+        # ubuntu_22_04_shared_py_cxx14:
+        #   containerImage: ${{ variables.ubuntu_22_04_tag }}
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_APCOMP: OFF
+        #   ENABLE_DRAY: OFF
+        #   ENABLE_VTKH: ON
+        #   ENABLE_MFEM: ON
+        #   ENABLE_BABELFLOW: OFF
+        #   ENABLE_ADIOS2: OFF
+        #   ENABLE_FIDES: OFF
+        #   ENABLE_GENTEN: OFF
+        #   BLT_CXX_STD: c++14
   
     container: $[ variables['containerImage'] ]
   
@@ -387,8 +374,8 @@ stages:
     strategy:
       matrix:
 
-        ubuntu_21_10_shared_py_cxx11_apcomp:
-          containerImage: ${{ variables.ubuntu_21_10_tag }}
+        ubuntu_20_04_shared_py_cxx11_apcomp:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -403,8 +390,8 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
-        ubuntu_21_10_shared_py_cxx11_dray:
-          containerImage: ${{ variables.ubuntu_21_10_tag }}
+        ubuntu_20_04_shared_py_cxx11_dray:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -419,8 +406,8 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
-        ubuntu_21_10_shared_py_cxx11_dray_double:
-          containerImage: ${{ variables.ubuntu_21_10_tag }}
+        ubuntu_20_04_shared_py_cxx11_dray_double:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -435,8 +422,8 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
 
-        ubuntu_21_10_shared_py_cxx11_dray_no_mfem:
-          containerImage: ${{ variables.ubuntu_21_10_tag }}
+        ubuntu_20_04_shared_py_cxx11_dray_no_mfem:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -672,17 +659,8 @@ stages:
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        cuda-10-static:
-          containerImage: ${{ variables.ubuntu_18_cuda_tag }}
-          BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
-          ENABLE_APCOMP: OFF
-          ENABLE_BABELFLOW: OFF
-          # static linking unit tests eats up alot of disk space,
-          # so skip building tests in CI to keep us away from clif
-          ENABLE_TESTS: OFF
         cuda-11.4.0-static:
-          containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_cuda_11_4_0_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
           ENABLE_APCOMP: OFF
@@ -690,7 +668,7 @@ stages:
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
-          ## on hold until we get new CI container
+          ## TODO on hold until we get new CI container with shared VTK-m build
           # cuda-11.4.0-shared:
           # containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
           # BUILD_SHARED_LIBS: ON
@@ -770,7 +748,7 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
-          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+          export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-cmake
           mkdir _test_build
           cd _test_build
@@ -785,7 +763,7 @@ stages:
           cat install/share/ascent/ascent_config.mk
           pwd
           ls -l
-          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+          export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-make
           make
         displayName: 'Test vs Install (using-with-make) [build only]'
@@ -801,7 +779,7 @@ stages:
     strategy:
       matrix:
         cuda-11.4.0-static:
-          containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_cuda_11_4_0_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
           ENABLE_DRAY: ON
@@ -810,7 +788,7 @@ stages:
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
         cuda-11.4.0-static_no_mfem:
-          containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_cuda_11_4_0_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
           ENABLE_DRAY: ON
@@ -913,7 +891,7 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
-          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+          export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-cmake
           mkdir _test_build
           cd _test_build
@@ -928,7 +906,7 @@ stages:
           cat install/share/ascent/ascent_config.mk
           pwd
           ls -l
-          export LD_LIBRARY_PATH="/usr/local/cuda-11.4/compat/:/usr/local/cuda-10.1/compat/"
+          export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-make
           make
         displayName: 'Test vs Install (using-with-make) [build only]'

@@ -110,16 +110,54 @@ if(NOT UMPIRE_DIR)
 endif()
 
 if(UMPIRE_DIR)
-    if(NOT EXISTS ${UMPIRE_DIR}/share/umpire/cmake/)
-        message(FATAL_ERROR "Could not find Umpire CMake include file (${UMPIRE_DIR}/share/umpire/cmake)")
+    set(_UMPIRE_SEARCH_PATH)
+    if(EXISTS ${UMPIRE_DIR}/share/umpire/cmake)
+      # old install layout
+      set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/share/umpire/cmake)
+    else()
+      # new install layout
+      set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib/cmake/umpire)
+    endif()
+    
+    if(NOT EXISTS ${_UMPIRE_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find Umpire CMake include file (${_UMPIRE_SEARCH_PATH})")
     endif()
 
     ###############################################################################
     # Import CMake targets
     ###############################################################################
-    find_dependency(Umpire REQUIRED
+    find_dependency(umpire REQUIRED
                     NO_DEFAULT_PATH
-                    PATHS ${UMPIRE_DIR}/share/umpire/cmake/)
+                    PATHS ${_UMPIRE_SEARCH_PATH})
+endif()
+
+###############################################################################
+# Setup Camp
+###############################################################################
+if(NOT CAMP_DIR)
+    set(CAMP_DIR ${ASCENT_CAMP_DIR})
+endif()
+
+if(CAMP_DIR)
+    set(_CAMP_SEARCH_PATH)
+    if(EXISTS ${CAMP_DIR}/share/camp/cmake)
+      # old install layout ?
+      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/share/camp/cmake)
+    else()
+      # new install layout ?
+      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/lib/cmake/camp)
+    endif()
+    
+    if(NOT EXISTS ${_CAMP_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find Camp CMake include file (${_CAMP_SEARCH_PATH})")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(camp REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${_CAMP_SEARCH_PATH})
 endif()
 
 ###############################################################################
