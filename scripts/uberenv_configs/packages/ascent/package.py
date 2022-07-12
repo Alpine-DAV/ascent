@@ -86,7 +86,8 @@ class Ascent(CMakePackage, CudaPackage):
     variant("genten", default=False, description="Build with GenTen support")
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("occa", default=False, description="Build with OCCA support")
-    variant("umpire", default=True, description="Build with OCCA support")
+    variant("raja", default=True, description="Build with RAJA support")
+    variant("umpire", default=True, description="Build with Umpire support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
@@ -136,6 +137,9 @@ class Ascent(CMakePackage, CudaPackage):
     #############################
     # TPLs for Runtime Features
     #############################
+
+    depends_on("raja", when="+raja")
+    depends_on("umpire", when="+umpire")
 
     depends_on("vtk-h",      when="+vtkh")
     depends_on("vtk-h~openmp",      when="+vtkh~openmp")
@@ -551,6 +555,15 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write("# occa not built by spack \n")
 
         #######################
+        # RAJA
+        #######################
+        if "+raja" in spec:
+            cfg.write("# RAJA from spack \n")
+            cfg.write(cmake_cache_entry("RAJA_DIR", spec['raja'].prefix))
+        else:
+            cfg.write("# RAJA not built by spack \n")
+
+        #######################
         # Umpire
         #######################
         if "+umpire" in spec:
@@ -558,6 +571,15 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write(cmake_cache_entry("UMPIRE_DIR", spec['umpire'].prefix))
         else:
             cfg.write("# umpire not built by spack \n")
+
+        #######################
+        # Camp
+        #######################
+        if "+umpire" in spec or "+raja" in spec:
+            cfg.write("# camp from spack \n")
+            cfg.write(cmake_cache_entry("CAMP_DIR", spec['camp'].prefix))
+        else:
+            cfg.write("# camp not built by spack \n")
 
         #######################
         # Adios

@@ -419,14 +419,11 @@ if (ENABLE_SERIAL)
                     vtkm_lodepng
                     )
 
-        if(ENABLE_TESTS)
-            if (NOT TARGET vtkm_cont_testing)
-                message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
-            endif ()
-            
-            list(APPEND imported_targets_to_link
-                        vtkm_cont_testing)
+        if(UMPIRE_FOUND)
+            list(APPEND imported_targets_to_link umpire)
         endif()
+
+        # TODO device link raja in rajaify branch
 
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES  ${ascent_device_sources}
@@ -588,14 +585,11 @@ if(MPI_FOUND)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
 
-      if(ENABLE_TESTS)
-          if (NOT TARGET vtkm_cont_testing)
-              message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
-          endif ()
-          
-          list(APPEND imported_targets_to_link
-                      vtkm_cont_testing)
-      endif()
+        if(UMPIRE_FOUND)
+            list(APPEND imported_targets_to_link umpire)
+        endif()
+
+        # TODO device link raja in rajaify branch
 
       source_objects(BINARY_DIR ${binary_dir}
                      SOURCES  ${ascent_device_sources}
