@@ -197,13 +197,13 @@ These tables provides an inventory of Ascent's features and the programming and 
 
    * - VTK-h Particle Advection 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
      - VTK-h and VTK-m APIs
      - `VTKHParticleAdvection <https://github.com/Alpine-DAV/ascent/blob/deef65e39f3b2792a40281439c4f614488349c0b/src/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L387>`_
 
    * - VTK-h Streamline 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
      - VTK-h and VTK-m APIs
      - `VTKHStreamline <https://github.com/Alpine-DAV/ascent/blob/deef65e39f3b2792a40281439c4f614488349c0b/src/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L403>`_
 
@@ -242,4 +242,35 @@ These tables provides an inventory of Ascent's features and the programming and 
      - VTK-m (Serial, OpenMP, Cuda, Kokkos)
      - VTK-h and VTK-m APIs
      - `VTKHGhostStripper <https://github.com/Alpine-DAV/ascent/blob/deef65e39f3b2792a40281439c4f614488349c0b/src/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L112>`_
+
+   * - VTK-h Mesh Renderer 
+     - Extract
+     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and VTK-m APIs
+     - `VTKHMeshRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/MeshRenderer.hpp#L9>`_
+
+   * - VTK-h Volume Renderer 
+     - Extract
+     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and VTK-m APIs
+     - `VTKHVolumeRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/VolumeRenderer.hpp#L15>`_
+
+   * - VTK-h Scalar Renderer 
+     - Extract
+     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and VTK-m APIs
+     - `VTKHScalarRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/ScalarRenderer.hpp#L16>`_
+
+   * - VTK-h Point Renderer 
+     - Extract
+     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and VTK-m APIs
+     - `VTKHPointRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/PointRenderer.hpp#L9>`_
+
+   * - VTK-h Line Renderer 
+     - Extract
+     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and VTK-m APIs
+     - `VTKHLineRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/LineRenderer.hpp#L9>`_
+
 
