@@ -37,6 +37,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added option to turn of world annotations
 - Added FIDES Support
 - Added Spack and Uberenv support for building on Perlmutter
+- Added Feature Map in the docs. Detailing Devil Ray and VTKh features. 
 
 ### Fixed
 - Fixed a bug where ascent timings files were written out twice
