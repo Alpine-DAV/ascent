@@ -54,7 +54,7 @@ VTKH_VTKM_LIB_FLAGS = -L $(VTKH_VTKM_DIR)/lib \
 #########################
 # VTKH Include Flags
 #########################
-VTKH_INCLUDE_FLAGS = -I $(VTKH_DIR)/include/ $(VTKM_VTKM_INCLUDE_FLAGS)
+VTKH_INCLUDE_FLAGS = -I $(VTKH_DIR)/include/ascent/ $(VTKM_VTKM_INCLUDE_FLAGS)
 
 
 ####################
