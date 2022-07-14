@@ -168,7 +168,7 @@ if(NOT ADIOS2_DIR)
 endif()
 
 if(ADIOS2_DIR)
-    if(NOT EXISTS ${ADIOS2_DIR}/lib/cmake/adios2)
+    if(NOT EXISTS ${ADIOS2_DIR})
       message(FATAL_ERROR "Could not find ADIOS2 CMake include info (${ADIOS2_DIR}/lib/cmake/adios2)")
     endif()
 
@@ -177,7 +177,7 @@ if(ADIOS2_DIR)
     ###############################################################################
     find_dependency(ADIOS2 REQUIRED
                     NO_DEFAULT_PATH
-                    PATHS ${ADIOS2_DIR}/lib/cmake/adios2)
+                    PATHS ${ADIOS2_DIR})
 endif()
 
 ###############################################################################
