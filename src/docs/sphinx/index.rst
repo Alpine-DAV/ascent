@@ -56,6 +56,12 @@ Ascent focuses on ease of use and reducing integration burden for simulation cod
 - It does not require GUI or system-graphics libraries
 - It includes integration examples that demonstrate how to use Ascent inside existing HPC-simulation proxy applications
 
+The Great Amalgamation
+--------------------------
+The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. 
+This reog was done to simplify the development and support of these tightly coupled capabilities.
+Ascent 0.9.0 will be the first release that only uses these versions. 
+
 
 Getting Started
 ----------------

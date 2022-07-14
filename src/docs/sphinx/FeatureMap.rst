@@ -4,6 +4,8 @@
 .. # other details. No copyright assignment is required to contribute to Ascent.
 .. ############################################################################
 
+.. _feature_map:
+
 Ascent Feature Map
 ====================
 
