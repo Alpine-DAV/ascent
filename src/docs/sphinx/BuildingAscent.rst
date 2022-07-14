@@ -47,46 +47,64 @@ that are not addressed here, please ask questions using our github `issue tracke
 Build Dependencies
 ------------------
 
-..  image:: images/AscentDependencies.png
-    :width: 85%
-    :align: center
+Ascent requires Conduit and provides optional features that require TPLS: 
 
-Ascent
-^^^^^^^^
+.. list-table::
+   :header-rows: 1
+   
+   * - Feature
+     - Required TPLS
 
-  * Conduit
-  * One or more runtimes
+   * - VTK-h Rendering and Filtering Pipelines
+     - VTk-m (Serial, Kokkos, OpenMP, CUDA)
 
-For Ascent, the Flow runtime is builtin, but for visualization functionality (filters and rendering), the VTK-h runtime is needed.
+   * - MFEM High-Order to Low-Order Refinement for VTK-h Pipelines
+     - MFEM
 
-Conduit (Required)
-""""""""""""""""""
-  * MPI
-  * Python + NumPy (Optional)
-  * HDF5 (Optional)
-  * Fortran compiler (Optional)
+   * - Devil Ray High-Order Ray Tracer Pipelines
+     - RAJA (Serial, OpenMP, CUDA, HIP), Umpire, MFEM
 
-VTK-h (Optional)
-""""""""""""""""
 
-* VTK-h:
-
-    * VTK-m:
-
-      * OpenMP (Optional)
-      * CUDA 7.5+ (Optional)
-      * MPI (Optional)
-
-.. note::
-
-    When building VTK-m for use with VTK-h, VTK-m must be configured with rendering on, among other options.
-    See the VTK-h spack package for details.
-
-MFEM (Optional)
-"""""""""""""""
-  * MPI
-  * Metis
-  * Hypre
+.. ..  image:: images/AscentDependencies.png
+..     :width: 85%
+..     :align: center
+..
+.. Ascent
+.. ^^^^^^^^
+..
+..   * Conduit
+..   * One or more runtimes
+..
+.. For Ascent, the Flow runtime is builtin, but for visualization functionality (filters and rendering), the VTK-h runtime is needed.
+..
+.. Conduit (Required)
+.. """"""""""""""""""
+..   * MPI
+..   * Python + NumPy (Optional)
+..   * HDF5 (Optional)
+..   * Fortran compiler (Optional)
+..
+.. VTK-h (Optional)
+.. """"""""""""""""
+..
+.. * VTK-h:
+..
+..     * VTK-m:
+..
+..       * OpenMP (Optional)
+..       * CUDA 7.5+ (Optional)
+..       * MPI (Optional)
+..
+.. .. note::
+..
+..     When building VTK-m for use with VTK-h, VTK-m must be configured with rendering on, among other options.
+..     See the VTK-h spack package for details.
+..
+.. MFEM (Optional)
+.. """""""""""""""
+..   * MPI
+..   * Metis
+..   * Hypre
 
 Getting Started
 ---------------
@@ -139,39 +157,143 @@ Build Options
 
 Ascent's build system supports the following CMake options:
 
-* **BUILD_SHARED_LIBS** - Controls if shared (ON) or static (OFF) libraries are built. *(default = ON)*
-* **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)*
+Main Ascent Options
+^^^^^^^^^^^^^^^^^^^^^^
 
-* **ENABLE_DOCS** - Controls if the Ascent documentation is built (when sphinx and doxygen are found ). *(default = ON)*
+.. list-table::
+   :header-rows: 1
 
-* **ENABLE_FORTRAN** - Controls if Fortran components of Ascent are built. This includes the Fortran language bindings and Cloverleaf3D . *(default = ON)*
-* **ENABLE_PYTHON** - Controls if the ascent python module and related tests are built. *(default = OFF)*
+   * - Option
+     - Description
+     - Default
 
- The Ascent python module will build for both Python 2 and Python 3. To select a specific Python, set the CMake variable PYTHON_EXECUTABLE to path of the desired python binary. The ascent python module requires the Conduit python module.
+   * - ``BUILD_SHARED_LIBS``
+     - Controls if shared (ON) or static (OFF) libraries are built.
+     - *(default = ON)*
 
-* **ENABLE_OPENMP** - Controls if the proxy-apps are configured with OpenMP. *(default = OFF)*
-* **ENABLE_MPI** - Controls if parallel versions of proxy-apps and Ascent are built. *(default = ON)*
+   * - ``ENABLE_FORTRAN``
+     - Controls if Fortran components of Ascent are built. This includes the Fortran language bindings and Cloverleaf3D.
+     - *(default = ON)*
+
+   * - ``ENABLE_PYTHON``
+     - Controls if the Ascent Python module and related tests are built.
+     - *(default = OFF)*
+
+   * - ``ENABLE_MPI``
+     - Controls if MPI parallel versions of Ascent and proxy-apps are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_SERIAL``
+     - Controls if Serial (non-MPI) version of Ascent and proxy-apps are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_CUDA``
+     - Controls if Ascent uses CUDA.
+     - *(default = OFF)*
+
+   * - ``ENABLE_OPENMP``
+     - Controls if the proxy-apps and Ascent use with OpenMP. 
+     - *(default = OFF)*
+
+   * - ``ENABLE_DRAY``
+     - Controls if Devil Ray is built. Requires RAJA + Umpire. (Devil Ray is now developed as part of Ascent)
+     - *(default = OFF)*
+
+   * - ``ENABLE_APCOMP``
+     - Controls if AP Compositor is built. (AP Compositor is now developed as part of Ascent)
+     - *(default = OFF)*
+
+   * - ``ENABLE_VTKH``
+     - Controls if AP Compositor is built. Requires VTK-m. (AP Compositor is now developed as part of Ascent)
+     - *(default = OFF)*
+
+   * - ``ENABLE_EXAMPLES``
+     - Controls if Ascent examples are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_UTILS``
+     - Controls if Ascent examples are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_TESTS``
+     - Controls if utilities are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_LOGGING``
+     - Controls if data logging is built.
+     - *(default = ON)*
+
+   * - ``ENABLE_DOCS``
+     - Controls if the Ascent documentation is built (when sphinx is available).
+     - *(default = ON)*
+
+   * - (Devil Ray Specific Options)
+     - 
+     - 
+
+   * - ``DRAY_ENABLE_STATS``
+     - Controls if Devil Ray Status support is built.
+     - *(default = ON)*
+
+   * - ``DRAY_USE_DOUBLE_PRECISION``
+     - Controls if Devil Ray is built with 64-bit floats
+     - *(default = OFF, use 32-bit precision floats)*
 
 
- We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
+TODO TPLS
+^^^^^^^^^^^^^^^^^^^^^^
 
- To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
+.. list-table::
+   :header-rows: 1
 
-.. warning::
-  Starting in CMake 3.10, the FindMPI **MPIEXEC** variable was changed to **MPIEXEC_EXECUTABLE**. FindMPI will still set **MPIEXEC**, but any attempt to change it before calling FindMPI with your own cached value of **MPIEXEC** will not survive, so you need to set **MPIEXEC_EXECUTABLE** `[reference] <https://cmake.org/cmake/help/v3.10/module/FindMPI.html>`_.
+   * - Name
+     - Description
+
+   * - ``CONDUIT_DIR``
+     - Path to an Conduit install *(required)*.
+
+   * - ``UMPIRE_DIR``
+     - Path to an Umpire install *(optional)*.
+
+   * - ``RAJA_DIR``
+     - Path to an RAJA install *(optional)*.
+
+   * - ``KOKKOS_DIR``
+     - Path to an Kokkos install *(optional)*.
+
+   * - ``OCCA_DIR``
+     - Path to an OCCA install *(optional)*.
+
+   * - ``VTKM_DIR``
+     - Path to an VTK-m install *(optional)*.
+
+   * - ``ADIOS2_DIR``
+     - Path to an ADIOS 2 install *(optional)*.
+
+   * - ``FIDES_DIR``
+     - Path to a FIDES install *(optional)*.
+
+   * - ``BABELFLOW_DIR``
+     - Path to a BabelFlow install *(optional)*.
+
+   * - ``BLT_SOURCE_DIR``
+     - Path to a BLT install *(default = "blt").
 
 
-* **CONDUIT_DIR** - Path to an Conduit install *(required)*.
+TODO Build Notes
+^^^^^^^^^^^^^^^^^^^^^^
 
-* **VTKM_DIR** - Path to an VTK-m install *(optional)*.
+.. - Python
+..   The Ascent python module builds for both Python 2 and Python 3. To select a specific Python, set the CMake variable PYTHON_EXECUTABLE to path of the desired python binary. The ascent python module requires the Conduit python module.
+..
+.. - MPI
+..   We use CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
+..
+..   To run the mpi unit tests, you may also need change the CMake variables **MPIEXEC_EXECUTABLE** and **MPIEXEC_NUMPROC_FLAG**, so you can use a different launcher, such as srun.
+..
+.. - BLT
+.. Ascent uses BLT (https://github.com/llnl/blt) as the foundation of its cmake-based build system. It is included as a submodule in Ascent's git repo, and also available in our release tarballs. The ``BLT_SOURCE_DIR`` option defaults to ``src/blt``, where we expect the blt submodule. The most compelling reason to override is to share a single instance of BLT across multiple projects.
 
-* **MFEM_DIR** - Path to a MFEM install *(optional)*.
-
-* **ADIOS_DIR** - Path to a ADIOS install *(optional)*.
-
-* **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
-
- Defaults to "blt", where we expect the blt submodule. The most compelling reason to override is to share a single instance of BLT across multiple projects.
 
 Host Config Files
 -----------------
@@ -259,7 +381,7 @@ Default invocation on OSX:
                                       --spack-config-dir scripts/uberenv_configs/spack_configs/darwin/
 
 
-The uberenv `--install` installs conduit\@master (not just the development dependencies):
+The uberenv `--install` installs ascent\@develop (not just the development dependencies):
 
 .. code:: bash
 
