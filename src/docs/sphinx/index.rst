@@ -59,8 +59,9 @@ Ascent focuses on ease of use and reducing integration burden for simulation cod
 The Great Amalgamation
 --------------------------
 The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. 
-This reog was done to simplify the development and support of these tightly coupled capabilities.
-Ascent 0.9.0 will be the first release that only uses these versions. 
+These external repos for these projects are archived.
+This reorg simplifies the development and support of these tightly coupled capabilities.
+Ascent 0.9.0 will be the first release using these internal versions.
 
 
 Getting Started
