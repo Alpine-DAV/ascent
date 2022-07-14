@@ -158,7 +158,6 @@ ifeq ($(ASCENT_VTKM_DIR),)
 else
     ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
                             -lvtkm_rendering-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_core-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter_clean_grid-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter_contour-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter_connected_components-$(ASCENT_VTKM_VERSION) \
@@ -171,6 +170,7 @@ else
                             -lvtkm_filter_mesh_info-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter_vector_analysis-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter_extra-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter_core-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_source-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_io-$(ASCENT_VTKM_VERSION) \
