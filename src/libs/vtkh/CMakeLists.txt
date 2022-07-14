@@ -65,7 +65,7 @@ set(vtkh_core_sources
 
 # always install headers
 install(FILES ${vtkh_core_headers}
-       DESTINATION include/vtkh)
+       DESTINATION include/ascent/vtkh)
 
 ###############################################################################
 if (ENABLE_SERIAL)
