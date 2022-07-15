@@ -130,7 +130,7 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
   -DVTKm_USE_DOUBLE_PRECISION=ON \
   -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
   -DVTKm_ENABLE_MPI=OFF \
-  -VTKm_ENABLE_OPENMP=${enable_openmp}\
+  -DVTKm_ENABLE_OPENMP=${enable_openmp}\
   -DVTKm_ENABLE_RENDERING=ON \
   -DVTKm_ENABLE_TESTING=OFF \
   -DBUILD_TESTING=OFF \
