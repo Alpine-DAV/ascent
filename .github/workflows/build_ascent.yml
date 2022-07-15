@@ -37,6 +37,10 @@ jobs:
                                 mpich \
                                 libmpich-dev \
                                 cmake
+    - name: Checkout
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
     - name: Build TPLs
       run: |
         env enable_mpi=ON \
@@ -45,9 +49,6 @@ jobs:
             enable_verbose=OFF \
             build_jobs=2 \
             ./scripts/build_ascent/build_ascent.sh
-    - uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
     - name: Build Ascent
       run: |
         echo "**** Configuring Ascent"
