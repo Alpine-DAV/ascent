@@ -75,42 +75,6 @@ Ascent requires Conduit and provides optional features that depend on third-part
 For a detailed account of features and what underpin them see :ref:`feature_map`.
 
 
-.. Ascent
-.. ^^^^^^^^
-..
-..   * Conduit
-..   * One or more runtimes
-..
-.. For Ascent, the Flow runtime is builtin, but for visualization functionality (filters and rendering), the VTK-h runtime is needed.
-..
-.. Conduit (Required)
-.. """"""""""""""""""
-..   * MPI
-..   * Python + NumPy (Optional)
-..   * HDF5 (Optional)
-..   * Fortran compiler (Optional)
-..
-.. VTK-h (Optional)
-.. """"""""""""""""
-..
-.. * VTK-h:
-..
-..     * VTK-m:
-..
-..       * OpenMP (Optional)
-..       * CUDA 7.5+ (Optional)
-..       * MPI (Optional)
-..
-.. .. note::
-..
-..     When building VTK-m for use with VTK-h, VTK-m must be configured with rendering on, among other options.
-..     See the VTK-h spack package for details.
-..
-.. MFEM (Optional)
-.. """""""""""""""
-..   * MPI
-..   * Metis
-..   * Hypre
 
 Getting Started
 ---------------
