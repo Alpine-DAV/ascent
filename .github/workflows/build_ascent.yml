@@ -1,0 +1,43 @@
+name: build_ascent
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_pip_basic:
+    name: Ubuntu Build Ascent
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Deps
+      run: |
+           sudo apt-get update
+           sudo apt-get install binutils \
+                                gcc \
+                                g++ \
+                                gfortran \
+                                python \
+                                perl \
+                                git \
+                                git-lfs \
+                                curl \
+                                wget \
+                                tar \
+                                unzip \
+                                build-essential \
+                                libncurses-dev \
+                                libssl-dev \
+                                libblas-dev \
+                                liblapack-dev \
+                                zlib1g-dev \
+                                libgdbm-dev \
+                                libreadline-dev \
+                                libsqlite3-dev \
+                                libbz2-dev \
+                                mpich \
+                                libmpich-dev \
+                                cmake
+    - name: Build TPLs and Ascent
+      run: env enable_mpi=ON ./scripts/build_ascent/build_ascent.sh
+
+
