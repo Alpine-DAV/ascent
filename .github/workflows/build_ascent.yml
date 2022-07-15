@@ -44,6 +44,7 @@ jobs:
     - name: Build TPLs
       run: |
         env enable_mpi=ON \
+            enable_fortran=ON \
             enable_tests=OFF \
             build_ascent=OFF \
             enable_verbose=OFF \

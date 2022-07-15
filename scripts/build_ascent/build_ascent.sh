@@ -169,6 +169,7 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DBUILD_SHARED_LIBS=ON\
   -DENABLE_OPENMP=${enable_openmp} \
   -DENABLE_TESTS=${enable_tests} \
+  -DENABLE_EXAMPLES=${enable_tests} \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
 
 echo "**** Building RAJA ${raja_version}"
