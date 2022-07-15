@@ -37,11 +37,10 @@ jobs:
                                 mpich \
                                 libmpich-dev \
                                 cmake
-    - name: Checkout
+    - name: Build TPLs
     - uses: actions/checkout@v2
       with:
         submodules: recursive
-    - name: Build TPLs
       run: |
         env enable_mpi=ON \
             enable_tests=OFF \
