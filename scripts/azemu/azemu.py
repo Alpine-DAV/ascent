@@ -15,6 +15,7 @@ locally using docker.
 import yaml
 import os
 import stat
+import subprocess
 
 
 class CTX:
@@ -95,6 +96,22 @@ class CTX:
             res += "# [[{0}]]\n".format(self.name)
         res += self.txt
         return res
+
+
+def shexe(cmd,ret_output=False,echo = True):
+    """ Helper for executing shell commands. """
+    if echo:
+        print("[exe: {}]".format(cmd))
+    if ret_output:
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+        res = p.communicate()[0]
+        res = res.decode('utf8')
+        return p.returncode,res
+    else:
+        return subprocess.call(cmd,shell=True)
 
 
 def azure_var_sub(txt, azure_vars):
@@ -238,6 +255,18 @@ def proc_steps(steps, config, ctx):
             else:
                 ctx.print_esc("STEP not SUPPORTED")
 
+def proc_config(config):
+    if config["repo_branch"] == "<CURRENT>":
+        rcode,rout = shexe("git rev-parse --abbrev-ref HEAD",ret_output=True,echo=True)
+        if rcode == 0:
+            config["repo_branch"] = rout.strip()
+        else:
+            print("[error finding current git branch]")
+            sys.exit(-1)
+    return config
+
+
+
 def main():
     azurep_yaml_file = "azure-pipelines.yml"
     config_yaml_file = "azemu-config.yaml"
@@ -247,6 +276,7 @@ def main():
     if os.path.isfile(root):
         root   = yaml.load(open(root), Loader=yaml.Loader)
     config = yaml.load(open(config_yaml_file), Loader=yaml.Loader)
+    config = proc_config(config)
     proc_root(root, config)
 
 

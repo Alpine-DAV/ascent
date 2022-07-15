@@ -409,9 +409,18 @@ if (ENABLE_SERIAL)
                     vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
-                    vtkm_filter_common
+                    vtkm_filter_core
+                    vtkm_filter_clean_grid
                     vtkm_filter_contour
-                    vtkm_filter_gradient
+                    vtkm_filter_connected_components
+                    vtkm_filter_density_estimate
+                    vtkm_filter_entity_extraction
+                    vtkm_filter_field_conversion
+                    vtkm_filter_field_transform
+                    vtkm_filter_geometry_refinement
+                    vtkm_filter_image_processing
+                    vtkm_filter_mesh_info
+                    vtkm_filter_vector_analysis
                     vtkm_filter_extra
                     vtkm_worklet
                     vtkm_source
@@ -419,14 +428,11 @@ if (ENABLE_SERIAL)
                     vtkm_lodepng
                     )
 
-        if(ENABLE_TESTS)
-            if (NOT TARGET vtkm_cont_testing)
-                message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
-            endif ()
-            
-            list(APPEND imported_targets_to_link
-                        vtkm_cont_testing)
+        if(UMPIRE_FOUND)
+            list(APPEND imported_targets_to_link umpire)
         endif()
+
+        # TODO device link raja in rajaify branch
 
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES  ${ascent_device_sources}
@@ -570,9 +576,18 @@ if(MPI_FOUND)
       list(APPEND imported_targets_to_link
                   vtkm_io
                   vtkm_rendering
-                  vtkm_filter_common
+                  vtkm_filter_core
+                  vtkm_filter_clean_grid
                   vtkm_filter_contour
-                  vtkm_filter_gradient
+                  vtkm_filter_connected_components
+                  vtkm_filter_density_estimate
+                  vtkm_filter_entity_extraction
+                  vtkm_filter_field_conversion
+                  vtkm_filter_field_transform
+                  vtkm_filter_geometry_refinement
+                  vtkm_filter_image_processing
+                  vtkm_filter_mesh_info
+                  vtkm_filter_vector_analysis
                   vtkm_filter_extra
                   vtkm_worklet
                   vtkm_source
@@ -588,14 +603,11 @@ if(MPI_FOUND)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
 
-      if(ENABLE_TESTS)
-          if (NOT TARGET vtkm_cont_testing)
-              message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
-          endif ()
-          
-          list(APPEND imported_targets_to_link
-                      vtkm_cont_testing)
-      endif()
+        if(UMPIRE_FOUND)
+            list(APPEND imported_targets_to_link umpire)
+        endif()
+
+        # TODO device link raja in rajaify branch
 
       source_objects(BINARY_DIR ${binary_dir}
                      SOURCES  ${ascent_device_sources}

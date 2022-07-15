@@ -1,5 +1,5 @@
 name: ascent
 repo_url:  https://github.com/Alpine-DAV/ascent.git
-# to do mod azemu to find current branch via git cmds
-repo_branch: task/2022_06_amalgamate_vtk-h
+# This tells azemu to find current branch via a git cmd
+repo_branch: <CURRENT>
 default_container:  alpinedav/ascent-ci:ubuntu-18-devel

@@ -406,7 +406,7 @@ endif()
 macro(install_headers_with_directory header_list)
   foreach(header ${${header_list}})
     string(REGEX MATCH "(.*)[/\\]" DIR ${header})
-    install(FILES ${header} DESTINATION include/dray/${DIR})
+    install(FILES ${header} DESTINATION include/ascent/dray/${DIR})
   endforeach(header)
 endmacro(install_headers_with_directory)
 

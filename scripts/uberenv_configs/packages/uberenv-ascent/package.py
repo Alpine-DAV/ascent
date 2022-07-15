@@ -22,11 +22,12 @@ class UberenvAscent(Ascent):
     variant("python",
             default=True,
             description="Build Python Support")
-
+    #
+    # NOTE: THIS IS OFF DUE TO SPACK FETCH ISSUE WITH SPHINX
     # default to building docs when using uberenv
-    variant("doc",
-            default=True,
-            description="Build deps needed to build Docs")
+    #variant("doc",
+    #        default=True,
+    #        description="Build deps needed to build Docs")
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
