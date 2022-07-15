@@ -58,7 +58,7 @@ Resulting image:
 
 .. image:: examples/tout_vector_component100.png
 
-An example of using the log filter.
+An example of using the natural log filter.
 ------------------------------------
 
 YAML actions:
@@ -91,7 +91,7 @@ Resulting image:
 
 .. image:: examples/tout_render_2d_default_runtime100.png
 
-An example of using the log filter.
+An example of using the natural log filter.
 ------------------------------------
 
 YAML actions:
@@ -300,7 +300,7 @@ Resulting image:
 
 .. image:: examples/tout_vec_mag100.png
 
-An example of using the log filter and clamping the min value. This can help when there are negative values present.
+An example of using the natural log filter and clamping the min value. This can help when there are negative values present.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -310,6 +310,28 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_log_field_clamp100.png
+
+An example of using a contour filter, then the the log base 10 filter that clamps the min value. This can help when there are negative values present. 
+---------------------------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log10_field_clamp.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log10_field_clamp.png
+
+An example of using a contour filter, then the the log base 2 filter that clamps the min value. This can help when there are negative values present. 
+---------------------------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log2_field_clamp.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log2_field_clamp.png
 
 An example of the slice filter with a single plane (off-axis).
 ---------------------------------------------------------------
