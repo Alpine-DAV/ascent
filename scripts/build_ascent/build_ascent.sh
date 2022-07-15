@@ -3,7 +3,7 @@
 ##############################################################################
 # Demonstrates how to manually build Ascent and its dependencies, including:
 #
-#  hdf5, conduit, vtk-m, raja, and umpire
+#  hdf5, conduit, vtk-m, mfem, raja, and umpire
 #
 # usage example:
 #   env enable_mpi=ON enable_openmp=ON ./build_ascent.sh
@@ -36,9 +36,11 @@ build_conduit="${build_conduit:=true}"
 build_vtkm="${build_vtkm:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
+build_mfem="${build_mfem:=true}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
+
 
 root_dir=$(pwd)
 
@@ -211,6 +213,38 @@ cmake --install ${umpire_build_dir}
 
 fi # build_umpire
 
+################
+# MFEM
+################
+mfem_version=4.4
+mfem_src_dir=${root_dir}/mfem-${mfem_version}
+mfem_build_dir=${root_dir}/build/mfem-${mfem_version}
+mfem_install_dir=${root_dir}/install/mfem-${mfem_version}/
+mfem_tarball=mfem-${mfem_version}.tar.gz
+
+if ${build_mfem}; then
+if [ ! -d ${mfem_src_dir} ]; then
+  echo "**** Downloading ${mfem_tarball}"
+  curl -L https://github.com/mfem/mfem/archive/refs/tags/v4.4.tar.gz -o ${mfem_tarball}
+  tar -xzf ${mfem_tarball}
+fi
+
+echo "**** Configuring MFEM ${mfem_version}"
+cmake -S ${mfem_src_dir} -B ${mfem_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_SHARED_LIBS=ON \
+  -DMFEM_USE_CONDUIT=ON \
+  -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
+  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir}
+
+echo "**** Building MFEM ${vtkm_version}"
+cmake --build ${mfem_build_dir} -j${build_jobs}
+echo "**** Installing MFEM ${mfem_version}"
+cmake --install ${mfem_build_dir}
+
+fi # build_mfem
+
 
 ################
 # Ascent
@@ -241,6 +275,7 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
   -DENABLE_VTKH=ON \
   -DRAJA_DIR=${raja_install_dir} \
   -DUMPIRE_DIR=${umpire_install_dir} \
+  -DMFEM_DIR=${mfem_install_dir} \
   -DENABLE_APCOMP=ON \
   -DENABLE_DRAY=ON
 
