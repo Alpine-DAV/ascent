@@ -27,6 +27,7 @@ enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
 enable_mpi="${enable_mpi:=OFF}"
 enable_tests="${enable_tests:=ON}"
+enable_verbose="${enable_verbose:=ON}"
 build_jobs="${build_jobs:=6}"
 
 # tpl controls
@@ -37,7 +38,7 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 
 # ascent options
-build_ascent="${build_camp:=true}"
+build_ascent="${build_ascent:=true}"
 
 root_dir=$(pwd)
 
@@ -59,7 +60,7 @@ fi
 
 echo "**** Configuring HDF5 ${hdf5_version}"
 cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir}
 
@@ -88,7 +89,7 @@ fi
 
 echo "**** Configuring Conduit ${conduit_version}"
 cmake -S ${conduit_src_dir} -B ${conduit_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=${conduit_install_dir} \
   -DENABLE_FORTRAN=${enable_fortran} \
@@ -122,7 +123,7 @@ fi
 
 echo "**** Configuring VTK-m ${vtkm_version}"
 cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF\
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON\
   -DVTKm_NO_DEPRECATED_VIRTUAL=ON \
@@ -163,7 +164,7 @@ fi
 
 echo "**** Configuring RAJA ${raja_version}"
 cmake -S ${raja_src_dir} -B ${raja_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF\
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON\
   -DENABLE_OPENMP=${enable_openmp} \
@@ -195,7 +196,7 @@ fi
 
 echo "**** Configuring Umpire ${umpire_version}"
 cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF\
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
   -DENABLE_OPENMP=${enable_openmp} \
@@ -226,7 +227,7 @@ fi
 
 echo "**** Configuring Ascent"
 cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=${ascent_install_dir} \
   -DENABLE_MPI=${enable_mpi} \
