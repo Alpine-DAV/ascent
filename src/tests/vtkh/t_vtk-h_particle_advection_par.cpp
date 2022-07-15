@@ -29,7 +29,7 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
     auto cs = currentDomain.GetCellSet();
     if (isSL)
     {
-      auto cellSet = cs.Cast<vtkm::cont::CellSetExplicit<>>();
+      auto cellSet = cs.AsCellSet<vtkm::cont::CellSetExplicit<>>();
       //Ensure that streamlines took <= to the max number of steps
       for(int j = 0; j < cellSet.GetNumberOfCells(); j++)
       {

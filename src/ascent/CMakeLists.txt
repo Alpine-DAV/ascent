@@ -409,9 +409,18 @@ if (ENABLE_SERIAL)
                     vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
-                    vtkm_filter_common
+                    vtkm_filter_core
+                    vtkm_filter_clean_grid
                     vtkm_filter_contour
-                    vtkm_filter_gradient
+                    vtkm_filter_connected_components
+                    vtkm_filter_density_estimate
+                    vtkm_filter_entity_extraction
+                    vtkm_filter_field_conversion
+                    vtkm_filter_field_transform
+                    vtkm_filter_geometry_refinement
+                    vtkm_filter_image_processing
+                    vtkm_filter_mesh_info
+                    vtkm_filter_vector_analysis
                     vtkm_filter_extra
                     vtkm_worklet
                     vtkm_source
@@ -567,9 +576,18 @@ if(MPI_FOUND)
       list(APPEND imported_targets_to_link
                   vtkm_io
                   vtkm_rendering
-                  vtkm_filter_common
+                  vtkm_filter_core
+                  vtkm_filter_clean_grid
                   vtkm_filter_contour
-                  vtkm_filter_gradient
+                  vtkm_filter_connected_components
+                  vtkm_filter_density_estimate
+                  vtkm_filter_entity_extraction
+                  vtkm_filter_field_conversion
+                  vtkm_filter_field_transform
+                  vtkm_filter_geometry_refinement
+                  vtkm_filter_image_processing
+                  vtkm_filter_mesh_info
+                  vtkm_filter_vector_analysis
                   vtkm_filter_extra
                   vtkm_worklet
                   vtkm_source

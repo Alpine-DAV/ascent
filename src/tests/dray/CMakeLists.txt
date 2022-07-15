@@ -45,7 +45,7 @@ set(BASIC_TESTS t_dray_smoke
                 t_dray_scalar_renderer
                 t_dray_volume_render
                 t_dray_volume_partials
-                t_dray_face_render
+                #t_dray_face_render
                 t_dray_reflect
                 t_dray_subset
                 t_dray_elem_attr

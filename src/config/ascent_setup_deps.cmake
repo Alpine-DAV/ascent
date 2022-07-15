@@ -279,3 +279,32 @@ endif()
 
 
 
+###############################################################################
+# Setup GenTen
+###############################################################################
+if(NOT KOKKOS_DIR)
+    set(KOKKOS_DIR ${ASCENT_KOKKOS_DIR})
+endif()
+
+if(EXISTS ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
+    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
+endif()
+
+if(EXISTS ${KOKKOS_DIR}/lib/cmake/Kokkos/)
+    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib/cmake/Kokkos/)
+endif()
+
+
+if(KOKKOS_DIR)
+    if(NOT EXISTS ${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)
+        MESSAGE(FATAL_ERROR "Could not find Kokkos CMake include file (${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(Kokkos REQUIRED
+                    NO_DEFAULT_PATH
+		    PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
+endif()
+

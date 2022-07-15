@@ -43,10 +43,14 @@ class Ascent(CMakePackage, CudaPackage):
             branch='develop',
             submodules=True)
 
-    version('0.7.1',
-            tag='v0.7.1',
+    version('0.8.0',
+            tag='v0.8.0',
             submodules=True,
             preferred=True)
+
+    version('0.7.1',
+            tag='v0.7.1',
+            submodules=True)
 
     version('0.7.0',
             tag='v0.7.0',
@@ -140,16 +144,36 @@ class Ascent(CMakePackage, CudaPackage):
 
     depends_on("raja", when="+raja")
     depends_on("umpire", when="+umpire")
+    
+    # ascent newer than 0.8.0 uses internal vtk-h
+    # use vtk-m 1.8 for newer than ascent 0.8.0
+    depends_on("vtk-m@:1.8", when="@0.8.1:")
 
-    depends_on("vtk-h",      when="+vtkh")
-    depends_on("vtk-h~openmp",      when="+vtkh~openmp")
-    depends_on("vtk-h+cuda+openmp", when="+vtkh+cuda+openmp")
-    depends_on("vtk-h+cuda~openmp", when="+vtkh+cuda~openmp")
+    depends_on("vtk-m~tbb", when="@0.8.1: +vtkh")
+    depends_on("vtk-m+openmp", when="@0.8.1: +vtkh+openmp")
+    depends_on("vtk-m~openmp", when="@0.8.1: +vtkh~openmp")
 
-    depends_on("vtk-h~shared",             when="~shared+vtkh")
-    depends_on("vtk-h~shared~openmp",      when="~shared+vtkh~openmp")
-    depends_on("vtk-h~shared+cuda",        when="~shared+vtkh+cuda")
-    depends_on("vtk-h~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
+    depends_on("vtk-m+openmp", when="@0.8.1: +vtkh+openmp")
+    depends_on("vtk-m~openmp", when="@0.8.1: +vtkh~openmp")
+
+    depends_on("vtk-m~cuda", when="@0.8.1: +vtkh~cuda")
+    depends_on("vtk-m+cuda", when="@0.8.1: +vtkh+cuda")
+    for _arch in CudaPackage.cuda_arch_values:
+        depends_on("vtk-m+cuda cuda_arch={0}".format(_arch), when="@0.8.1: +cuda+openmp cuda_arch={0}".format(_arch))
+
+    depends_on("vtk-m+fpic", when="@0.8.0: +vtkh")
+    depends_on("vtk-m~shared+fpic", when="@0.8.0: +vtkh~shared")
+
+    # use external vtk-h for 0.8.0 and older
+    depends_on("vtk-h",      when="@:0.8.0 +vtkh")
+    depends_on("vtk-h~openmp",      when="@:0.8.0 +vtkh~openmp")
+    depends_on("vtk-h+cuda+openmp", when="@:0.8.0 +vtkh+cuda+openmp")
+    depends_on("vtk-h+cuda~openmp", when="@:0.8.0 +vtkh+cuda~openmp")
+
+    depends_on("vtk-h~shared",             when="@:0.8.0 ~shared+vtkh")
+    depends_on("vtk-h~shared~openmp",      when="@:0.8.0 ~shared+vtkh~openmp")
+    depends_on("vtk-h~shared+cuda",        when="@:0.8.0 ~shared+vtkh+cuda")
+    depends_on("vtk-h~shared+cuda~openmp", when="@:0.8.0 ~shared+vtkh+cuda~openmp")
 
     # mfem
     depends_on("mfem~threadsafe~openmp+shared+conduit", when="+shared+mfem")
@@ -163,24 +187,25 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
     depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
 
+    # use external dray for 0.8.0 and older
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
-    depends_on("dray+mpi+shared+cuda",        when="+dray+mpi+cuda+shared")
-    depends_on("dray+mpi+shared+openmp",      when="+dray+mpi+openmp+shared")
-    depends_on("dray+mpi+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+    depends_on("dray+mpi+shared+cuda",        when="@:0.8.0 +dray+mpi+cuda+shared")
+    depends_on("dray+mpi+shared+openmp",      when="@:0.8.0 +dray+mpi+openmp+shared")
+    depends_on("dray+mpi+shared~openmp~cuda", when="@:0.8.0 +dray+mpi~openmp~cuda+shared")
 
-    depends_on("dray+mpi~shared+cuda",        when="+dray+mpi+cuda~shared")
-    depends_on("dray+mpi~shared+openmp",      when="+dray+mpi+openmp~shared")
-    depends_on("dray+mpi~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+    depends_on("dray+mpi~shared+cuda",        when="@:0.8.0 +dray+mpi+cuda~shared")
+    depends_on("dray+mpi~shared+openmp",      when="@:0.8.0 +dray+mpi+openmp~shared")
+    depends_on("dray+mpi~shared~openmp~cuda", when="@:0.8.0 +dray+mpi~openmp~cuda~shared")
 
     # devil ray variants without mpi
-    depends_on("dray~mpi+shared+cuda",        when="+dray~mpi+cuda+shared")
-    depends_on("dray~mpi+shared+openmp",      when="+dray~mpi+openmp+shared")
-    depends_on("dray~mpi+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
+    depends_on("dray~mpi+shared+cuda",        when="@:0.8.0 +dray~mpi+cuda+shared")
+    depends_on("dray~mpi+shared+openmp",      when="@:0.8.0 +dray~mpi+openmp+shared")
+    depends_on("dray~mpi+shared~openmp~cuda", when="@:0.8.0 +dray~mpi~openmp~cuda+shared")
 
-    depends_on("dray~mpi~shared+cuda",        when="+dray~mpi+cuda~shared")
-    depends_on("dray~mpi~shared+openmp",      when="+dray~mpi+openmp~shared")
-    depends_on("dray~mpi~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+    depends_on("dray~mpi~shared+cuda",        when="@:0.8.0 +dray~mpi+cuda~shared")
+    depends_on("dray~mpi~shared+openmp",      when="@:0.8.0 +dray~mpi+openmp~shared")
+    depends_on("dray~mpi~shared~openmp~cuda", when="@:0.8.0 +dray~mpi~openmp~cuda~shared")
 
     # occa defaults to +cuda so we have to explicit tell it ~cuda
     depends_on("occa~cuda",        when="+occa~cuda")
@@ -511,11 +536,14 @@ class Ascent(CMakePackage, CudaPackage):
         cfg.write("# vtk-h support \n")
 
         if "+vtkh" in spec:
+            cfg.write("# vtk-h\n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write(cmake_cache_entry("ENABLE_VTKH", "ON"))
+            else:
+                cfg.write(cmake_cache_entry("VTKH_DIR", spec['vtk-h'].prefix))
+
             cfg.write("# vtk-m from spack\n")
             cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtk-m'].prefix))
-
-            cfg.write("# vtk-h from spack\n")
-            cfg.write(cmake_cache_entry("VTKH_DIR", spec['vtk-h'].prefix))
 
             if "+cuda" in spec:
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "ON"))
@@ -525,7 +553,12 @@ class Ascent(CMakePackage, CudaPackage):
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "OFF"))
 
         else:
-            cfg.write("# vtk-h not built by spack \n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write("# vtk-h\n")
+                cfg.write(cmake_cache_entry("ENABLE_VTKH", "OFF"))
+            else:
+                cfg.write("# vtk-h not build by spack\n")
+
 
         #######################
         # MFEM
@@ -540,10 +573,20 @@ class Ascent(CMakePackage, CudaPackage):
         # Devil Ray
         #######################
         if "+dray" in spec:
-            cfg.write("# devil ray from spack \n")
-            cfg.write(cmake_cache_entry("DRAY_DIR", spec['dray'].prefix))
+            cfg.write("# devil ray\n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write(cmake_cache_entry("ENABLE_DRAY", "ON"))
+                cfg.write(cmake_cache_entry("ENABLE_APCOMP", "ON"))
+            else:
+                cfg.write("# devil ray from spack \n")
+                cfg.write(cmake_cache_entry("DRAY_DIR", spec['dray'].prefix))
         else:
-            cfg.write("# devil ray not built by spack \n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write("# devil ray\n")
+                cfg.write(cmake_cache_entry("ENABLE_DRAY", "OFF"))
+                cfg.write(cmake_cache_entry("ENABLE_APCOMP", "OFF"))
+            else:
+                cfg.write("# devil ray not build by spack\n")
 
         #######################
         # OCCA
