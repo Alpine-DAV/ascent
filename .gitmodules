@@ -6,4 +6,4 @@
 	url = https://github.com/Alpine-DAV/spack_configs.git
 [submodule "scripts/uberenv"]
 	path = scripts/uberenv
-	url = https://github.com/llnl/uberenv/
+	url = https://github.com/LLNL/uberenv.git

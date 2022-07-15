@@ -367,8 +367,7 @@ if(MPI_FOUND)
     ########################################
     # MPI Devil Ray
     ########################################
-    set(dray_mpi_deps ${dray_blt_mpi_deps}
-                      ${dray_thirdparty_libs}
+    set(dray_mpi_deps ${dray_thirdparty_libs}
                       ${ascent_blt_mpi_deps}
                       conduit::conduit_mpi apcomp_mpi)
 
@@ -407,7 +406,7 @@ endif()
 macro(install_headers_with_directory header_list)
   foreach(header ${${header_list}})
     string(REGEX MATCH "(.*)[/\\]" DIR ${header})
-    install(FILES ${header} DESTINATION include/dray/${DIR})
+    install(FILES ${header} DESTINATION include/ascent/dray/${DIR})
   endforeach(header)
 endmacro(install_headers_with_directory)
 

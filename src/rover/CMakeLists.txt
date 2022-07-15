@@ -4,7 +4,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
-set(rover_thirdparty_deps vtkh_lodepng vtkm vtkh conduit::conduit)
+set(rover_thirdparty_deps ascent_lodepng vtkm vtkh conduit::conduit)
 
 set(rover_headers
     domain.hpp
@@ -74,6 +74,7 @@ set_target_properties(rover PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions(rover PRIVATE ROVER_EXPORTS_FLAG)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty_builtin/diy2/include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../libs/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # PUBLIC keyword pushes these libs into RoverTargets.cmake
@@ -103,7 +104,7 @@ install(TARGETS rover
 if(MPI_FOUND)
 
   set(rover_mpi_thirdparty_deps ${ascent_blt_mpi_deps}
-                                vtkh_lodepng
+                                ascent_lodepng
                                 vtkm
                                 vtkh_mpi
                                 conduit::conduit

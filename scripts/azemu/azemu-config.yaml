@@ -1,4 +1,5 @@
 name: ascent
 repo_url:  https://github.com/Alpine-DAV/ascent.git
-repo_branch: task/2022_05_amalgamate_dray
+# This tells azemu to find current branch via a git cmd
+repo_branch: <CURRENT>
 default_container:  alpinedav/ascent-ci:ubuntu-18-devel

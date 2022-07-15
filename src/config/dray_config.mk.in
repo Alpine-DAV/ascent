@@ -114,7 +114,7 @@ DRAY_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(DRAY_MPI_LIBS) )
 # Devil Ray Include Flags
 #########################
 DRAY_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
-                   -I $(DRAY_DIR)/include/
+                   -I $(DRAY_DIR)/include/ascent/
 
 
 ####################

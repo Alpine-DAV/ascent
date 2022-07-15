@@ -51,8 +51,8 @@ std::string expand_family_name(const std::string name, int counter)
     }
     else
     {
-      counter = s_file_family_map[name];
-      s_file_family_map[name] = counter + 1;
+      counter = s_file_family_map[name] + 1;
+      s_file_family_map[name] = counter;
     }
   }
 

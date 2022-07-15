@@ -38,6 +38,7 @@ if(NOT ASCENT_FOUND)
 
     # advertise if vtk-h support is enabled
     set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
+
     set(ASCENT_VTKH_DIR "@VTKH_DIR@")
     set(ASCENT_VTKM_DIR "@VTKM_DIR@")
 
@@ -58,6 +59,10 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_UMPIRE_ENABLED @UMPIRE_FOUND@)
     set(ASCENT_UMPIRE_DIR "@UMPIRE_DIR@")
 
+    # advertise if camp support is enabled
+    set(ASCENT_CAMP_ENABLED @UMPIRE_FOUND@)
+    set(ASCENT_CAMP_DIR "@CAMP_DIR@")
+
     ##################################################
     # advertise if babelflow + pmt support is enabled
     set(ASCENT_BABELFLOW_ENABLED @BABELFLOW_FOUND@)
@@ -77,6 +82,10 @@ if(NOT ASCENT_FOUND)
     # advertise if genten support is enabled
     set(ASCENT_GENTEN_ENABLED @GENTEN_FOUND@)
     set(ASCENT_GENTEN_DIR "@GENTEN_DIR@")
+
+    # advertise if Kokkos support is enabled
+    set(ASCENT_KOKKOS_ENABLED @KOKKOS_FOUND@)
+    set(ASCENT_KOKKOS_DIR "@KOKKOS_DIR@")
 
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
