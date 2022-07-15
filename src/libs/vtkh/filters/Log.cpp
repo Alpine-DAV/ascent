@@ -319,8 +319,8 @@ void Log10::DoExecute()
     }
 
     vtkm::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
-    bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::CELL_SET;
-    bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::POINTS;
+    bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::Cells;
+    bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::Points;
 
     if(!is_cell_assoc && !is_point_assoc)
     {
@@ -453,8 +453,8 @@ void Log2::DoExecute()
     }
 
     vtkm::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
-    bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::CELL_SET;
-    bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::POINTS;
+    bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::Cells;
+    bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::Points;
 
     if(!is_cell_assoc && !is_point_assoc)
     {
