@@ -132,20 +132,18 @@ file was created that contains the CMake variables need for an Ascent build:
 
 
 
-I Want To Develop VTK-m and VTK-h Code
---------------------------------------
-If you want to add new features to VTK-m and VTK-h, and expose those features in 
-Ascent. In addition to the steps in the previous section, you will need to build
-and install VTK-m and VTK-h. The following information builds on the
-previous section, altering a spack-based build to instead use manually built versions
-of VTK-m and VTK-h. If all the dependencies were built manually, then this section
-can be safely skipped.
+I Want To Develop VTK-m and VTK-h Pipelines
+---------------------------------------------
+If you want to add new features to VTK-h, it source is developed inside
+the Ascent repo under `src/libs/vtkh`
 
-First follow the instructions in :ref:`building_vtkm` and
-:ref:`building_vtkh`.
+If your changes also require new features in VTK-m, you will need to build
+and install your own branch of VTK-m. 
+Follow the examples in :ref:`building_manually` to create a VTK-m build.
+
 
 Once built and installed, update the CMake configure file with the locations
-of the installs in the CMake variables ``VTKM_DIR`` and ``VTKH_DIR``, respectively.
+of the installs in the CMake variables ``VTKM_DIR``.
 
 .. note::
 
@@ -154,7 +152,7 @@ of the installs in the CMake variables ``VTKM_DIR`` and ``VTKH_DIR``, respective
     manually, consult :ref:`building` for specific build options for each
     dependency.
 
-Here are the current versions of vtkm and vtkh we build and test against:
+Here is the current version of VTK-m  we are using:
 
 .. literalinclude:: ../../../../hashes.txt
     :linenos:

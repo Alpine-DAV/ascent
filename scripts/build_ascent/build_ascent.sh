@@ -1,11 +1,19 @@
 #!/bin/bash
 
 ##############################################################################
-# Demonstrates how to manually build Ascent and its dependencies.
+# Demonstrates how to manually build Ascent and its dependencies, including:
+#
+#  hdf5, conduit, vtk-m, raja, and umpire
+#
+# usage example:
+#   env enable_mpi=ON enable_openmp=ON ./build_ascent.sh
 #
 #
-# Assumes: `cmake` is in your path
-#           Selected compilers are in path or env vars
+# Assumes: 
+#  - cmake is in your path
+#  - selected compilers are in your path or set via env vars
+#  - [when enabled] MPI and Python (+numpy and mpi4py), are in your path
+#
 ##############################################################################
 set -eu -o pipefail
 
@@ -19,8 +27,9 @@ enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
 enable_mpi="${enable_mpi:=OFF}"
 enable_tests="${enable_tests:=ON}"
+build_jobs="${build_jobs:=6}"
 
-# tpls
+# tpl controls
 build_hdf5="${build_hdf5:=true}"
 build_conduit="${build_conduit:=true}"
 build_vtkm="${build_vtkm:=true}"
@@ -29,16 +38,6 @@ build_umpire="${build_umpire:=true}"
 
 # ascent options
 build_ascent="${build_camp:=true}"
-
-build_jobs="${build_jobs:=6}"
-
-# HARDWIRE
-# build_hdf5=false
-# build_conduit=false
-# build_vtkm=false
-# build_raja=true
-# build_umpire=false
-# build_ascent=true
 
 root_dir=$(pwd)
 
@@ -131,6 +130,7 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
   -DVTKm_USE_DOUBLE_PRECISION=ON \
   -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
   -DVTKm_ENABLE_MPI=OFF \
+  -VTKm_ENABLE_OPENMP=${enable_openmp}\
   -DVTKm_ENABLE_RENDERING=ON \
   -DVTKm_ENABLE_TESTING=OFF \
   -DBUILD_TESTING=OFF \
@@ -138,7 +138,7 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
 echo "**** Building VTK-m ${vtkm_version}"
-cmake --build ${vtkm_build_dir} -j6
+cmake --build ${vtkm_build_dir} -j${build_jobs}
 echo "**** Installing VTK-m ${vtkm_version}"
 cmake --install ${vtkm_build_dir}
 
@@ -171,7 +171,7 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
 
 echo "**** Building RAJA ${raja_version}"
-cmake --build ${raja_build_dir} -j6
+cmake --build ${raja_build_dir} -j${build_jobs}
 echo "**** Installing RAJA ${raja_version}"
 cmake --install ${raja_build_dir}
 
@@ -181,7 +181,7 @@ fi # build_raja
 # Umpire
 ################
 umpire_version=6.0.0
-umpire_src_dir=${root_dir}/Umpire-${umpire_version}
+umpire_src_dir=${root_dir}/umpire-${umpire_version}
 umpire_build_dir=${root_dir}/build/umpire-${umpire_version}
 umpire_install_dir=${root_dir}/install/umpire-${umpire_version}/
 umpire_tarball=umpire-${umpire_version}.tar.gz
@@ -203,7 +203,7 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
   -DCMAKE_INSTALL_PREFIX=${umpire_install_dir}
 
 echo "**** Building Umpire ${umpire_version}"
-cmake --build ${umpire_build_dir} -j6
+cmake --build ${umpire_build_dir} -j${build_jobs}
 echo "**** Installing Umpire ${umpire_version}"
 cmake --install ${umpire_build_dir}
 
@@ -243,7 +243,7 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
   -DENABLE_DRAY=ON
 
 echo "**** Building Ascent"
-cmake --build ${ascent_build_dir} -j6
+cmake --build ${ascent_build_dir} -j${build_jobs}
 echo "**** Installing Ascent"
 cmake --install ${ascent_build_dir}
 

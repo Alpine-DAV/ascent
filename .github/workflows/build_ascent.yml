@@ -9,7 +9,7 @@ jobs:
     name: Ubuntu Build Ascent
     runs-on: ubuntu-latest
     steps:
-    - name: Install Deps
+    - name: Install System Deps
       run: |
            sudo apt-get update
            sudo apt-get install binutils \
@@ -38,6 +38,31 @@ jobs:
                                 libmpich-dev \
                                 cmake
     - uses: actions/checkout@v2
-    - name: Build TPLs and Ascent
+    - name: Build TPLs
       run: |
-        env enable_mpi=ON ./scripts/build_ascent/build_ascent.sh
+        env enable_mpi=ON enable_tests=OFF build_ascent=OFF ./scripts/build_ascent/build_ascent.sh
+    - name: Build Ascent
+      run: |
+        echo "**** Configuring Ascent"
+        cmake -S src -B build/ascent \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=install/ascent \
+              -DENABLE_MPI=ON \
+              -DENABLE_FORTRAN=ON \
+              -DENABLE_TESTS=ON \
+              -DENABLE_PYTHON=OFF \
+              -DBLT_CXX_STD=c++14 \
+              -DCONDUIT_DIR=install/conduit-v0.8.3/ \
+              -DVTKM_DIR=install/vtk-m-v1.8.0/ \
+              -DENABLE_VTKH=ON \
+              -DRAJA_DIR=install/raja-v0.14.1/ \
+              -DUMPIRE_DIR=install/umpire-6.0.0/ \
+              -DENABLE_APCOMP=ON \
+              -DENABLE_DRAY=ON
+        echo "**** Building Ascent"
+        cmake --build  build/ascent -j2
+        echo "**** Installing Ascent"
+        cmake --install  build/ascent
+
+
