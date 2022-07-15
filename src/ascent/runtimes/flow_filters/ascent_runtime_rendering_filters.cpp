@@ -1192,8 +1192,8 @@ DefaultRender::execute()
 
 	  if(render_node.has_path("dataset_bounds"))
 	  {
-	    const Node &n_dataset_bounds = render_node["dataset_bounds"];
-	    int num_bounds = n_dataset_bounds.dtype().number_of_elements();
+	    float64_accessor d_bounds = render_node["dataset_bounds"].value();
+	    int num_bounds = d_bounds.number_of_elements();
 	    
 	    if(num_bounds != 6)
             {
@@ -1204,12 +1204,12 @@ DefaultRender::execute()
 	                   " dataset_bounds when 6 are required:" <<
 			   " [xMin,xMax,yMin,yMax,zMin,zMax]");
 	    }
-	    scene_bounds.X.Min = n_dataset_bounds.as_float64_ptr()[0];
-	    scene_bounds.X.Max = n_dataset_bounds.as_float64_ptr()[1];
-	    scene_bounds.Y.Min = n_dataset_bounds.as_float64_ptr()[2];
-	    scene_bounds.Y.Max = n_dataset_bounds.as_float64_ptr()[3];
-	    scene_bounds.Z.Min = n_dataset_bounds.as_float64_ptr()[4];
-	    scene_bounds.Z.Max = n_dataset_bounds.as_float64_ptr()[5];
+	    scene_bounds.X.Min = d_bounds[0];
+	    scene_bounds.X.Max = d_bounds[1];
+	    scene_bounds.Y.Min = d_bounds[2];
+	    scene_bounds.Y.Max = d_bounds[3];
+	    scene_bounds.Z.Min = d_bounds[4];
+	    scene_bounds.Z.Max = d_bounds[5];
 	  }
 
           vtkh::Render render = detail::parse_render(render_node,
