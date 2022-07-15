@@ -38,6 +38,9 @@ jobs:
                                 libmpich-dev \
                                 cmake
     - name: Build TPLs and Ascent
-      run: env enable_mpi=ON ./scripts/build_ascent/build_ascent.sh
-
-
+      run: env enable_mpi=ON 
+      run: |
+        ls
+        pwd
+        export enable_mpi=ON
+        ./scripts/build_ascent/build_ascent.sh
