@@ -475,29 +475,3 @@ cmake --install ${ascent_build_dir}
 fi # build_ascent
 
 
-
-echo "**** Configuring Ascent"
-cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=${ascent_install_dir} \
-  -DENABLE_MPI=${enable_mpi} \
-  -DENABLE_FORTRAN=${enable_fortran} \
-  -DENABLE_TESTS=$enable_tests \
-  -DENABLE_PYTHON=${enable_python} \
-  -DBLT_CXX_STD=c++14 \
-  -DCONDUIT_DIR=${conduit_install_dir} \
-  -DVTKM_DIR=${vtkm_install_dir} \
-  -DENABLE_VTKH=ON \
-  -DRAJA_DIR=${raja_install_dir} \
-  -DUMPIRE_DIR=${umpire_install_dir} \
-  -DENABLE_APCOMP=ON \
-  -DENABLE_DRAY=ON
-
-echo "**** Building Ascent"
-cmake --build ${ascent_build_dir} -j6
-echo "**** Installing Ascent"
-cmake --install ${ascent_build_dir}
-
-fi # build_ascent
-
