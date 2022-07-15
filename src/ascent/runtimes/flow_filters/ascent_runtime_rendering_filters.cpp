@@ -167,6 +167,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("bg_color");
   r_valid_paths.push_back("shading");
   r_valid_paths.push_back("use_original_bounds");
+  r_valid_paths.push_back("dataset_bounds");
 
   std::vector<std::string> r_ignore_paths;
   r_ignore_paths.push_back("phi_theta_positions");
@@ -1189,6 +1190,28 @@ DefaultRender::execute()
                          "'image_prefix' parameter");
           }
 
+	  if(render_node.has_path("dataset_bounds"))
+	  {
+	    const Node &n_dataset_bounds = render_node["dataset_bounds"];
+	    int num_bounds = n_dataset_bounds.dtype().number_of_elements();
+	    
+	    if(num_bounds != 6)
+            {
+              std::string render_name = renders_node.child_names()[i];
+              std::string fpath = filter_to_path(this->name());
+              ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
+                           " only provided " << num_bounds << 
+	                   " dataset_bounds when 6 are required:" <<
+			   " [xMin,xMax,yMin,yMax,zMin,zMax]");
+	    }
+	    scene_bounds.X.Min = n_dataset_bounds.as_float64_ptr()[0];
+	    scene_bounds.X.Max = n_dataset_bounds.as_float64_ptr()[1];
+	    scene_bounds.Y.Min = n_dataset_bounds.as_float64_ptr()[2];
+	    scene_bounds.Y.Max = n_dataset_bounds.as_float64_ptr()[3];
+	    scene_bounds.Z.Min = n_dataset_bounds.as_float64_ptr()[4];
+	    scene_bounds.Z.Max = n_dataset_bounds.as_float64_ptr()[5];
+	  }
+
           vtkh::Render render = detail::parse_render(render_node,
                                                      scene_bounds,
                                                      image_name);
@@ -1264,7 +1287,6 @@ VTKHBounds::declare_interface(Node &i)
     i["output_port"] = "true";
 }
 
-
 //-----------------------------------------------------------------------------
 void
 VTKHBounds::execute()
@@ -1275,7 +1297,7 @@ VTKHBounds::execute()
     {
         ASCENT_ERROR("VTKHBounds input must be a data object");
     }
-
+    
     DataObject *data_object = input<DataObject>(0);
 
     // data could be the result of a failed pipeline
@@ -1284,7 +1306,7 @@ VTKHBounds::execute()
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
       bounds->Include(collection->global_bounds());
     }
-
+    
     set_output<vtkm::Bounds>(bounds);
 }
 
@@ -1765,7 +1787,7 @@ ExecScene::execute()
                                  bounds.X.Max,
                                  bounds.Y.Max,
                                  bounds.Z.Max};
-
+      
       image_data["scene_bounds"].set(coord_bounds, 6);
 
       image_list->append() = image_data;
