@@ -6,7 +6,7 @@
 "spack_configs_path": "scripts/uberenv_configs/spack_configs/configs",
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/spack/spack",
-"spack_commit": "13b609b4b673dcff10de9032670210869ce35398",
+"spack_branch": "develop",
 "spack_activate" : { "py-numpy"  : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
