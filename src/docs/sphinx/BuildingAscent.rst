@@ -478,7 +478,8 @@ See the `Spack configs <https://github.com/Alpine-DAV/spack_configs/tree/main/co
 Using Ascent in Another Project
 ---------------------------------
 
-Under ``src/examples`` there are examples demonstrating how to use Ascent in a CMake-based build system (``using-with-cmake``) and via a Makefile (``using-with-make``).
+Under ``src/examples`` there are examples demonstrating how to use Ascent in a CMake-based build system (``using-with-cmake``, ``using-with-cmake-mpi``) and via a Makefile (``using-with-make``, ``using-with-make-mpi``). You can read more details about these examples :ref:`using_in_your_project`.
+
 Under ``src/examples/proxies``  you can find example integrations using ascent in the Lulesh, Kripke, and Cloverleaf3D proxy-applications.
 In ``src/examples/synthetic/noise`` you can find an example integration using our synthetic smooth noise application.
 

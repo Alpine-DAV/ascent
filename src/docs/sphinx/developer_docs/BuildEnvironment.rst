@@ -134,11 +134,11 @@ file was created that contains the CMake variables need for an Ascent build:
 
 I Want To Develop VTK-m and VTK-h Pipelines
 ---------------------------------------------
-If you want to add new features to VTK-h, it source is developed inside
-the Ascent repo under `src/libs/vtkh`
+If you want to add new features to VTK-h, its source is developed inside
+the Ascent repo in the `src/libs/vtkh` directory.
 
 If your changes also require new features in VTK-m, you will need to build
-and install your own branch of VTK-m. 
+and install your own version of VTK-m. 
 Follow the examples in :ref:`building_manually` to create a VTK-m build.
 
 
