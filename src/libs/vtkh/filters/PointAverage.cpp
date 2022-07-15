@@ -1,6 +1,6 @@
 #include <vtkh/filters/PointAverage.hpp>
 #include <vtkh/Error.hpp>
-#include <vtkm/filter/PointAverage.h>
+#include <vtkm/filter/field_conversion/PointAverage.h>
 
 namespace vtkh
 {
@@ -58,7 +58,7 @@ void PointAverage::DoExecute()
       continue;
     }
 
-    vtkm::filter::PointAverage avg;
+    vtkm::filter::field_conversion::PointAverage avg;
     avg.SetOutputFieldName(m_output_field_name);
     avg.SetActiveField(m_field_name);
     avg.SetFieldsToPass(this->GetFieldSelection());

@@ -131,14 +131,14 @@ void MarchingCubes::DoExecute()
   // make sure we have a node-centered field
   bool valid_field = false;
   bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) ==
-                       vtkm::cont::Field::Association::CELL_SET;
+                       vtkm::cont::Field::Association::Cells;
   bool delete_input = false;
   if(valid_field && is_cell_assoc)
   {
     Recenter recenter;
     recenter.SetInput(m_input);
     recenter.SetField(m_field_name);
-    recenter.SetResultAssoc(vtkm::cont::Field::Association::POINTS);
+    recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
     recenter.Update();
     m_input = recenter.GetOutput();
     delete_input = true;

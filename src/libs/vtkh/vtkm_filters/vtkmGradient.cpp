@@ -1,5 +1,5 @@
 #include "vtkmGradient.hpp"
-#include <vtkm/filter/Gradient.h>
+#include <vtkm/filter/vector_analysis/Gradient.h>
 
 namespace vtkh
 {
@@ -11,7 +11,7 @@ vtkmGradient::Run(vtkm::cont::DataSet &input,
                   GradientParameters params,
                   vtkm::filter::FieldSelection map_fields)
 {
-  vtkm::filter::Gradient grad;
+  vtkm::filter::vector_analysis::Gradient grad;
   grad.SetOutputFieldName(params.output_name);
   grad.SetFieldsToPass(map_fields);
   grad.SetActiveField(field_name);
