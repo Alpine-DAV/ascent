@@ -67,6 +67,7 @@ jobs:
               -DENABLE_VTKH=ON \
               -DRAJA_DIR=`pwd`/install/raja-v0.14.1/ \
               -DUMPIRE_DIR=`pwd`/install/umpire-6.0.0/ \
+              -DMFEM_DIR=`pwd`/install/mfem-4.4/ \
               -DENABLE_APCOMP=ON \
               -DENABLE_DRAY=ON
         echo "**** Building Ascent"
