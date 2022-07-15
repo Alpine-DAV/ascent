@@ -221,7 +221,7 @@ ascent_install_dir=${root_dir}/install/ascent-${ascent_version}/
 if ${build_ascent}; then
 if [ ! -d ${ascent_src_dir} ]; then
     echo "**** Cloning Ascent"
-    git clone --recursive https://github.com/Alpine-DAV/ascent.git --branch task/2022_05_vtk_m_1.8_update
+    git clone --recursive https://github.com/Alpine-DAV/ascent.git
 fi
 
 echo "**** Configuring Ascent"
