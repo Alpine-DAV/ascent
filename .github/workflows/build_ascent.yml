@@ -62,11 +62,11 @@ jobs:
               -DENABLE_TESTS=ON \
               -DENABLE_PYTHON=OFF \
               -DBLT_CXX_STD=c++14 \
-              -DCONDUIT_DIR=install/conduit-v0.8.3/ \
-              -DVTKM_DIR=install/vtk-m-v1.8.0/ \
+              -DCONDUIT_DIR=`pwd`/install/conduit-v0.8.3/ \
+              -DVTKM_DIR=`pwd`/install/vtk-m-v1.8.0/ \
               -DENABLE_VTKH=ON \
-              -DRAJA_DIR=install/raja-v0.14.1/ \
-              -DUMPIRE_DIR=install/umpire-6.0.0/ \
+              -DRAJA_DIR=`pwd`/install/raja-v0.14.1/ \
+              -DUMPIRE_DIR=`pwd`/install/umpire-6.0.0/ \
               -DENABLE_APCOMP=ON \
               -DENABLE_DRAY=ON
         echo "**** Building Ascent"
