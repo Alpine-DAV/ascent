@@ -1204,12 +1204,18 @@ DefaultRender::execute()
 	                   " dataset_bounds when 6 are required:" <<
 			   " [xMin,xMax,yMin,yMax,zMin,zMax]");
 	    }
-	    scene_bounds.X.Min = d_bounds[0];
-	    scene_bounds.X.Max = d_bounds[1];
-	    scene_bounds.Y.Min = d_bounds[2];
-	    scene_bounds.Y.Max = d_bounds[3];
-	    scene_bounds.Z.Min = d_bounds[4];
-	    scene_bounds.Z.Max = d_bounds[5];
+	    if(scene_bounds.X.Min > d_bounds[0])
+	      scene_bounds.X.Min = d_bounds[0];
+	    if(scene_bounds.X.Max < d_bounds[1])
+	      scene_bounds.X.Max = d_bounds[1];
+	    if(scene_bounds.Y.Min > d_bounds[2])
+	      scene_bounds.Y.Min = d_bounds[2];
+	    if(scene_bounds.Y.Max < d_bounds[3])
+	      scene_bounds.Y.Max = d_bounds[3];
+	    if(scene_bounds.Z.Min > d_bounds[4])
+	      scene_bounds.Z.Min = d_bounds[4];
+	    if(scene_bounds.Z.Max < d_bounds[5])
+	      scene_bounds.Z.Max = d_bounds[5];
 	  }
 
           vtkh::Render render = detail::parse_render(render_node,
