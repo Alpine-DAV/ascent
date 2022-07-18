@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -178,6 +140,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
 #if defined(ASCENT_VTKM_ENABLED)
+    vtkh::Initialize();
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
@@ -197,7 +160,12 @@ AscentRuntime::Initialize(const conduit::Node &options)
                      "correct version of ascent?");
     }
 
+#if defined(ASCENT_VTKM_ENABLED)
+    vtkh::Initialize();
 #endif
+
+#endif //end non-mpi
+
     // set a info handler so we only display messages on rank 0;
     conduit::utils::set_info_handler(InfoHandler::info_handler);
 #ifdef VTKM_CUDA
@@ -232,6 +200,21 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 #endif
 
+//What if Kokkos is Serial/OpenMP/TBB w/no backend?
+//Ascent may not be the one in charge of initializing kokkos; ex: Genten(?)
+//Probably should get a flag from VTKh saying it wants Kokkos for VKTm
+#if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VTKM_ENABLED)
+    vtkh::SelectKokkosDevice(1);
+#ifdef VTKM_KOKKOS_HIP
+    vtkh::SelectKokkosDevice(1);
+#endif
+#ifdef VTKM_KOKKOS_CUDA
+    //TODO: Figure out how to get device index for kokkos cuda
+    //int device_count = vtkh::CUDADeviceCount();
+    //int rank_device = m_rank % device_count;
+    vtkh::SelectKokkosDevice(1);
+#endif
+#endif
 
 #ifdef ASCENT_MFEM_ENABLED
     if(options.has_path("refinement_level"))
@@ -475,7 +458,7 @@ AscentRuntime::Publish(const conduit::Node &data)
     // filter out default ghost name and
     // check if user provided ghost names are actually there
     VerifyGhosts();
-    // if nestsets are present, agument current ghost fields
+    // if nestsets are present, augment current ghost fields
     // for zones masked by finer levels. If no ghosts are present
     // we create them
     PaintNestsets();
@@ -1369,6 +1352,20 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     std::string renders_name = names[i] + "_renders";
 
+    if(!flow::Workspace::supports_filter_type("default_render"))
+    {
+        Node n_about;
+        ascent::about(n_about);
+        // this will always show "enabled"
+        n_about["runtimes/ascent"].remove_child("status");
+
+        ASCENT_ERROR("Cannot create scene (" << names[i] << ")"
+                     " because Ascent was not compiled with"
+                     " rendering support." << std::endl
+                     << "Ascent Configuration Details:"
+                     << n_about["runtimes/ascent"].to_yaml());
+    }
+
     w.graph().add_filter("default_render",
                           renders_name,
                           render_params);
@@ -1753,9 +1750,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         w.info(m_info["flow_graph"]);
         m_info["actions"] = actions;
-        // w.print();
-        // std::cout<<w.graph().to_dot();
-        //w.graph().save_dot_html("ascent_flow_graph.html");
+        // w.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         if(log_timings)

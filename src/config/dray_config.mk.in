@@ -1,0 +1,131 @@
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
+
+###############################################################################
+# file: dray_config.mk
+###############################################################################
+#
+# A CMake-generated Make include file Defines the following Make variables:
+#
+######
+#  DRAY_INCLUDE_FLAGS
+#  DRAY_LIB_FLAGS
+#  DRAY_MPI_LIB_FLAGS
+######
+#
+# For use in another Makefile build system
+############################################################################
+
+DRAY_DIR = @ASCENT_INSTALL_PREFIX@
+
+DRAY_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
+
+DRAY_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
+
+DRAY_CONDUIT_DIR = @CONDUIT_DIR@
+DRAY_MFEM_DIR    = @ASCENT_MFEM_DIR@
+DRAY_RAJA_DIR    = @ASCENT_RAJA_DIR@
+DRAY_UMPIRE_DIR  = @ASCENT_UMPIRE_DIR@
+DRAY_APCOMP_DIR  = @ASCENT_INSTALL_PREFIX@
+
+# include vars from conduit_config.mk
+include $(DRAY_CONDUIT_DIR)/share/conduit/conduit_config.mk
+
+# setup rpath helper
+DRAY_LINK_RPATH = -Wl,-rpath,$(DRAY_DIR)/lib $(CONDUIT_LINK_RPATH)
+
+# two steps are used b/c there are commas in the linker commands
+# which will undermine parsing of the makefile
+DRAY_RAJA_RPATH_FLAGS_VALUE = -Wl,-rpath,$(DRAY_RAJA_DIR)/lib
+DRAY_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(DRAY_RAJA_DIR)/lib
+DRAY_MFEM_RPATH_FLAGS_VALUE = -Wl,-rpath,$(DRAY_MFEM_DIR)/lib
+
+DRAY_LINK_RPATH += $(if $(DRAY_RAJA_DIR), $(DRAY_RAJA_RPATH_FLAGS_VALUE))
+DRAY_LINK_RPATH += $(if $(DRAY_UMPIRE_DIR), $(DRAY_UMPIRE_RPATH_FLAGS_VALUE))
+DRAY_LINK_RPATH += $(if $(DRAY_MFEM_DIR), $(DRAY_MFEM_RPATH_FLAGS_VALUE))
+
+
+#################
+# Linking Flags
+#################
+
+##########
+# Conduit
+##########
+
+# Note: Conduit's conduit_config.mk handles hdf5 and zlib
+
+# For Conduit without MPI
+DRAY_CONDUIT_LIB_FLAGS = $(CONDUIT_LIB_FLAGS)
+
+##########
+# UMPIRE
+##########
+
+DRAY_UMPIRE_LIB_FLAGS=-L $(DRAY_UMPIRE_DIR)/lib \
+                      -lumpire
+
+##########
+# RAJA
+##########
+
+DRAY_RAJA_LIB_FLAGS=-L $(DRAY_RAJA_DIR)/lib \
+                    -lRAJA
+
+##########
+# APComp
+##########
+
+DRAY_APCOMP_LIB_FLAGS=-L $(DRAY_APCOMP_DIR)/lib \
+                    -lapcomp
+
+
+DRAY_APCOMP_MPI_LIB_FLAGS=-L $(DRAY_APCOMP_DIR)/lib \
+                    -lapcomp_mpi
+
+##########
+# MFEM
+##########
+
+##########
+# MFEM
+##########
+# Include make vars from the mfem config.mk file
+ifeq ($(DRAY_MFEM_DIR),)
+   # not set, do not include config.mk
+else
+   include $(DRAY_MFEM_DIR)/share/mfem/config.mk
+endif
+
+# MFEM isn't in the interface, so we don't need include flags
+DRAY_MFEM_LIB_FLAGS = $(if $(DRAY_MFEM_DIR),-L $(DRAY_MFEM_DIR)/lib -lmfem $(MFEM_EXT_LIBS))
+
+# if we build mfem w/ mpi support (which we do to support laghos) serial static builds need to
+# link mpi, or fail due to unresolved symbols
+#
+# If mfem was built with MPI support, add ASCENT_MPI_LIBS to avoid errors with static serial builds
+DRAY_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(DRAY_MPI_LIBS) )
+
+
+#########################
+# Devil Ray Include Flags
+#########################
+DRAY_INCLUDE_FLAGS = $(CONDUIT_INCLUDE_FLAGS) \
+                   -I $(DRAY_DIR)/include/ascent/
+
+
+####################
+# DRAY Lib Flags
+####################
+# if using devil ray without mpi
+DRAY_LIB_FLAGS = -L $(DRAY_DIR)/lib \
+                 -ldray \
+                 $(DRAY_APCOMP_LIB_FLAGS) $(DRAY_UMPIRE_LIB_FLAGS) $(DRAY_RAJA_LIB_FLAGS) $(DRAY_MFEM_LIB_FLAGS) $(DRAY_CONDUIT_LIB_FLAGS) $(DRAY_OPENMP_LINK_FLAGS)
+
+# if using devil ray with mpi
+DRAY_MPI_LIB_FLAGS = -L $(DRAY_DIR)/lib \
+                 -ldray_mpi \
+                 $(DRAY_APCOMP_MPI_LIB_FLAGS) $(DRAY_UMPIRE_LIB_FLAGS) $(DRAY_RAJA_LIB_FLAGS) $(DRAY_MFEM_LIB_FLAGS) $(DRAY_CONDUIT_LIB_FLAGS) $(DRAY_OPENMP_LINK_FLAGS)

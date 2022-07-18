@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -70,7 +32,9 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayHandleExtractComponent.h>
+#include <vtkm/cont/CoordinateSystem.h>
 #include <vtkh/DataSet.hpp>
+
 // other ascent includes
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
@@ -317,14 +281,14 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   {
     copy = vtkm::CopyFlag::Off;
   }
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    vtkm_assoc = vtkm::cont::Field::Association::Points;
   }
   else if(assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    vtkm_assoc = vtkm::cont::Field::Association::Cells;
   }
   else
   {
@@ -357,14 +321,14 @@ vtkm::cont::Field GetVectorField(T *values_ptr,
   {
     copy = vtkm::CopyFlag::Off;
   }
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    vtkm_assoc = vtkm::cont::Field::Association::Points;
   }
   else if(assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    vtkm_assoc = vtkm::cont::Field::Association::Cells;
   }
   else
   {
@@ -404,14 +368,14 @@ void ExtractVector(vtkm::cont::DataSet *dset,
     ASCENT_ERROR("Extract vector: only 2 and 3 dims supported given "<<dims);
   }
 
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    vtkm_assoc = vtkm::cont::Field::Association::Points;
   }
   else if (assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    vtkm_assoc = vtkm::cont::Field::Association::Cells;
   }
   else
   {
@@ -1312,14 +1276,14 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
     string assoc_str = n_field["association"].as_string();
 
-    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
     if(assoc_str == "vertex")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+      vtkm_assoc = vtkm::cont::Field::Association::Points;
     }
     else if(assoc_str == "element")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+      vtkm_assoc = vtkm::cont::Field::Association::Cells;
     }
     else
     {
@@ -1390,13 +1354,13 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             if(assoc_str == "vertex")
             {
                 dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                 vtkm::cont::Field::Association::POINTS,
+                                                 vtkm::cont::Field::Association::Points,
                                                  vtkm_arr));
             }
             else if( assoc_str == "element")
             {
                 dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                 vtkm::cont::Field::Association::CELL_SET,
+                                                 vtkm::cont::Field::Association::Cells,
                                                  vtkm_arr));
             }
         }
@@ -1420,14 +1384,14 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 {
     string assoc_str = n_field["association"].as_string();
 
-    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
     if(assoc_str == "vertex")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+      vtkm_assoc = vtkm::cont::Field::Association::Points;
     }
     else if(assoc_str == "element")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+      vtkm_assoc = vtkm::cont::Field::Association::Cells;
     }
     else
     {
@@ -1739,11 +1703,12 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
     using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
 
-    vtkm::cont::VariantArrayHandle coordsHandle(coords.GetData());
+    vtkm::cont::UnknownArrayHandle coordsHandle(coords.GetData());
 
-    if(coordsHandle.IsType<Coords32>())
+    if(vtkm::cont::IsType<Coords32>(coordsHandle))
     {
-      Coords32 points = coordsHandle.Cast<Coords32>();
+      Coords32 points;
+      coordsHandle.AsArrayHandle(points);
 
       auto x_handle = points.GetArray(0);
       auto y_handle = points.GetArray(1);
@@ -1776,7 +1741,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(coordsHandle.IsType<CoordsVec32>())
     {
-      CoordsVec32 points = coordsHandle.Cast<CoordsVec32>();
+      CoordsVec32 points;
+      coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float32 *points_ptr = (vtkm::Float32*)vtkh::GetVTKMPointer(points);
@@ -1817,7 +1783,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(vtkm::cont::IsType<Coords64>(coordsHandle))
     {
-      Coords64 points = coordsHandle.Cast<Coords64>();
+      Coords64 points;
+      coordsHandle.AsArrayHandle(points);
 
       auto x_handle = points.GetArray(0);
       auto y_handle = points.GetArray(1);
@@ -1848,7 +1815,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else if(coordsHandle.IsType<CoordsVec64>())
     {
-     CoordsVec64 points = vtkm::cont::Cast<CoordsVec64>(coordsHandle);
+      CoordsVec64 points;
+      coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
       vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(points);
@@ -1922,19 +1890,19 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       output["topologies/"+topo_name+"/coordset"] = coords_name;
       output["topologies/"+topo_name+"/type"] = "structured";
 
-      vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
+      vtkm::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
       using Structured2D = vtkm::cont::CellSetStructured<2>;
       using Structured3D = vtkm::cont::CellSetStructured<3>;
-      if(dyn_cells.IsSameType(Structured2D()))
+      if(dyn_cells.CanConvert<Structured2D>())
       {
-        Structured2D cells = dyn_cells.Cast<Structured2D>();
+        Structured2D cells = dyn_cells.AsCellSet<Structured2D>();
         vtkm::Id2 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
       }
-      else if(dyn_cells.IsSameType(Structured3D()))
+      else if(dyn_cells.CanConvert<Structured3D>())
       {
-        Structured3D cells = dyn_cells.Cast<Structured3D>();
+        Structured3D cells = dyn_cells.AsCellSet<Structured3D>();
         vtkm::Id3 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
@@ -1950,14 +1918,14 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       output["topologies/"+topo_name+"/coordset"] = coords_name;
       output["topologies/"+topo_name+"/type"] = "unstructured";
-      vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
+      vtkm::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
 
       using SingleType = vtkm::cont::CellSetSingleType<>;
       using MixedType = vtkm::cont::CellSetExplicit<>;
 
-      if(dyn_cells.IsSameType(SingleType()))
+      if(dyn_cells.CanConvert<SingleType>())
       {
-        SingleType cells = dyn_cells.Cast<SingleType>();
+        SingleType cells = dyn_cells.AsCellSet<SingleType>();
         vtkm::UInt8 shape_id = cells.GetCellShape(0);
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
@@ -1981,7 +1949,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       {
         // If we are here, the we know that the cell set is explicit,
         // but only a single cell shape
-        auto cells = dyn_cells.Cast<vtkm::cont::CellSetExplicit<>>();
+        auto cells = dyn_cells.AsCellSet<vtkm::cont::CellSetExplicit<>>();
         auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagCell(),
                                            vtkm::TopologyElementTagPoint());
 
@@ -2009,7 +1977,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       {
         ASCENT_ERROR("Mixed explicit types not implemented");
         data_set.PrintSummary(std::cout);
-        MixedType cells = dyn_cells.Cast<MixedType>();
+        MixedType cells = dyn_cells.AsCellSet<MixedType>();
       }
 
     }
@@ -2075,8 +2043,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 {
   std::string name = field.GetName();
   std::string path = "fields/" + name;
-  bool assoc_points = vtkm::cont::Field::Association::POINTS == field.GetAssociation();
-  bool assoc_cells  = vtkm::cont::Field::Association::CELL_SET == field.GetAssociation();
+  bool assoc_points = vtkm::cont::Field::Association::Points == field.GetAssociation();
+  bool assoc_cells  = vtkm::cont::Field::Association::Cells == field.GetAssociation();
   //bool assoc_mesh  = vtkm::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
   if(!assoc_points && ! assoc_cells)
   {
@@ -2090,14 +2058,15 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   output[path + "/association"] = conduit_name;
   output[path + "/topology"] = topo_name;
 
-  vtkm::cont::VariantArrayHandle dyn_handle = field.GetData();
+  vtkm::cont::UnknownArrayHandle dyn_handle = field.GetData();
   //
   // this can be literally anything. Lets do some exhaustive casting
   //
   if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2111,7 +2080,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float64>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Float64>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2125,7 +2095,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int8>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2139,7 +2110,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2153,14 +2125,16 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int64>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Int64>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ASCENT_ERROR("Conduit int64 and vtkm::Int64 are different. Cannot convert vtkm::Int64\n");
     //output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt32>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt32>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2174,7 +2148,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt8>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt8>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
       output[path + "/values"].
@@ -2188,37 +2163,43 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>>())
   {
     using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>;
-    HandleType handle = dyn_handle.Cast<HandleType>();
+    HandleType handle;
+    dyn_handle.AsArrayHandle(handle);
     ConvertVecToNode(output, path, handle, zero_copy);
   }
   else

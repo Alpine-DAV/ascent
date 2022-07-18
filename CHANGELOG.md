@@ -4,13 +4,32 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## Unreleased
 
-### Preferred dependency versions for ascent@0.8.0 (WIP)
-- conduit@0.8.0
+### Preferred dependency versions for ascent@develop
+- conduit@0.8.3
+- vtk-m@1.8.0
+
+### Added
+- Added pipeline `partition` from Conduit Blueprint
+- Added extract `flatten` from Conduit Blueprint
+- Added Log base 10 filter. Filter type is `log10`
+- Added Log base 2 filter. Filter type is `log2`
+- Added Feature Map in the docs. Detailing Devil Ray and VTKh features 
+- Added `scripts/build_ascent/build_ascent.sh` a script that demonstrates how to manually build Ascent and its main dependencies.
+
+### Changed
+- **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
+- Update docs related to building Ascent.
+
+## [0.8.0] - Released 2022-02-11
+
+### Preferred dependency versions for ascent@0.8.0
+- conduit@0.8.2
 - dray@0.1.8
-- vtk-h@0.8.0
-- vtk-m@1.7.0
+- vtk-h@0.8.1
+- vtk-m@1.7.1
 
 
 ### Added
@@ -21,13 +40,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `streamline` and `particle_advection` transforms 
 - Added history gradient expressions
 - Added the ability save named sessions
+- Added new options to specify Cinema rendering parameters
 - Added the ability save subsets of expression results to session files
 - Added the ability to add comments to PNG files that Ascent creates
 - Added timings out control option to Ascent (and Flow)
 - Added support to render Polygonal nd Polyhedral Meshes 
 - Added option to turn of world annotations
 - Added FIDES Support
-- Added `save_info` action, which saves the Ascent::info() result tree at the end of execution
 
 ### Fixed
 - Fixed a bug where ascent timings files were written out twice
@@ -41,7 +60,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Updated to use VTK-m 1.7.0
 - Make Ascent Webserver support optional, linked to if Conduit Relay Web support exists
 - Simplified the relay extract protocol params, for example can now use `hdf5` instead of `blueprint/mesh/hdf5`
-
+- Updated Spack and Uberenv support for building on Summit
 
 ## [0.7.1] - Released 2021-05-20
 

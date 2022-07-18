@@ -1,0 +1,5 @@
+This font was created using this repo then converted into text file
+https://github.com/raphm/makeglfont
+
+Meta data is stored in yaml, then directly parsed by conduit.
+The png image containing the signed distance font is stored a binary array.

@@ -1,0 +1,6 @@
+root_file: "../../../../../src/tests/data/tripple_point/field_dump.cycle_006700.root"
+field: "density"
+trials: 10
+camera:
+  elevation: 0
+  azimuth: -60

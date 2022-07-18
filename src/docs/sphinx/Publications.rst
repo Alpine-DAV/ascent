@@ -1,45 +1,7 @@
 .. ############################################################################
-.. # Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-.. #
-.. # Produced at the Lawrence Livermore National Laboratory
-.. #
-.. # LLNL-CODE-716457
-.. #
-.. # All rights reserved.
-.. #
-.. # This file is part of Ascent.
-.. #
-.. # For details, see: http://ascent.readthedocs.io/.
-.. #
-.. # Please also read ascent/LICENSE
-.. #
-.. # Redistribution and use in source and binary forms, with or without
-.. # modification, are permitted provided that the following conditions are met:
-.. #
-.. # * Redistributions of source code must retain the above copyright notice,
-.. #   this list of conditions and the disclaimer below.
-.. #
-.. # * Redistributions in binary form must reproduce the above copyright notice,
-.. #   this list of conditions and the disclaimer (as noted below) in the
-.. #   documentation and/or other materials provided with the distribution.
-.. #
-.. # * Neither the name of the LLNS/LLNL nor the names of its contributors may
-.. #   be used to endorse or promote products derived from this software without
-.. #   specific prior written permission.
-.. #
-.. # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-.. # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-.. # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-.. # ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-.. # LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-.. # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-.. # DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-.. # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-.. # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-.. # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-.. # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-.. # POSSIBILITY OF SUCH DAMAGE.
-.. #
+.. # Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+.. # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+.. # other details. No copyright assignment is required to contribute to Ascent.
 .. ############################################################################
 
 Publications and Presentations
@@ -48,6 +10,12 @@ Publications and Presentations
 
 Publications
 ------------
+
+- `Ascent: A Flyweight In Situ Library for Exascale Simulations <https://doi.org/10.1007/978-3-030-81627-8_12>`_  In: Childs, H., Bennett, J.C., Garth, C. (eds) In Situ Visualization for Computational Science. Mathematics and Visualization. Springer, Cham.
+
+- `Automated In Situ Computational Steering Using Ascent’s Capable Yes-No Machine <https://doi.org/10.1145/3490138.3490144>`_ Presented at the `ISAV 2021 Workshop <https://dav.lbl.gov/events/ISAV2021/>`_, held in conjunction with SC 21, on November 15th 2021, Virtual Event.
+
+- `Trigger Happy: Assessing the Viability of Trigger-Based In Situ Analysis <https://doi.org/10.1109/LDAV53230.2021.00010>`_ Presented at the `IEEE Symposium on Large Data and Analysis (LDAV) 2021 <http://www.ldav.org/>`_, held in conjunction with IEEE Vis, on October 25rd 2021 Virtual Event.
 
 - `JIT’s Complicated: A Comprehensive System For Derived Field Generation <https://doi.org/10.1145/3426462.3426467>`_  Presented at the `ISAV 2020 Workshop <https://dav.lbl.gov/events/ISAV2020/>`_, held in conjunction with SC 20, on November 12th 2020, Virtual Event.
 
@@ -73,6 +41,11 @@ Publications
 Tutorials
 -------------
 
+- `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany
+- ECP 2022 Annual Meeting - May 2022, Virtual
+- `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
+- ECP 2021 Annual Meeting - April 2021, Virtual
+- `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
 - `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual Event.
 - ECP 2020 Annual Meeting - Feb 2020, Houston, TX
 - In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2020, Houston, TX.
@@ -94,3 +67,9 @@ Presentations
 .. note::
 
   This list also includes work related to Strawman, Ascent's predecessor.
+
+Acknowledgements
+=================
+
+This research was supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of the U.S. Department of Energy Office of Science and the National Nuclear Security Administration. This work performed under the auspices of the U.S. Department of Energy by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.
+

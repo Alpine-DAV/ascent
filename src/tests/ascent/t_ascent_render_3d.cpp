@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 //-----------------------------------------------------------------------------
@@ -2548,6 +2510,135 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
     ascent.close();
 }
 
+// //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_extreme_extents)
+{
+    // create uniform grid with very large (spatial) extents
+    Node mesh, info;
+
+    int num_per_dim = 9;
+    double total_side_dist = 1.5e20;
+    mesh["state/cycle"] = 100;
+    // create the coordinate set
+    mesh["coordsets/coords/type"] = "uniform";
+    mesh["coordsets/coords/dims/i"] = num_per_dim;
+    mesh["coordsets/coords/dims/j"] = num_per_dim;
+    mesh["coordsets/coords/dims/k"] = num_per_dim;
+
+    // add origin and spacing to the coordset (optional)
+    mesh["coordsets/coords/origin/x"].set_float64(0.0);
+    mesh["coordsets/coords/origin/y"].set_float64(0.0);
+    mesh["coordsets/coords/origin/z"].set_float64(0.0);
+
+    double distance_per_step = total_side_dist/(double)(num_per_dim-1);
+    mesh["coordsets/coords/spacing/dx"] = distance_per_step;
+    mesh["coordsets/coords/spacing/dy"] = distance_per_step;
+    mesh["coordsets/coords/spacing/dz"] = distance_per_step;
+
+    // add the topology
+    // this case is simple b/c it's implicitly derived from the coordinate set
+    mesh["topologies/topo/type"] = "uniform";
+    // reference the coordinate set by name
+    mesh["topologies/topo/coordset"] = "coords";
+
+    int num_verts = num_per_dim * num_per_dim * num_per_dim; // 3D
+    mesh["fields/alternating/values"].set(DataType::float64(num_verts));
+
+    // create a vertex associated field named alternating
+    mesh["fields/alternating/association"] = "vertex";
+    mesh["fields/alternating/topology"] = "topo";
+    float64_array vals = mesh["fields/alternating/values"].value();
+    for (int i = 0 ; i < num_verts ; i++)
+     vals[i] = ( (i%2)==0 ? 0.0 : 1.0);
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "alternating";
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                  "tout_render_3d_extreme_extents");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(mesh);
+    
+    scenes["s1/image_prefix"] = output_file;
+    ascent.execute(actions);
+    // check that we created an image
+    // TODO: We expect this to fail until we address float64 vs float32 issues
+    EXPECT_FALSE(check_test_image(output_file));
+
+    //now with rectilinear:
+    Node mesh_recti_coords;
+    conduit::blueprint::mesh::coordset::uniform::to_rectilinear(mesh["coordsets/coords"],
+                                                                mesh_recti_coords);
+    mesh_recti_coords.print();
+
+    mesh["coordsets/coords"] = mesh_recti_coords;
+    mesh["topologies/topo/type"]  = "rectilinear";
+    mesh.print();
+
+    bool mesh_ok = conduit::blueprint::mesh::verify(mesh,info);
+    EXPECT_TRUE(mesh_ok);
+    if(!mesh_ok)
+    {
+        std::cout << "Mesh Blueprint Verify Failed!! " << info.to_yaml() << std::endl;
+    }
+
+    output_file = conduit::utils::join_file_path(output_path,
+                                  "tout_render_3d_extreme_recti_extents");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    ascent.publish(mesh);
+    scenes["s1/image_prefix"] = output_file;
+    ascent.execute(actions);
+
+    // check that we created an image
+    // TODO: We expect this to fail until we address float64 vs float32 issues
+    EXPECT_FALSE(check_test_image(output_file));
+    
+
+    //now with unstructured:
+    Node mesh_unstruct;
+    
+    conduit::blueprint::mesh::topology::rectilinear::to_unstructured(mesh["topologies/topo"],
+                                                                     mesh_unstruct["topologies/topo"],
+                                                                     mesh_unstruct["coordsets/coords"]);
+
+    mesh["coordsets/coords"]  = mesh_unstruct["coordsets/coords"];
+    mesh["topologies/topo/"]  = mesh_unstruct["topologies/topo"];
+    mesh.print();
+
+    mesh_ok = conduit::blueprint::mesh::verify(mesh,info);
+    EXPECT_TRUE(mesh_ok);
+    if(!mesh_ok)
+    {
+        std::cout << "Mesh Blueprint Verify Failed!! " << info.to_yaml() << std::endl;
+    }
+
+    output_file = conduit::utils::join_file_path(output_path,
+                                  "tout_render_3d_extreme_unstruct_extents");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    ascent.publish(mesh);
+    scenes["s1/image_prefix"] = output_file;
+    ascent.execute(actions);
+
+    // check that we created an image
+    // TODO: We expect this to fail until we address float64 vs float32 issues
+    EXPECT_FALSE(check_test_image(output_file));
+
+    
+}
 
 
 //-----------------------------------------------------------------------------

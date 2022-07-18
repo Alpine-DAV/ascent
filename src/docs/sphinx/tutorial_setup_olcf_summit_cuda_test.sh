@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# source helper script that loads the default gcc module, sets python paths, and ASCENT_DIR env var
+# source helper script that loads modules, sets python paths, and ASCENT_DIR env var
 #
-source /gpfs/alpine/csc340/world-shared/software/ascent/current/summit/ascent_summit_setup_env_gcc_cuda.sh
+source /sw/summit/ums/ums010/ascent/current/summit/ascent_summit_setup_env_gcc_cuda.sh
 
 #
 # make your own dir to hold the tutorial examples
@@ -13,7 +13,7 @@ cd ascent_tutorial
 #
 # copy the examples from the public install
 #
-cp -r /gpfs/alpine/world-shared/csc340/software/ascent/current/summit/cuda/gnu/ascent-install/examples/ascent/tutorial/* .
+cp -r /sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/examples/ascent/tutorial/* .
 
 #
 # build cpp examples and run the first one

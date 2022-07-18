@@ -1,0 +1,4 @@
+root_file: "../../../../../src/tests/data/laghos_tg.cycle_000350.root"
+axis: 1  # 0 = x, 1 = y, 2 = z
+location: 0.0 # spatial location of chop on axis
+direction: 1 # 1 = chop in the positive dir, -1 neg dir

@@ -1,0 +1,2 @@
+root_file: "../../../../../src/tests/data/laghos_tg.cycle_000350.root"
+domains: [0,1]

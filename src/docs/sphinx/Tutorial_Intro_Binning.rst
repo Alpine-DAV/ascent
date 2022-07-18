@@ -23,7 +23,7 @@ Binning data spatially
 
 .. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_binning_example1.cpp
    :language: cpp
-   :lines: 50-
+   :lines: 13-
 
 Helper scripts for plotting the results from the session file created in the C++ example:
 

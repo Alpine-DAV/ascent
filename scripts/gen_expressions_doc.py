@@ -1,3 +1,8 @@
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
 import json
 import argparse
 import sys
@@ -76,10 +81,11 @@ with open('expression_functions.rst', "w+") as docs:
                             sig += ", "
                 sig += ")"
                 docs.write(".. function:: {}\n\n".format(sig))
+                docs.write(indent(":noindex:\n",4))
                 if not "description" in func:
                     sys.exit("Function {} does not have a description.".format(sig))
                 docs.write(indent("{}\n\n".format(func["description"]), 4))
-                docs.write(indent("{}".format(params), 4))
+                docs.write(indent("{}\n".format(params), 4))
                 docs.write(indent("{}\n\n".format(ret), 4))
 
 
@@ -100,10 +106,11 @@ with open('expression_objects.rst', "w+") as docs:
             for attr_name in objs[obj_name]["attrs"]:
                 # object type
                 attr = objs[obj_name]["attrs"][attr_name]
-                attrs += ":type {}: {}\n".format(attr_name, attr["type"])
+                if "type" in attr:
+                    attrs += ":type {}: {}\n".format(attr_name, attr["type"])
                 # object description
                 if "description" in attr:
-                    attrs += ":param {}: {}\n".format(
+                    attrs += ":param {}: {}\n\n".format(
                         attr_name, attr["description"]
                     )
                 else:

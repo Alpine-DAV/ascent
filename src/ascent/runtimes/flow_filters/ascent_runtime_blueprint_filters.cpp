@@ -1,45 +1,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-//
-// Produced at the Lawrence Livermore National Laboratory
-//
-// LLNL-CODE-716457
-//
-// All rights reserved.
-//
-// This file is part of Ascent.
-//
-// For details, see: http://ascent.readthedocs.io/.
-//
-// Please also read ascent/LICENSE
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the disclaimer below.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the disclaimer (as noted below) in the
-//   documentation and/or other materials provided with the distribution.
-//
-// * Neither the name of the LLNS/LLNL nor the names of its contributors may
-//   be used to endorse or promote products derived from this software without
-//   specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-// LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-// OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
@@ -59,6 +21,7 @@
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
+#include <conduit_blueprint_mesh.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -75,6 +38,8 @@
 // mpi
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#include <conduit_blueprint_mpi_mesh.hpp>
+#include <conduit_blueprint_mpi.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -212,6 +177,102 @@ BlueprintVerify::execute()
     set_output<DataObject>(d_input);
 }
 
+//-----------------------------------------------------------------------------
+BlueprintPartition::BlueprintPartition()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+BlueprintPartition::~BlueprintPartition()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+BlueprintPartition::declare_interface(Node &i)
+{
+    i["type_name"]   = "blueprint_data_partition";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+BlueprintPartition::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    if(! params.has_child("target") ||
+       ! params["target"].dtype().is_int() )
+    {
+        info["errors"].append() = "Missing required int parameter 'target'";
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("target");
+    valid_paths.push_back("selections");
+    valid_paths.push_back("fields");
+    valid_paths.push_back("mapping");
+    valid_paths.push_back("merge_tolerance");
+    valid_paths.push_back("distributed");
+    
+    std::string surprises = surprise_check(valid_paths, params);
+    
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+BlueprintPartition::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("blueprint_data_partition input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
+    conduit::Node *n_output = new conduit::Node();
+    
+    conduit::Node n_options = params();
+
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    if(params().has_child("distributed") && 
+       params()["distributed"].as_string() == "false" )
+    {
+        conduit::blueprint::mesh::partition(*n_input,
+		     		            n_options,
+					    *n_output);
+    }
+    else
+    {
+        conduit::blueprint::mpi::mesh::partition(*n_input,
+		    			         n_options,
+					         *n_output,
+					         mpi_comm);
+    }
+#else
+    conduit::blueprint::mesh::partition(*n_input,
+		     		        n_options,
+					*n_output);
+#endif
+    DataObject *d_output = new DataObject(n_output);
+    set_output<DataObject>(d_output);
+}
 //-----------------------------------------------------------------------------
 DataBinning::DataBinning()
 :Filter()

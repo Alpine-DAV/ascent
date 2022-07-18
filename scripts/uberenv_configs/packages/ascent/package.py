@@ -43,10 +43,14 @@ class Ascent(CMakePackage, CudaPackage):
             branch='develop',
             submodules=True)
 
-    version('0.7.1',
-            tag='v0.7.1',
+    version('0.8.0',
+            tag='v0.8.0',
             submodules=True,
             preferred=True)
+
+    version('0.7.1',
+            tag='v0.7.1',
+            submodules=True)
 
     version('0.7.0',
             tag='v0.7.0',
@@ -64,6 +68,8 @@ class Ascent(CMakePackage, CudaPackage):
     variant('test', default=True, description='Enable Ascent unit tests')
 
     variant("mpi", default=True, description="Build Ascent MPI Support")
+    # set to false for systems that implicitly link mpi
+    variant('blt_find_mpi', default=True, description='Use BLT CMake Find MPI logic')
     variant("serial", default=True, description="build serial (non-mpi) libraries")
 
     # variants for language support
@@ -81,9 +87,11 @@ class Ascent(CMakePackage, CudaPackage):
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
+    variant("genten", default=False, description="Build with GenTen support")
     variant("dray", default=False, description="Build with Devil Ray support")
     variant("occa", default=False, description="Build with OCCA support")
-    variant("umpire", default=True, description="Build with OCCA support")
+    variant("raja", default=True, description="Build with RAJA support")
+    variant("umpire", default=True, description="Build with Umpire support")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
@@ -97,11 +105,15 @@ class Ascent(CMakePackage, CudaPackage):
 
     # Certain CMake versions have been found to break for our use cases
     depends_on("cmake@3.14.1:3.14.99,3.18.2:", type='build')
+    # NOTE: With Old CONCRETIZER, dep on conduit with no variants
+    # causes a conflict (since conduit defailts python o off)
+    #depends_on("conduit")
     depends_on("conduit~python", when="~python")
     depends_on("conduit+python", when="+python")
+    depends_on("conduit+fortran", when="+fortran")
     depends_on("conduit+mpi", when="+mpi")
     depends_on("conduit~mpi", when="~mpi")
-    depends_on("conduit@develop")
+
 
     #######################
     # Python
@@ -130,15 +142,38 @@ class Ascent(CMakePackage, CudaPackage):
     # TPLs for Runtime Features
     #############################
 
-    depends_on("vtk-h@develop",             when="+vtkh")
-    depends_on("vtk-h~openmp",      when="+vtkh~openmp")
-    depends_on("vtk-h+cuda+openmp", when="+vtkh+cuda+openmp")
-    depends_on("vtk-h+cuda~openmp", when="+vtkh+cuda~openmp")
+    depends_on("raja", when="+raja")
+    depends_on("umpire", when="+umpire")
+    
+    # ascent newer than 0.8.0 uses internal vtk-h
+    # use vtk-m 1.8 for newer than ascent 0.8.0
+    depends_on("vtk-m@:1.8", when="@0.8.1:")
 
-    depends_on("vtk-h~shared",             when="~shared+vtkh")
-    depends_on("vtk-h~shared~openmp",      when="~shared+vtkh~openmp")
-    depends_on("vtk-h~shared+cuda",        when="~shared+vtkh+cuda")
-    depends_on("vtk-h~shared+cuda~openmp", when="~shared+vtkh+cuda~openmp")
+    depends_on("vtk-m~tbb", when="@0.8.1: +vtkh")
+    depends_on("vtk-m+openmp", when="@0.8.1: +vtkh+openmp")
+    depends_on("vtk-m~openmp", when="@0.8.1: +vtkh~openmp")
+
+    depends_on("vtk-m+openmp", when="@0.8.1: +vtkh+openmp")
+    depends_on("vtk-m~openmp", when="@0.8.1: +vtkh~openmp")
+
+    depends_on("vtk-m~cuda", when="@0.8.1: +vtkh~cuda")
+    depends_on("vtk-m+cuda", when="@0.8.1: +vtkh+cuda")
+    for _arch in CudaPackage.cuda_arch_values:
+        depends_on("vtk-m+cuda cuda_arch={0}".format(_arch), when="@0.8.1: +cuda+openmp cuda_arch={0}".format(_arch))
+
+    depends_on("vtk-m+fpic", when="@0.8.0: +vtkh")
+    depends_on("vtk-m~shared+fpic", when="@0.8.0: +vtkh~shared")
+
+    # use external vtk-h for 0.8.0 and older
+    depends_on("vtk-h",      when="@:0.8.0 +vtkh")
+    depends_on("vtk-h~openmp",      when="@:0.8.0 +vtkh~openmp")
+    depends_on("vtk-h+cuda+openmp", when="@:0.8.0 +vtkh+cuda+openmp")
+    depends_on("vtk-h+cuda~openmp", when="@:0.8.0 +vtkh+cuda~openmp")
+
+    depends_on("vtk-h~shared",             when="@:0.8.0 ~shared+vtkh")
+    depends_on("vtk-h~shared~openmp",      when="@:0.8.0 ~shared+vtkh~openmp")
+    depends_on("vtk-h~shared+cuda",        when="@:0.8.0 ~shared+vtkh+cuda")
+    depends_on("vtk-h~shared+cuda~openmp", when="@:0.8.0 ~shared+vtkh+cuda~openmp")
 
     # mfem
     depends_on("mfem~threadsafe~openmp+shared+conduit", when="+shared+mfem")
@@ -147,31 +182,36 @@ class Ascent(CMakePackage, CudaPackage):
     # fides
     depends_on("fides", when="+fides")
 
+    # genten
+    depends_on("genten", when="+genten")
+    depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
+    depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
+
+    # use external dray for 0.8.0 and older
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
-    depends_on("dray@develop",        when="+dray")
-    depends_on("dray+mpi~test~utils+shared+cuda",        when="+dray+mpi+cuda+shared")
-    depends_on("dray+mpi~test~utils+shared+openmp",      when="+dray+mpi+openmp+shared")
-    depends_on("dray+mpi~test~utils+shared~openmp~cuda", when="+dray+mpi~openmp~cuda+shared")
+    depends_on("dray+mpi+shared+cuda",        when="@:0.8.0 +dray+mpi+cuda+shared")
+    depends_on("dray+mpi+shared+openmp",      when="@:0.8.0 +dray+mpi+openmp+shared")
+    depends_on("dray+mpi+shared~openmp~cuda", when="@:0.8.0 +dray+mpi~openmp~cuda+shared")
 
-    depends_on("dray+mpi~test~utils~shared+cuda",        when="+dray+mpi+cuda~shared")
-    depends_on("dray+mpi~test~utils~shared+openmp",      when="+dray+mpi+openmp~shared")
-    depends_on("dray+mpi~test~utils~shared~openmp~cuda", when="+dray+mpi~openmp~cuda~shared")
+    depends_on("dray+mpi~shared+cuda",        when="@:0.8.0 +dray+mpi+cuda~shared")
+    depends_on("dray+mpi~shared+openmp",      when="@:0.8.0 +dray+mpi+openmp~shared")
+    depends_on("dray+mpi~shared~openmp~cuda", when="@:0.8.0 +dray+mpi~openmp~cuda~shared")
 
     # devil ray variants without mpi
-    depends_on("dray~mpi~test~utils+shared+cuda",        when="+dray~mpi+cuda+shared")
-    depends_on("dray~mpi~test~utils+shared+openmp",      when="+dray~mpi+openmp+shared")
-    depends_on("dray~mpi~test~utils+shared~openmp~cuda", when="+dray~mpi~openmp~cuda+shared")
+    depends_on("dray~mpi+shared+cuda",        when="@:0.8.0 +dray~mpi+cuda+shared")
+    depends_on("dray~mpi+shared+openmp",      when="@:0.8.0 +dray~mpi+openmp+shared")
+    depends_on("dray~mpi+shared~openmp~cuda", when="@:0.8.0 +dray~mpi~openmp~cuda+shared")
 
-    depends_on("dray~mpi~test~utils~shared+cuda",        when="+dray~mpi+cuda~shared")
-    depends_on("dray~mpi~test~utils~shared+openmp",      when="+dray~mpi+openmp~shared")
-    depends_on("dray~mpi~test~utils~shared~openmp~cuda", when="+dray~mpi~openmp~cuda~shared")
+    depends_on("dray~mpi~shared+cuda",        when="@:0.8.0 +dray~mpi+cuda~shared")
+    depends_on("dray~mpi~shared+openmp",      when="@:0.8.0 +dray~mpi+openmp~shared")
+    depends_on("dray~mpi~shared~openmp~cuda", when="@:0.8.0 +dray~mpi~openmp~cuda~shared")
 
     # occa defaults to +cuda so we have to explicit tell it ~cuda
-    depends_on("occa@1.1.1~cuda",        when="+occa~cuda")
-    depends_on("occa@1.1.1~cuda~openmp", when="+occa~cuda~openmp")
-    depends_on("occa@1.1.1+cuda+openmp", when="+occa+cuda+openmp")
-    depends_on("occa@1.1.1+cuda~openmp", when="+occa+cuda~openmp")
+    depends_on("occa~cuda",        when="+occa~cuda")
+    depends_on("occa~cuda~openmp", when="+occa~cuda~openmp")
+    depends_on("occa+cuda+openmp", when="+occa+cuda+openmp")
+    depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
 
     depends_on("umpire+cuda+shared", when="+cuda+shared")
     depends_on("umpire+cuda~shared", when="+cuda~shared")
@@ -208,48 +248,6 @@ class Ascent(CMakePackage, CudaPackage):
         options = []
         options.extend(['-C', host_config, "../spack-src/src/"])
         return options
-
-    # def install(self, spec, prefix):
-    #     """
-    #     Build and install Ascent.
-    #     """
-    #     with working_dir('spack-build', create=True):
-    #         py_site_pkgs_dir = None
-    #         if "+python" in spec:
-    #             try:
-    #                 py_site_pkgs_dir = site_packages_dir
-    #             except NameError:
-    #                 # spack's site_packages_dir won't exist in a subclass
-    #                 pass
-
-    #         host_cfg_fname = self.create_host_config(spec,
-    #                                                  prefix,
-    #                                                  py_site_pkgs_dir)
-    #         cmake_args = []
-    #         # if we have a static build, we need to avoid any of
-    #         # spack's default cmake settings related to rpaths
-    #         # (see: https://github.com/LLNL/spack/issues/2658)
-    #         if "+shared" in spec:
-    #             cmake_args.extend(std_cmake_args)
-    #         else:
-    #             for arg in std_cmake_args:
-    #                 if arg.count("RPATH") == 0:
-    #                     cmake_args.append(arg)
-    #         if self.spec.satisfies('%cce'):
-    #             cmake_args.extend(["-DCMAKE_Fortran_FLAGS=-ef"])
-    #         cmake_args.extend(["-C", host_cfg_fname, "../src"])
-    #         print("Configuring Ascent...")
-    #         cmake(*cmake_args)
-    #         print("Building Ascent...")
-    #         make()
-    #         # run unit tests if requested
-    #         if "+test" in spec and self.run_tests:
-    #             print("Running Ascent Unit Tests...")
-    #             make("test")
-    #         print("Installing Ascent...")
-    #         make("install")
-    #         # install copy of host config for provenance
-    #         install(host_cfg_fname, prefix)
 
     @run_after('install')
     @on_package_attributes(run_tests=True)
@@ -323,11 +321,7 @@ class Ascent(CMakePackage, CudaPackage):
         #######################
         c_compiler = env["SPACK_CC"]
         cpp_compiler = env["SPACK_CXX"]
-        f_compiler = None
-
-        if self.compiler.fc:
-            # even if this is set, it may not exist so do one more sanity check
-            f_compiler = env["SPACK_FC"]
+        f_compiler = env["SPACK_FC"]
 
         #######################################################################
         # Directly fetch the names of the actual compilers to create a
@@ -377,12 +371,11 @@ class Ascent(CMakePackage, CudaPackage):
         cfg.write(cmake_cache_entry("CMAKE_CXX_COMPILER", cpp_compiler))
 
         cfg.write("# fortran compiler used by spack\n")
-        if "+fortran" in spec and f_compiler is not None:
+        if "+fortran" in spec:
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "ON"))
             cfg.write(cmake_cache_entry("CMAKE_Fortran_COMPILER",
                                         f_compiler))
         else:
-            cfg.write("# no fortran compiler found\n\n")
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "OFF"))
 
         # shared vs static libs
@@ -504,7 +497,11 @@ class Ascent(CMakePackage, CudaPackage):
                 else:
                     cfg.write(cmake_cache_entry("MPIEXEC",
                                                 mpiexe_bin))
-
+            # find mpi support
+            if "+blt_find_mpi" in spec:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "ON"))
+            else:
+                cfg.write(cmake_cache_entry("ENABLE_FIND_MPI", "OFF"))
             ###################################
             # BABELFLOW (also depends on mpi)
             ###################################
@@ -539,11 +536,14 @@ class Ascent(CMakePackage, CudaPackage):
         cfg.write("# vtk-h support \n")
 
         if "+vtkh" in spec:
+            cfg.write("# vtk-h\n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write(cmake_cache_entry("ENABLE_VTKH", "ON"))
+            else:
+                cfg.write(cmake_cache_entry("VTKH_DIR", spec['vtk-h'].prefix))
+
             cfg.write("# vtk-m from spack\n")
             cfg.write(cmake_cache_entry("VTKM_DIR", spec['vtk-m'].prefix))
-
-            cfg.write("# vtk-h from spack\n")
-            cfg.write(cmake_cache_entry("VTKH_DIR", spec['vtk-h'].prefix))
 
             if "+cuda" in spec:
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "ON"))
@@ -553,7 +553,12 @@ class Ascent(CMakePackage, CudaPackage):
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "OFF"))
 
         else:
-            cfg.write("# vtk-h not built by spack \n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write("# vtk-h\n")
+                cfg.write(cmake_cache_entry("ENABLE_VTKH", "OFF"))
+            else:
+                cfg.write("# vtk-h not build by spack\n")
+
 
         #######################
         # MFEM
@@ -568,10 +573,20 @@ class Ascent(CMakePackage, CudaPackage):
         # Devil Ray
         #######################
         if "+dray" in spec:
-            cfg.write("# devil ray from spack \n")
-            cfg.write(cmake_cache_entry("DRAY_DIR", spec['dray'].prefix))
+            cfg.write("# devil ray\n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write(cmake_cache_entry("ENABLE_DRAY", "ON"))
+                cfg.write(cmake_cache_entry("ENABLE_APCOMP", "ON"))
+            else:
+                cfg.write("# devil ray from spack \n")
+                cfg.write(cmake_cache_entry("DRAY_DIR", spec['dray'].prefix))
         else:
-            cfg.write("# devil ray not built by spack \n")
+            if self.spec.satisfies('@0.8.1:'):
+                cfg.write("# devil ray\n")
+                cfg.write(cmake_cache_entry("ENABLE_DRAY", "OFF"))
+                cfg.write(cmake_cache_entry("ENABLE_APCOMP", "OFF"))
+            else:
+                cfg.write("# devil ray not build by spack\n")
 
         #######################
         # OCCA
@@ -583,6 +598,15 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write("# occa not built by spack \n")
 
         #######################
+        # RAJA
+        #######################
+        if "+raja" in spec:
+            cfg.write("# RAJA from spack \n")
+            cfg.write(cmake_cache_entry("RAJA_DIR", spec['raja'].prefix))
+        else:
+            cfg.write("# RAJA not built by spack \n")
+
+        #######################
         # Umpire
         #######################
         if "+umpire" in spec:
@@ -590,6 +614,15 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write(cmake_cache_entry("UMPIRE_DIR", spec['umpire'].prefix))
         else:
             cfg.write("# umpire not built by spack \n")
+
+        #######################
+        # Camp
+        #######################
+        if "+umpire" in spec or "+raja" in spec:
+            cfg.write("# camp from spack \n")
+            cfg.write(cmake_cache_entry("CAMP_DIR", spec['camp'].prefix))
+        else:
+            cfg.write("# camp not built by spack \n")
 
         #######################
         # Adios
@@ -611,6 +644,15 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write(cmake_cache_entry("FIDES_DIR", spec['fides'].prefix))
         else:
             cfg.write("# fides not built by spack \n")
+
+        #######################
+        # GenTen
+        #######################
+        cfg.write("# GenTen support\n")
+        if "+genten" in spec:
+            cfg.write(cmake_cache_entry("GENTEN_DIR", spec['genten'].prefix))
+        else:
+            cfg.write("# genten not built by spack \n")
 
         #######################
         # Finish host-config

@@ -1,45 +1,7 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 ###############################################################################
@@ -48,21 +10,39 @@
 #
 ###############################################################################
 
-# first Check for ADIOS_DIR
-if(NOT ADIOS2_DIR)
-    MESSAGE(FATAL_ERROR "ADIOS2 support needs explicit ADIOS2_DIR")
+# Handle legacy usage of ADIOS2_DIR
+if (ADIOS2_DIR AND NOT ADIOS2_ROOT)
+  # If find_package(ADIOS2) has already been called this will fail
+  if (NOT EXISTS ${ADIOS2_DIR}/include)
+    get_filename_component(tmp "${ADIOS2_DIR}" DIRECTORY)
+    get_filename_component(tmp "${tmp}" DIRECTORY)
+    get_filename_component(tmp "${tmp}" DIRECTORY)
+    if (EXISTS ${tmp}/include)
+      set(ADIOS2_ROOT "${tmp}" CACHE PATH "")
+    else ()
+      message(FATAL_ERROR "Could not determine ADIOS2_ROOT from ADIOS2_DIR")
+    endif ()
+  else ()
+    set(ADIOS2_ROOT "${ADIOS2_DIR}" CACHE PATH "")
+  endif ()
+endif ()
+
+# Check for ADIOS_ROOT
+if(NOT ADIOS2_ROOT)
+    MESSAGE(FATAL_ERROR "ADIOS2 support needs explicit ADIOS2_ROOT")
 endif()
 
-MESSAGE(STATUS "Looking for ADIOS2 using ADIOS2_DIR = ${ADIOS2_DIR}")
+MESSAGE(STATUS "Looking for ADIOS2 using ADIOS2_ROOT = ${ADIOS2_ROOT}")
 
-set(ADIOS2_DIR_ORIG ${ADIOS2_DIR})
+set(ADIOS2_DIR_ORIG ${ADIOS2_ROOT})
 
 find_package(ADIOS2 REQUIRED
              NO_DEFAULT_PATH
-             PATHS ${ADIOS2_DIR}/lib/cmake/adios2)
+             PATHS ${ADIOS2_ROOT})
 
+# ADIOS2_DIR is set by find_package
 message(STATUS "FOUND ADIOS2 at ${ADIOS2_DIR}")
 
 blt_register_library(NAME adios2
-                     INCLUDES ${ADIOS2_INCLUDE_DIR}
-                     LIBRARIES ${ADIOS2_LIB_DIRS} ${ADIOS2_LIBRARIES} )
+  INCLUDES ${ADIOS2_INCLUDE_DIR}
+  LIBRARIES ${ADIOS2_LIB_DIRS} ${ADIOS2_LIBRARIES} )

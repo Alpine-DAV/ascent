@@ -1,48 +1,20 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 include(CMakeFindDependencyMacro)
+
+###############################################################################
+# Setup OpenMP
+###############################################################################
+if(ASCENT_OPENMP_ENABLED)
+    # config openmp if not already found
+    if(NOT TARGET OpenMP::OpenMP_CXX)
+        find_dependency(OpenMP REQUIRED)
+    endif()
+endif()
 
 ###############################################################################
 # Setup Conduit
@@ -56,11 +28,11 @@ endif()
 # Check for CONDUIT_DIR
 ###############################################################################
 if(NOT CONDUIT_DIR)
-    MESSAGE(FATAL_ERROR "Could not find Conduit. Conduit requires explicit CONDUIT_DIR.")
+    message(FATAL_ERROR "Could not find Conduit. Conduit requires explicit CONDUIT_DIR.")
 endif()
 
 if(NOT EXISTS ${CONDUIT_DIR}/lib/cmake/conduit/conduit.cmake)
-    MESSAGE(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit/conduit.cmake)")
+    message(FATAL_ERROR "Could not find Conduit CMake include file (${CONDUIT_DIR}/lib/cmake/conduit/conduit.cmake)")
 endif()
 
 ###############################################################################
@@ -71,7 +43,7 @@ find_dependency(Conduit REQUIRED
                 PATHS ${CONDUIT_DIR}/lib/cmake)
 
 ###############################################################################
-# Setup VTK-h
+# Setup VTK-h (external)
 ###############################################################################
 if(NOT VTKH_DIR)
     set(VTKH_DIR ${ASCENT_VTKH_DIR})
@@ -79,137 +51,216 @@ endif()
 
 if(VTKH_DIR)
     if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
-        MESSAGE(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
+      message(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
     endif()
 
     ###############################################################################
     # Import CMake targets
     ###############################################################################
     find_dependency(VTKh REQUIRED
-                   NO_DEFAULT_PATH
-                   PATHS ${VTKH_DIR}/lib/)
+                    NO_DEFAULT_PATH
+                    PATHS ${VTKH_DIR}/lib)
+endif()
+
+###############################################################################
+# Setup VTK-m
+###############################################################################
+if(NOT VTKM_DIR)
+    set(VTKM_DIR ${ASCENT_VTKM_DIR})
+endif()
+
+if(VTKM_DIR)
+    # use VTKM_DIR to setup the options that cmake's find VTKm needs
+    if(NOT EXISTS ${VTKM_DIR})
+        message(FATAL_ERROR "Failed to find VTKm at VTKM_DIR=${VTKM_DIR}")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(VTKm REQUIRED
+      NO_DEFAULT_PATH
+      PATHS ${VTKM_DIR})
 endif()
 
 ###############################################################################
 # Setup Devil Ray
 ###############################################################################
 if(NOT DRAY_DIR)
-  set(DRAY_DIR ${ASCENT_DRAY_DIR})
+    set(DRAY_DIR ${ASCENT_DRAY_DIR})
 endif()
 
 if(DRAY_DIR)
-  if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
-    MESSAGE(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
+    if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
+        message(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
     endif()
 
     ###############################################################################
     # Import CMake targets
     ###############################################################################
     find_dependency(DRay REQUIRED
-                   NO_DEFAULT_PATH
-                   PATHS ${DRAY_DIR}/lib/cmake/)
+                    NO_DEFAULT_PATH
+                    PATHS ${DRAY_DIR}/lib/cmake/)
 endif()
 
 ###############################################################################
 # Setup Umpire
 ###############################################################################
 if(NOT UMPIRE_DIR)
-  set(UMPIRE_DIR ${ASCENT_UMPIRE_DIR})
+    set(UMPIRE_DIR ${ASCENT_UMPIRE_DIR})
 endif()
 
 if(UMPIRE_DIR)
-  if(NOT EXISTS ${UMPIRE_DIR}/share/umpire/cmake/)
-    MESSAGE(FATAL_ERROR "Could not find Umpire CMake include file (${UMPIRE_DIR}/share/umpire/cmake)")
-  endif()
+    set(_UMPIRE_SEARCH_PATH)
+    if(EXISTS ${UMPIRE_DIR}/share/umpire/cmake)
+      # old install layout
+      set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/share/umpire/cmake)
+    else()
+      # new install layout
+      set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib/cmake/umpire)
+    endif()
+    
+    if(NOT EXISTS ${_UMPIRE_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find Umpire CMake include file (${_UMPIRE_SEARCH_PATH})")
+    endif()
 
-  ###############################################################################
-  # Import CMake targets
-  ###############################################################################
-  find_dependency(Umpire REQUIRED
-                  NO_DEFAULT_PATH
-                  PATHS ${UMPIRE_DIR}/share/umpire/cmake/)
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(umpire REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${_UMPIRE_SEARCH_PATH})
+endif()
+
+###############################################################################
+# Setup Camp
+###############################################################################
+if(NOT CAMP_DIR)
+    set(CAMP_DIR ${ASCENT_CAMP_DIR})
+endif()
+
+if(CAMP_DIR)
+    set(_CAMP_SEARCH_PATH)
+    if(EXISTS ${CAMP_DIR}/share/camp/cmake)
+      # old install layout ?
+      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/share/camp/cmake)
+    else()
+      # new install layout ?
+      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/lib/cmake/camp)
+    endif()
+    
+    if(NOT EXISTS ${_CAMP_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find Camp CMake include file (${_CAMP_SEARCH_PATH})")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(camp REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${_CAMP_SEARCH_PATH})
 endif()
 
 ###############################################################################
 # Setup Adios2
 ###############################################################################
 if(NOT ADIOS2_DIR)
-  set(ADIOS2_DIR ${ASCENT_ADIOS2_DIR})
+    set(ADIOS2_DIR ${ASCENT_ADIOS2_DIR})
 endif()
 
 if(ADIOS2_DIR)
-  if(NOT EXISTS ${ADIOS2_DIR}/lib/cmake/adios2)
-    MESSAGE(FATAL_ERROR "Could not find ADIOS2 CMake include info (${ADIOS2_DIR}/lib/cmake/adios2)")
-  endif()
+    if(NOT EXISTS ${ADIOS2_DIR})
+      message(FATAL_ERROR "Could not find ADIOS2 CMake include info (${ADIOS2_DIR})")
+    endif()
 
-  ###############################################################################
-  # Import CMake targets
-  ###############################################################################
-  find_dependency(ADIOS2 REQUIRED
-                  NO_DEFAULT_PATH
-                  PATHS ${ADIOS2_DIR}/lib/cmake/adios2)
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(ADIOS2 REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${ADIOS2_DIR})
 endif()
 
 ###############################################################################
 # Setup Fides
 ###############################################################################
 if(NOT FIDES_DIR)
-  set(FIDES_DIR ${ASCENT_FIDES_DIR})
+    set(FIDES_DIR ${ASCENT_FIDES_DIR})
 endif()
 
 if(FIDES_DIR)
-  if(NOT EXISTS ${FIDES_DIR}/lib/cmake/fides)
-    MESSAGE(FATAL_ERROR "Could not find FIDES CMake include info (${FIDES_DIR}/lib/cmake/fides)")
-  endif()
+    if(NOT EXISTS ${FIDES_DIR})
+        message(FATAL_ERROR "Could not find FIDES CMake include info (${FIDES_DIR})")
+    endif()
 
-  ###############################################################################
-  # Import CMake targets
-  ###############################################################################
-  find_dependency(Fides REQUIRED
-                  NO_DEFAULT_PATH
-                  PATHS ${FIDES_DIR}/lib/cmake/fides)
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(Fides REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${FIDES_DIR})
 endif()
 
 ###############################################################################
 # Setup BabelFlow
 ###############################################################################
 if(NOT BABELFLOW_DIR)
-  set(BABELFLOW_DIR ${ASCENT_BABELFLOW_DIR})
+    set(BABELFLOW_DIR ${ASCENT_BABELFLOW_DIR})
 endif()
 
 if(BABELFLOW_DIR)
-  if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake/)
-    MESSAGE(FATAL_ERROR "Could not find BabelFLow CMake include info (${BABELFLOW_DIR}/lib/cmake/)")
-  endif()
+    if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake/)
+        message(FATAL_ERROR "Could not find BabelFLow CMake include info (${BABELFLOW_DIR}/lib/cmake/)")
+    endif()
 
-  ###############################################################################
-  # Import CMake targets
-  ###############################################################################
-  find_dependency(BabelFlow REQUIRED
-                  NO_DEFAULT_PATH
-                  PATHS ${BABELFLOW_DIR}/lib/cmake/)
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(BabelFlow REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${BABELFLOW_DIR}/lib/cmake/)
 endif()
 
 ###############################################################################
 # Setup PMT
 ###############################################################################
 if(NOT PMT_DIR)
-  set(PMT_DIR ${ASCENT_PMT_DIR})
+    set(PMT_DIR ${ASCENT_PMT_DIR})
 endif()
 
 if(PMT_DIR)
-  if(NOT EXISTS ${PMT_DIR}/lib/cmake)
-    MESSAGE(FATAL_ERROR "Could not find PMT CMake include info (${PMT_DIR}/lib/cmake)")
-  endif()
+    if(NOT EXISTS ${PMT_DIR}/lib/cmake)
+        message(FATAL_ERROR "Could not find PMT CMake include info (${PMT_DIR}/lib/cmake)")
+    endif()
 
-  ###############################################################################
-  # Import CMake targets
-  ###############################################################################
-  find_dependency(PMT REQUIRED
-                  NO_DEFAULT_PATH
-                  PATHS  ${PMT_DIR}/lib/cmake)
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(PMT REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS  ${PMT_DIR}/lib/cmake)
 endif()
 
+
+###############################################################################
+# Setup GenTen
+###############################################################################
+if(NOT GENTEN_DIR)
+    set(GENTEN_DIR ${ASCENT_GENTEN_DIR})
+endif()
+
+if(GENTEN_DIR)
+    if(NOT EXISTS ${GENTEN_DIR}/lib64/cmake/)
+        message(FATAL_ERROR "Could not find GenTent CMake include info (${GENTEN_DIR}/lib64/cmake/)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(Genten REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${GENTEN_DIR}/lib64/cmake/)
+endif()
 
 ###############################################################################
 # MFEM (even serial) may require mpi, if so we need to find mpi
@@ -217,3 +268,43 @@ endif()
 if(ASCENT_MFEM_MPI_ENABLED AND NOT MPI_FOUND)
     find_package(MPI COMPONENTS CXX)
 endif()
+
+
+###############################################################################
+# OCCA + CUDA will require targets from CUDAToolkit
+###############################################################################
+if(ASCENT_CUDA_ENABLED AND ASCENT_OCCA_ENABLED)
+    find_package(CUDAToolkit REQUIRED)
+endif()
+
+
+
+###############################################################################
+# Setup GenTen
+###############################################################################
+if(NOT KOKKOS_DIR)
+    set(KOKKOS_DIR ${ASCENT_KOKKOS_DIR})
+endif()
+
+if(EXISTS ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
+    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
+endif()
+
+if(EXISTS ${KOKKOS_DIR}/lib/cmake/Kokkos/)
+    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib/cmake/Kokkos/)
+endif()
+
+
+if(KOKKOS_DIR)
+    if(NOT EXISTS ${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)
+        MESSAGE(FATAL_ERROR "Could not find Kokkos CMake include file (${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(Kokkos REQUIRED
+                    NO_DEFAULT_PATH
+		    PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
+endif()
+

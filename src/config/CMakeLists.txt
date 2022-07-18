@@ -1,45 +1,7 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 
@@ -80,13 +42,107 @@ if(PYTHON_FOUND)
     endforeach()
 endif()
 
+# builtin libs vars for config.mk gen
+if(ENABLE_APCOMP)
+    set(ASCENT_APCOMP_ENABLED TRUE)
+endif()
 
-# generated the config.mk
+if(ENABLE_DRAY)
+    set(ASCENT_DRAY_ENABLED TRUE)
+endif()
+
+if(ENABLE_VTKH)
+    set(ASCENT_VTKH_ENABLED TRUE)
+endif()
+
+# When disabled, TPL dirs may be not be empty, the may be set to INGORE, etc
+# While CMake knows to ignore these type of vals make does not,
+# so we regularize with explicit vars
+
+if(VTKH_DIR)
+    set(ASCENT_VTKH_DIR ${VTKH_DIR} )
+endif()
+
+if(VTKM_DIR)
+    set(ASCENT_VTKM_DIR ${VTKM_DIR} )
+    set(ASCENT_VTKM_VERSION  ${VTKm_VERSION} )
+endif()
+
+if(MFEM_DIR)
+    set(ASCENT_MFEM_DIR ${MFEM_DIR} )
+endif()
+
+if(DRAY_DIR)
+    set(ASCENT_DRAY_DIR ${DRAY_DIR} )
+endif()
+
+if(OCCA_DIR)
+    set(ASCENT_OCCA_DIR ${OCCA_DIR} )
+endif()
+
+if(RAJA_DIR_ORIG)
+    set(ASCENT_RAJA_DIR ${RAJA_DIR_ORIG} )
+endif()
+
+if(UMPIRE_DIR_ORIG)
+    set(ASCENT_UMPIRE_DIR ${UMPIRE_DIR_ORIG} )
+endif()
+
+if(FIDES_DIR_ORIG)
+    set(ASCENT_FIDES_DIR ${FIDES_DIR_ORIG} )
+endif()
+
+if(ADIOS2_DIR_ORIG)
+    set(ASCENT_ADIOS2_DIR ${ADIOS2_DIR_ORIG} )
+endif()
+
+if(BABELFLOW_DIR_ORIG)
+    set(ASCENT_BABELFLOW_DIR ${BABELFLOW_DIR_ORIG} )
+endif()
+
+if(PMT_DIR_ORIG)
+    set(ASCENT_PMT_DIR ${PMT_DIR_ORIG} )
+endif()
+
+if(GENTEN_DIR_ORIG)
+    set(ASCENT_GENTEN_DIR ${GENTEN_DIR_ORIG} )
+endif()
+
+
+# generate the config.mk
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk")
 
 # install the config.mk
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.mk" DESTINATION share/ascent)
+
+
+
+# install optional libs config info
+if(ENABLE_APCOMP)
+    # generate the config.mk
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/apcomp_config.mk.in"
+                    "${CMAKE_CURRENT_BINARY_DIR}/apcomp_config.mk")
+    # install the config.mk
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/apcomp_config.mk" DESTINATION share/ascent)
+endif()
+
+if(ENABLE_DRAY)
+    # generate the config.mk
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/dray_config.mk.in"
+                    "${CMAKE_CURRENT_BINARY_DIR}/dray_config.mk")
+    # install the config.mk
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dray_config.mk" DESTINATION share/ascent)
+endif()
+
+
+if(ENABLE_VTKH)
+    # generate the config.mk
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/vtkh_config.mk.in"
+                    "${CMAKE_CURRENT_BINARY_DIR}/vtkh_config.mk")
+    # install the config.mk
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vtkh_config.mk" DESTINATION share/ascent)
+endif()
 
 
 ###############################################################################

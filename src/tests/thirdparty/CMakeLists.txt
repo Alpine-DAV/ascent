@@ -1,53 +1,40 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 ################################
-# Basic TPL Tests
+# TPL Smoke Tests
 ################################
 
+IF(VTKM_FOUND AND ENABLE_SERIAL)
+    message(STATUS "Adding VTK-m smoke test")
+    set(vtkm_smoke_deps vtkm)
+    
+    if(CUDA_FOUND)
+        list(APPEND vtkm_smoke_deps cuda)
+    endif()
+
+    add_cpp_test(TEST t_vtkm_smoke DEPENDS_ON ${vtkm_smoke_deps})
+    vtkm_add_target_information(t_vtkm_smoke
+                                DEVICE_SOURCES t_vtkm_smoke.cpp)
+    set_target_properties(t_vtkm_smoke PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
+    target_compile_definitions(t_vtkm_smoke PRIVATE "VTKH_FORCE_SERIAL")
+
+    if (ENABLE_OPENMP)
+        target_compile_definitions(t_vtkm_smoke PRIVATE "VTKH_FORCE_OPENMP")
+    endif()
+
+    if (CUDA_FOUND)
+        target_compile_definitions(t_vtkm_smoke PRIVATE "VTKH_FORCE_CUDA")
+    endif()
+
+endif()
+
 IF(VTKH_FOUND AND ENABLE_SERIAL)
-    message(STATUS "Adding vtk-h lib unit tests")
+    message(STATUS "Adding vtk-h lib smoke test")
     # also add vtkm, i suspect compile flags aren't transitive
     # for some reason, and this can undermine cuda builds
     set(vtkh_smoke_deps vtkm vtkh)
@@ -62,7 +49,7 @@ endif()
 
 
 IF(MFEM_FOUND)
-    message(STATUS "Adding mfem lib unit tests")
+    message(STATUS "Adding mfem smoke test")
     set(mfem_smoke_deps mfem conduit)
     # mfem does not have both a serial version and an mpi
     # version. So if we compiled with MPI on, the we need
@@ -72,7 +59,4 @@ IF(MFEM_FOUND)
     endif()
     add_cpp_test(TEST t_mfem_smoke DEPENDS_ON ${mfem_smoke_deps})
 endif()
-
-
-
 

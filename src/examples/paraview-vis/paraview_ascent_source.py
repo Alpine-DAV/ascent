@@ -1,3 +1,9 @@
+###############################################################################
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+###############################################################################
+
 import numpy as np
 from vtkmodules.util import numpy_support, vtkConstants
 from vtkmodules.vtkCommonCore import vtkPoints
@@ -171,7 +177,7 @@ def ascent_to_vtk(node, topology=None, extent=None):
                 cellType = vtkConstants.VTK_QUAD
             elif (shape == "point"):
                 npoints = 1
-                cellType = vtkConstants.VTK_PIXEL
+                cellType = vtkConstants.VTK_VERTEX
             else:
                 print("Error: Shape '%s' not implemented" % shape)
                 return None

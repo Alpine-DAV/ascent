@@ -1,0 +1,87 @@
+
+{
+  "blueprint_index": 
+  {
+    "mesh": 
+    {
+      "state": 
+      {
+        "number_of_domains": 1
+      },
+      "coordsets": 
+      {
+        "coords": 
+        {
+          "type": "explicit",
+          "coord_system": 
+          {
+            "axes": 
+            {
+              "x": null,
+              "y": null,
+              "z": null
+            },
+            "type": "cartesian"
+          },
+          "path": "coordsets/coords"
+        }
+      },
+      "topologies": 
+      {
+        "main": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "path": "topologies/main",
+          "grid_function": "mesh_nodes"
+        },
+        "boundary": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "path": "topologies/boundary"
+        }
+      },
+      "fields": 
+      {
+        "mesh_nodes": 
+        {
+          "number_of_components": 3,
+          "topology": "main",
+          "basis": "H1_3D_P20",
+          "path": "fields/mesh_nodes"
+        },
+        "element_attribute": 
+        {
+          "number_of_components": 1,
+          "topology": "main",
+          "association": "element",
+          "path": "fields/element_attribute"
+        },
+        "boundary_attribute": 
+        {
+          "number_of_components": 1,
+          "topology": "boundary",
+          "association": "element",
+          "path": "fields/boundary_attribute"
+        },
+        "bananas": 
+        {
+          "number_of_components": 1,
+          "topology": "main",
+          "basis": "H1_3D_P2",
+          "path": "fields/bananas"
+        }
+      }
+    }
+  },
+  "protocol": 
+  {
+    "name": "conduit_bin",
+    "version": "0.3.1"
+  },
+  "number_of_files": 1,
+  "number_of_trees": 1,
+  "file_pattern": "crazy_hex_000000/domain_%06d.conduit_bin",
+  "tree_pattern": ""
+}

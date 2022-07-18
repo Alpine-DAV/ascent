@@ -1,45 +1,7 @@
 ###############################################################################
-# Copyright (c) 2015-2019, Lawrence Livermore National Security, LLC.
-#
-# Produced at the Lawrence Livermore National Laboratory
-#
-# LLNL-CODE-716457
-#
-# All rights reserved.
-#
-# This file is part of Ascent.
-#
-# For details, see: http://ascent.readthedocs.io/.
-#
-# Please also read ascent/LICENSE
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the disclaimer below.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the disclaimer (as noted below) in the
-#   documentation and/or other materials provided with the distribution.
-#
-# * Neither the name of the LLNS/LLNL nor the names of its contributors may
-#   be used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
-# LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
 # avoid warnings for project commands w/o VERSION
@@ -49,7 +11,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.7.1")
+project(ascent VERSION "0.8.0")
 
 ################################
 # Build Options
@@ -65,10 +27,30 @@ option(ENABLE_SERIAL      "Build Serial (non-MPI) Support" ON)
 option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
+# builtin libs: dray, apcomp, vtkh
+
+option(ENABLE_DRAY        "Build Devil Ray Support"   OFF)
+# Note: ENABLE_DRAY reqs ENABLE_APCOMP
+option(ENABLE_APCOMP      "Build AP Compositor"       OFF)
+option(ENABLE_VTKH        "Build VTK-h "              OFF)
+
+
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
-option(ENABLE_LOGGING     "Enabe data logging"        OFF)
+option(ENABLE_LOGGING     "Enable data logging"       OFF)
 option(ENABLE_DOCS        "Build Documentation"       ON)
+
+# DRay Specific Options
+option(DRAY_ENABLE_STATS          "Enable stats"         ON)
+option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
+
+# VTK-h Sepcific Options 
+
+option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
+
+# Cuda Specific Options
+option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
+
 
 #####################################################
 # Note: Third party libs like MFEM, FIDES, etc are 
@@ -86,10 +68,6 @@ if(ENABLE_CUDA)
   cmake_minimum_required(VERSION 3.14)
 else()
   cmake_minimum_required(VERSION 3.9)
-endif()
-
-if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  message(FATAL_ERROR "Static libraries are required when building with CUDA")
 endif()
 
 if(ENABLE_CUDA)
@@ -143,11 +121,6 @@ include(cmake/CMakeBasics.cmake)
 include(cmake/VTKmDeviceSymbols.cmake)
 
 ################################
-# Set a default build type
-################################
-include(cmake/AscentBuildType.cmake)
-
-################################
 # Setup Fortran Support
 ################################
 include(cmake/SetupFortran.cmake)
@@ -176,9 +149,11 @@ add_subdirectory(thirdparty_builtin)
 ################################
 # Add our libs
 ################################
+add_subdirectory(libs)
+
 add_subdirectory(flow)
 
-if(VTKM_FOUND)
+if(VTKH_FOUND OR ENABLE_VTKH)
   add_subdirectory(rover)
 endif()
 
