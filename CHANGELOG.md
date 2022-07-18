@@ -18,6 +18,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added Log base 2 filter. Filter type is `log2`
 - Added Feature Map in the docs. Detailing Devil Ray and VTKh features 
 - Added `scripts/build_ascent/build_ascent.sh` a script that demonstrates how to manually build Ascent and its main dependencies.
+- Added ability to overwrite dimensions for the rendered bounding box around a dataset
 
 ### Changed
 - **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
