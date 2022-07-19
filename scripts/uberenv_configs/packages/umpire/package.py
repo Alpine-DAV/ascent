@@ -76,7 +76,7 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('cmake@3.8:', type='build')
     depends_on('cmake@3.9:', when='+cuda', type='build')
-    depends_on('cmake@:3.20', when='+rocm', type='build')
+    depends_on('cmake@3.20:', when='+rocm', type='build')
     depends_on('cmake@3.14:', when='@2022.03.0:')
 
     depends_on('blt@0.5.0:', type='build', when='@2022.03.0:')
@@ -180,6 +180,8 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
                 "HIP_ROOT_DIR", '{0}'.format(spec['hip'].prefix)))
             entries.append(cmake_cache_path(
                 "ROCM_PATH", '{0}'.format(spec['llvm-amdgpu'].prefix)))
+            entries.append(cmake_cache_path(
+                "HIP_CLANG_INCLUDE_PATH", '{0}'.format(spec['llvm-amdgpu'].prefix.include)))
             archs = self.spec.variants['amdgpu_target'].value
             if archs != 'none':
                 arch_str = ",".join(archs)
