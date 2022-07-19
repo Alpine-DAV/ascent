@@ -579,6 +579,7 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
         if "+rocm" in spec:
             cfg.write(cmake_cache_entry("ENABLE_HIP", "ON"))
             cfg.write(cmake_cache_entry("CMAKE_HIP_COMPILER", self.spec['hip'].hipcc))
+            cfg.write(cmake_cache_entry("ROCM_PATH", spec['llvm-amdgpu'].prefix)
             rocm_archs = ",".join(self.spec.variants['amdgpu_target'].value)
             cfg.write(cmake_cache_entry("CMAKE_HIP_ARCHITECTURES", rocm_archs))
         else:
