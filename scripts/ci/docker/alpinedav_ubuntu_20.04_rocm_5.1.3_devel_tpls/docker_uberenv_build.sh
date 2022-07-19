@@ -4,9 +4,9 @@
 # variants
 # TODO:
 # (+genten) genten currently disabled, wait for genten master to gain cokurt
-export SPACK_SPEC="%gcc+mpi+vtkh+dray+mfem+occa+rocm~genten~python~openmp~shared"
+export SPACK_SPEC="%clang+mpi+vtkh+dray+mfem+occa+rocm~genten~python~openmp~fortran"
 # constraints
-export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^mfem~rocm ^hypre~rocm"
+export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi ^mfem~rocm ^hypre~rocm ^raja@2022.03.0 ^conduit~fortran"
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_20.04_rocm_5.1.3_devel/"
 

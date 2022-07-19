@@ -16,4 +16,4 @@ RUN chmod -R a+x /*.sh
 
 RUN /docker_uberenv_build.sh
 
-RUN /docker_env_setup.sh
+#RUN /docker_env_setup.sh
