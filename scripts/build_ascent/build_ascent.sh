@@ -149,9 +149,42 @@ fi # build_vtkm
 
 
 ################
+# Camp
+################
+camp_version=v2022.03.0
+camp_src_dir=${root_dir}/camp-${camp_version}
+camp_build_dir=${root_dir}/build/camp-${camp_version}
+camp_install_dir=${root_dir}/install/camp-${camp_version}/
+camp_tarball=camp-${camp_version}.tar.gz
+
+if ${build_camp}; then
+if [ ! -d ${camp_src_dir} ]; then
+  echo "**** Downloading ${camp_tarball}"
+  curl -L https://github.com/LLNL/camp/archive/refs/tags/${camp_version}.tar.gz -o ${camp_tarball} 
+  tar -xzf ${camp_tarball} 
+fi
+
+echo "**** Configuring Camp ${camp_version}"
+cmake -S ${camp_src_dir} -B ${camp_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_SHARED_LIBS=ON\
+  -DENABLE_TESTS=${enable_tests} \
+  -DENABLE_EXAMPLES=${enable_tests} \
+  -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
+
+echo "**** Building Camp ${camp_version}"
+cmake --build ${camp_build_dir} -j${build_jobs}
+echo "**** Installing Camp ${camp_version}"
+cmake --install ${camp_build_dir}
+
+fi # build_camp
+
+
+################
 # RAJA
 ################
-raja_version=v0.14.1
+raja_version=v2022.03.0
 raja_src_dir=${root_dir}/RAJA-${raja_version}
 raja_build_dir=${root_dir}/build/raja-${raja_version}
 raja_install_dir=${root_dir}/install/raja-${raja_version}/
@@ -169,6 +202,7 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON\
+  -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
   -DENABLE_TESTS=${enable_tests} \
   -DENABLE_EXAMPLES=${enable_tests} \
@@ -202,6 +236,7 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
+  -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
   -DENABLE_TESTS=${enable_tests} \
   -DCMAKE_INSTALL_PREFIX=${umpire_install_dir}
@@ -275,6 +310,7 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
   -DENABLE_VTKH=ON \
   -DRAJA_DIR=${raja_install_dir} \
   -DUMPIRE_DIR=${umpire_install_dir} \
+  -DCAMP_DIR=${camp_install_dir} \
   -DMFEM_DIR=${mfem_install_dir} \
   -DENABLE_APCOMP=ON \
   -DENABLE_DRAY=ON
