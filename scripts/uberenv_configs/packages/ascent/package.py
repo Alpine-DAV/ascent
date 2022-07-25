@@ -147,7 +147,7 @@ class Ascent(CMakePackage, CudaPackage):
     
     # ascent newer than 0.8.0 uses internal vtk-h
     # use vtk-m 1.8 for newer than ascent 0.8.0
-    depends_on("vtk-m@:1.8", when="@0.8.1:")
+    depends_on("vtk-m@1.8:", when="@0.8.1:")
 
     depends_on("vtk-m~tbb", when="@0.8.1: +vtkh")
     depends_on("vtk-m+openmp", when="@0.8.1: +vtkh+openmp")
