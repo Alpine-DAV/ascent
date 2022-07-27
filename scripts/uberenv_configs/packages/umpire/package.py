@@ -178,8 +178,11 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
             entries.append(cmake_cache_option("ENABLE_HIP", True))
             entries.append(cmake_cache_path(
                 "HIP_ROOT_DIR", '{0}'.format(spec['hip'].prefix)))
+            # NOTE: We need the root install of rocm for ROCM_PATH
+            # There is no spack package named `rocm`, but rocminfo seems
+            # to also point to the root of the rocm install 
             entries.append(cmake_cache_path(
-                "ROCM_PATH", '{0}'.format(spec['llvm-amdgpu'].prefix)))
+                "ROCM_PATH", '{0}'.format(spec['rocminfo'].prefix)))
             entries.append(cmake_cache_path(
                 "HIP_CLANG_INCLUDE_PATH", '{0}'.format(spec['llvm-amdgpu'].prefix.include)))
             archs = self.spec.variants['amdgpu_target'].value

@@ -138,7 +138,7 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
 
     # Propagate AMD GPU target to raja for +rocm
     for amdgpu_value in ROCmPackage.amdgpu_targets:
-        depends_on("raja amdgpu_target=%s" % amdgpu_value, when="+rocm amdgpu_target=%s" % amdgpu_value)
+        depends_on("raja amdgpu_target=%s" % amdgpu_value, when="+raja+rocm amdgpu_target=%s" % amdgpu_value)
 
     # TODO: do we need all of these?
     depends_on("raja+cuda+shared", when="+cuda+shared")
@@ -155,18 +155,18 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
 
     # Propagate AMD GPU target to umpire for +rocm
     for amdgpu_value in ROCmPackage.amdgpu_targets:
-        depends_on("umpire amdgpu_target=%s" % amdgpu_value, when="+rocm amdgpu_target=%s" % amdgpu_value)
+        depends_on("umpire amdgpu_target=%s" % amdgpu_value, when="+umpire+rocm amdgpu_target=%s" % amdgpu_value)
 
     # TODO: do we need all of these?
-    depends_on("umpire+cuda+shared", when="+cuda+shared")
-    depends_on("umpire+cuda~shared", when="+cuda~shared")
-    depends_on("umpire~cuda+shared", when="~cuda+shared")
-    depends_on("umpire~cuda~shared", when="~cuda~shared")
+    depends_on("umpire+cuda+shared", when="+umpire+cuda+shared")
+    depends_on("umpire+cuda~shared", when="+umpire+cuda~shared")
+    depends_on("umpire~cuda+shared", when="+umpire~cuda+shared")
+    depends_on("umpire~cuda~shared", when="+umpire~cuda~shared")
 
     #############################
     # HIP
     #############################
-    depends_on("hip", when="+rocm") # do we need this with ROCmPackage?
+    depends_on("hip", when="+rocm")
 
     #############################
     # VTK-m + VTK-h
@@ -578,8 +578,11 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
 
         if "+rocm" in spec:
             cfg.write(cmake_cache_entry("ENABLE_HIP", "ON"))
-            cfg.write(cmake_cache_entry("CMAKE_HIP_COMPILER", self.spec['hip'].hipcc))
-            cfg.write(cmake_cache_entry("ROCM_PATH", spec['llvm-amdgpu'].prefix))
+            cfg.write(cmake_cache_entry("CMAKE_HIP_COMPILER", c_compiler))
+            # NOTE: We need the root install of rocm for ROCM_PATH
+            # There is no spack package named `rocm`, but rocminfo seems
+            # to also point to the root of the rocm install
+            cfg.write(cmake_cache_entry("ROCM_PATH", spec['rocminfo'].prefix))
             rocm_archs = ",".join(self.spec.variants['amdgpu_target'].value)
             cfg.write(cmake_cache_entry("CMAKE_HIP_ARCHITECTURES", rocm_archs))
         else:
@@ -606,6 +609,13 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
                           env["SPACK_CXX"]))
             else:
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "OFF"))
+
+            if "+rocm" in spec:
+                cfg.write(cmake_cache_entry("VTKm_ENABLE_KOKKOS ", "ON"))
+                cfg.write(cmake_cache_entry("KOKKOS_DIR", spec['kokkos'].prefix))
+            else:
+                cfg.write("# vtk-m not using ROCm\n")
+
 
         else:
             if self.spec.satisfies('@0.8.1:'):
