@@ -159,9 +159,11 @@ camp_tarball=camp-${camp_version}.tar.gz
 
 if ${build_camp}; then
 if [ ! -d ${camp_src_dir} ]; then
-  echo "**** Downloading ${camp_tarball}"
-  curl -L https://github.com/LLNL/camp/archive/refs/tags/v${camp_version}.tar.gz -o ${camp_tarball} 
-  tar -xzf ${camp_tarball} 
+  echo "**** Cloning Camp ${camp_version}"
+  # clone since camp releases don't contain submodules
+  git clone --recursive --depth 1 --branch v${camp_version} https://github.com/LLNL/camp.git camp-${camp_version}
+  # curl -L https://github.com/LLNL/camp/archive/refs/tags/v${camp_version}.tar.gz -o ${camp_tarball} 
+  # tar -xzf ${camp_tarball} 
 fi
 
 echo "**** Configuring Camp ${camp_version}"
@@ -179,6 +181,7 @@ echo "**** Installing Camp ${camp_version}"
 cmake --install ${camp_build_dir}
 
 fi # build_camp
+
 
 
 ################
@@ -218,7 +221,7 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=6.0.0
+umpire_version=2022.03.1
 umpire_src_dir=${root_dir}/umpire-${umpire_version}
 umpire_build_dir=${root_dir}/build/umpire-${umpire_version}
 umpire_install_dir=${root_dir}/install/umpire-${umpire_version}/

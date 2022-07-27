@@ -14,6 +14,6 @@ RUN tar -xzf ascent.docker.src.tar.gz
 COPY docker_uberenv_build.sh docker_env_setup.sh /
 RUN chmod -R a+x /*.sh
 
-RUN /docker_uberenv_build.sh
+#RUN /docker_uberenv_build.sh
 
 #RUN /docker_env_setup.sh

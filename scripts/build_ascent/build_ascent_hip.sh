@@ -40,6 +40,7 @@ build_hdf5="${build_hdf5:=true}"
 build_conduit="${build_conduit:=true}"
 build_kokkos="${build_kokkos:=true}"
 build_vtkm="${build_vtkm:=true}"
+build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
@@ -120,12 +121,12 @@ kokkos_version=3.6.01
 kokkos_src_dir=${root_dir}/kokkos-${kokkos_version}
 kokkos_build_dir=${root_dir}/build/kokkos-${kokkos_version}
 kokkos_install_dir=${root_dir}/install/kokkos-${kokkos_version}/
-kokkos_tarball=kokkos-${vtkm_version}.tar.gz
+kokkos_tarball=kokkos-${kokkos_version}.tar.gz
 
 if ${build_kokkos}; then
 if [ ! -d ${kokkos_src_dir} ]; then
   echo "**** Downloading ${kokkos_tarball}"
-  curl -L https://github.com/kokkos/kokkos/archive/refs/tags/${3.6.01}.tar.gz -o ${kokkos_tarball}
+  curl -L https://github.com/kokkos/kokkos/archive/refs/tags/${kokkos_version}.tar.gz -o ${kokkos_tarball}
   tar -xzf ${kokkos_tarball}
 fi
 
@@ -136,12 +137,12 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON\
   -DKokkos_ARCH_VEGA90A=ON \
-  -DCMAKE_CXX_COMPILER=${rocm_path}/bin/hipcc \
+  -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc \
   -DKokkos_ENABLE_HIP=ON \
   -DKokkos_ENABLE_SERIAL=ON \
   -DKokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE=OFF \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
-  -DCMAKE_CXX_FLAGS="--amdgpu-target=${ROCM_ARCH}"
+  -DCMAKE_CXX_FLAGS="--amdgpu-target=${ROCM_ARCH}" \
   -DBUILD_TESTING=OFF \
   -DVTKm_ENABLE_BENCHMARKS=OFF\
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir}
@@ -149,7 +150,7 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} \
 echo "**** Building Kokkos ${kokkos_version}"
 cmake --build ${kokkos_build_dir} -j${build_jobs}
 echo "**** Installing VTK-m ${kokkos_version}"
-cmake --install ${kokks_build_dir}
+cmake --install ${kokkos_build_dir}
 
 fi # build_vtkm
 
@@ -209,26 +210,25 @@ camp_tarball=camp-${camp_version}.tar.gz
 
 if ${build_camp}; then
 if [ ! -d ${camp_src_dir} ]; then
-  echo "**** Downloading ${camp_tarball}"
-  curl -L https://github.com/LLNL/camp/archive/refs/tags/v${camp_version}.tar.gz -o ${camp_tarball} 
-  tar -xzf ${camp_tarball} 
+  echo "**** Cloning Camp ${camp_version}"
+  # clone since camp releases don't contain submodules
+  git clone --recursive --depth 1 --branch v${camp_version} https://github.com/LLNL/camp.git camp-${camp_version}
+  # curl -L https://github.com/LLNL/camp/archive/refs/tags/v${camp_version}.tar.gz -o ${camp_tarball} 
+  # tar -xzf ${camp_tarball} 
 fi
 
 echo "**** Configuring Camp ${camp_version}"
 cmake -S ${camp_src_dir} -B ${camp_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=Release \
-  -DBUILD_SHARED_LIBS=ON\
-  -DBUILD_SHARED_LIBS=ON\
+  -DBUILD_SHARED_LIBS=ON \
   -DCMAKE_C_COMPILER=${CC} \
   -DCMAKE_CXX_COMPILER=${CXX} \
-  -DCMAKE_HIP_COMPILER=${CXX} \
   -DENABLE_HIP=ON \
-  -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH} \
-  -DROCM_PATH=/opt/rocm/ \ 
-  -DENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} \
-  -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
+  -DENABLE_TESTS=OFF \
+  -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}" \
+  -DROCM_PATH="/opt/rocm/" \
+  -DCMAKE_INSTALL_PREFIX=${camp_install_dir}
 
 echo "**** Building Camp ${camp_version}"
 cmake --build ${camp_build_dir} -j${build_jobs}
@@ -261,14 +261,14 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DBUILD_SHARED_LIBS=ON\
   -DCMAKE_C_COMPILER=${CC} \
   -DCMAKE_CXX_COMPILER=${CXX} \
-  -DCMAKE_HIP_COMPILER=${CXX} \
   -DENABLE_HIP=ON \
   -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH} \
   -DROCM_PATH=/opt/rocm/ \
   -DENABLE_OPENMP=OFF \
   -Dcamp_DIR=${camp_install_dir} \
-  -DENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} \
+  -DENABLE_TESTS=OFF \
+  -DENABLE_EXAMPLES=OFF \
+  -DENABLE_EXERCISES=OFF \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir}  
   
 
@@ -282,7 +282,7 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=6.0.0
+umpire_version=2022.03.1
 umpire_src_dir=${root_dir}/umpire-${umpire_version}
 umpire_build_dir=${root_dir}/build/umpire-${umpire_version}
 umpire_install_dir=${root_dir}/install/umpire-${umpire_version}/
@@ -387,10 +387,6 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
   -DMFEM_DIR=${mfem_install_dir} \
   -DENABLE_APCOMP=ON \
   -DENABLE_DRAY=ON
-
-# -DHIP_CLANG_INCLUDE_PATH=/opt/rocm-5.1.0/include \
-#-DCMAKE_HIP_FLAGS=-I/opt/cray/pe/mpich/default/ofi/rocm-compiler/5.0/include/ \
-
 
 echo "**** Building Ascent"
 cmake --build ${ascent_build_dir} -j${build_jobs}
