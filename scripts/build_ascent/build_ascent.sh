@@ -151,7 +151,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=v2022.03.0
+camp_version=2022.03.0
 camp_src_dir=${root_dir}/camp-${camp_version}
 camp_build_dir=${root_dir}/build/camp-${camp_version}
 camp_install_dir=${root_dir}/install/camp-${camp_version}/
@@ -160,7 +160,7 @@ camp_tarball=camp-${camp_version}.tar.gz
 if ${build_camp}; then
 if [ ! -d ${camp_src_dir} ]; then
   echo "**** Downloading ${camp_tarball}"
-  curl -L https://github.com/LLNL/camp/archive/refs/tags/${camp_version}.tar.gz -o ${camp_tarball} 
+  curl -L https://github.com/LLNL/camp/archive/refs/tags/v${camp_version}.tar.gz -o ${camp_tarball} 
   tar -xzf ${camp_tarball} 
 fi
 
