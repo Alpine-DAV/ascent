@@ -1,18 +1,23 @@
 #!/bin/bash
 set -ev
 
-# setup cmake in container
-curl -L https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.tar.gz -o cmake-3.23.2-linux-x86_64.tar.gz
-tar -xzf cmake-3.23.2-linux-x86_64.tar.gz
-export PATH=$PATH:/cmake-3.23.2-linux-x86_64/bin/
+cmake_install_dir=/cmake-3.23.2-linux-x86_64
+if [ ! -d ${cmake_install_dir} ]; then
+  echo "**** Downloading ${hdf5_tarball}"
+  # setup cmake in container
+  curl -L https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.tar.gz -o cmake-3.23.2-linux-x86_64.tar.gz
+  tar -xzf cmake-3.23.2-linux-x86_64.tar.gz
+fi
+
+export PATH=$PATH:/${cmake_install_dir}/bin/
 
 # build rocm tpls with helper script
 chmod +x ascent/scripts/build_ascent/build_ascent_hip.sh
-cd ascent && env build_ascent=false scripts/build_ascent/build_ascent_hip.sh
-# back to where we started
-cd ../
+env build_ascent=false ascent/scripts/build_ascent/build_ascent_hip.sh
 
+############################
 # TODO: get spack working
+############################
 # variants
 # TODO:
 # (+genten) genten currently disabled, wait for genten master to gain cokurt
