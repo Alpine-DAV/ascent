@@ -174,7 +174,7 @@ cmake -S ${camp_src_dir} -B ${camp_build_dir} \
   -DBUILD_SHARED_LIBS=ON\
   -DENABLE_TESTS=${enable_tests} \
   -DENABLE_EXAMPLES=${enable_tests} \
-  -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
+  -DCMAKE_INSTALL_PREFIX=${camp_install_dir}
 
 echo "**** Building Camp ${camp_version}"
 cmake --build ${camp_build_dir} -j${build_jobs}
