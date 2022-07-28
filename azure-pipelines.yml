@@ -545,10 +545,6 @@ stages:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
     variables:
-      COMPILER_CC: /opt/rocm/llvm/bin/amdclang
-      COMPILER_CXX: /opt/rocm/llvm/bin/amdclang++
-      ROCM_ARCH: gfx90a
-      ROCM_PATH: /opt/rocm/
       CMAKE_EXE: /cmake-3.23.2-linux-x86_64/bin/cmake
     strategy:
       matrix:
@@ -568,44 +564,10 @@ stages:
            #################################
            # configure
            #################################
-           # setup compiler env vars
-           export CC=${COMPILER_CC}
-           export CXX=${COMPILER_CXX}
-           export FC=${COMPILER_FC}
-           #setup tpl dirs
-           conduit_install_dir=/install/conduit-v0.8.3
-           kokkos_install_dir=/install/kokkos-3.6.01
-           vtkm_install_dir=/install/vtk-m-v1.8.0
-           camp_install_dir=/install/camp-2022.03.0
-           raja_install_dir=/install/raja-v2022.03.0
-           umpire_install_dir=/install/umpire-2022.03.1
-           mfem_install_dir=/install/mfem-4.4
-           # env info
-           ${CC} --version
-           echo $PATH
            ${CMAKE_EXE} --version
+           cat /ascent-config.cmake
            # configure
-           ${CMAKE_EXE} -S src -B build \
-                -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_INSTALL_PREFIX=install \
-                -DENABLE_MPI=ON \
-                -DENABLE_FORTRAN=OFF \
-                -DENABLE_TESTS=ON \
-                -DENABLE_PYTHON=OFF \
-                -DBLT_CXX_STD=c++14 \
-                -DCONDUIT_DIR=${conduit_install_dir} \
-                -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}" \
-                -DCMAKE_PREFIX_PATH="${kokkos_install_dir}" \
-                -DKOKKOS_DIR=${kokkos_install_dir} \
-                -DVTKM_DIR=${vtkm_install_dir} \
-                -DENABLE_VTKH=ON \
-                -DRAJA_DIR=${raja_install_dir} \
-                -DUMPIRE_DIR=${umpire_install_dir} \
-                -DCAMP_DIR=${camp_install_dir} \
-                -DMFEM_DIR=${mfem_install_dir} \
-                -DENABLE_APCOMP=ON \
-                -DENABLE_DRAY=ON
+           ${CMAKE_EXE} -S src -B build -C /ascent-config.cmake
         displayName: 'Configure with CMake'
 
       - script: |
@@ -613,7 +575,7 @@ stages:
            # build
            #################################
            # build
-           ${CMAKE_EXE} --build build -j 2
+           ${CMAKE_EXE} --build build -j 3
         displayName: 'Build'
 
 
@@ -621,7 +583,7 @@ stages:
            #################################
            # install
            #################################
-           ${CMAKE_EXE} --install build -j 2
+           ${CMAKE_EXE} --install build -j 3
         displayName: 'Install'
 
       - script: |
@@ -630,8 +592,9 @@ stages:
           ###########################
           pwd
           ls -l
-          ${CMAKE_EXE} install/examples/ascent/using-with-cmake -B build-using-with-cmake
-          ${CMAKE_EXE} --build build-using-with-cmake
+          cd install/examples/ascent/using-with-cmake
+          ${CMAKE_EXE} . -B build
+          ${CMAKE_EXE} --build build
         displayName: 'Test vs Install (using-with-cmake) [build only]'
 
       - script: |
