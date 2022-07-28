@@ -11,10 +11,6 @@
 #
 ###############################################################################
 
-#if(ENABLE_CUDA AND NOT "${BUILD_SHARED_LIBS}" STREQUAL "OFF")
-#  message(FATAL_ERROR "Ascent can only be built statically when cuda is enabled")
-#endif()
-
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     ASCENT_INSTALL_PREFIX)
 
@@ -51,13 +47,15 @@ endif()
 
 set(ASCENT_WEBSERVER_ENABLED ${CONDUIT_RELAY_WEBSERVER_ENABLED})
 
-
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
     set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
+    set(ASCENT_VTKM_USE_KOKKOS ${KOKKOS_FOUND})
 endif()
 
 set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
+set(ASCENT_USE_CUDA    ${CUDA_FOUND})
+set(ASCENT_USE_HIP     ${HIP_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
@@ -326,6 +324,10 @@ if(CUDA_FOUND)
     if(CMAKE_THREAD_LIBS_INIT)
         set(ASCENT_CUDA_MAKE_EXTRA_LIBS "${ASCENT_CUDA_MAKE_EXTRA_LIBS} ${CMAKE_THREAD_LIBS_INIT}"  CACHE STRING "" FORCE)
     endif()
+endif()
+
+if(HIP_FOUND)
+    list(APPEND ascent_thirdparty_libs blt_hip_runtime)
 endif()
 
 if(OPENMP_FOUND)

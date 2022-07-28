@@ -7,6 +7,10 @@ if(CUDA_FOUND)
   set(VTKH_CUDA_ENABLED TRUE)
 endif()
 
+if(HIP_FOUND)
+  set(VTKH_HIP_ENABLED TRUE)
+endif()
+
 if(ENABLE_OPENMP)
   set(VTKH_OPENMP_ENABLED TRUE)
 endif()
