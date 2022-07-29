@@ -332,9 +332,9 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
   -DCONDUIT_DIR=${conduit_install_dir} \
   -DVTKM_DIR=${vtkm_install_dir} \
   -DENABLE_VTKH=ON \
+  -DCAMP_DIR=${camp_install_dir} \
   -DRAJA_DIR=${raja_install_dir} \
   -DUMPIRE_DIR=${umpire_install_dir} \
-  -DCAMP_DIR=${camp_install_dir} \
   -DMFEM_DIR=${mfem_install_dir} \
   -DENABLE_APCOMP=ON \
   -DENABLE_DRAY=ON
