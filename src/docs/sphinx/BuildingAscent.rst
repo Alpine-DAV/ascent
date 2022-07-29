@@ -24,7 +24,7 @@ Ascent uses CMake for its build system.
 Building Ascent creates two separate libraries:
 
     * libascent : a version for execution on a single node
-    * libascent_mpi : a version for distributed-memory parallel
+    * libascent_mpi : a version for distributed-memory parallelism
 
 The CMake variable( ENABLE_MPI ON | OFF ) controls the building the parallel version of Ascent and included proxy-apps.
 
@@ -174,7 +174,7 @@ Main CMake Options
      - *(default = OFF)*
 
    * - ``ENABLE_VTKH``
-     - Controls if AP Compositor is built. Requires VTK-m. (AP Compositor is now developed as part of Ascent)
+     - Controls if VTK-h is built.. Requires VTK-m. (VTK-h is now developed as part of Ascent)
      - *(default = OFF)*
 
    * - ``ENABLE_EXAMPLES``
@@ -182,11 +182,11 @@ Main CMake Options
      - *(default = ON)*
 
    * - ``ENABLE_UTILS``
-     - Controls if Ascent examples are built.
+     - Controls if Ascent utilities are built.
      - *(default = ON)*
 
    * - ``ENABLE_TESTS``
-     - Controls if utilities are built.
+     - Controls if Ascent tests are built.
      - *(default = ON)*
 
    * - ``ENABLE_LOGGING``
