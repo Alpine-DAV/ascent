@@ -583,7 +583,7 @@ stages:
            #################################
            # install
            #################################
-           ${CMAKE_EXE} --install build -j 3
+           ${CMAKE_EXE} --install build
         displayName: 'Install'
 
       - script: |
