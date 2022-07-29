@@ -53,14 +53,14 @@ jobs:
     - name: Build Ascent
       run: |
         echo "**** Configuring Ascent"
-        cmake -S src -B build/ascent -C ascent-config.cmake
+        cmake -S src -B build -C ascent-config.cmake
     - name: Build Ascent
       run: |
         echo "**** Building Ascent"
-        cmake --build  build/ascent -j2
+        cmake --build  build -j2
     - name: Install Ascent
       run: |
         echo "**** Installing Ascent"
-        cmake --install  build/ascent
+        cmake --install  build
 
 

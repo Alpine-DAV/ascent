@@ -32,6 +32,10 @@ if(CUDA_FOUND)
     list(APPEND vtkh_base_deps cuda)
 endif()
 
+if(ENABLE_HIP)
+    list(APPEND vtkh_base_deps blt_hip)
+endif()
+
 if(ENABLE_OPENMP)
     list(APPEND vtkh_base_deps ${ascent_blt_openmp_deps})
 endif()
@@ -39,6 +43,7 @@ endif()
 if(KOKKOS_FOUND)
     list(APPEND vtkh_base_deps Kokkos::kokkos)
 endif()
+
 
 
 add_subdirectory(utils)
