@@ -10,6 +10,7 @@
 #cmakedefine VTKH_ENABLE_FILTER_CONTOUR_TREE
 #cmakedefine VTKH_OPENMP_ENABLED
 #cmakedefine VTKH_CUDA_ENABLED
+#cmakedefine VTKH_HIP_ENABLED
 #cmakedefine VTKH_KOKKOS_ENABLED
 #cmakedefine VTKH_ENABLE_LOGGING
 

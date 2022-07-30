@@ -53,26 +53,14 @@ jobs:
     - name: Build Ascent
       run: |
         echo "**** Configuring Ascent"
-        cmake -S src -B build/ascent \
-              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=install/ascent \
-              -DENABLE_MPI=ON \
-              -DENABLE_FORTRAN=ON \
-              -DENABLE_TESTS=ON \
-              -DENABLE_PYTHON=OFF \
-              -DBLT_CXX_STD=c++14 \
-              -DCONDUIT_DIR=`pwd`/install/conduit-v0.8.3/ \
-              -DVTKM_DIR=`pwd`/install/vtk-m-v1.8.0/ \
-              -DENABLE_VTKH=ON \
-              -DRAJA_DIR=`pwd`/install/raja-v0.14.1/ \
-              -DUMPIRE_DIR=`pwd`/install/umpire-6.0.0/ \
-              -DMFEM_DIR=`pwd`/install/mfem-4.4/ \
-              -DENABLE_APCOMP=ON \
-              -DENABLE_DRAY=ON
+        cmake -S src -B build -C ascent-config.cmake
+    - name: Build Ascent
+      run: |
         echo "**** Building Ascent"
-        cmake --build  build/ascent -j2
+        cmake --build  build -j2
+    - name: Install Ascent
+      run: |
         echo "**** Installing Ascent"
-        cmake --install  build/ascent
+        cmake --install  build
 
 

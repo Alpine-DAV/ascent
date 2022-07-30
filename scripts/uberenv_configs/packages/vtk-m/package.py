@@ -211,7 +211,8 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
             # hip support
             if "+rocm" in spec:
                 options.append("-DVTKm_NO_DEPRECATED_VIRTUAL:BOOL=ON")
-
+                options.append('-DCMAKE_HIP_COMPILER:STRING={0}'.format(
+                               env["SPACK_CXX"]))
                 archs = ",".join(self.spec.variants['amdgpu_target'].value)
                 options.append(
                     "-DCMAKE_HIP_ARCHITECTURES:STRING={0}".format(archs))

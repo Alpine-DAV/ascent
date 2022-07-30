@@ -28,6 +28,7 @@ RUN echo 'export PATH=/opt/rocm/llvm/bin:/opt/rocm/bin:/opt/rocm/profiler/bin:/o
 # Notes:
 # kmod -- hip requires lsmod
 # liblocale-codes-perl  -- hip uses perl, if locale bad, life isn't good
+# language-pack-en  -- hip uses perl, if locale bad, life isn't good
 RUN apt-get update && apt-get -y install \
              binutils \
              gcc \
@@ -61,6 +62,7 @@ RUN apt-get update && apt-get -y install \
              rocprim-dev     \
              rocrand-dev \
              kmod \
+             language-pack-en \
              liblocale-codes-perl \
              vim
 

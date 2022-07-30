@@ -43,6 +43,38 @@ find_dependency(Conduit REQUIRED
                 PATHS ${CONDUIT_DIR}/lib/cmake)
 
 ###############################################################################
+# Setup Kokkos
+###############################################################################
+if(NOT KOKKOS_DIR)
+    set(KOKKOS_DIR ${ASCENT_KOKKOS_DIR})
+endif()
+
+if(EXISTS ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
+    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
+endif()
+
+if(EXISTS ${KOKKOS_DIR}/lib/cmake/Kokkos/)
+    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib/cmake/Kokkos/)
+endif()
+
+
+if(KOKKOS_DIR)
+    if(NOT EXISTS ${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)
+        MESSAGE(FATAL_ERROR "Could not find Kokkos CMake include file (${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(Kokkos REQUIRED
+                    NO_DEFAULT_PATH
+		    PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
+endif()
+
+
+
+
+###############################################################################
 # Setup VTK-h (external)
 ###############################################################################
 if(NOT VTKH_DIR)
@@ -84,24 +116,34 @@ if(VTKM_DIR)
 endif()
 
 ###############################################################################
-# Setup Devil Ray
+# Setup Camp
 ###############################################################################
-if(NOT DRAY_DIR)
-    set(DRAY_DIR ${ASCENT_DRAY_DIR})
+if(NOT CAMP_DIR)
+    set(CAMP_DIR ${ASCENT_CAMP_DIR})
 endif()
 
-if(DRAY_DIR)
-    if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
-        message(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
+if(CAMP_DIR)
+    set(_CAMP_SEARCH_PATH)
+    if(EXISTS ${CAMP_DIR}/share/camp/cmake)
+      # old install layout ?
+      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/share/camp/cmake)
+    else()
+      # new install layout ?
+      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/lib/cmake/camp)
+    endif()
+    
+    if(NOT EXISTS ${_CAMP_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find Camp CMake include file (${_CAMP_SEARCH_PATH})")
     endif()
 
     ###############################################################################
     # Import CMake targets
     ###############################################################################
-    find_dependency(DRay REQUIRED
+    find_dependency(camp REQUIRED
                     NO_DEFAULT_PATH
-                    PATHS ${DRAY_DIR}/lib/cmake/)
+                    PATHS ${_CAMP_SEARCH_PATH})
 endif()
+
 
 ###############################################################################
 # Setup Umpire
@@ -133,33 +175,54 @@ if(UMPIRE_DIR)
 endif()
 
 ###############################################################################
-# Setup Camp
+# Setup RAJA
 ###############################################################################
-if(NOT CAMP_DIR)
-    set(CAMP_DIR ${ASCENT_CAMP_DIR})
+if(NOT RAJA_DIR)
+    set(RAJA_DIR ${ASCENT_RAJA_DIR})
 endif()
 
-if(CAMP_DIR)
-    set(_CAMP_SEARCH_PATH)
-    if(EXISTS ${CAMP_DIR}/share/camp/cmake)
-      # old install layout ?
-      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/share/camp/cmake)
+if(RAJA_DIR)
+    set(_RAJA_SEARCH_PATH)
+    if(EXISTS ${RAJA_DIR}/share/umpire/cmake)
+      # old install layout
+      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/share/raja/cmake)
     else()
-      # new install layout ?
-      set(_CAMP_SEARCH_PATH ${CAMP_DIR}/lib/cmake/camp)
+      # new install layout
+      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/rajae)
     endif()
     
-    if(NOT EXISTS ${_CAMP_SEARCH_PATH})
-        message(FATAL_ERROR "Could not find Camp CMake include file (${_CAMP_SEARCH_PATH})")
+    if(NOT EXISTS ${_UMPIRE_RAJA_PATH})
+        message(FATAL_ERROR "Could not find RAJA CMake include file (${_UMPIRE_RAJA_PATH})")
     endif()
 
     ###############################################################################
     # Import CMake targets
     ###############################################################################
-    find_dependency(camp REQUIRED
+    find_dependency(RAJA REQUIRED
                     NO_DEFAULT_PATH
-                    PATHS ${_CAMP_SEARCH_PATH})
+                    PATHS ${_RAJA_SEARCH_PATH})
 endif()
+
+###############################################################################
+# Setup Devil Ray
+###############################################################################
+if(NOT DRAY_DIR)
+    set(DRAY_DIR ${ASCENT_DRAY_DIR})
+endif()
+
+if(DRAY_DIR)
+    if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
+        message(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(DRay REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${DRAY_DIR}/lib/cmake/)
+endif()
+
 
 ###############################################################################
 # Setup Adios2
@@ -275,36 +338,5 @@ endif()
 ###############################################################################
 if(ASCENT_CUDA_ENABLED AND ASCENT_OCCA_ENABLED)
     find_package(CUDAToolkit REQUIRED)
-endif()
-
-
-
-###############################################################################
-# Setup GenTen
-###############################################################################
-if(NOT KOKKOS_DIR)
-    set(KOKKOS_DIR ${ASCENT_KOKKOS_DIR})
-endif()
-
-if(EXISTS ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
-    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib64/cmake/Kokkos/)
-endif()
-
-if(EXISTS ${KOKKOS_DIR}/lib/cmake/Kokkos/)
-    set(KOKKOS_CMAKE_CONFIG_DIR ${KOKKOS_DIR}/lib/cmake/Kokkos/)
-endif()
-
-
-if(KOKKOS_DIR)
-    if(NOT EXISTS ${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)
-        MESSAGE(FATAL_ERROR "Could not find Kokkos CMake include file (${KOKKOS_CMAKE_CONFIG_DIR}/KokkosConfig.cmake)")
-    endif()
-
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(Kokkos REQUIRED
-                    NO_DEFAULT_PATH
-		    PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
 endif()
 
