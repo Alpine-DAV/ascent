@@ -64,7 +64,7 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_UMPIRE_DIR "@UMPIRE_DIR@")
 
     # advertise if camp support is enabled
-    set(ASCENT_CAMP_ENABLED @UMPIRE_FOUND@)
+    set(ASCENT_CAMP_ENABLED @CAMP_FOUND@)
     set(ASCENT_CAMP_DIR "@CAMP_DIR@")
 
     ##################################################
