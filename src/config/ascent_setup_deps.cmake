@@ -116,6 +116,13 @@ if(VTKM_DIR)
 endif()
 
 ###############################################################################
+# HIP + Raja related tpls will require targets from hip
+###############################################################################
+if(ASCENT_HIP_ENABLED AND ASCENT_UMPIRE_ENABLED)
+    find_package(hip REQUIRED CONFIG PATHS ${ASCENT_ROCM_PATH})
+endif()
+
+###############################################################################
 # Setup Camp
 ###############################################################################
 if(NOT CAMP_DIR)
@@ -339,4 +346,5 @@ endif()
 if(ASCENT_CUDA_ENABLED AND ASCENT_OCCA_ENABLED)
     find_package(CUDAToolkit REQUIRED)
 endif()
+
 

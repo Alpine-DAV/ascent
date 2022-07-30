@@ -27,6 +27,10 @@ if(NOT ASCENT_FOUND)
     # advertise if cuda is enabled
     set(ASCENT_CUDA_ENABLED "@ENABLE_CUDA@")
 
+    # advertise if hip is enabled
+    set(ASCENT_HIP_ENABLED "@ENABLE_HIP@")
+    set(ASCENT_ROCM_PATH "@ROCM_PATH@")
+
     # advertise if openmp is enabled
     set(ASCENT_OPENMP_ENABLED "@ENABLE_OPENMP@")
 
