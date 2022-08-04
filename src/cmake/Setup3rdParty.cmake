@@ -145,3 +145,32 @@ if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
 
+##################################
+# Export BLT Targets when needed
+##################################
+set(ASCENT_BLT_TPL_DEPS_EXPORTS)
+
+blt_list_append(TO ASCENT_BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUDA)
+blt_list_append(TO ASCENT_BLT_TPL_DEPS_EXPORTS ELEMENTS hip hip_runtime IF ENABLE_HIP)
+
+# if using blt openmp target
+if(ENABLE_OPENMP AND NOT ASCENT_USE_CMAKE_OPENMP_TARGETS)
+  list(APPEND ASCENT_BLT_TPL_DEPS_EXPORTS openmp)
+endif()
+
+# if using blt mpi target
+if(ENABLE_MPI AND ENABLE_FIND_MPI AND NOT ASCENT_USE_CMAKE_MPI_TARGETS)
+  list(APPEND ASCENT_BLT_TPL_DEPS_EXPORTS mpi)
+endif()
+
+foreach(dep ${ASCENT_BLT_TPL_DEPS_EXPORTS})
+    # If the target is EXPORTABLE, add it to the export set
+    get_target_property(_is_imported ${dep} IMPORTED)
+    if(NOT ${_is_imported})
+        install(TARGETS              ${dep}
+                EXPORT               ascent
+                DESTINATION          lib)
+        # Namespace target to avoid conflicts
+        set_target_properties(${dep} PROPERTIES EXPORT_NAME ascent::blt_${dep})
+    endif()
+endforeach()
