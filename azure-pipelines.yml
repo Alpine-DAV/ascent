@@ -548,7 +548,7 @@ stages:
       CMAKE_EXE: /cmake-3.23.2-linux-x86_64/bin/cmake
     strategy:
       matrix:
-        ubuntu_20.04_rocm_cuda_5.1.3:
+        ubuntu_20.04_rocm_5.1.3:
           containerImage: ${{ variables.ubuntu_20_04_rocm_5_1_3_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Release

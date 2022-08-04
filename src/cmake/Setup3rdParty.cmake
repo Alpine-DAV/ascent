@@ -151,7 +151,7 @@ endif()
 set(ASCENT_BLT_TPL_DEPS_EXPORTS)
 
 blt_list_append(TO ASCENT_BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUDA)
-blt_list_append(TO ASCENT_BLT_TPL_DEPS_EXPORTS ELEMENTS hip hip_runtime IF ENABLE_HIP)
+blt_list_append(TO ASCENT_BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENABLE_HIP)
 
 # if using blt openmp target
 if(ENABLE_OPENMP AND NOT ASCENT_USE_CMAKE_OPENMP_TARGETS)
