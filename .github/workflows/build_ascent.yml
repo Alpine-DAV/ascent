@@ -50,7 +50,7 @@ jobs:
                                 libmpich-dev \
                                 cmake
     - name: Install intel compilers
-      if ${{ matrix.cc == "icx" || matrix.cc == "icc" }}
+      if: ${{ matrix.cc == "icx" || matrix.cc == "icc" }}
       run: |
         wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
           | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /devnull
