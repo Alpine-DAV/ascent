@@ -6,7 +6,19 @@ on:
 
 jobs:
   build_pip_basic:
-    name: Ubuntu Build Ascent
+    strategy:
+      matrix:
+        include:
+        - cc: gcc
+          cxx: g++
+          fc: gfortran
+        - cc: icc
+          cxx: icpc
+          fc: ifort
+        - cc: icx
+          cxx: icpx
+          fc: ifx
+    name: Ubuntu Build Ascent (${{ matrix.cc }})
     runs-on: ubuntu-latest
     steps:
     - name: Install System Deps
@@ -37,6 +49,16 @@ jobs:
                                 mpich \
                                 libmpich-dev \
                                 cmake
+    - name: Install intel compilers
+      if ${{ matrix.cc == "icx" || matrix.cc == "icc" }}
+      run: |
+        wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+          | gpg --dearmor > /usr/share/keyrings/oneapi-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" > \
+          /etc/apt/sources.list.d/oneAPI.list
+        apt-get update
+        apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic \
+                       intel-oneapi-compiler-fortran
     - name: Checkout
       uses: actions/checkout@v2
       with:
@@ -53,10 +75,18 @@ jobs:
     - name: Build Ascent
       run: |
         echo "**** Configuring Ascent"
+        export CC=${{ matrix.cc }}
+        export CXX=${{ matrix.cxx }}
+        export FC=${{ matrix.fc }}
+        [${CC} == "icx" || ${CC} == "icc"] || source /opt/intel/oneapi/setvars.sh
         cmake -S src -B build -C ascent-config.cmake
     - name: Build Ascent
       run: |
         echo "**** Building Ascent"
+        export CC=${{ matrix.cc }}
+        export CXX=${{ matrix.cxx }}
+        export FC=${{ matrix.fc }}
+        [${CC} == "icx" || ${CC} == "icc"] || source /opt/intel/oneapi/setvars.sh
         cmake --build  build -j2
     - name: Install Ascent
       run: |
