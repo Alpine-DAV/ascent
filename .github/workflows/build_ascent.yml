@@ -53,11 +53,11 @@ jobs:
       if ${{ matrix.cc == "icx" || matrix.cc == "icc" }}
       run: |
         wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
-          | gpg --dearmor > /usr/share/keyrings/oneapi-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" > \
-          /etc/apt/sources.list.d/oneAPI.list
-        apt-get update
-        apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic \
+          | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /devnull
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | \
+          sudo tee /etc/apt/sources.list.d/oneAPI.list > /dev/null
+        sudo apt-get update
+        sudo apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic \
                        intel-oneapi-compiler-fortran
     - name: Checkout
       uses: actions/checkout@v2
