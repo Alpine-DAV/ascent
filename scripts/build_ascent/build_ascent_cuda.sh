@@ -46,6 +46,15 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 
+build_hdf5=false
+build_conduit=false
+build_vtkm=false
+build_camp=false
+build_raja="${build_raja:=true}"
+build_umpire="${build_umpire:=true}"
+build_mfem="${build_mfem:=true}"
+
+
 # ascent options
 build_ascent="${build_ascent:=true}"
 
@@ -184,8 +193,8 @@ cmake -S ${camp_src_dir} -B ${camp_build_dir} \
   -DCMAKE_C_COMPILER=${CC} \
   -DCMAKE_CXX_COMPILER=${CXX} \
   -DENABLE_CUDA=ON \
-  -DENABLE_TESTS=OFF \
   -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
+  -DENABLE_TESTS=OFF \
   -DCMAKE_INSTALL_PREFIX=${camp_install_dir}
 
 echo "**** Building Camp ${camp_version}"
@@ -219,10 +228,9 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DBUILD_SHARED_LIBS=ON\
   -DCMAKE_C_COMPILER=${CC} \
   -DCMAKE_CXX_COMPILER=${CXX} \
-#  -DENABLE_HIP=ON \
-#  -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH} \
-#  -DROCM_PATH=/opt/rocm/ \
   -DENABLE_OPENMP=OFF \
+  -DENABLE_CUDA=ON \
+  -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_TESTS=OFF \
   -DENABLE_EXAMPLES=OFF \
@@ -260,9 +268,8 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
   -DBUILD_SHARED_LIBS=ON \
   -DCMAKE_C_COMPILER=${CC} \
   -DCMAKE_CXX_COMPILER=${CXX} \
-#  -DENABLE_HIP=ON \
-#  -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}" \
-#  -DROCM_PATH=/opt/rocm/ \
+  -DENABLE_CUDA=ON \
+  -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
   -DENABLE_TESTS=${enable_tests} \
@@ -357,13 +364,8 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
   -DENABLE_FORTRAN=${enable_fortran} \
   -DENABLE_TESTS=$enable_tests \
   -DENABLE_PYTHON=${enable_python} \
-#  -DENABLE_HIP=ON \
   -DBLT_CXX_STD=c++14 \
-#  -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}" \
-#  -DCMAKE_PREFIX_PATH="${kokkos_install_dir}" \
-#  -DROCM_PATH=${ROCM_PATH} \
   -DCONDUIT_DIR=${conduit_install_dir} \
-#  -DKOKKOS_DIR=${kokkos_install_dir} \
   -DVTKM_DIR=${vtkm_install_dir} \
   -DRAJA_DIR=${raja_install_dir} \
   -DUMPIRE_DIR=${umpire_install_dir} \
