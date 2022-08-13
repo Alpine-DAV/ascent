@@ -586,18 +586,18 @@ stages:
            ${CMAKE_EXE} --install build
         displayName: 'Install'
 
-      - script: |
-            ###########################
-            # using with cmake example
-            ###########################
-            pwd
-            ls -l
-            export CC=/opt/rocm/llvm/bin/amdclang
-            export CXX=/opt/rocm/llvm/bin/amdclang++
-            cd install/examples/ascent/using-with-cmake
-            ${CMAKE_EXE} . -B build
-            ${CMAKE_EXE} --build build
-        displayName: 'Test vs Install (using-with-cmake) [build only]'
+      # - script: |
+      #       ###########################
+      #       # using with cmake example
+      #       ###########################
+      #       pwd
+      #       ls -l
+      #       export CC=/opt/rocm/llvm/bin/amdclang
+      #       export CXX=/opt/rocm/llvm/bin/amdclang++
+      #       cd install/examples/ascent/using-with-cmake
+      #       ${CMAKE_EXE} . -B build
+      #       ${CMAKE_EXE} --build build
+      #   displayName: 'Test vs Install (using-with-cmake) [build only]'
 
       - script: |
           ###########################
