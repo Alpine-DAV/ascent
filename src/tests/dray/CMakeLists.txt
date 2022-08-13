@@ -81,6 +81,10 @@ if(ENABLE_OPENMP)
   list(APPEND dray_test_deps ${ascent_blt_openmp_deps})
 endif()
 
+if(ENABLE_CUDA)
+  list(APPEND dray_test_deps cuda)
+endif()
+
 
 if(ENABLE_SERIAL)
   message(STATUS "Adding basic dray unit tests")
