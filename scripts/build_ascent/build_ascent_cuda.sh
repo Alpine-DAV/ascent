@@ -46,6 +46,7 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 
+# TODO HWIRE REMOVE
 build_hdf5=false
 build_conduit=false
 build_vtkm=false
