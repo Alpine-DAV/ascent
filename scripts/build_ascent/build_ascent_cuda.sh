@@ -11,7 +11,7 @@
 #
 # Assumes: 
 #  - cmake is in your path
-#  - selected compilers are in your path or set via env vars
+#  - selected compilers (including nvcc) are in your path or set via env vars
 #  - [when enabled] MPI and Python (+numpy and mpi4py), are in your path
 #
 ##############################################################################
@@ -45,16 +45,6 @@ build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
-
-# TODO HWIRE REMOVE
-build_hdf5=false
-build_conduit=false
-build_vtkm=false
-build_camp=false
-build_raja="${build_raja:=true}"
-build_umpire="${build_umpire:=true}"
-build_mfem="${build_mfem:=true}"
-
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -335,11 +325,9 @@ echo 'set(CMAKE_INSTALL_PREFIX ' ${ascent_install_dir} ' CACHE PATH "")' >> asce
 echo 'set(ENABLE_MPI ' ${enable_mpi} ' CACHE BOOL "")' >> ascent-config.cmake
 echo 'set(ENABLE_FORTRAN ' ${enable_fortran} ' CACHE BOOL "")' >> ascent-config.cmake
 echo 'set(ENABLE_PYTHON ' ${enable_python} ' CACHE BOOL "")' >> ascent-config.cmake
-#echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ascent-config.cmake
 echo 'set(BLT_CXX_STD c++14 CACHE STRING "")' >> ascent-config.cmake
-#echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ascent-config.cmake
-#echo 'set(CMAKE_PREFIX_PATH ' ${kokkos_install_dir} ' CACHE PATH "")' >> ascent-config.cmake
-#echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ascent-config.cmake
+echo 'set(ENABLE_CUDA ON CACHE BOOL "")' >> ascent-config.cmake
+echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE PATH "")' >> ascent-config.cmake
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ascent-config.cmake
 echo 'set(VTKM_DIR ' ${vtkm_install_dir} ' CACHE PATH "")' >> ascent-config.cmake
 echo 'set(CAMP_DIR ' ${camp_install_dir} ' CACHE PATH "")' >> ascent-config.cmake
@@ -366,6 +354,8 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
   -DENABLE_TESTS=$enable_tests \
   -DENABLE_PYTHON=${enable_python} \
   -DBLT_CXX_STD=c++14 \
+  -DENABLE_CUDA=ON \
+  -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
   -DCONDUIT_DIR=${conduit_install_dir} \
   -DVTKM_DIR=${vtkm_install_dir} \
   -DRAJA_DIR=${raja_install_dir} \

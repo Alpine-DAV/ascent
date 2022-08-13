@@ -474,6 +474,11 @@ Here is a script that shows how to build Ascent and its main dependencies with R
 .. literalinclude:: ../../../scripts/build_ascent/build_ascent_hip.sh
    :language: bash
 
+Here is a script that shows how to build Ascent and its main dependencies with CUDA device support:
+
+.. literalinclude:: ../../../scripts/build_ascent/build_ascent_cuda.sh
+   :language: bash
+
 
 .. _paraview_ascent_support:
 
