@@ -17,6 +17,26 @@ if(ASCENT_OPENMP_ENABLED)
 endif()
 
 ###############################################################################
+# HIP related tpls will require targets from hip
+###############################################################################
+if(ASCENT_HIP_ENABLED)
+    ####################################
+    # IMPORANT NOTE AND FUN CMAKE FACT: 
+    ####################################
+    # The HIP CMake Pacakge *requires* ROCM_PATH to be set.
+    #
+    # If not set, it won't find other reqd cmake imports (like AMDDeviceLibs)
+    #
+    # You *cannot* just hand the path as an arg like ${ASCENT_ROCM_PATH}
+    # to find_package, ROCM_PATH must be set.
+    #
+    if(NOT ROCM_PATH)
+        set(ROCM_PATH ${ASCENT_ROCM_PATH})
+    endif()
+    find_package(hip REQUIRED CONFIG PATHS ${ROCM_PATH})
+endif()
+
+###############################################################################
 # Setup Conduit
 ###############################################################################
 # If ZZZ_DIR not set, use known install path for Conduit and VTK-h
@@ -115,12 +135,6 @@ if(VTKM_DIR)
       PATHS ${VTKM_DIR})
 endif()
 
-###############################################################################
-# HIP + Raja related tpls will require targets from hip
-###############################################################################
-if(ASCENT_HIP_ENABLED AND ASCENT_UMPIRE_ENABLED)
-    find_package(hip REQUIRED CONFIG PATHS ${ASCENT_ROCM_PATH})
-endif()
 
 ###############################################################################
 # Setup Camp

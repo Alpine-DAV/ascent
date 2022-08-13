@@ -548,7 +548,7 @@ stages:
       CMAKE_EXE: /cmake-3.23.2-linux-x86_64/bin/cmake
     strategy:
       matrix:
-        ubuntu_20.04_rocm_cuda_5.1.3:
+        ubuntu_20.04_rocm_5.1.3:
           containerImage: ${{ variables.ubuntu_20_04_rocm_5_1_3_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Release
@@ -586,16 +586,17 @@ stages:
            ${CMAKE_EXE} --install build
         displayName: 'Install'
 
-      # Skipping until we solve cmake mystery (find_packaged not called?)
       # - script: |
-      #     ###########################
-      #     # using with cmake example
-      #     ###########################
-      #     pwd
-      #     ls -l
-      #     cd install/examples/ascent/using-with-cmake
-      #     ${CMAKE_EXE} . -B build
-      #     ${CMAKE_EXE} --build build
+      #       ###########################
+      #       # using with cmake example
+      #       ###########################
+      #       pwd
+      #       ls -l
+      #       export CC=/opt/rocm/llvm/bin/amdclang
+      #       export CXX=/opt/rocm/llvm/bin/amdclang++
+      #       cd install/examples/ascent/using-with-cmake
+      #       ${CMAKE_EXE} . -B build
+      #       ${CMAKE_EXE} --build build
       #   displayName: 'Test vs Install (using-with-cmake) [build only]'
 
       - script: |
@@ -605,6 +606,8 @@ stages:
           cat install/share/ascent/ascent_config.mk
           pwd
           ls -l
+          export CC=/opt/rocm/llvm/bin/amdclang
+          export CXX=/opt/rocm/llvm/bin/amdclang++
           cd install/examples/ascent/using-with-make
-          env CC=/opt/rocm/llvm/bin/amdclang CXX=/opt/rocm/llvm/bin/amdclang++ make
+          make
         displayName: 'Test vs Install (using-with-make) [build only]'
