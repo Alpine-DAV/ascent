@@ -17,12 +17,12 @@
 ##############################################################################
 set -eu -o pipefail
 
-CC=gcc
-CXX=g++
-FTN=gfortran
+CC="${CC:=gcc}"
+CXX="${CXX:=g++}"
+FTN="${FTN:=gfortran}"
 
-CUDA_ARCH=80
-CUDA_ARCH_VTKM=ampere
+CUDA_ARCH="${CUDA_ARCH:=80}"
+CUDA_ARCH_VTKM="${CUDA_ARCH_VTKM:=ampere}"
 
 ##############################################################################
 # Build Options
