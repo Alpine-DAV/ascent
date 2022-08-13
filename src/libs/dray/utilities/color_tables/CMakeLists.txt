@@ -12,6 +12,11 @@ if(ENABLE_OPENMP)
     list(APPEND color_tables_thirdparty_libs ${ascent_blt_openmp_deps})
 endif()
 
+if(ENABLE_CUDA)
+    list(APPEND color_tables_thirdparty_libs cuda)
+endif()
+
+
 if(ENABLE_SERIAL)
     blt_add_executable(NAME color_tables
                        SOURCES color_tables.cpp
