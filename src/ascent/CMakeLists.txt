@@ -11,6 +11,10 @@
 #
 ###############################################################################
 
+#if(ENABLE_CUDA AND NOT "${BUILD_SHARED_LIBS}" STREQUAL "OFF")
+#  message(FATAL_ERROR "Ascent can only be built statically when cuda is enabled")
+#endif()
+
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     ASCENT_INSTALL_PREFIX)
 
@@ -47,15 +51,13 @@ endif()
 
 set(ASCENT_WEBSERVER_ENABLED ${CONDUIT_RELAY_WEBSERVER_ENABLED})
 
+
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
     set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
-    set(ASCENT_VTKM_USE_KOKKOS ${KOKKOS_FOUND})
 endif()
 
 set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
-set(ASCENT_USE_CUDA    ${CUDA_FOUND})
-set(ASCENT_USE_HIP     ${HIP_FOUND})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
@@ -326,10 +328,6 @@ if(CUDA_FOUND)
     endif()
 endif()
 
-if(HIP_FOUND)
-    list(APPEND ascent_thirdparty_libs blt_hip_runtime)
-endif()
-
 if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
 endif()
@@ -411,18 +409,9 @@ if (ENABLE_SERIAL)
                     vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
-                    vtkm_filter_core
-                    vtkm_filter_clean_grid
+                    vtkm_filter_common
                     vtkm_filter_contour
-                    vtkm_filter_connected_components
-                    vtkm_filter_density_estimate
-                    vtkm_filter_entity_extraction
-                    vtkm_filter_field_conversion
-                    vtkm_filter_field_transform
-                    vtkm_filter_geometry_refinement
-                    vtkm_filter_image_processing
-                    vtkm_filter_mesh_info
-                    vtkm_filter_vector_analysis
+                    vtkm_filter_gradient
                     vtkm_filter_extra
                     vtkm_worklet
                     vtkm_source
@@ -430,11 +419,14 @@ if (ENABLE_SERIAL)
                     vtkm_lodepng
                     )
 
-        if(UMPIRE_FOUND)
-            list(APPEND imported_targets_to_link umpire)
+        if(ENABLE_TESTS)
+            if (NOT TARGET vtkm_cont_testing)
+                message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
+            endif ()
+            
+            list(APPEND imported_targets_to_link
+                        vtkm_cont_testing)
         endif()
-
-        # TODO device link raja in rajaify branch
 
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES  ${ascent_device_sources}
@@ -578,18 +570,9 @@ if(MPI_FOUND)
       list(APPEND imported_targets_to_link
                   vtkm_io
                   vtkm_rendering
-                  vtkm_filter_core
-                  vtkm_filter_clean_grid
+                  vtkm_filter_common
                   vtkm_filter_contour
-                  vtkm_filter_connected_components
-                  vtkm_filter_density_estimate
-                  vtkm_filter_entity_extraction
-                  vtkm_filter_field_conversion
-                  vtkm_filter_field_transform
-                  vtkm_filter_geometry_refinement
-                  vtkm_filter_image_processing
-                  vtkm_filter_mesh_info
-                  vtkm_filter_vector_analysis
+                  vtkm_filter_gradient
                   vtkm_filter_extra
                   vtkm_worklet
                   vtkm_source
@@ -605,11 +588,14 @@ if(MPI_FOUND)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
 
-        if(UMPIRE_FOUND)
-            list(APPEND imported_targets_to_link umpire)
-        endif()
-
-        # TODO device link raja in rajaify branch
+      if(ENABLE_TESTS)
+          if (NOT TARGET vtkm_cont_testing)
+              message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
+          endif ()
+          
+          list(APPEND imported_targets_to_link
+                      vtkm_cont_testing)
+      endif()
 
       source_objects(BINARY_DIR ${binary_dir}
                      SOURCES  ${ascent_device_sources}

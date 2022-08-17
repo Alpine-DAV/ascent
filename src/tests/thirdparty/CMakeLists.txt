@@ -16,12 +16,6 @@ IF(VTKM_FOUND AND ENABLE_SERIAL)
         list(APPEND vtkm_smoke_deps cuda)
     endif()
 
-    # Note: We may not need this if everything propgates
-    # from VTK-m in the future
-    if(HIP_FOUND)
-        list(APPEND vtkm_smoke_deps blt_hip)
-    endif()
-
     add_cpp_test(TEST t_vtkm_smoke DEPENDS_ON ${vtkm_smoke_deps})
     vtkm_add_target_information(t_vtkm_smoke
                                 DEVICE_SOURCES t_vtkm_smoke.cpp)

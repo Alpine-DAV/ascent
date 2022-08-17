@@ -60,14 +60,14 @@ void ClipField::DoExecute()
 
   bool valid_field = false;
   bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) ==
-                       vtkm::cont::Field::Association::Cells;
+                       vtkm::cont::Field::Association::CELL_SET;
   bool delete_input = false;
   if(valid_field && is_cell_assoc)
   {
     Recenter recenter;
     recenter.SetInput(m_input);
     recenter.SetField(m_field_name);
-    recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
+    recenter.SetResultAssoc(vtkm::cont::Field::Association::POINTS);
     recenter.Update();
     this->m_input = recenter.GetOutput();
     delete_input = true;

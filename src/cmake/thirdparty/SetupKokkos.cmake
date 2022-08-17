@@ -15,7 +15,6 @@ endif()
 MESSAGE(STATUS "Looking for Kokkos using KOKKOS_DIR = ${KOKKOS_DIR}")
 
 set(KOKKOS_DIR_ORIG ${KOKKOS_DIR})
-set(KOKKOS_FOUND TRUE)
 
 # check for both lib64 and lib
 if(EXISTS ${KOKKOS_DIR}/lib64/cmake/Kokkos/)

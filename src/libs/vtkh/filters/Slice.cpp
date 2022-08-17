@@ -168,12 +168,12 @@ public:
     {
       //check to see if this is a supported field ;
       const vtkm::cont::Field &scalar_field = m_in_data_sets[0].GetField(m_field_index);
-      bool is_supported = (scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points ||
-                           scalar_field.GetAssociation() == vtkm::cont::Field::Association::Cells);
+      bool is_supported = (scalar_field.GetAssociation() == vtkm::cont::Field::Association::POINTS ||
+                           scalar_field.GetAssociation() == vtkm::cont::Field::Association::CELL_SET);
 
       if(!is_supported) return;
 
-      bool assoc_points = scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points;
+      bool assoc_points = scalar_field.GetAssociation() == vtkm::cont::Field::Association::POINTS;
       vtkm::cont::ArrayHandle<T> out;
       if(assoc_points)
       {
@@ -221,8 +221,8 @@ public:
       // of contour is now explicit cell set,but we can still assume that
       // this output will be all triangles.
       // this becomes more complicated if we want to support mixed types
-      //if(!cell_set.IsType(vtkm::cont::CellSetSingleType<>())) continue;
-      if(!cell_set.IsType<vtkm::cont::CellSetExplicit<>>())
+      //if(!cell_set.IsSameType(vtkm::cont::CellSetSingleType<>())) continue;
+      if(!cell_set.IsSameType(vtkm::cont::CellSetExplicit<>()))
       {
         std::cout<<"expected explicit cell set as the result of contour\n";
 
@@ -255,8 +255,8 @@ public:
     {
       auto cell_set = doms[dom].GetCellSet();
 
-      //if(!cell_set.IsType(vtkm::cont::CellSetSingleType<>())) continue;
-      if(!cell_set.IsType<vtkm::cont::CellSetExplicit<>>())
+      //if(!cell_set.IsSameType(vtkm::cont::CellSetSingleType<>())) continue;
+      if(!cell_set.IsSameType(vtkm::cont::CellSetExplicit<>()))
       {
         std::cout<<"expected explicit cell set as the result of contour\n";
         continue;
@@ -265,7 +265,7 @@ public:
       // grab the connectivity and copy it into the larger array
       //vtkm::cont::CellSetSingleType<> single_type = cell_set.Cast<vtkm::cont::CellSetSingleType<>>();
       vtkm::cont::CellSetExplicit<> single_type =
-        cell_set.AsCellSet<vtkm::cont::CellSetExplicit<>>();
+        cell_set.Cast<vtkm::cont::CellSetExplicit<>>();
       const vtkm::cont::ArrayHandle<vtkm::Id> dconn = single_type.GetConnectivityArray(
         vtkm::TopologyElementTagCell(),
         vtkm::TopologyElementTagPoint());
@@ -412,7 +412,7 @@ Slice::DoExecute()
         .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
 
       dom.AddField(vtkm::cont::Field(fname,
-                                      vtkm::cont::Field::Association::Points,
+                                      vtkm::cont::Field::Association::POINTS,
                                       slice_field));
     } // each domain
 

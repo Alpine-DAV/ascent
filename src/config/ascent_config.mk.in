@@ -158,19 +158,10 @@ ifeq ($(ASCENT_VTKM_DIR),)
 else
     ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
                             -lvtkm_rendering-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_clean_grid-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter_contour-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_connected_components-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_density_estimate-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_entity_extraction-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_field_conversion-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_field_transform-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_geometry_refinement-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_image_processing-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_mesh_info-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_vector_analysis-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter_gradient-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_filter_extra-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_core-$(ASCENT_VTKM_VERSION) \
+                            -lvtkm_filter_common-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_source-$(ASCENT_VTKM_VERSION) \
                             -lvtkm_io-$(ASCENT_VTKM_VERSION) \
@@ -277,7 +268,7 @@ else
                                 -ladios2_cxx11     \
                                 -ladios2_core_mpi  \
                                 -ladios2_core   \
-                                -ladios2_perfstubs \
+                                -ladios2_taustubs  \
                                 -ladios2_evpath    \
                                 -ladios2_ffs       \
                                 -ladios2_atl       \

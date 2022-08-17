@@ -7,10 +7,6 @@ if(CUDA_FOUND)
   set(VTKH_CUDA_ENABLED TRUE)
 endif()
 
-if(HIP_FOUND)
-  set(VTKH_HIP_ENABLED TRUE)
-endif()
-
 if(ENABLE_OPENMP)
   set(VTKH_OPENMP_ENABLED TRUE)
 endif()
@@ -32,10 +28,6 @@ if(CUDA_FOUND)
     list(APPEND vtkh_base_deps cuda)
 endif()
 
-if(ENABLE_HIP)
-    list(APPEND vtkh_base_deps blt_hip)
-endif()
-
 if(ENABLE_OPENMP)
     list(APPEND vtkh_base_deps ${ascent_blt_openmp_deps})
 endif()
@@ -43,7 +35,6 @@ endif()
 if(KOKKOS_FOUND)
     list(APPEND vtkh_base_deps Kokkos::kokkos)
 endif()
-
 
 
 add_subdirectory(utils)
@@ -74,7 +65,7 @@ set(vtkh_core_sources
 
 # always install headers
 install(FILES ${vtkh_core_headers}
-       DESTINATION include/ascent/vtkh)
+       DESTINATION include/vtkh)
 
 ###############################################################################
 if (ENABLE_SERIAL)

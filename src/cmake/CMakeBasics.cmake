@@ -43,9 +43,8 @@ macro(ENABLE_WARNINGS)
     else()
         if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR
             "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"   OR
-            "${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel" OR
-            "${CMAKE_CXX_COMPILER_ID}" MATCHES "IntelLLVM")
-            # use these flags for clang, gcc, icc, or icx
+            "${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
+            # use these flags for clang, gcc, or icc
             add_definitions(-Wall -Wextra)
         endif()
     endif()

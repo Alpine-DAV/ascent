@@ -17,13 +17,13 @@ public:
   virtual ~MeshQuality();
   std::string GetName() const override;
 
-  void cell_metric(vtkm::filter::mesh_info::CellMetric metric);
+  void cell_metric(vtkm::filter::CellMetric metric);
 
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  vtkm::filter::mesh_info::CellMetric m_metric;
+  vtkm::filter::CellMetric m_metric;
 };
 
 } //namespace vtkh

@@ -395,7 +395,6 @@ parameters:
 - ``fg_color`` : an array of three floating point values that controls the foreground color. The foreground color is used to color annotations and mesh plot lines.
 - ``annotations`` : controls if annotations are rendered or not. Valid values are ``"true"`` and ``"false"``.
 - ``render_bg`` : controls if the background is rendered or not. If no background is rendered, the background will appear transparent. Valid values are ``"true"`` and ``"false"``.
-- ``dataset_bounds`` : controls the dimensions of the rendered bounding box around the dataset. This will overwrite the default bounding box based on the dataset's dimensions. A valid value is an array of six doubles ([xMin,xMax,yMin,yMax,zMin,zMax]) that define dimensions larger than the default.  
 
 .. _actions_cinema:
 

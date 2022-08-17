@@ -316,8 +316,7 @@ SelectKokkosDevice(int device_index)
 { 
 #ifdef VTKM_ENABLE_KOKKOS
 #ifdef VTKM_KOKKOS_HIP 
-  if(!Kokkos::is_initialized())
-    Kokkos::initialize();
+  Kokkos::initialize();
 #endif  
 
 #ifdef VTKM_KOKKOS_CUDA
@@ -327,12 +326,10 @@ SelectKokkosDevice(int device_index)
   //and calling SelectCudaDevice(device_index) 
   //Is Kokkos smart enough to find this device for us? 
   //Kokkos::initialize(pars);
-  if(!Kokkos::is_initialized())
-    Kokkos::initialize();
+  Kokkos::initialize();
 #endif
   
-  if(!Kokkos::is_initialized())
-    Kokkos::initialize(); //no backend
+  Kokkos::initialize(); //no backend
 #endif
 }
 

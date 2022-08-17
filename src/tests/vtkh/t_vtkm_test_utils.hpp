@@ -121,7 +121,7 @@ vtkm::cont::Field CreateCellScalarField(int size, const char* fieldName)
 
 
   vtkm::cont::Field field(fieldName,
-                          vtkm::cont::Field::Association::Cells,
+                          vtkm::cont::Field::Association::CELL_SET,
                           data);
   return field;
 }
@@ -145,7 +145,7 @@ vtkm::cont::Field CreateGhostScalarField(vtkm::Id3 dims)
   }
 
   vtkm::cont::Field field("ghosts",
-                          vtkm::cont::Field::Association::Cells,
+                          vtkm::cont::Field::Association::CELL_SET,
                           data);
   return field;
 }
@@ -167,7 +167,7 @@ vtkm::cont::Field CreatePointScalarField(UniformCoords coords, const char* field
   }
 
   vtkm::cont::Field field(fieldName,
-                          vtkm::cont::Field::Association::Points,
+                          vtkm::cont::Field::Association::POINTS,
                           data);
   return field;
 }
@@ -188,7 +188,7 @@ vtkm::cont::Field CreatePointVecField(int size, const char* fieldName)
   }
 
   vtkm::cont::Field field(fieldName,
-                          vtkm::cont::Field::Association::Points,
+                          vtkm::cont::Field::Association::POINTS,
                           data);
   return field;
 }
@@ -349,7 +349,7 @@ vtkm::cont::DataSet CreateTestDataPoints(int num_points)
                                                        num_indices,
                                                        conn);
   vtkm::cont::Field vfield = vtkm::cont::make_Field("point_data_Float64",
-                                              vtkm::cont::Field::Association::Points,
+                                              vtkm::cont::Field::Association::POINTS,
                                               field,
                                               vtkm::CopyFlag::On);
   data_set.AddField(vfield);
@@ -434,13 +434,13 @@ inline vtkm::cont::DataSet Make3DExplicitDataSet5()
 
   //Set point scalar
   dataSet.AddField(make_Field(
-    "pointvar", vtkm::cont::Field::Association::Points, vars, nVerts, vtkm::CopyFlag::On));
+    "pointvar", vtkm::cont::Field::Association::POINTS, vars, nVerts, vtkm::CopyFlag::On));
 
   //Set cell scalar
   const int nCells = 4;
   vtkm::Float32 cellvar[nCells] = { 100.1f, 110.f, 120.2f, 130.5f };
   dataSet.AddField(make_Field(
-    "cellvar", vtkm::cont::Field::Association::Cells, cellvar, nCells, vtkm::CopyFlag::On));
+    "cellvar", vtkm::cont::Field::Association::CELL_SET, cellvar, nCells, vtkm::CopyFlag::On));
 
   vtkm::cont::CellSetExplicit<> cellSet;
   vtkm::Vec<vtkm::Id, 8> ids;
@@ -529,12 +529,12 @@ inline vtkm::cont::DataSet Make3DExplicitDataSet2()
 
   //Set point scalar
   dataSet.AddField(make_Field(
-    "pointvar", vtkm::cont::Field::Association::Points, vars, nVerts, vtkm::CopyFlag::On));
+    "pointvar", vtkm::cont::Field::Association::POINTS, vars, nVerts, vtkm::CopyFlag::On));
 
   //Set cell scalar
   vtkm::Float32 cellvar[2] = { 100.1f };
   dataSet.AddField(make_Field(
-    "cellvar", vtkm::cont::Field::Association::Cells, cellvar, 1, vtkm::CopyFlag::On));
+    "cellvar", vtkm::cont::Field::Association::CELL_SET, cellvar, 1, vtkm::CopyFlag::On));
 
   vtkm::cont::CellSetExplicit<> cellSet;
   vtkm::Vec<vtkm::Id, 8> ids;

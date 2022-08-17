@@ -21,13 +21,13 @@ This tutorial introduces how to use Ascent, including basics about:
 Ascent installs include standalone C++, Python, and Python-based Jupyter notebook examples for this tutorial. 
 You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
-.. 
-.. Scheduled Tutorials:
-..
 
-Past Tutorials:
+Scheduled Tutorials:
  * `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany 
  * ECP 2022 Annual Meeting - May 2022, Virtual
+
+
+Past Tutorials:
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
  * ECP 2021 Annual Meeting - April 2021, Virtual
  * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual

@@ -1,5 +1,5 @@
 #include "vtkmPointAverage.hpp"
-#include <vtkm/filter/field_conversion/PointAverage.h>
+#include <vtkm/filter/PointAverage.h>
 
 namespace vtkh
 {
@@ -9,7 +9,7 @@ vtkmPointAverage::Run(vtkm::cont::DataSet &input,
                       std::string output_field_name,
                       vtkm::filter::FieldSelection map_fields)
 {
-  vtkm::filter::field_conversion::PointAverage avg;
+  vtkm::filter::PointAverage avg;
   avg.SetOutputFieldName(output_field_name);
   avg.SetFieldsToPass(map_fields);
   avg.SetActiveField(field_name);

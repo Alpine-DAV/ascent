@@ -12,19 +12,19 @@ namespace detail
 std::string to_string(vtkm::cont::Field::Association assoc)
 {
   std::string res = "unknown";
-  if(assoc == vtkm::cont::Field::Association::WholeMesh)
+  if(assoc == vtkm::cont::Field::Association::WHOLE_MESH)
   {
     res = "whole mesh";
   }
-  else if(assoc == vtkm::cont::Field::Association::Any)
+  else if(assoc == vtkm::cont::Field::Association::ANY)
   {
     res = "any";
   }
-  else if(assoc == vtkm::cont::Field::Association::Points)
+  else if(assoc == vtkm::cont::Field::Association::POINTS)
   {
     res = "points";
   }
-  else if(assoc == vtkm::cont::Field::Association::Cells)
+  else if(assoc == vtkm::cont::Field::Association::CELL_SET)
   {
     res = "cell set";
   }

@@ -39,13 +39,6 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 
 ################################
-# Camp
-################################
-if(CAMP_DIR) # optional for now
-    include(cmake/thirdparty/SetupCamp.cmake)
-endif()
-
-################################
 # Umpire
 ################################
 if(UMPIRE_DIR) # optional for now

@@ -43,7 +43,7 @@ EnergyEngine::set_data_set(vtkm::cont::DataSet &dataset)
   if(m_tracer) delete m_tracer;
 
   m_tracer = new vtkm::rendering::ConnectivityProxy(dataset);
-  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
+  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::ENERGY_MODE);
   m_data_set = dataset;
 
 }
@@ -105,7 +105,7 @@ EnergyEngine::partial_trace(Ray32 &rays)
   init_rays(rays);
 
   m_tracer->SetUnitScalar(m_unit_scalar);
-  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
+  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::ENERGY_MODE);
   m_tracer->SetColorMap(m_color_map);
   return m_tracer->PartialTrace(rays);
 
@@ -155,7 +155,7 @@ EnergyEngine::partial_trace(Ray64 &rays)
   init_rays(rays);
 
   m_tracer->SetUnitScalar(m_unit_scalar);
-  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
+  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::ENERGY_MODE);
   m_tracer->SetColorMap(m_color_map);
   ROVER_INFO("Energy Engine tracing");
   return m_tracer->PartialTrace(rays);

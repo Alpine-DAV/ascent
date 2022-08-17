@@ -2,9 +2,7 @@
 #include <vtkh/filters/VectorMagnitude.hpp>
 
 #include <vtkh/vtkm_filters/vtkmVectorMagnitude.hpp>
-//TODO: new wrapped vtkm filter header
-//#include <vtkm/filter/vector_analysis/VectorMagnitude.h>
-#include <vtkm/filter/vector_analysis/worklet/Magnitude.h>
+#include <vtkm/worklet/Magnitude.h>
 #include <vtkm/TypeList.h>
 
 namespace vtkh
@@ -12,7 +10,7 @@ namespace vtkh
 
 namespace detail
 {
-//TODO: Rewrite using vtkm::filter::vector_analysis::VectorMagnitude
+
 struct VectorMagFunctor
 {
   vtkm::cont::Field result;

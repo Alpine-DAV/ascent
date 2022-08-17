@@ -1,6 +1,6 @@
 #include "vtkmVectorMagnitude.hpp"
 
-#include <vtkm/filter/vector_analysis/VectorMagnitude.h>
+#include <vtkm/filter/VectorMagnitude.h>
 
 namespace vtkh
 {
@@ -10,7 +10,7 @@ vtkmVectorMagnitude::Run(vtkm::cont::DataSet &input,
                          std::string out_field_name,
                          vtkm::filter::FieldSelection map_fields)
 {
-  vtkm::filter::vector_analysis::VectorMagnitude mag;
+  vtkm::filter::VectorMagnitude mag;
   mag.SetActiveField(field_name);
   mag.SetOutputFieldName(out_field_name);
   mag.SetFieldsToPass(map_fields);

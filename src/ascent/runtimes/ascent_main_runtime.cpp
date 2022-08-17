@@ -201,6 +201,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 //Ascent may not be the one in charge of initializing kokkos; ex: Genten(?)
 //Probably should get a flag from VTKh saying it wants Kokkos for VKTm
 #if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VTKM_ENABLED)
+    std::cerr << "Kokkos on and VTKM on" << std::endl;
     vtkh::SelectKokkosDevice(1);
 #ifdef VTKM_KOKKOS_HIP
     vtkh::SelectKokkosDevice(1);

@@ -211,7 +211,7 @@ Renderer::DoExecute()
       continue;
     }
 
-    const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
+    const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
     const vtkm::cont::Field &field = data_set.GetField(m_field_name);
     const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
 

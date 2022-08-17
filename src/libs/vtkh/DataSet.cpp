@@ -675,7 +675,7 @@ DataSet::AddConstantPointField(const vtkm::Float32 value, const std::string fiel
     vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
     vtkm::cont::ArrayHandle<vtkm::Float32> array;
     detail::MemSet(array, value, num_points);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::POINTS, array);
     m_domains[i].AddField(field);
   }
 }
@@ -734,7 +734,7 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
   if(!this->GlobalFieldExists(field_name))
   {
     valid_field = false;
-    return vtkm::cont::Field::Association::Any;
+    return vtkm::cont::Field::Association::ANY;
   }
 
   int assoc_id = -1;
@@ -750,19 +750,19 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
       if(dom.HasField(field_name))
       {
         local_assoc = dom.GetField(field_name).GetAssociation();
-        if(local_assoc == vtkm::cont::Field::Association::Any)
+        if(local_assoc == vtkm::cont::Field::Association::ANY)
         {
           assoc_id = 0;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::WholeMesh)
+        else if ( local_assoc == vtkm::cont::Field::Association::WHOLE_MESH)
         {
           assoc_id = 1;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::Points)
+        else if ( local_assoc == vtkm::cont::Field::Association::POINTS)
         {
           assoc_id = 2;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::Cells)
+        else if ( local_assoc == vtkm::cont::Field::Association::CELL_SET)
         {
           assoc_id = 3;
         }
@@ -813,19 +813,19 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
 
   if(assoc_id == 0)
   {
-    assoc = vtkm::cont::Field::Association::Any;
+    assoc = vtkm::cont::Field::Association::ANY;
   }
   else if ( assoc_id == 1)
   {
-    assoc = vtkm::cont::Field::Association::WholeMesh;
+    assoc = vtkm::cont::Field::Association::WHOLE_MESH;
   }
   else if ( assoc_id == 2)
   {
-    assoc = vtkm::cont::Field::Association::Points;
+    assoc = vtkm::cont::Field::Association::POINTS;
   }
   else if ( assoc_id == 3)
   {
-    assoc = vtkm::cont::Field::Association::Cells;
+    assoc = vtkm::cont::Field::Association::CELL_SET;
   }
   else
   {

@@ -1,5 +1,5 @@
 #include "vtkmClipWithField.hpp"
-#include <vtkm/filter/contour/ClipWithField.h>
+#include <vtkm/filter/ClipWithField.h>
 
 namespace vtkh
 {
@@ -10,7 +10,7 @@ vtkmClipWithField::Run(vtkm::cont::DataSet &input,
                        bool invert,
                        vtkm::filter::FieldSelection map_fields)
 {
-  vtkm::filter::contour::ClipWithField clipper;
+  vtkm::filter::ClipWithField clipper;
 
   clipper.SetClipValue(clip_value);
   clipper.SetInvertClip(invert);

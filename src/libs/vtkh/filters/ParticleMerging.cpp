@@ -1,6 +1,4 @@
-#include <vtkm/filter/clean_grid/worklet/PointMerge.h>
-//TODO: Header for wrapped filter
-//#include <vtkm/filter/clean_grid/CleanGrid.h>
+#include <vtkm/worklet/PointMerge.h>
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/ParticleMerging.hpp>
 

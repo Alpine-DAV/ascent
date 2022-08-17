@@ -1,5 +1,5 @@
 #include "vtkmCleanGrid.hpp"
-#include <vtkm/filter/clean_grid/CleanGrid.h>
+#include <vtkm/filter/CleanGrid.h>
 
 namespace vtkh
 {
@@ -14,7 +14,7 @@ vtkm::cont::DataSet
 vtkmCleanGrid::Run(vtkm::cont::DataSet &input,
                    vtkm::filter::FieldSelection map_fields)
 {
-  vtkm::filter::clean_grid::CleanGrid cleaner;
+  vtkm::filter::CleanGrid cleaner;
 
   if(m_tolerance != -1.)
   {

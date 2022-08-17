@@ -27,7 +27,7 @@ public:
 
   static bool IsStructured(const vtkm::rendering::Actor &actor, int &topo_dims);
 
-  static bool IsStructured(const vtkm::cont::UnknownCellSet &cell_set, int &topo_dims);
+  static bool IsStructured(const vtkm::cont::DynamicCellSet &cell_set, int &topo_dims);
 
   static bool IsRectilinear(const vtkm::cont::DataSet &data_set);
 
@@ -45,15 +45,15 @@ public:
 
   static bool GetPointDims(const vtkm::rendering::Actor &actor, int *dims);
 
-  static bool GetPointDims(const vtkm::cont::UnknownCellSet &cell_set, int *dims);
+  static bool GetPointDims(const vtkm::cont::DynamicCellSet &cell_set, int *dims);
 
   static bool GetCellDims(const vtkm::cont::DataSet &data_set, int *dims);
 
   static bool GetCellDims(const vtkm::rendering::Actor &actor, int *dims);
 
-  static bool GetCellDims(const vtkm::cont::UnknownCellSet &cell_set, int *dims);
+  static bool GetCellDims(const vtkm::cont::DynamicCellSet &cell_set, int *dims);
 
-  static bool IsSingleCellShape(const vtkm::cont::UnknownCellSet &cell_set, vtkm::UInt8 &shape_id);
+  static bool IsSingleCellShape(const vtkm::cont::DynamicCellSet &cell_set, vtkm::UInt8 &shape_id);
 
 };
 

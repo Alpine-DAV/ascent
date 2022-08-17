@@ -250,14 +250,11 @@ bool CanStrip(vtkm::cont::Field  &ghost_field,
                                               VTKM_DEFAULT_STORAGE_LIST{}),
          valid_flags);
 
-  vtkm::Vec<vtkm::Id,2> baseline = {-1, -1};
-  auto resMinMax = vtkm::cont::Algorithm::Reduce(valid_flags,
-                                                 baseline,
-                                                 detail::MinMaxIgnore());
-
+  vtkm::UInt8 res = vtkm::cont::Algorithm::Reduce(valid_flags,
+                                                  vtkm::UInt8(0),
+                                                  vtkm::Maximum());
   VTKH_DATA_CLOSE();
 
-  vtkm::UInt8 res = resMinMax[1];
   bool can_strip = res == 0;
   if(can_strip)
   {
@@ -287,7 +284,7 @@ bool StructuredStrip(vtkm::cont::DataSet &dataset,
                      bool &should_strip)
 {
   VTKH_DATA_OPEN("structured_strip");
-  vtkm::cont::UnknownCellSet cell_set = dataset.GetCellSet();
+  vtkm::cont::DynamicCellSet cell_set = dataset.GetCellSet();
   int dims[3];
   VTKMDataSetInfo::GetPointDims(cell_set, dims);
   vtkm::Vec<vtkm::Id,3> cell_dims(0,0,0);
@@ -296,7 +293,7 @@ bool StructuredStrip(vtkm::cont::DataSet &dataset,
   bool can_strip = false;
   vtkm::Id size = 0;
   should_strip = false;
-  if(cell_set.IsType<vtkm::cont::CellSetStructured<1>>())
+  if(cell_set.IsSameType(vtkm::cont::CellSetStructured<1>()))
   {
     cell_dims[0] = dims[0] - 1;
     size = cell_dims[0];
@@ -310,7 +307,7 @@ bool StructuredStrip(vtkm::cont::DataSet &dataset,
                             size,
                             should_strip);
   }
-  else if(cell_set.IsType<vtkm::cont::CellSetStructured<2>>())
+  else if(cell_set.IsSameType(vtkm::cont::CellSetStructured<2>()))
   {
     cell_dims[0] = dims[0] - 1;
     cell_dims[1] = dims[1] - 1;
@@ -325,7 +322,7 @@ bool StructuredStrip(vtkm::cont::DataSet &dataset,
                             size,
                             should_strip);
   }
-  else if(cell_set.IsType<vtkm::cont::CellSetStructured<3>>())
+  else if(cell_set.IsSameType(vtkm::cont::CellSetStructured<3>()))
   {
     cell_dims[0] = dims[0] - 1;
     cell_dims[1] = dims[1] - 1;

@@ -1,14 +1,14 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/Recenter.hpp>
 
-#include <vtkm/filter/field_conversion/PointAverage.h>
-#include <vtkm/filter/field_conversion/CellAverage.h>
+#include <vtkm/filter/PointAverage.h>
+#include <vtkm/filter/CellAverage.h>
 
 namespace vtkh
 {
 
 Recenter::Recenter()
- : m_assoc(vtkm::cont::Field::Association::Points)
+ : m_assoc(vtkm::cont::Field::Association::POINTS)
 {
 
 }
@@ -38,8 +38,8 @@ void Recenter::PostExecute()
 void Recenter::SetResultAssoc(vtkm::cont::Field::Association assoc)
 {
 
-  if(assoc != vtkm::cont::Field::Association::Cells &&
-     assoc != vtkm::cont::Field::Association::Points)
+  if(assoc != vtkm::cont::Field::Association::CELL_SET &&
+     assoc != vtkm::cont::Field::Association::POINTS)
   {
     throw Error("Recenter can only recenter zonal and nodal fields");
   }
@@ -86,15 +86,15 @@ void Recenter::DoExecute()
       temp.AddCoordinateSystem(coords);
     }
 
-    vtkm::cont::UnknownCellSet cellset = dom.GetCellSet();
+    vtkm::cont::DynamicCellSet cellset = dom.GetCellSet();
     out_data.SetCellSet(cellset);
     temp.SetCellSet(cellset);
 
     if(temp.HasField(m_field_name))
     {
       vtkm::cont::Field::Association in_assoc = temp.GetField(m_field_name).GetAssociation();
-      bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::Cells;
-      bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::Points;
+      bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::CELL_SET;
+      bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::POINTS;
 
       if(!is_cell_assoc && !is_point_assoc)
       {
@@ -107,14 +107,14 @@ void Recenter::DoExecute()
       {
         if(is_cell_assoc)
         {
-          vtkm::filter::field_conversion::PointAverage avg;
+          vtkm::filter::PointAverage avg;
           avg.SetOutputFieldName(out_name);
           avg.SetActiveField(m_field_name);
           dataset = avg.Execute(dom);
         }
         else
         {
-          vtkm::filter::field_conversion::CellAverage avg;
+          vtkm::filter::CellAverage avg;
           avg.SetOutputFieldName(out_name);
           avg.SetActiveField(m_field_name);
           dataset = avg.Execute(dom);
