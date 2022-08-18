@@ -1,5 +1,5 @@
 #include "vtkmExtractStructured.hpp"
-#include <vtkm/filter/ExtractStructured.h>
+#include <vtkm/filter/entity_extraction/ExtractStructured.h>
 
 namespace vtkh
 {
@@ -10,7 +10,7 @@ vtkmExtractStructured::Run(vtkm::cont::DataSet &input,
                            vtkm::filter::FieldSelection map_fields)
 {
 
-  vtkm::filter::ExtractStructured extract;
+  vtkm::filter::entity_extraction::ExtractStructured extract;
   extract.SetVOI(range);
   extract.SetSampleRate(sample_rate);
   extract.SetIncludeBoundary(true);

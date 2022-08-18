@@ -7,7 +7,7 @@ namespace vtkh
 {
 
 MeshQuality::MeshQuality()
-  : m_metric(vtkm::filter::CellMetric::VOLUME)
+  : m_metric(vtkm::filter::mesh_info::CellMetric::Volume)
 {
 
 }
@@ -17,7 +17,7 @@ MeshQuality::~MeshQuality()
 
 }
 
-void MeshQuality::cell_metric(vtkm::filter::CellMetric metric)
+void MeshQuality::cell_metric(vtkm::filter::mesh_info::CellMetric metric)
 {
   m_metric = metric;
 }
