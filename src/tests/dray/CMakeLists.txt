@@ -18,7 +18,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(BASIC_TESTS t_dray_smoke
                 t_dray_array
-                t_dray_lines
+                #t_dray_lines #temporary
                 t_dray_balancer
                 t_dray_billboard
                 t_dray_color_table
@@ -62,6 +62,9 @@ set(BASIC_TESTS t_dray_smoke
                 #t_dray_crazy_quad
                 #t_dray_triangle
                 #t_dray_element
+                t_dray_mesh_threshold
+                t_dray_cell_average
+                t_dray_point_average
 )
 
 set(MPI_TESTS t_dray_mpi_smoke
