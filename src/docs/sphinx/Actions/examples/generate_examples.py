@@ -56,3 +56,30 @@ for i in standalone:
 examples_file = open("../Examples.rst", "w")
 examples_file.write(examples)
 examples_file.close()
+
+
+#
+# List used and unused png files
+#
+found = []
+for l in examples.split("\n"):
+    if l.count(".png") > 0:
+        t = [ t for t in l.split(" ") if t.count(".png") > 0][0]
+        t = t[t.find("/")+1:]
+        print(t)
+        found.append(t)
+
+not_used = []
+for f in png_files:
+    if not f in found:
+        not_used.append(f)
+
+print("NOT USED")
+for f in not_used:
+    print(f)
+
+print("# found_in_yaml ", len(found))
+print("# png_files ", len(png_files))
+print("# not_used ", len(not_used))
+
+
