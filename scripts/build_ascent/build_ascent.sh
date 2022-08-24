@@ -77,7 +77,7 @@ fi # build_hdf5
 ################
 # Conduit
 ################
-conduit_version=v0.8.3
+conduit_version=v0.8.4
 conduit_src_dir=${root_dir}/conduit-${conduit_version}/src
 conduit_build_dir=${root_dir}/build/conduit-${conduit_version}/
 conduit_install_dir=${root_dir}/install/conduit-${conduit_version}/
