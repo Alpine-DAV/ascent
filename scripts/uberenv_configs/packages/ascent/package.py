@@ -28,7 +28,7 @@ def cmake_cache_entry(name, value, vtype=None):
     return 'set({0} "{1}" CACHE {2} "")\n\n'.format(name, value, vtype)
 
 
-class Ascent(CMakePackage, CudaPackage):
+class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     """Ascent is an open source many-core capable lightweight in situ
     visualization and analysis infrastructure for multi-physics HPC
     simulations."""
@@ -92,12 +92,10 @@ class Ascent(CMakePackage, CudaPackage):
     variant("occa", default=False, description="Build with OCCA support")
     variant("raja", default=True, description="Build with RAJA support")
     variant("umpire", default=True, description="Build with Umpire support")
+    variant("babelflow", default=False, description="Build with BabelFlow")
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
-
-    # variant for BabelFlow runtime
-    variant("babelflow", default=False, description="Build with BabelFlow")
 
     ##########################################################################
     # package dependencies
@@ -113,7 +111,6 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("conduit+fortran", when="+fortran")
     depends_on("conduit+mpi", when="+mpi")
     depends_on("conduit~mpi", when="~mpi")
-
 
     #######################
     # Python
@@ -132,22 +129,53 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("mpi", when="+mpi")
     depends_on("py-mpi4py", when="+mpi+python")
 
-    #######################
-    # BabelFlow
-    #######################
-    depends_on('babelflow', when='+babelflow+mpi')
-    depends_on('parallelmergetree', when='+babelflow+mpi')
-
     #############################
-    # TPLs for Runtime Features
+    # RAJA
     #############################
-
     depends_on("raja", when="+raja")
+
+    depends_on("raja+rocm", when="+raja+rocm")
+
+    # Propagate AMD GPU target to raja for +rocm
+    for amdgpu_value in ROCmPackage.amdgpu_targets:
+        depends_on("raja amdgpu_target=%s" % amdgpu_value, when="+raja+rocm amdgpu_target=%s" % amdgpu_value)
+
+    # TODO: do we need all of these?
+    depends_on("raja+cuda+shared", when="+cuda+shared")
+    depends_on("raja+cuda~shared", when="+cuda~shared")
+    depends_on("raja~cuda+shared", when="~cuda+shared")
+    depends_on("raja~cuda~shared", when="~cuda~shared")
+
+
+    #############################
+    # Umpire
+    #############################
     depends_on("umpire", when="+umpire")
-    
+    depends_on("umpire+rocm", when="+umpire+rocm")
+
+    # Propagate AMD GPU target to umpire for +rocm
+    for amdgpu_value in ROCmPackage.amdgpu_targets:
+        depends_on("umpire amdgpu_target=%s" % amdgpu_value, when="+umpire+rocm amdgpu_target=%s" % amdgpu_value)
+
+    # TODO: do we need all of these?
+    depends_on("umpire+cuda+shared", when="+umpire+cuda+shared")
+    depends_on("umpire+cuda~shared", when="+umpire+cuda~shared")
+    depends_on("umpire~cuda+shared", when="+umpire~cuda+shared")
+    depends_on("umpire~cuda~shared", when="+umpire~cuda~shared")
+
+    #############################
+    # HIP
+    #############################
+    depends_on("hip", when="+rocm")
+
+    #############################
+    # VTK-m + VTK-h
+    #############################
+    depends_on("raja", when="+raja")
+
     # ascent newer than 0.8.0 uses internal vtk-h
     # use vtk-m 1.8 for newer than ascent 0.8.0
-    depends_on("vtk-m@:1.8", when="@0.8.1:")
+    depends_on("vtk-m@1.8:", when="@0.8.1:")
 
     depends_on("vtk-m~tbb", when="@0.8.1: +vtkh")
     depends_on("vtk-m+openmp", when="@0.8.1: +vtkh+openmp")
@@ -163,6 +191,12 @@ class Ascent(CMakePackage, CudaPackage):
 
     depends_on("vtk-m+fpic", when="@0.8.0: +vtkh")
     depends_on("vtk-m~shared+fpic", when="@0.8.0: +vtkh~shared")
+    
+    depends_on("vtk-m+rocm", when="+rocm")
+
+    # Propagate AMD GPU target to vtk-m for +rocm
+    for amdgpu_value in ROCmPackage.amdgpu_targets:
+        depends_on("vtk-m amdgpu_target=%s" % amdgpu_value, when="+rocm amdgpu_target=%s" % amdgpu_value)
 
     # use external vtk-h for 0.8.0 and older
     depends_on("vtk-h",      when="@:0.8.0 +vtkh")
@@ -175,19 +209,16 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("vtk-h~shared+cuda",        when="@:0.8.0 ~shared+vtkh+cuda")
     depends_on("vtk-h~shared+cuda~openmp", when="@:0.8.0 ~shared+vtkh+cuda~openmp")
 
+    #############################
     # mfem
+    #############################
     depends_on("mfem~threadsafe~openmp+shared+conduit", when="+shared+mfem")
     depends_on("mfem~threadsafe~openmp~shared+conduit", when="~shared+mfem")
 
-    # fides
-    depends_on("fides", when="+fides")
-
-    # genten
-    depends_on("genten", when="+genten")
-    depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
-    depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
-
-    # use external dray for 0.8.0 and older
+    #######################
+    # Devil Ray
+    #######################
+    # use external dray for 0.8.0 and older, its built in for newer ver of Ascent
     # devil ray variants with mpi
     # we have to specify both because mfem makes us
     depends_on("dray+mpi+shared+cuda",        when="@:0.8.0 +dray+mpi+cuda+shared")
@@ -207,16 +238,33 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("dray~mpi~shared+openmp",      when="@:0.8.0 +dray~mpi+openmp~shared")
     depends_on("dray~mpi~shared~openmp~cuda", when="@:0.8.0 +dray~mpi~openmp~cuda~shared")
 
+    #######################
+    # occa
+    #######################
     # occa defaults to +cuda so we have to explicit tell it ~cuda
     depends_on("occa~cuda",        when="+occa~cuda")
     depends_on("occa~cuda~openmp", when="+occa~cuda~openmp")
     depends_on("occa+cuda+openmp", when="+occa+cuda+openmp")
     depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
 
-    depends_on("umpire+cuda+shared", when="+cuda+shared")
-    depends_on("umpire+cuda~shared", when="+cuda~shared")
-    depends_on("umpire~cuda+shared", when="~cuda+shared")
-    depends_on("umpire~cuda~shared", when="~cuda~shared")
+    #############################
+    # fides
+    #############################
+    depends_on("fides", when="+fides")
+
+    #############################
+    # genten
+    #############################
+    depends_on("genten", when="+genten")
+    depends_on("genten+cuda~openmp", when="+genten+cuda~openmp")
+    depends_on("genten+openmp~cuda", when="+genten+openmp~cuda")
+
+    #######################
+    # BabelFlow
+    #######################
+    depends_on('babelflow', when='+babelflow+mpi')
+    depends_on('parallelmergetree', when='+babelflow+mpi')
+
 
     #######################
     # Documentation related
@@ -227,8 +275,8 @@ class Ascent(CMakePackage, CudaPackage):
     ###########
     # Conflicts
     ###########
-    conflicts("+shared", when="+cuda",
-              msg="Ascent needs to be built with ~shared for CUDA builds.")
+    conflicts("+shared", when="@:0.8.1 +cuda",
+              msg="Ascent 0.8.0 and older need to be built with ~shared for CUDA builds.")
 
     ###################################
     # build phases used by this package
@@ -335,7 +383,6 @@ class Ascent(CMakePackage, CudaPackage):
         ##############################################
         # Find and record what CMake is used
         ##############################################
-
         if "+cmake" in spec:
             cmake_exe = spec['cmake'].command.path
         else:
@@ -416,7 +463,6 @@ class Ascent(CMakePackage, CudaPackage):
         #######################
         # Conduit
         #######################
-
         cfg.write("# conduit from spack \n")
         cfg.write(cmake_cache_entry("CONDUIT_DIR", spec['conduit'].prefix))
 
@@ -427,7 +473,6 @@ class Ascent(CMakePackage, CudaPackage):
         #######################
         # Python
         #######################
-
         cfg.write("# Python Support\n")
 
         if "+python" in spec and "+shared" in spec:
@@ -459,7 +504,6 @@ class Ascent(CMakePackage, CudaPackage):
         #######################
         # Serial
         #######################
-
         if "+serial" in spec:
             cfg.write(cmake_cache_entry("ENABLE_SERIAL", "ON"))
         else:
@@ -468,7 +512,6 @@ class Ascent(CMakePackage, CudaPackage):
         #######################
         # MPI
         #######################
-
         cfg.write("# MPI Support\n")
 
         if "+mpi" in spec:
@@ -516,7 +559,6 @@ class Ascent(CMakePackage, CudaPackage):
         #######################
         # CUDA
         #######################
-
         cfg.write("# CUDA Support\n")
 
         if "+cuda" in spec:
@@ -529,10 +571,26 @@ class Ascent(CMakePackage, CudaPackage):
         else:
             cfg.write(cmake_cache_entry("ENABLE_OPENMP", "OFF"))
 
+        ########################
+        # ROCm
+        #########################
+        cfg.write("# ROCm Support\n")
+
+        if "+rocm" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_HIP", "ON"))
+            cfg.write(cmake_cache_entry("CMAKE_HIP_COMPILER", c_compiler))
+            # NOTE: We need the root install of rocm for ROCM_PATH
+            # There is no spack package named `rocm`, but rocminfo seems
+            # to also point to the root of the rocm install
+            cfg.write(cmake_cache_entry("ROCM_PATH", spec['rocminfo'].prefix))
+            rocm_archs = ",".join(self.spec.variants['amdgpu_target'].value)
+            cfg.write(cmake_cache_entry("CMAKE_HIP_ARCHITECTURES", rocm_archs))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_HIP", "OFF"))
+
         #######################
         # VTK-h (and deps)
         #######################
-
         cfg.write("# vtk-h support \n")
 
         if "+vtkh" in spec:
@@ -552,13 +610,19 @@ class Ascent(CMakePackage, CudaPackage):
             else:
                 cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "OFF"))
 
+            if "+rocm" in spec:
+                cfg.write(cmake_cache_entry("VTKm_ENABLE_KOKKOS ", "ON"))
+                cfg.write(cmake_cache_entry("KOKKOS_DIR", spec['kokkos'].prefix))
+            else:
+                cfg.write("# vtk-m not using ROCm\n")
+
+
         else:
             if self.spec.satisfies('@0.8.1:'):
                 cfg.write("# vtk-h\n")
                 cfg.write(cmake_cache_entry("ENABLE_VTKH", "OFF"))
             else:
                 cfg.write("# vtk-h not build by spack\n")
-
 
         #######################
         # MFEM
@@ -625,7 +689,6 @@ class Ascent(CMakePackage, CudaPackage):
             cfg.write("# camp not built by spack \n")
 
         #######################
-        # Adios
         # Adios2
         #######################
         cfg.write("# adios2 support\n")

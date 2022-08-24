@@ -24,7 +24,7 @@ Ascent uses CMake for its build system.
 Building Ascent creates two separate libraries:
 
     * libascent : a version for execution on a single node
-    * libascent_mpi : a version for distributed-memory parallel
+    * libascent_mpi : a version for distributed-memory parallelism
 
 The CMake variable( ENABLE_MPI ON | OFF ) controls the building the parallel version of Ascent and included proxy-apps.
 
@@ -174,7 +174,7 @@ Main CMake Options
      - *(default = OFF)*
 
    * - ``ENABLE_VTKH``
-     - Controls if AP Compositor is built. Requires VTK-m. (AP Compositor is now developed as part of Ascent)
+     - Controls if VTK-h is built.. Requires VTK-m. (VTK-h is now developed as part of Ascent)
      - *(default = OFF)*
 
    * - ``ENABLE_EXAMPLES``
@@ -182,11 +182,11 @@ Main CMake Options
      - *(default = ON)*
 
    * - ``ENABLE_UTILS``
-     - Controls if Ascent examples are built.
+     - Controls if Ascent utilities are built.
      - *(default = ON)*
 
    * - ``ENABLE_TESTS``
-     - Controls if utilities are built.
+     - Controls if Ascent tests are built.
      - *(default = ON)*
 
    * - ``ENABLE_LOGGING``
@@ -463,9 +463,20 @@ Building Ascent Dependencies Manually
 
 In some environments, a spack build of Ascent's dependencies can fail or a user may prefer to build the dependencies manually.
 
-Here is a script that demonstrates how to build Ascent's main dependencies and Ascent:
+Here is a script that demonstrates how to build Ascent and its main dependencies without device support:
 
 .. literalinclude:: ../../../scripts/build_ascent/build_ascent.sh
+   :language: bash
+
+
+Here is a script that shows how to build Ascent and its main dependencies with ROCm/HIP device support:
+
+.. literalinclude:: ../../../scripts/build_ascent/build_ascent_hip.sh
+   :language: bash
+
+Here is a script that shows how to build Ascent and its main dependencies with CUDA device support:
+
+.. literalinclude:: ../../../scripts/build_ascent/build_ascent_cuda.sh
    :language: bash
 
 
