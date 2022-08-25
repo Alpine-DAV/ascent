@@ -629,8 +629,20 @@ DataSet::GetCycle() const
   return m_cycle;
 }
 
+void
+DataSet::SetTime(const vtkm::UInt64 time)
+{
+  m_time = time;
+}
+
+vtkm::UInt64
+DataSet::GetTime() const
+{
+  return m_time;
+}
+
 DataSet::DataSet()
-  : m_cycle(0)
+  : m_cycle(0), m_time(0)
 {
 }
 

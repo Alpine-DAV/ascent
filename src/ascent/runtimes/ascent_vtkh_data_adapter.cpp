@@ -524,13 +524,15 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       if(dom.has_path("state/cycle"))
       {
         cycle = dom["state/cycle"].to_uint64();
+	datasets["cycle"].SetCycle(cycle);
       }
 
       if(dom.has_path("state/time"))
       {
         time = dom["state/time"].to_float64();
+	datasets["time"].SetTime(time);
       }
-
+      
       for(int t = 0; t < topo_names.size(); ++t)
       {
         const std::string topo_name = topo_names[t];
