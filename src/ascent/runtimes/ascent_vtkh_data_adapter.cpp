@@ -524,13 +524,13 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       if(dom.has_path("state/cycle"))
       {
         cycle = dom["state/cycle"].to_uint64();
-	datasets["cycle"].SetCycle(cycle);
+	datasets["state/cycle"].SetCycle(cycle);
       }
 
       if(dom.has_path("state/time"))
       {
         time = dom["state/time"].to_float64();
-	datasets["time"].SetTime(time);
+	datasets["state/time"].SetTime(time);
       }
       
       for(int t = 0; t < topo_names.size(); ++t)
