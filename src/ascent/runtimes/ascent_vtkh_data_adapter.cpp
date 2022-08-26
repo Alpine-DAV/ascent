@@ -486,6 +486,12 @@ void VTKmCellShape(const std::string shape_type,
   }
 }
 
+template<typename T>
+bool allEqual(std::vector<T> const &v) 
+{
+  return std::adjacent_find(v.begin(), v.end(), std::not_equal_to<T>()) == v.end();
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end detail:: --
@@ -508,6 +514,8 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     std::map<std::string, vtkh::DataSet> datasets;
     vtkm::UInt64 cycle = 0;
     double time = 0;
+    std::vector<vtkm::UInt64> allCycles;
+    std::vector<double> allTimes;
 
     for(int i = 0; i < num_domains; ++i)
     {
@@ -524,13 +532,13 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       if(dom.has_path("state/cycle"))
       {
         cycle = dom["state/cycle"].to_uint64();
-	datasets["state/cycle"].SetCycle(cycle);
+	allCycles.push_back(cycle);
       }
 
       if(dom.has_path("state/time"))
       {
         time = dom["state/time"].to_float64();
-	datasets["state/time"].SetTime(time);
+	allTimes.push_back(time);
       }
       
       for(int t = 0; t < topo_names.size(); ++t)
@@ -542,6 +550,19 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       }
 
     }
+
+    //time and cycle should be the same for all domains
+    //if that's the case grab a topo and add the info
+    const conduit::Node &dom = n.child(0);
+    const std::vector<std::string> topo_names  = dom["topologies"].child_names();
+    const std::string topo_name = topo_names[0];
+
+    if(detail::allEqual(allCycles))
+      datasets[topo_name].SetCycle(allCycles[0]);
+    if(detail::allEqual(allTimes))
+      datasets[topo_name].SetTime(allTimes[0]);
+
+
 
     for(auto dset_it : datasets)
     {
