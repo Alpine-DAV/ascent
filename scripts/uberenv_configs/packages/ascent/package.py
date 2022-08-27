@@ -248,6 +248,11 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
 
     #############################
+    # adios2
+    #############################
+    depends_on("adios2", when="+adios2")
+
+    #############################
     # fides
     #############################
     depends_on("fides", when="+fides")

@@ -1,0 +1,26 @@
+#An example of using the log10 filter.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "vector_magnitude"
+        params: 
+          field: "vel"
+          output_name: "mag"
+      f2: 
+        type: "log10"
+        params: 
+          field: "mag"
+          output_name: "log10_mag"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "log10_mag"
+          pipeline: "pl1"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_log10_field"

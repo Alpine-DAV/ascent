@@ -10,4 +10,4 @@
           field: "braid"
           min_value: -0.5
           max_value: 0.5
-      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_3d_ascent_min_max"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_render_3d_ascent_min_max"
