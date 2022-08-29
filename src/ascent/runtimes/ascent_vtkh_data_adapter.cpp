@@ -557,9 +557,9 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     const std::vector<std::string> topo_names  = dom["topologies"].child_names();
     const std::string topo_name = topo_names[0];
 
-    if(detail::allEqual(allCycles))
+    if(allCycles.size() > 1 && detail::allEqual(allCycles))
       datasets[topo_name].SetCycle(allCycles[0]);
-    if(detail::allEqual(allTimes))
+    if(allTimes.size() > 1 && detail::allEqual(allTimes))
       datasets[topo_name].SetTime(allTimes[0]);
 
 
