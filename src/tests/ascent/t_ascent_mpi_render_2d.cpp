@@ -224,6 +224,180 @@ TEST(ascent_mpi_render_2d, test_render_mpi_2d_uniform_default_runtime)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_render_2d, test_render_mpi_2d_small_example)
+{
+    // example that demonstrates rendering bug described in
+    // https://github.com/Alpine-DAV/ascent/issues/992
+    // derived from example code from WillTrojak, posted in #992
+
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 2D MPI "
+                      "runtime test");
+        return;
+    }
+
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    ASCENT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    // example mesh from #992
+    conduit_float32 x[8], y[8], u[8];
+    conduit_int32 conn[8];
+    conduit_float32 scale = 4;
+
+    // Simple 2 rank example with 2 elements per rank.
+    if (par_rank == 0)
+    {
+        x[4] = -1.;
+        x[5] =  0.;
+        x[6] = -1.;
+        x[7] =  0.;
+        y[4] =  0.;
+        y[5] =  0.;
+        y[6] =  1.;
+        y[7] =  1.;
+
+        x[0] =  0.;
+        x[1] =  1.;
+        x[2] =  0.;
+        x[3] =  1.;
+        y[0] =  0.;
+        y[1] =  0.;
+        y[2] =  1.;
+        y[3] =  1.;
+        conn[0] = 0;
+        conn[1] = 1;
+        conn[2] = 3;
+        conn[3] = 2;
+        conn[4] = 4;
+        conn[5] = 5;
+        conn[6] = 7;
+        conn[7] = 6;
+    }
+    else if (par_rank == 1)
+    {
+        x[0] =  0.;
+        x[1] =  1.;
+        x[2] =  0.;
+        x[3] =  1.;
+        y[0] = -1.;
+        y[1] = -1.;
+        y[2] =  0.;
+        y[3] =  0.;
+
+        x[4] = -1.;
+        x[5] =  0.;
+        x[6] = -1.;
+        x[7] =  0.;
+        y[4] = -1.;
+        y[5] = -1.;
+        y[6] =  0.;
+        y[7] =  0.;
+        conn[0] = 0;
+        conn[1] = 1;
+        conn[2] = 3;
+        conn[3] = 2;
+        conn[4] = 4;
+        conn[5] = 5;
+        conn[6] = 7;
+        conn[7] = 6;
+    }
+
+    for (int i=0; i<8; i++)
+    {
+        u[i] = sin(x[i]) * cos(y[i]);
+        x[i] = scale*x[i];
+        y[i] = scale*y[i];
+    }
+
+    conduit::Node mesh;
+    mesh["coordsets/coords/type"] = "explicit";
+    mesh["coordsets/coords/values/x"].set(x,8);
+    mesh["coordsets/coords/values/y"].set(y,8);
+    mesh["topologies/mesh/type"] = "unstructured";
+    mesh["topologies/mesh/coordset"] = "coords";
+    mesh["topologies/mesh/elements/shape"] = "quad";
+    mesh["topologies/mesh/elements/connectivity"].set(conn,8);
+    mesh["state/domain_id"] = (conduit_int32)par_rank;
+    mesh["fields/u/association"] = "vertex";
+    mesh["fields/u/topology"] = "mesh";
+    mesh["fields/u/values"].set(u,8);
+    
+    std::string actions_yaml = R"ST(
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "mesh"
+      image_name: "tout_rmpi_2d_scene_mesh"
+    s2: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "u"
+      image_name: "tout_rmpi_2d_scene_u"
+)ST";
+
+
+    conduit::Node actions;
+    actions.parse(actions_yaml,"yaml");
+
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+
+    // setup outputs to write in ascent's test output dir
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_rmpi_2d_scene_mesh");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    actions[0]["scenes/s1/image_name"] = output_file;
+
+    output_file = conduit::utils::join_file_path(output_path,
+                                                 "tout_rmpi_2d_scene_u");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    actions[0]["scenes/s2/image_name"] = output_file;
+
+    ascent::Ascent a;
+    conduit::Node opts;
+    opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+    a.open(opts);
+    a.publish(mesh);
+    a.execute(actions);
+    a.close();
+
+}
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
