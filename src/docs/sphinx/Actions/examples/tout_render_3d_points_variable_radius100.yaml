@@ -11,4 +11,4 @@
           points: 
             radius: 0.25
             radius_delta: 2.0
-      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_3d_points_variable_radius"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_render_3d_points_variable_radius"

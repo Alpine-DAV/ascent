@@ -48,7 +48,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support to render Polygonal nd Polyhedral Meshes 
 - Added option to turn of world annotations
 - Added FIDES Support
-- Added Spack and Uberenv support for building on Perlmutter
 
 ### Fixed
 - Fixed a bug where ascent timings files were written out twice

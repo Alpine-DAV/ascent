@@ -12,4 +12,4 @@
         r1: 
           camera: 
             azimuth: 1.0
-          image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_3d_azimuth"
+          image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_render_3d_azimuth"
