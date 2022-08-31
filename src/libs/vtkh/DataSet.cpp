@@ -630,12 +630,12 @@ DataSet::GetCycle() const
 }
 
 void
-DataSet::SetTime(const vtkm::UInt64 time)
+DataSet::SetTime(const double time)
 {
   m_time = time;
 }
 
-vtkm::UInt64
+double
 DataSet::GetTime() const
 {
   return m_time;

@@ -18,7 +18,7 @@ protected:
   std::vector<vtkm::cont::DataSet> m_domains;
   std::vector<vtkm::Id>            m_domain_ids;
   vtkm::UInt64                     m_cycle;
-  vtkm::UInt64                     m_time;
+  double                           m_time;
 public:
   DataSet();
   ~DataSet();
@@ -32,8 +32,8 @@ public:
   // set cycle meta data
   void SetCycle(const vtkm::UInt64 cycle);
   vtkm::UInt64 GetCycle() const;
-  void SetTime(const vtkm::UInt64 time);
-  vtkm::UInt64 GetTime() const;
+  void SetTime(const double time);
+  double GetTime() const;
   vtkm::cont::DataSet& GetDomain(const vtkm::Id index);
   vtkm::cont::DataSet& GetDomainById(const vtkm::Id domain_id);
 
