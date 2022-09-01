@@ -509,6 +509,8 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     // different vtkh data sets
 
     const int num_domains = n.number_of_children();
+//    if(num_domains == 0)
+//      return nullptr;
 
     VTKHCollection *res = new VTKHCollection();
     std::map<std::string, vtkh::DataSet> datasets;
@@ -551,17 +553,20 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
 
     }
 
-    //time and cycle should be the same for all domains
-    //if that's the case grab a topo and add the info
-    const conduit::Node &dom = n.child(0);
-    const std::vector<std::string> topo_names  = dom["topologies"].child_names();
-    const std::string topo_name = topo_names[0];
+    //check to make sure there is data to grab
+    if(num_domains > 0)
+    {
+      //time and cycle should be the same for all domains
+      //if that's the case grab a topo and add the info
+      const conduit::Node &dom = n.child(0);
+      const std::vector<std::string> topo_names  = dom["topologies"].child_names();
+      const std::string topo_name = topo_names[0];
 
-    if(allCycles.size() != 0 && detail::allEqual(allCycles))
-      datasets[topo_name].SetCycle(allCycles[0]);
-    if(allTimes.size() != 0 && detail::allEqual(allTimes))
-      datasets[topo_name].SetTime(allTimes[0]);
-
+      if(allCycles.size() != 0 && detail::allEqual(allCycles))
+        datasets[topo_name].SetCycle(allCycles[0]);
+      if(allTimes.size() != 0 && detail::allEqual(allTimes))
+        datasets[topo_name].SetTime(allTimes[0]);
+    }
 
 
     for(auto dset_it : datasets)
