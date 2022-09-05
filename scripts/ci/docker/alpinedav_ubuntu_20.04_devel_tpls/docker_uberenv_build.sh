@@ -5,7 +5,7 @@ set -ev
 # TODO:
 # (+genten) genten currently disabled, wait for genten master to gain cokurt
 # (+fides) fides currently disabled, conflcit with new spack develop package ver
-export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa~fides~adios2+babelflow~genten"
+export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow~genten"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC} ^raja@0.14.0 ^vtk-m@1.8.0"
 # config
