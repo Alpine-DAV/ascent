@@ -11,6 +11,7 @@
 "spack_activate" : { "py-numpy"  : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
+                     "py-pip" : ["+python"],
                      "py-sphinx" : ["+python", "+doc"],
                      "py-sphinx-rtd-theme": ["+python","+doc"] }
 }
