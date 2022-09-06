@@ -46,7 +46,7 @@
 #cmakedefine ASCENT_VTKM_USE_KOKKOS   "@KOKKOS_FOUND@"
 
 
-#cmakedefine ASCENT_ADIOS_ENABLED     "@ADIOS_FOUND@"
+#cmakedefine ASCENT_ADIOS2_ENABLED    "@ADIOS2_FOUND@"
 #cmakedefine ASCENT_FIDES_ENABLED     "@FIDES_FOUND@"
 #cmakedefine ASCENT_MFEM_ENABLED      "@MFEM_FOUND@"
 #cmakedefine ASCENT_DRAY_ENABLED      "@DRAY_FOUND@"
