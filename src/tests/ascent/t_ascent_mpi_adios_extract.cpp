@@ -69,9 +69,9 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     string output_file = conduit::utils::join_file_path(output_path,"tout_adios_extract.bp");
 
     // remove old files before testing
-    if(conduit::utils::is_file(output_file))
+    if(conduit::utils::is_directory(output_file))
     {
-        conduit::utils::remove_file(output_file);
+        conduit::utils::remove_directory(output_file);
     }
 
     //
@@ -119,6 +119,8 @@ TEST(ascent_mpi_runtime, test_render_mpi_2d_main_runtime)
     ascent.close();
 
     MPI_Barrier(comm);
+
+    EXPECT_TRUE(conduit::utils::is_directory(output_file));
 }
 
 //-----------------------------------------------------------------------------
