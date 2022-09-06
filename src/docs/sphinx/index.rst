@@ -10,7 +10,7 @@
 Ascent
 ========
 
-A many-core capable flyweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
+`Ascent <http://github.com/alpine-dav/ascent>`_ is a many-core capable flyweight in situ visualization and analysis infrastructure for multi-physics HPC simulations.
 
 
 .. figure:: images/ascent_examples_small.png
@@ -55,6 +55,13 @@ Ascent focuses on ease of use and reducing integration burden for simulation cod
 - Replay capability helps prototype and test actions
 - It does not require GUI or system-graphics libraries
 - It includes integration examples that demonstrate how to use Ascent inside existing HPC-simulation proxy applications
+
+The Great Amalgamation
+--------------------------
+The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. 
+These external repos for these projects are archived.
+This reorg simplifies the development and support of these tightly coupled capabilities.
+Ascent 0.9.0 will be the first release using these internal versions.
 
 
 Getting Started
@@ -116,6 +123,7 @@ Ascent Documentation
    BuildingAscent
    AscentAPI
    Actions/index
+   FeatureMap
    Utilities
    GPU_notes
 
@@ -138,6 +146,7 @@ Ascent Documentation
    :hidden:
 
    Releases
+   Citing
    Publications
    Licenses
 

@@ -23,7 +23,7 @@ endif()
 find_package(VTKm REQUIRED QUIET)
 
 if(ENABLE_CUDA AND NOT VTKm_ENABLE_CUDA)
-   message(FATAL_ERROR "Ascent CUDA support requires VTK-m with CUDA support (ENABLE_CUDA == TRUE, however VTKm_ENABLE_CUDA == FALSE")
+   message(FATAL_ERROR "VTK-h CUDA support requires VTK-m with CUDA support (ENABLE_CUDA == TRUE, however VTKm_ENABLE_CUDA == FALSE")
 endif()
 
 if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
@@ -41,9 +41,21 @@ if(ENABLE_CUDA)
     vtkm_get_cuda_flags(_fetch_vtkm_cuda_flags)
     set(CMAKE_CUDA_FLAGS  "${CMAKE_CUDA_FLAGS} ${_fetch_vtkm_cuda_flags}")
     unset(_fetch_vtkm_cuda_flags)
+    # we also need
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas --disable-optimizer-constants")
 endif()
 
+
+# VTKM does not seem to propagate includes it exposes to us, so we have to work
+# around this.
+file(GLOB VTKM_LCL_DIR "${VTKM_DIR}/include/vtkm-*/vtkm/thirdparty/lcl/vtkmlcl/")
+include_directories("${VTKM_LCL_DIR}")
+
+# VTKM ridiculous
+file(GLOB VTKM_DIY_DIR "${VTKM_DIR}/include/vtkm-*/vtkm/thirdparty/diy/vtkmdiy/include/")
+include_directories("${VTKM_DIY_DIR}")
 
 blt_register_library(NAME vtkm
                      LIBRARIES ${VTKM_TARGETS}
                      )
+

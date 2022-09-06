@@ -25,6 +25,17 @@ Resulting image:
 
 .. image:: examples/tout_render_3d_points_const_radius100.png
 
+An example of rendering with no screen annotations.
+----------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_3d_no_screen_annotations100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_render_3d_no_screen_annotations100.png
+
 An example of creating a mesh plot.
 ------------------------------------
 
@@ -47,6 +58,17 @@ Resulting image:
 
 .. image:: examples/tout_rover_volume100.png
 
+An example of using the log2 filter and clamping the min value. This can help when there are negative values present.
+----------------------------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log2_field_clamp100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log2_field_clamp100.png
+
 An example if using the vector component filter  to extract a scalar component of a vector field.
 --------------------------------------------------------------------------------------------------
 
@@ -57,6 +79,17 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_vector_component100.png
+
+An example of rendering with no world annotations.
+---------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_3d_no_world_annotations100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_render_3d_no_world_annotations100.png
 
 An example of using the log filter.
 ------------------------------------
@@ -135,6 +168,39 @@ Resulting image:
 
 .. image:: examples/tout_multi_contour_levels100.png
 
+An example changing the rendering bounds of a 3d field.
+--------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_bounds_3d100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_render_bounds_3d100.png
+
+An example changing the rendering bounds of a 2d field.
+--------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_bounds_2d100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_render_bounds_2d100.png
+
+An example of the sampling filter using histogram-based approach.
+------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sampling_3d100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_sampling_3d100.png
+
 An example an inverted sphere clip using a center and radius
 -------------------------------------------------------------
 
@@ -178,6 +244,17 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_pipelines100.png
+
+
+-
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log2_field_clamp.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log2_field_clamp.png
 
 An example of using the gradient filter and plotting the magnitude.
 --------------------------------------------------------------------
@@ -487,6 +564,28 @@ Resulting image:
 
 .. image:: examples/tout_clip_box100.png
 
+An example of using the log10 filter.
+--------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log10_field100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log10_field100.png
+
+An example of using the log2 filter.
+-------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log2_field100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log2_field100.png
+
 An example of creating a custom color map.
 -------------------------------------------
 
@@ -564,6 +663,17 @@ Resulting image:
 
 .. image:: examples/tout_render_3d_points_variable_radius100.png
 
+
+-
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log10_field_clamp.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log10_field_clamp.png
+
 An example of using the threshold filter.
 ------------------------------------------
 
@@ -607,6 +717,17 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_gradient_mag_braid100.png
+
+An example of using the log10 filter and clamping the min value. This can help when there are negative values present.
+-----------------------------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_log10_field_clamp100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_log10_field_clamp100.png
 
 An example of using the gradient filter using cell gradients on a element centered field and plotting the magnitude.
 ---------------------------------------------------------------------------------------------------------------------
@@ -737,6 +858,13 @@ An example of quiering the maximum value of a field from the result of a pipelin
 YAML actions:
 
 .. literalinclude:: examples/tout_max_pipeline_query100.yaml
+
+An example of explicitly saving a session file.
+------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_save_session100.yaml
 
 An example of using devil ray for pseudocolor plot.
 ----------------------------------------------------

@@ -6,7 +6,7 @@ export SPACK_SPEC="%gcc+mpi+python+babelflow+fides+adios2+dray+mfem+occa"
 # constraints: h5py reqs hdf5+hl
 export SPACK_SPEC="${SPACK_SPEC} ^conduit~hdf5_compat ^hdf5+hl"
 # config
-export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/"
+export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/"
 
 cd /ascent && python scripts/uberenv/uberenv.py \
      -k \

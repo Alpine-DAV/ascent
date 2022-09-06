@@ -6,4 +6,4 @@
     t1: 
       params: 
         condition: "magnitude(max(field('braid')).position - vector(0,0,0)) > 0"
-        actions_file: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/trigger_extract_actions"
+        actions_file: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/trigger_extract_actions"

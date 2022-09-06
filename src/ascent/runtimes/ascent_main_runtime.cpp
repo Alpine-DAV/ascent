@@ -22,6 +22,7 @@
 //-----------------------------------------------------------------------------
 
 // conduit includes
+#include <conduit_fmt/conduit_fmt.h>
 #include <conduit_blueprint.hpp>
 
 // mpi related includes
@@ -29,9 +30,11 @@
 #include <mpi.h>
 // -- conduit relay mpi
 #include <conduit_relay_mpi.hpp>
+#include <conduit_blueprint_mpi.hpp>
 #endif
 
 #include <flow.hpp>
+#include <utils/ascent_string_utils.hpp>
 #include <ascent_actions_utils.hpp>
 #include <ascent_metadata.hpp>
 #include <ascent_runtime_filters.hpp>
@@ -201,7 +204,6 @@ AscentRuntime::Initialize(const conduit::Node &options)
 //Ascent may not be the one in charge of initializing kokkos; ex: Genten(?)
 //Probably should get a flag from VTKh saying it wants Kokkos for VKTm
 #if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VTKM_ENABLED)
-    std::cerr << "Kokkos on and VTKM on" << std::endl;
     vtkh::SelectKokkosDevice(1);
 #ifdef VTKM_KOKKOS_HIP
     vtkh::SelectKokkosDevice(1);
@@ -309,7 +311,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
     Node msg;
     ascent::about(msg["about"]);
     msg["options"] = options;
-    this->Info(msg["info"]);
+    // make external copy of info to push
+    msg["info"].set_external(m_info);
     m_web_interface.PushMessage(msg);
 }
 
@@ -328,6 +331,69 @@ AscentRuntime::ResetInfo()
     m_info.reset();
     m_info["runtime/type"] = "ascent";
     m_info["registered_filter_types"] = registered_filter_types();
+}
+
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::AddPublishedMeshInfo()
+{
+    conduit::Node n_index, n_per_rank_tbytes;
+    index_t src_tbytes = m_source.total_bytes_compact();
+    index_t all_tbytes = src_tbytes;
+
+    //
+    // TODO: STRIP INDEX? (We don't need the "path" entires)
+    //
+#ifdef ASCENT_MPI_ENABLED
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+  
+    Node n_src, n_reduce;
+    n_src = src_tbytes;
+    // all reduce to get total number of bytes across mpi tasks
+    conduit::relay::mpi::sum_all_reduce(n_src,
+                                        n_reduce,
+                                        mpi_comm);
+    all_tbytes = n_reduce.value();
+
+    m_info["published_mesh_info/total_bytes_compact"] = all_tbytes;
+    // all gather to get per rank total bytes
+    conduit::relay::mpi::all_gather(n_src,
+                                    m_info["published_mesh_info/total_bytes_compact_per_rank"],
+                                    mpi_comm);
+
+    index_t num_domains =  blueprint::mpi::mesh::number_of_domains(m_source,
+                                                                   mpi_comm);
+    m_info["published_mesh_info/number_of_domains"] = num_domains;
+
+    // if we have domains, then also provde the index
+    if(num_domains > 0)
+    {
+      blueprint::mpi::mesh::generate_index(m_source,
+                                           "",
+                                           m_info["published_mesh_info/index"],
+                                           mpi_comm);
+    }
+
+#else
+
+    // if we have domains, then also provde the index
+    index_t num_domains =  blueprint::mesh::number_of_domains(m_source);
+    m_info["published_mesh_info/number_of_domains"] = num_domains;
+    if(num_domains > 0)
+    {
+      // if we have domains, then also provde the index
+      blueprint::mesh::generate_index(m_source[0],
+                                      "",
+                                      1,
+                                      m_info["published_mesh_info/index"]);
+    }
+
+    m_info["published_mesh_info/total_bytes_compact"] = all_tbytes;
+    m_info["published_mesh_info/total_bytes_compact_per_rank"] = src_tbytes;
+#endif
+
 }
 
 
@@ -1496,6 +1562,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   m_connections.reset();
   m_scene_connections.reset();
   m_save_session_actions.reset();
+  m_save_info_actions.reset();
 
   // execution will be enforced in the following order:
   conduit::Node queries;
@@ -1582,6 +1649,12 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // the workspace executes.
         m_save_session_actions.append() = action;
       }
+      else if(action_name == "save_info")
+      {
+        // Saving the info will be deferred to after
+        // the workspace executes.
+        m_save_info_actions.append() = action;
+      }
       else
       {
         ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
@@ -1632,6 +1705,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
     try
     {
         ResetInfo();
+        AddPublishedMeshInfo();
 
         conduit::Node diff_info;
         bool different_actions = m_previous_actions.diff(actions, diff_info);
@@ -1706,11 +1780,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
           SaveSession();
         }
 
-        Node msg;
-        this->Info(msg["info"]);
-        ascent::about(msg["about"]);
-        m_web_interface.PushMessage(msg);
-
         // add render results to info
         Node render_file_names;
         Node renders;
@@ -1748,7 +1817,19 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         m_web_interface.PushRenders(render_file_names);
 
+        Node msg;
+        msg["info"].set_external(m_info);
+        ascent::about(msg["about"]);
+        m_web_interface.PushMessage(msg);
+
         w.registry().reset();
+
+        SetStatus("Ascent::execute completed");
+        if(m_save_info_actions.number_of_children() > 0)
+        {
+          SaveInfo();
+        }
+        
     }
     // --- close try --- //
 
@@ -2059,7 +2140,65 @@ void AscentRuntime::VerifyGhosts()
 
 }
 
-void AscentRuntime::SaveSession()
+
+//---------------------------------------------------------------------------//
+void
+AscentRuntime::SetStatus(const std::string &msg)
+{
+    std::ostringstream oss;
+    oss << msg << " at " << timestamp();
+    m_info["status/message"] = oss.str();
+}
+
+//---------------------------------------------------------------------------//
+void
+AscentRuntime::SetStatus(const std::string &msg,
+                          const std::string &details)
+{
+    std::ostringstream oss;
+    oss << msg << " at " << timestamp();
+    m_info["status/message"] = oss.str();
+    m_info["status/details"] = details;
+}
+
+//--------------------------------------------------------------------------//
+void
+AscentRuntime::SaveInfo()
+{
+    // info is same on all ranks, only save rank 0
+    if(m_rank == 0)
+    {
+        NodeConstIterator itr = m_save_info_actions.children();
+        while(itr.has_next())
+        {
+            const conduit::Node &action = itr.next();
+            // default
+            std::string filename = "out_ascent_info.yaml";
+            // default, if we have cycle  out_ascent_info_cycle_000zzz.yaml
+            if(Metadata::n_metadata.has_path("cycle"))
+            {
+                int cycle = Metadata::n_metadata["cycle"].to_int64();
+                filename = conduit_fmt::format("out_ascent_info_{:06d}.yaml",
+                                               cycle);
+            }
+
+            // also allow explicit name
+            if(action.has_path("file_name"))
+            {
+                if(!action["file_name"].dtype().is_string())
+                {
+                    ASCENT_ERROR("save_info filename must be a string");
+                }
+                filename = action["file_name"].as_string();
+            }
+            m_info.save(filename);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------//
+void
+AscentRuntime::SaveSession()
 {
   const int num_actions = m_save_session_actions.number_of_children();
 

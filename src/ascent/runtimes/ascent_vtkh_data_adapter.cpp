@@ -281,14 +281,14 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   {
     copy = vtkm::CopyFlag::Off;
   }
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    vtkm_assoc = vtkm::cont::Field::Association::Points;
   }
   else if(assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    vtkm_assoc = vtkm::cont::Field::Association::Cells;
   }
   else
   {
@@ -321,14 +321,14 @@ vtkm::cont::Field GetVectorField(T *values_ptr,
   {
     copy = vtkm::CopyFlag::Off;
   }
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    vtkm_assoc = vtkm::cont::Field::Association::Points;
   }
   else if(assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    vtkm_assoc = vtkm::cont::Field::Association::Cells;
   }
   else
   {
@@ -368,14 +368,14 @@ void ExtractVector(vtkm::cont::DataSet *dset,
     ASCENT_ERROR("Extract vector: only 2 and 3 dims supported given "<<dims);
   }
 
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+    vtkm_assoc = vtkm::cont::Field::Association::Points;
   }
   else if (assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+    vtkm_assoc = vtkm::cont::Field::Association::Cells;
   }
   else
   {
@@ -486,6 +486,12 @@ void VTKmCellShape(const std::string shape_type,
   }
 }
 
+template<typename T>
+bool allEqual(std::vector<T> const &v) 
+{
+  return std::adjacent_find(v.begin(), v.end(), std::not_equal_to<T>()) == v.end();
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end detail:: --
@@ -503,11 +509,15 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     // different vtkh data sets
 
     const int num_domains = n.number_of_children();
+//    if(num_domains == 0)
+//      return nullptr;
 
     VTKHCollection *res = new VTKHCollection();
     std::map<std::string, vtkh::DataSet> datasets;
     vtkm::UInt64 cycle = 0;
     double time = 0;
+    std::vector<vtkm::UInt64> allCycles;
+    std::vector<double> allTimes;
 
     for(int i = 0; i < num_domains; ++i)
     {
@@ -524,13 +534,15 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       if(dom.has_path("state/cycle"))
       {
         cycle = dom["state/cycle"].to_uint64();
+	allCycles.push_back(cycle);
       }
 
       if(dom.has_path("state/time"))
       {
         time = dom["state/time"].to_float64();
+	allTimes.push_back(time);
       }
-
+      
       for(int t = 0; t < topo_names.size(); ++t)
       {
         const std::string topo_name = topo_names[t];
@@ -540,6 +552,22 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       }
 
     }
+
+    //check to make sure there is data to grab
+    if(num_domains > 0)
+    {
+      //time and cycle should be the same for all domains
+      //if that's the case grab a topo and add the info
+      const conduit::Node &dom = n.child(0);
+      const std::vector<std::string> topo_names  = dom["topologies"].child_names();
+      const std::string topo_name = topo_names[0];
+
+      if(allCycles.size() != 0 && detail::allEqual(allCycles))
+        datasets[topo_name].SetCycle(allCycles[0]);
+      if(allTimes.size() != 0 && detail::allEqual(allTimes))
+        datasets[topo_name].SetTime(allTimes[0]);
+    }
+
 
     for(auto dset_it : datasets)
     {
@@ -1276,14 +1304,14 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
     string assoc_str = n_field["association"].as_string();
 
-    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
     if(assoc_str == "vertex")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+      vtkm_assoc = vtkm::cont::Field::Association::Points;
     }
     else if(assoc_str == "element")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+      vtkm_assoc = vtkm::cont::Field::Association::Cells;
     }
     else
     {
@@ -1354,13 +1382,13 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             if(assoc_str == "vertex")
             {
                 dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                 vtkm::cont::Field::Association::POINTS,
+                                                 vtkm::cont::Field::Association::Points,
                                                  vtkm_arr));
             }
             else if( assoc_str == "element")
             {
                 dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                 vtkm::cont::Field::Association::CELL_SET,
+                                                 vtkm::cont::Field::Association::Cells,
                                                  vtkm_arr));
             }
         }
@@ -1384,14 +1412,14 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 {
     string assoc_str = n_field["association"].as_string();
 
-    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::ANY;
+    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
     if(assoc_str == "vertex")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::POINTS;
+      vtkm_assoc = vtkm::cont::Field::Association::Points;
     }
     else if(assoc_str == "element")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::CELL_SET;
+      vtkm_assoc = vtkm::cont::Field::Association::Cells;
     }
     else
     {
@@ -1890,19 +1918,19 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       output["topologies/"+topo_name+"/coordset"] = coords_name;
       output["topologies/"+topo_name+"/type"] = "structured";
 
-      vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
+      vtkm::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
       using Structured2D = vtkm::cont::CellSetStructured<2>;
       using Structured3D = vtkm::cont::CellSetStructured<3>;
-      if(dyn_cells.IsSameType(Structured2D()))
+      if(dyn_cells.CanConvert<Structured2D>())
       {
-        Structured2D cells = dyn_cells.Cast<Structured2D>();
+        Structured2D cells = dyn_cells.AsCellSet<Structured2D>();
         vtkm::Id2 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
       }
-      else if(dyn_cells.IsSameType(Structured3D()))
+      else if(dyn_cells.CanConvert<Structured3D>())
       {
-        Structured3D cells = dyn_cells.Cast<Structured3D>();
+        Structured3D cells = dyn_cells.AsCellSet<Structured3D>();
         vtkm::Id3 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
@@ -1918,14 +1946,14 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       output["topologies/"+topo_name+"/coordset"] = coords_name;
       output["topologies/"+topo_name+"/type"] = "unstructured";
-      vtkm::cont::DynamicCellSet dyn_cells = data_set.GetCellSet();
+      vtkm::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
 
       using SingleType = vtkm::cont::CellSetSingleType<>;
       using MixedType = vtkm::cont::CellSetExplicit<>;
 
-      if(dyn_cells.IsSameType(SingleType()))
+      if(dyn_cells.CanConvert<SingleType>())
       {
-        SingleType cells = dyn_cells.Cast<SingleType>();
+        SingleType cells = dyn_cells.AsCellSet<SingleType>();
         vtkm::UInt8 shape_id = cells.GetCellShape(0);
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
@@ -1949,7 +1977,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       {
         // If we are here, the we know that the cell set is explicit,
         // but only a single cell shape
-        auto cells = dyn_cells.Cast<vtkm::cont::CellSetExplicit<>>();
+        auto cells = dyn_cells.AsCellSet<vtkm::cont::CellSetExplicit<>>();
         auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagCell(),
                                            vtkm::TopologyElementTagPoint());
 
@@ -1977,7 +2005,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       {
         ASCENT_ERROR("Mixed explicit types not implemented");
         data_set.PrintSummary(std::cout);
-        MixedType cells = dyn_cells.Cast<MixedType>();
+        MixedType cells = dyn_cells.AsCellSet<MixedType>();
       }
 
     }
@@ -2043,8 +2071,8 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 {
   std::string name = field.GetName();
   std::string path = "fields/" + name;
-  bool assoc_points = vtkm::cont::Field::Association::POINTS == field.GetAssociation();
-  bool assoc_cells  = vtkm::cont::Field::Association::CELL_SET == field.GetAssociation();
+  bool assoc_points = vtkm::cont::Field::Association::Points == field.GetAssociation();
+  bool assoc_cells  = vtkm::cont::Field::Association::Cells == field.GetAssociation();
   //bool assoc_mesh  = vtkm::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
   if(!assoc_points && ! assoc_cells)
   {

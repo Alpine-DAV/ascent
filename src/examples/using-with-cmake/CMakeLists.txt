@@ -36,6 +36,7 @@ project(using_with_cmake)
 # PATHS is just a hint if someone runs this example from the Ascent install
 # tree without setting up an environment hint to find Ascent
 find_package(Ascent REQUIRED
+             NO_DEFAULT_PATH
              PATHS ${CMAKE_SOURCE_DIR}/../../../)
 
 # create our example

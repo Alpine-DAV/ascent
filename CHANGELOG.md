@@ -5,12 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-
 ## Unreleased
+
+### Preferred dependency versions for ascent@develop
+- conduit@0.8.3
+- vtk-m@1.8.0
 
 ### Added
 - Added pipeline `partition` from Conduit Blueprint
 - Added extract `flatten` from Conduit Blueprint
+- Added Log base 10 filter. Filter type is `log10`
+- Added Log base 2 filter. Filter type is `log2`
+- Added Feature Map in the docs. Detailing Devil Ray and VTKh features 
+- Added `scripts/build_ascent/build_ascent.sh` a script that demonstrates how to manually build Ascent and its main dependencies.
+- Added ability to override dimensions for the rendered bounding box around a dataset
+
+### Changed
+- **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
+- Update docs related to building Ascent.
 
 ## [0.8.0] - Released 2022-02-11
 
@@ -36,7 +48,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support to render Polygonal nd Polyhedral Meshes 
 - Added option to turn of world annotations
 - Added FIDES Support
-- Added Spack and Uberenv support for building on Perlmutter
 
 ### Fixed
 - Fixed a bug where ascent timings files were written out twice

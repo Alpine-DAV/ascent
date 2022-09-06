@@ -9,7 +9,7 @@
 ################################
 
 ###############################################################################
-# gtest, fruit, mpi,cuda, openmp, sphinx and doxygen are handled by blt
+# gtest, fruit, mpi, cuda, openmp, sphinx and doxygen are handled by blt
 ###############################################################################
 
 ################################
@@ -30,7 +30,6 @@ endif()
 ################################
 include(cmake/thirdparty/SetupConduit.cmake)
 
-
 ################################################################
 ################################################################
 #
@@ -39,6 +38,40 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 
+################################
+# Camp
+################################
+if(CAMP_DIR) # optional for now
+    include(cmake/thirdparty/SetupCamp.cmake)
+endif()
+
+################################
+# Umpire
+################################
+if(UMPIRE_DIR) # optional for now
+    include(cmake/thirdparty/SetupUmpire.cmake)
+endif()
+
+################################
+# RAJA
+################################
+if(RAJA_DIR)  # optional for now
+    include(cmake/thirdparty/SetupRAJA.cmake)
+endif()
+
+################################
+# Setup Kokkos
+################################
+if (KOKKOS_DIR)
+  include(cmake/thirdparty/SetupKokkos.cmake)
+endif()
+
+################################
+# Setup OCCA
+################################
+if (OCCA_DIR)
+  include(cmake/thirdparty/SetupOcca.cmake)
+endif()
 
 ################################
 # VTKm and supporting libs
@@ -52,9 +85,10 @@ if(VTKM_DIR)
     ################################
     # VTKh
     ################################
-    include(cmake/thirdparty/SetupVTKh.cmake)
+    if(VTKH_DIR)  # builtin vs external logic
+        include(cmake/thirdparty/SetupVTKh.cmake)
+    endif()
 endif()
-
 
 #
 # Note: HDF5 is fully handled by importing conduit
@@ -74,12 +108,6 @@ if (DRAY_DIR)
   include(cmake/thirdparty/SetupDevilRay.cmake)
 endif()
 
-################################
-# Setup OCCA
-################################
-if (OCCA_DIR)
-  include(cmake/thirdparty/SetupOcca.cmake)
-endif()
 
 ################################
 # Setup Umpire
@@ -115,11 +143,4 @@ endif()
 ################################
 if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
-endif()
-
-################################
-# Setup Kokkos
-################################
-if (KOKKOS_DIR)
-  include(cmake/thirdparty/SetupKokkos.cmake)
 endif()

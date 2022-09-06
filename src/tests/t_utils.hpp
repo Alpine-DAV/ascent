@@ -41,6 +41,15 @@ remove_test_image(const std::string &path, const std::string num = "100")
 
 }
 
+
+//-----------------------------------------------------------------------------
+inline void
+remove_test_image_direct(const std::string &path)
+{
+    return remove_test_image(path,"");
+}
+
+
 //-----------------------------------------------------------------------------
 inline void
 remove_test_file(const std::string &path)
@@ -81,6 +90,76 @@ test_data_file(const std::string &file_name)
     string data_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"test_data");
     string file = conduit::utils::join_file_path(data_dir,file_name);
     return file;
+}
+
+
+inline std::string
+dray_baselines_dir()
+{
+    string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
+    return conduit::utils::join_file_path(res,"dray");
+}
+
+
+// NOTE: Devil Ray diff tolerance was 0.2f at time of great amalgamation 
+
+//-----------------------------------------------------------------------------
+inline bool
+check_test_image(const std::string &path,
+                 const std::string &baseline_dir,
+                 const float tolerance = 0.001f)
+{
+    Node info;
+    std::string png_path = path + ".png";
+    // for now, just check if the file exists.
+    bool res = conduit::utils::is_file(png_path);
+    info["test_file/path"] = png_path;
+    if(res)
+    {
+      info["test_file/exists"] = "true";
+    }
+    else
+    {
+      info["test_file/exists"] = "false";
+      res = false;
+    }
+
+    std::string file_name;
+    std::string path_b;
+
+    conduit::utils::rsplit_file_path(png_path,
+                                     file_name,
+                                     path_b);
+
+    //string baseline_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
+    string baseline = conduit::utils::join_file_path(baseline_dir,file_name);
+
+    info["baseline_file/path"] = baseline;
+    if(conduit::utils::is_file(baseline))
+    {
+      info["baseline_file/exists"] = "true";
+    }
+    else
+    {
+      info["baseline_file/exists"] = "false";
+      res = false;
+    }
+
+    if(res)
+    {
+      ascent::PNGCompare compare;
+
+      res &= compare.Compare(png_path, baseline, info, tolerance);
+    }
+
+    if(!res)
+    {
+      info.print();
+    }
+    std::string info_fpath = path + "_img_compare_results.json";
+    info.save(info_fpath,"json");
+
+    return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -140,13 +219,13 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
     return res;
 }
 
+
 inline bool
 check_test_file(const std::string &path)
 {
     // for now, just check if the file exists.
     return conduit::utils::is_file(path);
 }
-
 
 //-----------------------------------------------------------------------------
 // create an example 2d rectilinear grid with two variables.

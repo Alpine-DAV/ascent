@@ -7,7 +7,7 @@
       type: "relay"
       pipeline: "pl1"
       params: 
-        path: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_scalar_rendering"
+        path: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_scalar_rendering"
         protocol: "blueprint/mesh/hdf5"
 - 
   action: "add_pipelines"
