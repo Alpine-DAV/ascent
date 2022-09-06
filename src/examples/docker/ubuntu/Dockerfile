@@ -2,10 +2,10 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM alpinedav/ascent-ci:ubuntu-18-devel
+FROM alpinedav/ascent-ci:ubuntu-20.04-devel
 
 # nodejs is needed by jupyterlab for widgets
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -18,6 +18,7 @@ RUN tar -xzf ascent.docker.src.tar.gz
 # copy spack build script in
 COPY docker_uberenv_build.sh /
 RUN  ./docker_uberenv_build.sh
+
 
 # install jupyter, matplotlib, cinema, etc via pip
 RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
