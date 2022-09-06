@@ -269,7 +269,8 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     #######################
     depends_on('babelflow', when='+babelflow+mpi')
     depends_on('parallelmergetree', when='+babelflow+mpi')
-
+    depends_on('talass', when='+babelflow+mpi')
+    depends_on('streamstat', when='+babelflow+mpi')
 
     #######################
     # Documentation related

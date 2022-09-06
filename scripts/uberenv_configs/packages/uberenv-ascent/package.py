@@ -18,10 +18,6 @@ class UberenvAscent(Ascent):
 
     homepage = "https://github.com/alpine-DAV/ascent"
 
-    
-    depends_on('talass')
-    depends_on('streamstat')
-
     # default to building python when using uberenv
     variant("python",
             default=True,
