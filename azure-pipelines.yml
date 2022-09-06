@@ -168,7 +168,7 @@ stages:
         # Babelflow
         ############
         ubuntu_18_shared_py_cxx14_bflow:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
