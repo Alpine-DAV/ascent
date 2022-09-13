@@ -12,7 +12,10 @@ class vtkmLog
 {
 public:
   vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                          const LogBase base,
+		          const std::string in_field_name,
+			  const std::string out_field_name,
+			  vtkm::cont::Field::Association in_assoc,
+		  	  int log_base,
                           const vtkm::Float32 min_value);
 };
 }

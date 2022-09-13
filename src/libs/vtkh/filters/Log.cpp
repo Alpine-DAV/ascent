@@ -1,9 +1,7 @@
 #include "Log.hpp"
 #include <vtkh/Error.hpp>
+#include <vtkh/vtkm_filters/vtkmLog.hpp>
 
-#include <vtkm/Math.h>
-#include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/worklet/WorkletMapField.h>
 
 namespace vtkh
 {
@@ -123,15 +121,15 @@ void Log::DoExecute()
       throw Error("Log: input field must be zonal or nodal");
     }
 
-    vtkm::cont::ArrayHandle<vtkm::Float32> log_field;
-    vtkm::cont::Field in_field = dom.GetField(m_field_name);
+    vtkh::vtkmLog logger;
+    
+    auto output = logger.Run(dom,
+		    	     m_field_name,
+			     m_result_name,
+			     in_assoc,
+		   	     1,
+		    	     min_value);
 
-    //TODO:NEW CODE GOES HERE
-
-    vtkm::cont::Field out_field(m_result_name,
-                                in_assoc,
-                                log_field);
-    dom.AddField(out_field);
   }
 }
 
@@ -256,15 +254,15 @@ void Log10::DoExecute()
       throw Error("Log10: input field must be zonal or nodal");
     }
 
-    vtkm::cont::ArrayHandle<vtkm::Float32> log_field;
-    vtkm::cont::Field in_field = dom.GetField(m_field_name);
-
-    //TODO:NEW CODE GOES HERE
-
-    vtkm::cont::Field out_field(m_result_name,
-                                in_assoc,
-                                log_field);
-    dom.AddField(out_field);
+    vtkh::vtkmLog logger;
+    
+    auto output = logger.Run(dom,
+		    	     m_field_name,
+			     m_result_name,
+			     in_assoc,
+		   	     10,
+		    	     min_value);
+    
   }
 }
 
@@ -389,15 +387,15 @@ void Log2::DoExecute()
       throw Error("Log2: input field must be zonal or nodal");
     }
 
-    vtkm::cont::ArrayHandle<vtkm::Float32> log_field;
-    vtkm::cont::Field in_field = dom.GetField(m_field_name);
-
-    //TODO:NEW CODE GOES HERE
-
-    vtkm::cont::Field out_field(m_result_name,
-                                in_assoc,
-                                log_field);
-    dom.AddField(out_field);
+    vtkh::vtkmLog logger;
+    
+    auto output = logger.Run(dom,
+		    	     m_field_name,
+			     m_result_name,
+			     in_assoc,
+		   	     2,
+		    	     min_value);
+		    	     
   }
 }
 
