@@ -8,76 +8,6 @@
 namespace vtkh
 {
 
-namespace detail
-{
-class LogField : public vtkm::worklet::WorkletMapField
-{
-  const vtkm::Float32 m_min_value;
-public:
-  VTKM_CONT
-  LogField(const vtkm::Float32 min_value)
-   : m_min_value(min_value)
-  {}
-
-  typedef void ControlSignature(FieldIn, FieldOut);
-  typedef void ExecutionSignature(_1, _2);
-
-  template<typename T>
-  VTKM_EXEC
-  void operator()(const T &value, vtkm::Float32& log_value) const
-  {
-    vtkm::Float32 f_value = static_cast<vtkm::Float32>(value);
-    f_value = vtkm::Max(m_min_value, f_value);
-    log_value = vtkm::Log(f_value);
-  }
-}; //class LogField
-
-class Log10Field : public vtkm::worklet::WorkletMapField
-{
-  const vtkm::Float32 m_min_value;
-public:
-  VTKM_CONT
-  Log10Field(const vtkm::Float32 min_value)
-   : m_min_value(min_value)
-  {}
-
-  typedef void ControlSignature(FieldIn, FieldOut);
-  typedef void ExecutionSignature(_1, _2);
-
-  template<typename T>
-  VTKM_EXEC
-  void operator()(const T &value, vtkm::Float32& log_value) const
-  {
-    vtkm::Float32 f_value = static_cast<vtkm::Float32>(value);
-    f_value = vtkm::Max(m_min_value, f_value);
-    log_value = vtkm::Log10(f_value);
-  }
-}; //class Log10Field
-
-class Log2Field : public vtkm::worklet::WorkletMapField
-{
-  const vtkm::Float32 m_min_value;
-public:
-  VTKM_CONT
-  Log2Field(const vtkm::Float32 min_value)
-   : m_min_value(min_value)
-  {}
-
-  typedef void ControlSignature(FieldIn, FieldOut);
-  typedef void ExecutionSignature(_1, _2);
-
-  template<typename T>
-  VTKM_EXEC
-  void operator()(const T &value, vtkm::Float32& log_value) const
-  {
-    vtkm::Float32 f_value = static_cast<vtkm::Float32>(value);
-    f_value = vtkm::Max(m_min_value, f_value);
-    log_value = vtkm::Log2(f_value);
-  }
-}; //class Log2Field
-
-} // namespace detail
-
 Log::Log()
   : m_min_value(0.0001f),
     m_clamp_to_min(false)
@@ -140,7 +70,7 @@ void Log::PreExecute()
 
   if(m_result_name== "")
   {
-    m_result_name= "log(" + m_field_name + ")";
+    m_result_name= "log_e(" + m_field_name + ")";
   }
 
 }
@@ -196,8 +126,7 @@ void Log::DoExecute()
     vtkm::cont::ArrayHandle<vtkm::Float32> log_field;
     vtkm::cont::Field in_field = dom.GetField(m_field_name);
 
-    vtkm::worklet::DispatcherMapField<detail::LogField>(detail::LogField(min_value))
-      .Invoke(in_field.GetData().ResetTypes(vtkm::TypeListFieldScalar(), VTKM_DEFAULT_STORAGE_LIST{}), log_field);
+    //TODO:NEW CODE GOES HERE
 
     vtkm::cont::Field out_field(m_result_name,
                                 in_assoc,
@@ -274,7 +203,7 @@ void Log10::PreExecute()
 
   if(m_result_name== "")
   {
-    m_result_name= "log(" + m_field_name + ")";
+    m_result_name= "log_10(" + m_field_name + ")";
   }
 
 }
@@ -330,8 +259,7 @@ void Log10::DoExecute()
     vtkm::cont::ArrayHandle<vtkm::Float32> log_field;
     vtkm::cont::Field in_field = dom.GetField(m_field_name);
 
-    vtkm::worklet::DispatcherMapField<detail::Log10Field>(detail::Log10Field(min_value))
-      .Invoke(in_field.GetData().ResetTypes(vtkm::TypeListFieldScalar(), VTKM_DEFAULT_STORAGE_LIST{}), log_field);
+    //TODO:NEW CODE GOES HERE
 
     vtkm::cont::Field out_field(m_result_name,
                                 in_assoc,
@@ -408,7 +336,7 @@ void Log2::PreExecute()
 
   if(m_result_name== "")
   {
-    m_result_name= "log(" + m_field_name + ")";
+    m_result_name= "log_2(" + m_field_name + ")";
   }
 
 }
@@ -464,8 +392,7 @@ void Log2::DoExecute()
     vtkm::cont::ArrayHandle<vtkm::Float32> log_field;
     vtkm::cont::Field in_field = dom.GetField(m_field_name);
 
-    vtkm::worklet::DispatcherMapField<detail::Log2Field>(detail::Log2Field(min_value))
-      .Invoke(in_field.GetData().ResetTypes(vtkm::TypeListFieldScalar(), VTKM_DEFAULT_STORAGE_LIST{}), log_field);
+    //TODO:NEW CODE GOES HERE
 
     vtkm::cont::Field out_field(m_result_name,
                                 in_assoc,
