@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_threshold, vtkh_serial_threshold)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

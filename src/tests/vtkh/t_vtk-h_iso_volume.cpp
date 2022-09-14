@@ -21,6 +21,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_iso_volume, vtkh_iso_volume)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -72,6 +75,9 @@ TEST(vtkh_iso_volume, vtkh_iso_volume)
 //----------------------------------------------------------------------------
 TEST(vtkh_iso_volume, vtkh_iso_volume_empty)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

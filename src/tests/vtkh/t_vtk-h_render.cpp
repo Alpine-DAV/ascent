@@ -19,6 +19,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_render, vtkh_scaled_world_annotations)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -56,6 +59,9 @@ TEST(vtkh_render, vtkh_scaled_world_annotations)
 //----------------------------------------------------------------------------
 TEST(vtkh_render, vtkh_no_annotations)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -90,6 +96,9 @@ TEST(vtkh_render, vtkh_no_annotations)
 
 TEST(vtkh_render, vtkh_no_bg_or_annotations)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -125,6 +134,9 @@ TEST(vtkh_render, vtkh_no_bg_or_annotations)
 
 TEST(vtkh_render, vtkh_no_world_annotations)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -159,6 +171,9 @@ TEST(vtkh_render, vtkh_no_world_annotations)
 
 TEST(vtkh_render, vtkh_no_screen_annotations)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -193,6 +208,9 @@ TEST(vtkh_render, vtkh_no_screen_annotations)
 
 TEST(vtkh_render, vtkh_bg_color)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

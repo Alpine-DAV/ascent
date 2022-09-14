@@ -17,6 +17,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_statistics_par, vtkh_stats)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
 
   MPI_Init(NULL, NULL);
   int comm_size, rank;

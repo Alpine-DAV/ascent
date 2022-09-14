@@ -19,6 +19,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_mesh_renderer, vtkh_serial_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 16;
@@ -54,6 +57,9 @@ TEST(vtkh_mesh_renderer, vtkh_serial_render)
 //----------------------------------------------------------------------------
 TEST(vtkh_mesh_renderer, vtkh_serial_render_no_field)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 16;

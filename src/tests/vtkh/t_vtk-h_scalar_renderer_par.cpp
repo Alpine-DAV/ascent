@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_scalar_renderer, vtkh_parallel_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   MPI_Init(NULL, NULL);
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);

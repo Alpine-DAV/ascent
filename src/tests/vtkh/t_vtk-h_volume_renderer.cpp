@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
 
   vtkh::DataSet data_set;
 
@@ -75,6 +78,9 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
 
 TEST(vtkh_volume_renderer, vtkh_parallel_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
 
   vtkh::DataSet data_set;
 

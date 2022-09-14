@@ -17,6 +17,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_histogram_par, vtkh_histogram_clamp_range)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
 
   MPI_Init(NULL, NULL);
   int comm_size, rank;

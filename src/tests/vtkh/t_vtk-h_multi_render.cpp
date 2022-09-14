@@ -21,6 +21,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -82,6 +85,9 @@ TEST(vtkh_raytracer, vtkh_serial_render)
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_batch)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
