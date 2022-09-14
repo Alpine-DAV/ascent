@@ -8,6 +8,8 @@
 namespace vtkh
 {
 
+typedef vtkm::filter::field_transform::LogValues vtkmLogFilter;
+
 class vtkmLog
 {
 public:
@@ -15,7 +17,7 @@ public:
 		          const std::string in_field_name,
 			  const std::string out_field_name,
 			  vtkm::cont::Field::Association in_assoc,
-		  	  int log_base,
+		  	  vtkmLogFilter::LogBase log_base,
                           const vtkm::Float32 min_value);
 };
 }

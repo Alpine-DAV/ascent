@@ -98,6 +98,7 @@ void Log::DoExecute()
   }
 
   this->m_output = new DataSet();
+  vtkh::DataSet* log_output = new DataSet();
   // shallow copy input data set and bump internal ref counts
   *m_output = *m_input;
 
@@ -121,16 +122,21 @@ void Log::DoExecute()
       throw Error("Log: input field must be zonal or nodal");
     }
 
-    vtkh::vtkmLog logger;
+    vtkh::vtkmLog logarithm;
     
-    auto output = logger.Run(dom,
+    auto output = logarithm.Run(dom,
 		    	     m_field_name,
 			     m_result_name,
 			     in_assoc,
-		   	     1,
+		   	     vtkmLogFilter::LogBase::E,
 		    	     min_value);
+    
+    log_output->AddDomain(output,i);
 
   }
+
+  *m_output = *log_output;
+  delete log_output;
 }
 
 std::string
@@ -231,6 +237,7 @@ void Log10::DoExecute()
   }
 
   this->m_output = new DataSet();
+  vtkh::DataSet* log_output = new DataSet();
   // shallow copy input data set and bump internal ref counts
   *m_output = *m_input;
 
@@ -254,16 +261,20 @@ void Log10::DoExecute()
       throw Error("Log10: input field must be zonal or nodal");
     }
 
-    vtkh::vtkmLog logger;
+    vtkh::vtkmLog logarithm;
     
-    auto output = logger.Run(dom,
+    auto output = logarithm.Run(dom,
 		    	     m_field_name,
 			     m_result_name,
 			     in_assoc,
-		   	     10,
+		   	     vtkmLogFilter::LogBase::TEN,
 		    	     min_value);
-    
+
+    log_output->AddDomain(output,i);
   }
+
+  *m_output = *log_output;
+  delete log_output;
 }
 
 std::string
@@ -364,6 +375,7 @@ void Log2::DoExecute()
   }
 
   this->m_output = new DataSet();
+  vtkh::DataSet* log_output = new DataSet();
   // shallow copy input data set and bump internal ref counts
   *m_output = *m_input;
 
@@ -387,16 +399,21 @@ void Log2::DoExecute()
       throw Error("Log2: input field must be zonal or nodal");
     }
 
-    vtkh::vtkmLog logger;
-    
-    auto output = logger.Run(dom,
+    vtkh::vtkmLog logarithm;
+
+    auto output = logarithm.Run(dom,
 		    	     m_field_name,
 			     m_result_name,
 			     in_assoc,
-		   	     2,
+		   	     vtkmLogFilter::LogBase::TWO,
 		    	     min_value);
+
+    log_output->AddDomain(output, i);
 		    	     
   }
+
+  *m_output = *log_output;
+  delete log_output;
 }
 
 std::string
