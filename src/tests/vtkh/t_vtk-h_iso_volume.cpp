@@ -22,7 +22,7 @@
 TEST(vtkh_iso_volume, vtkh_iso_volume)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -76,7 +76,7 @@ TEST(vtkh_iso_volume, vtkh_iso_volume)
 TEST(vtkh_iso_volume, vtkh_iso_volume_empty)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

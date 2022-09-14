@@ -22,7 +22,7 @@
 TEST(vtkh_gradient, vtkh_gradient)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -86,7 +86,7 @@ TEST(vtkh_gradient, vtkh_gradient)
 TEST(vtkh_gradient, vtkh_qcriterion)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

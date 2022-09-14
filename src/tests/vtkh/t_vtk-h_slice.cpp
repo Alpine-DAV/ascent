@@ -18,7 +18,7 @@
 TEST(vtkh_slice, vtkh_slice)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -64,7 +64,7 @@ TEST(vtkh_slice, vtkh_slice)
 TEST(vtkh_slice, vtkh_mulit_slice)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

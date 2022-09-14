@@ -22,7 +22,7 @@
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -92,7 +92,7 @@ TEST(vtkh_raytracer, vtkh_serial_render)
 TEST(vtkh_multi_par, vtkh_batch)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);

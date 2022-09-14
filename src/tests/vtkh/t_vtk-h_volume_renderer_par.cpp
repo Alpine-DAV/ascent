@@ -22,7 +22,7 @@
 TEST(vtkh_volume_renderer, vtkh_parallel_render)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);

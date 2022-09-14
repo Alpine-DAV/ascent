@@ -18,7 +18,7 @@
 TEST(vtkh_dataset, vtkh_range)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

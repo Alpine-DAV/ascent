@@ -25,7 +25,7 @@
 TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -125,7 +125,7 @@ TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
 TEST(vtkh_emtpy_data, vtkh_empty_vtkh)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

@@ -23,7 +23,7 @@
 TEST(vtkh_clip, vtkh_box_clip)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -83,7 +83,7 @@ TEST(vtkh_clip, vtkh_box_clip)
 TEST(vtkh_clip, vtkh_2_plane_clip)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -146,7 +146,7 @@ TEST(vtkh_clip, vtkh_2_plane_clip)
 TEST(vtkh_clip, vtkh_2_plane_clip_particles)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

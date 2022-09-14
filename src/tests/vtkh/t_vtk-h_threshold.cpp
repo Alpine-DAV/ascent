@@ -21,7 +21,7 @@
 TEST(vtkh_threshold, vtkh_serial_threshold)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

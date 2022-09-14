@@ -20,7 +20,7 @@
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

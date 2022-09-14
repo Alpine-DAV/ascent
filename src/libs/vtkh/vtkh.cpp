@@ -310,7 +310,13 @@ SelectCUDADevice(int device_index)
 
 }
 //---------------------------------------------------------------------------//
+void
+InitializeKokkos()
+{
+  SelectKokkosDevice(0);
+}
 
+//---------------------------------------------------------------------------//
 void
 SelectKokkosDevice(int device_index)
 { 

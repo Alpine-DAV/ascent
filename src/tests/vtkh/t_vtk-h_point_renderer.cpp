@@ -21,7 +21,7 @@
 TEST(vtkh_point_renderer, vtkh_point_render)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -59,7 +59,7 @@ TEST(vtkh_point_renderer, vtkh_point_render)
 TEST(vtkh_point_renderer, vtkh_variable_point_render)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -99,7 +99,7 @@ TEST(vtkh_point_renderer, vtkh_variable_point_render)
 TEST(vtkh_point_renderer, vtkh_point_no_data)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

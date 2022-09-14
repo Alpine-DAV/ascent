@@ -22,7 +22,7 @@
 TEST(vtkh_mesh_quality, vtkh_volume)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -65,7 +65,7 @@ TEST(vtkh_mesh_quality, vtkh_volume)
 TEST(vtkh_mesh_quality, vtkh_not_supported)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

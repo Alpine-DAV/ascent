@@ -21,7 +21,7 @@
 TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
 
   MPI_Init(NULL, NULL);

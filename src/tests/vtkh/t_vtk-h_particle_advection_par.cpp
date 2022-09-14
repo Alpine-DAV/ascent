@@ -93,7 +93,7 @@ RunFilter(vtkh::DataSet& input,
 TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   MPI_Init(NULL, NULL);
   int comm_size, rank;

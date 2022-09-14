@@ -21,7 +21,7 @@
 TEST(vtkh_point_transform, vtkh_translate)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -64,7 +64,7 @@ TEST(vtkh_point_transform, vtkh_translate)
 TEST(vtkh_point_transform, vtkh_scale)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

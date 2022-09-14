@@ -23,7 +23,7 @@
 TEST(vtkh_clip_field, vtkh_clip)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -74,7 +74,7 @@ TEST(vtkh_clip_field, vtkh_clip)
 TEST(vtkh_clip_field, vtkh_clip_cell_centered)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

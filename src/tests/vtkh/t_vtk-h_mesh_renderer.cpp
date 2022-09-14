@@ -20,7 +20,7 @@
 TEST(vtkh_mesh_renderer, vtkh_serial_render)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -58,7 +58,7 @@ TEST(vtkh_mesh_renderer, vtkh_serial_render)
 TEST(vtkh_mesh_renderer, vtkh_serial_render_no_field)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

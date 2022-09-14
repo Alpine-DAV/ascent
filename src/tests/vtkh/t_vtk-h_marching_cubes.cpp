@@ -21,7 +21,7 @@
 TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -74,7 +74,7 @@ TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 TEST(vtkh_marching_cubes, vtkh_empty)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

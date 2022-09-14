@@ -21,7 +21,7 @@
 TEST(vtkh_hist_sampling_par, vtkh_sampling_point_view)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
 
   int comm_size, rank;
@@ -78,7 +78,7 @@ TEST(vtkh_hist_sampling_par, vtkh_sampling_point_view)
 TEST(vtkh_hist_sampling_par, vtkh_sampling_cell_view)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
 
   int comm_size, rank;

@@ -21,7 +21,7 @@
 TEST(vtkh_vector_ops, vtkh_vector_magnitude)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -71,7 +71,7 @@ TEST(vtkh_vector_ops, vtkh_vector_magnitude)
 TEST(vtkh_vector_ops, vtkh_composite_vector)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -126,7 +126,7 @@ TEST(vtkh_vector_ops, vtkh_composite_vector)
 TEST(vtkh_vector_ops, vtkh_vector_component)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

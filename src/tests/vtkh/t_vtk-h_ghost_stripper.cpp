@@ -22,7 +22,7 @@
 TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 
@@ -78,7 +78,7 @@ TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
 TEST(vtkh_ghost_stripper, vtkh_ghost_stripper_no_strip)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
 

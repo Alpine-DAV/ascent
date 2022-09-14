@@ -94,7 +94,7 @@ void render_output(vtkh::DataSet *data, std::string file_name)
 TEST(vtkh_lagrangian, vtkh_serial_lagrangian)
 {
 #ifdef VTKM_ENABLE_KOKKOS
-  vtkh::SelectKokkosDevice(1);
+  vtkh::InitializeKokkos();
 #endif
   vtkh::Lagrangian lagrangian;
   lagrangian.SetField("velocity");
