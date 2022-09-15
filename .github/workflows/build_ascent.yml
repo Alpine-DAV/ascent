@@ -78,7 +78,7 @@ jobs:
       run: |
         echo "**** Configuring Ascent"
         source /opt/intel/oneapi/setvars.sh || true
-        cmake -S src -B build -C ascent-config.cmake
+        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
       run: |
         echo "**** Building Ascent"
@@ -88,5 +88,12 @@ jobs:
       run: |
         echo "**** Installing Ascent"
         cmake --install  build
-
-
+    - name: Check Install
+      run: |
+        echo "**** Checking Ascent using-with-cmake-mpi example"
+        export CC=/usr/bin/mpicc
+        export CXX=/usr/bin/mpicxx
+        cd install/examples/ascent/using-with-cmake-mpi
+        cmake -S . -B build
+        cmake --build  build -j2
+        mpiexec -n 2 ./build/ascent_mpi_render_example
