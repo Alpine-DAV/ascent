@@ -30,7 +30,7 @@ project(using_with_cmake)
 #
 # Make sure we have CMake's MPI targets.
 #
-find_package(MPI REQUIRED COMPONENTS CXX))
+find_package(MPI REQUIRED COMPONENTS CXX)
 
 
 #
