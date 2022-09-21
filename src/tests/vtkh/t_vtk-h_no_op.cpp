@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_no_op, vtkh_serial_no_op)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

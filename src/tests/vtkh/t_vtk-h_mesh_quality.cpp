@@ -21,6 +21,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_mesh_quality, vtkh_volume)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -61,6 +64,9 @@ TEST(vtkh_mesh_quality, vtkh_volume)
 //----------------------------------------------------------------------------
 TEST(vtkh_mesh_quality, vtkh_not_supported)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

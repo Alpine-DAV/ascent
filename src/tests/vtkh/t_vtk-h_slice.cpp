@@ -17,6 +17,9 @@
 
 TEST(vtkh_slice, vtkh_slice)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -60,6 +63,9 @@ TEST(vtkh_slice, vtkh_slice)
 
 TEST(vtkh_slice, vtkh_mulit_slice)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
