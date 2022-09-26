@@ -105,7 +105,8 @@ struct VTKH_API Image
         m_pixels[offset + 3] = static_cast<unsigned char>(color_buffer[offset + 3] * 255.f);
         float depth = depth_buffer[i];
         //make sure we can do a single comparison on depth
-        depth = depth < 0 ? 2.f : depth;
+	//Remove this setting -- handle negative values in ImageCompsitor
+        //depth = depth < 0 ? 2.f : depth;
         m_depths[i] =  depth;
       }
     }
@@ -314,6 +315,8 @@ struct VTKH_API Image
       return ss.str();
     }
 
+    void Save(const std::string &name,
+              const std::vector<std::string> &comments) const;
     void Save(const std::string &name,
               const std::vector<std::string> &comments);
 };
