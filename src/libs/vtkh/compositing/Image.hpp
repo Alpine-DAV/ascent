@@ -105,7 +105,8 @@ struct VTKH_API Image
         m_pixels[offset + 3] = static_cast<unsigned char>(color_buffer[offset + 3] * 255.f);
         float depth = depth_buffer[i];
         //make sure we can do a single comparison on depth
-	//Remove this setting -- handle negative values in ImageCompsitor
+	//deal with negative depth values
+	//TODO: This may not be the best way
         depth = depth < 0 ? abs(depth) : depth;
         m_depths[i] =  depth;
       }
