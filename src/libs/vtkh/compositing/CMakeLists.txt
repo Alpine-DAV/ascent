@@ -15,6 +15,7 @@ set(vtkh_compositing_headers
 
 set(vtkh_compositing_sources
     Image.cpp
+    PayloadImage.cpp
     Compositor.cpp
     PartialCompositor.cpp
     PayloadCompositor.cpp
