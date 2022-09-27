@@ -106,7 +106,7 @@ struct VTKH_API Image
         float depth = depth_buffer[i];
         //make sure we can do a single comparison on depth
 	//Remove this setting -- handle negative values in ImageCompsitor
-        //depth = depth < 0 ? 2.f : depth;
+        depth = depth < 0 ? abs(depth) : depth;
         m_depths[i] =  depth;
       }
     }
