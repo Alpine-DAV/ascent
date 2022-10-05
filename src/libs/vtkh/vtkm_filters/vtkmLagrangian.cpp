@@ -1,6 +1,6 @@
 #include "vtkmLagrangian.hpp"
 
-#include <vtkm/filter/Lagrangian.h>
+#include <vtkm/filter/flow/Lagrangian.h>
 
 namespace vtkh
 {
@@ -18,7 +18,7 @@ vtkmLagrangian::Run(vtkm::cont::DataSet &input,
 #ifdef VTKH_BYPASS_VTKM_BIH
   return vtkm::cont::DataSet();
 #else
-  vtkm::filter::Lagrangian lagrangianFilter;
+  vtkm::filter::flow::Lagrangian lagrangianFilter;
   lagrangianFilter.SetStepSize(step_size);
   lagrangianFilter.SetWriteFrequency(write_frequency);
   lagrangianFilter.SetRank(rank);
