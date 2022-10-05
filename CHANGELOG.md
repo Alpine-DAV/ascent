@@ -8,7 +8,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased
 
 ### Preferred dependency versions for ascent@develop
-- conduit@0.8.3
+- conduit@0.8.4
 - vtk-m@1.8.0
 
 ### Added
@@ -23,6 +23,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 - **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
 - Update docs related to building Ascent.
+- Updated to BLT v0.5.2
 
 ## [0.8.0] - Released 2022-02-11
 
