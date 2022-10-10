@@ -103,6 +103,7 @@ Summary table of public ascent installs:
 
 See :ref:`tutorial_setup_public_installs` for more details on using these installs.
 
+.. _using_in_your_project:
 
 Using Ascent in Your Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

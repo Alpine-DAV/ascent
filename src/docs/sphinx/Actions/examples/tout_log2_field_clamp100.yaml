@@ -1,0 +1,27 @@
+#An example of using the log2 filter and clamping the min value. This can help when there are negative values present.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "vector_magnitude"
+        params: 
+          field: "vel"
+          output_name: "mag"
+      f2: 
+        type: "log2"
+        params: 
+          field: "mag"
+          output_name: "log2_mag"
+          clamp_min_value: 2.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "log2_mag"
+          pipeline: "pl1"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_log2_field_clamp"

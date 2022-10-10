@@ -18,4 +18,4 @@
           type: "pseudocolor"
           field: "braid"
           pipeline: "pl1"
-      image_prefix: "/Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_recenter_vertex"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_recenter_vertex"

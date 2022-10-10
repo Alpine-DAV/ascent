@@ -629,8 +629,20 @@ DataSet::GetCycle() const
   return m_cycle;
 }
 
+void
+DataSet::SetTime(const double time)
+{
+  m_time = time;
+}
+
+double
+DataSet::GetTime() const
+{
+  return m_time;
+}
+
 DataSet::DataSet()
-  : m_cycle(0)
+  : m_cycle(0), m_time(0)
 {
 }
 

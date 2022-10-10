@@ -1,0 +1,89 @@
+name: build_ascent
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_basic:
+    strategy:
+      matrix:
+        include:
+        - cc: icx
+          cxx: icpx
+          fc: ifx
+    name: Ubuntu Build Ascent (${{ matrix.cc }})
+    runs-on: ubuntu-latest
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+      FC: ${{ matrix.fc }}
+    steps:
+    - name: Install System Deps
+      run: |
+           sudo apt-get update
+           sudo apt-get install binutils \
+                                python \
+                                perl \
+                                git \
+                                git-lfs \
+                                curl \
+                                wget \
+                                tar \
+                                unzip \
+                                build-essential \
+                                libncurses-dev \
+                                libssl-dev \
+                                libblas-dev \
+                                liblapack-dev \
+                                zlib1g-dev \
+                                libgdbm-dev \
+                                libreadline-dev \
+                                libsqlite3-dev \
+                                libbz2-dev \
+                                cmake
+    - name: Install intel compilers
+      run: |
+        curl https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+          | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | \
+          sudo tee /etc/apt/sources.list.d/oneAPI.list > /dev/null
+        sudo apt-get update
+        sudo apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic \
+                       intel-oneapi-compiler-fortran
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Build TPLs
+      run: |
+        source /opt/intel/oneapi/setvars.sh
+        env enable_mpi=OFF \
+            enable_fortran=ON \
+            enable_tests=OFF \
+            build_ascent=OFF \
+            enable_verbose=OFF \
+            build_jobs=2 \
+            ./scripts/build_ascent/build_ascent.sh
+    - name: Configure Ascent
+      run: |
+        echo "**** Configuring Ascent"
+        source /opt/intel/oneapi/setvars.sh
+        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        echo "**** Building Ascent"
+        source /opt/intel/oneapi/setvars.sh
+        cmake --build build -j2
+    - name: Install Ascent
+      run: |
+        echo "**** Installing Ascent"
+        cmake --install  build
+    - name: Check Install
+      run: |
+        echo "**** Checking Ascent using-with-cmake example"
+        source /opt/intel/oneapi/setvars.sh
+        cd install/examples/ascent/using-with-cmake
+        cmake -S . -B build
+        cmake --build build -j2
+        ./build/ascent_render_example

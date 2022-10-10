@@ -27,6 +27,7 @@ namespace vtkh
 
   VTKH_API int         CUDADeviceCount();
   VTKH_API void        SelectCUDADevice(int device_index);
+  VTKH_API void        InitializeKokkos();
   VTKH_API void        SelectKokkosDevice(int device_index);
 
   VTKH_API void        ForceSerial();

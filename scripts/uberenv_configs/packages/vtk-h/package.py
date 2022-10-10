@@ -1,4 +1,4 @@
-# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2022 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -11,7 +11,7 @@ from os import environ as env
 
 import llnl.util.tty as tty
 
-from spack import *
+from spack.package import *
 
 
 def cmake_cache_entry(name, value, vtype=None):
@@ -65,7 +65,6 @@ class VtkH(CMakePackage, CudaPackage):
     # set to false for systems that implicitly link mpi
     variant('blt_find_mpi', default=True, description='Use BLT CMake Find MPI logic')
     variant("serial", default=True, description="build serial (non-mpi) libraries")
-    variant("cuda", default=False, description="build cuda support")
     variant("openmp", default=(sys.platform != 'darwin'),
             description="build openmp support")
     variant("logging", default=False, description="Build vtk-h with logging enabled")
@@ -76,27 +75,27 @@ class VtkH(CMakePackage, CudaPackage):
 
     depends_on("mpi", when="+mpi")
     depends_on("cuda", when="+cuda")
+    depends_on("vtk-m+fpic")
 
-    depends_on("vtk-m~tbb+openmp", when="+openmp")
-    depends_on("vtk-m~tbb~openmp", when="~openmp")
+    # use vtk-m 1.7 or newer for vtk-h 0.8 or newer
+    depends_on("vtk-m@1.7:", when="@0.8:")
 
-    depends_on("vtk-m+cuda~tbb+openmp", when="+cuda+openmp")
-    depends_on("vtk-m+cuda~tbb~openmp", when="+cuda~openmp")
+    # use vtk-m 1.6 or lower for vtk-h 0.7 or lower
+    depends_on("vtk-m@:1.6", when="@:0.7")
+    depends_on("vtk-m~tbb")
+    depends_on("vtk-m+openmp", when="+openmp")
+    depends_on("vtk-m~openmp", when="~openmp")
 
-    depends_on("vtk-m~tbb+openmp~shared", when="+openmp~shared")
-    depends_on("vtk-m~tbb~openmp~shared", when="~openmp~shared")
+    depends_on("vtk-m+openmp", when="+openmp")
+    depends_on("vtk-m~openmp", when="~openmp")
 
-    depends_on("vtk-m+cuda~tbb+openmp~shared", when="+cuda+openmp~shared")
-    depends_on("vtk-m+cuda~tbb~openmp~shared", when="+cuda~openmp~shared")
+    depends_on("vtk-m~cuda", when="~cuda")
+    depends_on("vtk-m+cuda", when="+cuda")
+    for _arch in CudaPackage.cuda_arch_values:
+        depends_on("vtk-m+cuda cuda_arch={0}".format(_arch), when="+cuda+openmp cuda_arch={0}".format(_arch))
 
-    ###################################
-    # build phases used by this package
-    ###################################
-    phases = ['hostconfig', 'cmake', 'build', 'install']
+    depends_on("vtk-m~shared", when="~shared")
 
-    ####################################################################
-    # Note: cmake, build, and install stages are handled by CMakePackage
-    ####################################################################
 
     # provide cmake args (pass host config as cmake cache file)
     def cmake_args(self):
@@ -119,12 +118,13 @@ class VtkH(CMakePackage, CudaPackage):
                                                      host_config_path))
         return host_config_path
 
-    def hostconfig(self, spec, prefix):
+    @run_before('cmake')
+    def hostconfig(self):
         """
         This method creates a 'host-config' file that specifies
         all of the options used to configure and build vtkh.
         """
-        
+        spec = self.spec
         if not os.path.isdir(spec.prefix):
             os.mkdir(spec.prefix)
 
@@ -232,11 +232,11 @@ class VtkH(CMakePackage, CudaPackage):
 
         if "+cuda" in spec:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "ON"))
-            cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","ON"))
-            cfg.write(cmake_cache_entry("CMAKE_CUDA_HOST_COMPILER",env["SPACK_CXX"]))
+            cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "ON"))
+            cfg.write(cmake_cache_entry("CMAKE_CUDA_HOST_COMPILER", env["SPACK_CXX"]))
         else:
             cfg.write(cmake_cache_entry("ENABLE_CUDA", "OFF"))
-            cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA","OFF"))
+            cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "OFF"))
 
         #######################################################################
         # Core Dependencies
@@ -277,9 +277,9 @@ class VtkH(CMakePackage, CudaPackage):
 
         # contour tree
         if "+contourtree" in spec:
-            cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE","ON"))
+            cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE", "ON"))
         else:
-            cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE","ON"))
+            cfg.write(cmake_cache_entry("ENABLE_FILTER_CONTOUR_TREE", "ON"))
 
         cfg.write("##################################\n")
         cfg.write("# end spack generated host-config\n")

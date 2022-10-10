@@ -42,6 +42,11 @@ find_package(Fides REQUIRED
 message(STATUS "Found Fides at ${FIDES_DIR}")
 set(FIDES_FOUND TRUE)
 
+# Fides cmake detection logic can change ADIOS2_FOUND to 1
+# so we reset it here to be consistent with other libs
+set(ADIOS2_FOUND TRUE)
+
+
 blt_register_library(NAME fides
                      INCLUDES ${FIDES_INCLUDE_DIR}
                      LIBRARIES ${FIDES_LIB_DIRS} ${FIDES_LIBRARIES} )

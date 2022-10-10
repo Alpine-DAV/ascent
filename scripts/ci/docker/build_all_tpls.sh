@@ -8,9 +8,9 @@ set -ev
 
 echo "[BUILDING TPL CONTAINERS]"
 
-# ubuntu 18 tpls
-echo "[ubuntu 18 tpls]"
-cd alpinedav_ubuntu_18_devel_tpls
+# ubuntu 18.04 tpls
+echo "[ubuntu 18.04 tpls]"
+cd alpinedav_ubuntu_18.04_devel_tpls
 ./build.sh
 cd ..
 # ubuntu 20.04
@@ -18,24 +18,20 @@ echo "[ubuntu 20.04 tpls]"
 cd alpinedav_ubuntu_20.04_devel_tpls
 ./build.sh 
 cd ..
-# ubuntu 21.04 tpls
-echo "[ubuntu 21.04 tpls]"
-cd alpinedav_ubuntu_21.04_devel_tpls
-./build.sh
-cd ..
-# ubuntu 21.10 tpls
-echo "[ubuntu 21.10 tpls]"
-cd alpinedav_ubuntu_21.10_devel_tpls
-./build.sh
-cd ..
-# ubuntu 18 cuda 10.1 tpls
-echo "[ubuntu 18 cuda 10.1 tpls]"
-cd alpinedav_ubuntu_18_cuda_10.1_devel_tpls
-./build.sh
-cd ..
+# ubuntu 22.04 (on hold until we get spack issue sorted)
+#echo "[ubuntu 22.04 tpls]"
+#cd alpinedav_ubuntu_22.04_devel_tpls
+#./build.sh 
+#cd ..
 # ubuntu 18.04 cuda 11.4.0 tpls
 echo "[ubuntu 18.04 cuda 11.4.0 tpls]"
 cd alpinedav_ubuntu_18.04_cuda_11.4.0_devel_tpls
+./build.sh
+cd ..
+
+# ubuntu 20.04 rocm 5.1.3 tpls
+echo "[ubuntu 20.04 rocm 5.1.3 tpls]"
+cd alpinedav_ubuntu_20.04_rocm_5.1.3_devel_tpls
 ./build.sh
 cd ..
 

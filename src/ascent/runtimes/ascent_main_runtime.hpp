@@ -42,7 +42,6 @@ public:
 
     void  Publish(const conduit::Node &data) override;
     void  Execute(const conduit::Node &actions) override;
-
     void  Info(conduit::Node &out) override;
 
     void  Cleanup() override;
@@ -78,6 +77,7 @@ private:
 
     std::string       m_session_name;
     conduit::Node     m_save_session_actions;
+    conduit::Node     m_save_info_actions;
 
     bool              m_field_filtering;
     std::set<std::string> m_field_list;
@@ -85,6 +85,7 @@ private:
     conduit::Node     m_comments;
 
     void              ResetInfo();
+    void              AddPublishedMeshInfo();
 
     flow::Workspace w;
     conduit::Node CreateDefaultFilters();
@@ -112,7 +113,13 @@ private:
     void SourceFieldFilter();
     void PaintNestsets();
     void VerifyGhosts();
+
     void SaveSession();
+    void SaveInfo();
+
+    void SetStatus(const std::string &msg);
+    void SetStatus(const std::string &msg,
+                   const std::string &details);
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();

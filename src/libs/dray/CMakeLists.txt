@@ -321,12 +321,12 @@ if(ENABLE_CUDA)
     set_source_files_properties(linear_bvh_builder.cpp PROPERTIES COMPILE_FLAGS "-Xptxas -dlcm=cg")
 endif()
 
+
 ################################################
 # hip support
 ################################################
 if(ENABLE_HIP)
-    #TODO FIX
-    list(APPEND dray_thirdparty_libs blt::hip)
+    list(APPEND dray_thirdparty_libs blt_hip blt_hip_runtime)
 endif()
 
 
@@ -344,7 +344,7 @@ if(ENABLE_SERIAL)
     target_compile_definitions(dray PRIVATE ASCENT_EXPORTS_FLAG)
 
     # TODO SYMBOL VIS
-    # set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    # set_target_properties(dray PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
     # build includes
     # this allows us to include as <dray/header.hpp>
@@ -406,7 +406,7 @@ endif()
 macro(install_headers_with_directory header_list)
   foreach(header ${${header_list}})
     string(REGEX MATCH "(.*)[/\\]" DIR ${header})
-    install(FILES ${header} DESTINATION include/dray/${DIR})
+    install(FILES ${header} DESTINATION include/ascent/dray/${DIR})
   endforeach(header)
 endmacro(install_headers_with_directory)
 

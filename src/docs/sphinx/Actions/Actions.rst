@@ -17,40 +17,18 @@ The currently supported actions are:
 - ``add_pipelines`` : adds a list of pipelines to transform mesh data
 - ``add_queries`` : adds a list of queries that evaluate expressions
 - ``add_triggers`` : adds a list of triggers that executes a set of actions based on a condition
+- ``save_info`` : saves ascent info result at the end of execution
+- ``save_session`` : saves expression session info at the end of execution (see :ref:`ExpressionsSaveSession`)
+
 
 Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.
-Actions files can be defined in both ``json`` or ``yaml``, and if you are human, we recomend using ``yaml``.
-Each time Ascent executes a set of actions, it will check for a file in the current working directory called ``ascent_actions.json`` or ``ascent_actions.yaml``.
-If found, the current actions specified in code will be replaced with the contents of the json file.
-Then default name of the ascent actions file can be specified in the ``ascent_options.json`` or in the
+Actions files can be defined in both ``yaml`` or ``json``, and if you are human, we recommend using ``yaml``.
+Each time Ascent executes a set of actions, it will check for a file in the current working directory called ``ascent_actions.yaml`` or ``ascent_actions.json``.
+If found, the current actions specified in code will be replaced with the contents of the yaml or json file.
+Then default name of the ascent actions file can be specified in the ``ascent_options.yaml`` or in the
 ascent options inside the simulation integration.
 
-Here is an example of an ascent actions json file:
-
-.. code-block:: json
-
-  [
-
-    {
-      "action": "add_scenes",
-      "scenes":
-      {
-        "scene1":
-        {
-          "plots":
-          {
-            "plt1":
-            {
-              "type": "pseudocolor",
-              "field": "zonal_noise"
-            }
-          }
-        }
-      }
-    }
-  ]
-
-The equivelent ``yaml`` is
+Here is an example of an ascent actions yaml file:
 
 .. code-block:: yaml
 

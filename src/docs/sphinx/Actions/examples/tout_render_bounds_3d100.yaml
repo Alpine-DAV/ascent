@@ -1,0 +1,16 @@
+#An example changing the rendering bounds of a 3d field.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    scene1: 
+      plots: 
+        plt1: 
+          type: "pseudocolor"
+          field: "braid"
+      renders: 
+        r1: 
+          camera: 
+            azimuth: 30
+          image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_render_bounds_3d"
+          dataset_bounds: [-15.0, 15.0, -15.0, 15.0, -15.0, 15.0]
