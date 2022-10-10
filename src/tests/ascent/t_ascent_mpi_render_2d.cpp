@@ -373,21 +373,21 @@ TEST(ascent_mpi_render_2d, test_render_mpi_2d_small_example)
     }
 
     // setup outputs to write in ascent's test output dir
-    string output_file = conduit::utils::join_file_path(output_path,
-                                                        "tout_rmpi_2d_scene_mesh");
+    string mesh_output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_mpi_2d_scene_mesh");
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    remove_test_image(mesh_output_file);
 
-    actions[0]["scenes/s1/image_name"] = output_file;
+    actions[0]["scenes/s1/image_prefix"] = mesh_output_file;
 
-    output_file = conduit::utils::join_file_path(output_path,
-                                                 "tout_rmpi_2d_scene_u");
+    string u_output_file = conduit::utils::join_file_path(output_path,
+                                                 "tout_render_mpi_2d_scene_u");
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    remove_test_image(u_output_file);
 
-    actions[0]["scenes/s2/image_name"] = output_file;
+    actions[0]["scenes/s2/image_prefix"] = u_output_file;
 
     ascent::Ascent a;
     conduit::Node opts;
@@ -397,6 +397,10 @@ TEST(ascent_mpi_render_2d, test_render_mpi_2d_small_example)
     a.execute(actions);
     a.close();
 
+    MPI_Barrier(comm);
+
+    EXPECT_TRUE(check_test_image(mesh_output_file));
+    EXPECT_TRUE(check_test_image(u_output_file));
 }
 
 //-----------------------------------------------------------------------------

@@ -93,6 +93,9 @@ void render_output(vtkh::DataSet *data, std::string file_name)
 //----------------------------------------------------------------------------
 TEST(vtkh_lagrangian, vtkh_serial_lagrangian)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::Lagrangian lagrangianFilter;
   lagrangianFilter.SetField("velocity");
   lagrangianFilter.SetStepSize(0.1);
@@ -128,6 +131,5 @@ TEST(vtkh_lagrangian, vtkh_serial_lagrangian)
 
     if(time == 9) render_output(extracted_basis, "basis");
   }
-
 
 }

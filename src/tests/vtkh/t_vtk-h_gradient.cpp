@@ -21,6 +21,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_gradient, vtkh_gradient)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -82,6 +85,9 @@ TEST(vtkh_gradient, vtkh_gradient)
 //----------------------------------------------------------------------------
 TEST(vtkh_gradient, vtkh_qcriterion)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

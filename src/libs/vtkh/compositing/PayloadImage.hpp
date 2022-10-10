@@ -204,7 +204,7 @@ struct VTKH_API PayloadImage
       return ss.str();
     }
 
-    void Save(std::string name);
+    void Save(const std::string &name, const std::vector<std::string> &comments);
 };
 
 } //namespace  vtkh
