@@ -12,7 +12,7 @@ namespace detail
 std::string to_string(vtkm::cont::Field::Association assoc)
 {
   std::string res = "unknown";
-  if(assoc == vtkm::cont::Field::Association::WholeDataSet)
+  if(assoc == vtkm::cont::Field::Association::WholeMesh)
   {
     res = "whole mesh";
   }

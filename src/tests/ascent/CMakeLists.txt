@@ -14,7 +14,6 @@
 ################################
 set(BASIC_TESTS t_ascent_smoke
                 t_ascent_runtime_options
-		t_ascent_opt_viewpoint
                 t_ascent_utils
                 t_ascent_memory
                 t_ascent_derived

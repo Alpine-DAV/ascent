@@ -766,7 +766,7 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
         {
           assoc_id = 0;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::WholeDataSet)
+        else if ( local_assoc == vtkm::cont::Field::Association::WholeMesh)
         {
           assoc_id = 1;
         }
@@ -829,7 +829,7 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
   }
   else if ( assoc_id == 1)
   {
-    assoc = vtkm::cont::Field::Association::WholeDataSet;
+    assoc = vtkm::cont::Field::Association::WholeMesh;
   }
   else if ( assoc_id == 2)
   {

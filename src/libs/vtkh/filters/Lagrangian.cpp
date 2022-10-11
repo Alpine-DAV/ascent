@@ -3,8 +3,6 @@
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
-#include <vtkm/filter/flow/Lagrangian.h>
-#include <vtkm/Particle.h>
 
 namespace vtkh
 {
@@ -59,50 +57,6 @@ Lagrangian::SetSeedResolutionInZ(const int &z_res)
 	m_z_res = z_res;
 }
 
-void 
-Lagrangian::SetCycle(const int &cycle)
-{
-	m_cycle = cycle;
-}
-
-void
-Lagrangian::SetBasisParticles(const vtkm::cont::ArrayHandle<vtkm::Particle> &basisParticles)
-{
-	m_basis_particles = basisParticles;
-}
-
-void
-Lagrangian::SetBasisParticlesOriginal(const vtkm::cont::ArrayHandle<vtkm::Particle> &basisParticlesOriginal)
-{
-	m_basis_particles_original = basisParticlesOriginal;
-}
-
-void
-Lagrangian::SetBasisParticleValidity(const vtkm::cont::ArrayHandle<vtkm::Id> &basisParticleValidity)
-{
-	m_basis_particle_validity = basisParticleValidity;
-}
-
-vtkm::cont::ArrayHandle<vtkm::Particle>
-Lagrangian::GetBasisParticles()
-{
-	return m_basis_particles;
-}
-
-vtkm::cont::ArrayHandle<vtkm::Particle>
-Lagrangian::GetBasisParticlesOriginal()
-{
-	return m_basis_particles_original;
-}
-
-vtkm::cont::ArrayHandle<vtkm::Id>
-Lagrangian::GetBasisParticleValidity()
-{
-	return m_basis_particle_validity;
-}
-
-
-
 
 void Lagrangian::PreExecute()
 {
@@ -120,8 +74,6 @@ void Lagrangian::DoExecute()
   vtkmLagrangian lagrangianFilter;
 
   this->m_output = new DataSet();
-  int cycle = this->m_input->GetCycle();
-
   const int num_domains = this->m_input->GetNumberOfDomains();
   for(int i = 0; i < num_domains; ++i)
   {
@@ -147,14 +99,11 @@ void Lagrangian::DoExecute()
                                                               m_field_name,
                                                               m_step_size,
                                                               m_write_frequency,
-                                                              m_cycle,
+                                                              vtkh::GetMPIRank(),
                                                               m_cust_res,
                                                               m_x_res,
                                                               m_y_res,
-                                                              m_z_res,
-							      m_basis_particles,
-							      m_basis_particles_original,
-							      m_basis_particle_validity);
+                                                              m_z_res);
 
     m_output->AddDomain(extractedBasis, domain_id);
   }

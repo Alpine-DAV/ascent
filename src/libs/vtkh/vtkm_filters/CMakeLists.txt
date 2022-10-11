@@ -10,7 +10,6 @@ set(vtkm_filters_headers
     vtkmExtractStructured.hpp
     vtkmGradient.hpp
     vtkmLagrangian.hpp
-    vtkmLog.hpp
     vtkmMarchingCubes.hpp
     vtkmMeshQuality.hpp
     vtkmPointAverage.hpp
@@ -30,7 +29,6 @@ set(vtkm_filters_sources
     vtkmExtractStructured.cpp
     vtkmGradient.cpp
     vtkmLagrangian.cpp
-    vtkmLog.cpp
     vtkmMarchingCubes.cpp
     vtkmMeshQuality.cpp
     vtkmPointAverage.cpp

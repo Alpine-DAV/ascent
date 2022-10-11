@@ -96,40 +96,26 @@ TEST(vtkh_lagrangian, vtkh_serial_lagrangian)
 #ifdef VTKM_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
-  vtkh::Lagrangian lagrangianFilter;
-  lagrangianFilter.SetField("velocity");
-  lagrangianFilter.SetStepSize(0.1);
-  lagrangianFilter.SetWriteFrequency(5);
-  lagrangianFilter.SetCustomSeedResolution(1);
-  lagrangianFilter.SetSeedResolutionInX(1);
-  lagrangianFilter.SetSeedResolutionInY(1);
-  lagrangianFilter.SetSeedResolutionInZ(1);
+  vtkh::Lagrangian lagrangian;
+  lagrangian.SetField("velocity");
+  lagrangian.SetStepSize(0.1);
+  lagrangian.SetWriteFrequency(5);
+  lagrangian.SetCustomSeedResolution(1);
+  lagrangian.SetSeedResolutionInX(1);
+  lagrangian.SetSeedResolutionInY(1);
+  lagrangian.SetSeedResolutionInZ(1);
 
-  std::cout << "Running Lagrangian filter test - vtkh" << std::endl;
-  vtkm::cont::ArrayHandle<vtkm::Particle> lagrangianBasisParticles;
-  vtkm::cont::ArrayHandle<vtkm::Particle> lagrangianBasisParticlesOriginal;
-  vtkm::cont::ArrayHandle<vtkm::Id> lagrangianBasisParticlesValidity;
+   std::cout << "Running Lagrangian filter test - vtkh" << std::endl;
 
-  lagrangianFilter.SetBasisParticles(lagrangianBasisParticles);
-  lagrangianFilter.SetBasisParticlesOriginal(lagrangianBasisParticlesOriginal);
-  lagrangianFilter.SetBasisParticleValidity(lagrangianBasisParticlesValidity);
-
-  vtkh::DataSet *extracted_basis;
-  for(vtkm::Id time = 0; time < 10; ++time)
+  for(vtkm::Id time = 1; time <= 10; ++time)
   {
     vtkh::DataSet data_set;
     data_set.AddDomain(MakeTestUniformDataSet(time),0);
-
-    lagrangianFilter.SetInput(&data_set);
-    lagrangianFilter.SetCycle(time);
-    lagrangianFilter.Update();
-
-    extracted_basis = lagrangianFilter.GetOutput();
-
-    std::cerr << "extracted basis: " << std::endl;
-    extracted_basis->PrintSummary(std::cerr);
-
-    if(time == 9) render_output(extracted_basis, "basis");
+    lagrangian.SetInput(&data_set);
+    lagrangian.Update();
+    vtkh::DataSet *extracted_basis = lagrangian.GetOutput();
+    extracted_basis->PrintSummary(std::cout);
+    if(time == 10) render_output(extracted_basis, "basis");
   }
 
 

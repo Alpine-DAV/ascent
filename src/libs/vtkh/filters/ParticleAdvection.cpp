@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkm/filter/ParticleAdvection.h>
-#include <vtkm/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 
@@ -97,7 +96,7 @@ void ParticleAdvection::DoExecute()
 
   //Everything is valid. Call the VTKm filter.
 
-  vtkm::filter::flow::ParticleAdvection particleAdvectionFilter;
+  vtkm::filter::ParticleAdvection particleAdvectionFilter;
   auto seedsAH = vtkm::cont::make_ArrayHandle(m_seeds, vtkm::CopyFlag::Off);
 
   particleAdvectionFilter.SetStepSize(m_step_size);

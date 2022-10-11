@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vtkh/filters/Streamline.hpp>
 #include <vtkm/filter/Streamline.h>
-#include <vtkm/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 
@@ -97,7 +96,7 @@ void Streamline::DoExecute()
 
   //Everything is valid. Call the VTKm filter.
 
-  vtkm::filter::flow::Streamline streamlineFilter;
+  vtkm::filter::Streamline streamlineFilter;
   auto seedsAH = vtkm::cont::make_ArrayHandle(m_seeds, vtkm::CopyFlag::Off);
 
   streamlineFilter.SetStepSize(m_step_size);

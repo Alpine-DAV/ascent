@@ -2325,49 +2325,34 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
     if(rank == 0)
     {
       #if defined(ASCENT_VTKM_ENABLED)
-      auto triangles = GetUniqueTriangles(dataset);
-      if (triangles.GetNumberOfValues() > 0) 
+      auto field_data = GetScalarDataAsArrayHandle<float>(*dataset, "shade");
+      if (field_data.GetNumberOfValues() > 0) 
       {
-        auto shadings = CalculateFlatShading(triangles, camera);
-        shading_entropy = calcentropyMM(shadings, 100, 1.0f, 0.0f);
+        DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
+        DataCheckVals<float> checkVals { .Min = 0, .Max = float(INT_MAX) };
+        field_data = copyWithChecks<float>(field_data, checks, checkVals);
+        shading_entropy = calcentropyMM(field_data, 1000, 1.0f, 0.0f);
+      } 
+      else
+      {
+        shading_entropy = 0;
       }
       #else
       int size = height*width;
-      std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
-      std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
-      std::vector<float> z0 = GetScalarData<float>(*dataset, "Z0", height, width);
-      std::vector<float> x1 = GetScalarData<float>(*dataset, "X1", height, width);
-      std::vector<float> y1 = GetScalarData<float>(*dataset, "Y1", height, width);
-      std::vector<float> z1 = GetScalarData<float>(*dataset, "Z1", height, width);
-      std::vector<float> x2 = GetScalarData<float>(*dataset, "X2", height, width);
-      std::vector<float> y2 = GetScalarData<float>(*dataset, "Y2", height, width);
-      std::vector<float> z2 = GetScalarData<float>(*dataset, "Z2", height, width);
-
-      std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
-//      #ifdef ASCENT_USE_OPENMP
-//      #pragma omp declare reduction (merge : std::vector<std::vector<float>> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
-//      #pragma omp parallel for reduction(merge:triangles)
-//      #endif
-      if(x0.size())
+      std::vector<float> shadings = GetScalarData<float>(*dataset, "shade", height, width);
+      std::vector<float> shade_data;
+      if(shadings.size())
       {
         for(int i = 0; i < size; i++)
-        {
-          if(x0[i] == x0[i]) //!nan
+          if(shadings[i] == shadings[i] && shadings[i] < INT_MAX && shadings[i] >= 0)
           {
-            std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
-            triangles.push_back(tri);
+            shade_data.push_back(shadings[i]);
           }
-        }
-        std::sort(triangles.begin(), triangles.end());
-        triangles.erase(std::unique(triangles.begin(), triangles.end()), triangles.end());
-        int num_triangles = triangles.size();
-        //calculate flat shading
-        std::vector<float> shadings = CalculateFlatShading(triangles, camera);
-        int shadings_size = shadings.size();
-        float shadings_arr[shadings_size];
-        std::copy(shadings.begin(), shadings.end(), shadings_arr);
-        shading_entropy = calcentropyMM(shadings_arr, num_triangles, 100, (float)1, (float)0);
+        float shade_array[shade_data.size()];
+        std::copy(shade_data.begin(), shade_data.end(), shade_array);
+        shading_entropy = calcentropyMM(shade_array, shade_data.size(), 1000, 1.0f, 0.0f);
       }
+
       #endif
     }
 
@@ -2376,49 +2361,37 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width, Camera ca
     return shading_entropy;
   #else
     #if defined(ASCENT_VTKM_ENABLED)
-    auto triangles = GetUniqueTriangles(dataset);
-    if (triangles.GetNumberOfValues() > 0) 
-    {
-      auto shadings = CalculateFlatShading(triangles, camera);
-      shading_entropy = calcentropyMM(shadings, 100, 1.0f, 0.0f);
-    }
-    #else //No VTK-m
-    int size = height*width;
-    std::vector<float> x0 = GetScalarData<float>(*dataset, "X0", height, width);
-    std::vector<float> y0 = GetScalarData<float>(*dataset, "Y0", height, width);
-    std::vector<float> z0 = GetScalarData<float>(*dataset, "Z0", height, width);
-    std::vector<float> x1 = GetScalarData<float>(*dataset, "X1", height, width);
-    std::vector<float> y1 = GetScalarData<float>(*dataset, "Y1", height, width);
-    std::vector<float> z1 = GetScalarData<float>(*dataset, "Z1", height, width);
-    std::vector<float> x2 = GetScalarData<float>(*dataset, "X2", height, width);
-    std::vector<float> y2 = GetScalarData<float>(*dataset, "Y2", height, width);
-    std::vector<float> z2 = GetScalarData<float>(*dataset, "Z2", height, width);
-
-    std::vector<std::vector<float>> triangles; //<x0,y0,z0,x1,y1,z1,x2,y2,z2>
-//      #ifdef ASCENT_USE_OPENMP
-//      #pragma omp declare reduction (merge : std::vector<std::vector<float>> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
-//      #pragma omp parallel for reduction(merge:triangles)
-//      #endif
-    if(x0.size())
-    {
-      for(int i = 0; i < size; i++)
+      auto field_data = GetScalarDataAsArrayHandle<float>(*dataset, "shade");
+      if (field_data.GetNumberOfValues() > 0)
       {
-        if(x0[i] == x0[i]) //!nan
-        {
-          std::vector<float> tri{x0[i],y0[i],z0[i],x1[i],y1[i],z1[i],x2[i],y2[i],z2[i]};
-          triangles.push_back(tri);
-        }
+        DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
+        DataCheckVals<float> checkVals { .Min = 0, .Max = float(INT_MAX) };
+        field_data = copyWithChecks<float>(field_data, checks, checkVals);
+        shading_entropy = calcentropyMM(field_data, 1000, 1.0f, 0.0f);
       }
-      int num_triangles = triangles.size();
-      //calculate flat shading
-      std::vector<float> shadings = CalculateFlatShading(triangles, camera);
-      long shadings_size = shadings.size();
-      //float* shadings_arr = &shadings[0]; //point shadings arr at shadings vec
-      float shadings_arr[shadings_size];
-      std::copy(shadings.begin(), shadings.end(), shadings_arr);
-      shading_entropy = calcentropyMM(shadings.data(), num_triangles, 100, (float)1, (float)0);
-      
-    }
+      else
+      {
+        shading_entropy = 0;
+      }
+    #else
+      int size = height*width;
+      std::vector<float> shadings = GetScalarData<float>(*dataset, "shade", height, width);
+      std::vector<float> shade_data;
+//      #ifdef ASCENT_USE_OPENMP
+//      #pragma omp declare reduction (merge : std::vector<float> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
+//      #pragma omp parallel for reduction(merge:depth_data)
+//      #endif
+      if(shadings.size())
+      {
+        for(int i = 0; i < size; i++)
+          if(shadings[i] == shadings[i] && shadings[i] < INT_MAX && shadings[i] >= 0)
+          {
+            shade_data.push_back(shadings[i]);
+          }
+        float shade_array[shade_data.size()];
+        std::copy(shade_data.begin(), shade_data.end(), shade_array);
+        shading_entropy = calcentropyMM(shade_array, shade_data.size(), 1000, 1.0f, 0.0f);
+      }
     #endif //VTK-m
     return shading_entropy;
   #endif //MPI
