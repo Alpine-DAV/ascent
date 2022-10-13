@@ -100,7 +100,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_filters PRIVATE ASCENT_EXPORTS_FLAG)
-#    set_target_properties(vtkh_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     if(CUDA_FOUND)
         set_target_properties(vtkh_filters PROPERTIES LINKER_LANGUAGE CUDA)

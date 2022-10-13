@@ -46,7 +46,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_rendering PRIVATE ASCENT_EXPORTS_FLAG)
-#    set_target_properties(vtkh_rendering PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_rendering PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     # Install libraries
     install(TARGETS vtkh_rendering

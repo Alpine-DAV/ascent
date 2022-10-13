@@ -40,6 +40,8 @@ option(ENABLE_UTILS       "Build Utilities"           ON)
 option(ENABLE_LOGGING     "Enable data logging"       OFF)
 option(ENABLE_DOCS        "Build Documentation"       ON)
 
+option(ENABLE_HIDDEN_VISIBILITY "Build with hidden visibility for private symbols" ON)
+
 # DRay Specific Options
 option(DRAY_ENABLE_STATS          "Enable stats"         ON)
 option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)

@@ -40,7 +40,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_compositing PRIVATE ASCENT_EXPORTS_FLAG)
-#    set_target_properties(vtkh_compositing PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_compositing PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     # build includes
     # this allows us to include as <vtkh/header.hpp>
