@@ -352,7 +352,7 @@ if (ENABLE_SERIAL)
                     HEADERS     ${ascent_headers}
                     DEPENDS_ON  ${ascent_thirdparty_libs})
 
-    set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+#    set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
 
     # TODO move to header ...
@@ -522,7 +522,7 @@ if(MPI_FOUND)
         HEADERS     ${ascent_headers} ${ascent_mpi_headers}
         DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
 
-    set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+#    set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
 
     if(ENABLE_LOGGING)

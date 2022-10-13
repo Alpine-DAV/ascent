@@ -70,7 +70,7 @@ set_target_properties(rover PROPERTIES
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENTIONS NO)
 
-set_target_properties(rover PROPERTIES CXX_VISIBILITY_PRESET hidden)
+# set_target_properties(rover PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions(rover PRIVATE ROVER_EXPORTS_FLAG)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty_builtin/diy2/include/)
@@ -129,7 +129,7 @@ if(MPI_FOUND)
 
                       blt_add_target_compile_flags(TO rover_mpi FLAGS "-DROVER_PARALLEL")
 
-  set_target_properties(rover_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+#  set_target_properties(rover_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
   target_compile_definitions(rover_mpi PRIVATE ROVER_EXPORTS_FLAG)
 
   target_include_directories(rover_mpi PRIVATE ${MPI_INCLUDE_PATH})

@@ -92,7 +92,7 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_core PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_core PROPERTIES CXX_VISIBILITY_PRESET hidden)
+#    set_target_properties(vtkh_core PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
     # build includes
     # this allows us to include as <vtkh/header.hpp>
@@ -128,7 +128,7 @@ if(MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_core_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_core_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+#    set_target_properties(vtkh_core_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     #
     target_compile_definitions(vtkh_core_mpi PRIVATE VTKH_PARALLEL)
 

@@ -37,7 +37,7 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_utils PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_utils PROPERTIES CXX_VISIBILITY_PRESET hidden)
+#    set_target_properties(vtkh_utils PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
     if(CUDA_FOUND)
         set_target_properties(vtkh_utils PROPERTIES LINKER_LANGUAGE CUDA)
@@ -75,7 +75,7 @@ if (MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_utils_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_utils_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+#    set_target_properties(vtkh_utils_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     #
     target_compile_definitions(vtkh_utils_mpi PRIVATE VTKH_PARALLEL)
 
