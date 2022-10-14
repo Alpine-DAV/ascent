@@ -143,7 +143,9 @@ if (MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_filters_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-#    set_target_properties(vtkh_filters_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_filters_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     #
     target_compile_definitions(vtkh_filters_mpi PRIVATE VTKH_PARALLEL)
 
