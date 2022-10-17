@@ -60,7 +60,7 @@ VTKH_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
                         -lvtkm_filter_field_conversion-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_filter_field_transform-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_filter_geometry_refinement-$(ASCENT_VTKM_VERSION) \
-                        -lvtkm_filter_geometry_resampling-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_resampling-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_filter_image_processing-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_filter_mesh_info-$(ASCENT_VTKM_VERSION) \
                         -lvtkm_filter_scalar_topology-$(ASCENT_VTKM_VERSION) \
