@@ -194,9 +194,9 @@ else
 
       # add proper diy based on mpi
       ifeq ($(VTKm_ENABLE_MPI),ON)
-         ASCENT_VTKM_LIB_FLAGS = $(ASCENT_VTKM_LIB_FLAGS) -lvtkmdiympi
+         ASCENT_VTKM_LIB_FLAGS += -lvtkmdiympi
       else
-         ASCENT_VTKM_LIB_FLAGS = $(ASCENT_VTKM_LIB_FLAGS) -lvtkmdiympi_nompi
+         ASCENT_VTKM_LIB_FLAGS += -lvtkmdiympi_nompi
       endif
 
 # vtk-m cuda extras
