@@ -635,6 +635,9 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
         if "+mfem" in spec:
             cfg.write("# mfem from spack \n")
             cfg.write(cmake_cache_entry("MFEM_DIR", spec['mfem'].prefix))
+            if "zlib" in spec:
+                # MFEM depends on zlib
+                cfg.write(cmake_cache_entry("ZLIB_DIR", spec["zlib"].prefix))
         else:
             cfg.write("# mfem not built by spack \n")
 
