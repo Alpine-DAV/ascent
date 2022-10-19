@@ -343,9 +343,10 @@ if(ENABLE_SERIAL)
     # build time only defs
     target_compile_definitions(dray PRIVATE ASCENT_EXPORTS_FLAG)
 
-    if(ENABLE_HIDDEN_VISIBILITY)
-        set_target_properties(dray PROPERTIES CXX_VISIBILITY_PRESET hidden)
-    endif()
+    # TODO
+    #if(ENABLE_HIDDEN_VISIBILITY)
+    #    set_target_properties(dray PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    #endif()
 
     # build includes
     # this allows us to include as <dray/header.hpp>
@@ -381,10 +382,11 @@ if(MPI_FOUND)
     target_compile_definitions(dray_mpi PRIVATE ASCENT_EXPORTS_FLAG)
     target_compile_definitions(dray_mpi PRIVATE DRAY_MPI_ENABLED)
 
-    if(ENABLE_HIDDEN_VISIBILITY)
-        set_target_properties(dray_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
-    endif()
-  
+    # TODO
+    # if(ENABLE_HIDDEN_VISIBILITY)
+    #     set_target_properties(dray_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    # endif()
+
     # build includes
     # this allows us to include as <dray/header.hpp>
     target_include_directories(dray_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
