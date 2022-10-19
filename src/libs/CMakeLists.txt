@@ -2,6 +2,12 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
+
+################################
+# Add flow
+################################
+add_subdirectory(flow)
+
 ################################
 # Add ap comp
 ################################
@@ -16,14 +22,10 @@ if(ENABLE_DRAY)
     add_subdirectory(dray)
 endif()
 
-
 ################################
 # Add VTK-h
 ################################
 if(ENABLE_VTKH)
     add_subdirectory(vtkh)
-endif()
-
-if(ENABLE_VTKH)
-  add_subdirectory(rover)
+    add_subdirectory(rover)
 endif()

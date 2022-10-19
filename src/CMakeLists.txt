@@ -153,8 +153,6 @@ add_subdirectory(thirdparty_builtin)
 ################################
 add_subdirectory(libs)
 
-add_subdirectory(flow)
-
 add_subdirectory(ascent)
 
 ################################

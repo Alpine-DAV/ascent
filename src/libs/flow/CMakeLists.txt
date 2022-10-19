@@ -7,7 +7,7 @@
 
 ###############################################################################
 #
-# file: src/flow/CMakeLists.txt
+# file: src/libs/flow/CMakeLists.txt
 #
 ###############################################################################
 
@@ -68,17 +68,28 @@ endif()
 # Build flow
 ##########################################
 
-blt_add_library(
-    NAME        ascent_flow
-    SOURCES     ${flow_sources}
-    HEADERS     ${flow_headers}
-    DEPENDS_ON  ${flow_thirdparty_libs})
+blt_add_library(NAME        ascent_flow
+                SOURCES     ${flow_sources}
+                HEADERS     ${flow_headers}
+                DEPENDS_ON  ${flow_thirdparty_libs}
+                )
 
 if(ENABLE_HIDDEN_VISIBILITY)
   set_target_properties(ascent_flow PROPERTIES CXX_VISIBILITY_PRESET hidden)
 endif()
+
 target_compile_definitions(ascent_flow PRIVATE ASCENT_EXPORTS_FLAG)
-    
+
+# build includes
+# this allows us to include as <header.hpp>
+target_include_directories(ascent_flow PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/flow>)
+target_include_directories(ascent_flow PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/flow/filters>)
+target_include_directories(ascent_flow PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/flow>)
+
+# install includes
+# setup exported target to point to proper include dir
+target_include_directories(ascent_flow PUBLIC $<INSTALL_INTERFACE:include/ascent/>)
+
 # install target for serial ascent lib
 install(TARGETS ascent_flow
         EXPORT  ascent
