@@ -757,16 +757,15 @@ struct GetDofDataFunctor
   GetDofDataFunctor() = default;
   ~GetDofDataFunctor() = default;
 
-  const GridFunction<3> *output() { return m_output; }
+  GridFunction<3> output() { return m_output; }
 
   template<typename MeshType>
   void operator()(MeshType &mesh)
   {
-    const GridFunction<3> &temp = mesh.get_dof_data();
-    m_output = &temp;
+    m_output = mesh.get_dof_data();
   }
 
-  const GridFunction<3> *m_output;
+  GridFunction<3> m_output;
 };
 
 GridFunction<3>
@@ -774,11 +773,7 @@ get_dof_data(Mesh *mesh)
 {
   GetDofDataFunctor func;
   dispatch(mesh, func);
-  if(!func.output())
-  {
-    DRAY_ERROR("Could not extract dof data from the given mesh, it may not exist.")
-  }
-  return *func.output();
+  return func.output();
 }
 
 } // namespace detail
