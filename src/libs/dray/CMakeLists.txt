@@ -418,7 +418,7 @@ install_headers_with_directory(dray_headers)
 
 
 if(ENABLE_UTILS)
-   message(status "Dray Utilities Enabled")
+   message(STATUS "Dray Utilities Enabled")
    add_subdirectory(utilities)
 endif()
 
