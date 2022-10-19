@@ -20,7 +20,7 @@ set(vtkh_utils_sources
 ###############################################################################
  # always install headers
  install(FILES ${vtkh_utils_headers}
-         DESTINATION include/vtkh/utils)
+         DESTINATION include/ascent/vtkh/utils)
 
 # deps are same between mpi and non mpi
 set(vtkh_utils_deps vtkm ascent_lodepng ${vtkh_base_deps})

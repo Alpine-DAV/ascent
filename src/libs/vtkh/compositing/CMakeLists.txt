@@ -23,7 +23,7 @@ set(vtkh_compositing_sources
 
 # always install headers
 install(FILES ${vtkh_compositing_headers}
-        DESTINATION include/vtkh/compositing)
+        DESTINATION include/ascent/vtkh/compositing)
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -128,6 +128,6 @@ if (MPI_FOUND)
 
     # Install extra mpi related headers
     install(FILES ${vtkh_compositing_mpi_headers}
-            DESTINATION include/vtkh/compositing)
+            DESTINATION include/ascent/vtkh/compositing)
 
 endif()
