@@ -12,6 +12,8 @@
 #ifndef APCOMP_PNG_DECODER_HPP
 #define APCOMP_PNG_DECODER_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <string>
 
 namespace apcomp

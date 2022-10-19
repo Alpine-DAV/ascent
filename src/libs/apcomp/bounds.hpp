@@ -7,6 +7,7 @@
 #ifndef APCOMP_BOUNDS_HPP
 #define APCOMP_BOUNDS_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <apcomp/apcomp_exports.h>
 
 namespace apcomp
