@@ -9,8 +9,20 @@
 #include <dray/policies.hpp>
 #include <RAJA/RAJA.hpp>
 
+#define DEBUGGING_CLIP
+#ifdef DEBUGGING_CLIP
+#include <conduit/conduit.hpp>
+#include <conduit/conduit_relay.hpp>
+#include <dray/io/blueprint_reader.hpp>
+#include <dray/io/blueprint_low_order.hpp>
+#endif
+
 namespace dray
 {
+
+void breakpoint()
+{
+}
 
 // Make the sphere distance field.
 class SphereDistance
@@ -24,6 +36,7 @@ public:
     m_radius = radius;
   }
 
+  // NOTE: This method gets instantiated for different mesh types by dispatch.
   template <class MeshType>
   void operator()(MeshType &mesh)
   {
@@ -31,7 +44,12 @@ public:
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     auto ndofs = mesh_gf.m_values.size();
-
+#if 0
+    cout << "ndofs=" << ndofs << endl;
+    cout << "mesh_gf summary"<< endl;
+    mesh.get_dof_data().m_ctrl_idx.summary();
+    mesh.get_dof_data().m_values.summary();
+#endif
     // Outputs
     GridFunction<1> gf;
     gf.m_el_dofs = mesh_gf.m_el_dofs;
@@ -45,16 +63,20 @@ public:
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
       [=] DRAY_LAMBDA (int32 id)
     {
-      // Get accessor for mesh's coord at this dof "id".
-      const ReadDofPtr<Vec<Float, 3>> mesh_rdp = mesh_dgf.get_rdp(id);
-      // Get accessor for output gf at this dof "id".
-      WriteDofPtr<Vec<Float, 1>> gf_wdp = dgf.get_wdp(id);
+      // Get id'th coord value in device memory.
+      auto id_value = mesh_dgf.m_values_ptr[id];
 
-      Float dx = m_center[0] - mesh_rdp[0][0];
-      Float dy = m_center[1] - mesh_rdp[0][1];
-      Float dz = m_center[2] - mesh_rdp[0][2];
-      Float dist = sqrt(dx*dx + dy*dy + dz*dz) - m_radius;
-      gf_wdp[0] = dist;
+      // Compute distance from sphere center.
+      Float px = id_value[0];
+      Float py = id_value[1];
+      Float pz = id_value[2];
+      Float dx = m_center[0] - px;
+      Float dy = m_center[1] - py;
+      Float dz = m_center[2] - pz;
+      Float dist = sqrt(dx*dx + dy*dy + dz*dz);
+
+      // Save distance.
+      dgf.m_values_ptr[id][0] = dist;
     });
 
     // Wrap the new GridFunction as a Field.
@@ -70,6 +92,85 @@ public:
   std::shared_ptr<Field> m_output;
   Float m_center[3];
   Float m_radius;
+};
+
+// Make the single plane distance field.
+class SinglePlaneDistance
+{
+public:
+  SinglePlaneDistance(const Float origin[3], const Float normal[3]) : m_output()
+  {
+    m_origin[0] = origin[0];
+    m_origin[1] = origin[1];
+    m_origin[2] = origin[2];
+    m_normal[0] = normal[0];
+    m_normal[1] = normal[1];
+    m_normal[2] = normal[2];
+  }
+
+  // NOTE: This method gets instantiated for different mesh types by dispatch.
+  template <class MeshType>
+  void operator()(MeshType &mesh)
+  {
+    // Inputs
+    const GridFunction<3> &mesh_gf = mesh.get_dof_data();
+    DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
+    auto ndofs = mesh_gf.m_values.size();
+    cout << "ndofs=" << ndofs << endl;
+    cout << "mesh_gf summary"<< endl;
+    mesh.get_dof_data().m_ctrl_idx.summary();
+    mesh.get_dof_data().m_values.summary();
+
+    // Outputs
+    GridFunction<1> gf;
+    gf.m_el_dofs = mesh_gf.m_el_dofs;
+    gf.m_size_el = mesh_gf.m_size_el;
+    gf.m_size_ctrl = mesh_gf.m_size_ctrl;
+    gf.m_ctrl_idx = mesh_gf.m_ctrl_idx;
+    gf.m_values.resize(ndofs);
+    DeviceGridFunction<1> dgf(gf);
+
+    Float normal[3];
+    Float nmag = sqrt(m_normal[0]*m_normal[0] +
+                      m_normal[1]*m_normal[1] +
+                      m_normal[2]*m_normal[2]);
+    normal[0] = (nmag != 0.) ? (m_normal[0] / nmag) : m_normal[0];
+    normal[1] = (nmag != 0.) ? (m_normal[1] / nmag) : m_normal[1];
+    normal[2] = (nmag != 0.) ? (m_normal[2] / nmag) : m_normal[2];
+
+    // Execute
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
+      [=] DRAY_LAMBDA (int32 id)
+    {
+      // Get id'th coord value in device memory.
+      auto id_value = mesh_dgf.m_values_ptr[id];
+
+      // Compute distance from plane.
+      Float px = id_value[0];
+      Float py = id_value[1];
+      Float pz = id_value[2];
+      Float xterm = (px - m_origin[0]) * normal[0];
+      Float yterm = (py - m_origin[1]) * normal[1];
+      Float zterm = (pz - m_origin[2]) * normal[2];
+      Float dist = xterm + yterm + zterm;
+
+      // Save distance.
+      dgf.m_values_ptr[id][0] = dist;
+    });
+
+    // Wrap the new GridFunction as a Field.
+    using MeshElemType = typename MeshType::ElementType;
+    using FieldElemType = Element<MeshElemType::get_dim(),
+                                  1,
+                                  MeshElemType::get_etype(),
+                                  MeshElemType::get_P()>;
+    m_output = std::make_shared<UnstructuredField<FieldElemType>>(
+                 gf, mesh.order());
+  }
+
+  std::shared_ptr<Field> m_output;
+  Float m_origin[3];
+  Float m_normal[3];
 };
 
 class Clip::InternalsType
@@ -172,7 +273,7 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_box_distances(DataSet domain, bool invert) const
+  make_box_distances(DataSet domain, Float &clip_value, bool invert) const
   {
     // TODO: Use the AABB<3> box to make distance field.
     std::shared_ptr<Field> retval;
@@ -181,24 +282,37 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_sphere_distances(DataSet domain, bool invert) const
+  make_sphere_distances(DataSet domain, Float &clip_value, bool invert) const
   {
     SphereDistance distcalc(sphere_center, sphere_radius);
+    // Dispatch to various mesh types in SphereDistance::operator()
     dispatch_3d(domain.mesh(), distcalc);
     std::shared_ptr<Field> retval = distcalc.m_output;
+    clip_value = sphere_radius;
     return retval;
   }
 
   std::shared_ptr<Field>
-  make_plane_distances(DataSet domain, bool invert, size_t plane_index) const
+  make_plane_distances(DataSet domain, Float &clip_value, bool invert, size_t plane_index) const
   {
-    // TODO: Make a distance field for the plane surface.
-    std::shared_ptr<Field> retval;
+    Float origin[3], normal[3];
+    origin[0] = plane_origin[plane_index][0];
+    origin[1] = plane_origin[plane_index][1];
+    origin[2] = plane_origin[plane_index][2];
+    normal[0] = plane_normal[plane_index][0];
+    normal[1] = plane_normal[plane_index][1];
+    normal[2] = plane_normal[plane_index][2];
+
+    SinglePlaneDistance distcalc(origin, normal);
+    // Dispatch to various mesh types in SinglePlaneDistance::operator()
+    dispatch_3d(domain.mesh(), distcalc);
+    std::shared_ptr<Field> retval = distcalc.m_output;
+    clip_value = 0.;
     return retval;
   }
 
   std::shared_ptr<Field>
-  make_multi_plane_distances(DataSet domain, bool invert) const
+  make_multi_plane_distances(DataSet domain, Float &clip_value, bool invert) const
   {
     // TODO: Make a field that combines plane distances for all planes,
     //       depending on clip_mode.
@@ -207,21 +321,21 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_distances(DataSet domain, bool invert, bool multipass, size_t pass = 0) const
+  make_distances(DataSet domain, Float &clip_value, bool invert, bool multipass, size_t pass = 0) const
   {
     std::shared_ptr<Field> f;
     if(clip_mode == 0)
-      f = make_box_distances(domain, invert);
+      f = make_box_distances(domain, clip_value, invert);
     else if(clip_mode == 1)
-      f = make_sphere_distances(domain, invert);
+      f = make_sphere_distances(domain, clip_value, invert);
     else if(clip_mode == 2)
-      f = make_plane_distances(domain, invert, 0);
+      f = make_plane_distances(domain, clip_value, invert, 0);
     else if(clip_mode == 3 || clip_mode == 4) // 2 or 3 planes
     {
       if(multipass)
-        f = make_plane_distances(domain, invert, pass);
+        f = make_plane_distances(domain, clip_value, invert, pass);
       else
-        f = make_multi_plane_distances(domain, invert);
+        f = make_multi_plane_distances(domain, clip_value, invert);
     }
     return f;
   }
@@ -306,14 +420,34 @@ Clip::execute(Collection &collection)
       for(size_t pass = 0; pass < npasses; pass++)
       {
         // Make the clipping field and add it to the dataset.
-        auto f = m_internals->make_distances(dom, m_do_multi_plane, pass);
+        Float clip_value = 0.;
+        auto f = m_internals->make_distances(dom, clip_value, m_do_multi_plane, pass);
         f->mesh_name(dom.mesh()->name());
         f->name(field_name);
         input.add_field(f);
 
-        // Do the clipping pass on this single domain.
+#ifdef DEBUGGING_CLIP
+        // Save the input data out.
+        conduit::Node n;
+        conduit::Node dnode;
+        input.to_node(dnode);
+        conduit::Node &bnode = n["domain1"];
+        dray::BlueprintLowOrder::to_blueprint(dnode, bnode);
+        std::stringstream s;
+        s << "clip" << pass;
+        std::string passname(s.str());
+        std::string filename(passname + ".yaml");
+        std::string protocol("yaml");
+        // This is to save to human-readable form.
+        conduit::relay::io::save(bnode, filename, protocol);
+        // This is to save it so VisIt can read it.
+        dray::BlueprintReader::save_blueprint(passname, n);
+#endif
+
+        // Do the clipping pass on this single domain. It keeps everything smaller
+        // than clip_value.
         ClipField clipper;
-        clipper.set_clip_value(0.);
+        clipper.set_clip_value(clip_value);
         clipper.set_field(field_name);
         clipper.set_invert_clip(m_invert);
         output = clipper.execute(input);
