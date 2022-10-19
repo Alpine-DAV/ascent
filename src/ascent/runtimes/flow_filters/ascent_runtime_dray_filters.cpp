@@ -55,7 +55,7 @@
 #include <dray/filters/mesh_boundary.hpp>
 #include <dray/filters/volume_balance.hpp>
 #include <dray/filters/vector_component.hpp>
-#include <dray/exports.hpp>
+#include <dray/dray_exports.h>
 #include <dray/transform_3d.hpp>
 #include <dray/rendering/renderer.hpp>
 #include <dray/rendering/surface.hpp>
@@ -1293,7 +1293,7 @@ DRayPseudocolor::execute()
       annotations = params()["annotations"].as_string() != "false";
     }
 
-    renderer.screen_annotations(annotations);
+    renderer.world_annotations(annotations);
 
     const int num_images = cameras.size();
     for(int i = 0; i < num_images; ++i)
@@ -1680,7 +1680,7 @@ DRay3Slice::execute()
       annotations = params()["annotations"].as_string() != "false";
     }
 
-    renderer.screen_annotations(annotations);
+    renderer.world_annotations(annotations);
 
     renderer.add(slicer_x);
     renderer.add(slicer_y);
@@ -1902,7 +1902,7 @@ DRayVolume::execute()
     {
       annotations = params()["annotations"].as_string() != "false";
     }
-    renderer.screen_annotations(annotations);
+    renderer.world_annotations(annotations);
 
     const int num_images = cameras.size();
     for(int i = 0; i < num_images; ++i)
