@@ -152,6 +152,9 @@ if(MPI_FOUND)
   # this allows us to include as <rover/header.hpp>
   target_include_directories(rover_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
   target_include_directories(rover_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/rover>)
+  # install includes
+  # setup exported target to point to proper include dir
+  target_include_directories(rover_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/rover>)
 
 
   if(ENABLE_HIDDEN_VISIBILITY)
