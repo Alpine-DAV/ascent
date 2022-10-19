@@ -27,15 +27,14 @@ endif()
 
 set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
-set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
-set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
-
-set(ASCENT_HDF5_ENABLED ${CONDUIT_RELAY_HDF5_ENABLED})
-set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
-set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
+set(ASCENT_VTKM_ENABLED   ${VTKM_FOUND})
+set(ASCENT_VTKH_ENABLED   ${ENABLE_VTKH}})
+set(ASCENT_HDF5_ENABLED   ${CONDUIT_RELAY_HDF5_ENABLED})
+set(ASCENT_MFEM_ENABLED   ${MFEM_FOUND})
+set(ASCENT_DRAY_ENABLED   ${ENBLE_DRAY})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 set(ASCENT_ADIOS2_ENABLED ${ADIOS2_FOUND})
-set(ASCENT_FIDES_ENABLED ${FIDES_FOUND})
+set(ASCENT_FIDES_ENABLED  ${FIDES_FOUND})
 set(ASCENT_GENTEN_ENABLED ${GENTEN_FOUND})
 set(ASCENT_KOKKOS_ENABLED ${KOKKOS_FOUND})
 
@@ -241,7 +240,7 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
-if(DRAY_FOUND)
+if(ENABLE_DRAY)
   list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
   list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
 endif()
@@ -335,7 +334,7 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
 endif()
 
-if(DRAY_FOUND)
+if(ENABLE_DRAY)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 
@@ -399,16 +398,6 @@ if (ENABLE_SERIAL)
         endif()
 
         set(imported_targets_to_link "")
-
-        if(VTKH_FOUND)
-          list(APPEND imported_targets_to_link
-                      vtkh_rendering
-                      vtkh_compositing
-                      vtkh_filters
-                      vtkh_core
-                      vtkh_utils
-                      vtkh_lodepng)
-        endif()
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
@@ -525,7 +514,7 @@ if(MPI_FOUND)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
         list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
     endif()
-    if(DRAY_FOUND)
+    if(ENABLE_DRAY)
         # swap dray_mpi for dray
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs dray)
         list(APPEND ascent_mpi_thirdparty_libs dray_mpi)
@@ -581,16 +570,6 @@ if(MPI_FOUND)
       endif()
 
       set(imported_targets_to_link "")
-
-      if(VTKH_FOUND)
-          list(APPEND imported_targets_to_link
-                      vtkh_rendering_mpi
-                      vtkh_compositing_mpi
-                      vtkh_filters_mpi
-                      vtkh_core_mpi
-                      vtkh_utils_mpi
-                      vtkh_lodepng)
-      endif()
 
       # updated for vtkm 1.9
       list(APPEND imported_targets_to_link

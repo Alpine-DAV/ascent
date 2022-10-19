@@ -7,6 +7,7 @@
 #ifndef rover_types_h
 #define rover_types_h
 
+#include <rover_config.h>
 #include <vtkm_typedefs.hpp>
 
 namespace rover {

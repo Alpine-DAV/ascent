@@ -155,10 +155,6 @@ add_subdirectory(libs)
 
 add_subdirectory(flow)
 
-if(VTKH_FOUND OR ENABLE_VTKH)
-  add_subdirectory(rover)
-endif()
-
 add_subdirectory(ascent)
 
 ################################

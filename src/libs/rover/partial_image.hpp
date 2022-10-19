@@ -7,6 +7,8 @@
 #ifndef rover_partial_image_h
 #define rover_partial_image_h
 
+#include <rover_config.h>
+
 #include <vector>
 
 #include <vtkm/cont/ArrayHandle.h>
@@ -55,7 +57,7 @@ struct PartialImage
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
     partials.resize(size);
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -80,7 +82,7 @@ struct PartialImage
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
     partials.resize(size);
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int index = 0; index < size; ++index)
@@ -109,7 +111,7 @@ struct PartialImage
 
     partials.resize(size);
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int index = 0; index < size; ++index)
@@ -149,7 +151,7 @@ struct PartialImage
     bg_color.m_pixel[2] = static_cast<FloatType>(background[2]);
     bg_color.m_alpha    = static_cast<FloatType>(background[3]);
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -194,7 +196,7 @@ struct PartialImage
     auto depth_portal = m_distances.WritePortal();
     auto intensity_portal = m_intensities.Buffer.WritePortal();
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -232,7 +234,7 @@ struct PartialImage
     auto depth_portal = m_distances.WritePortal();
     auto intensity_portal = m_intensities.Buffer.WritePortal();
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -270,7 +272,7 @@ struct PartialImage
       m_intensities.Resize(size);
     }
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)

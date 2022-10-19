@@ -6,7 +6,7 @@
 
 #ifndef rover_vtkm_typedefs_h
 #define rover_vtkm_typedefs_h
-
+#include <rover_config.h>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
 #include <vtkm/cont/ColorTable.h>

@@ -23,3 +23,7 @@ endif()
 if(ENABLE_VTKH)
     add_subdirectory(vtkh)
 endif()
+
+if(ENABLE_VTKH)
+  add_subdirectory(rover)
+endif()

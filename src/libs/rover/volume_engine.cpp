@@ -123,7 +123,7 @@ VolumeEngine::correct_opacity()
   auto corr_portal = corrected.WritePortal();
 
   const int num_points = m_color_map.GetNumberOfValues();
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
   for(int i = 0; i < num_points; i++)

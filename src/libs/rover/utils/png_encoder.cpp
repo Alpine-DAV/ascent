@@ -50,7 +50,7 @@ PNGEncoder::Encode(const double *rgba_in,
 
   for(int x = 0; x < width; ++x)
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for (int y = 0; y < height; ++y)
@@ -76,7 +76,7 @@ PNGEncoder::EncodeChannel(const double *buffer_in,
 
   for(int x = 0; x < width; ++x)
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for (int y = 0; y < height; ++y)
@@ -101,7 +101,7 @@ PNGEncoder::EncodeChannel(const float *buffer_in,
 
   for(int x = 0; x < width; ++x)
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for (int y = 0; y < height; ++y)
