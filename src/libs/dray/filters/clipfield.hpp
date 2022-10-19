@@ -26,9 +26,14 @@ public:
   bool invert() const;
 
   /**
-   * @brief Extracts cells using a field as a guide.
-   * @param data_set The dataset.
-   * @return A dataset containing the preserved cells.
+   * @brief Execute on a single DataSet.
+   */
+  DataSet execute(DataSet domain);
+
+  /**
+   * @brief Execute on all DataSets in a Collection.
+   * @param collection The collection.
+   * @return A new collection with the clipped domains.
    *
    */
   Collection execute(Collection &collection);

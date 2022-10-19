@@ -994,6 +994,24 @@ ClipField::invert() const
   return m_invert;
 }
 
+DataSet
+ClipField::execute(DataSet dom)
+{
+  DataSet output;
+  if(dom.mesh() != nullptr && dom.mesh()->order() == 1)
+  {
+    detail::ClipFieldLinear func(dom, m_clip_value, m_field_name, m_invert);
+    func.execute();
+    output = func.m_output;
+  }
+  else
+  {
+    DRAY_ERROR("TODO: support high order meshes.");
+  }
+
+  return output;
+}
+
 Collection
 ClipField::execute(Collection &collection)
 {
