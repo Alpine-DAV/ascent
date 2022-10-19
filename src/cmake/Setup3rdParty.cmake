@@ -83,6 +83,10 @@ if(VTKM_DIR)
     include(cmake/thirdparty/SetupVTKm.cmake)
 endif()
 
+if(ENABLE_VTKH AND NOT VTKM_FOUND)
+     MESSAGE(FATAL_ERROR "VTK-h support requires VTK-m (ENABLE_VTKH=ON and NOT VTKM_FOUND)")
+endif()
+
 #
 # Note: HDF5 is fully handled by importing conduit
 #

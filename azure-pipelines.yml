@@ -226,10 +226,6 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
-           # Always ignore spack built version of DRAY
-           export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"
-           # Always ignore spack built version of VTK-h
-           export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"
            #
            # we need to provide RAJA + Umpire
            #
@@ -463,10 +459,6 @@ stages:
            cd build
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-           # always skip external vtkh for these tests
-           export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"
-           # always skip external dray for these tests
-           export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"
            # c++ std
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
 
@@ -497,7 +489,6 @@ stages:
            cd build
            make VERBOSE=1
         displayName: 'Build'
-
 
       - script: |
            #################################

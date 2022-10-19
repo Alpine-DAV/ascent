@@ -8,6 +8,21 @@
 ################################
 add_subdirectory(flow)
 
+
+# display info about optional features
+if(ENABLE_APCOMP)
+    message(STATUS "Building APComp    (ENABLE_APCOMP=ON)")
+endif()
+
+if(ENABLE_DRAY)
+    message(STATUS "Building Devil Ray (ENABLE_DRAY=ON)")
+endif()
+
+if((ENABLE_VTKH))
+    message(STATUS "Building VTK-h     (ENABLE_VTKH=ON)")
+endif()
+
+
 ################################
 # Add ap comp
 ################################
