@@ -41,9 +41,9 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_APCOMP_ENABLED @ENABLE_APCOMP@)
 
     # advertise if vtk-h support is enabled
-    set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
+    set(ASCENT_VTKH_ENABLED @ENABLE_VTKH@)
 
-    set(ASCENT_VTKH_DIR "@VTKH_DIR@")
+    # vtk-m dir
     set(ASCENT_VTKM_DIR "@VTKM_DIR@")
 
     # advertise if mfem support is enabled
@@ -52,8 +52,7 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_MFEM_MPI_ENABLED @MFEM_MPI_ENABLED@)
 
     # advertise if devil ray support is enabled
-    set(ASCENT_DRAY_ENABLED @DRAY_FOUND@)
-    set(ASCENT_DRAY_DIR "@DRAY_DIR@")
+    set(ASCENT_DRAY_ENABLED @ENABLE_DRAY@)
 
     # advertise if occa support is enabled
     set(ASCENT_OCCA_ENABLED @OCCA_FOUND@)

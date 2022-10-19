@@ -81,13 +81,6 @@ if(VTKM_DIR)
     # VTKm
     ################################
     include(cmake/thirdparty/SetupVTKm.cmake)
-
-    ################################
-    # VTKh
-    ################################
-    if(VTKH_DIR)  # builtin vs external logic
-        include(cmake/thirdparty/SetupVTKh.cmake)
-    endif()
 endif()
 
 #
@@ -100,14 +93,6 @@ endif()
 if (MFEM_DIR)
   include(cmake/thirdparty/SetupMFEM.cmake)
 endif()
-
-################################
-# Setup Devil Ray
-################################
-if (DRAY_DIR)
-  include(cmake/thirdparty/SetupDevilRay.cmake)
-endif()
-
 
 ################################
 # Setup Umpire

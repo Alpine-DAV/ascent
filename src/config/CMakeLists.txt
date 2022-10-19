@@ -59,10 +59,6 @@ endif()
 # While CMake knows to ignore these type of vals make does not,
 # so we regularize with explicit vars
 
-if(VTKH_DIR)
-    set(ASCENT_VTKH_DIR ${VTKH_DIR} )
-endif()
-
 if(VTKM_DIR)
     set(ASCENT_VTKM_DIR ${VTKM_DIR} )
     set(ASCENT_VTKM_VERSION  ${VTKm_VERSION} )
@@ -70,10 +66,6 @@ endif()
 
 if(MFEM_DIR)
     set(ASCENT_MFEM_DIR ${MFEM_DIR} )
-endif()
-
-if(DRAY_DIR)
-    set(ASCENT_DRAY_DIR ${DRAY_DIR} )
 endif()
 
 if(OCCA_DIR)

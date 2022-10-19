@@ -91,29 +91,6 @@ if(KOKKOS_DIR)
 		    PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
 endif()
 
-
-
-
-###############################################################################
-# Setup VTK-h (external)
-###############################################################################
-if(NOT VTKH_DIR)
-    set(VTKH_DIR ${ASCENT_VTKH_DIR})
-endif()
-
-if(VTKH_DIR)
-    if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
-      message(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
-    endif()
-
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(VTKh REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${VTKH_DIR}/lib)
-endif()
-
 ###############################################################################
 # Setup VTK-m
 ###############################################################################
@@ -222,26 +199,6 @@ if(RAJA_DIR)
     find_dependency(RAJA REQUIRED
                     NO_DEFAULT_PATH
                     PATHS ${_RAJA_SEARCH_PATH})
-endif()
-
-###############################################################################
-# Setup Devil Ray
-###############################################################################
-if(NOT DRAY_DIR)
-    set(DRAY_DIR ${ASCENT_DRAY_DIR})
-endif()
-
-if(DRAY_DIR)
-    if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
-        message(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
-    endif()
-
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(DRay REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${DRAY_DIR}/lib/cmake/)
 endif()
 
 
