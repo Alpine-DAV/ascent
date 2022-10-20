@@ -22,10 +22,6 @@
 namespace dray
 {
 
-void breakpoint()
-{
-}
-
 inline void
 normalize(Float vec[3])
 {
