@@ -181,16 +181,16 @@ endif()
 
 if(RAJA_DIR)
     set(_RAJA_SEARCH_PATH)
-    if(EXISTS ${RAJA_DIR}/share/umpire/cmake)
+    if(EXISTS ${RAJA_DIR}/share/raja/cmake)
       # old install layout
       set(_RAJA_SEARCH_PATH ${RAJA_DIR}/share/raja/cmake)
     else()
       # new install layout
-      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/rajae)
+      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/raja)
     endif()
     
-    if(NOT EXISTS ${_UMPIRE_RAJA_PATH})
-        message(FATAL_ERROR "Could not find RAJA CMake include file (${_UMPIRE_RAJA_PATH})")
+    if(NOT EXISTS ${_RAJA_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find RAJA CMake include file (${_RAJA_SEARCH_PATH})")
     endif()
 
     ###############################################################################
