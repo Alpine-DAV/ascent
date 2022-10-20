@@ -101,33 +101,38 @@ set(rover_sources
       utils/vtk_dataset_reader.cpp
  )
 
-blt_add_library(NAME rover
-                SOURCES ${rover_sources}
-                HEADERS ${rover_headers}
-                DEPENDS_ON ${rover_thirdparty_deps}
-               )
+###############################################################################
+if (ENABLE_SERIAL)
+    blt_add_library(NAME rover
+                    SOURCES ${rover_sources}
+                    HEADERS ${rover_headers}
+                    DEPENDS_ON ${rover_thirdparty_deps}
+                    )
 
-vtkm_add_target_information(rover DEVICE_SOURCES ${rover_sources})
+    vtkm_add_target_information(rover DEVICE_SOURCES ${rover_sources})
 
-# build includes
-# this allows us to include as <header.hpp>
-target_include_directories(rover PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
-target_include_directories(rover PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/rover>)
+    # build includes
+    # this allows us to include as <header.hpp>
+    target_include_directories(rover PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
+    target_include_directories(rover PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/rover>)
 
 
-if(ENABLE_HIDDEN_VISIBILITY)
-  set_target_properties(rover PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(rover PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
+
+    target_compile_definitions(rover PRIVATE ROVER_EXPORTS_FLAG)
+
+    # install target for mpi ver
+    install(TARGETS rover
+            EXPORT  ascent
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION lib
+    )
+
 endif()
 
-target_compile_definitions(rover PRIVATE ROVER_EXPORTS_FLAG)
-
-# install target for mpi ver
-install(TARGETS rover
-        EXPORT  ascent
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION lib
-)
 ###################################################
 #   Build parallel version
 ##################################################
@@ -152,10 +157,6 @@ if(MPI_FOUND)
   # this allows us to include as <rover/header.hpp>
   target_include_directories(rover_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
   target_include_directories(rover_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/rover>)
-  # install includes
-  # setup exported target to point to proper include dir
-  target_include_directories(rover_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/rover>)
-
 
   if(ENABLE_HIDDEN_VISIBILITY)
     set_target_properties(rover_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
