@@ -131,10 +131,10 @@ public:
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     auto ndofs = mesh_gf.m_values.size();
-    cout << "ndofs=" << ndofs << endl;
-    cout << "mesh_gf summary"<< endl;
-    mesh.get_dof_data().m_ctrl_idx.summary();
-    mesh.get_dof_data().m_values.summary();
+    //cout << "ndofs=" << ndofs << endl;
+    //cout << "mesh_gf summary"<< endl;
+    //mesh.get_dof_data().m_ctrl_idx.summary();
+    //mesh.get_dof_data().m_values.summary();
 
     // Outputs
     GridFunction<1> gf;
@@ -204,10 +204,10 @@ public:
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     auto ndofs = mesh_gf.m_values.size();
-    cout << "ndofs=" << ndofs << endl;
-    cout << "mesh_gf summary"<< endl;
-    mesh.get_dof_data().m_ctrl_idx.summary();
-    mesh.get_dof_data().m_values.summary();
+    //cout << "ndofs=" << ndofs << endl;
+    //cout << "mesh_gf summary"<< endl;
+    //mesh.get_dof_data().m_ctrl_idx.summary();
+    //mesh.get_dof_data().m_values.summary();
 
     // Outputs
     GridFunction<1> gf;
@@ -260,9 +260,161 @@ public:
   }
 
   std::shared_ptr<Field> m_output;
-  Float m_origin[3][3];
-  Float m_normal[3][3];
+  Float m_origin[6][3];
+  Float m_normal[6][3];
   int   m_planes;
+};
+
+// Make the box distance field.
+class BoxDistance
+{
+public:
+  BoxDistance(AABB<3> bounds) : m_output()
+  {
+    m_bounds = bounds;
+  }
+
+  // NOTE: This method gets instantiated for different mesh types by dispatch.
+  template <class MeshType>
+  void operator()(MeshType &mesh)
+  {
+    // Inputs
+    const GridFunction<3> &mesh_gf = mesh.get_dof_data();
+    DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
+    auto ndofs = mesh_gf.m_values.size();
+
+    // Outputs
+    GridFunction<1> gf;
+    gf.m_el_dofs = mesh_gf.m_el_dofs;
+    gf.m_size_el = mesh_gf.m_size_el;
+    gf.m_size_ctrl = mesh_gf.m_size_ctrl;
+    gf.m_ctrl_idx = mesh_gf.m_ctrl_idx;
+    gf.m_values.resize(ndofs);
+    DeviceGridFunction<1> dgf(gf);
+
+    // Execute
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
+      [=] DRAY_LAMBDA (int32 id)
+    {
+      // Get id'th coord value in device memory.
+      auto id_value = mesh_dgf.m_values_ptr[id];
+
+      // Compute distance from planes and determine whether to keep the point.
+      Float px = id_value[0];
+      Float py = id_value[1];
+      Float pz = id_value[2];
+      Float dist = -0.25;
+      //if(m_bounds.contains(id_value))
+     // {
+     //   dist = -1.;
+     // }
+    //  else
+      bool notset = true;
+      {
+        // xmin
+        if(px < m_bounds.m_ranges[0].min() && notset)
+        {
+          Float origin[3];
+          origin[0] = m_bounds.m_ranges[0].min();
+          origin[1] = m_bounds.m_ranges[1].min();
+          origin[2] = m_bounds.m_ranges[2].min();
+          Float normal[3] = {-1., 0., 0.};
+          Float xterm = (px - origin[0]) * normal[0];
+          Float yterm = (py - origin[1]) * normal[1];
+          Float zterm = (pz - origin[2]) * normal[2];
+          dist = xterm + yterm + zterm;
+          notset = false;
+        }
+        // xmax
+        if(px > m_bounds.m_ranges[0].max() && notset)
+        {
+          Float origin[3];
+          origin[0] = m_bounds.m_ranges[0].max();
+          origin[1] = m_bounds.m_ranges[1].min();
+          origin[2] = m_bounds.m_ranges[2].min();
+          Float normal[3] = {1., 0., 0.};
+          Float xterm = (px - origin[0]) * normal[0];
+          Float yterm = (py - origin[1]) * normal[1];
+          Float zterm = (pz - origin[2]) * normal[2];
+          dist = xterm + yterm + zterm;
+          notset = false;
+        }
+
+        // ymin
+        if(py < m_bounds.m_ranges[1].min() && notset)
+        {
+          Float origin[3];
+          origin[0] = m_bounds.m_ranges[0].min();
+          origin[1] = m_bounds.m_ranges[1].min();
+          origin[2] = m_bounds.m_ranges[2].min();
+          Float normal[3] = {0., -1., 0.};
+          Float xterm = (px - origin[0]) * normal[0];
+          Float yterm = (py - origin[1]) * normal[1];
+          Float zterm = (pz - origin[2]) * normal[2];
+          dist = xterm + yterm + zterm;
+          notset = false;
+        }
+        // ymax
+        if(py > m_bounds.m_ranges[1].max() && notset)
+        {
+          Float origin[3];
+          origin[0] = m_bounds.m_ranges[0].min();
+          origin[1] = m_bounds.m_ranges[1].max();
+          origin[2] = m_bounds.m_ranges[2].min();
+          Float normal[3] = {0., 1., 0.};
+          Float xterm = (px - origin[0]) * normal[0];
+          Float yterm = (py - origin[1]) * normal[1];
+          Float zterm = (pz - origin[2]) * normal[2];
+          dist = xterm + yterm + zterm;
+          notset = false;
+        }
+
+        // zmin
+        if(pz < m_bounds.m_ranges[2].min() && notset)
+        {
+          Float origin[3];
+          origin[0] = m_bounds.m_ranges[0].min();
+          origin[1] = m_bounds.m_ranges[1].min();
+          origin[2] = m_bounds.m_ranges[2].min();
+          Float normal[3] = {0., 0., -1.};
+          Float xterm = (px - origin[0]) * normal[0];
+          Float yterm = (py - origin[1]) * normal[1];
+          Float zterm = (pz - origin[2]) * normal[2];
+          dist = xterm + yterm + zterm;
+          notset = false;
+        }
+        // zmax
+        if(pz > m_bounds.m_ranges[2].max() && notset)
+        {
+          Float origin[3];
+          origin[0] = m_bounds.m_ranges[0].min();
+          origin[1] = m_bounds.m_ranges[1].min();
+          origin[2] = m_bounds.m_ranges[2].max();
+          Float normal[3] = {0., 0., 1.};
+          Float xterm = (px - origin[0]) * normal[0];
+          Float yterm = (py - origin[1]) * normal[1];
+          Float zterm = (pz - origin[2]) * normal[2];
+          dist = xterm + yterm + zterm;
+          notset = false;
+        }
+      }
+
+      // Save distance.
+      dgf.m_values_ptr[id][0] = dist;
+    });
+
+    // Wrap the new GridFunction as a Field.
+    using MeshElemType = typename MeshType::ElementType;
+    using FieldElemType = Element<MeshElemType::get_dim(),
+                                  1,
+                                  MeshElemType::get_etype(),
+                                  MeshElemType::get_P()>;
+    m_output = std::make_shared<UnstructuredField<FieldElemType>>(
+                 gf, mesh.order());
+  }
+
+  std::shared_ptr<Field> m_output;
+  AABB<3> m_bounds;
 };
 
 class Clip::InternalsType
@@ -367,9 +519,12 @@ public:
   std::shared_ptr<Field>
   make_box_distances(DataSet domain, Float &clip_value, bool invert) const
   {
-    // TODO: Use the AABB<3> box to make distance field.
-    std::shared_ptr<Field> retval;
-
+    cout << "!!!! make_box_distances" << endl;
+    BoxDistance distcalc(boxbounds);
+    // Dispatch to various mesh types in SphereDistance::operator()
+    dispatch_3d(domain.mesh(), distcalc);
+    std::shared_ptr<Field> retval = distcalc.m_output;
+    clip_value = 0.;
     return retval;
   }
 
