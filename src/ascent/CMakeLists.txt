@@ -20,29 +20,29 @@ set(ASCENT_INSTALL_PREFIX ${ASCENT_INSTALL_PREFIX} CACHE STRING "" FORCE )
 # the cmake gui and think they should be setting it
 mark_as_advanced(ASCENT_INSTALL_PREFIX)
 
-
 if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
 set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
-set(ASCENT_VTKM_ENABLED   ${VTKM_FOUND})
 set(ASCENT_VTKH_ENABLED   ${ENABLE_VTKH}})
+set(ASCENT_DRAY_ENABLED   ${ENABLE_DRAY})
+set(ASCENT_APCOMP_ENABLED ${ENABLE_APCOMP})
+
+set(ASCENT_VTKM_ENABLED   ${VTKM_FOUND})
 set(ASCENT_HDF5_ENABLED   ${CONDUIT_RELAY_HDF5_ENABLED})
 set(ASCENT_MFEM_ENABLED   ${MFEM_FOUND})
-set(ASCENT_DRAY_ENABLED   ${ENABLE_DRAY})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
 set(ASCENT_ADIOS2_ENABLED ${ADIOS2_FOUND})
 set(ASCENT_FIDES_ENABLED  ${FIDES_FOUND})
 set(ASCENT_GENTEN_ENABLED ${GENTEN_FOUND})
 set(ASCENT_KOKKOS_ENABLED ${KOKKOS_FOUND})
 
-
 if(OCCA_FOUND AND UMPIRE_FOUND)
-  set(ASCENT_JIT_ENABLED TRUE)
+    set(ASCENT_JIT_ENABLED TRUE)
 else()
-  set(ASCENT_JIT_ENABLED FALSE)
+    set(ASCENT_JIT_ENABLED FALSE)
 endif()
 
 set(ASCENT_WEBSERVER_ENABLED ${CONDUIT_RELAY_WEBSERVER_ENABLED})
@@ -183,14 +183,14 @@ if(ASCENT_JIT_ENABLED)
     list(APPEND ascent_headers runtimes/expressions/ascent_array_registry.hpp)
     # this has device calls so we need to tell cmake to use the cuda compiler
     if(CUDA_FOUND)
-      set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
-      set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
-      set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
     endif()
     list(APPEND ascent_device_sources
-      runtimes/expressions/ascent_array.cpp
-      runtimes/expressions/ascent_array_internals.cpp
-      runtimes/expressions/ascent_derived_jit.cpp)
+                runtimes/expressions/ascent_array.cpp
+                runtimes/expressions/ascent_array_internals.cpp
+                runtimes/expressions/ascent_derived_jit.cpp)
 endif()
 
 if(VTKM_FOUND)
@@ -241,8 +241,8 @@ if(MFEM_FOUND)
 endif()
 
 if(ENABLE_DRAY)
-  list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
-  list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
 endif()
 
 if(GENTEN_FOUND)
@@ -342,7 +342,6 @@ if(GENTEN_FOUND)
     list(APPEND ascent_thirdparty_libs genten)
 endif()
 
-
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -353,17 +352,18 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON  ${ascent_thirdparty_libs})
 
     if(ENABLE_HIDDEN_VISIBILITY)
-      set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+        set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
+
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
 
     # TODO move to header ...
     if(CUDA_FOUND)
-      target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
+        target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
     endif()
 
     if(ENABLE_LOGGING)
-      target_compile_definitions(ascent PRIVATE ASCENT_LOGGING_ENABLED)
+        target_compile_definitions(ascent PRIVATE ASCENT_LOGGING_ENABLED)
     endif()
 
     if(VTKM_FOUND)
@@ -377,7 +377,6 @@ if (ENABLE_SERIAL)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
     )
-
 
     # Static linking CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
@@ -468,25 +467,24 @@ if(MPI_FOUND)
     set(ascent_mpi_thirdparty_libs ${ascent_blt_mpi_deps} conduit::conduit_mpi)
 
     if (BABELFLOW_FOUND)
-      if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-        add_compile_definitions("BABELFLOW_DEBUG")
-      endif()
+        if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+            add_compile_definitions("BABELFLOW_DEBUG")
+        endif()
 
-      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
+        list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
 
-      list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
-      list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
-      add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
-      include_directories(${BABELFLOW_INCLUDE_DIRS})
-      include_directories(${PMT_INCLUDE_DIRS})
+        list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
+        list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+        add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+        include_directories(${BABELFLOW_INCLUDE_DIRS})
+        include_directories(${PMT_INCLUDE_DIRS})
     endif ()
 
     # hola mpi support is only in par (mpi ver)
-
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_hola_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_hola_filters.cpp)
 
@@ -495,9 +493,9 @@ if(MPI_FOUND)
 
     # adios support is only in par (mpi ver)
     if (ASCENT_FIDES_ENABLED AND MPI_FOUND)
-       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
-       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
-       list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
+        list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
+        list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
     endif()
 
     # this combines our mpi specific deps to the broader list of ascent deps
@@ -514,34 +512,37 @@ if(MPI_FOUND)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
         list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
     endif()
+
     if(ENABLE_DRAY)
         # swap dray_mpi for dray
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs dray)
         list(APPEND ascent_mpi_thirdparty_libs dray_mpi)
     endif()
 
-    blt_add_library(
-        NAME        ascent_mpi
-        SOURCES     ${ascent_sources} ${ascent_mpi_sources}
-        HEADERS     ${ascent_headers} ${ascent_mpi_headers}
-        DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
+    blt_add_library(NAME        ascent_mpi
+                    SOURCES     ${ascent_sources} ${ascent_mpi_sources}
+                    HEADERS     ${ascent_headers} ${ascent_mpi_headers}
+                    DEPENDS_ON  ${ascent_mpi_thirdparty_libs}
+                 )
 
     if(ENABLE_HIDDEN_VISIBILITY)
-      set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+        set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
+
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
 
     if(ENABLE_LOGGING)
-      target_compile_definitions(ascent_mpi PRIVATE ASCENT_LOGGING_ENABLED)
+        target_compile_definitions(ascent_mpi PRIVATE ASCENT_LOGGING_ENABLED)
     endif()
 
     if(CUDA_FOUND)
-      target_compile_definitions(ascent_mpi PRIVATE ASCENT_CUDA_ENABLED)
+        target_compile_definitions(ascent_mpi PRIVATE ASCENT_CUDA_ENABLED)
     endif()
 
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
+
     blt_add_target_compile_flags(TO ascent_mpi FLAGS "-DASCENT_MPI_ENABLED")
 
     # install target for mpi ver

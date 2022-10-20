@@ -37,19 +37,21 @@
 // defs for general openmp support
 #cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
 
-// defs for runtime support based on which 3rd-party libs we have
+// defs for builtin libs
 #cmakedefine ASCENT_VTKH_ENABLED      "@ENABLE_VTKH@"
+#cmakedefine ASCENT_DRAY_ENABLED      "@ENABLE_DRAY@"
+#cmakedefine ASCENT_APCOMP_ENABLED    "@ENABLE_APCOMP@"
 
+// defs for runtime support based on which 3rd-party libs we have
 #cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_OPENMP   "@OPENMP_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_KOKKOS   "@KOKKOS_FOUND@"
 
-
 #cmakedefine ASCENT_ADIOS2_ENABLED    "@ADIOS2_FOUND@"
 #cmakedefine ASCENT_FIDES_ENABLED     "@FIDES_FOUND@"
 #cmakedefine ASCENT_MFEM_ENABLED      "@MFEM_FOUND@"
-#cmakedefine ASCENT_DRAY_ENABLED      "@ENABLE_DRAY@"
+
 #cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
 #cmakedefine ASCENT_PYTHON_ENABLED    "@PYTHON_FOUND@"
 #cmakedefine ASCENT_JIT_ENABLED       "@ASCENT_JIT_ENABLED@"
