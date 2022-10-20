@@ -8,7 +8,6 @@
 #define APCOMP_IMAGE_HPP
 
 #include <apcomp/apcomp_config.h>
-#include <apcomp/apcomp_config.h>
 
 #include <sstream>
 #include <vector>
