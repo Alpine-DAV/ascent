@@ -39,6 +39,7 @@ public:
                                           int32 &n_elems,
                                           std::string &shape);
 
+  static void to_blueprint(const conduit::Node &dray_rep, conduit::Node &n);
 };
 
 } // namespace dray

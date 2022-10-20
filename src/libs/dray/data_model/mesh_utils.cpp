@@ -2,7 +2,6 @@
 // Devil Ray Developers. See the top-level COPYRIGHT file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
-
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/subref.hpp>
 #include <dray/data_model/elem_ops.hpp>  // tri/tet dof indexing
@@ -14,6 +13,7 @@
 
 #include <dray/aabb.hpp>
 #include <dray/array_utils.hpp>
+#include <dray/dispatcher.hpp>
 
 #include <RAJA/RAJA.hpp>
 #include <dray/policies.hpp>
@@ -750,6 +750,32 @@ template BVH construct_bvh (UnstructuredMesh<MeshElem<3, ElemType::Simplex, Orde
                             Array<SubRef<3, ElemType::Simplex>> &ref_aabbs);
 template BVH construct_bvh (UnstructuredMesh<MeshElem<3, ElemType::Simplex, Order::Quadratic>> &mesh,
                             Array<SubRef<3, ElemType::Simplex>> &ref_aabbs);
+
+struct GetDofDataFunctor
+{
+  GetDofDataFunctor() = default;
+  ~GetDofDataFunctor() = default;
+
+  GridFunction<3> output() { return m_output; }
+
+  template<typename MeshType>
+  void operator()(MeshType &mesh)
+  {
+    GridFunction<3> temp = mesh.get_dof_data();
+    m_output = temp;
+  }
+
+  GridFunction<3> m_output;
+};
+
+GridFunction<3>
+get_dof_data(Mesh *mesh)
+{
+  GetDofDataFunctor func;
+  dispatch(mesh, func);
+
+  return func.output();
+}
 
 } // namespace detail
 } // namespace dray

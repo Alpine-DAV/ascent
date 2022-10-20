@@ -9,6 +9,8 @@
 #include <dray/data_model/mesh.hpp>
 #include <dray/data_model/subref.hpp>
 #include <dray/data_model/elem_ops.hpp>
+#include <dray/data_model/grid_function.hpp>
+#include <dray/data_model/unstructured_mesh.hpp>
 
 namespace dray
 {
@@ -53,6 +55,10 @@ Array<Vec<int32, 2>> reconstruct (Array<int32> &orig_ids);
 
 template <class ElemT>
 BVH construct_bvh (UnstructuredMesh<ElemT> &mesh, Array<typename get_subref<ElemT>::type> &ref_aabbs);
+
+// Extracts the dof data from the given mesh.
+GridFunction<3>
+get_dof_data(Mesh *);
 
 } // namespace detail
 
