@@ -303,100 +303,84 @@ public:
       Float px = id_value[0];
       Float py = id_value[1];
       Float pz = id_value[2];
-      Float dist = -0.25;
-      //if(m_bounds.contains(id_value))
-     // {
-     //   dist = -1.;
-     // }
-    //  else
-      bool notset = true;
+      Float dist;
+      // xmin
       {
-        // xmin
-        if(px < m_bounds.m_ranges[0].min() && notset)
-        {
-          Float origin[3];
-          origin[0] = m_bounds.m_ranges[0].min();
-          origin[1] = m_bounds.m_ranges[1].min();
-          origin[2] = m_bounds.m_ranges[2].min();
-          Float normal[3] = {-1., 0., 0.};
-          Float xterm = (px - origin[0]) * normal[0];
-          Float yterm = (py - origin[1]) * normal[1];
-          Float zterm = (pz - origin[2]) * normal[2];
-          dist = xterm + yterm + zterm;
-          notset = false;
-        }
-        // xmax
-        if(px > m_bounds.m_ranges[0].max() && notset)
-        {
-          Float origin[3];
-          origin[0] = m_bounds.m_ranges[0].max();
-          origin[1] = m_bounds.m_ranges[1].min();
-          origin[2] = m_bounds.m_ranges[2].min();
-          Float normal[3] = {1., 0., 0.};
-          Float xterm = (px - origin[0]) * normal[0];
-          Float yterm = (py - origin[1]) * normal[1];
-          Float zterm = (pz - origin[2]) * normal[2];
-          dist = xterm + yterm + zterm;
-          notset = false;
-        }
-
-        // ymin
-        if(py < m_bounds.m_ranges[1].min() && notset)
-        {
-          Float origin[3];
-          origin[0] = m_bounds.m_ranges[0].min();
-          origin[1] = m_bounds.m_ranges[1].min();
-          origin[2] = m_bounds.m_ranges[2].min();
-          Float normal[3] = {0., -1., 0.};
-          Float xterm = (px - origin[0]) * normal[0];
-          Float yterm = (py - origin[1]) * normal[1];
-          Float zterm = (pz - origin[2]) * normal[2];
-          dist = xterm + yterm + zterm;
-          notset = false;
-        }
-        // ymax
-        if(py > m_bounds.m_ranges[1].max() && notset)
-        {
-          Float origin[3];
-          origin[0] = m_bounds.m_ranges[0].min();
-          origin[1] = m_bounds.m_ranges[1].max();
-          origin[2] = m_bounds.m_ranges[2].min();
-          Float normal[3] = {0., 1., 0.};
-          Float xterm = (px - origin[0]) * normal[0];
-          Float yterm = (py - origin[1]) * normal[1];
-          Float zterm = (pz - origin[2]) * normal[2];
-          dist = xterm + yterm + zterm;
-          notset = false;
-        }
-
-        // zmin
-        if(pz < m_bounds.m_ranges[2].min() && notset)
-        {
-          Float origin[3];
-          origin[0] = m_bounds.m_ranges[0].min();
-          origin[1] = m_bounds.m_ranges[1].min();
-          origin[2] = m_bounds.m_ranges[2].min();
-          Float normal[3] = {0., 0., -1.};
-          Float xterm = (px - origin[0]) * normal[0];
-          Float yterm = (py - origin[1]) * normal[1];
-          Float zterm = (pz - origin[2]) * normal[2];
-          dist = xterm + yterm + zterm;
-          notset = false;
-        }
-        // zmax
-        if(pz > m_bounds.m_ranges[2].max() && notset)
-        {
-          Float origin[3];
-          origin[0] = m_bounds.m_ranges[0].min();
-          origin[1] = m_bounds.m_ranges[1].min();
-          origin[2] = m_bounds.m_ranges[2].max();
-          Float normal[3] = {0., 0., 1.};
-          Float xterm = (px - origin[0]) * normal[0];
-          Float yterm = (py - origin[1]) * normal[1];
-          Float zterm = (pz - origin[2]) * normal[2];
-          dist = xterm + yterm + zterm;
-          notset = false;
-        }
+        Float origin[3];
+        origin[0] = m_bounds.m_ranges[0].min();
+        origin[1] = m_bounds.m_ranges[1].min();
+        origin[2] = m_bounds.m_ranges[2].min();
+        Float normal[3] = {-1., 0., 0.};
+        Float xterm = (px - origin[0]) * normal[0];
+        Float yterm = (py - origin[1]) * normal[1];
+        Float zterm = (pz - origin[2]) * normal[2];
+        Float newdist = xterm + yterm + zterm;
+        dist = newdist;
+      }
+      // xmax
+      {
+        Float origin[3];
+        origin[0] = m_bounds.m_ranges[0].max();
+        origin[1] = m_bounds.m_ranges[1].min();
+        origin[2] = m_bounds.m_ranges[2].min();
+        Float normal[3] = {1., 0., 0.};
+        Float xterm = (px - origin[0]) * normal[0];
+        Float yterm = (py - origin[1]) * normal[1];
+        Float zterm = (pz - origin[2]) * normal[2];
+        Float newdist = xterm + yterm + zterm;
+        dist = max(dist, newdist);
+      }
+      // ymin
+      {
+        Float origin[3];
+        origin[0] = m_bounds.m_ranges[0].min();
+        origin[1] = m_bounds.m_ranges[1].min();
+        origin[2] = m_bounds.m_ranges[2].min();
+        Float normal[3] = {0., -1., 0.};
+        Float xterm = (px - origin[0]) * normal[0];
+        Float yterm = (py - origin[1]) * normal[1];
+        Float zterm = (pz - origin[2]) * normal[2];
+        Float newdist = xterm + yterm + zterm;
+        dist = max(dist, newdist);
+      }
+      // ymax
+      {
+        Float origin[3];
+        origin[0] = m_bounds.m_ranges[0].min();
+        origin[1] = m_bounds.m_ranges[1].max();
+        origin[2] = m_bounds.m_ranges[2].min();
+        Float normal[3] = {0., 1., 0.};
+        Float xterm = (px - origin[0]) * normal[0];
+        Float yterm = (py - origin[1]) * normal[1];
+        Float zterm = (pz - origin[2]) * normal[2];
+        Float newdist = xterm + yterm + zterm;
+        dist = max(dist, newdist);
+      }
+      // zmin
+      {
+        Float origin[3];
+        origin[0] = m_bounds.m_ranges[0].min();
+        origin[1] = m_bounds.m_ranges[1].min();
+        origin[2] = m_bounds.m_ranges[2].min();
+        Float normal[3] = {0., 0., -1.};
+        Float xterm = (px - origin[0]) * normal[0];
+        Float yterm = (py - origin[1]) * normal[1];
+        Float zterm = (pz - origin[2]) * normal[2];
+        Float newdist = xterm + yterm + zterm;
+        dist = max(dist, newdist);
+      }
+      // zmax
+      {
+        Float origin[3];
+        origin[0] = m_bounds.m_ranges[0].min();
+        origin[1] = m_bounds.m_ranges[1].min();
+        origin[2] = m_bounds.m_ranges[2].max();
+        Float normal[3] = {0., 0., 1.};
+        Float xterm = (px - origin[0]) * normal[0];
+        Float yterm = (py - origin[1]) * normal[1];
+        Float zterm = (pz - origin[2]) * normal[2];
+        Float newdist = xterm + yterm + zterm;
+        dist = max(dist, newdist);
       }
 
       // Save distance.
@@ -517,7 +501,7 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_box_distances(DataSet domain, Float &clip_value, bool invert) const
+  make_box_distances(DataSet domain, Float &clip_value) const
   {
     cout << "!!!! make_box_distances" << endl;
     BoxDistance distcalc(boxbounds);
@@ -529,7 +513,7 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_sphere_distances(DataSet domain, Float &clip_value, bool invert) const
+  make_sphere_distances(DataSet domain, Float &clip_value) const
   {
     SphereDistance distcalc(sphere_center, sphere_radius);
     // Dispatch to various mesh types in SphereDistance::operator()
@@ -540,7 +524,7 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_plane_distances(DataSet domain, Float &clip_value, bool invert, size_t plane_index) const
+  make_plane_distances(DataSet domain, Float &clip_value, size_t plane_index) const
   {
     Float origin[3], normal[3];
     origin[0] = plane_origin[plane_index][0];
@@ -559,7 +543,7 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_multi_plane_distances(DataSet domain, Float &clip_value, bool invert) const
+  make_multi_plane_distances(DataSet domain, Float &clip_value) const
   {
     MultiPlaneDistance distcalc(plane_origin, plane_normal, clip_mode-1);
     // Dispatch to various mesh types in SinglePlaneDistance::operator()
@@ -570,21 +554,21 @@ public:
   }
 
   std::shared_ptr<Field>
-  make_distances(DataSet domain, Float &clip_value, bool invert, bool multipass, size_t pass = 0) const
+  make_distances(DataSet domain, Float &clip_value, bool multipass, size_t pass = 0) const
   {
     std::shared_ptr<Field> f;
     if(clip_mode == 0)
-      f = make_box_distances(domain, clip_value, invert);
+      f = make_box_distances(domain, clip_value);
     else if(clip_mode == 1)
-      f = make_sphere_distances(domain, clip_value, invert);
+      f = make_sphere_distances(domain, clip_value);
     else if(clip_mode == 2)
-      f = make_plane_distances(domain, clip_value, invert, 0);
+      f = make_plane_distances(domain, clip_value, 0);
     else if(clip_mode == 3 || clip_mode == 4) // 2 or 3 planes
     {
       if(multipass)
-        f = make_plane_distances(domain, clip_value, invert, pass);
+        f = make_plane_distances(domain, clip_value, pass);
       else
-        f = make_multi_plane_distances(domain, clip_value, invert);
+        f = make_multi_plane_distances(domain, clip_value);
     }
     return f;
   }
