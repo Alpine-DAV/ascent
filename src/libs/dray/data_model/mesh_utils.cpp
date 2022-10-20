@@ -2,8 +2,6 @@
 // Devil Ray Developers. See the top-level COPYRIGHT file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
-#include <conduit/conduit.hpp>
-
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/subref.hpp>
 #include <dray/data_model/elem_ops.hpp>  // tri/tet dof indexing
