@@ -213,6 +213,52 @@ clip_1_plane(conduit::Node &node, const std::string &name)
   handle_test(std::string("clip_1_plane_inv_") + name, output2);
 }
 
+//-----------------------------------------------------------------------------
+void
+clip_2_plane(conduit::Node &node, const std::string &name)
+{
+  dray::Collection collection;
+  dray::DataSet domain = dray::BlueprintReader::blueprint_to_dray(node);
+  collection.add_domain(domain);
+
+  // Filter.
+  dray::Clip clip;
+  dray::Float origin1[]={0., 0., 0.}, normal1[] = {2., 0., 1.}; // it'll normalize
+  dray::Float origin2[]={-2., 0., 0.}, normal2[] = {1., 0., 0.};
+  clip.Set2PlaneClip(origin1, normal1, origin2, normal2);
+  dray::Collection output = clip.execute(collection);
+  handle_test(std::string("clip_1_plane_") + name, output);
+
+  // Filter again, inverting the selection.
+  clip.SetInvertClip(true);
+  dray::Collection output2 = clip.execute(collection);
+  handle_test(std::string("clip_1_plane_inv_") + name, output2);
+}
+
+//-----------------------------------------------------------------------------
+void
+clip_3_plane(conduit::Node &node, const std::string &name)
+{
+  dray::Collection collection;
+  dray::DataSet domain = dray::BlueprintReader::blueprint_to_dray(node);
+  collection.add_domain(domain);
+
+  // Filter.
+  dray::Clip clip;
+  dray::Float origin1[]={0., 0., 0.}, normal1[] = {2., 0., 1.}; // it'll normalize
+  dray::Float origin2[]={-2., 0., 0.}, normal2[] = {1., 0., 0.};
+  dray::Float origin3[]={0., -1., 0.}, normal3[] = {0., 1., 0.};
+
+  clip.Set3PlaneClip(origin1, normal1, origin2, normal2, origin3, normal3);
+  dray::Collection output = clip.execute(collection);
+  handle_test(std::string("clip_1_plane_") + name, output);
+
+  // Filter again, inverting the selection.
+  clip.SetInvertClip(true);
+  dray::Collection output2 = clip.execute(collection);
+  handle_test(std::string("clip_1_plane_inv_") + name, output2);
+}
+
 #if 0
 //-----------------------------------------------------------------------------
 TEST (dray_clipfield_threshold, unstructured_hex)
@@ -245,7 +291,7 @@ TEST (dray_clip_sphere, unstructured_hex)
 
   clip_sphere(data, "explicit_hexs");
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST (dray_clip_1_plane, unstructured_hex)
 {
@@ -260,4 +306,37 @@ TEST (dray_clip_1_plane, unstructured_hex)
                                              data);
 
   clip_1_plane(data, "explicit_hexs");
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clip_2_plane, unstructured_hex)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             data);
+
+  clip_2_plane(data, "explicit_hexs");
+}
+#endif
+
+//-----------------------------------------------------------------------------
+TEST (dray_clip_3_plane, unstructured_hex)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             data);
+
+  clip_3_plane(data, "explicit_hexs");
 }

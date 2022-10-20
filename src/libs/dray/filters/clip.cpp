@@ -17,11 +17,25 @@
 #include <dray/io/blueprint_low_order.hpp>
 #endif
 
+#include <cstring>
+
 namespace dray
 {
 
 void breakpoint()
 {
+}
+
+inline void
+normalize(Float vec[3])
+{
+  Float mag = sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+  if(mag > 0.)
+  {
+    vec[0] /= mag;
+    vec[1] /= mag;
+    vec[2] /= mag;
+  }
 }
 
 // Make the sphere distance field.
@@ -106,6 +120,7 @@ public:
     m_normal[0] = normal[0];
     m_normal[1] = normal[1];
     m_normal[2] = normal[2];
+    normalize(m_normal);
   }
 
   // NOTE: This method gets instantiated for different mesh types by dispatch.
@@ -130,14 +145,6 @@ public:
     gf.m_values.resize(ndofs);
     DeviceGridFunction<1> dgf(gf);
 
-    Float normal[3];
-    Float nmag = sqrt(m_normal[0]*m_normal[0] +
-                      m_normal[1]*m_normal[1] +
-                      m_normal[2]*m_normal[2]);
-    normal[0] = (nmag != 0.) ? (m_normal[0] / nmag) : m_normal[0];
-    normal[1] = (nmag != 0.) ? (m_normal[1] / nmag) : m_normal[1];
-    normal[2] = (nmag != 0.) ? (m_normal[2] / nmag) : m_normal[2];
-
     // Execute
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
       [=] DRAY_LAMBDA (int32 id)
@@ -149,9 +156,9 @@ public:
       Float px = id_value[0];
       Float py = id_value[1];
       Float pz = id_value[2];
-      Float xterm = (px - m_origin[0]) * normal[0];
-      Float yterm = (py - m_origin[1]) * normal[1];
-      Float zterm = (pz - m_origin[2]) * normal[2];
+      Float xterm = (px - m_origin[0]) * m_normal[0];
+      Float yterm = (py - m_origin[1]) * m_normal[1];
+      Float zterm = (pz - m_origin[2]) * m_normal[2];
       Float dist = xterm + yterm + zterm;
 
       // Save distance.
@@ -171,6 +178,91 @@ public:
   std::shared_ptr<Field> m_output;
   Float m_origin[3];
   Float m_normal[3];
+  bool  m_invert;
+};
+
+// Make the multi plane distance field.
+class MultiPlaneDistance
+{
+public:
+  MultiPlaneDistance(const Float origin[3][3], const Float normal[3][3],
+    int nplanes) : m_output()
+  {
+    memcpy(m_origin, origin, sizeof(Float)*9);
+    memcpy(m_normal, normal, sizeof(Float)*9);
+    normalize(m_normal[0]);
+    normalize(m_normal[1]);
+    normalize(m_normal[2]);
+    m_planes = nplanes;
+  }
+
+  // NOTE: This method gets instantiated for different mesh types by dispatch.
+  template <class MeshType>
+  void operator()(MeshType &mesh)
+  {
+    // Inputs
+    const GridFunction<3> &mesh_gf = mesh.get_dof_data();
+    DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
+    auto ndofs = mesh_gf.m_values.size();
+    cout << "ndofs=" << ndofs << endl;
+    cout << "mesh_gf summary"<< endl;
+    mesh.get_dof_data().m_ctrl_idx.summary();
+    mesh.get_dof_data().m_values.summary();
+
+    // Outputs
+    GridFunction<1> gf;
+    gf.m_el_dofs = mesh_gf.m_el_dofs;
+    gf.m_size_el = mesh_gf.m_size_el;
+    gf.m_size_ctrl = mesh_gf.m_size_ctrl;
+    gf.m_ctrl_idx = mesh_gf.m_ctrl_idx;
+    gf.m_values.resize(ndofs);
+    DeviceGridFunction<1> dgf(gf);
+
+    // Execute
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
+      [=] DRAY_LAMBDA (int32 id)
+    {
+      // Get id'th coord value in device memory.
+      auto id_value = mesh_dgf.m_values_ptr[id];
+
+      // Compute distance from planes and determine whether to keep the point.
+      Float px = id_value[0];
+      Float py = id_value[1];
+      Float pz = id_value[2];
+      Float pdist;
+      for(int p = 0; p < m_planes; p++)
+      {
+        Float xterm = (px - m_origin[p][0]) * m_normal[p][0];
+        Float yterm = (py - m_origin[p][1]) * m_normal[p][1];
+        Float zterm = (pz - m_origin[p][2]) * m_normal[p][2];
+        Float dist = xterm + yterm + zterm;
+        if(p == 0)
+          pdist = dist;
+        else
+        {
+          if(pdist >= 0.)
+            pdist = dist;
+        }
+      }
+
+      // Save distance.
+      dgf.m_values_ptr[id][0] = pdist;
+    });
+
+    // Wrap the new GridFunction as a Field.
+    using MeshElemType = typename MeshType::ElementType;
+    using FieldElemType = Element<MeshElemType::get_dim(),
+                                  1,
+                                  MeshElemType::get_etype(),
+                                  MeshElemType::get_P()>;
+    m_output = std::make_shared<UnstructuredField<FieldElemType>>(
+                 gf, mesh.order());
+  }
+
+  std::shared_ptr<Field> m_output;
+  Float m_origin[3][3];
+  Float m_normal[3][3];
+  int   m_planes;
 };
 
 class Clip::InternalsType
@@ -314,9 +406,11 @@ public:
   std::shared_ptr<Field>
   make_multi_plane_distances(DataSet domain, Float &clip_value, bool invert) const
   {
-    // TODO: Make a field that combines plane distances for all planes,
-    //       depending on clip_mode.
-    std::shared_ptr<Field> retval;
+    MultiPlaneDistance distcalc(plane_origin, plane_normal, clip_mode-1);
+    // Dispatch to various mesh types in SinglePlaneDistance::operator()
+    dispatch_3d(domain.mesh(), distcalc);
+    std::shared_ptr<Field> retval = distcalc.m_output;
+    clip_value = 0.;
     return retval;
   }
 
@@ -444,8 +538,8 @@ Clip::execute(Collection &collection)
         dray::BlueprintReader::save_blueprint(passname, n);
 #endif
 
-        // Do the clipping pass on this single domain. It keeps everything smaller
-        // than clip_value.
+        // Do the clipping pass on this single domain. By default, the filter
+        // keeps everything smaller than clip_value.
         ClipField clipper;
         clipper.set_clip_value(clip_value);
         clipper.set_field(field_name);
