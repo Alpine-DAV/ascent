@@ -2,6 +2,7 @@
 // Devil Ray Developers. See the top-level COPYRIGHT file for details.
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
+#include <conduit/conduit.hpp>
 
 #include <dray/data_model/element.hpp>
 #include <dray/data_model/subref.hpp>
@@ -757,16 +758,16 @@ struct GetDofDataFunctor
   GetDofDataFunctor() = default;
   ~GetDofDataFunctor() = default;
 
-  const GridFunction<3> *output() { return m_output; }
+  GridFunction<3> output() { return m_output; }
 
   template<typename MeshType>
   void operator()(MeshType &mesh)
   {
-    const GridFunction<3> &temp = mesh.get_dof_data();
-    m_output = &temp;
+    GridFunction<3> temp = mesh.get_dof_data();
+    m_output = temp;
   }
 
-  const GridFunction<3> *m_output;
+  GridFunction<3> m_output;
 };
 
 GridFunction<3>
@@ -774,11 +775,8 @@ get_dof_data(Mesh *mesh)
 {
   GetDofDataFunctor func;
   dispatch(mesh, func);
-  if(!func.output())
-  {
-    DRAY_ERROR("Could not extract dof data from the given mesh, it may not exist.")
-  }
-  return *func.output();
+
+  return func.output();
 }
 
 } // namespace detail
