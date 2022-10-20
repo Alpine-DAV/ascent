@@ -37,6 +37,18 @@ if(NOT ASCENT_FOUND)
     # advertise if fortran support is enabled
     set(ASCENT_FORTRAN_ENABLED @ENABLE_FORTRAN@)
 
+    # advertise if camp support is enabled
+    set(ASCENT_CAMP_ENABLED @CAMP_FOUND@)
+    set(ASCENT_CAMP_DIR @CAMP_DIR_ORIG@)
+
+    # advertise if umpire support is enabled
+    set(ASCENT_UMPIRE_ENABLED @UMPIRE_FOUND@)
+    set(ASCENT_UMPIRE_DIR @UMPIRE_DIR_ORIG@)
+
+    # advertise if raja support is enabled
+    set(ASCENT_RAJA_ENABLED @RAJA_FOUND@)
+    set(ASCENT_RAJA_DIR @RAJA_DIR_ORIG@)
+
     # advertise if apcomp is enabled
     set(ASCENT_APCOMP_ENABLED @ENABLE_APCOMP@)
 
