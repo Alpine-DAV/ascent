@@ -259,6 +259,21 @@ struct MarchingCubesFunctor
 
   template<typename FEType>
   void operator()(UnstructuredField<FEType> &field);
+
+  template<typename FEType>
+  static void calculate_triangle_cases(const DeviceField<FEType> &dfield,
+                                       const RAJA::RangeSegment &elem_range,
+                                       const int8 *lookup_ptr,
+                                       const Float isovalue,
+                                       uint32 *cut_info_ptr,
+                                       uint32 *num_triangles_ptr);
+
+  template<typename FEType>
+  static void compute_interpolant_weights(const DeviceField<FEType> &dfield,
+                                          const RAJA::RangeSegment &edge_range,
+                                          const uint64 *unique_edges_ptr,
+                                          const Float isovalue,
+                                          Float *weights_ptr);
 };
 
 MarchingCubesFunctor::MarchingCubesFunctor(DataSet &in,
@@ -277,13 +292,11 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   static_assert(FEType::get_P() == Order::Linear);
 
   // Grab some useful information about the field
-  constexpr OrderPolicy<Order::Linear> field_order_p;
-  constexpr auto shape3d = adapt_get_shape<FEType>();
-  constexpr auto ndofs = eattr::get_num_dofs(shape3d, field_order_p);
+
   const int nelem = field.get_num_elem();
 
   // Get the proper lookup table for the current shape
-  const Array<int8> lookup_array = detail::get_lookup_table(shape3d);
+  const Array<int8> lookup_array = detail::get_lookup_table(adapt_get_shape<FEType>());
   const int8 *lookup_ptr = lookup_array.get_device_ptr_const();
 
   Array<uint32> cut_info;
@@ -297,21 +310,8 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   // Determine triangle cases and number of triangles
   DeviceField<FEType> dfield(field);
   const auto elem_range = RAJA::RangeSegment(0, nelem);
-  // TODO: Debug CUDA failure
-  // terminate called after throwing an instance of 'std::runtime_error'
-  //   what():  campCudaErrchk(cudaStreamSynchronize(stream)) an illegal memory access was encountered /home/cdl/Programs/camp-develop/include/camp/resource/cuda.hpp:172
-  RAJA::forall<for_policy>(elem_range,
-    [=] DRAY_LAMBDA (int eid) {
-      const ReadDofPtr<Vec<Float, 1>> rdp = dfield.get_elem(eid).read_dof_ptr();
-      uint32 info = 0u;
-      for(int i = 0; i < ndofs; i++)
-      {
-        info |= (rdp[i][0] > m_isovalue) << i;
-      }
-      cut_info_ptr[eid] = info;
-      num_triangles_ptr[eid] = detail::get_num_triangles(shape3d, lookup_ptr, info);
-    });
-  DRAY_ERROR_CHECK();
+  MarchingCubesFunctor::calculate_triangle_cases(dfield, elem_range, lookup_ptr, m_isovalue, cut_info_ptr, num_triangles_ptr);
+
   Array<uint32> triangle_offsets_array = array_exc_scan_plus(num_triangles_array, m_total_triangles);
   const uint32 *triangle_offsets_ptr = triangle_offsets_array.get_device_ptr_const();
 
@@ -325,6 +325,7 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   RAJA::forall<for_policy>(elem_range,
     [=] DRAY_LAMBDA (int eid) {
       DEBUG_PRINT("\n  [" << eid << "]: " << num_triangles_ptr[eid] << " " << cut_info_ptr[eid]);
+      constexpr auto shape3d = adapt_get_shape<FEType>();
       const ReadDofPtr<Vec<Float, 1>> rdp = dfield.get_elem(eid).read_dof_ptr();
       const int8 *edges = detail::get_triangle_edges(shape3d, lookup_ptr, cut_info_ptr[eid]);
       const int32 *ctrl_idx_ptr = rdp.m_offset_ptr;
@@ -359,23 +360,8 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   // Compute interpolant weights
   m_weights_array.resize(m_unique_edges_array.size());
   Float *weights_ptr = m_weights_array.get_device_ptr();
-  // We don't want to use the ReadDofPtr object because we already have the indicies we want
-  const Vec<Float, 1> *field_ptr = dfield.get_elem(0).read_dof_ptr().m_dof_ptr;
   const RAJA::RangeSegment edge_range(0, m_unique_edges_array.size());
-  DEBUG_PRINT("Compute interpolant weights:");
-  RAJA::forall<for_policy>(edge_range,
-    [=] DRAY_LAMBDA (int idx) {
-      const Vec<uint32, 2> edge_def = unpack_ids(unique_edges_ptr[idx]);
-      const uint32 e0 = edge_def[0];
-      const uint32 e1 = edge_def[1];
-      const Float v0 = field_ptr[e0][0];
-      const Float v1 = field_ptr[e1][0];
-      const Float w = (m_isovalue - v0) / (v1 - v0);
-      DEBUG_PRINT("\n  " << unique_edges_ptr[idx] << " -> (" << e0 << "," << e1 << ") = (" << v0 << "," << v1 << ") = " << w);
-      weights_ptr[idx] = w;
-    });
-  DRAY_ERROR_CHECK();
-  DEBUG_PRINT(std::endl);
+  MarchingCubesFunctor::compute_interpolant_weights(dfield, edge_range, unique_edges_ptr, m_isovalue, weights_ptr);
 }
 
 DataSet
@@ -414,6 +400,58 @@ MarchingCubesFunctor::execute(Field *in_field)
   }
 
   return m_output;
+}
+
+template<typename FEType>
+void
+MarchingCubesFunctor::calculate_triangle_cases(const DeviceField<FEType> &dfield,
+                                               const RAJA::RangeSegment &elem_range,
+                                               const int8 *lookup_ptr,
+                                               const Float isovalue,
+                                               uint32 *cut_info_ptr,
+                                               uint32 *num_triangles_ptr)
+{
+  RAJA::forall<for_policy>(elem_range,
+    [=] DRAY_LAMBDA (int eid) {
+      constexpr OrderPolicy<Order::Linear> field_order_p;
+      constexpr auto shape3d = adapt_get_shape<FEType>();
+      constexpr auto ndofs = eattr::get_num_dofs(shape3d, field_order_p);
+      const ReadDofPtr<Vec<Float, 1>> rdp = dfield.get_elem(eid).read_dof_ptr();
+      uint32 info = 0u;
+      for(int i = 0; i < ndofs; i++)
+      {
+        info |= (rdp[i][0] > isovalue) << i;
+      }
+      cut_info_ptr[eid] = info;
+      num_triangles_ptr[eid] = detail::get_num_triangles(shape3d, lookup_ptr, info);
+    });
+  DRAY_ERROR_CHECK();
+}
+
+template<typename FEType>
+void
+MarchingCubesFunctor::compute_interpolant_weights(const DeviceField<FEType> &dfield,
+                                                  const RAJA::RangeSegment &edge_range,
+                                                  const uint64 *unique_edges_ptr,
+                                                  const Float isovalue,
+                                                  Float *weights_ptr)
+{
+  DEBUG_PRINT("Compute interpolant weights:");
+  // We don't want to use the ReadDofPtr object because we already have the indicies we want
+  const Vec<Float, 1> *field_ptr = dfield.get_elem(0).read_dof_ptr().m_dof_ptr;
+  RAJA::forall<for_policy>(edge_range,
+    [=] DRAY_LAMBDA (int idx) {
+      const Vec<uint32, 2> edge_def = unpack_ids(unique_edges_ptr[idx]);
+      const uint32 e0 = edge_def[0];
+      const uint32 e1 = edge_def[1];
+      const Float v0 = field_ptr[e0][0];
+      const Float v1 = field_ptr[e1][0];
+      const Float w = (isovalue - v0) / (v1 - v0);
+      DEBUG_PRINT("\n  " << unique_edges_ptr[idx] << " -> (" << e0 << "," << e1 << ") = (" << v0 << "," << v1 << ") = " << w);
+      weights_ptr[idx] = w;
+    });
+  DRAY_ERROR_CHECK();
+  DEBUG_PRINT(std::endl);
 }
 
 }//anonymous namespace
