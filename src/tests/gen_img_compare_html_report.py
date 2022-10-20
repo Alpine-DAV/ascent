@@ -7,6 +7,7 @@
 import json
 import glob
 import os
+import shutil
 
 from os.path import join as pjoin
 
@@ -16,6 +17,9 @@ def output_dir():
 def file_name(fpath):
     # use full path
     return fpath;
+
+def file_name_only(fpath):
+    return os.path.basename(fpath)
 
 def find_img_compare_results():
     res = glob.glob(pjoin(output_dir(),"*_img_compare_results.json"))
@@ -47,11 +51,25 @@ def gen_html_report():
                 ofile.write("{0} = MISSING <br>\n".format(k))
         ofile.write("</td>\n")
         if v["test_file"]["exists"] == "true":
-            ofile.write(gen_image_table_entry(file_name(v["test_file"]["path"])))
+            # copy all things we want in the report to a standard place
+            src_file = file_name(v["test_file"]["path"])
+            dest_dir = pjoin("_output/_result_images")
+            if not os.path.isdir(dest_dir):
+                os.mkdir(dest_dir)
+            dest_file = pjoin(dest_dir,file_name_only(src_file))
+            shutil.copy(src_file,dest_file)
+            ofile.write(gen_image_table_entry(pjoin("_result_images",file_name_only(src_file))))
         else:
             ofile.write("<td> TEST IMAGE MISSING!</td>\n")
         if v["baseline_file"]["exists"] == "true":
-            ofile.write(gen_image_table_entry(file_name(v["baseline_file"]["path"])))
+            # copy all things we want in the report to a standard place
+            src_file = file_name(v["baseline_file"]["path"])
+            dest_dir = pjoin("_output/_baseline_images")
+            if not os.path.isdir(dest_dir):
+                os.mkdir(dest_dir)
+            dest_file = pjoin(dest_dir,file_name_only(src_file))
+            shutil.copy(src_file,dest_file)
+            ofile.write(gen_image_table_entry(pjoin("_baseline_images",file_name_only(src_file))))
         else:
             ofile.write("<td> BASELINE IMAGE MISSING!</td>\n")
         if "diff_image" in v.keys():

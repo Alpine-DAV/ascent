@@ -1,0 +1,14 @@
+#An example of rendering with no world annotations.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+      renders: 
+        r1: 
+          image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_render_3d_no_world_annotations"
+          world_annotations: "false"

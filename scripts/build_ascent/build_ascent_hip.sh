@@ -82,7 +82,7 @@ fi # build_hdf5
 ################
 # Conduit
 ################
-conduit_version=v0.8.3
+conduit_version=v0.8.4
 conduit_src_dir=${root_dir}/conduit-${conduit_version}/src
 conduit_build_dir=${root_dir}/build/conduit-${conduit_version}/
 conduit_install_dir=${root_dir}/install/conduit-${conduit_version}/
@@ -156,7 +156,7 @@ fi # build_vtkm
 ################
 # VTK-m
 ################
-vtkm_version=v1.8.0
+vtkm_version=v1.9.0
 vtkm_src_dir=${root_dir}/vtk-m-${vtkm_version}
 vtkm_build_dir=${root_dir}/build/vtk-m-${vtkm_version}
 vtkm_install_dir=${root_dir}/install/vtk-m-${vtkm_version}/
@@ -201,7 +201,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=2022.03.0
+camp_version=2022.03.2
 camp_src_dir=${root_dir}/camp-${camp_version}
 camp_build_dir=${root_dir}/build/camp-${camp_version}
 camp_install_dir=${root_dir}/install/camp-${camp_version}/

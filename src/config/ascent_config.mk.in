@@ -104,7 +104,7 @@ ASCENT_LINK_RPATH += $(if $(ASCENT_GENTEN_DIR), $(ASCENT_GENTEN_RPATH_FLAGS_VALU
 
 #### CUDA
 ifeq ($(ASCENT_CUDA_LIBS),)
-   # not set, do not include config.mk
+   # not set, cuda flags will be blank
 else
     ASCENT_CUDA_LIB_FLAGS = $(ASCENT_CUDA_LIBS)
 endif
@@ -122,75 +122,6 @@ ASCENT_CONDUIT_LIB_FLAGS = $(CONDUIT_LIB_FLAGS)
 ASCENT_CONDUIT_MPI_LIB_FLAGS = $(CONDUIT_MPI_LIB_FLAGS)
 
 ##########
-# VTKH
-##########
-
-# only provide lib flags if VTK-h support is enabled
-ifeq ($(ASCENT_VTKH_DIR),)
-   # not set, do not include config.mk
-else
-    # If using VTKH without mpi
-    ASCENT_VTKH_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
-                          -lvtkh_rendering \
-                          -lvtkh_compositing \
-                          -lvtkh_filters \
-                          -lvtkh_core \
-                          -lvtkh_utils \
-                          -lvtkh_lodepng
-
-    # If using VTKH with mpi
-    ASCENT_VTKH_MPI_LIB_FLAGS=-L $(ASCENT_VTKH_DIR)/lib \
-                              -lvtkh_rendering_mpi \
-                              -lvtkh_compositing_mpi \
-                              -lvtkh_filters_mpi \
-                              -lvtkh_core_mpi \
-                              -lvtkh_lodepng \
-                              -lvtkh_utils_mpi
-endif
-
-##########
-#VTKM
-##########
-
-# only provide lib flags if VTK-m support is enabled
-ifeq ($(ASCENT_VTKM_DIR),)
-   # not set, do not include in config.mk
-else
-    ASCENT_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
-                            -lvtkm_rendering-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_clean_grid-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_contour-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_connected_components-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_density_estimate-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_entity_extraction-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_field_conversion-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_field_transform-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_geometry_refinement-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_image_processing-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_mesh_info-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_vector_analysis-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_extra-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_filter_core-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_source-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_io-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_lodepng-$(ASCENT_VTKM_VERSION) \
-                            -lvtkm_cont-$(ASCENT_VTKM_VERSION) \
-                            -lvtkmdiympi_nompi
-
-# vtk-m cuda extras
-ifeq ($(ASCENT_CUDA_LIBS),)
-   # not set, do not include config.mk
-else
-    ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
-    ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
-endif
-
-endif
-
-
-
-##########
 # MFEM
 ##########
 # Include make vars from the mfem config.mk file
@@ -198,17 +129,6 @@ ifeq ($(ASCENT_MFEM_DIR),)
    # not set, do not include config.mk
 else
    include $(ASCENT_MFEM_DIR)/share/mfem/config.mk
-endif
-
-##########
-# DRay (EXTERNAL)
-##########
-# Include make vars from the dray config.mk file
-ifeq ($(ASCENT_DRAY_DIR),)
-   # not set, do not include config
-else
-   include $(ASCENT_DRAY_DIR)/share/dray/dray_config.mk
-   ASCENT_LINK_RPATH += $(DRAY_LINK_RPATH)
 endif
 
 # MFEM isn't in the interface, so we don't need include flags
@@ -219,7 +139,6 @@ ASCENT_MFEM_LIB_FLAGS = $(if $(ASCENT_MFEM_DIR),-L $(ASCENT_MFEM_DIR)/lib -lmfem
 #
 # If mfem was built with MPI support, add ASCENT_MPI_LIBS to avoid errors with static serial builds
 ASCENT_MFEM_LIB_FLAGS += $(if $(MFEM_USE_MPI), $(ASCENT_MPI_LIBS) )
-
 
 ##########
 # Dray (builtin)
@@ -246,6 +165,15 @@ ifeq ($(ASCENT_VTKH_ENABLED),TRUE)
        ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
        ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
    endif  
+endif
+
+##########
+# Rover (builtin)
+##########
+# (builtin lib installed by ascent, depends on VTK-h)
+ifeq ($(ASCENT_VTKH_ENABLED),TRUE)
+   ASCENT_ROVER_LIB_FLAGS = -lrover
+   ASCENT_ROVER_MPI_LIB_FLAGS = -lrover_mpi 
 endif
 
 ##########
@@ -307,7 +235,6 @@ ASCENT_GENTEN_LIB_FLAGS = $(if $(ASCENT_GENTEN_DIR),-L $(ASCENT_GENTEN_DIR)/lib 
 # -lkokkoscore
 
 
-
 #######################
 # Ascent Include Flags
 #######################
@@ -327,7 +254,7 @@ ASCENT_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT) \
                    -lascent \
                    -lascent_flow \
                    -lascent_lodepng \
-                   -lrover $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS)  $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                   $(ASCENT_ROVER_LIB_FLAGS) $(DRAY_LIB_FLAGS) $(ASCENT_VTKH_LIB_FLAGS)  $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_LIB_FLAGS) $(ASCENT_CONDUIT_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda with a non-GPU sim
 ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
@@ -335,7 +262,7 @@ ASCENT_MPI_LIB_FLAGS = $(ASCENT_DEVICE_OBJECT_MPI) \
                        -lascent_mpi \
                        -lascent_flow \
                        -lascent_lodepng \
-                       -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS)  $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_MPI_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                       $(ASCENT_ROVER_MPI_LIB_FLAGS) $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS)  $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_MPI_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
 
 # if using Ascent with mpi and/or cuda where the linking code
 # performs a device link (resolving all cuda symbols)
@@ -343,4 +270,4 @@ ASCENT_MPI_CUDA_LIB_FLAGS = -L $(ASCENT_DIR)/lib \
                             -lascent_mpi \
                             -lascent_flow \
                             -lascent_lodepng \
-                            -lrover_mpi $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_MPI_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)
+                            $(ASCENT_ROVER_MPI_LIB_FLAGS) $(DRAY_MPI_LIB_FLAGS) $(ASCENT_VTKH_MPI_LIB_FLAGS) $(ASCENT_VTKM_LIB_FLAGS) $(VTKH_MPI_LIB_FLAGS) $(ASCENT_CONDUIT_MPI_LIB_FLAGS) $(ASCENT_MFEM_LIB_FLAGS) $(ASCENT_OCCA_LIB_FLAGS) $(ASCENT_GENTEN_LIB_FLAGS) $(ASCENT_FIDES_LIB_FLAGS) $(ASCENT_ADIOS2_LIB_FLAGS) $(ASCENT_PMT_LIB_FLAGS) $(ASCENT_BABELFLOW_LIB_FLAGS) $(ASCENT_UMPIRE_LIB_FLAGS) $(ASCENT_PYTHON_LIBS) $(ASCENT_OPENMP_LINK_FLAGS) $(ASCENT_CUDA_LIB_FLAGS)

@@ -34,6 +34,7 @@ set(ASCENT_HDF5_ENABLED ${CONDUIT_RELAY_HDF5_ENABLED})
 set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
 set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
 set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
+set(ASCENT_ADIOS2_ENABLED ${ADIOS2_FOUND})
 set(ASCENT_FIDES_ENABLED ${FIDES_FOUND})
 set(ASCENT_GENTEN_ENABLED ${GENTEN_FOUND})
 set(ASCENT_KOKKOS_ENABLED ${KOKKOS_FOUND})
@@ -352,7 +353,9 @@ if (ENABLE_SERIAL)
                     HEADERS     ${ascent_headers}
                     DEPENDS_ON  ${ascent_thirdparty_libs})
 
-    set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
 
     # TODO move to header ...
@@ -407,28 +410,40 @@ if (ENABLE_SERIAL)
                       vtkh_lodepng)
         endif()
 
+        # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
                     vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
-                    vtkm_filter_core
                     vtkm_filter_clean_grid
                     vtkm_filter_contour
+                    vtkm_filter_core
                     vtkm_filter_connected_components
                     vtkm_filter_density_estimate
                     vtkm_filter_entity_extraction
                     vtkm_filter_field_conversion
                     vtkm_filter_field_transform
+                    vtkm_filter_flow
                     vtkm_filter_geometry_refinement
                     vtkm_filter_image_processing
                     vtkm_filter_mesh_info
+                    vtkm_filter_multi_block
+                    vtkm_filter_resampling
+                    vtkm_filter_scalar_topology
                     vtkm_filter_vector_analysis
-                    vtkm_filter_extra
+                    vtkm_filter_zfp
                     vtkm_worklet
                     vtkm_source
                     vtkm_cont
-                    vtkm_lodepng
                     )
+
+        if(TARGET vtkmdiympi_nompi)
+            list(APPEND imported_targets_to_link vtkmdiympi_nompi)
+        endif()
+
+        if(TARGET vtkmdiympi)
+            list(APPEND imported_targets_to_link vtkmdiympi)
+        endif()
 
         if(UMPIRE_FOUND)
             list(APPEND imported_targets_to_link umpire)
@@ -522,7 +537,9 @@ if(MPI_FOUND)
         HEADERS     ${ascent_headers} ${ascent_mpi_headers}
         DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
 
-    set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
 
     if(ENABLE_LOGGING)
@@ -575,27 +592,32 @@ if(MPI_FOUND)
                       vtkh_lodepng)
       endif()
 
+      # updated for vtkm 1.9
       list(APPEND imported_targets_to_link
-                  vtkm_io
-                  vtkm_rendering
-                  vtkm_filter_core
-                  vtkm_filter_clean_grid
-                  vtkm_filter_contour
-                  vtkm_filter_connected_components
-                  vtkm_filter_density_estimate
-                  vtkm_filter_entity_extraction
-                  vtkm_filter_field_conversion
-                  vtkm_filter_field_transform
-                  vtkm_filter_geometry_refinement
-                  vtkm_filter_image_processing
-                  vtkm_filter_mesh_info
-                  vtkm_filter_vector_analysis
-                  vtkm_filter_extra
-                  vtkm_worklet
-                  vtkm_source
-                  vtkm_cont
-                  vtkm_lodepng
-                  )
+                    vtkmdiympi_nompi
+                    vtkm_io
+                    vtkm_rendering
+                    vtkm_filter_clean_grid
+                    vtkm_filter_contour
+                    vtkm_filter_core
+                    vtkm_filter_connected_components
+                    vtkm_filter_density_estimate
+                    vtkm_filter_entity_extraction
+                    vtkm_filter_field_conversion
+                    vtkm_filter_field_transform
+                    vtkm_filter_flow
+                    vtkm_filter_geometry_refinement
+                    vtkm_filter_image_processing
+                    vtkm_filter_mesh_info
+                    vtkm_filter_multi_block
+                    vtkm_filter_resampling
+                    vtkm_filter_scalar_topology
+                    vtkm_filter_vector_analysis
+                    vtkm_filter_zfp
+                    vtkm_worklet
+                    vtkm_source
+                    vtkm_cont
+                    )
 
         if(TARGET vtkmdiympi_nompi)
             list(APPEND imported_targets_to_link vtkmdiympi_nompi)

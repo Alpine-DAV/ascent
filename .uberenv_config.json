@@ -6,10 +6,12 @@
 "spack_configs_path": "scripts/uberenv_configs/spack_configs/configs",
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_url": "https://github.com/spack/spack",
+"spack_commit": "6983d520fa64d8c7343dcc627197b0e6c621d1a6",
 "spack_branch": "develop",
 "spack_activate" : { "py-numpy"  : ["+python"],
                      "py-mpi4py" : ["+python", "+mpi"],
                      "conduit"   : ["+python"],
+                     "py-pip" : ["+python"],
                      "py-sphinx" : ["+python", "+doc"],
                      "py-sphinx-rtd-theme": ["+python","+doc"] }
 }

@@ -463,18 +463,18 @@ Building Ascent Dependencies Manually
 
 In some environments, a spack build of Ascent's dependencies can fail or a user may prefer to build the dependencies manually.
 
-Here is a script that demonstrates how to build Ascent and its main dependencies without device support:
+Here is a `script <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_ that demonstrates how to build Ascent and its main dependencies without device support:
 
 .. literalinclude:: ../../../scripts/build_ascent/build_ascent.sh
    :language: bash
 
 
-Here is a script that shows how to build Ascent and its main dependencies with ROCm/HIP device support:
+Here is a `script <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_hip.sh>`_ that shows how to build Ascent and its main dependencies with ROCm/HIP device support:
 
 .. literalinclude:: ../../../scripts/build_ascent/build_ascent_hip.sh
    :language: bash
 
-Here is a script that shows how to build Ascent and its main dependencies with CUDA device support:
+Here is a `script <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_cuda.sh>`_ that shows how to build Ascent and its main dependencies with CUDA device support:
 
 .. literalinclude:: ../../../scripts/build_ascent/build_ascent_cuda.sh
    :language: bash

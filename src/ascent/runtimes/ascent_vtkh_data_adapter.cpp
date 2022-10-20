@@ -486,6 +486,12 @@ void VTKmCellShape(const std::string shape_type,
   }
 }
 
+template<typename T>
+bool allEqual(std::vector<T> const &v) 
+{
+  return std::adjacent_find(v.begin(), v.end(), std::not_equal_to<T>()) == v.end();
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end detail:: --
@@ -503,11 +509,15 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     // different vtkh data sets
 
     const int num_domains = n.number_of_children();
+//    if(num_domains == 0)
+//      return nullptr;
 
     VTKHCollection *res = new VTKHCollection();
     std::map<std::string, vtkh::DataSet> datasets;
     vtkm::UInt64 cycle = 0;
     double time = 0;
+    std::vector<vtkm::UInt64> allCycles;
+    std::vector<double> allTimes;
 
     for(int i = 0; i < num_domains; ++i)
     {
@@ -524,13 +534,15 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       if(dom.has_path("state/cycle"))
       {
         cycle = dom["state/cycle"].to_uint64();
+	allCycles.push_back(cycle);
       }
 
       if(dom.has_path("state/time"))
       {
         time = dom["state/time"].to_float64();
+	allTimes.push_back(time);
       }
-
+      
       for(int t = 0; t < topo_names.size(); ++t)
       {
         const std::string topo_name = topo_names[t];
@@ -540,6 +552,22 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       }
 
     }
+
+    //check to make sure there is data to grab
+    if(num_domains > 0)
+    {
+      //time and cycle should be the same for all domains
+      //if that's the case grab a topo and add the info
+      const conduit::Node &dom = n.child(0);
+      const std::vector<std::string> topo_names  = dom["topologies"].child_names();
+      const std::string topo_name = topo_names[0];
+
+      if(allCycles.size() != 0 && detail::allEqual(allCycles))
+        datasets[topo_name].SetCycle(allCycles[0]);
+      if(allTimes.size() != 0 && detail::allEqual(allTimes))
+        datasets[topo_name].SetTime(allTimes[0]);
+    }
+
 
     for(auto dset_it : datasets)
     {

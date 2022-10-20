@@ -248,6 +248,11 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("occa+cuda~openmp", when="+occa+cuda~openmp")
 
     #############################
+    # adios2
+    #############################
+    depends_on("adios2", when="+adios2")
+
+    #############################
     # fides
     #############################
     depends_on("fides", when="+fides")
@@ -630,6 +635,9 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
         if "+mfem" in spec:
             cfg.write("# mfem from spack \n")
             cfg.write(cmake_cache_entry("MFEM_DIR", spec['mfem'].prefix))
+            if "zlib" in spec:
+                # MFEM depends on zlib
+                cfg.write(cmake_cache_entry("ZLIB_DIR", spec["zlib"].prefix))
         else:
             cfg.write("# mfem not built by spack \n")
 

@@ -29,4 +29,10 @@ cd alpinedav_ubuntu_18.04_cuda_11.4.0_devel_tpls
 ./build.sh
 cd ..
 
+# ubuntu 20.04 rocm 5.1.3 tpls
+echo "[ubuntu 20.04 rocm 5.1.3 tpls]"
+cd alpinedav_ubuntu_20.04_rocm_5.1.3_devel_tpls
+./build.sh
+cd ..
+
 echo "[TPL CONTAINERS BUILDS COMPLETE]"

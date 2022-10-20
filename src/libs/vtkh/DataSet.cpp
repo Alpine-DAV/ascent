@@ -629,8 +629,20 @@ DataSet::GetCycle() const
   return m_cycle;
 }
 
+void
+DataSet::SetTime(const double time)
+{
+  m_time = time;
+}
+
+double
+DataSet::GetTime() const
+{
+  return m_time;
+}
+
 DataSet::DataSet()
-  : m_cycle(0)
+  : m_cycle(0), m_time(0)
 {
 }
 
@@ -754,7 +766,7 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
         {
           assoc_id = 0;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::WholeMesh)
+        else if ( local_assoc == vtkm::cont::Field::Association::WholeDataSet)
         {
           assoc_id = 1;
         }
@@ -817,7 +829,7 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
   }
   else if ( assoc_id == 1)
   {
-    assoc = vtkm::cont::Field::Association::WholeMesh;
+    assoc = vtkm::cont::Field::Association::WholeDataSet;
   }
   else if ( assoc_id == 2)
   {
