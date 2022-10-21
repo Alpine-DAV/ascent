@@ -17,7 +17,7 @@
 #include <dray/filters/clip.hpp>
 #include <string>
 
-int EXAMPLE_MESH_SIDE_DIM = 20;
+int EXAMPLE_MESH_SIDE_DIM = 3;
 
 #define DEBUG_TEST
 #define GENERATE_BASELINES

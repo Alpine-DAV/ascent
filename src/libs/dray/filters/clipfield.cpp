@@ -7,6 +7,14 @@
 #include <dray/error_check.hpp>
 #include <RAJA/RAJA.hpp>
 
+#include <conduit/conduit.hpp>
+#include <conduit/conduit_relay.hpp>
+
+#define PRINT_CASES
+
+void breakpoint()
+{
+}
 
 namespace dray
 {
@@ -166,6 +174,8 @@ THEN WITH THE POINT BLENDING ARRAY, WE CAN BLEND COORDS AND FIELDS
 #define P7     7
 
 // Edges of original cell (up to 12, for the hex)
+// These are also points as an edge like EA is a point in between
+// 2 original points.
 // Note: we assume these values are contiguous and monotonic.
 #define EA     20
 #define EB     21
@@ -282,12 +292,14 @@ struct ClipFieldLinear
 
     // Figure out which elements to keep based on the input field.
     ScalarField distance = create_distance_field(field);
+    cout << "Computed distance field." << endl;
 
     // Load the mesh-appropriate lut into arrays.
     Array<int32> lut_nshapes, lut_offset;
     Array<unsigned char> lut_shapes;
     load_lookups(mesh, lut_nshapes, lut_offset, lut_shapes);
-#if 1
+    cout << "Loaded lookup arrays." << endl;
+
     auto distance_gf = distance.get_dof_data();
     int32 nelem = distance_gf.get_num_elem(); // number of elements in gf.
     auto el_dofs = distance_gf.m_el_dofs;
@@ -308,9 +320,11 @@ struct ClipFieldLinear
     auto blendGroups_ptr = blendGroups.get_device_ptr();
     auto blendGroupLen_ptr = blendGroupLen.get_device_ptr();
 
+    // ----------------------------------------------------------------------
     //
     // Step 1: iterate over cells to determine sizes of outputs.
     //
+    // ----------------------------------------------------------------------
     RAJA::ReduceSum<reduce_policy, int> fragment_sum(0);
     RAJA::ReduceSum<reduce_policy, int> blendGroups_sum(0);
     RAJA::ReduceSum<reduce_policy, int> blendGroupLen_sum(0);
@@ -332,8 +346,7 @@ struct ClipFieldLinear
             clipcase |= (1 << nidx);
       }
 
-      // Iterate over the shapes and determine how many points and
-      // cell fragments we'll make.
+      // Get the shapes for this clip case.
       unsigned char *shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
 
       // The number of tets (cell fragments) produced for the case. We
@@ -443,7 +456,10 @@ struct ClipFieldLinear
           thisBlendGroups++;
         }
       }
-
+#if 0
+      // Print blend group information for this element.
+      cout << "(" << thisBlendGroups << ", " << thisblendGroupLen << ", " << thisFragments << ")";
+#endif
       // Save the results.
       blendGroups_ptr[elid] = thisBlendGroups;
       blendGroupLen_ptr[elid] = thisblendGroupLen;
@@ -455,9 +471,30 @@ struct ClipFieldLinear
       blendGroupLen_sum += thisblendGroupLen;
     });
     DRAY_ERROR_CHECK();
+#if 1
+    // ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+
+    cout << "Step 1:" << endl;
+    cout << "\tnelem = " << nelem << endl;
+    cout << "\tfragment_sum = " << fragment_sum.get() << endl;
+    cout << "\tblendGroups_sum = " << blendGroups_sum.get() << endl;
+    cout << "\tblendGroupLen_sum = " << blendGroupLen_sum.get() << endl;
 #endif
 
     /*
+    The algorithm determines which clip case is being used for the cell. Then it
+    iterates over the relevant points and tets for that case and keeps track of
+    which corner points, edges, faces, or center points are being created. These
+    points are used to build a set of blend groups that make the new points for
+    the output element. A clean corner point for example that appears in a tet
+    will be make a blend group that contains a single point, itself. An edge point
+    will make a blend group that contains the 2 edge endpoints and their respective
+    blend coefficients. A face or center point is created using the ST_PNT "command"
+    in the lookup case and it makes a blend group that consists of various other
+    points.
+
+
     elid------------
                    |
                    v
@@ -475,15 +512,16 @@ struct ClipFieldLinear
     blendNames= [{100,0x54321, 0x23456,0x34567}   {0x34567,  106},...]
 
     blendGroupSizes = [{1,2,2,2},,{2,1}...]
-    blendGroupOffsets=[0,1,3,5,    7,9,...} (exlusive scan of blendGroupSizes)
+    blendGroupOffsets=[0,1,3,5,    7,9,...} (exclusive scan of blendGroupSizes)
 
     blendNames is made from combining the values in a blend group into a single id.
     For singles, we can use the point id itself. For pairs, we can do <p0:p1>. For
     longer lists, we can sort the point ids and checksum them in some way.
 
-    Each group in the blendData is encoded to a blendName. We can then put
+    Each group in the blendIds is encoded to a blendName. We can then put
     the blendNames through a uniqueness filter so we can eliminate duplicate
-    blend groups.
+    blend groups later on. This should make adjacent cells share points, even
+    if they had to be created.
 
     origIndex   = [0,   1,       2,      3,          4,        5]
     blendNames  = [{100,0x54321, 0x23456,0x34567}   {0x34567,  106},...]
@@ -550,22 +588,20 @@ struct ClipFieldLinear
 
     */
 #if 1
+    // ----------------------------------------------------------------------
     //
-    // Step 2: Make blendOffset and blendCoeff, blendIds, blendNames.
+    // Step 2: Do some scans to fill out blendOffset and blendGroupOffsets,
+    //         which is where we fill in the real data.
     //
-    Array<int32> blendOffset, blendGroupOffsets, blendIds;
-    Array<Float> blendCoeff;
-    Array<int32> blendNames;
+    // blendOffset : Starting offset for blending data like blendIds, blendCoeff.
+    // blendGroupOffset : Starting offset for blendNames, blendGroupSizes.
+    //
+    // ----------------------------------------------------------------------
+    Array<int32> blendOffset, blendGroupOffsets;
     blendOffset.resize(nelem);
     blendGroupOffsets.resize(nelem);
-    blendIds.resize(blendGroupLen_sum.get());
-    blendCoeff.resize(blendGroupLen_sum.get());
-
     auto blendOffset_ptr = blendOffset.get_device_ptr();
     auto blendGroupOffsets_ptr = blendGroupOffsets.get_device_ptr();
-    auto blendIds_ptr = blendIds.get_device_ptr();
-    auto blendCoeff_ptr = blendCoeff.get_device_ptr();
-    auto blendNames_ptr = blendNames.get_device_ptr();
 
     // Make offsets via scan.
     RAJA::exclusive_scan<for_policy>(RAJA::make_span(blendGroupLen_ptr, nelem),
@@ -576,6 +612,26 @@ struct ClipFieldLinear
                                      RAJA::make_span(blendGroupOffsets_ptr, nelem),
                                      RAJA::operators::plus<int>{});
     DRAY_ERROR_CHECK();
+
+    // ----------------------------------------------------------------------
+    //
+    // Step 3: Iterate over the elements/cases again and fill in the blend
+    //         groups that get produced: blendNames, blendGroupSizes,
+    //         blendCoeff, blendIds. These are used to produce the new points.
+    //
+    // ----------------------------------------------------------------------
+    Array<uint32> blendNames;
+    Array<int32> blendIds, blendGroupSizes;
+    Array<Float> blendCoeff;
+    blendNames.resize(blendGroups_sum.get());
+    blendGroupSizes.resize(blendGroups_sum.get());
+    blendIds.resize(blendGroupLen_sum.get());
+    blendCoeff.resize(blendGroupLen_sum.get());
+
+    auto blendNames_ptr = blendNames.get_device_ptr();
+    auto blendGroupSizes_ptr = blendGroupSizes.get_device_ptr();
+    auto blendIds_ptr = blendIds.get_device_ptr();
+    auto blendCoeff_ptr = blendCoeff.get_device_ptr();
 
     // Populate blendCoeff, blendIds, blendNames.
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
@@ -599,8 +655,7 @@ struct ClipFieldLinear
             clipcase |= (1 << nidx);
       }
 
-      // Iterate over the shapes and determine how many points and
-      // cell fragments we'll make.
+      // Get the shapes for this lookup case.
       unsigned char *shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
 
       // The number of tets (cell fragments) produced for the case. We
@@ -639,59 +694,67 @@ struct ClipFieldLinear
                     { 2, 6 }    /* EL */
       };
 
-      auto make_name_1 = [](int32 id)
+      auto jenkins_one_at_a_time_hash = [](const uint8 *data, uint32 length) -> uint32
       {
-          int32 name = 0;
-          return name;
+        uint32 i = 0;
+        uint32 hash = 0;
+        while(i != length)
+        {
+          hash += data[i++];
+          hash += hash << 10;
+          hash ^= hash >> 6;
+        }
+        hash += hash << 3;
+        hash ^= hash >> 11;
+        hash += hash << 15;
+        return hash;
       };
 
-      auto make_name_2 = [](int32 id0, int32 id1)
+      auto make_name_1 = [&jenkins_one_at_a_time_hash](int32 id) -> uint32
       {
-          int32 name = 0;
-          return name;
+        return jenkins_one_at_a_time_hash(reinterpret_cast<uint8*>(&id), sizeof(int32));
       };
 
-      auto make_name_n = [](const int32 *start, const int32 *end)
+      auto make_name_2 = [&jenkins_one_at_a_time_hash](int32 id0, int32 id1) -> uint32
       {
-          int32 name = 0;
-#if 0
-def simple_sort(a):
-    # Copy input a to b
-    v = [0]*len(a)
-    for i in range(len(a)):
-        v[i] = a[i]
+        int32 data[2] = {id0, id1};
+        if(id1 < id0)
+        {
+          data[0] = id1;
+          data[1] = id0;
+        }
+        return jenkins_one_at_a_time_hash(reinterpret_cast<uint8*>(data), 2*sizeof(int32));
+      };
 
-    n = len(v)
-    for i in range(n):
-        j = i
-        while j > 0 and v[j] < v[j-1]:
-           tmp = v[j]
-           v[j] = v[j-1]
-           v[j-1] = tmp
-           j = j - 1
-    return v
-
-uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
-  size_t i = 0;
-  uint32_t hash = 0;
-  while (i != length) {
-    hash += key[i++];
-    hash += hash << 10;
-    hash ^= hash >> 6;
-  }
-  hash += hash << 3;
-  hash ^= hash >> 11;
-  hash += hash << 15;
-  return hash;
-}
-#endif
-          return name;
+      auto make_name_n = [&jenkins_one_at_a_time_hash](const int32 *start, const int32 *end) -> uint32
+      {
+        uint32 n = end - start + 1;
+        int32 v[12]; // pick largest number of blends.
+        // Copy unsorted values into data[].
+        for(int32 i = 0; i < n; i++)
+          v[i] = start[i];
+        // Sort (crude).
+        for(int32 i = 0; i < n; i++)
+        {
+          int32 tmp, j = i;
+          while(j > 0 && v[j] < v[j-1])
+          {
+             int32 tmp = v[j]; // swap
+             v[j] = v[j-1];
+             v[j-1] = tmp;
+             j--;
+          }
+        }
+        return jenkins_one_at_a_time_hash(reinterpret_cast<uint8*>(v), n*sizeof(int32));
       };
 
       // Starting offset of where we store this element's blend groups.
-      int32 bgStart = blendGroupOffsets_ptr[elid];
-      int32 bgOffset = blendOffset_ptr[elid];
-
+      int32 bgStart = blendOffset_ptr[elid];
+      int32 bgOffset = blendGroupOffsets_ptr[elid];
+#ifdef PRINT_CASES
+      if(clipcase != 255)
+          cout << "clipcase: " << clipcase << endl;
+#endif
       for(int32 si = 0; si < lut_nshapes_ptr[clipcase]; si++)
       {
         if(shapes[0] == ST_PNT)
@@ -706,6 +769,15 @@ uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
             int32 start = bgStart;
 
             auto npts = shapes[3];
+#ifdef PRINT_CASES
+            cout << "\tST_PNT " << (int)shapes[1] << ", " << (int)shapes[2];
+            for(unsigned char ni = 0; ni < npts; ni++)
+            {
+              auto ptid = shapes[4 + ni];
+              cout << ", " << (int)ptid;
+            }
+            cout << endl;
+#endif
             for(unsigned char ni = 0; ni < npts; ni++)
             {
               auto ptid = shapes[4 + ni];
@@ -747,6 +819,9 @@ uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
               }
             }
 
+            // Store how many points make up this blend group.
+            blendGroupSizes_ptr[bgOffset] = npts;
+
             // Store "name" of blend group.
             auto blendName = make_name_n(blendIds_ptr + start,
                                          blendIds_ptr + start + shapes[3]);
@@ -761,6 +836,18 @@ uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
           if((!m_invert && shapes[1] == COLOR0) ||
              (m_invert && shapes[1] == COLOR1))
           {
+#ifdef PRINT_CASES
+            cout << "\tST_TET ";
+            int c = (int)shapes[1];
+            if(c == 120) cout << "COLOR0";
+            if(c == 121) cout << "COLOR1";
+            if(c == 122) cout << "NOCOLOR";
+            cout << ", " << (int)shapes[2]
+                 << ", " << (int)shapes[3]
+                 << ", " << (int)shapes[4]
+                 << ", " << (int)shapes[5] << endl;
+#endif
+
             thisFragments++;
 
             // Count the points used in this cell.
@@ -791,6 +878,9 @@ uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
           blendCoeff_ptr[bgStart] = 1.;
           bgStart++;
 
+          // Store how many points make up this blend group.
+          blendGroupSizes_ptr[bgOffset] = 1;
+
           // Store "name" of blend group.
           blendNames_ptr[bgOffset++] = make_name_1(el_ids[pid]);
         }
@@ -818,6 +908,9 @@ uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
           blendCoeff_ptr[bgStart+1] = t;
           bgStart += 2;
 
+          // Store how many points make up this blend group.
+          blendGroupSizes_ptr[bgOffset] = 2;
+
           // Store "name" of blend group.
           blendNames_ptr[bgOffset++] = make_name_2(id0, id1);
         }
@@ -829,9 +922,240 @@ uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
     // blendNames to make unique blend groups. uNames contains a sorted list of
     // the unique blend group names while uIndices is their original index in
     // blendNames/blendGroupOffsets/blendGroupSizes.
-    Array<int32> uNames, uIndices;
-    unique(blendNames, uNames, uIndices);
+//    Array<int32> uNames, uIndices;
+//    unique(blendNames, uNames, uIndices);
 
+
+    // ----------------------------------------------------------------------
+    //
+    // Stage 3 - Make new points from the blend groups.
+    //
+    // ----------------------------------------------------------------------
+    const GridFunction<3> &mesh_gf = mesh.get_dof_data();
+    DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
+    int32 nbg = blendGroupSizes.size();
+    GridFunction<3> gf;
+    gf.m_el_dofs = nbg;
+    gf.m_size_el = nbg;
+    gf.m_size_ctrl = nbg;
+    gf.m_ctrl_idx.resize(nbg);
+    gf.m_values.resize(nbg);
+    DeviceGridFunction<3> dgf(gf);
+    auto gf_m_ctrl_idx = gf.m_ctrl_idx.get_device_ptr();
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bi)
+    {
+      gf_m_ctrl_idx[bi] = bi;
+    });
+
+    // Each loop iteration will handle one element's blend groups.
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
+    {
+      // Number of blend groups for this element.
+      int32 nbg = blendGroups_ptr[elid];
+      if(nbg > 0)
+      {
+        // Where this element's blend groups start.
+        int32 bgSizesStart = blendGroupOffsets_ptr[elid];
+        // Where this element's blend ids, coeffs start.
+        int32 bgIdx = blendOffset_ptr[elid];
+        for(int32 bi = 0; bi < nbg; ++bi)
+        {
+          int32 nThisBG = blendGroupSizes_ptr[bgSizesStart + bi];
+          Vec<Float, 3> blended = {0,0,0};
+          cout << "elid:" << elid << " bi=" << bi << endl;
+          for(int32 ii = 0; ii < nThisBG; ii++)
+          {
+            cout << "\t id=" << blendIds_ptr[bgIdx] << ", coeff=" << blendCoeff_ptr[bgIdx] << ", pt=" << mesh_dgf.m_values_ptr[blendIds_ptr[bgIdx]] << endl;
+            blended += mesh_dgf.m_values_ptr[blendIds_ptr[bgIdx]] * blendCoeff_ptr[bgIdx];
+            bgIdx++;
+          }
+          cout << "\t saving " << blended << endl;
+
+          dgf.m_values_ptr[bgSizesStart + bi] = blended;
+        }
+      }
+    });
+
+#if 1
+    // Save the data to a YAML file to look at it.
+    cout << "Writing clip debugging information." << endl;
+    conduit::Node n;
+    conduit::Node &s1 = n["stage1"];
+    s1["fragments"].set_external(fragments.get_host_ptr(), fragments.size());
+    s1["blendGroups"].set_external(blendGroups.get_host_ptr(), blendGroups.size());
+    s1["blendGroupLen"].set_external(blendGroupLen.get_host_ptr(), blendGroupLen.size());
+
+    conduit::Node &s2 = n["stage2"];
+    s2["blendOffset"].set_external(blendOffset.get_host_ptr(), blendOffset.size());
+    s2["blendGroupOffsets"].set_external(blendGroupOffsets.get_host_ptr(), blendGroupOffsets.size());
+
+    conduit::Node &s3 = n["stage3"];
+    s3["blendGroupSizes"].set_external(blendGroupSizes.get_host_ptr(), blendGroupSizes.size());
+    s3["blendNames"].set_external(blendNames.get_host_ptr(), blendNames.size());
+    s3["blendIds"].set_external(blendIds.get_host_ptr(), blendIds.size());
+    s3["blendCoeff"].set_external(blendCoeff.get_host_ptr(), blendCoeff.size());
+
+    conduit::Node &s4 = n["stage4"];
+    s4["blended.m_values"].set_external(reinterpret_cast<float*>(gf.m_values.get_host_ptr()), 3*gf.m_values.size());
+    s4["blended.m_ctrl_idx"].set_external(gf.m_ctrl_idx.get_host_ptr(), gf.m_ctrl_idx.size());
+
+    conduit::relay::io::save(n, "clipfield.yaml", "yaml");
+#endif
+
+#if 0
+    // Now that we have the blend groups, etc figured out, we need to use them
+    // to make new points and new connectivity for a tet mesh.
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
+    {
+      int32 start = elid * el_dofs;
+      const int32 reorder[] = {0,1,3,2,4,5,7,6};
+      int32 el_ids[8]; // max p1 ids.
+
+      // Determine the clip case.
+      int32 clipcase = 0;
+      for(int32 j = 0; j < el_dofs; j++)
+      {
+        // dray hex and VisIt hex (tables are geared to VisIt hex) have
+        // different node order.
+        int32 nidx = (el_dofs == 8) ? reorder[j] : j;
+
+        int32 dofid = conn_ptr[start + nidx];
+        el_ids[j] = dofid;
+
+        if(dist_ptr[dofid][0] > 0.)
+            clipcase |= (1 << nidx);
+      }
+
+      // Points used in cell (range [P0,N6])
+      unsigned char ptused[50] = {
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0
+      };
+      // Points used in cell (range [P0,N6])
+      unsigned char pt2blendGroup[50] = {
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0
+      };
+      // Get the shapes for this lookup case.
+      unsigned char *shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
+
+      for(int32 si = 0; si < lut_nshapes_ptr[clipcase]; si++)
+      {
+        if(shapes[0] == ST_PNT)
+        {
+          // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
+          if(shapes[2] == NOCOLOR ||
+             (!m_invert && shapes[2] == COLOR0) ||
+             (m_invert && shapes[2] == COLOR1))
+          {
+            // The point is a keeper.
+
+            for(unsigned char ni = 0; ni < shapes[3]; ni++)
+            {
+              auto ptid = shapes[4 + ni];
+
+              // count the point as used.
+              ptused[ptid]++;
+            }
+
+            // This center or face point counts as a blend group.
+            thisBlendGroups++;
+          }
+
+          shapes += (4 + shapes[3]);
+        }
+        else if(shapes[0] == ST_TET)
+        {
+          // ST_TET COLOR0 p0 p1 p2 p3
+          if((!m_invert && shapes[1] == COLOR0) ||
+             (m_invert && shapes[1] == COLOR1))
+          {
+            // Count the points used in this cell.
+            ptused[shapes[2]]++;
+            ptused[shapes[3]]++;
+            ptused[shapes[4]]++;
+            ptused[shapes[5]]++;
+          }
+          shapes += 6;
+        }
+        // TODO: Oh, we need to handle triangles too for the 2D case...
+#if 1
+        else
+        {
+          // Error! This should not happen because
+          break;
+        }
+#endif
+      }
+
+      // We know which points were active. Map the active ones to specific blend groups.
+      unsigned char bgidx = 0;
+      for(int32 pi = 0; pi <= N6; pi++)
+      {
+        if(ptused[pi] > 0)
+          pt2blendGroup[pi] = bgidx++;
+      }
+
+      // Iterate through again and emit the shapes using the blend group indices.
+      shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
+
+      for(int32 si = 0; si < lut_nshapes_ptr[clipcase]; si++)
+      {
+        if(shapes[0] == ST_PNT)
+        {
+          // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
+          if(shapes[2] == NOCOLOR ||
+             (!m_invert && shapes[2] == COLOR0) ||
+             (m_invert && shapes[2] == COLOR1))
+          {
+            // The point is a keeper.
+
+            for(unsigned char ni = 0; ni < shapes[3]; ni++)
+            {
+              auto ptid = shapes[4 + ni];
+
+              // count the point as used.
+              ptused[ptid]++;
+            }
+
+            // This center or face point counts as a blend group.
+            thisBlendGroups++;
+          }
+
+          shapes += (4 + shapes[3]);
+        }
+        else if(shapes[0] == ST_TET)
+        {
+          // ST_TET COLOR0 p0 p1 p2 p3
+          if((!m_invert && shapes[1] == COLOR0) ||
+             (m_invert && shapes[1] == COLOR1))
+          {
+            // Count the points used in this cell.
+            ptused[shapes[2]]++;
+            ptused[shapes[3]]++;
+            ptused[shapes[4]]++;
+            ptused[shapes[5]]++;
+          }
+          shapes += 6;
+        }
+        // TODO: Oh, we need to handle triangles too for the 2D case...
+#if 1
+        else
+        {
+          // Error! This should not happen because
+          break;
+        }
+#endif
+      }
+
+    }
+#endif
 
     DRAY_LOG_CLOSE();
   }
