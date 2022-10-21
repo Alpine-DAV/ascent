@@ -117,7 +117,7 @@ fi # build_conduit
 ################
 # VTK-m
 ################
-vtkm_version=v1.8.0
+vtkm_version=v1.9.0
 vtkm_src_dir=${root_dir}/vtk-m-${vtkm_version}
 vtkm_build_dir=${root_dir}/build/vtk-m-${vtkm_version}
 vtkm_install_dir=${root_dir}/install/vtk-m-${vtkm_version}/

@@ -84,6 +84,28 @@ else()
     set(MFEM_MPI_ENABLED TRUE)
 endif()
 
+
+# next check for ZLIB_DIR 
+# (spack builds of mfem now depend on zlib, and that is not propgating)
+#
+# TODO: Decide if we want to be strict about this
+# if(NOT ZLIB_DIR)
+#     MESSAGE(FATAL_ERROR "MFEM support needs explicit ZLIB_DIR")
+# endif()
+#
+
+if(ZLIB_DIR)
+    set(ZLIB_ROOT ${ZLIB_DIR})
+    find_package(ZLIB REQUIRED)
+endif()
+
+#
+# Add ZLIB to the mfem_tpl_lnk_flags
+#
+if(ZLIB_FOUND)
+    list(APPEND mfem_tpl_lnk_flags ${ZLIB_LIBRARIES})
+endif()
+
 #find includes
 find_path(MFEM_INCLUDE_DIRS mfem.hpp
           PATHS ${MFEM_DIR}/include

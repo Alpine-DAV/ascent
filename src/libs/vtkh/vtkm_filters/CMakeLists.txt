@@ -10,6 +10,7 @@ set(vtkm_filters_headers
     vtkmExtractStructured.hpp
     vtkmGradient.hpp
     vtkmLagrangian.hpp
+    vtkmLog.hpp
     vtkmMarchingCubes.hpp
     vtkmMeshQuality.hpp
     vtkmPointAverage.hpp
@@ -29,6 +30,7 @@ set(vtkm_filters_sources
     vtkmExtractStructured.cpp
     vtkmGradient.cpp
     vtkmLagrangian.cpp
+    vtkmLog.cpp
     vtkmMarchingCubes.cpp
     vtkmMeshQuality.cpp
     vtkmPointAverage.cpp
@@ -57,7 +59,9 @@ blt_add_library(NAME vtkm_compiled_filters
 
 vtkm_add_target_information(vtkm_compiled_filters DEVICE_SOURCES ${vtkm_filter_sources})
 
-set_target_properties(vtkm_compiled_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
+if(ENABLE_HIDDEN_VISIBILITY)
+  set_target_properties(vtkm_compiled_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
+endif()
 
 if(KOKKOS_FOUND)
       # vtkm + object libs are fun. Flags are not being propagated, so manually add them
