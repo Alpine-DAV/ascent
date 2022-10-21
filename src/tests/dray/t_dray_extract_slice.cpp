@@ -15,6 +15,8 @@
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_blueprint.hpp>
 
+// #define SAVE_BLUEPRINTS
+
 //-----------------------------------------------------------------------------
 static void
 dray_collection_to_blueprint(dray::Collection &c, conduit::Node &n)
@@ -255,12 +257,17 @@ TEST(dray_extract_slice, tets)
   Collection c = make_test_mesh(TestCase::Tet);
   DataSet ds = c.domain(0);
 
+#ifdef SAVE_BLUEPRINTS
+  conduit::Node n_input;
+  dray_collection_to_blueprint(c, n_input);
+  dray::BlueprintReader::save_blueprint("input_tets", n_input);
+#endif
+
   // Test that we can make one slice
   ExtractSlice slicer;
   slicer.add_plane({-5., -5., -5.}, {0., 0., 1.});
   // Should only have tris
   Collection tris = slicer.execute(c).first;
-  conduit::Node n_tris;
 
   using MeshType = Element<2, 3, ElemType::Simplex, Order::Linear>;
   using ScalarFieldType = Element<2, 1, ElemType::Simplex, Order::Linear>;
@@ -286,9 +293,6 @@ TEST(dray_extract_slice, tets)
   tris = slicer.execute(c).first;
   Collection tris_three = three_slicer.execute(c).first;
 
-  dray_collection_to_blueprint(tris, n_tris);
-  dray::BlueprintReader::save_blueprint("output_tet_tris", n_tris);
-  n_tris.save("output_tets_tris.yaml");
 
   const int SX = 25;
   const float ans_x[SX] = {0.0, 0.0, 1.0, 1.0, 0.0, 0.0,
@@ -318,6 +322,12 @@ TEST(dray_extract_slice, tets)
   test_result<ScalarFieldType>(tris_three.domain(2), "simple", ans_z, SZ);
   test_result<VecFieldType>(tris.domain(2), "simple_vec", ans_z, SZ);
   test_result<VecFieldType>(tris_three.domain(2), "simple_vec", ans_z, SZ);
+
+#ifdef SAVE_BLUEPRINTS
+  conduit::Node n_tris;
+  dray_collection_to_blueprint(tris, n_tris);
+  dray::BlueprintReader::save_blueprint("output_tet_tris", n_tris);
+#endif
 }
 
 TEST(dray_extract_slice, hexes)
@@ -325,26 +335,26 @@ TEST(dray_extract_slice, hexes)
   using namespace dray;
   Collection collection = make_test_mesh(TestCase::Hex);
 
+#ifdef SAVE_BLUEPRINTS
+  conduit::Node n_input;
+  dray_collection_to_blueprint(collection, n_input);
+  dray::BlueprintReader::save_blueprint("input_hexs", n_input);
+#endif
+
   // Test that we can make one slice
   ExtractSlice slicer;
   slicer.add_plane({-5., -5., -5.}, {0., 0., 1.});
-  // Should only have quads
-  Collection quads = slicer.execute(collection).second;
-  conduit::Node n_quads;
-  dray_collection_to_blueprint(quads, n_quads);
-  dray::BlueprintReader::save_blueprint("output_hex_quads", n_quads);
-  // n_quads.print();
+  // Should only have tris
+  Collection tris = slicer.execute(collection).first;
 
-  using MeshType = Element<2, 3, ElemType::Tensor, Order::Linear>;
-  using ScalarFieldType = Element<2, 1, ElemType::Tensor, Order::Linear>;
-  using VecFieldType = Element<2, 3, ElemType::Tensor, Order::Linear>;
-  // There should only be 9 points but currently some points get
-  // double / quadruple counted when included by multiple quads
-  const float ans_z[16] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f,
-                           1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
-  test_mesh<MeshType>(quads.domain(0), 2, -5.f, 16);
-  test_result<ScalarFieldType>(quads.domain(0), "simple", ans_z, 16);
-  test_result<VecFieldType>(quads.domain(0), "simple_vec", ans_z, 16);
+  using MeshType = Element<2, 3, ElemType::Simplex, Order::Linear>;
+  using ScalarFieldType = Element<2, 1, ElemType::Simplex, Order::Linear>;
+  using VecFieldType = Element<2, 3, ElemType::Simplex, Order::Linear>;
+  const int SZ = 9;
+  const float ans_z[SZ] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
+  test_mesh<MeshType>(tris.domain(0), 2, -5.f, SZ);
+  test_result<ScalarFieldType>(tris.domain(0), "simple", ans_z, SZ);
+  test_result<VecFieldType>(tris.domain(0), "simple_vec", ans_z, SZ);
 
   // Test that we can make multiple slices, also test ExtractThreeSlice makes the same answer
   slicer.clear();
@@ -353,29 +363,38 @@ TEST(dray_extract_slice, hexes)
   slicer.add_plane({-5., -5., -5.}, {0., 0., 1.});
   ExtractThreeSlice three_slicer;
   three_slicer.set_point({-5., -5., -5.});
-  quads = slicer.execute(collection).second;
-  Collection quads_three = three_slicer.execute(collection).second;
+  tris = slicer.execute(collection).first;
+  Collection tris_three = three_slicer.execute(collection).first;
 
-  const float ans_x[16] = {0.f, 2.f, 0.f, 2.f, 0.f, 2.f, 0.f, 2.f,
-                           2.f, 4.f, 2.f, 4.f, 2.f, 4.f, 2.f, 4.f};
-  test_mesh<MeshType>(quads.domain(0), 0, -5.f, 16);
-  test_result<ScalarFieldType>(quads.domain(0), "simple", ans_x, 16);
-  test_result<ScalarFieldType>(quads_three.domain(0), "simple", ans_x, 16);
-  test_result<VecFieldType>(quads.domain(0), "simple_vec", ans_x, 16);
-  test_result<VecFieldType>(quads_three.domain(0), "simple_vec", ans_x, 16);
+  const int SX = 9;
+  const float ans_x[SX] = {0.f, 0.f, 0.f, 2.f, 2.f, 2.f, 4.f, 4.f, 4.f};
+  test_mesh<MeshType>(tris.domain(0), 0, -5.f, SX);
+  test_mesh<MeshType>(tris_three.domain(0), 0, -5.f, SX);
+  test_result<ScalarFieldType>(tris.domain(0), "simple", ans_x, SX);
+  test_result<ScalarFieldType>(tris_three.domain(0), "simple", ans_x, SX);
+  test_result<VecFieldType>(tris.domain(0), "simple_vec", ans_x, SX);
+  test_result<VecFieldType>(tris_three.domain(0), "simple_vec", ans_x, SX);
 
-  const float ans_y[16] = {0.f, 0.f, 2.f, 2.f, 0.f, 0.f, 2.f, 2.f,
-                           2.f, 2.f, 4.f, 4.f, 2.f, 2.f, 4.f, 4.f};
-  test_mesh<MeshType>(quads.domain(1), 1, -5.f, 16);
-  test_result<ScalarFieldType>(quads.domain(1), "simple", ans_y, 16);
-  test_result<ScalarFieldType>(quads_three.domain(1), "simple", ans_y, 16);
-  test_result<VecFieldType>(quads.domain(1), "simple_vec", ans_y, 16);
-  test_result<VecFieldType>(quads_three.domain(1), "simple_vec", ans_y, 16);
+  const int SY = 9;
+  const float ans_y[SY] = {0.f, 0.f, 0.f, 2.f, 2.f, 2.f, 4.f, 4.f, 4.f};
+  test_mesh<MeshType>(tris.domain(1), 1, -5.f, SY);
+  test_mesh<MeshType>(tris_three.domain(1), 1, -5.f, SY);
+  test_result<ScalarFieldType>(tris.domain(1), "simple", ans_y, SY);
+  test_result<ScalarFieldType>(tris_three.domain(1), "simple", ans_y, SY);
+  test_result<VecFieldType>(tris.domain(1), "simple_vec", ans_y, SY);
+  test_result<VecFieldType>(tris_three.domain(1), "simple_vec", ans_y, SY);
 
   // Same answer as before
-  test_mesh<MeshType>(quads.domain(2), 2, -5.f, 16);
-  test_result<ScalarFieldType>(quads.domain(2), "simple", ans_z, 16);
-  test_result<ScalarFieldType>(quads_three.domain(2), "simple", ans_z, 16);
-  test_result<VecFieldType>(quads.domain(2), "simple_vec", ans_z, 16);
-  test_result<VecFieldType>(quads_three.domain(2), "simple_vec", ans_z, 16);
+  test_mesh<MeshType>(tris.domain(2), 2, -5.f, SZ);
+  test_mesh<MeshType>(tris_three.domain(2), 2, -5.f, SZ);
+  test_result<ScalarFieldType>(tris.domain(2), "simple", ans_z, SZ);
+  test_result<ScalarFieldType>(tris_three.domain(2), "simple", ans_z, SZ);
+  test_result<VecFieldType>(tris.domain(2), "simple_vec", ans_z, SZ);
+  test_result<VecFieldType>(tris_three.domain(2), "simple_vec", ans_z, SZ);
+
+#ifdef SAVE_BLUEPRINTS
+  conduit::Node n_tris;
+  dray_collection_to_blueprint(tris, n_tris);
+  dray::BlueprintReader::save_blueprint("output_hex_tris", n_tris);
+#endif
 }
