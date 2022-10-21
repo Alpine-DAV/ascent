@@ -115,7 +115,7 @@ binary_search(const T *data, int32 size, T value)
 template<typename Functor>
 void marching_cubes_dispatch(Field *field, Functor &func)
 {
-  if (/*!dispatch_field_only((UnstructuredField<HexScalar_P1>*)0, field, func) && */
+  if (!dispatch_field_only((UnstructuredField<HexScalar_P1>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetScalar_P1>*)0, field, func))
   {
     ::dray::detail::cast_field_failed(field, __FILE__, __LINE__);
@@ -261,7 +261,17 @@ struct MarchingCubesFunctor
   void operator()(UnstructuredField<FEType> &field);
 
   template<typename FEType>
-  static void calculate_triangle_cases(const DeviceField<FEType> &dfield,
+  static void calculate_triangle_cases(ShapeTet,
+                                       const DeviceField<FEType> &dfield,
+                                       const RAJA::RangeSegment &elem_range,
+                                       const int8 *lookup_ptr,
+                                       const Float isovalue,
+                                       uint32 *cut_info_ptr,
+                                       uint32 *num_triangles_ptr);
+
+  template<typename FEType>
+  static void calculate_triangle_cases(ShapeHex,
+                                       const DeviceField<FEType> &dfield,
                                        const RAJA::RangeSegment &elem_range,
                                        const int8 *lookup_ptr,
                                        const Float isovalue,
@@ -310,7 +320,8 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   // Determine triangle cases and number of triangles
   DeviceField<FEType> dfield(field);
   const auto elem_range = RAJA::RangeSegment(0, nelem);
-  MarchingCubesFunctor::calculate_triangle_cases(dfield, elem_range, lookup_ptr, m_isovalue, cut_info_ptr, num_triangles_ptr);
+  MarchingCubesFunctor::calculate_triangle_cases(adapt_get_shape<FEType>(),
+    dfield, elem_range, lookup_ptr, m_isovalue, cut_info_ptr, num_triangles_ptr);
 
   Array<uint32> triangle_offsets_array = array_exc_scan_plus(num_triangles_array, m_total_triangles);
   const uint32 *triangle_offsets_ptr = triangle_offsets_array.get_device_ptr_const();
@@ -404,7 +415,8 @@ MarchingCubesFunctor::execute(Field *in_field)
 
 template<typename FEType>
 void
-MarchingCubesFunctor::calculate_triangle_cases(const DeviceField<FEType> &dfield,
+MarchingCubesFunctor::calculate_triangle_cases(ShapeTet,
+                                               const DeviceField<FEType> &dfield,
                                                const RAJA::RangeSegment &elem_range,
                                                const int8 *lookup_ptr,
                                                const Float isovalue,
@@ -421,6 +433,36 @@ MarchingCubesFunctor::calculate_triangle_cases(const DeviceField<FEType> &dfield
       for(int i = 0; i < ndofs; i++)
       {
         info |= (rdp[i][0] > isovalue) << i;
+      }
+      cut_info_ptr[eid] = info;
+      num_triangles_ptr[eid] = detail::get_num_triangles(shape3d, lookup_ptr, info);
+    });
+  DRAY_ERROR_CHECK();
+}
+
+template<typename FEType>
+void
+MarchingCubesFunctor::calculate_triangle_cases(ShapeHex,
+                                               const DeviceField<FEType> &dfield,
+                                               const RAJA::RangeSegment &elem_range,
+                                               const int8 *lookup_ptr,
+                                               const Float isovalue,
+                                               uint32 *cut_info_ptr,
+                                               uint32 *num_triangles_ptr)
+{
+  // NOTE: This is the same algorithm as for Tets but the Hex table is based off
+  //       VTK / VisIt ordered hexes so we need to use a reorder array.
+  RAJA::forall<for_policy>(elem_range,
+    [=] DRAY_LAMBDA (int eid) {
+      constexpr OrderPolicy<Order::Linear> field_order_p;
+      constexpr auto shape3d = adapt_get_shape<FEType>();
+      constexpr auto ndofs = eattr::get_num_dofs(shape3d, field_order_p);
+      const ReadDofPtr<Vec<Float, 1>> rdp = dfield.get_elem(eid).read_dof_ptr();
+      const int8 reorder[8] = {0, 1, 3, 2, 4, 5, 7, 6};
+      uint32 info = 0u;
+      for(int i = 0; i < ndofs; i++)
+      {
+        info |= (rdp[reorder[i]][0] > isovalue) << i;
       }
       cut_info_ptr[eid] = info;
       num_triangles_ptr[eid] = detail::get_num_triangles(shape3d, lookup_ptr, info);
