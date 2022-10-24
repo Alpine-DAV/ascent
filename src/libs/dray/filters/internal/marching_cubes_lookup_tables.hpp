@@ -10,6 +10,54 @@
 #include <dray/array.hpp>
 #include <dray/vec.hpp>
 
+// Q: Is this the desired way to document this?
+// The two maching cubes lookup tables implemented in this file are based
+// off the lookup tables used in VTK-m. The two tables will be marked with comments.
+/* VTK-m license
+Copyright (c) 2014-2022
+Kitware Inc.,
+National Technology & Engineering Solutions of Sandia, LLC (NTESS),
+UT-Battelle, LLC.,
+Los Alamos National Security, LLC.,
+All rights reserved.
+
+Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government
+retains certain rights in this software.
+
+Under the terms of Contract DE-AC52-06NA25396 with Los Alamos National
+Laboratory (LANL), the U.S. Government retains certain rights in
+this software.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the
+   distribution.
+
+ * Neither the name of Kitware nor the names of any contributors may
+   be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+========================================================================
+*/
+
 namespace dray
 {
 
@@ -25,6 +73,7 @@ namespace tet
 const int lookup_size = 7*16 + 16 + 12;
 const int ntriangles_offset = 7*16;
 const int edges_offset = 7*16 + 16;
+// Lookup table cases based off VTK-m
 const int8 lookup_table[lookup_size] = {
   // Triangle edge definitions
   X, X, X, X, X, X, X,  // Case 0
@@ -62,8 +111,10 @@ namespace hex
 const int lookup_size = 16*256 + 256 + 24;
 const int ntriangles_offset = 16*256;
 const int edges_offset = 16*256 + 256;
+// Lookup table cases based off VTK-m
 const int8 lookup_table[lookup_size] = {
-  // Triangle edge definitions, these cases assume VTK ordering of a hex.
+  // Triangle edge definitions, these cases currently assume VTK ordering of a hex.
+  // You will need to reorder the Hex dofs using [0, 1, 3, 2, 4, 5, 7, 6] to create the proper lookup index.
   X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X, // Case 0
   0,  8,  3,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X, // Case 1
   0,  1,  9,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X,  X, // ...
