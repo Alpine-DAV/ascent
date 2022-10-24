@@ -160,7 +160,11 @@ set(dray_headers dray.hpp
                  data_model/unstructured_mesh.hpp
                  data_model/mesh.hpp
 
+                 filters/internal/marching_cubes_lookup_tables.hpp
                  filters/cell_average.hpp
+                 filters/extract_slice.hpp
+                 filters/extract_three_slice.hpp
+                 filters/marching_cubes.hpp
                  filters/mesh_boundary.hpp
                  filters/point_average.hpp
                  filters/threshold.hpp
@@ -262,6 +266,9 @@ set(dray_sources dray.cpp
                  data_model/unstructured_field.cpp
                  # filters
                  filters/cell_average.cpp
+                 filters/extract_slice.cpp
+                 filters/extract_three_slice.cpp
+                 filters/marching_cubes.cpp
                  filters/mesh_boundary.cpp
                  filters/point_average.cpp
                  filters/threshold.cpp

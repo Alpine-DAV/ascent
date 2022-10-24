@@ -8,6 +8,7 @@
 #include <dray/dray_exports.h>
 
 #include <dray/filters/isosurfacing.hpp>
+#include <dray/filters/marching_cubes.hpp>
 #include <dray/error.hpp>
 #include <dray/dispatcher.hpp>
 #include <dray/array_utils.hpp>
@@ -888,6 +889,23 @@ namespace dray
     }
   };
 
+  bool
+  ExtractIsosurface::all_linear(Collection &collxn)
+  {
+    bool retval = true;
+    for(DataSet ds : collxn.domains())
+    {
+      Mesh *mesh = ds.mesh();
+      Field *field = ds.field(m_iso_field_name);
+
+      if(mesh->order() != 1 || field->order() != 1)
+      {
+        retval = false;
+        break;
+      }
+    }
+    return retval;
+  }
 
   // execute() wrapper
   std::pair<DataSet, DataSet> ExtractIsosurface::execute(DataSet &data_set)
@@ -907,11 +925,23 @@ namespace dray
   {
     Collection out_collxn_first;
     Collection out_collxn_second;
-    for (DataSet ds : collxn.domains())
+    bool use_marching_cubes = all_linear(collxn);
+    if(use_marching_cubes)
     {
-      std::pair<DataSet, DataSet> ds_pair = this->execute(ds);
-      out_collxn_first.add_domain(ds_pair.first);
-      out_collxn_second.add_domain(ds_pair.second);
+      // Fast-path for linear mesh/field types.
+      MarchingCubes filter;
+      filter.set_field(m_iso_field_name);
+      filter.set_isovalue(m_iso_value);
+      out_collxn_first = filter.execute(collxn);
+    }
+    else
+    {
+      for (DataSet ds : collxn.domains())
+      {
+        std::pair<DataSet, DataSet> ds_pair = this->execute(ds);
+        out_collxn_first.add_domain(ds_pair.first);
+        out_collxn_second.add_domain(ds_pair.second);
+      }
     }
     return {out_collxn_first, out_collxn_second};
   }
