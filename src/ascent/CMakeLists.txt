@@ -455,11 +455,19 @@ if (ENABLE_SERIAL)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
 
+        if(RAJA_FOUND)
+            list(APPEND imported_targets_to_link RAJA)
+        endif()
+
         if(UMPIRE_FOUND)
             list(APPEND imported_targets_to_link umpire)
         endif()
+        
+        if(CAMP_FOUND)
+            list(APPEND imported_targets_to_link camp)
+        endif()
 
-        # TODO device link raja in rajaify branch
+        # device link
 
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES  ${ascent_device_sources}
@@ -577,25 +585,25 @@ if(MPI_FOUND)
 
     # Static linking CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
-      set(locations_on_disk "")
+        set(locations_on_disk "")
 
-      set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
+        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
 
-      set(internal_targets_to_link $<TARGET_FILE:rover>)
+        set(internal_targets_to_link $<TARGET_FILE:rover>)
 
-      if(ENABLE_VTKH)
-          list(APPEND internal_targets_to_link
-                      $<TARGET_FILE:vtkh_rendering_mpi>
-                      $<TARGET_FILE:vtkh_compositing_mpi>
-                      $<TARGET_FILE:vtkh_filters_mpi>
-                      $<TARGET_FILE:vtkh_core_mpi>
-                      $<TARGET_FILE:vtkh_utils_mpi>)
-      endif()
+        if(ENABLE_VTKH)
+            list(APPEND internal_targets_to_link
+                       $<TARGET_FILE:vtkh_rendering_mpi>
+                       $<TARGET_FILE:vtkh_compositing_mpi>
+                       $<TARGET_FILE:vtkh_filters_mpi>
+                       $<TARGET_FILE:vtkh_core_mpi>
+                       $<TARGET_FILE:vtkh_utils_mpi>)
+        endif()
 
-      set(imported_targets_to_link "")
+        set(imported_targets_to_link "")
 
-      # updated for vtkm 1.9
-      list(APPEND imported_targets_to_link
+        # updated for vtkm 1.9
+        list(APPEND imported_targets_to_link
                     vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
@@ -629,26 +637,34 @@ if(MPI_FOUND)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
 
+        if(RAJA_FOUND)
+            list(APPEND imported_targets_to_link RAJA)
+        endif()
+
         if(UMPIRE_FOUND)
             list(APPEND imported_targets_to_link umpire)
         endif()
 
-        # TODO device link raja in rajaify branch
+        if(CAMP_FOUND)
+            list(APPEND imported_targets_to_link camp)
+        endif()
 
-      source_objects(BINARY_DIR ${binary_dir}
+        # device link
+
+        source_objects(BINARY_DIR ${binary_dir}
                      SOURCES  ${ascent_device_sources}
                      TARGETS ${internal_targets_to_link}
                      IMPORTED_TARGETS ${imported_targets_to_link}
                      RESULT locations_on_disk)
 
-      separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-      #message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
-      add_custom_command(TARGET ascent_mpi PRE_LINK
-                         DEPENDS ascent_mpi rover_mpi
-                         COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
-                         COMMENT "manual device link step for Ascent parallel"
-                         )
-      install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
+        separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+        #message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
+        add_custom_command(TARGET ascent_mpi PRE_LINK
+                            DEPENDS ascent_mpi rover_mpi
+                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+                            COMMENT "manual device link step for Ascent parallel"
+                            )
+        install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
     endif()
 
 endif()
