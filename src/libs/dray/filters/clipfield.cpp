@@ -338,8 +338,25 @@ struct ClipFieldLinear
 
   DRAY_EXEC static int32 bsearch(uint32 name, const uint32 *names, int32 n)
   {
-     // TODO: add binary search for name in names.
-     return 0;
+    int32 index = -1;
+    int32 left = 0;
+    int32 right = n - 1;
+    while(left <= right)
+    {
+      int32 m = (left + right) / 2;
+      if(names[m] < name)
+        left = m + 1;
+      else if(names[m] > name)
+        right = m - 1;
+      else
+      {
+        index = m;
+        break;
+      }
+    }
+    cout << "bsearch(" << name << ") -> " << index << endl;
+
+    return index;
   }
 
   // This method gets invoked by dispatch, which will have converted the field
@@ -1010,13 +1027,13 @@ struct ClipFieldLinear
     gf.m_values.resize(nbg);
     DeviceGridFunction<3> dgf(gf);
     auto gf_m_ctrl_idx = gf.m_ctrl_idx.get_device_ptr();
-    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bi)
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bgid)
     {
-      gf_m_ctrl_idx[bi] = bi;
+      gf_m_ctrl_idx[bgid] = bgid;
     });
     DRAY_ERROR_CHECK();
 
-    // Each loop iteration will one unique blend group.
+    // Each loop iteration is one unique blend group.
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bgid)
     {
       // Original blendGroup index.
@@ -1123,7 +1140,8 @@ struct ClipFieldLinear
 
       // Go through the points in the order they would have been added as blend
       // groups, get their blendName, and then overall index of that blendName
-      // in uNames. That will be their index in the final dofs.
+      // in uNames, the unique list of new dof names. That will be their index
+      // in the final dofs.
       uint32 point_2_newdof[50];
       for(unsigned char pid = N0; pid <= N6; pid++)
       {
@@ -1154,7 +1172,8 @@ struct ClipFieldLinear
       // dofs.
       shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
       // This is where the output fragments start for this element
-      int32 tetOutput = fragmentOffsets_ptr[elid];
+      int32 tetOutput = fragmentOffsets_ptr[elid] * 4;
+cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
       for(int32 si = 0; si < lut_nshapes_ptr[clipcase]; si++)
       {
         if(shapes[0] == ST_PNT)
@@ -1187,6 +1206,16 @@ struct ClipFieldLinear
       }
     });
     DRAY_ERROR_CHECK();
+
+    // ----------------------------------------------------------------------
+    //
+    // Stage 7 - Make the output mesh.
+    //
+    // ----------------------------------------------------------------------
+    gf.m_ctrl_idx = conn_out;
+    auto newmesh = std::make_shared<UnstructuredMesh<Tet_P1>>(gf, 1);
+    newmesh->name(mesh.name());
+    m_output.add_mesh(newmesh);
 
 #if 1
     // Save the data to a YAML file to look at it.

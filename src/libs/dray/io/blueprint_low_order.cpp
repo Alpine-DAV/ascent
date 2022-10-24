@@ -1146,42 +1146,45 @@ BlueprintLowOrder::to_blueprint(const conduit::Node &dray_rep, conduit::Node &n)
     }
 
     // Do fields.
-    const conduit::Node &n_fields = dray_rep["fields"];
-    conduit::Node &n_outfields = n["fields"];
-    for(conduit::index_t i = 0; i < n_fields.number_of_children(); i++)
+    if(dray_rep.has_child("fields"))
     {
-        const conduit::Node &n_field = n_fields[i];
-        const conduit::Node &n_gf = n_field["grid_function"];
-        dofs_per_element = n_gf["dofs_per_element"].to_int();
-        int phys_dim = n_gf["phys_dim"].to_int();
-
-        conduit::Node &n_outfield = n_outfields[n_field.name()];
-        n_outfield["topology"] = "topology";
-        int nvalues = n_gf["values_size"].to_int();
-        if(dofs_per_element == 1)
+        const conduit::Node &n_fields = dray_rep["fields"];
+        conduit::Node &n_outfields = n["fields"];
+        for(conduit::index_t i = 0; i < n_fields.number_of_children(); i++)
         {
-            n_outfield["association"] = "element";
-        }
-        else
-        {
-            n_outfield["association"] = "vertex";
-        }
-        if(phys_dim == 1)
-        {
-            n_outfield["values"].set_external_node(n_gf["values"]);
-        }
-        else if(phys_dim == 2)
-        {
-            auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
-            n_outfield["values/x"].set_external(ptr, nvalues, 0, 2 * sizeof(Float));
-            n_outfield["values/y"].set_external(ptr, nvalues, sizeof(Float), 2 * sizeof(Float));
-        }
-        else if(phys_dim == 3)
-        {
-            auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
-            n_outfield["values/x"].set_external(ptr, nvalues, 0, 3 * sizeof(Float));
-            n_outfield["values/y"].set_external(ptr, nvalues, sizeof(Float), 3 * sizeof(Float));
-            n_outfield["values/z"].set_external(ptr, nvalues, 2*sizeof(Float), 3 * sizeof(Float));
+            const conduit::Node &n_field = n_fields[i];
+            const conduit::Node &n_gf = n_field["grid_function"];
+            dofs_per_element = n_gf["dofs_per_element"].to_int();
+            int phys_dim = n_gf["phys_dim"].to_int();
+    
+            conduit::Node &n_outfield = n_outfields[n_field.name()];
+            n_outfield["topology"] = "topology";
+            int nvalues = n_gf["values_size"].to_int();
+            if(dofs_per_element == 1)
+            {
+                n_outfield["association"] = "element";
+            }
+            else
+            {
+                n_outfield["association"] = "vertex";
+            }
+            if(phys_dim == 1)
+            {
+                n_outfield["values"].set_external_node(n_gf["values"]);
+            }
+            else if(phys_dim == 2)
+            {
+                auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
+                n_outfield["values/x"].set_external(ptr, nvalues, 0, 2 * sizeof(Float));
+                n_outfield["values/y"].set_external(ptr, nvalues, sizeof(Float), 2 * sizeof(Float));
+            }
+            else if(phys_dim == 3)
+            {
+                auto ptr = reinterpret_cast<Float *>(const_cast<void*>(n_gf["values"].data_ptr()));
+                n_outfield["values/x"].set_external(ptr, nvalues, 0, 3 * sizeof(Float));
+                n_outfield["values/y"].set_external(ptr, nvalues, sizeof(Float), 3 * sizeof(Float));
+                n_outfield["values/z"].set_external(ptr, nvalues, 2*sizeof(Float), 3 * sizeof(Float));
+            }
         }
     }
 
