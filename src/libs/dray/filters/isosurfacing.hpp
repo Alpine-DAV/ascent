@@ -20,6 +20,7 @@ class ExtractIsosurface
 protected:
   std::string m_iso_field_name;
   Float m_iso_value;
+  bool all_linear(Collection &collxn);
   std::pair<DataSet, DataSet> execute(DataSet &data_set);
 public:
   std::pair<Collection, Collection> execute(Collection &collxn);
