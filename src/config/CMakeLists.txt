@@ -80,6 +80,10 @@ if(UMPIRE_DIR_ORIG)
     set(ASCENT_UMPIRE_DIR ${UMPIRE_DIR_ORIG} )
 endif()
 
+if(CAMP_DIR_ORIG)
+    set(ASCENT_CAMP_DIR ${CAMP_DIR_ORIG} )
+endif()
+
 if(FIDES_DIR_ORIG)
     set(ASCENT_FIDES_DIR ${FIDES_DIR_ORIG} )
 endif()
