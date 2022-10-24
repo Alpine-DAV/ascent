@@ -281,6 +281,7 @@ set(dray_sources dray.cpp
 set(dray_thirdparty_libs
     RAJA
     umpire
+    camp
     conduit::conduit
     ascent_lodepng)
 
