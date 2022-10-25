@@ -26,9 +26,9 @@ Helpful Flags
 ^^^^^^^^^^^^^
 **Help Flag:**
 
-.. list-table::
-   
-   * - /rocm/bin/rocprof -h
+ =========================== 
+  /rocm/bin/rocprof -h
+ =========================== 
    
 **Housekeeping Flags:**
 
