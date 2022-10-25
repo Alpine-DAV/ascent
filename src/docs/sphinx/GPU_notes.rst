@@ -58,15 +58,15 @@ Helpful Flags
      
 lets add text in between to see what happens:
 
- ====================== ==============================================================================================
- Option                 Description                                  
- ====================== ==============================================================================================
-  -i input<.txt|.html>  Specify an input file (note: all output files will be named input.\*)
-  --stats               Generate a file of kernel execution stats called <output file>.stats.csv
-  --hsa-trace           Trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is 
-                        compatible with chrome-tracing
-  --hip-trace           Trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
- ====================== ==============================================================================================
+ ======================= ==============================================================================================
+ Option                  Description                                  
+ ======================= ==============================================================================================
+  -i input<.txt|.html>   Specify an input file (note: all output files will be named input.\*)
+  --stats                Generate a file of kernel execution stats called <output file>.stats.csv
+  --hsa-trace            Trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is 
+                         compatible with chrome-tracing
+  --hip-trace            Trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
+ ======================= ==============================================================================================
 
 Enabling RocProf in Your Build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
