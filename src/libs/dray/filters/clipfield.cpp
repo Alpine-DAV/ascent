@@ -466,8 +466,8 @@ cout << "clipcase=" << clipcase << endl;
             {
               auto ptid = shapes[4 + ni];
 
-              // count the point as used.
-              ptused[ptid]++;
+//              // count the point as used.
+//              ptused[ptid]++;
 
               // Increase the blend size to include this center point.
               if(/*ptid >= P0 &&*/ ptid <= P7)
@@ -798,8 +798,8 @@ cout << "elid: " << elid << ": thisFragments=" << thisFragments << endl;
             {
               auto ptid = shapes[4 + ni];
 
-              // count the point as used.
-              ptused[ptid]++;
+//              // count the point as used.
+//              ptused[ptid]++;
 
               // Increase the blend size to include this center point.
               if(/*ptid >= P0 &&*/ ptid <= P7)
@@ -988,6 +988,18 @@ cout << "elid: " << elid << ": thisFragments=" << thisFragments << endl;
       dgf.m_values_ptr[bgid] = blended;
     });
     DRAY_ERROR_CHECK();
+#if 1
+    // Write Point3D file containing xyz locations and point name.
+    auto uNames_hptr = uNames.get_host_ptr();
+    auto v_hptr = gf.m_values.get_host_ptr();
+    FILE *f = fopen("uNames.3D", "wt");
+    fprintf(f, "X Y Z Name\n");
+    for(int i = 0; i < uNames.size(); i++)
+    {
+        fprintf(f, "%f %f %f %u\n", v_hptr[i][0], v_hptr[i][1], v_hptr[i][2], uNames_hptr[i]);
+    }
+    fclose(f);
+#endif
 
     // ----------------------------------------------------------------------
     //
@@ -1042,8 +1054,10 @@ cout << "elid " << elid << ": Adding " << fragments_ptr[elid] << " fragments." <
       {
         if(shapes[0] == ST_PNT)
         {
-          // Mark the N# point as used. Do we need to mark edge points here?
-          ptused[N0 + shapes[1]]++;
+            // Skip over
+
+//          // Mark the N# point as used. Do we need to mark edge points here?
+//          ptused[N0 + shapes[1]]++;
 
           // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
           shapes += (4 + shapes[3]);
@@ -1072,9 +1086,12 @@ cout << "elid " << elid << ": Adding " << fragments_ptr[elid] << " fragments." <
 #endif
       }
 
-      // This element's blendNames start at blendGroupStart[elid] in the original,
-      // non-unique list.
-      int32 bgStart = blendGroupStart_ptr[elid];
+      // This element's blendNames start at blendGroupOffsets[elid] in the
+      // original, non-unique list.
+
+      // Seek to the start of the blend groups for this element.
+      int32 bgStart = blendGroupOffsets_ptr[elid];
+cout << "elid " << elid << ": blend names start at: " << bgStart << endl;
 
       // Go through the points in the order they would have been added as blend
       // groups, get their blendName, and then overall index of that blendName
@@ -1086,6 +1103,7 @@ cout << "elid " << elid << ": Adding " << fragments_ptr[elid] << " fragments." <
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
+cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1094,6 +1112,7 @@ cout << "elid " << elid << ": Adding " << fragments_ptr[elid] << " fragments." <
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
+cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1102,6 +1121,7 @@ cout << "elid " << elid << ": Adding " << fragments_ptr[elid] << " fragments." <
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
+cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
