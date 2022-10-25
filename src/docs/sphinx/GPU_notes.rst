@@ -30,6 +30,8 @@ Helpful Flags
    
    * /rocm/bin/rocprof -h
    
+Helpful Flags
+^^^^^^^^^^^^^
 .. list-table::
    :header-rows: 1
 
@@ -45,6 +47,8 @@ Helpful Flags
         
    * -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
         
+Helpful Flags
+^^^^^^^^^^^^^
 .. list-table::
    :header-rows: 1
    
