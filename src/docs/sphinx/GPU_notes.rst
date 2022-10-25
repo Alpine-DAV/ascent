@@ -55,7 +55,7 @@ Helpful Flags
    * - --hsa-trace **:** trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is compatible with chrome-tracing
          
    * - --hip-trace **:** trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
-
+lets add text in between to see what happens:
   ==================== ============================================== ================================================
   Option               Description                                     Default
   ==================== ============================================== ================================================
