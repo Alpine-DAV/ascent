@@ -418,6 +418,11 @@ if (ENABLE_SERIAL)
                       $<TARGET_FILE:ascent_lodepng>)
         endif()
 
+        if(ENABLE_DRAY)
+            list(APPEND internal_targets_to_link
+                        $<TARGET_FILE:dray>)
+        endif()
+
         set(imported_targets_to_link "")
 
         # updated for vtkm 1.9
@@ -598,6 +603,11 @@ if(MPI_FOUND)
                        $<TARGET_FILE:vtkh_filters_mpi>
                        $<TARGET_FILE:vtkh_core_mpi>
                        $<TARGET_FILE:vtkh_utils_mpi>)
+        endif()
+
+        if(ENABLE_DRAY)
+            list(APPEND internal_targets_to_link
+                        $<TARGET_FILE:dray_mpi>)
         endif()
 
         set(imported_targets_to_link "")
