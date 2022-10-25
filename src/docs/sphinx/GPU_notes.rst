@@ -32,40 +32,28 @@ Helpful Flags
    
 **Housekeeping Flags:**
 
-.. list-table::
-   
-   * - --timestamp <on|off> **:** turn on/off gpu kernel dispatch timestamps
-         
-   * - --basenames <on|off> **:** turn on/off turncating gpu kernel names such as template parameters and arguments types
-       
-   * - -o <output csv file> **:** save direct counter data to a specified file name
-         
-   * - -d <directory> **:** send profiling data to a specified directory
-         
-   * - -t <temporary directory> **:** change the directory where files are created from /tmp to temporary directory, allowing you to save these files
+ =========================== ==================================================== ================================================
+ Option                      Description                                          Default
+ =========================== ==================================================== ================================================
+  --timestamp <on|off>        Turn on/off gpu kernel dispatch timestamps           **OFF**
+  --basenames <on|off>        Turn on/off turncating gpu kernel names such         **OFF**
+                              as template parameters and arguments types
+  -o <output csv file>        Save direct counter data to a specified file name    <input file base>.csv
+  -d <directory>              Send profiling data to a specified directory         /tmp
+  -t <temporary directory>    Change the directory where tmp files are created     /tmp
+                              allowing you to save these files
+ =========================== ==================================================== ================================================
         
 **Profiling Flags:**
-
-.. list-table::
-   
-   * - -i input<.txt|.html> **:** specify an input file (note: all output files will be named input.\*)
-         
-   * - --stats **:** generate a file of kernel execution stats called <output file>.stats.csv
-         
-   * - --hsa-trace **:** trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is compatible with chrome-tracing
-         
-   * - --hip-trace **:** trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
-     
-lets add text in between to see what happens:
 
  =========================== ==============================================================================================
  Option                      Description                                  
  =========================== ==============================================================================================
-  -i input<.txt|.html>       Specify an input file (note: all output files will be named input.\*)
-  --stats                    Generate a file of kernel execution stats called <output file>.stats.csv
-  --hsa-trace                Trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is 
-                             compatible with chrome-tracing
-  --hip-trace                Trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
+  -i input<.txt|.html>        Specify an input file (note: all output files will be named input.\*)
+  --stats                     Generate a file of kernel execution stats called <output file>.stats.csv
+  --hsa-trace                 Trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is 
+                              compatible with chrome-tracing
+  --hip-trace                 Trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
  =========================== ==============================================================================================
 
 Enabling RocProf in Your Build
