@@ -25,34 +25,36 @@ Below you will find a basic guide to using rocProf with Ascent.
 Helpful Flags
 ^^^^^^^^^^^^^
 .. list-table::
-
-   Help flag
+   :header-rows: 1
+   * Help Flag
    
-   /rocm/bin/rocprof -h
+   * /rocm/bin/rocprof -h
    
 .. list-table::
+   :header-rows: 1
 
-   Housekeeping Flags
+   * Housekeeping Flags
    
-   --timestamp <on|off>: turn on/off gpu kernel dispatch timestamps
+   * --timestamp <on|off>: turn on/off gpu kernel dispatch timestamps
         
-   --basenames <on|off>: turn on/off turncating gpu kernel names such as template parameters and arguments types
+   * --basenames <on|off>: turn on/off turncating gpu kernel names such as template parameters and arguments types
       
-   -o <output csv file>: save direct counter data to a specified file name
+   * -o <output csv file>: save direct counter data to a specified file name
         
-   -d <directory>: send profiling data to a specified directory
+   * -d <directory>: send profiling data to a specified directory
         
-   -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
+   * -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
         
 .. list-table::
-
-   Profiling Flags
+   :header-rows: 1
    
-   -i input<.txt|.html>: specify an input file (note: all output files will be named input.\*)
+   * Profiling Flags
+   
+   * -i input<.txt|.html>: specify an input file (note: all output files will be named input.\*)
         
-   --stats: generate a file of kernel execution stats called <output file>.stats.csv
+   * --stats: generate a file of kernel execution stats called <output file>.stats.csv
         
-   --hsa-trace: trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is compatible with chrome-tracing
+   * --hsa-trace: trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is compatible with chrome-tracing
         
-   --hip-trace: trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
+   * --hip-trace: trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
 
