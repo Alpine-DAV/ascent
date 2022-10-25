@@ -24,13 +24,13 @@ Below you will find a basic guide to using rocProf with Ascent.
 
 Helpful Flags
 ^^^^^^^^^^^^^
-Help Flag:
+*Help Flag:*
 
 .. list-table::
    
    * - /rocm/bin/rocprof -h
    
-Housekeeping Flags:
+*Housekeeping Flags:*
 
 .. list-table::
    
@@ -44,8 +44,7 @@ Housekeeping Flags:
          
    * - -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
         
-Helpful Flags
-^^^^^^^^^^^^^
+*Profiling Flags:*
 
 .. list-table::
    
