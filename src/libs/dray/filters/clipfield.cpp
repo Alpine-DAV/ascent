@@ -249,12 +249,14 @@ struct ClipFieldLinear
   std::string   m_field_name;
   bool m_invert;
 
+  //-------------------------------------------------------------------------
   ClipFieldLinear(DataSet &input, Float value, const std::string &field_name,
      bool invert) : m_input(input), m_output(), m_clip_value(value),
       m_field_name(field_name), m_invert(invert)
   {
   }
 
+  //-------------------------------------------------------------------------
   // Execute the filter for the input mesh across all possible field types.
   void execute()
   {
@@ -273,6 +275,7 @@ struct ClipFieldLinear
     m_output.domain_id(m_input.domain_id());
   }
 
+  //-------------------------------------------------------------------------
   // Load lookup tables for mesh element type into the lut arrays.
   template <typename MeshType>
   void load_lookups(MeshType &/*m*/,
@@ -282,6 +285,7 @@ struct ClipFieldLinear
   {
   }
 
+  //-------------------------------------------------------------------------
   template <typename FieldType>
   DRAY_EXEC static int32 clip_case(int32 elid,
                                    int32 el_dofs,
@@ -310,9 +314,11 @@ struct ClipFieldLinear
         clipcase |= (1 << j);
       }
     }
+    cout << "elid " << elid << ": clipcase=" << clipcase << endl;
     return clipcase;
   }
 
+  //-------------------------------------------------------------------------
   DRAY_EXEC static uint32 jenkins_hash(const uint8 *data, uint32 length)
   {
     uint32 i = 0;
@@ -329,11 +335,13 @@ struct ClipFieldLinear
     return hash;
   };
 
+  //-------------------------------------------------------------------------
   DRAY_EXEC static uint32 make_name_1(int32 id)
   {
     return jenkins_hash(reinterpret_cast<uint8*>(&id), sizeof(int32));
   };
 
+  //-------------------------------------------------------------------------
   DRAY_EXEC static uint32 make_name_2(int32 id0, int32 id1)
   {
     int32 data[2] = {id0, id1};
@@ -345,6 +353,7 @@ struct ClipFieldLinear
     return jenkins_hash(reinterpret_cast<uint8*>(data), 2*sizeof(int32));
   };
 
+  //-------------------------------------------------------------------------
   DRAY_EXEC static uint32 make_name_n(const int32 *start, const int32 *end)
   {
     uint32 n = end - start + 1;
@@ -367,6 +376,7 @@ struct ClipFieldLinear
     return jenkins_hash(reinterpret_cast<uint8*>(v), n*sizeof(int32));
   };
 
+  //-------------------------------------------------------------------------
   DRAY_EXEC static int32 bsearch(uint32 name, const uint32 *names, int32 n)
   {
     int32 index = -1;
@@ -385,11 +395,11 @@ struct ClipFieldLinear
         break;
       }
     }
-    cout << "bsearch(" << name << ") -> " << index << endl;
-
+    //cout << "bsearch(" << name << ") -> " << index << endl;
     return index;
   }
 
+  //-------------------------------------------------------------------------
   // This method gets invoked by dispatch, which will have converted the field
   // into a concrete derived type so this method is able to call methods on
   // the derived type with no virtual calls.
@@ -470,7 +480,6 @@ struct ClipFieldLinear
     auto distance_gf = distance.get_dof_data();
     int32 nelem = distance_gf.get_num_elem(); // number of elements in gf.
     auto el_dofs = distance_gf.m_el_dofs;
-cout << "el_dofs=" << el_dofs << endl;
 
     // Load the mesh/element-appropriate lut into arrays.
     Array<int32> lut_nshapes, lut_offset;
@@ -763,7 +772,7 @@ cout << "el_dofs=" << el_dofs << endl;
             {
               auto ptid = shapes[4 + ni];
 
-              // Increase the blend size to include this center point.
+              // Add the point to the blend group.
               if(ptid <= P7)
               {
                 // corner point.
@@ -774,6 +783,8 @@ cout << "el_dofs=" << el_dofs << endl;
               }
               else if(ptid >= EA && ptid <= EL)
               {
+// TODO: need if test for el_dofs==8
+
                 // edge points are derived from 2 corner points. If
                 // those appear here then we're probably creating a
                 // face point. We can store the 2 corner points in place
@@ -797,12 +808,14 @@ cout << "el_dofs=" << el_dofs << endl;
               }
             }
 
-            // Store how many points make up this blend group.
-            blendGroupSizes_ptr[bgOffset] = npts;
+            // Store how many points make up this blend group. Note that the
+            // size will not necessarily be equal to npts if edges were involved.
+            int32 nblended = bgStart - blendGroupStart_ptr[bgOffset];
+            blendGroupSizes_ptr[bgOffset] = nblended;
 
             // Store "name" of blend group.
             auto blendName = make_name_n(blendIds_ptr + start,
-                                         blendIds_ptr + start + shapes[3]);
+                                         blendIds_ptr + start + nblended);
             blendNames_ptr[bgOffset++] = blendName;
           }
 
@@ -1020,7 +1033,7 @@ cout << "el_dofs=" << el_dofs << endl;
 
       // Seek to the start of the blend groups for this element.
       int32 bgStart = blendGroupOffsets_ptr[elid];
-cout << "elid " << elid << ": blend names start at: " << bgStart << endl;
+//cout << "elid " << elid << ": blend names start at: " << bgStart << endl;
 
       // Go through the points in the order they would have been added as blend
       // groups, get their blendName, and then overall index of that blendName
@@ -1032,7 +1045,7 @@ cout << "elid " << elid << ": blend names start at: " << bgStart << endl;
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
-cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
+//cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1041,7 +1054,7 @@ cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << n
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
-cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
+//cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1050,7 +1063,7 @@ cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << n
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
-cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
+//cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1060,7 +1073,7 @@ cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << n
       shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
       // This is where the output fragments start for this element
       int32 tetOutput = fragmentOffsets_ptr[elid] * 4;
-cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
+//cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
       for(int32 si = 0; si < lut_nshapes_ptr[clipcase]; si++)
       {
         if(shapes[0] == ST_PNT)
@@ -1212,7 +1225,6 @@ cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
   }
 
   //-------------------------------------------------------------------------
-
   template<typename ScalarField>
   ScalarField
   create_distance_field(ScalarField &field) const
@@ -1247,6 +1259,7 @@ cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
   }
 };
 
+//---------------------------------------------------------------------------
 // Load Hex lookup data.
 template <>
 void
@@ -1266,6 +1279,8 @@ ClipFieldLinear::load_lookups(HexMesh_P1 &m,
 
 }//namespace detail
 
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 ClipField::ClipField() : m_clip_value(0.), m_field_name(), m_invert(false)
 {
 }
