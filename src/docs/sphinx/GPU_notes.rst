@@ -25,10 +25,8 @@ Below you will find a basic guide to using rocProf with Ascent.
 Helpful Flags
 ^^^^^^^^^^^^^
 **Help Flag:**
-
-+=========================+ 
-|  /rocm/bin/rocprof -h   |
-+=========================+ 
+ ::
+  /rocm/bin/rocprof -h   
    
 **Housekeeping Flags:**
 
