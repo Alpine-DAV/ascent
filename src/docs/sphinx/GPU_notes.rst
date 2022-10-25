@@ -50,7 +50,7 @@ Profiling Flags:
    :header-rows: 1
    
    * - Flag
-     -Description
+     - Description
    
    * - -i input<.txt|.html>
      - specify an input file (note: all output files will be named input.\*)
