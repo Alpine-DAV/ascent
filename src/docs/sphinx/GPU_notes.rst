@@ -26,11 +26,13 @@ Helpful Flags
 ^^^^^^^^^^^^^
 .. list-table::
 
-   - Help flag
+   Help flag
    
    /rocm/bin/rocprof -h
    
-   - Housekeeping Flags
+.. list-table::
+
+   Housekeeping Flags
    
    --timestamp <on|off>: turn on/off gpu kernel dispatch timestamps
         
@@ -42,7 +44,9 @@ Helpful Flags
         
    -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
         
-   - Profiling Flags
+.. list-table::
+
+   Profiling Flags
    
    -i input<.txt|.html>: specify an input file (note: all output files will be named input.\*)
         
