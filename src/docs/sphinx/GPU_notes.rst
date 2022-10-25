@@ -24,21 +24,15 @@ Below you will find a basic guide to using rocProf with Ascent.
 
 Helpful Flags
 ^^^^^^^^^^^^^
+Help Flag:
 
 .. list-table::
-   :header-rows: 1
-
-   * - Help Flag
    
    * - /rocm/bin/rocprof -h
    
-Helpful Flags
-^^^^^^^^^^^^^
+Housekeeping Flags:
 
 .. list-table::
-   :header-rows: 1
-
-   * - Housekeeping Flags
    
    * - --timestamp <on|off>: turn on/off gpu kernel dispatch timestamps
          
@@ -50,13 +44,9 @@ Helpful Flags
          
    * - -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
         
-Helpful Flags
-^^^^^^^^^^^^^
+Profiling Flags:
 
 .. list-table::
-   :header-rows: 1
-   
-   * - Profiling Flags
    
    * - -i input<.txt|.html>: specify an input file (note: all output files will be named input.\*)
          
