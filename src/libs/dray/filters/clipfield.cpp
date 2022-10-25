@@ -410,6 +410,7 @@ struct ClipFieldLinear
       int32 start = elid * el_dofs;
       const int32 reorder[] = {0,1,3,2,4,5,7,6};
 
+cout << "elid: " << elid << ", ";
       // Determine the clip case.
       int32 clipcase = 0;
       for(int32 j = 0; j < el_dofs; j++)
@@ -419,9 +420,11 @@ struct ClipFieldLinear
         int32 nidx = (el_dofs == 8) ? reorder[j] : j;
 
         int32 dofid = conn_ptr[start + nidx];
+cout << "dist[" << dofid << "]=" << dist_ptr[dofid][0] << ", ";
         if(dist_ptr[dofid][0] > 0.)
             clipcase |= (1 << nidx);
       }
+cout << "clipcase=" << clipcase << endl;
 
       // Get the shapes for this clip case.
       unsigned char *shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
@@ -541,7 +544,7 @@ struct ClipFieldLinear
       blendGroups_ptr[elid] = thisBlendGroups;
       blendGroupLen_ptr[elid] = thisblendGroupLen;
       fragments_ptr[elid] = thisFragments;
-
+cout << "elid: " << elid << ": thisFragments=" << thisFragments << endl;
       // Sum up the sizes overall.
       fragment_sum += thisFragments;
       blendGroups_sum += thisBlendGroups;
@@ -758,70 +761,12 @@ struct ClipFieldLinear
                     { 2, 6 }    /* EL */
       };
 
-#if 0
-      // NOTE: We define some Lambdas here in the RAJA code so we can hopefully
-      //       execute them in the device without having to otherwise decorate
-      //       for RAJA.
-      auto jenkins_hash = [](const uint8 *data, uint32 length) -> uint32
-      {
-        uint32 i = 0;
-        uint32 hash = 0;
-        while(i != length)
-        {
-          hash += data[i++];
-          hash += hash << 10;
-          hash ^= hash >> 6;
-        }
-        hash += hash << 3;
-        hash ^= hash >> 11;
-        hash += hash << 15;
-        return hash;
-      };
-
-      auto make_name_1 = [&jenkins_hash](int32 id) -> uint32
-      {
-        return jenkins_hash(reinterpret_cast<uint8*>(&id), sizeof(int32));
-      };
-
-      auto make_name_2 = [&jenkins_hash](int32 id0, int32 id1) -> uint32
-      {
-        int32 data[2] = {id0, id1};
-        if(id1 < id0)
-        {
-          data[0] = id1;
-          data[1] = id0;
-        }
-        return jenkins_hash(reinterpret_cast<uint8*>(data), 2*sizeof(int32));
-      };
-
-      auto make_name_n = [&jenkins_hash](const int32 *start, const int32 *end) -> uint32
-      {
-        uint32 n = end - start + 1;
-        int32 v[12]; // pick largest number of blends.
-        // Copy unsorted values into data[].
-        for(int32 i = 0; i < n; i++)
-          v[i] = start[i];
-        // Sort (crude).
-        for(int32 i = 0; i < n; i++)
-        {
-          int32 tmp, j = i;
-          while(j > 0 && v[j] < v[j-1])
-          {
-             int32 tmp = v[j]; // swap
-             v[j] = v[j-1];
-             v[j-1] = tmp;
-             j--;
-          }
-        }
-        return jenkins_hash(reinterpret_cast<uint8*>(v), n*sizeof(int32));
-      };
-#endif
       // Starting offset of where we store this element's blend groups.
       int32 bgStart = blendOffset_ptr[elid];
       int32 bgOffset = blendGroupOffsets_ptr[elid];
 #ifdef PRINT_CASES
       if(clipcase != 255)
-          cout << "clipcase: " << clipcase << endl;
+          cout << "elem " << elid << ": clipcase: " << clipcase << endl;
 #endif
       for(int32 si = 0; si < lut_nshapes_ptr[clipcase]; si++)
       {
@@ -1019,20 +964,10 @@ struct ClipFieldLinear
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     int32 nbg = uNames.size();
+    cout << "Num unique blend groups: " << nbg << endl;
     GridFunction<3> gf;
-    gf.m_el_dofs = nbg;
-    gf.m_size_el = nbg;
-    gf.m_size_ctrl = nbg;
-    gf.m_ctrl_idx.resize(nbg);
     gf.m_values.resize(nbg);
     DeviceGridFunction<3> dgf(gf);
-    auto gf_m_ctrl_idx = gf.m_ctrl_idx.get_device_ptr();
-    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bgid)
-    {
-      gf_m_ctrl_idx[bgid] = bgid;
-    });
-    DRAY_ERROR_CHECK();
-
     // Each loop iteration is one unique blend group.
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bgid)
     {
@@ -1068,7 +1003,7 @@ struct ClipFieldLinear
       // If there are no fragments, return from lambda.
       if(fragments_ptr[elid] == 0)
         return;
-
+cout << "elid " << elid << ": Adding " << fragments_ptr[elid] << " fragments." << endl;
       int32 start = elid * el_dofs;
       const int32 reorder[] = {0,1,3,2,4,5,7,6};
       int32 el_ids[8]; // max p1 ids.
@@ -1107,6 +1042,9 @@ struct ClipFieldLinear
       {
         if(shapes[0] == ST_PNT)
         {
+          // Mark the N# point as used. Do we need to mark edge points here?
+          ptused[N0 + shapes[1]]++;
+
           // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
           shapes += (4 + shapes[3]);
         }
@@ -1178,6 +1116,7 @@ cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
       {
         if(shapes[0] == ST_PNT)
         {
+          // Skip past the point definition.
           // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
           shapes += (4 + shapes[3]);
         }
@@ -1212,7 +1151,11 @@ cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
     // Stage 7 - Make the output mesh.
     //
     // ----------------------------------------------------------------------
+    // Finish filling out the grid function for the coords.
+    gf.m_el_dofs = 4;
+    gf.m_size_el = fragment_sum.get();
     gf.m_ctrl_idx = conn_out;
+    gf.m_size_ctrl = conn_out.size();
     auto newmesh = std::make_shared<UnstructuredMesh<Tet_P1>>(gf, 1);
     newmesh->name(mesh.name());
     m_output.add_mesh(newmesh);
@@ -1221,6 +1164,12 @@ cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
     // Save the data to a YAML file to look at it.
     cout << "Writing clip debugging information." << endl;
     conduit::Node n;
+    conduit::Node &inp = n["input"];
+    mesh.to_node(inp);
+
+    conduit::Node &s0 = n["stage0/distance"];
+    distance.to_node(s0);
+
     conduit::Node &s1 = n["stage1"];
     s1["nelem"] = nelem;
     s1["fragment_sum"] = fragment_sum.get();
@@ -1252,6 +1201,9 @@ cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
 
     conduit::Node &s6 = n["stage6"];
     s6["conn_out"].set_external(conn_out.get_host_ptr(), conn_out.size());
+
+    conduit::Node &sout = n["output"];
+    m_output.to_node(sout);
 
     conduit::relay::io::save(n, "clipfield.yaml", "yaml");
 #endif
@@ -1324,10 +1276,10 @@ cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
   ScalarField
   create_distance_field(ScalarField &field) const
   {
-    // The size of the field's control idx (connectivity)
-    int32 sz = field.get_dof_data().m_size_ctrl;
+    // The size of the field's values
+    int32 sz = field.get_dof_data().m_values.size();
 
-    // Make a new distance array that is the same size as the input field's m_ctrl_idx.
+    // Make a new distance array that is the same size as the input field.
     Array<Vec<Float,1>> dist;
     dist.resize(sz);
     Vec<Float,1> *dist_ptr = dist.get_device_ptr();
@@ -1444,9 +1396,9 @@ ClipField::execute(Collection &collection)
     DataSet dom = collection.domain(i);
     if(dom.mesh() != nullptr && dom.mesh()->order() == 1)
     {
-        detail::ClipFieldLinear func(dom, m_clip_value, m_field_name, m_invert);
-        func.execute();
-        res.add_domain(func.m_output);
+      detail::ClipFieldLinear func(dom, m_clip_value, m_field_name, m_invert);
+      func.execute();
+      res.add_domain(func.m_output);
     }
     else
     {
