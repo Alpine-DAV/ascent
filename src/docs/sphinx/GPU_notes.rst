@@ -55,27 +55,29 @@ Helpful Flags
    * - --hsa-trace **:** trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is compatible with chrome-tracing
          
    * - --hip-trace **:** trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
+     
 lets add text in between to see what happens:
-  ==================== ============================================== ================================================
-  Option               Description                                     Default
-  ==================== ============================================== ================================================
-   -i input<.txt|.html> specify an input file (note: all output files
-                        will be named input.\*)
-   --stats              generate a file of kernel execution stats 
-                        called <output file>.stats.csv
-   --hsa-trace          trace GPU kernels, host HSA events, and HIP 
-                        memory copies. Generates JSON file that is 
-                        compatible with chrome-tracing
-   --hip-trace          trace HIP API calls. Generates JSON file 
-                        that is compatible with chrome-tracing
-   --prefix             Destination directory                          ``uberenv_libs``
-   --spec               Spack spec                                     linux: **%gcc**
-                                                                       osx: **%clang**
-   --spack-config-dir   Folder with Spack settings files               linux: (empty)
-                                                                       osx: ``scripts/uberenv_configs/spack_configs/darwin/``
-   -k                   Ignore SSL Errors                              **False**
-   --install            Fully install ascent not just dependencies     **False**
-  ==================== ============================================== ================================================
+
+==================== ============================================== ================================================
+Option               Description                                     Default
+==================== ============================================== ================================================
+ -i input<.txt|.html> specify an input file (note: all output files
+                      will be named input.\*)
+ --stats              generate a file of kernel execution stats 
+                      called <output file>.stats.csv
+ --hsa-trace          trace GPU kernels, host HSA events, and HIP 
+                      memory copies. Generates JSON file that is 
+                      compatible with chrome-tracing
+ --hip-trace          trace HIP API calls. Generates JSON file 
+                      that is compatible with chrome-tracing
+ --prefix             Destination directory                          ``uberenv_libs``
+ --spec               Spack spec                                     linux: **%gcc**
+                                                                     osx: **%clang**
+ --spack-config-dir   Folder with Spack settings files               linux: (empty)
+                                                                     osx: ``scripts/uberenv_configs/spack_configs/darwin/``
+ -k                   Ignore SSL Errors                              **False**
+ --install            Fully install ascent not just dependencies     **False**
+==================== ============================================== ================================================
 
 Enabling RocProf in Your Build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
