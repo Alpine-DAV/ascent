@@ -58,24 +58,15 @@ Helpful Flags
      
 lets add text in between to see what happens:
 
- ==================== ============================================== ================================================
- Option               Description                                     Default
- ==================== ============================================== ================================================
-  --stats              generate a file of kernel execution stats 
-                       called <output file>.stats.csv
-  --hsa-trace          trace GPU kernels, host HSA events, and HIP 
-                       memory copies. Generates JSON file that is 
+ ===================== ==============================================================================================
+ Option                Description                                  
+ ===================== ==============================================================================================
+  -i input<.txt|.html> Specify an input file (note: all output files will be named input.\*)
+  --stats              Generate a file of kernel execution stats called <output file>.stats.csv
+  --hsa-trace          Trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is 
                        compatible with chrome-tracing
-  --hip-trace          trace HIP API calls. Generates JSON file 
-                       that is compatible with chrome-tracing
-  --prefix             Destination directory                          ``uberenv_libs``
-  --spec               Spack spec                                     linux: **%gcc**
-                                                                      osx: **%clang**
-  --spack-config-dir   Folder with Spack settings files               linux: (empty)
-                                                                      osx: ``scripts/uberenv_configs/spack_configs/darwin/``
-  -k                   Ignore SSL Errors                              **False**
-  --install            Fully install ascent not just dependencies     **False**
- ==================== ============================================== ================================================
+  --hip-trace          Trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
+ ===================== ==============================================================================================
 
 Enabling RocProf in Your Build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
