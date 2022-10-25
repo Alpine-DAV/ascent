@@ -44,23 +44,16 @@ Housekeeping Flags:
          
    * - -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
         
-Profiling Flags:
+Helpful Flags
+^^^^^^^^^^^^^
 
 .. list-table::
-   :header-rows: 1
    
-   * - Flag
-     - Description
-   
-   * - -i input<.txt|.html>
-     - specify an input file (note: all output files will be named input.\*)
+   * - -i input<.txt|.html>: specify an input file (note: all output files will be named input.\*)
          
-   * - --stats
-     - generate a file of kernel execution stats called <output file>.stats.csv
+   * - --stats: generate a file of kernel execution stats called <output file>.stats.csv
          
-   * - --hsa-trace
-     - trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is compatible with chrome-tracing
+   * - --hsa-trace: trace GPU kernels, host HSA events, and HIP memory copies. Generates JSON file that is compatible with chrome-tracing
          
-   * - --hip-trace
-     - trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
+   * - --hip-trace: trace HIP API calls. Generates JSON file that is compatible with chrome-tracing
 
