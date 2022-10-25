@@ -41,7 +41,6 @@ Housekeeping Flags:
    -t <temporary directory>: change the directory where files are created from /tmp to temporary directory, allowing you to save these files
         
 Profiling Flags: 
-.. list-table::
    -i input<.txt|.html>: specify an input file (note: all output files will be named input.\*)
         
    --stats: generate a file of kernel execution stats called <output file>.stats.csv
