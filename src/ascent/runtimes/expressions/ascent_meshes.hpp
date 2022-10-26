@@ -4,7 +4,7 @@
 #include "ascent_memory_manager.hpp"
 #include "ascent_memory_interface.hpp"
 #include "ascent_array.hpp"
-#include "ascent_raja_policies.hpp"
+#include "ascent_execution_policies.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

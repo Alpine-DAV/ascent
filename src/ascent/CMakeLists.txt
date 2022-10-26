@@ -144,8 +144,8 @@ set(ascent_headers
     runtimes/expressions/ascent_data_binning.hpp
     runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
-    runtimes/expressions/ascent_raja_policies.hpp
-    runtimes/expressions/ascent_execution.hpp
+    runtimes/expressions/ascent_execution_policies.hpp
+    runtimes/expressions/ascent_execution_manager.hpp
     runtimes/expressions/ascent_derived_jit.hpp
     runtimes/expressions/ascent_jit_array.hpp
     runtimes/expressions/ascent_jit_field.hpp
@@ -211,8 +211,8 @@ set(ascent_sources
     runtimes/expressions/ascent_array_registry.cpp
     runtimes/expressions/ascent_array_utils.cpp
     runtimes/expressions/ascent_data_binning.cpp
-    runtimes/expressions/ascent_raja_policies.cpp
-    runtimes/expressions/ascent_execution.cpp
+    runtimes/expressions/ascent_execution_policies.cpp
+    runtimes/expressions/ascent_execution_manager.cpp
     runtimes/expressions/ascent_derived_jit.cpp
     runtimes/expressions/ascent_jit_array.cpp
     runtimes/expressions/ascent_jit_field.cpp
@@ -254,7 +254,7 @@ set(ascent_device_sources runtimes/expressions/ascent_memory_manager.cpp
                           runtimes/expressions/ascent_array_utils.cpp
                           runtimes/expressions/ascent_array_internals.cpp
                           runtimes/expressions/ascent_data_binning.cpp
-                          runtimes/expressions/ascent_raja_policies.cpp
+                          runtimes/expressions/ascent_execution_policies.cpp
                           runtimes/expressions/ascent_blueprint_architect.cpp
                           runtimes/expressions/ascent_derived_jit.cpp 
                           )

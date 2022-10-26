@@ -16,7 +16,7 @@
 #include <expressions/ascent_blueprint_architect.hpp>
 #include <runtimes/expressions/ascent_memory_manager.hpp>
 #include <runtimes/expressions/ascent_conduit_reductions.hpp>
-#include <runtimes/expressions/ascent_execution.hpp>
+#include <runtimes/expressions/ascent_execution_manager.hpp>
 
 #include <cmath>
 #include <iostream>

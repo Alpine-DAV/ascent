@@ -25,7 +25,7 @@
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_data_binning.hpp"
 #include "ascent_conduit_reductions.hpp"
-#include "ascent_execution.hpp"
+#include "ascent_execution_manager.hpp"
 #include <ascent_config.h>
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>

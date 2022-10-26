@@ -6,7 +6,7 @@
 #ifndef ASCENT_MATH_HPP
 #define ASCENT_MATH_HPP
 
-#include "ascent_raja_policies.hpp"
+#include "ascent_execution_policies.hpp"
 
 // include math so we can use functions defined
 // in both cuda and c

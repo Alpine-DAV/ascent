@@ -2,7 +2,7 @@
 #define ASCENT_MEMORY_INTERFACE_HPP
 
 #include <conduit.hpp>
-#include "ascent_raja_policies.hpp"
+#include "ascent_execution_policies.hpp"
 #include "ascent_memory_manager.hpp"
 #include <ascent_logging.hpp>
 

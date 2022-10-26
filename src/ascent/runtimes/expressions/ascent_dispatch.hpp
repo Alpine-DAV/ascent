@@ -5,8 +5,8 @@
 #include "ascent_memory_interface.hpp"
 #include "ascent_meshes.hpp"
 #include "ascent_array.hpp"
-#include "ascent_raja_policies.hpp"
-#include "ascent_execution.hpp"
+#include "ascent_execution_policies.hpp"
+#include "ascent_execution_manager.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

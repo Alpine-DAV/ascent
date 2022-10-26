@@ -1,12 +1,23 @@
-#ifndef ASCENT_RAJA_POLICIECS_HPP
-#define ASCENT_RAJA_POLICIECS_HPP
+#ifndef ASCENT_EXECUTION_POLICIES_HPP
+#define ASCENT_EXECUTION_POLICIES_HPP
 
 #include <ascent_config.h>
 #include <conduit.hpp>
+
+#if defined(ASCENT_RAJA_ENABLED)
 #include <RAJA/RAJA.hpp>
+#endif
 
 namespace ascent
 {
+
+//---------------------------------------------------------------------------//
+#if defined(ASCENT_RAJA_ENABLED)
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// policies for when raja is on
+//---------------------------------------------------------------------------//
+
 #if defined(ASCENT_CUDA_ENABLED)
 #define CUDA_BLOCK_SIZE 128
 #endif
@@ -15,6 +26,7 @@ namespace ascent
 #define HIP_BLOCK_SIZE 256
 #endif
 
+//---------------------------------------------------------------------------//
 #if defined(ASCENT_CUDA_ENABLED)
 struct CudaExec
 {
@@ -25,6 +37,7 @@ struct CudaExec
 };
 #endif
 
+//---------------------------------------------------------------------------//
 #if defined(ASCENT_HIP_ENABLED)
 struct HipExec
 {
@@ -35,6 +48,7 @@ struct HipExec
 };
 #endif
 
+//---------------------------------------------------------------------------//
 #if defined(ASCENT_OPENMP_ENABLED)
 struct OpenMPExec
 {
@@ -54,6 +68,7 @@ struct OpenMPExec
 };
 #endif
 
+//---------------------------------------------------------------------------//
 struct SerialExec
 {
   using for_policy = RAJA::seq_exec;
@@ -71,6 +86,7 @@ struct SerialExec
   static std::string memory_space;
 };
 
+//---------------------------------------------------------------------------//
 #if defined(ASCENT_CUDA_ENABLED)
 using for_policy    = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 using reduce_policy = RAJA::cuda_reduce;
@@ -83,17 +99,18 @@ using atomic_policy = RAJA::hip_atomic;
 using for_policy    = RAJA::omp_parallel_for_exec;
 using reduce_policy = RAJA::omp_reduce;
 using atomic_policy = RAJA::omp_atomic;
-#else // serial
+#else
 using for_policy    = RAJA::seq_exec;
 using reduce_policy = RAJA::seq_reduce;
 using atomic_policy = RAJA::seq_atomic;
 #endif
 
+//---------------------------------------------------------------------------//
 //
 // CPU only policies need when using classes
 // that cannot be called on a GPU, e.g. MFEM
 //
-#ifdef ASCENT_OPENMP_ENABLED
+#if defined(ASCENT_OPENMP_ENABLED)
 using for_cpu_policy    = RAJA::omp_parallel_for_exec;
 using reduce_cpu_policy = RAJA::omp_reduce;
 using atomic_cpu_policy = RAJA::omp_atomic;
@@ -103,9 +120,41 @@ using reduce_cpu_policy = RAJA::seq_reduce;
 using atomic_cpu_policy = RAJA::seq_atomic;
 #endif
 
-// -------------------- Lambda decorators ----------------------
-#if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
+//---------------------------------------------------------------------------//
+#else
+//---------------------------------------------------------------------------//
+// policies for when raja is OFF
+//---------------------------------------------------------------------------//
+struct EmptyPolicy
+{};
+//---------------------------------------------------------------------------//
+struct SerialExec
+{
+  using for_policy    = EmptyPolicy;
+  using reduce_policy = EmptyPolicy;
+  using atomic_policy = EmptyPolicy;
+  static std::string memory_space;
+};
 
+//---------------------------------------------------------------------------//
+using for_policy    = EmptyPolicy;
+using reduce_policy = EmptyPolicy;
+using atomic_policy = EmptyPolicy;
+
+//---------------------------------------------------------------------------//
+using for_cpu_policy    = EmptyPolicy;
+using reduce_cpu_policy = EmptyPolicy;
+using atomic_cpu_policy = EmptyPolicy;
+#endif
+
+//---------------------------------------------------------------------------//
+// Lambda decorators
+//---------------------------------------------------------------------------//
+
+#if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
+//---------------------------------------------------------------------------//
+// CUDA decorators
+//---------------------------------------------------------------------------//
 #define ASCENT_EXEC inline __host__ __device__
 // Note: there is a performance hit for doing both host and device
 // the cuda compiler calls this on then host as a std::function call for each i
@@ -114,21 +163,28 @@ using atomic_cpu_policy = RAJA::seq_atomic;
 #define ASCENT_LAMBDA __device__ __host__
 
 #elif defined(ASCENT_HIP_ENABLED)
+//---------------------------------------------------------------------------//
+// HIP decorators
+//---------------------------------------------------------------------------//
     #error hip support here
 #else
-
-#define ASCENT_EXEC inline
+//---------------------------------------------------------------------------//
+// Non-device decorators
+//---------------------------------------------------------------------------//
+#define ASCENT_EXEC   inline
 #define ASCENT_LAMBDA
 
 #endif
 
 #define ASCENT_CPU_LAMBDA
 
-// -------------------- Error Checking --------------------------
-//--------------------------------//
-// cuda error check
-//--------------------------------//
+//---------------------------------------------------------------------------//
+// Device Error Checks
+//---------------------------------------------------------------------------//
 #if defined(ASCENT_CUDA_ENABLED)
+//---------------------------------------------------------------------------//
+// cuda error check
+//---------------------------------------------------------------------------//
 inline void cuda_error_check(const char *file, const int line )
 {
   cudaError err = cudaGetLastError();
@@ -140,10 +196,11 @@ inline void cuda_error_check(const char *file, const int line )
   }
 }
 #define ASCENT_DEVICE_ERROR_CHECK() cuda_error_check(__FILE__,__LINE__);
-//--------------------------------//
-// hip error check
-//--------------------------------//
+
 #elif defined(ASCENT_HIP_ENABLED)
+//---------------------------------------------------------------------------//
+// hip error check
+//---------------------------------------------------------------------------//
 inline void hip_error_check(const char *file, const int line )
 {
   #error HIP support here
@@ -156,10 +213,10 @@ inline void hip_error_check(const char *file, const int line )
   }
 }
 #define ASCENT_DEVICE_ERROR_CHECK() hip_error_check(__FILE__,__LINE__);
-//--------------------------------//
-// non-device error check (noop)
-//--------------------------------//
 #else
+//---------------------------------------------------------------------------//
+// non-device error check (noop)
+//---------------------------------------------------------------------------//
 #define ASCENT_DEVICE_ERROR_CHECK()
 #endif
 

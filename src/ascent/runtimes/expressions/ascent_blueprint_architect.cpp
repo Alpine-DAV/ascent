@@ -15,7 +15,7 @@
 #include "ascent_array_utils.hpp"
 #include "ascent_dispatch.hpp"
 #include "ascent_memory_interface.hpp"
-#include "ascent_execution.hpp"
+#include "ascent_execution_manager.hpp"
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
