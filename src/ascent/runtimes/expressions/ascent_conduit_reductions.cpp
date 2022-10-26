@@ -166,17 +166,24 @@ exec_dispatch(const conduit::Node &field, std::string component, const Function 
     SerialExec exec;
     res = dispatch_memory(field, component, func, exec);
   }
-#if defined(ASCENT_USE_OPENMP)
+#if defined(ASCENT_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     res = dispatch_memory(field, component, func, exec);
   }
 #endif
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
+    res = dispatch_memory(field, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
     res = dispatch_memory(field, component, func, exec);
   }
 #endif
@@ -365,7 +372,7 @@ struct GradientFunctor
     double *gradients = new double[num_gradients];
 
     if(single_dx) {    
-    #ifdef ASCENT_USE_OPENMP
+    #ifdef ASCENT_OPENMP_ENABLED
         #pragma omp parallel for
     #endif
         for(int v = 0; v < num_gradients; ++v)
@@ -374,7 +381,7 @@ struct GradientFunctor
         }
     }
     else {
-    #ifdef ASCENT_USE_OPENMP
+    #ifdef ASCENT_OPENMP_ENABLED
         #pragma omp parallel for
     #endif
         for(int v = 0; v < num_gradients; ++v)

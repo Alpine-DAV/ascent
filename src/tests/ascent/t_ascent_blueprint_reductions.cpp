@@ -182,10 +182,11 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, array_tests_cuda)
 {
-#ifndef ASCENT_USE_CUDA
+#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif
+    // TODO Q: Do these automatically select the exe device?
 
     conduit::Node input, res;
 
@@ -399,12 +400,12 @@ TEST(ascent_blueprint_reductions, field_histogram_braid_cpu)
 TEST(ascent_blueprint_reductions, field_max_gpu)
 {
 
-#ifndef ASCENT_USE_CUDA
+#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif
 
-    ExecutionManager::execution("cuda");
+    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
 
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
@@ -419,12 +420,12 @@ TEST(ascent_blueprint_reductions, field_max_gpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_histogram_gpu)
 {
-  #ifndef ASCENT_USE_CUDA
+#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
-  #endif
+#endif
 
-    ExecutionManager::execution("cuda");
+    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
 
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
@@ -451,12 +452,12 @@ TEST(ascent_blueprint_reductions, field_histogram_gpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_max_already_gpu)
 {
-  #ifndef ASCENT_USE_CUDA
+#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
-  #endif
+#endif
 
-    ExecutionManager::execution("cuda");
+    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
 
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
@@ -475,12 +476,12 @@ TEST(ascent_blueprint_reductions, field_max_already_gpu)
 // //-----------------------------------------------------------------------------
 // TEST(ascent_blueprint_reductions, field_max_already_gpu_rectilinear)
 // {
-// #ifndef ASCENT_USE_CUDA
-//   ASCENT_INFO("GPU Support Disabled, skipping GPU test");
-//   return;
+// #if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+//     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+//     return;
 // #endif
 //
-//     ExecutionManager::execution("cuda");
+//     ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
 //
 //     // this is normally set in ascent::Initialize, but we
 //     // have to set it here so that we do the right thing with
@@ -498,12 +499,12 @@ TEST(ascent_blueprint_reductions, field_max_already_gpu)
 
 TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
 {
-#ifndef ASCENT_USE_CUDA
-  ASCENT_INFO("GPU Support Disabled, skipping GPU test");
-  return;
+#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+    ASCENT_INFO("GPU Support Disabled, skipping GPU test");
+    return;
 #endif
 
-    ExecutionManager::execution("cuda");
+    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
     // device pointers
@@ -524,12 +525,12 @@ TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_histogram_already_gpu)
 {
-  #ifndef ASCENT_USE_CUDA
+#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
-  #endif
+#endif
 
-    ExecutionManager::execution("cuda");
+    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
     // device pointers

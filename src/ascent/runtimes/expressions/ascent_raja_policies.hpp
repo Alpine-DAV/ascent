@@ -7,9 +7,15 @@
 
 namespace ascent
 {
-
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
 #define CUDA_BLOCK_SIZE 128
+#endif
+
+#if defined(ASCENT_HIP_ENABLED)
+#define HIP_BLOCK_SIZE 256
+#endif
+
+#if defined(ASCENT_CUDA_ENABLED)
 struct CudaExec
 {
   using for_policy = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
@@ -19,15 +25,27 @@ struct CudaExec
 };
 #endif
 
-#if defined(ASCENT_USE_OPENMP)
+#if defined(ASCENT_HIP_ENABLED)
+struct HipExec
+{
+  using for_policy = RAJA::hip_exec<HIP_BLOCK_SIZE>;
+  using reduce_policy = RAJA::hip_reduce;
+  using atomic_policy = RAJA::hip_atomic;
+  static std::string memory_space;
+};
+#endif
+
+#if defined(ASCENT_OPENMP_ENABLED)
 struct OpenMPExec
 {
   using for_policy = RAJA::omp_parallel_for_exec;
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLE)
   // the cuda policy for reductions can be used
   // by other backends, and this should suppress
   // erroneous host device warnings
   using reduce_policy = RAJA::cuda_reduce;
+#elif defined(ASCENT_HIP_ENABLED)
+  using reduce_policy = RAJA::hip_reduce;
 #else
   using reduce_policy = RAJA::omp_reduce;
 #endif
@@ -39,11 +57,13 @@ struct OpenMPExec
 struct SerialExec
 {
   using for_policy = RAJA::seq_exec;
-#ifdef ASCENT_USE_CUDA
-  // the cuda policy for reductions can be used
+#if defined(ASCENT_CUDA_ENABLED)
+  // the cuda/hip policy for reductions can be used
   // by other backends, and this should suppress
   // erroneous host device warnings
   using reduce_policy = RAJA::cuda_reduce;
+#elif  defined(ASCENT_HIP_ENABLED)
+  using reduce_policy = RAJA::hip_reduce;
 #else
   using reduce_policy = RAJA::seq_reduce;
 #endif
@@ -51,17 +71,20 @@ struct SerialExec
   static std::string memory_space;
 };
 
-#ifdef ASCENT_USE_CUDA
-#define BLOCK_SIZE 128
-using for_policy = RAJA::cuda_exec<BLOCK_SIZE>;
+#if defined(ASCENT_CUDA_ENABLED)
+using for_policy    = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 using reduce_policy = RAJA::cuda_reduce;
 using atomic_policy = RAJA::cuda_atomic;
-#elif defined(ASCENT_USE_OPENMP)
-using for_policy = RAJA::omp_parallel_for_exec;
+#elif defined(ASCENT_HIP_ENABLED)
+using for_policy    = RAJA::hip_exec<HIP_BLOCK_SIZE>;
+using reduce_policy = RAJA::hip_reduce;
+using atomic_policy = RAJA::hip_atomic;
+#elif defined(ASCENT_OPENMP_ENABLED)
+using for_policy    = RAJA::omp_parallel_for_exec;
 using reduce_policy = RAJA::omp_reduce;
 using atomic_policy = RAJA::omp_atomic;
-#else
-using for_policy = RAJA::seq_exec;
+#else // serial
+using for_policy    = RAJA::seq_exec;
 using reduce_policy = RAJA::seq_reduce;
 using atomic_policy = RAJA::seq_atomic;
 #endif
@@ -70,12 +93,12 @@ using atomic_policy = RAJA::seq_atomic;
 // CPU only policies need when using classes
 // that cannot be called on a GPU, e.g. MFEM
 //
-#ifdef ASCENT_USE_OPENMP
-using for_cpu_policy = RAJA::omp_parallel_for_exec;
+#ifdef ASCENT_OPENMP_ENABLED
+using for_cpu_policy    = RAJA::omp_parallel_for_exec;
 using reduce_cpu_policy = RAJA::omp_reduce;
 using atomic_cpu_policy = RAJA::omp_atomic;
 #else
-using for_cpu_policy = RAJA::seq_exec;
+using for_cpu_policy    = RAJA::seq_exec;
 using reduce_cpu_policy = RAJA::seq_reduce;
 using atomic_cpu_policy = RAJA::seq_atomic;
 #endif
@@ -90,6 +113,8 @@ using atomic_cpu_policy = RAJA::seq_atomic;
 // call. Thus for small loops, the know overhead is about 3x
 #define ASCENT_LAMBDA __device__ __host__
 
+#elif defined(ASCENT_HIP_ENABLED)
+    #error hip support here
 #else
 
 #define ASCENT_EXEC inline
@@ -100,7 +125,10 @@ using atomic_cpu_policy = RAJA::seq_atomic;
 #define ASCENT_CPU_LAMBDA
 
 // -------------------- Error Checking --------------------------
-#ifdef ASCENT_USE_CUDA
+//--------------------------------//
+// cuda error check
+//--------------------------------//
+#if defined(ASCENT_CUDA_ENABLED)
 inline void cuda_error_check(const char *file, const int line )
 {
   cudaError err = cudaGetLastError();
@@ -112,6 +140,25 @@ inline void cuda_error_check(const char *file, const int line )
   }
 }
 #define ASCENT_DEVICE_ERROR_CHECK() cuda_error_check(__FILE__,__LINE__);
+//--------------------------------//
+// hip error check
+//--------------------------------//
+#elif defined(ASCENT_HIP_ENABLED)
+inline void hip_error_check(const char *file, const int line )
+{
+  #error HIP support here
+  cudaError err = cudaGetLastError();
+  if ( cudaSuccess != err )
+  {
+    std::cerr<<"HIP error reported at: "<<file<<":"<<line;
+    std::cerr<<" : "<<cudaGetErrorString(err)<<"\n";
+    //exit( -1 );
+  }
+}
+#define ASCENT_DEVICE_ERROR_CHECK() hip_error_check(__FILE__,__LINE__);
+//--------------------------------//
+// non-device error check (noop)
+//--------------------------------//
 #else
 #define ASCENT_DEVICE_ERROR_CHECK()
 #endif

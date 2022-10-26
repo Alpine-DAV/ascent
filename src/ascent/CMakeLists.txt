@@ -63,23 +63,11 @@ set(ASCENT_OPENMP_ENABLED ${OPENMP_FOUND})
 set(ASCENT_CUDA_ENABLED   ${CUDA_FOUND})
 set(ASCENT_HIP_ENABLED    ${HIP_FOUND})
 
-# TODO remove in favor of ZZZ_ENABLED
-set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
-set(ASCENT_USE_CUDA    ${CUDA_FOUND})
-set(ASCENT_USE_HIP     ${HIP_FOUND})
-
-
 if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_OPENMP_ENABLED ${OPENMP_FOUND})
     set(ASCENT_VTKM_CUDA_ENABLED   ${CUDA_FOUND})
     set(ASCENT_VTKM_KOKKOS_ENABLED ${HIP_FOUND})
-
-    # TODO remove in favor of ZZZ_ENABLED
-    set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
-    set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
-    set(ASCENT_VTKM_USE_KOKKOS ${KOKKOS_FOUND})
 endif()
-
 
 # ASCENT_ZZZ_ENTIRES are derived vars.
 # We mark them as advanced b/c otherwise folks may see them
@@ -112,13 +100,6 @@ mark_as_advanced(ASCENT_INSTALL_PREFIX
                  ASCENT_VTKM_OPENMP_ENABLED
                  ASCENT_VTKM_CUDA_ENABLED
                  ASCENT_VTKM_KOKKOS_ENABLED
-                 # TODO remove in favor fo ZZZ_ENABLED
-                 ASCENT_VTKM_USE_OPENMP
-                 ASCENT_VTKM_USE_CUDA
-                 ASCENT_VTKM_USE_KOKKOS
-                 ASCENT_USE_OPENMP
-                 ASCENT_USE_CUDA
-                 ASCENT_USE_HIP
                  )
 
 # gen config header

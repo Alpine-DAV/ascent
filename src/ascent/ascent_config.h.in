@@ -42,11 +42,6 @@
 #cmakedefine ASCENT_CUDA_ENABLED          "@CUDA_FOUND@"
 #cmakedefine ASCENT_HIP_ENABLED           "@HIP_FOUND@"
 
-// TODO REMOVE in favor of ZZZ_ENABLED
-#cmakedefine ASCENT_USE_CUDA          "@CUDA_FOUND@"
-#cmakedefine ASCENT_USE_HIP           "@HIP_FOUND@"
-#cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
-
 // defs for builtin libs
 #cmakedefine ASCENT_VTKH_ENABLED      "@ENABLE_VTKH@"
 #cmakedefine ASCENT_DRAY_ENABLED      "@ENABLE_DRAY@"
@@ -62,11 +57,6 @@
 #cmakedefine ASCENT_VTKM_OPENMP_ENABLED   "@OPENMP_FOUND@"
 #cmakedefine ASCENT_VTKM_CUDA_ENABLED     "@CUDA_FOUND@"
 #cmakedefine ASCENT_VTKM_KOKKOS_ENABLED   "@KOKKOS_FOUND@"
-
-// TODO REMOVE in favor of ZZZ_ENABLED
-#cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_OPENMP   "@OPENMP_FOUND@"
-#cmakedefine ASCENT_VTKM_USE_KOKKOS   "@KOKKOS_FOUND@"
 
 #cmakedefine ASCENT_ADIOS2_ENABLED    "@ADIOS2_FOUND@"
 #cmakedefine ASCENT_FIDES_ENABLED     "@FIDES_FOUND@"

@@ -966,7 +966,7 @@ field_histogram(const conduit::Node &dataset,
       res = field_reduction_histogram(dom[path], min_val, max_val, num_bins);
 
       double *dom_hist = res["value"].value();
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
       for(int bin_index = 0; bin_index < num_bins; ++bin_index)
@@ -1461,7 +1461,7 @@ void init_bins(double *bins,
     init_val = std::numeric_limits<double>::max();
   }
 
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -1607,7 +1607,7 @@ binning(const conduit::Node &dataset,
     // update bins
     if(reduction_var.empty())
     {
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
       for(int i = 0; i < homes_size; ++i)
@@ -1627,7 +1627,7 @@ binning(const conduit::Node &dataset,
       if(dom[values_path].dtype().is_float32())
       {
         const conduit::float32_array values = dom[values_path].value();
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
         for(int i = 0; i < homes_size; ++i)
@@ -1641,7 +1641,7 @@ binning(const conduit::Node &dataset,
       else
       {
         const conduit::float64_array values = dom[values_path].value();
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
         for(int i = 0; i < homes_size; ++i)
@@ -1656,7 +1656,7 @@ binning(const conduit::Node &dataset,
     else if(is_xyz(reduction_var))
     {
       int coord = reduction_var[0] - 'x';
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
       for(int i = 0; i < homes_size; ++i)
@@ -1711,14 +1711,14 @@ binning(const conduit::Node &dataset,
   if(reduction_op == "pdf")
   {
     double total = 0;
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for reduction(+ : total)
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
       total += bins[2 * i];
     }
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1735,7 +1735,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "min")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1752,7 +1752,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "max")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1770,7 +1770,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "sum")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1787,7 +1787,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "avg")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1806,7 +1806,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "rms")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1825,7 +1825,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "var")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1845,7 +1845,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "std")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1939,7 +1939,7 @@ paint_binning(const conduit::Node &binning,
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
         dom["fields/" + field_name + "/values"].value();
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < homes_size; ++i)
@@ -2039,7 +2039,7 @@ histogram_entropy(const conduit::Node &hist)
   double sum = array_sum(hist.fetch_existing("attrs/value/value"), exec)["value"].to_float64();
   double entropy = 0;
 
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for reduction(+ : entropy)
 #endif
   for(int b = 0; b < num_bins; ++b)
@@ -2071,7 +2071,7 @@ histogram_pdf(const conduit::Node &hist)
   res["value"].set(conduit::DataType::c_double(num_bins));
   double *pdf_vals = res["value"].value();
   
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
   for(int b = 0; b < num_bins; ++b)

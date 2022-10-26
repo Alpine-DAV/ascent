@@ -16,6 +16,7 @@ public:
   // return the peferred cpu exection device
   // i.e., openmp if supported and serial if not
   static std::string preferred_cpu_device();
+  static std::string preferred_gpu_device();
 private:
   static std::string m_exec;
 };

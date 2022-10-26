@@ -15,7 +15,7 @@ void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 {
   is_gpu = false;
   is_unified = false;
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
   cudaPointerAttributes atts;
   const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
 
@@ -24,26 +24,29 @@ void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
   // clear last error so other error checking does
   // not pick it up
   cudaError_t error = cudaGetLastError();
-#if CUDART_VERSION >= 10000
-  is_gpu = perr == cudaSuccess &&
-                   (atts.type == cudaMemoryTypeDevice ||
-                   atts.type == cudaMemoryTypeManaged);
-  is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
-#else
-  is_gpu = perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
-  is_unified = false;
-#endif
+  #if CUDART_VERSION >= 10000
+    is_gpu = perr == cudaSuccess &&
+                     (atts.type == cudaMemoryTypeDevice ||
+                     atts.type == cudaMemoryTypeManaged);
+    is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
+  #else
+    is_gpu = perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
+    is_unified = false;
+  #endif
   // This will gen an error when the pointer is not a GPU pointer.
   // Clear the error so others don't pick it up.
   error = cudaGetLastError();
   (void) error;
-#endif
+#elif defined(ASCENT_HIP_ENABLED)
+// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!! HIP SUPPORT!
+  #error Need HIP Support here!
+#endif 
 }
 
 // https://gitlab.kitware.com/third-party/nvpipe/blob/master/encode.c
 bool is_gpu_ptr(const void *ptr)
 {
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
   cudaPointerAttributes atts;
   const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
 
@@ -57,6 +60,10 @@ bool is_gpu_ptr(const void *ptr)
   #else
   return perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
   #endif
+
+#elif defined(ASCENT_HIP_ENABLED)
+  // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!! HIP SUPPORT!
+  #error Need HIP Support here!
 #else
   (void) ptr;
   return false;
@@ -141,7 +148,7 @@ AllocationManager::umpire_device_allocator_id(int id)
   bool can_use = false;
   bool need_device = false;
 
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   need_device = true;
 #endif
 
@@ -205,9 +212,9 @@ AllocationManager::conduit_device_allocator_id()
 
 void AllocationManager::set_conduit_mem_handlers()
 {
-#ifdef ASCENT_USE_CUDA
-  // we only need to overide the mem handlers in the
-  // presence of cuda
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+  // we only need to override the mem handlers in the
+  // presence of cuda or hip
   conduit::utils::set_memcpy_handler(MagicMemory::copy);
   conduit::utils::set_memset_handler(MagicMemory::memset);
 #endif
@@ -250,7 +257,7 @@ size_t DeviceAllocator::m_free_count = 0;
 void *
 DeviceAllocator::alloc(size_t items, size_t item_size)
 {
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   m_total_bytes_alloced += items * item_size;
   m_alloc_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
@@ -268,7 +275,7 @@ DeviceAllocator::alloc(size_t items, size_t item_size)
 void
 DeviceAllocator::free(void *data_ptr)
 {
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   m_free_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
   const int allocator_id = AllocationManager::umpire_device_allocator_id();
@@ -283,11 +290,15 @@ DeviceAllocator::free(void *data_ptr)
 void
 MagicMemory::memset(void * ptr, int value, size_t num )
 {
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   bool is_device = is_gpu_ptr(ptr);
   if(is_device)
   {
-    cudaMemset(ptr,value,num);
+    #if defined(ASCENT_CUDA_ENABLED)
+        cudaMemset(ptr,value,num);
+    #elif defined(ASCENT_HIP_ENABLED)
+        #error NEED HIP SUPPORT HERE
+    #endif
   }
   else
   {
@@ -301,20 +312,32 @@ MagicMemory::memset(void * ptr, int value, size_t num )
 void
 MagicMemory::copy(void * destination, const void * source, size_t num)
 {
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   bool src_is_gpu = is_gpu_ptr(source);
   bool dst_is_gpu = is_gpu_ptr(destination);
   if(src_is_gpu && dst_is_gpu)
   {
-    cudaMemcpy(destination, source, num, cudaMemcpyDeviceToDevice);
+     #if defined(ASCENT_CUDA_ENABLED)
+         cudaMemcpy(destination, source, num, cudaMemcpyDeviceToDevice);
+     #elif defined(ASCENT_HIP_ENABLED)
+         #error NEED HIP SUPPORT HERE
+     #endif
   }
   else if(src_is_gpu && !dst_is_gpu)
   {
-    cudaMemcpy(destination, source, num, cudaMemcpyDeviceToHost);
+    #if defined(ASCENT_CUDA_ENABLED)
+        cudaMemcpy(destination, source, num, cudaMemcpyDeviceToHost);
+    #elif defined(ASCENT_HIP_ENABLED)
+        #error NEED HIP SUPPORT HERE
+    #endif
   }
   else if(!src_is_gpu && dst_is_gpu)
   {
-    cudaMemcpy(destination, source, num, cudaMemcpyHostToDevice);
+    #if defined(ASCENT_CUDA_ENABLED)
+        cudaMemcpy(destination, source, num, cudaMemcpyHostToDevice);
+    #elif defined(ASCENT_HIP_ENABLED)
+        #error NEED HIP SUPPORT HERE
+    #endif
   }
   else
   {

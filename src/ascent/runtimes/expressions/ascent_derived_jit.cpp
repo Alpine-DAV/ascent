@@ -1019,7 +1019,7 @@ void Jitable::init_occa()
 {
 #ifdef ASCENT_JIT_ENABLED
     // running this in a loop segfaults...
-#ifdef ASCENT_CUDA_ENABLED
+#if defined(ASCENT_CUDA_ENABLED)
   if(m_cuda_device_id == -1)
   {
     // the ascent runtime should tell us what to use, otherwise just
@@ -1027,7 +1027,9 @@ void Jitable::init_occa()
     cudaGetDevice(&m_cuda_device_id);
   }
   occa::setDevice({{"mode", "CUDA"}, {"device_id", m_cuda_device_id}});
-#elif defined(ASCENT_USE_OPENMP)
+#elif defined(ASCENT_HIP_ENABLED)
+  #error OCCA HIP SUPPORT!
+#elif defined(ASCENT_OPENMP_ENABLED)
   occa::setDevice({{"mode", "OpenMP"}});
 #else
   occa::setDevice({{"mode", "Serial"}});
@@ -1036,10 +1038,11 @@ void Jitable::init_occa()
 #endif
 }
 
+// TODO Num devices instead of "cuda"
 int Jitable::num_cuda_devices()
 {
   int device_count = 0;
-#ifdef ASCENT_CUDA_ENABLED
+#if defined(ASCENT_CUDA_ENABLED)
   cudaError_t res = cudaGetDeviceCount(&device_count);
   if(res != cudaSuccess)
   {
@@ -1049,10 +1052,13 @@ int Jitable::num_cuda_devices()
     << cudaGetErrorString(res);
     ASCENT_ERROR(msg.str());
   }
+#elif defined(ASCENT_HIP_ENABLED)
+  #error NEED HIP SUPPORT
 #endif
   return device_count;
 }
 
+// TODO Num devices instead of "cuda"
 void Jitable::set_cuda_device(int device_id)
 {
   m_cuda_device_id = device_id;

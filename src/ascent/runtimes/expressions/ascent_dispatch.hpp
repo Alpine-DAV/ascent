@@ -260,17 +260,24 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
     SerialExec exec;
     dispatch_memory_mesh(n_coords,n_topo, func, exec);
   }
-#if defined(ASCENT_USE_OPENMP)
+#if defined(ASCENT_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     dispatch_memory_mesh(n_coords,n_topo, func, exec);
   }
 #endif
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
+    dispatch_memory_mesh(n_coords,n_topo, func, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
     dispatch_memory_mesh(n_coords,n_topo, func, exec);
   }
 #endif
@@ -294,17 +301,24 @@ exec_dispatch_array(Array<T> &array, Function &func)
     SerialExec exec;
     func(array, exec);
   }
-#if defined(ASCENT_USE_OPENMP)
+#if defined(ASCENT_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     func(array, exec);
   }
 #endif
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
+    func(array, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
     func(array, exec);
   }
 #endif
@@ -328,17 +342,24 @@ exec_dispatch(Function &func)
     SerialExec exec;
     func(exec);
   }
-#if defined(ASCENT_USE_OPENMP)
+#if defined(ASCENT_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     func(exec);
   }
 #endif
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
+    func(exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
     func(exec);
   }
 #endif

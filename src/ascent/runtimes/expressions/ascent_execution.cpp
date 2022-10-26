@@ -4,10 +4,12 @@
 
 namespace ascent
 {
-// set the default exection env
-#ifdef ASCENT_USE_CUDA
+// set the default execution env
+#if defined(ASCENT_CUDA_ENABLED)
 std::string ExecutionManager::m_exec = "cuda";
-#elif defined(ASCENT_USE_OPENMP)
+#elif defined(ASCENT_HIP_ENABLED)
+std::string ExecutionManager::m_exec = "hip";
+#elif defined(ASCENT_OPENMP_ENABLED)
 std::string ExecutionManager::m_exec = "openmp";
 #else
 std::string ExecutionManager::m_exec = "serial";
@@ -18,11 +20,14 @@ ExecutionManager::info()
 {
   conduit::Node res;
   res["backends"].append() = "serial";
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_OPENMP_ENABLED)
+  res["backends"].append() = "openmp";
+#endif
+#if defined(ASCENT_CUDA_ENABLED)
   res["backends"].append() = "cuda";
 #endif
-#if defined(ASCENT_USE_OPENMP)
-  res["backends"].append() = "openmp";
+#if defined(ASCENT_HIP_ENABLED)
+  res["backends"].append() = "hip";
 #endif
   return res;
 }
@@ -31,8 +36,20 @@ std::string ExecutionManager::preferred_cpu_device()
 {
   std::string res = "serial";
 
-#if defined(ASCENT_USE_OPENMP)
+#if defined(ASCENT_OPENMP_ENABLED)
   res = "openmp";
+#endif
+  return res;
+}
+
+std::string ExecutionManager::preferred_gpu_device()
+{
+  std::string res = "none";
+
+#if defined(ASCENT_CUDA_ENABLED)
+  res = "cuda";
+#elif defined(ASCENT_HIP_ENABLED)
+  res = "hip";
 #endif
   return res;
 }
@@ -45,19 +62,27 @@ ExecutionManager::execution(const std::string exec)
     ASCENT_ERROR("Unknown execution backend '"<<exec<<"')");
   }
 
-#ifndef ASCENT_USE_CUDA
+#if not defined(ASCENT_CUDA_ENABLED)
   if(exec == "cuda")
   {
     ASCENT_ERROR("Cuda backend support not built");
   }
 #endif
 
-#if not defined(ASCENT_USE_OPENMP)
+#if not defined(ASCENT_HIP_ENABLED)
+  if(exec == "hip")
+  {
+    ASCENT_ERROR("Hip backend support not built");
+  }
+#endif
+
+#if not defined(ASCENT_OPENMP_ENABLED)
   if(exec == "openmp")
   {
     ASCENT_ERROR("OpenMP backend support not built");
   }
 #endif
+ 
   m_exec = exec;
 }
 

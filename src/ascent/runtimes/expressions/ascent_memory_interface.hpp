@@ -185,10 +185,20 @@ public:
     // the element. 2 hours to learn this
     index_t el_idx = m_field[path].dtype().element_index(idx) / sizeof(T);
     T val;
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED)
     if(is_gpu_ptr(ptr))
     {
       cudaMemcpy (&val, &ptr[el_idx], sizeof (T), cudaMemcpyDeviceToHost);
+    }
+    else
+    {
+      val = ptr[el_idx];
+    }
+#elif defined(ASCENT_HIP_ENABLED)
+    if(is_gpu_ptr(ptr))
+    {
+       #error TODO NEED HIP SUPPORT HERE
+      // cudaMemcpy (&val, &ptr[el_idx], sizeof (T), cudaMemcpyDeviceToHost);
     }
     else
     {
@@ -264,7 +274,7 @@ public:
     const T * ptr = raw_ptr(component,leaf_path);
 
 
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
     if(is_gpu_ptr(ptr))
     {
       //std::cout<<"already a gpu pointer\n";
@@ -298,7 +308,7 @@ public:
     std::string leaf_path;
     const T * ptr = raw_ptr(component,leaf_path);
 
-#ifdef ASCENT_USE_CUDA
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
     bool is_unified;
     bool is_gpu;
     is_gpu_ptr(ptr,is_gpu, is_unified);

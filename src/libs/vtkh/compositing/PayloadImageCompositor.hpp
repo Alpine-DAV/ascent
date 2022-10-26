@@ -28,7 +28,7 @@ void ZBufferComposite(vtkh::PayloadImage &front, const vtkh::PayloadImage &image
 
   const int size = static_cast<int>(front.m_depths.size());
   const bool nan_check = image.m_default_value != image.m_default_value;
-#ifdef vtkh_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
