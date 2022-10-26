@@ -7,6 +7,8 @@
 #ifndef rover_h
 #define rover_h
 
+#include <rover_config.h>
+
 #include <image.hpp>
 #include <rover_exports.h>
 #include <rover_types.hpp>

@@ -6,7 +6,7 @@
 
 #ifndef rover_volume_engine_h
 #define rover_volume_engine_h
-
+#include <rover_config.h>
 #include <engine.hpp>
 #include <vtkm/rendering/ConnectivityProxy.h>
 namespace rover {

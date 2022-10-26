@@ -26,32 +26,39 @@
 
 #define ASCENT_CPP_COMPILER "@CMAKE_CXX_COMPILER@"
 
-#cmakedefine ASCENT_FORTRAN_COMPILER "${ASCENT_FORTRAN_COMPILER}"
+#cmakedefine ASCENT_FORTRAN_ENABLED   "@FORTRAN_FOUND@"
+#cmakedefine ASCENT_FORTRAN_COMPILER  "${ASCENT_FORTRAN_COMPILER}"
+
+#cmakedefine ASCENT_PYTHON_ENABLED    "@PYTHON_FOUND@"
+#cmakedefine ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@"
 
 // this path points to the web client js code tree
-#cmakedefine ASCENT_SOURCE_WEB_CLIENT_ROOT   "@ASCENT_SOURCE_WEB_CLIENT_ROOT@"
+#cmakedefine ASCENT_SOURCE_WEB_CLIENT_ROOT  "@ASCENT_SOURCE_WEB_CLIENT_ROOT@"
 
-#cmakedefine ASCENT_USE_CUDA        "@CUDA_FOUND@"
-#cmakedefine ASCENT_USE_HIP         "@HIP_FOUND@"
-
-// defs for general openmp support
+#cmakedefine ASCENT_USE_CUDA          "@CUDA_FOUND@"
+#cmakedefine ASCENT_USE_HIP           "@HIP_FOUND@"
 #cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
 
+// defs for builtin libs
+#cmakedefine ASCENT_VTKH_ENABLED      "@ENABLE_VTKH@"
+#cmakedefine ASCENT_DRAY_ENABLED      "@ENABLE_DRAY@"
+#cmakedefine ASCENT_APCOMP_ENABLED    "@ENABLE_APCOMP@"
+
 // defs for runtime support based on which 3rd-party libs we have
-#cmakedefine ASCENT_VTKH_ENABLED      "@VTKH_FOUND@"
+#cmakedefine ASCENT_CAMP_ENABLED      "@CAMP_FOUND@"
+#cmakedefine ASCENT_UMPIRE_ENABLED    "@UMPIRE_FOUND@"
+#cmakedefine ASCENT_RAJA_ENABLED      "@RAJA_FOUND@"
 
 #cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_OPENMP   "@OPENMP_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_KOKKOS   "@KOKKOS_FOUND@"
 
-
 #cmakedefine ASCENT_ADIOS2_ENABLED    "@ADIOS2_FOUND@"
 #cmakedefine ASCENT_FIDES_ENABLED     "@FIDES_FOUND@"
 #cmakedefine ASCENT_MFEM_ENABLED      "@MFEM_FOUND@"
-#cmakedefine ASCENT_DRAY_ENABLED      "@DRAY_FOUND@"
+
 #cmakedefine ASCENT_HDF5_ENABLED      "@HDF5_FOUND@"
-#cmakedefine ASCENT_PYTHON_ENABLED    "@PYTHON_FOUND@"
 #cmakedefine ASCENT_JIT_ENABLED       "@ASCENT_JIT_ENABLED@"
 #cmakedefine ASCENT_WEBSERVER_ENABLED "@ASCENT_WEBSERVER_ENABLED@"
 #cmakedefine ASCENT_GENTEN_ENABLED    "@GENTEN_FOUND@"

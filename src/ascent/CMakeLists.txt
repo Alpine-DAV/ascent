@@ -20,30 +20,43 @@ set(ASCENT_INSTALL_PREFIX ${ASCENT_INSTALL_PREFIX} CACHE STRING "" FORCE )
 # the cmake gui and think they should be setting it
 mark_as_advanced(ASCENT_INSTALL_PREFIX)
 
-
+set(ASCENT_FORTRAN_ENABLED ${FORTRAN_FOUND})
 if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
+set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
+set(ASCENT_PYTHON_EXECUTABLE ${PYTHON_FOUND})
+
+if(PYTHON_FOUND)
+    set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
+endif()
+
+
 set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
 
-set(ASCENT_VTKM_ENABLED ${VTKM_FOUND})
-set(ASCENT_VTKH_ENABLED ${VTKM_FOUND})
 
-set(ASCENT_HDF5_ENABLED ${CONDUIT_RELAY_HDF5_ENABLED})
-set(ASCENT_MFEM_ENABLED ${MFEM_FOUND})
-set(ASCENT_DRAY_ENABLED ${DRAY_FOUND})
-set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
+
+set(ASCENT_CAMP_ENABLED   ${CAMP_FOUND})
+set(ASCENT_UMPIRE_ENABLED ${UMPIRE_FOUND})
+set(ASCENT_RAJA_ENABLED   ${RAJA_FOUND})
+set(ASCENT_APCOMP_ENABLED ${ENABLE_APCOMP})
+set(ASCENT_DRAY_ENABLED   ${ENABLE_DRAY})
+
+set(ASCENT_VTKH_ENABLED   ${ENABLE_VTKH})
+set(ASCENT_VTKM_ENABLED   ${VTKM_FOUND})
+set(ASCENT_HDF5_ENABLED   ${CONDUIT_RELAY_HDF5_ENABLED})
+set(ASCENT_MFEM_ENABLED   ${MFEM_FOUND})
+
 set(ASCENT_ADIOS2_ENABLED ${ADIOS2_FOUND})
-set(ASCENT_FIDES_ENABLED ${FIDES_FOUND})
+set(ASCENT_FIDES_ENABLED  ${FIDES_FOUND})
 set(ASCENT_GENTEN_ENABLED ${GENTEN_FOUND})
 set(ASCENT_KOKKOS_ENABLED ${KOKKOS_FOUND})
 
-
 if(OCCA_FOUND AND UMPIRE_FOUND)
-  set(ASCENT_JIT_ENABLED TRUE)
+    set(ASCENT_JIT_ENABLED TRUE)
 else()
-  set(ASCENT_JIT_ENABLED FALSE)
+    set(ASCENT_JIT_ENABLED FALSE)
 endif()
 
 set(ASCENT_WEBSERVER_ENABLED ${CONDUIT_RELAY_WEBSERVER_ENABLED})
@@ -54,6 +67,9 @@ if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_USE_KOKKOS ${KOKKOS_FOUND})
 endif()
 
+#
+# TODO CHANGE TO ASCENT_OPENMP_ENABLED, etc
+#
 set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
 set(ASCENT_USE_CUDA    ${CUDA_FOUND})
 set(ASCENT_USE_HIP     ${HIP_FOUND})
@@ -184,14 +200,14 @@ if(ASCENT_JIT_ENABLED)
     list(APPEND ascent_headers runtimes/expressions/ascent_array_registry.hpp)
     # this has device calls so we need to tell cmake to use the cuda compiler
     if(CUDA_FOUND)
-      set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
-      set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
-      set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
     endif()
     list(APPEND ascent_device_sources
-      runtimes/expressions/ascent_array.cpp
-      runtimes/expressions/ascent_array_internals.cpp
-      runtimes/expressions/ascent_derived_jit.cpp)
+                runtimes/expressions/ascent_array.cpp
+                runtimes/expressions/ascent_array_internals.cpp
+                runtimes/expressions/ascent_derived_jit.cpp)
 endif()
 
 if(VTKM_FOUND)
@@ -241,9 +257,15 @@ if(MFEM_FOUND)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
 endif()
 
-if(DRAY_FOUND)
-  list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
-  list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+if(ENABLE_DRAY)
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+    list(APPEND ascent_device_sources runtimes/expressions/ascent_expression_filters.cpp)
+    list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+    if(CUDA_FOUND)
+        set_source_files_properties(runtimes/expressions/ascent_expression_filters.cpp     PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(runtimes/flow_filters/ascent_runtime_dray_filters.cpp  PROPERTIES LANGUAGE CUDA)
+    endif()
 endif()
 
 if(GENTEN_FOUND)
@@ -335,14 +357,13 @@ if(OPENMP_FOUND)
     list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
 endif()
 
-if(DRAY_FOUND)
+if(ENABLE_DRAY)
     list(APPEND ascent_thirdparty_libs dray)
 endif()
 
 if(GENTEN_FOUND)
     list(APPEND ascent_thirdparty_libs genten)
 endif()
-
 
 ##########################################
 # Build a serial version of ascent
@@ -354,17 +375,18 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON  ${ascent_thirdparty_libs})
 
     if(ENABLE_HIDDEN_VISIBILITY)
-      set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
+        set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
+
     target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
 
     # TODO move to header ...
     if(CUDA_FOUND)
-      target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
+        target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
     endif()
 
     if(ENABLE_LOGGING)
-      target_compile_definitions(ascent PRIVATE ASCENT_LOGGING_ENABLED)
+        target_compile_definitions(ascent PRIVATE ASCENT_LOGGING_ENABLED)
     endif()
 
     if(VTKM_FOUND)
@@ -378,7 +400,6 @@ if (ENABLE_SERIAL)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
     )
-
 
     # Static linking CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
@@ -398,17 +419,12 @@ if (ENABLE_SERIAL)
                       $<TARGET_FILE:ascent_lodepng>)
         endif()
 
-        set(imported_targets_to_link "")
-
-        if(VTKH_FOUND)
-          list(APPEND imported_targets_to_link
-                      vtkh_rendering
-                      vtkh_compositing
-                      vtkh_filters
-                      vtkh_core
-                      vtkh_utils
-                      vtkh_lodepng)
+        if(ENABLE_DRAY)
+            list(APPEND internal_targets_to_link
+                        $<TARGET_FILE:dray>)
         endif()
+
+        set(imported_targets_to_link "")
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
@@ -445,11 +461,19 @@ if (ENABLE_SERIAL)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
 
+        if(RAJA_FOUND)
+            list(APPEND imported_targets_to_link RAJA)
+        endif()
+
         if(UMPIRE_FOUND)
             list(APPEND imported_targets_to_link umpire)
         endif()
+        
+        if(CAMP_FOUND)
+            list(APPEND imported_targets_to_link camp)
+        endif()
 
-        # TODO device link raja in rajaify branch
+        # device link
 
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES  ${ascent_device_sources}
@@ -458,7 +482,7 @@ if (ENABLE_SERIAL)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        #message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
 
         add_custom_command(TARGET ascent PRE_LINK
                            DEPENDS ascent rover vtkh
@@ -479,25 +503,24 @@ if(MPI_FOUND)
     set(ascent_mpi_thirdparty_libs ${ascent_blt_mpi_deps} conduit::conduit_mpi)
 
     if (BABELFLOW_FOUND)
-      if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-        add_compile_definitions("BABELFLOW_DEBUG")
-      endif()
+        if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+            add_compile_definitions("BABELFLOW_DEBUG")
+        endif()
 
-      list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
-      list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
+        list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_babelflow_filters.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_pmt.cpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_comp_utils.cpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_compose.cpp)
 
-      list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
-      list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
-      add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
-      include_directories(${BABELFLOW_INCLUDE_DIRS})
-      include_directories(${PMT_INCLUDE_DIRS})
+        list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
+        list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
+        add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+        include_directories(${BABELFLOW_INCLUDE_DIRS})
+        include_directories(${PMT_INCLUDE_DIRS})
     endif ()
 
     # hola mpi support is only in par (mpi ver)
-
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_hola_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_hola_filters.cpp)
 
@@ -506,9 +529,9 @@ if(MPI_FOUND)
 
     # adios support is only in par (mpi ver)
     if (ASCENT_FIDES_ENABLED AND MPI_FOUND)
-       list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
-       list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
-       list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
+        list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
+        list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
+        list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
     endif()
 
     # this combines our mpi specific deps to the broader list of ascent deps
@@ -525,34 +548,37 @@ if(MPI_FOUND)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
         list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
     endif()
-    if(DRAY_FOUND)
+
+    if(ENABLE_DRAY)
         # swap dray_mpi for dray
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs dray)
         list(APPEND ascent_mpi_thirdparty_libs dray_mpi)
     endif()
 
-    blt_add_library(
-        NAME        ascent_mpi
-        SOURCES     ${ascent_sources} ${ascent_mpi_sources}
-        HEADERS     ${ascent_headers} ${ascent_mpi_headers}
-        DEPENDS_ON  ${ascent_mpi_thirdparty_libs})
+    blt_add_library(NAME        ascent_mpi
+                    SOURCES     ${ascent_sources} ${ascent_mpi_sources}
+                    HEADERS     ${ascent_headers} ${ascent_mpi_headers}
+                    DEPENDS_ON  ${ascent_mpi_thirdparty_libs}
+                 )
 
     if(ENABLE_HIDDEN_VISIBILITY)
-      set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+        set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
+
     target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
 
     if(ENABLE_LOGGING)
-      target_compile_definitions(ascent_mpi PRIVATE ASCENT_LOGGING_ENABLED)
+        target_compile_definitions(ascent_mpi PRIVATE ASCENT_LOGGING_ENABLED)
     endif()
 
     if(CUDA_FOUND)
-      target_compile_definitions(ascent_mpi PRIVATE ASCENT_CUDA_ENABLED)
+        target_compile_definitions(ascent_mpi PRIVATE ASCENT_CUDA_ENABLED)
     endif()
 
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
+
     blt_add_target_compile_flags(TO ascent_mpi FLAGS "-DASCENT_MPI_ENABLED")
 
     # install target for mpi ver
@@ -565,35 +591,30 @@ if(MPI_FOUND)
 
     # Static linking CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
-      set(locations_on_disk "")
+        set(locations_on_disk "")
 
-      set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
+        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
 
-      set(internal_targets_to_link $<TARGET_FILE:rover>)
+        set(internal_targets_to_link $<TARGET_FILE:rover>)
 
-      if(ENABLE_VTKH)
-          list(APPEND internal_targets_to_link
-                      $<TARGET_FILE:vtkh_rendering_mpi>
-                      $<TARGET_FILE:vtkh_compositing_mpi>
-                      $<TARGET_FILE:vtkh_filters_mpi>
-                      $<TARGET_FILE:vtkh_core_mpi>
-                      $<TARGET_FILE:vtkh_utils_mpi>)
-      endif()
+        if(ENABLE_VTKH)
+            list(APPEND internal_targets_to_link
+                       $<TARGET_FILE:vtkh_rendering_mpi>
+                       $<TARGET_FILE:vtkh_compositing_mpi>
+                       $<TARGET_FILE:vtkh_filters_mpi>
+                       $<TARGET_FILE:vtkh_core_mpi>
+                       $<TARGET_FILE:vtkh_utils_mpi>)
+        endif()
 
-      set(imported_targets_to_link "")
+        if(ENABLE_DRAY)
+            list(APPEND internal_targets_to_link
+                        $<TARGET_FILE:dray_mpi>)
+        endif()
 
-      if(VTKH_FOUND)
-          list(APPEND imported_targets_to_link
-                      vtkh_rendering_mpi
-                      vtkh_compositing_mpi
-                      vtkh_filters_mpi
-                      vtkh_core_mpi
-                      vtkh_utils_mpi
-                      vtkh_lodepng)
-      endif()
+        set(imported_targets_to_link "")
 
-      # updated for vtkm 1.9
-      list(APPEND imported_targets_to_link
+        # updated for vtkm 1.9
+        list(APPEND imported_targets_to_link
                     vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
@@ -627,26 +648,34 @@ if(MPI_FOUND)
             list(APPEND imported_targets_to_link vtkmdiympi)
         endif()
 
+        if(RAJA_FOUND)
+            list(APPEND imported_targets_to_link RAJA)
+        endif()
+
         if(UMPIRE_FOUND)
             list(APPEND imported_targets_to_link umpire)
         endif()
 
-        # TODO device link raja in rajaify branch
+        if(CAMP_FOUND)
+            list(APPEND imported_targets_to_link camp)
+        endif()
 
-      source_objects(BINARY_DIR ${binary_dir}
+        # device link
+
+        source_objects(BINARY_DIR ${binary_dir}
                      SOURCES  ${ascent_device_sources}
                      TARGETS ${internal_targets_to_link}
                      IMPORTED_TARGETS ${imported_targets_to_link}
                      RESULT locations_on_disk)
 
-      separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-      #message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
-      add_custom_command(TARGET ascent_mpi PRE_LINK
-                         DEPENDS ascent_mpi rover_mpi
-                         COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
-                         COMMENT "manual device link step for Ascent parallel"
-                         )
-      install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
+        separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
+        add_custom_command(TARGET ascent_mpi PRE_LINK
+                            DEPENDS ascent_mpi rover_mpi
+                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+                            COMMENT "manual device link step for Ascent parallel"
+                            )
+        install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
     endif()
 
 endif()

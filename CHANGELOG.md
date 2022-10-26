@@ -12,7 +12,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - vtk-m@1.9.0
 
 ### Added
-- Added pipeline `partition` from Conduit Blueprint
+- Added pipeline `partition` transform from Conduit Blueprint
 - Added extract `flatten` from Conduit Blueprint
 - Added Log base 10 filter. Filter type is `log10`
 - Added Log base 2 filter. Filter type is `log2`
@@ -23,6 +23,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Changed
 - **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
+- `apcomp`, `dray`, `flow`, `rover`, and `vtkh` are now developed in `src/libs`.
 - Updated to VTK-m 1.9
 - Update docs related to building Ascent.
 - Updated to BLT v0.5.2

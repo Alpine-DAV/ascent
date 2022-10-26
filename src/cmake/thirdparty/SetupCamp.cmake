@@ -17,7 +17,7 @@ else()
   set(_CAMP_SEARCH_PATH ${CAMP_DIR}/lib/cmake/camp)
 endif()
 
-set(_CAMP_SEARCH_PATH ${CAMP_DIR})
+set(CAMP_DIR_ORIG ${CAMP_DIR})
 find_package(camp REQUIRED
              NO_DEFAULT_PATH
              PATHS ${_CAMP_SEARCH_PATH})

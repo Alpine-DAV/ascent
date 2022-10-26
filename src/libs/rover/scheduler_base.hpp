@@ -7,6 +7,8 @@
 #ifndef rover_scheduler_base_h
 #define rover_scheduler_base_h
 
+#include <rover_config.h>
+
 #include <domain.hpp>
 #include <image.hpp>
 #include <engine.hpp>

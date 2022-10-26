@@ -28,12 +28,10 @@ option(ENABLE_CUDA        "Build CUDA Support"        OFF)
 option(ENABLE_OPENMP      "Build OpenMP Support"      OFF)
 
 # builtin libs: dray, apcomp, vtkh
-
 option(ENABLE_DRAY        "Build Devil Ray Support"   OFF)
 # Note: ENABLE_DRAY reqs ENABLE_APCOMP
 option(ENABLE_APCOMP      "Build AP Compositor"       OFF)
-option(ENABLE_VTKH        "Build VTK-h "              OFF)
-
+option(ENABLE_VTKH        "Build VTK-h"               OFF)
 
 option(ENABLE_EXAMPLES    "Build Examples"            ON)
 option(ENABLE_UTILS       "Build Utilities"           ON)
@@ -46,7 +44,7 @@ option(ENABLE_HIDDEN_VISIBILITY "Build with hidden visibility for private symbol
 option(DRAY_ENABLE_STATS          "Enable stats"         ON)
 option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
 
-# VTK-h Sepcific Options 
+# VTK-h Specific Options 
 
 option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
 
@@ -59,17 +57,19 @@ option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
 #       enabled when you provide MFEM_DIR, etc
 #####################################################
 
-
 if(NOT ENABLE_SERIAL AND NOT ENABLE_MPI)
-  message(FATAL_ERROR "No libraries are built. "
-    "Please set ENABLE_SERIAL, ENABLE_MPI or both to ON")
+    message(FATAL_ERROR "No libraries are built. "
+            "Please set ENABLE_SERIAL, ENABLE_MPI or both to ON")
 endif()
 
+if(ENABLE_DRAY AND NOT ENABLE_APCOMP)
+    message(FATAL_ERROR "Devil Ray requires APComp (ENABLE_APCOMP=OFF and ENABLE_DRAY=ON)")
+endif()
 
 if(ENABLE_CUDA)
-  cmake_minimum_required(VERSION 3.14)
+    cmake_minimum_required(VERSION 3.14)
 else()
-  cmake_minimum_required(VERSION 3.9)
+    cmake_minimum_required(VERSION 3.9)
 endif()
 
 if(ENABLE_CUDA)
@@ -89,7 +89,7 @@ endif()
 
 # allow find_packages to use ZZZ_ROOT vars
 if(POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
+    cmake_policy(SET CMP0074 NEW)
 endif()
 
 ################################
@@ -147,17 +147,10 @@ include(cmake/SetupIncludes.cmake)
 ################################
 add_subdirectory(thirdparty_builtin)
 
-
 ################################
 # Add our libs
 ################################
 add_subdirectory(libs)
-
-add_subdirectory(flow)
-
-if(VTKH_FOUND OR ENABLE_VTKH)
-  add_subdirectory(rover)
-endif()
 
 add_subdirectory(ascent)
 
@@ -176,7 +169,7 @@ if(ENABLE_TESTS)
 endif()
 
 ################################
-# Add utilites
+# Add utilities
 ################################
 if(ENABLE_UTILS)
    add_subdirectory(utilities)

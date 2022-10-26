@@ -47,7 +47,7 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
   const int size = m_width * m_height;
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -80,7 +80,7 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, b
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
   const int size = m_width * m_height;
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -123,7 +123,7 @@ void cast_array_handle(vtkm::cont::ArrayHandle<T> &cast_to,
   cast_to.Allocate(size);
   auto portal_to = cast_to.WritePortal();
   auto portal_from = cast_to.ReadPortal();
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(vtkm::Id i = 0; i < size; ++i)
@@ -316,7 +316,7 @@ Image<FloatType>::flatten_intensities()
   {
     auto channel = m_intensities[c].ReadPortal();
 
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -346,7 +346,7 @@ Image<FloatType>::flatten_optical_depths()
   for(int c = 0; c < num_channels; ++c)
   {
     auto channel = m_optical_depths[c].ReadPortal();
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)

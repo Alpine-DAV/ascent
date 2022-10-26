@@ -7,6 +7,8 @@
 #ifndef rover_domain_h
 #define rover_domain_h
 
+#include <rover_config.h>
+
 #include <memory>
 
 #include <engine.hpp>

@@ -7,6 +7,7 @@
 #ifndef APCOMP_ABSORPTION_PARTIAL_HPP
 #define APCOMP_ABSORPTION_PARTIAL_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <assert.h>
 
 namespace apcomp {
@@ -54,7 +55,7 @@ struct AbsorptionPartial
     const int size = static_cast<int>(partials.size());
     AbsorptionPartial<FloatType> bg;
     bg.m_bins = background;
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)

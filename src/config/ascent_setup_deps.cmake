@@ -91,29 +91,6 @@ if(KOKKOS_DIR)
 		    PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
 endif()
 
-
-
-
-###############################################################################
-# Setup VTK-h (external)
-###############################################################################
-if(NOT VTKH_DIR)
-    set(VTKH_DIR ${ASCENT_VTKH_DIR})
-endif()
-
-if(VTKH_DIR)
-    if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
-      message(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
-    endif()
-
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(VTKh REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${VTKH_DIR}/lib)
-endif()
-
 ###############################################################################
 # Setup VTK-m
 ###############################################################################
@@ -204,16 +181,16 @@ endif()
 
 if(RAJA_DIR)
     set(_RAJA_SEARCH_PATH)
-    if(EXISTS ${RAJA_DIR}/share/umpire/cmake)
+    if(EXISTS ${RAJA_DIR}/share/raja/cmake)
       # old install layout
       set(_RAJA_SEARCH_PATH ${RAJA_DIR}/share/raja/cmake)
     else()
       # new install layout
-      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/rajae)
+      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/raja)
     endif()
     
-    if(NOT EXISTS ${_UMPIRE_RAJA_PATH})
-        message(FATAL_ERROR "Could not find RAJA CMake include file (${_UMPIRE_RAJA_PATH})")
+    if(NOT EXISTS ${_RAJA_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find RAJA CMake include file (${_RAJA_SEARCH_PATH})")
     endif()
 
     ###############################################################################
@@ -223,27 +200,6 @@ if(RAJA_DIR)
                     NO_DEFAULT_PATH
                     PATHS ${_RAJA_SEARCH_PATH})
 endif()
-
-###############################################################################
-# Setup Devil Ray
-###############################################################################
-if(NOT DRAY_DIR)
-    set(DRAY_DIR ${ASCENT_DRAY_DIR})
-endif()
-
-if(DRAY_DIR)
-    if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
-        message(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
-    endif()
-
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(DRay REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${DRAY_DIR}/lib/cmake/)
-endif()
-
 
 ###############################################################################
 # Setup Adios2

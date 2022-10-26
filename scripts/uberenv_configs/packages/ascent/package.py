@@ -88,7 +88,6 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
     variant("genten", default=False, description="Build with GenTen support")
-    variant("dray", default=False, description="Build with Devil Ray support")
     variant("occa", default=False, description="Build with OCCA support")
     variant("raja", default=True, description="Build with RAJA support")
     variant("umpire", default=True, description="Build with Umpire support")

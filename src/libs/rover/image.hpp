@@ -7,8 +7,8 @@
 #ifndef rover_image_h
 #define rover_image_h
 
+#include <rover_config.h>
 #include <vector>
-
 #include <vtkm/cont/ArrayHandle.h>
 
 #include <rover_types.hpp>

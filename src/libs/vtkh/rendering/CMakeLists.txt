@@ -30,7 +30,7 @@ set(vtkh_rendering_sources
 ###############################################################################
 # always install headers
 install(FILES ${vtkh_rendering_headers}
-        DESTINATION include/vtkh/rendering)
+        DESTINATION include/ascent/vtkh/rendering)
 
 ###############################################################################
 if (ENABLE_SERIAL)

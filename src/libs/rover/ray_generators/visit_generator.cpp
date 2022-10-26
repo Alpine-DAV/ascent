@@ -152,7 +152,7 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   {
     const T near_y = y_start + T(y) * near_dy;
     const T far_y = y_end + T(y) * far_dy;
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int x = 0; x < x_size; ++x)
@@ -187,7 +187,7 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 
   // set a couple other ray variables
   ROVER_INFO("Ray size "<<size);
-#ifdef ROVER_ENABLE_OPENMP
+#ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)

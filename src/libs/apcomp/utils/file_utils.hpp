@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include <apcomp/apcomp_config.h>
 #include <apcomp/apcomp_exports.h>
 // stolen from llnl/conduit
 
