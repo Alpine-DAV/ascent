@@ -314,7 +314,10 @@ struct ClipFieldLinear
         clipcase |= (1 << j);
       }
     }
-    cout << "elid " << elid << ": clipcase=" << clipcase << endl;
+    cout << "elid " << elid << ": clipcase=" << clipcase << ", el_ids={";
+    for(int32 i = 0; i < el_dofs; i++)
+       cout << el_ids[i] << ", ";  
+    cout << "}" << endl;
     return clipcase;
   }
 
@@ -323,6 +326,12 @@ struct ClipFieldLinear
   {
     uint32 i = 0;
     uint32 hash = 0;
+#if 1
+    // Build the length into the hash so {1} and {0,1} hash to different values.
+    hash += static_cast<uint8>(length & 0xff);
+    hash += hash << 10;
+    hash ^= hash >> 6;
+#endif
     while(i != length)
     {
       hash += data[i++];
