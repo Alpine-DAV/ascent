@@ -283,7 +283,7 @@ clip_box_plane(conduit::Node &node, const std::string &name)
 //  dray::Collection output2 = clip.execute(collection);
 //  handle_test(std::string("clip_box_plane_inv_") + name, output2);
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST (dray_clipfield, hexs_2_2_2_noclip)
 {
@@ -544,10 +544,9 @@ TEST (dray_clipfield, hexs_braid)
 
   clip_3d(data, "hexs_braid", "braid", 4.8f);
 }
-
-#if 0
+#endif
 //-----------------------------------------------------------------------------
-TEST (dray_clip_sphere, unstructured_hex)
+TEST (dray_clip_sphere, sphere)
 {
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
@@ -559,9 +558,11 @@ TEST (dray_clip_sphere, unstructured_hex)
                                              EXAMPLE_MESH_SIDE_DIM,
                                              data);
 
-  clip_sphere(data, "explicit_hexs");
+  clip_sphere(data, "hexs");
 }
 
+
+#if 0
 //-----------------------------------------------------------------------------
 TEST (dray_clip_1_plane, unstructured_hex)
 {

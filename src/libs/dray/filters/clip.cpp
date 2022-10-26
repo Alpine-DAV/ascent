@@ -54,12 +54,7 @@ public:
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     auto ndofs = mesh_gf.m_values.size();
-#if 0
-    cout << "ndofs=" << ndofs << endl;
-    cout << "mesh_gf summary"<< endl;
-    mesh.get_dof_data().m_ctrl_idx.summary();
-    mesh.get_dof_data().m_values.summary();
-#endif
+
     // Outputs
     GridFunction<1> gf;
     gf.m_el_dofs = mesh_gf.m_el_dofs;
@@ -127,10 +122,6 @@ public:
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     auto ndofs = mesh_gf.m_values.size();
-    //cout << "ndofs=" << ndofs << endl;
-    //cout << "mesh_gf summary"<< endl;
-    //mesh.get_dof_data().m_ctrl_idx.summary();
-    //mesh.get_dof_data().m_values.summary();
 
     // Outputs
     GridFunction<1> gf;
@@ -200,10 +191,6 @@ public:
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     auto ndofs = mesh_gf.m_values.size();
-    //cout << "ndofs=" << ndofs << endl;
-    //cout << "mesh_gf summary"<< endl;
-    //mesh.get_dof_data().m_ctrl_idx.summary();
-    //mesh.get_dof_data().m_values.summary();
 
     // Outputs
     GridFunction<1> gf;
@@ -499,7 +486,6 @@ public:
   std::shared_ptr<Field>
   make_box_distances(DataSet domain, Float &clip_value) const
   {
-    cout << "!!!! make_box_distances" << endl;
     BoxDistance distcalc(boxbounds);
     // Dispatch to various mesh types in SphereDistance::operator()
     dispatch_3d(domain.mesh(), distcalc);
@@ -678,7 +664,12 @@ Clip::execute(Collection &collection)
         ClipField clipper;
         clipper.set_clip_value(clip_value);
         clipper.set_field(field_name);
-        clipper.set_invert_clip(m_invert);
+        // If we are doing sphere clipping, use the opposite of the m_invert
+        // flag to match VisIt.
+        if(m_internals->clip_mode == 1)
+            clipper.set_invert_clip(!m_invert);
+        else
+            clipper.set_invert_clip(m_invert);
         output = clipper.execute(input);
 
         // Remove the new field from the output and the input.
@@ -690,9 +681,13 @@ Clip::execute(Collection &collection)
         // Prepare for the next pass.
         input = output;
       }
-
+#if 0
+      conduit::Node n;
+      output.to_node(n);
+      n.print();
+#endif
       // Add the clipped output to the collection.
-      res.add_domain(output);       
+      res.add_domain(output);
     }
   }
 
