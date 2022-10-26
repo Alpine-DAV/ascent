@@ -11,6 +11,7 @@
 #include <dray/data_model/unstructured_field.hpp>
 #include <dray/data_model/unstructured_mesh.hpp>
 #include <dray/filters/internal/marching_cubes_lookup_tables.hpp>
+#include <dray/filters/point_average.hpp>
 #include <dray/dispatcher.hpp>
 
 // #define DEBUG_MARCHING_CUBES
@@ -713,6 +714,16 @@ MarchingCubes::execute(Collection &c)
     MarchingCubesFunctor func(domain, m_field, m_isovalues[0]);
     func.do_orig_cells = MarchingCubesFunctor::has_cell_data(domain);
     auto field_ptr = domain.field_shared(m_field);
+    // If the field if cell-centered, we will have to recenter it
+    if(field_ptr->order() == Order::Constant)
+    {
+      PointAverage pointavg;
+      Collection temp;
+      temp.add_domain(domain);
+      pointavg.set_field(m_field);
+      temp = pointavg.execute(temp);
+      field_ptr = temp.domain(0).field_shared(m_field);
+    }
     DataSet iso_domain = func.execute(field_ptr.get());
     output.add_domain(iso_domain);
   }
