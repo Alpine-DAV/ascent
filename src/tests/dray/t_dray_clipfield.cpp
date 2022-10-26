@@ -18,9 +18,10 @@
 #include <string>
 
 int EXAMPLE_MESH_SIDE_DIM = 15;
+int EXAMPLE_MESH_SIDE_DIM_SM = 7;
 
-#define DEBUG_TEST
-#define GENERATE_BASELINES
+//#define DEBUG_TEST
+//#define GENERATE_BASELINES
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -238,7 +239,7 @@ clip_2_plane(conduit::Node &node, const std::string &name)
 
 //-----------------------------------------------------------------------------
 void
-clip_3_plane(conduit::Node &node, const std::string &name)
+clip_3_plane(conduit::Node &node, const std::string &name, bool multiplane)
 {
   dray::Collection collection;
   dray::DataSet domain = dray::BlueprintReader::blueprint_to_dray(node);
@@ -251,6 +252,7 @@ clip_3_plane(conduit::Node &node, const std::string &name)
   dray::Float origin3[]={0., -1., 0.}, normal3[] = {0., 1., 0.};
 
   clip.Set3PlaneClip(origin1, normal1, origin2, normal2, origin3, normal3);
+  clip.SetMultiPlane(multiplane);
   dray::Collection output = clip.execute(collection);
   handle_test(std::string("clip_3_plane_") + name, output);
 
@@ -279,11 +281,11 @@ clip_box_plane(conduit::Node &node, const std::string &name)
   handle_test(std::string("clip_box_plane_") + name, output);
 
   // Filter again, inverting the selection.
-//  clip.SetInvertClip(true);
-//  dray::Collection output2 = clip.execute(collection);
-//  handle_test(std::string("clip_box_plane_inv_") + name, output2);
+  clip.SetInvertClip(true);
+  dray::Collection output2 = clip.execute(collection);
+  handle_test(std::string("clip_box_plane_inv_") + name, output2);
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST (dray_clipfield, hexs_2_2_2_noclip)
 {
@@ -544,9 +546,9 @@ TEST (dray_clipfield, hexs_braid)
 
   clip_3d(data, "hexs_braid", "braid", 4.8f);
 }
-#endif
+
 //-----------------------------------------------------------------------------
-TEST (dray_clip_sphere, sphere)
+TEST (dray_clip, hexs_sphere)
 {
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
@@ -561,10 +563,24 @@ TEST (dray_clip_sphere, sphere)
   clip_sphere(data, "hexs");
 }
 
-
-#if 0
 //-----------------------------------------------------------------------------
-TEST (dray_clip_1_plane, unstructured_hex)
+TEST (dray_clip, hexs_1_plane)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             EXAMPLE_MESH_SIDE_DIM_SM,
+                                             EXAMPLE_MESH_SIDE_DIM_SM,
+                                             EXAMPLE_MESH_SIDE_DIM_SM,
+                                             data);
+
+  clip_1_plane(data, "hexs");
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clip, hexs_2_plane)
 {
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
@@ -576,11 +592,11 @@ TEST (dray_clip_1_plane, unstructured_hex)
                                              EXAMPLE_MESH_SIDE_DIM,
                                              data);
 
-  clip_1_plane(data, "explicit_hexs");
+  clip_2_plane(data, "hexs");
 }
 
 //-----------------------------------------------------------------------------
-TEST (dray_clip_2_plane, unstructured_hex)
+TEST (dray_clip, hexs_3_plane)
 {
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
@@ -592,11 +608,12 @@ TEST (dray_clip_2_plane, unstructured_hex)
                                              EXAMPLE_MESH_SIDE_DIM,
                                              data);
 
-  clip_2_plane(data, "explicit_hexs");
+  clip_3_plane(data, "hexs", false);
+  // TODO: clip_3_plane(data, "hexs_multiplane", true);
 }
 
 //-----------------------------------------------------------------------------
-TEST (dray_clip_3_plane, unstructured_hex)
+TEST (dray_clip, hexs_box)
 {
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
@@ -608,22 +625,5 @@ TEST (dray_clip_3_plane, unstructured_hex)
                                              EXAMPLE_MESH_SIDE_DIM,
                                              data);
 
-  clip_3_plane(data, "explicit_hexs");
+  clip_box_plane(data, "hexs");
 }
-
-//-----------------------------------------------------------------------------
-TEST (dray_clip_box_plane, unstructured_hex)
-{
-#ifdef DEBUG_TEST
-  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
-#endif
-  conduit::Node data;
-  conduit::blueprint::mesh::examples::braid("structured",
-                                             EXAMPLE_MESH_SIDE_DIM,
-                                             EXAMPLE_MESH_SIDE_DIM,
-                                             EXAMPLE_MESH_SIDE_DIM,
-                                             data);
-
-  clip_box_plane(data, "explicit_hexs");
-}
-#endif

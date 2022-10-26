@@ -223,8 +223,7 @@ public:
           pdist = dist;
         else
         {
-          if(pdist >= 0.)
-            pdist = dist;
+          pdist = min(pdist, dist);
         }
       }
 
@@ -616,6 +615,12 @@ void
 Clip::SetInvertClip(bool invert)
 {
   m_invert = invert;
+}
+
+void
+Clip::SetMultiPlane(bool value)
+{
+  m_do_multi_plane = value;
 }
 
 Collection

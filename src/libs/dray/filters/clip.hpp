@@ -29,6 +29,7 @@ public:
                      const Float normal3[3]);
 
   void SetInvertClip(bool invert);
+  void SetMultiPlane(bool value);
 
   /**
    * @brief Clips the input dataset.
