@@ -91,10 +91,12 @@ bool AllocationManager::m_external_device_allocator = false;
 int
 AllocationManager::device_allocator_id()
 {
-  // TODO ERROR IF UMPIRE IS OFF?
   if(m_device_allocator_id == -1)
   {
-
+#if !defined(ASCENT_UMPIRE_ENABLED)
+         ASCENT_ERROR("Ascent was built without Umpire Support. "
+                       "Cannot access device allocator id");
+#else
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("DEVICE");
     // we can use the umpire profiling to find a good default size
@@ -105,7 +107,9 @@ AllocationManager::device_allocator_id()
                             1ul * // 1GB default size
                             1024ul * 1024ul * 1024ul + 1);
     m_device_allocator_id = pooled_allocator.getId();
+#endif
   }
+
   return m_device_allocator_id;
 }
 
@@ -113,9 +117,12 @@ AllocationManager::device_allocator_id()
 int
 AllocationManager::host_allocator_id()
 {
-  // TODO ERROR IF UMPIRE IS OFF?
   if(m_device_allocator_id == -1)
   {
+#if !defined(ASCENT_UMPIRE_ENABLED)
+         ASCENT_ERROR("Ascent was built without Umpire Support. "
+                       "Cannot access host allocator id");
+#else
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("HOST");
     // we can use the umpire profiling to find a good default size
@@ -125,6 +132,7 @@ AllocationManager::host_allocator_id()
                             1ul * // 1GB default size
                             1024ul * 1024ul * 1024ul + 1);
     m_host_allocator_id = pooled_allocator.getId();
+#endif
   }
   return m_host_allocator_id;
 }
@@ -133,8 +141,6 @@ AllocationManager::host_allocator_id()
 bool
 AllocationManager::set_device_allocator_id(int id)
 {
-  // TODO ERROR IF UMPIRE IS OFF
-
   if(m_external_device_allocator && m_device_allocator_id != id)
   {
     // with the current implementation, i cant control switching allocators in the middle
@@ -143,6 +149,10 @@ AllocationManager::set_device_allocator_id(int id)
     ASCENT_ERROR("Changing the device allocator id in the middle of a run is not supported\n");
   }
 
+#if !defined(ASCENT_UMPIRE_ENABLED)
+    ASCENT_ERROR("Ascent was built without Umpire Support. "
+                 "Cannot set device allocator id.");
+#else
   auto &rm = umpire::ResourceManager::getInstance ();
   bool valid_id = true;
 
@@ -191,13 +201,14 @@ AllocationManager::set_device_allocator_id(int id)
   {
     // Matt: i don't think anyone will s
     // if this is not the same, we have to get rid
-    // of all currently allocated deviec resources.
+    // of all currently allocated device resources.
     // Data will be preserved by a synch to host
     //release_device_res();
     m_device_allocator_id = id;
   }
   m_external_device_allocator = true;
   return true;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -259,10 +270,14 @@ HostAllocator::alloc(size_t items, size_t item_size)
   //std::cout<<"Bananas allocate\n";
   m_total_bytes_alloced += items * item_size;
   m_alloc_count++;
+#if defined(ASCENT_UMPIRE_ENABLED)
   auto &rm = umpire::ResourceManager::getInstance ();
   const int allocator_id = AllocationManager::host_allocator_id();
   umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
-  return host_allocator.allocate (items * item_size);
+  return host_allocator.allocate(items * item_size);
+#else
+  return malloc(items * item_size);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -271,11 +286,14 @@ HostAllocator::free(void *data_ptr)
 {
   //std::cout<<"free bananas\n";
   m_free_count++;
-
+#if defined(ASCENT_UMPIRE_ENABLED)
   auto &rm = umpire::ResourceManager::getInstance ();
   const int allocator_id = AllocationManager::host_allocator_id();
   umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
-  host_allocator.deallocate (data_ptr);
+  host_allocator.deallocate(data_ptr);
+#else
+  return free(data_ptr);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -291,6 +309,11 @@ size_t DeviceAllocator::m_free_count = 0;
 void *
 DeviceAllocator::alloc(size_t items, size_t item_size)
 {
+#if !defined(ASCENT_UMPIRE_ENABLED)
+     ASCENT_ERROR("Ascent was built without Umpire support. "
+                  "Cannot use DeviceAllocator::alloc().");
+#endif
+
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   m_total_bytes_alloced += items * item_size;
   m_alloc_count++;
@@ -310,6 +333,11 @@ DeviceAllocator::alloc(size_t items, size_t item_size)
 void
 DeviceAllocator::free(void *data_ptr)
 {
+#if !defined(ASCENT_UMPIRE_ENABLED)
+     ASCENT_ERROR("Ascent was built without Umpire support. "
+                  "Cannot use DeviceAllocator::free().");
+#endif
+
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   m_free_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
