@@ -151,7 +151,8 @@ blueprint_plugin_error_handler(const std::string &msg,
 
 //-----------------------------------------------------------------------------
 void
-clip_3d(conduit::Node &node, const std::string &name)
+clip_3d(conduit::Node &node, const std::string &name,
+  const std::string &fieldname = std::string("test"), float clip_value = 0.5)
 {
   dray::Collection collection;
   dray::DataSet domain = dray::BlueprintReader::blueprint_to_dray(node);
@@ -159,8 +160,8 @@ clip_3d(conduit::Node &node, const std::string &name)
 
   // Filter.
   dray::ClipField clip;
-  clip.set_clip_value(-4.8);
-  clip.set_field("braid"); // mesh_topology/braid
+  clip.set_clip_value(clip_value);
+  clip.set_field(fieldname); // mesh_topology/braid
 
   dray::Collection output = clip.execute(collection);
   handle_test(std::string("clip_") + name, output);
@@ -278,28 +279,258 @@ clip_box_plane(conduit::Node &node, const std::string &name)
   handle_test(std::string("clip_box_plane_") + name, output);
 
   // Filter again, inverting the selection.
-  clip.SetInvertClip(true);
-  dray::Collection output2 = clip.execute(collection);
-  handle_test(std::string("clip_box_plane_inv_") + name, output2);
+//  clip.SetInvertClip(true);
+//  dray::Collection output2 = clip.execute(collection);
+//  handle_test(std::string("clip_box_plane_inv_") + name, output2);
 }
 
-#if 0
 //-----------------------------------------------------------------------------
-TEST (dray_clipfield_threshold, unstructured_hex)
+TEST (dray_clipfield, hexs_2_2_2_noclip)
 {
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
 #endif
   conduit::Node data;
   conduit::blueprint::mesh::examples::braid("structured",
-                                             EXAMPLE_MESH_SIDE_DIM,
-                                             EXAMPLE_MESH_SIDE_DIM,
-                                             EXAMPLE_MESH_SIDE_DIM,
+                                             2,
+                                             2,
+                                             2,
                                              data);
+  /*
 
-  clip_3d(data, "explicit_hexs");
+   *----*
+   |    |
+   |    |
+   *----*
+   0    0
+   */
+  float values[] = {
+    0., 0.,
+    0., 0.,
+
+    0., 0.,
+    0., 0.
+  };
+
+  // Add another field.
+  data["fields/test/topology"] = "mesh";
+  data["fields/test/association"] = "vertex";
+  data["fields/test/type"] = "scalar";
+  data["fields/test/values"].set_external(values, 2*2*2);
+  data.print();
+
+  clip_3d(data, "hexs_2_2_2_noclip");
 }
 
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, hexs_3_2_2_noclip)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             3,
+                                             2,
+                                             2,
+                                             data);
+  /*
+
+   *----*----*
+   |    |    |
+   |    |    |
+   *----*----*
+   0    0    0
+   */
+  float values[] = {
+    0., 0.,0.,
+    0., 0.,0.,
+
+    0., 0.,0.,
+    0., 0.,0.
+  };
+
+  // Add another field.
+  data["fields/test/topology"] = "mesh";
+  data["fields/test/association"] = "vertex";
+  data["fields/test/type"] = "scalar";
+  data["fields/test/values"].set_external(values, 3*2*2);
+  data.print();
+
+  clip_3d(data, "hexs_3_2_2_noclip");
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, hexs_3_2_2_corner)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             3,
+                                             2,
+                                             2,
+                                             data);
+  /*
+   0    0    1
+   *----*----*
+   |    |    |
+   |    |    |
+   *----*----*
+   0    0    0
+   */
+  float values[] = {
+    0., 0.,0.,
+    0., 0.,1.,
+
+    0., 0.,0.,
+    0., 0.,1.
+  };
+
+  // Add another field.
+  data["fields/test/topology"] = "mesh";
+  data["fields/test/association"] = "vertex";
+  data["fields/test/type"] = "scalar";
+  data["fields/test/values"].set_external(values, 3*2*2);
+  data.print();
+
+  clip_3d(data, "hexs_3_2_2_corner");
+}
+
+//-----------------------------------------------------------------------------
+// This works
+TEST (dray_clipfield, hexs_3_3_2_hole)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             3,
+                                             3,
+                                             2,
+                                             data);
+  /*
+   0    0    0
+   *----*----*
+   |    |    |
+   |   1|    |     Make a hole in the middle
+  0*----*----* 0
+   |    |    |
+   |    |    |
+   *----*----*
+   0    0    0
+   */
+  float values[] = {
+    0., 0.,0.,
+    0., 1.,0.,
+    0., 0.,0.,
+
+    0., 0.,0.,
+    0., 1.,0.,
+    0., 0.,0.
+  };
+
+  // Add another field.
+  data["fields/test/topology"] = "mesh";
+  data["fields/test/association"] = "vertex";
+  data["fields/test/type"] = "scalar";
+  data["fields/test/values"].set_external(values, 3*3*2);
+  data.print();
+
+  clip_3d(data, "hexs_3_3_2_hole");
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, hexs_3_2_2_vertical)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             3,
+                                             2,
+                                             2,
+                                             data);
+  /*
+
+   *----*----*
+   |    |    |
+   |    |    |
+   *----*----*
+   1    0   -1
+
+   */
+  float values[] = {
+    1., 0., -1.,
+    1., 0., -1.,
+
+    1., 0., -1.,
+    1., 0., -1.,
+  };
+
+  // Add another field.
+  data["fields/test/topology"] = "mesh";
+  data["fields/test/association"] = "vertex";
+  data["fields/test/type"] = "scalar";
+  data["fields/test/values"].set_external(values, 3*2*2);
+  data.print();
+
+  clip_3d(data, "hexs_3_2_2_vertical");
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, hexs_3_3_3_vertical)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             3,
+                                             3,
+                                             3,
+                                             data);
+  /*
+
+   *----*----*
+   |    |    |
+   |    |    |
+   *----*----*
+   |    |    |
+   |    |    |
+   *----*----*
+   1    0   -1
+
+   */
+  float values[] = {
+    1., 0., -1.,
+    1., 0., -1.,
+    1., 0., -1.,
+
+    1., 0., -1.,
+    1., 0., -1.,
+    1., 0., -1.,
+
+    1., 0., -1.,
+    1., 0., -1.,
+    1., 0., -1.     
+  };
+
+  // Add another field.
+  data["fields/test/topology"] = "mesh";
+  data["fields/test/association"] = "vertex";
+  data["fields/test/type"] = "scalar";
+  data["fields/test/values"].set_external(values, 3*3*3);
+  data.print();
+
+  clip_3d(data, "hexs_3_3_3_vertical");
+}
+
+
+#if 0
 //-----------------------------------------------------------------------------
 TEST (dray_clip_sphere, unstructured_hex)
 {
@@ -363,7 +594,6 @@ TEST (dray_clip_3_plane, unstructured_hex)
 
   clip_3_plane(data, "explicit_hexs");
 }
-#endif
 
 //-----------------------------------------------------------------------------
 TEST (dray_clip_box_plane, unstructured_hex)
@@ -380,3 +610,4 @@ TEST (dray_clip_box_plane, unstructured_hex)
 
   clip_box_plane(data, "explicit_hexs");
 }
+#endif

@@ -518,7 +518,8 @@ struct ClipFieldLinear
 
     // ----------------------------------------------------------------------
     //
-    // Stage 1: Iterate over cells to determine sizes of outputs.
+    // Stage 1: Iterate over elements and their respective clip cases to
+    //          determine sizes of outputs.
     //
     // ----------------------------------------------------------------------
     RAJA::ReduceSum<reduce_policy, int> fragment_sum(0);
@@ -1020,7 +1021,18 @@ struct ClipFieldLinear
       {
         if(shapes[0] == ST_PNT)
         {
-          // Skip over
+          // Count the point as used since a blend group would have
+          // been emitted for it under these conditions. This makes
+          // sure that we get the ordering for point_2_newdof right
+          // when a set of shapes happens to not use the blended point.
+          // That, of course, means that the lut needs to be fixed a bit.
+          if(shapes[2] == NOCOLOR ||
+             (!m_invert && shapes[2] == COLOR0) ||
+             (m_invert && shapes[2] == COLOR1))
+          {
+             ptused[N0 + shapes[1]]++;
+          }
+
           // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
           shapes += (4 + shapes[3]);
         }

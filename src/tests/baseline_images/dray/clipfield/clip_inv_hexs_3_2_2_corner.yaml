@@ -1,0 +1,16 @@
+
+domain0: 
+  coordsets: 
+    coords: 
+      type: "explicit"
+      values: 
+        x: [10.0, 3.33333349227905, 5.0, 5.0, 10.0, 10.0, 10.0]
+        y: [10.0, -3.33333349227905, 10.0, 10.0, 10.0, 0.0, 0.0]
+        z: [-10.0, 0.0, 10.0, -10.0, 10.0, 10.0, -10.0]
+  topologies: 
+    topology: 
+      coordset: "coords"
+      type: "unstructured"
+      elements: 
+        shape: "tet"
+        connectivity: [6, 2, 0, 3, 6, 4, 0, 2, 6, 5, 4, 2]
