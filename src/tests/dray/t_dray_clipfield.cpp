@@ -108,7 +108,7 @@ compare_baseline(const std::string &testname, const conduit::Node &tdata)
     conduit::Node baseline, info;
     conduit::relay::io::load(filename, "yaml", baseline);
     convert_float64_to_float32(baseline);
-    bool different = baseline.diff(tdata, info, 1.e-4, true);
+    bool different = baseline.diff(tdata, info, 1.e-3, true);
     if(different)
     {
         std::cout << "Difference for " << testname << std::endl;
@@ -319,7 +319,6 @@ TEST (dray_clipfield, hexs_2_2_2_noclip)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 2*2*2);
-  data.print();
 
   clip_3d(data, "hexs_2_2_2_noclip");
 }
@@ -357,7 +356,6 @@ TEST (dray_clipfield, hexs_3_2_2_noclip)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*2*2);
-  data.print();
 
   clip_3d(data, "hexs_3_2_2_noclip");
 }
@@ -395,7 +393,6 @@ TEST (dray_clipfield, hexs_3_2_2_corner)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*2*2);
-  data.print();
 
   clip_3d(data, "hexs_3_2_2_corner");
 }
@@ -439,7 +436,6 @@ TEST (dray_clipfield, hexs_3_3_2_hole)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*3*2);
-  data.print();
 
   clip_3d(data, "hexs_3_3_2_hole");
 }
@@ -478,7 +474,6 @@ TEST (dray_clipfield, hexs_3_2_2_vertical)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*2*2);
-  data.print();
 
   clip_3d(data, "hexs_3_2_2_vertical");
 }
@@ -526,7 +521,6 @@ TEST (dray_clipfield, hexs_3_3_3_vertical)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*3*3);
-  data.print();
 
   clip_3d(data, "hexs_3_3_3_vertical");
 }

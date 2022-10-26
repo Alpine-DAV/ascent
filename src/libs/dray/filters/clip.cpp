@@ -9,7 +9,9 @@
 #include <dray/policies.hpp>
 #include <RAJA/RAJA.hpp>
 
-#define DEBUGGING_CLIP
+// This flag enables conditionally-compiled code to write a file that
+// contains the distance functions on the clip geometry. Leave in.
+//#define DEBUGGING_CLIP
 #ifdef DEBUGGING_CLIP
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_relay.hpp>

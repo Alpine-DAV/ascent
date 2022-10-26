@@ -10,7 +10,10 @@
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_relay.hpp>
 
-#define PRINT_CASES
+// Some flags for conditionally compiled code. Uncomment as needed when debugging.
+//#define PRINT_CASES
+//#define WRITE_YAML_FILE
+//#define WRITE_POINT3D_FILE
 
 void breakpoint()
 {
@@ -314,14 +317,17 @@ struct ClipFieldLinear
         clipcase |= (1 << j);
       }
     }
+#ifdef PRINT_CASES
     cout << "elid " << elid << ": clipcase=" << clipcase << ", el_ids={";
     for(int32 i = 0; i < el_dofs; i++)
-       cout << el_ids[i] << ", ";  
+      cout << el_ids[i] << ", ";  
     cout << "}" << endl;
+#endif
     return clipcase;
   }
 
   //-------------------------------------------------------------------------
+  // NOTE: For larger meshes, a hash that makes uint64 might be desirable.
   DRAY_EXEC static uint32 jenkins_hash(const uint8 *data, uint32 length)
   {
     uint32 i = 0;
@@ -453,7 +459,7 @@ struct ClipFieldLinear
 
     blendNames is made from combining the values in a blend group into a single id.
     For singles, we can use the point id itself. For pairs, we can do <p0:p1>. For
-    longer lists, we can sort the point ids and checksum them in some way.
+    longer lists, we sort the point ids and hash them.
 
     Each group in the blendIds is encoded to a blendName. We can then put
     the blendNames through a uniqueness filter so we can eliminate duplicate
@@ -462,29 +468,29 @@ struct ClipFieldLinear
 
     origIndex   = [0,   1,       2,      3,          4,        5]
     blendNames  = [{100,0x54321, 0x23456,0x34567}   {0x34567,  106},...]
-    uniqueNames = [100, 106, 0x23456, 0x34567, 0x54321}
-    u2origIndex = [0, 5, 2, 3, 1]    (3,4 were dups)
+    uNames = [100, 106, 0x23456, 0x34567, 0x54321}
+    uIndex = [0, 5, 2, 3, 1]    (3,4 were dups)
 
     For a point in the cell, get its blend group index in the cell. For example,
     if we're in cell 0 and we get point 0x54321. We want to find its blend group data
     in blendCoeff, blendIds.
 
-    uidx = bsearch(uniqueNames, 0x54321)                   (4)
-    obidx = u2origIndex[uidx]                              (1 blend group)
-    start = blendGroupOffsets[obidx]                       (1)
-    int32 nids = blendGroupSizes[obidx]                    (2)
-    int32 *ids = &blendIds[start]                          ({0.5 0.5})
-    Float *coeff = &blendCoeff[start]                      ({100 101})
+    uidx = bsearch(uNames, 0x54321)                   (4)
+    obidx = uIndex[uidx]                              (1 blend group)
+    start = blendGroupOffsets[obidx]                  (1)
+    int32 nids = blendGroupSizes[obidx]               (2)
+    int32 *ids = &blendIds[start]                     ({0.5 0.5})
+    Float *coeff = &blendCoeff[start]                 ({100 101})
 
-    uidx = bsearch(uniqueNames, 106)                       (1)
-    obidx = u2origIndex[uidx]                              (5 blend group)
-    start = blendGroupOffsets[obidx]                       (9)
-    int32 nids = blendGroupSizes[obidx]                    (1)
-    int32 *ids = &blendIds[start]                          ({1.})
-    Float *coeff = &blendCoeff[start]                      ({106})
+    uidx = bsearch(uNames, 106)                       (1)
+    obidx = uIndex[uidx]                              (5 blend group)
+    start = blendGroupOffsets[obidx]                  (9)
+    int32 nids = blendGroupSizes[obidx]               (1)
+    int32 *ids = &blendIds[start]                     ({1.})
+    Float *coeff = &blendCoeff[start]                 ({106})
 
     The bsearch result for the name in the uniqueNames is the global point id to
-    use in the connectivity.
+    use in the new dofs.
     */
     DRAY_LOG_OPEN("clipfield");
 
@@ -527,24 +533,6 @@ struct ClipFieldLinear
     RAJA::ReduceSum<reduce_policy, int> blendGroupLen_sum(0);
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
     {
-#if 0
-      int32 start = elid * el_dofs;
-      // Print the element connectivity and values.
-      cout << "elid: " << elid << ", dofs={";
-      for(int32 j = 0; j < el_dofs; j++)
-      {
-        if(j>0) cout << ", ";
-        cout << conn_ptr[start + j];
-      }
-      cout << "}, values={";
-      for(int32 j = 0; j < el_dofs; j++)
-      {
-        if(j>0) cout << ", ";
-        cout << dist_ptr[conn_ptr[start + j]][0];
-      }
-      cout << "}" << endl;
-#endif
-
       // Determine the clip case.
       int32 el_ids[8]; // max p1 ids.
       int32 clipcase = clip_case(elid, el_dofs, conn_ptr, dist_ptr, el_ids);
@@ -945,7 +933,7 @@ struct ClipFieldLinear
     const GridFunction<3> &mesh_gf = mesh.get_dof_data();
     DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
     int32 nbg = uNames.size();
-    cout << "Num unique blend groups: " << nbg << endl;
+    //cout << "Num unique blend groups: " << nbg << endl;
     GridFunction<3> gf;
     gf.m_values.resize(nbg);
     DeviceGridFunction<3> dgf(gf);
@@ -957,19 +945,19 @@ struct ClipFieldLinear
       auto npts = blendGroupSizes_ptr[origBGIdx];
       auto bgIdx = blendGroupStart_ptr[origBGIdx];
 
-      cout << "bg=" << origBGIdx << ", name=" << uNames_ptr[bgid] << endl;
+      //cout << "bg=" << origBGIdx << ", name=" << uNames_ptr[bgid] << endl;
       Vec<Float, 3> blended = {0,0,0};
       for(int32 ii = 0; ii < npts; ii++)
       {
-         cout << "\t id=" << blendIds_ptr[bgIdx] << ", coeff=" << blendCoeff_ptr[bgIdx] << ", pt=" << mesh_dgf.m_values_ptr[blendIds_ptr[bgIdx]] << endl;
+         //cout << "\t id=" << blendIds_ptr[bgIdx] << ", coeff=" << blendCoeff_ptr[bgIdx] << ", pt=" << mesh_dgf.m_values_ptr[blendIds_ptr[bgIdx]] << endl;
          blended += mesh_dgf.m_values_ptr[blendIds_ptr[bgIdx]] * blendCoeff_ptr[bgIdx];
          bgIdx++;
       }
-      cout << "\t saving " << blended << endl;
+      //cout << "\t saving " << blended << endl;
       dgf.m_values_ptr[bgid] = blended;
     });
     DRAY_ERROR_CHECK();
-#if 1
+#ifdef WRITE_POINT3D_FILE
     // Write Point3D file containing xyz locations and point name.
     auto uNames_hptr = uNames.get_host_ptr();
     auto v_hptr = gf.m_values.get_host_ptr();
@@ -996,7 +984,6 @@ struct ClipFieldLinear
       // If there are no fragments, return from lambda.
       if(fragments_ptr[elid] == 0)
         return;
-      //cout << "elid " << elid << ": Adding " << fragments_ptr[elid] << " fragments." << endl;
 
       // Determine the clip case.
       int32 el_ids[8]; // max p1 ids.
@@ -1058,7 +1045,6 @@ struct ClipFieldLinear
 
       // Seek to the start of the blend groups for this element.
       int32 bgStart = blendGroupOffsets_ptr[elid];
-//cout << "elid " << elid << ": blend names start at: " << bgStart << endl;
 
       // Go through the points in the order they would have been added as blend
       // groups, get their blendName, and then overall index of that blendName
@@ -1070,7 +1056,6 @@ struct ClipFieldLinear
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
-//cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1079,7 +1064,6 @@ struct ClipFieldLinear
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
-//cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1088,7 +1072,6 @@ struct ClipFieldLinear
         if(ptused[pid] > 0)
         {
           auto name = blendNames_ptr[bgStart++];
-//cout << "\t point " << (int)pid << ": bgStart=" << (bgStart-1) << ", name=" << name << endl;
           point_2_newdof[pid] = bsearch(name, uNames_ptr, uNames_len);
         }
       }
@@ -1098,7 +1081,6 @@ struct ClipFieldLinear
       shapes = &lut_shapes_ptr[lut_offset_ptr[clipcase]];
       // This is where the output fragments start for this element
       int32 tetOutput = fragmentOffsets_ptr[elid] * 4;
-//cout << "elid " << elid << ": tetOutput=" << tetOutput << endl;
       for(int32 si = 0; si < lut_nshapes_ptr[clipcase]; si++)
       {
         if(shapes[0] == ST_PNT)
@@ -1139,7 +1121,7 @@ struct ClipFieldLinear
     newmesh->name(mesh.name());
     m_output.add_mesh(newmesh);
 
-#if 1
+#ifdef WRITE_YAML_FILE
     // Save the data to a YAML file to look at it.
     cout << "Writing clip debugging information." << endl;
     conduit::Node n;
