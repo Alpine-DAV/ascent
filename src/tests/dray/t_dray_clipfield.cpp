@@ -17,7 +17,7 @@
 #include <dray/filters/clip.hpp>
 #include <string>
 
-int EXAMPLE_MESH_SIDE_DIM = 3;
+int EXAMPLE_MESH_SIDE_DIM = 15;
 
 #define DEBUG_TEST
 #define GENERATE_BASELINES
@@ -529,6 +529,21 @@ TEST (dray_clipfield, hexs_3_3_3_vertical)
   clip_3d(data, "hexs_3_3_3_vertical");
 }
 
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, hexs_braid)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("structured",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             data);
+
+  clip_3d(data, "hexs_braid", "braid", 4.8f);
+}
 
 #if 0
 //-----------------------------------------------------------------------------
