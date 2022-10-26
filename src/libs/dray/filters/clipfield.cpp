@@ -1,3 +1,7 @@
+// Copyright 2022 Lawrence Livermore National Security, LLC and other
+// Devil Ray Developers. See the top-level COPYRIGHT file for details.
+//
+// SPDX-License-Identifier: (BSD-3-Clause)
 #include <dray/filters/clipfield.hpp>
 
 #include <dray/dispatcher.hpp>
