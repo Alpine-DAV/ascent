@@ -10,8 +10,10 @@
 
 namespace ascent
 {
-  //
-void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
+
+//-----------------------------------------------------------------------------
+void
+is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 {
   is_gpu = false;
   is_unified = false;
@@ -43,8 +45,11 @@ void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 #endif 
 }
 
+//-----------------------------------------------------------------------------
+// Adapted from:
 // https://gitlab.kitware.com/third-party/nvpipe/blob/master/encode.c
-bool is_gpu_ptr(const void *ptr)
+bool
+is_gpu_ptr(const void *ptr)
 {
 #if defined(ASCENT_CUDA_ENABLED)
   cudaPointerAttributes atts;
@@ -70,17 +75,26 @@ bool is_gpu_ptr(const void *ptr)
 #endif
 }
 
-int AllocationManager::m_umpire_device_allocator_id = -1;
-int AllocationManager::m_umpire_host_allocator_id = -1;
-int AllocationManager::m_conduit_host_allocator_id = -1;
-int AllocationManager::m_conduit_device_allocator_id = -1;
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Allocation Manager
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+int  AllocationManager::m_device_allocator_id = -1;
+int  AllocationManager::m_host_allocator_id  = -1;
+int  AllocationManager::m_conduit_host_allocator_id   = -1;
+int  AllocationManager::m_conduit_device_allocator_id = -1;
 bool AllocationManager::m_external_device_allocator = false;
 
+//-----------------------------------------------------------------------------
 int
-AllocationManager::umpire_device_allocator_id()
+AllocationManager::device_allocator_id()
 {
-  if(m_umpire_device_allocator_id == -1)
+  // TODO ERROR IF UMPIRE IS OFF?
+  if(m_device_allocator_id == -1)
   {
+
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("DEVICE");
     // we can use the umpire profiling to find a good default size
@@ -90,15 +104,17 @@ AllocationManager::umpire_device_allocator_id()
                             allocator,
                             1ul * // 1GB default size
                             1024ul * 1024ul * 1024ul + 1);
-    m_umpire_device_allocator_id = pooled_allocator.getId();
+    m_device_allocator_id = pooled_allocator.getId();
   }
-  return m_umpire_device_allocator_id;
+  return m_device_allocator_id;
 }
 
+//-----------------------------------------------------------------------------
 int
-AllocationManager::umpire_host_allocator_id()
+AllocationManager::host_allocator_id()
 {
-  if(m_umpire_host_allocator_id == -1)
+  // TODO ERROR IF UMPIRE IS OFF?
+  if(m_device_allocator_id == -1)
   {
     auto &rm = umpire::ResourceManager::getInstance ();
     auto allocator = rm.getAllocator("HOST");
@@ -108,27 +124,30 @@ AllocationManager::umpire_host_allocator_id()
                             allocator,
                             1ul * // 1GB default size
                             1024ul * 1024ul * 1024ul + 1);
-    m_umpire_host_allocator_id = pooled_allocator.getId();
+    m_host_allocator_id = pooled_allocator.getId();
   }
-  return m_umpire_host_allocator_id;
+  return m_host_allocator_id;
 }
 
+//-----------------------------------------------------------------------------
 bool
-AllocationManager::umpire_device_allocator_id(int id)
+AllocationManager::set_device_allocator_id(int id)
 {
+  // TODO ERROR IF UMPIRE IS OFF
 
-  if(m_external_device_allocator && m_umpire_device_allocator_id != id)
+  if(m_external_device_allocator && m_device_allocator_id != id)
   {
     // with the current implementation, i cant control switching allocators in the middle
     // This would cause a mismatch between memory allocated with one 'allocator' then that
     // memory being deallocated with another. Something to think about
-    ASCENT_ERROR("Setting the device allocator id in the middle of the run to something new is BAD\n");
+    ASCENT_ERROR("Changing the device allocator id in the middle of a run is not supported\n");
   }
 
   auto &rm = umpire::ResourceManager::getInstance ();
   bool valid_id = true;
 
   umpire::Allocator allocator;
+
   try
   {
     allocator = rm.getAllocator (id);
@@ -153,7 +172,7 @@ AllocationManager::umpire_device_allocator_id(int id)
 #endif
 
   bool is_device = resource == umpire::MemoryResourceTraits::resource_type::device;
-  bool is_host = resource == umpire::MemoryResourceTraits::resource_type::host;
+  bool is_host   = resource == umpire::MemoryResourceTraits::resource_type::host;
 
   if(is_device && need_device)
   {
@@ -168,19 +187,20 @@ AllocationManager::umpire_device_allocator_id(int id)
     return false;
   }
 
-  if(id != m_umpire_device_allocator_id)
+  if(id != m_device_allocator_id)
   {
     // Matt: i don't think anyone will s
     // if this is not the same, we have to get rid
     // of all currently allocated deviec resources.
     // Data will be preserved by a synch to host
     //release_device_res();
-    m_umpire_device_allocator_id = id;
+    m_device_allocator_id = id;
   }
   m_external_device_allocator = true;
   return true;
 }
 
+//-----------------------------------------------------------------------------
 int
 AllocationManager::conduit_host_allocator_id()
 {
@@ -196,6 +216,7 @@ AllocationManager::conduit_host_allocator_id()
   return m_conduit_host_allocator_id;
 }
 
+//-----------------------------------------------------------------------------
 int
 AllocationManager::conduit_device_allocator_id()
 {
@@ -203,14 +224,16 @@ AllocationManager::conduit_device_allocator_id()
   {
     m_conduit_device_allocator_id
       = conduit::utils::register_allocator(DeviceAllocator::alloc,
-                                             DeviceAllocator::free);
+                                           DeviceAllocator::free);
 
     //std::cout<<"Created device allocator "<<m_conduit_device_allocator_id<<"\n";
   }
   return m_conduit_device_allocator_id;
 }
 
-void AllocationManager::set_conduit_mem_handlers()
+//-----------------------------------------------------------------------------
+void
+AllocationManager::set_conduit_mem_handlers()
 {
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   // we only need to override the mem handlers in the
@@ -220,11 +243,16 @@ void AllocationManager::set_conduit_mem_handlers()
 #endif
 }
 
-// ------------------------- Host Allocator -----------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Host Allocator
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 size_t HostAllocator::m_total_bytes_alloced = 0;
 size_t HostAllocator::m_alloc_count = 0;
 size_t HostAllocator::m_free_count = 0;
 
+//-----------------------------------------------------------------------------
 void *
 HostAllocator::alloc(size_t items, size_t item_size)
 {
@@ -232,11 +260,12 @@ HostAllocator::alloc(size_t items, size_t item_size)
   m_total_bytes_alloced += items * item_size;
   m_alloc_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::umpire_host_allocator_id();
+  const int allocator_id = AllocationManager::host_allocator_id();
   umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
   return host_allocator.allocate (items * item_size);
 }
 
+//-----------------------------------------------------------------------------
 void
 HostAllocator::free(void *data_ptr)
 {
@@ -244,16 +273,21 @@ HostAllocator::free(void *data_ptr)
   m_free_count++;
 
   auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::umpire_host_allocator_id();
+  const int allocator_id = AllocationManager::host_allocator_id();
   umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
   host_allocator.deallocate (data_ptr);
 }
 
-// ------------------------- Host Allocator -----------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Device Allocator
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 size_t DeviceAllocator::m_total_bytes_alloced = 0;
 size_t DeviceAllocator::m_alloc_count = 0;
 size_t DeviceAllocator::m_free_count = 0;
 
+//-----------------------------------------------------------------------------
 void *
 DeviceAllocator::alloc(size_t items, size_t item_size)
 {
@@ -272,6 +306,7 @@ DeviceAllocator::alloc(size_t items, size_t item_size)
 #endif
 }
 
+//-----------------------------------------------------------------------------
 void
 DeviceAllocator::free(void *data_ptr)
 {
@@ -287,6 +322,7 @@ DeviceAllocator::free(void *data_ptr)
 #endif
 }
 
+//-----------------------------------------------------------------------------
 void
 MagicMemory::memset(void * ptr, int value, size_t num )
 {
@@ -309,6 +345,7 @@ MagicMemory::memset(void * ptr, int value, size_t num )
 #endif
 }
 
+//-----------------------------------------------------------------------------
 void
 MagicMemory::copy(void * destination, const void * source, size_t num)
 {

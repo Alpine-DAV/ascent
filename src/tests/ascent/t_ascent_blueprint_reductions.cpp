@@ -152,7 +152,7 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
     std::cout << "input" << std::endl;
     input["values"].parse("[0,1,2,3,4,5]","yaml");
     input.print();
-    res = ascent::runtime::expressions::array_max(input["values"],ExecutionManager::preferred_cpu_device());
+    res = ascent::runtime::expressions::array_max(input["values"],ExecutionManager::preferred_cpu_policy());
     std::cout << "RESULT:" << std::endl;
     res.print();
     EXPECT_EQ(res["value"].to_float64(), 5.0);
@@ -162,7 +162,7 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
     std::cout << "input" << std::endl;
     input["values"].parse("[0,1,2,3,4,5]","yaml");
     input.print();
-    res = ascent::runtime::expressions::array_min(input["values"],ExecutionManager::preferred_cpu_device());
+    res = ascent::runtime::expressions::array_min(input["values"],ExecutionManager::preferred_cpu_policy());
     std::cout << "RESULT:" << std::endl;
     res.print();
     EXPECT_EQ(res["value"].to_float64(), 0.0);
@@ -172,7 +172,7 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
     std::cout << "input" << std::endl;
     input["values"].parse("[0,1,2,3,4,5]","yaml");
     input.print();
-    res = ascent::runtime::expressions::array_sum(input["values"],ExecutionManager::preferred_cpu_device());
+    res = ascent::runtime::expressions::array_sum(input["values"],ExecutionManager::preferred_cpu_policy());
     std::cout << "RESULT:" << std::endl;
     res.print();
     EXPECT_EQ(res["value"].to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
@@ -225,7 +225,7 @@ TEST(ascent_blueprint_reductions, array_tests_cuda)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_max_tiny_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_tiny_cpu_example_input_mesh(dataset);
     std::cout << "field_max_tiny_cpu -- input:" << std::endl;
@@ -241,7 +241,7 @@ TEST(ascent_blueprint_reductions, field_max_tiny_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_min_tiny_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_tiny_cpu_example_input_mesh(dataset);
     std::cout << "field_min_tiny_cpu -- input:" << std::endl;
@@ -257,7 +257,7 @@ TEST(ascent_blueprint_reductions, field_min_tiny_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_sum_tiny_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_tiny_cpu_example_input_mesh(dataset);
     std::cout << "field_sum_tiny_cpu -- input:" << std::endl;
@@ -273,7 +273,7 @@ TEST(ascent_blueprint_reductions, field_sum_tiny_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_histogram_tiny_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_tiny_cpu_example_input_mesh(dataset);
     std::cout << "field_histogram_tiny_cpu -- input:" << std::endl;
@@ -322,7 +322,7 @@ TEST(ascent_blueprint_reductions, field_histogram_tiny_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_max_braid_cpu)
 {
-    //ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    //ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
 
@@ -335,7 +335,7 @@ TEST(ascent_blueprint_reductions, field_max_braid_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_min_braid_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
 
@@ -348,7 +348,7 @@ TEST(ascent_blueprint_reductions, field_min_braid_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_sum_braid_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
 
@@ -361,7 +361,7 @@ TEST(ascent_blueprint_reductions, field_sum_braid_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_ave_braid_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
 
@@ -373,7 +373,7 @@ TEST(ascent_blueprint_reductions, field_ave_braid_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_histogram_braid_cpu)
 {
-    ExecutionManager::execution(ExecutionManager::preferred_cpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_cpu_policy());
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
 
@@ -405,7 +405,7 @@ TEST(ascent_blueprint_reductions, field_max_gpu)
     return;
 #endif
 
-    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_gpu_policy());
 
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
@@ -425,7 +425,7 @@ TEST(ascent_blueprint_reductions, field_histogram_gpu)
     return;
 #endif
 
-    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_gpu_policy());
 
     Node dataset;
     gen_braid_cpu_example_input_mesh(dataset);
@@ -457,7 +457,7 @@ TEST(ascent_blueprint_reductions, field_max_already_gpu)
     return;
 #endif
 
-    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_gpu_policy());
 
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
@@ -481,7 +481,7 @@ TEST(ascent_blueprint_reductions, field_max_already_gpu)
 //     return;
 // #endif
 //
-//     ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
+//     ExecutionManager::set_execution_policy(ExecutionManager::preferred_gpu_policy());
 //
 //     // this is normally set in ascent::Initialize, but we
 //     // have to set it here so that we do the right thing with
@@ -504,7 +504,7 @@ TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
     return;
 #endif
 
-    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_gpu_policy());
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
     // device pointers
@@ -530,7 +530,7 @@ TEST(ascent_blueprint_reductions, field_histogram_already_gpu)
     return;
 #endif
 
-    ExecutionManager::execution(ExecutionManager::preferred_gpu_device());
+    ExecutionManager::set_execution_policy(ExecutionManager::preferred_gpu_policy());
     // this is normally set in ascent::Initialize, but we
     // have to set it here so that we do the right thing with
     // device pointers

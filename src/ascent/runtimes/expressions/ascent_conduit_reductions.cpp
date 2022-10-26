@@ -159,7 +159,7 @@ exec_dispatch(const conduit::Node &field, std::string component, const Function 
 {
 
   conduit::Node res;
-  const std::string exec_policy = ExecutionManager::execution();
+  const std::string exec_policy = ExecutionManager::execution_policy();
   //std::cout<<"Exec policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")
   {
@@ -685,15 +685,15 @@ array_max(const conduit::Node &array,
           const std::string &component)
 {
   // keep the original so we can set it back
-  const std::string orig = ExecutionManager::execution();
-  ExecutionManager::execution(exec_loc);
+  const std::string orig = ExecutionManager::execution_policy();
+  ExecutionManager::set_execution_policy(exec_loc);
 
   conduit::Node fake_field;
   fake_field["values"].set_external(array);
 
   conduit::Node res = field_reduction_max(fake_field, component);
   // restore the original execution env
-  ExecutionManager::execution(orig);
+  ExecutionManager::set_execution_policy(orig);
 
   return res;
 }
@@ -704,15 +704,15 @@ array_min(const conduit::Node &array,
           const std::string &component)
 {
   // keep the original so we can set it back
-  const std::string orig = ExecutionManager::execution();
-  ExecutionManager::execution(exec_loc);
+  const std::string orig = ExecutionManager::execution_policy();
+  ExecutionManager::set_execution_policy(exec_loc);
 
   conduit::Node fake_field;
   fake_field["values"].set_external(array);
 
   conduit::Node res = field_reduction_min(fake_field, component);
   // restore the original execution env
-  ExecutionManager::execution(orig);
+  ExecutionManager::set_execution_policy(orig);
   return res;
 }
 
@@ -722,15 +722,15 @@ array_sum(const conduit::Node &array,
           const std::string &component)
 {
   // keep the original so we can set it back
-  const std::string orig = ExecutionManager::execution();
-  ExecutionManager::execution(exec_loc);
+  const std::string orig = ExecutionManager::execution_policy();
+  ExecutionManager::set_execution_policy(exec_loc);
 
   conduit::Node fake_field;
   fake_field["values"].set_external(array);
 
   conduit::Node res = field_reduction_sum(fake_field, component);
   // restore the original execution env
-  ExecutionManager::execution(orig);
+  ExecutionManager::set_execution_policy(orig);
 
   return res;
 }

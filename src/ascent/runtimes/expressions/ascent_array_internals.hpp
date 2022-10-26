@@ -67,7 +67,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   bool m_device_dirty;
   bool m_host_dirty;
   size_t m_size;
-  bool m_cuda_enabled;
+  bool m_device_enabled;
   bool m_own_host;
   bool m_own_device;
 
@@ -84,10 +84,10 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     m_own_device(true)
   {
 
-#ifdef ASCENT_CUDA_ENABLED
-    m_cuda_enabled = true;
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+    m_device_enabled = true;
 #else
-    m_cuda_enabled = false;
+    m_device_enabled = false;
 #endif
     ArrayRegistry::add_array (this);
   }
@@ -130,11 +130,10 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   : ArrayInternalsBase (),
     m_size (size)
   {
-#ifdef ASCENT_CUDA_ENABLED
-
-    m_cuda_enabled = true;
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+    m_device_enabled = true;
 #else
-    m_cuda_enabled = false;
+    m_device_enabled = false;
 #endif
     pointer_assignment(data);
     ArrayRegistry::add_array (this);
@@ -146,7 +145,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     assert (i >= 0);
     assert (i < m_size);
     T val = T();
-    if (!m_cuda_enabled)
+    if (!m_device_enabled)
     {
       if (m_host == nullptr)
       {
@@ -242,7 +241,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   T *get_device_ptr ()
   {
-    if (!m_cuda_enabled)
+    if (!m_device_enabled)
     {
       return get_host_ptr ();
     }
@@ -265,7 +264,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   const T *get_device_ptr_const ()
   {
-    if (!m_cuda_enabled)
+    if (!m_device_enabled)
     {
       return get_host_ptr ();
     }
@@ -291,7 +290,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       allocate_host ();
     }
 
-    if (m_cuda_enabled)
+    if (m_device_enabled)
     {
       if (m_host_dirty && m_device != nullptr)
       {
@@ -313,7 +312,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       allocate_host ();
     }
 
-    if (m_cuda_enabled)
+    if (m_device_enabled)
     {
       if (m_host_dirty && m_host != nullptr)
       {
@@ -363,7 +362,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     std::cout << "[array] host_ptr = " << m_host << "\n";
     std::cout << "[array] device_ptr = " << m_device << "\n";
     std::cout << "[array] size "<<m_size<<"\n";
-    if(m_cuda_enabled)
+    if(m_device_enabled)
     {
       if(m_device_dirty)  std::cout << "[array] device dirty \n";
       else std::cout << "[array] device clean\n";
@@ -388,7 +387,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   virtual void release_device_ptr () override
   {
-    if (m_cuda_enabled)
+    if (m_device_enabled)
     {
       if (m_device != nullptr)
       {
@@ -468,7 +467,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
   void deallocate_device ()
   {
-    if (m_cuda_enabled)
+    if (m_device_enabled)
     {
       if(!m_own_host)
       {
@@ -497,7 +496,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     {
       ASCENT_ERROR("Array: cannot allocate device when zero copied");
     }
-    if (m_cuda_enabled)
+    if (m_device_enabled)
     {
       if (m_device == nullptr)
       {
@@ -519,7 +518,10 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       return;
     }
 
-#ifdef ASCENT_CUDA_ENABLED
+#if defined(ASCENT_CUDA_ENABLED)
+    cudaMemcpy(m_host, m_device, m_size * sizeof(T), cudaMemcpyDeviceToHost);
+#elif defined(ASCENT_HIP_ENABLED)
+    #error HIP SUPPORT HERE
     cudaMemcpy(m_host, m_device, m_size * sizeof(T), cudaMemcpyDeviceToHost);
 #endif
   }
@@ -531,7 +533,10 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       // this is unified memory, so do nothing
       return;
     }
-#ifdef ASCENT_CUDA_ENABLED
+#if defined(ASCENT_CUDA_ENABLED)
+    cudaMemcpy(m_device, m_host, m_size * sizeof(T), cudaMemcpyHostToDevice);
+#elif defined(ASCENT_HIP_ENABLED)
+    #error HIP SUPPORT HERE
     cudaMemcpy(m_device, m_host, m_size * sizeof(T), cudaMemcpyHostToDevice);
 #endif
   }

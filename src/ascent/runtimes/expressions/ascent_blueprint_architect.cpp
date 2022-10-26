@@ -2035,7 +2035,7 @@ histogram_entropy(const conduit::Node &hist)
   hist.print();
   const double *hist_bins = hist.fetch_existing("attrs/value/value").value();
   const int num_bins = hist.fetch_existing("attrs/num_bins/value").to_int32();
-  std::string exec = ExecutionManager::preferred_cpu_device();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
   double sum = array_sum(hist.fetch_existing("attrs/value/value"), exec)["value"].to_float64();
   double entropy = 0;
 
@@ -2064,7 +2064,7 @@ histogram_pdf(const conduit::Node &hist)
   double min_val = hist.fetch_existing("attrs/min_val/value").to_float64();
   double max_val = hist.fetch_existing("attrs/max_val/value").to_float64();
 
-  std::string exec = ExecutionManager::preferred_cpu_device();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
   double sum = array_sum(hist.fetch_existing("attrs/value/value"), exec)["value"].to_float64();
 
   conduit::Node res;
@@ -2093,7 +2093,7 @@ histogram_cdf(const conduit::Node &hist)
   double min_val = hist.fetch_existing("attrs/min_val/value").to_float64();
   double max_val = hist.fetch_existing("attrs/max_val/value").to_float64();
 
-  std::string exec = ExecutionManager::preferred_cpu_device();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
   double sum = array_sum(hist.fetch_existing("attrs/value/value"),exec)["value"].to_float64();
 
   double rolling_cdf = 0;

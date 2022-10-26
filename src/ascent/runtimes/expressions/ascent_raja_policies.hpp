@@ -18,7 +18,7 @@ namespace ascent
 #if defined(ASCENT_CUDA_ENABLED)
 struct CudaExec
 {
-  using for_policy = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
+  using for_policy    = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
   using reduce_policy = RAJA::cuda_reduce;
   using atomic_policy = RAJA::cuda_atomic;
   static std::string memory_space;
@@ -28,7 +28,7 @@ struct CudaExec
 #if defined(ASCENT_HIP_ENABLED)
 struct HipExec
 {
-  using for_policy = RAJA::hip_exec<HIP_BLOCK_SIZE>;
+  using for_policy    = RAJA::hip_exec<HIP_BLOCK_SIZE>;
   using reduce_policy = RAJA::hip_reduce;
   using atomic_policy = RAJA::hip_atomic;
   static std::string memory_space;

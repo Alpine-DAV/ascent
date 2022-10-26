@@ -252,7 +252,7 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
                    Function &func)
 {
 
-  const std::string exec_policy = ExecutionManager::execution();
+  const std::string exec_policy = ExecutionManager::execution_policy();
 
   //std::cout<<"Mesh Exec policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")
@@ -293,7 +293,7 @@ template<typename Function, typename T>
 void
 exec_dispatch_array(Array<T> &array, Function &func)
 {
-  const std::string exec_policy = ExecutionManager::execution();
+  const std::string exec_policy = ExecutionManager::execution_policy();
 
   //std::cout<<"Array Exec policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")
@@ -334,7 +334,7 @@ template<typename Function>
 void
 exec_dispatch(Function &func)
 {
-  const std::string exec_policy = ExecutionManager::execution();
+  const std::string exec_policy = ExecutionManager::execution_policy();
 
   //std::cout<<"Exec only policy "<<exec_policy<<"\n";
   if(exec_policy == "serial")

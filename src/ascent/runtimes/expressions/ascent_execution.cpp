@@ -15,10 +15,12 @@ std::string ExecutionManager::m_exec = "openmp";
 std::string ExecutionManager::m_exec = "serial";
 #endif
 
+//-----------------------------------------------------------------------------
 conduit::Node
 ExecutionManager::info()
 {
   conduit::Node res;
+  res["policy"] = m_exec;
   res["backends"].append() = "serial";
 #if defined(ASCENT_OPENMP_ENABLED)
   res["backends"].append() = "openmp";
@@ -29,10 +31,13 @@ ExecutionManager::info()
 #if defined(ASCENT_HIP_ENABLED)
   res["backends"].append() = "hip";
 #endif
+
   return res;
 }
 
-std::string ExecutionManager::preferred_cpu_device()
+//-----------------------------------------------------------------------------
+std::string
+ExecutionManager::preferred_cpu_policy()
 {
   std::string res = "serial";
 
@@ -42,7 +47,9 @@ std::string ExecutionManager::preferred_cpu_device()
   return res;
 }
 
-std::string ExecutionManager::preferred_gpu_device()
+//-----------------------------------------------------------------------------
+std::string
+ExecutionManager::preferred_gpu_policy()
 {
   std::string res = "none";
 
@@ -51,44 +58,51 @@ std::string ExecutionManager::preferred_gpu_device()
 #elif defined(ASCENT_HIP_ENABLED)
   res = "hip";
 #endif
+
   return res;
 }
 
+//-----------------------------------------------------------------------------
 void
-ExecutionManager::execution(const std::string exec)
+ExecutionManager::set_execution_policy(const std::string &exec)
 {
-  if(exec != "cuda" && exec != "openmp" && exec != "serial")
-  {
-    ASCENT_ERROR("Unknown execution backend '"<<exec<<"')");
-  }
+    if(exec != "cuda"   &&
+       exec != "hip"    &&
+       exec != "openmp" &&
+       exec != "serial")
+    {
+        ASCENT_ERROR("Unknown execution backend '" << exec << "')");
+    }
 
 #if not defined(ASCENT_CUDA_ENABLED)
-  if(exec == "cuda")
-  {
-    ASCENT_ERROR("Cuda backend support not built");
-  }
+    if(exec == "cuda")
+    {
+        ASCENT_ERROR("Cuda backend support not built");
+    }
 #endif
 
 #if not defined(ASCENT_HIP_ENABLED)
-  if(exec == "hip")
-  {
-    ASCENT_ERROR("Hip backend support not built");
-  }
+    if(exec == "hip")
+    {
+        ASCENT_ERROR("Hip backend support not built");
+    }
 #endif
 
 #if not defined(ASCENT_OPENMP_ENABLED)
-  if(exec == "openmp")
-  {
-    ASCENT_ERROR("OpenMP backend support not built");
-  }
+    if(exec == "openmp")
+    {
+        ASCENT_ERROR("OpenMP backend support not built");
+    }
 #endif
  
   m_exec = exec;
 }
 
-std::string ExecutionManager::execution()
+//-----------------------------------------------------------------------------
+std::string
+ExecutionManager::execution_policy()
 {
-  return m_exec;
+    return m_exec;
 }
 
 } // namespace ascent

@@ -43,7 +43,8 @@ TEST(ascent_conduit_reductions, go)
   std::cout << "input" << std::endl;
   input["values"].parse("[0,1,2,3,4,5]","yaml");
   input.print();
-  res = ascent::runtime::expressions::array_max(input["values"],ExecutionManager::execution());
+  res = ascent::runtime::expressions::array_max(input["values"],
+                                        ExecutionManager::execution_policy());
   std::cout << "RESULT:" << std::endl;
   res.print();
   EXPECT_EQ(res.to_float64(), 5.0);
@@ -52,7 +53,8 @@ TEST(ascent_conduit_reductions, go)
   std::cout << "input" << std::endl;
   input["values"].parse("[0,1,2,3,4,5]","yaml");
   input.print();
-  res = ascent::runtime::expressions::array_min(input["values"],ExecutionManager::execution());
+  res = ascent::runtime::expressions::array_min(input["values"],
+                                          ExecutionManager::execution_policy());
   std::cout << "RESULT:" << std::endl;
   res.print();
   EXPECT_EQ(res.to_float64(), 0.0);
@@ -61,7 +63,8 @@ TEST(ascent_conduit_reductions, go)
   std::cout << "input" << std::endl;
   input["values"].parse("[0,1,2,3,4,5]","yaml");
   input.print();
-  res = ascent::runtime::expressions::array_sum(input["values"],ExecutionManager::execution());
+  res = ascent::runtime::expressions::array_sum(input["values"],
+                                          ExecutionManager::execution_policy());
   std::cout << "RESULT:" << std::endl;
   res.print();
   EXPECT_EQ(res.to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);

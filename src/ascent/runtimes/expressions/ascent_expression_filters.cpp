@@ -904,7 +904,7 @@ void
 ArrayMin::execute()
 {
   conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_device();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
   (*output)["value"] = array_min((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
@@ -1134,7 +1134,7 @@ void
 ArrayMax::execute()
 {
   conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_device();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
   (*output)["value"] = array_max((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
@@ -1243,7 +1243,7 @@ void
 ArrayAvg::execute()
 {
   conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_device();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
   conduit::Node sum = array_sum((*input<Node>("arg1"))["value"], exec);
   (*output)["value"] = sum["value"].to_float64() / sum["count"].to_float64();
   (*output)["type"] = "double";
@@ -3733,7 +3733,7 @@ void
 ArraySum::execute()
 {
   conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_device();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
   (*output)["value"] = array_sum((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
