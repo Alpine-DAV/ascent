@@ -328,9 +328,13 @@ struct ClipFieldLinear
     uint32 hash = 0;
 #if 1
     // Build the length into the hash so {1} and {0,1} hash to different values.
-    hash += static_cast<uint8>(length & 0xff);
-    hash += hash << 10;
-    hash ^= hash >> 6;
+    const auto ldata = reinterpret_cast<const uint8 *>(&length);
+    for(int e = 0; e < 4; e++)
+    {
+      hash += ldata[e];
+      hash += hash << 10;
+      hash ^= hash >> 6;
+    }
 #endif
     while(i != length)
     {
