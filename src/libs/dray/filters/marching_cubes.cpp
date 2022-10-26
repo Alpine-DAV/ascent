@@ -144,6 +144,18 @@ void blend_edges_dispatch(Mesh *mesh, Functor &func)
   }
 }
 
+template<typename Functor>
+void map_orig_cells_dispatch(Field *field, Functor &func)
+{
+  if (!dispatch_field_only((UnstructuredField<HexScalar_P0>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<HexVector_P0>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<TetScalar_P0>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<TetVector_P0>*)0, field, func))
+  {
+    ::dray::detail::cast_field_failed(field, __FILE__, __LINE__);
+  }
+}
+
 // --------------------------------------------------------------------------------------
 //                         ***** Begin BlendEdgesFunctor *****
 // --------------------------------------------------------------------------------------
@@ -238,6 +250,86 @@ BlendEdgesFunctor::operator()(UnstructuredMesh<METype> &mesh)
 }
 
 // --------------------------------------------------------------------------------------
+//                         ***** Begin MapOrigCellsFunctor *****
+// --------------------------------------------------------------------------------------
+struct MapOrigCellsFunctor
+{
+  const Array<int32> *m_orig_cells_array;
+  Array<int32> m_ctrl_idx;
+  std::shared_ptr<Field> m_output_field;
+  MapOrigCellsFunctor(const Array<int32> *orig_cells_array);
+
+  template<typename T, int nc>
+  GridFunction<nc> do_mapping(const Array<Vec<T, nc>> &data_array);
+
+  template<typename FEType>
+  void operator()(UnstructuredField<FEType> &field);
+};
+
+MapOrigCellsFunctor::MapOrigCellsFunctor(const Array<int32> *orig_cells_array)
+  : m_orig_cells_array(orig_cells_array)
+{
+  // Do nothing
+}
+
+template<typename T, int nc>
+GridFunction<nc>
+MapOrigCellsFunctor::do_mapping(const Array<Vec<T, nc>> &data_array)
+{
+  const auto &orig_cells_array = *m_orig_cells_array;
+
+  // Allocate output array
+  GridFunction<nc> retval;
+  retval.m_values.resize(orig_cells_array.size());
+  Vec<Float, nc> *values_ptr = retval.m_values.get_device_ptr();
+
+  const auto *orig_cells_ptr = orig_cells_array.get_device_ptr_const();
+  const Vec<Float, nc> *data_ptr = data_array.get_device_ptr_const();
+
+  const RAJA::RangeSegment elem_range(0, orig_cells_array.size());
+  RAJA::forall<for_policy>(elem_range,
+    [=] DRAY_LAMBDA (int idx) {
+      const auto orig_id = orig_cells_ptr[idx];
+      Vec<Float, nc> &value = values_ptr[idx];
+      for(int c = 0; c < nc; c++)
+      {
+        value[c] = data_ptr[orig_id][c];
+      }
+    });
+  DRAY_ERROR_CHECK();
+
+  // One DoF per element, reuse m_ctrl_idx
+  retval.m_ctrl_idx = m_ctrl_idx;
+  retval.m_el_dofs = 1;
+  retval.m_size_el = retval.m_values.size();
+  retval.m_size_ctrl = m_ctrl_idx.size();
+  return retval;
+}
+
+template<typename FEType>
+void
+MapOrigCellsFunctor::operator()(UnstructuredField<FEType> &field)
+{
+  // Nothing todo if we don't have an original cells array
+  if(m_orig_cells_array->size() == 0)
+  {
+    return;
+  }
+  // m_ctrl_idx will be used to create all the grid functions
+  //  created by this functor. Only needs to be set once for a
+  //  given orig_cells_array but I didn't want to dispatch a kernel
+  //  in the constructor.
+  if(m_ctrl_idx.size() != m_orig_cells_array->size())
+  {
+    m_ctrl_idx = array_counting(m_orig_cells_array->size(), 0, 1);
+  }
+  const auto &in_gf = field.get_dof_data();
+  const auto out_gf = do_mapping(in_gf.m_values);
+  using ElemType = Element<2, in_gf.get_ncomp(), ElemType::Simplex, Order::Constant>;
+  m_output_field = std::make_shared<UnstructuredField<ElemType>>(out_gf, Order::Constant, field.name());
+}
+
+// --------------------------------------------------------------------------------------
 //                       ***** Begin MarchingCubesFunctor *****
 // --------------------------------------------------------------------------------------
 struct MarchingCubesFunctor
@@ -247,9 +339,11 @@ struct MarchingCubesFunctor
   std::string m_field;
   Array<uint64> m_unique_edges_array;
   Array<int32> m_conn_array;
+  Array<int32> m_original_cells;
   Array<Float> m_weights_array;
   Float m_isovalue;
   uint32 m_total_triangles;
+  bool do_orig_cells;
 
   MarchingCubesFunctor(DataSet &in,
                       const std::string &field,
@@ -284,13 +378,23 @@ struct MarchingCubesFunctor
                                           const uint64 *unique_edges_ptr,
                                           const Float isovalue,
                                           Float *weights_ptr);
+
+  template<typename FEType>
+  static Array<int32> create_original_cells(const uint32 total_triangles,
+                                            const int nelem,
+                                            const uint32 *triangle_offsets_ptr,
+                                            const uint32 *cut_info_ptr,
+                                            const int8 *lookup_ptr);
+
+  static bool has_cell_data(DataSet &dataset);
 };
 
 MarchingCubesFunctor::MarchingCubesFunctor(DataSet &in,
                                            const std::string &field,
                                            Float isoval)
   : m_input(in), m_output(), m_field(field), m_unique_edges_array(),
-    m_conn_array(), m_weights_array(), m_isovalue(isoval), m_total_triangles(0)
+    m_conn_array(), m_original_cells(), m_weights_array(), m_isovalue(isoval), m_total_triangles(0),
+    do_orig_cells(true)
 {
 
 }
@@ -325,6 +429,13 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
 
   Array<uint32> triangle_offsets_array = array_exc_scan_plus(num_triangles_array, m_total_triangles);
   const uint32 *triangle_offsets_ptr = triangle_offsets_array.get_device_ptr_const();
+
+  // Store original cells
+  if(do_orig_cells)
+  {
+    m_original_cells = create_original_cells<FEType>(m_total_triangles, nelem,
+      triangle_offsets_ptr, cut_info_ptr, lookup_ptr);
+  }
 
   // Compute edge ids and new connectivity
   uint32 nedges = m_total_triangles * 3;
@@ -386,6 +497,8 @@ MarchingCubesFunctor::execute(Field *in_field)
   blend_edges_dispatch(m_input.mesh(), blend);
   m_output.add_mesh(blend.m_output_mesh);
 
+  MapOrigCellsFunctor map_orig(&m_original_cells);
+
   // Iterate fields
   const int nfields = m_input.number_of_fields();
   for(int i = 0; i < nfields; i++)
@@ -407,6 +520,11 @@ MarchingCubesFunctor::execute(Field *in_field)
     {
       blend_edges_dispatch(field, blend);
       m_output.add_field(blend.m_output_field);
+    }
+    else if(field->order() == 0)
+    {
+      map_orig_cells_dispatch(field, map_orig);
+      m_output.add_field(map_orig.m_output_field);
     }
   }
 
@@ -496,6 +614,49 @@ MarchingCubesFunctor::compute_interpolant_weights(const DeviceField<FEType> &dfi
   DEBUG_PRINT(std::endl);
 }
 
+template<typename FEType>
+Array<int32>
+MarchingCubesFunctor::create_original_cells(const uint32 total_triangles,
+                                            const int nelem,
+                                            const uint32 *triangle_offsets_ptr,
+                                            const uint32 *cut_info_ptr,
+                                            const int8 *lookup_ptr)
+{
+  Array<int32> orig_cells_array;
+  orig_cells_array.resize(total_triangles);
+  int32 *orig_cells_ptr = orig_cells_array.get_device_ptr();
+  const RAJA::RangeSegment elem_range(0, nelem);
+  RAJA::forall<for_policy>(elem_range,
+    [=] DRAY_LAMBDA (int idx) {
+      constexpr auto shape3d = adapt_get_shape<FEType>();
+      const auto ntris = detail::get_num_triangles(shape3d, lookup_ptr, cut_info_ptr[idx]);
+      int32 *orig_cells_offset = orig_cells_ptr + triangle_offsets_ptr[idx];
+      for(int i = 0; i < ntris; i++)
+      {
+        orig_cells_offset[i] = idx;
+      }
+    });
+  DRAY_ERROR_CHECK();
+  return orig_cells_array;
+}
+
+bool
+MarchingCubesFunctor::has_cell_data(DataSet &ds)
+{
+  const auto nfields = ds.number_of_fields();
+  bool has_cell_data = false;
+  for(auto i = 0; i < nfields; i++)
+  {
+    Field *field = ds.field(i);
+    if(field->order() == Order::Constant)
+    {
+      has_cell_data = true;
+      break;
+    }
+  }
+  return has_cell_data;
+}
+
 }//anonymous namespace
 
 namespace dray
@@ -550,7 +711,9 @@ MarchingCubes::execute(Collection &c)
   for(auto &domain : domains)
   {
     MarchingCubesFunctor func(domain, m_field, m_isovalues[0]);
-    DataSet iso_domain = func.execute(domain.field(m_field));
+    func.do_orig_cells = MarchingCubesFunctor::has_cell_data(domain);
+    auto field_ptr = domain.field_shared(m_field);
+    DataSet iso_domain = func.execute(field_ptr.get());
     output.add_domain(iso_domain);
   }
   return output;
