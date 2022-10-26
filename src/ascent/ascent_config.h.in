@@ -32,10 +32,17 @@
 #cmakedefine ASCENT_PYTHON_ENABLED    "@PYTHON_FOUND@"
 #cmakedefine ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@"
 
+#cmakedefine ASCENT_LOGGING_ENABLED   "@ENABLE_LOGGING@"
+
 // this path points to the web client js code tree
 #cmakedefine ASCENT_SOURCE_WEB_CLIENT_ROOT  "@ASCENT_SOURCE_WEB_CLIENT_ROOT@"
 
 // defs for general openmp/cuda support
+#cmakedefine ASCENT_OPENMP_ENABLED        "@OPENMP_FOUND@"
+#cmakedefine ASCENT_CUDA_ENABLED          "@CUDA_FOUND@"
+#cmakedefine ASCENT_HIP_ENABLED           "@HIP_FOUND@"
+
+// TODO REMOVE in favor of ZZZ_ENABLED
 #cmakedefine ASCENT_USE_CUDA          "@CUDA_FOUND@"
 #cmakedefine ASCENT_USE_HIP           "@HIP_FOUND@"
 #cmakedefine ASCENT_USE_OPENMP        "@OPENMP_FOUND@"
@@ -51,6 +58,12 @@
 #cmakedefine ASCENT_RAJA_ENABLED      "@RAJA_FOUND@"
 
 #cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
+
+#cmakedefine ASCENT_VTKM_OPENMP_ENABLED   "@OPENMP_FOUND@"
+#cmakedefine ASCENT_VTKM_CUDA_ENABLED     "@CUDA_FOUND@"
+#cmakedefine ASCENT_VTKM_KOKKOS_ENABLED   "@KOKKOS_FOUND@"
+
+// TODO REMOVE in favor of ZZZ_ENABLED
 #cmakedefine ASCENT_VTKM_USE_CUDA     "@CUDA_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_OPENMP   "@OPENMP_FOUND@"
 #cmakedefine ASCENT_VTKM_USE_KOKKOS   "@KOKKOS_FOUND@"
@@ -64,6 +77,9 @@
 #cmakedefine ASCENT_WEBSERVER_ENABLED "@ASCENT_WEBSERVER_ENABLED@"
 #cmakedefine ASCENT_GENTEN_ENABLED    "@GENTEN_FOUND@"
 #cmakedefine ASCENT_KOKKOS_ENABLED    "@KOKKOS_FOUND@"
+#cmakedefine ASCENT_BABELFLOW_ENABLED "@BABELFLOW_FOUND@"
+
+
 
 //-----------------------------------------------------------------------------
 //

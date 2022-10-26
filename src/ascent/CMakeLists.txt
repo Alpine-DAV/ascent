@@ -11,31 +11,28 @@
 #
 ###############################################################################
 
+
+###############################################################################
+# Capture config settings into derived CMake vars with ASCENT_ prefix
+# these are used to generate headers, our CMake exports, and ascent.mk 
+###############################################################################
+
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
                                     ASCENT_INSTALL_PREFIX)
 
 set(ASCENT_INSTALL_PREFIX ${ASCENT_INSTALL_PREFIX} CACHE STRING "" FORCE )
-# ASCENT_INSTALL_PREFIX is basically used as an output var so
-# we mark it as advanced b/c otherwise folks may see it in ccmake or
-# the cmake gui and think they should be setting it
-mark_as_advanced(ASCENT_INSTALL_PREFIX)
 
 set(ASCENT_FORTRAN_ENABLED ${FORTRAN_FOUND})
 if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
-set(ASCENT_PYTHON_ENABLED ${PYTHON_FOUND})
+set(ASCENT_PYTHON_ENABLED   ${PYTHON_FOUND})
 set(ASCENT_PYTHON_EXECUTABLE ${PYTHON_FOUND})
 
-if(PYTHON_FOUND)
-    set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
-endif()
-
+set(ASCENT_LOGGING_ENABLED ${ENABLE_LOGGING})
 
 set(ASCENT_SOURCE_WEB_CLIENT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/web_clients)
-
-
 
 set(ASCENT_CAMP_ENABLED   ${CAMP_FOUND})
 set(ASCENT_UMPIRE_ENABLED ${UMPIRE_FOUND})
@@ -52,6 +49,7 @@ set(ASCENT_ADIOS2_ENABLED ${ADIOS2_FOUND})
 set(ASCENT_FIDES_ENABLED  ${FIDES_FOUND})
 set(ASCENT_GENTEN_ENABLED ${GENTEN_FOUND})
 set(ASCENT_KOKKOS_ENABLED ${KOKKOS_FOUND})
+set(ASCENT_BABELFLOW_ENABLED ${BABELFLOW_FOUND})
 
 if(OCCA_FOUND AND UMPIRE_FOUND)
     set(ASCENT_JIT_ENABLED TRUE)
@@ -61,82 +59,75 @@ endif()
 
 set(ASCENT_WEBSERVER_ENABLED ${CONDUIT_RELAY_WEBSERVER_ENABLED})
 
+set(ASCENT_OPENMP_ENABLED ${OPENMP_FOUND})
+set(ASCENT_CUDA_ENABLED   ${CUDA_FOUND})
+set(ASCENT_HIP_ENABLED    ${HIP_FOUND})
+
+# TODO remove in favor of ZZZ_ENABLED
+set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
+set(ASCENT_USE_CUDA    ${CUDA_FOUND})
+set(ASCENT_USE_HIP     ${HIP_FOUND})
+
+
 if(ASCENT_VTKM_ENABLED)
+    set(ASCENT_VTKM_OPENMP_ENABLED ${OPENMP_FOUND})
+    set(ASCENT_VTKM_CUDA_ENABLED   ${CUDA_FOUND})
+    set(ASCENT_VTKM_KOKKOS_ENABLED ${HIP_FOUND})
+
+    # TODO remove in favor of ZZZ_ENABLED
     set(ASCENT_VTKM_USE_CUDA ${CUDA_FOUND})
     set(ASCENT_VTKM_USE_OPENMP ${OPENMP_FOUND})
     set(ASCENT_VTKM_USE_KOKKOS ${KOKKOS_FOUND})
 endif()
 
-#
-# TODO CHANGE TO ASCENT_OPENMP_ENABLED, etc
-#
-set(ASCENT_USE_OPENMP  ${OPENMP_FOUND})
-set(ASCENT_USE_CUDA    ${CUDA_FOUND})
-set(ASCENT_USE_HIP     ${HIP_FOUND})
 
+# ASCENT_ZZZ_ENTIRES are derived vars.
+# We mark them as advanced b/c otherwise folks may see them
+# in ccmake or the cmake gui and think they should be changing them
+mark_as_advanced(ASCENT_INSTALL_PREFIX
+                 ASCENT_FORTRAN_ENABLED
+                 ASCENT_FORTRAN_COMPILER
+                 ASCENT_PYTHON_ENABLED
+                 ASCENT_PYTHON_EXECUTABLE
+                 ASCENT_LOGGING_ENABLED
+                 ASCENT_SOURCE_WEB_CLIENT_ROOT
+                 ASCENT_CAMP_ENABLED
+                 ASCENT_UMPIRE_ENABLED
+                 ASCENT_RAJA_ENABLED
+                 ASCENT_APCOMP_ENABLED
+                 ASCENT_DRAY_ENABLED
+                 ASCENT_VTKH_ENABLED
+                 ASCENT_VTKM_ENABLED
+                 ASCENT_HDF5_ENABLED
+                 ASCENT_MFEM_ENABLED
+                 ASCENT_ADIOS2_ENABLED
+                 ASCENT_FIDES_ENABLED
+                 ASCENT_GENTEN_ENABLED
+                 ASCENT_KOKKOS_ENABLED
+                 ASCENT_JIT_ENABLED
+                 ASCENT_WEBSERVER_ENABLED
+                 ASCENT_OPENMP_ENABLED
+                 ASCENT_CUDA_ENABLED
+                 ASCENT_HIP_ENABLED
+                 ASCENT_VTKM_OPENMP_ENABLED
+                 ASCENT_VTKM_CUDA_ENABLED
+                 ASCENT_VTKM_KOKKOS_ENABLED
+                 # TODO remove in favor fo ZZZ_ENABLED
+                 ASCENT_VTKM_USE_OPENMP
+                 ASCENT_VTKM_USE_CUDA
+                 ASCENT_VTKM_USE_KOKKOS
+                 ASCENT_USE_OPENMP
+                 ASCENT_USE_CUDA
+                 ASCENT_USE_HIP
+                 )
+
+# gen config header
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
 
-set(ascent_device_sources )
-
-set(ascent_sources
-    # ascent interface
-    ascent.cpp
-    c/ascent_c.cpp
-    # runtimes
-    ascent_runtime.cpp
-    runtimes/ascent_main_runtime.cpp
-    runtimes/ascent_metadata.cpp
-    runtimes/ascent_empty_runtime.cpp
-    runtimes/ascent_expression_eval.cpp
-    runtimes/ascent_transmogrifier.cpp
-    runtimes/expressions/ascent_blueprint_architect.cpp
-    runtimes/expressions/ascent_blueprint_topologies.cpp
-    runtimes/expressions/ascent_conduit_reductions.cpp
-    runtimes/expressions/ascent_expression_filters.cpp
-    runtimes/expressions/ascent_expressions_ast.cpp
-    runtimes/expressions/ascent_expressions_tokens.cpp
-    runtimes/expressions/ascent_expressions_parser.cpp
-    runtimes/expressions/ascent_memory_manager.cpp
-    runtimes/expressions/ascent_array.cpp
-    runtimes/expressions/ascent_array_internals.cpp
-    runtimes/expressions/ascent_array_utils.cpp
-    runtimes/expressions/ascent_data_binning.cpp
-    runtimes/expressions/ascent_raja_policies.cpp
-    runtimes/expressions/ascent_execution.cpp
-    runtimes/expressions/ascent_derived_jit.cpp
-    runtimes/expressions/ascent_jit_array.cpp
-    runtimes/expressions/ascent_jit_field.cpp
-    runtimes/expressions/ascent_jit_fusion.cpp
-    runtimes/expressions/ascent_jit_kernel.cpp
-    runtimes/expressions/ascent_jit_math.cpp
-    runtimes/expressions/ascent_jit_topology.cpp
-    runtimes/expressions/ascent_insertion_ordered_set.cpp
-    runtimes/expressions/ascent_expression_jit_filters.cpp
-    runtimes/ascent_flow_runtime.cpp
-    runtimes/flow_filters/ascent_runtime_filters.cpp
-    runtimes/flow_filters/ascent_runtime_param_check.cpp
-    runtimes/flow_filters/ascent_runtime_relay_filters.cpp
-    runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
-    runtimes/flow_filters/ascent_runtime_htg_filters.cpp
-    runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
-    runtimes/flow_filters/ascent_runtime_query_filters.cpp
-    runtimes/flow_filters/ascent_runtime_utils.cpp
-    # utils
-    utils/ascent_actions_utils.cpp
-    utils/ascent_data_logger.cpp
-    utils/ascent_file_system.cpp
-    utils/ascent_block_timer.cpp
-    utils/ascent_logging.cpp
-    utils/ascent_png_compare.cpp
-    utils/ascent_png_decoder.cpp
-    utils/ascent_png_encoder.cpp
-    utils/ascent_mpi_utils.cpp
-    utils/ascent_string_utils.cpp
-    utils/ascent_web_interface.cpp
-    utils/ascent_resources.cpp
-    # hola
-    hola/ascent_hola.cpp)
+###############################################################################
+# setup base source lists
+###############################################################################
 
 set(ascent_headers
     # ascent interface
@@ -147,8 +138,13 @@ set(ascent_headers
     # runtimes
     ascent_runtime.hpp
     runtimes/ascent_empty_runtime.hpp
-    runtimes/ascent_expression_eval.hpp
+    runtimes/ascent_flow_runtime.hpp
+    runtimes/ascent_main_runtime.hpp
+    runtimes/ascent_data_object.hpp
+    runtimes/ascent_metadata.hpp
     runtimes/ascent_transmogrifier.hpp
+    # expressions
+    runtimes/ascent_expression_eval.hpp
     runtimes/expressions/ascent_blueprint_architect.hpp
     runtimes/expressions/ascent_blueprint_topologies.hpp
     runtimes/expressions/ascent_conduit_reductions.hpp
@@ -162,6 +158,8 @@ set(ascent_headers
     runtimes/expressions/ascent_array.hpp
     runtimes/expressions/ascent_array_utils.hpp
     runtimes/expressions/ascent_array_internals.hpp
+    runtimes/expressions/ascent_array_internals_base.hpp
+    runtimes/expressions/ascent_array_registry.hpp
     runtimes/expressions/ascent_data_binning.hpp
     runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
@@ -177,9 +175,6 @@ set(ascent_headers
     runtimes/expressions/ascent_insertion_ordered_set.hpp
     runtimes/expressions/ascent_expression_jit_filters.hpp
     # flow
-    runtimes/ascent_main_runtime.hpp
-    runtimes/ascent_metadata.hpp
-    runtimes/ascent_flow_runtime.hpp
     runtimes/flow_filters/ascent_runtime_filters.hpp
     runtimes/flow_filters/ascent_runtime_param_check.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
@@ -205,63 +200,89 @@ set(ascent_headers
     utils/ascent_resources_cinema_web.hpp
     # hola
     hola/ascent_hola.hpp)
+    list(APPEND ascent_headers )
+    list(APPEND ascent_sources )
+set(ascent_sources
+    # ascent interface
+    ascent.cpp
+    c/ascent_c.cpp
+    # runtimes
+    ascent_runtime.cpp
+    runtimes/ascent_empty_runtime.cpp
+    runtimes/ascent_flow_runtime.cpp
+    runtimes/ascent_main_runtime.cpp
+    runtimes/ascent_data_object.cpp
+    runtimes/ascent_metadata.cpp
+    runtimes/ascent_transmogrifier.cpp
+    # expressions
+    runtimes/ascent_expression_eval.cpp
+    runtimes/expressions/ascent_blueprint_architect.cpp
+    runtimes/expressions/ascent_blueprint_topologies.cpp
+    runtimes/expressions/ascent_conduit_reductions.cpp
+    runtimes/expressions/ascent_expression_filters.cpp
+    runtimes/expressions/ascent_expressions_ast.cpp
+    runtimes/expressions/ascent_expressions_tokens.cpp
+    runtimes/expressions/ascent_expressions_parser.cpp
+    runtimes/expressions/ascent_memory_manager.cpp
+    runtimes/expressions/ascent_array.cpp
+    runtimes/expressions/ascent_array_internals.cpp
+    runtimes/expressions/ascent_array_internals_base.cpp
+    runtimes/expressions/ascent_array_registry.cpp
+    runtimes/expressions/ascent_array_utils.cpp
+    runtimes/expressions/ascent_data_binning.cpp
+    runtimes/expressions/ascent_raja_policies.cpp
+    runtimes/expressions/ascent_execution.cpp
+    runtimes/expressions/ascent_derived_jit.cpp
+    runtimes/expressions/ascent_jit_array.cpp
+    runtimes/expressions/ascent_jit_field.cpp
+    runtimes/expressions/ascent_jit_fusion.cpp
+    runtimes/expressions/ascent_jit_kernel.cpp
+    runtimes/expressions/ascent_jit_math.cpp
+    runtimes/expressions/ascent_jit_topology.cpp
+    runtimes/expressions/ascent_insertion_ordered_set.cpp
+    runtimes/expressions/ascent_expression_jit_filters.cpp
+    # filters (other filters are added later based on enabled tpls)
+    runtimes/flow_filters/ascent_runtime_filters.cpp
+    runtimes/flow_filters/ascent_runtime_param_check.cpp
+    runtimes/flow_filters/ascent_runtime_relay_filters.cpp
+    runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
+    runtimes/flow_filters/ascent_runtime_htg_filters.cpp
+    runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
+    runtimes/flow_filters/ascent_runtime_query_filters.cpp
+    runtimes/flow_filters/ascent_runtime_utils.cpp
+    # utils
+    utils/ascent_actions_utils.cpp
+    utils/ascent_data_logger.cpp
+    utils/ascent_file_system.cpp
+    utils/ascent_block_timer.cpp
+    utils/ascent_logging.cpp
+    utils/ascent_png_compare.cpp
+    utils/ascent_png_decoder.cpp
+    utils/ascent_png_encoder.cpp
+    utils/ascent_mpi_utils.cpp
+    utils/ascent_string_utils.cpp
+    utils/ascent_web_interface.cpp
+    utils/ascent_resources.cpp
+    # hola
+    hola/ascent_hola.cpp)
 
+# explicit list of any sources that need to be device linked
+set(ascent_device_sources runtimes/expressions/ascent_memory_manager.cpp
+                          runtimes/expressions/ascent_conduit_reductions.cpp
+                          runtimes/expressions/ascent_array.cpp
+                          runtimes/expressions/ascent_array_utils.cpp
+                          runtimes/expressions/ascent_array_internals.cpp
+                          runtimes/expressions/ascent_data_binning.cpp
+                          runtimes/expressions/ascent_raja_policies.cpp
+                          runtimes/expressions/ascent_blueprint_architect.cpp
+                          runtimes/expressions/ascent_derived_jit.cpp 
+                          )
 
-# TODO VALIDATE LINK WITH CHANGES THEN REMOVE
-
-# if(CUDA_FOUND)
-#   set(ascent_cuda_sources runtimes/expressions/ascent_memory_manager.cpp
-#                           runtimes/expressions/ascent_conduit_reductions.cpp
-#                           runtimes/expressions/ascent_array.cpp
-#                           runtimes/expressions/ascent_array_utils.cpp
-#                           runtimes/expressions/ascent_array_internals.cpp
-#                           runtimes/expressions/ascent_data_binning.cpp
-#                           runtimes/expressions/ascent_raja_policies.cpp
-#                           runtimes/expressions/ascent_blueprint_architect.cpp)
-#
-#   # tell cmake to compiler these files with nvcc
-#   set_source_files_properties(${ascent_cuda_sources}  PROPERTIES LANGUAGE CUDA)
-# endif()
-list(APPEND ascent_device_sources
-            runtimes/expressions/ascent_memory_manager.cpp
-            runtimes/expressions/ascent_conduit_reductions.cpp
-            runtimes/expressions/ascent_array.cpp
-            runtimes/expressions/ascent_array_utils.cpp
-            runtimes/expressions/ascent_array_internals.cpp
-            runtimes/expressions/ascent_data_binning.cpp
-            runtimes/expressions/ascent_raja_policies.cpp
-            runtimes/expressions/ascent_blueprint_architect.cpp)
-  # TODO THIS MIGHT BE HANDLED LATER
-  # tell cmake to compiler these files with nvcc
-
-if(CUDA_FOUND)
-  set_source_files_properties(${ascent_device_sources}  PROPERTIES LANGUAGE CUDA)
-endif()
-
-if(ASCENT_JIT_ENABLED)
-    list(APPEND ascent_sources runtimes/expressions/ascent_array.cpp)
-    list(APPEND ascent_sources runtimes/expressions/ascent_array_internals.cpp)
-    list(APPEND ascent_sources runtimes/expressions/ascent_array_internals_base.cpp)
-    list(APPEND ascent_sources runtimes/expressions/ascent_array_registry.cpp)
-
-    list(APPEND ascent_headers runtimes/expressions/ascent_array.hpp)
-    list(APPEND ascent_headers runtimes/expressions/ascent_array_internals.hpp)
-    list(APPEND ascent_headers runtimes/expressions/ascent_array_internals_base.hpp)
-    list(APPEND ascent_headers runtimes/expressions/ascent_array_registry.hpp)
-    # this has device calls so we need to tell cmake to use the cuda compiler
-    if(CUDA_FOUND)
-        set_source_files_properties(runtimes/expressions/ascent_array.cpp  PROPERTIES LANGUAGE CUDA)
-        set_source_files_properties(runtimes/expressions/ascent_array_internals.cpp  PROPERTIES LANGUAGE CUDA)
-        set_source_files_properties(runtimes/expressions/ascent_derived_jit.cpp  PROPERTIES LANGUAGE CUDA)
-    endif()
-    list(APPEND ascent_device_sources
-                runtimes/expressions/ascent_array.cpp
-                runtimes/expressions/ascent_array_internals.cpp
-                runtimes/expressions/ascent_derived_jit.cpp)
-endif()
+##############################
+# optional features
+#############################
 
 if(VTKM_FOUND)
-
     set(ascent_vtkh_dep_headers
         runtimes/ascent_data_object.hpp
         runtimes/ascent_vtkh_data_adapter.hpp
@@ -284,49 +305,41 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
 
-    set(ascent_vtkm_device_sources
-        ${ascent_vtkh_dep_sources}
-        runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
+    list(APPEND ascent_headers ${ascent_vtkh_dep_headers})
+    list(APPEND ascent_sources ${ascent_vtkh_dep_sources})
+
+    # keep a vtkm-specific device source list
+    set(ascent_vtkm_device_sources ${ascent_vtkh_dep_sources}
+                                   runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
+
+    # also make sure that these are in ascent's device source list
     list(APPEND ascent_device_sources ${ascent_vtkm_device_sources})
-
-    foreach( _itm ${ascent_vtkh_dep_headers} )
-        list(APPEND ascent_headers ${_itm})
-    endforeach()
-
-    foreach( _itm ${ascent_vtkh_dep_sources} )
-        list(APPEND ascent_sources ${_itm})
-    endforeach()
-else()
-    list(APPEND ascent_headers runtimes/ascent_data_object.hpp)
-    list(APPEND ascent_sources runtimes/ascent_data_object.cpp)
 endif()
 
+
 if(MFEM_FOUND)
-    # data adapter
+    # mfem data adapter
     list(APPEND ascent_headers runtimes/ascent_mfem_data_adapter.hpp)
     list(APPEND ascent_sources runtimes/ascent_mfem_data_adapter.cpp)
+    # no mfem device sources
 endif()
 
 if(ENABLE_DRAY)
+    # dray filters
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_dray_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
+    # tag device sources
     list(APPEND ascent_device_sources runtimes/expressions/ascent_expression_filters.cpp)
     list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_dray_filters.cpp)
-    if(CUDA_FOUND)
-        set_source_files_properties(runtimes/expressions/ascent_expression_filters.cpp     PROPERTIES LANGUAGE CUDA)
-        set_source_files_properties(runtimes/flow_filters/ascent_runtime_dray_filters.cpp  PROPERTIES LANGUAGE CUDA)
-    endif()
 endif()
 
 if(GENTEN_FOUND)
+    # genten filters
     list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_genten_filters.hpp)
     list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
+    # tag device sources
     list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
 endif()
-
-##############################
-# optional features
-#############################
 
 if(FORTRAN_FOUND)
     add_library(ascent_fortran OBJECT fortran/ascent_fortran.f90)
@@ -356,10 +369,17 @@ if(PYTHON_FOUND)
         runtimes/flow_filters/ascent_python_script_filter.hpp)
 endif()
 
+
+##################################
+# flag all device sources
+##################################
+if(CUDA_FOUND)
+  set_source_files_properties(${ascent_device_sources} PROPERTIES LANGUAGE CUDA)
+endif()
+
 ##################
 # req'd libs
 ##################
-
 set(ascent_thirdparty_libs
     conduit::conduit
     ascent_flow
@@ -428,21 +448,15 @@ if (ENABLE_SERIAL)
                     HEADERS     ${ascent_headers}
                     DEPENDS_ON  ${ascent_thirdparty_libs})
 
+    #  compile defs
+    target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
+
+    # symbol visibility
     if(ENABLE_HIDDEN_VISIBILITY)
         set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
 
-    target_compile_definitions(ascent PRIVATE ASCENT_EXPORTS_FLAG)
-
-    # TODO move to header ...
-    if(CUDA_FOUND)
-        target_compile_definitions(ascent PRIVATE ASCENT_CUDA_ENABLED)
-    endif()
-
-    if(ENABLE_LOGGING)
-        target_compile_definitions(ascent PRIVATE ASCENT_LOGGING_ENABLED)
-    endif()
-
+    # special device source logic for vtk-m features
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
@@ -453,14 +467,10 @@ if (ENABLE_SERIAL)
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
-    )
+            )
 
-    # Static linking CUDA
+    # manual device link for CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
-        set(locations_on_disk "")
-
-        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
-
         set(internal_targets_to_link $<TARGET_FILE:rover>)
 
         if(ENABLE_VTKH)
@@ -527,8 +537,11 @@ if (ENABLE_SERIAL)
             list(APPEND imported_targets_to_link camp)
         endif()
 
-        # device link
+        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
+        # clear output result
+        set(locations_on_disk "")
 
+        # device link
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES  ${ascent_device_sources}
                        TARGETS ${internal_targets_to_link}
@@ -558,6 +571,7 @@ if(MPI_FOUND)
 
     if (BABELFLOW_FOUND)
         if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+            # TODO ADD TO HEADER ?
             add_compile_definitions("BABELFLOW_DEBUG")
         endif()
 
@@ -569,7 +583,7 @@ if(MPI_FOUND)
 
         list(APPEND ascent_mpi_thirdparty_libs BabelFlow::babelflow BabelFlow::babelflow_mpi)
         list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
-        add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+        # TODO Q: these should be handled by the imported targets above?
         include_directories(${BABELFLOW_INCLUDE_DIRS})
         include_directories(${PMT_INCLUDE_DIRS})
     endif ()
@@ -582,7 +596,7 @@ if(MPI_FOUND)
     list(APPEND ascent_sources hola/ascent_hola_mpi.cpp)
 
     # adios support is only in par (mpi ver)
-    if (ASCENT_FIDES_ENABLED AND MPI_FOUND)
+    if (FIDES_FOUND)
         list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_adios2_filters.hpp)
         list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_adios2_filters.cpp)
         list(APPEND ascent_mpi_thirdparty_libs adios2::adios2 fides)
@@ -592,15 +606,18 @@ if(MPI_FOUND)
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
     if(VTKM_FOUND)
-        if (BABELFLOW_FOUND)
-            list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
-        endif()
-
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
         list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
+
+        # babelflow specific vtk-m sources
+        if (BABELFLOW_FOUND)
+            list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+        endif()
+
+        list(APPEND ascent_vtkm_device_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
     endif()
 
     if(ENABLE_DRAY)
@@ -613,27 +630,21 @@ if(MPI_FOUND)
                     SOURCES     ${ascent_sources} ${ascent_mpi_sources}
                     HEADERS     ${ascent_headers} ${ascent_mpi_headers}
                     DEPENDS_ON  ${ascent_mpi_thirdparty_libs}
-                 )
+                    )
 
+    #  compile defs
+    target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
+    target_compile_definitions(ascent_mpi PRIVATE ASCENT_MPI_ENABLED)
+
+    # symbol visibility
     if(ENABLE_HIDDEN_VISIBILITY)
         set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
 
-    target_compile_definitions(ascent_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-
-    if(ENABLE_LOGGING)
-        target_compile_definitions(ascent_mpi PRIVATE ASCENT_LOGGING_ENABLED)
-    endif()
-
-    if(CUDA_FOUND)
-        target_compile_definitions(ascent_mpi PRIVATE ASCENT_CUDA_ENABLED)
-    endif()
-
+    # special device source logic for vtk-m features
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
-
-    blt_add_target_compile_flags(TO ascent_mpi FLAGS "-DASCENT_MPI_ENABLED")
 
     # install target for mpi ver
     install(TARGETS ascent_mpi
@@ -641,14 +652,10 @@ if(MPI_FOUND)
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
-    )
+            )
 
-    # Static linking CUDA
+    # manual device link for CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
-        set(locations_on_disk "")
-
-        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
-
         set(internal_targets_to_link $<TARGET_FILE:rover>)
 
         if(ENABLE_VTKH)
@@ -714,13 +721,16 @@ if(MPI_FOUND)
             list(APPEND imported_targets_to_link camp)
         endif()
 
+        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
+        # clear result
+        set(locations_on_disk "")
+        
         # device link
-
         source_objects(BINARY_DIR ${binary_dir}
-                     SOURCES  ${ascent_device_sources}
-                     TARGETS ${internal_targets_to_link}
-                     IMPORTED_TARGETS ${imported_targets_to_link}
-                     RESULT locations_on_disk)
+                       SOURCES    ${ascent_device_sources}
+                       TARGETS    ${internal_targets_to_link}
+                       IMPORTED_TARGETS ${imported_targets_to_link}
+                       RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
         message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
