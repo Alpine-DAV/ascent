@@ -9,7 +9,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/Statistics.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -17,6 +17,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_statistics_par, vtkh_stats)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
 
   MPI_Init(NULL, NULL);
   int comm_size, rank;

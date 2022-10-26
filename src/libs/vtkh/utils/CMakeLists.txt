@@ -20,7 +20,7 @@ set(vtkh_utils_sources
 ###############################################################################
  # always install headers
  install(FILES ${vtkh_utils_headers}
-         DESTINATION include/vtkh/utils)
+         DESTINATION include/ascent/vtkh/utils)
 
 # deps are same between mpi and non mpi
 set(vtkh_utils_deps vtkm ascent_lodepng ${vtkh_base_deps})
@@ -37,7 +37,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_utils PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_utils PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_utils PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     if(CUDA_FOUND)
         set_target_properties(vtkh_utils PROPERTIES LINKER_LANGUAGE CUDA)
@@ -75,7 +77,9 @@ if (MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_utils_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_utils_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_utils_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     #
     target_compile_definitions(vtkh_utils_mpi PRIVATE VTKH_PARALLEL)
 

@@ -7,6 +7,8 @@
 #ifndef APCOMP_IMAGE_HPP
 #define APCOMP_IMAGE_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <sstream>
 #include <vector>
 #include <apcomp/bounds.hpp>

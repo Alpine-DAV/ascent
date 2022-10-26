@@ -22,13 +22,10 @@ include_directories(${PROJECT_SOURCE_DIR}/thirdparty_builtin/tiny_obj)
 # add include dirs so units tests have access to the headers across
 # libs and in unit tests
 include_directories(${PROJECT_SOURCE_DIR}/ascent/)
+include_directories(${PROJECT_SOURCE_DIR}/ascent/c)
 include_directories(${PROJECT_BINARY_DIR}/ascent/)
 include_directories(${PROJECT_SOURCE_DIR}/ascent/utils)
 include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes)
 include_directories(${PROJECT_SOURCE_DIR}/ascent/hola)
-include_directories(${PROJECT_SOURCE_DIR}/flow)
-include_directories(${PROJECT_BINARY_DIR}/flow)
-include_directories(${PROJECT_SOURCE_DIR}/flow/filters)
 include_directories(${PROJECT_SOURCE_DIR}/ascent/runtimes/flow_filters)
-include_directories(${PROJECT_SOURCE_DIR}/rover)
 

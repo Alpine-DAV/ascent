@@ -12,7 +12,7 @@
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -21,6 +21,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_volume_renderer, vtkh_parallel_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -68,6 +71,9 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
 //----------------------------------------------------------------------------
 TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured_blank)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -135,6 +141,9 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured_blank)
 //-----------------------------------------------------------------------------
 TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

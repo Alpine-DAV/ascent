@@ -12,7 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -21,6 +21,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -88,6 +91,9 @@ TEST(vtkh_raytracer, vtkh_serial_render)
 //----------------------------------------------------------------------------
 TEST(vtkh_multi_par, vtkh_batch)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

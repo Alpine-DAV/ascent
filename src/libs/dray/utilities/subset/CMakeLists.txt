@@ -5,6 +5,11 @@
 set(subset_thirdparty_libs dray)
 set(subset_thirdparty_libs_mpi dray_mpi)
 
+if(ENABLE_CUDA)
+    list(APPEND subset_thirdparty_libs cuda)
+    list(APPEND subset_thirdparty_libs_mpi cuda)
+endif()
+
 ################################################
 # subset
 ################################################

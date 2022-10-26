@@ -12,7 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_hist_sampling_par, vtkh_sampling_point_view)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
 
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -74,6 +77,9 @@ TEST(vtkh_hist_sampling_par, vtkh_sampling_point_view)
 //----------------------------------------------------------------------------
 TEST(vtkh_hist_sampling_par, vtkh_sampling_cell_view)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
 
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);

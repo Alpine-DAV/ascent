@@ -27,19 +27,35 @@ if(NOT ASCENT_FOUND)
     # advertise if cuda is enabled
     set(ASCENT_CUDA_ENABLED "@ENABLE_CUDA@")
 
+    # advertise if hip is enabled
+    set(ASCENT_HIP_ENABLED "@ENABLE_HIP@")
+    set(ASCENT_ROCM_PATH "@ROCM_PATH@")
+
     # advertise if openmp is enabled
     set(ASCENT_OPENMP_ENABLED "@ENABLE_OPENMP@")
 
     # advertise if fortran support is enabled
     set(ASCENT_FORTRAN_ENABLED @ENABLE_FORTRAN@)
 
+    # advertise if camp support is enabled
+    set(ASCENT_CAMP_ENABLED @CAMP_FOUND@)
+    set(ASCENT_CAMP_DIR @CAMP_DIR_ORIG@)
+
+    # advertise if umpire support is enabled
+    set(ASCENT_UMPIRE_ENABLED @UMPIRE_FOUND@)
+    set(ASCENT_UMPIRE_DIR @UMPIRE_DIR_ORIG@)
+
+    # advertise if raja support is enabled
+    set(ASCENT_RAJA_ENABLED @RAJA_FOUND@)
+    set(ASCENT_RAJA_DIR @RAJA_DIR_ORIG@)
+
     # advertise if apcomp is enabled
     set(ASCENT_APCOMP_ENABLED @ENABLE_APCOMP@)
 
     # advertise if vtk-h support is enabled
-    set(ASCENT_VTKH_ENABLED @VTKH_FOUND@)
+    set(ASCENT_VTKH_ENABLED @ENABLE_VTKH@)
 
-    set(ASCENT_VTKH_DIR "@VTKH_DIR@")
+    # vtk-m dir
     set(ASCENT_VTKM_DIR "@VTKM_DIR@")
 
     # advertise if mfem support is enabled
@@ -48,8 +64,7 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_MFEM_MPI_ENABLED @MFEM_MPI_ENABLED@)
 
     # advertise if devil ray support is enabled
-    set(ASCENT_DRAY_ENABLED @DRAY_FOUND@)
-    set(ASCENT_DRAY_DIR "@DRAY_DIR@")
+    set(ASCENT_DRAY_ENABLED @ENABLE_DRAY@)
 
     # advertise if occa support is enabled
     set(ASCENT_OCCA_ENABLED @OCCA_FOUND@)
@@ -58,6 +73,10 @@ if(NOT ASCENT_FOUND)
     # advertise if umpire support is enabled
     set(ASCENT_UMPIRE_ENABLED @UMPIRE_FOUND@)
     set(ASCENT_UMPIRE_DIR "@UMPIRE_DIR@")
+
+    # advertise if camp support is enabled
+    set(ASCENT_CAMP_ENABLED @CAMP_FOUND@)
+    set(ASCENT_CAMP_DIR "@CAMP_DIR@")
 
     ##################################################
     # advertise if babelflow + pmt support is enabled
@@ -78,6 +97,10 @@ if(NOT ASCENT_FOUND)
     # advertise if genten support is enabled
     set(ASCENT_GENTEN_ENABLED @GENTEN_FOUND@)
     set(ASCENT_GENTEN_DIR "@GENTEN_DIR@")
+
+    # advertise if Kokkos support is enabled
+    set(ASCENT_KOKKOS_ENABLED @KOKKOS_FOUND@)
+    set(ASCENT_KOKKOS_DIR "@KOKKOS_DIR@")
 
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)

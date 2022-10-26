@@ -72,7 +72,7 @@ Image::Init(const float *color_buffer,
   m_pixels.resize(size * 4);
   m_depths.resize(size);
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
       #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -116,7 +116,7 @@ Image::Init(const unsigned char *color_buffer,
             color_buffer + size * 4,
             &m_pixels[0]);
 
-#ifdef apcomp_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -157,7 +157,7 @@ Image::CompositeBackground(const float color[4])
     bg_color[i] = static_cast<unsigned char>(color[i] * 255.f);
   }
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -200,7 +200,7 @@ Image::SubsetFrom(const Image &image,
   m_pixels.resize(s_dx * s_dy * 4);
   m_depths.resize(s_dx * s_dy);
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int y = start_y; y < end_y; ++y)
@@ -236,7 +236,7 @@ Image::SubsetTo(Image &image) const
   const int start_x = m_bounds.m_min_x - image.m_bounds.m_min_x;
   const int start_y = m_bounds.m_min_y - image.m_bounds.m_min_y;
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int y = 0; y < s_dy; ++y)

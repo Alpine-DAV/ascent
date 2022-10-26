@@ -629,8 +629,20 @@ DataSet::GetCycle() const
   return m_cycle;
 }
 
+void
+DataSet::SetTime(const double time)
+{
+  m_time = time;
+}
+
+double
+DataSet::GetTime() const
+{
+  return m_time;
+}
+
 DataSet::DataSet()
-  : m_cycle(0)
+  : m_cycle(0), m_time(0)
 {
 }
 
@@ -675,7 +687,7 @@ DataSet::AddConstantPointField(const vtkm::Float32 value, const std::string fiel
     vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
     vtkm::cont::ArrayHandle<vtkm::Float32> array;
     detail::MemSet(array, value, num_points);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::POINTS, array);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
     m_domains[i].AddField(field);
   }
 }
@@ -734,7 +746,7 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
   if(!this->GlobalFieldExists(field_name))
   {
     valid_field = false;
-    return vtkm::cont::Field::Association::ANY;
+    return vtkm::cont::Field::Association::Any;
   }
 
   int assoc_id = -1;
@@ -750,19 +762,19 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
       if(dom.HasField(field_name))
       {
         local_assoc = dom.GetField(field_name).GetAssociation();
-        if(local_assoc == vtkm::cont::Field::Association::ANY)
+        if(local_assoc == vtkm::cont::Field::Association::Any)
         {
           assoc_id = 0;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::WHOLE_MESH)
+        else if ( local_assoc == vtkm::cont::Field::Association::WholeDataSet)
         {
           assoc_id = 1;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::POINTS)
+        else if ( local_assoc == vtkm::cont::Field::Association::Points)
         {
           assoc_id = 2;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::CELL_SET)
+        else if ( local_assoc == vtkm::cont::Field::Association::Cells)
         {
           assoc_id = 3;
         }
@@ -813,19 +825,19 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
 
   if(assoc_id == 0)
   {
-    assoc = vtkm::cont::Field::Association::ANY;
+    assoc = vtkm::cont::Field::Association::Any;
   }
   else if ( assoc_id == 1)
   {
-    assoc = vtkm::cont::Field::Association::WHOLE_MESH;
+    assoc = vtkm::cont::Field::Association::WholeDataSet;
   }
   else if ( assoc_id == 2)
   {
-    assoc = vtkm::cont::Field::Association::POINTS;
+    assoc = vtkm::cont::Field::Association::Points;
   }
   else if ( assoc_id == 3)
   {
-    assoc = vtkm::cont::Field::Association::CELL_SET;
+    assoc = vtkm::cont::Field::Association::Cells;
   }
   else
   {

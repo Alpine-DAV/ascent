@@ -1,0 +1,29 @@
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "contour"
+        params:
+          field: "e"
+          levels: 10
+      f2:
+        type: "log10"
+        params:
+          field: "e"
+          output_name: "log10_energy"
+          clamp_min_value: 1.0
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "log10_energy"
+          pipeline: "pl1"
+      renders:
+        r1:
+          image_prefix: "contour_log10_energy_%04d"
+          camera:
+            azimuth: 135

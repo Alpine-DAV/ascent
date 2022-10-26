@@ -7,6 +7,8 @@
 #ifndef APCOMP_DIY_COLLECT_HPP
 #define APCOMP_DIY_COLLECT_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <diy/master.hpp>
 #include <diy/partners/swap.hpp>
 #include <diy/reduce.hpp>

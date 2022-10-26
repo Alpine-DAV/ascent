@@ -13,7 +13,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 
@@ -22,6 +22,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_clip_field, vtkh_clip)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -70,6 +73,9 @@ TEST(vtkh_clip_field, vtkh_clip)
 //----------------------------------------------------------------------------
 TEST(vtkh_clip_field, vtkh_clip_cell_centered)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

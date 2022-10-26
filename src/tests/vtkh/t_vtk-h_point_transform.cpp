@@ -11,7 +11,7 @@
 #include <vtkh/filters/PointTransform.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 
@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_point_transform, vtkh_translate)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -60,6 +63,9 @@ TEST(vtkh_point_transform, vtkh_translate)
 
 TEST(vtkh_point_transform, vtkh_scale)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

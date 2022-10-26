@@ -11,7 +11,7 @@
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 
@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -70,6 +73,9 @@ TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_empty)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -120,6 +126,9 @@ TEST(vtkh_marching_cubes, vtkh_empty)
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_marching_cubes_recenter)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::SelectKokkosDevice(1);
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

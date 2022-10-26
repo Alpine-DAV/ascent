@@ -12,7 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 
@@ -21,6 +21,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -74,6 +77,9 @@ TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
 //----------------------------------------------------------------------------
 TEST(vtkh_ghost_stripper, vtkh_ghost_stripper_no_strip)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

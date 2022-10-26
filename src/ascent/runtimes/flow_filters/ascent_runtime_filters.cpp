@@ -115,6 +115,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHIsoVolume>("transforms","isovolume");
     AscentRuntime::register_filter_type<VTKHLagrangian>("transforms","lagrangian");
     AscentRuntime::register_filter_type<VTKHLog>("transforms","log");
+    AscentRuntime::register_filter_type<VTKHLog10>("transforms","log10");
+    AscentRuntime::register_filter_type<VTKHLog2>("transforms","log2");
     AscentRuntime::register_filter_type<VTKHMarchingCubes>("transforms","contour");
     AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");
     AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");
@@ -169,7 +171,7 @@ register_builtin()
 #endif
 
 #if defined(ASCENT_ADIOS2_ENABLED)
-    AscentRuntime::register_filter_type<ADIOS2>("extracts","ADIOS2");
+    AscentRuntime::register_filter_type<ADIOS2>("extracts","adios2");
 #endif
 
 #endif

@@ -8,7 +8,7 @@
 Tutorial Overview
 ==================
 
-`Ascent Tutorial  Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2021_11_05_ascent_intro.pdf>`_
+`Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2022_08_23_ascent_intro.pdf>`_
 
 
 This tutorial introduces how to use Ascent, including basics about:
@@ -23,11 +23,13 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 
 
 Scheduled Tutorials:
- * `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany 
- * ECP 2022 Annual Meeting - May 2022, Virtual
+
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2022 <https://software.llnl.gov/radiuss/event/2022/07/07/radiuss-on-aws/>`_ - August 2022, Virtual
 
 
 Past Tutorials:
+ * `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany 
+ * ECP 2022 Annual Meeting - May 2022, Virtual
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
  * ECP 2021 Annual Meeting - April 2021, Virtual
  * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual

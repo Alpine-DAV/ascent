@@ -1804,7 +1804,226 @@ VTKHLog::execute()
     delete log_output;
     set_output<DataObject>(res);
 }
+//-----------------------------------------------------------------------------
 
+VTKHLog10::VTKHLog10()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLog10::~VTKHLog10()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLog10::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_log10";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHLog10::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_numeric("clamp_min_value",params, info, false, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("clamp_min_value");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLog10::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_log10 input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkh::Log10 logger;
+    logger.SetInput(&data);
+    logger.SetField(field_name);
+    if(params().has_path("output_name"))
+    {
+      logger.SetResultField(params()["output_name"].as_string());
+    }
+
+    if(params().has_path("clamp_min_value"))
+    {
+      double min_value = get_float64(params()["clamp_min_value"], data_object);
+      logger.SetClampMin(min_value);
+      logger.SetClampToMin(true);
+    }
+
+    logger.Update();
+
+    vtkh::DataSet *log_output = logger.GetOutput();
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*log_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete log_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+VTKHLog2::VTKHLog2()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLog2::~VTKHLog2()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLog2::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_log2";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHLog2::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+    res &= check_string("output_name",params, info, false);
+    res &= check_numeric("clamp_min_value",params, info, false, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("output_name");
+    valid_paths.push_back("clamp_min_value");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLog2::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_log2 input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkh::Log2 logger;
+    logger.SetInput(&data);
+    logger.SetField(field_name);
+    if(params().has_path("output_name"))
+    {
+      logger.SetResultField(params()["output_name"].as_string());
+    }
+
+    if(params().has_path("clamp_min_value"))
+    {
+      double min_value = get_float64(params()["clamp_min_value"], data_object);
+      logger.SetClampMin(min_value);
+      logger.SetClampToMin(true);
+    }
+
+    logger.Update();
+
+    vtkh::DataSet *log_output = logger.GetOutput();
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*log_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete log_output;
+    set_output<DataObject>(res);
+}
 //-----------------------------------------------------------------------------
 
 VTKHRecenter::VTKHRecenter()
@@ -1899,11 +2118,11 @@ VTKHRecenter::execute()
 
     if(association == "vertex")
     {
-      recenter.SetResultAssoc(vtkm::cont::Field::Association::POINTS);
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
     }
     if(association == "element")
     {
-      recenter.SetResultAssoc(vtkm::cont::Field::Association::CELL_SET);
+      recenter.SetResultAssoc(vtkm::cont::Field::Association::Cells);
     }
 
     recenter.Update();

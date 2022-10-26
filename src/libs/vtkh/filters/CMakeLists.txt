@@ -83,7 +83,7 @@ set(vtkh_filters_base_deps vtkm_compiled_filters ${vtkh_base_deps})
 # Always install headers
 ############################################################
 install(FILES ${vtkh_filters_headers}
-        DESTINATION include/vtkh/filters)
+        DESTINATION include/ascent/vtkh/filters)
 
 ############################################################
 if (ENABLE_SERIAL)
@@ -100,7 +100,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_filters PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     if(CUDA_FOUND)
         set_target_properties(vtkh_filters PROPERTIES LINKER_LANGUAGE CUDA)
@@ -141,7 +143,9 @@ if (MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_filters_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_filters_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_filters_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     #
     target_compile_definitions(vtkh_filters_mpi PRIVATE VTKH_PARALLEL)
 

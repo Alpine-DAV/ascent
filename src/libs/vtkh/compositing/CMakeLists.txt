@@ -15,6 +15,7 @@ set(vtkh_compositing_headers
 
 set(vtkh_compositing_sources
     Image.cpp
+    PayloadImage.cpp
     Compositor.cpp
     PartialCompositor.cpp
     PayloadCompositor.cpp
@@ -22,7 +23,7 @@ set(vtkh_compositing_sources
 
 # always install headers
 install(FILES ${vtkh_compositing_headers}
-        DESTINATION include/vtkh/compositing)
+        DESTINATION include/ascent/vtkh/compositing)
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -40,7 +41,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_compositing PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_compositing PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_compositing PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     # build includes
     # this allows us to include as <vtkh/header.hpp>
@@ -98,7 +101,9 @@ if (MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_compositing_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_compositing_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_compositing_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     #
     target_compile_definitions(vtkh_compositing_mpi PRIVATE VTKH_PARALLEL)
 
@@ -123,6 +128,6 @@ if (MPI_FOUND)
 
     # Install extra mpi related headers
     install(FILES ${vtkh_compositing_mpi_headers}
-            DESTINATION include/vtkh/compositing)
+            DESTINATION include/ascent/vtkh/compositing)
 
 endif()

@@ -11,12 +11,15 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 
 TEST(vtkh_slice, vtkh_slice)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -60,6 +63,9 @@ TEST(vtkh_slice, vtkh_slice)
 
 TEST(vtkh_slice, vtkh_mulit_slice)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

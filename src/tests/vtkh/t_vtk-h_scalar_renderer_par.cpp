@@ -11,7 +11,7 @@
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkm/io/writer/VTKDataSetWriter.h>
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_scalar_renderer, vtkh_parallel_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   MPI_Init(NULL, NULL);
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);

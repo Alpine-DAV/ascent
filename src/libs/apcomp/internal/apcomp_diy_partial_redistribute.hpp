@@ -7,6 +7,8 @@
 #ifndef APCOMP_DIY_PARTIAL_REDISTRIBUTE_HPP
 #define APCOMP_DIY_PARTIAL_REDISTRIBUTE_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include "apcomp_diy_partial_blocks.hpp"
 #include <diy/assigner.hpp>
 #include <diy/decomposition.hpp>

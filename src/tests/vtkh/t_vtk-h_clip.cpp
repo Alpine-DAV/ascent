@@ -13,7 +13,7 @@
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_test_utils.hpp"
+#include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
 
@@ -22,6 +22,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_clip, vtkh_box_clip)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -79,6 +82,9 @@ TEST(vtkh_clip, vtkh_box_clip)
 
 TEST(vtkh_clip, vtkh_2_plane_clip)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;
@@ -139,6 +145,9 @@ TEST(vtkh_clip, vtkh_2_plane_clip)
 
 TEST(vtkh_clip, vtkh_2_plane_clip_particles)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int size = 1000;
