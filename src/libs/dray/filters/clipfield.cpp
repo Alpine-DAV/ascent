@@ -19,152 +19,10 @@
 //#define WRITE_YAML_FILE
 //#define WRITE_POINT3D_FILE
 
-void breakpoint()
-{
-}
-
 namespace dray
 {
 namespace detail
 {
-
-
-/*
-
-a hex will make 6 tets. The number of edges is:
-
-12 from the original hex
-6 to divide each face
-1 internal diagonal
-
-Each cell can make 19 edges.
-
-
-int cell_edge_count[ncells] = 0;
-int cell_edge_start[ncells][19];
-int cell_edge_end[ncells][19];
-
-[parallel] for each hex cell:
-    // look up the distances for the hex corners.
-    dist[8] = ...
-
-    for each tet in hex
-        tetdist[] = the dist values that matter for this tet.
-        for each edge in tet
-            if edge appears in solid case
-                edgecount = cell_edge_count[cellid]++;
-                cell_edge_start[cellid][edgecount] = edge.start;
-                cell_edge_end[cellid][edgecount] = edge.end;
-                cell_edge_blend[cellid][edgecount] = t;
-            
-// We will have determined all of the edges for all of the cells
-// at this point. The cell_edge arrays will contain some duplicates.
-int lowest_mask[possible_edges] = 0
-int lowest_index[possible_edges] = [0,1,2,3,4,...]
-
-[parallel] foreach possible_edge:
-    edge = determine_from_possible_edge_index()
-    index = -1;
-    foreach ce in cell_edge:
-        if edge == ce:
-            if index == -1:
-                index = e
-                lowest_mask[edgeindex] = 1
-                
-                break
-
-// Can we do the exclusive scan trick to get the indices that we'll pull
-// from the cell_edge...
-
-
-
-
-unique
-
-  We have a list of keys: [0,1,3,1,3,22,5]
-  We want to make a unique list.
-
-  keys    = [0,1,3,1,3,22,5]
-  indices = [0,1,2,3,4,5,6]
-
-  Use keys to sort indices via sort_pairs.
-
-  keys    = [0,1,1,3,3,5,22]
-  indices = [0,1,3,2,4,6,5]
-
-  RAJA::sort_pairs<for_policy>(keys, indices,...)
-
-  The keys are now in sorted order. The indices for each key refer to the
-  original index that we would want to preserve.
-
-  Now we run exclusive or scan over the key elements. Non-zero values in
-  the sequence ought to be unique since it means that there is a change in
-  value.
-  RAJA::inclusive_scan_inplace< exec_policy >(keys, xord, RAJA::operators::bit_xor<int>)
-
-  The first value should always count as "on". How to address this?
-
-  xord = [1,0,2,0,6,19]
-
-  for_all<>((mask, xord, i){
-     if(i == 0)
-         mask[i] = 1;
-     else
-         mask[i] = xord[i-1] != 0;
-  });
-
-  mask    = [1,1,0,1,0,1,1]
-  keys    = [0,1,1,3,3,5,22]
-  indices = [0,1,3,2,4,6,5]   <-- the ones that got sorted by keys
-
-             * * *     *  *   <--- selected indices using mask
-  origkeys= [0,1,3,1,3,22,5]  <--- just for illustration
-
-  Use inclusive scan sum to count the number of 1's in mask. That's how 
-  many elements the final array will have.
-
-  int n = scan.get();
-  
-  Do exclusive scan of mask to produce offset array.
-
-  RAJA::exclusive_scan<for_policy>(mask, offset)
-
-  offset = [0,1,1,2,2,3,4]
-
-  unique = new Array[n]
-  for_all<>(offset,unique,, i){
-     if(mask[i] == 1)
-         unique[offset[i]] = keys[i];
-  });
-  
-  I'm not sure we need indices[] at all here.
-
-  At this point, unique should contain:
-
-  unique = [0,1,3,5,22]
-
-
- What we might want to do in general is:
- 1. Iterate over cells and determine clip case and how many new edge points 
-    each cell will make.
- 2. reduce+sum the number of edge points
- 3. Allocate edge array
- 4. Iterate over the cells again, use the clip case we stored to figure out
-    which edges will be made. Figure out an identifier for each point. HOW TO DO THIS?
-    For points along an edge, we could do pt1:pt2 into a long. THESE NEED TO BE UNIQUE
-    ACROSS THE DATASET. Also, we have face points that blend more than 2 points.
-    HOW TO TAG THOSE?
-
- 5. Run edge array through unique
-
-THE GOAL IS TO MAKE A POINT BLENDING ARRAY...
-
-<npts0 p0, p1,...><npts1 p0, p1,...>...
-offset = [0, npts0+1, npts1+1, ...]
-
-THEN WITH THE POINT BLENDING ARRAY, WE CAN BLEND COORDS AND FIELDS
-
-*/
 
 // Borrowed from VisIt.
 
@@ -226,7 +84,7 @@ THEN WITH THE POINT BLENDING ARRAY, WE CAN BLEND COORDS AND FIELDS
 // Include Hex clip cases that make tets.
 #include <dray/filters/post.C>
 
-// Just dispatch over
+// Just dispatch over P1 mesh types
 template<typename Functor>
 void dispatch_p1(Mesh *mesh, Field *field, Functor &func)
 {
@@ -239,6 +97,131 @@ void dispatch_p1(Mesh *mesh, Field *field, Functor &func)
     detail::cast_mesh_failed(mesh, __FILE__, __LINE__);
 }
 
+template<typename Functor>
+void dispatch_p1(Field *field, Functor &func)
+{
+  if (!dispatch_field_only((UnstructuredField<HexScalar_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<TetScalar_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadScalar_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<TriScalar_P1>*)0,  field, func) &&
+
+      !dispatch_field_only((UnstructuredField<HexVector_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<TetVector_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_2D_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_P1>*)0,  field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_2D_P1>*)0,  field, func)
+     )
+  {
+    cout << "dispatch_p1 is not yet handling type " << field->type_name()
+         << " for field " << field->name() << ". The field will be missing in "
+            "the output." << endl;
+    ;//detail::cast_field_failed(field, __FILE__, __LINE__);
+  }
+}
+
+//---------------------------------------------------------------------------
+/**
+ @brief Blend a field using blend group information.
+ */
+class BlendFieldFunctor
+{ 
+public:
+  BlendFieldFunctor(const Array<uint32> * _uIndices,
+                    const Array<int32>  * _blendGroupSizes,
+                    const Array<int32>  * _blendGroupStart,
+                    const Array<int32>  * _blendIds,
+                    const Array<Float>  * _blendCoeff,
+                    const Array<int32>  * _conn,
+                    int32 _total_elements)
+  {
+    // Stash blend parameters
+    m_uIndices = _uIndices;
+    m_blendGroupSizes = _blendGroupSizes;
+    m_blendGroupStart = _blendGroupStart;
+    m_blendIds = _blendIds;
+    m_blendCoeff = _blendCoeff;
+    m_conn = _conn;
+    m_total_elements = _total_elements;
+    m_output = nullptr;
+  }
+
+  void reset()
+  {
+    m_output = nullptr;
+  }
+
+  // Called by dispatch_3d when we want to blend fields.
+  template <typename FEType>
+  void operator()(const UnstructuredField<FEType> &field)
+  {
+    // Create a new GridFunction that contains the blended data.
+    auto bgf = blend(field.get_dof_data());
+    // Make a new UnstructuredField
+    m_output = std::make_shared<UnstructuredField<FEType>>(bgf, 1, field.name());
+  }
+
+  std::shared_ptr<Field> get_output() const
+  {
+    return m_output;
+  }
+
+  template <typename GridFuncType>
+  GridFuncType blend(const GridFuncType &in_gf) const
+  {
+    auto nbg = m_uIndices->size();
+    const auto uIndices_ptr = m_uIndices->get_device_ptr_const();
+    const auto blendGroupSizes_ptr = m_blendGroupSizes->get_device_ptr_const();
+    const auto blendGroupStart_ptr = m_blendGroupStart->get_device_ptr_const();
+    const auto blendIds_ptr = m_blendIds->get_device_ptr_const();
+    const auto blendCoeff_ptr = m_blendCoeff->get_device_ptr_const();
+
+    GridFuncType gf;
+    gf.m_values.resize(nbg);
+    DeviceGridFunction<GridFuncType::get_ncomp()> dgf(gf);
+    DeviceGridFunctionConst<GridFuncType::get_ncomp()> in_dgf(in_gf);
+
+    // Each loop iteration handles one unique blend group.
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bgid)
+    {
+      // Original blendGroup index.
+      auto origBGIdx = uIndices_ptr[bgid];
+      auto npts = blendGroupSizes_ptr[origBGIdx];
+      auto bgIdx = blendGroupStart_ptr[origBGIdx];
+
+      //cout << "bg=" << origBGIdx << ", name=" << uNames_ptr[bgid] << endl;
+      auto blended = Vec<Float, GridFuncType::get_ncomp()>::zero();
+      for(int32 ii = 0; ii < npts; ii++)
+      {
+         //cout << "\t id=" << blendIds_ptr[bgIdx] << ", coeff=" << blendCoeff_ptr[bgIdx] << ", pt=" << in_dgf.m_values_ptr[blendIds_ptr[bgIdx]] << endl;
+         blended += in_dgf.m_values_ptr[blendIds_ptr[bgIdx]] * blendCoeff_ptr[bgIdx];
+         bgIdx++;
+      }
+      //cout << "\t saving " << blended << endl;
+      dgf.m_values_ptr[bgid] = blended;
+    });
+    DRAY_ERROR_CHECK();
+
+    // Finish filling in gf.
+    gf.m_el_dofs = 4;
+    gf.m_size_el = m_total_elements;
+    gf.m_ctrl_idx = *m_conn;
+    gf.m_size_ctrl = m_conn->size();
+    return gf;
+  }
+
+private:
+  const Array<uint32> *m_uIndices;
+  const Array<int32>  *m_blendGroupSizes;
+  const Array<int32>  *m_blendGroupStart;
+  const Array<int32>  *m_blendIds;
+  const Array<Float>  *m_blendCoeff;
+  const Array<int32>  *m_conn;
+  int32                m_total_elements;
+  std::shared_ptr<Field> m_output;
+};
+
+//---------------------------------------------------------------------------
 // Applies a clip field operation on a DataSet. This code assumes that the
 // mesh is P1 (linear) in connectivity, coordinates, and distance function.
 // 
@@ -255,11 +238,12 @@ struct ClipFieldLinear
   Float m_clip_value;
   std::string   m_field_name;
   bool m_invert;
+  bool m_exclude_clip_field;
 
   //-------------------------------------------------------------------------
   ClipFieldLinear(DataSet &input, Float value, const std::string &field_name,
-     bool invert) : m_input(input), m_output(), m_clip_value(value),
-      m_field_name(field_name), m_invert(invert)
+     bool invert, bool ecf) : m_input(input), m_output(), m_clip_value(value),
+      m_field_name(field_name), m_invert(invert), m_exclude_clip_field(ecf)
   {
   }
 
@@ -290,6 +274,7 @@ struct ClipFieldLinear
       Array<int32> &/*lut_offset*/,
       Array<unsigned char> &/*lut_shapes*/) const
   {
+    // Template specialization used later to load the real values.
   }
 
   //-------------------------------------------------------------------------
@@ -508,7 +493,6 @@ struct ClipFieldLinear
     Array<int32> lut_nshapes, lut_offset;
     Array<unsigned char> lut_shapes;
     load_lookups(mesh, lut_nshapes, lut_offset, lut_shapes);
-    cout << "Loaded lookup arrays." << endl;
 
     // We'll compute some per-element values for the outputs.
     Array<int32> fragments, blendGroups, blendGroupLen;
@@ -930,53 +914,7 @@ struct ClipFieldLinear
 
     // ----------------------------------------------------------------------
     //
-    // Stage 5 - Make new points from the unique blend groups.
-    // TODO: Separate this out into a blend_vector() routine since we could
-    //       reuse it to make the vector fields.
-    // ----------------------------------------------------------------------
-    const GridFunction<3> &mesh_gf = mesh.get_dof_data();
-    DeviceGridFunctionConst<3> mesh_dgf(mesh_gf);
-    int32 nbg = uNames.size();
-    //cout << "Num unique blend groups: " << nbg << endl;
-    GridFunction<3> gf;
-    gf.m_values.resize(nbg);
-    DeviceGridFunction<3> dgf(gf);
-    // Each loop iteration is one unique blend group.
-    RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bgid)
-    {
-      // Original blendGroup index.
-      auto origBGIdx = uIndices_ptr[bgid];
-      auto npts = blendGroupSizes_ptr[origBGIdx];
-      auto bgIdx = blendGroupStart_ptr[origBGIdx];
-
-      //cout << "bg=" << origBGIdx << ", name=" << uNames_ptr[bgid] << endl;
-      Vec<Float, 3> blended = {0,0,0};
-      for(int32 ii = 0; ii < npts; ii++)
-      {
-         //cout << "\t id=" << blendIds_ptr[bgIdx] << ", coeff=" << blendCoeff_ptr[bgIdx] << ", pt=" << mesh_dgf.m_values_ptr[blendIds_ptr[bgIdx]] << endl;
-         blended += mesh_dgf.m_values_ptr[blendIds_ptr[bgIdx]] * blendCoeff_ptr[bgIdx];
-         bgIdx++;
-      }
-      //cout << "\t saving " << blended << endl;
-      dgf.m_values_ptr[bgid] = blended;
-    });
-    DRAY_ERROR_CHECK();
-#ifdef WRITE_POINT3D_FILE
-    // Write Point3D file containing xyz locations and point name.
-    auto uNames_hptr = uNames.get_host_ptr();
-    auto v_hptr = gf.m_values.get_host_ptr();
-    FILE *f = fopen("uNames.3D", "wt");
-    fprintf(f, "X Y Z Name\n");
-    for(int i = 0; i < uNames.size(); i++)
-    {
-        fprintf(f, "%f %f %f %u\n", v_hptr[i][0], v_hptr[i][1], v_hptr[i][2], uNames_hptr[i]);
-    }
-    fclose(f);
-#endif
-
-    // ----------------------------------------------------------------------
-    //
-    // Stage 6 - Iterate over the cases again and make new connectivity.
+    // Stage 5 - Iterate over the cases again and make new connectivity.
     //
     // ----------------------------------------------------------------------
     Array<int32> conn_out;
@@ -1114,16 +1052,46 @@ struct ClipFieldLinear
 
     // ----------------------------------------------------------------------
     //
-    // Stage 7 - Finish making the output mesh.
+    // Stage 6 - Finish making the output mesh.
     //
     // ----------------------------------------------------------------------
-    gf.m_el_dofs = 4;
-    gf.m_size_el = fragment_sum.get();
-    gf.m_ctrl_idx = conn_out;
-    gf.m_size_ctrl = conn_out.size();
+    BlendFieldFunctor bff(&uIndices, &blendGroupSizes, &blendGroupStart,
+                          &blendIds, &blendCoeff, &conn_out, fragment_sum.get());
+    // Blend coordinate dofs.
+    GridFunction<3> gf = bff.blend(mesh.get_dof_data());
+#ifdef WRITE_POINT3D_FILE
+    // Write Point3D file containing xyz locations and point name.
+    auto uNames_hptr = uNames.get_host_ptr();
+    auto v_hptr = gf.m_values.get_host_ptr();
+    FILE *f = fopen("uNames.3D", "wt");
+    fprintf(f, "X Y Z Name\n");
+    for(int i = 0; i < uNames.size(); i++)
+    {
+        fprintf(f, "%f %f %f %u\n", v_hptr[i][0], v_hptr[i][1], v_hptr[i][2], uNames_hptr[i]);
+    }
+    fclose(f);
+#endif
+    // Make a new P1 tet mesh.
     auto newmesh = std::make_shared<UnstructuredMesh<Tet_P1>>(gf, 1);
     newmesh->name(mesh.name());
     m_output.add_mesh(newmesh);
+
+    // Blend fields and put them on the dataset.
+    const int nfields = m_input.number_of_fields();
+    for(int i = 0; i < nfields; i++)
+    {
+      // Get the field and check whether we want it on the output.
+      Field *field = m_input.field(i);
+      if(m_exclude_clip_field && field->name() == m_field_name)
+        continue;
+
+      // Dispatch to BlendFieldFunctor to blend the field.
+      bff.reset();
+      dispatch_p1(field, bff);
+      auto f = bff.get_output();
+      if(f != nullptr)
+        m_output.add_field(f);
+    }
 
 #ifdef WRITE_YAML_FILE
     // Save the data to a YAML file to look at it.
@@ -1161,11 +1129,11 @@ struct ClipFieldLinear
     s4["uIndices"].set_external(uIndices.get_host_ptr(), uIndices.size());
 
     conduit::Node &s5 = n["stage5"];
-    s5["blended.m_values"].set_external(reinterpret_cast<float*>(gf.m_values.get_host_ptr()), 3*gf.m_values.size());
-    s5["blended.m_ctrl_idx"].set_external(gf.m_ctrl_idx.get_host_ptr(), gf.m_ctrl_idx.size());
+    s5["conn_out"].set_external(conn_out.get_host_ptr(), conn_out.size());
 
     conduit::Node &s6 = n["stage6"];
-    s6["conn_out"].set_external(conn_out.get_host_ptr(), conn_out.size());
+    s6["gf.m_values"].set_external(reinterpret_cast<float*>(gf.m_values.get_host_ptr()), 3*gf.m_values.size());
+    s6["gf.m_ctrl_idx"].set_external(gf.m_ctrl_idx.get_host_ptr(), gf.m_ctrl_idx.size());
 
     conduit::Node &sout = n["output"];
     m_output.to_node(sout);
@@ -1336,13 +1304,19 @@ ClipField::invert() const
   return m_invert;
 }
 
+void
+ClipField::exclude_clip_field(bool value)
+{
+  m_exclude_clip_field = value;
+}
+
 DataSet
 ClipField::execute(DataSet dom)
 {
   DataSet output;
   if(dom.mesh() != nullptr && dom.mesh()->order() == 1)
   {
-    detail::ClipFieldLinear func(dom, m_clip_value, m_field_name, m_invert);
+    detail::ClipFieldLinear func(dom, m_clip_value, m_field_name, m_invert, m_exclude_clip_field);
     func.execute();
     output = func.m_output;
   }
@@ -1363,7 +1337,7 @@ ClipField::execute(Collection &collection)
     DataSet dom = collection.domain(i);
     if(dom.mesh() != nullptr && dom.mesh()->order() == 1)
     {
-      detail::ClipFieldLinear func(dom, m_clip_value, m_field_name, m_invert);
+      detail::ClipFieldLinear func(dom, m_clip_value, m_field_name, m_invert, m_exclude_clip_field);
       func.execute();
       res.add_domain(func.m_output);
     }

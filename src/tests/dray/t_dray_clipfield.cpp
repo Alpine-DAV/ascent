@@ -56,6 +56,8 @@ dray_collection_to_blueprint(dray::Collection &c, conduit::Node &n)
           std::string path(s.str());
           conduit::Node &bnode = n[path];
           dray::BlueprintLowOrder::to_blueprint(dnode, bnode);
+
+          bnode["state/domain_id"] = it->domain_id();
       }
       catch(std::exception &e)
       {
@@ -102,13 +104,54 @@ convert_float64_to_float32(conduit::Node &input)
 
 //-----------------------------------------------------------------------------
 void
+limit_precision(conduit::Node &input)
+{
+    const int p = 1000;
+    for(conduit::index_t i = 0; i < input.number_of_children(); i++)
+    {
+        conduit::Node &n = input[i];
+        if(n.dtype().is_float64())
+        {
+            auto arr = n.as_float64_array();
+            std::vector<double> tmp;
+            tmp.reserve(arr.number_of_elements());
+            for(conduit::index_t elem = 0; elem < arr.number_of_elements(); elem++)
+            {
+                double val = arr[elem];
+                val = static_cast<double>(static_cast<int>(val * p) % p) / static_cast<double>(p);
+                tmp.push_back(val);
+            }
+            n.set(tmp);
+        }
+        else if(n.dtype().is_float32())
+        {
+            auto arr = n.as_float32_array();
+            std::vector<float> tmp;
+            tmp.reserve(arr.number_of_elements());
+            for(conduit::index_t elem = 0; elem < arr.number_of_elements(); elem++)
+            {
+                float val = arr[elem];
+                val = static_cast<float>(static_cast<int>(val * p) % p) / static_cast<float>(p);
+                tmp.push_back(val);
+            }
+            n.set(tmp);
+        }
+        else
+        {
+            limit_precision(n);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
 compare_baseline(const std::string &testname, const conduit::Node &tdata)
 {
     std::string filename(baseline_dir() + sep + testname + ".yaml");
     conduit::Node baseline, info;
     conduit::relay::io::load(filename, "yaml", baseline);
     convert_float64_to_float32(baseline);
-    bool different = baseline.diff(tdata, info, 1.e-3, true);
+    bool different = baseline.diff(tdata, info, 1.e-2, true);
     if(different)
     {
         std::cout << "Difference for " << testname << std::endl;
@@ -124,6 +167,7 @@ handle_test(const std::string &testname, dray::Collection &tfdataset)
   // We save the Blueprint-compatible dataset as the baseline.
   conduit::Node tfdata;
   dray_collection_to_blueprint(tfdataset, tfdata);
+//  limit_precision(tfdata);
 #ifdef GENERATE_BASELINES
   make_baseline(testname, tfdata);
   #ifdef DEBUG_TEST
@@ -152,7 +196,7 @@ blueprint_plugin_error_handler(const std::string &msg,
 
 //-----------------------------------------------------------------------------
 void
-clip_3d(conduit::Node &node, const std::string &name,
+clip_3d(conduit::Node &node, const std::string &name, bool do_inverse = true,
   const std::string &fieldname = std::string("test"), float clip_value = 0.5)
 {
   dray::Collection collection;
@@ -168,9 +212,12 @@ clip_3d(conduit::Node &node, const std::string &name,
   handle_test(std::string("clip_") + name, output);
 
   // Filter again, inverting the selection.
-  clip.set_invert_clip(true);
-  dray::Collection output2 = clip.execute(collection);
-  handle_test(std::string("clip_inv_") + name, output2);
+  if(do_inverse)
+  {
+    clip.set_invert_clip(true);
+    dray::Collection output2 = clip.execute(collection);
+    handle_test(std::string("clip_inv_") + name, output2);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -320,7 +367,7 @@ TEST (dray_clipfield, hexs_2_2_2_noclip)
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 2*2*2);
 
-  clip_3d(data, "hexs_2_2_2_noclip");
+  clip_3d(data, "hexs_2_2_2_noclip", false);
 }
 
 //-----------------------------------------------------------------------------
@@ -357,7 +404,7 @@ TEST (dray_clipfield, hexs_3_2_2_noclip)
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*2*2);
 
-  clip_3d(data, "hexs_3_2_2_noclip");
+  clip_3d(data, "hexs_3_2_2_noclip", false);
 }
 
 //-----------------------------------------------------------------------------
@@ -538,7 +585,7 @@ TEST (dray_clipfield, hexs_braid)
                                              EXAMPLE_MESH_SIDE_DIM,
                                              data);
 
-  clip_3d(data, "hexs_braid", "braid", 4.8f);
+  clip_3d(data, "hexs_braid", true, "braid", 4.8f);
 }
 
 //-----------------------------------------------------------------------------

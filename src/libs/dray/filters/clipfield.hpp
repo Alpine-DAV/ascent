@@ -17,6 +17,7 @@ protected:
   Float m_clip_value;
   std::string   m_field_name;
   bool m_invert;
+  bool m_exclude_clip_field;
 public:
   ClipField();
   ~ClipField();
@@ -28,6 +29,7 @@ public:
   Float clip_value() const;
   const std::string &field() const;
   bool invert() const;
+  void exclude_clip_field(bool);
 
   /**
    * @brief Execute on a single DataSet.

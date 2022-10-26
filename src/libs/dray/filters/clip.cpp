@@ -671,6 +671,7 @@ Clip::execute(Collection &collection)
         ClipField clipper;
         clipper.set_clip_value(clip_value);
         clipper.set_field(field_name);
+        clipper.exclude_clip_field(true);
         // If we are doing sphere clipping, use the opposite of the m_invert
         // flag to match VisIt.
         if(m_internals->clip_mode == 1)

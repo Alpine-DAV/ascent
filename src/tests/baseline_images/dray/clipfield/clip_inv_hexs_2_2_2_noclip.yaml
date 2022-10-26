@@ -14,3 +14,17 @@ domain0:
       elements: 
         shape: "tet"
         connectivity: 
+  fields: 
+    braid: 
+      topology: "topology"
+      association: "vertex"
+      values: 
+    vel: 
+      topology: "topology"
+      association: "vertex"
+      values: 
+        x: 
+        y: 
+        z: 
+  state: 
+    domain_id: 0
