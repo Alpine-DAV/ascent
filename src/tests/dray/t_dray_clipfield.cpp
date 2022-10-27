@@ -652,7 +652,6 @@ TEST (dray_clip, hexs_3_plane)
                                              data);
 
   clip_3_plane(data, "hexs", false);
-  // TODO: clip_3_plane(data, "hexs_multiplane", true);
 }
 
 //-----------------------------------------------------------------------------
@@ -685,6 +684,9 @@ TEST (dray_clipfield, tets_braid)
                                              data);
 
   clip_3d(data, "tets_braid", true, "braid", 2.f);
+
+  // TODO: Examine this because it makes scrambled geometry.
+  //clip_3_plane(data, "tets_multiplane", true);
 }
 
 //-----------------------------------------------------------------------------
