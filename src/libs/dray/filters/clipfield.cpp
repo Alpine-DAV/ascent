@@ -81,9 +81,30 @@ namespace detail
 #define COLOR1  121
 #define NOCOLOR 122
 
-// Include Hex clip cases that make tets.
-#include <dray/filters/post.C>
+// Include clip cases that make tets. These were developed using VisIt's
+// clip editor but all of the cases were reworked to produce tets since
+// dray can't make a mixture of cell types and lacks wedges and pyramids.
+// The hex case actually was developed using some pyramids and these were
+// split in a post-processing step to get the orientations right.
+//
+// Limitations:
+//   1. The hex cases where the cells contained wedges were adapted to instead
+//      use 3 tets. However, the automatic re-orientation of the clip editor
+//      might produce some orientations that line up to neighboring cells.
+//      This affects the watertightness of the cell, though all space is
+//      covered.
+//
+//   2. Tet cases 0, 15 pass through the original tet rather than decomposing
+//      into a set of tets that imprint 4 triangles per original tet face as
+//      is done in the other cases. This will probably create the same
+//      watertightness issue but it is also kind of better than blowing up
+//      unclipped cells into many smaller tets. If size is not an issue,
+//      cases 0, 15 could further decompose the tets to make it watertight.
+//              
+#include <dray/filters/internal/clip_cases_hex.cpp>
+#include <dray/filters/internal/clip_cases_tet.cpp>
 
+//---------------------------------------------------------------------------
 // Just dispatch over P1 mesh types
 template<typename Functor>
 void dispatch_p1(Mesh *mesh, Field *field, Functor &func)
@@ -97,6 +118,7 @@ void dispatch_p1(Mesh *mesh, Field *field, Functor &func)
     detail::cast_mesh_failed(mesh, __FILE__, __LINE__);
 }
 
+//---------------------------------------------------------------------------
 template<typename Functor>
 void dispatch_p0p1(Field *field, Functor &func)
 {
@@ -159,7 +181,8 @@ void dispatch_p0p1(Field *field, Functor &func)
 class BlendFieldFunctor
 { 
 public:
-  BlendFieldFunctor(const Array<uint32> * _uIndices,
+  BlendFieldFunctor(const Array<uint32> * _uNames,
+                    const Array<uint32> * _uIndices,
                     const Array<int32>  * _blendGroupSizes,
                     const Array<int32>  * _blendGroupStart,
                     const Array<int32>  * _blendIds,
@@ -170,6 +193,7 @@ public:
                     int32 _total_elements)
   {
     // Stash blend parameters
+    m_uNames = _uNames;
     m_uIndices = _uIndices;
     m_blendGroupSizes = _blendGroupSizes;
     m_blendGroupStart = _blendGroupStart;
@@ -217,6 +241,7 @@ public:
   GridFuncType blend(const GridFuncType &in_gf) const
   {
     auto nbg = m_uIndices->size();
+    const auto uNames_ptr = m_uNames->get_device_ptr_const();
     const auto uIndices_ptr = m_uIndices->get_device_ptr_const();
     const auto blendGroupSizes_ptr = m_blendGroupSizes->get_device_ptr_const();
     const auto blendGroupStart_ptr = m_blendGroupStart->get_device_ptr_const();
@@ -229,6 +254,7 @@ public:
     DeviceGridFunctionConst<GridFuncType::get_ncomp()> in_dgf(in_gf);
 
     // Each loop iteration handles one unique blend group.
+    //cout << "Start blending " << nbg << " groups" << endl;
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, nbg), [=] DRAY_LAMBDA (int32 bgid)
     {
       // Original blendGroup index.
@@ -250,7 +276,7 @@ public:
     DRAY_ERROR_CHECK();
 
     // Finish filling in gf.
-    gf.m_el_dofs = 4;
+    gf.m_el_dofs = 4; // tet mesh
     gf.m_size_el = m_total_elements;
     gf.m_ctrl_idx = *m_conn;
     gf.m_size_ctrl = m_conn->size();
@@ -290,6 +316,7 @@ public:
   }
 
 private:
+  const Array<uint32> *m_uNames;
   const Array<uint32> *m_uIndices;
   const Array<int32>  *m_blendGroupSizes;
   const Array<int32>  *m_blendGroupStart;
@@ -567,8 +594,8 @@ struct ClipFieldLinear
     // Make a distance field.
     ScalarField distance = create_distance_field(field);
     auto distance_gf = distance.get_dof_data();
-    int32 nelem = distance_gf.get_num_elem(); // number of elements in gf.
-    auto el_dofs = distance_gf.m_el_dofs;
+    int32 nelem = mesh.cells(); // number of elements in mesh.
+    auto el_dofs = mesh.get_dof_data().m_el_dofs;
 
     // Load the mesh/element-appropriate lut into arrays.
     Array<int32> lut_nshapes, lut_offset;
@@ -791,21 +818,35 @@ struct ClipFieldLinear
         0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0
       };
-      const unsigned char hex_edge_to_corners[12][2] = {
-                    { 0, 1 },   /* EA */
-                    { 1, 2 },   /* EB */
-                    { 3, 2 },   /* EC */
-                    { 3, 0 },   /* ED */
-                    { 4, 5 },   /* EE */
-                    { 5, 6 },   /* EF */
-                    { 6, 7 },   /* EG */
-                    { 7, 4 },   /* EH */
-                    { 0, 4 },   /* EI */
-                    { 1, 5 },   /* EJ */
-                    { 3, 7 },   /* EK */
-                    { 2, 6 }    /* EL */
-      };
 
+      // NOTE: I was going to make load_lookups load these into a device-accessible
+      //       array so the template specialization would load the right one. I
+      //       must not have done it right. Do this for now.
+      static const unsigned char hex_edge_to_corners[12][2] = {
+        { 0, 1 },   /* EA */
+        { 1, 2 },   /* EB */
+        { 3, 2 },   /* EC */
+        { 3, 0 },   /* ED */
+        { 4, 5 },   /* EE */
+        { 5, 6 },   /* EF */
+        { 6, 7 },   /* EG */
+        { 7, 4 },   /* EH */
+        { 0, 4 },   /* EI */
+        { 1, 5 },   /* EJ */
+        { 3, 7 },   /* EK */
+        { 2, 6 }    /* EL */
+      };
+      static const unsigned char tet_edge_to_corners[6][2] = {
+        { 0, 1 },   /* EA */
+        { 1, 2 },   /* EB */
+        { 2, 0 },   /* EC */
+        { 0, 3 },   /* ED */
+        { 1, 3 },   /* EE */
+        { 2, 3 }    /* EF */
+      };
+      const unsigned char (*edge_to_corners)[2] =
+        (el_dofs == 8) ? hex_edge_to_corners : tet_edge_to_corners;
+      
       // Starting offset of where we store this element's blend groups.
       int32 bgStart = blendOffset_ptr[elid];
       int32 bgOffset = blendGroupOffsets_ptr[elid];
@@ -854,13 +895,11 @@ struct ClipFieldLinear
               }
               else if(ptid >= EA && ptid <= EL)
               {
-// TODO: need if test for el_dofs==8
-
                 // edge points are derived from 2 corner points. If
                 // those appear here then we're probably creating a
                 // face point. We can store the 2 corner points in place
                 // of the edge point (along with some blending coeff).
-                const unsigned char *c = hex_edge_to_corners[ptid - EA];
+                const unsigned char *c = edge_to_corners[ptid - EA];
                 int32 id0 = el_ids[c[0]];
                 int32 id1 = el_ids[c[1]];
                 // Figure out the blend for edge.
@@ -948,7 +987,7 @@ struct ClipFieldLinear
       {
         if(ptused[pid] > 0)
         {
-          const unsigned char *c = hex_edge_to_corners[pid - EA];
+          const unsigned char *c = edge_to_corners[pid - EA];
           int32 id0 = el_ids[c[0]];
           int32 id1 = el_ids[c[1]];
           // Figure out the blend for edge.
@@ -1136,7 +1175,7 @@ struct ClipFieldLinear
     // Stage 6 - Finish making the output mesh.
     //
     // ----------------------------------------------------------------------
-    BlendFieldFunctor bff(&uIndices, &blendGroupSizes, &blendGroupStart,
+    BlendFieldFunctor bff(&uNames, &uIndices, &blendGroupSizes, &blendGroupStart,
                           &blendIds, &blendCoeff, &fragments, &fragmentOffsets,
                           &conn_out, fragment_sum.get());
     // Blend coordinate dofs.
@@ -1335,6 +1374,23 @@ ClipFieldLinear::load_lookups(HexMesh_P1 &m,
                  sizeof(startClipShapesHex)/sizeof(int));
   lut_shapes.set(clipShapesHex,
                  sizeof(clipShapesHex)/sizeof(unsigned char));
+}
+
+//---------------------------------------------------------------------------
+// Load Tet lookup data.
+template <>
+void
+ClipFieldLinear::load_lookups(TetMesh_P1 &m,
+      Array<int32> &lut_nshapes,
+      Array<int32> &lut_offset,
+      Array<unsigned char> &lut_shapes) const
+{
+  lut_nshapes.set(reinterpret_cast<const int32*>(numClipShapesTet),
+                  sizeof(numClipShapesTet)/sizeof(int));
+  lut_offset.set(reinterpret_cast<const int32*>(startClipShapesTet),
+                 sizeof(startClipShapesTet)/sizeof(int));
+  lut_shapes.set(clipShapesTet,
+                 sizeof(clipShapesTet)/sizeof(unsigned char));
 }
 
 

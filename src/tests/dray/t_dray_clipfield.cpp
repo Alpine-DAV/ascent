@@ -202,7 +202,9 @@ clip_3d(conduit::Node &node, const std::string &name, bool do_inverse = true,
   dray::Collection collection;
   dray::DataSet domain = dray::BlueprintReader::blueprint_to_dray(node);
   collection.add_domain(domain);
-
+#if 0
+  handle_test(std::string("clip_") + name + "_orig", collection);
+#endif
   // Filter.
   dray::ClipField clip;
   clip.set_clip_value(clip_value);
@@ -446,7 +448,6 @@ TEST (dray_clipfield, hexs_3_2_2_corner)
 }
 
 //-----------------------------------------------------------------------------
-// This works
 TEST (dray_clipfield, hexs_3_3_2_hole)
 {
 #ifdef DEBUG_TEST
@@ -668,5 +669,81 @@ TEST (dray_clip, hexs_box)
                                              data);
 
   clip_box_plane(data, "hexs");
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, tets_braid)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("tets",
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             EXAMPLE_MESH_SIDE_DIM,
+                                             data);
+
+  clip_3d(data, "tets_braid", true, "braid", 2.f);
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, tets_1)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  // Make a simple tet mesh with 1 cell.
+  float x[] = {0.f, 0.f, 1.f, 0.f};
+  float y[] = {0.f, 0.f, 0.f, 1.f};
+  float z[] = {0.f, 1.f, 0.f, 0.f};
+  int conn[] = {0,1,2,3};
+
+  conduit::Node data;
+  data["coordsets/coords/type"] = "explicit";
+  data["coordsets/coords/values/x"].set_external(x, sizeof(x)/sizeof(float));
+  data["coordsets/coords/values/y"].set_external(y, sizeof(y)/sizeof(float));
+  data["coordsets/coords/values/z"].set_external(z, sizeof(z)/sizeof(float));
+  data["topologies/topology/coordset"] = "coords";
+  data["topologies/topology/type"] = "unstructured";
+  data["topologies/topology/elements/shape"] = "tet";
+  data["topologies/topology/elements/connectivity"].set_external(conn, sizeof(conn)/sizeof(int));
+  data["fields/height/topology"] = "topology";
+  data["fields/height/association"] = "vertex";
+  data["fields/height/values"].set_external(y, sizeof(y)/sizeof(float));
+
+  //data.print();
+
+  clip_3d(data, "tets_1", true, "height", 0.6);
+}
+
+//-----------------------------------------------------------------------------
+TEST (dray_clipfield, tets_tiny)
+{
+#ifdef DEBUG_TEST
+  conduit::utils::set_error_handler(blueprint_plugin_error_handler);
+#endif
+  // Make a simple tet mesh with 4 cells.
+  float x[] = {0.f, 0.f, 1.f,  0.f, -1.f, 0.f};
+  float y[] = {0.f, 0.f, 0.f,  0.f,  0.f, 1.f};
+  float z[] = {0.f, 1.f, 0.f, -1.f,  0.f, 0.f};
+  int conn[] = {0,1,2,5,  0,2,3,5,  0,3,4,5,  0,4,1,5};
+
+  conduit::Node data;
+  data["coordsets/coords/type"] = "explicit";
+  data["coordsets/coords/values/x"].set_external(x, sizeof(x)/sizeof(float));
+  data["coordsets/coords/values/y"].set_external(y, sizeof(y)/sizeof(float));
+  data["coordsets/coords/values/z"].set_external(z, sizeof(z)/sizeof(float));
+  data["topologies/topology/coordset"] = "coords";
+  data["topologies/topology/type"] = "unstructured";
+  data["topologies/topology/elements/shape"] = "tet";
+  data["topologies/topology/elements/connectivity"].set_external(conn, sizeof(conn)/sizeof(int));
+  data["fields/height/topology"] = "topology";
+  data["fields/height/association"] = "vertex";
+  data["fields/height/values"].set_external(y, sizeof(y)/sizeof(float));
+
+  //data.print();
+
+  clip_3d(data, "tets_tiny", true, "height", 0.6);
 }
 
