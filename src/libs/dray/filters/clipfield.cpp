@@ -167,9 +167,11 @@ void dispatch_p0p1(Field *field, Functor &func)
       //!dispatch_field_only((UnstructuredField<TriVector_2D_P2>*)0,  field, func)
      )
   {
-    cout << "dispatch_p0p1 is not yet handling type " << field->type_name()
-         << " for field " << field->name() << ". The field will be missing in "
-            "the output." << endl;
+    // NOTE: Building with CUDA does not like these lines so comment them out.
+    //cout << "dispatch_p0p1 is not yet handling type " << field->type_name()
+    //     << " for field " << field->name() << ". The field will be missing in "
+    //        "the output." << endl;
+
     //detail::cast_field_failed(field, __FILE__, __LINE__);
   }
 }

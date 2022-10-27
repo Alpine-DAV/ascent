@@ -709,7 +709,7 @@ namespace dray
                                OrderPolicy<OP> out_order_p,
                                WriteDofPtr<Vec<Float, ncomp>> out_field_wdp)
   {
-    const int32 ip = eattr::get_order(in_order_p);
+    //const int32 ip = eattr::get_order(in_order_p);
     const int32 mp = eattr::get_order(mesh_order_p);
     const int32 op = eattr::get_order(out_order_p);
 
@@ -739,7 +739,7 @@ namespace dray
                                OrderPolicy<OP> out_order_p,
                                WriteDofPtr<Vec<Float, ncomp>> out_field_wdp)
   {
-    const int32 ip = eattr::get_order(in_order_p);
+    //const int32 ip = eattr::get_order(in_order_p);
     const int32 mp = eattr::get_order(mesh_order_p);
     const int32 op = eattr::get_order(out_order_p);
 
