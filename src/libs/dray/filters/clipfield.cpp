@@ -98,25 +98,57 @@ void dispatch_p1(Mesh *mesh, Field *field, Functor &func)
 }
 
 template<typename Functor>
-void dispatch_p1(Field *field, Functor &func)
+void dispatch_p0p1(Field *field, Functor &func)
 {
-  if (!dispatch_field_only((UnstructuredField<HexScalar_P1>*)0, field, func) &&
+  if (//!dispatch_field_only((UnstructuredField<HexScalar>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<HexScalar_P0>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<HexScalar_P1>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<HexScalar_P2>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<TetScalar>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<TetScalar_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetScalar_P1>*)0, field, func) &&
-      !dispatch_field_only((UnstructuredField<QuadScalar_P1>*)0, field, func) &&
-      !dispatch_field_only((UnstructuredField<TriScalar_P1>*)0,  field, func) &&
+      //!dispatch_field_only((UnstructuredField<TetScalar_P2>*)0, field, func) &&
 
+      //!dispatch_field_only((UnstructuredField<QuadScalar>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadScalar_P0>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadScalar_P1>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<QuadScalar_P2>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<TriScalar>*)0,     field, func) &&
+      !dispatch_field_only((UnstructuredField<TriScalar_P0>*)0,  field, func) &&
+      !dispatch_field_only((UnstructuredField<TriScalar_P1>*)0,  field, func) &&
+      //!dispatch_field_only((UnstructuredField<TriScalar_P2>*)0,  field, func) &&
+
+      //!dispatch_field_only((UnstructuredField<HexVector>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<HexVector_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<HexVector_P1>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<HexVector_P2>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<TetVector>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<TetVector_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetVector_P1>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<TetVector_P2>*)0, field, func) &&
+
+      //!dispatch_field_only((UnstructuredField<QuadVector>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<QuadVector_P1>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<QuadVector_P2>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<QuadVector_2D>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_2D_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<QuadVector_2D_P1>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<QuadVector_2D_P2>*)0, field, func) &&
+      //!dispatch_field_only((UnstructuredField<TriVector>*)0,     field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_P0>*)0,  field, func) &&
       !dispatch_field_only((UnstructuredField<TriVector_P1>*)0,  field, func) &&
-      !dispatch_field_only((UnstructuredField<TriVector_2D_P1>*)0,  field, func)
+      //!dispatch_field_only((UnstructuredField<TriVector_P2>*)0,  field, func) &&
+      //!dispatch_field_only((UnstructuredField<TriVector_2D>*)0,     field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_2D_P0>*)0,  field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_2D_P1>*)0,  field, func)// &&
+      //!dispatch_field_only((UnstructuredField<TriVector_2D_P2>*)0,  field, func)
      )
   {
-    cout << "dispatch_p1 is not yet handling type " << field->type_name()
+    cout << "dispatch_p0p1 is not yet handling type " << field->type_name()
          << " for field " << field->name() << ". The field will be missing in "
             "the output." << endl;
-    ;//detail::cast_field_failed(field, __FILE__, __LINE__);
+    //detail::cast_field_failed(field, __FILE__, __LINE__);
   }
 }
 
@@ -132,6 +164,8 @@ public:
                     const Array<int32>  * _blendGroupStart,
                     const Array<int32>  * _blendIds,
                     const Array<Float>  * _blendCoeff,
+                    const Array<int32>  * _fragments,
+                    const Array<int32>  * _fragmentOffsets,
                     const Array<int32>  * _conn,
                     int32 _total_elements)
   {
@@ -141,6 +175,8 @@ public:
     m_blendGroupStart = _blendGroupStart;
     m_blendIds = _blendIds;
     m_blendCoeff = _blendCoeff;
+    m_fragments = _fragments;
+    m_fragmentOffsets = _fragmentOffsets;
     m_conn = _conn;
     m_total_elements = _total_elements;
     m_output = nullptr;
@@ -155,10 +191,20 @@ public:
   template <typename FEType>
   void operator()(const UnstructuredField<FEType> &field)
   {
-    // Create a new GridFunction that contains the blended data.
-    auto bgf = blend(field.get_dof_data());
-    // Make a new UnstructuredField
-    m_output = std::make_shared<UnstructuredField<FEType>>(bgf, 1, field.name());
+    if(field.order() == 0)
+    {
+      // Create a new GridFunction that contains the replicated data.
+      auto bgf = replicate(field.get_dof_data());
+      // Make a new UnstructuredField
+      m_output = std::make_shared<UnstructuredField<FEType>>(bgf, 0, field.name());
+    }
+    else
+    {
+      // Create a new GridFunction that contains the blended data.
+      auto bgf = blend(field.get_dof_data());
+      // Make a new UnstructuredField
+      m_output = std::make_shared<UnstructuredField<FEType>>(bgf, 1, field.name());
+    }
   }
 
   std::shared_ptr<Field> get_output() const
@@ -166,6 +212,7 @@ public:
     return m_output;
   }
 
+  // node-centered
   template <typename GridFuncType>
   GridFuncType blend(const GridFuncType &in_gf) const
   {
@@ -210,12 +257,46 @@ public:
     return gf;
   }
 
+  // element-centered
+  template <typename GridFuncType>
+  GridFuncType replicate(const GridFuncType &in_gf) const
+  {
+    const auto fragments_ptr = m_fragments->get_device_ptr_const();
+    const auto fragmentOffsets_ptr = m_fragmentOffsets->get_device_ptr_const();
+    GridFuncType gf;
+    gf.m_ctrl_idx.resize(m_total_elements);
+    gf.m_values.resize(m_total_elements);
+    DeviceGridFunction<GridFuncType::get_ncomp()> dgf(gf);
+    DeviceGridFunctionConst<GridFuncType::get_ncomp()> in_dgf(in_gf);
+
+    auto ctrl_idx_ptr = gf.m_ctrl_idx.get_device_ptr();
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, m_fragments->size()), [=] DRAY_LAMBDA (int32 elid)
+    {
+      ctrl_idx_ptr[elid] = elid;
+
+      // Repeat the element value in the output.
+      auto start = fragmentOffsets_ptr[elid];
+      auto n = fragments_ptr[elid];
+      for(int32 i = 0; i < n; i++)
+          dgf.m_values_ptr[start + i] = in_dgf.m_values_ptr[elid];
+    });
+    DRAY_ERROR_CHECK();
+
+    // Finish filling in gf.
+    gf.m_el_dofs = 1;
+    gf.m_size_el = m_total_elements;
+    gf.m_size_ctrl = m_total_elements;
+    return gf;
+  }
+
 private:
   const Array<uint32> *m_uIndices;
   const Array<int32>  *m_blendGroupSizes;
   const Array<int32>  *m_blendGroupStart;
   const Array<int32>  *m_blendIds;
   const Array<Float>  *m_blendCoeff;
+  const Array<int32>  *m_fragments;
+  const Array<int32>  *m_fragmentOffsets;
   const Array<int32>  *m_conn;
   int32                m_total_elements;
   std::shared_ptr<Field> m_output;
@@ -1056,7 +1137,8 @@ struct ClipFieldLinear
     //
     // ----------------------------------------------------------------------
     BlendFieldFunctor bff(&uIndices, &blendGroupSizes, &blendGroupStart,
-                          &blendIds, &blendCoeff, &conn_out, fragment_sum.get());
+                          &blendIds, &blendCoeff, &fragments, &fragmentOffsets,
+                          &conn_out, fragment_sum.get());
     // Blend coordinate dofs.
     GridFunction<3> gf = bff.blend(mesh.get_dof_data());
 #ifdef WRITE_POINT3D_FILE
@@ -1087,7 +1169,7 @@ struct ClipFieldLinear
 
       // Dispatch to BlendFieldFunctor to blend the field.
       bff.reset();
-      dispatch_p1(field, bff);
+      dispatch_p0p1(field, bff);
       auto f = bff.get_output();
       if(f != nullptr)
         m_output.add_field(f);
@@ -1260,7 +1342,8 @@ ClipFieldLinear::load_lookups(HexMesh_P1 &m,
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-ClipField::ClipField() : m_clip_value(0.), m_field_name(), m_invert(false)
+ClipField::ClipField() : m_clip_value(0.), m_field_name(), m_invert(false),
+  m_exclude_clip_field(false)
 {
 }
 

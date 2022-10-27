@@ -19,6 +19,10 @@ domain0:
       topology: "topology"
       association: "vertex"
       values: [0.852490484714508, -1.2108952999115, 0.789104700088501, -1.14750957489014, -1.14750814437866, 0.852491855621338, -0.232023268938065]
+    radial: 
+      topology: "topology"
+      association: "element"
+      values: [141.421356201172, 141.421356201172, 141.421356201172]
     vel: 
       topology: "topology"
       association: "vertex"

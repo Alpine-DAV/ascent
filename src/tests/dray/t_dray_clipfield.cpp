@@ -206,7 +206,8 @@ clip_3d(conduit::Node &node, const std::string &name, bool do_inverse = true,
   // Filter.
   dray::ClipField clip;
   clip.set_clip_value(clip_value);
-  clip.set_field(fieldname); // mesh_topology/braid
+  clip.set_field(fieldname);
+  clip.exclude_clip_field(fieldname == "test");
 
   dray::Collection output = clip.execute(collection);
   handle_test(std::string("clip_") + name, output);
@@ -668,3 +669,4 @@ TEST (dray_clip, hexs_box)
 
   clip_box_plane(data, "hexs");
 }
+
