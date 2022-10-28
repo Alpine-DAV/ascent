@@ -80,13 +80,14 @@ Below are the modules and flags that are required by Ascent and its dependencies
 
 .. code-block:: sh
 
+   module load PrgEnv-cray    
+   module load craype-accel-amd-gfx90a    
    module load cmake/3.22.2
    module load craype-accel-amd-gfx90a
    module load rocm/5.2.0
    module load cray-mpich
 
    # we want conduit to use this
-
    module load cray-hdf5-parallel/1.12.1.1
 
    # GPU-aware MPI
@@ -105,6 +106,8 @@ When combined, the modules and flags needed to enable both HIP and rocProf on Cr
 
 .. code-block:: sh
 
+   module load PrgEnv-cray    
+   module load craype-accel-amd-gfx90a    
    module load cmake/3.22.2
    module load craype-accel-amd-gfx90a
    module load rocm/5.2.0
@@ -130,4 +133,49 @@ When combined, the modules and flags needed to enable both HIP and rocProf on Cr
 
 Running on the GPU
 ^^^^^^^^^^^^^^^^^^
+This section will demonstrate submitting a job on Crusher via slurm and a batch script. 
+The ```job.sh``` batch script will define submissions options, load necessary modules, and launch the parallel job. 
+Below is an example ```job.sh``` that launches the Kripke simulation, one of the example integrations provided by Ascent. 
 
+.. code-block:: sh
+   #!/bin/bash
+   #SBATCH -A xxx666 
+   #SBATCH -t 02:00:00
+   #SBATCH -N 1
+   #SBATCH -J test2
+   #SBATCH -o test2.output
+   #SBATCH -e test2.error
+
+   module load PrgEnv-cray    
+   module load craype-accel-amd-gfx90a    
+   module load cmake/3.22.2
+   module load craype-accel-amd-gfx90a
+   module load rocm/5.2.0
+   module load cray-mpich
+   module load cray-hdf5-parallel/1.12.1.1
+
+   srun -n 6 --ntasks-per-node 6 -G 6 --gpus-per-node 6 ./warpx inputs_3d max_step=400 diag1.intervals=10 diag1.format=ascent
+
+In the above example, the ```#SBATCH``` and options are: 
+
+ =========================== ==============================================================================================
+ Option                      Description
+ =========================== ==============================================================================================
+  -A                          Account to charge submitted job 
+  -t                          Requested walltime for submitted job
+  -N                          Number of nodes
+  -J                          Job Name
+  -o                          stdout file name
+  -e                          stderr file name
+ =========================== ==============================================================================================
+
+The parallel job is launced with ```srun``` with the follow options:
+
+ =========================== ==============================================================================================
+ Option                      Description
+ =========================== ==============================================================================================
+  -n                          Number of MPI ranks
+  --ntasks-per-node           Number of MPI ranks per node 
+  -G                          Number of GPUs
+  --gpus-per-node             Number of GPUs per node
+ =========================== ==============================================================================================
