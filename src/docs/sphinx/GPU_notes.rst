@@ -63,62 +63,62 @@ Enabling RocProf in Your Build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order for rocProf to profile your application, you must compile your build with the following modules and library flags: 
 .. code-block:: sh
-  module load PrgEnv-cray
-  module load craype-accel-amd-gfx90a
-  module load rocm/5.2.0
-   
-  export CXX="$(which CC) -x hip"
-  export CXXFLAGS="-ggdb -03 -std=c++17 -Wall"
-  export LD="$(which CC)"
-  export LDFLAGS="${CXXFLAGS} -L${ROCM_PATH}/lib"
-  export LIBS="-lamdhip64"
+   module load PrgEnv-cray
+   module load craype-accel-amd-gfx90a
+   module load rocm/5.2.0
+    
+   export CXX="$(which CC) -x hip"
+   export CXXFLAGS="-ggdb -03 -std=c++17 -Wall"
+   export LD="$(which CC)"
+   export LDFLAGS="${CXXFLAGS} -L${ROCM_PATH}/lib"
+   export LIBS="-lamdhip64"
 
 Many of the modules and flags required for rocProf are required in order to execute on the GPU. 
 Below are the modules and flags that are required by Ascent and its dependencies to enable HIP on Crusher: 
 .. code-block:: sh
-  module load cmake/3.22.2
-  module load craype-accel-amd-gfx90a
-  module load rocm/5.2.0
-  module load cray-mpich
+   module load cmake/3.22.2
+   module load craype-accel-amd-gfx90a
+   module load rocm/5.2.0
+   module load cray-mpich
 
-  # we want conduit to use this
-  module load cray-hdf5-parallel/1.12.1.1
+   # we want conduit to use this
+   module load cray-hdf5-parallel/1.12.1.1
 
-  # GPU-aware MPI
-  export MPICH_GPU_SUPPORT_ENABLED=1
+   # GPU-aware MPI
+   export MPICH_GPU_SUPPORT_ENABLED=1
 
-  export AMREX_AMD_ARCH=gfx90a
+   export AMREX_AMD_ARCH=gfx90a
 
-  export CC=$(which cc)
-  export CXX=$(which CC)
-  export FC=$(which ftn)
-  export CFLAGS="-I${ROCM_PATH}/include"
-  export CXXFLAGS="-I${ROCM_PATH}/include -Wno-pass-failed"
-  export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64"
+   export CC=$(which cc)
+   export CXX=$(which CC)
+   export FC=$(which ftn)
+   export CFLAGS="-I${ROCM_PATH}/include"
+   export CXXFLAGS="-I${ROCM_PATH}/include -Wno-pass-failed"
+   export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64"
  
 When combined, the modules and flags needed to enable both HIP and rocProf on Crusher become the following:
 .. code-block:: sh
-  module load cmake/3.22.2
-  module load craype-accel-amd-gfx90a
-  module load rocm/5.2.0
-  module load cray-mpich
+   module load cmake/3.22.2
+   module load craype-accel-amd-gfx90a
+   module load rocm/5.2.0
+   module load cray-mpich
 
-  # we want conduit to use this
-  module load cray-hdf5-parallel/1.12.1.1
+   # we want conduit to use this
+   module load cray-hdf5-parallel/1.12.1.1
 
-  # GPU-aware MPI
-  export MPICH_GPU_SUPPORT_ENABLED=1
+   # GPU-aware MPI
+   export MPICH_GPU_SUPPORT_ENABLED=1
 
-  export AMREX_AMD_ARCH=gfx90a
+   export AMREX_AMD_ARCH=gfx90a
 
-  export CC=$(which cc)
-  export CXX="$(which CC) -x hip"
-  export FC=$(which ftn)
-  export CFLAGS="-I${ROCM_PATH}/include"
-  export CXXFLAGS="-I${ROCM_PATH}/include -ggdb -O3 -std=c++17 -Wall -Wno-pass-failed"
-  export LD=${CC}
-  export LDFLAGS="${CXXFLAGS} -L${ROCM_PATH}/lib -lamdhip64"
-  export LIBS="-lamdhip64"
+   export CC=$(which cc)
+   export CXX="$(which CC) -x hip"
+   export FC=$(which ftn)
+   export CFLAGS="-I${ROCM_PATH}/include"
+   export CXXFLAGS="-I${ROCM_PATH}/include -ggdb -O3 -std=c++17 -Wall -Wno-pass-failed"
+   export LD=${CC}
+   export LDFLAGS="${CXXFLAGS} -L${ROCM_PATH}/lib -lamdhip64"
+   export LIBS="-lamdhip64"
  
 
 Running on the GPU
