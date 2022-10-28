@@ -138,6 +138,7 @@ The ```job.sh``` batch script will define submissions options, load necessary mo
 Below is an example ```job.sh``` that launches the Kripke simulation, one of the example integrations provided by Ascent. 
 
 .. code-block:: sh
+
    #!/bin/bash
    #SBATCH -A xxx666 
    #SBATCH -t 02:00:00
