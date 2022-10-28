@@ -63,12 +63,12 @@ Enabling RocProf in Your Build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order for rocProf to profile your application, you must compile your build with the following modules and library flags: 
 .. code-block:: sh
-   module load PrgEnv-cray
-   module load craype-accel-amd-gfx90a
-   module load rocm/5.2.0
+   module load PrgEnv-cray 
+   module load craype-accel-amd-gfx90a 
+   module load rocm/5.2.0 
     
-   export CXX="$(which CC) -x hip"
-   export CXXFLAGS="-ggdb -03 -std=c++17 -Wall"
+   export CXX="$(which CC) -x hip" 
+   export CXXFLAGS="-ggdb -03 -std=c++17 -Wall" 
    export LD="$(which CC)"
    export LDFLAGS="${CXXFLAGS} -L${ROCM_PATH}/lib"
    export LIBS="-lamdhip64"
@@ -82,6 +82,7 @@ Below are the modules and flags that are required by Ascent and its dependencies
    module load cray-mpich
 
    # we want conduit to use this
+
    module load cray-hdf5-parallel/1.12.1.1
 
    # GPU-aware MPI
