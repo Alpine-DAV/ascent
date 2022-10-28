@@ -12,8 +12,341 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Allocation Manager
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+int  AllocationManager::m_host_allocator_id  = -1;
+int  AllocationManager::m_device_allocator_id = -1;
+
+int  AllocationManager::m_conduit_host_allocator_id   = -1;
+int  AllocationManager::m_conduit_device_allocator_id = -1;
+
+bool AllocationManager::m_external_host_allocator = false;
+bool AllocationManager::m_external_device_allocator = false;
+
+//-----------------------------------------------------------------------------
+int
+AllocationManager::host_allocator_id()
+{
+  if(m_device_allocator_id == -1)
+  {
+#if !defined(ASCENT_UMPIRE_ENABLED)
+         ASCENT_ERROR("Ascent was built without Umpire Support. "
+                       "Cannot access host allocator id");
+#else
+    auto &rm = umpire::ResourceManager::getInstance ();
+    auto allocator = rm.getAllocator("HOST");
+    // we can use the umpire profiling to find a good default size
+    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPoolList>(
+                            "HOST_POOL",
+                            allocator,
+                            1ul * // 1GB default size
+                            1024ul * 1024ul * 1024ul + 1);
+    m_host_allocator_id = pooled_allocator.getId();
+#endif
+  }
+  return m_host_allocator_id;
+}
+
+//-----------------------------------------------------------------------------
+int
+AllocationManager::device_allocator_id()
+{
+  if(m_device_allocator_id == -1)
+  {
+#if !defined(ASCENT_UMPIRE_ENABLED)
+         ASCENT_ERROR("Ascent was built without Umpire Support. "
+                       "Cannot access device allocator id");
+#else
+    auto &rm = umpire::ResourceManager::getInstance ();
+    auto allocator = rm.getAllocator("DEVICE");
+    // we can use the umpire profiling to find a good default size
+
+    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPoolList>(
+                            "GPU_POOL",
+                            allocator,
+                            1ul * // 1GB default size
+                            1024ul * 1024ul * 1024ul + 1);
+    m_device_allocator_id = pooled_allocator.getId();
+#endif
+  }
+
+  return m_device_allocator_id;
+}
+
+//-----------------------------------------------------------------------------
+bool
+AllocationManager::set_host_allocator_id(int id)
+{
+    if(m_external_host_allocator && m_host_allocator_id != id)
+    {
+        // We can't change allocators mid stream.
+        // This would cause a mismatch between memory allocated with one 'allocator' then that
+        // memory being deallocated with another.
+        ASCENT_ERROR("Changing the host allocator id in the middle of a run is not supported.");
+    }
+
+#if !defined(ASCENT_UMPIRE_ENABLED)
+    ASCENT_ERROR("Ascent was built without Umpire Support. "
+                 "Cannot set host allocator id.");
+#else
+
+    auto &rm = umpire::ResourceManager::getInstance ();
+    bool valid_id = true;
+
+    umpire::Allocator allocator;
+
+    try
+    {
+        allocator = rm.getAllocator (id);
+    }
+    catch(...)
+    {
+        valid_id = false;
+    }
+
+    auto resource = allocator.getAllocationStrategy()->getTraits().resource;
+    // check that this is a host allocator
+    bool is_host   = resource == umpire::MemoryResourceTraits::resource_type::host;
+
+    if(!is_host)
+    {
+        return false;
+    }
+
+    m_host_allocator_id = id;
+    m_external_host_allocator = true;
+    return true;
+#endif
+}
+
+
+
+//-----------------------------------------------------------------------------
+bool
+AllocationManager::set_device_allocator_id(int id)
+{
+    if(m_external_device_allocator && m_device_allocator_id != id)
+    {
+        // We can't change allocators mid stream.
+        // This would cause a mismatch between memory allocated with one 'allocator' then that
+        // memory being deallocated with another.
+        ASCENT_ERROR("Changing the device allocator id in the middle of a run is not supported.");
+    }
+
+#if !defined(ASCENT_UMPIRE_ENABLED)
+    ASCENT_ERROR("Ascent was built without Umpire Support. "
+                 "Cannot set device allocator id.");
+#else
+    auto &rm = umpire::ResourceManager::getInstance ();
+    bool valid_id = true;
+
+    umpire::Allocator allocator;
+
+    try
+    {
+        allocator = rm.getAllocator (id);
+    }
+    catch(...)
+    {
+        valid_id = false;
+    }
+
+    if(!valid_id)
+    {
+        return false;
+    }
+
+    auto resource = allocator.getAllocationStrategy()->getTraits().resource;
+
+    bool can_use = false;
+    bool need_device = false;
+
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+    need_device = true;
+#endif
+
+    bool is_device = resource == umpire::MemoryResourceTraits::resource_type::device;
+    bool is_host   = resource == umpire::MemoryResourceTraits::resource_type::host;
+
+    if(is_device && need_device)
+    {
+        can_use = true;
+    }
+    else if(is_host && !need_device)
+    {
+        can_use = true;
+    }
+    
+    if(!can_use)
+    {
+        return false;
+    }
+
+    m_device_allocator_id = id;
+    m_external_device_allocator = true;
+
+    return true;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+int
+AllocationManager::conduit_host_allocator_id()
+{
+  if(m_conduit_host_allocator_id == -1)
+  {
+    m_conduit_host_allocator_id
+      = conduit::utils::register_allocator(HostMemory::allocate,
+                                           HostMemory::deallocate);
+
+    //std::cout<<"Created host allocator "<<m_conduit_host_allocator_id<<"\n";
+  }
+  //std::cout<<"conduit host allocator "<<m_conduit_host_allocator_id<<"\n";
+  return m_conduit_host_allocator_id;
+}
+
+//-----------------------------------------------------------------------------
+int
+AllocationManager::conduit_device_allocator_id()
+{
+  if(m_conduit_device_allocator_id == -1)
+  {
+    m_conduit_device_allocator_id
+      = conduit::utils::register_allocator(DeviceMemory::allocate,
+                                           DeviceMemory::deallocate);
+
+    //std::cout<<"Created device allocator "<<m_conduit_device_allocator_id<<"\n";
+  }
+  return m_conduit_device_allocator_id;
+}
+
+//-----------------------------------------------------------------------------
 void
-is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
+AllocationManager::set_conduit_mem_handlers()
+{
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+  // we only need to override the mem handlers in the
+  // presence of cuda or hip
+  conduit::utils::set_memcpy_handler(MagicMemory::copy);
+  conduit::utils::set_memset_handler(MagicMemory::memset);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Host Memory
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+size_t HostMemory::m_total_bytes_alloced = 0;
+size_t HostMemory::m_alloc_count = 0;
+size_t HostMemory::m_free_count = 0;
+
+//-----------------------------------------------------------------------------
+void *
+HostMemory::allocate(size_t bytes)
+{
+  m_total_bytes_alloced += bytes;
+  m_alloc_count++;
+#if defined(ASCENT_UMPIRE_ENABLED)
+  auto &rm = umpire::ResourceManager::getInstance ();
+  const int allocator_id = AllocationManager::host_allocator_id();
+  umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
+  return host_allocator.allocate(bytes);
+#else
+  return malloc(bytes);
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+void *
+HostMemory::allocate(size_t items, size_t item_size)
+{
+  return allocate(items * item_size);
+}
+
+//-----------------------------------------------------------------------------
+void
+HostMemory::deallocate(void *data_ptr)
+{
+  m_free_count++;
+#if defined(ASCENT_UMPIRE_ENABLED)
+  auto &rm = umpire::ResourceManager::getInstance ();
+  const int allocator_id = AllocationManager::host_allocator_id();
+  umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
+  host_allocator.deallocate(data_ptr);
+#else
+  return free(data_ptr);
+#endif
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Device Memory
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+size_t DeviceMemory::m_total_bytes_alloced = 0;
+size_t DeviceMemory::m_alloc_count = 0;
+size_t DeviceMemory::m_free_count = 0;
+
+//-----------------------------------------------------------------------------
+void *
+DeviceMemory::allocate(size_t bytes)
+{
+#if !defined(ASCENT_UMPIRE_ENABLED)
+     ASCENT_ERROR("Ascent was built without Umpire support. "
+                  "Cannot use DeviceMemory::alloc().");
+#endif
+
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+  m_total_bytes_alloced += bytes;
+  m_alloc_count++;
+  auto &rm = umpire::ResourceManager::getInstance ();
+  const int allocator_id = AllocationManager::umpire_device_allocator_id();
+  umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
+  return device_allocator.allocate(bytes);
+#else
+  (void) bytes; // unused
+  ASCENT_ERROR("Calling device allocator when no device is present.");
+  return nullptr;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void *
+DeviceMemory::allocate(size_t items, size_t item_size)
+{
+    return allocate(items * item_size);
+}
+
+//-----------------------------------------------------------------------------
+void
+DeviceMemory::deallocate(void *data_ptr)
+{
+#if !defined(ASCENT_UMPIRE_ENABLED)
+     ASCENT_ERROR("Ascent was built without Umpire support. "
+                  "Cannot use DeviceMemory::free().");
+#endif
+
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+  m_free_count++;
+  auto &rm = umpire::ResourceManager::getInstance ();
+  const int allocator_id = AllocationManager::umpire_device_allocator_id();
+  umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
+  device_allocator.deallocate (data_ptr);
+#else
+  (void) data_ptr;
+  ASCENT_ERROR("Calling device allocator when no device is present.");
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+void
+DeviceMemory::is_device_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 {
   is_gpu = false;
   is_unified = false;
@@ -49,7 +382,7 @@ is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 // Adapted from:
 // https://gitlab.kitware.com/third-party/nvpipe/blob/master/encode.c
 bool
-is_gpu_ptr(const void *ptr)
+DeviceMemory::is_device_ptr(const void *ptr)
 {
 #if defined(ASCENT_CUDA_ENABLED)
   cudaPointerAttributes atts;
@@ -77,285 +410,16 @@ is_gpu_ptr(const void *ptr)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// Allocation Manager
+// Magic Memory
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-
-int  AllocationManager::m_device_allocator_id = -1;
-int  AllocationManager::m_host_allocator_id  = -1;
-int  AllocationManager::m_conduit_host_allocator_id   = -1;
-int  AllocationManager::m_conduit_device_allocator_id = -1;
-bool AllocationManager::m_external_device_allocator = false;
-
-//-----------------------------------------------------------------------------
-int
-AllocationManager::device_allocator_id()
-{
-  if(m_device_allocator_id == -1)
-  {
-#if !defined(ASCENT_UMPIRE_ENABLED)
-         ASCENT_ERROR("Ascent was built without Umpire Support. "
-                       "Cannot access device allocator id");
-#else
-    auto &rm = umpire::ResourceManager::getInstance ();
-    auto allocator = rm.getAllocator("DEVICE");
-    // we can use the umpire profiling to find a good default size
-
-    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPoolList>(
-                            "GPU_POOL",
-                            allocator,
-                            1ul * // 1GB default size
-                            1024ul * 1024ul * 1024ul + 1);
-    m_device_allocator_id = pooled_allocator.getId();
-#endif
-  }
-
-  return m_device_allocator_id;
-}
-
-//-----------------------------------------------------------------------------
-int
-AllocationManager::host_allocator_id()
-{
-  if(m_device_allocator_id == -1)
-  {
-#if !defined(ASCENT_UMPIRE_ENABLED)
-         ASCENT_ERROR("Ascent was built without Umpire Support. "
-                       "Cannot access host allocator id");
-#else
-    auto &rm = umpire::ResourceManager::getInstance ();
-    auto allocator = rm.getAllocator("HOST");
-    // we can use the umpire profiling to find a good default size
-    auto pooled_allocator = rm.makeAllocator<umpire::strategy::DynamicPoolList>(
-                            "HOST_POOL",
-                            allocator,
-                            1ul * // 1GB default size
-                            1024ul * 1024ul * 1024ul + 1);
-    m_host_allocator_id = pooled_allocator.getId();
-#endif
-  }
-  return m_host_allocator_id;
-}
-
-//-----------------------------------------------------------------------------
-bool
-AllocationManager::set_device_allocator_id(int id)
-{
-  if(m_external_device_allocator && m_device_allocator_id != id)
-  {
-    // with the current implementation, i cant control switching allocators in the middle
-    // This would cause a mismatch between memory allocated with one 'allocator' then that
-    // memory being deallocated with another. Something to think about
-    ASCENT_ERROR("Changing the device allocator id in the middle of a run is not supported\n");
-  }
-
-#if !defined(ASCENT_UMPIRE_ENABLED)
-    ASCENT_ERROR("Ascent was built without Umpire Support. "
-                 "Cannot set device allocator id.");
-#else
-  auto &rm = umpire::ResourceManager::getInstance ();
-  bool valid_id = true;
-
-  umpire::Allocator allocator;
-
-  try
-  {
-    allocator = rm.getAllocator (id);
-  }
-  catch(...)
-  {
-    valid_id = false;
-  }
-
-  if(!valid_id)
-  {
-    return false;
-  }
-
-  auto resource = allocator.getAllocationStrategy()->getTraits().resource;
-
-  bool can_use = false;
-  bool need_device = false;
-
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
-  need_device = true;
-#endif
-
-  bool is_device = resource == umpire::MemoryResourceTraits::resource_type::device;
-  bool is_host   = resource == umpire::MemoryResourceTraits::resource_type::host;
-
-  if(is_device && need_device)
-  {
-    can_use = true;
-  }
-  else if(is_host && !need_device)
-  {
-    can_use = true;
-  }
-  if(!can_use)
-  {
-    return false;
-  }
-
-  if(id != m_device_allocator_id)
-  {
-    // Matt: i don't think anyone will s
-    // if this is not the same, we have to get rid
-    // of all currently allocated device resources.
-    // Data will be preserved by a synch to host
-    //release_device_res();
-    m_device_allocator_id = id;
-  }
-  m_external_device_allocator = true;
-  return true;
-#endif
-}
-
-//-----------------------------------------------------------------------------
-int
-AllocationManager::conduit_host_allocator_id()
-{
-  if(m_conduit_host_allocator_id == -1)
-  {
-    m_conduit_host_allocator_id
-      = conduit::utils::register_allocator(HostAllocator::alloc,
-                                           HostAllocator::free);
-
-    //std::cout<<"Created host allocator "<<m_conduit_host_allocator_id<<"\n";
-  }
-  //std::cout<<"conduit host allocator "<<m_conduit_host_allocator_id<<"\n";
-  return m_conduit_host_allocator_id;
-}
-
-//-----------------------------------------------------------------------------
-int
-AllocationManager::conduit_device_allocator_id()
-{
-  if(m_conduit_device_allocator_id == -1)
-  {
-    m_conduit_device_allocator_id
-      = conduit::utils::register_allocator(DeviceAllocator::alloc,
-                                           DeviceAllocator::free);
-
-    //std::cout<<"Created device allocator "<<m_conduit_device_allocator_id<<"\n";
-  }
-  return m_conduit_device_allocator_id;
-}
-
-//-----------------------------------------------------------------------------
-void
-AllocationManager::set_conduit_mem_handlers()
-{
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
-  // we only need to override the mem handlers in the
-  // presence of cuda or hip
-  conduit::utils::set_memcpy_handler(MagicMemory::copy);
-  conduit::utils::set_memset_handler(MagicMemory::memset);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Host Allocator
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-size_t HostAllocator::m_total_bytes_alloced = 0;
-size_t HostAllocator::m_alloc_count = 0;
-size_t HostAllocator::m_free_count = 0;
-
-//-----------------------------------------------------------------------------
-void *
-HostAllocator::alloc(size_t items, size_t item_size)
-{
-  //std::cout<<"Bananas allocate\n";
-  m_total_bytes_alloced += items * item_size;
-  m_alloc_count++;
-#if defined(ASCENT_UMPIRE_ENABLED)
-  auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::host_allocator_id();
-  umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
-  return host_allocator.allocate(items * item_size);
-#else
-  return malloc(items * item_size);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-void
-HostAllocator::free(void *data_ptr)
-{
-  //std::cout<<"free bananas\n";
-  m_free_count++;
-#if defined(ASCENT_UMPIRE_ENABLED)
-  auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::host_allocator_id();
-  umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
-  host_allocator.deallocate(data_ptr);
-#else
-  return free(data_ptr);
-#endif
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Device Allocator
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-size_t DeviceAllocator::m_total_bytes_alloced = 0;
-size_t DeviceAllocator::m_alloc_count = 0;
-size_t DeviceAllocator::m_free_count = 0;
-
-//-----------------------------------------------------------------------------
-void *
-DeviceAllocator::alloc(size_t items, size_t item_size)
-{
-#if !defined(ASCENT_UMPIRE_ENABLED)
-     ASCENT_ERROR("Ascent was built without Umpire support. "
-                  "Cannot use DeviceAllocator::alloc().");
-#endif
-
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
-  m_total_bytes_alloced += items * item_size;
-  m_alloc_count++;
-  auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::umpire_device_allocator_id();
-  umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
-  return device_allocator.allocate (items * item_size);
-#else
-  (void) items;
-  (void) item_size;
-  ASCENT_ERROR("Calling device allocator when no device is present.");
-  return nullptr;
-#endif
-}
-
-//-----------------------------------------------------------------------------
-void
-DeviceAllocator::free(void *data_ptr)
-{
-#if !defined(ASCENT_UMPIRE_ENABLED)
-     ASCENT_ERROR("Ascent was built without Umpire support. "
-                  "Cannot use DeviceAllocator::free().");
-#endif
-
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
-  m_free_count++;
-  auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::umpire_device_allocator_id();
-  umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
-  device_allocator.deallocate (data_ptr);
-#else
-  (void) data_ptr;
-  ASCENT_ERROR("Calling device allocator when no device is present.");
-#endif
-}
 
 //-----------------------------------------------------------------------------
 void
 MagicMemory::memset(void * ptr, int value, size_t num )
 {
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
-  bool is_device = is_gpu_ptr(ptr);
+  bool is_device = DeviceMemory::is_device_ptr(ptr);
   if(is_device)
   {
     #if defined(ASCENT_CUDA_ENABLED)
@@ -378,8 +442,8 @@ void
 MagicMemory::copy(void * destination, const void * source, size_t num)
 {
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
-  bool src_is_gpu = is_gpu_ptr(source);
-  bool dst_is_gpu = is_gpu_ptr(destination);
+  bool src_is_gpu = DeviceMemory::is_device_ptr(source);
+  bool dst_is_gpu = DeviceMemory::is_device_ptr(destination);
   if(src_is_gpu && dst_is_gpu)
   {
      #if defined(ASCENT_CUDA_ENABLED)

@@ -429,7 +429,7 @@ void calc_bindex(const Array<double> &values,
                  Exec)
 {
   const std::string mem_space = Exec::memory_space;
-  using fp = typename Exec::for_policy;
+
 
   const int size = values.size();
   const double *values_ptr = values.get_ptr_const(mem_space);
@@ -441,7 +441,9 @@ void calc_bindex(const Array<double> &values,
   bool clamp = axis["clamp"].to_int32() == 1;
   //std::cout<<"**** bindex size "<<size<<"\n";
 
-  RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+  using for_policy = typename Exec::for_policy;
+
+  ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
   {
     const int v_offset = i * num_components + component_id;
     const double value = values_ptr[v_offset];
@@ -497,7 +499,7 @@ template<typename T, typename Exec>
 Array<double> cast_to_float64(conduit::Node &field, const std::string component)
 {
   const std::string mem_space = Exec::memory_space;
-  using fp = typename Exec::for_policy;
+
 
   MemoryInterface<T> farray(field);
   MemoryAccessor<T> accessor = farray.accessor(mem_space,component);
@@ -505,8 +507,8 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
   const int size = accessor.m_size;
   res.resize(size);
   double *res_ptr = res.get_ptr(mem_space);
-
-  RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+  using for_policy = typename Exec::for_policy;
+  ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
   {
     res_ptr[i] = static_cast<double>(accessor[i]);
   });
@@ -575,8 +577,8 @@ struct BinningFunctor
   void operator()(const Exec &)
   {
 
-    using fp = typename Exec::for_policy;
-    using ap = typename Exec::atomic_policy;
+    using for_policy = typename Exec::for_policy;
+    using atomic_policy = typename Exec::atomic_policy;
 
     for(auto dom_id : m_domain_ids)
     {
@@ -591,9 +593,10 @@ struct BinningFunctor
       testa.status();
       const int size = m_values[dom_id].size();
       double *bins_ptr = m_bins.get_ptr(Exec::memory_space);
-        RAJA::forall<fp>
-          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
-        {
+      
+  
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
+      {
           // if(i == 0)
           // {
           //   for(int ii  = 0; ii< size; ++ii)printf("i %d val %f\n", ii,values_ptr[ii]);
@@ -602,33 +605,31 @@ struct BinningFunctor
           const double value = values_ptr[i];
           const int offset = index * 2;
           //printf("binner cell %d bindex %d value %f\n", i,index,value);
-          RAJA::atomicAdd<ap>(bins_ptr + offset, value);
-          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
-        });
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
+      });
+
       if(m_op == "min")
       {
-        RAJA::forall<fp>
-          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
           const int index = bindex_ptr[i];
           const double value = values_ptr[i];
-          RAJA::atomicMin<ap>(bins_ptr + index, value);
+          ascent::atomic_min<atomic_policy>(bins_ptr + index, value);
         });
       }
       else if(m_op == "max")
       {
-        RAJA::forall<fp>
-          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
           const int index = bindex_ptr[i];
           const double value = values_ptr[i];
-          RAJA::atomicMax<ap>(bins_ptr + index, value);
+          ascent::atomic_max<atomic_policy>(bins_ptr + index, value);
         });
       }
       else if(m_op == "avg" || m_op == "sum" || m_op == "pdf")
       {
-        RAJA::forall<fp>
-          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
           if(i == 0)
           {
@@ -638,33 +639,31 @@ struct BinningFunctor
           const double value = values_ptr[i];
           const int offset = index * 2;
           // printf("binner cell %d bindex %d value %f\n", i,index,value);
-          RAJA::atomicAdd<ap>(bins_ptr + offset, value);
-          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
         });
       }
       else if(m_op == "rms")
       {
-        RAJA::forall<fp>
-          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
           const int index = bindex_ptr[i];
           const double value = values_ptr[i];
           const int offset = index * 2;
-          RAJA::atomicAdd<ap>(bins_ptr + offset, value * value);
-          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, 1.);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value * value);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
         });
       }
       else if(m_op == "var" || m_op == "std")
       {
-        RAJA::forall<fp>
-          (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
           const int index = bindex_ptr[i];
           const double value = values_ptr[i];
           const int offset = index * 3;
-          RAJA::atomicAdd<ap>(bins_ptr + offset, value * value);
-          RAJA::atomicAdd<ap>(bins_ptr + offset + 1, value);
-          RAJA::atomicAdd<ap>(bins_ptr + offset + 2, 1.);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value * value);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, value);
+          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 2, 1.);
         });
       }
 
@@ -901,20 +900,21 @@ struct CalcResultsFunctor
   {
     double *bins_ptr = m_bins.get_ptr(Exec::memory_space);
     const int size = m_num_bins;
-    using fp = typename Exec::for_policy;
+
     int op_code = m_op_code;
     const double min_default = std::numeric_limits<double>::max();
     const double max_default = std::numeric_limits<double>::lowest();
     const double empty_val = m_empty_val;
     double pdf_total = 0;
 
+    using for_policy = typename Exec::for_policy;
+    using reduce_policy = typename Exec::reduce_policy;
+
     if(m_op == "pdf")
     {
       // we need the total sum to generate a pdf
-      using rp = typename Exec::reduce_policy;
-      RAJA::ReduceSum<rp, double> sum(0.0);
-      RAJA::forall<fp>
-        (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+      ascent::ReduceSum<reduce_policy, double> sum(0.0);
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
         sum += bins_ptr[i * 2];
       });
@@ -927,8 +927,7 @@ struct CalcResultsFunctor
     array_memset(results, m_empty_val);
     double *res_ptr = results.get_ptr(Exec::memory_space);
 
-    RAJA::forall<fp>
-      (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       double result;
       if(op_code == 0)

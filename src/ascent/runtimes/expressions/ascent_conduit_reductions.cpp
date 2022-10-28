@@ -408,12 +408,11 @@ struct MaxFunctor
     T identity = std::numeric_limits<T>::lowest();
     const int size = accessor.m_size;
 
-    using fp = typename Exec::for_policy;
-    using rp = typename Exec::reduce_policy;
+    using for_policy    = typename Exec::for_policy;
+    using reduce_policy = typename Exec::reduce_policy;
 
-    RAJA::ReduceMaxLoc<rp, T> reducer(identity,-1);
-
-    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+    ascent::ReduceMaxLoc<reduce_policy,T> reducer(identity,-1);
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       const T val = accessor[i];
       reducer.maxloc(val,i);
@@ -437,12 +436,12 @@ struct MinFunctor
     T identity = std::numeric_limits<T>::max();
     const int size = accessor.m_size;
 
-    using fp = typename Exec::for_policy;
-    using rp = typename Exec::reduce_policy;
+    using for_policy = typename Exec::for_policy;
+    using reduce_policy = typename Exec::reduce_policy;
 
-    RAJA::ReduceMinLoc<rp, T> reducer(identity, -1);
-
-    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+    ascent::ReduceMinLoc<reduce_policy,T> reducer(identity,-1);
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
 
       const T val = accessor[i];
       reducer.minloc(val,i);
@@ -463,11 +462,11 @@ struct SumFunctor
                            const Exec &) const
   {
     const int size = accessor.m_size;
-    using fp = typename Exec::for_policy;
-    using rp = typename Exec::reduce_policy;
+    using for_policy = typename Exec::for_policy;
+    using reduce_policy = typename Exec::reduce_policy;
 
-    RAJA::ReduceSum<rp, T> sum(static_cast<T>(0));
-    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+    ascent::ReduceSum<reduce_policy,T> sum(static_cast<T>(0));
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       const T val = accessor[i];
       sum += val;
@@ -488,14 +487,15 @@ struct NanFunctor
                            const Exec &) const
   {
     const int size = accessor.m_size;
-    using fp = typename Exec::for_policy;
-    using rp = typename Exec::reduce_policy;
+    using for_policy = typename Exec::for_policy;
+    using reduce_policy = typename Exec::reduce_policy;
 
-    RAJA::ReduceSum<rp, RAJA::Index_type> count(0);
-    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+    ascent::ReduceSum<reduce_policy,index_t> count(0);
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
 
       const T value = accessor[i];
-      RAJA::Index_type is_nan = 0;
+      index_t is_nan = 0;
       if(value != value)
       {
         is_nan = 1;
@@ -529,16 +529,16 @@ struct InfFunctor
   template<typename T, typename Exec>
   conduit::Node impl(const MemoryAccessor<T> accessor, Exec &) const
   {
-    using fp = typename Exec::for_policy;
-    using rp = typename Exec::reduce_policy;
+    using for_policy = typename Exec::for_policy;
+    using reduce_policy = typename Exec::reduce_policy;
     const int size = accessor.m_size;
 
-    RAJA::ReduceSum<rp, RAJA::Index_type> count(0);
-
-    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i) {
+    ascent::ReduceSum<reduce_policy,index_t> count(0);
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
 
       const T value = accessor[i];
-      RAJA::Index_type is = 0;
+      index_t is = 0;
       if(is_inf(value))
       {
         is = 1;
@@ -598,18 +598,18 @@ struct HistogramFunctor
 
     double *bins_ptr = bins.get_ptr(Exec::memory_space);
 
-    using fp = typename Exec::for_policy;
-    using ap = typename Exec::atomic_policy;
+    using for_policy    = typename Exec::for_policy;
+    using atomic_policy = typename Exec::atomic_policy;
 
-    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type i)
+
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       double val = static_cast<double>(accessor[i]);
       int bin_index = static_cast<int>((val - min_val) * inv_delta);
       // clamp for now
       // another option is not to count data outside the range
       bin_index = max(0, min(bin_index, num_bins - 1));
-      int old = RAJA::atomicAdd<ap> (&(bins_ptr[bin_index]), 1.);
-
+      int old = ascent::atomic_add<atomic_policy>(&(bins_ptr[bin_index]), 1.);
     });
     ASCENT_DEVICE_ERROR_CHECK();
 

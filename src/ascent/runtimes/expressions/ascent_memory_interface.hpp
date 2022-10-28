@@ -9,6 +9,7 @@
 namespace ascent
 {
 
+// TODO conduit::index_t ?
 using index_t = conduit::int64;
 
 template<typename T>
@@ -185,28 +186,19 @@ public:
     // the element. 2 hours to learn this
     index_t el_idx = m_field[path].dtype().element_index(idx) / sizeof(T);
     T val;
-#if defined(ASCENT_CUDA_ENABLED)
-    if(is_gpu_ptr(ptr))
+
+    if(DeviceMemory::is_device_ptr(ptr))
     {
-      cudaMemcpy (&val, &ptr[el_idx], sizeof (T), cudaMemcpyDeviceToHost);
+      #if defined(ASCENT_CUDA_ENABLED)
+          cudaMemcpy (&val, &ptr[el_idx], sizeof (T), cudaMemcpyDeviceToHost);
+      #elif defined(ASCENT_HIP_ENABLED)
+         #error TODO NEED HIP SUPPORT HERE
+      #endif
     }
     else
     {
       val = ptr[el_idx];
     }
-#elif defined(ASCENT_HIP_ENABLED)
-    if(is_gpu_ptr(ptr))
-    {
-       #error TODO NEED HIP SUPPORT HERE
-      // cudaMemcpy (&val, &ptr[el_idx], sizeof (T), cudaMemcpyDeviceToHost);
-    }
-    else
-    {
-      val = ptr[el_idx];
-    }
-#else
-    val = ptr[el_idx];
-#endif
     return val;
   }
 
@@ -269,20 +261,19 @@ public:
 
   const T *device_ptr_const(int component)
   {
-
     std::string leaf_path;
     const T * ptr = raw_ptr(component,leaf_path);
 
-
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
-    if(is_gpu_ptr(ptr))
+    if(DeviceMemory::is_device_ptr(ptr))
     {
       //std::cout<<"already a gpu pointer\n";
       return ptr;
     }
     else
     {
-      //std::string d_path = "device_"+leaf_path;
+      std::string d_path = "device_"+leaf_path;
+
       //std::cout<<"leaf_path '"<<leaf_path<<"' device _path '"<<d_path<<"'\n";
       //std::cout<<"size "<<m_sizes[component]<<"\n";
       if(!m_field.has_path(d_path))
@@ -311,8 +302,9 @@ public:
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
     bool is_unified;
     bool is_gpu;
-    is_gpu_ptr(ptr,is_gpu, is_unified);
+    DeviceMemory::is_device_ptr(ptr,is_gpu, is_unified);
     bool is_host_accessible =  !is_gpu || (is_gpu && is_unified);
+    
     if(is_unified)
     {
       //std::cout<<"Unified\n";
@@ -323,12 +315,6 @@ public:
       //std::cout<<"gpu\n";
     }
 
-    if(is_gpu_ptr(ptr))
-    {
-      //std::cout<<"gpu banans\n";
-    }
-
-    //std::cout<<"bananas\n";
     if(is_host_accessible)
     {
       //std::cout<<"already a host pointer\n";

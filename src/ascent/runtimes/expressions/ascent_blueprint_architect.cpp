@@ -503,7 +503,6 @@ struct VertexFunctor
   template<typename MeshType, typename Exec>
   void operator()(MeshType &mesh, const Exec &)
   {
-    using fp = typename Exec::for_policy;
     const int size = mesh.m_num_points;
     //const int dims = mesh.m_dims;
     // we cant capture class members
@@ -513,9 +512,8 @@ struct VertexFunctor
     m_vertices.resize(size * 3);
     double *verts_ptr = m_vertices.get_ptr(Exec::memory_space);
     //std::cout<<"**** VertexFunctor Mem space "<<Exec::memory_space<<"\n";
-
-    RAJA::forall<fp>
-      (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type point_idx)
+    using for_policy = typename Exec::for_policy;
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t point_idx)
     {
       double vert[3];
       mesh.vertex(point_idx, vert);
@@ -536,7 +534,7 @@ struct CentroidFunctor
   template<typename MeshType, typename Exec>
   void operator()(MeshType &mesh, const Exec &)
   {
-    using fp = typename Exec::for_policy;
+    
     const int size = mesh.m_num_cells;
     const int dims = mesh.m_dims;
 
@@ -544,8 +542,8 @@ struct CentroidFunctor
     m_centroids.resize(size * mesh.m_dims);
     double *centroids_ptr = m_centroids.get_ptr(Exec::memory_space);
     //std::cout<<"Mem space "<<Exec::memory_space<<"\n";
-
-    RAJA::forall<fp> (RAJA::RangeSegment (0, size), [=] ASCENT_LAMBDA (RAJA::Index_type cell_idx)
+    using for_policy = typename Exec::for_policy;
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t cell_idx)
     {
       centroids_ptr[cell_idx] = cell_idx;
       int indices[8] = {-1, -1, -1, -1, -1, -1, -1, -1};

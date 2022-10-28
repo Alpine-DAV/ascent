@@ -10,12 +10,112 @@
 
 namespace ascent
 {
+    
+    
+//---------------------------------------------------------------------------//
+/*
+//---------------------------------------------------------------------------//
+Ascent Device Execution Policies and Interfaces.
+
+
+-----------------------
+Execution Policies 
+-----------------------
+
+Provides structs with typed policies used to select host or device execution
+in various dispatch methods. 
+
+struct ExecPolicy
+{
+    using for_policy     = ... // determines for loop execution
+    using reduce_policy  = ... // determines reduction execution
+    using atomic_policy  = ... // determines atomic operations execution
+}
+
+When RAJA is enabled, RAJA policy types are selected.
+
+When RAJA is disabled, stub policies are provided and serial execution is
+only option.
+
+
+-----------------------
+Execution Interfaces 
+-----------------------
+
+Provides forall, reduction, and atomic interfaces:
+
+* forall
+* ReduceSum
+* ReduceMin
+* ReduceMinLoc
+* ReduceMax
+* ReduceMaxLoc
+* atomic_add
+* atomic_min
+* atomic_max
+
+When RAJA is enabled, RAJA execution is used. 
+
+When RAJA is disabled, serial implementations are substituted.
+
+
+forall usage example:
+
+  ascent::forall<Exec>(0, size, [=] ASCENT_LAMBDA(index_t i)
+  {
+    data[i] = ...;
+  });
+
+//---------------------------------------------------------------------------//
+*/
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// Index type
+//---------------------------------------------------------------------------//
+using index_t = conduit::index_t;
+
+
+//---------------------------------------------------------------------------//
+// Lambda decorators
+//---------------------------------------------------------------------------//
+
+#if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
+//---------------------------------------------------------------------------//
+// CUDA decorators
+//---------------------------------------------------------------------------//
+#define ASCENT_EXEC inline __host__ __device__
+// Note: there is a performance hit for doing both host and device
+// the cuda compiler calls this on then host as a std::function call for each i
+// in the for loop, and that basically works out to a virtual function
+// call. Thus for small loops, the know overhead is about 3x
+#define ASCENT_LAMBDA __device__ __host__
+
+#elif defined(ASCENT_HIP_ENABLED) // && ?
+//---------------------------------------------------------------------------//
+// HIP decorators
+//---------------------------------------------------------------------------//
+#define ASCENT_EXEC inline __host__ __device__
+#define ASCENT_LAMBDA __device__ __host__
+
+#else
+//---------------------------------------------------------------------------//
+// Non-device decorators
+//---------------------------------------------------------------------------//
+#define ASCENT_EXEC   inline
+#define ASCENT_LAMBDA
+
+#endif
+
+#define ASCENT_CPU_LAMBDA
+
 
 //---------------------------------------------------------------------------//
 #if defined(ASCENT_RAJA_ENABLED)
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
-// policies for when raja is on
+// RAJA_ON policies for when raja is on
+//---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
 #if defined(ASCENT_CUDA_ENABLED)
@@ -121,12 +221,73 @@ using atomic_cpu_policy = RAJA::seq_atomic;
 #endif
 
 //---------------------------------------------------------------------------//
+// RAJA Exec Interfaces
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// forall
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename Kernel>
+inline void forall(const index_t& begin,
+                   const index_t& end,
+                   Kernel&& kernel) noexcept
+{
+    RAJA::forall<ExecPolicy>(RAJA::RangeSegment(begin, end),
+                             std::forward<Kernel>(kernel));
+}
+
+//---------------------------------------------------------------------------//
+// Reductions
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename T>
+using ReduceSum    = RAJA::ReduceSum<ExecPolicy,T>;
+
+template <typename ExecPolicy, typename T>
+using ReduceMin    = RAJA::ReduceMin<ExecPolicy,T>;
+template <typename ExecPolicy, typename T>
+using ReduceMinLoc    = RAJA::ReduceMinLoc<ExecPolicy,T>;
+
+template <typename ExecPolicy, typename T>
+using ReduceMax    = RAJA::ReduceMax<ExecPolicy,T>;
+template <typename ExecPolicy, typename T>
+using ReduceMaxLoc = RAJA::ReduceMaxLoc<ExecPolicy,T>;
+
+//---------------------------------------------------------------------------//
+// Atomics
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename T>
+ASCENT_EXEC T atomic_add(T volatile *acc, T value)
+{
+    return RAJA::atomicAdd(ExecPolicy{}, acc, value);
+}
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename T>
+ASCENT_EXEC T atomic_min(T volatile *acc, T value)
+{
+    return RAJA::atomicMin(ExecPolicy{}, acc, value);
+}
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename T>
+ASCENT_EXEC T atomic_max(T volatile *acc, T value)
+{
+    return RAJA::atomicMax(ExecPolicy{}, acc, value);
+}
+
+
+//---------------------------------------------------------------------------//
 #else
 //---------------------------------------------------------------------------//
-// policies for when raja is OFF
+//---------------------------------------------------------------------------//
+// RAJA_OFF policies for when raja is OFF
+//---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 struct EmptyPolicy
 {};
+
 //---------------------------------------------------------------------------//
 struct SerialExec
 {
@@ -145,38 +306,221 @@ using atomic_policy = EmptyPolicy;
 using for_cpu_policy    = EmptyPolicy;
 using reduce_cpu_policy = EmptyPolicy;
 using atomic_cpu_policy = EmptyPolicy;
+
+//---------------------------------------------------------------------------//
+// Exec interfaces for when RAJA is disabled
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename Kernel>
+inline void forall(const index_t& begin,
+                   const index_t& end,
+                   Kernel&& kernel) noexcept
+{
+    for(index_t i = begin; i < end; ++i)
+    {
+        kernel(i);
+    };
+}
+
+
+//---------------------------------------------------------------------------//
+// Reductions
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, T>
+class ReduceSum
+{
+public:
+    ReduceSum()
+    : m_value(0)
+    {
+        // empty
+    }
+z
+    void sum(const T value)
+    {
+        m_value += value;
+    }
+
+    T get() const
+    {
+        return m_value;
+    }
+
+private:
+    T m_value;
+};
+
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, T>
+class ReduceMin
+{
+public:
+    ReduceMin()
+    : m_value(std::numeric_limits<T>::max()),
+    {
+        // empty
+    }
+
+    void min(const T value)
+    {
+        if (value < m_value) m_value=value;
+    }
+
+    T get() const
+    {
+        return m_value;
+    }
+
+private:
+    T m_value;
+};
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, T>
+class ReduceMinLoc
+{
+public:
+
+    //---------------------------------------------------------------------
+    ReduceMaxLoc():
+    : m_value(std::numeric_limits<T>::lowest()),
+      m_index(-1)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    inline void maxloc(const T v, index_t i)
+    {
+        if(value < m_value)
+        {
+            m_value=v;
+            m_index=i;
+        }
+    };
+
+    //---------------------------------------------------------------------
+    inline T get() const
+    {
+        return m_value;
+    }
+
+    //---------------------------------------------------------------------
+    inline index_t getloc() const
+    {
+        return m_index;
+    }
+
+private:
+    T       m_value;
+    index_t m_index;
+};
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, T>
+class ReduceMax
+{
+public:
+    ReduceMax()
+    : m_value(std::numeric_limits<T>::lowest()),
+    {
+        // empty
+    }
+
+    void max(const T value)
+    {
+        if (value > m_value)
+        {
+            m_value=value;
+        }
+    }
+
+    T get() const
+    {
+        return m_value;
+    }
+
+private:
+    T m_value;
+};
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, T>
+class ReduceMaxLoc
+{
+public:
+
+    //---------------------------------------------------------------------
+    ReduceMaxLoc():
+    : m_value(std::numeric_limits<T>::lowest()),
+      m_index(-1)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    inline void maxloc(const T v, index_t i)
+    {
+        if(value > m_value)
+        {
+            m_value=v;
+            m_index=i;
+        }
+    };
+
+    //---------------------------------------------------------------------
+    inline T get() const
+    {
+        return m_value;
+    }
+
+    //---------------------------------------------------------------------
+    inline index_t getloc() const
+    {
+        return m_index;
+    }
+
+private:
+    T       m_value;
+    index_t m_index;
+};
+
+//---------------------------------------------------------------------------//
+// Atomics
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, T>
+inline T atomic_add(T* acc, T value)
+{
+    T res = (*acc);
+    (*acc)+=value;
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename T>
+inline T atomic_min(T volatile *acc, T value)
+{
+    T res = (*acc);
+    (*acc) = std::min(*acc, value)
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy, typename T>
+inline T atomic_max(T volatile *acc, T value)
+{
+    T res = (*acc);
+    (*acc) = std::max(*acc, value);
+    return res;
+}
+
+
 #endif
 
-//---------------------------------------------------------------------------//
-// Lambda decorators
-//---------------------------------------------------------------------------//
-
-#if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
-//---------------------------------------------------------------------------//
-// CUDA decorators
-//---------------------------------------------------------------------------//
-#define ASCENT_EXEC inline __host__ __device__
-// Note: there is a performance hit for doing both host and device
-// the cuda compiler calls this on then host as a std::function call for each i
-// in the for loop, and that basically works out to a virtual function
-// call. Thus for small loops, the know overhead is about 3x
-#define ASCENT_LAMBDA __device__ __host__
-
-#elif defined(ASCENT_HIP_ENABLED)
-//---------------------------------------------------------------------------//
-// HIP decorators
-//---------------------------------------------------------------------------//
-    #error hip support here
-#else
-//---------------------------------------------------------------------------//
-// Non-device decorators
-//---------------------------------------------------------------------------//
-#define ASCENT_EXEC   inline
-#define ASCENT_LAMBDA
-
-#endif
-
-#define ASCENT_CPU_LAMBDA
 
 //---------------------------------------------------------------------------//
 // Device Error Checks
@@ -203,19 +547,18 @@ inline void cuda_error_check(const char *file, const int line )
 //---------------------------------------------------------------------------//
 inline void hip_error_check(const char *file, const int line )
 {
-  #error HIP support here
-  cudaError err = cudaGetLastError();
-  if ( cudaSuccess != err )
+  hipError_t err = hipGetLastError();
+  if ( hipSuccess != err )
   {
     std::cerr<<"HIP error reported at: "<<file<<":"<<line;
-    std::cerr<<" : "<<cudaGetErrorString(err)<<"\n";
+    std::cerr<<" : "<<hipGetErrorName(err)<<"\n";
     //exit( -1 );
   }
 }
 #define ASCENT_DEVICE_ERROR_CHECK() hip_error_check(__FILE__,__LINE__);
 #else
 //---------------------------------------------------------------------------//
-// non-device error check (noop)
+// non-device error check (no op)
 //---------------------------------------------------------------------------//
 #define ASCENT_DEVICE_ERROR_CHECK()
 #endif

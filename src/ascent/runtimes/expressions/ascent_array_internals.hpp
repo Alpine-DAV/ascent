@@ -11,6 +11,7 @@
 #include "ascent_memory_manager.hpp"
 #include "ascent_array_internals_base.hpp"
 #include "ascent_array_registry.hpp"
+#include "ascent_memory_manager.hpp"
 
 #include "ascent_logging.hpp"
 
@@ -24,40 +25,6 @@ namespace ascent
 
 namespace runtime
 {
-
-namespace detail
-{
-
-inline void is_gpu_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
-{
-  is_gpu = false;
-  is_unified = false;
-#if ASCENT_CUDA_ENABLED
-  cudaPointerAttributes atts;
-  const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
-
-  is_gpu = false;
-  is_unified = false;
-  // clear last error so other error checking does
-  // not pick it up
-  cudaError_t error = cudaGetLastError();
-#if CUDART_VERSION >= 10000
-  is_gpu = perr == cudaSuccess &&
-                   (atts.type == cudaMemoryTypeDevice ||
-                   atts.type == cudaMemoryTypeManaged);
-  is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
-#else
-  is_gpu = perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
-  is_unified = false;
-#endif
-  // This will gen an error when the pointer is not a GPU pointer.
-  // Clear the error so others don't pick it up.
-  error = cudaGetLastError();
-  (void) error;
-#endif
-}
-
-}
 
 template <typename T> class ArrayInternals : public ArrayInternalsBase
 {
@@ -95,7 +62,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   void pointer_assignment(T *data)
   {
     bool is_gpu, is_unified;
-    detail::is_gpu_ptr(data, is_gpu, is_unified);
+    DeviceMemory::is_device_ptr(data, is_gpu, is_unified);
 
     if(is_gpu)
     {
@@ -435,11 +402,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     }
     else if (m_host != nullptr)
     {
-      auto &rm = umpire::ResourceManager::getInstance ();
-
-      const int allocator_id = ArrayRegistry::host_allocator_id();
-      umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
-      host_allocator.deallocate (m_host);
+      ascent::HostMemory::deallocate(m_host);
       ArrayRegistry::remove_host_bytes(m_size * sizeof(T));
 
       m_host = nullptr;
@@ -457,10 +420,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
     if (m_host == nullptr)
     {
-      auto &rm = umpire::ResourceManager::getInstance ();
-      const int allocator_id = ArrayRegistry::host_allocator_id();
-      umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
-      m_host = static_cast<T *> (host_allocator.allocate (m_size * sizeof (T)));
+      m_host = static_cast<T *>(ascent::HostMemory::allocate(m_size * sizeof (T)));
       ArrayRegistry::add_host_bytes(m_size * sizeof(T));
     }
   }
@@ -476,11 +436,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
       }
       if (m_device != nullptr && m_own_device)
       {
-        auto &rm = umpire::ResourceManager::getInstance ();
-        const int allocator_id = ArrayRegistry::device_allocator_id();
-        umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
-        //umpire::Allocator device_allocator = rm.getAllocator ("DEVICE");
-        device_allocator.deallocate (m_device);
+        ascent::DeviceMemory::deallocate(m_device);
         ArrayRegistry::remove_device_bytes(m_size * sizeof(T));
 
         m_device = nullptr;
@@ -500,10 +456,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     {
       if (m_device == nullptr)
       {
-        auto &rm = umpire::ResourceManager::getInstance ();
-        const int allocator_id = ArrayRegistry::device_allocator_id();
-        umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
-        m_device = static_cast<T *> (device_allocator.allocate (m_size * sizeof (T)));
+        m_device = static_cast<T *>(ascent::DeviceMemory::allocate(m_size * sizeof (T)));
         ArrayRegistry::add_device_bytes(m_size * sizeof(T));
       }
     }

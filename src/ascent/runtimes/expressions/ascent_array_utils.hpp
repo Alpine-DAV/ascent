@@ -21,8 +21,8 @@ namespace runtime
 namespace expressions
 {
 
-void array_memset (Array<double> &array, const double val);
-void array_memset (Array<int> &array, const int val);
+void array_memset(Array<double> &array, const double val);
+void array_memset(Array<int> &array, const int val);
 
 //-----------------------------------------------------------------------------
 };
