@@ -181,5 +181,6 @@ The parallel job is launced with ``srun`` with the follow options:
   --gpus-per-node             Number of GPUs per node
  =========================== ==============================================================================================
 
- For more information on running jobs on Crusher, see their user guide: `https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#running-jobs`. 
+ For more information on running jobs on Crusher, see their user guide: `https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#running-jobs`.  
+
  And for more information about running Kripke, see :ref:`kripke_integration`. 
