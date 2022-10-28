@@ -9,9 +9,9 @@
 // compiler.  If you must modify it by hand, at least be nice to the 
 // parser and don't add anything else to this file or rearrange it.
 
-int numClipCasesPh = 256;
+int numClipCasesHex = 256;
 
-int numClipShapesPh[256] = {
+int numClipShapesHex[256] = {
   7,  15,  15,  16,  15,  27,  16,  20, // cases 0 - 7
   15,  16,  27,  20,  16,  20,  20,  11, // cases 8 - 15
   15,  16,  27,  20,  23,  26,  26,  21, // cases 16 - 23
@@ -46,7 +46,7 @@ int numClipShapesPh[256] = {
   18,  16,  25,  15,  16,  15,  15,  7  // cases 248 - 255
 };
 
-int startClipShapesPh[256] = {
+int startClipShapesHex[256] = {
   0, 54, 152, 250, 354, 452, 617, 721, // cases 0 - 7
   847, 945, 1049, 1214, 1340, 1444, 1570, 1696, // cases 8 - 15
   1774, 1872, 1976, 2141, 2267, 2409, 2573, 2737, // cases 16 - 23
@@ -81,7 +81,7 @@ int startClipShapesPh[256] = {
   37377, 37493, 37597, 37756, 37854, 37958, 38056, 38154  // cases 248 - 255
 };
 
-unsigned char clipShapesPh[] = {
+unsigned char clipShapesHex[] = {
  // Case #0: Unique case #1
   ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
   ST_PYR, COLOR0, P0, P3, P7, P4, N0, 

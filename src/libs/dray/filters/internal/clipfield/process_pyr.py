@@ -176,10 +176,10 @@ def main():
 
         i = i + 1
 #    return
-    print("int numClipCasesPh = 256;")
-    print_array("numClipShapesPh", counts)
-    print_array("clipShapesPh", offsets)
-    print("unsigned char clipShapesPh[] = {")
+    print("int numClipCasesHex = 256;")
+    print_array("numClipShapesHex", counts)
+    print_array("clipShapesHex", offsets)
+    print("unsigned char clipShapesHex[] = {")
     for i in range(256):
         #print(f" // Case #{i}: Unique case #{i}")
         print(labels[i])
