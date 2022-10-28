@@ -157,7 +157,7 @@ Below is an example ```job.sh``` that launches the Kripke simulation, one of the
 
    srun -n 6 --ntasks-per-node 6 -G 6 --gpus-per-node 6 ./warpx inputs_3d max_step=400 diag1.intervals=10 diag1.format=ascent
 
-In the above example, the ```#SBATCH``` and options are: 
+In the above example, the ``#SBATCH`` and options are: 
 
  =========================== ==============================================================================================
  Option                      Description
@@ -170,7 +170,7 @@ In the above example, the ```#SBATCH``` and options are:
   -e                          stderr file name
  =========================== ==============================================================================================
 
-The parallel job is launced with ```srun``` with the follow options:
+The parallel job is launced with ``srun`` with the follow options:
 
  =========================== ==============================================================================================
  Option                      Description
