@@ -305,7 +305,7 @@ DeviceMemory::allocate(size_t bytes)
   m_total_bytes_alloced += bytes;
   m_alloc_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::umpire_device_allocator_id();
+  const int allocator_id = AllocationManager::device_allocator_id();
   umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
   return device_allocator.allocate(bytes);
 #else
@@ -334,7 +334,7 @@ DeviceMemory::deallocate(void *data_ptr)
 #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
   m_free_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
-  const int allocator_id = AllocationManager::umpire_device_allocator_id();
+  const int allocator_id = AllocationManager::device_allocator_id();
   umpire::Allocator device_allocator = rm.getAllocator (allocator_id);
   device_allocator.deallocate (data_ptr);
 #else
