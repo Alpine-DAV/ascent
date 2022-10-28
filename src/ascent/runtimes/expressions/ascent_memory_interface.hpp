@@ -192,7 +192,7 @@ public:
       #if defined(ASCENT_CUDA_ENABLED)
           cudaMemcpy (&val, &ptr[el_idx], sizeof (T), cudaMemcpyDeviceToHost);
       #elif defined(ASCENT_HIP_ENABLED)
-         #error TODO NEED HIP SUPPORT HERE
+          hipMemcpy (&val, &ptr[el_idx], sizeof (T), hipMemcpyDeviceToHost);
       #endif
     }
     else

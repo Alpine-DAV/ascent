@@ -474,8 +474,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 #if defined(ASCENT_CUDA_ENABLED)
     cudaMemcpy(m_host, m_device, m_size * sizeof(T), cudaMemcpyDeviceToHost);
 #elif defined(ASCENT_HIP_ENABLED)
-    #error HIP SUPPORT HERE
-    cudaMemcpy(m_host, m_device, m_size * sizeof(T), cudaMemcpyDeviceToHost);
+    hipMemcpy(m_host, m_device, m_size * sizeof(T), hipMemcpyDeviceToHost);
 #endif
   }
 
@@ -489,8 +488,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 #if defined(ASCENT_CUDA_ENABLED)
     cudaMemcpy(m_device, m_host, m_size * sizeof(T), cudaMemcpyHostToDevice);
 #elif defined(ASCENT_HIP_ENABLED)
-    #error HIP SUPPORT HERE
-    cudaMemcpy(m_device, m_host, m_size * sizeof(T), cudaMemcpyHostToDevice);
+    hipMemcpy(m_device, m_host, m_size * sizeof(T), hipMemcpyHostToDevice);
 #endif
   }
 

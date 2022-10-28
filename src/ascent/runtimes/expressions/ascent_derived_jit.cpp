@@ -57,7 +57,7 @@ namespace runtime
 namespace expressions
 {
 
-int Jitable::m_cuda_device_id = -1;
+int Jitable::m_device_id = -1;
 
 namespace detail
 {
@@ -1020,15 +1020,21 @@ void Jitable::init_occa()
 #ifdef ASCENT_JIT_ENABLED
     // running this in a loop segfaults...
 #if defined(ASCENT_CUDA_ENABLED)
-  if(m_cuda_device_id == -1)
+  if(m_device_id == -1)
   {
     // the ascent runtime should tell us what to use, otherwise just
     // get the current device to tell occa
-    cudaGetDevice(&m_cuda_device_id);
+    cudaGetDevice(&m_device_id);
   }
-  occa::setDevice({{"mode", "CUDA"}, {"device_id", m_cuda_device_id}});
+  occa::setDevice({{"mode", "CUDA"}, {"device_id", m_device_id}});
 #elif defined(ASCENT_HIP_ENABLED)
-  #error OCCA HIP SUPPORT!
+  if(m_device_id == -1)
+  {
+    // the ascent runtime should tell us what to use, otherwise just
+    // get the current device to tell occa
+    hipGetDevice(&m_device_id);
+  }
+  occa::setDevice({{"mode", "HIP"}, {"device_id", m_device_id}});
 #elif defined(ASCENT_OPENMP_ENABLED)
   occa::setDevice({{"mode", "OpenMP"}});
 #else
@@ -1039,7 +1045,7 @@ void Jitable::init_occa()
 }
 
 // TODO Num devices instead of "cuda"
-int Jitable::num_cuda_devices()
+int Jitable::num_devices()
 {
   int device_count = 0;
 #if defined(ASCENT_CUDA_ENABLED)
@@ -1053,15 +1059,23 @@ int Jitable::num_cuda_devices()
     ASCENT_ERROR(msg.str());
   }
 #elif defined(ASCENT_HIP_ENABLED)
-  #error NEED HIP SUPPORT
+  hipError_t res = hipGetDeviceCount(&device_count);
+  if(res != hipSuccess)
+  {
+    std::stringstream msg;
+    msg << "Failed to get HIP device count" << std::endl
+    << "HIP Error Message: "
+    << hipGetErrorString(res);
+    ASCENT_ERROR(msg.str());
+  }
 #endif
   return device_count;
 }
 
 // TODO Num devices instead of "cuda"
-void Jitable::set_cuda_device(int device_id)
+void Jitable::set_device(int device_id)
 {
-  m_cuda_device_id = device_id;
+  m_device_id = device_id;
 }
 //-----------------------------------------------------------------------------
 };

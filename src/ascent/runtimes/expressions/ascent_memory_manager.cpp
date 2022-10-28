@@ -348,33 +348,37 @@ DeviceMemory::deallocate(void *data_ptr)
 void
 DeviceMemory::is_device_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 {
-  is_gpu = false;
-  is_unified = false;
-#if defined(ASCENT_CUDA_ENABLED)
-  cudaPointerAttributes atts;
-  const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
-
-  is_gpu = false;
-  is_unified = false;
-  // clear last error so other error checking does
-  // not pick it up
-  cudaError_t error = cudaGetLastError();
-  #if CUDART_VERSION >= 10000
-    is_gpu = perr == cudaSuccess &&
-                     (atts.type == cudaMemoryTypeDevice ||
-                     atts.type == cudaMemoryTypeManaged);
-    is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
-  #else
-    is_gpu = perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
+    is_gpu = false;
     is_unified = false;
-  #endif
-  // This will gen an error when the pointer is not a GPU pointer.
-  // Clear the error so others don't pick it up.
-  error = cudaGetLastError();
-  (void) error;
+#if defined(ASCENT_CUDA_ENABLED)
+    cudaPointerAttributes atts;
+    const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
+
+    is_gpu = false;
+    is_unified = false;
+
+    // clear last error so other error checking does
+    // not pick it up
+    cudaError_t error = cudaGetLastError();
+    is_gpu = (perr == cudaSuccess) &&
+             (atts.type == cudaMemoryTypeDevice ||
+              atts.type == cudaMemoryTypeManaged   );
+
+    is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
 #elif defined(ASCENT_HIP_ENABLED)
-// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!! HIP SUPPORT!
-  #error Need HIP Support here!
+    hipPointerAttributes_t atts;
+    const hipError_t perr = hipPointerGetAttributes(&atts, ptr);
+
+    is_gpu = false;
+    is_unified = false;
+
+    // clear last error so other error checking does
+    // not pick it up
+    hipError_t perr = hipGetLastError();
+    is_gpu = (perr == hipSuccess) &&
+             (atts.type == hipMemoryTypeDevice ||
+              atts.type ==  hipMemoryTypeManaged );
+    is_unified = (hipSuccess && atts.type == hipMemoryTypeDevice);
 #endif 
 }
 
@@ -385,23 +389,24 @@ bool
 DeviceMemory::is_device_ptr(const void *ptr)
 {
 #if defined(ASCENT_CUDA_ENABLED)
-  cudaPointerAttributes atts;
-  const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
-
-  // clear last error so other error checking does
-  // not pick it up
-  cudaError_t error = cudaGetLastError();
-  #if CUDART_VERSION >= 10000
-  return perr == cudaSuccess &&
+    cudaPointerAttributes atts;
+    const cudaError_t perr = cudaPointerGetAttributes(&atts, ptr);
+    // clear last error so other error checking does
+    // not pick it up
+    cudaError_t error = cudaGetLastError();
+    return perr == cudaSuccess &&
                 (atts.type == cudaMemoryTypeDevice ||
                  atts.type == cudaMemoryTypeManaged);
-  #else
-  return perr == cudaSuccess && atts.memoryType == cudaMemoryTypeDevice;
-  #endif
 
 #elif defined(ASCENT_HIP_ENABLED)
-  // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!! HIP SUPPORT!
-  #error Need HIP Support here!
+    hipPointerAttributes_t atts;
+    const hipError_t perr = cudaPointerGetAttributes(&atts, ptr);
+    // clear last error so other error checking does
+    // not pick it up
+    hipError_t error = cudaGetLastError();
+    return perr == hipSuccess &&
+                (atts.type == hipMemoryTypeDevice ||
+                 atts.type == hipMemoryTypeManaged);
 #else
   (void) ptr;
   return false;
@@ -425,7 +430,7 @@ MagicMemory::memset(void * ptr, int value, size_t num )
     #if defined(ASCENT_CUDA_ENABLED)
         cudaMemset(ptr,value,num);
     #elif defined(ASCENT_HIP_ENABLED)
-        #error NEED HIP SUPPORT HERE
+        hipMemset(ptr,value,num);
     #endif
   }
   else
@@ -449,7 +454,7 @@ MagicMemory::copy(void * destination, const void * source, size_t num)
      #if defined(ASCENT_CUDA_ENABLED)
          cudaMemcpy(destination, source, num, cudaMemcpyDeviceToDevice);
      #elif defined(ASCENT_HIP_ENABLED)
-         #error NEED HIP SUPPORT HERE
+         hipMemcpy(destination, source, num, hipMemcpyDeviceToDevice);
      #endif
   }
   else if(src_is_gpu && !dst_is_gpu)
@@ -457,7 +462,7 @@ MagicMemory::copy(void * destination, const void * source, size_t num)
     #if defined(ASCENT_CUDA_ENABLED)
         cudaMemcpy(destination, source, num, cudaMemcpyDeviceToHost);
     #elif defined(ASCENT_HIP_ENABLED)
-        #error NEED HIP SUPPORT HERE
+        hipMemcpy(destination, source, num, hipMemcpyDeviceToHost);
     #endif
   }
   else if(!src_is_gpu && dst_is_gpu)
@@ -465,7 +470,7 @@ MagicMemory::copy(void * destination, const void * source, size_t num)
     #if defined(ASCENT_CUDA_ENABLED)
         cudaMemcpy(destination, source, num, cudaMemcpyHostToDevice);
     #elif defined(ASCENT_HIP_ENABLED)
-        #error NEED HIP SUPPORT HERE
+        hipMemcpy(destination, source, num, hipMemcpyHostToDevice);
     #endif
   }
   else

@@ -194,9 +194,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
 #endif
 #if defined(ASCENT_JIT_ENABLED)
       {
-        int device_count = runtime::expressions::Jitable::num_cuda_devices();
+        int device_count = runtime::expressions::Jitable::num_devices();
         int rank_device = m_rank % device_count;
-        runtime::expressions::Jitable::set_cuda_device(rank_device);
+        runtime::expressions::Jitable::set_device(rank_device);
       }
 #endif
     }
