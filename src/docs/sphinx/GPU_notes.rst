@@ -155,7 +155,7 @@ Below is an example ```job.sh``` that launches the Kripke simulation, one of the
    module load cray-mpich
    module load cray-hdf5-parallel/1.12.1.1
 
-   srun -n 6 --ntasks-per-node 6 -G 6 --gpus-per-node 6 ./warpx inputs_3d max_step=400 diag1.intervals=10 diag1.format=ascent
+   srun -n 6 --ntasks-per-node 6 -G 6 --gpus-per-node 6 ./kripke_par --procs 1,1,1  --zones 32,32,32 --niter 3 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4 
 
 In the above example, the ``#SBATCH`` and options are: 
 
@@ -180,3 +180,6 @@ The parallel job is launced with ``srun`` with the follow options:
   -G                          Number of GPUs
   --gpus-per-node             Number of GPUs per node
  =========================== ==============================================================================================
+
+ For more information on running jobs on Crusher, see their user guide: `https://docs.olcf.ornl.gov/systems/crusher_quick_start_guide.html#running-jobs`. 
+ And for more information about running Kripke, see :ref:`kripke_integration`. 
