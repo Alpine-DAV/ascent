@@ -204,8 +204,8 @@ Below is an example of using rocProf that will only generate an output file for 
      'if [${SLURM_PROCID -eq 0 ]; rocprof --hip-trace ./kripke_par --procs 1,1,6  --zones 60,60,60 --niter 3 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4; \
      else ./kripke_par --procs 1,1,6  --zones 60,60,60 --niter 3 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4; fi'
 
-Helpful Flags
-*************
+Helpful RocProf Flags
+^^^^^^^^^^^^^^^^^^^^^
 
 **Help Flag:**
 
