@@ -62,7 +62,9 @@ Helpful Flags
 Enabling RocProf in Your Build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order for rocProf to profile your application, you must compile your build with the following modules and library flags: 
-.. code:: sh
+
+.. code-block:: sh
+
    module load PrgEnv-cray    
    module load craype-accel-amd-gfx90a    
    module load rocm/5.2.0    
@@ -75,7 +77,9 @@ In order for rocProf to profile your application, you must compile your build wi
 
 Many of the modules and flags required for rocProf are required in order to execute on the GPU. 
 Below are the modules and flags that are required by Ascent and its dependencies to enable HIP on Crusher: 
-.. code:: sh
+
+.. code-block:: sh
+
    module load cmake/3.22.2
    module load craype-accel-amd-gfx90a
    module load rocm/5.2.0
@@ -98,7 +102,9 @@ Below are the modules and flags that are required by Ascent and its dependencies
    export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64"
  
 When combined, the modules and flags needed to enable both HIP and rocProf on Crusher become the following:
-.. code:: sh
+
+.. code-block:: sh
+
    module load cmake/3.22.2
    module load craype-accel-amd-gfx90a
    module load rocm/5.2.0
