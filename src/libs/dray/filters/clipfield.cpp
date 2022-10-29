@@ -297,16 +297,24 @@ public:
     DeviceGridFunction<GridFuncType::get_ncomp()> dgf(gf);
     DeviceGridFunctionConst<GridFuncType::get_ncomp()> in_dgf(in_gf);
 
-    auto ctrl_idx_ptr = gf.m_ctrl_idx.get_device_ptr();
+    // Replicate the data for elements that produced fragments into the 
+    // output grid function.
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, m_fragments->size()), [=] DRAY_LAMBDA (int32 elid)
     {
-      ctrl_idx_ptr[elid] = elid;
-
       // Repeat the element value in the output.
       auto start = fragmentOffsets_ptr[elid];
       auto n = fragments_ptr[elid];
       for(int32 i = 0; i < n; i++)
           dgf.m_values_ptr[start + i] = in_dgf.m_values_ptr[elid];
+    });
+    DRAY_ERROR_CHECK();
+
+    // Not all elements in the original mesh produce fragments. So, we populate
+    // the ctrl_idx in a second loop.
+    auto ctrl_idx_ptr = gf.m_ctrl_idx.get_device_ptr();
+    RAJA::forall<for_policy>(RAJA::RangeSegment(0, m_total_elements), [=] DRAY_LAMBDA (int32 i)
+    {
+      ctrl_idx_ptr[i] = i;
     });
     DRAY_ERROR_CHECK();
 
@@ -379,7 +387,7 @@ struct ClipFieldLinear
   //-------------------------------------------------------------------------
   // Load lookup tables for mesh element type into the lut arrays.
   template <typename MeshType>
-  void load_lookups(MeshType &/*m*/,
+  void load_lookups(const MeshType &/*m*/,
       Array<int32> &/*lut_nshapes*/,
       Array<int32> &/*lut_offset*/,
       Array<unsigned char> &/*lut_shapes*/) const
@@ -530,7 +538,7 @@ struct ClipFieldLinear
   // into a concrete derived type so this method is able to call methods on
   // the derived type with no virtual calls.
   template<typename MeshType, typename ScalarField>
-  void operator()(MeshType &mesh, ScalarField &field)
+  void operator()(const MeshType &mesh, const ScalarField &field)
   {
     /*
     The algorithm determines which clip case is being used for the cell. Then it
@@ -1336,7 +1344,7 @@ struct ClipFieldLinear
   //-------------------------------------------------------------------------
   template<typename ScalarField>
   ScalarField
-  create_distance_field(ScalarField &field) const
+  create_distance_field(const ScalarField &field) const
   {
     // The size of the field's values
     int32 sz = field.get_dof_data().m_values.size();
@@ -1354,7 +1362,8 @@ struct ClipFieldLinear
     n.print();
     std::cout << "create_distance_field: field.m_values.size="<< field.get_dof_data().m_values.size() << std::endl;
 #endif
-    auto field_ptr = field.get_dof_data().m_values.get_device_ptr();
+    // NOTE: Using CUDA, the following line throws an exception. Make it const.
+    auto field_ptr = field.get_dof_data().m_values.get_device_ptr_const();
 //    std::cout << "create_distance_field: field device ptr="<< (void*)field_ptr << std::endl;
 
     // Make the distance field for all the dofs in the input field.
@@ -1382,7 +1391,7 @@ struct ClipFieldLinear
 // Load Hex lookup data.
 template <>
 void
-ClipFieldLinear::load_lookups(HexMesh_P1 &m,
+ClipFieldLinear::load_lookups(const HexMesh_P1 &m,
       Array<int32> &lut_nshapes,
       Array<int32> &lut_offset,
       Array<unsigned char> &lut_shapes) const
@@ -1399,7 +1408,7 @@ ClipFieldLinear::load_lookups(HexMesh_P1 &m,
 // Load Tet lookup data.
 template <>
 void
-ClipFieldLinear::load_lookups(TetMesh_P1 &m,
+ClipFieldLinear::load_lookups(const TetMesh_P1 &m,
       Array<int32> &lut_nshapes,
       Array<int32> &lut_offset,
       Array<unsigned char> &lut_shapes) const
