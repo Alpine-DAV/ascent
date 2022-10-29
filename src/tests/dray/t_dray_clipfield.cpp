@@ -356,7 +356,7 @@ TEST (dray_clipfield, hexs_2_2_2_noclip)
    *----*
    0    0
    */
-  float values[] = {
+  double values[] = {
     0., 0.,
     0., 0.,
 
@@ -365,9 +365,9 @@ TEST (dray_clipfield, hexs_2_2_2_noclip)
   };
 
   // Add another field.
-  data["fields/test/topology"] = "mesh";
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
+  data["fields/test/topology"] = "mesh";
   data["fields/test/values"].set_external(values, 2*2*2);
 
   clip_3d(data, "hexs_2_2_2_noclip", false);
@@ -393,7 +393,7 @@ TEST (dray_clipfield, hexs_3_2_2_noclip)
    *----*----*
    0    0    0
    */
-  float values[] = {
+  double values[] = {
     0., 0.,0.,
     0., 0.,0.,
 
@@ -430,7 +430,7 @@ TEST (dray_clipfield, hexs_3_2_2_corner)
    *----*----*
    0    0    0
    */
-  float values[] = {
+  double values[] = {
     0., 0.,0.,
     0., 0.,1.,
 
@@ -470,7 +470,7 @@ TEST (dray_clipfield, hexs_3_3_2_hole)
    *----*----*
    0    0    0
    */
-  float values[] = {
+  double values[] = {
     0., 0.,0.,
     0., 1.,0.,
     0., 0.,0.,
@@ -510,7 +510,7 @@ TEST (dray_clipfield, hexs_3_2_2_vertical)
    1    0   -1
 
    */
-  float values[] = {
+  double values[] = {
     1., 0., -1.,
     1., 0., -1.,
 
@@ -551,7 +551,7 @@ TEST (dray_clipfield, hexs_3_3_3_vertical)
    1    0   -1
 
    */
-  float values[] = {
+  double values[] = {
     1., 0., -1.,
     1., 0., -1.,
     1., 0., -1.,
@@ -696,23 +696,23 @@ TEST (dray_clipfield, tets_1)
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
 #endif
   // Make a simple tet mesh with 1 cell.
-  float x[] = {0.f, 0.f, 1.f, 0.f};
-  float y[] = {0.f, 0.f, 0.f, 1.f};
-  float z[] = {0.f, 1.f, 0.f, 0.f};
+  double x[] = {0.f, 0.f, 1.f, 0.f};
+  double y[] = {0.f, 0.f, 0.f, 1.f};
+  double z[] = {0.f, 1.f, 0.f, 0.f};
   int conn[] = {0,1,2,3};
 
   conduit::Node data;
   data["coordsets/coords/type"] = "explicit";
-  data["coordsets/coords/values/x"].set_external(x, sizeof(x)/sizeof(float));
-  data["coordsets/coords/values/y"].set_external(y, sizeof(y)/sizeof(float));
-  data["coordsets/coords/values/z"].set_external(z, sizeof(z)/sizeof(float));
+  data["coordsets/coords/values/x"].set_external(x, sizeof(x)/sizeof(double));
+  data["coordsets/coords/values/y"].set_external(y, sizeof(y)/sizeof(double));
+  data["coordsets/coords/values/z"].set_external(z, sizeof(z)/sizeof(double));
   data["topologies/topology/coordset"] = "coords";
   data["topologies/topology/type"] = "unstructured";
   data["topologies/topology/elements/shape"] = "tet";
   data["topologies/topology/elements/connectivity"].set_external(conn, sizeof(conn)/sizeof(int));
   data["fields/height/topology"] = "topology";
   data["fields/height/association"] = "vertex";
-  data["fields/height/values"].set_external(y, sizeof(y)/sizeof(float));
+  data["fields/height/values"].set_external(y, sizeof(y)/sizeof(double));
 
   //data.print();
 
@@ -726,23 +726,23 @@ TEST (dray_clipfield, tets_tiny)
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
 #endif
   // Make a simple tet mesh with 4 cells.
-  float x[] = {0.f, 0.f, 1.f,  0.f, -1.f, 0.f};
-  float y[] = {0.f, 0.f, 0.f,  0.f,  0.f, 1.f};
-  float z[] = {0.f, 1.f, 0.f, -1.f,  0.f, 0.f};
+  double x[] = {0.f, 0.f, 1.f,  0.f, -1.f, 0.f};
+  double y[] = {0.f, 0.f, 0.f,  0.f,  0.f, 1.f};
+  double z[] = {0.f, 1.f, 0.f, -1.f,  0.f, 0.f};
   int conn[] = {0,1,2,5,  0,2,3,5,  0,3,4,5,  0,4,1,5};
 
   conduit::Node data;
   data["coordsets/coords/type"] = "explicit";
-  data["coordsets/coords/values/x"].set_external(x, sizeof(x)/sizeof(float));
-  data["coordsets/coords/values/y"].set_external(y, sizeof(y)/sizeof(float));
-  data["coordsets/coords/values/z"].set_external(z, sizeof(z)/sizeof(float));
+  data["coordsets/coords/values/x"].set_external(x, sizeof(x)/sizeof(double));
+  data["coordsets/coords/values/y"].set_external(y, sizeof(y)/sizeof(double));
+  data["coordsets/coords/values/z"].set_external(z, sizeof(z)/sizeof(double));
   data["topologies/topology/coordset"] = "coords";
   data["topologies/topology/type"] = "unstructured";
   data["topologies/topology/elements/shape"] = "tet";
   data["topologies/topology/elements/connectivity"].set_external(conn, sizeof(conn)/sizeof(int));
   data["fields/height/topology"] = "topology";
   data["fields/height/association"] = "vertex";
-  data["fields/height/values"].set_external(y, sizeof(y)/sizeof(float));
+  data["fields/height/values"].set_external(y, sizeof(y)/sizeof(double));
 
   //data.print();
 

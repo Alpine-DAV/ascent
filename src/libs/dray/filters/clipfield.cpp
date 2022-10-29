@@ -472,23 +472,31 @@ struct ClipFieldLinear
   };
 
   //-------------------------------------------------------------------------
-  DRAY_EXEC static uint32 make_name_n(const int32 *start, const int32 *end)
+  DRAY_EXEC static uint32 make_name_n(const int32 *start, int32 n)
   {
-    uint32 n = end - start + 1;
-    int32 v[12]; // pick largest number of blends.
+    if(n == 2)
+      return make_name_2(start[0], start[1]);
+
+    //cout << n <<":(";
+    int32 v[14]={0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // pick largest number of blends.
     // Copy unsorted values into data[].
     for(int32 i = 0; i < n; i++)
-      v[i] = start[i];
-    // Sort (crude).
-    for(int32 i = 0; i < n; i++)
     {
-      int32 tmp, j = i;
-      while(j > 0 && v[j] < v[j-1])
+      //cout << start[i] << ",";
+      v[i] = start[i];
+    }
+    //cout << "),";
+    // Sort (crude).
+    for(int32 i = 0; i < n-1; i++)
+    {
+      for(int32 j = 0; j < n-i-1; j++)
       {
-         int32 tmp = v[j]; // swap
-         v[j] = v[j-1];
-         v[j-1] = tmp;
-         j--;
+         if(v[j] > v[j+1])
+         {
+           int32 tmp = v[j]; // swap
+           v[j] = v[j+1];
+           v[j+1] = tmp;
+         }
       }
     }
     return jenkins_hash(reinterpret_cast<uint8*>(v), n*sizeof(int32));
@@ -926,8 +934,7 @@ struct ClipFieldLinear
             blendGroupSizes_ptr[bgOffset] = nblended;
 
             // Store "name" of blend group.
-            auto blendName = make_name_n(blendIds_ptr + start,
-                                         blendIds_ptr + start + nblended);
+            auto blendName = make_name_n(blendIds_ptr + start, nblended);
             blendNames_ptr[bgOffset++] = blendName;
           }
 
@@ -1333,12 +1340,22 @@ struct ClipFieldLinear
   {
     // The size of the field's values
     int32 sz = field.get_dof_data().m_values.size();
-
+//    std::cout << "create_distance_field: sz=" << sz << std::endl;
     // Make a new distance array that is the same size as the input field.
     Array<Vec<Float,1>> dist;
     dist.resize(sz);
+//    std::cout << "create_distance_field: resized dist array" << std::endl;
     Vec<Float,1> *dist_ptr = dist.get_device_ptr();
+#if 0
+    std::cout << "create_distance_field: dist device ptr="<< (void*)dist_ptr << std::endl;
+    std::cout << "create_distance_field: field.name="<< field.name() << std::endl;
+    conduit::Node n;
+    field.to_node(n);
+    n.print();
+    std::cout << "create_distance_field: field.m_values.size="<< field.get_dof_data().m_values.size() << std::endl;
+#endif
     auto field_ptr = field.get_dof_data().m_values.get_device_ptr();
+//    std::cout << "create_distance_field: field device ptr="<< (void*)field_ptr << std::endl;
 
     // Make the distance field for all the dofs in the input field.
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, sz), [=] DRAY_LAMBDA (int32 i)
