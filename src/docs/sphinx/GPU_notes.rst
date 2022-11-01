@@ -47,7 +47,6 @@ Below are the modules and flags that are required by Ascent and its dependencies
    module load PrgEnv-cray    
    module load craype-accel-amd-gfx90a    
    module load cmake/3.22.2
-   module load craype-accel-amd-gfx90a
    module load rocm/5.2.0
    module load cray-mpich
 
@@ -73,7 +72,6 @@ When combined, the modules and flags needed to enable both HIP and rocProf on Cr
    module load PrgEnv-cray    
    module load craype-accel-amd-gfx90a    
    module load cmake/3.22.2
-   module load craype-accel-amd-gfx90a
    module load rocm/5.2.0
    module load cray-mpich
 
@@ -156,8 +154,8 @@ One way to confirm your job is executing on the GPU, is to use rocProf with the 
 But an easy way to verify your job is NOT running on the GPU is if rocProf produces no output files. 
 
 Below is an example of using rocProf that will generate an output file for each MPI rank. 
-Note: this could result in several GBs of data depending on the size of your job.
-There are typically 6 files generated per MPI rank.
+Note: this could result in several GBs of data depending on the size of your job since there are typically 6 files generated per MPI rank.
+**Known Issue:** Currently, rocprof on Crusher is failing to produce output files for non-root MPI ranks. 
 
 .. code-block:: sh
 
@@ -177,32 +175,8 @@ There are typically 6 files generated per MPI rank.
    module load cray-mpich
    module load cray-hdf5-parallel/1.12.1.1
    
-   srun -n 6 --ntasks-per-node 6 -G 6 --gpus-per-node 6 \
-     'rocprof -o ${SLURM_JOBID}-${SLURM_PROCIDd}.csv --hip-trace ./kripke_par --procs 1,1,6  --zones 60,60,60 --niter 3 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4'
+   srun -n 6 --ntasks-per-node 6 -G 6 --gpus-per-node 6 rocprof -o ${SLURM_JOBID}-${SLURM_PROCIDd}.csv --hip-trace ./kripke_par --procs 1,1,6  --zones 60,60,60 --niter 3 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4
 
-Below is an example of using rocProf that will only generate an output file for the MPI root rank. 
-
-.. code-block:: sh
-
-   #!/bin/bash
-   #SBATCH -A csc340
-   #SBATCH -t 00:10:00
-   #SBATCH -N 1
-   #SBATCH -J kripke_gpu
-   #SBATCH -o kripke.output
-   #SBATCH -e kripke.error
-   
-   
-   module load PrgEnv-cray
-   module load craype-accel-amd-gfx90a
-   module load rocm/5.2.0
-   module load cmake/3.22.2
-   module load cray-mpich
-   module load cray-hdf5-parallel/1.12.1.1
-   
-   srun -n 6 --ntasks-per-node 6 -G 6 --gpus-per-node 6 \
-     'if [${SLURM_PROCID -eq 0 ]; rocprof --hip-trace ./kripke_par --procs 1,1,6  --zones 60,60,60 --niter 3 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4; \
-     else ./kripke_par --procs 1,1,6  --zones 60,60,60 --niter 3 --dir 1:2 --grp 1:1 --legendre 4 --quad 4:4; fi'
 
 Helpful RocProf Flags
 ^^^^^^^^^^^^^^^^^^^^^
