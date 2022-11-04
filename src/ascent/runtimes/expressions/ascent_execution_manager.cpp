@@ -9,7 +9,7 @@ namespace ascent
 std::string ExecutionManager::m_exec = "cuda";
 #elif defined(ASCENT_HIP_ENABLED)
 std::string ExecutionManager::m_exec = "hip";
-#elif defined(ASCENT_OPENMP_ENABLED)
+#elif defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
 std::string ExecutionManager::m_exec = "openmp";
 #else
 std::string ExecutionManager::m_exec = "serial";
@@ -22,7 +22,7 @@ ExecutionManager::info()
   conduit::Node res;
   res["policy"] = m_exec;
   res["backends"].append() = "serial";
-#if defined(ASCENT_OPENMP_ENABLED)
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   res["backends"].append() = "openmp";
 #endif
 #if defined(ASCENT_CUDA_ENABLED)
@@ -41,7 +41,7 @@ ExecutionManager::preferred_cpu_policy()
 {
   std::string res = "serial";
 
-#if defined(ASCENT_OPENMP_ENABLED)
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   res = "openmp";
 #endif
   return res;
