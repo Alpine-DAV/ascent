@@ -260,7 +260,7 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
     SerialExec exec;
     dispatch_memory_mesh(n_coords,n_topo, func, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED)
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
@@ -301,7 +301,7 @@ exec_dispatch_array(Array<T> &array, Function &func)
     SerialExec exec;
     func(array, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED)
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
@@ -342,7 +342,7 @@ exec_dispatch(Function &func)
     SerialExec exec;
     func(exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED)
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;

@@ -2,7 +2,9 @@
 #define ASCENT_EXECUTION_POLICIES_HPP
 
 #include <ascent_config.h>
+#include <limits>
 #include <conduit.hpp>
+
 
 #if defined(ASCENT_RAJA_ENABLED)
 #include <RAJA/RAJA.hpp>
@@ -329,7 +331,7 @@ inline void forall(const index_t& begin,
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-template <typename ExecPolicy, T>
+template <typename ExecPolicy, typename T>
 class ReduceSum
 {
 public:
@@ -338,7 +340,7 @@ public:
     {
         // empty
     }
-z
+
     void sum(const T value)
     {
         m_value += value;
@@ -355,12 +357,12 @@ private:
 
 
 //---------------------------------------------------------------------------//
-template <typename ExecPolicy, T>
+template <typename ExecPolicy, typename T>
 class ReduceMin
 {
 public:
     ReduceMin()
-    : m_value(std::numeric_limits<T>::max()),
+    : m_value(std::numeric_limits<T>::max())
     {
         // empty
     }
@@ -380,13 +382,13 @@ private:
 };
 
 //---------------------------------------------------------------------------//
-template <typename ExecPolicy, T>
+template <typename ExecPolicy, typename T>
 class ReduceMinLoc
 {
 public:
 
     //---------------------------------------------------------------------
-    ReduceMaxLoc():
+    ReduceMinLoc()
     : m_value(std::numeric_limits<T>::lowest()),
       m_index(-1)
     {
@@ -396,7 +398,7 @@ public:
     //---------------------------------------------------------------------
     inline void maxloc(const T v, index_t i)
     {
-        if(value < m_value)
+        if(v < m_value)
         {
             m_value=v;
             m_index=i;
@@ -421,12 +423,12 @@ private:
 };
 
 //---------------------------------------------------------------------------//
-template <typename ExecPolicy, T>
+template <typename ExecPolicy, typename T>
 class ReduceMax
 {
 public:
     ReduceMax()
-    : m_value(std::numeric_limits<T>::lowest()),
+    : m_value(std::numeric_limits<T>::lowest())
     {
         // empty
     }
@@ -449,13 +451,13 @@ private:
 };
 
 //---------------------------------------------------------------------------//
-template <typename ExecPolicy, T>
+template <typename ExecPolicy, typename T>
 class ReduceMaxLoc
 {
 public:
 
     //---------------------------------------------------------------------
-    ReduceMaxLoc():
+    ReduceMaxLoc()
     : m_value(std::numeric_limits<T>::lowest()),
       m_index(-1)
     {
@@ -465,7 +467,7 @@ public:
     //---------------------------------------------------------------------
     inline void maxloc(const T v, index_t i)
     {
-        if(value > m_value)
+        if(v > m_value)
         {
             m_value=v;
             m_index=i;
@@ -492,7 +494,7 @@ private:
 //---------------------------------------------------------------------------//
 // Atomics
 //---------------------------------------------------------------------------//
-template <typename ExecPolicy, T>
+template <typename ExecPolicy, typename T>
 inline T atomic_add(T* acc, T value)
 {
     T res = (*acc);
@@ -505,7 +507,7 @@ template <typename ExecPolicy, typename T>
 inline T atomic_min(T volatile *acc, T value)
 {
     T res = (*acc);
-    (*acc) = std::min(*acc, value)
+    (*acc) = std::min(*acc, value);
     return res;
 }
 
