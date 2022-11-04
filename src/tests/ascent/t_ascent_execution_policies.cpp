@@ -49,7 +49,7 @@ TEST(ascent_execution_policies, forall)
 
 TEST(ascent_execution_policies, reductions)
 {
-  return;
+  
     const index_t size = 4;
     index_t vals[size] = {0,-10,10, 5};
     index_t *vals_ptr =  &vals[0];
@@ -63,6 +63,7 @@ TEST(ascent_execution_policies, reductions)
     ASCENT_DEVICE_ERROR_CHECK();
 
     EXPECT_EQ(sum_reducer.get(),5);
+
 
    // min
     ascent::ReduceMin<reduce_policy,index_t> min_reducer;
@@ -84,6 +85,8 @@ TEST(ascent_execution_policies, reductions)
 
     EXPECT_EQ(minloc_reducer.get(),-10);
     EXPECT_EQ(minloc_reducer.getLoc(),1);
+
+
 
    // max
     ascent::ReduceMax<reduce_policy,index_t> max_reducer;

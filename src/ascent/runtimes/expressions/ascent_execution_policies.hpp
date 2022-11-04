@@ -331,20 +331,37 @@ inline void forall(const index_t& begin,
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+// -------
+// For the curious: 
+// -------
+// the const crimes we commit here are in the name of [=] capture
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 template <typename ExecPolicy, typename T>
 class ReduceSum
 {
 public:
     //---------------------------------------------------------------------
     ReduceSum()
-    : m_value(0)
+    : m_value(0),
+      m_value_ptr(&m_value)
     {
         // empty
     }
 
     //---------------------------------------------------------------------
     ReduceSum(T v_start)
-    : m_value(v_start)
+    : m_value(v_start),
+      m_value_ptr(&m_value)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    ReduceSum(const ReduceSum &v)
+    : m_value(v.m_value), // will be unused in copies
+      m_value_ptr(v.m_value_ptr) // this is where the magic happens
     {
         // empty
     }
@@ -352,7 +369,7 @@ public:
     //---------------------------------------------------------------------
     void sum(const T value) const
     {
-        // m_value += value;
+        m_value_ptr[0] += value;
     }
 
     //---------------------------------------------------------------------
@@ -362,7 +379,8 @@ public:
     }
 
 private:
-    T m_value;
+    T  m_value;
+    T* m_value_ptr;
 };
 
 
@@ -374,14 +392,24 @@ public:
     
     //---------------------------------------------------------------------
     ReduceMin()
-    : m_value(std::numeric_limits<T>::max())
+    : m_value(std::numeric_limits<T>::max()),
+      m_value_ptr(&m_value)
     {
         // empty
     }
 
     //---------------------------------------------------------------------
     ReduceMin(T v_start)
-    : m_value(v_start)
+    : m_value(v_start),
+      m_value_ptr(&m_value)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    ReduceMin(const ReduceMin &v)
+    : m_value(v.m_value), // will be unused in copies
+      m_value_ptr(v.m_value_ptr) // this is where the magic happens
     {
         // empty
     }
@@ -389,17 +417,21 @@ public:
     //---------------------------------------------------------------------
     void min(const T value) const
     {
-        // if (value < m_value) m_value=value;
+        if (value < m_value_ptr[0])
+        {
+            m_value_ptr[0]=value;
+        }
     }
 
     //---------------------------------------------------------------------
     T get() const
     {
-        return m_value;
+        return m_value_ptr[0];
     }
 
 private:
-    T m_value;
+    T  m_value;
+    T *m_value_ptr;
 };
 
 //---------------------------------------------------------------------------//
@@ -410,8 +442,10 @@ public:
 
     //---------------------------------------------------------------------
     ReduceMinLoc()
-    : m_value(std::numeric_limits<T>::lowest()),
-      m_index(-1)
+    : m_value(std::numeric_limits<T>::max()),
+      m_value_ptr(&m_value),
+      m_index(-1),
+      m_index_ptr(&m_index)
     {
         // empty
     }
@@ -419,7 +453,19 @@ public:
     //---------------------------------------------------------------------
     ReduceMinLoc(T v_start, index_t i_start)
     : m_value(v_start),
-      m_index(i_start)
+      m_value_ptr(&m_value),
+      m_index(i_start),
+      m_index_ptr(&m_index)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    ReduceMinLoc(const ReduceMinLoc &v)
+    : m_value(v.m_value), // will be unused in copies
+      m_value_ptr(v.m_value_ptr), // this is where the magic happens
+      m_index(v.m_index), // will be unused in copies
+      m_index_ptr(v.m_index_ptr) // this is where the magic happens
     {
         // empty
     }
@@ -427,28 +473,30 @@ public:
     //---------------------------------------------------------------------
     inline void minloc(const T v, index_t i) const
     {
-        if(v < m_value)
+        if(v < m_value_ptr[0])
         {
-            // m_value=v;
-            // m_index=i;
+            m_value_ptr[0]=v;
+            m_index_ptr[0]=i;
         }
     };
 
     //---------------------------------------------------------------------
     inline T get() const
     {
-        return m_value;
+        return m_value_ptr[0];
     }
 
     //---------------------------------------------------------------------
     inline index_t getLoc() const
     {
-        return m_index;
+        return m_index_ptr[0];
     }
 
 private:
-    T       m_value;
-    index_t m_index;
+    T         m_value;
+    T       *m_value_ptr;
+    index_t   m_index;
+    index_t  *m_index_ptr;
 };
 
 //---------------------------------------------------------------------------//
@@ -458,35 +506,47 @@ class ReduceMax
 public:
     //---------------------------------------------------------------------
     ReduceMax()
-    : m_value(std::numeric_limits<T>::lowest())
+    : m_value(std::numeric_limits<T>::lowest()),
+      m_value_ptr(&m_value)
     {
         // empty
     }
 
     //---------------------------------------------------------------------
     ReduceMax(T v_start)
-    : m_value(v_start)
+    : m_value(v_start),
+      m_value_ptr(&m_value)
     {
         // empty
     }
 
     //---------------------------------------------------------------------
+    ReduceMax(const ReduceMax &v)
+    : m_value(v.m_value), // will be unused in copies
+      m_value_ptr(v.m_value_ptr) // this is where the magic happens
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    // the const crimes we commit here are in the name of [=] capture
     void max(const T value) const
     {
-        if (value > m_value)
+        if (value >  m_value_ptr[0])
         {
-            // m_value=value;
+            m_value_ptr[0]=value;
         }
     }
     
     //---------------------------------------------------------------------
     T get() const
     {
-        return m_value;
+        return  m_value_ptr[0];
     }
 
 private:
-    T m_value;
+    T  m_value;
+    T *m_value_ptr; 
 };
 
 //---------------------------------------------------------------------------//
@@ -498,7 +558,9 @@ public:
     //---------------------------------------------------------------------
     ReduceMaxLoc()
     : m_value(std::numeric_limits<T>::lowest()),
-      m_index(-1)
+      m_value_ptr(&m_value),
+      m_index(-1),
+      m_index_ptr(&m_index)
     {
         // empty
     }
@@ -506,36 +568,51 @@ public:
     //---------------------------------------------------------------------
     ReduceMaxLoc(T v_start, index_t i_start)
     : m_value(v_start),
-      m_index(i_start)
+      m_value_ptr(&m_value),
+      m_index(i_start),
+      m_index_ptr(&m_index)
     {
         // empty
     }
 
     //---------------------------------------------------------------------
+    ReduceMaxLoc(const ReduceMaxLoc &v)
+    : m_value(v.m_value), // will be unused in copies
+      m_value_ptr(v.m_value_ptr), // this is where the magic happens
+      m_index(v.m_index), // will be unused in copies
+      m_index_ptr(v.m_index_ptr) // this is where the magic happens
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    // the const crimes we commit here are in the name of [=] capture
     inline void maxloc(const T v, index_t i) const
     {
-        if(v > m_value)
+        if(v > m_value_ptr[0])
         {
-            // m_value = v;
-            // m_index = i;
+            m_value_ptr[0] = v;
+            m_index_ptr[0] = i;
         }
     };
 
     //---------------------------------------------------------------------
     inline T get() const
     {
-        return m_value;
+        return m_value_ptr[0];
     }
 
     //---------------------------------------------------------------------
     inline index_t getLoc() const
     {
-        return m_index;
+        return m_index_ptr[0];
     }
 
 private:
     T        m_value;
+    T       *m_value_ptr;
     index_t  m_index;
+    index_t *m_index_ptr;
 };
 
 //---------------------------------------------------------------------------//
