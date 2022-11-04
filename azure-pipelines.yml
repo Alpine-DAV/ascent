@@ -63,6 +63,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
+          ENABLE_RAJA: OFF
+          ENABLE_UMPIRE: OFF
+          ENABLE_CAMP: OFF
           ENABLE_VTKH: OFF
           ENABLE_APCOMP: OFF
           ENABLE_DRAY: OFF
@@ -79,6 +82,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_APCOMP: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: OFF
@@ -98,6 +104,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_VTKH: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: ON
@@ -114,6 +123,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_VTKH: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: OFF
@@ -133,6 +145,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_APCOMP: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: OFF
@@ -226,21 +241,18 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
-           #
-           # we need to provide RAJA + Umpire
-           #
-           export RAJA_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/raja*/`
-           export UMPIRE_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/umpire*/`
-           export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=${UMPIRE_DIR}"
-           export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=${RAJA_DIR}"
-
+        
            # dray double perc option
            if [ $ENABLE_DRAY_DOUBLE  = 'ON' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAY_USE_DOUBLE_PRECISION=ON"; fi
+
            # other tpl options
-           if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
-           if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
-           if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
-           if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
+           if [ $ENABLE_RAJA   = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=IGNORE"; fi
+           if [ $ENABLE_UMPIRE = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=IGNORE"; fi
+           if [ $ENABLE_CAMP = 'OFF' ];    then export CMAKE_OPTS="${CMAKE_OPTS} -DCAMP_DIR=IGNORE"; fi
+           if [ $ENABLE_MFEM  = 'OFF' ];   then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
+           if [ $ENABLE_VTKH  = 'OFF' ];   then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
+           if [ $ENABLE_ADIOS2 = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
+           if [ $ENABLE_FIDES = 'OFF' ];   then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBABELFLOW_DIR=IGNORE"; fi
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBabelFlow_DIR=IGNORE"; fi
            if [ $ENABLE_GENTEN = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DGENTEN_DIR=IGNORE"; fi 
