@@ -469,9 +469,8 @@ struct SumFunctor
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       const T val = accessor[i];
-      // TODO: Moc op overload?
-      //sum += val;
-      sum.sum(val);
+      sum += val;
+
     });
     ASCENT_DEVICE_ERROR_CHECK();
 
@@ -502,9 +501,7 @@ struct NanFunctor
       {
         is_nan = 1;
       }
-      // TODO: Moc += operator?
-      //count += is_nan;
-      count.sum(is_nan);
+      count += is_nan;
     });
     ASCENT_DEVICE_ERROR_CHECK();
 
@@ -547,9 +544,8 @@ struct InfFunctor
       {
         is = 1;
       }
-      // TODO mode += operator?
-      // count += is;
-      count.sum(is);
+      count += is;
+
     });
     ASCENT_DEVICE_ERROR_CHECK();
 

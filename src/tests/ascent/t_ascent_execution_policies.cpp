@@ -58,7 +58,7 @@ TEST(ascent_execution_policies, reductions)
     ascent::ReduceSum<reduce_policy,index_t> sum_reducer;
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
-        sum_reducer.sum(vals_ptr[i]);
+        sum_reducer += vals_ptr[i];
     });
     ASCENT_DEVICE_ERROR_CHECK();
 

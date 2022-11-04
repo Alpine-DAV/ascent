@@ -918,9 +918,7 @@ struct CalcResultsFunctor
       ascent::ReduceSum<reduce_policy, double> sum(0.0);
       ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
-        // TODO moc operator?
-        //sum += bins_ptr[i * 2];
-        sum.sum(bins_ptr[i * 2]);
+        sum += bins_ptr[i * 2];
       });
       pdf_total = sum.get();
     }
