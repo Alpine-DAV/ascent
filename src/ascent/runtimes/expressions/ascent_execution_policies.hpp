@@ -335,17 +335,27 @@ template <typename ExecPolicy, typename T>
 class ReduceSum
 {
 public:
+    //---------------------------------------------------------------------
     ReduceSum()
     : m_value(0)
     {
         // empty
     }
 
-    void sum(const T value)
+    //---------------------------------------------------------------------
+    ReduceSum(T v_start)
+    : m_value(v_start)
     {
-        m_value += value;
+        // empty
     }
 
+    //---------------------------------------------------------------------
+    void sum(const T value) const
+    {
+        // m_value += value;
+    }
+
+    //---------------------------------------------------------------------
     T get() const
     {
         return m_value;
@@ -361,17 +371,28 @@ template <typename ExecPolicy, typename T>
 class ReduceMin
 {
 public:
+    
+    //---------------------------------------------------------------------
     ReduceMin()
     : m_value(std::numeric_limits<T>::max())
     {
         // empty
     }
 
-    void min(const T value)
+    //---------------------------------------------------------------------
+    ReduceMin(T v_start)
+    : m_value(v_start)
     {
-        if (value < m_value) m_value=value;
+        // empty
+    }
+    
+    //---------------------------------------------------------------------
+    void min(const T value) const
+    {
+        // if (value < m_value) m_value=value;
     }
 
+    //---------------------------------------------------------------------
     T get() const
     {
         return m_value;
@@ -396,12 +417,20 @@ public:
     }
 
     //---------------------------------------------------------------------
-    inline void maxloc(const T v, index_t i)
+    ReduceMinLoc(T v_start, index_t i_start)
+    : m_value(v_start),
+      m_index(i_start)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    inline void minloc(const T v, index_t i) const
     {
         if(v < m_value)
         {
-            m_value=v;
-            m_index=i;
+            // m_value=v;
+            // m_index=i;
         }
     };
 
@@ -412,7 +441,7 @@ public:
     }
 
     //---------------------------------------------------------------------
-    inline index_t getloc() const
+    inline index_t getLoc() const
     {
         return m_index;
     }
@@ -427,20 +456,30 @@ template <typename ExecPolicy, typename T>
 class ReduceMax
 {
 public:
+    //---------------------------------------------------------------------
     ReduceMax()
     : m_value(std::numeric_limits<T>::lowest())
     {
         // empty
     }
 
-    void max(const T value)
+    //---------------------------------------------------------------------
+    ReduceMax(T v_start)
+    : m_value(v_start)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    void max(const T value) const
     {
         if (value > m_value)
         {
-            m_value=value;
+            // m_value=value;
         }
     }
-
+    
+    //---------------------------------------------------------------------
     T get() const
     {
         return m_value;
@@ -465,12 +504,20 @@ public:
     }
 
     //---------------------------------------------------------------------
-    inline void maxloc(const T v, index_t i)
+    ReduceMaxLoc(T v_start, index_t i_start)
+    : m_value(v_start),
+      m_index(i_start)
+    {
+        // empty
+    }
+
+    //---------------------------------------------------------------------
+    inline void maxloc(const T v, index_t i) const
     {
         if(v > m_value)
         {
-            m_value=v;
-            m_index=i;
+            // m_value = v;
+            // m_index = i;
         }
     };
 
@@ -481,14 +528,14 @@ public:
     }
 
     //---------------------------------------------------------------------
-    inline index_t getloc() const
+    inline index_t getLoc() const
     {
         return m_index;
     }
 
 private:
-    T       m_value;
-    index_t m_index;
+    T        m_value;
+    index_t  m_index;
 };
 
 //---------------------------------------------------------------------------//
@@ -504,7 +551,7 @@ inline T atomic_add(T* acc, T value)
 
 //---------------------------------------------------------------------------//
 template <typename ExecPolicy, typename T>
-inline T atomic_min(T volatile *acc, T value)
+inline T atomic_min(T *acc, T value)
 {
     T res = (*acc);
     (*acc) = std::min(*acc, value);
@@ -513,7 +560,7 @@ inline T atomic_min(T volatile *acc, T value)
 
 //---------------------------------------------------------------------------//
 template <typename ExecPolicy, typename T>
-inline T atomic_max(T volatile *acc, T value)
+inline T atomic_max(T *acc, T value)
 {
     T res = (*acc);
     (*acc) = std::max(*acc, value);

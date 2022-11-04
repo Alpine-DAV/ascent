@@ -2,10 +2,13 @@
 #include <ascent_logging.hpp>
 #include <ascent_config.h>
 
+
+#if defined(ASCENT_UMPIRE_ENABLED)
 #include <umpire/Umpire.hpp>
 #include <umpire/util/MemoryResourceTraits.hpp>
 #include <umpire/strategy/DynamicPoolList.hpp>
-
+#endif
+#include <cstring> // memcpy
 #include <conduit.hpp>
 
 namespace ascent

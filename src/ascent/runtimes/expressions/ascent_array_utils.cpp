@@ -2,7 +2,9 @@
 #include <ascent_config.h>
 #include <expressions/ascent_dispatch.hpp>
 
+#if defined(ASCENT_RAJA_ENABLED)
 #include <RAJA/RAJA.hpp>
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

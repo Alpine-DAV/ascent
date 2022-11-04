@@ -166,7 +166,7 @@ exec_dispatch(const conduit::Node &field, std::string component, const Function 
     SerialExec exec;
     res = dispatch_memory(field, component, func, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED)
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED) 
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
@@ -469,7 +469,9 @@ struct SumFunctor
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       const T val = accessor[i];
-      sum += val;
+      // TODO: Moc op overload?
+      //sum += val;
+      sum.sum(val);
     });
     ASCENT_DEVICE_ERROR_CHECK();
 
@@ -500,7 +502,9 @@ struct NanFunctor
       {
         is_nan = 1;
       }
-      count += is_nan;
+      // TODO: Moc += operator?
+      //count += is_nan;
+      count.sum(is_nan);
     });
     ASCENT_DEVICE_ERROR_CHECK();
 
@@ -543,7 +547,9 @@ struct InfFunctor
       {
         is = 1;
       }
-      count += is;
+      // TODO mode += operator?
+      // count += is;
+      count.sum(is);
     });
     ASCENT_DEVICE_ERROR_CHECK();
 

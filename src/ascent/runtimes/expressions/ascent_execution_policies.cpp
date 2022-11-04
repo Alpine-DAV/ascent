@@ -12,7 +12,7 @@ std::string CudaExec::memory_space = "device";
 std::string HipExec::memory_space = "device";
 #endif
 
-#if defined(ASCENT_OPENMP_ENABLED)
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
 std::string OpenMPExec::memory_space = "host";
 #endif
 

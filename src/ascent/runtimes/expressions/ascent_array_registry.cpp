@@ -7,9 +7,10 @@
 #include "ascent_array_internals_base.hpp"
 #include "ascent_array_registry.hpp"
 
+#if defined(ASCENT_UMPIRE_ENABLED)
 #include <umpire/Umpire.hpp>
 #include <umpire/strategy/QuickPool.hpp>
-
+#endif
 
 #include <algorithm>
 #include <iostream>

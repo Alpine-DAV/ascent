@@ -4,7 +4,9 @@
 #include <expressions/ascent_dispatch.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
 
+#if defined(ASCENT_RAJA_ENABLED)
 #include <RAJA/RAJA.hpp>
+#endif
 
 #include <flow_workspace.hpp>
 #include <map>
@@ -916,7 +918,9 @@ struct CalcResultsFunctor
       ascent::ReduceSum<reduce_policy, double> sum(0.0);
       ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
-        sum += bins_ptr[i * 2];
+        // TODO moc operator?
+        //sum += bins_ptr[i * 2];
+        sum.sum(bins_ptr[i * 2]);
       });
       pdf_total = sum.get();
     }

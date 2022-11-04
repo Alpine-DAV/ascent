@@ -15,8 +15,11 @@
 
 #include "ascent_logging.hpp"
 
+#if defined(ASCENT_UMPIRE_ENABLED)
 #include <umpire/Umpire.hpp>
+#endif
 
+#include <cassert>
 #include <iostream>
 #include <string.h>
 
