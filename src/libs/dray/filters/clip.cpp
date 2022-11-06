@@ -25,7 +25,7 @@ namespace dray
 {
 
 inline void
-normalize(Float vec[3])
+normalize(Vec<Float, 3> &vec)
 {
   Float mag = sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
   if(mag > 0.)
@@ -66,6 +66,9 @@ public:
     gf.m_values.resize(ndofs);
     DeviceGridFunction<1> dgf(gf);
 
+    // For local capture
+    const auto center = m_center;
+
     // Execute
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
       [=] DRAY_LAMBDA (int32 id)
@@ -77,9 +80,9 @@ public:
       Float px = id_value[0];
       Float py = id_value[1];
       Float pz = id_value[2];
-      Float dx = m_center[0] - px;
-      Float dy = m_center[1] - py;
-      Float dz = m_center[2] - pz;
+      Float dx = center[0] - px;
+      Float dy = center[1] - py;
+      Float dz = center[2] - pz;
       Float dist = sqrt(dx*dx + dy*dy + dz*dz);
 
       // Save distance.
@@ -97,7 +100,7 @@ public:
   }
 
   std::shared_ptr<Field> m_output;
-  Float m_center[3];
+  Vec<Float, 3> m_center;
   Float m_radius;
 };
 
@@ -134,6 +137,10 @@ public:
     gf.m_values.resize(ndofs);
     DeviceGridFunction<1> dgf(gf);
 
+    // Local capture
+    const auto normal = m_normal;
+    const auto origin = m_origin;
+
     // Execute
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
       [=] DRAY_LAMBDA (int32 id)
@@ -145,9 +152,9 @@ public:
       Float px = id_value[0];
       Float py = id_value[1];
       Float pz = id_value[2];
-      Float xterm = (px - m_origin[0]) * m_normal[0];
-      Float yterm = (py - m_origin[1]) * m_normal[1];
-      Float zterm = (pz - m_origin[2]) * m_normal[2];
+      Float xterm = (px - origin[0]) * normal[0];
+      Float yterm = (py - origin[1]) * normal[1];
+      Float zterm = (pz - origin[2]) * normal[2];
       Float dist = xterm + yterm + zterm;
 
       // Save distance.
@@ -165,24 +172,38 @@ public:
   }
 
   std::shared_ptr<Field> m_output;
-  Float m_origin[3];
-  Float m_normal[3];
+  Vec<Float, 3> m_origin;
+  Vec<Float, 3> m_normal;
   bool  m_invert;
 };
 
 // Make the multi plane distance field.
 class MultiPlaneDistance
 {
+private:
+  inline static Vec<Vec<Float, 3>, 3> to_dray_vec(const Float mat[3][3])
+  {
+    Vec<Vec<Float, 3>, 3> retval;
+    for(int i = 0; i < 3; i++)
+    {
+      for(int j = 0; j < 3; j++)
+      {
+        retval[i][j] = mat[i][j];
+      }
+    }
+    return retval;
+  }
 public:
   MultiPlaneDistance(const Float origin[3][3], const Float normal[3][3],
     int nplanes) : m_output()
   {
-    memcpy(m_origin, origin, sizeof(Float)*9);
-    memcpy(m_normal, normal, sizeof(Float)*9);
+    m_origin = to_dray_vec(origin);
+    m_normal = to_dray_vec(normal);
+    if(nplanes > 3 || nplanes < 1) DRAY_ERROR("MultiPlaneDistance only supports 1-3 planes.");
+    m_planes = nplanes;
     normalize(m_normal[0]);
     normalize(m_normal[1]);
     normalize(m_normal[2]);
-    m_planes = nplanes;
   }
 
   // NOTE: This method gets instantiated for different mesh types by dispatch.
@@ -203,6 +224,11 @@ public:
     gf.m_values.resize(ndofs);
     DeviceGridFunction<1> dgf(gf);
 
+    // Local capture
+    const auto normal = m_normal;
+    const auto origin = m_origin;
+    const auto nplanes = m_planes;
+
     // Execute
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
       [=] DRAY_LAMBDA (int32 id)
@@ -215,11 +241,11 @@ public:
       Float py = id_value[1];
       Float pz = id_value[2];
       Float pdist;
-      for(int p = 0; p < m_planes; p++)
+      for(int p = 0; p < nplanes; p++)
       {
-        Float xterm = (px - m_origin[p][0]) * m_normal[p][0];
-        Float yterm = (py - m_origin[p][1]) * m_normal[p][1];
-        Float zterm = (pz - m_origin[p][2]) * m_normal[p][2];
+        Float xterm = (px - origin[p][0]) * normal[p][0];
+        Float yterm = (py - origin[p][1]) * normal[p][1];
+        Float zterm = (pz - origin[p][2]) * normal[p][2];
         Float dist = xterm + yterm + zterm;
         if(p == 0)
           pdist = dist;
@@ -244,8 +270,8 @@ public:
   }
 
   std::shared_ptr<Field> m_output;
-  Float m_origin[6][3];
-  Float m_normal[6][3];
+  Vec<Vec<Float, 3>, 3> m_origin;
+  Vec<Vec<Float, 3>, 3> m_normal;
   int   m_planes;
 };
 
@@ -276,6 +302,9 @@ public:
     gf.m_values.resize(ndofs);
     DeviceGridFunction<1> dgf(gf);
 
+    // Local capture
+    const auto bounds = m_bounds;
+
     // Execute
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, ndofs),
       [=] DRAY_LAMBDA (int32 id)
@@ -291,9 +320,9 @@ public:
       // xmin
       {
         Float origin[3];
-        origin[0] = m_bounds.m_ranges[0].min();
-        origin[1] = m_bounds.m_ranges[1].min();
-        origin[2] = m_bounds.m_ranges[2].min();
+        origin[0] = bounds.m_ranges[0].min();
+        origin[1] = bounds.m_ranges[1].min();
+        origin[2] = bounds.m_ranges[2].min();
         Float normal[3] = {-1., 0., 0.};
         Float xterm = (px - origin[0]) * normal[0];
         Float yterm = (py - origin[1]) * normal[1];
@@ -304,9 +333,9 @@ public:
       // xmax
       {
         Float origin[3];
-        origin[0] = m_bounds.m_ranges[0].max();
-        origin[1] = m_bounds.m_ranges[1].min();
-        origin[2] = m_bounds.m_ranges[2].min();
+        origin[0] = bounds.m_ranges[0].max();
+        origin[1] = bounds.m_ranges[1].min();
+        origin[2] = bounds.m_ranges[2].min();
         Float normal[3] = {1., 0., 0.};
         Float xterm = (px - origin[0]) * normal[0];
         Float yterm = (py - origin[1]) * normal[1];
@@ -317,9 +346,9 @@ public:
       // ymin
       {
         Float origin[3];
-        origin[0] = m_bounds.m_ranges[0].min();
-        origin[1] = m_bounds.m_ranges[1].min();
-        origin[2] = m_bounds.m_ranges[2].min();
+        origin[0] = bounds.m_ranges[0].min();
+        origin[1] = bounds.m_ranges[1].min();
+        origin[2] = bounds.m_ranges[2].min();
         Float normal[3] = {0., -1., 0.};
         Float xterm = (px - origin[0]) * normal[0];
         Float yterm = (py - origin[1]) * normal[1];
@@ -330,9 +359,9 @@ public:
       // ymax
       {
         Float origin[3];
-        origin[0] = m_bounds.m_ranges[0].min();
-        origin[1] = m_bounds.m_ranges[1].max();
-        origin[2] = m_bounds.m_ranges[2].min();
+        origin[0] = bounds.m_ranges[0].min();
+        origin[1] = bounds.m_ranges[1].max();
+        origin[2] = bounds.m_ranges[2].min();
         Float normal[3] = {0., 1., 0.};
         Float xterm = (px - origin[0]) * normal[0];
         Float yterm = (py - origin[1]) * normal[1];
@@ -343,9 +372,9 @@ public:
       // zmin
       {
         Float origin[3];
-        origin[0] = m_bounds.m_ranges[0].min();
-        origin[1] = m_bounds.m_ranges[1].min();
-        origin[2] = m_bounds.m_ranges[2].min();
+        origin[0] = bounds.m_ranges[0].min();
+        origin[1] = bounds.m_ranges[1].min();
+        origin[2] = bounds.m_ranges[2].min();
         Float normal[3] = {0., 0., -1.};
         Float xterm = (px - origin[0]) * normal[0];
         Float yterm = (py - origin[1]) * normal[1];
@@ -356,9 +385,9 @@ public:
       // zmax
       {
         Float origin[3];
-        origin[0] = m_bounds.m_ranges[0].min();
-        origin[1] = m_bounds.m_ranges[1].min();
-        origin[2] = m_bounds.m_ranges[2].max();
+        origin[0] = bounds.m_ranges[0].min();
+        origin[1] = bounds.m_ranges[1].min();
+        origin[2] = bounds.m_ranges[2].max();
         Float normal[3] = {0., 0., 1.};
         Float xterm = (px - origin[0]) * normal[0];
         Float yterm = (py - origin[1]) * normal[1];

@@ -645,6 +645,7 @@ struct ClipFieldLinear
     RAJA::ReduceSum<reduce_policy, int> fragment_sum(0);
     RAJA::ReduceSum<reduce_policy, int> blendGroups_sum(0);
     RAJA::ReduceSum<reduce_policy, int> blendGroupLen_sum(0);
+    const bool do_invert = m_invert;
     RAJA::forall<for_policy>(RAJA::RangeSegment(0, nelem), [=] DRAY_LAMBDA (int32 elid)
     {
       // Determine the clip case.
@@ -682,8 +683,8 @@ struct ClipFieldLinear
         {
           // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
           if(shapes[2] == NOCOLOR ||
-             (!m_invert && shapes[2] == COLOR0) ||
-             (m_invert && shapes[2] == COLOR1))
+             (!do_invert && shapes[2] == COLOR0) ||
+             (do_invert && shapes[2] == COLOR1))
           {
             // The point is a keeper.
 
@@ -716,8 +717,8 @@ struct ClipFieldLinear
         else if(shapes[0] == ST_TET)
         {
           // ST_TET COLOR0 p0 p1 p2 p3
-          if((!m_invert && shapes[1] == COLOR0) ||
-             (m_invert && shapes[1] == COLOR1))
+          if((!do_invert && shapes[1] == COLOR0) ||
+             (do_invert && shapes[1] == COLOR1))
           {
             thisFragments++;
 
@@ -878,8 +879,8 @@ struct ClipFieldLinear
         {
           // ST_PNT, 0, COLOR0, 8, P0, P1, P2, P3, P4, P5, P6, P7, 
           if(shapes[2] == NOCOLOR ||
-             (!m_invert && shapes[2] == COLOR0) ||
-             (m_invert && shapes[2] == COLOR1))
+             (!do_invert && shapes[2] == COLOR0) ||
+             (do_invert && shapes[2] == COLOR1))
           {
             // The point is a keeper. Add a blend group for this point.
             auto one_over_n = 1.f / static_cast<float>(shapes[3]);
@@ -951,8 +952,8 @@ struct ClipFieldLinear
         else if(shapes[0] == ST_TET)
         {
           // ST_TET COLOR0 p0 p1 p2 p3
-          if((!m_invert && shapes[1] == COLOR0) ||
-             (m_invert && shapes[1] == COLOR1))
+          if((!do_invert && shapes[1] == COLOR0) ||
+             (do_invert && shapes[1] == COLOR1))
           {
 #ifdef PRINT_CASES
             cout << "\tST_TET ";
@@ -1093,8 +1094,8 @@ struct ClipFieldLinear
           // when a set of shapes happens to not use the blended point.
           // That, of course, means that the lut needs to be fixed a bit.
           if(shapes[2] == NOCOLOR ||
-             (!m_invert && shapes[2] == COLOR0) ||
-             (m_invert && shapes[2] == COLOR1))
+             (!do_invert && shapes[2] == COLOR0) ||
+             (do_invert && shapes[2] == COLOR1))
           {
              ptused[N0 + shapes[1]]++;
           }
@@ -1105,8 +1106,8 @@ struct ClipFieldLinear
         else if(shapes[0] == ST_TET)
         {
           // ST_TET COLOR0 p0 p1 p2 p3
-          if((!m_invert && shapes[1] == COLOR0) ||
-             (m_invert && shapes[1] == COLOR1))
+          if((!do_invert && shapes[1] == COLOR0) ||
+             (do_invert && shapes[1] == COLOR1))
           {
             // Count the points used in this cell.
             ptused[shapes[2]]++;
@@ -1171,8 +1172,8 @@ struct ClipFieldLinear
         else if(shapes[0] == ST_TET)
         {
           // ST_TET COLOR0 p0 p1 p2 p3
-          if((!m_invert && shapes[1] == COLOR0) ||
-             (m_invert && shapes[1] == COLOR1))
+          if((!do_invert && shapes[1] == COLOR0) ||
+             (do_invert && shapes[1] == COLOR1))
           {
             // Output the dofs used for this tet.
             conn_out_ptr[tetOutput++] = point_2_newdof[shapes[2]];
@@ -1342,34 +1343,28 @@ struct ClipFieldLinear
   }
 
   //-------------------------------------------------------------------------
-  template<typename ScalarField>
-  ScalarField
-  create_distance_field(const ScalarField &field) const
+  template<typename FEType>
+  UnstructuredField<FEType>
+  create_distance_field(const UnstructuredField<FEType> &field) const
   {
     // The size of the field's values
     int32 sz = field.get_dof_data().m_values.size();
-//    std::cout << "create_distance_field: sz=" << sz << std::endl;
+
     // Make a new distance array that is the same size as the input field.
     Array<Vec<Float,1>> dist;
     dist.resize(sz);
-//    std::cout << "create_distance_field: resized dist array" << std::endl;
+
     Vec<Float,1> *dist_ptr = dist.get_device_ptr();
-#if 0
-    std::cout << "create_distance_field: dist device ptr="<< (void*)dist_ptr << std::endl;
-    std::cout << "create_distance_field: field.name="<< field.name() << std::endl;
-    conduit::Node n;
-    field.to_node(n);
-    n.print();
-    std::cout << "create_distance_field: field.m_values.size="<< field.get_dof_data().m_values.size() << std::endl;
-#endif
+
     // NOTE: Using CUDA, the following line throws an exception. Make it const.
-    auto field_ptr = field.get_dof_data().m_values.get_device_ptr_const();
-//    std::cout << "create_distance_field: field device ptr="<< (void*)field_ptr << std::endl;
+    const auto *field_ptr = field.get_dof_data().m_values.get_device_ptr_const();
 
     // Make the distance field for all the dofs in the input field.
-    RAJA::forall<for_policy>(RAJA::RangeSegment(0, sz), [=] DRAY_LAMBDA (int32 i)
-    {
-        dist_ptr[i].m_data[0] = field_ptr[i][0] - m_clip_value;
+    const Float clip_value = m_clip_value;
+    const RAJA::RangeSegment range(0, sz);
+    RAJA::forall<for_policy>(range,
+      [=] DRAY_LAMBDA (int32 i) {
+        dist_ptr[i][0] = field_ptr[i][0] - clip_value;
     });
     DRAY_ERROR_CHECK();
 
@@ -1382,7 +1377,7 @@ struct ClipFieldLinear
     gf.m_size_ctrl = field.get_dof_data().m_size_ctrl;
 
     // Wrap as a new field.
-    ScalarField newfield(gf, field.get_poly_order());
+    UnstructuredField<FEType> newfield(gf, field.get_poly_order());
     return newfield;
   }
 };
