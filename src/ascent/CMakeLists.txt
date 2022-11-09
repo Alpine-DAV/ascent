@@ -181,8 +181,7 @@ set(ascent_headers
     utils/ascent_resources_cinema_web.hpp
     # hola
     hola/ascent_hola.hpp)
-    list(APPEND ascent_headers )
-    list(APPEND ascent_sources )
+
 set(ascent_sources
     # ascent interface
     ascent.cpp
