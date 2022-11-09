@@ -33,7 +33,7 @@ bool AllocationManager::m_external_device_allocator = false;
 int
 AllocationManager::host_allocator_id()
 {
-  if(m_device_allocator_id == -1)
+  if(m_host_allocator_id == -1)
   {
 #if !defined(ASCENT_UMPIRE_ENABLED)
          ASCENT_ERROR("Ascent was built without Umpire Support. "
