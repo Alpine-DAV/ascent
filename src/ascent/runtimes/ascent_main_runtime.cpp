@@ -161,6 +161,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
                      "correct version of ascent?");
     }
 
+
 #if defined(ASCENT_VTKM_ENABLED)
     vtkh::Initialize();
 #endif
@@ -217,6 +218,40 @@ AscentRuntime::Initialize(const conduit::Node &options)
     vtkh::SelectKokkosDevice(1);
 #endif
 #endif
+
+
+#if defined(ASCENT_UMPIRE_ENABLED)
+//
+// allocator id setup
+//
+
+int host_alloc_id   = -1;
+int device_alloc_id = -1;
+
+if(options.has_child("host_allocator_id"))
+{
+    host_alloc_id = options["host_allocator_id"].to_int();
+}
+
+if(options.has_child("device_allocator_id"))
+{
+    device_alloc_id = options["device_allocator_id"].to_int();
+}
+
+    #if defined(ASCENT_DRAY_ENABLED)
+        // set devil dray allocator ids to be the same as those used by ascent
+        host_alloc_id = ascent::AllocationManager::host_allocator_id();
+        dray::dray::set_host_allocator_id(host_alloc_id);
+
+        #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+            device_alloc_id = ascent::AllocationManager::device_allocator_id();
+            dray::dray::set_device_allocator_id(device_alloc_id);
+        #endif // end ASCENT_DEVICE_ENABLED
+    #endif // end ASCENT_DRAY_ENABLED
+
+#endif
+
+
 
 #ifdef ASCENT_MFEM_ENABLED
     if(options.has_path("refinement_level"))
