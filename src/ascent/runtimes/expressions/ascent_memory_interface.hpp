@@ -264,7 +264,7 @@ public:
     std::string leaf_path;
     const T * ptr = raw_ptr(component,leaf_path);
 
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
     if(DeviceMemory::is_device_ptr(ptr))
     {
       //std::cout<<"already a gpu pointer\n";
@@ -299,7 +299,7 @@ public:
     std::string leaf_path;
     const T * ptr = raw_ptr(component,leaf_path);
 
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
     bool is_unified;
     bool is_gpu;
     DeviceMemory::is_device_ptr(ptr,is_gpu, is_unified);

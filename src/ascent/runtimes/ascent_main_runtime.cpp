@@ -243,7 +243,7 @@ if(options.has_child("device_allocator_id"))
         host_alloc_id = ascent::AllocationManager::host_allocator_id();
         dray::dray::set_host_allocator_id(host_alloc_id);
 
-        #if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+        #if defined(ASCENT_DEVICE_ENABLED)
             device_alloc_id = ascent::AllocationManager::device_allocator_id();
             dray::dray::set_device_allocator_id(device_alloc_id);
         #endif // end ASCENT_DEVICE_ENABLED

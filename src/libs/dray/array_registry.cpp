@@ -79,9 +79,8 @@ ArrayRegistry::set_device_allocator_id(int id)
   bool can_use = false;
   bool need_device = false;
 
-#ifdef DRAY_CUDA_ENABLED
-  need_device = true;
-#elif defined(DRAY_HIP_ENABLED)
+
+#if defined(DRAY_DEVICE_ENABLED)
   need_device = true;
 #endif
 

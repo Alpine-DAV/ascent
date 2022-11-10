@@ -182,7 +182,7 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, array_tests_cuda)
 {
-#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+#if !defined(ASCENT_DEVICE_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif
@@ -400,7 +400,7 @@ TEST(ascent_blueprint_reductions, field_histogram_braid_cpu)
 TEST(ascent_blueprint_reductions, field_max_gpu)
 {
 
-#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+#if !defined(ASCENT_DEVICE_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif
@@ -420,7 +420,7 @@ TEST(ascent_blueprint_reductions, field_max_gpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_histogram_gpu)
 {
-#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+#if !defined(ASCENT_DEVICE_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif
@@ -452,7 +452,7 @@ TEST(ascent_blueprint_reductions, field_histogram_gpu)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_max_already_gpu)
 {
-#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+#if !defined(ASCENT_DEVICE_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif
@@ -499,7 +499,7 @@ TEST(ascent_blueprint_reductions, field_max_already_gpu)
 
 TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
 {
-#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+#if !defined(ASCENT_DEVICE_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif
@@ -525,7 +525,7 @@ TEST(ascent_blueprint_reductions, max_already_gpu_zone_centered)
 //-----------------------------------------------------------------------------
 TEST(ascent_blueprint_reductions, field_histogram_already_gpu)
 {
-#if !defined(ASCENT_CUDA_ENABLED) && !defined(ASCENT_HIP_ENABLED)
+#if !defined(ASCENT_DEVICE_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
     return;
 #endif

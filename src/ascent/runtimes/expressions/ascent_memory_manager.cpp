@@ -167,7 +167,7 @@ AllocationManager::set_device_allocator_id(int id)
     bool can_use = false;
     bool need_device = false;
 
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
     need_device = true;
 #endif
 
@@ -230,7 +230,7 @@ AllocationManager::conduit_device_allocator_id()
 void
 AllocationManager::set_conduit_mem_handlers()
 {
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
   // we only need to override the mem handlers in the
   // presence of cuda or hip
   conduit::utils::set_memcpy_handler(MagicMemory::copy);
@@ -304,7 +304,7 @@ DeviceMemory::allocate(size_t bytes)
                   "Cannot use DeviceMemory::alloc().");
 #endif
 
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
   m_total_bytes_alloced += bytes;
   m_alloc_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
@@ -334,7 +334,7 @@ DeviceMemory::deallocate(void *data_ptr)
                   "Cannot use DeviceMemory::free().");
 #endif
 
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
   m_free_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
   const int allocator_id = AllocationManager::device_allocator_id();
@@ -426,7 +426,7 @@ DeviceMemory::is_device_ptr(const void *ptr)
 void
 MagicMemory::memset(void * ptr, int value, size_t num )
 {
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
   bool is_device = DeviceMemory::is_device_ptr(ptr);
   if(is_device)
   {
@@ -449,7 +449,7 @@ MagicMemory::memset(void * ptr, int value, size_t num )
 void
 MagicMemory::copy(void * destination, const void * source, size_t num)
 {
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
   bool src_is_gpu = DeviceMemory::is_device_ptr(source);
   bool dst_is_gpu = DeviceMemory::is_device_ptr(destination);
   if(src_is_gpu && dst_is_gpu)

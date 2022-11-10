@@ -70,6 +70,9 @@
 #cmakedefine ASCENT_BABELFLOW_ENABLED "@BABELFLOW_FOUND@"
 
 
+#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#define ASCENT_DEVICE_ENABLED
+#endif
 
 //-----------------------------------------------------------------------------
 //

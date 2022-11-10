@@ -54,7 +54,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     m_own_device(true)
   {
 
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
     m_device_enabled = true;
 #else
     m_device_enabled = false;
@@ -100,7 +100,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
   : ArrayInternalsBase (),
     m_size (size)
   {
-#if defined(ASCENT_CUDA_ENABLED) || defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED)
     m_device_enabled = true;
 #else
     m_device_enabled = false;
