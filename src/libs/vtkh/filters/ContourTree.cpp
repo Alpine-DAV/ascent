@@ -7,10 +7,10 @@
 #include <vtkm/cont/Storage.h>
 #include <vtkm/internal/Configure.h>
 #include <vtkm/filter/ContourTreeUniformAugmented.h>
-#include <vtkm/worklet/contourtree_augmented/PrintVectors.h>
-#include <vtkm/worklet/contourtree_augmented/ProcessContourTree.h>
-#include <vtkm/worklet/contourtree_augmented/processcontourtree/Branch.h>
-#include <vtkm/worklet/contourtree_augmented/processcontourtree/PiecewiseLinearFunction.h>
+#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/PrintVectors.h>
+#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/ProcessContourTree.h>
+#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
+#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/PiecewiseLinearFunction.h>
 
 namespace caugmented_ns = vtkm::worklet::contourtree_augmented;
 using DataValueType = vtkm::Float64;
