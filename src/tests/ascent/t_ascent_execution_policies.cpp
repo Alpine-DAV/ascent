@@ -27,7 +27,8 @@ using namespace conduit;
 using namespace ascent;
 
 
-TEST(ascent_execution_policies, forall)
+
+void test_forall()
 {
     const index_t size = 10;
     index_t vals[size];
@@ -47,7 +48,7 @@ TEST(ascent_execution_policies, forall)
 }
 
 
-TEST(ascent_execution_policies, reductions)
+void test_reductions()
 {
   
     const index_t size = 4;
@@ -112,7 +113,8 @@ TEST(ascent_execution_policies, reductions)
 }
 
 
-TEST(ascent_execution_policies, atomics)
+
+void test_atomics()
 {
     const index_t size = 4;
     index_t vals[size] = {0,-1,-2,-3};
@@ -155,3 +157,19 @@ TEST(ascent_execution_policies, atomics)
     }  
 
 }
+
+TEST(ascent_execution_policies, forall)
+{
+    test_forall();
+}
+
+TEST(ascent_execution_policies, reductions)
+{
+  test_reductions();
+}
+
+TEST(ascent_execution_policies, atomics)
+{
+    test_atomics();
+}
+

@@ -201,7 +201,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=2022.03.2
+camp_version=2022.10.0
 camp_src_dir=${root_dir}/camp-${camp_version}
 camp_build_dir=${root_dir}/build/camp-${camp_version}
 camp_install_dir=${root_dir}/install/camp-${camp_version}/
