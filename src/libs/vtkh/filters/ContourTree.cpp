@@ -59,23 +59,6 @@ namespace vtkh
     std::cout << "\n---\n";
   };
 
-
-class SplitColumnComparer
-{
-public:
-  SplitColumnComparer(double* range, int splitDim):
-    m_range(range), m_splitDim(splitDim)
-  {
-  }
-  bool operator() (int i,int j)
-  {
-    return m_range[i*6 + 2*m_splitDim] < m_range[j*6 + 2*m_splitDim];
-  }
-private:
-  double* m_range;
-  int m_splitDim;
-};
-
 ContourTree::ContourTree()
   : m_levels(5)
 {
@@ -161,127 +144,21 @@ void ContourTree::DoExecute()
 
   vtkm::cont::PartitionedDataSet inDataSet;
 
-  vtkm::cont::ArrayHandle<vtkm::Id3> localBlockIndices;
-  vtkm::cont::ArrayHandle<vtkm::Id3> localBlockOrigins;
-  vtkm::cont::ArrayHandle<vtkm::Id3> localBlockSizes;
-  vtkm::Id3 globalSize(0, 0, 0);
-  vtkm::Id3 blocksPerDim(1, 1, 1);
-
-  // Each rank has one or more blocks.
-  // All ranks have the same number of blocks.
-  double range[mpi_size][6];
-  double localRange[6];
-
   vtkm::Id domain_id;
   vtkm::cont::DataSet dom;
 
   this->m_input->GetDomain(0, dom, domain_id);
-  auto domRange = dom.GetCoordinateSystem(0).GetRange();
   inDataSet.AppendPartition(dom);
 
+#ifdef DEBUG
   if( mpi_size != 1 )
   {
-    for(int j = 0; j < 3; ++j)
-    {
-      localRange[2*j] = domRange[j].Min;
-      localRange[2*j + 1] = domRange[j].Max;
-    }
-
-#ifdef DEBUG
     std::ostringstream ostr;
     ostr << "rank: " << mpi_rank
        << " coord system range: " << dom.GetCoordinateSystem(0).GetRange() << std::endl;
     std::cout << ostr.str();
-#endif
-
-    int blocksPerRank = num_domains;
-    MPI_Allgather(localRange, 2*3*blocksPerRank, MPI_DOUBLE,
-                  range, 2*3*blocksPerRank, MPI_DOUBLE, mpi_comm);
-
-#ifdef DEBUG
-    {
-      std::ostringstream ostr;
-      ostr << "rank: " << mpi_rank << " values: " << std::endl;
-      for(int i = 0; i < mpi_size; ++i)
-      {
-        for(int j = 0; j < 6; ++j)
-          ostr << range[i][j] << " ";
-        ostr << std::endl;
-      }
-
-      ostr << std::endl;
-      std::cout << ostr.str();
-    }
-#endif
-
-    // Compute globalSize
-    for(int i = 0; i < mpi_size; ++i)
-    {
-      for(int j = 0; j < 3; ++j)
-      {
-        if(range[i][2*j+1] > globalSize[j])
-          globalSize[j] = range[i][2*j+1];
-      }
-    }
-    for(int j = 0; j < 3; ++j)
-    {
-      ++globalSize[j];
-    }
-
-    // Compute blocksPerDim
-    double minRange[3] = {range[0][0], range[0][2], range[0][4]};
-    int splitDim = -1;
-
-    for(int i = 1; i < mpi_size; ++i)
-    {
-      for(int j = 0; j < 3; ++j)
-      {
-        if(range[i][2*j] != minRange[j])
-        {
-          blocksPerDim[j] = mpi_size;
-          splitDim = j;
-
-          i = mpi_size;  // Break outside loop too.
-          break;
-        }
-      }
-    }
-
-    // Initalize localBlock variables
-    localBlockIndices.Allocate(blocksPerRank);
-    localBlockOrigins.Allocate(blocksPerRank);
-    localBlockSizes.Allocate(blocksPerRank);
-
-    auto localBlockIndicesPortal = localBlockIndices.WritePortal();
-    auto localBlockOriginsPortal = localBlockOrigins.WritePortal();
-    auto localBlockSizesPortal = localBlockSizes.WritePortal();
-
-    // Compute localBlockIndices
-    int start[mpi_size]; // start of the splitDim column
-    for(int i = 0; i < mpi_size; ++i)
-    {
-      start[i] = i;
-    }
-
-    SplitColumnComparer comp(&range[0][0], splitDim);
-    std::sort(start, start+mpi_size, comp);
-
-    vtkm::Id3 id(0, 0, 0);
-
-    id[splitDim] = start[mpi_rank];
-    localBlockIndicesPortal.Set(0, id);
-
-    // Compute localBlockOrigins
-    id = vtkm::Id3(0, 0, 0);
-    id[splitDim] = range[start[mpi_rank]][2*splitDim];
-    localBlockOriginsPortal.Set(0, id);
-
-    // Compute localBlockSizes
-    id = globalSize;
-    id[splitDim] = range[start[mpi_rank]][2*splitDim + 1] -
-      range[start[mpi_rank]][2*splitDim] + 1;
-    localBlockSizesPortal.Set(0, id);
   }
+#endif
 #endif // VTKH_PARALLEL
 
   bool useMarchingCubes = false;
@@ -294,19 +171,6 @@ void ContourTree::DoExecute()
                                             computeRegularStructure);
 
   std::vector<DataValueType> iso_values;
-
-#ifdef VTKH_PARALLEL
-  if(mpi_size != 1)
-  {
-    // blocksPerDim - number of blocks in each dim.
-    // globalSize - extents - full size of the data.
-    // localBlockIndices - the order of the data blocks index.
-    // localBlockOrigins - block origins in extent.
-    // localBlockSize - extents of the data.
-    filter.SetSpatialDecomposition(
-      blocksPerDim, globalSize, localBlockIndices, localBlockOrigins, localBlockSizes);
-  }
-#endif // VTKH_PARALLEL
 
   filter.SetActiveField(m_field_name);
 
