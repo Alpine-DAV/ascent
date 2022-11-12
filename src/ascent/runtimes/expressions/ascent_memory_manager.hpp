@@ -63,7 +63,7 @@ private:
 ///  Uses AllocationManager::host_allocator_id() when Umpire is enabled,
 ///  Uses malloc/free when Umpire is disabled. 
 //-----------------------------------------------------------------------------
-struct HostMemory
+struct ASCENT_API HostMemory
 {
   static void *allocate(size_t bytes);
   static void *allocate(size_t items, size_t item_size);
@@ -80,7 +80,7 @@ private:
 ///  Uses AllocationManager::device_allocator_id() when Umpire is enabled.
 ///  allocate() and deallocate() throw errors when Umpire is disabled.
 //-----------------------------------------------------------------------------
-struct DeviceMemory
+struct ASCENT_API DeviceMemory
 {
   static void *allocate(size_t bytes);
   static void *allocate(size_t items, size_t item_size);
@@ -97,7 +97,7 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-struct MagicMemory
+struct ASCENT_API MagicMemory
 {
   static void memset(void *ptr, int value, size_t num );
   static void copy(void *destination, const void *source, size_t num);
