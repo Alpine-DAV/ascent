@@ -107,7 +107,7 @@ PointRenderer::PreExecute()
   }
   else
   {
-    vtkm::Bounds coordBounds = this->m_input->GetGlobalBounds();
+    vtkm::Bounds coordBounds = GetGlobalBounds(this->m_input);
     // set a default radius
     vtkm::Float64 lx = coordBounds.X.Length();
     vtkm::Float64 ly = coordBounds.Y.Length();
@@ -124,7 +124,7 @@ PointRenderer::PreExecute()
     mesh_mapper->SetRadius(radius);
   }
 
-  if(!m_use_nodes && this->m_input->IsPointMesh() && m_use_point_merging)
+  if(!m_use_nodes && IsPointMesh(this->m_input) && m_use_point_merging)
   {
     vtkm::Float32 max_radius = radius;
     if(m_use_variable_radius)

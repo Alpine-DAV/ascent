@@ -2,6 +2,7 @@
 #include <vtkh/compositing/Compositor.hpp>
 
 #include <vtkh/Logger.hpp>
+#include <vtkh/DataSet.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 #include <vtkm/rendering/raytracing/Logger.h>
@@ -136,7 +137,9 @@ Renderer::PreExecute()
   if(!range_set)
   {
     // we have not been given a range, so ask the data set
-    vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_name);
+    //vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_name);
+    vtkm::cont::Field in_field = m_input->GetGlobalField(m_field_name);
+    vtkm::cont::ArrayHandle<vtkm::Range> ranges = in_field.GetRange();
     int num_components = ranges.GetNumberOfValues();
     //
     // current vtkm renderers only supports single component scalar fields
@@ -162,7 +165,7 @@ Renderer::PreExecute()
     }
   }
 
-  m_bounds = m_input->GetGlobalBounds();
+  m_bounds = GetGlobalBounds(m_input);
 }
 
 void
@@ -200,12 +203,11 @@ Renderer::DoExecute()
 
   int total_renders = static_cast<int>(m_renders.size());
 
-  int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
+  int num_domains = static_cast<int>(m_input->GetNumberOfPartitions());
   for(int dom = 0; dom < num_domains; ++dom)
   {
     vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
-    m_input->GetDomain(dom, data_set, domain_id);
+    data_set = m_input->GetPartition(dom);
     if(!data_set.HasField(m_field_name))
     {
       continue;
@@ -275,7 +277,7 @@ Renderer::GetRenders() const
   return m_renders;
 }
 
-vtkh::DataSet *
+vtkm::cont::PartitionedDataSet *
 Renderer::GetInput()
 {
   return m_input;

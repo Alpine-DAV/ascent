@@ -8,6 +8,7 @@
 #include <vtkh/vtkh_exports.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/PartitionedDataSet.h>
 
 namespace vtkh
 {
@@ -65,13 +66,6 @@ public:
   vtkm::Id GetNumberOfCells() const;
   // returns the number of cells on this rank
   vtkm::Id GetGlobalNumberOfCells() const;
-  // returns the union of all domains bounds on this rank
-  vtkm::Bounds GetBounds(vtkm::Id coordinate_system_index = 0) const;
-  // returns the union of all abounds on all ranks
-  vtkm::Bounds GetGlobalBounds(vtkm::Id coordinate_system_index = 0) const;
-  // returns a bounds of a single domain
-  vtkm::Bounds GetDomainBounds(const int &domain_index,
-                               vtkm::Id coordinate_system_index = 0) const;
 
   vtkm::cont::Field::Association GetFieldAssociation(const std::string field_name,
                                                      bool &valid_field) const;
@@ -111,6 +105,25 @@ public:
   void PrintSummary(std::ostream &stream) const;
 };
 
+  // returns the union of all abounds on all ranks
+  vtkm::Bounds GetGlobalBounds(vtkm::cont::PartitionedDataSet* input,
+		               vtkm::Id coordinate_system_index = 0);
+
+  // returns the union of all domains bounds on this rank
+  vtkm::Bounds GetBounds(vtkm::Id coordinate_system_index = 0, 
+		         vtkm::Id num_partitions = 0);
+
+  // returns a bounds of a single domain
+  vtkm::Bounds GetDomainBounds(const int &domain_index,
+                               vtkm::Id coordinate_system_index = 0);
+
+  bool IsStructured(vtkm::cont::PartitionedDataSet* input,
+		    int &topological_dims);
+
+  // returns true if every single domain is unstructrued
+  bool IsUnstructured(vtkm::cont::PartitionedDataSet* input);
+
+  bool IsPointMesh(vtkm::cont::PartitionedDataSet* input);
 } // namespace vtkh
 
 #endif

@@ -16,56 +16,58 @@ Filter::~Filter()
 };
 
 void
-Filter::SetInput(DataSet *input)
+Filter::SetInput(vtkm::cont::PartitionedDataSet *input)
 {
   m_input = input;
 }
 
-DataSet*
+vtkm::cont::PartitionedDataSet*
 Filter::GetOutput()
 {
   return m_output;
 }
 
-DataSet*
+vtkm::cont::PartitionedDataSet*
 Filter::Update()
 {
   VTKH_DATA_OPEN(this->GetName());
-#ifdef VTKH_ENABLE_LOGGING
-  VTKH_DATA_ADD("device", GetCurrentDevice());
-  long long int in_cells = this->m_input->GetNumberOfCells();
-  VTKH_DATA_ADD("input_cells", in_cells);
-  VTKH_DATA_ADD("input_domains", this->m_input->GetNumberOfDomains());
-  int in_topo_dims;
-  bool in_structured = this->m_input->IsStructured(in_topo_dims);
-  if(in_structured)
-  {
-    VTKH_DATA_ADD("in_topology", "structured");
-  }
-  else
-  {
-    VTKH_DATA_ADD("in_topology", "unstructured");
-  }
-#endif
+  //TODO:COME BACK TO THIS
+//#ifdef VTKH_ENABLE_LOGGING
+//  VTKH_DATA_ADD("device", GetCurrentDevice());
+//  long long int in_cells = this->m_input->GetNumberOfCells();
+//  VTKH_DATA_ADD("input_cells", in_cells);
+//  VTKH_DATA_ADD("input_domains", this->m_input->GetNumberOfDomains());
+//  int in_topo_dims;
+//  bool in_structured = this->m_input->IsStructured(in_topo_dims);
+//  if(in_structured)
+//  {
+//    VTKH_DATA_ADD("in_topology", "structured");
+//  }
+//  else
+//  {
+//    VTKH_DATA_ADD("in_topology", "unstructured");
+//  }
+//#endif
   PreExecute();
   DoExecute();
   PostExecute();
-#ifdef VTKH_ENABLE_LOGGING
-  long long int out_cells = this->m_output->GetNumberOfCells();
-  VTKH_DATA_ADD("output_cells", out_cells);
-  VTKH_DATA_ADD("output_domains", this->m_output->GetNumberOfDomains());
-  int out_topo_dims;
-  bool out_structured = this->m_output->IsStructured(out_topo_dims);
-
-  if(out_structured)
-  {
-    VTKH_DATA_ADD("output_topology", "structured");
-  }
-  else
-  {
-    VTKH_DATA_ADD("output_topology", "unstructured");
-  }
-#endif
+//TODO:COME BACK TO THIS
+//#ifdef VTKH_ENABLE_LOGGING
+//  long long int out_cells = this->m_output->GetNumberOfCells();
+//  VTKH_DATA_ADD("output_cells", out_cells);
+//  VTKH_DATA_ADD("output_domains", this->m_output->GetNumberOfDomains());
+//  int out_topo_dims;
+//  bool out_structured = this->m_output->IsStructured(out_topo_dims);
+//
+//  if(out_structured)
+//  {
+//    VTKH_DATA_ADD("output_topology", "structured");
+//  }
+//  else
+//  {
+//    VTKH_DATA_ADD("output_topology", "unstructured");
+//  }
+//#endif
   VTKH_DATA_CLOSE();
   return m_output;
 }
@@ -108,9 +110,9 @@ Filter::PostExecute()
 void
 Filter::MapAllFields()
 {
-  if(m_input->GetNumberOfDomains() > 0)
+  if(m_input->GetNumberOfPartitions() > 0)
   {
-    vtkm::cont::DataSet dom = m_input->GetDomain(0);
+    vtkm::cont::DataSet dom = m_input->GetPartition(0);
     vtkm::IdComponent num_fields = dom.GetNumberOfFields();
     for(vtkm::IdComponent i = 0; i < num_fields; ++i)
     {
@@ -131,7 +133,7 @@ Filter::CheckForRequiredField(const std::string &field_name)
     throw Error(msg.str());
   }
 
-  if(!m_input->GlobalFieldExists(field_name))
+  if(!m_input->HasGlobalField(field_name))
   {
     std::stringstream msg;
     msg<<"Required field '"<<field_name;
@@ -143,7 +145,7 @@ Filter::CheckForRequiredField(const std::string &field_name)
 void
 Filter::PropagateMetadata()
 {
-  m_output->SetCycle(m_input->GetCycle());
+  m_output->AddField(m_input->GetField("cycle"));
 }
 
 

@@ -27,7 +27,7 @@ public:
   void SetCamera(vtkmCamera &camera);
 
   int GetNumberOfCameras() const;
-  vtkh::DataSet *GetInput();
+  vtkm::cont::PartitionedDataSet *GetInput();
   void SetHeight(const int height);
   void SetWidth(const int width);
 protected:

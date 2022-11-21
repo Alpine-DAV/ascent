@@ -38,13 +38,13 @@ public:
   void SetRange(const vtkm::Range &range);
   void DisableColorBar();
 
-  vtkm::cont::ColorTable      GetColorTable() const;
-  std::string                 GetFieldName() const;
-  int                         GetNumberOfRenders() const;
-  std::vector<Render>         GetRenders() const;
-  vtkh::DataSet              *GetInput();
-  vtkm::Range                 GetRange() const;
-  bool                        GetHasColorTable() const;
+  vtkm::cont::ColorTable         GetColorTable() const;
+  std::string                    GetFieldName() const;
+  int                            GetNumberOfRenders() const;
+  std::vector<Render>            GetRenders() const;
+  vtkm::cont::PartitionedDataSet *GetInput();
+  vtkm::Range                    GetRange() const;
+  bool                           GetHasColorTable() const;
 protected:
 
   // image related data with cinema support

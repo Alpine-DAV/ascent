@@ -104,8 +104,8 @@ void
 ScalarRenderer::DoExecute()
 {
 
-  int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
-  this->m_output = new DataSet();
+  int num_domains = static_cast<int>(m_input->GetNumberOfPartitions());
+  this->m_output = new vtkm::cont::PartitionedDataSet();
 
   //
   // There external faces + bvh construction happens
@@ -124,8 +124,7 @@ ScalarRenderer::DoExecute()
   for(int dom = 0; dom < num_domains; ++dom)
   {
     vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
-    m_input->GetDomain(dom, data_set, domain_id);
+    data_set = this->m_input->GetPartition(dom);
     vtkm::cont::DataSet filtered = detail::filter_scalar_fields(data_set);
     renderers[dom].SetInput(filtered);
     renderers[dom].SetWidth(m_width);
@@ -153,8 +152,7 @@ ScalarRenderer::DoExecute()
   for(int dom = 0; dom < num_domains; ++dom)
   {
     vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
-    m_input->GetDomain(dom, data_set, domain_id);
+    m_input->GetPartition(dom);
     num_cells = data_set.GetCellSet().GetNumberOfCells();
 
     if(data_set.GetCellSet().GetNumberOfCells())
@@ -269,7 +267,7 @@ ScalarRenderer::DoExecute()
       {
         vtkm::cont::DataSet dset = final_result.ToDataSet();
         const int domain_id = 0;
-        this->m_output->AddDomain(dset, domain_id);
+        this->m_output->InsertPartition(domain_id, dset);
       }
     }
   }
@@ -371,7 +369,7 @@ ScalarRenderer::SetWidth(const int width)
   m_width = width;
 }
 
-vtkh::DataSet *
+vtkm::cont::PartitionedDataSet *
 ScalarRenderer::GetInput()
 {
   return m_input;

@@ -230,15 +230,127 @@ DataSet::GetGlobalNumberOfDomains() const
   return domains;
 }
 
+bool
+IsEmpty(vtkm::cont::PartitionedDataSet* input)
+{
+  bool is_empty = true;
+  const size_t num_domains = input->GetNumberOfPartitions();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    auto cellset = input->GetPartition(i).GetCellSet();
+    if(cellset.GetNumberOfCells() > 0)
+    {
+      is_empty = false;
+      break;
+    }
+  }
+
+  return is_empty;
+}
+
+bool
+GlobalIsEmpty(vtkm::cont::PartitionedDataSet* input)
+{
+  bool is_empty = IsEmpty(input);
+  is_empty = detail::GlobalAgreement(is_empty);
+  return is_empty;
+}
+
+
+bool
+IsPointMesh(vtkm::cont::PartitionedDataSet* input)
+{
+  const bool is_empty = GlobalIsEmpty(input);
+  if(is_empty) return false;
+
+  // since we are not empty, start with the affirmative is_points.
+  // if someone is not points, the we will figure it out here
+  bool is_points = true;
+  const size_t num_domains = input->GetNumberOfPartitions();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    const vtkm::cont::DataSet &dom = input->GetPartition(i);
+    vtkm::UInt8 shape_type;
+    bool single_type = VTKMDataSetInfo::IsSingleCellShape(dom.GetCellSet(), shape_type);
+
+    if(dom.GetCellSet().GetNumberOfCells() > 0)
+    {
+      is_points = (single_type && (shape_type == 1)) && is_points;
+    }
+  }
+
+  is_points = detail::GlobalAgreement(is_points);
+  return is_points;
+}
+
+bool
+IsUnstructured(vtkm::cont::PartitionedDataSet* input)
+{
+  bool is_unstructured = true;
+  const size_t num_domains = input->GetNumberOfPartitions();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    const vtkm::cont::DataSet &dom = input->GetPartition(i);
+    int dims;
+    is_unstructured = !VTKMDataSetInfo::IsStructured(dom, dims) && is_unstructured;
+
+    (void) dims;
+
+    if(!is_unstructured)
+    {
+      break;
+    }
+  }
+
+  is_unstructured = detail::GlobalAgreement(is_unstructured);
+
+  return is_unstructured;
+}
+
+bool
+IsStructured(vtkm::cont::PartitionedDataSet* input, int &topological_dims)
+{
+  topological_dims = -1;
+  bool is_structured = true;
+  const size_t num_domains = input->GetNumberOfPartitions();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    const vtkm::cont::DataSet &dom = input->GetPartition(i);
+    int dims;
+    is_structured = VTKMDataSetInfo::IsStructured(dom, dims) && is_structured;
+
+    if(i == 0)
+    {
+      topological_dims = dims;
+    }
+
+    if(!is_structured || dims != topological_dims)
+    {
+      topological_dims = -1;
+      break;
+    }
+  }
+
+  is_structured = detail::GlobalAgreement(is_structured);
+
+  if(!is_structured)
+  {
+    topological_dims = -1;
+  }
+  return is_structured;
+}
+
+
 vtkm::Bounds
-DataSet::GetDomainBounds(const int &domain_index,
-                         vtkm::Id coordinate_system_index) const
+GetDomainBounds(const int &domain_index,
+                         vtkm::Id coordinate_system_index,
+			 vtkm::cont::PartitionedDataSet* input) 
 {
   const vtkm::Id index = coordinate_system_index;
   vtkm::cont::CoordinateSystem coords;
   try
   {
-    coords = m_domains[domain_index].GetCoordinateSystem(index);
+    coords = input->GetPartition(domain_index).GetCoordinateSystem(index);
   }
   catch (const vtkm::cont::Error &error)
   {
@@ -254,16 +366,16 @@ DataSet::GetDomainBounds(const int &domain_index,
 
 
 vtkm::Bounds
-DataSet::GetBounds(vtkm::Id coordinate_system_index) const
+GetBounds(vtkm::Id coordinate_system_index, vtkm::cont::PartitionedDataSet* input) 
 {
   const vtkm::Id index = coordinate_system_index;
-  const size_t num_domains = m_domains.size();
+  const size_t num_domains = input->GetNumberOfPartitions();
 
   vtkm::Bounds bounds;
 
   for(size_t i = 0; i < num_domains; ++i)
   {
-    vtkm::Bounds dom_bounds = GetDomainBounds(i, index);
+    vtkm::Bounds dom_bounds = GetDomainBounds(i, index, input);
     bounds.Include(dom_bounds);
   }
 
@@ -271,11 +383,11 @@ DataSet::GetBounds(vtkm::Id coordinate_system_index) const
 }
 
 vtkm::Bounds
-DataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
+GetGlobalBounds(vtkm::cont::PartitionedDataSet* input, vtkm::Id coordinate_system_index)
 {
   VTKH_DATA_OPEN("GetGlobalBounds");
   vtkm::Bounds bounds;
-  bounds = GetBounds(coordinate_system_index);
+  bounds = GetBounds(coordinate_system_index, input);
 
 #ifdef VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());

@@ -4,34 +4,34 @@
 
 set(vtkh_filters_headers
     Filter.hpp
-    CellAverage.hpp
-    CleanGrid.hpp
-    Clip.hpp
-    ClipField.hpp
-    CompositeVector.hpp
-    Gradient.hpp
-    GhostStripper.hpp
-    HistSampling.hpp
-    Histogram.hpp
-    Log.hpp
-    IsoVolume.hpp
-    NoOp.hpp
-    Lagrangian.hpp
-    MarchingCubes.hpp
-    MeshQuality.hpp
-    ParticleAdvection.hpp
-    ParticleMerging.hpp
-    PointAverage.hpp
-    PointTransform.hpp
-    Recenter.hpp
-    Tetrahedralize.hpp
-    Threshold.hpp
-    Triangulate.hpp
-    Statistics.hpp
-    Streamline.hpp
-    Slice.hpp
-    VectorComponent.hpp
-    VectorMagnitude.hpp
+#    CellAverage.hpp
+#    CleanGrid.hpp
+#    Clip.hpp
+#    ClipField.hpp
+#    CompositeVector.hpp
+#    Gradient.hpp
+#    GhostStripper.hpp
+#    HistSampling.hpp
+#    Histogram.hpp
+#    Log.hpp
+#    IsoVolume.hpp
+#    NoOp.hpp
+#    Lagrangian.hpp
+#    MarchingCubes.hpp
+#    MeshQuality.hpp
+#    ParticleAdvection.hpp
+#    ParticleMerging.hpp
+#    PointAverage.hpp
+#    PointTransform.hpp
+#    Recenter.hpp
+#    Tetrahedralize.hpp
+#    Threshold.hpp
+#    Triangulate.hpp
+#    Statistics.hpp
+#    Streamline.hpp
+#    Slice.hpp
+#    VectorComponent.hpp
+#    VectorMagnitude.hpp
     )
 
 if(ENABLE_FILTER_CONTOUR_TREE)
@@ -40,34 +40,34 @@ endif()
 
 set(vtkh_filters_sources
     Filter.cpp
-    CellAverage.cpp
-    CleanGrid.cpp
-    Clip.cpp
-    ClipField.cpp
-    CompositeVector.cpp
-    Gradient.cpp
-    GhostStripper.cpp
-    HistSampling.cpp
-    Histogram.cpp
-    Log.cpp
-    IsoVolume.cpp
-    NoOp.cpp
-    Lagrangian.cpp
-    MarchingCubes.cpp
-    MeshQuality.cpp
-    ParticleAdvection.cpp
-    ParticleMerging.cpp
-    PointAverage.cpp
-    PointTransform.cpp
-    Recenter.cpp
-    Tetrahedralize.cpp
-    Threshold.cpp
-    Triangulate.cpp
-    Slice.cpp
-    Statistics.cpp
-    Streamline.cpp
-    VectorComponent.cpp
-    VectorMagnitude.cpp
+#    CellAverage.cpp
+#    CleanGrid.cpp
+#    Clip.cpp
+#    ClipField.cpp
+#    CompositeVector.cpp
+#    Gradient.cpp
+#    GhostStripper.cpp
+#    HistSampling.cpp
+#    Histogram.cpp
+#    Log.cpp
+#    IsoVolume.cpp
+#    NoOp.cpp
+#    Lagrangian.cpp
+#    MarchingCubes.cpp
+#    MeshQuality.cpp
+#    ParticleAdvection.cpp
+#    ParticleMerging.cpp
+#    PointAverage.cpp
+#    PointTransform.cpp
+#    Recenter.cpp
+#    Tetrahedralize.cpp
+#    Threshold.cpp
+#    Triangulate.cpp
+#    Slice.cpp
+#    Statistics.cpp
+#    Streamline.cpp
+#    VectorComponent.cpp
+#    VectorMagnitude.cpp
     )
 
 if(VTKH_ENABLE_FILTER_CONTOUR_TREE)

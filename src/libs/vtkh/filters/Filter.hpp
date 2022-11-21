@@ -5,6 +5,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkm/filter/FieldSelection.h>
+#include <vtkm/cont/PartitionedDataSet.h>
 
 namespace vtkh
 {
@@ -14,11 +15,11 @@ class VTKH_API Filter
 public:
   Filter();
   virtual ~Filter();
-  virtual void SetInput(DataSet *input);
+  virtual void SetInput(vtkm::cont::PartitionedDataSet *input);
   virtual std::string GetName() const = 0;
 
-  DataSet* GetOutput();
-  DataSet* Update();
+  vtkm::cont::PartitionedDataSet* GetOutput();
+  vtkm::cont::PartitionedDataSet* Update();
 
   void AddMapField(const std::string &field_name);
 
@@ -38,8 +39,10 @@ protected:
 
   std::vector<std::string> m_map_fields;
 
-  DataSet *m_input;
-  DataSet *m_output;
+//  DataSet *m_input;
+//  DataSet *m_output;
+  vtkm::cont::PartitionedDataSet *m_input;
+  vtkm::cont::PartitionedDataSet *m_output;
 
   void MapAllFields();
 

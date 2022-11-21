@@ -422,7 +422,7 @@ VolumeRenderer::Update()
   VTKH_DATA_ADD("input_cells", in_cells);
   VTKH_DATA_ADD("input_domains", this->m_input->GetNumberOfDomains());
   int in_topo_dims;
-  bool in_structured = this->m_input->IsStructured(in_topo_dims);
+  bool in_structured = IsStructured(this->m_input,in_topo_dims);
   if(in_structured)
   {
     VTKH_DATA_ADD("in_topology", "structured");

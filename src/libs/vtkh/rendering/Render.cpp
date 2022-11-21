@@ -367,7 +367,7 @@ vtkh::Render
 MakeRender(int width,
            int height,
            vtkm::rendering::Camera camera,
-           vtkh::DataSet &data_set,
+           vtkm::cont::PartitionedDataSet &data_set,
            const std::string &image_name,
            float bg_color[4],
            float fg_color[4])
@@ -375,7 +375,7 @@ MakeRender(int width,
   vtkh::Render render;
   render.SetCamera(camera);
   render.SetImageName(image_name);
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  vtkm::Bounds bounds = GetGlobalBounds(&data_set);
   render.SetSceneBounds(bounds);
   render.SetWidth(width);
   render.SetHeight(height);
