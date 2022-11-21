@@ -22,7 +22,8 @@ public:
   static Renderer::vtkmCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
 
   void Update() override;
-  virtual void SetInput(DataSet *input) override;
+  virtual void SetInput(vtkm::cont::PartitionedDataSet *input) override;
+  //virtual void SetInput(DataSet *input) override;
 
   virtual void SetColorTable(const vtkm::cont::ColorTable &color_table) override;
 protected:

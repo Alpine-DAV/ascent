@@ -100,9 +100,9 @@ void MemSet(vtkm::cont::ArrayHandle<T> &array, const T value, const vtkm::Id num
 } // namespace detail
 
 bool
-DataSet::OneDomainPerRank() const
+OneDomainPerRank(vtkm::cont::PartitionedDataSet* data_set) 
 {
-  bool one = GetNumberOfDomains() == 1;
+  bool one = data_set->GetNumberOfPartitions() == 1;
   return detail::GlobalAgreement(one);
 }
 
@@ -342,9 +342,9 @@ IsStructured(vtkm::cont::PartitionedDataSet* input, int &topological_dims)
 
 
 vtkm::Bounds
-GetDomainBounds(const int &domain_index,
-                         vtkm::Id coordinate_system_index,
-			 vtkm::cont::PartitionedDataSet* input) 
+GetDomainBounds(vtkm::cont::PartitionedDataSet* input, 
+                const int &domain_index,
+                vtkm::Id coordinate_system_index)
 {
   const vtkm::Id index = coordinate_system_index;
   vtkm::cont::CoordinateSystem coords;
@@ -375,7 +375,7 @@ GetBounds(vtkm::Id coordinate_system_index, vtkm::cont::PartitionedDataSet* inpu
 
   for(size_t i = 0; i < num_domains; ++i)
   {
-    vtkm::Bounds dom_bounds = GetDomainBounds(i, index, input);
+    vtkm::Bounds dom_bounds = GetDomainBounds(input, i, index);
     bounds.Include(dom_bounds);
   }
 

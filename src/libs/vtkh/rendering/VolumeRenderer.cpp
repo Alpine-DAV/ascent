@@ -420,7 +420,7 @@ VolumeRenderer::Update()
   VTKH_DATA_ADD("device", GetCurrentDevice());
   long long int in_cells = this->m_input->GetNumberOfCells();
   VTKH_DATA_ADD("input_cells", in_cells);
-  VTKH_DATA_ADD("input_domains", this->m_input->GetNumberOfDomains());
+  VTKH_DATA_ADD("input_domains", this->m_input->GetNumberOfPartitions());
   int in_topo_dims;
   bool in_structured = IsStructured(this->m_input,in_topo_dims);
   if(in_structured)
@@ -468,7 +468,7 @@ void VolumeRenderer::CorrectOpacity()
 void
 VolumeRenderer::DoExecute()
 {
-  if(m_input->OneDomainPerRank() && !m_has_unstructured)
+  if(OneDomainPerRank(m_input) && !m_has_unstructured)
   {
     // Danger: this logic only works if there is exactly one per rank
     RenderOneDomainPerRank();
@@ -491,7 +491,7 @@ VolumeRenderer::RenderOneDomainPerRank()
   m_tracer->SetSampleDistance(m_sample_dist);
 
   int total_renders = static_cast<int>(m_renders.size());
-  int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
+  int num_domains = static_cast<int>(m_input->GetNumberOfPartitions());
   if(num_domains > 1)
   {
     throw Error("RenderOneDomainPerRank: this should never happend.");
@@ -499,8 +499,7 @@ VolumeRenderer::RenderOneDomainPerRank()
   for(int dom = 0; dom < num_domains; ++dom)
   {
     vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
-    m_input->GetDomain(0, data_set, domain_id);
+    data_set = m_input->GetPartition(0);
 
     if(!data_set.HasField(m_field_name))
     {
@@ -652,7 +651,7 @@ VolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera,
 void
 VolumeRenderer::Composite(const int &num_images)
 {
-  const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
+  const int num_domains = static_cast<int>(m_input->GetNumberOfPartitions());
 
   m_compositor->SetCompositeMode(Compositor::VIS_ORDER_BLEND);
 
@@ -833,7 +832,7 @@ VolumeRenderer::DepthSort(int num_domains,
 void
 VolumeRenderer::FindVisibilityOrdering()
 {
-  const int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
+  const int num_domains = static_cast<int>(m_input->GetNumberOfPartitions());
   const int num_cameras = static_cast<int>(m_renders.size());
   m_visibility_orders.resize(num_cameras);
 
@@ -857,7 +856,7 @@ VolumeRenderer::FindVisibilityOrdering()
     const vtkm::rendering::Camera &camera = m_renders[i].GetCamera();
     for(int dom = 0; dom < num_domains; ++dom)
     {
-      vtkm::Bounds bounds = this->m_input->GetDomainBounds(dom);
+      vtkm::Bounds bounds = GetDomainBounds(this->m_input, dom);
       min_depths[dom] = FindMinDepth(camera, bounds);
     }
 
@@ -865,18 +864,17 @@ VolumeRenderer::FindVisibilityOrdering()
 
   } // for each camera
 }
-void VolumeRenderer::SetInput(DataSet *input)
+void VolumeRenderer::SetInput(vtkm::cont::PartitionedDataSet *input)
 {
   Filter::SetInput(input);
   ClearWrappers();
 
-  int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
+  int num_domains = static_cast<int>(m_input->GetNumberOfPartitions());
   m_has_unstructured = false;
   for(int dom = 0; dom < num_domains; ++dom)
   {
     vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
-    m_input->GetDomain(dom, data_set, domain_id);
+    data_set = m_input->GetPartition(dom);
 
     const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
     if(cellset.GetNumberOfCells() == 0)

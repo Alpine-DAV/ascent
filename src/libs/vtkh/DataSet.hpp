@@ -55,8 +55,6 @@ public:
   // checks to see if cells exist on all ranks
   bool GlobalIsEmpty() const;
 
-  // return true if there is at most one domain on each rank
-  bool OneDomainPerRank() const;
 
   // returns the number of domains on this rank
   vtkm::Id GetNumberOfDomains() const;
@@ -105,8 +103,12 @@ public:
   void PrintSummary(std::ostream &stream) const;
 };
 
+
+  // return true if there is at most one domain on each rank
+  bool OneDomainPerRank(vtkm::cont::PartitionedDataSet* data_set);
+
   // returns the union of all abounds on all ranks
-  vtkm::Bounds GetGlobalBounds(vtkm::cont::PartitionedDataSet* input,
+  vtkm::Bounds GetGlobalBounds(vtkm::cont::PartitionedDataSet* data_set,
 		               vtkm::Id coordinate_system_index = 0);
 
   // returns the union of all domains bounds on this rank
@@ -114,16 +116,17 @@ public:
 		         vtkm::Id num_partitions = 0);
 
   // returns a bounds of a single domain
-  vtkm::Bounds GetDomainBounds(const int &domain_index,
+  vtkm::Bounds GetDomainBounds(vtkm::cont::PartitionedDataSet* data_set, 
+		               const int &domain_index,
                                vtkm::Id coordinate_system_index = 0);
 
-  bool IsStructured(vtkm::cont::PartitionedDataSet* input,
+  bool IsStructured(vtkm::cont::PartitionedDataSet* data_set,
 		    int &topological_dims);
 
   // returns true if every single domain is unstructrued
-  bool IsUnstructured(vtkm::cont::PartitionedDataSet* input);
+  bool IsUnstructured(vtkm::cont::PartitionedDataSet* data_set);
 
-  bool IsPointMesh(vtkm::cont::PartitionedDataSet* input);
+  bool IsPointMesh(vtkm::cont::PartitionedDataSet* data_set);
 } // namespace vtkh
 
 #endif
