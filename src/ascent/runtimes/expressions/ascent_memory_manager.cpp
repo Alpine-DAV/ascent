@@ -234,7 +234,7 @@ AllocationManager::set_conduit_mem_handlers()
   // we only need to override the mem handlers in the
   // presence of cuda or hip
   conduit::utils::set_memcpy_handler(MagicMemory::copy);
-  conduit::utils::set_memset_handler(MagicMemory::memset);
+  conduit::utils::set_memset_handler(MagicMemory::set);
 #endif
 }
 
@@ -424,7 +424,7 @@ DeviceMemory::is_device_ptr(const void *ptr)
 
 //-----------------------------------------------------------------------------
 void
-MagicMemory::memset(void * ptr, int value, size_t num )
+MagicMemory::set(void * ptr, int value, size_t num )
 {
 #if defined(ASCENT_DEVICE_ENABLED)
   bool is_device = DeviceMemory::is_device_ptr(ptr);

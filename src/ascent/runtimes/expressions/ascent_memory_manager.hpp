@@ -99,7 +99,7 @@ private:
 //-----------------------------------------------------------------------------
 struct ASCENT_API MagicMemory
 {
-  static void memset(void *ptr, int value, size_t num );
+  static void set(void *ptr, int value, size_t num );
   static void copy(void *destination, const void *source, size_t num);
 };
 
