@@ -24,6 +24,10 @@
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
+#if defined(ASCENT_DRAY_ENABLED)
+#include <dray/dray.hpp>
+#endif
+
 using namespace std;
 using namespace conduit;
 using namespace ascent;
@@ -1237,6 +1241,24 @@ main(int argc, char *argv[])
   // device pointers
   AllocationManager::set_conduit_mem_handlers();
 
+  // this is normally set in ascent::Initialize, 
+  // make sure devil ray and ascent use same umpire
+  // allocs
+
+  #if defined(ASCENT_DRAY_ENABLED)
+      int host_alloc_id   = -1;
+      int device_alloc_id = -1;
+      // set devil dray allocator ids to be the same as those used by ascent
+      host_alloc_id = ascent::AllocationManager::host_allocator_id();
+      dray::dray::set_host_allocator_id(host_alloc_id);
+
+      #if defined(ASCENT_DEVICE_ENABLED)
+          device_alloc_id = ascent::AllocationManager::device_allocator_id();
+          dray::dray::set_device_allocator_id(device_alloc_id);
+      #endif // end ASCENT_DEVICE_ENABLED
+  #endif // end ASCENT_DRAY_ENABLED
+
+  
   // allow override of the data size via the command line
   if(argc == 2)
   {

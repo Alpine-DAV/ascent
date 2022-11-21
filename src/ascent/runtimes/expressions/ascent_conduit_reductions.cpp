@@ -603,6 +603,12 @@ struct HistogramFunctor
     using for_policy    = typename Exec::for_policy;
     using atomic_policy = typename Exec::atomic_policy;
 
+    // init device array
+    ascent::forall<for_policy>(0, num_bins, [=] ASCENT_LAMBDA(index_t i)
+    {
+      bins_ptr[i]=0.0;
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
 
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
