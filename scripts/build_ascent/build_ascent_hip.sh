@@ -17,10 +17,11 @@
 ##############################################################################
 set -eu -o pipefail
 
-CC=/opt/rocm/llvm/bin/amdclang
-CXX=/opt/rocm/llvm/bin/amdclang++
-ROCM_ARCH=gfx90a
-ROCM_PATH=/opt/rocm/
+CC="${CC:=/opt/rocm/llvm/bin/amdclang}"
+CXX="${CXX:=/opt/rocm/llvm/bin/amdclang++}"
+# FTN?
+ROCM_ARCH="${ROCM_ARCH:=gfx90a}"
+ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
 
 ##############################################################################
 # Build Options
