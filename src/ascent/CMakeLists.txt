@@ -357,6 +357,10 @@ if(CUDA_FOUND)
   set_source_files_properties(${ascent_device_sources} PROPERTIES LANGUAGE CUDA)
 endif()
 
+if(HIP_FOUND)
+  set_source_files_properties(${ascent_device_sources} PROPERTIES LANGUAGE HIP)
+endif()
+
 ##################
 # req'd libs
 ##################
