@@ -39,7 +39,8 @@
 #include "BabelFlow/reduce/KWayReductionTaskMap.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
-#include "BabelFlow/DefGraphConnector.h"
+//#include "BabelFlow/DefGraphConnector.h"
+#include "BabelFlow/MultiGraphConnector.h"
 #include "BabelFlow/ModuloMap.h"
 #include "BabelFlow/RelayTask.h"
 
@@ -122,9 +123,9 @@ private:
   BabelFlow::ComposableTaskGraph m_fullGraph;
   BabelFlow::ComposableTaskMap m_fullTaskMap;
 
-  BabelFlow::DefGraphConnector m_defGraphConnector_1;
-  BabelFlow::DefGraphConnector m_defGraphConnector_2;
-  BabelFlow::DefGraphConnector m_defGraphConnector_3;
+    //BabelFlow::DefGraphConnector m_defGraphConnector_1;
+    //BabelFlow::DefGraphConnector m_defGraphConnector_2;
+    //BabelFlow::DefGraphConnector m_defGraphConnector_3;
 
   std::vector<uint32_t> m_radices;
 };
@@ -1330,30 +1331,30 @@ void ParallelMergeTree::Initialize()
 
   if( StatisticsMap::sRequestedStats.size() )
   {
-    m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
-    m_defGraphConnector_2 = BabelFlow::DefGraphConnector( &m_kWayMergeGr, 1, &m_treeStatsGr, 2 );
-    m_defGraphConnector_3 = BabelFlow::DefGraphConnector( &m_treeStatsGr, 2, &m_gatherTaskGr, 3 );
+      //m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
+      //m_defGraphConnector_2 = BabelFlow::DefGraphConnector( &m_kWayMergeGr, 1, &m_treeStatsGr, 2 );
+      //m_defGraphConnector_3 = BabelFlow::DefGraphConnector( &m_treeStatsGr, 2, &m_gatherTaskGr, 3 );
 
-    std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ 
-      &m_defGraphConnector_1, 
-      &m_defGraphConnector_2,
-      &m_defGraphConnector_3
-    };
+      //std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ 
+      // &m_defGraphConnector_1, 
+      //&m_defGraphConnector_2,
+      //&m_defGraphConnector_3
+      //};
     std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr, &m_treeStatsGr, &m_gatherTaskGr };
     std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp, &m_treeStatsMp, &m_gatherTaskMp }; 
 
-    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
+    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec/*, gr_connectors*/ );
     m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
   }
   else
   {
-    m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
+      // m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
 
-    std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector_1 };
+      //std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector_1 };
     std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_kWayMergeGr };
     std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_kWayTaskMp }; 
 
-    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
+    m_fullGraph = BabelFlow::ComposableTaskGraph( gr_vec/*, gr_connectors*/ );
     m_fullTaskMap = BabelFlow::ComposableTaskMap( task_maps );
   }
   
