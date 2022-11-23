@@ -369,7 +369,7 @@ DeviceMemory::is_device_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 
     is_unified = cudaSuccess && atts.type == cudaMemoryTypeDevice;
 #elif defined(ASCENT_HIP_ENABLED)
-    hipPointerAttributes_t atts;
+    hipPointerAttribute_t atts;
     const hipError_t perr = hipPointerGetAttributes(&atts, ptr);
 
     is_gpu = false;
@@ -380,7 +380,7 @@ DeviceMemory::is_device_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
     hipError_t perr = hipGetLastError();
     is_gpu = (perr == hipSuccess) &&
              (atts.type == hipMemoryTypeDevice ||
-              atts.type ==  hipMemoryTypeManaged );
+              atts.type ==  hipMemoryTypeUnified );
     is_unified = (hipSuccess && atts.type == hipMemoryTypeDevice);
 #endif 
 }
@@ -402,14 +402,14 @@ DeviceMemory::is_device_ptr(const void *ptr)
                  atts.type == cudaMemoryTypeManaged);
 
 #elif defined(ASCENT_HIP_ENABLED)
-    hipPointerAttributes_t atts;
+    hipPointerAttribute_t atts;
     const hipError_t perr = cudaPointerGetAttributes(&atts, ptr);
     // clear last error so other error checking does
     // not pick it up
     hipError_t error = cudaGetLastError();
     return perr == hipSuccess &&
                 (atts.type == hipMemoryTypeDevice ||
-                 atts.type == hipMemoryTypeManaged);
+                 atts.type == hipMemoryTypeUnified);
 #else
   (void) ptr;
   return false;
