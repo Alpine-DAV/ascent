@@ -377,7 +377,7 @@ DeviceMemory::is_device_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
 
     // clear last error so other error checking does
     // not pick it up
-    hipError_t perr = hipGetLastError();
+    hipError_t error = hipGetLastError();
     is_gpu = (perr == hipSuccess) &&
              (atts.memoryType == hipMemoryTypeDevice ||
               atts.memoryType ==  hipMemoryTypeUnified );
