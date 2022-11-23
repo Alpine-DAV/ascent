@@ -39,6 +39,12 @@
 #include "driver_types.h"
 #endif
 
+#ifdef ASCENT_HIP_ENABLED
+#include <hip_runtime.h>
+#include <hip.h>
+#endif
+
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
