@@ -180,7 +180,7 @@ TEST(ascent_blueprint_reductions, array_tests_cpu)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_blueprint_reductions, array_tests_cuda)
+TEST(ascent_blueprint_reductions, array_tests_gpu)
 {
 #if !defined(ASCENT_DEVICE_ENABLED)
     ASCENT_INFO("GPU Support Disabled, skipping GPU test");
@@ -194,7 +194,7 @@ TEST(ascent_blueprint_reductions, array_tests_cuda)
     std::cout << "input" << std::endl;
     input["values"].parse("[0,1,2,3,4,5]","yaml");
     input.print();
-    res = ascent::runtime::expressions::array_max(input["values"],"cuda");
+    res = ascent::runtime::expressions::array_max(input["values"],ExecutionManager::preferred_gpu_policy());
     std::cout << "RESULT:" << std::endl;
     res.print();
     EXPECT_EQ(res["value"].to_float64(), 5.0);
@@ -204,7 +204,7 @@ TEST(ascent_blueprint_reductions, array_tests_cuda)
     std::cout << "input" << std::endl;
     input["values"].parse("[0,1,2,3,4,5]","yaml");
     input.print();
-    res = ascent::runtime::expressions::array_min(input["values"],"cuda");
+    res = ascent::runtime::expressions::array_min(input["values"],ExecutionManager::preferred_gpu_policy());
     std::cout << "RESULT:" << std::endl;
     res.print();
     EXPECT_EQ(res["value"].to_float64(), 0.0);
@@ -214,7 +214,7 @@ TEST(ascent_blueprint_reductions, array_tests_cuda)
     std::cout << "input" << std::endl;
     input["values"].parse("[0,1,2,3,4,5]","yaml");
     input.print();
-    res = ascent::runtime::expressions::array_sum(input["values"],"cuda");
+    res = ascent::runtime::expressions::array_sum(input["values"],ExecutionManager::preferred_gpu_policy());
     std::cout << "RESULT:" << std::endl;
     res.print();
     EXPECT_EQ(res["value"].to_float64(), 0.0 + 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
