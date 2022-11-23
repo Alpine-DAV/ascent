@@ -40,7 +40,7 @@
 #endif
 
 #ifdef ASCENT_HIP_ENABLED
-#include <hip.h>
+#include "hip/hip_runtime.h"
 #endif
 
 
