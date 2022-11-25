@@ -890,7 +890,7 @@ namespace dray
   };
 
   bool
-  ExtractIsosurface::all_linear(Collection &collxn)
+  ExtractIsosurface::low_order(Collection &collxn)
   {
     bool retval = true;
     for(DataSet ds : collxn.domains())
@@ -898,7 +898,9 @@ namespace dray
       Mesh *mesh = ds.mesh();
       Field *field = ds.field(m_iso_field_name);
 
-      if(mesh->order() != 1 || field->order() != 1)
+      // Check that the mesh and field are low-order
+      if(  (mesh->order() != Order::Constant && mesh->order() != Order::Linear)
+        || (field->order() != Order::Constant && field->order() != Order::Linear))
       {
         retval = false;
         break;
@@ -925,7 +927,7 @@ namespace dray
   {
     Collection out_collxn_first;
     Collection out_collxn_second;
-    bool use_marching_cubes = all_linear(collxn);
+    bool use_marching_cubes = low_order(collxn);
     if(use_marching_cubes)
     {
       // Fast-path for linear mesh/field types.
