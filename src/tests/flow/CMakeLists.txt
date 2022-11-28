@@ -29,9 +29,10 @@ endif()
 
 #(tests depend on ascent b/c we are using some of its utils in the tests)
 
+# Note: flow tests use some of ascent's utils, hence the `ascent` dep here
 message(STATUS "Adding flow lib unit tests")
 foreach(TEST ${FLOW_TESTS})
-    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent_flow)
+    add_cpp_test(TEST ${TEST} DEPENDS_ON ascent ascent_flow)
 endforeach()
 
 if(PYTHON_FOUND AND ENABLE_PYTHON)
