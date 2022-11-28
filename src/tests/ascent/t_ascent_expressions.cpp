@@ -14,6 +14,7 @@
 
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
+#include <runtimes/expressions/ascent_memory_manager.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -23,12 +24,15 @@
 #include "t_config.hpp"
 #include "t_utils.hpp"
 
+#if defined(ASCENT_DRAY_ENABLED)
+#include <dray/dray.hpp>
+#endif
+
 using namespace std;
 using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
-
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, basic_expressions)
 {
@@ -307,6 +311,8 @@ TEST(ascent_expressions, functional_correctness)
   Node multi_dom;
   blueprint::mesh::to_multi_domain(data, multi_dom);
 
+  multi_dom.print();
+
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&multi_dom);
 
@@ -317,6 +323,48 @@ TEST(ascent_expressions, functional_correctness)
   res = eval.evaluate(expr);
   EXPECT_EQ(res["value"].as_float64(), 25);
   EXPECT_EQ(res["type"].as_string(), "vector");
+
+  expr = "histogram(field('ele_example'),num_bins=3)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"[5.0, 5.0, 6.0]");
+
+  expr = "histogram(field('ele_example'),num_bins=3).value";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].to_yaml(),"[5.0, 5.0, 6.0]");
+  EXPECT_EQ(res["type"].as_string(), "array");
+
+  expr = "max(histogram(field('ele_example'),num_bins=3).value)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].as_float64(), 6.0);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "min(histogram(field('ele_example'),num_bins=3).value)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].as_float64(), 5.0);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "sum(histogram(field('ele_example'),num_bins=3).value)";
+  res = eval.evaluate(expr);
+  res.print();
+  EXPECT_EQ(res["value"].as_float64(), 16.0);
+  EXPECT_EQ(res["type"].as_string(), "double");
+
+  expr = "entropy(histogram(field('ele_example'),num_bins=3))";
+  res = eval.evaluate(expr);
+  res.print();
+
+  expr = "pdf(histogram(field('ele_example'),num_bins=3))";
+  res = eval.evaluate(expr);
+  res.print();
+
+  expr = "cdf(histogram(field('ele_example'),num_bins=3))";
+  res = eval.evaluate(expr);
+  res.print();
+
 
   expr = "entropy(histogram(field('ele_example')))";
   res = eval.evaluate(expr);
@@ -781,6 +829,13 @@ TEST(ascent_expressions, test_gradient_array)
     res = eval.evaluate("gradient(val, window_length=200, window_length_unit='cycle')", "gradient_val");
   }
 
+  // input setup:
+  // cycles: [100, 200, 300, 500]
+  // times:  [2.0, 4.0, 6.0, 10.0]
+  // vals:   [1,   2,   3 ,  4]
+  // vecs:   [(1,2,3), (9,3,4), (3,4,0), (6,4,8)]
+
+
   runtime::expressions::ExpressionEval eval(&multi_dom);
   conduit::float64_array result;
 
@@ -891,13 +946,28 @@ TEST(ascent_expressions, test_gradient_array)
     EXPECT_EQ(result.to_json(), "[0.5, 0.5, 0.25]");
   }
 
+  // NOTE: min, max of an array return a conduit node with both
+  // `value` and `index`, I think they are tagged wrong as "double"
+  // other parts of the expr system depend on this, but
+  // its not direclty tested.
+
   // confirm it behaves properly with other operators that take an array as input
   for(const string &expression : {
       "max(gradient_range(val, first_absolute_index=1, last_absolute_index=3))",
     }) {
     res = eval.evaluate(expression);
+    res.print();
     EXPECT_EQ(res["type"].as_string(), "double");
     EXPECT_EQ(res["value"].to_float64(), 0.5);
+  }
+
+  for(const string &expression : {
+      "min(gradient_range(val, first_absolute_index=1, last_absolute_index=3))",
+    }) {
+    res = eval.evaluate(expression);
+    res.print();
+    EXPECT_EQ(res["type"].as_string(), "double");
+    EXPECT_EQ(res["value"].to_float64(), 0.25);
   }
 
   //confirm it returns an empty gradient if there is only a single value
@@ -1002,14 +1072,18 @@ TEST(ascent_expressions, test_history_range)
       "max(history_range(val, first_absolute_index=0, last_absolute_index=2))",
     }) {
     res = eval.evaluate(expression);
+    res.print();
     EXPECT_EQ(res["type"].as_string(), "double");
     EXPECT_EQ(res["value"].as_double(), -1);
   }
+
+  // NOTE: EQUALS -1 wont work b/c the result of max is value + index.
 
   for(const string &expression : {
       "max(history_range(val, first_absolute_index=0, last_absolute_index=2)) == -1.0",
     }) {
     res = eval.evaluate(expression);
+    res.print();
     EXPECT_EQ(res["type"].as_string(), "bool");
     EXPECT_EQ(res["value"].to_int8(), 1);
   }
@@ -1117,341 +1191,6 @@ TEST(ascent_expressions, if_expressions)
   }
   EXPECT_EQ(threw, true);
 }
-//-----------------------------------------------------------------------------
-
-TEST(ascent_binning, binning_basic_meshes)
-{
-  // the vtkm runtime is currently our only rendering runtime
-  Node n;
-  ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent support disabled, skipping test");
-    return;
-  }
-
-  //
-  // Create an example mesh.
-  //
-  Node data, verify_info;
-
-  conduit::blueprint::mesh::examples::basic("hexs", 3, 3, 3, data);
-
-  // ascent normally adds this but we are doing an end around
-  data["state/cycle"] = 100;
-  data["state/time"] = 1.3;
-  data["state/domain_id"] = 0;
-  Node multi_dom;
-  blueprint::mesh::to_multi_domain(data, multi_dom);
-
-  runtime::expressions::register_builtin();
-  runtime::expressions::ExpressionEval eval(&multi_dom);
-
-  conduit::Node res;
-  std::string expr;
-
-  expr = "binning('field', 'sum', [axis('x', [0, 2.5, 5, 7.5, 10])])";
-  res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(), "[0.0, 0.0, 16.0, 0.0]");
-
-  expr = "binning('field', 'max', [axis('z', [-5, 0, 5])])";
-  res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 7.0]");
-
-  expr = "binning('field', 'max', [axis('z', [-5, 0, 1], clamp=True)])";
-  res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(), "[3.0, 7.0]");
-
-  expr =
-      "binning('field', 'max', [axis('x', num_bins=4), axis('y', num_bins=4)], "
-      "empty_bin_val=100)";
-  res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(),
-            "[4.0, 100.0, 5.0, 100.0, 100.0, 100.0, 100.0, 100.0, 6.0, 100.0, "
-            "7.0, 100.0, 100.0, 100.0, 100.0, 100.0]");
-
-  expr =
-      "binning('field', 'sum', [axis('x', num_bins=2), axis('y', num_bins=2), "
-      "axis('z', num_bins=2)])";
-  res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(),
-            "[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]");
-
-  expr = "binning('', 'pdf', [axis('field', num_bins=8)])";
-  res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(),
-            "[0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125]");
-
-  expr = "binning('field', 'pdf', [axis('x', num_bins=2), axis('y', "
-         "num_bins=2), axis('z', num_bins=2)])";
-  res = eval.evaluate(expr);
-  EXPECT_EQ(res["attrs/value/value"].to_json(),
-            "[0.0, 0.0357142857142857, 0.0714285714285714, 0.107142857142857, "
-            "0.142857142857143, 0.178571428571429, 0.214285714285714, 0.25]");
-}
-
-TEST(ascent_binning, binning_errors)
-{
-  // the vtkm runtime is currently our only rendering runtime
-  Node n;
-  ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent support disabled, skipping test");
-    return;
-  }
-
-  //
-  // Create an example mesh.
-  //
-  Node data, verify_info;
-  conduit::blueprint::mesh::examples::braid("hexs",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            data);
-  // ascent normally adds this but we are doing an end around
-  data["state/domain_id"] = 0;
-  Node multi_dom;
-  blueprint::mesh::to_multi_domain(data, multi_dom);
-
-  runtime::expressions::register_builtin();
-  runtime::expressions::ExpressionEval eval(&multi_dom);
-
-  conduit::Node res;
-  std::string expr;
-
-  bool threw = false;
-  try
-  {
-    expr = "binning('', 'avg', [axis('x'), axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('braid', 'sum', [axis('x'), axis('vel')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('vel', 'sum', [axis('x'), axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('braid', 'sum', [axis('x', bins=[1,2], num_bins=1), "
-           "axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('braid', 'sum', [axis('x', bins=[1]), axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_binning, filter_braid_binning_mesh)
-{
-  // the vtkm runtime is currently our only rendering runtime
-  Node n;
-  ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent support disabled, skipping test");
-    return;
-  }
-
-  string output_path = prepare_output_dir();
-  std::string output_file =
-      conduit::utils::join_file_path(output_path, "tout_binning_filter");
-
-  remove_test_image(output_file);
-  //
-  // Create an example mesh.
-  //
-  Node data, verify_info;
-  conduit::blueprint::mesh::examples::braid("hexs", 20, 20, 20, data);
-
-  conduit::Node pipelines;
-  // pipeline 1
-  pipelines["pl1/f1/type"] = "binning";
-  // filter knobs
-  conduit::Node &params = pipelines["pl1/f1/params"];
-  params["reduction_op"] = "sum";
-  params["var"] = "braid";
-  params["output_field"] = "binning";
-  // paint the field onto the original mesh
-  params["output_type"] = "mesh";
-
-  conduit::Node &axis0 = params["axes"].append();
-  axis0["var"] = "x";
-  axis0["num_bins"] = 10;
-  axis0["min_val"] = -10.0;
-  axis0["max_val"] = 10.0;
-  axis0["clamp"] = 1;
-
-  conduit::Node &axis1 = params["axes"].append();
-  axis1["var"] = "y";
-  axis1["num_bins"] = 10;
-  axis1["clamp"] = 0;
-
-  conduit::Node &axis2 = params["axes"].append();
-  axis2["var"] = "z";
-  axis2["num_bins"] = 10;
-  axis2["clamp"] = 10;
-
-  conduit::Node scenes;
-  scenes["s1/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/field"] = "binning";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/image_prefix"] = output_file;
-
-  conduit::Node actions;
-  // add the pipeline
-  conduit::Node &add_pipelines= actions.append();
-  add_pipelines["action"] = "add_pipelines";
-  add_pipelines["pipelines"] = pipelines;
-  // add the scenes
-  conduit::Node &add_scenes= actions.append();
-  add_scenes["action"] = "add_scenes";
-  add_scenes["scenes"] = scenes;
-
-  //
-  // Run Ascent
-  //
-
-  Ascent ascent;
-
-  Node ascent_opts;
-  ascent_opts["runtime/type"] = "ascent";
-  ascent.open(ascent_opts);
-  ascent.publish(data);
-  ascent.execute(actions);
-  ascent.close();
-
-  EXPECT_TRUE(check_test_image(output_file, 0.1));
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_binning, filter_braid_binning_bins)
-{
-  // the vtkm runtime is currently our only rendering runtime
-  Node n;
-  ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent support disabled, skipping test");
-    return;
-  }
-
-  string output_path = prepare_output_dir();
-  std::string output_file =
-      conduit::utils::join_file_path(output_path, "tout_binning_filter_bins");
-
-  remove_test_image(output_file);
-  //
-  // Create an example mesh.
-  //
-  Node data, verify_info;
-  conduit::blueprint::mesh::examples::braid("hexs", 20, 20, 20, data);
-
-  conduit::Node pipelines;
-  // pipeline 1
-  pipelines["pl1/f1/type"] = "binning";
-  // filter knobs
-  conduit::Node &params = pipelines["pl1/f1/params"];
-  params["reduction_op"] = "sum";
-  params["var"] = "braid";
-  params["output_field"] = "binning";
-  // reduced dataset of only the bins
-  params["output_type"] = "bins";
-
-  conduit::Node &axis0 = params["axes"].append();
-  axis0["var"] = "x";
-  axis0["num_bins"] = 10;
-  axis0["min_val"] = -10.0;
-  axis0["max_val"] = 10.0;
-  axis0["clamp"] = 1;
-
-  conduit::Node &axis1 = params["axes"].append();
-  axis1["var"] = "y";
-  axis1["num_bins"] = 10;
-  axis1["clamp"] = 0;
-
-  conduit::Node &axis2 = params["axes"].append();
-  axis2["var"] = "z";
-  axis2["num_bins"] = 10;
-  axis2["clamp"] = 10;
-
-  conduit::Node scenes;
-  scenes["s1/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/field"] = "binning";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/image_prefix"] = output_file;
-
-  conduit::Node actions;
-  // add the pipeline
-  conduit::Node &add_pipelines= actions.append();
-  add_pipelines["action"] = "add_pipelines";
-  add_pipelines["pipelines"] = pipelines;
-  // add the scenes
-  conduit::Node &add_scenes= actions.append();
-  add_scenes["action"] = "add_scenes";
-  add_scenes["scenes"] = scenes;
-
-  //
-  // Run Ascent
-  //
-
-  Ascent ascent;
-
-  Node ascent_opts;
-  ascent_opts["runtime/type"] = "ascent";
-  ascent.open(ascent_opts);
-  ascent.publish(data);
-  ascent.execute(actions);
-  ascent.close();
-
-  EXPECT_TRUE(check_test_image(output_file, 0.1));
-}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_expressions, lineout)
@@ -1497,6 +1236,29 @@ main(int argc, char *argv[])
 
   ::testing::InitGoogleTest(&argc, argv);
 
+  // this is normally set in ascent::Initialize, but we
+  // have to set it here so that we do the right thing with
+  // device pointers
+  AllocationManager::set_conduit_mem_handlers();
+
+  // this is normally set in ascent::Initialize, 
+  // make sure devil ray and ascent use same umpire
+  // allocs
+
+  #if defined(ASCENT_DRAY_ENABLED)
+      int host_alloc_id   = -1;
+      int device_alloc_id = -1;
+      // set devil dray allocator ids to be the same as those used by ascent
+      host_alloc_id = ascent::AllocationManager::host_allocator_id();
+      dray::dray::set_host_allocator_id(host_alloc_id);
+
+      #if defined(ASCENT_DEVICE_ENABLED)
+          device_alloc_id = ascent::AllocationManager::device_allocator_id();
+          dray::dray::set_device_allocator_id(device_alloc_id);
+      #endif // end ASCENT_DEVICE_ENABLED
+  #endif // end ASCENT_DRAY_ENABLED
+
+  
   // allow override of the data size via the command line
   if(argc == 2)
   {

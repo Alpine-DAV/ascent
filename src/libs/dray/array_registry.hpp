@@ -25,18 +25,24 @@ class ArrayRegistry
   static int num_arrays ();
 
   // memory allocators
-  static int device_allocator_id();
-  // set a device allocator from outside ascent
-  static bool device_allocator_id(int id);
-  
-  static int host_allocator_id();
+  // host alloc
+  static int  host_allocator_id();
+  // set a host allocator from outside
+  static bool set_host_allocator_id(int id);
 
+  // device alloc
+  static int  device_allocator_id();
+  // set a device allocator from outside
+  static bool set_device_allocator_id(int id);
+  
   private:
   static std::list<ArrayInternalsBase *> m_arrays;
 
-  static int m_device_allocator_id;
-  static int m_host_allocator_id;
+  static int  m_host_allocator_id;
+  static int  m_device_allocator_id;
+  static bool m_external_host_allocator;
   static bool m_external_device_allocator;
+
 };
 
 } // namespace dray

@@ -11,6 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_array.hpp"
+#include "ascent_array_utils.hpp"
+#include "ascent_dispatch.hpp"
+#include "ascent_memory_interface.hpp"
+#include "ascent_execution_manager.hpp"
 #include "ascent_conduit_reductions.hpp"
 
 #include <ascent_logging.hpp>
@@ -189,12 +194,14 @@ get_element_indices(const conduit::Node &n_topo,
 
     indices.resize(num_indices);
     // look up the connectivity
+    // this is an array that could be on the GPU, so we have to
+    // use special care
     const conduit::Node &n_topo_conn = n_topo_eles["connectivity"];
-    const conduit::int32_array conn_a = n_topo_conn.value();
+    MemoryInterface<int> conn(n_topo_eles, "connectivity");
     const int offset = index * num_indices;
     for(int i = 0; i < num_indices; ++i)
     {
-      indices[i] = conn_a[offset + i];
+      indices[i] = conn.value(offset + i,0);
     }
   }
   else
@@ -281,26 +288,22 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
   double vert[3] = {0., 0., 0.};
   if(is_float64)
   {
-    conduit::float64_array x_a = n_coords["values/x"].value();
-    conduit::float64_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[index];
-    vert[1] = y_a[index];
-    if(n_coords.has_path("values/z"))
+    MemoryInterface<double> array(n_coords);
+    vert[0] = array.value(index,"x");
+    vert[1] = array.value(index,"y");
+    if(array.components() == 3)
     {
-      conduit::float64_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[index];
+      vert[2] = array.value(index,"z");
     }
   }
   else
   {
-    conduit::float32_array x_a = n_coords["values/x"].value();
-    conduit::float32_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[index];
-    vert[1] = y_a[index];
-    if(n_coords.has_path("values/z"))
+    MemoryInterface<float> array(n_coords);
+    vert[0] = array.value(index,"x");
+    vert[1] = array.value(index,"y");
+    if(array.components() == 3)
     {
-      conduit::float32_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[index];
+      vert[2] = array.value(index,"z");
     }
   }
 
@@ -342,26 +345,22 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
 
   if(is_float64)
   {
-    conduit::float64_array x_a = n_coords["values/x"].value();
-    conduit::float64_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[logical_index[0]];
-    vert[1] = y_a[logical_index[1]];
+    MemoryInterface<double> f_coords(n_coords);
+    vert[0] = f_coords.value(logical_index[0],"x");
+    vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
     {
-      conduit::float64_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[logical_index[2]];
+      vert[2] = f_coords.value(logical_index[2],"z");
     }
   }
   else
   {
-    conduit::float32_array x_a = n_coords["values/x"].value();
-    conduit::float32_array y_a = n_coords["values/y"].value();
-    vert[0] = x_a[logical_index[0]];
-    vert[1] = y_a[logical_index[1]];
+    MemoryInterface<float> f_coords(n_coords);
+    vert[0] = f_coords.value(logical_index[0],"x");
+    vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
     {
-      conduit::float32_array z_a = n_coords["values/z"].value();
-      vert[2] = z_a[logical_index[2]];
+      vert[2] = f_coords.value(logical_index[2],"z");
     }
   }
 
@@ -494,6 +493,88 @@ get_explicit_element(const conduit::Node &n_coords,
   res.set(vert, 3);
   return res;
 }
+
+
+struct VertexFunctor
+{
+  Array<double> m_vertices;
+  int m_dims;
+
+  template<typename MeshType, typename Exec>
+  void operator()(MeshType &mesh, const Exec &)
+  {
+    const int size = mesh.m_num_points;
+    //const int dims = mesh.m_dims;
+    // we cant capture class members
+    m_dims = mesh.m_dims;
+
+    // always output 3 components
+    m_vertices.resize(size * 3);
+    double *verts_ptr = m_vertices.get_ptr(Exec::memory_space);
+    //std::cout<<"**** VertexFunctor Mem space "<<Exec::memory_space<<"\n";
+    using for_policy = typename Exec::for_policy;
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t point_idx)
+    {
+      double vert[3];
+      mesh.vertex(point_idx, vert);
+      const int offset = point_idx * 3;
+      verts_ptr[offset + 0] = vert[0];
+      verts_ptr[offset + 1] = vert[1];
+      verts_ptr[offset + 2] = vert[2];
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
+  }
+};
+
+struct CentroidFunctor
+{
+  Array<double> m_centroids;
+  int m_dims;
+
+  template<typename MeshType, typename Exec>
+  void operator()(MeshType &mesh, const Exec &)
+  {
+    
+    const int size = mesh.m_num_cells;
+    const int dims = mesh.m_dims;
+
+    // one component for each dim
+    m_centroids.resize(size * mesh.m_dims);
+    double *centroids_ptr = m_centroids.get_ptr(Exec::memory_space);
+    //std::cout<<"Mem space "<<Exec::memory_space<<"\n";
+    using for_policy = typename Exec::for_policy;
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t cell_idx)
+    {
+      centroids_ptr[cell_idx] = cell_idx;
+      int indices[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
+      mesh.cell_indices(cell_idx, indices);
+
+      double centroid[3] = {0., 0., 0.};
+      const int num_indices = mesh.m_num_indices;
+      for(int i = 0; i < num_indices; ++i)
+      {
+        double vert[3];
+        mesh.vertex(indices[i], vert);
+        for(int c = 0; c < 3; c++)
+        {
+          centroid[c] += vert[c];
+        }
+      }
+
+      centroid[0] /= double(num_indices);
+      centroid[1] /= double(num_indices);
+      centroid[2] /= double(num_indices);
+
+      const int out_offset = cell_idx * dims;
+      for(int i = 0; i < dims; i++)
+      {
+        centroids_ptr[out_offset + i] = centroid[i];
+      }
+
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
+  }
+};
 
 //-----------------------------------------------------------------------------
 }; // namespace detail
@@ -878,12 +959,12 @@ field_histogram(const conduit::Node &dataset,
     const conduit::Node &dom = dataset.child(i);
     if(dom.has_path("fields/" + field))
     {
-      const std::string path = "fields/" + field + "/values";
+      const std::string path = "fields/" + field;
       conduit::Node res;
-      res = array_histogram(dom[path], min_val, max_val, num_bins);
+      res = field_reduction_histogram(dom[path], min_val, max_val, num_bins);
 
       double *dom_hist = res["value"].value();
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
       for(int bin_index = 0; bin_index < num_bins; ++bin_index)
@@ -956,9 +1037,13 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
       {
         const std::string axis_path = "values/" + axes[i][0];
         min_coords[i] = std::min(
-            min_coords[i], array_min(n_coords[axis_path])["value"].as_double());
+            min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].as_double());
         max_coords[i] = std::max(
-            max_coords[i], array_max(n_coords[axis_path])["value"].as_double());
+            max_coords[i], field_reduction_max(n_coords, axes[i][0])["value"].as_double());
+        //min_coords[i] = std::min(
+        //    min_coords[i], field_reduction_min(n_coords[axis_path])["value"].as_double());
+        //max_coords[i] = std::max(
+        //    max_coords[i], field_reduction_max(n_coords[axis_path])["value"].as_double());
       }
     }
     else
@@ -1070,8 +1155,8 @@ global_topo_and_assoc(const conduit::Node &dataset,
                        + "'. Binning only supports vertex and element association.";
   }
 
-  int error_int = error ? 1 : 0;
 #ifdef ASCENT_MPI_ENABLED
+  int error_int = error ? 1 : 0;
   int global_error;
   MPI_Allreduce(&error_int, &global_error, 1, MPI_INT, MPI_MAX, mpi_comm);
   conduit::Node global_msg;
@@ -1353,6 +1438,7 @@ update_bin(double *bins,
   }
 }
 
+
 void init_bins(double *bins,
                const int size,
                const std::string reduction_op)
@@ -1373,7 +1459,7 @@ void init_bins(double *bins,
     init_val = std::numeric_limits<double>::max();
   }
 
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -1383,7 +1469,12 @@ void init_bins(double *bins,
 
 }
 
-// reduction_op: sum, min, max, avg, pdf, std, var, rms
+
+//
+// NOTE THERE IS A RAJA VERSION IN ascent_data_binning
+// that we want to supercede this one, it needs more work.
+//
+
 conduit::Node
 binning(const conduit::Node &dataset,
         conduit::Node &bin_axes,
@@ -1450,6 +1541,19 @@ binning(const conduit::Node &dataset,
   size_t num_bins = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
+    conduit::Node &axis = bin_axes.child(axis_index);
+    const std::string axis_name = axis.name();
+
+    if(!bin_axes.child(axis_index).has_child("min_val"))
+    {
+      axis["min_val"] = field_min(dataset, axis_name)["value"].as_float64();
+    }
+    if(!axis.has_child("max_val"))
+    {
+      // TODO: FIXME THE BASELINES REQUIRE +1 here, not good.
+      axis["max_val"] = field_max(dataset, axis_name)["value"].as_float64() + 1.0;
+    }
+
     if(bin_axes.child(axis_index).has_path("num_bins"))
     {
       // uniform axis
@@ -1501,7 +1605,7 @@ binning(const conduit::Node &dataset,
     // update bins
     if(reduction_var.empty())
     {
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
       for(int i = 0; i < homes_size; ++i)
@@ -1521,7 +1625,7 @@ binning(const conduit::Node &dataset,
       if(dom[values_path].dtype().is_float32())
       {
         const conduit::float32_array values = dom[values_path].value();
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
         for(int i = 0; i < homes_size; ++i)
@@ -1535,7 +1639,7 @@ binning(const conduit::Node &dataset,
       else
       {
         const conduit::float64_array values = dom[values_path].value();
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
         for(int i = 0; i < homes_size; ++i)
@@ -1550,7 +1654,7 @@ binning(const conduit::Node &dataset,
     else if(is_xyz(reduction_var))
     {
       int coord = reduction_var[0] - 'x';
-//#ifdef ASCENT_USE_OPENMP
+//#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
 //#endif
       for(int i = 0; i < homes_size; ++i)
@@ -1605,14 +1709,14 @@ binning(const conduit::Node &dataset,
   if(reduction_op == "pdf")
   {
     double total = 0;
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for reduction(+ : total)
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
       total += bins[2 * i];
     }
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1629,7 +1733,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "min")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1646,7 +1750,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "max")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1664,7 +1768,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "sum")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1681,7 +1785,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "avg")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1700,7 +1804,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "rms")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1719,7 +1823,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "var")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1739,7 +1843,7 @@ binning(const conduit::Node &dataset,
   }
   else if(reduction_op == "std")
   {
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < num_bins; ++i)
@@ -1833,7 +1937,7 @@ paint_binning(const conduit::Node &binning,
         conduit::DataType::float64(homes_size));
     conduit::float64_array values =
         dom["fields/" + field_name + "/values"].value();
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
     for(int i = 0; i < homes_size; ++i)
@@ -1850,6 +1954,7 @@ paint_binning(const conduit::Node &binning,
         "Failed to verify mesh after painting binning back on the mesh.");
   }
 }
+
 
 void
 binning_mesh(const conduit::Node &binning,
@@ -1923,14 +2028,16 @@ binning_mesh(const conduit::Node &binning,
 }
 
 conduit::Node
-field_entropy(const conduit::Node &hist)
+histogram_entropy(const conduit::Node &hist)
 {
-  const double *hist_bins = hist["attrs/value/value"].value();
-  const int num_bins = hist["attrs/num_bins/value"].to_int32();
-  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
+  hist.print();
+  const double *hist_bins = hist.fetch_existing("attrs/value/value").value();
+  const int num_bins = hist.fetch_existing("attrs/num_bins/value").to_int32();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  double sum = array_sum(hist.fetch_existing("attrs/value/value"), exec)["value"].to_float64();
   double entropy = 0;
 
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for reduction(+ : entropy)
 #endif
   for(int b = 0; b < num_bins; ++b)
@@ -1948,47 +2055,50 @@ field_entropy(const conduit::Node &hist)
 }
 
 conduit::Node
-field_pdf(const conduit::Node &hist)
+histogram_pdf(const conduit::Node &hist)
 {
-  const double *hist_bins = hist["attrs/value/value"].value();
-  const int num_bins = hist["attrs/num_bins/value"].to_int32();
-  double min_val = hist["attrs/min_val/value"].to_float64();
-  double max_val = hist["attrs/max_val/value"].to_float64();
+  const double *hist_bins = hist.fetch_existing("attrs/value/value").value();
+  const int num_bins = hist.fetch_existing("attrs/num_bins/value").to_int32();
+  double min_val = hist.fetch_existing("attrs/min_val/value").to_float64();
+  double max_val = hist.fetch_existing("attrs/max_val/value").to_float64();
 
-  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  double sum = array_sum(hist.fetch_existing("attrs/value/value"), exec)["value"].to_float64();
 
-  double *pdf = new double[num_bins]();
-
-#ifdef ASCENT_USE_OPENMP
+  conduit::Node res;
+  res["value"].set(conduit::DataType::c_double(num_bins));
+  double *pdf_vals = res["value"].value();
+  
+#ifdef ASCENT_OPENMP_ENABLED
 #pragma omp parallel for
 #endif
   for(int b = 0; b < num_bins; ++b)
   {
-    pdf[b] = hist_bins[b] / sum;
+    pdf_vals[b] = hist_bins[b] / sum;
   }
 
-  conduit::Node res;
-  res["value"].set(pdf, num_bins);
   res["min_val"] = min_val;
   res["max_val"] = max_val;
   res["num_bins"] = num_bins;
-  delete[] pdf;
   return res;
 }
 
 conduit::Node
-field_cdf(const conduit::Node &hist)
+histogram_cdf(const conduit::Node &hist)
 {
-  const double *hist_bins = hist["attrs/value/value"].value();
-  const int num_bins = hist["attrs/num_bins/value"].to_int32();
-  double min_val = hist["attrs/min_val/value"].to_float64();
-  double max_val = hist["attrs/max_val/value"].to_float64();
+  const double *hist_bins = hist.fetch_existing("attrs/value/value").value();
+  const int num_bins = hist.fetch_existing("attrs/num_bins/value").to_int32();
+  double min_val = hist.fetch_existing("attrs/min_val/value").to_float64();
+  double max_val = hist.fetch_existing("attrs/max_val/value").to_float64();
 
-  double sum = array_sum(hist["attrs/value/value"])["value"].to_float64();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  double sum = array_sum(hist.fetch_existing("attrs/value/value"),exec)["value"].to_float64();
 
   double rolling_cdf = 0;
 
-  double *cdf = new double[num_bins]();
+  conduit::Node res;
+  res["value"].set(conduit::DataType::c_double(num_bins));
+  double *cdf = res["value"].value();
 
   // TODO can this be parallel?
   for(int b = 0; b < num_bins; ++b)
@@ -1997,12 +2107,10 @@ field_cdf(const conduit::Node &hist)
     cdf[b] = rolling_cdf;
   }
 
-  conduit::Node res;
-  res["value"].set(cdf, num_bins);
   res["min_val"] = min_val;
   res["max_val"] = max_val;
   res["num_bins"] = num_bins;
-  delete[] cdf;
+
   return res;
 }
 
@@ -2072,9 +2180,9 @@ field_nan_count(const conduit::Node &dataset, const std::string &field)
     const conduit::Node &dom = dataset.child(i);
     if(dom.has_path("fields/" + field))
     {
-      const std::string path = "fields/" + field + "/values";
+      const std::string path = "fields/" + field;
       conduit::Node res;
-      res = array_nan_count(dom[path]);
+      res = field_reduction_nan_count(dom[path]);
       nan_count += res["value"].to_float64();
     }
   }
@@ -2094,9 +2202,9 @@ field_inf_count(const conduit::Node &dataset, const std::string &field)
     const conduit::Node &dom = dataset.child(i);
     if(dom.has_path("fields/" + field))
     {
-      const std::string path = "fields/" + field + "/values";
+      const std::string path = "fields/" + field;
       conduit::Node res;
-      res = array_inf_count(dom[path]);
+      res = field_reduction_inf_count(dom[path]);
       inf_count += res["value"].to_float64();
     }
   }
@@ -2120,14 +2228,14 @@ field_min(const conduit::Node &dataset, const std::string &field)
     const conduit::Node &dom = dataset.child(i);
     if(dom.has_path("fields/" + field))
     {
-      const std::string path = "fields/" + field + "/values";
+      const std::string path = "fields/" + field;
       conduit::Node res;
-      res = array_min(dom[path]);
+      res = field_reduction_min(dom[path]);
       double a_min = res["value"].to_float64();
       if(a_min < min_value)
       {
         min_value = a_min;
-        index = res["index"].as_int32();
+        index = res["index"].to_int32();
         domain = i;
         domain_id = dom["state/domain_id"].to_int32();
       }
@@ -2216,9 +2324,9 @@ field_sum(const conduit::Node &dataset, const std::string &field)
     const conduit::Node &dom = dataset.child(i);
     if(dom.has_path("fields/" + field))
     {
-      const std::string path = "fields/" + field + "/values";
+      const std::string path = "fields/" + field;
       conduit::Node res;
-      res = array_sum(dom[path]);
+      res = field_reduction_sum(dom[path]);
 
       double a_sum = res["value"].to_float64();
       long long int a_count = res["count"].to_int64();
@@ -2274,14 +2382,15 @@ field_max(const conduit::Node &dataset, const std::string &field)
     const conduit::Node &dom = dataset.child(i);
     if(dom.has_path("fields/" + field))
     {
-      const std::string path = "fields/" + field + "/values";
+      //const std::string path = "fields/" + field + "/values";
+      const std::string path = "fields/" + field;
       conduit::Node res;
-      res = array_max(dom[path]);
+      res = field_reduction_max(dom[path]);
       double a_max = res["value"].to_float64();
       if(a_max > max_value)
       {
         max_value = a_max;
-        index = res["index"].as_int32();
+        index = res["index"].to_int32();
         domain = i;
         domain_id = dom["state/domain_id"].to_int32();
       }
@@ -2582,6 +2691,89 @@ std::set<std::string> topology_names(const conduit::Node &dataset)
 
   return topos;
 }
+
+bool field_is_float32(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_float32();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_float32();
+  }
+}
+
+bool field_is_float64(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_float64();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_float64();
+  }
+}
+
+bool field_is_int32(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_int32();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_int32();
+  }
+}
+
+bool field_is_int64(const conduit::Node &field)
+{
+  const int children = field["values"].number_of_children();
+  if(children == 0)
+  {
+    return field["values"].dtype().is_int64();
+  }
+  else
+  {
+    // there has to be one or more children so ask the first
+    return field["values"].child(0).dtype().is_int64();
+  }
+}
+
+Array<double>
+centroids(const conduit::Node &domain, const std::string topo)
+{
+  const conduit::Node &n_topo = domain["topologies"][topo];
+  const std::string mesh_type = n_topo["type"].as_string();
+  const std::string coords_name = n_topo["coordset"].as_string();
+  const conduit::Node &n_coords = domain["coordsets/"+coords_name];
+
+  detail::CentroidFunctor func;
+  exec_dispatch_mesh(n_coords,n_topo, func);
+  return func.m_centroids;
+}
+
+Array<double>
+vertices(const conduit::Node &domain, const std::string topo)
+{
+  const conduit::Node &n_topo = domain["topologies"][topo];
+  const std::string mesh_type = n_topo["type"].as_string();
+  const std::string coords_name = n_topo["coordset"].as_string();
+  const conduit::Node &n_coords = domain["coordsets/"+coords_name];
+
+  detail::VertexFunctor func;
+  exec_dispatch_mesh(n_coords,n_topo, func);
+  return func.m_vertices;
+}
+
 conduit::Node
 final_topo_and_assoc(const conduit::Node &dataset,
                      const conduit::Node &bin_axes,

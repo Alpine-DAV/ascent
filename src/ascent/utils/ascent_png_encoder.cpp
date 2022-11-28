@@ -88,7 +88,7 @@ PNGEncoder::Encode(const float *rgba_in,
 
     for(int x = 0; x < width; ++x)
 
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
         #pragma omp parrallel for
 #endif
         for (int y = 0; y < height; ++y)

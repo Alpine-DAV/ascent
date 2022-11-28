@@ -244,9 +244,9 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
-           #
            # dray double perc option
            if [ $ENABLE_DRAY_DOUBLE  = 'ON' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAY_USE_DOUBLE_PRECISION=ON"; fi
+
            # other tpl options
            if [ $ENABLE_RAJA    = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=IGNORE"; fi
            if [ $ENABLE_UMPIRE  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=IGNORE"; fi

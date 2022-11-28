@@ -133,7 +133,7 @@ struct VTKH_API Image
                 color_buffer + size * 4,
                 &m_pixels[0]);
 
-#ifdef vtkh_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
       #pragma omp parallel for
 #endif
       for(int i = 0; i < size; ++i)
