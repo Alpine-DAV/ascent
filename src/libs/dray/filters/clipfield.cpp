@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: (BSD-3-Clause)
 #include <dray/filters/clipfield.hpp>
+#include <dray/filters/point_average.hpp>
 
 #include <dray/dispatcher.hpp>
 #include <dray/utils/data_logger.hpp>
@@ -374,9 +375,15 @@ struct ClipFieldLinear
     Field *field = m_input.field(m_field_name);
     if(field != nullptr && field->components() == 1)
     {
-
-// TODO: make sure that the field is on the nodes!!!
-
+      // If the field is cell-centered then we have to move it to the points
+      DataSet temp;
+      PointAverage pavg;
+      if(field->order() == Order::Constant)
+      {
+        pavg.set_field(m_field_name);
+        temp = pavg.execute(m_input);
+        field = temp.field(m_field_name);
+      }
       dispatch_p1(m_input.mesh(), field, *this);
     }
 
