@@ -554,7 +554,7 @@ if (ENABLE_SERIAL)
                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
                            COMMENT "manual device link step for Ascent"
                            )
-        install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm.o DESTINATION lib)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm.o DESTINATION lib)
     endif()
 
 endif()
@@ -751,7 +751,7 @@ if(MPI_FOUND)
                             COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
                             COMMENT "manual device link step for Ascent parallel"
                             )
-        install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
+        install(FILES $${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm_mpi.o DESTINATION lib)
     endif()
 
 endif()
