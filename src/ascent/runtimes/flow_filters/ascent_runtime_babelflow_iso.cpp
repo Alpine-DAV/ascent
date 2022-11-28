@@ -457,19 +457,19 @@ public:
     BabelFlow::TaskGraph::registerCallback( 4, BabelFlow::KWayReduction::MID_TASK_CB, bflow_comp::gather_results_radixk) ;
     BabelFlow::TaskGraph::registerCallback( 4, BabelFlow::KWayReduction::ROOT_TASK_CB, bflow_comp::write_results_radixk );
 
-    m_isoGrConnector_1 = BabelFlow::DefGraphConnector( &m_redAllGr, 0, &m_isoCalcTaskGr, 1 );
-    m_isoGrConnector_2 = BabelFlow::DefGraphConnector( &m_isoCalcTaskGr, 1, &m_isoRenderTaskGr, 2 );    
-    m_isoGrConnector_3 = BabelFlow::DefGraphConnector( &m_isoRenderTaskGr, 2, &m_radixkGr, 3 );
-    m_defGraphConnector = BabelFlow::DefGraphConnector( &m_radixkGr, 3, &m_gatherTaskGr, 4 );
+    //m_isoGrConnector_1 = BabelFlow::DefGraphConnector( &m_redAllGr, 0, &m_isoCalcTaskGr, 1 );
+    //m_isoGrConnector_2 = BabelFlow::DefGraphConnector( &m_isoCalcTaskGr, 1, &m_isoRenderTaskGr, 2 );    
+    //m_isoGrConnector_3 = BabelFlow::DefGraphConnector( &m_isoRenderTaskGr, 2, &m_radixkGr, 3 );
+    //m_defGraphConnector = BabelFlow::DefGraphConnector( &m_radixkGr, 3, &m_gatherTaskGr, 4 );
 
-    std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_isoGrConnector_1, 
-                                                               &m_isoGrConnector_2,
-                                                               &m_isoGrConnector_3, 
-                                                               &m_defGraphConnector };
+    //std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_isoGrConnector_1, 
+    //                                                           &m_isoGrConnector_2,
+    //                                                           &m_isoGrConnector_3, 
+    //                                                           &m_defGraphConnector };
     std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_redAllGr, &m_isoCalcTaskGr, &m_isoRenderTaskGr, &m_radixkGr, &m_gatherTaskGr };
     std::vector<BabelFlow::TaskMap*> task_maps{ &m_redAllMp, &m_isoCalcTaskMp, &m_isoRenderTaskMp, &m_radixkMp, &m_gatherTaskMp };
 
-    m_radGatherGraph = BabelFlow::ComposableTaskGraph( gr_vec, gr_connectors );
+    m_radGatherGraph = BabelFlow::ComposableTaskGraph( gr_vec/*, gr_connectors*/ );
     m_radGatherTaskMap = BabelFlow::ComposableTaskMap( task_maps );
 
 #ifdef BFLOW_ISO_DEBUG
@@ -502,9 +502,9 @@ protected:
   BabelFlow::SingleTaskGraph m_isoRenderTaskGr;
   BabelFlow::ModuloMap m_isoRenderTaskMp;
 
-  BabelFlow::DefGraphConnector m_isoGrConnector_1;
-  BabelFlow::DefGraphConnector m_isoGrConnector_2;
-  BabelFlow::DefGraphConnector m_isoGrConnector_3;
+    //BabelFlow::DefGraphConnector m_isoGrConnector_1;
+    //BabelFlow::DefGraphConnector m_isoGrConnector_2;
+    //BabelFlow::DefGraphConnector m_isoGrConnector_3;
 
   BabelFlow::RadixKExchange m_redAllGr;
   BabelFlow::RadixKExchangeTaskMap m_redAllMp; 
