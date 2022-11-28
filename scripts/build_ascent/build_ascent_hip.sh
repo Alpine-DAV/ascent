@@ -17,10 +17,11 @@
 ##############################################################################
 set -eu -o pipefail
 
-CC=/opt/rocm/llvm/bin/amdclang
-CXX=/opt/rocm/llvm/bin/amdclang++
-ROCM_ARCH=gfx90a
-ROCM_PATH=/opt/rocm/
+CC="${CC:=/opt/rocm/llvm/bin/amdclang}"
+CXX="${CXX:=/opt/rocm/llvm/bin/amdclang++}"
+# FTN?
+ROCM_ARCH="${ROCM_ARCH:=gfx90a}"
+ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
 
 ##############################################################################
 # Build Options
@@ -156,7 +157,7 @@ fi # build_vtkm
 ################
 # VTK-m
 ################
-vtkm_version=v1.8.0
+vtkm_version=v1.9.0
 vtkm_src_dir=${root_dir}/vtk-m-${vtkm_version}
 vtkm_build_dir=${root_dir}/build/vtk-m-${vtkm_version}
 vtkm_install_dir=${root_dir}/install/vtk-m-${vtkm_version}/
@@ -201,7 +202,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=2022.03.0
+camp_version=2022.10.0
 camp_src_dir=${root_dir}/camp-${camp_version}
 camp_build_dir=${root_dir}/build/camp-${camp_version}
 camp_install_dir=${root_dir}/install/camp-${camp_version}/

@@ -42,6 +42,7 @@ find_package(ADIOS2 REQUIRED
 
 # ADIOS2_DIR is set by find_package
 message(STATUS "FOUND ADIOS2 at ${ADIOS2_DIR}")
+set(ADIOS2_FOUND TRUE)
 
 blt_register_library(NAME adios2
   INCLUDES ${ADIOS2_INCLUDE_DIR}

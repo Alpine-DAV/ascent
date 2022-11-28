@@ -40,6 +40,7 @@
 #include <ascent_runtime_filters.hpp>
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
+#include <expressions/ascent_memory_manager.hpp>
 #include <expressions/ascent_derived_jit.hpp>
 #include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
@@ -160,6 +161,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
                      "correct version of ascent?");
     }
 
+
 #if defined(ASCENT_VTKM_ENABLED)
     vtkh::Initialize();
 #endif
@@ -168,6 +170,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     // set a info handler so we only display messages on rank 0;
     conduit::utils::set_info_handler(InfoHandler::info_handler);
+    AllocationManager::set_conduit_mem_handlers();
 #ifdef VTKM_CUDA
 
     bool sel_cuda_device = true;
@@ -192,9 +195,9 @@ AscentRuntime::Initialize(const conduit::Node &options)
 #endif
 #if defined(ASCENT_JIT_ENABLED)
       {
-        int device_count = runtime::expressions::Jitable::num_cuda_devices();
+        int device_count = runtime::expressions::Jitable::num_devices();
         int rank_device = m_rank % device_count;
-        runtime::expressions::Jitable::set_cuda_device(rank_device);
+        runtime::expressions::Jitable::set_device(rank_device);
       }
 #endif
     }
@@ -215,6 +218,40 @@ AscentRuntime::Initialize(const conduit::Node &options)
     vtkh::SelectKokkosDevice(1);
 #endif
 #endif
+
+
+#if defined(ASCENT_UMPIRE_ENABLED)
+//
+// allocator id setup
+//
+
+int host_alloc_id   = -1;
+int device_alloc_id = -1;
+
+if(options.has_child("host_allocator_id"))
+{
+    host_alloc_id = options["host_allocator_id"].to_int();
+}
+
+if(options.has_child("device_allocator_id"))
+{
+    device_alloc_id = options["device_allocator_id"].to_int();
+}
+
+    #if defined(ASCENT_DRAY_ENABLED)
+        // set devil dray allocator ids to be the same as those used by ascent
+        host_alloc_id = ascent::AllocationManager::host_allocator_id();
+        dray::dray::set_host_allocator_id(host_alloc_id);
+
+        #if defined(ASCENT_DEVICE_ENABLED)
+            device_alloc_id = ascent::AllocationManager::device_allocator_id();
+            dray::dray::set_device_allocator_id(device_alloc_id);
+        #endif // end ASCENT_DEVICE_ENABLED
+    #endif // end ASCENT_DRAY_ENABLED
+
+#endif
+
+
 
 #ifdef ASCENT_MFEM_ENABLED
     if(options.has_path("refinement_level"))

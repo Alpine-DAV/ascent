@@ -46,6 +46,4 @@ bool BinomTable::size_at_least (int32 N) // N starts from 0.
 }
 
 
-BinomTable GlobBinomTable (10);
-
 } // namespace dray

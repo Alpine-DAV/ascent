@@ -43,7 +43,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class DRayPseudocolor : public ::flow::Filter
+class ASCENT_API DRayPseudocolor : public ::flow::Filter
 {
 public:
     DRayPseudocolor();
@@ -56,7 +56,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DRay3Slice : public ::flow::Filter
+class ASCENT_API DRay3Slice : public ::flow::Filter
 {
 public:
     DRay3Slice();
@@ -69,7 +69,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DRayVolume : public ::flow::Filter
+class ASCENT_API DRayVolume : public ::flow::Filter
 {
 public:
     DRayVolume();
@@ -82,7 +82,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DRayProject2d: public ::flow::Filter
+class ASCENT_API DRayProject2d: public ::flow::Filter
 {
 public:
     DRayProject2d();
@@ -94,7 +94,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DRayProjectColors2d: public ::flow::Filter
+class ASCENT_API DRayProjectColors2d: public ::flow::Filter
 {
 public:
     DRayProjectColors2d();
@@ -106,7 +106,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DRayReflect : public ::flow::Filter
+class ASCENT_API DRayReflect : public ::flow::Filter
 {
 public:
     DRayReflect();
@@ -119,7 +119,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class DRayVectorComponent : public ::flow::Filter
+class ASCENT_API DRayVectorComponent : public ::flow::Filter
 {
 public:
     DRayVectorComponent();

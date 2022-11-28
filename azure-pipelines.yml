@@ -9,12 +9,12 @@
 #####
 
 variables:
-  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-09-06-sha777b6d
-  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-09-05-shaed07cd
-  # TODO - on hold until we get spack working on 22.04
+  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-10-17-sha12725d
+  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-10-17-sha12725d
+  #  TODO - on hold until we get spack working on 22.04
   #ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls
-  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-09-05-shaed07cd
-  ubuntu_20_04_rocm_5_1_3_tag: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel-tpls_2022-09-05-shaed07cd
+  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-10-21-sha173f5c
+  ubuntu_20_04_rocm_5_1_3_tag: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel-tpls_2022-10-17-sha12725d
 
 
 # only build merge target pr to develop
@@ -63,6 +63,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
+          ENABLE_RAJA: OFF
+          ENABLE_UMPIRE: OFF
+          ENABLE_CAMP: OFF
           ENABLE_VTKH: OFF
           ENABLE_APCOMP: OFF
           ENABLE_DRAY: OFF
@@ -79,6 +82,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_APCOMP: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: OFF
@@ -98,6 +104,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_VTKH: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: ON
@@ -114,6 +123,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_VTKH: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: OFF
@@ -133,6 +145,9 @@ stages:
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
           ENABLE_APCOMP: ON
           ENABLE_DRAY: ON
           ENABLE_DRAY_DOUBLE: OFF
@@ -167,20 +182,24 @@ stages:
         ############
         # Babelflow
         ############
-        ubuntu_18_shared_py_cxx14_bflow:
-          containerImage: ${{ variables.ubuntu_18_04_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_APCOMP: ON
-          ENABLE_DRAY: ON
-          ENABLE_DRAY_DOUBLE: OFF
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: ON
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          BLT_CXX_STD: c++14
+        # TODO: babelflow disabled until #822 is worked out
+        # ubuntu_18_shared_py_cxx14_bflow:
+        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_RAJA: ON
+        #   ENABLE_UMPIRE: ON
+        #   ENABLE_CAMP: ON
+        #   ENABLE_APCOMP: ON
+        #   ENABLE_DRAY: ON
+        #   ENABLE_DRAY_DOUBLE: OFF
+        #   ENABLE_VTKH: ON
+        #   ENABLE_MFEM: ON
+        #   ENABLE_BABELFLOW: ON
+        #   ENABLE_ADIOS2: OFF
+        #   ENABLE_FIDES: OFF
+        #   BLT_CXX_STD: c++14
 
     container: $[ variables['containerImage'] ]
 
@@ -225,21 +244,14 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
-           # Always ignore spack built version of DRAY
-           export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"
-           # Always ignore spack built version of VTK-h
-           export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"
-           #
-           # we need to provide RAJA + Umpire
-           #
-           export RAJA_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/raja*/`
-           export UMPIRE_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/umpire*/`
-           export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=${UMPIRE_DIR}"
-           export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=${RAJA_DIR}"
-
            # dray double perc option
            if [ $ENABLE_DRAY_DOUBLE  = 'ON' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAY_USE_DOUBLE_PRECISION=ON"; fi
+
            # other tpl options
+           if [ $ENABLE_RAJA    = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=IGNORE"; fi
+           if [ $ENABLE_UMPIRE  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=IGNORE"; fi
+           if [ $ENABLE_CAMP    = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_CAMP=IGNORE"; fi
+           
            if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
            if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
@@ -462,10 +474,6 @@ stages:
            cd build
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-           # always skip external vtkh for these tests
-           export CMAKE_OPTS="${CMAKE_OPTS} -DVTKH_DIR=IGNORE"
-           # always skip external dray for these tests
-           export CMAKE_OPTS="${CMAKE_OPTS} -DDRAY_DIR=IGNORE"
            # c++ std
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
 
@@ -496,7 +504,6 @@ stages:
            cd build
            make VERBOSE=1
         displayName: 'Build'
-
 
       - script: |
            #################################

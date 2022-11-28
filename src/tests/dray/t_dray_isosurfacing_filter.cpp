@@ -56,6 +56,8 @@ TEST (dray_isosurface_filter, dray_isosurface_filter_analytic)
   const std::string iso_field_name = "perfection";
   const Float isoval = 1.1;
 
+  std::cout << "exec ExtractIsosurface\n";
+
   std::shared_ptr<dray::ExtractIsosurface> iso_extractor
     = std::make_shared<dray::ExtractIsosurface>();
   iso_extractor->iso_field(iso_field_name);
@@ -190,6 +192,7 @@ TEST (dray_isosurface_filter, dray_isosurface_filter_tg_velx_density)
   iso_extractor->iso_field(iso_field_name);
   iso_extractor->iso_value(isoval);
 
+  std::cout << "exec ExtractIsosurface\n";
   // Extract isosurface. Partly made of tris, partly quads.
   auto isosurf_tri_quad = iso_extractor->execute(collxn);
   dray::Collection isosurf_tris = isosurf_tri_quad.first;

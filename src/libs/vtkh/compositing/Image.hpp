@@ -105,7 +105,9 @@ struct VTKH_API Image
         m_pixels[offset + 3] = static_cast<unsigned char>(color_buffer[offset + 3] * 255.f);
         float depth = depth_buffer[i];
         //make sure we can do a single comparison on depth
-        depth = depth < 0 ? 2.f : depth;
+	//deal with negative depth values
+	//TODO: This may not be the best way
+        depth = depth < 0 ? abs(depth) : depth;
         m_depths[i] =  depth;
       }
     }
@@ -131,7 +133,7 @@ struct VTKH_API Image
                 color_buffer + size * 4,
                 &m_pixels[0]);
 
-#ifdef vtkh_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
       #pragma omp parallel for
 #endif
       for(int i = 0; i < size; ++i)
@@ -314,6 +316,8 @@ struct VTKH_API Image
       return ss.str();
     }
 
+    void Save(const std::string &name,
+              const std::vector<std::string> &comments) const;
     void Save(const std::string &name,
               const std::vector<std::string> &comments);
 };

@@ -7,6 +7,7 @@
 #ifndef APCOMP_HPP
 #define APCOMP_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <apcomp/apcomp_exports.h>
 #include <string>
 

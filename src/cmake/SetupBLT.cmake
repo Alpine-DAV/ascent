@@ -97,6 +97,12 @@ if(ENABLE_OPENMP)
     endif()
 endif()
 
+#
+# case sensitive awesomness
+#
+if(ENABLE_HIP AND hip_FOUND)
+    set(HIP_FOUND TRUE)
+endif()
 
 ################################################################
 # apply folders to a few ungrouped blt targets

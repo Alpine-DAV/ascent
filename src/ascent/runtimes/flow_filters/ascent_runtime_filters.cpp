@@ -171,7 +171,7 @@ register_builtin()
 #endif
 
 #if defined(ASCENT_ADIOS2_ENABLED)
-    AscentRuntime::register_filter_type<ADIOS2>("extracts","ADIOS2");
+    AscentRuntime::register_filter_type<ADIOS2>("extracts","adios2");
 #endif
 
 #endif

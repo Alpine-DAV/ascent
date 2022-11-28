@@ -7,6 +7,7 @@
 #ifndef APCOMP_PNG_COMPARE_HPP
 #define APCOMP_PNG_COMPARE_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <string>
 #include <apcomp/apcomp_exports.h>
 

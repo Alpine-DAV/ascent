@@ -385,33 +385,52 @@ template<typename Functor>
 void dispatch(Field *field, Functor &func)
 {
   if (!dispatch_field_only((UnstructuredField<HexScalar>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<HexScalar_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<HexScalar_P1>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<HexScalar_P2>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetScalar>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<TetScalar_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetScalar_P1>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetScalar_P2>*)0, field, func) &&
 
       !dispatch_field_only((UnstructuredField<QuadScalar>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadScalar_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<QuadScalar_P1>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<QuadScalar_P2>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TriScalar>*)0,     field, func) &&
+      !dispatch_field_only((UnstructuredField<TriScalar_P0>*)0,  field, func) &&
       !dispatch_field_only((UnstructuredField<TriScalar_P1>*)0,  field, func) &&
       !dispatch_field_only((UnstructuredField<TriScalar_P2>*)0,  field, func) &&
 
       !dispatch_field_only((UnstructuredField<HexVector>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<HexVector_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<HexVector_P1>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<HexVector_P2>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetVector>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<TetVector_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetVector_P1>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetVector_P2>*)0, field, func) &&
 
       !dispatch_field_only((UnstructuredField<QuadVector>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<QuadVector_P1>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<QuadVector_P2>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_2D>*)0,    field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_2D_P0>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_2D_P1>*)0, field, func) &&
+      !dispatch_field_only((UnstructuredField<QuadVector_2D_P2>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TriVector>*)0,     field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_P0>*)0,  field, func) &&
       !dispatch_field_only((UnstructuredField<TriVector_P1>*)0,  field, func) &&
-      !dispatch_field_only((UnstructuredField<TriVector_P2>*)0,  field, func))
+      !dispatch_field_only((UnstructuredField<TriVector_P2>*)0,  field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_2D>*)0,     field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_2D_P0>*)0,  field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_2D_P1>*)0,  field, func) &&
+      !dispatch_field_only((UnstructuredField<TriVector_2D_P2>*)0,  field, func)
+     )
+  {
     detail::cast_field_failed(field, __FILE__, __LINE__);
+  }
 }
 
 // Used for mapping all fields onto the output

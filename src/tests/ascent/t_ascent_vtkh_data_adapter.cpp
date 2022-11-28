@@ -83,6 +83,9 @@ TEST(ascent_data_adapter, vtkm_uniform_3d_to_blueprint)
 //-----------------------------------------------------------------------------
 TEST(ascent_data_adapter, vtkm_rectilinear_3d_to_blueprint)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+    vtkh::InitializeKokkos();
+#endif
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support

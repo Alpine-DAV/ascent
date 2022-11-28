@@ -56,7 +56,7 @@ void ZBufferComposite(vtkh::Image &front, const vtkh::Image &image)
 
   const int size = static_cast<int>(front.m_depths.size());
 
-#ifdef vtkh_USE_OPENMP
+#ifdef VTKH_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -67,7 +67,7 @@ void ZBufferComposite(vtkh::Image &front, const vtkh::Image &image)
       continue;
     }
     const int offset = i * 4;
-    front.m_depths[i] = depth;
+    front.m_depths[i] = abs(depth);
     front.m_pixels[offset + 0] = image.m_pixels[offset + 0];
     front.m_pixels[offset + 1] = image.m_pixels[offset + 1];
     front.m_pixels[offset + 2] = image.m_pixels[offset + 2];

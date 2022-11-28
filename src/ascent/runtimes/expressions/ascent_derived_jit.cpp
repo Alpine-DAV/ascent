@@ -39,6 +39,11 @@
 #include "driver_types.h"
 #endif
 
+#ifdef ASCENT_HIP_ENABLED
+#include "hip/hip_runtime.h"
+#endif
+
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -57,7 +62,7 @@ namespace runtime
 namespace expressions
 {
 
-int Jitable::m_cuda_device_id = -1;
+int Jitable::m_device_id = -1;
 
 namespace detail
 {
@@ -1019,15 +1024,23 @@ void Jitable::init_occa()
 {
 #ifdef ASCENT_JIT_ENABLED
     // running this in a loop segfaults...
-#ifdef ASCENT_CUDA_ENABLED
-  if(m_cuda_device_id == -1)
+#if defined(ASCENT_CUDA_ENABLED)
+  if(m_device_id == -1)
   {
     // the ascent runtime should tell us what to use, otherwise just
     // get the current device to tell occa
-    cudaGetDevice(&m_cuda_device_id);
+    cudaGetDevice(&m_device_id);
   }
-  occa::setDevice({{"mode", "CUDA"}, {"device_id", m_cuda_device_id}});
-#elif defined(ASCENT_USE_OPENMP)
+  occa::setDevice({{"mode", "CUDA"}, {"device_id", m_device_id}});
+#elif defined(ASCENT_HIP_ENABLED)
+  if(m_device_id == -1)
+  {
+    // the ascent runtime should tell us what to use, otherwise just
+    // get the current device to tell occa
+    hipGetDevice(&m_device_id);
+  }
+  occa::setDevice({{"mode", "HIP"}, {"device_id", m_device_id}});
+#elif defined(ASCENT_OPENMP_ENABLED)
   occa::setDevice({{"mode", "OpenMP"}});
 #else
   occa::setDevice({{"mode", "Serial"}});
@@ -1036,10 +1049,11 @@ void Jitable::init_occa()
 #endif
 }
 
-int Jitable::num_cuda_devices()
+// TODO Num devices instead of "cuda"
+int Jitable::num_devices()
 {
   int device_count = 0;
-#ifdef ASCENT_CUDA_ENABLED
+#if defined(ASCENT_CUDA_ENABLED)
   cudaError_t res = cudaGetDeviceCount(&device_count);
   if(res != cudaSuccess)
   {
@@ -1049,13 +1063,24 @@ int Jitable::num_cuda_devices()
     << cudaGetErrorString(res);
     ASCENT_ERROR(msg.str());
   }
+#elif defined(ASCENT_HIP_ENABLED)
+  hipError_t res = hipGetDeviceCount(&device_count);
+  if(res != hipSuccess)
+  {
+    std::stringstream msg;
+    msg << "Failed to get HIP device count" << std::endl
+    << "HIP Error Message: "
+    << hipGetErrorString(res);
+    ASCENT_ERROR(msg.str());
+  }
 #endif
   return device_count;
 }
 
-void Jitable::set_cuda_device(int device_id)
+// TODO Num devices instead of "cuda"
+void Jitable::set_device(int device_id)
 {
-  m_cuda_device_id = device_id;
+  m_device_id = device_id;
 }
 //-----------------------------------------------------------------------------
 };

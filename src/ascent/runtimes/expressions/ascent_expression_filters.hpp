@@ -207,22 +207,11 @@ public:
   virtual void execute();
 };
 
-class ArrayMin : public ::flow::Filter
+class ScalarGradient : public ::flow::Filter
 {
 public:
-  ArrayMin();
-  ~ArrayMin();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
-
-class FieldMax : public ::flow::Filter
-{
-public:
-  FieldMax();
-  ~FieldMax();
+  ScalarGradient();
+  ~ScalarGradient();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -234,6 +223,51 @@ class ArrayMax : public ::flow::Filter
 public:
   ArrayMax();
   ~ArrayMax();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+
+class ArrayMin : public ::flow::Filter
+{
+public:
+  ArrayMin();
+  ~ArrayMin();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class ArrayAvg : public ::flow::Filter
+{
+public:
+  ArrayAvg();
+  ~ArrayAvg();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class ArrayGradient : public ::flow::Filter
+{
+public:
+  ArrayGradient();
+  ~ArrayGradient();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+class FieldMax : public ::flow::Filter
+{
+public:
+  FieldMax();
+  ~FieldMax();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -262,38 +296,7 @@ public:
   virtual void execute();
 };
 
-class ArrayAvg : public ::flow::Filter
-{
-public:
-  ArrayAvg();
-  ~ArrayAvg();
 
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
-
-class ScalarGradient : public ::flow::Filter
-{
-public:
-  ScalarGradient();
-  ~ScalarGradient();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
-
-class ArrayGradient : public ::flow::Filter
-{
-public:
-  ArrayGradient();
-  ~ArrayGradient();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
 
 class FieldSum : public ::flow::Filter
 {

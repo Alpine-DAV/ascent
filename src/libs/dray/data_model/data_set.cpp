@@ -221,7 +221,22 @@ void DataSet::to_node(conduit::Node &n_dataset)
   conduit::Node &n_meshes = n_dataset["meshes"];
   for(int32 i = 0; i < m_meshes.size(); ++i)
   {
-    conduit::Node &n_mesh = n_meshes[m_meshes[i]->name()];
+    // Make a name. Make sure it is valid in case the mesh does not have a name.
+    std::string name(m_meshes[i]->name());
+    if(name.empty())
+    {
+      if(m_meshes.size() > 1)
+      {
+        std::ostringstream s;
+        s << "mesh" << i;
+        name = s.str();
+      }
+      else
+      {
+        name = "mesh";
+      }
+    }
+    conduit::Node &n_mesh = n_meshes[name];
     m_meshes[i]->to_node(n_mesh);
   }
 
