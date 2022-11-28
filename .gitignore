@@ -20,3 +20,6 @@ spack-libs
 spack.lock
 AZEMU-LAUNCH-*.sh
 AZEMU-SCRIPT-*.sh
+build/
+install/
+diva/

@@ -55,6 +55,7 @@
    #include <ascent_runtime_genten_filters.hpp>
 #endif
 
+#include <ascent_runtime_diva_filters.hpp>
 
 using namespace flow;
 
@@ -180,6 +181,7 @@ register_builtin()
     AscentRuntime::register_filter_type<AscentPythonScript>();
 #endif
 
+    AscentRuntime::register_filter_type<DivaFlatten>("extracts", "diva");
 }
 
 
