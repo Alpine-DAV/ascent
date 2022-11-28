@@ -165,7 +165,7 @@ vtkm::Bounds VTKHCollection::global_bounds() const
   vtkm::Bounds bounds;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
-    bounds.Include(it->second.GetBounds());
+    bounds.Include(GetBounds(it->second));
   }
 
 #if defined(ASCENT_MPI_ENABLED)
