@@ -47,7 +47,7 @@ namespace expressions
 class Jitable
 {
 protected:
-  static int m_cuda_device_id;
+  static int m_device_id;
 public:
   Jitable(const int num_domains)
   {
@@ -59,8 +59,8 @@ public:
   }
 
   static void init_occa();
-  static void set_cuda_device(int device_id);
-  static int num_cuda_devices();
+  static void set_device(int device_id);
+  static int  num_devices();
 
 
   void fuse_vars(const Jitable &from);

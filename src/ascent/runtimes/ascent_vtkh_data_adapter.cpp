@@ -847,7 +847,7 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
     const vtkm::IdComponent indices_value = indices;
     auto shapes_portal = shapes.WritePortal();
     auto num_indices_portal = num_indices.WritePortal();
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for (int i = 0; i < num_shapes; ++i)

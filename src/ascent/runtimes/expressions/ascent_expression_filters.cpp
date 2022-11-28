@@ -23,7 +23,9 @@
 // ascent includes
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
+#include "ascent_data_binning.hpp"
 #include "ascent_conduit_reductions.hpp"
+#include "ascent_execution_manager.hpp"
 #include <ascent_config.h>
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
@@ -902,7 +904,8 @@ void
 ArrayMin::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_min((*input<Node>("arg1"))["value"]);
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  (*output)["value"] = array_min((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
@@ -1131,7 +1134,8 @@ void
 ArrayMax::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_max((*input<Node>("arg1"))["value"])["value"];
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  (*output)["value"] = array_max((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
@@ -1239,7 +1243,8 @@ void
 ArrayAvg::execute()
 {
   conduit::Node *output = new conduit::Node();
-  conduit::Node sum = array_sum((*input<Node>("arg1"))["value"]);
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  conduit::Node sum = array_sum((*input<Node>("arg1"))["value"], exec);
   (*output)["value"] = sum["value"].to_float64() / sum["count"].to_float64();
   (*output)["type"] = "double";
 
@@ -2836,17 +2841,18 @@ Axis::execute()
   {
     output = new conduit::Node();
 
+    // Normally, we would do all the error checking here/ determined
+    // the mins and maxs, but there are some issues. Since we are
+    // merely an axis , which is part of data binning, we are not
+    // aware of the field that the binning is on. Thus, we can't
+    // automatically figure out the spatial min/max since
+    // we don't know the topoloy. Thus we will defer the error
+    // checking to the actual binning code.
     double min_val;
     bool min_found = false;
     if(!n_min->dtype().is_empty())
     {
       min_val = (*n_min)["value"].to_float64();
-      (*output)["value/" + name + "/min_val"] = min_val;
-      min_found = true;
-    }
-    else if(!is_xyz(name))
-    {
-      min_val = field_min(*dataset, name)["value"].to_float64();
       (*output)["value/" + name + "/min_val"] = min_val;
       min_found = true;
     }
@@ -2859,15 +2865,10 @@ Axis::execute()
       max_found = true;
       (*output)["value/" + name + "/max_val"] = max_val;
     }
-    else if(!is_xyz(name))
-    {
-      // add 1 because the last bin isn't inclusive
-      max_val = field_max(*dataset, name)["value"].to_float64() + 1.0;
-      (*output)["value/" + name + "/max_val"] = max_val;
-      max_found = true;
-    }
 
+    // default num bins
     (*output)["value/" + name + "/num_bins"] = 256;
+
     if(!n_num_bins->dtype().is_empty())
     {
       (*output)["value/" + name + "/num_bins"] =
@@ -2883,10 +2884,10 @@ Axis::execute()
     }
   }
 
-  (*output)["value/" + name + "/clamp"] = false;
+  (*output)["value/" + name + "/clamp"] = 0;
   if(!n_clamp->dtype().is_empty())
   {
-    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_uint8();
+    (*output)["value/" + name + "/clamp"] = (*n_clamp)["value"].to_int32();
   }
 
   (*output)["value/" + name];
@@ -3161,6 +3162,16 @@ void binning_interface(const std::string &reduction_var,
                       empty_bin_val,
                       component);
 
+  // // TODO THIS IS THE RAJA VERSION
+  // std::map<int, Array<int>> bindexes;
+  // n_binning = data_binning(dataset,
+  //                          n_output_axes,
+  //                          reduction_var,
+  //                          reduction_op,
+  //                          empty_bin_val,
+  //                          component,
+  //                          bindexes);
+
 }
 //-----------------------------------------------------------------------------
 void
@@ -3253,7 +3264,7 @@ Entropy::execute()
   }
 
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field_entropy(*hist)["value"];
+  (*output)["value"] = histogram_entropy(*hist)["value"];
   (*output)["type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
@@ -3298,7 +3309,7 @@ Pdf::execute()
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] = field_pdf(*hist)["value"];
+  (*output)["attrs/value/value"] = histogram_pdf(*hist)["value"];
   (*output)["attrs/value/type"] = "array";
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
@@ -3346,7 +3357,7 @@ Cdf::execute()
 
   conduit::Node *output = new conduit::Node();
   (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] = field_cdf(*hist)["value"];
+  (*output)["attrs/value/value"] = histogram_cdf(*hist)["value"];
   (*output)["attrs/value/type"] = "array";
   (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
   (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
@@ -3722,7 +3733,8 @@ void
 ArraySum::execute()
 {
   conduit::Node *output = new conduit::Node();
-  (*output)["value"] = array_sum((*input<Node>("arg1"))["value"])["value"];
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  (*output)["value"] = array_sum((*input<Node>("arg1"))["value"], exec)["value"];
   (*output)["type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());

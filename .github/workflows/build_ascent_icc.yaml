@@ -23,7 +23,7 @@ jobs:
       run: |
            sudo apt-get update
            sudo apt-get install binutils \
-                                python \
+                                python3 \
                                 perl \
                                 git \
                                 git-lfs \
