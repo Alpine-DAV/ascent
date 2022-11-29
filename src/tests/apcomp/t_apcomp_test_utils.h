@@ -127,7 +127,7 @@ inline std::string
 t_apcomp_baseline_dir()
 {
     std::string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"apcomp");
-    res = conduit::utils::join_file_path(res,"baseline_images");
+    res = conduit::utils::join_file_path(res,"_baseline_images");
     std::cout << res << std::endl;
     return res;
 }
