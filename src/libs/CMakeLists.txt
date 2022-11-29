@@ -44,9 +44,14 @@ if(ENABLE_DRAY)
 endif()
 
 ################################
-# Add VTK-h
+# Add VTK-h + rover
 ################################
 if(ENABLE_VTKH)
     add_subdirectory(vtkh)
     add_subdirectory(rover)
 endif()
+
+################################
+# Add ascent
+################################
+add_subdirectory(ascent)

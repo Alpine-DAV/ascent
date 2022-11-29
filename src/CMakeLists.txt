@@ -152,8 +152,6 @@ add_subdirectory(thirdparty_builtin)
 ################################
 add_subdirectory(libs)
 
-add_subdirectory(ascent)
-
 ################################
 # Add mini-app examples
 ################################
