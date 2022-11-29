@@ -26,7 +26,7 @@ namespace ascent
 
 //-----------------------------------------------------------------------------
 /// -- Returns path to root directory for web client resources --
-/// Source path:     src/ascent/web_clients
+/// Source path:     src/libs/ascent/web_clients
 /// Installed path:  {install_prefix}/share/ascent/web_clients
 //-----------------------------------------------------------------------------
 std::string web_client_root_directory();
