@@ -7,6 +7,10 @@ if(CUDA_FOUND)
   set(VTKH_CUDA_ENABLED TRUE)
 endif()
 
+if(HIP_FOUND)
+  set(VTKH_HIP_ENABLED TRUE)
+endif()
+
 if(ENABLE_OPENMP)
   set(VTKH_OPENMP_ENABLED TRUE)
 endif()
@@ -28,6 +32,10 @@ if(CUDA_FOUND)
     list(APPEND vtkh_base_deps cuda)
 endif()
 
+if(ENABLE_HIP)
+    list(APPEND vtkh_base_deps blt_hip)
+endif()
+
 if(ENABLE_OPENMP)
     list(APPEND vtkh_base_deps ${ascent_blt_openmp_deps})
 endif()
@@ -35,6 +43,7 @@ endif()
 if(KOKKOS_FOUND)
     list(APPEND vtkh_base_deps Kokkos::kokkos)
 endif()
+
 
 
 add_subdirectory(utils)
@@ -65,7 +74,7 @@ set(vtkh_core_sources
 
 # always install headers
 install(FILES ${vtkh_core_headers}
-       DESTINATION include/vtkh)
+        DESTINATION include/ascent/vtkh)
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -83,7 +92,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_core PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_core PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_core PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     # build includes
     # this allows us to include as <vtkh/header.hpp>
@@ -119,7 +130,9 @@ if(MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_core_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_core_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_core_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     #
     target_compile_definitions(vtkh_core_mpi PRIVATE VTKH_PARALLEL)
 

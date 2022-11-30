@@ -3,12 +3,13 @@
 
 #include <assert.h>
 #include <random>
+#include <vtkm/Matrix.h>
 #include <vtkm/VectorAnalysis.h>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/DataSetBuilderRectilinear.h>
 #include <vtkm/cont/DataSetBuilderExplicit.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
-#include <vtkm/cont/testing/Testing.h>
+//#include <vtkm/cont/testing/Testing.h>
 
 #define BASE_SIZE 32
 typedef vtkm::cont::ArrayHandleUniformPointCoordinates UniformCoords;
@@ -120,7 +121,7 @@ vtkm::cont::Field CreateCellScalarField(int size, const char* fieldName)
 
 
   vtkm::cont::Field field(fieldName,
-                          vtkm::cont::Field::Association::CELL_SET,
+                          vtkm::cont::Field::Association::Cells,
                           data);
   return field;
 }
@@ -144,7 +145,7 @@ vtkm::cont::Field CreateGhostScalarField(vtkm::Id3 dims)
   }
 
   vtkm::cont::Field field("ghosts",
-                          vtkm::cont::Field::Association::CELL_SET,
+                          vtkm::cont::Field::Association::Cells,
                           data);
   return field;
 }
@@ -166,7 +167,7 @@ vtkm::cont::Field CreatePointScalarField(UniformCoords coords, const char* field
   }
 
   vtkm::cont::Field field(fieldName,
-                          vtkm::cont::Field::Association::POINTS,
+                          vtkm::cont::Field::Association::Points,
                           data);
   return field;
 }
@@ -187,7 +188,7 @@ vtkm::cont::Field CreatePointVecField(int size, const char* fieldName)
   }
 
   vtkm::cont::Field field(fieldName,
-                          vtkm::cont::Field::Association::POINTS,
+                          vtkm::cont::Field::Association::Points,
                           data);
   return field;
 }
@@ -348,7 +349,7 @@ vtkm::cont::DataSet CreateTestDataPoints(int num_points)
                                                        num_indices,
                                                        conn);
   vtkm::cont::Field vfield = vtkm::cont::make_Field("point_data_Float64",
-                                              vtkm::cont::Field::Association::POINTS,
+                                              vtkm::cont::Field::Association::Points,
                                               field,
                                               vtkm::CopyFlag::On);
   data_set.AddField(vfield);
@@ -433,13 +434,13 @@ inline vtkm::cont::DataSet Make3DExplicitDataSet5()
 
   //Set point scalar
   dataSet.AddField(make_Field(
-    "pointvar", vtkm::cont::Field::Association::POINTS, vars, nVerts, vtkm::CopyFlag::On));
+    "pointvar", vtkm::cont::Field::Association::Points, vars, nVerts, vtkm::CopyFlag::On));
 
   //Set cell scalar
   const int nCells = 4;
   vtkm::Float32 cellvar[nCells] = { 100.1f, 110.f, 120.2f, 130.5f };
   dataSet.AddField(make_Field(
-    "cellvar", vtkm::cont::Field::Association::CELL_SET, cellvar, nCells, vtkm::CopyFlag::On));
+    "cellvar", vtkm::cont::Field::Association::Cells, cellvar, nCells, vtkm::CopyFlag::On));
 
   vtkm::cont::CellSetExplicit<> cellSet;
   vtkm::Vec<vtkm::Id, 8> ids;
@@ -528,12 +529,12 @@ inline vtkm::cont::DataSet Make3DExplicitDataSet2()
 
   //Set point scalar
   dataSet.AddField(make_Field(
-    "pointvar", vtkm::cont::Field::Association::POINTS, vars, nVerts, vtkm::CopyFlag::On));
+    "pointvar", vtkm::cont::Field::Association::Points, vars, nVerts, vtkm::CopyFlag::On));
 
   //Set cell scalar
   vtkm::Float32 cellvar[2] = { 100.1f };
   dataSet.AddField(make_Field(
-    "cellvar", vtkm::cont::Field::Association::CELL_SET, cellvar, 1, vtkm::CopyFlag::On));
+    "cellvar", vtkm::cont::Field::Association::Cells, cellvar, 1, vtkm::CopyFlag::On));
 
   vtkm::cont::CellSetExplicit<> cellSet;
   vtkm::Vec<vtkm::Id, 8> ids;
@@ -554,6 +555,140 @@ inline vtkm::cont::DataSet Make3DExplicitDataSet2()
   dataSet.SetCellSet(cellSet);
 
   return dataSet;
+}
+
+namespace detail
+{
+
+template <typename T>
+struct TestValueImpl;
+} //namespace detail
+
+// Many tests involve getting and setting values in some index-based structure
+// (like an array). These tests also often involve trying many types. The
+// overloaded TestValue function returns some unique value for an index for a
+// given type. Different types might give different values.
+//
+template <typename T>
+static inline T TestValue(vtkm::Id index, T)
+{
+  return detail::TestValueImpl<T>()(index);
+}
+
+namespace detail
+{
+
+template <typename T>
+struct TestValueImpl
+{
+  T DoIt(vtkm::Id index, vtkm::TypeTraitsIntegerTag) const
+  {
+    constexpr bool larger_than_2bytes = sizeof(T) > 2;
+    if (larger_than_2bytes)
+    {
+       return T(index * 100);
+    }
+    else
+    {
+      return T(index + 100);
+    }
+  }
+
+  T DoIt(vtkm::Id index, vtkm::TypeTraitsRealTag) const
+  {
+    return T(0.01f * static_cast<float>(index) + 1.001f);
+  }
+
+  T operator()(vtkm::Id index) const
+  {
+    return this->DoIt(index, typename vtkm::TypeTraits<T>::NumericTag());
+  }
+};
+
+template <typename T, vtkm::IdComponent N>
+struct TestValueImpl<vtkm::Vec<T, N>>
+{
+  vtkm::Vec<T, N> operator()(vtkm::Id index) const
+  {
+    vtkm::Vec<T, N> value;
+    for (vtkm::IdComponent i = 0; i < N; i++)
+    {
+      value[i] = TestValue(index * N + i, T());
+    }
+    return value;
+  }
+};
+
+template <typename U, typename V>
+struct TestValueImpl<vtkm::Pair<U, V>>
+{
+  vtkm::Pair<U, V> operator()(vtkm::Id index) const
+  {
+    return vtkm::Pair<U, V>(TestValue(2 * index, U()), TestValue(2 * index + 1, V()));
+  }
+};
+
+template <typename T, vtkm::IdComponent NumRow, vtkm::IdComponent NumCol>
+struct TestValueImpl<vtkm::Matrix<T, NumRow, NumCol>>
+{
+  vtkm::Matrix<T, NumRow, NumCol> operator()(vtkm::Id index) const
+  {
+    vtkm::Matrix<T, NumRow, NumCol> value;
+    vtkm::Id runningIndex = index * NumRow * NumCol;
+    for (vtkm::IdComponent row = 0; row < NumRow; ++row)
+    {
+      for (vtkm::IdComponent col = 0; col < NumCol; ++col)
+      {
+        value(row, col) = TestValue(runningIndex, T());
+        ++runningIndex;
+      }
+    }
+    return value;
+  }
+};
+
+template <>
+struct TestValueImpl<std::string>
+{
+  std::string operator()(vtkm::Id index) const
+  {
+    std::stringstream stream;
+    stream << index;
+    return stream.str();
+  }
+};
+
+} //namespace detail
+
+// Verifies that the contents of the given array portal match the values
+// returned by vtkm::testing::TestValue.
+template <typename PortalType>
+static inline void CheckPortal(const PortalType& portal)
+{
+  using ValueType = typename PortalType::ValueType;
+  for (vtkm::Id index = 0; index < portal.GetNumberOfValues(); index++)
+  {
+    ValueType expectedValue = TestValue(index, ValueType());
+    ValueType foundValue = portal.Get(index);
+    if (!test_equal(expectedValue, foundValue))
+    {
+      ASCENT_ERROR("Got unexpected value in array. Expected: " << expectedValue
+              << ", Found: " << foundValue << "\n");
+    }
+  }
+}
+
+/// Sets all the values in a given array portal to be the values returned
+/// by vtkm::testing::TestValue. The ArrayPortal must be allocated first.
+template <typename PortalType>
+static inline void SetPortal(const PortalType& portal)
+{
+  using ValueType = typename PortalType::ValueType;
+
+  for (vtkm::Id index = 0; index < portal.GetNumberOfValues(); index++)
+  {
+    portal.Set(index, TestValue(index, ValueType()));
+  }
 }
 
 inline vtkm::cont::DataSet Make3DExplicitDataSetCowNose()
@@ -645,6 +780,6 @@ inline vtkm::cont::DataSet Make3DRectilinearDataSet0()
 
   return dataSet;
 }
-
+             
 
 #endif

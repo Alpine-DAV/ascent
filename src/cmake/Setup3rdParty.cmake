@@ -1,4 +1,3 @@
-###############################################################################
 # Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
@@ -38,6 +37,18 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 
+#
+# TODO: Post Rajafy branch, I think we need more logic if
+#       we want RAJA and Umpire to remain optional.
+#
+
+################################
+# Camp
+################################
+if(CAMP_DIR) # optional for now
+    include(cmake/thirdparty/SetupCamp.cmake)
+endif()
+
 ################################
 # Umpire
 ################################
@@ -74,13 +85,10 @@ if(VTKM_DIR)
     # VTKm
     ################################
     include(cmake/thirdparty/SetupVTKm.cmake)
+endif()
 
-    ################################
-    # VTKh
-    ################################
-    if(VTKH_DIR)  # builtin vs external logic
-        include(cmake/thirdparty/SetupVTKh.cmake)
-    endif()
+if(ENABLE_VTKH AND NOT VTKM_FOUND)
+     MESSAGE(FATAL_ERROR "VTK-h support requires VTK-m (ENABLE_VTKH=ON and NOT VTKM_FOUND)")
 endif()
 
 #
@@ -93,14 +101,6 @@ endif()
 if (MFEM_DIR)
   include(cmake/thirdparty/SetupMFEM.cmake)
 endif()
-
-################################
-# Setup Devil Ray
-################################
-if (DRAY_DIR)
-  include(cmake/thirdparty/SetupDevilRay.cmake)
-endif()
-
 
 ################################
 # Setup Umpire
@@ -137,4 +137,3 @@ endif()
 if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
-

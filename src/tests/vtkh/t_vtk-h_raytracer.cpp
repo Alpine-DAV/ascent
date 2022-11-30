@@ -19,6 +19,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
   vtkh::DataSet data_set;
 
   const int base_size = 32;

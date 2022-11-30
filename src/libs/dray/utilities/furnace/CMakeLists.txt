@@ -14,6 +14,11 @@ if(ENABLE_OPENMP)
     list(APPEND furnace_thirdparty_libs_mpi ${ascent_blt_openmp_deps})
 endif()
 
+if(ENABLE_CUDA)
+    list(APPEND furnace_thirdparty_libs cuda)
+    list(APPEND furnace_thirdparty_libs_mpi cuda)
+endif()
+
 if(ENABLE_SERIAL)
     ################################################
     # point location furnace
@@ -54,6 +59,8 @@ if(ENABLE_SERIAL)
                       DEPENDS_ON ${furnace_thirdparty_libs}
                       OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                       )
+
+
 
     #configure_file(point_config.yaml ${CMAKE_CURRENT_BINARY_DIR}/point_config.yaml COPYONLY)
 

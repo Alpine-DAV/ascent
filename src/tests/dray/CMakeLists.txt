@@ -45,7 +45,7 @@ set(BASIC_TESTS t_dray_smoke
                 t_dray_scalar_renderer
                 t_dray_volume_render
                 t_dray_volume_partials
-                t_dray_face_render
+                #t_dray_face_render
                 t_dray_reflect
                 t_dray_subset
                 t_dray_elem_attr
@@ -86,6 +86,10 @@ if(ENABLE_OPENMP)
   list(APPEND dray_test_deps ${ascent_blt_openmp_deps})
 endif()
 
+if(ENABLE_CUDA)
+  list(APPEND dray_test_deps cuda)
+endif()
+
 
 if(ENABLE_SERIAL)
   message(STATUS "Adding basic dray unit tests")
@@ -96,7 +100,17 @@ if(ENABLE_SERIAL)
 endif()
 
 if(MPI_FOUND)
-    set(dray_test_mpi_deps dray_mpi ascent)
+    set(dray_test_mpi_deps dray_mpi ascent_mpi)
+
+    # note: this should come in automatically
+    #       but not going to temp fate 
+    if(ENABLE_OPENMP)
+      list(APPEND dray_test_mpi_deps ${ascent_blt_openmp_deps})
+    endif()
+
+    if(ENABLE_CUDA)
+      list(APPEND dray_test_mpi_deps cuda)
+    endif()
 
     message(STATUS "Adding MPI dray unit tests")
     foreach(TEST ${MPI_TESTS})
@@ -104,7 +118,6 @@ if(MPI_FOUND)
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ${dray_test_mpi_deps})
     endforeach()
 endif()
-
 
 # #  add custom command that generates a html img comparison report for our tests
 # #  run with "make gen_report"

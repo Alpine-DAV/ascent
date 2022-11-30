@@ -3,11 +3,11 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-export TAG_BASE=alpinedav/ascent:ascent-ubuntu-18
+export TAG_BASE=alpinedav/ascent:ascent-ubuntu-20.04
 
 date
 
-python build_and_tag.py ${TAG_BASE}
+python build_and_tag.py ${TAG_BASE} --squash
 
 date
 

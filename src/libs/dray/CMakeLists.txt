@@ -299,6 +299,7 @@ set(dray_sources dray.cpp
 set(dray_thirdparty_libs
     RAJA
     umpire
+    camp
     conduit::conduit
     ascent_lodepng)
 
@@ -339,12 +340,12 @@ if(ENABLE_CUDA)
     set_source_files_properties(linear_bvh_builder.cpp PROPERTIES COMPILE_FLAGS "-Xptxas -dlcm=cg")
 endif()
 
+
 ################################################
 # hip support
 ################################################
 if(ENABLE_HIP)
-    #TODO FIX
-    list(APPEND dray_thirdparty_libs blt::hip)
+    list(APPEND dray_thirdparty_libs blt_hip blt_hip_runtime)
 endif()
 
 
@@ -361,8 +362,10 @@ if(ENABLE_SERIAL)
     # build time only defs
     target_compile_definitions(dray PRIVATE ASCENT_EXPORTS_FLAG)
 
-    # TODO SYMBOL VIS
-    # set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    # TODO
+    #if(ENABLE_HIDDEN_VISIBILITY)
+    #    set_target_properties(dray PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    #endif()
 
     # build includes
     # this allows us to include as <dray/header.hpp>
@@ -398,9 +401,11 @@ if(MPI_FOUND)
     target_compile_definitions(dray_mpi PRIVATE ASCENT_EXPORTS_FLAG)
     target_compile_definitions(dray_mpi PRIVATE DRAY_MPI_ENABLED)
 
-    # TODO SYMBOL VIS
-    # set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
-  
+    # TODO
+    # if(ENABLE_HIDDEN_VISIBILITY)
+    #     set_target_properties(dray_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    # endif()
+
     # build includes
     # this allows us to include as <dray/header.hpp>
     target_include_directories(dray_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
@@ -424,7 +429,7 @@ endif()
 macro(install_headers_with_directory header_list)
   foreach(header ${${header_list}})
     string(REGEX MATCH "(.*)[/\\]" DIR ${header})
-    install(FILES ${header} DESTINATION include/dray/${DIR})
+    install(FILES ${header} DESTINATION include/ascent/dray/${DIR})
   endforeach(header)
 endmacro(install_headers_with_directory)
 
@@ -432,7 +437,7 @@ install_headers_with_directory(dray_headers)
 
 
 if(ENABLE_UTILS)
-   message(status "Dray Utilities Enabled")
+   message(STATUS "Dray Utilities Enabled")
    add_subdirectory(utilities)
 endif()
 

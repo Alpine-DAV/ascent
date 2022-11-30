@@ -15,10 +15,10 @@ if(NOT BLT_SOURCE_DIR)
 endif()
 
 ################################################################
-# if not set, prefer c++11 lang standard
+# if not set, prefer c++14 lang standard
 ################################################################
 if(NOT BLT_CXX_STD)
-    set(BLT_CXX_STD "c++11" CACHE STRING "")
+    set(BLT_CXX_STD "c++14" CACHE STRING "")
 endif()
 
 ################################################################
@@ -97,6 +97,12 @@ if(ENABLE_OPENMP)
     endif()
 endif()
 
+#
+# case sensitive awesomness
+#
+if(ENABLE_HIP AND hip_FOUND)
+    set(HIP_FOUND TRUE)
+endif()
 
 ################################################################
 # apply folders to a few ungrouped blt targets
@@ -135,7 +141,7 @@ set(BLT_TPL_DEPS_EXPORTS)
 blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUDA)
 blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENABLE_HIP)
 
-if(ENABLE_MPI AND NOT ASCENT_USE_CMAKE_MPI_TARGETS)
+if(ENABLE_MPI AND ENABLE_FIND_MPI AND NOT ASCENT_USE_CMAKE_MPI_TARGETS)
     list(APPEND BLT_TPL_DEPS_EXPORTS mpi)
 endif()
 

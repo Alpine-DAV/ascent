@@ -7,6 +7,7 @@
 #ifndef APCOMP_ERROR_HPP
 #define APCOMP_ERROR_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <apcomp/apcomp_exports.h>
 #include <exception>
 #include <string>

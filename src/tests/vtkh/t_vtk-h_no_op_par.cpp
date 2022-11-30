@@ -20,6 +20,9 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_no_op_par, vtkh_parallel_no_op)
 {
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
 
   MPI_Init(NULL, NULL);
   int comm_size, rank;

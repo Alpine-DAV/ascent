@@ -26,12 +26,20 @@ cmake_minimum_required(VERSION 3.9)
 
 project(using_with_cmake)
 
+
+#
+# Make sure we have CMake's MPI targets.
+#
+find_package(MPI REQUIRED COMPONENTS CXX)
+
+
 #
 # Use CMake's find_package to import ascent's targets
 #
 # PATHS is just a hint if someone runs this example from the Ascent install
 # tree without setting up an environment hint to find Ascent
 find_package(Ascent REQUIRED
+             NO_DEFAULT_PATH
              PATHS ${CMAKE_SOURCE_DIR}/../../../)
 
 

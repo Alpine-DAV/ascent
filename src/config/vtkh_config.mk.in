@@ -36,25 +36,54 @@ VTKH_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 # include flags
 VTKM_VTKM_INCLUDE_FLAGS = -I $(VTKH_VTKM_DIR)/include/
 
-# lib flags
-VTKH_VTKM_LIB_FLAGS = -L $(VTKH_VTKM_DIR)/lib \
-                        -lvtkm_rendering-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_filter_contour-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_filter_gradient-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_filter_extra-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_filter_common-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_worklet-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_source-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_io-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_lodepng-$(VTKH_VTKM_VERSION) \
-                        -lvtkm_cont-$(VTKH_VTKM_VERSION) \
-                        -lvtkmdiympi_nompi
+ #######
+ # include settings from intalled vtkm
+ #######
+ include $(VTKH_VTKM_DIR)/share/vtkm-$(VTKH_VTKM_VERSION)/vtkm_config.mk
+ 
+ ######
+ # TODO: Use flags from vtkm_config.mk when they are ready
+ ######
+ # VTKH_VTKM_LIB_FLAGS = $(VTKm_LIB_FLAGS)
+    
+######
+# libs for vtk-m 1.9
+######
+VTKH_VTKM_LIB_FLAGS = -L $(ASCENT_VTKM_DIR)/lib \
+                        -lvtkm_rendering-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_clean_grid-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_flow-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_contour-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_connected_components-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_density_estimate-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_entity_extraction-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_field_conversion-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_field_transform-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_geometry_refinement-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_resampling-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_image_processing-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_mesh_info-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_scalar_topology-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_vector_analysis-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_multi_block-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_filter_core-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_worklet-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_source-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_io-$(ASCENT_VTKM_VERSION) \
+                        -lvtkm_cont-$(ASCENT_VTKM_VERSION)
+
+# add proper diy based on mpi
+ifeq ($(VTKm_ENABLE_MPI),ON)
+    VTKH_VTKM_LIB_FLAGS += -lvtkmdiympi
+else
+    VTKH_VTKM_LIB_FLAGS += -lvtkmdiympi_nompi
+endif
 
 
 #########################
 # VTKH Include Flags
 #########################
-VTKH_INCLUDE_FLAGS = -I $(VTKH_DIR)/include/ $(VTKM_VTKM_INCLUDE_FLAGS)
+VTKH_INCLUDE_FLAGS = -I $(VTKH_DIR)/include/ascent/ $(VTKM_VTKM_INCLUDE_FLAGS)
 
 
 ####################

@@ -71,7 +71,7 @@ PNGEncoder::Encode(const float *rgba_in,
 
     for(int x = 0; x < width; ++x)
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
         for (int y = 0; y < height; ++y)

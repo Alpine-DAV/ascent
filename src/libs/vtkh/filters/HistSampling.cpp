@@ -340,7 +340,7 @@ void HistSampling::DoExecute()
     vtkm::cont::ArrayHandle <vtkm::Float32> output;
     vtkm::cont::Algorithm ::Copy(stencilBool , output );
 
-    if(assoc == vtkm::cont::Field::Association::POINTS)
+    if(assoc == vtkm::cont::Field::Association::Points)
     {
       dom.AddPointField("valSampled", output);
     }

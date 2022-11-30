@@ -30,7 +30,7 @@ set(vtkh_rendering_sources
 ###############################################################################
 # always install headers
 install(FILES ${vtkh_rendering_headers}
-        DESTINATION include/vtkh/rendering)
+        DESTINATION include/ascent/vtkh/rendering)
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -46,7 +46,9 @@ if (ENABLE_SERIAL)
 
     # build time only defs
     target_compile_definitions(vtkh_rendering PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_rendering PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_rendering PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
 
     # Install libraries
     install(TARGETS vtkh_rendering
@@ -73,7 +75,9 @@ if (MPI_FOUND)
 
     # build time only defs
     target_compile_definitions(vtkh_rendering_mpi PRIVATE ASCENT_EXPORTS_FLAG)
-    set_target_properties(vtkh_rendering_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    if(ENABLE_HIDDEN_VISIBILITY)
+      set_target_properties(vtkh_rendering_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
     #
     target_compile_definitions(vtkh_rendering_mpi PRIVATE VTKH_PARALLEL)
 

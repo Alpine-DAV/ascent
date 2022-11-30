@@ -1,0 +1,26 @@
+#An example of using the log2 filter.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "vector_magnitude"
+        params: 
+          field: "vel"
+          output_name: "mag"
+      f2: 
+        type: "log2"
+        params: 
+          field: "mag"
+          output_name: "log2_mag"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "log2_mag"
+          pipeline: "pl1"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_log2_field"

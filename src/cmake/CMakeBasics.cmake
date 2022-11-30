@@ -43,8 +43,9 @@ macro(ENABLE_WARNINGS)
     else()
         if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR
             "${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"   OR
-            "${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
-            # use these flags for clang, gcc, or icc
+            "${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel" OR
+            "${CMAKE_CXX_COMPILER_ID}" MATCHES "IntelLLVM")
+            # use these flags for clang, gcc, icc, or icx
             add_definitions(-Wall -Wextra)
         endif()
     endif()
@@ -116,7 +117,7 @@ endif()
 # git HEAD changes or when a branch is checked out, unless a change causes
 # cmake to reconfigure.
 #
-# However, this limited approach will still be useful in many cases, 
+# However, this limited approach will still be useful in many cases,
 # including building and for installing  conduit as a tpl
 #
 ##############################################################################
@@ -157,7 +158,7 @@ if(GIT_FOUND)
        set(ASCENT_GIT_TAG "unknown")
     endif()
     message(STATUS "git tag: " ${ASCENT_GIT_TAG})
-  
+
 endif()
 
 ###############################################################################
@@ -181,10 +182,14 @@ if(CUDA_FOUND)
          set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xnvlink=--suppress-stack-size-warning")
     endif()
 
+    # TODO: Resolve?
+    #if(DEFINED CUDA_ARCH)
+    #  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -restrict -arch ${CUDA_ARCH}")
+    #endif()
+
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-constexpr")
 
     if(ENABLE_CUDA_DEBUG_CPU_ONLY)
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DDEBUG_CPU_ONLY")
     endif()
-
 endif()

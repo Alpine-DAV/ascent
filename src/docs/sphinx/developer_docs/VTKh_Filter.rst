@@ -8,7 +8,7 @@
 
 VTK-h Filter Anatomy
 ====================
-VTK-h filters can be found in the ``src/vtkh/filters`` directory of the
+VTK-h filters can be found in the ``src/libs/vtkh/filters`` directory of the
 `VTK-h github repsository <https://github.com/Alpine-DAV/vtk-h>`_.
 The VTK-h filter interface is straight-forward:
 
@@ -33,7 +33,7 @@ with extra meta data like the cycle and domain ids.
 
 Implementing A New Filter
 -------------------------
-As a convenience, we provide a `NoOp <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/vtkh/filters/NoOp.hpp>`_
+As a convenience, we provide a `NoOp <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/libs/vtkh/filters/NoOp.hpp>`_
 filter as staring point. Its recommended that you copy and rename the header and source code
 files and use that as a base. The NoOp filter demonstrates how to loop through all the domains
 in the input data set, retrieve the underlying VTK-m data set, and where the interesting stuff
@@ -57,7 +57,7 @@ goes.
   }
 
 Inside of the source file, you are free to create new and invoke existing VTK-m worklets that will
-execute on supported devices. For a more fully functional example, consult the `Marching Cubes <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/vtkh/filters/MarchingCubes.cpp>`_
+execute on supported devices. For a more fully functional example, consult the `Marching Cubes <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/libs/vtkh/filters/MarchingCubes.cpp>`_
 filter.
 
 Updating the CMakeLists.txt

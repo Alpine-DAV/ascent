@@ -335,7 +335,7 @@ void Clip::DoExecute()
         .Invoke(dom.GetCoordinateSystem().GetData(), clip_field);
 
       dom.AddField(vtkm::cont::Field(fname,
-                                     vtkm::cont::Field::Association::POINTS,
+                                     vtkm::cont::Field::Association::Points,
                                      clip_field));
     } // each domain
 

@@ -8,4 +8,4 @@
               field: braid
           renders:
             r1:
-              image_prefix: /Users/larsen30/research/test_builds/devil_ray/ascent/build/tests/_output/tout_render_actions_img_yaml
+              image_prefix: /Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_render_actions_img_yaml

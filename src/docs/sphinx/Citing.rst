@@ -4,6 +4,7 @@
 .. # other details. No copyright assignment is required to contribute to Ascent.
 .. ###############################################################################
 
+.. _citing:
 
 Citing
 ======

@@ -68,10 +68,14 @@ def gen_docker_tag():
 def main():
     # get tag-base
     if len(sys.argv) < 2:
-        print("usage: build_and_tag.py {tag_base}")
+        print("usage: build_and_tag.py {tag_base} <extra docker build args>")
         sys.exit(-1)
     tag_base = sys.argv[1]
-    
+
+    extra_args = ""
+    if len(sys.argv) > 2:
+        extra_args = sys.argv[2]
+
     # remove old source tarball if it exists
     remove_if_exists("ascent.docker.src.tar.gz")
 
@@ -89,12 +93,10 @@ def main():
     os.chdir(orig_dir)
 
     # exec docker build to create image
-    # note: --squash requires docker runtime with experimental 
-    # docker features enabled. It combines all the layers into
-    # a more compact final image to save disk space.
     # tag with date + git hash
-    sexe('docker build -t {0}_{1} . '.format(tag_base,
-                                             gen_docker_tag()))
+    sexe('docker build -t {0}_{1} . {2}'.format(tag_base,
+                                             gen_docker_tag(),
+                                             extra_args))
 
 if __name__ == "__main__":
     main()

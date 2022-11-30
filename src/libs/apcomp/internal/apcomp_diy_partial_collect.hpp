@@ -7,6 +7,8 @@
 #ifndef APCOMP_DIY_COLLECT_HPP
 #define APCOMP_DIY_COLLECT_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <apcomp/absorption_partial.hpp>
 #include <apcomp/emission_partial.hpp>
 #include <apcomp/volume_partial.hpp>

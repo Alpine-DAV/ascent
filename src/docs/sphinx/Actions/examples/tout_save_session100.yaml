@@ -1,0 +1,11 @@
+#An example of explicitly saving a session file.
+
+- 
+  action: "add_queries"
+  queries: 
+    q1: 
+      params: 
+        expression: "min(field('braid')).value"
+        name: "bananas"
+- 
+  action: "save_session"

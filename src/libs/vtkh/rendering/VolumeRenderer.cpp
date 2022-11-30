@@ -232,7 +232,7 @@ public:
          vtkm::rendering::CanvasRayTracer &canvas,
          std::vector<VolumePartial<float>> &partials) override
   {
-    const vtkm::cont::DynamicCellSet &cellset = m_data_set.GetCellSet();
+    const vtkm::cont::UnknownCellSet &cellset = m_data_set.GetCellSet();
     const vtkm::cont::Field &field = m_data_set.GetField(m_field_name);
     const vtkm::cont::CoordinateSystem &coords = m_data_set.GetCoordinateSystem();
 
@@ -250,7 +250,7 @@ public:
     tracer.SetSampleDistance(m_sample_dist);
     tracer.SetData(coords,
                    field,
-                   cellset.Cast<vtkm::cont::CellSetStructured<3>>(),
+                   cellset.AsCellSet<vtkm::cont::CellSetStructured<3>>(),
                    m_scalar_range);
     tracer.SetColorMap(m_color_map);
 
@@ -507,7 +507,7 @@ VolumeRenderer::RenderOneDomainPerRank()
       continue;
     }
 
-    const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
+    const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
     const vtkm::cont::Field &field = data_set.GetField(m_field_name);
     const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
 
@@ -878,7 +878,7 @@ void VolumeRenderer::SetInput(DataSet *input)
     vtkm::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
 
-    const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
+    const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
     if(cellset.GetNumberOfCells() == 0)
     {
       continue;

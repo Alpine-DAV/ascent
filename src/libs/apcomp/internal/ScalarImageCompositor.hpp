@@ -1,6 +1,7 @@
 #ifndef APCOMP_SCALAR_IMAGE_COMPOSITOR_HPP
 #define APCOMP_SCALAR_IMAGE_COMPOSITOR_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <apcomp/scalar_image.hpp>
 #include <algorithm>
 #include <cmath>
@@ -29,7 +30,7 @@ void ZBufferComposite(apcomp::ScalarImage &front, const apcomp::ScalarImage &ima
 
   const int size = static_cast<int>(front.m_depths.size());
   const bool nan_check = image.m_default_value != image.m_default_value;
-#ifdef apcomp_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
