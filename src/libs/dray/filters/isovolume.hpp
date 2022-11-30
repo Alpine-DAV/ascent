@@ -13,8 +13,9 @@ public:
   Isovolume();
   virtual ~Isovolume();
 
+  void exclude_clip_field(bool exclude);
+
   void set_field(std::string field_name);
-  void set_invert(bool invert);
   void set_range(RangeType range);
 
   /**
@@ -28,7 +29,7 @@ public:
 protected:
   std::string m_field;
   RangeType m_range;
-  bool m_invert;
+  bool m_exclude_clip_field;
 };
 
 };//namespace dray

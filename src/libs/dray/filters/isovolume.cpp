@@ -7,7 +7,7 @@ namespace dray
 {
 
 Isovolume::Isovolume()
-  : m_field(), m_range({0., 0.}), m_invert(false)
+  : m_field(), m_range({0., 0.}), m_exclude_clip_field(false)
 {
   // Do nothing
 }
@@ -18,15 +18,15 @@ Isovolume::~Isovolume()
 }
 
 void
-Isovolume::set_field(std::string field)
+Isovolume::exclude_clip_field(bool exclude)
 {
-  m_field = field;
+  m_exclude_clip_field = exclude;
 }
 
 void
-Isovolume::set_invert(bool invert)
+Isovolume::set_field(std::string field)
 {
-  m_invert = invert;
+  m_field = field;
 }
 
 void
@@ -59,7 +59,8 @@ Isovolume::execute(Collection &c)
   ClipField clipmax;
   clipmax.set_clip_value(m_range[1]);
   clipmax.set_field(m_field);
-  clipmax.set_invert_clip(m_invert);
+  clipmax.set_invert_clip(false);
+  // NOTE: Can't exclude_clip_field here because we will need it for clipmin.
   Collection retval = clipmax.execute(c);
 
   // Make sure the first clip operation resulted in data.
@@ -83,7 +84,7 @@ Isovolume::execute(Collection &c)
   ClipField clipmin;
   clipmin.set_clip_value(m_range[0]);
   clipmin.set_field(m_field);
-  clipmin.set_invert_clip(!m_invert);
+  clipmin.set_invert_clip(true);
   return clipmin.execute(retval);
 }
 
