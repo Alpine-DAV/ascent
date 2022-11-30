@@ -36,10 +36,10 @@ namespace ascent
 class ASCENT_API VTKHCollection
 {
 protected:
-  std::map<std::string, vtkh::DataSet> m_datasets;
+  std::map<std::string, vtkm::cont::PartitionedDataSet> p_datasets;
 public:
   VTKHCollection();
-  void add(vtkh::DataSet &dataset, const std::string topology_name);
+  void add(vtkm::cont::PartitionedDataSet &dataset, const std::string topology_name);
 
   // returns true if the topology exists on any rank
   bool has_topology(const std::string name) const;
@@ -77,7 +77,7 @@ public:
   VTKHCollection* copy_without_topology(const std::string topology_name);
 
   // re-organize by 'domian_id / topology / data set'
-  std::map<int, std::map<std::string,vtkm::cont::DataSet>> by_domain_id();
+  std::map<int, std::map<std::string,vtkm::cont::PartitionedDataSet>> by_domain_id();
 
 };
 

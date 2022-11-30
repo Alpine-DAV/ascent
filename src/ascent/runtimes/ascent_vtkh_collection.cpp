@@ -76,17 +76,17 @@ int global_max(int local)
 
 void VTKHCollection::add(vtkh::DataSet &dataset, const std::string topology_name)
 {
-  bool has_topo = m_datasets.count(topology_name) != 0;
+  bool has_topo = p_datasets.count(topology_name) != 0;
   if(has_topo)
   {
     ASCENT_ERROR("VTKH collection already had topology '"<<topology_name<<"'");
   }
-  m_datasets[topology_name] = dataset;
+  p_datasets[topology_name] = dataset;
 }
 
 bool VTKHCollection::has_topology(const std::string name) const
 {
-  bool has_topo = m_datasets.count(name) != 0;
+  bool has_topo = p_datasets.count(name) != 0;
 
   return detail::global_has(has_topo);
 }
@@ -94,10 +94,10 @@ bool VTKHCollection::has_topology(const std::string name) const
 std::string VTKHCollection::field_topology(const std::string field_name) {
   std::string topo_name = "";
 
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
     // Should we really have to ask an MPI questions? its safer
-    if(it->second.FieldExists(field_name))
+    if(it->second.HasField(field_name))
     {
       topo_name = it->first;
       break;
@@ -139,10 +139,10 @@ std::string VTKHCollection::field_topology(const std::string field_name) {
 bool VTKHCollection::has_field(const std::string field_name) const
 {
   bool has = false;
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
     // Should we really have to ask an MPI questions? its safer
-    if(it->second.FieldExists(field_name))
+    if(it->second.HasField(field_name))
     {
       has = true;
       break;
@@ -163,7 +163,7 @@ vtkm::Bounds VTKHCollection::global_bounds() const
   // to get the global bounds, we include all local bounds
   // then do a mpi reduce here
   vtkm::Bounds bounds;
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
     bounds.Include(GetBounds(it->second));
   }
@@ -221,16 +221,17 @@ vtkm::Bounds VTKHCollection::global_bounds() const
 
   return bounds;
 }
-
+//TODO:unclear how to count domains across multiple partitions
+//do you ever want multiple partitions or just keep adding to the same partition?
 std::vector<vtkm::Id> VTKHCollection::domain_ids() const
 {
   std::vector<vtkm::Id> all_ids;
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
-    std::vector<vtkm::Id> domain_ids = it->second.GetDomainIds();
-    for(int i = 0; i < domain_ids.size(); ++i)
+    vtkm::Id num_domains = it->second.GetNumberOfPartitions();
+    for(int i = 0; i < num_domains; ++i)
     {
-      all_ids.push_back(domain_ids[i]);
+      all_ids.push_back(i);
     }
   }
   return all_ids;
@@ -242,13 +243,13 @@ VTKHCollection::dataset_by_topology(const std::string topology_name)
   // this will return a empty dataset if this rank
   // does not actually have this topo, but it exists
   // globally
-  return m_datasets[topology_name];
+  return p_datasets[topology_name];
 }
 
 std::vector<std::string> VTKHCollection::topology_names() const
 {
   std::set<std::string> names;
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
     names.insert(it->first);
   }
@@ -263,12 +264,12 @@ std::vector<std::string> VTKHCollection::field_names() const
   // just grab the first domain of every topo and repo
   // the known fields
   std::set<std::string> names;
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
-    vtkh::DataSet domains = it->second;
-    if(domains.GetNumberOfDomains() > 0)
+    vtkm::cont::PartitionedDataSet domains = it->second;
+    if(domains.GetNumberOfPartitions() > 0)
     {
-      vtkm::cont::DataSet dom = domains.GetDomain(0);
+      vtkm::cont::DataSet dom = domains.GetPartition(0);
       for(int i = 0; i < dom.GetNumberOfFields(); ++i)
       {
         names.insert(dom.GetField(i).GetName());
@@ -287,16 +288,16 @@ VTKHCollection::by_domain_id()
 {
   std::map<int, std::map<std::string, vtkm::cont::DataSet>> res;
 
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
     const std::string topo_name = it->first;
-    vtkh::DataSet &vtkh_dataset = it->second;
+    vtkm::cont::PartitionedDataSet &vtkm_pdataset = it->second;
 
-    std::vector<vtkm::Id> domain_ids = vtkh_dataset.GetDomainIds();
-    for(int i = 0; i < domain_ids.size(); ++i)
+    vtkm::Id num_domain = vtkm_pdataset.GetNumberOfPartitions();
+    for(int i = 0; i < num_domains; ++i)
     {
-      const int domain_id = domain_ids[i];
-      res[domain_id][topo_name] = vtkh_dataset.GetDomain(i);
+      const int domain_id = i;
+      res[domain_id][topo_name] = vtkm_pdataset.GetPartition(i);
     }
   }
 
@@ -308,7 +309,7 @@ int VTKHCollection::number_of_topologies() const
   // this is not perfect. For example, we could
   // random topology names on different ranks,
   // but this is 99% of our possible use cases
-  return detail::global_max(m_datasets.size());
+  return detail::global_max(p_datasets.size());
 }
 
 VTKHCollection* VTKHCollection::copy_without_topology(const std::string topology_name)
@@ -320,7 +321,7 @@ VTKHCollection* VTKHCollection::copy_without_topology(const std::string topology
   }
 
   VTKHCollection *copy = new VTKHCollection(*this);
-  copy->m_datasets.erase(topology_name);
+  copy->p_datasets.erase(topology_name);
 
   return copy;
 }
@@ -330,12 +331,12 @@ std::string VTKHCollection::summary() const
   std::stringstream msg;
 
   msg<<"vtkh colletion:\n";
-  for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
+  for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
     const std::string topo_name = it->first;
     msg<<"  Topology '"<<topo_name<<"': \n";
-    const vtkh::DataSet &vtkh_dataset = it->second;
-    vtkh_dataset.PrintSummary(msg);
+    const vtkm::cont::PartitionedDataSet &vtkm_pdataset = it->second;
+    vtkm_pdataset.PrintSummary(msg);
 
   }
   return msg.str();
