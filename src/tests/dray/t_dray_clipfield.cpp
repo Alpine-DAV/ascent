@@ -179,6 +179,71 @@ handle_test(const std::string &testname, dray::Collection &tfdataset)
 #endif
 }
 
+//-----------------------------------------------------------------------------
+// Chris Laganella: I had to rebaseline a couple tests in this file and wanted
+//  to double check the vector fields were being treated properly - so I grabbed
+//  this from the extract_slice tests.
+static conduit::Node
+make_simple_field(int constant, int nx, int ny, int nz, int nc=1)
+{
+  std::vector<std::vector<float>> data;
+  data.resize(nc);
+
+  for(int i = 0; i < nz; i++)
+  {
+    for(int j = 0; j < ny*nx; j++)
+    {
+      for(int c = 0; c < nc; c++)
+      {
+        if(c % 2 == 0)
+        {
+          data[c].push_back(float(constant * (i)));
+        }
+        else
+        {
+          data[c].push_back(-float(constant * (i)));
+        }
+      }
+    }
+  }
+
+#ifndef NDEBUG
+  std::cout << "input:";
+  for(int i = 0; i < data[0].size(); i++)
+  {
+    std::cout << " (";
+    for(int c = 0; c < nc; c++)
+    {
+      std::cout << data[c][i] << (c < nc-1 ? "," : ")");
+    }
+  }
+  std::cout << std::endl;
+#endif
+
+  conduit::Node n_field;
+  if(nc == 1)
+  {
+    // Scalar
+    n_field["association"].set("vertex");
+    n_field["type"].set("scalar");
+    n_field["topology"].set("mesh");
+    n_field["values"].set(data[0]);
+  }
+  else
+  {
+    // Vector
+    n_field["association"].set("vertex");
+    n_field["type"].set("vector");
+    n_field["topology"].set("mesh");
+    for(int c = 0; c < nc; c++)
+    {
+      conduit::Node &n = n_field["values"].append();
+      n.set(data[c]);
+    }
+  }
+  return n_field;
+}
+
 #ifdef DEBUG_TEST
 //-----------------------------------------------------------------------------
 void
@@ -202,8 +267,13 @@ clip_3d(conduit::Node &node, const std::string &name, bool do_inverse = true,
   dray::Collection collection;
   dray::DataSet domain = dray::BlueprintReader::blueprint_to_dray(node);
   collection.add_domain(domain);
-#if 0
+#if DEBUG_TEST
   handle_test(std::string("clip_") + name + "_orig", collection);
+  {
+    conduit::Node n_input;
+    dray_collection_to_blueprint(collection, n_input);
+    dray::BlueprintReader::save_blueprint(std::string("clip_") + name + "_orig", n_input);
+  }
 #endif
   // Filter.
   dray::ClipField clip;
@@ -212,6 +282,15 @@ clip_3d(conduit::Node &node, const std::string &name, bool do_inverse = true,
   clip.exclude_clip_field(fieldname == "test");
 
   dray::Collection output = clip.execute(collection);
+
+#if DEBUG_TEST
+  {
+    conduit::Node n_output;
+    dray_collection_to_blueprint(output, n_output);
+    dray::BlueprintReader::save_blueprint(std::string("clip_") + name, n_output);
+  }
+#endif
+
   handle_test(std::string("clip_") + name, output);
 
   // Filter again, inverting the selection.
@@ -379,11 +458,12 @@ TEST (dray_clipfield, hexs_3_2_2_noclip)
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
 #endif
+  const int nx = 3, ny = 2, nz = 2;
   conduit::Node data;
   conduit::blueprint::mesh::examples::braid("structured",
-                                             3,
-                                             2,
-                                             2,
+                                             nx,
+                                             ny,
+                                             nz,
                                              data);
   /*
 
@@ -407,6 +487,11 @@ TEST (dray_clipfield, hexs_3_2_2_noclip)
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*2*2);
 
+  // Add another vector field.
+  const int constant = 12;
+  const int nc = 3;
+  data["fields/vec"] = make_simple_field(constant, nx, ny, nz, nc);
+
   clip_3d(data, "hexs_3_2_2_noclip", false);
 }
 
@@ -416,11 +501,12 @@ TEST (dray_clipfield, hexs_3_2_2_corner)
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
 #endif
+  const int nx = 3, ny = 2, nz = 2;
   conduit::Node data;
   conduit::blueprint::mesh::examples::braid("structured",
-                                             3,
-                                             2,
-                                             2,
+                                             nx,
+                                             ny,
+                                             nz,
                                              data);
   /*
    0    0    1
@@ -443,6 +529,12 @@ TEST (dray_clipfield, hexs_3_2_2_corner)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*2*2);
+
+  // Add another vector field.
+  const int constant = 12;
+  const int nc = 3;
+
+  data["fields/vec"] = make_simple_field(constant, nx, ny, nz, nc);
 
   clip_3d(data, "hexs_3_2_2_corner");
 }
@@ -495,11 +587,12 @@ TEST (dray_clipfield, hexs_3_2_2_vertical)
 #ifdef DEBUG_TEST
   conduit::utils::set_error_handler(blueprint_plugin_error_handler);
 #endif
+  const int nx = 3, ny = 2, nz = 2;
   conduit::Node data;
   conduit::blueprint::mesh::examples::braid("structured",
-                                             3,
-                                             2,
-                                             2,
+                                             nx,
+                                             ny,
+                                             nz,
                                              data);
   /*
 
@@ -523,6 +616,11 @@ TEST (dray_clipfield, hexs_3_2_2_vertical)
   data["fields/test/association"] = "vertex";
   data["fields/test/type"] = "scalar";
   data["fields/test/values"].set_external(values, 3*2*2);
+
+  // Add another vector field.
+  const int constant = 12;
+  const int nc = 3;
+  data["fields/vec"] = make_simple_field(constant, nx, ny, nz, nc);
 
   clip_3d(data, "hexs_3_2_2_vertical");
 }
@@ -748,4 +846,3 @@ TEST (dray_clipfield, tets_tiny)
 
   clip_3d(data, "tets_tiny", true, "height", 0.6);
 }
-
