@@ -5,6 +5,7 @@
 #include <dray/error_check.hpp>
 #include <numeric>
 #include <algorithm>
+#include <random>
 #include <cmath>
 #include <cstdlib>
 
@@ -26,11 +27,15 @@ namespace dray
 
 namespace detail
 {
+/*
+// TODO: Do we need to convert this to a "random engine"
+// compatible template, or will defaults engine be ok?
 struct ShuffleRNG {
     int operator() (int n) {
         return std::rand() / (1.0 + RAND_MAX) * n;
     }
 };
+*/
 
 
 template<typename MeshElement>
@@ -325,8 +330,10 @@ VolumeBalance::schedule_prefix(std::vector<float32> &rank_volumes,
     random[i] = i;
   }
 
-  std::srand(0);
-  std::shuffle(random.begin(), random.end(), detail::ShuffleRNG());
+  //std::srand(0);
+  //std::shuffle(random.begin(), random.end(), detail::ShuffleRNG());
+  std::shuffle(random.begin(), random.end(), std::default_random_engine(0));
+  
 
   std::vector<float32> prefix_sum;
   prefix_sum.resize(global_size);
