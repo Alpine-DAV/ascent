@@ -22,6 +22,7 @@ int EXAMPLE_MESH_SIDE_DIM_SM = 7;
 
 //#define DEBUG_TEST
 //#define GENERATE_BASELINES
+//#define WRITE_CONDUIT_DATASETS
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -267,8 +268,10 @@ clip_3d(conduit::Node &node, const std::string &name, bool do_inverse = true,
   dray::Collection collection;
   dray::DataSet domain = dray::BlueprintReader::blueprint_to_dray(node);
   collection.add_domain(domain);
-#if DEBUG_TEST
+#ifdef DEBUG_TEST
   handle_test(std::string("clip_") + name + "_orig", collection);
+#endif
+#ifdef WRITE_CONDUIT_DATASETS
   {
     conduit::Node n_input;
     dray_collection_to_blueprint(collection, n_input);
@@ -283,7 +286,7 @@ clip_3d(conduit::Node &node, const std::string &name, bool do_inverse = true,
 
   dray::Collection output = clip.execute(collection);
 
-#if DEBUG_TEST
+#ifdef WRITE_CONDUIT_DATASETS
   {
     conduit::Node n_output;
     dray_collection_to_blueprint(output, n_output);
