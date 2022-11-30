@@ -111,10 +111,11 @@ template<typename Functor>
 void dispatch_p1(Mesh *mesh, Field *field, Functor &func)
 {
   if (!dispatch_mesh_field((HexMesh_P1*)0, mesh, field, func) &&
-      !dispatch_mesh_field((TetMesh_P1*)0, mesh, field, func) &&
+      !dispatch_mesh_field((TetMesh_P1*)0, mesh, field, func)/* &&
 
+      TODO: 2D implementation
       !dispatch_mesh_field((QuadMesh_P1*)0, mesh, field, func) &&
-      !dispatch_mesh_field((TriMesh_P1*)0,  mesh, field, func))
+      !dispatch_mesh_field((TriMesh_P1*)0,  mesh, field, func)*/)
 
     detail::cast_mesh_failed(mesh, __FILE__, __LINE__);
 }
@@ -123,49 +124,15 @@ void dispatch_p1(Mesh *mesh, Field *field, Functor &func)
 template<typename Functor>
 void dispatch_p0p1(Field *field, Functor &func)
 {
-  if (//!dispatch_field_only((UnstructuredField<HexScalar>*)0,    field, func) &&
-      !dispatch_field_only((UnstructuredField<HexScalar_P0>*)0, field, func) &&
+  if (!dispatch_field_only((UnstructuredField<HexScalar_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<HexScalar_P1>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<HexScalar_P2>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<TetScalar>*)0,    field, func) &&
       !dispatch_field_only((UnstructuredField<TetScalar_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<TetScalar_P1>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<TetScalar_P2>*)0, field, func) &&
 
-      //!dispatch_field_only((UnstructuredField<QuadScalar>*)0,    field, func) &&
-      !dispatch_field_only((UnstructuredField<QuadScalar_P0>*)0, field, func) &&
-      !dispatch_field_only((UnstructuredField<QuadScalar_P1>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<QuadScalar_P2>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<TriScalar>*)0,     field, func) &&
-      !dispatch_field_only((UnstructuredField<TriScalar_P0>*)0,  field, func) &&
-      !dispatch_field_only((UnstructuredField<TriScalar_P1>*)0,  field, func) &&
-      //!dispatch_field_only((UnstructuredField<TriScalar_P2>*)0,  field, func) &&
-
-      //!dispatch_field_only((UnstructuredField<HexVector>*)0,    field, func) &&
       !dispatch_field_only((UnstructuredField<HexVector_P0>*)0, field, func) &&
       !dispatch_field_only((UnstructuredField<HexVector_P1>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<HexVector_P2>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<TetVector>*)0,    field, func) &&
       !dispatch_field_only((UnstructuredField<TetVector_P0>*)0, field, func) &&
-      !dispatch_field_only((UnstructuredField<TetVector_P1>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<TetVector_P2>*)0, field, func) &&
-
-      //!dispatch_field_only((UnstructuredField<QuadVector>*)0,    field, func) &&
-      !dispatch_field_only((UnstructuredField<QuadVector_P0>*)0, field, func) &&
-      !dispatch_field_only((UnstructuredField<QuadVector_P1>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<QuadVector_P2>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<QuadVector_2D>*)0,    field, func) &&
-      !dispatch_field_only((UnstructuredField<QuadVector_2D_P0>*)0, field, func) &&
-      !dispatch_field_only((UnstructuredField<QuadVector_2D_P1>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<QuadVector_2D_P2>*)0, field, func) &&
-      //!dispatch_field_only((UnstructuredField<TriVector>*)0,     field, func) &&
-      !dispatch_field_only((UnstructuredField<TriVector_P0>*)0,  field, func) &&
-      !dispatch_field_only((UnstructuredField<TriVector_P1>*)0,  field, func) &&
-      //!dispatch_field_only((UnstructuredField<TriVector_P2>*)0,  field, func) &&
-      //!dispatch_field_only((UnstructuredField<TriVector_2D>*)0,     field, func) &&
-      !dispatch_field_only((UnstructuredField<TriVector_2D_P0>*)0,  field, func) &&
-      !dispatch_field_only((UnstructuredField<TriVector_2D_P1>*)0,  field, func)// &&
-      //!dispatch_field_only((UnstructuredField<TriVector_2D_P2>*)0,  field, func)
+      !dispatch_field_only((UnstructuredField<TetVector_P1>*)0, field, func)
      )
   {
     // NOTE: Building with CUDA does not like these lines so comment them out.
@@ -181,6 +148,7 @@ void dispatch_p0p1(Field *field, Functor &func)
 /**
  @brief Blend a field using blend group information.
  */
+template<typename MeshElemType>
 class BlendFieldFunctor
 { 
 public:
@@ -215,22 +183,24 @@ public:
   }
 
   // Called by dispatch_3d when we want to blend fields.
-  template <typename FEType>
-  void operator()(const UnstructuredField<FEType> &field)
+  template <typename InFEType>
+  void operator()(const UnstructuredField<InFEType> &field)
   {
     if(field.order() == 0)
     {
+      using OutFEType = Element<MeshElemType::get_dim(), InFEType::get_ncomp(), MeshElemType::get_etype(), Order::Constant>;
       // Create a new GridFunction that contains the replicated data.
       auto bgf = replicate(field.get_dof_data());
       // Make a new UnstructuredField
-      m_output = std::make_shared<UnstructuredField<FEType>>(bgf, 0, field.name());
+      m_output = std::make_shared<UnstructuredField<OutFEType>>(bgf, 0, field.name());
     }
     else
     {
+      using OutFEType = Element<MeshElemType::get_dim(), InFEType::get_ncomp(), MeshElemType::get_etype(), Order::Linear>;
       // Create a new GridFunction that contains the blended data.
       auto bgf = blend(field.get_dof_data());
       // Make a new UnstructuredField
-      m_output = std::make_shared<UnstructuredField<FEType>>(bgf, 1, field.name());
+      m_output = std::make_shared<UnstructuredField<OutFEType>>(bgf, 1, field.name());
     }
   }
 
@@ -1200,7 +1170,7 @@ struct ClipFieldLinear
     // Stage 6 - Finish making the output mesh.
     //
     // ----------------------------------------------------------------------
-    BlendFieldFunctor bff(&uNames, &uIndices, &blendGroupSizes, &blendGroupStart,
+    BlendFieldFunctor<Tet_P1> bff(&uNames, &uIndices, &blendGroupSizes, &blendGroupStart,
                           &blendIds, &blendCoeff, &fragments, &fragmentOffsets,
                           &conn_out, fragment_sum.get());
     // Blend coordinate dofs.
