@@ -542,10 +542,10 @@ Array<double> cast_field_values(conduit::Node &field, const std::string componen
   }
   else
   {
-#warning "this is a bad idea, one rank might have this field and others not"
-// TODO: have a way to propgate errors that could hang things
+    // This error is a bad idea, one rank might have this field and others not
+    // TODO: have a way to propgate errors that could hang things
     ASCENT_ERROR("Type dispatch: unsupported array type "<<
-                  field.schema().to_string());
+                 field.schema().to_string());
   }
   return res;
 }
