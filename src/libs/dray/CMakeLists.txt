@@ -165,6 +165,7 @@ set(dray_headers dray.hpp
                  filters/cell_average.hpp
                  filters/extract_slice.hpp
                  filters/extract_three_slice.hpp
+                 filters/isovolume.hpp
                  filters/marching_cubes.hpp
                  filters/mesh_boundary.hpp
                  filters/point_average.hpp
@@ -271,6 +272,7 @@ set(dray_sources dray.cpp
                  filters/cell_average.cpp
                  filters/extract_slice.cpp
                  filters/extract_three_slice.cpp
+                 filters/isovolume.cpp
                  filters/marching_cubes.cpp
                  filters/mesh_boundary.cpp
                  filters/point_average.cpp
