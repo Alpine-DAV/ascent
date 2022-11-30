@@ -326,7 +326,7 @@ VolumeBalance::schedule_prefix(std::vector<float32> &rank_volumes,
   }
 
   std::srand(0);
-  std::random_shuffle(random.begin(), random.end(), detail::ShuffleRNG());
+  std::shuffle(random.begin(), random.end(), detail::ShuffleRNG());
 
   std::vector<float32> prefix_sum;
   prefix_sum.resize(global_size);
