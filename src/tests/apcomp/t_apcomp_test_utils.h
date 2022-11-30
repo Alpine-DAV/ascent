@@ -126,8 +126,8 @@ void partials_to_png(std::vector<apcomp::VolumePartial<float>> &partials,
 inline std::string
 t_apcomp_baseline_dir()
 {
-    std::string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"apcomp");
-    res = conduit::utils::join_file_path(res,"baseline_images");
+    std::string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"_baseline_images");
+    res = conduit::utils::join_file_path(res,"apcomp");
     std::cout << res << std::endl;
     return res;
 }

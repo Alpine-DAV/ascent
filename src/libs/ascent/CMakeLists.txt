@@ -7,7 +7,7 @@
 
 ###############################################################################
 #
-# file: src/ascent/CMakeLists.txt
+# file: src/libs/ascent/CMakeLists.txt
 #
 ###############################################################################
 
@@ -445,6 +445,20 @@ if (ENABLE_SERIAL)
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
 
+    # build includes
+    # for generated config header
+    target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+    # this allows us to include as <header.hpp> during builds
+    target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/>)
+    target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/c>)
+    target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/utils>)
+    target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/runtimes>)
+    target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/hola>)
+    target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/runtimes/flow_filters>)
+    # install includes
+    # setup exported target to point to proper include dir
+    target_include_directories(ascent PUBLIC $<INSTALL_INTERFACE:include/ascent/>)
+
     # install target for serial ascent lib
     install(TARGETS ascent
             EXPORT  ascent
@@ -540,7 +554,7 @@ if (ENABLE_SERIAL)
                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
                            COMMENT "manual device link step for Ascent"
                            )
-        install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm.o DESTINATION lib)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm.o DESTINATION lib)
     endif()
 
 endif()
@@ -632,6 +646,20 @@ if(MPI_FOUND)
     if(VTKM_FOUND)
         vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
+
+    # build includes
+    # for generated config header
+    target_include_directories(ascent_mpi PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+    # this allows us to include as <header.hpp> during builds
+    target_include_directories(ascent_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/>)
+    target_include_directories(ascent_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/c>)
+    target_include_directories(ascent_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/utils>)
+    target_include_directories(ascent_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/runtimes>)
+    target_include_directories(ascent_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/hola>)
+    target_include_directories(ascent_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/ascent/runtimes/flow_filters>)
+    # install includes
+    # setup exported target to point to proper include dir
+    target_include_directories(ascent_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/>)
 
     # install target for mpi ver
     install(TARGETS ascent_mpi
@@ -726,7 +754,7 @@ if(MPI_FOUND)
                             COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
                             COMMENT "manual device link step for Ascent parallel"
                             )
-        install(FILES ${CMAKE_BINARY_DIR}/ascent/bcal_vtkm_mpi.o DESTINATION lib)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm_mpi.o DESTINATION lib)
     endif()
 
 endif()
