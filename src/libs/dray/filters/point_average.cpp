@@ -224,19 +224,56 @@ PointAverage::~PointAverage()
 void
 PointAverage::set_field(const std::string &name)
 {
+  // Unless explicitly set by the user, out_field should match in_field
+  if(out_field.empty() || out_field == in_field)
+  {
+    out_field = name;
+  }
   in_field = name;
 }
 
 void
 PointAverage::set_output_field(const std::string &name)
 {
-  out_field = name;
+  // If the name is empty, reset the output field to name of the input field
+  out_field = name.empty() ? in_field : name;
 }
 
 void
 PointAverage::set_mesh(const std::string &name)
 {
   ref_mesh = name;
+}
+
+DataSet
+PointAverage::execute(DataSet &domain)
+{
+  DataSet out_dom = initialize_output_domain(domain, out_field);
+  if(!domain.has_field(in_field))
+  {
+    return out_dom;
+  }
+
+  // Get the mesh, default to mesh 0. Use the user provided mesh if it exists.
+  Mesh  *mesh = mesh = domain.mesh();
+  if(!ref_mesh.empty())
+  {
+    if(!domain.has_mesh(ref_mesh))
+    {
+      DRAY_ERROR("The mesh " << ref_mesh << " could not be found in the given DataSet.");
+    }
+    mesh = domain.mesh(ref_mesh);
+  }
+  if(!mesh)
+  {
+    DRAY_ERROR("PointAverage cannot be executed on a domain with no mesh. Domain " << domain.domain_id() << ".");
+  }
+
+  Field *field = domain.field(in_field);
+  PointAverageFunctor pointavg(mesh, field, out_field);
+  pointavg.execute();
+  out_dom.add_field(pointavg.output());
+  return out_dom;
 }
 
 Collection
@@ -248,43 +285,11 @@ PointAverage::execute(Collection &input)
             << "' because it does not exist in the given collection.");
   }
 
-  // Default output name to input name.
-  // If the user set a custom output name then use that.
-  std::string out_name(in_field);
-  if(!out_field.empty())
-  {
-    out_name = out_field;
-  }
-
   Collection output;
   auto domains = input.domains();
   for(DataSet &domain : domains)
   {
-    DataSet out_dom = initialize_output_domain(domain, out_name);
-    if(domain.has_field(in_field))
-    {
-      // Get the mesh, default to mesh 0.
-      Mesh  *mesh = mesh = domain.mesh();
-      if(!ref_mesh.empty())
-      {
-        if(!domain.has_mesh(ref_mesh))
-        {
-          // Issue warning? A mesh was picked by the user but it
-          // doesn't exist on this domain.
-          continue;
-        }
-        mesh = domain.mesh(ref_mesh);
-      }
-      if(!mesh)
-      {
-        DRAY_ERROR("PointAverage cannot be executed on a domain with no mesh. Domain " << domain.domain_id() << ".")
-      }
-
-      Field *field = domain.field(in_field);
-      PointAverageFunctor pointavg(mesh, field, out_name);
-      pointavg.execute();
-      out_dom.add_field(pointavg.output());
-    }
+    DataSet out_dom = execute(domain);
     output.add_domain(out_dom);
   }
   return output;

@@ -63,6 +63,7 @@ set(BASIC_TESTS t_dray_smoke
                 #t_dray_triangle
                 #t_dray_element
                 t_dray_mesh_threshold
+                t_dray_clipfield
                 t_dray_cell_average
                 t_dray_point_average
                 t_dray_extract_slice
