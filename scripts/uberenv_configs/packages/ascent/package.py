@@ -268,7 +268,8 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     #######################
     depends_on('babelflow', when='+babelflow+mpi')
     depends_on('parallelmergetree', when='+babelflow+mpi')
-
+    depends_on('talass', when='+babelflow+mpi')
+    depends_on('streamstat', when='+babelflow+mpi')
 
     #######################
     # Documentation related
@@ -557,6 +558,10 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
                                             spec['babelflow'].prefix))
                 cfg.write(cmake_cache_entry("PMT_DIR",
                                             spec['parallelmergetree'].prefix))
+                cfg.write(cmake_cache_entry("StreamStat_DIR",
+                                            spec['streamstat'].prefix))
+                cfg.write(cmake_cache_entry("TopoFileParser_DIR",
+                                            spec['talass'].prefix))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
 

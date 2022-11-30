@@ -19,7 +19,7 @@
 #include "BabelFlow/reduce/SingleTaskGraph.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
-#include "BabelFlow/DefGraphConnector.h"
+//#include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/ModuloMap.h"
 
 #ifdef ASCENT_MPI_ENABLED
@@ -144,7 +144,7 @@ private:
   BabelFlow::ComposableTaskGraph m_reduceGraph;
   BabelFlow::ComposableTaskMap m_reduceTaskMap;
 
-  BabelFlow::DefGraphConnector m_defGraphConnector;
+    //BabelFlow::DefGraphConnector m_defGraphConnector;
 };
 
 //-----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ private:
   BabelFlow::ComposableTaskGraph m_binSwapGraph;
   BabelFlow::ComposableTaskMap m_binSwapTaskMap;
 
-  BabelFlow::DefGraphConnector m_defGraphConnector;
+    //BabelFlow::DefGraphConnector m_defGraphConnector;
 };
 
 //-----------------------------------------------------------------------------
@@ -207,7 +207,7 @@ protected:
   BabelFlow::ComposableTaskGraph m_radGatherGraph;
   BabelFlow::ComposableTaskMap m_radGatherTaskMap;
 
-  BabelFlow::DefGraphConnector m_defGraphConnector;
+    //BabelFlow::DefGraphConnector m_defGraphConnector;
 };
 
 //-----------------------------------------------------------------------------

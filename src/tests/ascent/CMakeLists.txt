@@ -164,6 +164,7 @@ if(MPI_FOUND AND ENABLE_MPI)
   if(BABELFLOW_FOUND)
     # add the babelflow pmt mpi test
     add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
+    add_cpp_mpi_test(TEST t_ascent_babelflow_stat_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
     if(DRAY_FOUND)
       # babelflow compositing test requires dray
       add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)

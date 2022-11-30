@@ -55,3 +55,38 @@ message(STATUS "FOUND PMT at ${PMT_DIR}")
 blt_register_library( NAME pmt
                       INCLUDES ${PMT_INCLUDE_DIRS}
                       LIBRARIES  pmt)
+
+## Find also StreamingStatistics library
+
+if(NOT StreamStat_DIR)
+    MESSAGE(FATAL_ERROR "StreamingStatistics support needs explicit StreamStat_DIR")
+endif()
+
+set(StreamStat_DIR ${StreamStat_DIR}/lib/cmake)
+MESSAGE(STATUS "Looking for StreamingStatistics using STREAMSTAT_DIR = ${StreamStat_DIR}")
+
+find_package(StreamStat REQUIRED)
+
+message(STATUS "FOUND StreamStat at ${StreamStat_DIR}")
+
+blt_register_library( NAME streamstat
+                      INCLUDES ${StreamStat_INCLUDE_DIRS}
+                      LIBRARIES StreamingStatistics)
+
+
+## Find the TopoReader library
+
+if(NOT TopoFileParser_DIR)
+    MESSAGE(FATAL_ERROR "StreamingStatistics support needs explicit TopoFileParser_DIR")
+endif()
+
+set(TopoFileParser_DIR ${TopoFileParser_DIR}/lib/cmake)
+MESSAGE(STATUS "Looking for StreamingStatistics using TOPOPARSER_DIR = ${TopoFileParser_DIR}")
+
+find_package(TopoFileParser REQUIRED)
+
+message(STATUS "FOUND TopoFileParser at ${TopoFileParser_DIR}")
+
+blt_register_library( NAME topofileparser
+                      INCLUDES ${TopoParser_INCLUDE_DIRS}
+                      LIBRARIES TopologyFileParser)
