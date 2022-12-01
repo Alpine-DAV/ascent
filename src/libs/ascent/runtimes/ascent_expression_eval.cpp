@@ -1551,7 +1551,7 @@ ExpressionEval::evaluate(const std::string expr, std::string expr_name)
 
 
   // remove temporary fields, topologies, and coordsets from the dataset
-  #warning "Need a way to delete the intermediate results during execution"
+  // TODO: We need a way to delete the intermediate results during execution
   conduit::Node *dataset = m_data_object.as_node().get();
   const int num_domains = dataset->number_of_children();
   for(int i = 0; i < num_domains; ++i)

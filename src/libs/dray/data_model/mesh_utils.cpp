@@ -527,9 +527,7 @@ BVH construct_bvh (UnstructuredMesh<ElemT> &mesh, Array<typename get_subref<Elem
 
   constexpr int splits = 2 * (2 << dim_outside);
   const int32 num_scratch_els = num_els * (splits + 1);
-
-#warning "splits no longer controlable"
-
+  // TODO: Note splits are no longer controllable
   using ShapeTag = typename AdaptGetShape<ElemT>::type;
   using OrderPolicy = typename AdaptGetOrderPolicy<ElemT>::type;
   const OrderPolicy order_p = adapt_get_order_policy(ElemT(), mesh.order());
