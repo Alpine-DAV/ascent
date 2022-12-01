@@ -27,16 +27,6 @@ namespace dray
 
 namespace detail
 {
-/*
-// TODO: Do we need to convert this to a "random engine"
-// compatible template, or will defaults engine be ok?
-struct ShuffleRNG {
-    int operator() (int n) {
-        return std::rand() / (1.0 + RAND_MAX) * n;
-    }
-};
-*/
-
 
 template<typename MeshElement>
 void mask_cells(UnstructuredMesh<MeshElement> &mesh,
@@ -330,8 +320,6 @@ VolumeBalance::schedule_prefix(std::vector<float32> &rank_volumes,
     random[i] = i;
   }
 
-  //std::srand(0);
-  //std::shuffle(random.begin(), random.end(), detail::ShuffleRNG());
   std::shuffle(random.begin(), random.end(), std::default_random_engine(0));
   
 
