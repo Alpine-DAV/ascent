@@ -276,3 +276,173 @@ These tables provides an inventory of Ascent's features and the programming and 
      - `VTKHLineRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/LineRenderer.hpp#L9>`_
 
 
+`Ascent Expressions  <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/ascent_expression_eval.cpp#L238>`_
+
+.. Expression Lang Primitives 
+  .. flow::Workspace::register_filter_type<expressions::Identifier>();
+  .. flow::Workspace::register_filter_type<expressions::Double>();
+  .. flow::Workspace::register_filter_type<expressions::Integer>();
+  .. flow::Workspace::register_filter_type<expressions::String>();
+  .. flow::Workspace::register_filter_type<expressions::Boolean>();
+  .. flow::Workspace::register_filter_type<expressions::Vector>();
+  .. flow::Workspace::register_filter_type<expressions::NullArg>();
+  .. flow::Workspace::register_filter_type<expressions::Nan>();
+
+Ascent Expression Language Primitives
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Feature Type
+     - Programming APIs
+     - Data APIs
+     - Source Links
+
+   * - Identifier
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `Identifier <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L78>`_
+
+   * - Double
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `Double <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L133>`_
+
+   * - Integer
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `Integer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L122>`_
+
+   * - String
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `String <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L144>`_
+
+   * - Boolean
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `Boolean <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L111>`_
+
+   * - Vector
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `Vector <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L345>`_
+
+   * - Null
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `NullArg <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L144>`_
+
+   * - Nan
+     - Expression Language Primitive
+     - C++
+     - Conduit Node
+     - `Nan <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L622>`_
+
+
+Ascent Expression Language Operations
+.. Expression Lang Operations
+  .. flow::Workspace::register_filter_type<expressions::IfExpr>();
+  .. flow::Workspace::register_filter_type<expressions::BinaryOp>();
+  .. flow::Workspace::register_filter_type<expressions::DotAccess>();
+  .. flow::Workspace::register_filter_type<expressions::ArrayAccess>();
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Feature Type
+     - Programming APIs
+     - Data APIs
+     - Source Links
+
+   * - If Conditional
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `IfExpr <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L478>`_
+
+   * - Binary Operation
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `BinaryOp <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L544>`_
+
+   * - Dot Access
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `DotAccessor <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L544>`_
+
+   * - Array Access
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `ArrayAccess <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L533>`_
+
+.. Mesh BP Aware
+  .. flow::Workspace::register_filter_type<expressions::Field>();
+  .. flow::Workspace::register_filter_type<expressions::Topo>();
+  .. flow::Workspace::register_filter_type<expressions::Cycle>();
+  .. flow::Workspace::register_filter_type<expressions::Time>();
+  .. flow::Workspace::register_filter_type<expressions::Lineout>();
+  .. flow::Workspace::register_filter_type<expressions::Bounds>();
+  .. flow::Workspace::register_filter_type<expressions::FieldMax>();
+  .. flow::Workspace::register_filter_type<expressions::FieldMin>();
+  .. flow::Workspace::register_filter_type<expressions::FieldAvg>();
+  .. flow::Workspace::register_filter_type<expressions::FieldNanCount>();
+  .. flow::Workspace::register_filter_type<expressions::FieldInfCount>();
+  .. flow::Workspace::register_filter_type<expressions::FieldSum>();
+
+.. History
+  .. flow::Workspace::register_filter_type<expressions::History>();
+  .. flow::Workspace::register_filter_type<expressions::HistoryRange>();
+
+
+.. Array Exprs
+  .. flow::Workspace::register_filter_type<expressions::ArrayMax>();
+  .. flow::Workspace::register_filter_type<expressions::ArrayMin>();
+  .. flow::Workspace::register_filter_type<expressions::ArrayAvg>();
+  .. flow::Workspace::register_filter_type<expressions::ArraySum>();
+  .. flow::Workspace::register_filter_type<expressions::Histogram>();
+  .. flow::Workspace::register_filter_type<expressions::ArrayGradient>();
+
+
+.. Basic Math
+  .. flow::Workspace::register_filter_type<expressions::Abs>();
+  .. flow::Workspace::register_filter_type<expressions::Pow>();
+  .. flow::Workspace::register_filter_type<expressions::Exp>();
+  .. flow::Workspace::register_filter_type<expressions::Log>();
+  .. flow::Workspace::register_filter_type<expressions::Magnitude>();
+  .. flow::Workspace::register_filter_type<expressions::ScalarMax>();
+  .. flow::Workspace::register_filter_type<expressions::ScalarMin>();
+  .. flow::Workspace::register_filter_type<expressions::ScalarGradient>();
+
+.. Stats
+  .. flow::Workspace::register_filter_type<expressions::Entropy>();
+  .. flow::Workspace::register_filter_type<expressions::Pdf>();
+  .. flow::Workspace::register_filter_type<expressions::Cdf>();
+  .. flow::Workspace::register_filter_type<expressions::Quantile>();
+
+.. Binning
+  .. flow::Workspace::register_filter_type<expressions::Binning>();
+  .. flow::Workspace::register_filter_type<expressions::BinByValue>();
+  .. flow::Workspace::register_filter_type<expressions::BinByIndex>();
+  .. flow::Workspace::register_filter_type<expressions::Bin>();
+
+
+.. ????
+  .. flow::Workspace::register_filter_type<expressions::Axis>();
+  .. flow::Workspace::register_filter_type<expressions::Replace>();
+  .. flow::Workspace::register_filter_type<expressions::PointAndAxis>();
+  .. flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
+
+
