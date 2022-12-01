@@ -329,7 +329,8 @@ MapOrigCellsFunctor::operator()(UnstructuredField<FEType> &field)
   }
   const auto &in_gf = field.get_dof_data();
   const auto out_gf = do_mapping(in_gf.m_values);
-  using ElemType = Element<2, in_gf.get_ncomp(), ElemType::Simplex, Order::Constant>;
+  using InGFType = typename std::remove_reference<decltype(in_gf)>::type;
+  using ElemType = Element<2, InGFType::get_ncomp(), ElemType::Simplex, Order::Constant>;
   m_output_field = std::make_shared<UnstructuredField<ElemType>>(out_gf, Order::Constant, field.name());
 }
 
