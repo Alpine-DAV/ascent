@@ -347,13 +347,13 @@ Ascent Expression Language Primitives
      - Conduit Node
      - `Nan <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L622>`_
 
-
-Ascent Expression Language Operations
 .. Expression Lang Operations
   .. flow::Workspace::register_filter_type<expressions::IfExpr>();
   .. flow::Workspace::register_filter_type<expressions::BinaryOp>();
   .. flow::Workspace::register_filter_type<expressions::DotAccess>();
   .. flow::Workspace::register_filter_type<expressions::ArrayAccess>();
+
+Ascent Expression Language Operations
 
 .. list-table::
    :header-rows: 1
@@ -388,6 +388,68 @@ Ascent Expression Language Operations
      - Conduit Node
      - `ArrayAccess <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L533>`_
 
+
+.. History
+  .. flow::Workspace::register_filter_type<expressions::History>();
+  .. flow::Workspace::register_filter_type<expressions::HistoryRange>();
+
+Ascent Expression History
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Feature Type
+     - Programming APIs
+     - Data APIs
+     - Source Links
+
+   * - History
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `History <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L89>`_
+
+   * - History Range
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `HistoryRange <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp#L100>`_
+
+
+.. Basic Math
+  .. flow::Workspace::register_filter_type<expressions::Abs>();
+  .. flow::Workspace::register_filter_type<expressions::Pow>();
+  .. flow::Workspace::register_filter_type<expressions::Exp>();
+  .. flow::Workspace::register_filter_type<expressions::Log>();
+  .. flow::Workspace::register_filter_type<expressions::Magnitude>();
+  .. flow::Workspace::register_filter_type<expressions::ScalarMax>();
+  .. flow::Workspace::register_filter_type<expressions::ScalarMin>();
+  .. flow::Workspace::register_filter_type<expressions::ScalarGradient>();
+
+.. Array Exprs
+  .. flow::Workspace::register_filter_type<expressions::ArrayMax>();
+  .. flow::Workspace::register_filter_type<expressions::ArrayMin>();
+  .. flow::Workspace::register_filter_type<expressions::ArrayAvg>();
+  .. flow::Workspace::register_filter_type<expressions::ArraySum>();
+  .. flow::Workspace::register_filter_type<expressions::ArrayGradient>();
+
+.. Stats
+  .. flow::Workspace::register_filter_type<expressions::Histogram>();
+  .. flow::Workspace::register_filter_type<expressions::Entropy>();
+  .. flow::Workspace::register_filter_type<expressions::Pdf>();
+  .. flow::Workspace::register_filter_type<expressions::Cdf>();
+  .. flow::Workspace::register_filter_type<expressions::Quantile>();
+
+.. Binning
+  .. flow::Workspace::register_filter_type<expressions::Binning>();
+  .. flow::Workspace::register_filter_type<expressions::BinByValue>();
+  .. flow::Workspace::register_filter_type<expressions::BinByIndex>();
+  .. flow::Workspace::register_filter_type<expressions::Bin>();
+  .. flow::Workspace::register_filter_type<expressions::PointAndAxis>();
+  .. flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
+  .. flow::Workspace::register_filter_type<expressions::Axis>();
+
 .. Mesh BP Aware
   .. flow::Workspace::register_filter_type<expressions::Field>();
   .. flow::Workspace::register_filter_type<expressions::Topo>();
@@ -402,47 +464,9 @@ Ascent Expression Language Operations
   .. flow::Workspace::register_filter_type<expressions::FieldInfCount>();
   .. flow::Workspace::register_filter_type<expressions::FieldSum>();
 
-.. History
-  .. flow::Workspace::register_filter_type<expressions::History>();
-  .. flow::Workspace::register_filter_type<expressions::HistoryRange>();
-
-
-.. Array Exprs
-  .. flow::Workspace::register_filter_type<expressions::ArrayMax>();
-  .. flow::Workspace::register_filter_type<expressions::ArrayMin>();
-  .. flow::Workspace::register_filter_type<expressions::ArrayAvg>();
-  .. flow::Workspace::register_filter_type<expressions::ArraySum>();
-  .. flow::Workspace::register_filter_type<expressions::Histogram>();
-  .. flow::Workspace::register_filter_type<expressions::ArrayGradient>();
-
-
-.. Basic Math
-  .. flow::Workspace::register_filter_type<expressions::Abs>();
-  .. flow::Workspace::register_filter_type<expressions::Pow>();
-  .. flow::Workspace::register_filter_type<expressions::Exp>();
-  .. flow::Workspace::register_filter_type<expressions::Log>();
-  .. flow::Workspace::register_filter_type<expressions::Magnitude>();
-  .. flow::Workspace::register_filter_type<expressions::ScalarMax>();
-  .. flow::Workspace::register_filter_type<expressions::ScalarMin>();
-  .. flow::Workspace::register_filter_type<expressions::ScalarGradient>();
-
-.. Stats
-  .. flow::Workspace::register_filter_type<expressions::Entropy>();
-  .. flow::Workspace::register_filter_type<expressions::Pdf>();
-  .. flow::Workspace::register_filter_type<expressions::Cdf>();
-  .. flow::Workspace::register_filter_type<expressions::Quantile>();
-
-.. Binning
-  .. flow::Workspace::register_filter_type<expressions::Binning>();
-  .. flow::Workspace::register_filter_type<expressions::BinByValue>();
-  .. flow::Workspace::register_filter_type<expressions::BinByIndex>();
-  .. flow::Workspace::register_filter_type<expressions::Bin>();
-
-
 .. ????
-  .. flow::Workspace::register_filter_type<expressions::Axis>();
   .. flow::Workspace::register_filter_type<expressions::Replace>();
-  .. flow::Workspace::register_filter_type<expressions::PointAndAxis>();
-  .. flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
+
+
 
 
