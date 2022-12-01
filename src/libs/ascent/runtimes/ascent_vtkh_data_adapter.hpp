@@ -67,7 +67,7 @@ public:
     //  conduit::blueprint::mesh::verify(n,info) == true
     //
     // zero copy means attempt to zero copy
-    static vtkh::DataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
+    static vtkm::cont::PartitionedDataSet  *BlueprintToVTKHDataSet(const conduit::Node &n,
                                                   const std::string &topo_name,
                                                   bool zero_copy = false);
 
@@ -83,14 +83,14 @@ public:
 
 
     // wraps a single VTKm data set into a VTKH dataset
-    static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
+    static vtkm::cont::PartitionedDataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
 
     static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
                                                     conduit::Node &node,
                                                     const std::string topo_name,
                                                     bool zero_copy);
 
-    static void              VTKHToBlueprintDataSet(vtkh::DataSet *dset,
+    static void              VTKHToBlueprintDataSet(vtkm::cont::PartitionedDataSet *dset,
                                                     conduit::Node &node,
                                                     bool zero_copy);
 

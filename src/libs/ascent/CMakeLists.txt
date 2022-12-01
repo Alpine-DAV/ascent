@@ -156,15 +156,16 @@ set(ascent_headers
     runtimes/expressions/ascent_insertion_ordered_set.hpp
     runtimes/expressions/ascent_expression_jit_filters.hpp
     # flow
-    runtimes/flow_filters/ascent_runtime_filters.hpp
-    runtimes/flow_filters/ascent_runtime_param_check.hpp
-    runtimes/flow_filters/ascent_runtime_relay_filters.hpp
-    runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
-    runtimes/flow_filters/ascent_runtime_htg_filters.hpp
-    runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
-    runtimes/flow_filters/ascent_runtime_query_filters.hpp
-    runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
-    runtimes/flow_filters/ascent_runtime_utils.hpp
+    #TODO:FILTERS
+    #    runtimes/flow_filters/ascent_runtime_filters.hpp
+    #    runtimes/flow_filters/ascent_runtime_param_check.hpp
+    #    runtimes/flow_filters/ascent_runtime_relay_filters.hpp
+    #    runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
+    #    runtimes/flow_filters/ascent_runtime_htg_filters.hpp
+    #    runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
+    #    runtimes/flow_filters/ascent_runtime_query_filters.hpp
+    #    runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
+    #    runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
     utils/ascent_actions_utils.hpp
     utils/ascent_data_logger.hpp
@@ -222,14 +223,14 @@ set(ascent_sources
     runtimes/expressions/ascent_insertion_ordered_set.cpp
     runtimes/expressions/ascent_expression_jit_filters.cpp
     # filters (other filters are added later based on enabled tpls)
-    runtimes/flow_filters/ascent_runtime_filters.cpp
-    runtimes/flow_filters/ascent_runtime_param_check.cpp
-    runtimes/flow_filters/ascent_runtime_relay_filters.cpp
-    runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
-    runtimes/flow_filters/ascent_runtime_htg_filters.cpp
-    runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
-    runtimes/flow_filters/ascent_runtime_query_filters.cpp
-    runtimes/flow_filters/ascent_runtime_utils.cpp
+    #    runtimes/flow_filters/ascent_runtime_filters.cpp
+    #    runtimes/flow_filters/ascent_runtime_param_check.cpp
+    #    runtimes/flow_filters/ascent_runtime_relay_filters.cpp
+    #    runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
+    #    runtimes/flow_filters/ascent_runtime_htg_filters.cpp
+    #    runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
+    #    runtimes/flow_filters/ascent_runtime_query_filters.cpp
+    #    runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
     utils/ascent_actions_utils.cpp
     utils/ascent_data_logger.cpp
@@ -267,22 +268,22 @@ if(VTKM_FOUND)
         runtimes/ascent_data_object.hpp
         runtimes/ascent_vtkh_data_adapter.hpp
         runtimes/ascent_vtkh_collection.hpp
-        runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
-        runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
-        runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
-        runtimes/flow_filters/ascent_runtime_rover_filters.hpp
-        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
+	#        runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
+	#        runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
+	#        runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
+	#        runtimes/flow_filters/ascent_runtime_rover_filters.hpp
+	#        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/ascent_main_runtime.hpp)
 
     set(ascent_vtkh_dep_sources
         runtimes/ascent_data_object.cpp
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/ascent_vtkh_collection.cpp
-        runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
-        runtimes/flow_filters/ascent_runtime_vtkh_utils.cpp
-        runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
-        runtimes/flow_filters/ascent_runtime_rover_filters.cpp
-        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
+	#        runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+	#        runtimes/flow_filters/ascent_runtime_vtkh_utils.cpp
+	#        runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
+	#        runtimes/flow_filters/ascent_runtime_rover_filters.cpp
+	#        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/ascent_main_runtime.cpp)
 
     list(APPEND ascent_headers ${ascent_vtkh_dep_headers})

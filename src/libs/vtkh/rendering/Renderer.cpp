@@ -165,7 +165,7 @@ Renderer::PreExecute()
     }
   }
 
-  m_bounds = GetGlobalBounds(m_input);
+  m_bounds = GetGlobalBounds(*m_input);
 }
 
 void

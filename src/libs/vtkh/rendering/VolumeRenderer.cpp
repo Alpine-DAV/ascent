@@ -856,7 +856,7 @@ VolumeRenderer::FindVisibilityOrdering()
     const vtkm::rendering::Camera &camera = m_renders[i].GetCamera();
     for(int dom = 0; dom < num_domains; ++dom)
     {
-      vtkm::Bounds bounds = GetDomainBounds(this->m_input, dom);
+      vtkm::Bounds bounds = GetDomainBounds(*this->m_input, dom);
       min_depths[dom] = FindMinDepth(camera, bounds);
     }
 

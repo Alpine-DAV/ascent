@@ -107,7 +107,7 @@ PointRenderer::PreExecute()
   }
   else
   {
-    vtkm::Bounds coordBounds = GetGlobalBounds(this->m_input);
+    vtkm::Bounds coordBounds = GetGlobalBounds(*this->m_input);
     // set a default radius
     vtkm::Float64 lx = coordBounds.X.Length();
     vtkm::Float64 ly = coordBounds.Y.Length();

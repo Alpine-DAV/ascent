@@ -375,7 +375,7 @@ MakeRender(int width,
   vtkh::Render render;
   render.SetCamera(camera);
   render.SetImageName(image_name);
-  vtkm::Bounds bounds = GetGlobalBounds(&data_set);
+  vtkm::Bounds bounds = GetGlobalBounds(data_set);
   render.SetSceneBounds(bounds);
   render.SetWidth(width);
   render.SetHeight(height);

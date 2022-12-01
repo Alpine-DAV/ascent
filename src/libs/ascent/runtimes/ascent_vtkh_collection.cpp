@@ -74,7 +74,7 @@ int global_max(int local)
 
 } // namespace detail
 
-void VTKHCollection::add(vtkh::DataSet &dataset, const std::string topology_name)
+void VTKHCollection::add(vtkm::cont::PartitionedDataSet &dataset, const std::string topology_name)
 {
   bool has_topo = p_datasets.count(topology_name) != 0;
   if(has_topo)
@@ -165,7 +165,7 @@ vtkm::Bounds VTKHCollection::global_bounds() const
   vtkm::Bounds bounds;
   for(auto it = p_datasets.begin(); it != p_datasets.end(); ++it)
   {
-    bounds.Include(GetBounds(it->second));
+    bounds.Include(vtkh::GetBounds(it->second));
   }
 
 #if defined(ASCENT_MPI_ENABLED)
@@ -237,7 +237,7 @@ std::vector<vtkm::Id> VTKHCollection::domain_ids() const
   return all_ids;
 }
 
-vtkh::DataSet&
+vtkm::cont::PartitionedDataSet&
 VTKHCollection::dataset_by_topology(const std::string topology_name)
 {
   // this will return a empty dataset if this rank
@@ -293,7 +293,7 @@ VTKHCollection::by_domain_id()
     const std::string topo_name = it->first;
     vtkm::cont::PartitionedDataSet &vtkm_pdataset = it->second;
 
-    vtkm::Id num_domain = vtkm_pdataset.GetNumberOfPartitions();
+    vtkm::Id num_domains = vtkm_pdataset.GetNumberOfPartitions();
     for(int i = 0; i < num_domains; ++i)
     {
       const int domain_id = i;

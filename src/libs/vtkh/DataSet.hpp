@@ -108,15 +108,15 @@ public:
   bool OneDomainPerRank(vtkm::cont::PartitionedDataSet* data_set);
 
   // returns the union of all abounds on all ranks
-  vtkm::Bounds GetGlobalBounds(vtkm::cont::PartitionedDataSet* data_set,
+  vtkm::Bounds GetGlobalBounds(vtkm::cont::PartitionedDataSet data_set,
 		               vtkm::Id coordinate_system_index = 0);
 
   // returns the union of all domains bounds on this rank
-  vtkm::Bounds GetBounds(vtkm::Id coordinate_system_index = 0, 
-		         vtkm::Id num_partitions = 0);
+  vtkm::Bounds GetBounds(vtkm::cont::PartitionedDataSet data_set,
+		         vtkm::Id coordinate_system_index = 0);
 
   // returns a bounds of a single domain
-  vtkm::Bounds GetDomainBounds(vtkm::cont::PartitionedDataSet* data_set, 
+  vtkm::Bounds GetDomainBounds(vtkm::cont::PartitionedDataSet data_set, 
 		               const int &domain_index,
                                vtkm::Id coordinate_system_index = 0);
 
@@ -127,6 +127,7 @@ public:
   bool IsUnstructured(vtkm::cont::PartitionedDataSet* data_set);
 
   bool IsPointMesh(vtkm::cont::PartitionedDataSet* data_set);
+
 } // namespace vtkh
 
 #endif

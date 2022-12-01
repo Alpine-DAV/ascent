@@ -33,6 +33,7 @@
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayHandleExtractComponent.h>
 #include <vtkm/cont/CoordinateSystem.h>
+#include <vtkm/worklet/WorkletMapField.h>
 #include <vtkh/DataSet.hpp>
 
 // other ascent includes
@@ -492,6 +493,36 @@ bool allEqual(std::vector<T> const &v)
   return std::adjacent_find(v.begin(), v.end(), std::not_equal_to<T>()) == v.end();
 }
 
+template<typename T>
+class MemSetWorklet : public vtkm::worklet::WorkletMapField
+{
+protected:
+  T Value;
+public:
+  VTKM_CONT
+  MemSetWorklet(const T value)
+    : Value(value)
+  {
+  }
+
+  typedef void ControlSignature(FieldOut);
+  typedef void ExecutionSignature(_1);
+
+  VTKM_EXEC
+  void operator()(T &value) const
+  {
+    value = Value;
+  }
+}; //class MemSetWorklet
+
+template<typename T>
+void MemSet(vtkm::cont::ArrayHandle<T> &array, const T value, const vtkm::Id num_values)
+{
+  array.Allocate(num_values);
+  vtkm::worklet::DispatcherMapField<MemSetWorklet<T>>(MemSetWorklet<T>(value))
+    .Invoke(array);
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end detail:: --
@@ -513,7 +544,7 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
 //      return nullptr;
 
     VTKHCollection *res = new VTKHCollection();
-    std::map<std::string, vtkh::DataSet> datasets;
+    std::map<std::string, vtkm::cont::PartitionedDataSet> datasets;
     vtkm::UInt64 cycle = 0;
     double time = 0;
     std::vector<vtkm::UInt64> allCycles;
@@ -547,7 +578,7 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       {
         const std::string topo_name = topo_names[t];
         vtkm::cont::DataSet *dset = BlueprintToVTKmDataSet(dom, zero_copy, topo_name);
-        datasets[topo_name].AddDomain(*dset,domain_id);
+        datasets[topo_name].AppendPartition(*dset);
         delete dset;
       }
 
@@ -563,9 +594,21 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       const std::string topo_name = topo_names[0];
 
       if(allCycles.size() != 0 && detail::allEqual(allCycles))
-        datasets[topo_name].SetCycle(allCycles[0]);
+      {
+	vtkm::Id cycle = allCycles[0];
+	vtkm::cont::ArrayHandle<vtkm::Id> array;
+	detail::MemSet(array, cycle, 1);	
+	vtkm::cont::Field field("cycle", vtkm::cont::Field::Association::Points, array);
+	datasets[topo_name].AddField(field);
+      }
       if(allTimes.size() != 0 && detail::allEqual(allTimes))
-        datasets[topo_name].SetTime(allTimes[0]);
+      {
+	vtkm::Float32 time = allTimes[0];
+	vtkm::cont::ArrayHandle<vtkm::Float32> array;
+	detail::MemSet(array, time, 1);	
+	vtkm::cont::Field field("time", vtkm::cont::Field::Association::Points, array);
+	datasets[topo_name].AddField(field);
+      }
     }
 
 
@@ -578,7 +621,7 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
 }
 
 //-----------------------------------------------------------------------------
-vtkh::DataSet *
+vtkm::cont::PartitionedDataSet *
 VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
                                         const std::string &topo_name,
                                         bool zero_copy)
@@ -586,7 +629,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
 
     // treat everything as a multi-domain data set
 
-    vtkh::DataSet *res = new vtkh::DataSet;
+    vtkm::cont::PartitionedDataSet *res = new vtkm::cont::PartitionedDataSet;
 
     int num_domains = 0;
 
@@ -604,10 +647,14 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
       if(dom.has_path("state/cycle"))
       {
         vtkm::UInt64 cycle = dom["state/cycle"].to_uint64();
-        res->SetCycle(cycle);
+	vtkm::cont::ArrayHandle<vtkm::UInt64> array;
+        vtkm::Id num_vals = 1;
+	detail::MemSet(array, cycle, num_vals);	
+	vtkm::cont::Field field("cycle", vtkm::cont::Field::Association::Points, array);
+        res->AddField(field);
       }
 
-      res->AddDomain(*dset,domain_id);
+      res->AppendPartition(*dset);
       // vtk-m will shallow copy the data assoced with dset
       // clean up our copy
       delete dset;
@@ -617,13 +664,13 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
 }
 
 //-----------------------------------------------------------------------------
-vtkh::DataSet *
+vtkm::cont::PartitionedDataSet *
 VTKHDataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
 {
     // wrap a single VTKm data set into a VTKH dataset
-    vtkh::DataSet   *res = new  vtkh::DataSet;
+    vtkm::cont::PartitionedDataSet   *res = new  vtkm::cont::PartitionedDataSet;
     int domain_id = 0; // TODO, MPI_TASK_ID ?
-    res->AddDomain(*dset,domain_id);
+    res->AppendPartition(*dset);
     return res;
 }
 
@@ -2282,7 +2329,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
 }
 
 void
-VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
+VTKHDataAdapter::VTKHToBlueprintDataSet(vtkm::cont::PartitionedDataSet *dset,
                                         conduit::Node &node,
                                         bool zero_copy)
 {
@@ -2290,16 +2337,19 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
   bool success = true;
   try
   {
-    const int num_doms = dset->GetNumberOfDomains();
+    const int num_doms = dset->GetNumberOfPartitions();
     for(int i = 0; i < num_doms; ++i)
     {
       conduit::Node &dom = node.append();
       vtkm::cont::DataSet vtkm_dom;
       vtkm::Id domain_id;
-      int cycle = dset->GetCycle();
-      dset->GetDomain(i, vtkm_dom, domain_id);
+      vtkm::cont::ArrayHandle<vtkm::Id> a_cycle;
+      dset->GetField("cycle").GetData().AsArrayHandle(a_cycle);
+      int cycle = a_cycle.ReadPortal().Get(0);
+      vtkm_dom = dset->GetPartition(i);
       VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", zero_copy);
-      dom["state/domain_id"] = (int) domain_id;
+      //TODO: Handle domain_ids; nothing in partitioneddataset
+      dom["state/domain_id"] = i;
       dom["state/cycle"] = cycle;
     }
   }

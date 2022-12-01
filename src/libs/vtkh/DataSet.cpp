@@ -342,7 +342,7 @@ IsStructured(vtkm::cont::PartitionedDataSet* input, int &topological_dims)
 
 
 vtkm::Bounds
-GetDomainBounds(vtkm::cont::PartitionedDataSet* input, 
+GetDomainBounds(vtkm::cont::PartitionedDataSet input, 
                 const int &domain_index,
                 vtkm::Id coordinate_system_index)
 {
@@ -350,7 +350,7 @@ GetDomainBounds(vtkm::cont::PartitionedDataSet* input,
   vtkm::cont::CoordinateSystem coords;
   try
   {
-    coords = input->GetPartition(domain_index).GetCoordinateSystem(index);
+    coords = input.GetPartition(domain_index).GetCoordinateSystem(index);
   }
   catch (const vtkm::cont::Error &error)
   {
@@ -366,10 +366,10 @@ GetDomainBounds(vtkm::cont::PartitionedDataSet* input,
 
 
 vtkm::Bounds
-GetBounds(vtkm::Id coordinate_system_index, vtkm::cont::PartitionedDataSet* input) 
+GetBounds(vtkm::cont::PartitionedDataSet input, vtkm::Id coordinate_system_index) 
 {
   const vtkm::Id index = coordinate_system_index;
-  const size_t num_domains = input->GetNumberOfPartitions();
+  const size_t num_domains = input.GetNumberOfPartitions();
 
   vtkm::Bounds bounds;
 
@@ -383,11 +383,11 @@ GetBounds(vtkm::Id coordinate_system_index, vtkm::cont::PartitionedDataSet* inpu
 }
 
 vtkm::Bounds
-GetGlobalBounds(vtkm::cont::PartitionedDataSet* input, vtkm::Id coordinate_system_index)
+GetGlobalBounds(vtkm::cont::PartitionedDataSet input, vtkm::Id coordinate_system_index)
 {
   VTKH_DATA_OPEN("GetGlobalBounds");
   vtkm::Bounds bounds;
-  bounds = GetBounds(coordinate_system_index, input);
+  bounds = GetBounds(input, coordinate_system_index);
 
 #ifdef VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());

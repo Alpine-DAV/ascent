@@ -56,7 +56,7 @@ public:
 
   // returns an empty dataset if topology does not exist on
   // this rank
-  vtkh::DataSet &dataset_by_topology(const std::string topology_name);
+  vtkm::cont::PartitionedDataSet &dataset_by_topology(const std::string topology_name);
 
   vtkm::Bounds global_bounds() const;
 
@@ -77,7 +77,7 @@ public:
   VTKHCollection* copy_without_topology(const std::string topology_name);
 
   // re-organize by 'domian_id / topology / data set'
-  std::map<int, std::map<std::string,vtkm::cont::PartitionedDataSet>> by_domain_id();
+  std::map<int, std::map<std::string,vtkm::cont::DataSet>> by_domain_id();
 
 };
 
