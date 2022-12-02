@@ -568,8 +568,7 @@ Array Expressions
   .. flow::Workspace::register_filter_type<expressions::Cdf>();
   .. flow::Workspace::register_filter_type<expressions::Quantile>();
 
-
-Array Statistics
+Array Statistics Expressions
 
 .. list-table::
    :header-rows: 1
@@ -610,16 +609,8 @@ Array Statistics
      - Conduit Node
      - `Quantile <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
 
-.. Binning
-  .. flow::Workspace::register_filter_type<expressions::Binning>();
-  .. flow::Workspace::register_filter_type<expressions::BinByValue>();
-  .. flow::Workspace::register_filter_type<expressions::BinByIndex>();
-  .. flow::Workspace::register_filter_type<expressions::Bin>();
-  .. flow::Workspace::register_filter_type<expressions::PointAndAxis>();
-  .. flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
-  .. flow::Workspace::register_filter_type<expressions::Axis>();
 
-.. Mesh
+.. Mesh 
   .. flow::Workspace::register_filter_type<expressions::Cycle>();
   .. flow::Workspace::register_filter_type<expressions::Time>();
   .. flow::Workspace::register_filter_type<expressions::Topo>();
@@ -629,9 +620,153 @@ Array Statistics
   .. flow::Workspace::register_filter_type<expressions::FieldMax>();
   .. flow::Workspace::register_filter_type<expressions::FieldMin>();
   .. flow::Workspace::register_filter_type<expressions::FieldAvg>();
+  .. flow::Workspace::register_filter_type<expressions::FieldSum>();
   .. flow::Workspace::register_filter_type<expressions::FieldNanCount>();
   .. flow::Workspace::register_filter_type<expressions::FieldInfCount>();
-  .. flow::Workspace::register_filter_type<expressions::FieldSum>();
+
+Mesh Aware Expressions
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Feature Type
+     - Programming APIs
+     - Data APIs
+     - Source Links
+
+   * - `cycle`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Cycle <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `time`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Time <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `topo`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Topo <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `field`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Field <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `lineout`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Lineout <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `bounds`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Bounds <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `field_max`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `FieldMax <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `field_min`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `FieldMin <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `field_avg`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `FieldAvg <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `field_sum`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `FieldSum <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `field_nan_count`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `FieldNanCount <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `field_inf_count`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `FieldInfCount <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
 
 
+.. Binning
+  .. flow::Workspace::register_filter_type<expressions::Binning>();
+  .. flow::Workspace::register_filter_type<expressions::Axis>();
+  .. flow::Workspace::register_filter_type<expressions::Bin>();
+  .. flow::Workspace::register_filter_type<expressions::BinByValue>();
+  .. flow::Workspace::register_filter_type<expressions::BinByIndex>();
+  .. flow::Workspace::register_filter_type<expressions::PointAndAxis>();
+  .. flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
+
+Binning Expressions
+
+.. list-table::
+   :header-rows: 1
+
+   * - Name
+     - Feature Type
+     - Programming APIs
+     - Data APIs
+     - Source Links
+
+   * - `binning` (Mesh Binning)
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Binning <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `axis`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Axis <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `bin`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `Bin <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `bin_by_value`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `BinByValue <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `bin_by_index`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `BinByIndex <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `point_and_axis`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `PointAndAxis <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
+
+   * - `max_from_point`
+     - Expression Language Operation
+     - C++
+     - Conduit Node
+     - `MaxFromPoint <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
 
