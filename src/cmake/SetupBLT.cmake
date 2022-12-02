@@ -97,6 +97,14 @@ if(ENABLE_OPENMP)
     endif()
 endif()
 
+################################
+# Invoke CMake HIP lang setup
+# if ENABLE_HIP == ON
+################################
+if(ENABLE_HIP)
+    enable_language(HIP)
+endif()
+
 #
 # case sensitive awesomness
 #
