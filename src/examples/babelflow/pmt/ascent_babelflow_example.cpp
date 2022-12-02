@@ -8,12 +8,7 @@
 #include <ascent_logging.hpp>
 #include <conduit_blueprint.hpp>
 
-#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-#else
-#include <mpidummy.h>
-#define _NOMPI
-#endif
 
 #include <string.h> 
 #include <iostream>
