@@ -67,6 +67,7 @@ set(BASIC_TESTS t_dray_smoke
                 t_dray_cell_average
                 t_dray_point_average
                 t_dray_extract_slice
+                t_dray_isovolume
 )
 
 set(MPI_TESTS t_dray_mpi_smoke
