@@ -237,7 +237,7 @@ public:
   {
     // we have to keep around the dataset so we bring the
     // whole collection with us
-    vtkh::DataSet &data = m_collection->dataset_by_topology(m_topo_name);
+    vtkm::cont::PartitionedDataSet &data = m_collection->dataset_by_topology(m_topo_name);
     renderer->SetInput(&data);
     m_registry->add<vtkh::Renderer>(m_key,renderer,1);
   }
@@ -1554,11 +1554,11 @@ CreatePlot::execute()
       }
     }
 
-    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkm::cont::PartitionedDataSet &data = collection->dataset_by_topology(topo_name);
 
     std::string type = params()["type"].as_string();
 
-    if(data.GlobalIsEmpty())
+    if(vtkh::GlobalIsEmpty(data))
     {
       std::string fpath = filter_to_path(this->name());
       ASCENT_INFO(fpath<<" "<<type<<" plot yielded no data, i.e., no cells remain");
@@ -1568,7 +1568,7 @@ CreatePlot::execute()
 
     if(type == "pseudocolor")
     {
-      bool is_point_mesh = data.IsPointMesh();
+      bool is_point_mesh = vtkh::IsPointMesh(data);
       if(is_point_mesh)
       {
         vtkh::PointRenderer *p_renderer = new vtkh::PointRenderer();
@@ -1658,7 +1658,7 @@ CreatePlot::execute()
         // needed. This will eventually go away once
         // the mesh mapper in vtkm can handle no field
         const std::string fname = "constant_mesh_field";
-        data.AddConstantPointField(0.f, fname);
+	vtkh::AddConstantPointField(data, 0.f, fname);
         renderer->SetField(fname);
         mesh->SetUseForegroundColor(true);
       }

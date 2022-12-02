@@ -231,13 +231,13 @@ DataSet::GetGlobalNumberOfDomains() const
 }
 
 bool
-IsEmpty(vtkm::cont::PartitionedDataSet* input)
+IsEmpty(vtkm::cont::PartitionedDataSet input)
 {
   bool is_empty = true;
-  const size_t num_domains = input->GetNumberOfPartitions();
+  const size_t num_domains = input.GetNumberOfPartitions();
   for(size_t i = 0; i < num_domains; ++i)
   {
-    auto cellset = input->GetPartition(i).GetCellSet();
+    auto cellset = input.GetPartition(i).GetCellSet();
     if(cellset.GetNumberOfCells() > 0)
     {
       is_empty = false;
@@ -249,16 +249,31 @@ IsEmpty(vtkm::cont::PartitionedDataSet* input)
 }
 
 bool
-GlobalIsEmpty(vtkm::cont::PartitionedDataSet* input)
+GlobalIsEmpty(vtkm::cont::PartitionedDataSet input)
 {
   bool is_empty = IsEmpty(input);
   is_empty = detail::GlobalAgreement(is_empty);
   return is_empty;
 }
 
+void
+AddConstantPointField(vtkm::cont::PartitionedDataSet dataset, const vtkm::Float32 value, const std::string fieldname)
+{
+  const size_t size = dataset.GetNumberOfPartitions();
+
+  for(size_t i = 0; i < size; ++i)
+  {
+    vtkm::Id num_points = dataset.GetPartition(i).GetCoordinateSystem().GetData().GetNumberOfValues();
+    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    detail::MemSet(array, value, num_points);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    dataset.AddField(field);
+  }
+}
+
 
 bool
-IsPointMesh(vtkm::cont::PartitionedDataSet* input)
+IsPointMesh(vtkm::cont::PartitionedDataSet input)
 {
   const bool is_empty = GlobalIsEmpty(input);
   if(is_empty) return false;
@@ -266,10 +281,10 @@ IsPointMesh(vtkm::cont::PartitionedDataSet* input)
   // since we are not empty, start with the affirmative is_points.
   // if someone is not points, the we will figure it out here
   bool is_points = true;
-  const size_t num_domains = input->GetNumberOfPartitions();
+  const size_t num_domains = input.GetNumberOfPartitions();
   for(size_t i = 0; i < num_domains; ++i)
   {
-    const vtkm::cont::DataSet &dom = input->GetPartition(i);
+    const vtkm::cont::DataSet &dom = input.GetPartition(i);
     vtkm::UInt8 shape_type;
     bool single_type = VTKMDataSetInfo::IsSingleCellShape(dom.GetCellSet(), shape_type);
 
@@ -850,6 +865,7 @@ DataSet::GlobalFieldExists(const std::string &field_name) const
 #endif
   return exists;
 }
+
 
 vtkm::cont::Field::Association
 DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) const

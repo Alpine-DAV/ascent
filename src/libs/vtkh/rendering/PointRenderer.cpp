@@ -124,7 +124,7 @@ PointRenderer::PreExecute()
     mesh_mapper->SetRadius(radius);
   }
 
-  if(!m_use_nodes && IsPointMesh(this->m_input) && m_use_point_merging)
+  if(!m_use_nodes && IsPointMesh(*this->m_input) && m_use_point_merging)
   {
     vtkm::Float32 max_radius = radius;
     if(m_use_variable_radius)

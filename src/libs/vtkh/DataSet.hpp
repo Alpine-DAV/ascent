@@ -103,6 +103,8 @@ public:
   void PrintSummary(std::ostream &stream) const;
 };
 
+  // add a scalar field to this data set with a constant value
+  void AddConstantPointField(vtkm::cont::PartitionedDataSet dataset, const vtkm::Float32 value, const std::string fieldname);
 
   // return true if there is at most one domain on each rank
   bool OneDomainPerRank(vtkm::cont::PartitionedDataSet* data_set);
@@ -126,7 +128,12 @@ public:
   // returns true if every single domain is unstructrued
   bool IsUnstructured(vtkm::cont::PartitionedDataSet* data_set);
 
-  bool IsPointMesh(vtkm::cont::PartitionedDataSet* data_set);
+  bool IsPointMesh(vtkm::cont::PartitionedDataSet data_set);
+
+  // checks to see if cells exist on this rank
+  bool IsEmpty(vtkm::cont::PartitionedDataSet data_set);
+  // checks to see if cells exist on all ranks
+  bool GlobalIsEmpty(vtkm::cont::PartitionedDataSet data_set);
 
 } // namespace vtkh
 
