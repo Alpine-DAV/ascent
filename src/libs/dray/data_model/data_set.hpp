@@ -50,6 +50,7 @@ public:
   std::shared_ptr<Field> field_shared(const int &index);
   std::shared_ptr<Field> field_shared(const std::string &field_name);
   void add_field(std::shared_ptr<Field> field);
+  void remove_field(const std::string &field_name);
   friend class BlueprintReader;
   std::string field_info();
 

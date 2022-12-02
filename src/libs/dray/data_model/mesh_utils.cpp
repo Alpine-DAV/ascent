@@ -759,8 +759,7 @@ struct GetDofDataFunctor
   template<typename MeshType>
   void operator()(MeshType &mesh)
   {
-    GridFunction<3> temp = mesh.get_dof_data();
-    m_output = temp;
+    m_output = mesh.get_dof_data();
   }
 
   GridFunction<3> m_output;
@@ -771,7 +770,6 @@ get_dof_data(Mesh *mesh)
 {
   GetDofDataFunctor func;
   dispatch(mesh, func);
-
   return func.output();
 }
 
