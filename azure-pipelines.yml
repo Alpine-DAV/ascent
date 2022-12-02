@@ -165,7 +165,7 @@ stages:
         # TODO: genten disabled until we have code in main repo
         #       and spack pkg in spack develop
         # ubuntu_18_shared_py_cxx14_genten:
-        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   containerImage: ${{ variables.ubuntu_18_04_tag }}
         #   BUILD_SHARED_LIBS: ON
         #   CMAKE_BUILD_TYPE: Debug
         #   ENABLE_PYTHON: ON
@@ -183,7 +183,7 @@ stages:
         # Babelflow
         ############
         ubuntu_18_shared_py_cxx14_bflow:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+          containerImage: ${{ variables.ubuntu_18_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
