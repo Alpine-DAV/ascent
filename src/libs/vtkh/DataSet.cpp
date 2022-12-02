@@ -256,10 +256,15 @@ GlobalIsEmpty(vtkm::cont::PartitionedDataSet input)
   return is_empty;
 }
 
+//TODO: Unclear if field should be added to Partition itself or
+//added to each dataset within the partition
+//opted for the latter since it was most comparable
+//to the original version
 void
 AddConstantPointField(vtkm::cont::PartitionedDataSet dataset, const vtkm::Float32 value, const std::string fieldname)
 {
   const size_t size = dataset.GetNumberOfPartitions();
+  std::vector<vtkm::cont::DataSet> v_datasets = dataset.GetPartitions();
 
   for(size_t i = 0; i < size; ++i)
   {
@@ -267,7 +272,8 @@ AddConstantPointField(vtkm::cont::PartitionedDataSet dataset, const vtkm::Float3
     vtkm::cont::ArrayHandle<vtkm::Float32> array;
     detail::MemSet(array, value, num_points);
     vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
-    dataset.AddField(field);
+    v_datasets[i].AddField(field);
+    dataset.ReplacePartition(i, v_datasets[i]);
   }
 }
 

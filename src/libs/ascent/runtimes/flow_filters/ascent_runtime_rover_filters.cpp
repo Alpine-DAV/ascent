@@ -193,10 +193,10 @@ RoverXRay::execute()
 
     std::string topo_name = collection->field_topology(field_name);
 
-    vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+    vtkm::cont::PartitionedDataSet &dataset = collection->dataset_by_topology(topo_name);
 
     vtkmCamera camera;
-    camera.ResetToBounds(dataset.GetGlobalBounds());
+    camera.ResetToBounds(vtkh::GetGlobalBounds(dataset));
 
     if(params().has_path("camera"))
     {
@@ -244,9 +244,10 @@ RoverXRay::execute()
     settings.m_render_mode = rover::energy;
 
     tracer.set_render_settings(settings);
-    for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
+    std::vector<vtkm::cont::DataSet> v_datasets = dataset.GetPartitions();
+    for(int i = 0; i < dataset.GetNumberOfPartitions(); ++i)
     {
-      tracer.add_data_set(dataset.GetDomain(i));
+      tracer.add_data_set(v_datasets[i]);
     }
 
     tracer.set_ray_generator(&generator);
@@ -418,10 +419,10 @@ RoverVolume::execute()
 
     std::string topo_name = collection->field_topology(field_name);
 
-    vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+    vtkm::cont::PartitionedDataSet &dataset = collection->dataset_by_topology(topo_name);
 
     vtkmCamera camera;
-    camera.ResetToBounds(dataset.GetGlobalBounds());
+    camera.ResetToBounds(vtkh::GetGlobalBounds(dataset));
 
     if(params().has_path("camera"))
     {
@@ -486,9 +487,10 @@ RoverVolume::execute()
     }
 
     tracer.set_render_settings(settings);
-    for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
+    std::vector<vtkm::cont::DataSet> v_datasets = dataset.GetPartitions();
+    for(int i = 0; i < dataset.GetNumberOfPartitions(); ++i)
     {
-      tracer.add_data_set(dataset.GetDomain(i));
+      tracer.add_data_set(v_datasets[i]);
     }
 
     tracer.set_ray_generator(&generator);
