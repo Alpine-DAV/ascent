@@ -37,7 +37,7 @@ blt_register_library( NAME babelflow
                       INCLUDES ${BabelFlow_INCLUDE_DIRS}
                       LIBRARIES  babelflow babelflow_mpi)
 
-## Find also ParallelMergeTree analysis algorithm to build (based on BabelFlow)
+## Find ParallelMergeTree analysis algorithm to build (based on BabelFlow)
 if(NOT PMT_DIR)
     MESSAGE(FATAL_ERROR "ParallelMergeTree support needs explicit PMT_DIR")
 endif()
@@ -56,37 +56,33 @@ blt_register_library( NAME pmt
                       INCLUDES ${PMT_INCLUDE_DIRS}
                       LIBRARIES  pmt)
 
-## Find also StreamingStatistics library
-
-if(NOT StreamStat_DIR)
-    MESSAGE(FATAL_ERROR "StreamingStatistics support needs explicit StreamStat_DIR")
+## Find StreamingStatistics library
+if(NOT STREAMSTAT_DIR)
+    MESSAGE(FATAL_ERROR "StreamingStatistics support needs explicit STREAMSTAT_DIR")
 endif()
 
-set(StreamStat_DIR ${StreamStat_DIR}/lib/cmake)
-MESSAGE(STATUS "Looking for StreamingStatistics using STREAMSTAT_DIR = ${StreamStat_DIR}")
+MESSAGE(STATUS "Looking for StreamingStatistics using STREAMSTAT_DIR = ${STREAMSTAT_DIR}/lib/cmake")
 
-find_package(StreamStat REQUIRED)
+set(STREAMSTAT_DIR_ORIG ${STREAMSTAT_DIR})
 
-message(STATUS "FOUND StreamStat at ${StreamStat_DIR}")
+find_package(StreamStat REQUIRED
+             NO_DEFAULT_PATH
+             PATHS ${STREAMSTAT_DIR}/lib/cmake)
 
-blt_register_library( NAME streamstat
-                      INCLUDES ${StreamStat_INCLUDE_DIRS}
-                      LIBRARIES StreamingStatistics)
+message(STATUS "FOUND StreamStat at ${STREAMSTAT_DIR}")
 
-
-## Find the TopoReader library
-
-if(NOT TopoFileParser_DIR)
-    MESSAGE(FATAL_ERROR "StreamingStatistics support needs explicit TopoFileParser_DIR")
+## Find the TopoFilerParser library
+if(NOT TOPOFILEPARSER_DIR)
+    MESSAGE(FATAL_ERROR "TopoFilerParser support needs explicit TOPOFILEPARSER_DIR")
 endif()
 
-set(TopoFileParser_DIR ${TopoFileParser_DIR}/lib/cmake)
-MESSAGE(STATUS "Looking for StreamingStatistics using TOPOPARSER_DIR = ${TopoFileParser_DIR}")
+set(TopoFileParser_DIR )
+MESSAGE(STATUS "Looking for TopoFilerParser using TOPOFILEPARSER_DIR = ${TOPOFILEPARSER_DIR}/lib/cmake}")
 
-find_package(TopoFileParser REQUIRED)
+find_package(TopoFileParser REQUIRED
+             NO_DEFAULT_PATH
+             PATHS ${TOPOFILEPARSER_DIR}/lib/cmake)
 
-message(STATUS "FOUND TopoFileParser at ${TopoFileParser_DIR}")
+message(STATUS "FOUND TopoFileParser at ${TOPOFILEPARSER_DIR}/lib/cmake")
 
-blt_register_library( NAME topofileparser
-                      INCLUDES ${TopoParser_INCLUDE_DIRS}
-                      LIBRARIES TopologyFileParser)
+

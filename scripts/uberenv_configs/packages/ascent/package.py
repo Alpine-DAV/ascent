@@ -558,9 +558,9 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
                                             spec['babelflow'].prefix))
                 cfg.write(cmake_cache_entry("PMT_DIR",
                                             spec['parallelmergetree'].prefix))
-                cfg.write(cmake_cache_entry("StreamStat_DIR",
+                cfg.write(cmake_cache_entry("STREAMSTAT_DIR",
                                             spec['streamstat'].prefix))
-                cfg.write(cmake_cache_entry("TopoFileParser_DIR",
+                cfg.write(cmake_cache_entry("TOPOFILEPARSER_DIR",
                                             spec['talass'].prefix))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))

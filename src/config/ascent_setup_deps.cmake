@@ -283,6 +283,47 @@ endif()
 
 
 ###############################################################################
+# Setup StreamStat
+###############################################################################
+if(NOT STREAMSTAT_DIR)
+    set(STREAMSTAT_DIR ${ASCENT_STREAMSTAT_DIR})
+endif()
+
+if(STREAMSTAT_DIR)
+    if(NOT EXISTS ${STREAMSTAT_DIR}/lib/cmake)
+        message(FATAL_ERROR "Could not find StreamStat CMake include info (${STREAMSTAT_DIR}/lib/cmake)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(StreamStat REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS  $${STREAMSTAT_DIR}/lib/cmake)
+endif()
+
+###############################################################################
+# Setup TopoFileParser
+###############################################################################
+if(NOT TOPOFILEPARSER_DIR)
+    set(TOPOFILEPARSER_DIR ${ASCENT_STREAMSTAT_DIR})
+endif()
+
+if(TOPOFILEPARSER_DIR)
+    if(NOT EXISTS ${TOPOFILEPARSER_DIR}/lib/cmake)
+        message(FATAL_ERROR "Could not find TopoFileParser CMake include info (${TOPOFILEPARSER_DIR}/lib/cmake)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(TopoFileParser REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS  $${TOPOFILEPARSER_DIR}/lib/cmake)
+endif()
+
+
+###############################################################################
 # Setup GenTen
 ###############################################################################
 if(NOT GENTEN_DIR)
@@ -291,7 +332,7 @@ endif()
 
 if(GENTEN_DIR)
     if(NOT EXISTS ${GENTEN_DIR}/lib64/cmake/)
-        message(FATAL_ERROR "Could not find GenTent CMake include info (${GENTEN_DIR}/lib64/cmake/)")
+        message(FATAL_ERROR "Could not find GenTen CMake include info (${GENTEN_DIR}/lib64/cmake/)")
     endif()
 
     ###############################################################################

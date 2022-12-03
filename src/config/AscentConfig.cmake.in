@@ -83,12 +83,12 @@ if(NOT ASCENT_FOUND)
     set(ASCENT_CAMP_DIR "@CAMP_DIR@")
 
     ##################################################
-    # advertise if babelflow + pmt support is enabled
+    # advertise if babelflow support is enabled
     set(ASCENT_BABELFLOW_ENABLED @BABELFLOW_FOUND@)
     set(ASCENT_BABELFLOW_DIR "@BABELFLOW_DIR_ORIG@")
-
-    set(ASCENT_PMT_ENABLED @PMT_FOUND@)
     set(ASCENT_PMT_DIR "@PMT_DIR_ORIG@")
+    set(ASCENT_STREAMSTAT_DIR "@STREAMSTAT_DIR@")
+    set(ASCENT_TOPOFILEPARSER_DIR "@TOPOFILEPARSER_DIR@")
 
     ##################################################
     # advertise if fides and adios2 support is enabled
