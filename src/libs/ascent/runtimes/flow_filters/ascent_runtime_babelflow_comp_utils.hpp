@@ -22,13 +22,7 @@
 //#include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/ModuloMap.h"
 
-#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-#else
-#include <mpidummy.h>
-#define _NOMPI
-#endif
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -21,12 +21,7 @@
 #include <flow_workspace.hpp>
 
 
-#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-#else
-#include <mpidummy.h>
-#define _NOMPI
-#endif
 
 #include "BabelFlow/TypeDefinitions.h"
 #include "ascent_runtime_babelflow_filters.hpp"
