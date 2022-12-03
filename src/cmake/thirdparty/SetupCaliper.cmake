@@ -22,9 +22,13 @@ if(NOT ADIAK_DIR)
     MESSAGE(FATAL_ERROR "Caliper support needs explicit ADIAK_DIR")
 endif()
 
+message(STATUS "Looking for Adiak in: ${ADIAK_DIR}")
+
 find_package(adiak REQUIRED
              NO_DEFAULT_PATH
              PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+
+message(STATUS "Looking for Caliper in: ${CALIPER_DIR}")
 
 find_package(caliper REQUIRED
              NO_DEFAULT_PATH
@@ -32,4 +36,5 @@ find_package(caliper REQUIRED
 
 set(ADIAK_FOUND TRUE)
 set(CALIPER_FOUND TRUE)
+set(ASCENT_CALIPER_ENABLED TRUE)
 

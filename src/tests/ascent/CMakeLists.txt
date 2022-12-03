@@ -16,6 +16,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_runtime_options
                 t_ascent_data_binning
                 t_ascent_utils
+                t_ascent_annotations
                 t_ascent_derived
                 t_ascent_empty_runtime
                 t_ascent_expressions

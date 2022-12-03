@@ -95,6 +95,8 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
+    # caliper
+    variant("caliper", default=True, description="Build Conduit Caliper support")
 
     ##########################################################################
     # package dependencies
@@ -270,6 +272,11 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('parallelmergetree', when='+babelflow+mpi')
     depends_on('talass', when='+babelflow+mpi')
     depends_on('streamstat', when='+babelflow+mpi')
+
+    #######################
+    # Caliper
+    #######################
+    depends_on("caliper", when="+caliper")
 
     #######################
     # Documentation related
@@ -728,6 +735,16 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
             cfg.write(cmake_cache_entry("GENTEN_DIR", spec['genten'].prefix))
         else:
             cfg.write("# genten not built by spack \n")
+
+        #######################
+        # Caliper
+        #######################
+        cfg.write("# caliper from spack \n")
+        if "+caliper" in spec:
+            cfg.write(cmake_cache_entry("CALIPER_DIR", spec["caliper"].prefix))
+            cfg.write(cmake_cache_entry("ADIAK_DIR", spec["adiak"].prefix))
+        else:
+            cfg.write("# caliper not built by spack \n")
 
         #######################
         # Finish host-config

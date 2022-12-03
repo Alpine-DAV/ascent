@@ -18,6 +18,11 @@ if(HIP_FOUND)
     list(APPEND smoke_device_deps blt_hip)
 endif()
 
+if(CALIPER_FOUND)
+    message(STATUS "Adding caliper smoke test")
+    add_cpp_test(TEST t_caliper_smoke DEPENDS_ON caliper)
+endif()
+
 if(RAJA_FOUND)
     message(STATUS "Adding raja smoke test")
     set(raja_smoke_deps RAJA ${smoke_device_deps})
