@@ -21,6 +21,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added ability to override dimensions for the rendered bounding box around a dataset
 - Added CMake option `ENABLE_HIDDEN_VISIBILITY` (default=ON), which controls if hidden visibility is used for private symbols
 - Added documentation for how to use ROCm's rocprof profiler for GPUs with Ascent
+- Added support for Caliper performance annotations 
 
 ### Changed
 - **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.

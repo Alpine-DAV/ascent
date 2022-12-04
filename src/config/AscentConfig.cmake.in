@@ -41,6 +41,12 @@ if(NOT ASCENT_FOUND)
     # advertise if fortran support is enabled
     set(ASCENT_FORTRAN_ENABLED @ENABLE_FORTRAN@)
 
+    # advertise if caliper support is enabled
+    set(ASCENT_CALIPER_ENABLED @ASCENT_CALIPER_ENABLED@)
+
+    set(ASCENT_ADIAK_DIR "@ADIAK_DIR@")
+    set(ASCENT_CALIPER_DIR "@CALIPER_DIR@")
+    
     # advertise if camp support is enabled
     set(ASCENT_CAMP_ENABLED @CAMP_FOUND@)
     set(ASCENT_CAMP_DIR @CAMP_DIR_ORIG@)

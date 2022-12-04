@@ -37,10 +37,12 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 ################################################################
 
-#
-# TODO: Post Rajafy branch, I think we need more logic if
-#       we want RAJA and Umpire to remain optional.
-#
+################################
+# Caliper
+################################
+if(CALIPER_DIR)
+    include(cmake/thirdparty/SetupCaliper.cmake)
+endif()
 
 ################################
 # Camp
@@ -81,9 +83,6 @@ endif()
 # VTKm and supporting libs
 ################################
 if(VTKM_DIR)
-    ################################
-    # VTKm
-    ################################
     include(cmake/thirdparty/SetupVTKm.cmake)
 endif()
 
@@ -127,7 +126,7 @@ endif()
 # Setup Babelflow
 ################################
 if (BABELFLOW_DIR OR BabelFlow_DIR)
-    include(cmake/thirdparty/SetupBabelFlow.cmake)
+  include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif()
 
 

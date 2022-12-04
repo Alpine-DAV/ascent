@@ -63,6 +63,40 @@ find_dependency(Conduit REQUIRED
                 PATHS ${CONDUIT_DIR}/lib/cmake)
 
 ###############################################################################
+# Setup Caliper
+###############################################################################
+if(NOT CALIPER_DIR)
+    set(CALIPER_DIR ${ASCENT_CALIPER_DIR})
+endif()
+
+if(CALIPER_DIR)
+    if(NOT Ascent_FIND_QUIETLY)
+        message(STATUS "Ascent was built with Caliper Support")
+    endif()
+
+    if(NOT ADIAK_DIR)
+        set(ADIAK_DIR ${ASCENT_ADIAK_DIR})
+    endif()
+
+    if(ADIAK_DIR)
+        if(NOT Ascent_FIND_QUIETLY)
+            message(STATUS "Looking for Adiak at: ${ADIAK_DIR}/lib/cmake/adiak")
+        endif()
+        # find adiak first
+        find_package(adiak REQUIRED
+                     NO_DEFAULT_PATH
+                     PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+    endif()
+    if(NOT Ascent_FIND_QUIETLY)
+        message(STATUS "Looking for Caliper at: ${CALIPER_DIR}/share/cmake/caliper")
+    endif()
+    # find caliper
+    find_package(caliper REQUIRED
+                 NO_DEFAULT_PATH
+                 PATHS ${CALIPER_DIR}/share/cmake/caliper)
+endif()
+
+###############################################################################
 # Setup Kokkos
 ###############################################################################
 if(NOT KOKKOS_DIR)
