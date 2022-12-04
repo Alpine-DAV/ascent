@@ -9,7 +9,7 @@
 #####
 
 variables:
-  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-12-01-sha22e69c
+  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-12-04-sha4b283f
   ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-12-01-sha22e69c
   #  TODO - on hold until we get spack working on 22.04
   #ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls
