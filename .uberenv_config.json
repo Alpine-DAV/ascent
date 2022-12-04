@@ -9,6 +9,7 @@
 "spack_commit": "6983d520fa64d8c7343dcc627197b0e6c621d1a6",
 "spack_branch": "develop",
 "spack_activate" : {"conduit" : ["+python"], 
+                    "py-pip" : ["+python"], 
                     "py-numpy" : ["+python"], 
                     "py-sphinx": ["+python","+doc"],
                     "py-docutils": ["+python","+doc"],
