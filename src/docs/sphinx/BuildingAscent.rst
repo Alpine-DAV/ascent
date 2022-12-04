@@ -220,25 +220,31 @@ CMake Options for Third-party Library Paths
      - Description
 
    * - ``CONDUIT_DIR``
-     - Path to an Conduit install **(required)**
+     - Path to a Conduit install **(required)**
+
+   * - ``CALIPER_DIR``
+     - Path to a Caliper install (optional)
+
+   * - ``ADIAK_DIR``
+     - Path to an Adiak install (optional) Caliper support requires Adiak.
 
    * - ``RAJA_DIR``
-     - Path to an RAJA install (optional)
+     - Path to a RAJA install (optional)
 
    * - ``UMPIRE_DIR``
-     - Path to an Umpire install (optional)
+     - Path to a Umpire install (optional)
 
    * - ``OCCA_DIR``
      - Path to an OCCA install (optional)
 
    * - ``VTKM_DIR``
-     - Path to an VTK-m install (optional)
+     - Path to a VTK-m install (optional)
 
    * - ``KOKKOS_DIR``
-     - Path to an Kokkos install (optional)
+     - Path to a Kokkos install (optional)
 
    * - ``ADIOS2_DIR``
-     - Path to an ADIOS 2 install (optional)
+     - Path to a ADIOS 2 install (optional)
 
    * - ``FIDES_DIR``
      - Path to a FIDES install (optional)

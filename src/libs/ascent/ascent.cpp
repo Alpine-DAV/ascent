@@ -647,6 +647,13 @@ about(conduit::Node &n)
     n["install_prefix"] = ASCENT_INSTALL_PREFIX;
     n["license"] = ASCENT_LICENSE_TEXT;
 
+// caliper annotations support
+#if defined(ASCENT_CALIPER_ENABLED)
+    n["annotations"] = "enabled";
+#else 
+    n["annotations"] = "disabled";
+#endif
+
     std::string install_prefix = n["install_prefix"].as_string();
     std::string web_root = utils::join_file_path(install_prefix,"share");
     web_root = utils::join_file_path(web_root,"ascent");

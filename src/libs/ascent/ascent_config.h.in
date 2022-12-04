@@ -33,6 +33,7 @@
 #cmakedefine ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@"
 
 #cmakedefine ASCENT_LOGGING_ENABLED   "@ENABLE_LOGGING@"
+#cmakedefine ASCENT_CALIPER_ENABLED   "@ASCENT_CALIPER_ENABLED@"
 
 // this path points to the web client js code tree
 #cmakedefine ASCENT_SOURCE_WEB_CLIENT_ROOT  "@ASCENT_SOURCE_WEB_CLIENT_ROOT@"
