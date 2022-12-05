@@ -588,7 +588,7 @@ if(MPI_FOUND)
       list(APPEND ascent_mpi_thirdparty_libs PMT::pmt)
       list(APPEND ascent_mpi_thirdparty_libs StreamStat::StreamingStatistics)
       list(APPEND ascent_mpi_thirdparty_libs TopoFileParser::TopologyFileParser)
-      add_compile_definitions(ASCENT_BABELFLOW_ENABLED)
+
       include_directories(${BABELFLOW_INCLUDE_DIRS})
       include_directories(${PMT_INCLUDE_DIRS})
       include_directories(${StreamStat_INCLUDE_DIRS})

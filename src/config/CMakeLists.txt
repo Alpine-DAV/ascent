@@ -104,6 +104,15 @@ if(GENTEN_DIR_ORIG)
     set(ASCENT_GENTEN_DIR ${GENTEN_DIR_ORIG} )
 endif()
 
+if(STREAMSTAT_DIR_ORIG)
+    set(ASCENT_STREAMSTAT_DIR ${STREAMSTAT_DIR_ORIG} )
+endif()
+
+if(TOPOFILEPARSER_DIR_ORIG)
+    set(ASCENT_TOPOFILEPARSER_DIR ${TOPOFILEPARSER_DIR_ORIG} )
+endif()
+
+
 
 # generate the config.mk
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.mk.in"

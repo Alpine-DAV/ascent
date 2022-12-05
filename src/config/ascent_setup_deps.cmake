@@ -278,43 +278,88 @@ endif()
 ###############################################################################
 # Setup BabelFlow
 ###############################################################################
-if(NOT BABELFLOW_DIR)
-    set(BABELFLOW_DIR ${ASCENT_BABELFLOW_DIR})
-endif()
-
-if(BABELFLOW_DIR)
-    if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake/)
-        message(FATAL_ERROR "Could not find BabelFLow CMake include info (${BABELFLOW_DIR}/lib/cmake/)")
+if(ASCENT_BABELFLOW_ENABLED)
+    ##########################################################################
+    # BabelFlow
+    ##########################################################################
+    if(NOT BABELFLOW_DIR)
+        set(BABELFLOW_DIR ${ASCENT_BABELFLOW_DIR})
     endif()
 
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(BabelFlow REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${BABELFLOW_DIR}/lib/cmake/)
-endif()
+    if(BABELFLOW_DIR)
+        if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake/)
+            message(FATAL_ERROR "Could not find BabelFLow CMake include info (${BABELFLOW_DIR}/lib/cmake/)")
+        endif()
 
-###############################################################################
-# Setup PMT
-###############################################################################
-if(NOT PMT_DIR)
-    set(PMT_DIR ${ASCENT_PMT_DIR})
-endif()
-
-if(PMT_DIR)
-    if(NOT EXISTS ${PMT_DIR}/lib/cmake)
-        message(FATAL_ERROR "Could not find PMT CMake include info (${PMT_DIR}/lib/cmake)")
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(BabelFlow REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS ${BABELFLOW_DIR}/lib/cmake/)
     endif()
 
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(PMT REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS  ${PMT_DIR}/lib/cmake)
-endif()
+    ##########################################################################
+    # Setup PMT
+    ##########################################################################
+    if(NOT PMT_DIR)
+        set(PMT_DIR ${ASCENT_PMT_DIR})
+    endif()
 
+    if(PMT_DIR)
+        if(NOT EXISTS ${PMT_DIR}/lib/cmake)
+            message(FATAL_ERROR "Could not find PMT CMake include info (${PMT_DIR}/lib/cmake)")
+        endif()
+
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(PMT REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS  ${PMT_DIR}/lib/cmake)
+    endif()
+
+
+    ##########################################################################
+    # Setup StreamStat
+    ##########################################################################
+    if(NOT STREAMSTAT_DIR)
+        set(STREAMSTAT_DIR ${ASCENT_STREAMSTAT_DIR})
+    endif()
+
+    if(STREAMSTAT_DIR)
+        if(NOT EXISTS ${STREAMSTAT_DIR}/lib/cmake)
+            message(FATAL_ERROR "Could not find StreamStat CMake include info (${STREAMSTAT_DIR}/lib/cmake)")
+        endif()
+
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(StreamStat REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS  ${STREAMSTAT_DIR}/lib/cmake)
+    endif()
+
+    ##########################################################################
+    # Setup TopoFileParser
+    ##########################################################################
+    if(NOT TOPOFILEPARSER_DIR)
+        set(TOPOFILEPARSER_DIR ${ASCENT_TOPOFILEPARSER_DIR})
+    endif()
+
+    if(TOPOFILEPARSER_DIR)
+        if(NOT EXISTS ${TOPOFILEPARSER_DIR}/lib/cmake)
+            message(FATAL_ERROR "Could not find TopoFileParser CMake include info (${TOPOFILEPARSER_DIR}/lib/cmake)")
+        endif()
+
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(TopoFileParser REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS  ${TOPOFILEPARSER_DIR}/lib/cmake)
+    endif()
+endif() # end if babelflow
 
 ###############################################################################
 # Setup GenTen
@@ -325,7 +370,7 @@ endif()
 
 if(GENTEN_DIR)
     if(NOT EXISTS ${GENTEN_DIR}/lib64/cmake/)
-        message(FATAL_ERROR "Could not find GenTent CMake include info (${GENTEN_DIR}/lib64/cmake/)")
+        message(FATAL_ERROR "Could not find GenTen CMake include info (${GENTEN_DIR}/lib64/cmake/)")
     endif()
 
     ###############################################################################
