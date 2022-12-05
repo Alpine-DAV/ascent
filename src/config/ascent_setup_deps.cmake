@@ -333,7 +333,7 @@ if(STREAMSTAT_DIR)
     ###############################################################################
     find_dependency(StreamStat REQUIRED
                     NO_DEFAULT_PATH
-                    PATHS  $${STREAMSTAT_DIR}/lib/cmake)
+                    PATHS  ${STREAMSTAT_DIR}/lib/cmake)
 endif()
 
 ###############################################################################
@@ -353,7 +353,7 @@ if(TOPOFILEPARSER_DIR)
     ###############################################################################
     find_dependency(TopoFileParser REQUIRED
                     NO_DEFAULT_PATH
-                    PATHS  $${TOPOFILEPARSER_DIR}/lib/cmake)
+                    PATHS  ${TOPOFILEPARSER_DIR}/lib/cmake)
 endif()
 
 
