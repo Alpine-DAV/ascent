@@ -430,7 +430,6 @@ if (ENABLE_SERIAL)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
                     vtkm_filter_clean_grid
@@ -597,7 +596,7 @@ if(MPI_FOUND)
 
         set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
 
-        set(internal_targets_to_link $<TARGET_FILE:rover>)
+        set(internal_targets_to_link $<TARGET_FILE:rover_mpi>)
 
         if(ENABLE_VTKH)
             list(APPEND internal_targets_to_link
@@ -617,7 +616,6 @@ if(MPI_FOUND)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkmdiympi_nompi
                     vtkm_io
                     vtkm_rendering
                     vtkm_filter_clean_grid
