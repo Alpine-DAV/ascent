@@ -358,6 +358,82 @@ public:
 
 };
 
+template< typename T >
+std::vector<T>
+GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  std::vector<T> data;
+     
+  //if there is data: loop through domains and grab all triangles.
+  if(!vtkhData.IsEmpty())
+  {
+    for(int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
+      //Get variable
+      vtkm::cont::Field field = dataset.GetField(field_name);
+      
+      long int size = field.GetNumberOfValues();
+      
+      vtkm::cont::ArrayHandle<T> field_data;
+      //using Type = vtkm::cont::ArrayHandle<vtkm::FloatDefault>();
+      //if(field.GetData().IsType<Type>())
+      //  cerr << "THEY ARE A FLOAT" << endl;
+      //else
+      //  cerr << "THE DATA IS NOT FLOAT" << endl;      
+      field.GetData().AsArrayHandle(field_data);
+      auto portal = field_data.ReadPortal();
+
+      for(int i = 0; i < size; i++)
+      {
+        data.push_back(portal.Get(i));
+      }
+      
+    }
+  }
+  return data;
+}
+
+template< typename T >
+T calcEntropyMM( const std::vector<T> array, long len, int nBins , T field_min, T field_max)
+{
+  T max = field_max;
+  T min = field_min;
+
+  T stepSize = (max-min) / (T)nBins;
+  if(stepSize == 0)
+    return 0.0;
+
+  long* hist = new long[ nBins ];
+  for(int i = 0; i < nBins; i++ )
+    hist[i] = 0;
+
+  for(long i = 0; i < len; i++ )
+  {
+    T idx = (std::abs(array[i]) - min) / stepSize;
+    if((int)idx == nBins )
+      idx -= 1.0;
+    hist[(int)idx]++;
+  }
+
+  T entropy = 0.0;
+  for(int i = 0; i < nBins; i++ )
+  {
+    T prob = (T)hist[i] / (T)len;
+    if(prob != 0.0 )
+      entropy += prob * std::log( prob );
+  }
+
+  delete[] hist;
+
+  return (entropy * -1.0);
+}
+
 } // namespace detail
 
 Slice::Slice()
@@ -445,6 +521,159 @@ std::string
 Slice::GetName() const
 {
   return "vtkh::Slice";
+}
+
+AutoSliceLevels::AutoSliceLevels()
+{
+
+}
+
+AutoSliceLevels::~AutoSliceLevels()
+{
+
+}
+
+void
+AutoSliceLevels::AddPlane(vtkm::Vec<vtkm::Float32,3> point, vtkm::Vec<vtkm::Float32,3> normal)
+{
+  m_points.push_back(point);
+  m_normals.push_back(normal);
+}
+
+void
+AutoSliceLevels::SetLevels(int num_levels)
+{
+  m_levels = num_levels;
+}
+
+void
+AutoSliceLevels::SetField(std::string field)
+{
+  m_field_name = field;
+}
+
+
+void
+AutoSliceLevels::PreExecute()
+{
+  Filter::PreExecute();
+}
+
+vtkm::Vec<vtkm::Float32,3>
+GetPoint(int level, int num_levels, vtkm::Bounds bounds)
+{
+  vtkm::Vec<vtkm::Float32,3> point;
+  float spacing = 100.0/num_levels;
+  float current_space = level * spacing;
+  const float eps = 1e-5;
+
+  float offset = (((current_space) * (4)) / (100)) - 2;
+
+  std::max(-1.f, std::min(1.f, offset));
+  float t = (offset + 1.f) / 2.f;
+  t = std::max(0.f + eps, std::min(1.f - eps, t));
+  point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+  point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+  point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+
+  return point;
+}
+
+void
+AutoSliceLevels::DoExecute()
+{
+  const std::string fname = "slice_field";
+  const int num_domains = this->m_input->GetNumberOfDomains();
+  const int num_slices = this->m_levels;
+  std::string field = this->m_field_name;
+  float current_score = -1;
+  float winning_score = -1;
+
+  if(num_slices == 0)
+  {
+    throw Error("AutoSliceLevels: no slice planes specified");
+  }
+  
+  std::vector<float> field_data = vtkh::detail::GetScalarData<float>(*this->m_input, field.c_str());
+  float datafield_max = 0.;
+  float datafield_min = 0.;
+#if ASCENT_MPI_ENABLED
+  float local_datafield_max = 0.;
+  float local_datafield_min = 0.;
+  if(field_data.size())
+  { 
+    local_datafield_max = (float)*max_element(field_data.begin(),field_data.end());
+    local_datafield_min = (float)*min_element(field_data.begin(),field_data.end());
+  }
+  MPI_Reduce(&local_datafield_max, &datafield_max, 1, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&local_datafield_min, &datafield_min, 1, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+#else
+  if(field_data.size())
+  { 
+    datafield_max = (float)*max_element(field_data.begin(),field_data.end());
+    datafield_min = (float)*min_element(field_data.begin(),field_data.end());
+  }
+#endif
+
+  vtkm::Bounds bounds = this->m_input->GetGlobalBounds();
+ 
+  for(int s = 0; s < num_slices; ++s)
+  {
+    vtkm::Vec<vtkm::Float32,3> point = GetPoint(s, num_slices, bounds);
+    vtkm::Vec<vtkm::Float32,3> normal = m_normals[s];
+    vtkh::DataSet temp_ds = *(this->m_input);
+    // shallow copy the input so we don't propagate the slice field
+    // to the input data set, since it might be used in other places
+    for(int i = 0; i < num_domains; ++i)
+    {
+      vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+
+      vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
+      vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
+        .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
+
+      dom.AddField(vtkm::cont::Field(fname,
+                                      vtkm::cont::Field::Association::Points,
+                                      slice_field));
+    } // each domain
+
+    vtkh::MarchingCubes marcher;
+    marcher.SetInput(&temp_ds);
+    marcher.SetIsoValue(0.);
+    marcher.SetField(fname);
+    marcher.Update();
+    vtkh::DataSet* output = marcher.GetOutput();
+    std::vector<float> slice_data = vtkh::detail::GetScalarData<float>(*output, field.c_str());
+    current_score = vtkh::detail::calcEntropyMM<float>(slice_data, slice_data.size(), 256, datafield_min, datafield_max);
+    
+    if(current_score > winning_score)
+    {
+      winning_score = current_score;
+      this->m_output = output;
+    }
+  } // each slice
+
+//  if(slices.size() > 1)
+//  {
+//    detail::MergeContours merger(slices, fname);
+//    this->m_output = merger.Merge();
+//  }
+//  else
+//  {
+//    this->m_output = slices[0];
+//  }
+}
+
+void
+AutoSliceLevels::PostExecute()
+{
+  Filter::PostExecute();
+}
+
+std::string
+AutoSliceLevels::GetName() const
+{
+  return "vtkh::AutoSliceLevels";
 }
 
 } // namespace vtkh
