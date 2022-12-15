@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 #include <conduit_relay_io.hpp>
 #include <conduit_relay_io_handle.hpp>
+#include <conduit_relay_io_blueprint.hpp>
 #include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
@@ -400,7 +401,16 @@ void hola(const std::string &source,
     data.reset();
     if(source == "relay/blueprint/mesh")
     {
-        relay_blueprint_mesh_read(options,data);
+#if defined(ASCENT_MPI_ENABLED)
+	MPI_Comm comm  = MPI_Comm_f2c(options["mpi_comm"].to_int());
+	std::string root_file = options["root_file"].as_string();
+	std::cerr << "root file: " << root_file << std::endl;
+        conduit::relay::io::blueprint::load_mesh(root_file,data);
+#else
+	std::string root_file = options["root_file"].as_string();
+	std::cerr << "root file: " << root_file << std::endl;
+        conduit::relay::io::blueprint::load_mesh(root_file,data);
+#endif
     }
     else if(source == "hola_mpi")
     {

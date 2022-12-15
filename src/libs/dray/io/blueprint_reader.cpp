@@ -428,7 +428,8 @@ Collection load_bp(const std::string &root_file)
   DRAY_LOG_OPEN("load_bp");
   Node options, data;
   options["root_file"] = root_file;
-  detail::relay_blueprint_mesh_read (options, data);
+  conduit::relay::io::blueprint::load_mesh(root_file, data);
+
   const int num_domains = data.number_of_children();
   Collection collection;
   DRAY_LOG_OPEN("convert_bp");
@@ -453,7 +454,7 @@ BlueprintReader::load_blueprint(const std::string &root_file,
 {
   conduit::Node options;
   options["root_file"] = root_file;
-  detail::relay_blueprint_mesh_read (options, dataset);
+  conduit::relay::io::blueprint::load_mesh(root_file, dataset);
 }
 
 void
