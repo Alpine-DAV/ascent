@@ -31,14 +31,13 @@ public:
   AutoSliceLevels();
   virtual ~AutoSliceLevels();
   std::string GetName() const override;
-  void AddPlane(vtkm::Vec<vtkm::Float32,3> point, vtkm::Vec<vtkm::Float32,3> normal);
+  void SetNormal(vtkm::Vec<vtkm::Float32,3> normal);
   void SetLevels(int levels);
   void SetField(std::string field_name);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  std::vector<vtkm::Vec<vtkm::Float32,3>> m_points;
   std::vector<vtkm::Vec<vtkm::Float32,3>> m_normals;
   int m_levels;
   std::string m_field_name;

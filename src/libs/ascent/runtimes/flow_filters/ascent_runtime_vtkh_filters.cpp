@@ -916,6 +916,7 @@ VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("levels");
+    valid_paths.push_back("field");
     valid_paths.push_back("normal/x");
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
@@ -983,7 +984,7 @@ VTKHAutoSliceLevels::execute()
     v_normal[1] = get_float32(n_normal["y"], data_object);
     v_normal[2] = get_float32(n_normal["z"], data_object);
 
-    slicer.AddPlane(point, v_normal);
+    slicer.SetNormal(v_normal);
     slicer.SetLevels(n_levels);
     slicer.SetField(field);
     slicer.Update();

@@ -534,9 +534,8 @@ AutoSliceLevels::~AutoSliceLevels()
 }
 
 void
-AutoSliceLevels::AddPlane(vtkm::Vec<vtkm::Float32,3> point, vtkm::Vec<vtkm::Float32,3> normal)
+AutoSliceLevels::SetNormal(vtkm::Vec<vtkm::Float32,3> normal)
 {
-  m_points.push_back(point);
   m_normals.push_back(normal);
 }
 
@@ -594,6 +593,7 @@ AutoSliceLevels::DoExecute()
     throw Error("AutoSliceLevels: no slice planes specified");
   }
   
+  this->m_input->PrintSummary(std::cerr);
   std::vector<float> field_data = vtkh::detail::GetScalarData<float>(*this->m_input, field.c_str());
   float datafield_max = 0.;
   float datafield_min = 0.;
@@ -643,8 +643,10 @@ AutoSliceLevels::DoExecute()
     marcher.SetField(fname);
     marcher.Update();
     vtkh::DataSet* output = marcher.GetOutput();
+    output->PrintSummary(std::cerr);
     std::vector<float> slice_data = vtkh::detail::GetScalarData<float>(*output, field.c_str());
     current_score = vtkh::detail::calcEntropyMM<float>(slice_data, slice_data.size(), 256, datafield_min, datafield_max);
+    std::cerr << "slice " << s << " has entropy: " << current_score << std::endl;
     
     if(current_score > winning_score)
     {
