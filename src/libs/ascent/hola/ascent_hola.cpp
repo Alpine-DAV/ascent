@@ -18,8 +18,8 @@
 //-----------------------------------------------------------------------------
 #include <conduit_relay_io.hpp>
 #include <conduit_relay_io_handle.hpp>
-#include <conduit_relay_io_blueprint.hpp>
 #include <conduit_blueprint.hpp>
+#include <conduit_relay_io_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -31,6 +31,7 @@
 #if defined(ASCENT_MPI_ENABLED)
     #include "ascent_hola_mpi.hpp"
     #include <conduit_relay_mpi.hpp>
+    #include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
 using namespace conduit;
