@@ -454,7 +454,12 @@ BlueprintReader::load_blueprint(const std::string &root_file,
 {
   conduit::Node options;
   options["root_file"] = root_file;
+#ifdef DRAY_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(dray::mpi_comm());
+  conduit::relay::mpi::io::blueprint::load_mesh(root_file, dataset, mpi_comm);
+#else
   conduit::relay::io::blueprint::load_mesh(root_file, dataset);
+#endif
 }
 
 void
