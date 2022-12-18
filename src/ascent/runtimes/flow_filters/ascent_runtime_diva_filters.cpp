@@ -249,11 +249,11 @@ filter_fields(const conduit::Node &input,
   has_data = global_someone_agrees(has_data);
   if(!has_data)
   {
-    ASCENT_ERROR("Relay: field selection resulted in no data."
+    ASCENT_ERROR("DIVA Extract: field selection resulted in no data."
                  "This can occur if the fields did not exist "
                  "in the simulaiton data or if the fields were "
                  "created as a result of a pipeline, but the "
-                 "relay extract did not recieve the result of "
+                 "diva extract did not recieve the result of "
                  "a pipeline");
   }
 
