@@ -527,9 +527,7 @@ BVH construct_bvh (UnstructuredMesh<ElemT> &mesh, Array<typename get_subref<Elem
 
   constexpr int splits = 2 * (2 << dim_outside);
   const int32 num_scratch_els = num_els * (splits + 1);
-
-#warning "splits no longer controlable"
-
+  // TODO: Note splits are no longer controllable
   using ShapeTag = typename AdaptGetShape<ElemT>::type;
   using OrderPolicy = typename AdaptGetOrderPolicy<ElemT>::type;
   const OrderPolicy order_p = adapt_get_order_policy(ElemT(), mesh.order());
@@ -761,8 +759,7 @@ struct GetDofDataFunctor
   template<typename MeshType>
   void operator()(MeshType &mesh)
   {
-    GridFunction<3> temp = mesh.get_dof_data();
-    m_output = temp;
+    m_output = mesh.get_dof_data();
   }
 
   GridFunction<3> m_output;
@@ -773,7 +770,6 @@ get_dof_data(Mesh *mesh)
 {
   GetDofDataFunctor func;
   dispatch(mesh, func);
-
   return func.output();
 }
 

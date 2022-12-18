@@ -87,7 +87,7 @@ output_dir()
 inline std::string
 test_data_file(const std::string &file_name)
 {
-    string data_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"test_data");
+    string data_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"_test_data");
     string file = conduit::utils::join_file_path(data_dir,file_name);
     return file;
 }
@@ -96,7 +96,7 @@ test_data_file(const std::string &file_name)
 inline std::string
 dray_baselines_dir()
 {
-    string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
+    string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"_baseline_images");
     return conduit::utils::join_file_path(res,"dray");
 }
 
@@ -131,7 +131,6 @@ check_test_image(const std::string &path,
                                      file_name,
                                      path_b);
 
-    //string baseline_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
     string baseline = conduit::utils::join_file_path(baseline_dir,file_name);
 
     info["baseline_file/path"] = baseline;
@@ -188,7 +187,7 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
                                      file_name,
                                      path_b);
 
-    string baseline_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"baseline_images");
+    string baseline_dir = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"_baseline_images");
     string baseline = conduit::utils::join_file_path(baseline_dir,file_name);
 
     info["baseline_file/path"] = baseline;

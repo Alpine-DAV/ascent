@@ -97,6 +97,20 @@ if(ENABLE_OPENMP)
     endif()
 endif()
 
+################################
+# Invoke CMake HIP lang setup
+# if ENABLE_HIP == ON
+################################
+if(ENABLE_HIP)
+    enable_language(HIP)
+endif()
+
+#
+# case sensitive awesomness
+#
+if(ENABLE_HIP AND hip_FOUND)
+    set(HIP_FOUND TRUE)
+endif()
 
 ################################################################
 # apply folders to a few ungrouped blt targets
