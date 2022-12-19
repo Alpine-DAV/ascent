@@ -896,8 +896,7 @@ VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = true;
-
+    bool res = check_string("field",params, info, true);
 
     if(!params.has_path("levels"))
     {
@@ -971,7 +970,7 @@ VTKHAutoSliceLevels::execute()
 
     const Node &n_normal = params()["normal"];
     const int n_levels = params()["levels"].to_int32();
-    const std::string field = params()["field"].to_string();
+    std::string field = params()["field"].as_string();
 
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
     vtkm::Bounds bounds = data.GetGlobalBounds();

@@ -358,7 +358,7 @@ public:
 
 };
 
-template< typename T >
+template <typename T>
 std::vector<T>
 GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
 {
@@ -380,30 +380,42 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
       
       long int size = field.GetNumberOfValues();
       
-      vtkm::cont::ArrayHandle<T> field_data;
-      //using Type = vtkm::cont::ArrayHandle<vtkm::FloatDefault>();
-      //if(field.GetData().IsType<Type>())
-      //  cerr << "THEY ARE A FLOAT" << endl;
-      //else
-      //  cerr << "THE DATA IS NOT FLOAT" << endl;      
-      field.GetData().AsArrayHandle(field_data);
-      auto portal = field_data.ReadPortal();
-
-      for(int i = 0; i < size; i++)
+      using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
+      using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+      if(field.GetData().IsType<data_d>())
       {
-        data.push_back(portal.Get(i));
+        vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
+        field.GetData().AsArrayHandle(field_data);
+        auto portal = field_data.ReadPortal();
+
+        for(int i = 0; i < size; i++)
+        {
+          data.push_back(portal.Get(i));
+        }
       }
-      
+      if(field.GetData().IsType<data_f>())
+      {
+        vtkm::cont::ArrayHandle<vtkm::Float32> field_data;
+        field.GetData().AsArrayHandle(field_data);
+        auto portal = field_data.ReadPortal();
+
+        for(int i = 0; i < size; i++)
+        {
+          data.push_back(portal.Get(i));
+        }
+      }
     }
   }
+  //else
+    //cerr << "VTKH Data is empty" << endl;
   return data;
 }
 
 template< typename T >
 T calcEntropyMM( const std::vector<T> array, long len, int nBins , T field_min, T field_max)
 {
-  T max = field_max;
   T min = field_min;
+  T max = field_max;
 
   T stepSize = (max-min) / (T)nBins;
   if(stepSize == 0)
@@ -578,6 +590,15 @@ GetPoint(int level, int num_levels, vtkm::Bounds bounds)
   return point;
 }
 
+bool invalidChar (char c)
+{
+    return !(c>=0 && c <128);
+}
+void stripUnicode(std::string & str)
+{
+    str.erase(remove_if(str.begin(),str.end(), invalidChar), str.end());
+}
+
 void
 AutoSliceLevels::DoExecute()
 {
@@ -592,8 +613,7 @@ AutoSliceLevels::DoExecute()
   {
     throw Error("AutoSliceLevels: no slice planes specified");
   }
-  
-  this->m_input->PrintSummary(std::cerr);
+   
   std::vector<float> field_data = vtkh::detail::GetScalarData<float>(*this->m_input, field.c_str());
   float datafield_max = 0.;
   float datafield_min = 0.;
@@ -620,7 +640,7 @@ AutoSliceLevels::DoExecute()
   for(int s = 0; s < num_slices; ++s)
   {
     vtkm::Vec<vtkm::Float32,3> point = GetPoint(s, num_slices, bounds);
-    vtkm::Vec<vtkm::Float32,3> normal = m_normals[s];
+    vtkm::Vec<vtkm::Float32,3> normal = m_normals[0];
     vtkh::DataSet temp_ds = *(this->m_input);
     // shallow copy the input so we don't propagate the slice field
     // to the input data set, since it might be used in other places
@@ -643,7 +663,6 @@ AutoSliceLevels::DoExecute()
     marcher.SetField(fname);
     marcher.Update();
     vtkh::DataSet* output = marcher.GetOutput();
-    output->PrintSummary(std::cerr);
     std::vector<float> slice_data = vtkh::detail::GetScalarData<float>(*output, field.c_str());
     current_score = vtkh::detail::calcEntropyMM<float>(slice_data, slice_data.size(), 256, datafield_min, datafield_max);
     std::cerr << "slice " << s << " has entropy: " << current_score << std::endl;
