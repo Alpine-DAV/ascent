@@ -990,6 +990,11 @@ VTKHAutoSliceLevels::execute()
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
 
+    if(!graph().workspace().registry().has_entry("camera"))
+    {
+      graph().workspace().registry().add<vtkm::rendering::Camera>("camera",slicer.GetCamera(),1);
+    }
+
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = new VTKHCollection();
