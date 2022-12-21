@@ -1,4 +1,3 @@
-
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
@@ -446,6 +445,7 @@ T calcEntropyMM( const std::vector<T> array, long len, int nBins , T field_min, 
   return (entropy * -1.0);
 }
 
+
 } // namespace detail
 
 Slice::Slice()
@@ -563,12 +563,68 @@ AutoSliceLevels::SetField(std::string field)
   m_field_name = field;
 }
 
+vtkmCamera*
+AutoSliceLevels::GetCamera()
+{
+  return m_camera;
+}
 
 void
 AutoSliceLevels::PreExecute()
 {
   Filter::PreExecute();
 }
+
+vtkm::Vec<vtkm::Float32,3>
+GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
+{
+  //point where normal intersects unit sphere
+  vtkm::Vec<vtkm::Float32,3> point;
+
+  //reverse normal
+  //want camera point in the same dir as normal
+  vtkm::Vec<vtkm::Float32,3> r_normal{(((float)-1.0)*normal[0],
+		  			((float)-1.0)*normal[1],
+					((float)-1.0)*normal[2])};
+
+  //calc discriminant
+  //a = dot(normal,normal)
+  vtkm::Float32 r_norm0 = r_normal[0]*r_normal[0];
+  vtkm::Float32 r_norm1 = r_normal[1]*r_normal[1];
+  vtkm::Float32 r_norm2 = r_normal[2]*r_normal[2];
+  vtkm::Float32 a = r_norm0 + r_norm1 + r_norm2;
+
+  //b is 0
+  //c is -1
+  vtkm::Float32 discriminant = 4.0*a;
+
+  vtkm::Float32 t =  sqrt(discriminant)/(2*a);
+  vtkm::Float32 t2 = -t;
+  if(abs(t2) < abs(t)) 
+    t = t2;
+
+  point[0]= t * r_normal[0];
+  point[1]= t * r_normal[1];
+  point[2]= t * r_normal[2];
+
+  return point;
+
+}
+
+void
+SetCamera(vtkmCamera *camera, vtkm::Vec<vtkm::Float32,3> normal, vtkm::Float32 radius)
+{
+  vtkm::Vec<vtkm::Float32,3> i_point = GetIntersectionPoint(normal);
+  vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+
+  vtkm::Vec<vtkm::Float32,3> pos;
+  pos[0] = radius*i_point[0] + lookat[0];
+  pos[1] = radius*i_point[1] + lookat[1];
+  pos[2] = radius*i_point[2] + lookat[2];
+
+  camera->SetPosition(pos);
+}
+
 
 vtkm::Vec<vtkm::Float32,3>
 GetPoint(int level, int num_levels, vtkm::Bounds bounds)
@@ -615,11 +671,15 @@ AutoSliceLevels::DoExecute()
   }
    
   std::vector<float> field_data = vtkh::detail::GetScalarData<float>(*this->m_input, field.c_str());
+
   float datafield_max = 0.;
   float datafield_min = 0.;
+
 #if ASCENT_MPI_ENABLED
+
   float local_datafield_max = 0.;
   float local_datafield_min = 0.;
+
   if(field_data.size())
   { 
     local_datafield_max = (float)*max_element(field_data.begin(),field_data.end());
@@ -627,20 +687,23 @@ AutoSliceLevels::DoExecute()
   }
   MPI_Reduce(&local_datafield_max, &datafield_max, 1, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
   MPI_Reduce(&local_datafield_min, &datafield_min, 1, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+
 #else
+
   if(field_data.size())
   { 
     datafield_max = (float)*max_element(field_data.begin(),field_data.end());
     datafield_min = (float)*min_element(field_data.begin(),field_data.end());
   }
+
 #endif
 
   vtkm::Bounds bounds = this->m_input->GetGlobalBounds();
+  vtkm::Vec<vtkm::Float32,3> normal = m_normals[0];
  
   for(int s = 0; s < num_slices; ++s)
   {
     vtkm::Vec<vtkm::Float32,3> point = GetPoint(s, num_slices, bounds);
-    vtkm::Vec<vtkm::Float32,3> normal = m_normals[0];
     vtkh::DataSet temp_ds = *(this->m_input);
     // shallow copy the input so we don't propagate the slice field
     // to the input data set, since it might be used in other places
@@ -673,16 +736,21 @@ AutoSliceLevels::DoExecute()
       this->m_output = output;
     }
   } // each slice
+  
+  
+  if(!(normal[0] == normal[1] == normal[2] == 1))
+  {
+    vtkmCamera *camera = new vtkmCamera;
+    camera->ResetToBounds(bounds);
 
-//  if(slices.size() > 1)
-//  {
-//    detail::MergeContours merger(slices, fname);
-//    this->m_output = merger.Merge();
-//  }
-//  else
-//  {
-//    this->m_output = slices[0];
-//  }
+    vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
+    vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
+    vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
+    vtkm::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
+
+    SetCamera(camera,normal,radius);  
+    m_camera = camera;
+  }
 }
 
 void
