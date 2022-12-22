@@ -568,61 +568,29 @@ AutoSliceLevels::GetCamera()
 {
   return m_camera;
 }
+vtkm::Bounds
+AutoSliceLevels::GetDataBounds()
+{
+  return m_bounds;
+}
+
+vtkm::Vec<vtkm::Float32,3>
+AutoSliceLevels::GetNormal()
+{
+  return m_normal;
+}
+
+vtkm::Float32
+AutoSliceLevels::GetRadius()
+{
+  return m_radius;
+}
+
 
 void
 AutoSliceLevels::PreExecute()
 {
   Filter::PreExecute();
-}
-
-vtkm::Vec<vtkm::Float32,3>
-GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
-{
-  //point where normal intersects unit sphere
-  vtkm::Vec<vtkm::Float32,3> point;
-
-  //reverse normal
-  //want camera point in the same dir as normal
-  vtkm::Vec<vtkm::Float32,3> r_normal{(((float)-1.0)*normal[0],
-		  			((float)-1.0)*normal[1],
-					((float)-1.0)*normal[2])};
-
-  //calc discriminant
-  //a = dot(normal,normal)
-  vtkm::Float32 r_norm0 = r_normal[0]*r_normal[0];
-  vtkm::Float32 r_norm1 = r_normal[1]*r_normal[1];
-  vtkm::Float32 r_norm2 = r_normal[2]*r_normal[2];
-  vtkm::Float32 a = r_norm0 + r_norm1 + r_norm2;
-
-  //b is 0
-  //c is -1
-  vtkm::Float32 discriminant = 4.0*a;
-
-  vtkm::Float32 t =  sqrt(discriminant)/(2*a);
-  vtkm::Float32 t2 = -t;
-  if(abs(t2) < abs(t)) 
-    t = t2;
-
-  point[0]= t * r_normal[0];
-  point[1]= t * r_normal[1];
-  point[2]= t * r_normal[2];
-
-  return point;
-
-}
-
-void
-SetCamera(vtkmCamera *camera, vtkm::Vec<vtkm::Float32,3> normal, vtkm::Float32 radius)
-{
-  vtkm::Vec<vtkm::Float32,3> i_point = GetIntersectionPoint(normal);
-  vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
-
-  vtkm::Vec<vtkm::Float32,3> pos;
-  pos[0] = radius*i_point[0] + lookat[0];
-  pos[1] = radius*i_point[1] + lookat[1];
-  pos[2] = radius*i_point[2] + lookat[2];
-
-  camera->SetPosition(pos);
 }
 
 
@@ -700,6 +668,7 @@ AutoSliceLevels::DoExecute()
 
   vtkm::Bounds bounds = this->m_input->GetGlobalBounds();
   vtkm::Vec<vtkm::Float32,3> normal = m_normals[0];
+  std::cerr << "THIS normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
  
   for(int s = 0; s < num_slices; ++s)
   {
@@ -737,19 +706,30 @@ AutoSliceLevels::DoExecute()
     }
   } // each slice
   
-  
-  if(!(normal[0] == normal[1] == normal[2] == 1))
+  if(normal[0] == 1 && normal[1] == 1 &&  normal[2] == 1)
   {
+	  std::cerr << "normal is 1 1 1 " << std::endl;
+  }
+  else
+  {
+	  std::cerr << "normal is not 1 1 1 " << std::endl;
     vtkmCamera *camera = new vtkmCamera;
     camera->ResetToBounds(bounds);
-
+    std::cerr << "In VTKH Filters" << std::endl;
     vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
     vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
     vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
     vtkm::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
+    std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
+    std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
+    std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
+    std::cerr<<std::endl;
+    std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+    std::cerr << "radius: " << radius << std::endl;
 
-    SetCamera(camera,normal,radius);  
-    m_camera = camera;
+    this->m_radius = radius;
+    this->m_bounds = bounds;
+    this->m_normal = normal;
   }
 }
 

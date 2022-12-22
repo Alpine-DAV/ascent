@@ -38,6 +38,9 @@ public:
   void SetLevels(int levels);
   void SetField(std::string field_name);
   vtkmCamera* GetCamera();
+  vtkm::Bounds GetDataBounds();
+  vtkm::Float32 GetRadius();
+  vtkm::Vec<vtkm::Float32,3> GetNormal();
 protected:
   void PreExecute() override;
   void PostExecute() override;
@@ -46,6 +49,9 @@ protected:
   int m_levels;
   std::string m_field_name;
   vtkmCamera *m_camera;
+  vtkm::Bounds m_bounds;
+  vtkm::Float32 m_radius;
+  vtkm::Vec<vtkm::Float32,3> m_normal;
 };
 
 } //namespace vtkh

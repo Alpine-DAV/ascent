@@ -1254,12 +1254,14 @@ DefaultRender::execute()
       if(graph().workspace().registry().has_entry("camera"))
       {
         vtkm::rendering::Camera *camera = graph().workspace().registry().fetch<vtkm::rendering::Camera>("camera");
+	camera->Print();
 
 	render = vtkh::MakeRender(1024,
                                   1024,
                                   scene_bounds,
 				  *camera,
                                   image_name);
+	delete camera;
       }
       else
       {
