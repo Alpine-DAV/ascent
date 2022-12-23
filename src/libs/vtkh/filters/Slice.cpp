@@ -668,7 +668,6 @@ AutoSliceLevels::DoExecute()
 
   vtkm::Bounds bounds = this->m_input->GetGlobalBounds();
   vtkm::Vec<vtkm::Float32,3> normal = m_normals[0];
-  std::cerr << "THIS normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
  
   for(int s = 0; s < num_slices; ++s)
   {
@@ -694,10 +693,10 @@ AutoSliceLevels::DoExecute()
     marcher.SetIsoValue(0.);
     marcher.SetField(fname);
     marcher.Update();
+    
     vtkh::DataSet* output = marcher.GetOutput();
     std::vector<float> slice_data = vtkh::detail::GetScalarData<float>(*output, field.c_str());
     current_score = vtkh::detail::calcEntropyMM<float>(slice_data, slice_data.size(), 256, datafield_min, datafield_max);
-    std::cerr << "slice " << s << " has entropy: " << current_score << std::endl;
     
     if(current_score > winning_score)
     {
@@ -706,31 +705,33 @@ AutoSliceLevels::DoExecute()
     }
   } // each slice
   
-  if(normal[0] == 1 && normal[1] == 1 &&  normal[2] == 1)
-  {
-	  std::cerr << "normal is 1 1 1 " << std::endl;
-  }
-  else
-  {
-	  std::cerr << "normal is not 1 1 1 " << std::endl;
-    vtkmCamera *camera = new vtkmCamera;
-    camera->ResetToBounds(bounds);
-    std::cerr << "In VTKH Filters" << std::endl;
-    vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
-    vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
-    vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
-    vtkm::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
-    std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
-    std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
-    std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
-    std::cerr<<std::endl;
-    std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
-    std::cerr << "radius: " << radius << std::endl;
+  //TODO: needed for setting camera based on input normal
+  //if(normal[0] == 1 && normal[1] == 1 &&  normal[2] == 1)
+  //{
 
-    this->m_radius = radius;
-    this->m_bounds = bounds;
-    this->m_normal = normal;
-  }
+  //        std::cerr << "normal is 1 1 1 " << std::endl;
+  //}
+  //else
+  //{
+  //        std::cerr << "normal is not 1 1 1 " << std::endl;
+  //  vtkmCamera *camera = new vtkmCamera;
+  //  camera->ResetToBounds(bounds);
+  //  std::cerr << "In VTKH Filters" << std::endl;
+  //  vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
+  //  vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
+  //  vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
+  //  vtkm::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
+  //  std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
+  //  std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
+  //  std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
+  //  std::cerr<<std::endl;
+  //  std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+  //  std::cerr << "radius: " << radius << std::endl;
+
+  //  this->m_radius = radius;
+  //  this->m_bounds = bounds;
+  //  this->m_normal = normal;
+  //}
 }
 
 void

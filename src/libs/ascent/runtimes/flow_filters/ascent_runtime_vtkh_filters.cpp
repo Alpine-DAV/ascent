@@ -940,7 +940,6 @@ GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
 {
   //point where normal intersects unit sphere
   vtkm::Vec<vtkm::Float32,3> point;
-  std::cerr << "normal in intersection point: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
 
   //reverse normal
   //want camera point in the same dir as normal
@@ -948,26 +947,21 @@ GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
 		  			((vtkm::Float32)1.0)*normal[1],
 					((vtkm::Float32)1.0)*normal[2]};
 
-  std::cerr << "r_normal in intersection point: " << r_normal[0] << " " << r_normal[1] << " " << r_normal[2] << std::endl;
   //calc discriminant
   //a = dot(normal,normal)
   vtkm::Float32 r_norm0 = r_normal[0]*r_normal[0];
   vtkm::Float32 r_norm1 = r_normal[1]*r_normal[1];
   vtkm::Float32 r_norm2 = r_normal[2]*r_normal[2];
-  std::cerr << "r_norms in intersection point: " << r_norm0 << " " << r_norm1 << " " << r_norm2 << std::endl;
   vtkm::Float32 a = r_norm0 + r_norm1 + r_norm2;
-  std::cerr << "a: " << a << std::endl;
   //b is 0
   //c is -1
   vtkm::Float32 discriminant = 4.0*a;
-  std::cerr << "discriminant: " << discriminant << std::endl;
 
   vtkm::Float32 t =  sqrt(discriminant)/(2*a);
   vtkm::Float32 t2 = -t;
   if(abs(t2) < abs(t)) 
     t = t2;
 
-  std::cerr << "t: " << t << std::endl;
   point[0]= t * r_normal[0];
   point[1]= t * r_normal[1];
   point[2]= t * r_normal[2];
@@ -987,7 +981,6 @@ SetCamera(vtkm::rendering::Camera *camera, vtkm::Vec<vtkm::Float32,3> normal, vt
   pos[0] = zoom*radius*i_point[0] + lookat[0];
   pos[1] = zoom*radius*i_point[1] + lookat[1];
   pos[2] = zoom*radius*i_point[2] + lookat[2];
-  std::cerr << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
 
   camera->SetPosition(pos);
 }
