@@ -1249,27 +1249,11 @@ DefaultRender::execute()
         }
       }
       
-      vtkh::Render render;
+      vtkh::Render render = vtkh::MakeRender(1024,
+                            1024,
+                            scene_bounds,
+                            image_name);
       
-      if(graph().workspace().registry().has_entry("camera"))
-      {
-        vtkm::rendering::Camera *camera = graph().workspace().registry().fetch<vtkm::rendering::Camera>("camera");
-	camera->Print();
-
-	render = vtkh::MakeRender(1024,
-                                  1024,
-                                  scene_bounds,
-				  *camera,
-                                  image_name);
-	delete camera;
-      }
-      else
-      {
-        render = vtkh::MakeRender(1024,
-                                  1024,
-                                  scene_bounds,
-                                  image_name);
-      }
       Node meta = Metadata::n_metadata;
       if(meta.has_path("comments"))
       {

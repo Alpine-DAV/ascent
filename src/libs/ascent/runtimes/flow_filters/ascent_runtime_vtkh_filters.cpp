@@ -940,29 +940,34 @@ GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
 {
   //point where normal intersects unit sphere
   vtkm::Vec<vtkm::Float32,3> point;
+  std::cerr << "normal in intersection point: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
 
   //reverse normal
   //want camera point in the same dir as normal
-  vtkm::Vec<vtkm::Float32,3> r_normal{(((float)1.0)*normal[0],
-		  			((float)1.0)*normal[1],
-					((float)1.0)*normal[2])};
+  vtkm::Vec<vtkm::Float32,3> r_normal{((vtkm::Float32)1.0)*normal[0],
+		  			((vtkm::Float32)1.0)*normal[1],
+					((vtkm::Float32)1.0)*normal[2]};
 
+  std::cerr << "r_normal in intersection point: " << r_normal[0] << " " << r_normal[1] << " " << r_normal[2] << std::endl;
   //calc discriminant
   //a = dot(normal,normal)
   vtkm::Float32 r_norm0 = r_normal[0]*r_normal[0];
   vtkm::Float32 r_norm1 = r_normal[1]*r_normal[1];
   vtkm::Float32 r_norm2 = r_normal[2]*r_normal[2];
+  std::cerr << "r_norms in intersection point: " << r_norm0 << " " << r_norm1 << " " << r_norm2 << std::endl;
   vtkm::Float32 a = r_norm0 + r_norm1 + r_norm2;
-
+  std::cerr << "a: " << a << std::endl;
   //b is 0
   //c is -1
   vtkm::Float32 discriminant = 4.0*a;
+  std::cerr << "discriminant: " << discriminant << std::endl;
 
   vtkm::Float32 t =  sqrt(discriminant)/(2*a);
   vtkm::Float32 t2 = -t;
   if(abs(t2) < abs(t)) 
     t = t2;
 
+  std::cerr << "t: " << t << std::endl;
   point[0]= t * r_normal[0];
   point[1]= t * r_normal[1];
   point[2]= t * r_normal[2];
@@ -978,9 +983,10 @@ SetCamera(vtkm::rendering::Camera *camera, vtkm::Vec<vtkm::Float32,3> normal, vt
   vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
 
   vtkm::Vec<vtkm::Float32,3> pos;
-  pos[0] = radius*i_point[0] + lookat[0];
-  pos[1] = radius*i_point[1] + lookat[1];
-  pos[2] = radius*i_point[2] + lookat[2];
+  vtkm::Float32 zoom = 3;
+  pos[0] = zoom*radius*i_point[0] + lookat[0];
+  pos[1] = zoom*radius*i_point[1] + lookat[1];
+  pos[2] = zoom*radius*i_point[2] + lookat[2];
   std::cerr << "pos: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
 
   camera->SetPosition(pos);
@@ -1039,25 +1045,28 @@ VTKHAutoSliceLevels::execute()
     slicer.Update();
 
     vtkh::DataSet *slice_output = slicer.GetOutput();
-    if(!graph().workspace().registry().has_entry("camera"))
-    {
-      vtkm::rendering::Camera *cam = new vtkm::rendering::Camera;
-      vtkm::Bounds bounds = slicer.GetDataBounds();
-      std::cerr << "In Ascent runtime filters" << std::endl;
-      std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
-      std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
-      std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
-      std::cerr<<std::endl;
-      vtkm::Vec<vtkm::Float32,3> normal = slicer.GetNormal();
-      std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
-      vtkm::Float32 radius = slicer.GetRadius();
-      std::cerr << "radius: " << radius << std::endl;
-      SetCamera(cam, normal, radius);
-      std::cerr << "Cam before registry:" << std::endl;
-      cam->Print();
-      std::cerr << "Cam after registry:" << std::endl;
-      graph().workspace().registry().add<vtkm::rendering::Camera>("camera",cam,1);
-    }
+    
+    //TODO: implement auto camera based on input normal
+    //
+    //if(!graph().workspace().registry().has_entry("camera"))
+    //{
+    //  vtkm::rendering::Camera *cam = new vtkm::rendering::Camera;
+    //  vtkm::Bounds bounds = slicer.GetDataBounds();
+    //  std::cerr << "In Ascent runtime filters" << std::endl;
+    //  std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
+    //  std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
+    //  std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
+    //  std::cerr<<std::endl;
+    //  vtkm::Vec<vtkm::Float32,3> normal = slicer.GetNormal();
+    //  std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+    //  vtkm::Float32 radius = slicer.GetRadius();
+    //  std::cerr << "radius: " << radius << std::endl;
+    //  SetCamera(cam, normal, radius);
+    //  std::cerr << "Cam before registry:" << std::endl;
+    //  cam->Print();
+    //  std::cerr << "Cam after registry:" << std::endl;
+    //  graph().workspace().registry().add<vtkm::rendering::Camera>("camera",cam,1);
+    //}
 
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
