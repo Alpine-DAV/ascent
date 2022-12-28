@@ -120,7 +120,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHMarchingCubes>("transforms","contour");
     AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");
     AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");
-    AscentRuntime::register_filter_type<VTKHAutoSliceLevels>("transforms","auto_slice_levels");
+    AscentRuntime::register_filter_type<VTKHAutoSliceLevels>("transforms","auto_slice");
     AscentRuntime::register_filter_type<VTKH3Slice>("transforms","3slice");
     AscentRuntime::register_filter_type<VTKHCompositeVector>("transforms","composite_vector");
     AscentRuntime::register_filter_type<VTKHVectorComponent>("transforms","vector_component");
