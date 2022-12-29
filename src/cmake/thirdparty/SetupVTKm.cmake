@@ -22,6 +22,15 @@ endif()
 
 find_package(VTKm REQUIRED QUIET)
 
+#vtkm precision check
+#if(NOT VTKm_USE_DOUBLE_PRECISION)
+#  message(FATAL_ERROR "Ascent requires VTK-m to be built with double precision (VTKm_USE_64BIT_IDS=OFF and VTKm_USE_DOUBLE_PRECISION=ON)")
+#endif()
+
+if(NOT VTKm_USE_DEFAULT_TYPES_FOR_ASCENT)
+  message(FATAL_ERROR "Ascent requires VTK-m to be built with default types (VTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON)")
+endif()
+
 if(ENABLE_CUDA AND NOT VTKm_ENABLE_CUDA)
    message(FATAL_ERROR "VTK-h CUDA support requires VTK-m with CUDA support (ENABLE_CUDA == TRUE, however VTKm_ENABLE_CUDA == FALSE")
 endif()
