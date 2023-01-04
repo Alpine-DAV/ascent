@@ -783,7 +783,7 @@ TEST(ascent_slice, test_auto_slice_xy_axis)
     scenes["s1/plots/p1/field"]              = "braid";
     scenes["s1/plots/p1/pipeline"]           = "pl1";
     scenes["s1/renders/r1/camera/azimuth"]   = 90.0;
-    scenes["s1/renders/r1/camera/elevation"] = 90.0;
+    scenes["s1/renders/r1/camera/elevation"] = 45.0;
     scenes["s1/renders/r1/image_prefix"]     = output_file;
 
     conduit::Node actions;
