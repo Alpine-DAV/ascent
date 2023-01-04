@@ -320,7 +320,7 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
   slice_params["normal/x"] = 0.f;   
   slice_params["normal/y"] = 0.f;   
   slice_params["normal/z"] = 1.f; 
-  slice_params["field"] = "radial";
+  slice_params["field"] = "braid";
   slice_params["levels"] = 10;
 
 .. _autoslicefig:
@@ -341,14 +341,14 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
   slice_params["normal/x"] = 1.f;   
   slice_params["normal/y"] = 0.f;   
   slice_params["normal/z"] = 0.f; 
-  slice_params["field"] = "radial";
+  slice_params["field"] = "braid";
   slice_params["levels"] = 10;
 
   conduit::Node scenes;
   // add a plot of pipeline 1
   scenes["s1/plots/p1/type"] = "pseudocolor";
   scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/plots/p1/field"] = "radial";
+  scenes["s1/plots/p1/field"] = "braid";
   //Need to turn camera 90 degrees horizontally
   //in order to point down x-axis
   scenes["s1/renders/r1/camera/azimuth"] = 90.0;
@@ -372,14 +372,14 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
   slice_params["normal/x"] = 0.f;   
   slice_params["normal/y"] = 1.f;   
   slice_params["normal/z"] = 0.f; 
-  slice_params["field"] = "radial";
+  slice_params["field"] = "braid";
   slice_params["levels"] = 10;
 
   conduit::Node scenes;
   // add a plot of pipeline 1
   scenes["s1/plots/p1/type"] = "pseudocolor";
   scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/plots/p1/field"] = "radial";
+  scenes["s1/plots/p1/field"] = "braid";
   //Need to turn camera 90 degrees vertically
   //in order to point down y-axis
   scenes["s1/renders/r1/camera/elevation"] = 90.0;

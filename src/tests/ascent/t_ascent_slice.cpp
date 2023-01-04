@@ -512,7 +512,7 @@ TEST(ascent_slice, test_auto_slice_z_axis)
     pipelines["pl1/f1/type"] = "auto_slice";
     // filter knobs
     conduit::Node &slice_params = pipelines["pl1/f1/params"];
-    slice_params["field"]    = "radial";
+    slice_params["field"]    = "braid";
     slice_params["levels"]   = 10;
     slice_params["normal/x"] = 0.f;
     slice_params["normal/y"] = 0.f;
@@ -520,7 +520,7 @@ TEST(ascent_slice, test_auto_slice_z_axis)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]     = "pseudocolor";
-    scenes["s1/plots/p1/field"]    = "radial";
+    scenes["s1/plots/p1/field"]    = "braid";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"]      = output_file;
 
@@ -598,7 +598,7 @@ TEST(ascent_slice, test_auto_slice_x_axis)
     pipelines["pl1/f1/type"] = "auto_slice";
     // filter knobs
     conduit::Node &slice_params = pipelines["pl1/f1/params"];
-    slice_params["field"]    = "radial";
+    slice_params["field"]    = "braid";
     slice_params["levels"]   = 10;
     slice_params["normal/x"] = 1.f;
     slice_params["normal/y"] = 0.f;
@@ -606,7 +606,7 @@ TEST(ascent_slice, test_auto_slice_x_axis)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]             = "pseudocolor";
-    scenes["s1/plots/p1/field"]            = "radial";
+    scenes["s1/plots/p1/field"]            = "braid";
     scenes["s1/plots/p1/pipeline"]         = "pl1";
     scenes["s1/renders/r1/camera/azimuth"] = 90.0;
     scenes["s1/renders/r1/image_prefix"]   = output_file;
@@ -685,7 +685,7 @@ TEST(ascent_slice, test_auto_slice_y_axis)
     pipelines["pl1/f1/type"] = "auto_slice";
     // filter knobs
     conduit::Node &slice_params = pipelines["pl1/f1/params"];
-    slice_params["field"]    = "radial";
+    slice_params["field"]    = "braid";
     slice_params["levels"]   = 10;
     slice_params["normal/x"] = 0.f;
     slice_params["normal/y"] = 1.f;
@@ -693,7 +693,7 @@ TEST(ascent_slice, test_auto_slice_y_axis)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]               = "pseudocolor";
-    scenes["s1/plots/p1/field"]              = "radial";
+    scenes["s1/plots/p1/field"]              = "braid";
     scenes["s1/plots/p1/pipeline"]           = "pl1";
     scenes["s1/renders/r1/camera/elevation"] = 90.0;
     scenes["s1/renders/r1/image_prefix"]     = output_file;
@@ -772,7 +772,7 @@ TEST(ascent_slice, test_auto_slice_xy_axis)
     pipelines["pl1/f1/type"] = "auto_slice";
     // filter knobs
     conduit::Node &slice_params = pipelines["pl1/f1/params"];
-    slice_params["field"]    = "radial";
+    slice_params["field"]    = "braid";
     slice_params["levels"]   = 10;
     slice_params["normal/x"] = 1.f;
     slice_params["normal/y"] = 1.f;
@@ -780,7 +780,7 @@ TEST(ascent_slice, test_auto_slice_xy_axis)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]               = "pseudocolor";
-    scenes["s1/plots/p1/field"]              = "radial";
+    scenes["s1/plots/p1/field"]              = "braid";
     scenes["s1/plots/p1/pipeline"]           = "pl1";
     scenes["s1/renders/r1/camera/azimuth"]   = 90.0;
     scenes["s1/renders/r1/camera/elevation"] = 90.0;
