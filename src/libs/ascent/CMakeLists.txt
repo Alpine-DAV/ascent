@@ -497,28 +497,28 @@ if (ENABLE_SERIAL)
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
                     vtkmdiympi_nompi
-                    vtkm_io
-                    vtkm_rendering
-                    vtkm_filter_clean_grid
-                    vtkm_filter_contour
-                    vtkm_filter_core
-                    vtkm_filter_connected_components
-                    vtkm_filter_density_estimate
-                    vtkm_filter_entity_extraction
-                    vtkm_filter_field_conversion
-                    vtkm_filter_field_transform
-                    vtkm_filter_flow
-                    vtkm_filter_geometry_refinement
-                    vtkm_filter_image_processing
-                    vtkm_filter_mesh_info
-                    vtkm_filter_multi_block
-                    vtkm_filter_resampling
-                    vtkm_filter_scalar_topology
-                    vtkm_filter_vector_analysis
-                    vtkm_filter_zfp
-                    vtkm_worklet
-                    vtkm_source
-                    vtkm_cont
+                    vtkm::io
+                    vtkm::rendering
+                    vtkm::filter_clean_grid
+                    vtkm::filter_contour
+                    vtkm::filter_core
+                    vtkm::filter_connected_components
+                    vtkm::filter_density_estimate
+                    vtkm::filter_entity_extraction
+                    vtkm::filter_field_conversion
+                    vtkm::filter_field_transform
+                    vtkm::filter_flow
+                    vtkm::filter_geometry_refinement
+                    vtkm::filter_image_processing
+                    vtkm::filter_mesh_info
+                    vtkm::filter_multi_block
+                    vtkm::filter_resampling
+                    vtkm::filter_scalar_topology
+                    vtkm::filter_vector_analysis
+                    vtkm::filter_zfp
+                    vtkm::worklet
+                    vtkm::source
+                    vtkm::cont
                     )
 
         if(TARGET vtkmdiympi_nompi)
@@ -698,28 +698,28 @@ if(MPI_FOUND)
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
                     vtkmdiympi_nompi
-                    vtkm_io
-                    vtkm_rendering
-                    vtkm_filter_clean_grid
-                    vtkm_filter_contour
-                    vtkm_filter_core
-                    vtkm_filter_connected_components
-                    vtkm_filter_density_estimate
-                    vtkm_filter_entity_extraction
-                    vtkm_filter_field_conversion
-                    vtkm_filter_field_transform
-                    vtkm_filter_flow
-                    vtkm_filter_geometry_refinement
-                    vtkm_filter_image_processing
-                    vtkm_filter_mesh_info
-                    vtkm_filter_multi_block
-                    vtkm_filter_resampling
-                    vtkm_filter_scalar_topology
-                    vtkm_filter_vector_analysis
-                    vtkm_filter_zfp
-                    vtkm_worklet
-                    vtkm_source
-                    vtkm_cont
+                    vtkm::io
+                    vtkm::rendering
+                    vtkm::filter_clean_grid
+                    vtkm::filter_contour
+                    vtkm::filter_core
+                    vtkm::filter_connected_components
+                    vtkm::filter_density_estimate
+                    vtkm::filter_entity_extraction
+                    vtkm::filter_field_conversion
+                    vtkm::filter_field_transform
+                    vtkm::filter_flow
+                    vtkm::filter_geometry_refinement
+                    vtkm::filter_image_processing
+                    vtkm::filter_mesh_info
+                    vtkm::filter_multi_block
+                    vtkm::filter_resampling
+                    vtkm::filter_scalar_topology
+                    vtkm::filter_vector_analysis
+                    vtkm::filter_zfp
+                    vtkm::worklet
+                    vtkm::source
+                    vtkm::cont
                     )
 
         if(TARGET vtkmdiympi_nompi)

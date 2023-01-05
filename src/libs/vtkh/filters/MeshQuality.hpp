@@ -5,7 +5,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/filter/MeshQuality.h>
+#include <vtkm/filter/mesh_info/MeshQuality.h>
 
 namespace vtkh
 {

@@ -89,7 +89,8 @@ TEST(vtkm_smoke, basic_use_openmp)
     scalars.push_back(1);
     vtkm::cont::Field scalarField = vtkm::cont::make_Field("some_field",
                                                            vtkm::cont::Field::Association::Cells,
-                                                           scalars);
+                                                           scalars,
+                                                           vtkm::CopyFlag::Off);
 
     const vtkm::cont::CoordinateSystem coords = data.GetCoordinateSystem();
     vtkm::rendering::Actor actor(data.GetCellSet(),
@@ -137,7 +138,8 @@ TEST(vtkm_smoke, basic_use_cuda)
     scalars.push_back(1);
     vtkm::cont::Field scalarField = vtkm::cont::make_Field("some_field",
                                                            vtkm::cont::Field::Association::Cells,
-                                                           scalars);
+                                                           scalars,
+                                                           vtkm::CopyFlag::Off);
 
     const vtkm::cont::CoordinateSystem coords = data.GetCoordinateSystem();
     vtkm::rendering::Actor actor(data.GetCellSet(),

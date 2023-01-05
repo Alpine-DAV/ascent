@@ -12,7 +12,6 @@
 #include <vtkh/filters/Streamline.hpp>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/DataSetFieldAdd.h>
 #include <vtkm/cont/CellSetSingleType.h>
 #include "t_vtkm_test_utils.hpp"
 #include <iostream>
@@ -123,10 +122,10 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   for (int i = 0; i < 100; i++)
   {
     vtkm::Particle p;
-    p.Pos = vtkm::Vec3f(randRange(bounds.X.Min, bounds.X.Max),
-                        randRange(bounds.Y.Min, bounds.Y.Max),
-                        randRange(bounds.Z.Min, bounds.Z.Max));
-    p.ID = static_cast<vtkm::Id>(i);
+    p.SetPosition(vtkm::Vec3f(randRange(bounds.X.Min, bounds.X.Max),
+                              randRange(bounds.Y.Min, bounds.Y.Max),
+      	                      randRange(bounds.Z.Min, bounds.Z.Max)));
+    p.SetID(static_cast<vtkm::Id>(i));
 
     seeds.push_back(p);
   }
