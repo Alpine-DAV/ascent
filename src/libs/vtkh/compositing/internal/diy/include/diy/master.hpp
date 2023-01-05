@@ -85,6 +85,8 @@ namespace vtkhdiy
       struct QueuePolicy
       {
                 QueuePolicy(size_t sz): size(sz)          {}
+                QueuePolicy(const QueuePolicy &p) size(p.size) {}
+               ~QueuePolicy() {}
         bool    unload_incoming(const Master& master, int from, int to, size_t sz) const    { return sz > size; }
         bool    unload_outgoing(const Master& master, int from, size_t sz) const            { return sz > size*master.outgoing_count(from); }
 
