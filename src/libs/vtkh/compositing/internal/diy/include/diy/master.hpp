@@ -73,22 +73,24 @@ namespace vtkhdiy
       template<class Block>
       using Callback = std::function<void(Block*, const ProxyWithLink&)>;
 
-      struct QueuePolicy
-      {
-        virtual bool    unload_incoming(const Master& master, int from, int to, size_t size) const  =0;
-        virtual bool    unload_outgoing(const Master& master, int from, size_t size) const          =0;
-        virtual         ~QueuePolicy() {}
-      };
+      // BEGIN ASCENT CHANGE //
+      // struct QueuePolicy
+      // {
+      //   virtual bool    unload_incoming(const Master& master, int from, int to, size_t size) const  =0;
+      //   virtual bool    unload_outgoing(const Master& master, int from, size_t size) const          =0;
+      //   virtual         ~QueuePolicy() {}
+      // };
 
       //! Move queues out of core if their size exceeds a parameter given in the constructor
-      struct QueueSizePolicy: public QueuePolicy
+      struct QueuePolicy
       {
-                QueueSizePolicy(size_t sz): size(sz)          {}
+                QueuePolicy(size_t sz): size(sz)          {}
         bool    unload_incoming(const Master& master, int from, int to, size_t sz) const    { return sz > size; }
         bool    unload_outgoing(const Master& master, int from, size_t sz) const            { return sz > size*master.outgoing_count(from); }
 
         size_t  size;
       };
+      // END ASCENT CHANGE //
 
       struct MessageInfo
       {
@@ -173,7 +175,9 @@ namespace vtkhdiy
                            ExternalStorage*     storage  = 0,  //!< storage object (path, method, etc.) for storing temporary blocks being shuffled in/out of core
                            SaveBlock            save     = 0,  //!< block save function; master manages saving if save != 0
                            LoadBlock            load     = 0,  //!< block load function; master manages loading if load != 0
-                           QueuePolicy*         q_policy = new QueueSizePolicy(4096)): //!< policy for managing message queues specifies maximum size of message queues to keep in memory
+                           // BEGIN ASCENT EDIT //
+                           QueuePolicy          q_policy = QueuePolicy(4096)): //!< policy for managing message queues specifies maximum size of message queues to keep in memory
+                           // END ASCENT EDIT //
                       blocks_(create, destroy, storage, save, load),
                       queue_policy_(q_policy),
                       limit_(limit),
@@ -185,7 +189,12 @@ namespace vtkhdiy
                       exchange_round_(-1),
                       immediate_(true)
                                                         {}
-                    ~Master()                           { set_immediate(true); clear(); delete queue_policy_; }
+                    ~Master()                           { set_immediate(true);
+                                                          clear(); 
+                                                          // BEGIN ASCENT CHANGE
+                                                          //delete queue_policy_;
+                                                          // END ASCENT CHANGE
+                                                        }
       inline void   clear();
       inline void   destroy(int i)                      { if (blocks_.own()) blocks_.destroy(i); }
 
@@ -306,8 +315,10 @@ namespace vtkhdiy
       Collection            blocks_;
       std::vector<int>      gids_;
       std::map<int, int>    lids_;
-
-      QueuePolicy*          queue_policy_;
+      
+      // BEGIN ASCENT CHANGE
+      QueuePolicy           queue_policy_;
+      // END ASCENT CHANGE
 
       int                   limit_;
       int                   threads_;
@@ -528,7 +539,8 @@ unload_incoming(int gid)
     for (InQueueRecords::iterator it = in_qrs.records.begin(); it != in_qrs.records.end(); ++it)
     {
       QueueRecord& qr = it->second;
-      if (queue_policy_->unload_incoming(*this, it->first, gid, qr.size))
+      // ASCENT EDIT (queue_policy_ no longer a pointer)//
+      if (queue_policy_.unload_incoming(*this, it->first, gid, qr.size))
       {
         log->debug("Unloading queue: {} <- {}", gid, it->first);
         qr.external = storage_->put(in_qrs.queues[it->first]);
@@ -555,7 +567,8 @@ unload_outgoing(int gid)
     out_queues_size += it->second.size();   // buffer contents
     ++count;
   }
-  if (queue_policy_->unload_outgoing(*this, gid, out_queues_size - sizeof(size_t)))
+  // ASCENT EDIT (queue_policy_ no longer a pointer)//
+  if (queue_policy_.unload_outgoing(*this, gid, out_queues_size - sizeof(size_t)))
   {
       log->debug("Unloading outgoing queues: {} -> ...; size = {}\n", gid, out_queues_size);
       MemoryBuffer  bb;     bb.reserve(out_queues_size);
@@ -566,7 +579,8 @@ unload_outgoing(int gid)
         if (it->first.proc == comm_.rank())
         {
           // treat as incoming
-          if (queue_policy_->unload_incoming(*this, gid, it->first.gid, it->second.size()))
+          // ASCENT EDIT (queue_policy_ no longer a pointer)//
+          if (queue_policy_.unload_incoming(*this, gid, it->first.gid, it->second.size()))
           {
             QueueRecord& qr = out_qr.external_local[it->first];
             qr.size = it->second.size();
@@ -920,7 +934,8 @@ comm_exchange(ToSendList& to_send, int out_queues_limit)
           log->debug("Unloading outgoing directly as incoming: {} <- {}", to, from);
           MemoryBuffer& bb = it->second;
           in_qr.size = bb.size();
-          if (queue_policy_->unload_incoming(*this, from, to, in_qr.size))
+          // ASCENT EDIT (queue_policy_ no longer a pointer)//
+          if (queue_policy_.unload_incoming(*this, from, to, in_qr.size))
             in_qr.external = storage_->put(bb);
           else
           {
@@ -1040,8 +1055,9 @@ comm_exchange(ToSendList& to_send, int out_queues_limit)
       assert(ir.info.round >= exchange_round_);
       IncomingRound *in = &incoming_[ir.info.round];
 
+      // ASCENT EDIT (queue_policy_ no longer a pointer)//
       bool unload_queue = ((ir.info.round == exchange_round_) ? (block(lid(to)) == 0) : (limit_ != -1)) &&
-                          queue_policy_->unload_incoming(*this, from, to, size);
+                          queue_policy_.unload_incoming(*this, from, to, size);
       if (unload_queue)
       {
         log->debug("Directly unloading queue {} <- {}", to, from);
