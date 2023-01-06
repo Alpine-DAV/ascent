@@ -342,7 +342,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
         int  p = 0; // single scalar
         lo_col = new mfem::L2_FECollection(p, ho_mesh->Dimension(), 1);
       }
-      mfem::FiniteElementSpace *lo_fes = new mfem::FiniteElementSpace(lo_mesh, lo_col, ho_fes->GetVDim());
+      mfem::FiniteElementSpace *lo_fes = new mfem::FiniteElementSpace(&lo_mesh, lo_col, ho_fes->GetVDim());
       mfem::GridFunction *lo_gf = new mfem::GridFunction(lo_fes);
       // transform the higher order function to a low order function somehow
       mfem::OperatorHandle hi_to_lo;
@@ -631,10 +631,8 @@ MFEMDataAdapter::ElementTypeToShapeName(mfem::Element::Type element_type)
      case mfem::Element::HEXAHEDRON:     return "hex";
      case mfem::Element::WEDGE:          return "wedge";
      case mfem::Element::PYRAMID:        return "pyramid";
-     case default:                       return "unknown";
+     default:                            return "unknown";
    }
-
-   return "unknown";
 }
 
 };
