@@ -235,7 +235,7 @@ template<typename FEType>
 void
 BlendEdgesFunctor::operator()(UnstructuredField<FEType> &field)
 {
-  static_assert(FEType::get_P() == Order::Linear);
+  static_assert(FEType::get_P() == Order::Linear, "Assert: FEType::get_P() == Order::Linear");
   const auto &in_gf = field.get_dof_data();
   const auto out_gf = do_blend(in_gf.m_values);
   using InGFType = typename std::remove_reference<decltype(in_gf)>::type;
@@ -247,7 +247,7 @@ template<typename METype>
 void
 BlendEdgesFunctor::operator()(UnstructuredMesh<METype> &mesh)
 {
-  static_assert(METype::get_P() == Order::Linear);
+  static_assert(METype::get_P() == Order::Linear, "Assert: METype::get_P() == Order::Linear");
   const auto &in_gf = mesh.get_dof_data();
   const auto out_gf = do_blend(in_gf.m_values);
   m_output_mesh = std::make_shared<TriMesh_P1>(out_gf, 1);
@@ -408,7 +408,7 @@ template<typename FEType>
 void
 MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
 {
-  static_assert(FEType::get_P() == Order::Linear);
+  static_assert(FEType::get_P() == Order::Linear, "Assert: FEType::get_P() == Order::Linear"););
 
   // Grab some useful information about the field
 
