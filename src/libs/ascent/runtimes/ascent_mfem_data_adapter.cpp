@@ -309,8 +309,9 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     const mfem::FiniteElementSpace *ho_fes_space = ho_mesh->GetNodalFESpace();
     const mfem::FiniteElementCollection *ho_fes_col = ho_fes_space->FEColl();
     // refine the mesh and convert to blueprint
-    mfem::Mesh *lo_mesh = new mfem::Mesh(ho_mesh, refinement, mfem::BasisType::GaussLobatto);
-    MeshToBlueprintMesh (lo_mesh, n_dset);
+    mfem::Mesh lo_mesh = mfem::Mesh::MakeRefined(*ho_mesh, refinement, mfem::BasisType::GaussLobatto);
+
+    MeshToBlueprintMesh(&lo_mesh, n_dset);
 
     int conn_size = n_dset["topologies/main/elements/connectivity"].dtype().number_of_elements();
 
@@ -372,8 +373,6 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       info.print();
       ASCENT_ERROR("Linearize: failed to build a blueprint conforming data set from mfem")
     }
-    delete lo_mesh;
-
   }
   //output.schema().print();
 }
@@ -631,6 +630,8 @@ MFEMDataAdapter::ElementTypeToShapeName(mfem::Element::Type element_type)
      case mfem::Element::TETRAHEDRON:    return "tet";
      case mfem::Element::HEXAHEDRON:     return "hex";
      case mfem::Element::WEDGE:          return "wedge";
+     case mfem::Element::PYRAMID:        return "pyramid";
+     case default:                       return "unknown";
    }
 
    return "unknown";
