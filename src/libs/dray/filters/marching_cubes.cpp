@@ -408,7 +408,7 @@ template<typename FEType>
 void
 MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
 {
-  static_assert(FEType::get_P() == Order::Linear, "Assert: FEType::get_P() == Order::Linear"););
+  static_assert(FEType::get_P() == Order::Linear, "Assert: FEType::get_P() == Order::Linear");
 
   // Grab some useful information about the field
 
