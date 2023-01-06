@@ -85,6 +85,34 @@ else()
 endif()
 
 
+string(REGEX MATCHALL "MFEM_USE_CUDA += +YES" mfem_use_cuda ${mfem_cfg_file_txt})
+
+if(mfem_use_cuda STREQUAL "")
+    set(MFEM_CUDA_ENABLED FALSE)
+else()
+    set(MFEM_CUDA_ENABLED TRUE)
+endif()
+
+
+string(REGEX MATCHALL "MFEM_USE_HIP += +YES" mfem_use_hip ${mfem_cfg_file_txt})
+
+if(mfem_use_hip STREQUAL "")
+    set(MFEM_HIP_ENABLED FALSE)
+else()
+    set(MFEM_HIP_ENABLED TRUE)
+endif()
+
+# this might be helpful b/c mfem doesn't capture all caliper transitive deps in
+# its augmented link line
+string(REGEX MATCHALL "MFEM_USE_CALIPER += +YES" mfem_use_caliper ${mfem_cfg_file_txt})
+
+if(mfem_use_caliper STREQUAL "")
+    set(MFEM_CALIPER_ENABLED FALSE)
+else()
+    set(MFEM_CALIPER_ENABLED TRUE)
+endif()
+
+
 # next check for ZLIB_DIR 
 # (spack builds of mfem now depend on zlib, and that is not propgating)
 #
