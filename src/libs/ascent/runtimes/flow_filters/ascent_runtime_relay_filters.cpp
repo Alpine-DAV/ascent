@@ -80,104 +80,15 @@ namespace filters
 namespace detail
 {
 
-//-------------------------------------------------------------------------
-void
-mesh_bp_generate_index(const conduit::Node &mesh,
-                       const std::string &ref_path,
-                       int num_domains,
-                       Node &index_out)
-{
-    if(blueprint::mesh::is_multi_domain(mesh))
-    {
-        NodeConstIterator itr = mesh.children();
-
-        while(itr.has_next())
-        {
-            Node curr_idx;
-            const Node &cld = itr.next();
-            blueprint::mesh::generate_index(cld,
-                                            ref_path,
-                                            num_domains,
-                                            curr_idx);
-            // add any new entries to the running index
-            index_out.update(curr_idx);
-        }
-    }
-    else
-    {
-        blueprint::mesh::generate_index(mesh,
-                                        ref_path,
-                                        num_domains,
-                                        index_out);
-    }
-}
-
-#ifdef ASCENT_MPI_ENABLED
-//-------------------------------------------------------------------------
-void
-mesh_bp_generate_index(const conduit::Node &mesh,
-                       const std::string &ref_path,
-                       Node &index_out,
-                       MPI_Comm comm)
-{
-    int par_rank = relay::mpi::rank(comm);
-    int par_size = relay::mpi::size(comm);
-
-    // we need a list of all possible topos, coordsets, etc
-    // for the blueprint index in the root file.
-    //
-    // across ranks, domains may be sparse
-    //  for example: a topo may only exist in one domain
-    // so we union all local mesh indices, and then
-    // se an all gather and union the results together
-    // to create an accurate global index.
-
-    index_t local_num_domains = blueprint::mesh::number_of_domains(mesh);
-    // note:
-    // find global # of domains w/o conduit_blueprint_mpi for now
-    // since we aren't yet linking conduit_blueprint_mpi
-    Node n_src, n_reduce;
-    n_src = local_num_domains;
-
-    mpi::sum_all_reduce(n_src,
-                        n_reduce,
-                        comm);
-
-    index_t global_num_domains = n_reduce.to_int();
-
-    index_out.reset();
-
-    Node local_idx, gather_idx;
-
-    if(local_num_domains > 0)
-    {
-        mesh_bp_generate_index(mesh,
-                               ref_path,
-                               global_num_domains,
-                               local_idx);
-    }
-
-    relay::mpi::all_gather_using_schema(local_idx,
-                                        gather_idx,
-                                        comm);
-
-    NodeConstIterator itr = gather_idx.children();
-    while(itr.has_next())
-    {
-        const Node &curr = itr.next();
-        index_out.update(curr);
-    }
-}
-
-#endif
-
-
+//-----------------------------------------------------------------------------
 //
 // recalculate cycle num so that we are consistent.
 // Assumes that domains are valid
 //
-void make_cycle_ids(conduit::Node &domains,
-                    const std::string &path)
+//-----------------------------------------------------------------------------
+void
+make_cycle_ids(conduit::Node &domains,
+               const std::string &path)
 {
     int num_local_domains = domains.number_of_children();
 
@@ -223,11 +134,14 @@ void make_cycle_ids(conduit::Node &domains,
     }
 }
 
+//-----------------------------------------------------------------------------
 //
 // recalculate domain ids so that we are consistent.
 // Assumes that domains are valid
 //
-void make_domain_ids(conduit::Node &domains)
+//-----------------------------------------------------------------------------
+void
+make_domain_ids(conduit::Node &domains)
 {
   int num_domains = domains.number_of_children();
 
@@ -259,6 +173,8 @@ void make_domain_ids(conduit::Node &domains)
     dom["state/domain_id"] = domain_offset + i;
   }
 }
+
+//-----------------------------------------------------------------------------
 //
 // This expects a single or multi_domain blueprint mesh and will iterate
 // through all domains to see if they are valid. Returns true
@@ -269,9 +185,11 @@ void make_domain_ids(conduit::Node &domains)
 // have no data left in a domain because of something like a
 // clip
 //
-bool clean_mesh(const conduit::Node &data,
-                const std::string &path, // used to imp unique cycle counter
-                conduit::Node &output)
+//-----------------------------------------------------------------------------
+bool
+clean_mesh(const conduit::Node &data,
+           const std::string &path, // used to imp unique cycle counter
+           conduit::Node &output)
 {
   output.reset();
   const int potential_doms = data.number_of_children();
@@ -318,9 +236,13 @@ bool clean_mesh(const conduit::Node &data,
   make_cycle_ids(output,path);
   return output.number_of_children() > 0;
 }
-// mfem needs these special fields so look for them
-void check_for_attributes(const conduit::Node &input,
-                          std::vector<std::string> &list)
+
+//-----------------------------------------------------------------------------
+// mfem needs special fields so look for them
+//-----------------------------------------------------------------------------
+void
+check_for_attributes(const conduit::Node &input,
+                     std::vector<std::string> &list)
 {
   const int num_doms = input.number_of_children();
   std::set<std::string> specials;
@@ -347,10 +269,12 @@ void check_for_attributes(const conduit::Node &input,
   }
 }
 
-void filter_fields(const conduit::Node &input,
-                   conduit::Node &output,
-                   std::vector<std::string> fields,
-                   flow::Graph &graph)
+//-----------------------------------------------------------------------------
+void
+filter_fields(const conduit::Node &input,
+              conduit::Node &output,
+              std::vector<std::string> fields,
+              flow::Graph &graph)
 {
   // assume this is multi-domain
   //
@@ -678,375 +602,7 @@ void mesh_blueprint_save(const Node &data,
 #endif
 
     return;
-//
-//     // setup the directory
-//     char fmt_buff[64] = {0};
-//     snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-//
-//     std::string output_base_path = path;
-//
-//     ostringstream oss;
-//     oss << output_base_path << ".cycle_" << fmt_buff;
-//     string output_dir  =  oss.str();
-//
-//     bool dir_ok = false;
-//
-//     // let rank zero handle dir creation
-//     if(par_rank == 0)
-//     {
-//         // check of the dir exists
-//         dir_ok = directory_exists(output_dir);
-//         if(!dir_ok)
-//         {
-//             // if not try to let rank zero create it
-//             dir_ok = create_directory(output_dir);
-//         }
-//     }
-//
-//     int global_num_domains = local_num_domains;
-//
-// #ifdef ASCENT_MPI_ENABLED
-//     // TODO:
-//     // This a reduce to check for an error ...
-//     // it will be a common pattern, how do we make this easy?
-//
-//     // use an mpi sum to check if the dir exists
-//     Node n_src, n_reduce;
-//
-//     if(dir_ok)
-//         n_src = (int)1;
-//     else
-//         n_src = (int)0;
-//
-//     mpi::sum_all_reduce(n_src,
-//                         n_reduce,
-//                         mpi_comm);
-//
-//     dir_ok = (n_reduce.as_int() == 1);
-//
-//     n_src = local_num_domains;
-//
-//     mpi::sum_all_reduce(n_src,
-//                         n_reduce,
-//                         mpi_comm);
-//
-//     global_num_domains = n_reduce.as_int();
-// #endif
-//
-//
-//     if(global_num_domains == 0)
-//     {
-//       if(par_rank == 0)
-//       {
-//           ASCENT_WARN("There no data to save. Doing nothing.");
-//       }
-//       return;
-//     }
-//
-//
-//     // zero or negative (default cases), use one file per domain
-//     if(num_files <= 0)
-//     {
-//         num_files = global_num_domains;
-//     }
-//
-//     // if global domains > num_files, warn and use one file per domain
-//     if(global_num_domains < num_files)
-//     {
-//         ASCENT_INFO("Requested more files than actual domains, "
-//                     "writing one file per domain");
-//         num_files = global_num_domains;
-//     }
-//
-//     if(!dir_ok)
-//     {
-//         ASCENT_ERROR("Error: failed to create directory " << output_dir);
-//     }
-//
-//     if(global_num_domains == num_files)
-//     {
-//         // write out each domain
-//         for(int i = 0; i < local_num_domains; ++i)
-//         {
-//             const Node &dom = multi_dom.child(i);
-//             uint64 domain = dom["state/domain_id"].to_uint64();
-//
-//             snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain);
-//             oss.str("");
-//             oss << "domain_" << fmt_buff << "." << file_protocol;
-//             string output_file  = conduit::utils::join_file_path(output_dir,oss.str());
-//             relay::io::save(dom, output_file);
-//         }
-//     }
-//     else // more complex case
-//     {
-//         //
-//         // recall: we have re-labeled domain ids from 0 - > N-1, however
-//         // some mpi tasks may have no data.
-//         //
-//
-//         // books we keep:
-//
-//         Node books;
-//         books["local_domain_to_file"].set(DataType::int32(local_num_domains));
-//         books["local_domain_status"].set(DataType::int32(local_num_domains));
-//         books["local_file_batons"].set(DataType::int32(num_files));
-//         books["global_file_batons"].set(DataType::int32(num_files));
-//
-//         // local # of domains
-//         int32_array local_domain_to_file = books["local_domain_to_file"].value();
-//         int32_array local_domain_status  = books["local_domain_status"].value();
-//         // num total files
-//         int32_array local_file_batons    = books["local_file_batons"].value();
-//         int32_array global_file_batons   = books["global_file_batons"].value();
-//
-//         Node d2f_map;
-//         gen_domain_to_file_map(global_num_domains,
-//                                num_files,
-//                                books);
-//
-//         int32_array global_d2f = books["global_domain_to_file"].value();
-//
-//         // init our local map and status array
-//         for(int d = 0; d < local_num_domains; ++d)
-//         {
-//             const Node &dom = multi_dom.child(d);
-//             uint64 domain = dom["state/domain_id"].to_uint64();
-//             // local domain index to file map
-//             local_domain_to_file[d] = global_d2f[domain];
-//             local_domain_status[d] = 1; // pending (1), vs done (0)
-//         }
-//
-//         //
-//         // Round and round we go, will we deadlock I believe no :-)
-//         //
-//         // Here is how this works:
-//         //  At each round, if a rank has domains pending to write to a file,
-//         //  we put the rank id in the local file_batons vec.
-//         //  This vec is then mpi max'ed, and the highest rank
-//         //  that needs access to each file will write this round.
-//         //
-//         //  When a rank does not need to write to a file, we
-//         //  put -1 for this rank.
-//         //
-//         //  During each round, max of # files writers are participating
-//         //
-//         //  We are done when the mpi max of the batons is -1 for all files.
-//         //
-//
-//         bool another_twirl = true;
-//         int twirls = 0;
-//         while(another_twirl)
-//         {
-//             // update baton requests
-//             for(int f = 0; f < num_files; ++f)
-//             {
-//                 for(int d = 0; d < local_num_domains; ++d)
-//                 {
-//                     if(local_domain_status[d] == 1)
-//                         local_file_batons[f] = par_rank;
-//                     else
-//                         local_file_batons[f] = -1;
-//                 }
-//             }
-//
-//             // mpi max file batons array
-//             #ifdef ASCENT_MPI_ENABLED
-//                 mpi::max_all_reduce(books["local_file_batons"],
-//                                     books["global_file_batons"],
-//                                     mpi_comm);
-//             #else
-//                 global_file_batons.set(local_file_batons);
-//             #endif
-//
-//             // we now have valid batons (global_file_batons)
-//             for(int f = 0; f < num_files; ++f)
-//             {
-//                 // check if this rank has the global baton for this file
-//                 if( global_file_batons[f] == par_rank )
-//                 {
-//                     // check the domains this rank has pending
-//                     for(int d = 0; d < local_num_domains; ++d)
-//                     {
-//                         // reuse this handle for all domains in the file
-//                         relay::io::IOHandle hnd;
-//                         if(local_domain_status[d] == 1 &&  // pending
-//                            local_domain_to_file[d] == f) // destined for this file
-//                         {
-//                             // now is the time to write!
-//                             // pattern is:
-//                             //  file_%06llu.{protocol}:/domain_%06llu/...
-//                             const Node &dom = multi_dom.child(d);
-//                             uint64 domain_id = dom["state/domain_id"].to_uint64();
-//                             // construct file name
-//                             snprintf(fmt_buff, sizeof(fmt_buff), "%06d",f);
-//                             oss.str("");
-//                             oss << "file_" << fmt_buff << "." << file_protocol;
-//                             std::string file_name = oss.str();
-//                             oss.str("");
-//                             // and now domain id
-//                             snprintf(fmt_buff, sizeof(fmt_buff), "%06llu",domain_id);
-//                             oss << "domain_" << fmt_buff;
-//
-//                             std::string path = oss.str();
-//                             string output_file = conduit::utils::join_file_path(output_dir,file_name);
-//
-//                             if(!hnd.is_open())
-//                             {
-//                                 hnd.open(output_file);
-//                             }
-//
-//                             hnd.write(dom,path);
-//                             ASCENT_INFO("rank " << par_rank << " output_file"
-//                                       << output_file << " path " << path);
-//
-//                             // update status, we are done with this doman
-//                             local_domain_status[d] = 0;
-//                         }
-//                     }
-//                 }
-//             }
-//
-//             // If you  need to debug the baton alog:
-//             // std::cout << "[" << par_rank << "] "
-//             //              << " twirls: " << twirls
-//             //              << " details\n"
-//             //              << books.to_yaml();
-//
-//             // check if we have another round
-//             // stop when all batons are -1
-//             another_twirl = false;
-//             for(int f = 0; f < num_files && !another_twirl; ++f)
-//             {
-//                 // if any entry is not -1, we still have more work to do
-//                 if(global_file_batons[f] != -1)
-//                 {
-//                     another_twirl = true;
-//                     twirls++;
-//                 }
-//             }
-//         }
-//     }
-//
-//     int root_file_writer = 0;
-//     if(local_num_domains == 0)
-//     {
-//       root_file_writer = -1;
-//     }
-// #ifdef ASCENT_MPI_ENABLED
-//     // Rank 0 could have an empty domain, so we have to check
-//     // to find someone with a data set to write out the root file.
-//     Node out;
-//     out = local_num_domains;
-//     Node rcv;
-//
-//     mpi::all_gather_using_schema(out, rcv, mpi_comm);
-//     root_file_writer = -1;
-//     int* res_ptr = (int*)rcv.data_ptr();
-//     for(int i = 0; i < par_size; ++i)
-//     {
-//         if(res_ptr[i] != 0)
-//         {
-//             root_file_writer = i;
-//             break;
-//         }
-//     }
-//
-//     MPI_Barrier(mpi_comm);
-// #endif
-//
-//     if(root_file_writer == -1)
-//     {
-//         // this should not happen. global doms is already 0
-//         ASCENT_WARN("Relay: there are no domains to write out");
-//     }
-//
-//     snprintf(fmt_buff, sizeof(fmt_buff), "%06d",cycle);
-//
-//     oss.str("");
-//     oss << path
-//         << ".cycle_"
-//         << fmt_buff
-//         << ".root";
-//
-//     string root_file = oss.str();
-//
-//     // return this via out var
-//     root_file_out = root_file;
-//
-//     // --------
-//     // create blueprint index
-//     // --------
-//
-//     // all ranks participate in the index gen
-//     Node bp_idx;
-// #ifdef ASCENT_MPI_ENABLED
-//         // mpi tasks may have diff fields, topos, etc
-//         //
-//         detail::mesh_bp_generate_index(multi_dom,
-//                                        "",
-//                                        bp_idx["mesh"],
-//                                        mpi_comm);
-// #else
-//         detail::mesh_bp_generate_index(multi_dom,
-//                                        "",
-//                                        global_num_domains,
-//                                        bp_idx["mesh"]);
-// #endif
-//
-//     // let selected rank write out the root file
-//     if(par_rank == root_file_writer)
-//     {
-//         string output_dir_base, output_dir_path;
-//
-//         // TODO: Fix for windows
-//         conduit::utils::rsplit_string(output_dir,
-//                                       "/",
-//                                       output_dir_base,
-//                                       output_dir_path);
-//
-//         string output_tree_pattern;
-//         string output_file_pattern;
-//
-//         if(global_num_domains == num_files)
-//         {
-//             output_tree_pattern = "/";
-//             output_file_pattern = conduit::utils::join_file_path(output_dir_base,
-//                                                                  "domain_%06d." + file_protocol);
-//         }
-//         else
-//         {
-//             output_tree_pattern = "/domain_%06d";
-//             output_file_pattern = conduit::utils::join_file_path(output_dir_base,
-//                                                                  "file_%06d." + file_protocol);
-//         }
-//
-//
-//         Node root;
-//         root["blueprint_index"] = bp_idx;
-//
-//         // work around conduit and manually add state fields
-//         if(multi_dom.child(0).has_path("state/cycle"))
-//         {
-//           bp_idx["mesh/state/cycle"] = multi_dom.child(0)["state/cycle"].to_int32();
-//         }
-//
-//         if(multi_dom.child(0).has_path("state/time"))
-//         {
-//           bp_idx["mesh/state/time"] = multi_dom.child(0)["state/time"].to_double();
-//         }
-//
-//         root["protocol/name"]    = file_protocol;
-//         root["protocol/version"] = "0.6.0";
-//
-//         root["number_of_files"]  = num_files;
-//         root["number_of_trees"]  = global_num_domains;
-//         // TODO: make sure this is relative
-//         root["file_pattern"]     = output_file_pattern;
-//         root["tree_pattern"]     = output_tree_pattern;
-//
-//         relay::io::save(root,root_file,file_protocol);
-//     }
+
 }
 
 
