@@ -25,8 +25,9 @@ def gen_lic_hpp(lic_file,hpp_out):
     # write the lic prelude, then create var to use in c++
     hpp_f = open(hpp_out,"w")
     hpp_f.write(pattern["hdr"])
-    for l in lic_txt:
-        hpp_f.write("%s%s" % (pattern["st"],l))
+    hpp_f.write("// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent\n")
+    hpp_f.write("// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and\n")
+    hpp_f.write("// other details. No copyright assignment is required to contribute to Ascent.\n")
     hpp_f.write(pattern["hdr"])
     hpp_f.write("\n")
     hpp_f.write("#ifndef ASCENT_LICENSE_TEXT_HPP\n")

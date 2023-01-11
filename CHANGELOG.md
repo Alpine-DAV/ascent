@@ -5,13 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
+## [0.9.0] - Released 2023-01-12
 
-### Preferred dependency versions for ascent@develop
-- conduit@0.8.4
+### Preferred dependency versions for ascent@0.9.0
+- conduit@0.8.6
 - vtk-m@1.9.0
 
 ### Added
+- Added support for HIP and running on AMD GPUs
+- Added RAJA expressions infrastructure
 - Added pipeline `partition` transform from Conduit Blueprint
 - Added extract `flatten` from Conduit Blueprint
 - Added Log base 10 filter. Filter type is `log10`
@@ -167,7 +169,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.9.0...HEAD
+[0.8.0]: https://github.com/Alpine-DAV/ascent/compare/v0.8.0...v0.9.0
+[0.7.1]: https://github.com/Alpine-DAV/ascent/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
