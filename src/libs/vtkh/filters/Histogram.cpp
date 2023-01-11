@@ -2,10 +2,7 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
-
-//TODO: Header for new Histogram filter
-//#include <vtkm/filter/density_estimate/Histogram.h>
-#include <vtkm/filter/density_estimate/worklet/FieldHistogram.h>
+#include <vtkh/vtkm_filters/vtkmHistogram.hpp>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -17,28 +14,28 @@ namespace vtkh
 namespace detail
 {
 
-struct HistoFunctor
-{
-
-  vtkm::Range m_range;
-  vtkm::Id m_num_bins;
-
-  vtkm::cont::ArrayHandle<vtkm::Id> m_bins;
-  vtkm::Float64 m_bin_delta;
-
-  template<typename T, typename S>
-  void operator()(const vtkm::cont::ArrayHandle<T,S> &array)
-  {
-    T bin_delta;
-    T min_range = static_cast<T>(m_range.Min);
-    T max_range = static_cast<T>(m_range.Max);
-
-    //TODO:Rewrite using vtkm::filter::density_estimate::Histogram
-    vtkm::worklet::FieldHistogram worklet;
-    worklet.Run(array,m_num_bins,min_range,max_range,bin_delta,m_bins);
-    m_bin_delta = static_cast<vtkm::Float64>(bin_delta);
-  }
-};
+//struct HistoFunctor
+//{
+//
+//  vtkm::Range m_range;
+//  vtkm::Id m_num_bins;
+//
+//  vtkm::cont::ArrayHandle<vtkm::Id> m_bins;
+//  vtkm::Float64 m_bin_delta;
+//
+//  template<typename T, typename S>
+//  void operator()(const vtkm::cont::ArrayHandle<T,S> &array)
+//  {
+//    T bin_delta;
+//    T min_range = static_cast<T>(m_range.Min);
+//    T max_range = static_cast<T>(m_range.Max);
+//
+//    //TODO:Rewrite using vtkm::filter::density_estimate::Histogram
+//    vtkm::worklet::FieldHistogram worklet;
+//    worklet.Run(array,m_num_bins,min_range,max_range,bin_delta,m_bins);
+//    m_bin_delta = static_cast<vtkm::Float64>(bin_delta);
+//  }
+//};
 
 template<typename T>
 void reduce(T *array, int size);
@@ -168,6 +165,8 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
 
   const int num_domains = data_set.GetNumberOfDomains();
   std::vector<HistogramResult> local_histograms;
+  vtkm::cont::PartitionedDataSet p_dataset;
+
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::Id domain_id;
@@ -176,22 +175,15 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
     if(!dom.HasField(field_name)) continue;
 
     vtkm::cont::Field field = dom.GetField(field_name);
-
-    detail::HistoFunctor hist;
-    hist.m_num_bins = m_num_bins;
-    hist.m_range = range;
-
-    field.GetData().ResetTypes(vtkm::TypeListFieldScalar(), VTKM_DEFAULT_STORAGE_LIST{}).CastAndCall(hist);
-    HistogramResult dom_hist;
-    dom_hist.m_bins = hist.m_bins;
-    dom_hist.m_bin_delta = hist.m_bin_delta;
-    dom_hist.m_range = range;
-    local_histograms.push_back(dom_hist);
+    p_dataset.AddField(field);
   }
 
-  HistogramResult local = merge_histograms(local_histograms);
-  vtkm::Id * bin_ptr = GetVTKMPointer(local.m_bins);
-  detail::reduce(bin_ptr, m_num_bins);
+  vtkmHistogram hist;
+  auto result = hist.Run(p_dataset, m_num_bins, range);
+
+  //HistogramResult local = merge_histograms(local_histograms);
+  //vtkm::Id * bin_ptr = GetVTKMPointer(local.m_bins);
+  //detail::reduce(bin_ptr, m_num_bins);
 
   VTKH_DATA_CLOSE();
   return local;
