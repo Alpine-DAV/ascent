@@ -73,6 +73,27 @@ if(ENABLE_MPI)
             set(ascent_blt_mpi_deps "" CACHE STRING "")
         endif()
     endif()
+    #
+    # In some cases (mpich?) -fallow-argument-mismatch will be 
+    # reported as a needed MPI flag for fortran.
+    # BLT fuses all MPI compiler flags into one big bunch.
+    # (It does not differentiate between C and fortran flags)
+    #
+    # -fallow-argument-mismatch is a fortran compiler flag that makes clang
+    # very unhappy, and this will cause blt's mpi smoke test to fail to build
+    # with clang. 
+    #
+    # Conduit does not use mpi fortran, so we strip this flag if it exists.
+    #
+    # blt's mpi target is called "mpi" 
+    if(TARGET mpi)
+    # check and strip interface compile opts
+        get_target_property(_mpi_iface_compile_opts mpi INTERFACE_COMPILE_OPTIONS)
+        if(_mpi_iface_compile_opts)
+            list(REMOVE_ITEM _mpi_iface_compile_opts "-fallow-argument-mismatch")
+            set_target_properties(mpi PROPERTIES INTERFACE_COMPILE_OPTIONS "${_mpi_iface_compile_opts}")
+        endif()
+    endif()
 endif()
 
 
