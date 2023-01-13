@@ -11,6 +11,6 @@ export FTN=$(which ftn)
 export CFLAGS="-I${ROCM_PATH}/include"
 export CXXFLAGS="-I${ROCM_PATH}/include -Wno-pass-failed"
 export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64"
-env enable_mpi=ON ./build_ascent_hip.sh
+env enable_mpi=ON enable_find_mpi=OFF ./build_ascent_hip.sh
 
 
