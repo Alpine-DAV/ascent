@@ -603,7 +603,7 @@ stages:
              cd install/examples/ascent/using-with-cmake
              ${CMAKE_EXE} . -B build
              ${CMAKE_EXE} --build build
-         displayName: 'Test vs Install (using-with-cmake) [build only]'
+        displayName: 'Test vs Install (using-with-cmake) [build only]'
 
       - script: |
           ###########################
