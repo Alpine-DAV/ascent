@@ -111,7 +111,7 @@ echo "**** Configuring Conduit ${conduit_version}"
 cmake -S ${conduit_src_dir} -B ${conduit_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DCMAKE_BUILD_SHARED_LIBS=${build_shared_libs} \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DCMAKE_INSTALL_PREFIX=${conduit_install_dir} \
   -DENABLE_FORTRAN=${enable_fortran} \
   -DENABLE_MPI=${enable_mpi} \
@@ -166,7 +166,7 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
   -DVTKm_ENABLE_MPI=OFF \
   -DVTKm_ENABLE_CUDA=ON \
   -DCMAKE_CUDA_HOST_COMPILER=${CXX}\
-  -DVTKm_CUDA_Architecture=${CUDA_ARCH_VTKM} \
+  -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
 echo "**** Building VTK-m ${vtkm_version}"

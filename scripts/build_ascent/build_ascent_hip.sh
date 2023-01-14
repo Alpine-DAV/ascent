@@ -111,7 +111,7 @@ echo "**** Configuring Conduit ${conduit_version}"
 cmake -S ${conduit_src_dir} -B ${conduit_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DCMAKE_BUILD_SHARED_LIBS=${build_shared_libs} \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DCMAKE_INSTALL_PREFIX=${conduit_install_dir} \
   -DENABLE_FORTRAN=${enable_fortran} \
   -DENABLE_MPI=${enable_mpi} \
