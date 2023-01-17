@@ -42,6 +42,11 @@ if(PYTHON_FOUND)
     endforeach()
 endif()
 
+# builtin var for shared libs
+if(BUILD_SHARED_LIBS)
+    set(ASCENT_BUILD_SHARED_LIBS TRUE)
+endif()
+
 # builtin libs vars for config.mk gen
 if(ENABLE_APCOMP)
     set(ASCENT_APCOMP_ENABLED TRUE)
