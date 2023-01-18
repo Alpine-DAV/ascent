@@ -87,6 +87,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics
                t_ascent_mpi_multi_topo
+               t_ascent_mpi_mfem_dist_example
                t_ascent_mpi_slice)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
@@ -158,6 +159,12 @@ if(MPI_FOUND AND ENABLE_MPI)
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi)
     endforeach()
+
+    # foreach(TEST ${MPI_4RANK_TESTS})
+    #     # this uses 2 procs
+    #     add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 4 DEPENDS_ON ascent_mpi)
+    # endforeach()
+
 
     # add the hola mpi test which uses 8 ranks
     add_cpp_mpi_test(TEST t_ascent_hola_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
