@@ -663,12 +663,12 @@ and the resulting vector field will be a float64.
 
   conduit::Node pipelines;
   // pipeline 1
-  pipelines["pl1/f1/type"] = "vector_component";
+  pipelines["pl1/f1/type"] = "composite_vector";
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field1"] = "pressure";      // (required)
-  params["field1"] = "temperature";   // (required)
-  params["field1"] = "bananas";       // (optional, 2D vector if not present)
+  params["field2"] = "temperature";   // (required)
+  params["field3"] = "bananas";       // (optional, 2D vector if not present)
   params["output_name"] = "my_vec";   // (required) name of the output field
   params["component"] = 0; // (required) index of the component
 
