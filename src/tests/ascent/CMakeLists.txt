@@ -160,10 +160,11 @@ if(MPI_FOUND AND ENABLE_MPI)
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi)
     endforeach()
 
-    # foreach(TEST ${MPI_4RANK_TESTS})
-    #     # this uses 2 procs
-    #     add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 4 DEPENDS_ON ascent_mpi)
-    # endforeach()
+    #foreach(TEST ${MPI_4RANK_TESTS})
+        # this uses 2 procs
+        add_cpp_mpi_test(TEST t_ascent_mpi_mfem_dist_example_r4 NUM_MPI_TASKS 4 DEPENDS_ON ascent_mpi)
+        add_cpp_mpi_test(TEST t_ascent_mpi_mfem_dist_example_r4_parmesh NUM_MPI_TASKS 4 DEPENDS_ON ascent_mpi)
+    #endforeach()
 
 
     # add the hola mpi test which uses 8 ranks
