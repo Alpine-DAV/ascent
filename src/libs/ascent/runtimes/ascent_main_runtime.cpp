@@ -225,18 +225,34 @@ AscentRuntime::Initialize(const conduit::Node &options)
 // allocator id setup
 //
 
-int host_alloc_id   = -1;
-int device_alloc_id = -1;
+    int host_alloc_id   = -1;
+    int device_alloc_id = -1;
 
-if(options.has_child("host_allocator_id"))
-{
-    host_alloc_id = options["host_allocator_id"].to_int();
-}
+    if(options.has_child("host_allocator_id"))
+    {
+        host_alloc_id = options["host_allocator_id"].to_int();
+    }
 
-if(options.has_child("device_allocator_id"))
-{
-    device_alloc_id = options["device_allocator_id"].to_int();
-}
+    if(options.has_child("device_allocator_id"))
+    {
+        device_alloc_id = options["device_allocator_id"].to_int();
+    }
+
+    if( host_alloc_id != -1 )
+    {
+        if(!ascent::AllocationManager::set_host_allocator_id(host_alloc_id) )
+        {
+            ASCENT_ERROR("Error setting host allocator id to " << host_alloc_id);
+        }
+    }
+
+    if( device_alloc_id != -1 )
+    {
+        if(!ascent::AllocationManager::set_device_allocator_id(device_alloc_id) )
+        {
+            ASCENT_ERROR("Error setting device allocator id to " << device_alloc_id);
+        }
+    }
 
     #if defined(ASCENT_DRAY_ENABLED)
         // set devil dray allocator ids to be the same as those used by ascent
