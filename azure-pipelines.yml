@@ -11,8 +11,7 @@
 variables:
   ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2023-01-12-sha2d3c54
   ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2023-01-12-sha2d3c54
-  #  TODO - on hold until we get spack working on 22.04
-  #ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls
+  ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls_2023-01-26-shae01268
   ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2023-01-12-sha2d3c54
   ubuntu_18_04_cuda_11_4_0_build_ascent_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls-build-ascent_2023-01-14-sha8a3e2d
   ubuntu_20_04_rocm_5_1_3_tag: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel-tpls_2023-01-12-sha6036f9
@@ -80,6 +79,25 @@ stages:
 
         ubuntu_18.04_shared_py_cxx14:
           containerImage: ${{ variables.ubuntu_18_04_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
+          ENABLE_APCOMP: ON
+          ENABLE_DRAY: ON
+          ENABLE_DRAY_DOUBLE: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++14
+
+        ubuntu_22.04_shared_py_cxx14:
+          containerImage: ${{ variables.ubuntu_22_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON

@@ -2,7 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM alpinedav/ascent-ci:ubuntu-20.04-devel
+FROM alpinedav/ascent-ci:ubuntu-22.04-devel
 
 # nodejs is needed by jupyterlab for widgets
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
