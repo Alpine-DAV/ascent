@@ -315,7 +315,7 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
   conduit::Node pipelines;
   pipelines["pl1/f1/type"] = "auto_slice";
 
-  // filter knobs (all these are optional)
+  // filter knobs (not optional)
   conduit::Node &slice_params = pipelines["pl1/f1/params"];
   slice_params["normal/x"] = 0.f;   
   slice_params["normal/y"] = 0.f;   
@@ -337,7 +337,7 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
   conduit::Node pipelines;
   pipelines["pl1/f1/type"] = "auto_slice";
 
-  // filter knobs (all these are optional)
+  // filter knobs (not optional)
   conduit::Node &slice_params = pipelines["pl1/f1/params"];
   slice_params["normal/x"] = 1.f;   
   slice_params["normal/y"] = 0.f;   
@@ -369,7 +369,7 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
   conduit::Node pipelines;
   pipelines["pl1/f1/type"] = "auto_slice";
 
-  // filter knobs (all these are optional)
+  // filter knobs (not optional)
   conduit::Node &slice_params = pipelines["pl1/f1/params"];
   slice_params["normal/x"] = 0.f;   
   slice_params["normal/y"] = 1.f;   
@@ -401,7 +401,7 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
   conduit::Node pipelines;
   pipelines["pl1/f1/type"] = "auto_slice";
 
-  // filter knobs (all these are optional)
+  // filter knobs (not optional)
   conduit::Node &slice_params = pipelines["pl1/f1/params"];
   slice_params["normal/x"] = 1.f;   
   slice_params["normal/y"] = 1.f;   
@@ -431,7 +431,7 @@ Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down th
     An example image of the automatic slice filter using the previous code sample. 
     This example uses a normal that points in the xy-direction, meaning the angle camera needs to be adjusted using both the azimuth and elevation.
 
-:numref:`Figures %s <autoslicefig>`, :numref:`%s <autoslice2fig>` , :numref: `%s <autoslice3fig>` , and :numref:`%s <autoslice4fig>` show images produced from the automatic slice filter.
+:numref:`Figures %s <autoslicefig>`, :numref:`%s <autoslice2fig>` , :numref:`%s <autoslice3fig>` , and :numref:`%s <autoslice4fig>` show images produced from the automatic slice filter.
 The full example is located in the file `slice test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_slice.cpp>`_.
 
 Clip
@@ -663,12 +663,12 @@ and the resulting vector field will be a float64.
 
   conduit::Node pipelines;
   // pipeline 1
-  pipelines["pl1/f1/type"] = "vector_component";
+  pipelines["pl1/f1/type"] = "composite_vector";
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field1"] = "pressure";      // (required)
-  params["field1"] = "temperature";   // (required)
-  params["field1"] = "bananas";       // (optional, 2D vector if not present)
+  params["field2"] = "temperature";   // (required)
+  params["field3"] = "bananas";       // (optional, 2D vector if not present)
   params["output_name"] = "my_vec";   // (required) name of the output field
   params["component"] = 0; // (required) index of the component
 
