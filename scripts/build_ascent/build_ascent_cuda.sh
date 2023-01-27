@@ -256,7 +256,8 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DRAJA_ENABLE_TESTS=${enable_tests} \
   -DENABLE_EXAMPLES=${enable_tests} \
   -DENABLE_EXERCISES=${enable_tests} \
-  -DCMAKE_INSTALL_PREFIX=${raja_install_dir}  
+  -DRAJA_ENABLE_VECTORIZATION=OFF \
+  -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
   
 
 echo "**** Building RAJA ${raja_version}"
