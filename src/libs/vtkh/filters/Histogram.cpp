@@ -3,6 +3,7 @@
 #include <vtkh/Logger.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/vtkm_filters/vtkmHistogram.hpp>
+#include <vtkm/cont/PartitionedDataSet.h>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -127,25 +128,40 @@ Histogram::merge_histograms(std::vector<Histogram::HistogramResult> &histograms)
   return res;
 }
 
-Histogram::HistogramResult
-Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
+void 
+Histogram::PreExecute()
+{
+  Filter::PreExecute();
+}
+
+
+void 
+Histogram::PostExecute()
+{
+  Filter::PostExecute();
+}
+
+void 
+Histogram::DoExecute()
 {
   VTKH_DATA_OPEN("histogram");
   VTKH_DATA_ADD("device", GetCurrentDevice());
   VTKH_DATA_ADD("bins", m_num_bins);
-  VTKH_DATA_ADD("input_cells", data_set.GetNumberOfCells());
-  VTKH_DATA_ADD("input_domains", data_set.GetNumberOfDomains());
+  VTKH_DATA_ADD("input_cells", this->m_input->GetNumberOfCells());
+  VTKH_DATA_ADD("input_domains", this->m_input->GetNumberOfDomains());
 
-  if(!data_set.GetGlobalNumberOfDomains())
+  const int global_domains = this->m_input->GetGlobalNumberOfDomains();
+  if(global_domains == 0)
   {
     throw Error("Histogram: can't run since there is no data!");
   }
 
-  if(!data_set.GlobalFieldExists(field_name))
+  if(!this->m_input->GlobalFieldExists(m_field_name))
   {
     throw Error("Histogram: field '"+field_name+"' does not exist");
   }
 
+  this->m_output = new DataSet();
 
   vtkm::Range range;
   if(m_range.IsNonEmpty())
@@ -154,7 +170,7 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
   }
   else
   {
-    vtkm::cont::ArrayHandle<vtkm::Range> ranges = data_set.GetGlobalRange(field_name);
+    vtkm::cont::ArrayHandle<vtkm::Range> ranges = this->m_input->GetGlobalRange(field_name);
 
     if(ranges.GetNumberOfValues() != 1)
     {
@@ -163,7 +179,7 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
     range = ranges.ReadPortal().Get(0);
   }
 
-  const int num_domains = data_set.GetNumberOfDomains();
+  const int num_domains = this->m_input->GetNumberOfDomains();
   std::vector<HistogramResult> local_histograms;
   vtkm::cont::PartitionedDataSet p_dataset;
 
@@ -171,7 +187,7 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
   {
     vtkm::Id domain_id;
     vtkm::cont::DataSet dom;
-    data_set.GetDomain(i, dom, domain_id);
+    this->m_input->GetDomain(i, dom, domain_id);
     if(!dom.HasField(field_name)) continue;
 
     vtkm::cont::Field field = dom.GetField(field_name);
@@ -181,43 +197,21 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
   vtkmHistogram hist;
   auto result = hist.Run(p_dataset, m_num_bins, range);
 
-  //HistogramResult local = merge_histograms(local_histograms);
-  //vtkm::Id * bin_ptr = GetVTKMPointer(local.m_bins);
-  //detail::reduce(bin_ptr, m_num_bins);
+  std::vector<vtkm::cont::DataSet> v_datasets = result.GetPartitions();
+  int size = v_datasets.size();
+  for(int i  = 0; i < size; i++)
+  {
+    this->m_output.AddDomain(v_datasets[i],i);
+  }
+  
 
   VTKH_DATA_CLOSE();
-  return local;
 }
 
-void
-Histogram::HistogramResult::Print(std::ostream &out)
+std::string
+Histogram::GetName() const
 {
-  auto binPortal = m_bins.ReadPortal();
-  const int num_bins = m_bins.GetNumberOfValues();
-  vtkm::Id sum = 0;
-  for (vtkm::Id i = 0; i < num_bins; i++)
-  {
-    vtkm::Float64 lo = m_range.Min + (static_cast<vtkm::Float64>(i) * m_bin_delta);
-    vtkm::Float64 hi = lo + m_bin_delta;
-    sum += binPortal.Get(i);
-    out << " Bin [" << i << "] Range[" << lo
-        << ", " << hi << "] = " << binPortal.Get(i)
-        << "\n";
-  }
-  out<<"total points: "<<sum<<"\n";
-}
-
-vtkm::Id
-Histogram::HistogramResult::totalCount()
-{
-  auto binPortal = m_bins.ReadPortal();
-  const int num_bins = m_bins.GetNumberOfValues();
-  vtkm::Id sum = 0;
-  for (vtkm::Id i = 0; i < num_bins; i++)
-  {
-    sum += binPortal.Get(i);
-  }
-  return sum;
+  return "vtkh::Histogram";
 }
 
 } //  namespace vtkh

@@ -3,8 +3,8 @@
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmHistogram::Run(vtkm::cont::Field &f_input,
+vtkm::cont::PartitionedDataSet
+vtkmHistogram::Run(vtkm::cont::PartitionedDataSet &p_input,
               vtkm::Id num_bins,
 	      vtkm::Range range)
 {
@@ -13,10 +13,7 @@ vtkmHistogram::Run(vtkm::cont::Field &f_input,
   hist.SetNumberOfBins(num_bins);
   hist.SetRange(range);
 
-  vtkm::cont::DataSet d_input;
-  d_input.AddField(f_input);
-
-  auto output = hist.Execute(d_input);
+  auto output = hist.Execute(p_input);
   return output;
 }
 

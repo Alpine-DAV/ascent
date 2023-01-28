@@ -1,7 +1,7 @@
 #ifndef VTK_H_VTKM_CLIP_HPP
 #define VTK_H_VTKM_CLIP_HPP
 
-#include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/PartitionedDataSet.h>
 
 namespace vtkh
 {
@@ -9,7 +9,7 @@ namespace vtkh
 class vtkmHistogram
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::Field &input,
+  vtkm::cont::PartitionedDataSet Run(vtkm::cont::PartitionedDataSet &p_input,
                           vtkm::Id num_bins,
 			  vtkm::Range range);
 };
