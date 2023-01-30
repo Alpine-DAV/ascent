@@ -7,12 +7,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_png_exports.h
+/// file: ascent_png_utils_exports.h
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_PNG_EXPORTS_H
-#define ASCENT_PNG_EXPORTS_H
+#ifndef ASCENT_PNG_UTILS_EXPORTS_H
+#define ASCENT_PNG_UTILS_EXPORTS_H
 
 //-----------------------------------------------------------------------------
 // -- define proper lib exports for various platforms --
