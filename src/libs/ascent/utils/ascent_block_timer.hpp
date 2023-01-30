@@ -16,11 +16,11 @@
 #define ASCENT_BLOCK_TIMER(NAME) ascent::BlockTimer ASCENT_BLOCK_TIMER_##NAME(#NAME);
 #define MAX_DEPTH 5
 
-#include<sys/time.h>
 #include <string>
 #include <map>
 #include <set>
 #include <cstdlib>
+#include <chrono>
 
 #include <conduit.hpp>
 #include <ascent_config.h>
@@ -35,6 +35,8 @@ namespace ascent
 //-----------------------------------------------------------------------------
 class ASCENT_API BlockTimer
 {
+    using std::chrono::high_resolution_clock::time_point = time_point;
+    using std::chrono::high_resolution_clock = high_resolution_clock;
 public:
     // methods
     BlockTimer(const std::string &name);
@@ -82,12 +84,12 @@ private:
                               double [][3],
                               std::string);
     // static data members
-    static conduit::Node                  s_global_root;
-    static int                            s_rank; // MPI rank
-    static int                            s_global_depth;
-    static std::string                    s_current_path;
-    static std::map<std::string, timeval> s_timers;
-    static std::set<std::string>          s_visited;
+    static conduit::Node                     s_global_root;
+    static int                               s_rank; // MPI rank
+    static int                               s_global_depth;
+    static std::string                       s_current_path;
+    static std::map<std::string, time_point> s_timers;
+    static std::set<std::string>             s_visited;
 
 };
 
