@@ -30,7 +30,7 @@
 #include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_resources.hpp>
-#include <ascent_png_encoder.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 

@@ -12,7 +12,7 @@
 #ifndef ASCENT_PNG_DECODER_HPP
 #define ASCENT_PNG_DECODER_HPP
 
-#include <ascent_png_utils_exports.h>
+#include <png_utils/ascent_png_utils_exports.h>
 
 #include <string>
 
