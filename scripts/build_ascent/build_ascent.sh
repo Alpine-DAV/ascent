@@ -233,13 +233,13 @@ echo "**** Configuring RAJA ${raja_version}"
 cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DBUILD_SHARED_LIBS=${build_shared_libs} \
+  -DBUILD_SHARED_LIBS=ON \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=${enable_tests} \
-  -DRAJA_ENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} \
-  -DENABLE_EXERCISES=${enable_tests} \
+  -DENABLE_TESTS=OFF \
+  -DRAJA_ENABLE_TESTS=OFF \
+  -DENABLE_EXAMPLES=OFF \
+  -DENABLE_EXERCISES=OFF \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
 
 echo "**** Building RAJA ${raja_version}"
@@ -277,7 +277,13 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=${enable_tests} \
+  -DENABLE_TESTS=OFF  \
+  -DUMPIRE_ENABLE_TOOLS=Off \
+  -DUMPIRE_ENABLE_BENCHMARKS=Off \
+  -DBLT_CXX_STD="" \
+  -DCMAKE_CXX_STANDARD=17 \
+  -DUMPIRE_ENABLE_FILESYSTEM=On \
+  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On \
   -DCMAKE_INSTALL_PREFIX=${umpire_install_dir}
 
 echo "**** Building Umpire ${umpire_version}"
@@ -314,6 +320,7 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DMFEM_USE_CONDUIT=ON \
+  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON \
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
   -DCMAKE_INSTALL_PREFIX=${mfem_install_dir}
 
