@@ -32,9 +32,34 @@ public:
     void           Encode(const unsigned char *rgba_in,
                           const int width,
                           const int height);
+
     void           Encode(const float *rgba_in,
                           const int width,
                           const int height);
+
+   void            Encode(const double *rgba_in,
+                          const int width,
+                          const int height);
+
+    void           EncodeChannel(const float *buffer_in,
+                                 const int width,
+                                 const int height);
+
+    void           EncodeChannel(const double *buffer_in,
+                                 const int width,
+                                 const int height);
+
+    // TODO ENCODE CHANNEL WITH COMMENTS
+    void           Encode(const unsigned char *rgba_in,
+                          const int width,
+                          const int height,
+                          const std::vector<std::string> &comments);
+
+    void           Encode(const float *rgba_in,
+                          const int width,
+                          const int height,
+                          const std::vector<std::string> &comments);
+
     void           Save(const std::string &filename);
 
     void          *PngBuffer();
