@@ -6,13 +6,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_png_encoder.hpp
+/// file: ascent_png_decoder.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_PNG_ENCODER_HPP
-#define ASCENT_PNG_ENCODER_HPP
+#ifndef ASCENT_PNG_DECODER_HPP
+#define ASCENT_PNG_DECODER_HPP
 
-#include <conduit.hpp>
+#include <ascent_png_utils_exports.h>
+
 #include <string>
 
 //-----------------------------------------------------------------------------
@@ -21,32 +22,16 @@
 namespace ascent
 {
 
-class PNGEncoder
+class ASCENT_API PNGDecoder
 {
 public:
-    PNGEncoder();
-    ~PNGEncoder();
-
-    void           Encode(const unsigned char *rgba_in,
-                          const int width,
-                          const int height);
-    void           Encode(const float *rgba_in,
-                          const int width,
-                          const int height);
-    void           Save(const std::string &filename);
-
-    void          *PngBuffer();
-    size_t         PngBufferSize();
-
-    void           Base64Encode();
-    conduit::Node &Base64Node();
-
-    void           Cleanup();
-
-private:
-    unsigned char *m_buffer;
-    size_t         m_buffer_size;
-    conduit::Node  m_base64_data;
+    PNGDecoder();
+    ~PNGDecoder();
+    // rgba
+    void Decode(unsigned char *&rgba,
+                int &width,
+                int &height,
+                const std::string &file_name);
 };
 
 //-----------------------------------------------------------------------------

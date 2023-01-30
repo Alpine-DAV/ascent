@@ -12,12 +12,13 @@
 
 #include "ascent_png_decoder.hpp"
 
-#include "ascent_logging.hpp"
+
 
 // standard includes
 #include <stdlib.h>
 
 // thirdparty includes
+#include <conduit.hpp>
 #include <lodepng.h>
 
 using namespace conduit;
@@ -52,7 +53,7 @@ PNGDecoder::Decode(unsigned char *&rgba,
 
   if(res)
   {
-    ASCENT_ERROR("Error decoding png "<<file_name<<"  code "<<res);
+    CONDUIT_ERROR("Error decoding png "<<file_name<<"  code "<<res);
   }
 }
 

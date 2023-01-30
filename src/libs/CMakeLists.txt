@@ -29,6 +29,10 @@ else()
 endif()
 
 
+# ascent_png_utils object lib
+# shared for testing of all libs
+add_subdirectory(png_utils)
+
 ################################
 # Add ap comp
 ################################

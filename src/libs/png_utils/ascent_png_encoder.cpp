@@ -12,12 +12,11 @@
 
 #include "ascent_png_encoder.hpp"
 
-#include "ascent_logging.hpp"
-
 // standard includes
 #include <stdlib.h>
 
 // thirdparty includes
+#include <conduit.hpp>
 #include <lodepng.h>
 
 using namespace conduit;
@@ -70,7 +69,7 @@ PNGEncoder::Encode(const unsigned char *rgba_in,
 
     if(error)
     {
-        ASCENT_WARN("lodepng_encode_memory failed")
+        CONDUIT_WARN("lodepng_encode_memory failed")
     }
 }
 
@@ -113,7 +112,7 @@ PNGEncoder::Encode(const float *rgba_in,
 
     if(error)
     {
-        ASCENT_WARN("lodepng_encode_memory failed")
+        CONDUIT_WARN("lodepng_encode_memory failed")
     }
 }
 
@@ -123,7 +122,7 @@ PNGEncoder::Save(const std::string &filename)
 {
     if(m_buffer == NULL)
     {
-        ASCENT_WARN("Save must be called after encode()")
+        CONDUIT_WARN("Save must be called after encode()")
         /// we have a problem ...!
         return;
     }
@@ -133,7 +132,7 @@ PNGEncoder::Save(const std::string &filename)
                                        filename.c_str());
     if(error)
     {
-        ASCENT_WARN("Error saving PNG buffer to file: " << filename);
+        CONDUIT_WARN("Error saving PNG buffer to file: " << filename);
     }
 }
 
@@ -157,7 +156,7 @@ PNGEncoder::Base64Encode()
 {
     if(m_buffer == NULL)
     {
-        ASCENT_WARN("base64_encode must be called after encode()")
+        CONDUIT_WARN("base64_encode must be called after encode()")
         return;
     }
 
