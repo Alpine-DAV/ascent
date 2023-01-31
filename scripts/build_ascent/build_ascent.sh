@@ -244,7 +244,7 @@ echo "**** Configuring RAJA ${raja_version}"
 cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DBUILD_SHARED_LIBS=ON \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
   -DENABLE_TESTS=${enable_tests} \
