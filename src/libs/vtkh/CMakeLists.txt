@@ -25,7 +25,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/vtkh_config.h.in"
 ############################################################
 # setup base deps list
 ############################################################
-set(vtkh_base_deps )
+set(vtkh_base_deps conduit::conduit ascent_png_utils)
 
 if(CUDA_FOUND)
     # triggers cuda compile

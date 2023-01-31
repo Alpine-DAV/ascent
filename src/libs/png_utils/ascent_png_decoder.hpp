@@ -6,21 +6,15 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_png_decoder.cpp
+/// file: ascent_png_decoder.hpp
 ///
 //-----------------------------------------------------------------------------
+#ifndef ASCENT_PNG_DECODER_HPP
+#define ASCENT_PNG_DECODER_HPP
 
-#include "ascent_png_decoder.hpp"
+#include <png_utils/ascent_png_utils_exports.h>
 
-#include "ascent_logging.hpp"
-
-// standard includes
-#include <stdlib.h>
-
-// thirdparty includes
-#include <lodepng.h>
-
-using namespace conduit;
+#include <string>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -28,33 +22,17 @@ using namespace conduit;
 namespace ascent
 {
 
-//-----------------------------------------------------------------------------
-PNGDecoder::PNGDecoder()
-{}
-
-//-----------------------------------------------------------------------------
-PNGDecoder::~PNGDecoder()
+class ASCENT_API PNGDecoder
 {
-}
-
-
-void
-PNGDecoder::Decode(unsigned char *&rgba,
-                   int &width,
-                   int &height,
-                   const std::string &file_name)
-{
-  unsigned w,h;
-  unsigned int res = lpng::lodepng_decode32_file(&rgba, &w, &h, file_name.c_str());
-
-  width = w;
-  height = h;
-
-  if(res)
-  {
-    ASCENT_ERROR("Error decoding png "<<file_name<<"  code "<<res);
-  }
-}
+public:
+    PNGDecoder();
+    ~PNGDecoder();
+    // rgba
+    void Decode(unsigned char *&rgba,
+                int &width,
+                int &height,
+                const std::string &file_name);
+};
 
 //-----------------------------------------------------------------------------
 };
@@ -62,5 +40,9 @@ PNGDecoder::Decode(unsigned char *&rgba,
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
+#endif
+//-----------------------------------------------------------------------------
+// -- end header ifdef guard
+//-----------------------------------------------------------------------------
 
 

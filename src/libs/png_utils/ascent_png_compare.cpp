@@ -14,12 +14,12 @@
 #include "ascent_png_decoder.hpp"
 #include "ascent_png_encoder.hpp"
 
-#include "ascent_logging.hpp"
 
 // standard includes
 #include <stdlib.h>
 
 // thirdparty includes
+#include <conduit.hpp>
 #include <lodepng.h>
 
 using namespace conduit;
@@ -44,7 +44,7 @@ void PNGCompare::ColorTolerance(int color_tolerance)
 {
   if(color_tolerance < 0 || color_tolerance > 255)
   {
-    ASCENT_ERROR("Color tolerance must be between 0-255: "<<color_tolerance);
+    CONDUIT_ERROR("Color tolerance must be between 0-255: "<<color_tolerance);
   }
   m_color_tolerance = color_tolerance;
 }
@@ -93,7 +93,7 @@ PNGCompare::DiffImage(const unsigned char *buff_1,
                                   height);
   if(res)
   {
-    ASCENT_ERROR("Failed to encode and save image diff file "<<out_name);
+    CONDUIT_ERROR("Failed to encode and save image diff file "<<out_name);
   }
 }
 

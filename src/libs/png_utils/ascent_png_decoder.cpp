@@ -6,14 +6,22 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_png_encoder.hpp
+/// file: ascent_png_decoder.cpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_PNG_ENCODER_HPP
-#define ASCENT_PNG_ENCODER_HPP
 
+#include "ascent_png_decoder.hpp"
+
+
+
+// standard includes
+#include <stdlib.h>
+
+// thirdparty includes
 #include <conduit.hpp>
-#include <string>
+#include <lodepng.h>
+
+using namespace conduit;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -21,33 +29,33 @@
 namespace ascent
 {
 
-class PNGEncoder
+//-----------------------------------------------------------------------------
+PNGDecoder::PNGDecoder()
+{}
+
+//-----------------------------------------------------------------------------
+PNGDecoder::~PNGDecoder()
 {
-public:
-    PNGEncoder();
-    ~PNGEncoder();
+}
 
-    void           Encode(const unsigned char *rgba_in,
-                          const int width,
-                          const int height);
-    void           Encode(const float *rgba_in,
-                          const int width,
-                          const int height);
-    void           Save(const std::string &filename);
 
-    void          *PngBuffer();
-    size_t         PngBufferSize();
+void
+PNGDecoder::Decode(unsigned char *&rgba,
+                   int &width,
+                   int &height,
+                   const std::string &file_name)
+{
+  unsigned w,h;
+  unsigned int res = lpng::lodepng_decode32_file(&rgba, &w, &h, file_name.c_str());
 
-    void           Base64Encode();
-    conduit::Node &Base64Node();
+  width = w;
+  height = h;
 
-    void           Cleanup();
-
-private:
-    unsigned char *m_buffer;
-    size_t         m_buffer_size;
-    conduit::Node  m_base64_data;
-};
+  if(res)
+  {
+    CONDUIT_ERROR("Error decoding png "<<file_name<<"  code "<<res);
+  }
+}
 
 //-----------------------------------------------------------------------------
 };
@@ -55,9 +63,5 @@ private:
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
 
 

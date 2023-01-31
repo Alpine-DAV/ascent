@@ -12,9 +12,11 @@
 #ifndef ASCENT_PNG_COMPARE_HPP
 #define ASCENT_PNG_COMPARE_HPP
 
+#include <png_utils/ascent_png_utils_exports.h>
+
 #include <string>
 #include <conduit.hpp>
-#include <ascent_exports.h>
+
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -25,11 +25,6 @@ set(apcomp_headers
     absorption_partial.hpp
     emission_partial.hpp
     volume_partial.hpp
-    utils/file_utils.hpp
-    utils/png_compare.hpp
-    utils/png_decoder.hpp
-    utils/png_encoder.hpp
-    utils/lodepng.h
   )
 
 set(apcomp_sources
@@ -38,11 +33,6 @@ set(apcomp_sources
     compositor.cpp
     partial_compositor.cpp
     scalar_compositor.cpp
-    utils/file_utils.cpp
-    utils/png_compare.cpp
-    utils/png_decoder.cpp
-    utils/png_encoder.cpp
-    utils/lodepng.cpp
   )
 
 
@@ -52,7 +42,7 @@ install(FILES ${apcomp_headers} DESTINATION include/ascent/apcomp)
 # serial (non mpi) apcomp lib
 #------------------------------------------------------------------------------
 if (ENABLE_SERIAL)
-    set(apcomp_deps )
+    set(apcomp_deps conduit::conduit ascent_png_utils)
 
     if(ENABLE_OPENMP)
         list(APPEND apcomp_deps ${ascent_blt_openmp_deps})
@@ -116,7 +106,7 @@ if (MPI_FOUND)
 
     list(APPEND apcomp_mpi_sources ${apcomp_sources})
 
-    set(apcomp_mpi_deps ${ascent_blt_mpi_deps})
+    set(apcomp_mpi_deps conduit::conduit ascent_png_utils ${ascent_blt_mpi_deps})
 
     if(ENABLE_OPENMP)
          list(APPEND apcomp_mpi_deps ${ascent_blt_openmp_deps})
