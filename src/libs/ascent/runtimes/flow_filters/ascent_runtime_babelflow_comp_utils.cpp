@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <fstream>
 
-#include <ascent_png_encoder.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
 #include "ascent_runtime_babelflow_comp_utils.hpp"
 
 //#include "BabelFlow/DefGraphConnector.h"
