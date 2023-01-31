@@ -127,8 +127,9 @@ BlockTimer::Stop(const std::string &name)
     {
         // Record timer.
         auto t_start = s_timers[name];
+        using fsec = std::chrono::duration<float>;
         auto ftime = std::chrono::duration_cast<fsec>(high_resolution_clock::now() - t_start);
-        double elapsed_time = ftime.count();
+        float elapsed_time = ftime.count();
 
         Node &curr = CurrentNode();
 
