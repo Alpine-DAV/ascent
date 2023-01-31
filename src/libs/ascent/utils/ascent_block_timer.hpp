@@ -35,8 +35,8 @@ namespace ascent
 //-----------------------------------------------------------------------------
 class ASCENT_API BlockTimer
 {
-    using std::chrono::high_resolution_clock::time_point = time_point;
-    using std::chrono::high_resolution_clock = high_resolution_clock;
+    using time_point = std::chrono::high_resolution_clock::time_point;
+    using high_resolution_clock = std::chrono::high_resolution_clock;
 public:
     // methods
     BlockTimer(const std::string &name);
