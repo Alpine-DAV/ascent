@@ -45,6 +45,17 @@ build_mfem="${build_mfem:=true}"
 # ascent options
 build_ascent="${build_ascent:=true}"
 
+# see if we are building on windows
+build_windows="${build_windows:=OFF}"
+case "$OSTYPE" in
+  win*)     build_windows="ON";;
+  msys*)    build_windows="ON";;
+  *)        ;;
+esac
+
+if [[ "$build_windows" == "ON" ]]; then
+  echo "*** configuring for windows"
+fi 
 
 root_dir=$(pwd)
 
@@ -236,10 +247,10 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DBUILD_SHARED_LIBS=ON \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=OFF \
-  -DRAJA_ENABLE_TESTS=OFF \
-  -DENABLE_EXAMPLES=OFF \
-  -DENABLE_EXERCISES=OFF \
+  -DENABLE_TESTS=${enable_tests} \
+  -DRAJA_ENABLE_TESTS=${enable_tests} \
+  -DENABLE_EXAMPLES=${enable_tests} \
+  -DENABLE_EXERCISES=${enable_tests} \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
 
 echo "**** Building RAJA ${raja_version}"
@@ -260,8 +271,12 @@ umpire_src_dir=${root_dir}/umpire-${umpire_version}
 umpire_build_dir=${root_dir}/build/umpire-${umpire_version}
 umpire_install_dir=${root_dir}/install/umpire-${umpire_version}/
 umpire_tarball=umpire-${umpire_version}.tar.gz
-umpire_windows_cmake_flags="-DBLT_CXX_STD=\"\" -DCMAKE_CXX_STANDARD=17 -DUMPIRE_ENABLE_FILESYSTEM=On -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On"
+umpire_windows_cmake_flags="-DBLT_CXX_STD=c++17 -DCMAKE_CXX_STANDARD=17 -DUMPIRE_ENABLE_FILESYSTEM=On -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On"
 
+umpire_extra_cmake_args=""
+if [[ "$build_windows" == "ON" ]]; then
+  umpire_extra_cmake_args="${umpire_windows_cmake_flags}"
+fi 
 
 # build only if install doesn't exist
 if [ ! -d ${umpire_install_dir} ]; then
@@ -279,9 +294,9 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=OFF \
+  -DENABLE_TESTS=${enable_tests} \
   -DUMPIRE_ENABLE_TOOLS=Off \
-  -DUMPIRE_ENABLE_BENCHMARKS=Off ${umpire_windows_cmake_flags} \
+  -DUMPIRE_ENABLE_BENCHMARKS=${enable_tests} ${umpire_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${umpire_install_dir}
 
 echo "**** Building Umpire ${umpire_version}"
@@ -304,6 +319,12 @@ mfem_install_dir=${root_dir}/install/mfem-${mfem_version}/
 mfem_tarball=mfem-${mfem_version}.tar.gz
 mfem_windows_cmake_flags="-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 
+mfem_extra_cmake_args=""
+if [[ "$build_windows" == "ON" ]]; then
+  mfem_extra_cmake_args="${mfem_windows_cmake_flags}"
+fi 
+
+
 # build only if install doesn't exist
 if [ ! -d ${mfem_install_dir} ]; then
 if ${build_mfem}; then
@@ -314,13 +335,12 @@ if [ ! -d ${mfem_src_dir} ]; then
 fi
 
 
-
 echo "**** Configuring MFEM ${mfem_version}"
 cmake -S ${mfem_src_dir} -B ${mfem_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DMFEM_USE_CONDUIT=ON ${mfem_windows_cmake_flags}\
+  -DMFEM_USE_CONDUIT=ON ${mfem_extra_cmake_args}\
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
   -DCMAKE_INSTALL_PREFIX=${mfem_install_dir}
 
