@@ -13,6 +13,7 @@
 #include "gtest/gtest.h"
 
 #include <ascent.hpp>
+#include <ascent_resources.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -42,9 +43,19 @@ TEST(ascent_utils, ascent_copy_dir)
         conduit::utils::remove_file(idx_fpath);
     }
 
+    // load ascent web resources from compiled in resource tree
+    Node ascent_rc;
+    ascent::resources::load_compiled_resource_tree("ascent_web",
+                                                    ascent_rc);
+    if(ascent_rc.dtype().is_empty())
+    {
+        ASCENT_ERROR("Failed to load compiled resources for ascent_web");
+    }
 
-    ascent::copy_directory(ASCENT_SOURCE_WEB_CLIENT_ROOT, output_path);
-    EXPECT_TRUE(directory_exists(conduit::utils::join_path(output_path,"ascent/resources")));
+    ascent::resources::expand_resource_tree_to_file_system(ascent_rc,
+                                                           output_path);
+
+    EXPECT_TRUE(conduit::utils::is_directory(conduit::utils::join_path(output_path,"resources")));
     EXPECT_TRUE(conduit::utils::is_file(idx_fpath));
 }
 

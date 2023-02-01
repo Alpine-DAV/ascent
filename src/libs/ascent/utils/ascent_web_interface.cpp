@@ -14,8 +14,8 @@
 
 #include <ascent.hpp>
 #include <ascent_config.h>
-#include <ascent_file_system.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_resources.hpp>
 
 // thirdparty includes
 #include <lodepng.h>
@@ -133,8 +133,22 @@ WebInterface::Connection()
 
         if(m_doc_root != default_root)
         {
-            copy_directory(default_root,
-                           m_doc_root);
+            // check if m_doc_root already has resources
+            if(conduit::utils::is_file(conduit::utils::join_file_path(m_doc_root,
+                                                                      "index.html")))
+            {
+                // load ascent web resources from compiled in resource tree
+                Node ascent_rc;
+                ascent::resources::load_compiled_resource_tree("ascent_web",
+                                                                ascent_rc);
+                if(ascent_rc.dtype().is_empty())
+                {
+                    ASCENT_ERROR("Failed to load compiled resources for ascent_web");
+                }
+
+                ascent::resources::expand_resource_tree_to_file_system(ascent_rc,
+                                                                       m_doc_root);
+            }
         }
 
         m_server.set_document_root(m_doc_root);
