@@ -32,7 +32,7 @@ TEST(ascent_utils, ascent_copy_dir)
 {
     string output_path = conduit::utils::join_path(prepare_output_dir(),"my_folder");
 
-    string idx_fpath = conduit::utils::join_path(output_path,"ascent/index.html");
+    string idx_fpath = conduit::utils::join_path(output_path,"index.html");
 
     // for multiple runs of this test:
     //  we don't have a util to kill the entire dir, so
