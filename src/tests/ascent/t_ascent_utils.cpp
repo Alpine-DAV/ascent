@@ -52,6 +52,11 @@ TEST(ascent_utils, ascent_copy_dir)
         ASCENT_ERROR("Failed to load compiled resources for ascent_web");
     }
 
+    if(!conduit::utils::is_directory(output_path))
+    {
+        conduit::utils::create_directory(output_path);
+    }
+
     ascent::resources::expand_resource_tree_to_file_system(ascent_rc,
                                                            output_path);
 
