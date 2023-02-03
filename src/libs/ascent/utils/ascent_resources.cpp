@@ -10,24 +10,18 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_web_interface.hpp"
+#include "ascent_resources.hpp"
 
 #include <ascent.hpp>
 #include <ascent_config.h>
-#include <ascent_file_system.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_resources_cinema_web.hpp>
-
-// thirdparty includes
-#include <lodepng.h>
+#include <ascent_resources_ascent_web.hpp>
 
 // conduit includes
 #include <conduit_relay.hpp>
 
 using namespace conduit;
-
-
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -52,6 +46,10 @@ load_compiled_resource_tree(const std::string &resource_name,
     {
         res.parse(RC_CINEMA_WEB,"conduit_base64_json");
     }
+    else if(resource_name == "ascent_web")
+    {
+        res.parse(RC_ASCENT_WEB,"conduit_base64_json");
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -72,9 +70,9 @@ expand_resource_tree_to_file_system(const conduit::Node &resource_tree,
                                                                    name);
 
             // create a folder if it doesn't exist
-            if(!directory_exists(child_dir))
+            if(!conduit::utils::is_directory(child_dir))
             {
-                create_directory(child_dir);
+                conduit::utils::create_directory(child_dir);
             }
 
             expand_resource_tree_to_file_system(curr,child_dir);
