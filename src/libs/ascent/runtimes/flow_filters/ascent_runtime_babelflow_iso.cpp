@@ -32,7 +32,12 @@
 #include <ascent_vtkh_data_adapter.hpp>
 #endif
 
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#else
+#include <mpidummy.h>
+#define _NOMPI
+#endif
 
 #include "BabelFlow/TypeDefinitions.h"
 #include "ascent_runtime_babelflow_filters.hpp"
@@ -452,15 +457,6 @@ public:
     BabelFlow::TaskGraph::registerCallback( 4, BabelFlow::KWayReduction::MID_TASK_CB, bflow_comp::gather_results_radixk) ;
     BabelFlow::TaskGraph::registerCallback( 4, BabelFlow::KWayReduction::ROOT_TASK_CB, bflow_comp::write_results_radixk );
 
-    //m_isoGrConnector_1 = BabelFlow::DefGraphConnector( &m_redAllGr, 0, &m_isoCalcTaskGr, 1 );
-    //m_isoGrConnector_2 = BabelFlow::DefGraphConnector( &m_isoCalcTaskGr, 1, &m_isoRenderTaskGr, 2 );    
-    //m_isoGrConnector_3 = BabelFlow::DefGraphConnector( &m_isoRenderTaskGr, 2, &m_radixkGr, 3 );
-    //m_defGraphConnector = BabelFlow::DefGraphConnector( &m_radixkGr, 3, &m_gatherTaskGr, 4 );
-
-    //std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_isoGrConnector_1, 
-    //                                                           &m_isoGrConnector_2,
-    //                                                           &m_isoGrConnector_3, 
-    //                                                           &m_defGraphConnector };
     std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_redAllGr, &m_isoCalcTaskGr, &m_isoRenderTaskGr, &m_radixkGr, &m_gatherTaskGr };
     std::vector<BabelFlow::TaskMap*> task_maps{ &m_redAllMp, &m_isoCalcTaskMp, &m_isoRenderTaskMp, &m_radixkMp, &m_gatherTaskMp };
 
@@ -473,7 +469,6 @@ public:
       m_isoCalcTaskGr.outputGraphHtml( m_nRanks, &m_isoCalcTaskMp, "iso-gr.html" );
       m_isoRenderTaskGr.outputGraphHtml( m_nRanks, &m_isoRenderTaskMp, "gather-task.html" );
       m_radixkGr.outputGraphHtml( m_nRanks, &m_radixkMp, "radixk.html" );
-      // m_gatherTaskGr.outputGraphHtml( m_nRanks, &m_gatherTaskMp, "gather-task.html" );
       m_radGatherGraph.outputGraphHtml( m_nRanks, &m_radGatherTaskMap, "bflow-iso.html" );
     }
 #endif
@@ -496,10 +491,6 @@ protected:
 
   BabelFlow::SingleTaskGraph m_isoRenderTaskGr;
   BabelFlow::ModuloMap m_isoRenderTaskMp;
-
-    //BabelFlow::DefGraphConnector m_isoGrConnector_1;
-    //BabelFlow::DefGraphConnector m_isoGrConnector_2;
-    //BabelFlow::DefGraphConnector m_isoGrConnector_3;
 
   BabelFlow::RadixKExchange m_redAllGr;
   BabelFlow::RadixKExchangeTaskMap m_redAllMp; 

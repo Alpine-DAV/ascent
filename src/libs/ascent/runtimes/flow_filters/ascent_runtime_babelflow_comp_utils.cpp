@@ -9,10 +9,9 @@
 #include <algorithm>
 #include <fstream>
 
-#include <png_utils/ascent_png_encoder.hpp>
+#include <ascent_png_encoder.hpp>
 #include "ascent_runtime_babelflow_comp_utils.hpp"
 
-//#include "BabelFlow/DefGraphConnector.h"
 #include "BabelFlow/ComposableTaskGraph.h"
 #include "BabelFlow/ComposableTaskMap.h"
 
@@ -615,13 +614,10 @@ void BabelCompReduce::Initialize()
   m_preProcTaskGr.setGraphId( 0 );
   m_reduceTaskGr.setGraphId( 1 );
 
-  //m_defGraphConnector = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_reduceTaskGr, 1 );
-
-  //std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
   std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_reduceTaskGr };
   std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_reduceTaskMp }; 
 
-  m_reduceGraph = BabelFlow::ComposableTaskGraph( gr_vec/*, gr_connectors*/ );
+  m_reduceGraph = BabelFlow::ComposableTaskGraph( gr_vec );
   m_reduceTaskMap = BabelFlow::ComposableTaskMap( task_maps );
 
   BabelFlow::TaskGraph::registerCallback( 0, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, bflow_comp::pre_proc );
@@ -672,13 +668,10 @@ void BabelCompBinswap::Initialize()
   m_preProcTaskGr.setGraphId( 0 );
   m_binSwapTaskGr.setGraphId( 1 );
 
-  //m_defGraphConnector = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_binSwapTaskGr, 1 );
-
-  //std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
   std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_preProcTaskGr, &m_binSwapTaskGr };
   std::vector<BabelFlow::TaskMap*> task_maps{ &m_preProcTaskMp, &m_binSwapTaskMp }; 
 
-  m_binSwapGraph = BabelFlow::ComposableTaskGraph( gr_vec/*, gr_connectors*/ );
+  m_binSwapGraph = BabelFlow::ComposableTaskGraph( gr_vec );
   m_binSwapTaskMap = BabelFlow::ComposableTaskMap( task_maps );
 
   BabelFlow::TaskGraph::registerCallback( 0, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, bflow_comp::pre_proc );
@@ -751,13 +744,10 @@ void BabelCompRadixK::Initialize()
   m_radixkGr.setGraphId( 0 );
   m_gatherTaskGr.setGraphId( 1 );
 
-  // m_defGraphConnector = BabelFlow::DefGraphConnector( &m_radixkGr, 0, &m_gatherTaskGr, 1 );
-
-  //std::vector<BabelFlow::TaskGraphConnector*> gr_connectors{ &m_defGraphConnector };
   std::vector<BabelFlow::TaskGraph*> gr_vec{ &m_radixkGr, &m_gatherTaskGr };
   std::vector<BabelFlow::TaskMap*> task_maps{ &m_radixkMp, &m_gatherTaskMp }; 
 
-  m_radGatherGraph = BabelFlow::ComposableTaskGraph( gr_vec/*, gr_connectors*/ );
+  m_radGatherGraph = BabelFlow::ComposableTaskGraph( gr_vec );
   m_radGatherTaskMap = BabelFlow::ComposableTaskMap( task_maps );
 
   BabelFlow::TaskGraph::registerCallback( 0, BabelFlow::RadixKExchange::LEAF_TASK_CB, bflow_comp::volume_render_radixk );
