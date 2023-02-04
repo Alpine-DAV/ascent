@@ -786,7 +786,15 @@ int bracket_counter = 0;
  * down here because we want the user's section 1 to have been scanned first.
  * The user has a chance to override it with an option.
  */
-#include <unistd.h>
+    #ifndef _WIN32
+        #include <unistd.h>
+        #define ascent_isatty isatty
+        #define ascent_fileno fileno
+        #else
+        #include <io.h>
+        #define ascent_isatty _isatty
+        #define ascent_fileno _fileno
+    #endif
 #endif
 
 #ifndef YY_EXTRA_TYPE
@@ -1837,7 +1845,7 @@ static void yy_load_buffer_state  (void)
         b->yy_bs_column = 0;
     }
 
-        b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
+    b->yy_is_interactive = file ? (ascent_isatty( ascent_fileno(file) ) > 0) : 0;
 
 	errno = oerrno;
 }
