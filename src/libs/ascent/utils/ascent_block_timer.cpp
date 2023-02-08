@@ -18,7 +18,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <set>
@@ -27,7 +26,6 @@
 #ifdef ASCENT_PLATFORM_UNIX
 #include <sys/sysinfo.h>
 #endif
-
 
 
 using namespace conduit;
@@ -47,12 +45,12 @@ namespace ascent
 {
 
 // Initialize BlockTimer static data members.
-int                             BlockTimer::s_global_depth = 0;
-conduit::Node                   BlockTimer::s_global_root;
-std::string                     BlockTimer::s_current_path = "";
-std::map<std::string, timeval>  BlockTimer::s_timers;
-std::set<std::string>           BlockTimer::s_visited;
-int                             BlockTimer::s_rank = 0;
+int                                            BlockTimer::s_global_depth = 0;
+conduit::Node                                  BlockTimer::s_global_root;
+std::string                                    BlockTimer::s_current_path = "";
+std::map<std::string, BlockTimer::time_point>  BlockTimer::s_timers;
+std::set<std::string>                          BlockTimer::s_visited;
+int                                            BlockTimer::s_rank = 0;
 
 //-----------------------------------------------------------------------------
 BlockTimer::BlockTimer(std::string const &name)
@@ -112,10 +110,9 @@ BlockTimer::Start(const std::string &name)
         // Start timing.
         if (s_timers.count(name) == 0)
         {
-            timeval timer;
-            s_timers.insert(std::pair<std::string, timeval>(name, timer));
+            s_timers.insert(std::pair<std::string, time_point>(name,
+                                                               high_resolution_clock::now()));
         }
-        gettimeofday(&s_timers[name], NULL);
     }
 
 }
@@ -129,12 +126,10 @@ BlockTimer::Stop(const std::string &name)
     if (s_global_depth <= MAX_DEPTH)
     {
         // Record timer.
-        timeval start, end;
-        gettimeofday(&end, NULL);
-        start = s_timers[name];
-
-        // Calculate elapsed time.
-        double elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000;
+        auto t_start = s_timers[name];
+        using fsec = std::chrono::duration<float>;
+        auto ftime = std::chrono::duration_cast<fsec>(high_resolution_clock::now() - t_start);
+        float elapsed_time = ftime.count();
 
         Node &curr = CurrentNode();
 

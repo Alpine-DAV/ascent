@@ -31,7 +31,7 @@ TEST(apcomp_c_order_mpi, apcomp_c_order_mpi)
   std::string output_dir = prepare_output_dir();
   
   std::string file_name = "apcomp_c_order_mpi";
-  std::string output_file = apcomp::join_file_path(output_dir,file_name);
+  std::string output_file = conduit::utils::join_file_path(output_dir,file_name);
   remove_test_file(output_file);
 
   int par_rank;
