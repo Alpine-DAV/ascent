@@ -24,7 +24,7 @@ void
 VolumeEngine::set_data_set(vtkm::cont::DataSet &dataset)
 {
   if(m_tracer) delete m_tracer;
-  m_tracer = new vtkm::rendering::ConnectivityProxy(dataset);
+  m_tracer = new vtkm::rendering::ConnectivityProxy(dataset, "");
 }
 
 int VolumeEngine::get_num_channels()

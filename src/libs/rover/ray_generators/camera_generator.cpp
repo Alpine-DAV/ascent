@@ -64,7 +64,7 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
 {
   vtkm::rendering::CanvasRayTracer canvas(m_width, m_height);
   vtkm::rendering::raytracing::Camera ray_gen;
-  ray_gen.SetParameters(m_camera, canvas);
+  ray_gen.SetParameters(m_camera, m_width, m_height);
 
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
   this->m_has_rays = false;
@@ -76,7 +76,7 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
 {
   vtkm::rendering::CanvasRayTracer canvas(m_width, m_height);
   vtkm::rendering::raytracing::Camera ray_gen;
-  ray_gen.SetParameters(m_camera, canvas);
+  ray_gen.SetParameters(m_camera, m_width, m_height);
 
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
   this->m_has_rays = false;

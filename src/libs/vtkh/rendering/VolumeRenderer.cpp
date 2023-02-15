@@ -185,7 +185,7 @@ class UnstructuredWrapper : public VolumeWrapper
 public:
   UnstructuredWrapper(vtkm::cont::DataSet &data_set)
     : VolumeWrapper(data_set),
-      m_tracer(data_set)
+      m_tracer(data_set, "")
   {
   }
 

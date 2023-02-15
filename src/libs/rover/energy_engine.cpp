@@ -42,7 +42,7 @@ EnergyEngine::set_data_set(vtkm::cont::DataSet &dataset)
   ROVER_INFO("Energy Engine settting data set");
   if(m_tracer) delete m_tracer;
 
-  m_tracer = new vtkm::rendering::ConnectivityProxy(dataset);
+  m_tracer = new vtkm::rendering::ConnectivityProxy(dataset, "");
   m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
   m_data_set = dataset;
 
