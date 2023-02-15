@@ -415,6 +415,10 @@ TEST(vtkh_contour_tree, vtkh_contour_tree)
   // Default values if we are serial.
   int mpiSize = 1, mpiRank = 0;
 
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
+
 #ifdef VTKM_ENABLE_MPI
   MPI_Init(NULL, NULL);
 

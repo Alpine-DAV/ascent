@@ -12,6 +12,8 @@
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/PiecewiseLinearFunction.h>
 
+#include <vtkh/filters/GhostStripper.hpp> // AES
+
 namespace caugmented_ns = vtkm::worklet::contourtree_augmented;
 using DataValueType = vtkm::Float64;
 using ValueArray = vtkm::cont::ArrayHandle<DataValueType>;
@@ -20,6 +22,107 @@ using PLFType = vtkm::worklet::contourtree_augmented::process_contourtree_inc::P
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
+
+static void ShiftLogicalOriginToZero(vtkm::cont::PartitionedDataSet& pds)
+{
+  // Shift the logical origin (minimum of LocalPointIndexStart) to zero
+  // along each dimension
+
+  // Compute minimum global point index start for all data sets on this MPI rank
+  std::vector<vtkm::Id> minimumGlobalPointIndexStartThisRank;
+  using ds_const_iterator = vtkm::cont::PartitionedDataSet::const_iterator;
+  for (ds_const_iterator ds_it = pds.cbegin(); ds_it != pds.cend(); ++ds_it)
+  {
+    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+      [&minimumGlobalPointIndexStartThisRank](const auto& css)
+      {
+        minimumGlobalPointIndexStartThisRank.resize(css.Dimension,
+                                                    std::numeric_limits<vtkm::Id>::max());
+        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+        {
+          minimumGlobalPointIndexStartThisRank[d] =
+            std::min(minimumGlobalPointIndexStartThisRank[d], css.GetGlobalPointIndexStart()[d]);
+        }
+      });
+  }
+
+  // Perform global reduction to find GlobalPointDimensions across all ranks
+  std::vector<vtkm::Id> minimumGlobalPointIndexStart;
+  auto comm = vtkm::cont::EnvironmentTracker::GetCommunicator();
+  vtkmdiy::mpi::all_reduce(comm,
+                           minimumGlobalPointIndexStartThisRank,
+                           minimumGlobalPointIndexStart,
+                           vtkmdiy::mpi::minimum<vtkm::Id>{});
+
+  // Shift all cell sets so that minimum global point index start
+  // along each dimension is zero
+  using ds_iterator = vtkm::cont::PartitionedDataSet::iterator;
+  for (ds_iterator ds_it = pds.begin(); ds_it != pds.end(); ++ds_it)
+  {
+    // This does not work, i.e., it does not really change the cell set for the DataSet
+    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+      [&minimumGlobalPointIndexStart, &ds_it](auto& css) {
+        auto pointIndexStart = css.GetGlobalPointIndexStart();
+        typename std::remove_reference_t<decltype(css)>::SchedulingRangeType shiftedPointIndexStart;
+        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+        {
+          shiftedPointIndexStart[d] = pointIndexStart[d] - minimumGlobalPointIndexStart[d];
+        }
+        css.SetGlobalPointIndexStart(shiftedPointIndexStart);
+        // Why is the following necessary? Shouldn't it be sufficient to update the
+        // CellSet through the reference?
+        ds_it->SetCellSet(css);
+      });
+  }
+}
+
+static void ComputeGlobalPointSize(vtkm::cont::PartitionedDataSet& pds)
+{
+  // Compute GlobalPointDimensions as maximum of GlobalPointIndexStart + PointDimensions
+  // for each dimension across all blocks
+
+  // Compute GlobalPointDimensions for all data sets on this MPI rank
+  std::vector<vtkm::Id> globalPointDimensionsThisRank;
+  using ds_const_iterator = vtkm::cont::PartitionedDataSet::const_iterator;
+  for (ds_const_iterator ds_it = pds.cbegin(); ds_it != pds.cend(); ++ds_it)
+  {
+    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+      [&globalPointDimensionsThisRank](const auto& css) {
+        globalPointDimensionsThisRank.resize(css.Dimension, -1);
+        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+        {
+          globalPointDimensionsThisRank[d] =
+            std::max(globalPointDimensionsThisRank[d],
+                     css.GetGlobalPointIndexStart()[d] + css.GetPointDimensions()[d]);
+        }
+      });
+  }
+
+  // Perform global reduction to find GlobalPointDimensions across all ranks
+  std::vector<vtkm::Id> globalPointDimensions;
+  auto comm = vtkm::cont::EnvironmentTracker::GetCommunicator();
+  vtkmdiy::mpi::all_reduce(
+    comm, globalPointDimensionsThisRank, globalPointDimensions, vtkmdiy::mpi::maximum<vtkm::Id>{});
+
+  // Set this information in all cell sets
+  using ds_iterator = vtkm::cont::PartitionedDataSet::iterator;
+  for (ds_iterator ds_it = pds.begin(); ds_it != pds.end(); ++ds_it)
+  {
+    // This does not work, i.e., it does not really change the cell set for the DataSet
+    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+      [&globalPointDimensions, &ds_it](auto& css) {
+        typename std::remove_reference_t<decltype(css)>::SchedulingRangeType gpd;
+        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+        {
+          gpd[d] = globalPointDimensions[d];
+        }
+        css.SetGlobalPointDimensions(gpd);
+        // Why is the following necessary? Shouldn't it be sufficient to update the
+        // CellSet through the reference?
+        ds_it->SetCellSet(css);
+      });
+  }
+}
 
 // This is from VTK-m diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
 namespace vtkmdiy
@@ -118,6 +221,28 @@ void ContourTree::DoExecute()
     delete_input = true;
   }
 
+  bool has_ghosts = false; // Experimental when enabled .... 
+
+  if(has_ghosts)
+  {
+    vtkh::GhostStripper stripper;
+
+    stripper.SetInput(m_input);
+    stripper.SetField("ascent_ghosts");
+    stripper.SetMinValue(0);
+    stripper.SetMaxValue(0);
+    stripper.Update();
+    vtkh::DataSet* stripped_input = stripper.GetOutput(); // AES FIX THIS ...
+
+    if (delete_input) {
+       delete(m_input);
+    }
+
+    m_input = stripped_input;
+    delete_input = true;
+  } 
+
+
   int mpi_rank = 0;
 
   this->m_output = new DataSet();
@@ -185,6 +310,11 @@ void ContourTree::DoExecute()
     PrintArrayHandle( dataField, "dataField" );
 #endif // VTKH_PARALLEL
 #endif // DEBUG
+
+#ifdef VTKH_PARALLEL
+    ShiftLogicalOriginToZero(inDataSet);
+    ComputeGlobalPointSize(inDataSet);
+#endif // VTKH_PARALLEL
 
     auto result = filter.Execute(inDataSet);
 
