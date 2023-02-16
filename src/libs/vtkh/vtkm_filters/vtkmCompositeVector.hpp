@@ -11,7 +11,7 @@ class vtkmCompositeVector
 {
 public:
   vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                          std::vector<std::stringi> input_field_names,
+                          std::vector<std::string> input_field_names,
                           std::string output_field_name);
 };
 }

@@ -1,6 +1,6 @@
 //#include <vtkm/filter/your_vtkm_filter.h>
 #include <vtkh/filters/CompositeVector.hpp>
-#include <vtkm/worklet/WorkletMapField.h>
+#include <vtkh/vtkm_filters/vtkmCompositeVector.hpp>
 #include <vtkh/Error.hpp>
 
 namespace vtkh
@@ -171,13 +171,13 @@ void CompositeVector::DoExecute()
       input_field_names.push_back(m_field_3);
       vtkmCompositeVector composite3DVec;
       vtkm::cont::DataSet output = composite3DVec.Run(dom, input_field_names, m_result_name); 
-      m_output->AddDomain(output);
+      m_output->AddDomain(output, i);
     }
     else
     {
       vtkmCompositeVector composite2DVec;
       vtkm::cont::DataSet output = composite2DVec.Run(dom, input_field_names, m_result_name); 
-      m_output->AddDomain(output);
+      m_output->AddDomain(output, i);
     }
   }
 }
