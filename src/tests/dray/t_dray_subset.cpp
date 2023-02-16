@@ -19,6 +19,7 @@
 #include <dray/utils/appstats.hpp>
 
 #include <dray/math.hpp>
+#include <dray/array_registry.hpp>
 
 #include <fstream>
 #include <stdlib.h>
@@ -41,6 +42,16 @@ TEST (dray_subset, dray_subset_basic)
   {
     std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
     return;
+  }
+  // between tests, we should always start with 0 arrays, 0 usage
+  EXPECT_EQ(dray::ArrayRegistry::number_of_arrays(),0);
+  EXPECT_EQ(dray::ArrayRegistry::host_usage(),0);
+  EXPECT_EQ(dray::ArrayRegistry::device_usage(),0);
+  dray::ArrayRegistry::summary();
+  dray::stats::StatStore::clear();
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
   }
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "taylor_green_2d.cycle_000050.root";
@@ -104,5 +115,6 @@ TEST (dray_subset, dray_subset_basic)
   // note: dray diff tolerance was 0.2f prior to import
   EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
   fb.save_depth (output_file + "_depth");
-  dray::stats::StatStore::write_ray_stats (c_width, c_height);
+  dray::stats::StatStore::write_ray_stats (output_file + "_stats",
+                                           c_width, c_height);
 }

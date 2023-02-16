@@ -22,6 +22,8 @@ class dray
     static void mpi_comm(int mpi_comm_id);
     static int  mpi_comm();
 
+    // device_enabled, true of either cuda or hip are enabled
+    static bool device_enabled();
     static bool cuda_enabled();
     static bool hip_enabled();
 
