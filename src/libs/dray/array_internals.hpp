@@ -125,7 +125,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
         // we have to copy a singe value off the gpu
         if (m_device == nullptr)
         {
-          // ask for garbage and yee shall recieve
+          // ask for garbage and yee shall receive
           allocate_device ();
         }
 #ifdef DRAY_CUDA_ENABLED

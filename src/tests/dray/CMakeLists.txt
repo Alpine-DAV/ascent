@@ -27,7 +27,7 @@ set(BASIC_TESTS t_dray_smoke
                 ##t_dray_ambient_occlusion
                 ##t_dray_obj_reader
                 #t_dray_matrix
-                #t_dray_registry
+                t_dray_registry
                 t_dray_slice
                 t_dray_multi_render
                 t_dray_dataset_to_node
@@ -45,7 +45,7 @@ set(BASIC_TESTS t_dray_smoke
                 t_dray_scalar_renderer
                 t_dray_volume_render
                 t_dray_volume_partials
-                #t_dray_face_render
+                t_dray_face_render
                 t_dray_reflect
                 t_dray_subset
                 t_dray_elem_attr

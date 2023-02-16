@@ -78,6 +78,6 @@ int main (int argc, char *argv[])
     }
   }
 
-  dray::stats::StatStore::write_point_stats ("locate_stats");
+  dray::stats::StatStore::write_point_stats ("out_furnace_point_location");
   finalize_furnace();
 }
