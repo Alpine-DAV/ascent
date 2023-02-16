@@ -199,16 +199,15 @@ ArrayRegistry::summary()
 
     // umpire host pool info
     auto &rm = umpire::ResourceManager::getInstance ();
-    const int allocator_id = ArrayRegistry::host_allocator_id();
-    umpire::Allocator host_allocator = rm.getAllocator (allocator_id);
+    const int host_allocator_id = ArrayRegistry::host_allocator_id();
+    umpire::Allocator host_allocator = rm.getAllocator(host_allocator_id);
     std::cout  << " Host Current Size:   " << host_allocator.getCurrentSize() << std::endl;
     std::cout  << " Host High Water:     " << host_allocator.getHighWatermark() << std::endl;
 
 #if defined(DRAY_DEVICE_ENABLED)
     // umpire device pool info
-    auto &rm = umpire::ResourceManager::getInstance ();
-    const int allocator_id = ArrayRegistry::device_allocator_id();
-    umpire::Allocator dev_allocator = rm.getAllocator (allocator_id);
+    const int dev_allocator_id = ArrayRegistry::device_allocator_id();
+    umpire::Allocator dev_allocator = rm.getAllocator(dev_allocator_id);
     std::cout  << " Device Current Size: " << dev_allocator.getCurrentSize() << std::endl;
     std::cout  << " Device High Water:   " << dev_allocator.getHighWatermark() << std::endl;
 #else
