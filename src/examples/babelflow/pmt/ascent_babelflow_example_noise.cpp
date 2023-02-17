@@ -726,8 +726,8 @@ int main(int argc, char **argv)
   //scenes["s2/image_name"] = "segmentation";
 
   // print our full actions tree
-  //if( mpi_rank == 0 )
-  //  std::cout << action.to_yaml() << std::endl;
+  if( mpi_rank == 0 )
+    std::cout << action.to_yaml() << std::endl;
 
   action.append()["action"] = "execute";
   start = clock();
