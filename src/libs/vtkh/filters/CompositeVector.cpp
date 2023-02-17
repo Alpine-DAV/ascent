@@ -149,14 +149,17 @@ void CompositeVector::PostExecute()
 void CompositeVector::DoExecute()
 {
   this->m_output = new DataSet();
-  // shallow copy input data set and bump internal ref counts
-  *m_output = *m_input;
 
   const int num_domains = this->m_input->GetNumberOfDomains();
+  std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds();
+
+  bool valid;
+  vtkm::cont::Field::Association assoc =
+    this->m_input->GetFieldAssociation(m_field_1, valid);
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::DataSet &dom =  this->m_output->GetDomain(i);
+    vtkm::cont::DataSet &dom =  this->m_input->GetDomain(i);
     std::vector<std::string> input_field_names;
     if(!dom.HasField(m_field_1))
     {
@@ -170,14 +173,14 @@ void CompositeVector::DoExecute()
     {
       input_field_names.push_back(m_field_3);
       vtkmCompositeVector composite3DVec;
-      vtkm::cont::DataSet output = composite3DVec.Run(dom, input_field_names, m_result_name); 
-      m_output->AddDomain(output, i);
+      vtkm::cont::DataSet output = composite3DVec.Run(dom, input_field_names, m_result_name, assoc);
+      m_output->AddDomain(output, domain_ids[i]);
     }
     else
     {
       vtkmCompositeVector composite2DVec;
-      vtkm::cont::DataSet output = composite2DVec.Run(dom, input_field_names, m_result_name); 
-      m_output->AddDomain(output, i);
+      vtkm::cont::DataSet output = composite2DVec.Run(dom, input_field_names, m_result_name, assoc); 
+      m_output->AddDomain(output, domain_ids[i]);
     }
   }
 }
