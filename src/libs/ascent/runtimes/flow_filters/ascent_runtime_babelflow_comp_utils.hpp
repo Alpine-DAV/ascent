@@ -21,12 +21,12 @@
 #include "BabelFlow/ComposableTaskMap.h"
 #include "BabelFlow/ModuloMap.h"
 
-#ifdef ASCENT_MPI_ENABLED
+//#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-#else
-#include <mpidummy.h>
-#define _NOMPI
-#endif
+//#else
+//#include <mpidummy.h>
+//#define _NOMPI
+//#endif
 
 
 //-----------------------------------------------------------------------------
