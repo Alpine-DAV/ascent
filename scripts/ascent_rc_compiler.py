@@ -41,7 +41,7 @@ def gen_cpp_resource_header_source(n,def_name):
     res += '// -------------------- \n'
     res += '// (windows case) \n'
     res += '#else\n'
-    res += 'char [] RC_{0}_CHARS = \n'.format(def_name) + "{"
+    res += 'char RC_{0}_CHARS[] = '.format(def_name) + "{"
     res_bytes =  bytearray(res_string,'utf-8')
     res_hexs = [ hex(v) for v in res_bytes]
     res_bytes_code = ",".join(res_hexs)

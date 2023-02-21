@@ -127,7 +127,8 @@ int main (int argc, char *argv[])
     fb.save("volume");
   }
 
-  dray::stats::StatStore::write_ray_stats (config.m_camera.get_width (),
+  dray::stats::StatStore::write_ray_stats ("out_furnace_volume_rendering",
+                                           config.m_camera.get_width (),
                                            config.m_camera.get_height ());
 
   finalize_furnace();

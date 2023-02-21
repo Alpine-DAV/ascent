@@ -26,6 +26,10 @@ void init_furnace()
   MPI_Comm comm = MPI_COMM_WORLD;
   dray::dray::mpi_comm(MPI_Comm_c2f(comm));
 #endif
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
+  }
 }
 
 void finalize_furnace()
