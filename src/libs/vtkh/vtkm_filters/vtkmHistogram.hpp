@@ -1,5 +1,5 @@
-#ifndef VTK_H_VTKM_CLIP_HPP
-#define VTK_H_VTKM_CLIP_HPP
+#ifndef VTK_H_VTKM_HISTOGRAM_HPP
+#define VTK_H_VTKM_HISTOGRAM_HPP
 
 #include <vtkm/cont/PartitionedDataSet.h>
 
