@@ -133,6 +133,18 @@ bool contains(const std::string haystack, std::string needle)
   }
 };
 
+void trim(std::string &s)
+{
+     s.erase(s.begin(),
+             std::find_if_not(s.begin(),
+                              s.end(),
+                              [](char c){ return std::isspace(c); }));
+     s.erase(std::find_if_not(s.rbegin(), 
+                              s.rend(),
+                              [](char c){ return std::isspace(c); }).base(),
+             s.end());
+}
+
 int main (int argc, char *argv[])
 {
   Options options;
@@ -151,7 +163,12 @@ int main (int argc, char *argv[])
     std::string line;
     while(!getline(in_file, line).eof())
     {
-      time_steps.push_back(line);
+      // only add non-empty entries
+      trim(line);
+      if(!line.empty())
+      {
+          time_steps.push_back(line);
+      }
     }
   }
 
