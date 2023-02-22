@@ -743,7 +743,7 @@ TEST(ascent_runtime_options, test_field_filtering_ghosts)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
 
-    // add a ghost field that 
+    // add a ghost field 
     data["fields/ascent_ghosts"].set(data["fields/radial"]);
     
     float64_array gvals = data["fields/ascent_ghosts/values"].value();
