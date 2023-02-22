@@ -9,15 +9,18 @@
 
 namespace dray
 {
+
 namespace stats
 {
 
 namespace detail
 {
+  
+//---------------------------------------------------------------------------//
 void write_ray_data(const int32 width,
                     const int32 height,
                     std::vector<std::pair<int32,Stats>> &ray_data,
-                    std::string file_name)
+                    const std::string &file_name)
 {
 #ifdef DRAY_STATS
   // create a blank field we can fill ine
@@ -81,11 +84,8 @@ void write_ray_data(const int32 width,
   (void) file_name;
 #endif
 }
-} // namespace detail
 
-std::vector<std::vector<std::pair<int32,Stats>>> StatStore::m_ray_stats;
-std::vector<std::vector<std::pair<Vec<float32,3>,Stats>>> StatStore::m_point_stats;
-
+//---------------------------------------------------------------------------//
 template<typename T>
 void add_point_stats_impl(Array<Vec<T,3>> &points,
                         Array<Stats> &stats,
@@ -119,8 +119,65 @@ void add_point_stats_impl(Array<Vec<T,3>> &points,
 #endif
 }
 
-void StatStore::write_point_stats(const std::string name)
+} // namespace detail
+
+//---------------------------------------------------------------------------//
+// static
+//---------------------------------------------------------------------------//
+#ifdef DRAY_STATS
+bool StatStore::m_stats_supported = true;
+#else
+bool StatStore::m_stats_supported = false;
+#endif
+
+bool StatStore::m_stats_enabled = false;
+
+std::vector<std::vector<std::pair<int32,Stats>>> StatStore::m_ray_stats;
+std::vector<std::vector<std::pair<Vec<float32,3>,Stats>>> StatStore::m_point_stats;
+
+//---------------------------------------------------------------------------//
+bool
+StatStore::stats_supported()
+{ 
+  return m_stats_supported;
+}
+
+//---------------------------------------------------------------------------//
+bool
+StatStore::stats_enabled()
+{ 
+  return m_stats_enabled;
+}
+
+//---------------------------------------------------------------------------//
+void
+StatStore::enable_stats()
+{ 
+  if(!m_stats_supported)
+  {
+    DRAY_ERROR (
+    "StatStore::enable_stats() -- Cannot enable stats, "
+    "Dray was compiled without stats support (DRAY_ENABLE_STATS=OFF)");
+  }
+  m_stats_enabled = true;
+}
+
+//---------------------------------------------------------------------------//
+void
+StatStore::disable_stats()
+{ 
+  m_stats_enabled = false;
+}
+
+
+//---------------------------------------------------------------------------//
+void
+StatStore::write_point_stats(const std::string &ofile_base)
 {
+  if(!m_stats_enabled)
+  {
+    return;
+  }
 #ifdef DRAY_STATS
   const int32 num_layers = m_point_stats.size();
   int32 tot_size = 0;
@@ -130,7 +187,7 @@ void StatStore::write_point_stats(const std::string name)
   }
 
   std::stringstream file_name;
-  file_name<<name<<"_"<<dray::mpi_rank()<<".vtk";
+  file_name << ofile_base << "_point_stats_" << dray::mpi_rank() << ".vtk";
   std::ofstream file;
   file.open (file_name.str());
   file<<"# vtk DataFile Version 3.0\n";
@@ -208,6 +265,7 @@ void StatStore::write_point_stats(const std::string name)
 #endif
 }
 
+//---------------------------------------------------------------------------//
 void
 StatStore::clear()
 {
@@ -215,9 +273,14 @@ StatStore::clear()
   m_ray_stats.clear();
 }
 
+//---------------------------------------------------------------------------//
 void
 StatStore::add_ray_stats(const Array<Ray> &rays, Array<Stats> &stats)
 {
+  if(!m_stats_enabled)
+  {
+    return;
+  }
 #ifdef DRAY_STATS
   const int32 size = rays.size();
   std::vector<std::pair<int32,Stats>> ray_data;
@@ -239,9 +302,14 @@ StatStore::add_ray_stats(const Array<Ray> &rays, Array<Stats> &stats)
 #endif
 }
 
+//---------------------------------------------------------------------------//
 void
 StatStore::add_point_stats(Array<Vec<Float,3>> &points, Array<Stats> &stats)
 {
+  if(!m_stats_enabled)
+  {
+    return;
+  }
 #ifdef DRAY_STATS
   const int32 size = points.size();
   std::vector<std::pair<Vec<float32,3>,Stats>> point_data;
@@ -269,15 +337,21 @@ StatStore::add_point_stats(Array<Vec<Float,3>> &points, Array<Stats> &stats)
 #endif
 }
 
+//---------------------------------------------------------------------------//
 void
-StatStore::write_ray_stats(const int32 width,const int32 height)
+StatStore::write_ray_stats(const std::string &ofile_base,
+                           const int32 width,const int32 height)
 {
+  if(!m_stats_enabled)
+  {
+    return;
+  }
 #ifdef DRAY_STATS
   const int num_images = m_ray_stats.size();
   for(int i = 0; i < num_images; ++i)
   {
     std::stringstream ss;
-    ss<<"ray_data_"<<i<<"_r_"<<dray::mpi_rank();
+    ss<< ofile_base << "_ray_stats_" << i << "_r_" << dray::mpi_rank();
     detail::write_ray_data(width,
                            height,
                            m_ray_stats[i],
@@ -291,8 +365,13 @@ StatStore::write_ray_stats(const int32 width,const int32 height)
 #endif
 }
 
+//---------------------------------------------------------------------------//
 std::ostream& operator<<(std::ostream &os, const Stats &stats)
 {
+  if(!StatStore::stats_enabled())
+  {
+    return os;
+  }
 #ifdef DRAY_STATS
   os << "[" << stats.m_newton_iters <<", "<<stats.m_candidates<<"]";
 #else
@@ -302,4 +381,5 @@ std::ostream& operator<<(std::ostream &os, const Stats &stats)
 }
 
 } // namespace stats
+
 } // namespace dray

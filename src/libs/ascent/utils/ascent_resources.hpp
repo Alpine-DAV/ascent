@@ -12,6 +12,7 @@
 #ifndef ASCENT_RESOURCES_HPP
 #define ASCENT_RESOURCES_HPP
 
+#include <ascent_exports.h>
 #include <string>
 #include <conduit.hpp>
 
@@ -27,11 +28,11 @@ namespace ascent
 namespace resources
 {
 
-void load_compiled_resource_tree(const std::string &resource_name,
-                                 conduit::Node &res);
+void ASCENT_API load_compiled_resource_tree(const std::string &resource_name,
+                                            conduit::Node &res);
 
-void expand_resource_tree_to_file_system(const conduit::Node &resource_tree,
-                                         const std::string &path);
+void ASCENT_API expand_resource_tree_to_file_system(const conduit::Node &resource_tree,
+                                                    const std::string &path);
 
 //-----------------------------------------------------------------------------
 };

@@ -30,7 +30,6 @@
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_metadata.hpp>
-#include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_runtime_param_check.hpp>

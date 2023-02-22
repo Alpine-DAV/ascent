@@ -16,6 +16,19 @@ By default, each CUDA capable GPU device is queried, and a rank is assigned a de
 Collisions could result in a run-time failure or significant delays. 
 This default behavior can be overridden. Please see the Ascent options for more details.
 
+Using ROCm-SMI on AMD GPUs
+--------------------------
+ROCm-SMI stands for ROCm System Management Interface and provides an interfaces for applications and users to monitor and control GPU applicatoins. 
+
+ROCm-SMI can be used to verify GPU usage. 
+This is done by launching your application and then using ROCm-SMI on the same node to monitor the running job. 
+
+The following call will monitor the usage of GPUs every tenth of a second:
+
+.. code-block:: sh
+
+   watch -n 0.1 rocm-smi    
+
 Using RocProf on AMD GPUs
 -------------------------
 RocProf is a command line tool provided by ROCm that is implemented on top of the rocProfiler and rocTracer APIs.

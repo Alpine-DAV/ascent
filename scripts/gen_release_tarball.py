@@ -2,6 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
+import sys
 import subprocess
 import json
 from optparse import OptionParser
@@ -25,7 +26,7 @@ def shexe(cmd):
 def main():
     opts = parse_args()
     print(json.dumps(opts,indent=2))
-    shexe("python scripts/git_archive_all.py --prefix ascent-v{0} ascent-v{0}-src-with-blt.tar.gz".format(opts["ver"]))
+    shexe("{0} scripts/git_archive_all.py --prefix ascent-v{1} ascent-v{1}-src-with-blt.tar.gz".format(sys.executable,opts["ver"]))
     shexe("shasum -a 256 ascent-v{0}-src-with-blt.tar.gz".format(opts["ver"]))
 
 

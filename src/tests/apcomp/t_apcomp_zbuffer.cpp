@@ -29,7 +29,7 @@ TEST(apcomp_zbuffer, apcomp_zbuffer)
 {
   std::string output_dir = prepare_output_dir();
   std::string file_name = "apcomp_zbuffer";
-  std::string output_file = apcomp::join_file_path(output_dir,file_name);
+  std::string output_file = conduit::utils::join_file_path(output_dir,file_name);
   // TOD: Fix these, i don't think they delete
   remove_test_file(output_file);
 
