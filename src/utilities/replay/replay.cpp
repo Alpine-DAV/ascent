@@ -16,6 +16,7 @@
 
 #include <fstream>
 #include <vector>
+#include <algorithm>
 #ifdef REPLAY_MPI
 #include <mpi.h>
 #endif
