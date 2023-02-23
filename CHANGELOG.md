@@ -16,6 +16,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 - Devil Ray stats are now opt in, instead of opt out to avoid accumulating memory.
 
+### Fixed
+- Ensure ghost indicator fields survive field filtering.
+
 ## [0.9.0] - Released 2023-01-12
 
 ### Preferred dependency versions for ascent@0.9.0
