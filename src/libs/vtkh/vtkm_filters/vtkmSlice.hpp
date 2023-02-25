@@ -10,8 +10,9 @@ class vtkmSlice
 {
 public:
   vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                          std::vector<vtkm::Vec<vtkm::Float32,3>> m_points,
-                          std::vector<vtkm::Vec<vtkm::Float32,3>> m_normals);
+                          vtkm::Vec<vtkm::Float32,3> m_points,
+                          vtkm::Vec<vtkm::Float32,3> m_normals,
+			  std::string fname);
 };
 }
 #endif

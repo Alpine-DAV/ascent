@@ -1,7 +1,9 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
+#include <vtkh/vtkm_filters/vtkmSlice.hpp>
 
+#include <vtkm/filter/contour/Slice.h>
 #include <vtkm/VectorAnalysis.h>
 #include <vtkm/cont/Algorithm.h>
 #include <vtkm/cont/TryExecute.h>
@@ -474,52 +476,47 @@ Slice::PreExecute()
 void
 Slice::DoExecute()
 {
-  const std::string fname = "slice_field";
+  const std::string fname = "sliceScalars";
   const int num_domains = this->m_input->GetNumberOfDomains();
   const int num_slices = this->m_points.size();
+  this->m_output = new vtkh::DataSet();
 
   if(num_slices == 0)
   {
     throw Error("Slice: no slice planes specified");
   }
 
+  std::cerr << "NUM SLICES: " << num_slices << std::endl;
   std::vector<vtkh::DataSet*> slices;
   for(int s = 0; s < num_slices; ++s)
   {
     vtkm::Vec<vtkm::Float32,3> point = m_points[s];
     vtkm::Vec<vtkm::Float32,3> normal = m_normals[s];
     vtkh::DataSet temp_ds = *(this->m_input);
+    vtkh::DataSet *slice_output = new vtkh::DataSet();
     // shallow copy the input so we don't propagate the slice field
     // to the input data set, since it might be used in other places
     for(int i = 0; i < num_domains; ++i)
     {
       vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+      vtkh::vtkmSlice slicer;
+      auto output = slicer.Run(dom, m_points[s], m_normals[s], fname);
+      slice_output->AddDomain(output, i); 
 
-      vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
-      vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
-        .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
-
-      dom.AddField(vtkm::cont::Field(fname,
-                                      vtkm::cont::Field::Association::Points,
-                                      slice_field));
     } // each domain
-
-    vtkh::MarchingCubes marcher;
-    marcher.SetInput(&temp_ds);
-    marcher.SetIsoValue(0.);
-    marcher.SetField(fname);
-    marcher.Update();
-    slices.push_back(marcher.GetOutput());
+    slices.push_back(slice_output);
   } // each slice
 
   if(slices.size() > 1)
   {
     detail::MergeContours merger(slices, fname);
     this->m_output = merger.Merge();
+//    for(int i = 0; i < num_slices; i++) delete slices[i];
   }
   else
   {
     this->m_output = slices[0];
+    //delete slices[0];
   }
 }
 
@@ -626,7 +623,7 @@ void stripUnicode(std::string & str)
 void
 AutoSliceLevels::DoExecute()
 {
-  const std::string fname = "slice_field";
+  const std::string fname = "sliceScalars";
   const int num_domains = this->m_input->GetNumberOfDomains();
   const int num_slices = this->m_levels;
   std::string field = this->m_field_name;
@@ -678,14 +675,9 @@ AutoSliceLevels::DoExecute()
     for(int i = 0; i < num_domains; ++i)
     {
       vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
-
-      vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
-      vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
-        .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
-
-      dom.AddField(vtkm::cont::Field(fname,
-                                      vtkm::cont::Field::Association::Points,
-                                      slice_field));
+      vtkh::vtkmSlice slicer;
+      auto output = slicer.Run(dom, point, normal, fname);
+      temp_ds.AddDomain(output,i); 
     } // each domain
 
     vtkh::MarchingCubes marcher;
@@ -693,9 +685,10 @@ AutoSliceLevels::DoExecute()
     marcher.SetIsoValue(0.);
     marcher.SetField(fname);
     marcher.Update();
-    
-    vtkh::DataSet* output = marcher.GetOutput();
-    std::vector<float> slice_data = vtkh::detail::GetScalarData<float>(*output, field.c_str());
+
+    vtkh::DataSet *output = marcher.GetOutput();
+
+    std::vector<float> slice_data = vtkh::detail::GetScalarData<float>(temp_ds, field.c_str());
     current_score = vtkh::detail::calcEntropyMM<float>(slice_data, slice_data.size(), 256, datafield_min, datafield_max);
     
     if(current_score > winning_score)
