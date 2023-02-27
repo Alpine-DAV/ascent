@@ -23,6 +23,7 @@
 #ifndef FLOW_HPP
 #define FLOW_HPP
 
+#include <flow_exports.h>
 #include <flow_config.h>
 
 #include <conduit.hpp>
@@ -33,6 +34,8 @@
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 #include <flow_timer.hpp>
+
+#include <flow_imports.hpp>
 
 // filters
 #include <flow_filters.hpp>

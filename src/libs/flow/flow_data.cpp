@@ -91,6 +91,11 @@ Data::print() const
     CONDUIT_INFO(to_json());
 }
 
+
+// export compiled instance of Node wrapper
+template class FLOW_API DataWrapper<conduit::Node>;
+
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

@@ -38,6 +38,7 @@ set(flow_headers
     flow_graph.hpp
     flow_workspace.hpp
     flow_timer.hpp
+    flow_imports.hpp
     filters/flow_builtin_filters.hpp)
 
 set(flow_thirdparty_libs

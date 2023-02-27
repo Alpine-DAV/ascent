@@ -23,6 +23,11 @@
 #else
 #define FLOW_API __declspec(dllimport)
 #endif
+
+// special case to declare symbols that should be imported
+// (populated only on windows)
+#define FLOW_IMPORT_API __declspec(dllimport)
+
 #if defined(_MSC_VER)
 // Turn off warning about lack of DLL interface
 #pragma warning(disable:4251)
@@ -37,7 +42,15 @@
 # else
 #   define FLOW_API /* hidden by default */
 # endif
+
+// special case to declare symbols that should be imported.
+// (empty for non windows case)
+#define FLOW_IMPORT_API
 #endif
+
+// API def For templates that are used downstream
+// (empty for all cases)
+#define FLOW_TEMPLATE_API
 
 #endif
 

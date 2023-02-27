@@ -98,8 +98,13 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+// DataWrapper is a templated used downstream
+// b/c of this we don't want to cement import/export
+// during Conduit compile time.
+//  We use FLOW_TEMPLATE_API instead of FLOW_API
+// 
 template <class T>
-class FLOW_API DataWrapper: public Data
+class FLOW_TEMPLATE_API DataWrapper: public Data
 {
  public:
 
@@ -130,10 +135,6 @@ class FLOW_API DataWrapper: public Data
     }
 };
 
-
-// this needs to be declared here to cement proper symbol visibly
-// to use runtime type checking in further libs
-template class FLOW_API DataWrapper<conduit::Node>;
 
 //-----------------------------------------------------------------------------
 };
