@@ -479,14 +479,12 @@ Slice::DoExecute()
   const std::string fname = "sliceScalars";
   const int num_domains = this->m_input->GetNumberOfDomains();
   const int num_slices = this->m_points.size();
-  this->m_output = new vtkh::DataSet();
 
   if(num_slices == 0)
   {
     throw Error("Slice: no slice planes specified");
   }
 
-  std::cerr << "NUM SLICES: " << num_slices << std::endl;
   std::vector<vtkh::DataSet*> slices;
   for(int s = 0; s < num_slices; ++s)
   {
@@ -502,7 +500,6 @@ Slice::DoExecute()
       vtkh::vtkmSlice slicer;
       auto output = slicer.Run(dom, m_points[s], m_normals[s], fname);
       slice_output->AddDomain(output, i); 
-
     } // each domain
     slices.push_back(slice_output);
   } // each slice
@@ -698,33 +695,6 @@ AutoSliceLevels::DoExecute()
     }
   } // each slice
   
-  //TODO: needed for setting camera based on input normal
-  //if(normal[0] == 1 && normal[1] == 1 &&  normal[2] == 1)
-  //{
-
-  //        std::cerr << "normal is 1 1 1 " << std::endl;
-  //}
-  //else
-  //{
-  //        std::cerr << "normal is not 1 1 1 " << std::endl;
-  //  vtkmCamera *camera = new vtkmCamera;
-  //  camera->ResetToBounds(bounds);
-  //  std::cerr << "In VTKH Filters" << std::endl;
-  //  vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
-  //  vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
-  //  vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
-  //  vtkm::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
-  //  std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
-  //  std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
-  //  std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
-  //  std::cerr<<std::endl;
-  //  std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
-  //  std::cerr << "radius: " << radius << std::endl;
-
-  //  this->m_radius = radius;
-  //  this->m_bounds = bounds;
-  //  this->m_normal = normal;
-  //}
 }
 
 void
