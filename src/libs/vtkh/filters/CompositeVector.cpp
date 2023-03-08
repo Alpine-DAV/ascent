@@ -1,6 +1,6 @@
 //#include <vtkm/filter/your_vtkm_filter.h>
 #include <vtkh/filters/CompositeVector.hpp>
-#include <vtkm/worklet/WorkletMapField.h>
+#include <vtkh/vtkm_filters/vtkmCompositeVector.hpp>
 #include <vtkh/Error.hpp>
 
 namespace vtkh
@@ -30,50 +30,6 @@ std::string to_string(vtkm::cont::Field::Association assoc)
   }
   return res;
 }
-
-class MakeCompositeVector : public vtkm::worklet::WorkletMapField
-{
-public:
-  VTKM_CONT
-  MakeCompositeVector()
-  {}
-
-  typedef void ControlSignature(FieldIn, FieldIn, FieldIn, FieldOut);
-  typedef void ExecutionSignature(_1, _2, _3, _4);
-
-  template<typename T, typename U, typename V>
-  VTKM_EXEC
-  void operator()(const T &value1,
-                  const U &value2,
-                  const V &value3,
-                  vtkm::Vec<vtkm::Float64,3> &output) const
-  {
-    output[0] = static_cast<vtkm::Float64>(value1);
-    output[1] = static_cast<vtkm::Float64>(value2);
-    output[2] = static_cast<vtkm::Float64>(value3);
-  }
-};
-
-class MakeVector2d : public vtkm::worklet::WorkletMapField
-{
-public:
-  VTKM_CONT
-  MakeVector2d()
-  {}
-
-  typedef void ControlSignature(FieldIn, FieldIn, FieldOut);
-  typedef void ExecutionSignature(_1, _2, _3);
-
-  template<typename T, typename U>
-  VTKM_EXEC
-  void operator()(const T &value1,
-                  const U &value2,
-                  vtkm::Vec<vtkm::Float64,2> &output) const
-  {
-    output[0] = static_cast<vtkm::Float64>(value1);
-    output[1] = static_cast<vtkm::Float64>(value2);
-  }
-};
 
 }// namespace detail
 
@@ -193,58 +149,38 @@ void CompositeVector::PostExecute()
 void CompositeVector::DoExecute()
 {
   this->m_output = new DataSet();
-  // shallow copy input data set and bump internal ref counts
-  *m_output = *m_input;
 
   const int num_domains = this->m_input->GetNumberOfDomains();
+  std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds();
+
+  bool valid;
+  vtkm::cont::Field::Association assoc =
+    this->m_input->GetFieldAssociation(m_field_1, valid);
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::DataSet &dom =  this->m_output->GetDomain(i);
-
+    vtkm::cont::DataSet &dom =  this->m_input->GetDomain(i);
+    std::vector<std::string> input_field_names;
     if(!dom.HasField(m_field_1))
     {
       continue;
     }
 
-    vtkm::cont::Field in_field_1 = dom.GetField(m_field_1);
-    vtkm::cont::Field in_field_2 = dom.GetField(m_field_2);
+    input_field_names.push_back(m_field_1);
+    input_field_names.push_back(m_field_2);
 
     if(m_mode_3d)
     {
-      vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>> vec_field;
-      vtkm::cont::Field in_field_3 = dom.GetField(m_field_3);
-
-      vtkm::worklet::DispatcherMapField<detail::MakeCompositeVector>(detail::MakeCompositeVector())
-        .Invoke(in_field_1.GetData().ResetTypes(vtkm::TypeListFieldScalar(),
-                                                VTKM_DEFAULT_STORAGE_LIST{}),
-                in_field_2.GetData().ResetTypes(vtkm::TypeListFieldScalar(),
-                                                VTKM_DEFAULT_STORAGE_LIST{}),
-                in_field_3.GetData().ResetTypes(vtkm::TypeListFieldScalar(),
-                                                VTKM_DEFAULT_STORAGE_LIST{}),
-                vec_field);
-
-      vtkm::cont::Field out_field(m_result_name,
-                                  in_field_1.GetAssociation(),
-                                  vec_field);
-      dom.AddField(out_field);
+      input_field_names.push_back(m_field_3);
+      vtkmCompositeVector composite3DVec;
+      vtkm::cont::DataSet output = composite3DVec.Run(dom, input_field_names, m_result_name, assoc);
+      m_output->AddDomain(output, domain_ids[i]);
     }
     else
     {
-      vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>> vec_field;
-
-      vtkm::worklet::DispatcherMapField<detail::MakeVector2d>(detail::MakeVector2d())
-        .Invoke(in_field_1.GetData().ResetTypes(vtkm::TypeListFieldScalar(),
-                                                VTKM_DEFAULT_STORAGE_LIST{}),
-                in_field_2.GetData().ResetTypes(vtkm::TypeListFieldScalar(),
-                                                VTKM_DEFAULT_STORAGE_LIST{}),
-                vec_field);
-
-      vtkm::cont::Field out_field(m_result_name,
-                                  in_field_1.GetAssociation(),
-                                  vec_field);
-      dom.AddField(out_field);
-
+      vtkmCompositeVector composite2DVec;
+      vtkm::cont::DataSet output = composite2DVec.Run(dom, input_field_names, m_result_name, assoc); 
+      m_output->AddDomain(output, domain_ids[i]);
     }
   }
 }
