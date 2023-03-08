@@ -868,6 +868,212 @@ VTKHSlice::execute()
 }
 
 //-----------------------------------------------------------------------------
+VTKHAutoSliceLevels::VTKHAutoSliceLevels()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAutoSliceLevels::~VTKHAutoSliceLevels()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAutoSliceLevels::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_autoslicelevels";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("field",params, info, true);
+
+    if(!params.has_path("levels"))
+    {
+      info["errors"]
+        .append() = "AutoSliceLevels must specify number of slices to consider via 'levels'.";
+      res = false;
+    }
+
+    res = check_string("topology",params, info, false) && res;
+
+    res = check_numeric("normal/x",params, info, true, true) && res;
+    res = check_numeric("normal/y",params, info, true, true) && res;
+    res = check_numeric("normal/z",params, info, true, true) && res;
+
+    res = check_numeric("levels",params, info, true, true) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("levels");
+    valid_paths.push_back("field");
+    valid_paths.push_back("normal/x");
+    valid_paths.push_back("normal/y");
+    valid_paths.push_back("normal/z");
+    valid_paths.push_back("topology");
+
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+
+vtkm::Vec<vtkm::Float32,3>
+GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
+{
+  //point where normal intersects unit sphere
+  vtkm::Vec<vtkm::Float32,3> point;
+
+  //reverse normal
+  //want camera point in the same dir as normal
+  vtkm::Vec<vtkm::Float32,3> r_normal{((vtkm::Float32)1.0)*normal[0],
+		  			((vtkm::Float32)1.0)*normal[1],
+					((vtkm::Float32)1.0)*normal[2]};
+
+  //calc discriminant
+  //a = dot(normal,normal)
+  vtkm::Float32 r_norm0 = r_normal[0]*r_normal[0];
+  vtkm::Float32 r_norm1 = r_normal[1]*r_normal[1];
+  vtkm::Float32 r_norm2 = r_normal[2]*r_normal[2];
+  vtkm::Float32 a = r_norm0 + r_norm1 + r_norm2;
+  //b is 0
+  //c is -1
+  vtkm::Float32 discriminant = 4.0*a;
+
+  vtkm::Float32 t =  sqrt(discriminant)/(2*a);
+  vtkm::Float32 t2 = -t;
+  if(abs(t2) < abs(t)) 
+    t = t2;
+
+  point[0]= t * r_normal[0];
+  point[1]= t * r_normal[1];
+  point[2]= t * r_normal[2];
+
+  return point;
+
+}
+
+void
+SetCamera(vtkm::rendering::Camera *camera, vtkm::Vec<vtkm::Float32,3> normal, vtkm::Float32 radius)
+{
+  vtkm::Vec<vtkm::Float32,3> i_point = GetIntersectionPoint(normal);
+  vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+
+  vtkm::Vec<vtkm::Float32,3> pos;
+  vtkm::Float32 zoom = 3;
+  pos[0] = zoom*radius*i_point[0] + lookat[0];
+  pos[1] = zoom*radius*i_point[1] + lookat[1];
+  pos[2] = zoom*radius*i_point[2] + lookat[2];
+
+  camera->SetPosition(pos);
+}
+//-----------------------------------------------------------------------------
+
+void
+VTKHAutoSliceLevels::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHAutoSliceLevels input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkh::AutoSliceLevels slicer;
+
+    slicer.SetInput(&data);
+
+    const Node &n_normal = params()["normal"];
+    const int n_levels = params()["levels"].to_int32();
+    std::string field = params()["field"].as_string();
+
+    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+    vtkm::Bounds bounds = data.GetGlobalBounds();
+
+    Vec3f v_normal;
+    v_normal[0] = get_float32(n_normal["x"], data_object);
+    v_normal[1] = get_float32(n_normal["y"], data_object);
+    v_normal[2] = get_float32(n_normal["z"], data_object);
+
+    slicer.SetNormal(v_normal);
+    slicer.SetLevels(n_levels);
+    slicer.SetField(field);
+    slicer.Update();
+
+    vtkh::DataSet *slice_output = slicer.GetOutput();
+    
+    //TODO: implement auto camera based on input normal
+    //
+    //if(!graph().workspace().registry().has_entry("camera"))
+    //{
+    //  vtkm::rendering::Camera *cam = new vtkm::rendering::Camera;
+    //  vtkm::Bounds bounds = slicer.GetDataBounds();
+    //  std::cerr << "In Ascent runtime filters" << std::endl;
+    //  std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
+    //  std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
+    //  std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
+    //  std::cerr<<std::endl;
+    //  vtkm::Vec<vtkm::Float32,3> normal = slicer.GetNormal();
+    //  std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+    //  vtkm::Float32 radius = slicer.GetRadius();
+    //  std::cerr << "radius: " << radius << std::endl;
+    //  SetCamera(cam, normal, radius);
+    //  std::cerr << "Cam before registry:" << std::endl;
+    //  cam->Print();
+    //  std::cerr << "Cam after registry:" << std::endl;
+    //  graph().workspace().registry().add<vtkm::rendering::Camera>("camera",cam,1);
+    //}
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = new VTKHCollection();
+    //= collection->copy_without_topology(topo_name);
+    new_coll->add(*slice_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete slice_output;
+    set_output<DataObject>(res);
+
+}
+
+//-----------------------------------------------------------------------------
 VTKHGhostStripper::VTKHGhostStripper()
 :Filter()
 {

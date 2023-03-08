@@ -225,7 +225,7 @@ DataSet bp_ho_2dray (const conduit::Node &n_dataset)
     topo_name = names[0];
     dataset.mesh()->name(topo_name);
   }
-#warning "should we import the boundry topology?"
+  // TODO:  should we import the boundary topology?
 
   DRAY_INFO ("Found topology "<<topo_name);
 

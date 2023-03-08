@@ -7,6 +7,7 @@
 #include <dray/array.hpp>
 #include <dray/ray.hpp>
 #include <dray/types.hpp>
+#include <dray/error.hpp>
 
 #include <iostream>
 #include <vector>
@@ -69,13 +70,27 @@ class StatStore
 protected:
   static std::vector<std::vector<std::pair<int32,Stats>>> m_ray_stats;
   static std::vector<std::vector<std::pair<Vec<float32,3>,Stats>>> m_point_stats;
-public:
-  static void add_ray_stats(const Array<Ray> &rays, Array<Stats> &stats);
 
+  static bool m_stats_supported;
+  static bool m_stats_enabled;
+
+public:
+  // support == compiled with support
+  static bool stats_supported();
+  // enabled means compiled with support && opt in to stats via call to enable_stats()
+  static bool stats_enabled();
+
+  // enable / disable stats
+  static void enable_stats();
+  static void disable_stats();
+
+  static void add_ray_stats(const Array<Ray> &rays, Array<Stats> &stats);
   static void add_point_stats(Array<Vec<Float,3>> &points, Array<Stats> &stats);
 
-  static void write_ray_stats(const int32 width,const int32 height);
-  static void write_point_stats(const std::string name);
+  static void write_ray_stats(const std::string &ofile_base,
+                              const int32 width,
+                              const int32 height);
+  static void write_point_stats(const std::string &ofile_base);
   static void clear();
 
 };

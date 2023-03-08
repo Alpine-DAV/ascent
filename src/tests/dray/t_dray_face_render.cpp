@@ -16,6 +16,7 @@
 #include <dray/rendering/renderer.hpp>
 
 #include <dray/utils/appstats.hpp>
+#include <dray/array_registry.hpp>
 
 #include <dray/math.hpp>
 
@@ -33,12 +34,24 @@ mfem_enabled()
 #endif
 }
 
+//---------------------------------------------------------------------------//
 TEST (dray_faces, dray_impeller_faces)
 {
   if(!mfem_enabled())
   {
     std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
     return;
+  }
+
+  // between tests, we should always start with 0 arrays, 0 usage
+  EXPECT_EQ(dray::ArrayRegistry::number_of_arrays(),0);
+  EXPECT_EQ(dray::ArrayRegistry::host_usage(),0);
+  EXPECT_EQ(dray::ArrayRegistry::device_usage(),0);
+  dray::ArrayRegistry::summary();
+  dray::stats::StatStore::clear();
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
   }
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "impeller_p2_000000.root";
@@ -78,9 +91,11 @@ TEST (dray_faces, dray_impeller_faces)
   // note: dray diff tolerance was 0.2f prior to import
   EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
   fb.save_depth (output_file + "_depth");
-  dray::stats::StatStore::write_ray_stats (c_width, c_height);
+  dray::stats::StatStore::write_ray_stats (output_file + "_stats",
+                                           c_width, c_height);
 }
 
+//---------------------------------------------------------------------------//
 TEST (dray_faces, dray_triangles)
 {
   if(!mfem_enabled())
@@ -88,7 +103,18 @@ TEST (dray_faces, dray_triangles)
     std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
     return;
   }
-  
+
+  // between tests, we should always start with 0 arrays, 0 usage
+  EXPECT_EQ(dray::ArrayRegistry::number_of_arrays(),0);
+  EXPECT_EQ(dray::ArrayRegistry::host_usage(),0);
+  EXPECT_EQ(dray::ArrayRegistry::device_usage(),0);
+  dray::ArrayRegistry::summary();
+  dray::stats::StatStore::clear();
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
+  }
+
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "esher_000000.root";
   std::string output_path = prepare_output_dir ();
   std::string output_file =
@@ -126,15 +152,28 @@ TEST (dray_faces, dray_triangles)
   // note: dray diff tolerance was 0.2f prior to import
   EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
   fb.save_depth (output_file + "_depth");
-  dray::stats::StatStore::write_ray_stats (c_width, c_height);
+  dray::stats::StatStore::write_ray_stats (output_file + "_stats",
+                                           c_width, c_height);
 }
 
+//---------------------------------------------------------------------------//
 TEST (dray_faces, dray_warbly_faces)
 {
   if(!mfem_enabled())
   {
     std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
     return;
+  }
+
+  // between tests, we should always start with 0 arrays, 0 usage
+  EXPECT_EQ(dray::ArrayRegistry::number_of_arrays(),0);
+  EXPECT_EQ(dray::ArrayRegistry::host_usage(),0);
+  EXPECT_EQ(dray::ArrayRegistry::device_usage(),0);
+  dray::ArrayRegistry::summary();
+  dray::stats::StatStore::clear();
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
   }
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "warbly_cube/warbly_cube_000000.root";
@@ -199,5 +238,6 @@ TEST (dray_faces, dray_warbly_faces)
   fb.save(output_file);
   // note: dray diff tolerance was 0.2f prior to import
   EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
-  dray::stats::StatStore::write_ray_stats (c_width, c_height);
+  dray::stats::StatStore::write_ray_stats (output_file + "_stats",
+                                           c_width, c_height);
 }

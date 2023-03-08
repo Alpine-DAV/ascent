@@ -722,6 +722,82 @@ TEST(ascent_runtime_options, test_field_filtering)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_field_filtering_ghosts)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    // add a ghost field 
+    data["fields/ascent_ghosts"].set(data["fields/radial"]);
+    
+    float64_array gvals = data["fields/ascent_ghosts/values"].value();
+    for(int i=0; i < gvals.number_of_elements(); i++)
+    {
+        // ghost every other element ....
+        gvals[i] = i%2;
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing field filtering with ghosts");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_field_filtering_wghosts");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, test_field_filtering_error)
 {
     Node n;

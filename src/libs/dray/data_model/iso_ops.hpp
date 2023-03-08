@@ -346,14 +346,16 @@ namespace dray
   DRAY_EXEC IsocutInfo measure_isocut(ShapeTet, const ScalarDP & dofs, Float iota, int32 p)
   {
     THROW_LOGIC_ERROR("Not implemented in " __FILE__ " measure_isocut(ShapeTet)")
-    return *(IsocutInfo*)nullptr;
+    IsocutInfo res;
+    return res;
   }
 
 
   DRAY_EXEC Split<Simplex> pick_iso_simple_split(ShapeTet, const IsocutInfo &info)
   {
     THROW_LOGIC_ERROR("Not implemented in " __FILE__ " pick_iso_simple_split(ShapeTet)")
-    return *(Split<Simplex>*)nullptr;
+    Split<Simplex> res;
+    return res;
   }
 
 

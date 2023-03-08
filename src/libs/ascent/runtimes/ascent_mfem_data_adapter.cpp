@@ -309,8 +309,9 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
     const mfem::FiniteElementSpace *ho_fes_space = ho_mesh->GetNodalFESpace();
     const mfem::FiniteElementCollection *ho_fes_col = ho_fes_space->FEColl();
     // refine the mesh and convert to blueprint
-    mfem::Mesh *lo_mesh = new mfem::Mesh(ho_mesh, refinement, mfem::BasisType::GaussLobatto);
-    MeshToBlueprintMesh (lo_mesh, n_dset);
+    mfem::Mesh lo_mesh = mfem::Mesh::MakeRefined(*ho_mesh, refinement, mfem::BasisType::GaussLobatto);
+
+    MeshToBlueprintMesh(&lo_mesh, n_dset);
 
     int conn_size = n_dset["topologies/main/elements/connectivity"].dtype().number_of_elements();
 
@@ -341,7 +342,7 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
         int  p = 0; // single scalar
         lo_col = new mfem::L2_FECollection(p, ho_mesh->Dimension(), 1);
       }
-      mfem::FiniteElementSpace *lo_fes = new mfem::FiniteElementSpace(lo_mesh, lo_col, ho_fes->GetVDim());
+      mfem::FiniteElementSpace *lo_fes = new mfem::FiniteElementSpace(&lo_mesh, lo_col, ho_fes->GetVDim());
       mfem::GridFunction *lo_gf = new mfem::GridFunction(lo_fes);
       // transform the higher order function to a low order function somehow
       mfem::OperatorHandle hi_to_lo;
@@ -372,8 +373,6 @@ MFEMDataAdapter::Linearize(MFEMDomains *ho_domains, conduit::Node &output, const
       info.print();
       ASCENT_ERROR("Linearize: failed to build a blueprint conforming data set from mfem")
     }
-    delete lo_mesh;
-
   }
   //output.schema().print();
 }
@@ -631,9 +630,9 @@ MFEMDataAdapter::ElementTypeToShapeName(mfem::Element::Type element_type)
      case mfem::Element::TETRAHEDRON:    return "tet";
      case mfem::Element::HEXAHEDRON:     return "hex";
      case mfem::Element::WEDGE:          return "wedge";
+     case mfem::Element::PYRAMID:        return "pyramid";
+     default:                            return "unknown";
    }
-
-   return "unknown";
 }
 
 };

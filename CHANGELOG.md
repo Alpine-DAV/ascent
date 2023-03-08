@@ -6,12 +6,28 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 
 ## Unreleased
-
 ### Preferred dependency versions for ascent@develop
-- conduit@0.8.4
+- conduit@0.8.6
 - vtk-m@1.9.0
 
 ### Added
+- Added runtime control option (in addition to existing compile time option) to Devil Ray stats.
+
+### Changed
+- Devil Ray stats are now opt in, instead of opt out to avoid accumulating memory.
+
+### Fixed
+- Ensure ghost indicator fields survive field filtering.
+
+## [0.9.0] - Released 2023-01-12
+
+### Preferred dependency versions for ascent@0.9.0
+- conduit@0.8.6
+- vtk-m@1.9.0
+
+### Added
+- Added support for HIP and running on AMD GPUs
+- Added RAJA expressions infrastructure
 - Added pipeline `partition` transform from Conduit Blueprint
 - Added extract `flatten` from Conduit Blueprint
 - Added Log base 10 filter. Filter type is `log10`
@@ -22,6 +38,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added CMake option `ENABLE_HIDDEN_VISIBILITY` (default=ON), which controls if hidden visibility is used for private symbols
 - Added documentation for how to use ROCm's rocprof profiler for GPUs with Ascent
 - Added support for Caliper performance annotations 
+- Added automatic slice filter that evaluates a number of slices and outputs the one with the highest entropy
 
 ### Changed
 - **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
@@ -166,7 +183,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.9.0...HEAD
+[0.8.0]: https://github.com/Alpine-DAV/ascent/compare/v0.8.0...v0.9.0
+[0.7.1]: https://github.com/Alpine-DAV/ascent/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Alpine-DAV/ascent/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Alpine-DAV/ascent/compare/v0.4.0...v0.5.0
