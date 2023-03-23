@@ -25,7 +25,7 @@ jobs:
             build_umpire=false `
             build_mfem=false `
             ./scripts/build_ascent/build_ascent.sh
-- name: Configure Ascent
+    - name: Configure Ascent
       run: |
         echo "**** Configuring Ascent"
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
