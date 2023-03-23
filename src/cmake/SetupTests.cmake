@@ -17,7 +17,6 @@
 ################################################################
 
 if(ASCENT_ENABLE_TESTS AND NOT ENABLE_TESTS)
-    message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
     set(ENABLE_TESTS ON)
 endif()
 
@@ -27,6 +26,67 @@ else()
     message(STATUS "Tests are disabled (ENABLE_TESTS=OFF)")
 endif()
 
+
+#####################################################################
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # Copy DLLs into our bin dir so we can satisfy 
+    # deps to run tests.
+    #
+    # Note: There are per target ways to do this, however
+    #       all of our many, many tests share these dlls so 
+    #       I opted for a single copy step, instead of
+    #       trying to track and copy each test. 
+    #
+    # Show TPL DLL Paths
+    message(STATUS "ASCENT_TPL_DLL_PATHS: ${ASCENT_TPL_DLL_PATHS}")
+    # glob and gather dlls from all TPL dirs
+    set(tpl_all_dlls)
+    foreach( tpl_dll_path in ${ASCENT_TPL_DLL_PATHS})
+        file(GLOB tpl_glob_dlls ${tpl_dll_path}/*.dll)
+        foreach( tpl_dll ${tpl_glob_dlls})
+            list(APPEND tpl_all_dlls ${tpl_dll})
+        endforeach()
+    endforeach()
+    add_custom_target(tpl_dlls_dir ALL
+                      COMMAND ${CMAKE_COMMAND} -E make_directory
+                      ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
+    add_custom_target(tpl_dlls ALL
+                      COMMAND ${CMAKE_COMMAND} -E copy 
+                      ${tpl_all_dlls}
+                      ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
+    add_dependencies(tpl_dlls tpl_dlls_dir)
+endif()
+
+##------------------------------------------------------------------------------
+## - Helper for setting up windows DLL runtime paths for cmake test funcs
+##
+## add_tpl_dll_paths( TEST test )
+##------------------------------------------------------------------------------
+function(add_tpl_dll_paths)
+    set(options)
+    set(singleValueArgs TEST)
+    set(multiValueArgs)
+
+    # parse our arguments
+    cmake_parse_arguments(arg
+                         "${options}"
+                         "${singleValueArgs}"
+                         "${multiValueArgs}" ${ARGN} )
+
+    if(WIN32 AND BUILD_SHARED_LIBS)
+        # add ASCENT_TPL_DLL_PATHS to PATH for ${arg_TEST} 
+        set(ENV_PATH_SEP "\\;")
+        set(ASCENT_TPL_DLL_PATHS_STRING)
+        list(JOIN ASCENT_TPL_DLL_PATHS  "\\;" ASCENT_TPL_DLL_PATHS_STRING)
+        set(PATH_STRING "PATH=%PATH%${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}${ASCENT_TPL_DLL_PATHS_STRING}")
+        #message(FATAL_ERROR ${PATH_STRING} )
+        set_property(TEST ${args_TEST}
+                     APPEND
+                     PROPERTY
+                     ENVIRONMENT ${PATH_STRING})
+    endif()
+
+endfunction()
 
 ##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest
@@ -77,8 +137,10 @@ function(add_cpp_test)
         if(EXTRA_PYTHON_MODULE_DIRS)
             set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
         endif()
-        set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
+
+    add_tpl_dll_paths(TEST ${arg_TEST})
 
 endfunction()
 
@@ -132,8 +194,10 @@ function(add_cuda_test)
         if(EXTRA_PYTHON_MODULE_DIRS)
             set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
         endif()
-        set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
+
+    add_tpl_dll_paths(TEST ${arg_TEST})
 
 endfunction()
 
@@ -188,8 +252,10 @@ function(add_cpp_mpi_test)
         if(EXTRA_PYTHON_MODULE_DIRS)
             set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
         endif()
-        set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
+
+    add_tpl_dll_paths(TEST ${arg_TEST})
 
     ###########################################################################
     # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
@@ -232,7 +298,9 @@ function(add_python_test TEST)
     if(EXTRA_PYTHON_MODULE_DIRS)
         set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
     endif()
-    set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+    set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+
+    add_tpl_dll_paths(TEST ${arg_TEST})
 
 endfunction(add_python_test)
 
@@ -284,7 +352,9 @@ function(add_python_mpi_test TEST)
      if(EXTRA_PYTHON_MODULE_DIRS)
          set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
      endif()
-     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+     set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+
+     add_tpl_dll_paths(TEST ${arg_TEST})
 
      ###########################################################################
      # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
@@ -323,6 +393,8 @@ macro(add_fortran_test)
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST})
+
+    add_tpl_dll_paths(TEST ${arg_TEST})
 
 endmacro(add_fortran_test)
 
