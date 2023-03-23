@@ -312,7 +312,7 @@ function(add_python_mpi_test TEST)
      if(EXTRA_PYTHON_MODULE_DIRS)
          set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
      endif()
-     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+     set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
 
      ###########################################################################
      # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
@@ -320,7 +320,7 @@ function(add_python_mpi_test TEST)
      # Since this is an OpenMPI specific env var, it shouldn't interfere
      # with other mpi implementations.
      ###########################################################################
-     set_property(TEST ${TEST}
+     set_property(TEST ${arg_TEST}
                   PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
 
 endfunction()

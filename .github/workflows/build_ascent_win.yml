@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@v2
       with: 
         submodules: 'recursive'
-    - name: Build & Test
+    - name: Build TPLs
       run: |
         env build_ascent=false `
             enable_tests=OFF `
@@ -25,3 +25,15 @@ jobs:
             build_umpire=false `
             build_mfem=false `
             ./scripts/build_ascent/build_ascent.sh
+- name: Configure Ascent
+      run: |
+        echo "**** Configuring Ascent"
+        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        echo "**** Building Ascent"
+        cmake --build  build --confiig Release -j2
+    - name: Install Ascent
+      run: |
+        echo "**** Installing Ascent"
+        cmake --install  build --confiig Release
