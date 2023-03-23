@@ -24,4 +24,4 @@ jobs:
             build_raja=false `
             build_umpire=false `
             build_mfem=false `
-            ./build_ascent.sh
+            ./scripts/build_ascent/build_ascent.sh
