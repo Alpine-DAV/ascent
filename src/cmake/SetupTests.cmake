@@ -58,37 +58,6 @@ if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
 endif()
 
 ##------------------------------------------------------------------------------
-## - Helper for setting up windows DLL runtime paths for cmake test funcs
-##
-## add_tpl_dll_paths( TEST test )
-##------------------------------------------------------------------------------
-function(add_tpl_dll_paths)
-    set(options)
-    set(singleValueArgs TEST)
-    set(multiValueArgs)
-
-    # parse our arguments
-    cmake_parse_arguments(arg
-                         "${options}"
-                         "${singleValueArgs}"
-                         "${multiValueArgs}" ${ARGN} )
-
-    if(WIN32 AND BUILD_SHARED_LIBS)
-        # add ASCENT_TPL_DLL_PATHS to PATH for ${arg_TEST} 
-        set(ENV_PATH_SEP "\\;")
-        set(ASCENT_TPL_DLL_PATHS_STRING)
-        list(JOIN ASCENT_TPL_DLL_PATHS  "\\;" ASCENT_TPL_DLL_PATHS_STRING)
-        set(PATH_STRING "PATH=%PATH%${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}${ASCENT_TPL_DLL_PATHS_STRING}")
-        #message(FATAL_ERROR ${PATH_STRING} )
-        set_property(TEST ${args_TEST}
-                     APPEND
-                     PROPERTY
-                     ENVIRONMENT ${PATH_STRING})
-    endif()
-
-endfunction()
-
-##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest
 ##
 ## add_cpp_test( TEST test DEPENDS_ON dep1 dep2... )
@@ -139,9 +108,6 @@ function(add_cpp_test)
         endif()
         set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
-
-    add_tpl_dll_paths(TEST ${arg_TEST})
-
 endfunction()
 
 
@@ -196,8 +162,6 @@ function(add_cuda_test)
         endif()
         set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
-
-    add_tpl_dll_paths(TEST ${arg_TEST})
 
 endfunction()
 
@@ -255,8 +219,6 @@ function(add_cpp_mpi_test)
         set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
 
-    add_tpl_dll_paths(TEST ${arg_TEST})
-
     ###########################################################################
     # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
     # to run with more tasks than actual cores
@@ -298,9 +260,7 @@ function(add_python_test TEST)
     if(EXTRA_PYTHON_MODULE_DIRS)
         set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
     endif()
-    set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
-
-    add_tpl_dll_paths(TEST ${arg_TEST})
+    set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
 
 endfunction(add_python_test)
 
@@ -352,9 +312,7 @@ function(add_python_mpi_test TEST)
      if(EXTRA_PYTHON_MODULE_DIRS)
          set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
      endif()
-     set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
-
-     add_tpl_dll_paths(TEST ${arg_TEST})
+     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
 
      ###########################################################################
      # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
@@ -362,7 +320,7 @@ function(add_python_mpi_test TEST)
      # Since this is an OpenMPI specific env var, it shouldn't interfere
      # with other mpi implementations.
      ###########################################################################
-     set_property(TEST ${arg_TEST}
+     set_property(TEST ${TEST}
                   PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
 
 endfunction()
@@ -393,8 +351,6 @@ macro(add_fortran_test)
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST})
-
-    add_tpl_dll_paths(TEST ${arg_TEST})
 
 endmacro(add_fortran_test)
 
