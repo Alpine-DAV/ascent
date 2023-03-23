@@ -86,7 +86,7 @@ cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} \
 echo "**** Building HDF5 ${hdf5_version}"
 cmake --build ${hdf5_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing HDF5 ${hdf5_version}"
-cmake --install ${hdf5_build_dir}
+cmake --install ${hdf5_build_dir} --config ${build_config}
 
 fi
 else
@@ -97,7 +97,7 @@ fi # build_hdf5
 ################
 # Conduit
 ################
-conduit_version=v0.8.6
+conduit_version=v0.8.7
 conduit_src_dir=${root_dir}/conduit-${conduit_version}/src
 conduit_build_dir=${root_dir}/build/conduit-${conduit_version}/
 conduit_install_dir=${root_dir}/install/conduit-${conduit_version}/
@@ -166,9 +166,9 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
   -DVTKm_ENABLE_MPI=OFF \
   -DVTKm_ENABLE_OPENMP=${enable_openmp}\
   -DVTKm_ENABLE_RENDERING=ON \
-  -DVTKm_ENABLE_TESTING=OFF \
-  -DBUILD_TESTING=OFF \
-  -DVTKm_ENABLE_BENCHMARKS=OFF\
+  -DVTKm_ENABLE_TESTING=${enable_tests} \
+  -DBUILD_TESTING=${enable_tests} \
+  -DVTKm_ENABLE_BENCHMARKS=OFF \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
 echo "**** Building VTK-m ${vtkm_version}"
@@ -342,7 +342,9 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DMFEM_USE_CONDUIT=ON ${mfem_extra_cmake_args}\
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
-  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir}
+  -DMFEM_ENABLE_TESTING=${enable_tests} \
+  -DMFEM_ENABLE_EXAMPLES=${enable_tests} \
+  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
 
 echo "**** Building MFEM ${vtkm_version}"
 cmake --build ${mfem_build_dir} --config ${build_config} -j${build_jobs}
