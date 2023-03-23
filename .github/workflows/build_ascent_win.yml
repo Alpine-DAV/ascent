@@ -1,0 +1,27 @@
+name: build_ascent_windows
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_windows_msvc_base:
+    name: MSVC Base Release
+    runs-on: windows-2019
+    steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        env build_ascent=false `
+            enable_tests=OFF `
+            build_camp=false `
+            build_raja=false `
+            build_umpire=false `
+            build_mfem=false `
+            ./build_ascent.sh
