@@ -60,12 +60,25 @@ fi
 root_dir=$(pwd)
 
 ################
+# path helper
+################
+function ospath()
+{
+  respath=""
+  if [[ "$build_windows" == "ON" ]]; then
+    echo `cygpath -m $1`
+  else
+    echo $1
+  fi 
+}
+
+################
 # HDF5
 ################
 hdf5_version=1.12.2
-hdf5_src_dir=${root_dir}/hdf5-${hdf5_version}
-hdf5_build_dir=${root_dir}/build/hdf5-${hdf5_version}/
-hdf5_install_dir=${root_dir}/install/hdf5-${hdf5_version}/
+hdf5_src_dir=$(ospath ${root_dir}/hdf5-${hdf5_version})
+hdf5_build_dir=$(ospath ${root_dir}/build/hdf5-${hdf5_version}/)
+hdf5_install_dir=$(ospath ${root_dir}/install/hdf5-${hdf5_version}/)
 hdf5_tarball=hdf5-${hdf5_version}.tar.gz
 
 # build only if install doesn't exist
@@ -98,9 +111,9 @@ fi # build_hdf5
 # Conduit
 ################
 conduit_version=v0.8.7
-conduit_src_dir=${root_dir}/conduit-${conduit_version}/src
-conduit_build_dir=${root_dir}/build/conduit-${conduit_version}/
-conduit_install_dir=${root_dir}/install/conduit-${conduit_version}/
+conduit_src_dir=$(ospath ${root_dir}/conduit-${conduit_version}/src)
+conduit_build_dir=$(ospath ${root_dir}/build/conduit-${conduit_version}/)
+conduit_install_dir=$(ospath ${root_dir}/install/conduit-${conduit_version}/)
 conduit_tarball=conduit-${conduit_version}-src-with-blt.tar.gz
 
 # build only if install doesn't exist
@@ -140,9 +153,9 @@ fi # build_conduit
 # VTK-m
 ################
 vtkm_version=v1.9.0
-vtkm_src_dir=${root_dir}/vtk-m-${vtkm_version}
-vtkm_build_dir=${root_dir}/build/vtk-m-${vtkm_version}
-vtkm_install_dir=${root_dir}/install/vtk-m-${vtkm_version}/
+vtkm_src_dir=$(ospath ${root_dir}/vtk-m-${vtkm_version})
+vtkm_build_dir=$(ospath ${root_dir}/build/vtk-m-${vtkm_version})
+vtkm_install_dir=$(ospath ${root_dir}/install/vtk-m-${vtkm_version}/)
 vtkm_tarball=vtk-m-${vtkm_version}.tar.gz
 
 # build only if install doesn't exist
@@ -186,9 +199,9 @@ fi # build_vtkm
 # Camp
 ################
 camp_version=2022.10.1
-camp_src_dir=${root_dir}/camp-${camp_version}
-camp_build_dir=${root_dir}/build/camp-${camp_version}
-camp_install_dir=${root_dir}/install/camp-${camp_version}/
+camp_src_dir=$(ospath ${root_dir}/camp-${camp_version})
+camp_build_dir=$(ospath ${root_dir}/build/camp-${camp_version})
+camp_install_dir=$(ospath ${root_dir}/install/camp-${camp_version}/)
 camp_tarball=camp-${camp_version}.tar.gz
 
 # build only if install doesn't exist
@@ -226,9 +239,9 @@ fi # build_camp
 # RAJA
 ################
 raja_version=v2022.10.4
-raja_src_dir=${root_dir}/RAJA-${raja_version}
-raja_build_dir=${root_dir}/build/raja-${raja_version}
-raja_install_dir=${root_dir}/install/raja-${raja_version}/
+raja_src_dir=$(ospath ${root_dir}/RAJA-${raja_version})
+raja_build_dir=$(ospath ${root_dir}/build/raja-${raja_version})
+raja_install_dir=$(ospath ${root_dir}/install/raja-${raja_version}/)
 raja_tarball=RAJA-${raja_version}.tar.gz
 
 # build only if install doesn't exist
@@ -267,9 +280,9 @@ fi # build_raja
 # Umpire
 ################
 umpire_version=2022.10.0
-umpire_src_dir=${root_dir}/umpire-${umpire_version}
-umpire_build_dir=${root_dir}/build/umpire-${umpire_version}
-umpire_install_dir=${root_dir}/install/umpire-${umpire_version}/
+umpire_src_dir=$(ospath ${root_dir}/umpire-${umpire_version})
+umpire_build_dir=$(ospath ${root_dir}/build/umpire-${umpire_version})
+umpire_install_dir=$(ospath ${root_dir}/install/umpire-${umpire_version}/)
 umpire_tarball=umpire-${umpire_version}.tar.gz
 umpire_windows_cmake_flags="-DBLT_CXX_STD=c++17 -DCMAKE_CXX_STANDARD=17 -DUMPIRE_ENABLE_FILESYSTEM=On -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On"
 
@@ -312,10 +325,10 @@ fi # build_umpire
 ################
 # MFEM
 ################
-mfem_version=4.4
-mfem_src_dir=${root_dir}/mfem-${mfem_version}
-mfem_build_dir=${root_dir}/build/mfem-${mfem_version}
-mfem_install_dir=${root_dir}/install/mfem-${mfem_version}/
+mfem_version=4.5.2
+mfem_src_dir=$(ospath ${root_dir}/mfem-${mfem_version})
+mfem_build_dir=$(ospath ${root_dir}/build/mfem-${mfem_version})
+mfem_install_dir=$(ospath ${root_dir}/install/mfem-${mfem_version}/)
 mfem_tarball=mfem-${mfem_version}.tar.gz
 mfem_windows_cmake_flags="-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 
@@ -361,9 +374,9 @@ fi # build_mfem
 # Ascent
 ################
 ascent_version=develop
-ascent_src_dir=${root_dir}/ascent/src
-ascent_build_dir=${root_dir}/build/ascent-${ascent_version}/
-ascent_install_dir=${root_dir}/install/ascent-${ascent_version}/
+ascent_src_dir=$(ospath ${root_dir}/ascent/src)
+ascent_build_dir=$(ospath ${root_dir}/build/ascent-${ascent_version}/)
+ascent_install_dir=$(ospath ${root_dir}/install/ascent-${ascent_version}/)
 
 echo "**** Creating Ascent host-config (ascent-config.cmake)"
 #
