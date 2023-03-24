@@ -343,7 +343,7 @@ if [ ! -d ${mfem_install_dir} ]; then
 if ${build_mfem}; then
 if [ ! -d ${mfem_src_dir} ]; then
   echo "**** Downloading ${mfem_tarball}"
-  curl -L https://github.com/mfem/mfem/archive/refs/tags/v4.4.tar.gz -o ${mfem_tarball}
+  curl -L https://github.com/mfem/mfem/archive/refs/tags/v${mfem_version}.tar.gz -o ${mfem_tarball}
   tar -xzf ${mfem_tarball}
 fi
 

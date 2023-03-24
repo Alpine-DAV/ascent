@@ -289,7 +289,7 @@ function(add_python_mpi_test TEST)
           set(test_command ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_MPI_TASKS} ${test_command} )
     endif()
 
-    add_test(NAME ${TEST}
+    add_test(NAME ${arg_TEST}
              COMMAND ${test_command} )
 
      # make sure python can pick up the modules we built

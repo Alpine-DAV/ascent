@@ -28,7 +28,7 @@ jobs:
     - name: Configure Ascent
       run: |
         echo "**** Configuring Ascent"
-        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+        cmake -S src -B build -C ascent-config.cmake -DENABLE_DRAY=OFF -ENABLE_APCOMP=OFF -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
       run: |
         echo "**** Building Ascent"
