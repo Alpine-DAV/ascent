@@ -6,17 +6,6 @@
 
 namespace vtkh
 {
-typedef vtkm::cont::CellSetPermutation<vtkm::cont::CellSetStructured<2>>
-  PermStructured2d;
-
-typedef vtkm::cont::CellSetPermutation<vtkm::cont::CellSetStructured<3>>
-  PermStructured3d;
-
-typedef vtkm::cont::CellSetPermutation<vtkm::cont::CellSetExplicit<>>
-  PermExplicit;
-
-typedef  vtkm::cont::CellSetPermutation<vtkm::cont::CellSetSingleType<>>
-  PermExplicitSingle;
 
 vtkm::cont::DataSet
 vtkmThreshold::Run(vtkm::cont::DataSet &input,
