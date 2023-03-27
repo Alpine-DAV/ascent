@@ -157,6 +157,21 @@ void GhostStripper::DoExecute()
 
     if(!dom.HasField(m_field_name))
     {
+      continue;
+    }
+
+    vtkm::cont::Field field = dom.GetField(m_field_name);
+    vtkm::Range ghost_range = field.GetRange().ReadPortal().Get(0);
+
+    if(ghost_range.Min >= m_min_value &&
+    ghost_range.Max <= m_max_value)
+    {
+      // nothing to do here
+      m_output->AddDomain(dom, domain_id);
+      continue;
+    }
+    if(!dom.HasField(m_field_name))
+    {
       m_output->AddDomain(dom,domain_id);
     }
     else
