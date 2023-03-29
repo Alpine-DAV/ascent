@@ -17,7 +17,7 @@ message(STATUS "Adding ascent lib python interface unit tests")
 
 if(ENABLE_SERIAL)
     foreach(TEST ${PYTHON_MODULE_TESTS})
-        add_python_test(TEST ${TEST})
+        add_python_test(${TEST})
     endforeach()
 endif()
 
