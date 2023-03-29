@@ -270,10 +270,10 @@ endfunction(add_python_test)
 ##
 ## add_python_mpi_test( TEST test NUM_MPI_TASKS 2 )
 ##------------------------------------------------------------------------------
-function(add_python_mpi_test TEST)
+function(add_python_mpi_test)
 
     set(options)
-    set(singleValueArgs NUM_MPI_TASKS)
+    set(singleValueArgs TEST NUM_MPI_TASKS)
 
     # parse our arguments
     cmake_parse_arguments(arg
@@ -281,8 +281,8 @@ function(add_python_mpi_test TEST)
                          "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
-    message(STATUS " [*] Adding Python-based MPI Unit Test: ${TEST}")
-    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+    message(STATUS " [*] Adding Python-based MPI Unit Test: ${arg_TEST}")
+    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${arg_TEST})
 
     # Handle mpi
     if ( ${arg_NUM_MPI_TASKS} )
