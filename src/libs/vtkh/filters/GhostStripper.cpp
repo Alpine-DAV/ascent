@@ -2,7 +2,7 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
 #include <vtkh/utils/vtkm_dataset_info.hpp>
-#include <vtkh/vtkm_filters/vtkmGhostStripper.hpp>
+#include <vtkh/vtkm_filters/vtkmGhostCellRemove.hpp>
 #include <vtkh/vtkm_filters/vtkmThreshold.hpp>
 #include <vtkh/vtkm_filters/vtkmCleanGrid.hpp>
 #include <vtkh/vtkm_filters/vtkmExtractStructured.hpp>
@@ -176,7 +176,7 @@ void GhostStripper::DoExecute()
     }
     else
     {
-      vtkmGhostStripper stripper;
+      vtkh::vtkmGhostStripper stripper;
       vtkm::cont::DataSet stripper_out = stripper.Run(dom, m_field_name);
       m_output->AddDomain(stripper_out,domain_id);
     }
