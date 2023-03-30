@@ -165,20 +165,28 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
     extracts["e1/type"]  = "relay";
     extracts["e1/params/path"] = output_file;
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    std::cerr << "HERE1" << std::endl;
 
     conduit::Node actions;
     // add the extracts
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
+    std::cerr << "HERE2" << std::endl;
 
     Node ascent_opts;
     Ascent ascent;
+    std::cerr << "HERE3" << std::endl;
     ascent.open(ascent_opts);
+    std::cerr << "HERE4" << std::endl;
     ascent_opts["runtime"] = "ascent";
+    std::cerr << "HERE5" << std::endl;
     ascent.publish(blueprint);
+    std::cerr << "HERE6" << std::endl;
     ascent.execute(actions);
+    std::cerr << "HERE7" << std::endl;
     ascent.close();
+    std::cerr << "HERE8" << std::endl;
 
 }
 //-----------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 
 #include <vtkm/worklet/FieldStatistics.h>
 //#include <vtkm/filter/CreateResult.h>
+#include <vtkm/filter/Filter.h>
 #include <vtkm/cont/ArrayHandleTransform.h>
 #include <vtkm/worklet/DispatcherMapField.h>
 #include <iostream>
