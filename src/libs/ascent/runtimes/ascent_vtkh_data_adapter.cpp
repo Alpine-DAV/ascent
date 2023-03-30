@@ -1733,7 +1733,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
     vtkm::cont::UnknownArrayHandle coordsHandle(coords.GetData());
 
-    if(vtkm::cont::IsType<Coords32>(coordsHandle))
+    if(coordsHandle.CanConvert<Coords32>())
     {
       Coords32 points;
       coordsHandle.AsArrayHandle(points);
@@ -1809,7 +1809,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
 
     }
-    else if(vtkm::cont::IsType<Coords64>(coordsHandle))
+    else if(coordsHandle.CanConvert<Coords64>())
     {
       Coords64 points;
       coordsHandle.AsArrayHandle(points);
@@ -2016,50 +2016,27 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 template<typename T, int N>
 void ConvertVecToNode(conduit::Node &output,
                       std::string path,
-                      vtkm::cont::ArrayHandle<vtkm::Vec<T,N>> &handle,
-                      bool zero_copy)
+                      vtkm::cont::ArrayHandleStride<vtkm::Vec<T,N>> &stride_handle)
 {
   static_assert(N > 1 && N < 4, "Vecs must be size 2 or 3");
   output[path + "/type"] = "vector";
-  if(zero_copy)
-  {
-    output[path + "/values/u"].set_external((T*) vtkh::GetVTKMPointer(handle),
-                                            handle.GetNumberOfValues(),
-                                            sizeof(T)*0,   // starting offset in bytes
-                                            sizeof(T)*N);  // stride in bytes
-    output[path + "/values/v"].set_external((T*) vtkh::GetVTKMPointer(handle),
-                                            handle.GetNumberOfValues(),
-                                            sizeof(T)*1,   // starting offset in bytes
-                                            sizeof(T)*N);  // stride in bytes
-  }
-  else
-  {
-    output[path + "/values/u"].set((T*) vtkh::GetVTKMPointer(handle),
-                                   handle.GetNumberOfValues(),
-                                   sizeof(T)*0,   // starting offset in bytes
-                                   sizeof(T)*N);  // stride in bytes
-    output[path + "/values/v"].set((T*) vtkh::GetVTKMPointer(handle),
-                                   handle.GetNumberOfValues(),
-                                   sizeof(T)*1,   // starting offset in bytes
-                                   sizeof(T)*N);  // stride in bytes
-  }
+  vtkm::cont::ArrayHandleBasic<vtkm::Vec<T,N>> basic_array = stride_handle.GetBasicArray();
+  output[path + "/values/u"].set_external((T*) vtkh::GetVTKMPointer(basic_array),
+                                          stride_handle.GetNumberOfValues(),
+                                          sizeof(T)*0,   // starting offset in bytes
+                                          sizeof(T)*N);  // stride in bytes
+  output[path + "/values/v"].set_external((T*) vtkh::GetVTKMPointer(basic_array),
+                                          stride_handle.GetNumberOfValues(),
+                                          sizeof(T)*1,   // starting offset in bytes
+                                          sizeof(T)*N);  // stride in bytes
   if(N == 3)
   {
 
-    if(zero_copy)
-    {
-      output[path + "/values/w"].set_external((T*) vtkh::GetVTKMPointer(handle),
-                                              handle.GetNumberOfValues(),
-                                              sizeof(T)*2,   // starting offset in bytes
-                                              sizeof(T)*N);  // stride in bytes
-    }
-    else
-    {
-      output[path + "/values/w"].set((T*) vtkh::GetVTKMPointer(handle),
-                                     handle.GetNumberOfValues(),
-                                     sizeof(T)*2,   // starting offset in bytes
-                                     sizeof(T)*N);  // stride in bytes
-    }
+    vtkm::cont::ArrayHandleBasic<vtkm::Vec<T,N>> basic_array = stride_handle.GetBasicArray();
+    output[path + "/values/w"].set_external((T*) vtkh::GetVTKMPointer(basic_array),
+                                            stride_handle.GetNumberOfValues(),
+                                            sizeof(T)*2,   // starting offset in bytes
+                                            sizeof(T)*N);  // stride in bytes
   }
 }
 
@@ -2090,145 +2067,190 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   //
   // this can be literally anything. Lets do some exhaustive casting
   //
-  if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float32>>())
+  if(dyn_handle.IsBaseComponentType<vtkm::Float32>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Float32>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
+      vtkm::cont::ArrayHandleStride<vtkm::Float32> stride_handle = dyn_handle.ExtractComponent<vtkm::Float32>(0,vtkm::CopyFlag::Off);
+      vtkm::cont::ArrayHandleBasic<vtkm::Float32> basic_array = stride_handle.GetBasicArray();
       output[path + "/values"].
-        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
     else
     {
-      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+      vtkm::cont::ArrayHandleStride<vtkm::Float32> stride_handle = dyn_handle.ExtractComponent<vtkm::Float32>(0,vtkm::CopyFlag::On);
+      vtkm::cont::ArrayHandleBasic<vtkm::Float32> basic_array = stride_handle.GetBasicArray();
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Float64>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Float64>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Float64>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
+      vtkm::cont::ArrayHandleStride<vtkm::Float64> stride_handle = dyn_handle.ExtractComponent<vtkm::Float64>(0,vtkm::CopyFlag::Off);
+      vtkm::cont::ArrayHandleBasic<vtkm::Float64> basic_array = stride_handle.GetBasicArray();
       output[path + "/values"].
-        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
     else
     {
-      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+      vtkm::cont::ArrayHandleStride<vtkm::Float64> stride_handle = dyn_handle.ExtractComponent<vtkm::Float64>(0,vtkm::CopyFlag::On);
+      vtkm::cont::ArrayHandleBasic<vtkm::Float64> basic_array = stride_handle.GetBasicArray();
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int8>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Int8>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Int8>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
+      vtkm::cont::ArrayHandleStride<vtkm::Int8> stride_handle = dyn_handle.ExtractComponent<vtkm::Int8>(0,vtkm::CopyFlag::Off);
+      vtkm::cont::ArrayHandleBasic<vtkm::Int8> basic_array = stride_handle.GetBasicArray();
       output[path + "/values"].
-        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
     else
     {
-      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+      vtkm::cont::ArrayHandleStride<vtkm::Int8> stride_handle = dyn_handle.ExtractComponent<vtkm::Int8>(0,vtkm::CopyFlag::On);
+      vtkm::cont::ArrayHandleBasic<vtkm::Int8> basic_array = stride_handle.GetBasicArray();
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int32>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Int32>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Int32>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
+      vtkm::cont::ArrayHandleStride<vtkm::Int32> stride_handle = dyn_handle.ExtractComponent<vtkm::Int32>(0,vtkm::CopyFlag::Off);
+      vtkm::cont::ArrayHandleBasic<vtkm::Int32> basic_array = stride_handle.GetBasicArray();
       output[path + "/values"].
-        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
     else
     {
-      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+      vtkm::cont::ArrayHandleStride<vtkm::Int32> stride_handle = dyn_handle.ExtractComponent<vtkm::Int32>(0,vtkm::CopyFlag::On);
+      vtkm::cont::ArrayHandleBasic<vtkm::Int32> basic_array = stride_handle.GetBasicArray();
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Int64>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Int64>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Int64>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
     ASCENT_ERROR("Conduit int64 and vtkm::Int64 are different. Cannot convert vtkm::Int64\n");
     //output[path + "/values"].set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt32>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::UInt32>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt32>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
+      vtkm::cont::ArrayHandleStride<vtkm::UInt32> stride_handle = dyn_handle.ExtractComponent<vtkm::UInt32>(0,vtkm::CopyFlag::Off);
+      vtkm::cont::ArrayHandleBasic<vtkm::UInt32> basic_array = stride_handle.GetBasicArray();
       output[path + "/values"].
-        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
     else
     {
-      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+      vtkm::cont::ArrayHandleStride<vtkm::UInt32> stride_handle = dyn_handle.ExtractComponent<vtkm::UInt32>(0,vtkm::CopyFlag::On);
+      vtkm::cont::ArrayHandleBasic<vtkm::UInt32> basic_array = stride_handle.GetBasicArray();
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::UInt8>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::UInt8>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::UInt8>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
     if(zero_copy)
     {
+      vtkm::cont::ArrayHandleStride<vtkm::UInt8> stride_handle = dyn_handle.ExtractComponent<vtkm::UInt8>(0,vtkm::CopyFlag::Off);
+      vtkm::cont::ArrayHandleBasic<vtkm::UInt8> basic_array = stride_handle.GetBasicArray();
       output[path + "/values"].
-        set_external(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
     else
     {
-      output[path + "/values"].  set(vtkh::GetVTKMPointer(handle), handle.GetNumberOfValues());
+      vtkm::cont::ArrayHandleStride<vtkm::UInt8> stride_handle = dyn_handle.ExtractComponent<vtkm::UInt8>(0,vtkm::CopyFlag::On);
+      vtkm::cont::ArrayHandleBasic<vtkm::UInt8> basic_array = stride_handle.GetBasicArray();
+      output[path + "/values"].
+        set_external(vtkh::GetVTKMPointer(basic_array), stride_handle.GetNumberOfValues());
     }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Vec<vtkm::Float32,3>>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
-    ConvertVecToNode(output, path, handle, zero_copy);
+    if(zero_copy)
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float32,3>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float32,3>>(0,vtkm::CopyFlag::Off);
+      ConvertVecToNode(output, path, stride_handle);
+    }
+    else
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float32,3>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float32,3>>(0,vtkm::CopyFlag::On);
+      ConvertVecToNode(output, path, stride_handle);
+    }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Vec<vtkm::Float64,3>>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
-    ConvertVecToNode(output, path, handle, zero_copy);
+    if(zero_copy)
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float64,3>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float64,3>>(0,vtkm::CopyFlag::Off);
+      ConvertVecToNode(output, path, stride_handle);
+    }
+    else
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float64,3>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float64,3>>(0,vtkm::CopyFlag::On);
+      ConvertVecToNode(output, path, stride_handle);
+    }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Vec<vtkm::Int32,3>>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,3>>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
-    ConvertVecToNode(output, path, handle, zero_copy);
+    if(zero_copy)
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Int32,3>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Int32,3>>(0,vtkm::CopyFlag::Off);
+      ConvertVecToNode(output, path, stride_handle);
+    }
+    else
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Int32,3>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Int32,3>>(0,vtkm::CopyFlag::On);
+      ConvertVecToNode(output, path, stride_handle);
+    }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Vec<vtkm::Float32,2>>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
-    ConvertVecToNode(output, path, handle, zero_copy);
+    if(zero_copy)
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float32,2>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float32,2>>(0,vtkm::CopyFlag::Off);
+      ConvertVecToNode(output, path, stride_handle);
+    }
+    else
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float32,2>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float32,2>>(0,vtkm::CopyFlag::On);
+      ConvertVecToNode(output, path, stride_handle);
+    }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Vec<vtkm::Float64,2>>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
-    ConvertVecToNode(output, path, handle, zero_copy);
+    if(zero_copy)
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float64,2>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float64,2>>(0,vtkm::CopyFlag::Off);
+      ConvertVecToNode(output, path, stride_handle);
+    }
+    else
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Float64,2>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Float64,2>>(0,vtkm::CopyFlag::On);
+      ConvertVecToNode(output, path, stride_handle);
+    }
   }
-  else if(dyn_handle.IsType<vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>>())
+  else if(dyn_handle.IsBaseComponentType<vtkm::Vec<vtkm::Int32,2>>())
   {
-    using HandleType = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Int32,2>>;
-    HandleType handle;
-    dyn_handle.AsArrayHandle(handle);
-    ConvertVecToNode(output, path, handle, zero_copy);
+    if(zero_copy)
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Int32,2>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Int32,2>>(0,vtkm::CopyFlag::Off);
+      ConvertVecToNode(output, path, stride_handle);
+    }
+    else
+    {
+      vtkm::cont::ArrayHandleStride<vtkm::Vec<vtkm::Int32,2>> stride_handle = dyn_handle.ExtractComponent<vtkm::Vec<vtkm::Int32,2>>(0,vtkm::CopyFlag::On);
+      ConvertVecToNode(output, path, stride_handle);
+    }
   }
   else
   {

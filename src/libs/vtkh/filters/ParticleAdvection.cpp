@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vtkh/filters/ParticleAdvection.hpp>
-#include <vtkm/filter/ParticleAdvection.h>
+#include <vtkm/filter/flow/ParticleAdvection.h>
 #include <vtkm/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>

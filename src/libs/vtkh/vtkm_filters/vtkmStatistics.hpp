@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #ifndef VTK_H_VTKM_STATISTICS_HPP
 #define VTK_H_VTKM_STATISTICS_HPP
 
@@ -6,10 +7,11 @@
 namespace vtkh
 {
 
-class vtkmHistogram
+class vtkmStatistics
 {
 public:
-  vtkm::cont::PartitionedDataSet Run(vtkm::cont::PartitionedDataSet &p_input);
+  vtkm::cont::PartitionedDataSet Run(vtkm::cont::PartitionedDataSet &p_input,
+		                     std::string field_name);
 };
 }
 #endif
