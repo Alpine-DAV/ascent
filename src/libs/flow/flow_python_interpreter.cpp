@@ -270,10 +270,8 @@ PythonInterpreter::initialize(int argc, char **argv)
 
         // Init Python
         Py_Initialize();
-        PyEval_InitThreads();
 
         // set sys argvs
-
         if(argc == 0 || argv == NULL)
         {
             set_argv(1, const_cast<char**>(&prog_name));

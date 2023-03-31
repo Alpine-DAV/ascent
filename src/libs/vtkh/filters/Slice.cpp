@@ -1,4 +1,3 @@
-
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
@@ -358,6 +357,95 @@ public:
 
 };
 
+template <typename T>
+std::vector<T>
+GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
+{
+  //Get domain Ids on this rank
+  //will be nonzero even if there is no data
+  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  std::vector<T> data;
+     
+  //if there is data: loop through domains and grab all triangles.
+  if(!vtkhData.IsEmpty())
+  {
+    for(int i = 0; i < localDomainIds.size(); i++)
+    {
+      vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
+      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
+      //Get variable
+      vtkm::cont::Field field = dataset.GetField(field_name);
+      
+      long int size = field.GetNumberOfValues();
+      
+      using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
+      using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+      if(field.GetData().IsType<data_d>())
+      {
+        vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
+        field.GetData().AsArrayHandle(field_data);
+        auto portal = field_data.ReadPortal();
+
+        for(int i = 0; i < size; i++)
+        {
+          data.push_back(portal.Get(i));
+        }
+      }
+      if(field.GetData().IsType<data_f>())
+      {
+        vtkm::cont::ArrayHandle<vtkm::Float32> field_data;
+        field.GetData().AsArrayHandle(field_data);
+        auto portal = field_data.ReadPortal();
+
+        for(int i = 0; i < size; i++)
+        {
+          data.push_back(portal.Get(i));
+        }
+      }
+    }
+  }
+  //else
+    //cerr << "VTKH Data is empty" << endl;
+  return data;
+}
+
+template< typename T >
+T calcEntropyMM( const std::vector<T> array, long len, int nBins , T field_min, T field_max)
+{
+  T min = field_min;
+  T max = field_max;
+
+  T stepSize = (max-min) / (T)nBins;
+  if(stepSize == 0)
+    return 0.0;
+
+  long* hist = new long[ nBins ];
+  for(int i = 0; i < nBins; i++ )
+    hist[i] = 0;
+
+  for(long i = 0; i < len; i++ )
+  {
+    T idx = (std::abs(array[i]) - min) / stepSize;
+    if((int)idx == nBins )
+      idx -= 1.0;
+    hist[(int)idx]++;
+  }
+
+  T entropy = 0.0;
+  for(int i = 0; i < nBins; i++ )
+  {
+    T prob = (T)hist[i] / (T)len;
+    if(prob != 0.0 )
+      entropy += prob * std::log( prob );
+  }
+
+  delete[] hist;
+
+  return (entropy * -1.0);
+}
+
+
 } // namespace detail
 
 Slice::Slice()
@@ -445,6 +533,217 @@ std::string
 Slice::GetName() const
 {
   return "vtkh::Slice";
+}
+
+AutoSliceLevels::AutoSliceLevels()
+{
+
+}
+
+AutoSliceLevels::~AutoSliceLevels()
+{
+
+}
+
+void
+AutoSliceLevels::SetNormal(vtkm::Vec<vtkm::Float32,3> normal)
+{
+  m_normals.push_back(normal);
+}
+
+void
+AutoSliceLevels::SetLevels(int num_levels)
+{
+  m_levels = num_levels;
+}
+
+void
+AutoSliceLevels::SetField(std::string field)
+{
+  m_field_name = field;
+}
+
+vtkmCamera*
+AutoSliceLevels::GetCamera()
+{
+  return m_camera;
+}
+vtkm::Bounds
+AutoSliceLevels::GetDataBounds()
+{
+  return m_bounds;
+}
+
+vtkm::Vec<vtkm::Float32,3>
+AutoSliceLevels::GetNormal()
+{
+  return m_normal;
+}
+
+vtkm::Float32
+AutoSliceLevels::GetRadius()
+{
+  return m_radius;
+}
+
+
+void
+AutoSliceLevels::PreExecute()
+{
+  Filter::PreExecute();
+}
+
+
+vtkm::Vec<vtkm::Float32,3>
+GetPoint(int level, int num_levels, vtkm::Bounds bounds)
+{
+  vtkm::Vec<vtkm::Float32,3> point;
+  float spacing = 100.0/num_levels;
+  float current_space = level * spacing;
+  const float eps = 1e-5;
+
+  float offset = (((current_space) * (4)) / (100)) - 2;
+
+  std::max(-1.f, std::min(1.f, offset));
+  float t = (offset + 1.f) / 2.f;
+  t = std::max(0.f + eps, std::min(1.f - eps, t));
+  point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+  point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+  point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+
+  return point;
+}
+
+bool invalidChar (char c)
+{
+    return !(c>=0 && c <128);
+}
+void stripUnicode(std::string & str)
+{
+    str.erase(remove_if(str.begin(),str.end(), invalidChar), str.end());
+}
+
+void
+AutoSliceLevels::DoExecute()
+{
+  const std::string fname = "slice_field";
+  const int num_domains = this->m_input->GetNumberOfDomains();
+  const int num_slices = this->m_levels;
+  std::string field = this->m_field_name;
+  float current_score = -1;
+  float winning_score = -1;
+
+  if(num_slices == 0)
+  {
+    throw Error("AutoSliceLevels: no slice planes specified");
+  }
+   
+  std::vector<float> field_data = vtkh::detail::GetScalarData<float>(*this->m_input, field.c_str());
+
+  float datafield_max = 0.;
+  float datafield_min = 0.;
+
+#if ASCENT_MPI_ENABLED
+
+  float local_datafield_max = 0.;
+  float local_datafield_min = 0.;
+
+  if(field_data.size())
+  { 
+    local_datafield_max = (float)*max_element(field_data.begin(),field_data.end());
+    local_datafield_min = (float)*min_element(field_data.begin(),field_data.end());
+  }
+  MPI_Reduce(&local_datafield_max, &datafield_max, 1, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&local_datafield_min, &datafield_min, 1, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+
+#else
+
+  if(field_data.size())
+  { 
+    datafield_max = (float)*max_element(field_data.begin(),field_data.end());
+    datafield_min = (float)*min_element(field_data.begin(),field_data.end());
+  }
+
+#endif
+
+  vtkm::Bounds bounds = this->m_input->GetGlobalBounds();
+  vtkm::Vec<vtkm::Float32,3> normal = m_normals[0];
+ 
+  for(int s = 0; s < num_slices; ++s)
+  {
+    vtkm::Vec<vtkm::Float32,3> point = GetPoint(s, num_slices, bounds);
+    vtkh::DataSet temp_ds = *(this->m_input);
+    // shallow copy the input so we don't propagate the slice field
+    // to the input data set, since it might be used in other places
+    for(int i = 0; i < num_domains; ++i)
+    {
+      vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+
+      vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
+      vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
+        .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
+
+      dom.AddField(vtkm::cont::Field(fname,
+                                      vtkm::cont::Field::Association::Points,
+                                      slice_field));
+    } // each domain
+
+    vtkh::MarchingCubes marcher;
+    marcher.SetInput(&temp_ds);
+    marcher.SetIsoValue(0.);
+    marcher.SetField(fname);
+    marcher.Update();
+    
+    vtkh::DataSet* output = marcher.GetOutput();
+    std::vector<float> slice_data = vtkh::detail::GetScalarData<float>(*output, field.c_str());
+    current_score = vtkh::detail::calcEntropyMM<float>(slice_data, slice_data.size(), 256, datafield_min, datafield_max);
+    
+    if(current_score > winning_score)
+    {
+      winning_score = current_score;
+      this->m_output = output;
+    }
+  } // each slice
+  
+  //TODO: needed for setting camera based on input normal
+  //if(normal[0] == 1 && normal[1] == 1 &&  normal[2] == 1)
+  //{
+
+  //        std::cerr << "normal is 1 1 1 " << std::endl;
+  //}
+  //else
+  //{
+  //        std::cerr << "normal is not 1 1 1 " << std::endl;
+  //  vtkmCamera *camera = new vtkmCamera;
+  //  camera->ResetToBounds(bounds);
+  //  std::cerr << "In VTKH Filters" << std::endl;
+  //  vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
+  //  vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
+  //  vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
+  //  vtkm::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
+  //  std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
+  //  std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
+  //  std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
+  //  std::cerr<<std::endl;
+  //  std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
+  //  std::cerr << "radius: " << radius << std::endl;
+
+  //  this->m_radius = radius;
+  //  this->m_bounds = bounds;
+  //  this->m_normal = normal;
+  //}
+}
+
+void
+AutoSliceLevels::PostExecute()
+{
+  Filter::PostExecute();
+}
+
+std::string
+AutoSliceLevels::GetName() const
+{
+  return "vtkh::AutoSliceLevels";
 }
 
 } // namespace vtkh

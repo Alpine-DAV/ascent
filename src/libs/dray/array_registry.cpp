@@ -8,6 +8,7 @@
 
 #include <dray/array_internals_base.hpp>
 #include <dray/array_registry.hpp>
+#include <dray/error.hpp>
 
 #include <umpire/Umpire.hpp>
 #include <umpire/strategy/QuickPool.hpp>
@@ -21,8 +22,9 @@ namespace dray
 
 std::list<ArrayInternalsBase *> ArrayRegistry::m_arrays;
 
-int ArrayRegistry::m_device_allocator_id = -1;
 int ArrayRegistry::m_host_allocator_id = -1;
+int ArrayRegistry::m_device_allocator_id = -1;
+bool ArrayRegistry::m_external_host_allocator = false;
 bool ArrayRegistry::m_external_device_allocator = false;
 
 int ArrayRegistry::device_allocator_id()
@@ -42,10 +44,19 @@ int ArrayRegistry::device_allocator_id()
   return m_device_allocator_id;
 }
 
-bool ArrayRegistry::device_allocator_id(int id)
+//-----------------------------------------------------------------------------
+bool
+ArrayRegistry::set_device_allocator_id(int id)
 {
+    if(m_external_device_allocator && m_device_allocator_id != id)
+    {
+        // We can't change allocators mid stream.
+        // This would cause a mismatch between memory allocated with one 'allocator' then that
+        // memory being deallocated with another.
+        DRAY_ERROR("Changing the host allocator id in the middle of a run is not supported.");
+    }
 
-  auto &rm = umpire::ResourceManager::getInstance ();
+  auto &rm = umpire::ResourceManager::getInstance();
   bool valid_id = true;
 
   umpire::Allocator allocator;
@@ -68,9 +79,8 @@ bool ArrayRegistry::device_allocator_id(int id)
   bool can_use = false;
   bool need_device = false;
 
-#ifdef DRAY_CUDA_ENABLED
-  need_device = true;
-#elif defined(DRAY_HIP_ENABLED)
+
+#if defined(DRAY_DEVICE_ENABLED)
   need_device = true;
 #endif
 
@@ -91,7 +101,7 @@ bool ArrayRegistry::device_allocator_id(int id)
   }
 
   // if this is not the same, we have to get rid
-  // of all currently allocated deviec resources.
+  // of all currently allocated device resources.
   // Data will be preserved by a synch to host
   if(id != m_device_allocator_id)
   {
@@ -100,6 +110,47 @@ bool ArrayRegistry::device_allocator_id(int id)
   }
   m_external_device_allocator = true;
   return true;
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+ArrayRegistry::set_host_allocator_id(int id)
+{
+    if(m_external_host_allocator && m_host_allocator_id != id)
+    {
+        // We can't change allocators mid stream.
+        // This would cause a mismatch between memory allocated with one 'allocator' then that
+        // memory being deallocated with another.
+        DRAY_ERROR("Changing the host allocator id in the middle of a run is not supported.");
+    }
+
+    auto &rm = umpire::ResourceManager::getInstance ();
+    bool valid_id = true;
+
+    umpire::Allocator allocator;
+
+    try
+    {
+        allocator = rm.getAllocator (id);
+    }
+    catch(...)
+    {
+        valid_id = false;
+    }
+
+    auto resource = allocator.getAllocationStrategy()->getTraits().resource;
+    // check that this is a host allocator
+    bool is_host   = resource == umpire::MemoryResourceTraits::resource_type::host;
+
+    if(!is_host)
+    {
+        return false;
+    }
+
+    m_host_allocator_id = id;
+    m_external_host_allocator = true;
+    return true;
 }
 
 int ArrayRegistry::host_allocator_id()
@@ -135,6 +186,41 @@ void ArrayRegistry::remove_array (ArrayInternalsBase *array)
   }
   m_arrays.remove (array);
 }
+
+void
+ArrayRegistry::summary()
+{
+    std::cout << "ArrayRegistry Number of Arrays: " << number_of_arrays() << std::endl;
+    std::cout  << "Memory Usage:" << std::endl;
+    std::cout  << " Host:   " << host_usage() << std::endl;
+    std::cout  << " Device: " << device_usage() << std::endl;
+
+    std::cout  << "Umpire pool info:" << std::endl;
+
+    // umpire host pool info
+    auto &rm = umpire::ResourceManager::getInstance ();
+    const int host_allocator_id = ArrayRegistry::host_allocator_id();
+    umpire::Allocator host_allocator = rm.getAllocator(host_allocator_id);
+    std::cout  << " Host Current Size:   " << host_allocator.getCurrentSize() << std::endl;
+    std::cout  << " Host High Water:     " << host_allocator.getHighWatermark() << std::endl;
+
+#if defined(DRAY_DEVICE_ENABLED)
+    // umpire device pool info
+    const int dev_allocator_id = ArrayRegistry::device_allocator_id();
+    umpire::Allocator dev_allocator = rm.getAllocator(dev_allocator_id);
+    std::cout  << " Device Current Size: " << dev_allocator.getCurrentSize() << std::endl;
+    std::cout  << " Device High Water:   " << dev_allocator.getHighWatermark() << std::endl;
+#else
+    std::cout  << "(No Umpire Device Pool [DRAY_DEVICE_ENABLED == FALSE] )" << std::endl;
+#endif
+
+}
+
+int ArrayRegistry::number_of_arrays()
+{
+  return static_cast<int>(m_arrays.size());
+}
+
 
 size_t ArrayRegistry::device_usage ()
 {

@@ -42,6 +42,11 @@ if(PYTHON_FOUND)
     endforeach()
 endif()
 
+# builtin var for shared libs
+if(BUILD_SHARED_LIBS)
+    set(ASCENT_BUILD_SHARED_LIBS TRUE)
+endif()
+
 # builtin libs vars for config.mk gen
 if(ENABLE_APCOMP)
     set(ASCENT_APCOMP_ENABLED TRUE)
@@ -103,6 +108,15 @@ endif()
 if(GENTEN_DIR_ORIG)
     set(ASCENT_GENTEN_DIR ${GENTEN_DIR_ORIG} )
 endif()
+
+if(STREAMSTAT_DIR_ORIG)
+    set(ASCENT_STREAMSTAT_DIR ${STREAMSTAT_DIR_ORIG} )
+endif()
+
+if(TOPOFILEPARSER_DIR_ORIG)
+    set(ASCENT_TOPOFILEPARSER_DIR ${TOPOFILEPARSER_DIR_ORIG} )
+endif()
+
 
 
 # generate the config.mk

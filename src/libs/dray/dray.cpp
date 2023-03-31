@@ -21,10 +21,16 @@ namespace dray
 
 static int g_mpi_comm_id = -1;
 
-static void umpire_device_allocator(int id)
+void dray::set_host_allocator_id(int id)
 {
-  ArrayRegistry::device_allocator_id(id);
+  ArrayRegistry::set_host_allocator_id(id);
 }
+
+void dray::set_device_allocator_id(int id)
+{
+  ArrayRegistry::set_device_allocator_id(id);
+}
+
 
 void
 check_comm_handle()
@@ -144,6 +150,15 @@ void dray::init ()
 
 void dray::finalize ()
 {
+}
+
+bool dray::device_enabled ()
+{
+#ifdef DRAY_DEVICE_ENABLED
+  return true;
+#else
+  return false;
+#endif
 }
 
 bool dray::cuda_enabled ()

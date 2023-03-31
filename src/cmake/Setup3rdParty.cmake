@@ -1,4 +1,3 @@
-###############################################################################
 # Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
@@ -39,6 +38,13 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################################################
 
 ################################
+# Caliper
+################################
+if(CALIPER_DIR)
+    include(cmake/thirdparty/SetupCaliper.cmake)
+endif()
+
+################################
 # Camp
 ################################
 if(CAMP_DIR) # optional for now
@@ -77,9 +83,6 @@ endif()
 # VTKm and supporting libs
 ################################
 if(VTKM_DIR)
-    ################################
-    # VTKm
-    ################################
     include(cmake/thirdparty/SetupVTKm.cmake)
 endif()
 
@@ -123,7 +126,7 @@ endif()
 # Setup Babelflow
 ################################
 if (BABELFLOW_DIR OR BabelFlow_DIR)
-    include(cmake/thirdparty/SetupBabelFlow.cmake)
+  include(cmake/thirdparty/SetupBabelFlow.cmake)
 endif()
 
 

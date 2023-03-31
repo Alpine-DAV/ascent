@@ -216,7 +216,7 @@ Ascent's Jupyter extract provides a path for interactive analysis and visualizat
 
 In this demo we provide two example Jupyter Notebooks with code and instructions under ``examples/tutorial/cloverleaf_demos/jupyter_extract/notebooks`` and demonstrate how to connect them with Ascent.
 
-First you will need to install the ``ascent_jupyter_bridge`` python module located in your source directory under ``src/ascent/python/ascent_jupyter_bridge``. Navigate to that directory and make sure you have ``pip`` installed then run the following commands:
+First you will need to install the ``ascent_jupyter_bridge`` python module located in your source directory under ``src/libs/ascent/python/ascent_jupyter_bridge``. Navigate to that directory and make sure you have ``pip`` installed then run the following commands:
 
 .. code::
 

@@ -9,12 +9,12 @@
 #####
 
 variables:
-  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2022-10-17-sha12725d
-  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2022-10-17-sha12725d
-  #  TODO - on hold until we get spack working on 22.04
-  #ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls
-  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2022-10-21-sha173f5c
-  ubuntu_20_04_rocm_5_1_3_tag: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel-tpls_2022-10-17-sha12725d
+  ubuntu_18_04_tag: alpinedav/ascent-ci:ubuntu-18.04-devel-tpls_2023-01-12-sha2d3c54
+  ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2023-01-12-sha2d3c54
+  ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls_2023-01-26-shae01268
+  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2023-01-12-sha2d3c54
+  ubuntu_18_04_cuda_11_4_0_build_ascent_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls-build-ascent_2023-01-14-sha8a3e2d
+  ubuntu_20_04_rocm_5_1_3_tag: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel-tpls_2023-01-12-sha6036f9
 
 
 # only build merge target pr to develop
@@ -96,6 +96,25 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++14
 
+        ubuntu_22.04_shared_py_cxx14:
+          containerImage: ${{ variables.ubuntu_22_04_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
+          ENABLE_APCOMP: ON
+          ENABLE_DRAY: ON
+          ENABLE_DRAY_DOUBLE: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: OFF
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          ENABLE_GENTEN: OFF
+          BLT_CXX_STD: c++14
+
         #################
         # Dray Options
         #################
@@ -160,12 +179,33 @@ stages:
           BLT_CXX_STD: c++14
 
         ############
+        # Babelflow
+        ############
+        ubuntu_18_shared_py_cxx14_bflow:
+          containerImage: ${{ variables.ubuntu_18_04_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_PYTHON: ON
+          ENABLE_RAJA: ON
+          ENABLE_UMPIRE: ON
+          ENABLE_CAMP: ON
+          ENABLE_APCOMP: ON
+          ENABLE_DRAY: ON
+          ENABLE_DRAY_DOUBLE: OFF
+          ENABLE_VTKH: ON
+          ENABLE_MFEM: ON
+          ENABLE_BABELFLOW: ON
+          ENABLE_ADIOS2: OFF
+          ENABLE_FIDES: OFF
+          BLT_CXX_STD: c++14
+
+        ############
         # GENTEN
         ############
         # TODO: genten disabled until we have code in main repo
         #       and spack pkg in spack develop
         # ubuntu_18_shared_py_cxx14_genten:
-        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   containerImage: ${{ variables.ubuntu_18_04_tag }}
         #   BUILD_SHARED_LIBS: ON
         #   CMAKE_BUILD_TYPE: Debug
         #   ENABLE_PYTHON: ON
@@ -179,27 +219,6 @@ stages:
         #   ENABLE_GENTEN: ON
         #   BLT_CXX_STD: c++14
  
-        ############
-        # Babelflow
-        ############
-        # TODO: babelflow disabled until #822 is worked out
-        # ubuntu_18_shared_py_cxx14_bflow:
-        #   containerImage: ${{ variables.ubuntu_18_tag }}
-        #   BUILD_SHARED_LIBS: ON
-        #   CMAKE_BUILD_TYPE: Debug
-        #   ENABLE_PYTHON: ON
-        #   ENABLE_RAJA: ON
-        #   ENABLE_UMPIRE: ON
-        #   ENABLE_CAMP: ON
-        #   ENABLE_APCOMP: ON
-        #   ENABLE_DRAY: ON
-        #   ENABLE_DRAY_DOUBLE: OFF
-        #   ENABLE_VTKH: ON
-        #   ENABLE_MFEM: ON
-        #   ENABLE_BABELFLOW: ON
-        #   ENABLE_ADIOS2: OFF
-        #   ENABLE_FIDES: OFF
-        #   BLT_CXX_STD: c++14
 
     container: $[ variables['containerImage'] ]
 
@@ -244,9 +263,9 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
-           #
            # dray double perc option
            if [ $ENABLE_DRAY_DOUBLE  = 'ON' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAY_USE_DOUBLE_PRECISION=ON"; fi
+
            # other tpl options
            if [ $ENABLE_RAJA    = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=IGNORE"; fi
            if [ $ENABLE_UMPIRE  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=IGNORE"; fi
@@ -545,8 +564,79 @@ stages:
           make
         displayName: 'Test vs Install (using-with-make) [build only]'
 
+  - job: Ubuntu_CUDA_Amalgamation_build_ascent
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 0
+    variables:
+      CMAKE_EXE: /cmake-3.23.2-linux-x86_64/bin/cmake
+    strategy:
+      matrix:
+        ubuntu_18.04_cuda_11_4_0:
+          containerImage: ${{ variables.ubuntu_18_04_cuda_11_4_0_build_ascent_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Release
+          BLT_CXX_STD: c++14
+          ENABLE_TESTS: ON
+    container: $[ variables['containerImage'] ]
+    steps:
+      - checkout: self
+        clean: boolean
+        submodules: recursive
 
-  - job: Ubuntu_HIP_Amalgamation
+      - script: |
+           #################################
+           # configure
+           #################################
+           ${CMAKE_EXE} --version
+           cat /ascent-config.cmake
+           # configure
+           ${CMAKE_EXE} -S src -B build -C /ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+        displayName: 'Configure with CMake'
+
+      - script: |
+           #################################
+           # build
+           #################################
+           # build
+           ${CMAKE_EXE} --build build -j 3
+        displayName: 'Build'
+
+
+      - script: |
+           #################################
+           # install
+           #################################
+           ${CMAKE_EXE} --install build
+        displayName: 'Install'
+
+      - script: |
+             ###########################
+             # using with cmake example
+             ###########################
+             pwd
+             ls -l
+             export CC=gcc
+             export CXX=g++
+             cd install/examples/ascent/using-with-cmake
+             ${CMAKE_EXE} . -B build
+             ${CMAKE_EXE} --build build
+        displayName: 'Test vs Install (using-with-cmake) [build only]'
+
+      - script: |
+          ###########################
+          # using with make example
+          ###########################
+          cat install/share/ascent/ascent_config.mk
+          pwd
+          ls -l
+          export CC=gcc
+          export CXX=g++
+          cd install/examples/ascent/using-with-make
+          make
+        displayName: 'Test vs Install (using-with-make) [build only]'
+
+  - job: Ubuntu_HIP_Amalgamation_build_ascent
     pool:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0

@@ -11,7 +11,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.8.0")
+project(ascent VERSION "0.9.0")
 
 ################################
 # Build Options
@@ -151,8 +151,6 @@ add_subdirectory(thirdparty_builtin)
 # Add our libs
 ################################
 add_subdirectory(libs)
-
-add_subdirectory(ascent)
 
 ################################
 # Add mini-app examples

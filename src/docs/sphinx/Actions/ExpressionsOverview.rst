@@ -9,8 +9,8 @@
 Expressions Overview
 ====================
 Expressions are a powerful analysis tool that can both answer questions
-about mesh data and calculate derived quatities. Ascent uses a
-python-like domain specific language (DSL) to execute generic compuations.
+about mesh data and calculate derived quantities. Ascent uses a
+python-like domain specific language (DSL) to execute generic computations.
 Broadly speaking, the expressions system allows users to mix and match
 two types of computation:
 
@@ -84,10 +84,10 @@ Every time a query is executed the results are stored and can be accessed
 in three ways:
 
     - Inside expressions: values can be referenced by name by other expressions
-    - Inside the simulation: query results can be programatically accessed
+    - Inside the simulation: query results can be programmatically accessed
     - As a post process: results are stored inside a file called `ascent_session.yaml`
 
-The session file provides a way to acccess and plot the results of queries.
+The session file provides a way to access and plot the results of queries.
 Session files are commonly processed by python scripts.
 Here is an example of a single time step of the max query:
 
@@ -113,7 +113,7 @@ Here is an example of a single time step of the max query:
 Query results are index by name and then cycle.
 Additionally, the simulation time for each query is always available.
 In this example, the max query returns both the value and position
-of the element contaning the maximum value.
+of the element containing the maximum value.
 
 Query History
 -------------
@@ -160,12 +160,12 @@ Derived Fields
 Derived fields allow users to create new fields on the mesh as a
 result of some arbitrary computation. A simple example of a derived field
 is calculating mass based on cell volume and density, when mass is not
-directly available. Once created, the new field can be manipuated via
+directly available. Once created, the new field can be manipulated via
 filters or plotted
 
 Derived expressions are just-in-time(JIT) compiled at runtime. That is,
-code is generatated on the fly and the compiler is invoked during to create
-the binary code that is executed. While this can be expensived the first time
+code is generated on the fly and the compiler is invoked during to create
+the binary code that is executed. While this can be expensive the first time
 the expression is run, the binary is cached and the cost is amortized over the
 entire simulation run. Additionally, the binary is cached in Ascent's default
 directory (which defaults to the current working directory), so the compile
@@ -173,10 +173,10 @@ time cost can also be amortized over multiple simulation invocations.
 Supported backends include serial, OpenMP, and CUDA.
 
 Derived generation is triggered by using either the `field` function used
-in conjuction with math operations or the `topo` function.
+in conjunction with math operations or the `topo` function.
 The expressions filter provides a way to create a derived field
-that is mapped back onto the mesh. Since derived fields transfrom data,
-expressions filters are part of pipeline in Ascent. Here is a examle
+that is mapped back onto the mesh. Since derived fields transform data,
+expressions filters are part of pipeline in Ascent. Here is an example
 of creating a simple derived field on the mesh:
 
 .. code-block:: yaml
@@ -195,7 +195,7 @@ Subsequent pipeline filters will have access the the variable
 `density_plus_1`.
 
 The `topo` function allows users to access information about the mesh topologies.
-There are several topological attributes accessable through the `topo` function
+There are several topological attributes accessible through the `topo` function
 including area (if 2d) and volume (if 3d). Here is an example of creating a
 new field on the mesh that has the volume of each cell:
 
@@ -245,7 +245,7 @@ if we want to keep track of the total mesh volume over time
 In queries, the only restriction is that the result must be
 a single value or object (i.e., a data reduction) so it can
 be stored for access. However, there is no restriction on the results
-of expressions filters and they can be either derived fields or queires.
+of expressions filters and they can be either derived fields or queries.
 
 Queries on Pipeline Results
 ---------------------------

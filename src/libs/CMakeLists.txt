@@ -29,6 +29,10 @@ else()
 endif()
 
 
+# ascent_png_utils object lib
+# shared for testing of all libs
+add_subdirectory(png_utils)
+
 ################################
 # Add ap comp
 ################################
@@ -44,9 +48,14 @@ if(ENABLE_DRAY)
 endif()
 
 ################################
-# Add VTK-h
+# Add VTK-h + rover
 ################################
 if(ENABLE_VTKH)
     add_subdirectory(vtkh)
     add_subdirectory(rover)
 endif()
+
+################################
+# Add ascent
+################################
+add_subdirectory(ascent)

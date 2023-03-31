@@ -8,6 +8,33 @@
 # TPL Smoke Tests
 ################################
 
+set(smoke_device_deps)
+
+if(CUDA_FOUND)
+    list(APPEND smoke_device_deps cuda)
+endif()
+
+if(HIP_FOUND)
+    list(APPEND smoke_device_deps blt_hip)
+endif()
+
+if(CALIPER_FOUND)
+    message(STATUS "Adding caliper smoke test")
+    add_cpp_test(TEST t_caliper_smoke DEPENDS_ON caliper)
+endif()
+
+if(RAJA_FOUND)
+    message(STATUS "Adding raja smoke test")
+    set(raja_smoke_deps RAJA ${smoke_device_deps})
+    add_cpp_test(TEST t_raja_smoke DEPENDS_ON ${raja_smoke_deps})
+endif()
+
+if(UMPIRE_FOUND)
+    message(STATUS "Adding umpire smoke test")
+    set(umpire_smoke_deps umpire ${smoke_device_deps})
+    add_cpp_test(TEST t_umpire_smoke DEPENDS_ON ${umpire_smoke_deps})
+endif()
+
 IF(VTKM_FOUND AND ENABLE_SERIAL)
     message(STATUS "Adding VTK-m smoke test")
     set(vtkm_smoke_deps vtkm)
@@ -41,12 +68,16 @@ endif()
 
 IF(MFEM_FOUND)
     message(STATUS "Adding mfem smoke test")
-    set(mfem_smoke_deps mfem conduit)
+    set(mfem_smoke_deps mfem conduit::conduit)
+    #check if mfem has device deps
+    if(MFEM_CUDA_ENABLED OR MFEM_HIP_ENABLED)
+         list(APPEND mfem_smoke_deps ${smoke_device_deps})
+    endif()
     # mfem does not have both a serial version and an mpi
     # version. So if we compiled with MPI on, the we need
     # to set the correct dependency
     if(MPI_FOUND AND ENABLE_MPI)
-        list(APPEND mfem_smoke_deps mpi conduit)
+        list(APPEND mfem_smoke_deps mpi)
     endif()
     add_cpp_test(TEST t_mfem_smoke DEPENDS_ON ${mfem_smoke_deps})
 endif()

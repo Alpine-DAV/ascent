@@ -82,9 +82,9 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
 
     variant("openmp", default=(sys.platform != 'darwin'),
             description="build openmp support")
-    variant("mfem", default=False, description="Build MFEM filter support")
+    variant("mfem", default=True, description="Build MFEM filter support")
     variant("adios", default=False, description="Build Adios filter support")
-    variant("dray", default=False, description="Build with Devil Ray support")
+    variant("dray", default=True, description="Build with Devil Ray support")
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
     variant("genten", default=False, description="Build with GenTen support")
@@ -95,6 +95,8 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
 
     # variants for dev-tools (docs, etc)
     variant("doc", default=False, description="Build Ascent's documentation")
+    # caliper
+    variant("caliper", default=True, description="Build Conduit Caliper support")
 
     ##########################################################################
     # package dependencies
@@ -268,7 +270,13 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     #######################
     depends_on('babelflow', when='+babelflow+mpi')
     depends_on('parallelmergetree', when='+babelflow+mpi')
+    depends_on('talass', when='+babelflow+mpi')
+    depends_on('streamstat', when='+babelflow+mpi')
 
+    #######################
+    # Caliper
+    #######################
+    depends_on("caliper", when="+caliper")
 
     #######################
     # Documentation related
@@ -557,6 +565,10 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
                                             spec['babelflow'].prefix))
                 cfg.write(cmake_cache_entry("PMT_DIR",
                                             spec['parallelmergetree'].prefix))
+                cfg.write(cmake_cache_entry("STREAMSTAT_DIR",
+                                            spec['streamstat'].prefix))
+                cfg.write(cmake_cache_entry("TOPOFILEPARSER_DIR",
+                                            spec['talass'].prefix))
         else:
             cfg.write(cmake_cache_entry("ENABLE_MPI", "OFF"))
 
@@ -723,6 +735,16 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
             cfg.write(cmake_cache_entry("GENTEN_DIR", spec['genten'].prefix))
         else:
             cfg.write("# genten not built by spack \n")
+
+        #######################
+        # Caliper
+        #######################
+        cfg.write("# caliper from spack \n")
+        if "+caliper" in spec:
+            cfg.write(cmake_cache_entry("CALIPER_DIR", spec["caliper"].prefix))
+            cfg.write(cmake_cache_entry("ADIAK_DIR", spec["adiak"].prefix))
+        else:
+            cfg.write("# caliper not built by spack \n")
 
         #######################
         # Finish host-config
