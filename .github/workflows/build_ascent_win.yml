@@ -23,7 +23,6 @@ jobs:
             build_camp=false `
             build_raja=false `
             build_umpire=false `
-            build_mfem=false `
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
