@@ -6,22 +6,16 @@
 #include <vtkm/cont/DeviceAdapter.h>
 #include <vtkm/cont/Storage.h>
 #include <vtkm/internal/Configure.h>
-#include <vtkm/filter/ContourTreeUniformAugmented.h>
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/PrintVectors.h>
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/ProcessContourTree.h>
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/PiecewiseLinearFunction.h>
 
-#include <vtkh/filters/GhostStripper.hpp> // AES
+#include <vtkh/filters/GhostStripper.hpp> 
+
+#include <fstream>
 
 namespace caugmented_ns = vtkm::worklet::contourtree_augmented;
-using DataValueType = vtkm::Float64;
-using ValueArray = vtkm::cont::ArrayHandle<DataValueType>;
-using BranchType = vtkm::worklet::contourtree_augmented::process_contourtree_inc::Branch<DataValueType>;
-using PLFType = vtkm::worklet::contourtree_augmented::process_contourtree_inc::PiecewiseLinearFunction<DataValueType>;
-
-#ifdef VTKH_PARALLEL
-#include <mpi.h>
 
 static void ShiftLogicalOriginToZero(vtkm::cont::PartitionedDataSet& pds)
 {
@@ -124,6 +118,9 @@ static void ComputeGlobalPointSize(vtkm::cont::PartitionedDataSet& pds)
   }
 }
 
+#ifdef VTKH_PARALLEL
+#include <mpi.h>
+
 // This is from VTK-m diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
 namespace vtkmdiy
 {
@@ -201,29 +198,173 @@ void ContourTree::PostExecute()
   Filter::PostExecute();
 }
 
+struct AnalyzerFunctor
+{
+  vtkm::filter::scalar_topology::ContourTreeAugmented& filter;
+  vtkh::ContourTree& contourTree;
+  bool dataFieldIsSorted;
+
+  public:
+  AnalyzerFunctor(vtkh::ContourTree& contourTree, vtkm::filter::scalar_topology::ContourTreeAugmented& filter): contourTree(contourTree), filter(filter)  {
+  }
+
+  void SetDataFieldIsSorted(bool dataFieldIsSorted) {
+     this->dataFieldIsSorted = dataFieldIsSorted;
+  }
+
+  void operator()(const vtkm::cont::ArrayHandle<vtkm::Float32> &arr) const
+  {
+     contourTree.analysis<vtkm::Float32>(filter, dataFieldIsSorted, arr);
+  }
+
+  void operator()(const vtkm::cont::ArrayHandle<vtkm::Float64> &arr) const
+  {
+     contourTree.analysis<vtkm::Float64>(filter, dataFieldIsSorted, arr);
+  }
+
+  template <typename T>
+  void operator()(const T&) const
+  {
+    throw vtkm::cont::ErrorBadValue("AnalyzerFunctor Expected Float32 or Float64!");
+  }
+};
+
+template<typename DataValueType> void ContourTree::analysis(vtkm::filter::scalar_topology::ContourTreeAugmented& filter,  bool dataFieldIsSorted, const vtkm::cont::UnknownArrayHandle& arr)
+{
+  std::vector<DataValueType> iso_values;
+
+  DataValueType eps = 0.00001;        // Error away from critical point
+  vtkm::Id numComp = m_levels + 1;    // Number of components the tree should be simplified to
+  vtkm::Id contourType = 0;           // Approach to be used to select contours based on the tree
+  vtkm::Id contourSelectMethod = 0;   // Method to be used to compute the relevant iso values
+  bool usePersistenceSorter = true;
+
+  // Compute the branch decomposition
+  // Compute the volume for each hyperarc and superarc
+  caugmented_ns::IdArrayType superarcIntrinsicWeight;
+  caugmented_ns::IdArrayType superarcDependentWeight;
+  caugmented_ns::IdArrayType supernodeTransferWeight;
+  caugmented_ns::IdArrayType hyperarcDependentWeight;
+
+  caugmented_ns::ProcessContourTree::ComputeVolumeWeightsSerial(
+      filter.GetContourTree(),
+      filter.GetNumIterations(),
+      superarcIntrinsicWeight,  // (output)
+      superarcDependentWeight,  // (output)
+      supernodeTransferWeight,  // (output)
+      hyperarcDependentWeight); // (output)
+
+  // Compute the branch decomposition by volume
+  caugmented_ns::IdArrayType whichBranch;
+  caugmented_ns::IdArrayType branchMinimum;
+  caugmented_ns::IdArrayType branchMaximum;
+  caugmented_ns::IdArrayType branchSaddle;
+  caugmented_ns::IdArrayType branchParent;
+
+#ifdef DEBUG
+  PrintArrayHandle( superarcIntrinsicWeight, "superarcIntrinsicWeight" );
+  PrintArrayHandle( superarcDependentWeight, "superarcDependentWeight" );
+  PrintArrayHandle( supernodeTransferWeight, "superarcDependentWeight" );
+  PrintArrayHandle( hyperarcDependentWeight, "hyperarcDependentWeight" );
+#endif // DEBUG
+
+
+  caugmented_ns::ProcessContourTree::ComputeVolumeBranchDecompositionSerial(
+      filter.GetContourTree(),
+      superarcDependentWeight,
+      superarcIntrinsicWeight,
+      whichBranch,               // (output)
+      branchMinimum,             // (output)
+      branchMaximum,             // (output)
+      branchSaddle,              // (output)
+      branchParent);             // (output)
+
+  // This is from ContourTree.h
+  using IdArrayType = vtkm::cont::ArrayHandle<vtkm::Id>;
+
+  // Create explicit representation of the branch decompostion from the array representation
+  using ValueArray = vtkm::cont::ArrayHandle<DataValueType>;
+  ValueArray dataField;
+
+  arr.AsArrayHandle(dataField);
+
+  using BranchType = vtkm::worklet::contourtree_augmented::process_contourtree_inc::Branch<DataValueType>;
+
+  BranchType* branchDecompostionRoot = caugmented_ns::ProcessContourTree::ComputeBranchDecomposition<DataValueType>(
+      filter.GetContourTree().Superparents,
+      filter.GetContourTree().Supernodes,
+      whichBranch,
+      branchMinimum,
+      branchMaximum,
+      branchSaddle,
+      branchParent,
+      filter.GetSortOrder(),
+      dataField,
+      dataFieldIsSorted
+    );
+
+  // Simplify the contour tree of the branch decompostion
+  branchDecompostionRoot->SimplifyToSize(numComp, usePersistenceSorter);
+  using PLFType = vtkm::worklet::contourtree_augmented::process_contourtree_inc::PiecewiseLinearFunction<DataValueType>;
+
+  // Compute the relevant iso-values
+  switch(contourSelectMethod)
+  {
+    default:
+    case 0:
+      {
+        branchDecompostionRoot->GetRelevantValues(contourType, eps, iso_values);
+      }
+      break;
+    case 1:
+      {
+        PLFType plf;
+        branchDecompostionRoot->AccumulateIntervals(contourType, eps, plf);
+        iso_values = plf.nLargest(m_levels);
+      }
+      break;
+  }
+
+  // Print the compute iso values
+  std::sort(iso_values.begin(), iso_values.end());
+
+  // Unique isovalues
+  auto it = std::unique (iso_values.begin(), iso_values.end());
+  iso_values.resize( std::distance(iso_values.begin(), it) );
+
+  for(size_t x = 0; x < iso_values.size(); ++x)
+  {
+      m_iso_values[x] = iso_values[x];
+  }
+
+  if(branchDecompostionRoot)
+  {
+      delete branchDecompostionRoot;
+  }
+}
+
 void ContourTree::DoExecute()
 {
   vtkh::DataSet *old_input = this->m_input;
+  const int before_num_domains = this->m_input->GetNumberOfDomains();
 
   // make sure we have a node-centered field
   bool valid_field = false;
-  bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) ==
-                       vtkm::cont::Field::Association::CELL_SET;
+  bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) == vtkm::cont::Field::Association::Cells;
   bool delete_input = false;
-  if(valid_field && is_cell_assoc)
+  bool do_recenter = true;
+  if(do_recenter && valid_field && is_cell_assoc)
   {
     Recenter recenter;
     recenter.SetInput(m_input);
     recenter.SetField(m_field_name);
-    recenter.SetResultAssoc(vtkm::cont::Field::Association::POINTS);
+    recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
     recenter.Update();
     m_input = recenter.GetOutput();
     delete_input = true;
   }
 
-  bool has_ghosts = false; // Experimental when enabled .... 
-
-  if(has_ghosts)
+  if(m_input->FieldExists("ascent_ghosts"))
   {
     vtkh::GhostStripper stripper;
 
@@ -232,7 +373,7 @@ void ContourTree::DoExecute()
     stripper.SetMinValue(0);
     stripper.SetMaxValue(0);
     stripper.Update();
-    vtkh::DataSet* stripped_input = stripper.GetOutput(); // AES FIX THIS ...
+    vtkh::DataSet* stripped_input = stripper.GetOutput(); 
 
     if (delete_input) {
        delete(m_input);
@@ -240,8 +381,7 @@ void ContourTree::DoExecute()
 
     m_input = stripped_input;
     delete_input = true;
-  } 
-
+  }
 
   int mpi_rank = 0;
 
@@ -275,7 +415,6 @@ void ContourTree::DoExecute()
   this->m_input->GetDomain(0, dom, domain_id);
   inDataSet.AppendPartition(dom);
 
-#ifdef DEBUG
   if( mpi_size != 1 )
   {
     std::ostringstream ostr;
@@ -283,6 +422,7 @@ void ContourTree::DoExecute()
        << " coord system range: " << dom.GetCoordinateSystem(0).GetRange() << std::endl;
     std::cout << ostr.str();
   }
+#ifdef DEBUG
 #endif
 #endif // VTKH_PARALLEL
 
@@ -292,203 +432,41 @@ void ContourTree::DoExecute()
   bool computeRegularStructure = true;
 
   //Convert the mesh of values into contour tree, pairs of vertex ids
-  vtkm::filter::ContourTreeAugmented filter(useMarchingCubes,
-                                            computeRegularStructure);
-
-  std::vector<DataValueType> iso_values;
+  vtkm::filter::scalar_topology::ContourTreeAugmented filter(useMarchingCubes, computeRegularStructure);
 
   filter.SetActiveField(m_field_name);
-
-#ifdef DEBUG
-    std::cout << "--- inDataSet \n";
-    inDataSet.PrintSummary( std::cout );
-    std::cout << "--- end inDataSet \n";
-
-#ifdef VTKH_PARALLEL
-    ValueArray dataField;
-    inDataSet.GetPartitions()[0].GetField(0).GetData().CopyTo(dataField);
-    PrintArrayHandle( dataField, "dataField" );
-#endif // VTKH_PARALLEL
-#endif // DEBUG
 
 #ifdef VTKH_PARALLEL
     ShiftLogicalOriginToZero(inDataSet);
     ComputeGlobalPointSize(inDataSet);
 #endif // VTKH_PARALLEL
 
-    auto result = filter.Execute(inDataSet);
-
-#ifdef DEBUG
-    std::cout << "--- result \n";
-    result.PrintSummary( std::cout );
-    std::cout << "--- end result \n";
-
-    {
-    ValueArray dataField;
-#ifdef VTKH_PARALLEL
-    std::cout << "--- field name: " << m_field_name << std::endl;
-    if( result.GetPartitions()[0].GetNumberOfFields() > 1 )
-      result.GetPartitions()[0].GetField("values").GetData().CopyTo(dataField);
-    else
-      result.GetPartitions()[0].GetField(0).GetData().CopyTo(dataField);
-#endif // VTKH_PARALLEL
-    PrintArrayHandle( dataField, "result dataField" );
-    }
-#endif // DEBUG
+  auto result = filter.Execute(inDataSet);
 
   m_iso_values.resize(m_levels);
-  if(mpi_rank == 0)
-  {
-    DataValueType eps = 0.00001;        // Error away from critical point
-    vtkm::Id numComp = m_levels + 1;    // Number of components the tree should be simplified to
-    vtkm::Id contourType = 0;           // Approach to be used to select contours based on the tree
-    vtkm::Id contourSelectMethod = 0;   // Method to be used to compute the relevant iso values
-    bool usePersistenceSorter = true;
 
-    // Compute the branch decomposition
-    // Compute the volume for each hyperarc and superarc
-    caugmented_ns::IdArrayType superarcIntrinsicWeight;
-    caugmented_ns::IdArrayType superarcDependentWeight;
-    caugmented_ns::IdArrayType supernodeTransferWeight;
-    caugmented_ns::IdArrayType hyperarcDependentWeight;
+  if (mpi_rank == 0) {
+    AnalyzerFunctor analyzerFunctor(*this, filter);
 
-    caugmented_ns::ProcessContourTree::ComputeVolumeWeightsSerial(
-      filter.GetContourTree(),
-      filter.GetNumIterations(),
-      superarcIntrinsicWeight,  // (output)
-      superarcDependentWeight,  // (output)
-      supernodeTransferWeight,  // (output)
-      hyperarcDependentWeight); // (output)
-
-#ifdef DEBUG
-    PrintArrayHandle( superarcIntrinsicWeight, "superarcIntrinsicWeight" );
-    PrintArrayHandle( superarcDependentWeight, "superarcDependentWeight" );
-    PrintArrayHandle( supernodeTransferWeight, "superarcDependentWeight" );
-    PrintArrayHandle( hyperarcDependentWeight, "hyperarcDependentWeight" );
-#endif // DEBUG
-
-    // Compute the branch decomposition by volume
-    caugmented_ns::IdArrayType whichBranch;
-    caugmented_ns::IdArrayType branchMinimum;
-    caugmented_ns::IdArrayType branchMaximum;
-    caugmented_ns::IdArrayType branchSaddle;
-    caugmented_ns::IdArrayType branchParent;
-
-    caugmented_ns::ProcessContourTree::ComputeVolumeBranchDecompositionSerial(
-      filter.GetContourTree(),
-      superarcDependentWeight,
-      superarcIntrinsicWeight,
-      whichBranch,               // (output)
-      branchMinimum,             // (output)
-      branchMaximum,             // (output)
-      branchSaddle,              // (output)
-      branchParent);             // (output)
-
-#ifdef DEBUG
-    PrintArrayHandle( whichBranch,   "whichBranch" );
-    PrintArrayHandle( branchMinimum, "branchMinimum" );
-    PrintArrayHandle( branchMaximum, "branchMaximum" );
-    PrintArrayHandle( branchSaddle,  "branchSaddle" );
-    PrintArrayHandle( branchParent,  "branchParent" );
-#endif // DEBUG
-
-    // This is from ContourTree.h
-    using IdArrayType = vtkm::cont::ArrayHandle<vtkm::Id>;
-
-    // Create explicit representation of the branch decompostion from the array representation
 #ifndef VTKH_PARALLEL
-    ValueArray dataField;
-    inDataSet.GetField(0).GetData().CopyTo(dataField);
-
-    bool dataFieldIsSorted = false;
-#else // VTKH_PARALLEL
-    ValueArray dataField;
-    bool dataFieldIsSorted;
-
-    // Why do this? Because right now aa is an int array and we want a double array.
+    analyzerFunctor.SetDataFieldIsSorted(false);
+    vtkm::cont::CastAndCall(inDataSet.GetField(0).GetData(), analyzerFunctor);
+#else
     if(mpi_size == 1)
     {
-      inDataSet.GetPartition(0).GetField(0).GetData().CopyTo(dataField);
-      dataFieldIsSorted = false;
-    }else{
-      if( result.GetPartitions()[0].GetNumberOfFields() > 1 )
-        result.GetPartitions()[0].GetField("values").GetData().CopyTo(dataField);
-      else
-        result.GetPartitions()[0].GetField(0).GetData().CopyTo(dataField);
-      dataFieldIsSorted = true;
+      analyzerFunctor.SetDataFieldIsSorted(false);
+      vtkm::cont::CastAndCall(inDataSet.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
+    } else {
+      analyzerFunctor.SetDataFieldIsSorted(true);
+
+      if( result.GetPartitions()[0].GetNumberOfFields() > 1 ) {
+        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("values").GetData(), analyzerFunctor);
+      } else {
+        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
+      }
     }
 #endif // VTKH_PARALLEL
-#ifdef DEBUG
-    //resultDataset.PrintSummary( std::cerr );
-    //PrintArrayHandle( (IdArrayType)aa );
-    PrintArrayHandle( dataField, "dataField" );
-#endif // DEBUG
-
-    BranchType* branchDecompostionRoot = caugmented_ns::ProcessContourTree::ComputeBranchDecomposition<DataValueType>(
-      filter.GetContourTree().Superparents,
-      filter.GetContourTree().Supernodes,
-      whichBranch,
-      branchMinimum,
-      branchMaximum,
-      branchSaddle,
-      branchParent,
-      filter.GetSortOrder(),
-      dataField,
-      dataFieldIsSorted
-    );
-
-    // Simplify the contour tree of the branch decompostion
-    branchDecompostionRoot->SimplifyToSize(numComp, usePersistenceSorter);
-
-    // Compute the relevant iso-values
-    switch(contourSelectMethod)
-    {
-    default:
-    case 0:
-      {
-        branchDecompostionRoot->GetRelevantValues(contourType, eps, iso_values);
-      }
-      break;
-    case 1:
-      {
-        PLFType plf;
-        branchDecompostionRoot->AccumulateIntervals(contourType, eps, plf);
-        iso_values = plf.nLargest(m_levels);
-      }
-      break;
-    }
-
-    // Print the compute iso values
-    std::sort(iso_values.begin(), iso_values.end());
-
-#ifdef DEBUG
-    std::cout << "Isovalues: ";
-    for(DataValueType val : iso_values) std::cout << val << " ";
-    std::cout << std::endl;
-#endif
-
-    // Unique isovalues
-    std::vector<DataValueType>::iterator it = std::unique (iso_values.begin(), iso_values.end());
-    iso_values.resize( std::distance(iso_values.begin(), it) );
-
-#ifdef DEBUG
-    std::cout << iso_values.size() << "  Unique Isovalues: ";
-    for(DataValueType val : iso_values) std::cout << val << " ";
-    std::cout << std::endl;
-
-    std::cout<<"Acrs : " << filter.GetContourTree().Arcs.GetNumberOfValues() <<std::endl;
-#endif
-
-    for(size_t x = 0; x < iso_values.size(); ++x)
-    {
-      m_iso_values[x] = iso_values[x];
-    }
-
-    if(branchDecompostionRoot)
-    {
-      delete branchDecompostionRoot;
-    }
-  }
+  } // mpi_rank == 0
 
 #ifdef VTKH_PARALLEL
   MPI_Bcast(&m_iso_values[0], m_levels, MPI_DOUBLE, 0, mpi_comm);

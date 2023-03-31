@@ -4,6 +4,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
+#include <vtkm/filter/ContourTreeUniformAugmented.h>
 
 namespace vtkh
 {
@@ -17,10 +18,15 @@ public:
   void SetField(const std::string &field_name);
   void SetNumLevels(int levels);
   std::vector<double> GetIsoValues();
+
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
+
+private:
+  friend class AnalyzerFunctor;
+  template<typename DataValueType> void analysis(vtkm::filter::scalar_topology::ContourTreeAugmented& filter, bool dataFieldIsSorted, const vtkm::cont::UnknownArrayHandle&  arr);
 
   std::string m_field_name;
   int m_levels;
