@@ -31,8 +31,8 @@ jobs:
     - name: Build Ascent
       run: |
         echo "**** Building Ascent"
-        cmake --build  build --confiig Release -j2
+        cmake --build  build --config Release -j2
     - name: Install Ascent
       run: |
         echo "**** Installing Ascent"
-        cmake --install  build --confiig Release
+        cmake --install  build --config Release
