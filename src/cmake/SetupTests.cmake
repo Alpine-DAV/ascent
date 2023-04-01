@@ -17,7 +17,6 @@
 ################################################################
 
 if(ASCENT_ENABLE_TESTS AND NOT ENABLE_TESTS)
-    message(STATUS " [*] Adding Unit Test: ${arg_TEST}")
     set(ENABLE_TESTS ON)
 endif()
 
@@ -27,6 +26,36 @@ else()
     message(STATUS "Tests are disabled (ENABLE_TESTS=OFF)")
 endif()
 
+
+#####################################################################
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # Copy DLLs into our bin dir so we can satisfy 
+    # deps to run tests.
+    #
+    # Note: There are per target ways to do this, however
+    #       all of our many, many tests share these dlls so 
+    #       I opted for a single copy step, instead of
+    #       trying to track and copy each test. 
+    #
+    # Show TPL DLL Paths
+    message(STATUS "ASCENT_TPL_DLL_PATHS: ${ASCENT_TPL_DLL_PATHS}")
+    # glob and gather dlls from all TPL dirs
+    set(tpl_all_dlls)
+    foreach( tpl_dll_path in ${ASCENT_TPL_DLL_PATHS})
+        file(GLOB tpl_glob_dlls ${tpl_dll_path}/*.dll)
+        foreach( tpl_dll ${tpl_glob_dlls})
+            list(APPEND tpl_all_dlls ${tpl_dll})
+        endforeach()
+    endforeach()
+    add_custom_target(tpl_dlls_dir ALL
+                      COMMAND ${CMAKE_COMMAND} -E make_directory
+                      ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
+    add_custom_target(tpl_dlls ALL
+                      COMMAND ${CMAKE_COMMAND} -E copy 
+                      ${tpl_all_dlls}
+                      ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
+    add_dependencies(tpl_dlls tpl_dlls_dir)
+endif()
 
 ##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest
@@ -77,9 +106,8 @@ function(add_cpp_test)
         if(EXTRA_PYTHON_MODULE_DIRS)
             set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
         endif()
-        set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
-
 endfunction()
 
 
@@ -132,7 +160,7 @@ function(add_cuda_test)
         if(EXTRA_PYTHON_MODULE_DIRS)
             set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
         endif()
-        set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
 
 endfunction()
@@ -188,7 +216,7 @@ function(add_cpp_mpi_test)
         if(EXTRA_PYTHON_MODULE_DIRS)
             set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
         endif()
-        set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
     endif()
 
     ###########################################################################
@@ -242,10 +270,10 @@ endfunction(add_python_test)
 ##
 ## add_python_mpi_test( TEST test NUM_MPI_TASKS 2 )
 ##------------------------------------------------------------------------------
-function(add_python_mpi_test TEST)
+function(add_python_mpi_test)
 
     set(options)
-    set(singleValueArgs NUM_MPI_TASKS)
+    set(singleValueArgs TEST NUM_MPI_TASKS)
 
     # parse our arguments
     cmake_parse_arguments(arg
@@ -253,15 +281,15 @@ function(add_python_mpi_test TEST)
                          "${singleValueArgs}"
                          "${multiValueArgs}" ${ARGN} )
 
-    message(STATUS " [*] Adding Python-based MPI Unit Test: ${TEST}")
-    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${TEST})
+    message(STATUS " [*] Adding Python-based MPI Unit Test: ${arg_TEST}")
+    set(test_command ${PYTHON_EXECUTABLE} -B -m unittest -v ${arg_TEST})
 
     # Handle mpi
     if ( ${arg_NUM_MPI_TASKS} )
           set(test_command ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${arg_NUM_MPI_TASKS} ${test_command} )
     endif()
 
-    add_test(NAME ${TEST}
+    add_test(NAME ${arg_TEST}
              COMMAND ${test_command} )
 
      # make sure python can pick up the modules we built
@@ -284,7 +312,7 @@ function(add_python_mpi_test TEST)
      if(EXTRA_PYTHON_MODULE_DIRS)
          set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
      endif()
-     set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+     set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
 
      ###########################################################################
      # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
@@ -293,7 +321,7 @@ function(add_python_mpi_test TEST)
      # with other mpi implementations.
      ###########################################################################
      set_property(TEST ${arg_TEST}
-                  PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
+                  APPEND PROPERTY ENVIRONMENT  "OMPI_MCA_rmaps_base_oversubscribe=1")
 
 endfunction()
 

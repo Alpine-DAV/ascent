@@ -24,3 +24,9 @@ find_dependency(RAJA REQUIRED
                 NO_DEFAULT_PATH
                 PATHS ${_RAJA_SEARCH_PATH})
 message(STATUS "Found RAJA in: ${RAJA_DIR}")
+
+
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # if we are running tests with dlls, we need path to dlls
+    list(APPEND ASCENT_TPL_DLL_PATHS ${RAJA_DIR_ORIG}/lib/)
+endif()

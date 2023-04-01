@@ -1,0 +1,46 @@
+name: build_ascent_windows
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_windows_msvc_base:
+    name: MSVC Base Release
+    runs-on: windows-2019
+    steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build TPLs
+      run: |
+        env build_ascent=false `
+            enable_tests=OFF `
+            build_camp=false `
+            build_raja=false `
+            build_umpire=false `
+            ./scripts/build_ascent/build_ascent.sh
+    - name: Configure Ascent
+      run: |
+        echo "**** Configuring Ascent"
+        cmake -S src -B build `
+              -C ascent-config.cmake `
+              -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON `
+              -DCAMP_DIR=IGNORE `
+              -DRAJA_DIR=IGNORE `
+              -DUMPIRE_DIR=IGNORE `
+              -DENABLE_DRAY=OFF `
+              -DENABLE_APCOMP=OFF `
+              -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        echo "**** Building Ascent"
+        cmake --build  build --config Release -j2
+    - name: Install Ascent
+      run: |
+        echo "**** Installing Ascent"
+        cmake --install  build --config Release
