@@ -12,9 +12,12 @@ set(_RAJA_SEARCH_PATH)
 if(EXISTS ${RAJA_DIR}/share/raja/cmake)
   # old install layout
   set(_RAJA_SEARCH_PATH ${RAJA_DIR}/share/raja/cmake)
-else()
+elseif(EXISTS ${RAJA_DIR}/lib/cmake/raja)
   # new install layout
   set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/raja)
+else ()
+  # try RAJA_DIR itself
+  set(_RAJA_SEARCH_PATH ${RAJA_DIR})
 endif()
 
 message(STATUS "Looking for RAJA in: ${RAJA_DIR}")
