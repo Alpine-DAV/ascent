@@ -253,8 +253,8 @@ if [ ! -d ${raja_src_dir} ]; then
   tar -xzf ${raja_tarball}
   # apply raja patch
   cd  ${raja_src_dir}
-  patch -p1 < ../2023_01_30_raja.patch
-  cd ..
+  patch -p1 < ${root_dir}/2023_01_30_raja.patch
+  cd ${root_dir}
 fi
 
 echo "**** Configuring RAJA ${raja_version}"
