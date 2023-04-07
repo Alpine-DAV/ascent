@@ -58,6 +58,7 @@ if [[ "$build_windows" == "ON" ]]; then
 fi 
 
 root_dir=$(pwd)
+script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 
 ################
 # path helper
@@ -253,7 +254,7 @@ if [ ! -d ${raja_src_dir} ]; then
   tar -xzf ${raja_tarball}
   # apply raja patch
   cd  ${raja_src_dir}
-  patch -p1 < ${root_dir}/2023_01_30_raja.patch
+  patch -p1 < ${script_dir}/2023_01_30_raja.patch
   cd ${root_dir}
 fi
 
