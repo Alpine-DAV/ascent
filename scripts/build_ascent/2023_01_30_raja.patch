@@ -1,0 +1,36 @@
+From 9a50702cf835996f96cb33e2cb4c0aa1a7a86df5 Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Fri, 27 Jan 2023 15:49:35 -0800
+Subject: [PATCH] try new logic for windows shared exports
+
+---
+ azure-pipelines.yml        | 2 +-
+ include/RAJA/config.hpp.in | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/azure-pipelines.yml b/azure-pipelines.yml
+index c84a71eb18..268ba4a660 100644
+--- a/azure-pipelines.yml
++++ b/azure-pipelines.yml
+@@ -3,7 +3,7 @@ jobs:
+   strategy:
+     matrix:
+       shared:
+-        SHARED_ARGS: '-DBUILD_SHARED_LIBS=On -DCMAKE_CXX_FLAGS="/DRAJASHAREDDLL_EXPORTS" '
++        SHARED_ARGS: '-DBUILD_SHARED_LIBS=On'
+       static:
+         SHARED_ARGS: '-DBUILD_SHARED_LIBS=Off'
+   pool:
+diff --git a/include/RAJA/config.hpp.in b/include/RAJA/config.hpp.in
+index 26b0b0dbde..0347650fc4 100644
+--- a/include/RAJA/config.hpp.in
++++ b/include/RAJA/config.hpp.in
+@@ -364,7 +364,7 @@ const int DATA_ALIGN = @RAJA_DATA_ALIGN@;
+ //
+ 
+ #if (defined(_WIN32) || defined(_WIN64)) && !defined(RAJA_WIN_STATIC_BUILD)
+-#ifdef RAJASHAREDDLL_EXPORTS
++#ifdef RAJA_EXPORTS
+ #define RAJASHAREDDLL_API __declspec(dllexport)
+ #else
+ #define RAJASHAREDDLL_API __declspec(dllimport)

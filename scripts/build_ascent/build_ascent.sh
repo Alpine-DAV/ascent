@@ -58,6 +58,7 @@ if [[ "$build_windows" == "ON" ]]; then
 fi 
 
 root_dir=$(pwd)
+script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 
 ################
 # path helper
@@ -250,7 +251,11 @@ if ${build_raja}; then
 if [ ! -d ${raja_src_dir} ]; then
   echo "**** Downloading ${raja_tarball}"
   curl -L https://github.com/LLNL/RAJA/releases/download/${raja_version}/${raja_tarball} -o ${raja_tarball} 
-  tar -xzf ${raja_tarball} 
+  tar -xzf ${raja_tarball}
+  # apply raja patch
+  cd  ${raja_src_dir}
+  patch -p1 < ${script_dir}/2023_01_30_raja.patch
+  cd ${root_dir}
 fi
 
 echo "**** Configuring RAJA ${raja_version}"
@@ -353,7 +358,7 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DMFEM_USE_CONDUIT=ON ${mfem_extra_cmake_args}\
+  -DMFEM_USE_CONDUIT=ON ${mfem_extra_cmake_args} \
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
   -DMFEM_ENABLE_TESTING=${enable_tests} \
   -DMFEM_ENABLE_EXAMPLES=${enable_tests} \
