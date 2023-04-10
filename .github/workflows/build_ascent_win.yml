@@ -26,7 +26,6 @@ jobs:
         echo "**** Configuring Ascent"
         cmake -S src -B build `
               -C ascent-config.cmake `
-              -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON `
               -DENABLE_DRAY=OFF `
               -DENABLE_APCOMP=OFF `
               -DCMAKE_INSTALL_PREFIX=install
