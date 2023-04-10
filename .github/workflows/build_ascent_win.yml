@@ -37,3 +37,7 @@ jobs:
       run: |
         echo "**** Installing Ascent"
         cmake --install  build --config Release
+    - name: Run Ascent Unit Tests
+      run: |
+        echo "**** Ascent Unit Tests"
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
