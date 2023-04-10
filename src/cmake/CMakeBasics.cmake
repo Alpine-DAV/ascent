@@ -97,6 +97,11 @@ if(WIN32)
     set(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR}/bin)
     set(ARCHIVE_OUTPUT_PATH     ${CMAKE_BINARY_DIR}/bin)
     set(LIBRARY_OUTPUT_PATH     ${CMAKE_BINARY_DIR}/bin)
+    if(BUILD_SHARED_LIBS)
+        # We don't have all symbols exported yet, so we use
+        # cmake support for exports when building on windows
+        set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON CACHE BOOL "" FORCE)
+    endif()
 endif()
 
 ################################

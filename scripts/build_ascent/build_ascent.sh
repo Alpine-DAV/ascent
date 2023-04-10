@@ -34,6 +34,7 @@ build_config="${build_config:=Release}"
 build_shared_libs="${build_shared_libs:=ON}"
 
 # tpl controls
+build_zlib="${build_zlib:=true}"
 build_hdf5="${build_hdf5:=true}"
 build_conduit="${build_conduit:=true}"
 build_vtkm="${build_vtkm:=true}"
@@ -74,9 +75,45 @@ function ospath()
 }
 
 ################
+# Zlib
+################
+zlib_version=1.2.13
+zlib_src_dir=$(ospath ${root_dir}/zlib-${zlib_version})
+zlib_build_dir=$(ospath ${root_dir}/build/zlib-${zlib_version}/)
+zlib_install_dir=$(ospath ${root_dir}/install/zlib-${zlib_version}/)
+zlib_tarball=zlib-${zlib_version}.tar.gz
+
+# build only if install doesn't exist
+if [ ! -d ${zlib_install_dir} ]; then
+if ${build_zlib}; then
+if [ ! -d ${zlib_src_dir} ]; then
+  echo "**** Downloading ${zlib_tarball}"
+  curl -L https://www.zlib.net/zlib-${zlib_version}.tar.gz -o ${zlib_tarball}
+  tar -xzf ${zlib_tarball}
+fi
+
+echo "**** Configuring Zlib ${zlib_version}"
+cmake -S ${zlib_src_dir} -B ${zlib_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DCMAKE_INSTALL_PREFIX=${zlib_install_dir}
+
+echo "**** Building Zlib ${zlib_version}"
+cmake --build ${zlib_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Zlib ${zlib_version}"
+cmake --install ${zlib_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Zlib build, install found at: ${zlib_install_dir}"
+fi # build_zlib
+
+
+################
 # HDF5
 ################
 hdf5_version=1.12.2
+hdf5_short_version=1.12
 hdf5_src_dir=$(ospath ${root_dir}/hdf5-${hdf5_version})
 hdf5_build_dir=$(ospath ${root_dir}/build/hdf5-${hdf5_version}/)
 hdf5_install_dir=$(ospath ${root_dir}/install/hdf5-${hdf5_version}/)
@@ -87,14 +124,26 @@ if [ ! -d ${hdf5_install_dir} ]; then
 if ${build_hdf5}; then
 if [ ! -d ${hdf5_src_dir} ]; then
   echo "**** Downloading ${hdf5_tarball}"
-  curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz -o ${hdf5_tarball}
+  curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
   tar -xzf ${hdf5_tarball}
 fi
+
+# hdf5 needs the actual zlib lib, just the install dir -- sort all of this out 
+# Note: always use static b/c paths aren't plumbed for windows dlls yet
+if [[ "$build_windows" == "ON" ]]; then
+    zlib_lib_file=${zlib_install_dir}/lib/zlibstatic.lib
+else
+    zlib_lib_file=${zlib_install_dir}/lib/zlib.a
+fi
+
 
 echo "**** Configuring HDF5 ${hdf5_version}"
 cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
+  -DZLIB_INCLUDE_DIR:PATH=${zlib_install_dir}/include \
+  -DZLIB_LIBRARY_DIR:FILEPATH=${zlib_lib_file} \
+  -DZLIB_USE_EXTERNAL=1 \
   -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir}
 
 echo "**** Building HDF5 ${hdf5_version}"
@@ -137,7 +186,9 @@ cmake -S ${conduit_src_dir} -B ${conduit_build_dir} \
   -DENABLE_FIND_MPI=${enable_find_mpi} \
   -DENABLE_PYTHON=${enable_python} \
   -DENABLE_TESTS=${enable_tests} \
-  -DHDF5_DIR=${hdf5_install_dir}
+  -DHDF5_DIR=${hdf5_install_dir} \
+  -DZLIB_DIR=${zlib_install_dir}
+
 
 echo "**** Building Conduit ${conduit_version}"
 cmake --build ${conduit_build_dir} --config ${build_config} -j${build_jobs}

@@ -241,7 +241,7 @@ TEST(ascent_runtime_options, test_timings)
                               "          {\n"
                               "            \"r1\": \n"
                               "            {\n"
-                              "              \"image_prefix\": \"" + output_file + "\"\n"
+                              "              \"image_prefix\": \"" + conduit::utils::escape_special_chars(output_file) + "\"\n"
                               "            }\n"
                               "          }\n"
                               "        }\n"
@@ -343,7 +343,7 @@ TEST(ascent_runtime_options, test_timings_tear_updown)
                               "          {\n"
                               "            \"r1\": \n"
                               "            {\n"
-                              "              \"image_prefix\": \"" + output_file + "\"\n"
+                              "              \"image_prefix\": \"" + conduit::utils::escape_special_chars(output_file) + "\"\n"
                               "            }\n"
                               "          }\n"
                               "        }\n"
@@ -448,7 +448,7 @@ TEST(ascent_runtime_options, test_actions_file)
                               "          {\n"
                               "            \"r1\": \n"
                               "            {\n"
-                              "              \"image_prefix\": \"" + output_file + "\"\n"
+                              "              \"image_prefix\": \"" + conduit::utils::escape_special_chars(output_file) + "\"\n"
                               "            }\n"
                               "          }\n"
                               "        }\n"
@@ -626,7 +626,7 @@ TEST(ascent_runtime_options, test_actions_yaml_file)
                               "              field: braid\n"
                               "          renders:\n"
                               "            r1:\n"
-                              "              image_prefix: " + output_file + "\n";
+                              "              image_prefix: " + conduit::utils::escape_special_chars(output_file)  + "\n";
 
 
     std::ofstream file(output_actions);

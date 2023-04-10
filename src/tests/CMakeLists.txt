@@ -5,6 +5,22 @@
 ###############################################################################
 
 
+#define ASCENT_T_SRC_DIR   "@CMAKE_CURRENT_SOURCE_DIR@"
+#define ASCENT_T_BIN_DIR   "@CMAKE_CURRENT_BINARY_DIR@"
+#define ASCENT_T_DATA_DIR  "@CMAKE_CURRENT_SOURCE_DIR@/data/"
+
+
+
+convert_to_native_escaped_file_path(${CMAKE_CURRENT_SOURCE_DIR}
+                                    ASCENT_T_SRC_DIR)
+
+convert_to_native_escaped_file_path(${CMAKE_CURRENT_BINARY_DIR}
+                                     ASCENT_T_BIN_DIR)
+
+convert_to_native_escaped_file_path(${CMAKE_CURRENT_SOURCE_DIR}/data/
+                                    ASCENT_T_DATA_DIR)
+
+
 # this header allows us to easily use the cmake source and binary paths in
 # our unit tests
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/t_config.hpp.in"

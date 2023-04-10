@@ -20,9 +20,9 @@
 //
 //-----------------------------------------------------------------------------
 
-#define ASCENT_T_SRC_DIR   "@CMAKE_CURRENT_SOURCE_DIR@"
-#define ASCENT_T_BIN_DIR   "@CMAKE_CURRENT_BINARY_DIR@"
-#define ASCENT_T_DATA_DIR  "@CMAKE_CURRENT_SOURCE_DIR@/data/"
+#define ASCENT_T_SRC_DIR   "@ASCENT_T_SRC_DIR@"
+#define ASCENT_T_BIN_DIR   "@ASCENT_T_BIN_DIR@"
+#define ASCENT_T_DATA_DIR  "@ASCENT_T_DATA_DIR@"
 
 #endif
 
