@@ -428,8 +428,8 @@ endif()
 ######################################################
 macro(install_headers_with_directory header_list)
   foreach(header ${${header_list}})
-    string(REGEX MATCH "(.*)[/\\]" DIR ${header})
-    install(FILES ${header} DESTINATION include/ascent/dray/${DIR})
+    get_filename_component(hdr_dir ${header} DIRECTORY)
+    install(FILES ${header} DESTINATION include/ascent/dray/${hdr_dir})
   endforeach(header)
 endmacro(install_headers_with_directory)
 
