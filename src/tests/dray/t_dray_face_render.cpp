@@ -176,7 +176,9 @@ TEST (dray_faces, dray_warbly_faces)
     dray::stats::StatStore::enable_stats();
   }
 
-  std::string root_file = std::string (ASCENT_T_DATA_DIR) + "warbly_cube/warbly_cube_000000.root";
+  std::string root_file = conduit::utils::join_file_path( std::string(ASCENT_T_DATA_DIR),
+                                                         "warbly_cube");
+  root_file = conduit::utils::join_file_path( root_file, "warbly_cube_000000.root");
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "warbly_faces");
