@@ -13,7 +13,7 @@ jobs:
           cxx: icpx
           fc: ifx
     name: Ubuntu Build Ascent (${{ matrix.cc }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}
