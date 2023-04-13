@@ -428,13 +428,22 @@ endif()
 ######################################################
 macro(install_headers_with_directory header_list)
   foreach(header ${${header_list}})
-    get_filename_component(hdr_dir ${header} DIRECTORY)
-    install(FILES ${header} DESTINATION include/ascent/dray/${hdr_dir})
+    # install with headers only works for headers presented
+    # with relative paths. We will have an abs path
+    # case for the generated config header, don't
+    # try to find the relative dir in that case
+    if(IS_ABSOLUTE ${header})
+        install(FILES ${header} DESTINATION include/ascent/dray/)
+    else()
+        get_filename_component(hdr_dir ${header} DIRECTORY)
+        install(FILES ${header} DESTINATION include/ascent/dray/${hdr_dir})
+    endif()
   endforeach(header)
 endmacro(install_headers_with_directory)
 
 install_headers_with_directory(dray_headers)
 
+#message(FATAL_ERROR "BLADH")
 
 if(ENABLE_UTILS)
    message(STATUS "Dray Utilities Enabled")
