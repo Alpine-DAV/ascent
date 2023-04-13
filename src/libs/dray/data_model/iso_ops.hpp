@@ -797,7 +797,7 @@ namespace dray
       }
     }
 #ifdef DEBUG_ISOSURFACE_FILTER
-    if(split_counter > MAX_SPLITS)
+    if(split_counter >= MAX_SPLITS)
     {
       std::cout << "ERROR: split_counter="
                 << static_cast<int>(split_counter)
