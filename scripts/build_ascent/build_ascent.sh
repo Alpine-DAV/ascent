@@ -193,7 +193,7 @@ cmake -S ${conduit_src_dir} -B ${conduit_build_dir} \
 echo "**** Building Conduit ${conduit_version}"
 cmake --build ${conduit_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing Conduit ${conduit_version}"
-cmake --install ${conduit_build_dir}
+cmake --install ${conduit_build_dir} --config ${build_config}
 
 fi
 else
@@ -239,7 +239,7 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
 echo "**** Building VTK-m ${vtkm_version}"
 cmake --build ${vtkm_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing VTK-m ${vtkm_version}"
-cmake --install ${vtkm_build_dir}
+cmake --install ${vtkm_build_dir}  --config ${build_config}
 
 fi
 else
@@ -279,7 +279,7 @@ cmake -S ${camp_src_dir} -B ${camp_build_dir} \
 echo "**** Building Camp ${camp_version}"
 cmake --build ${camp_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing Camp ${camp_version}"
-cmake --install ${camp_build_dir}
+cmake --install ${camp_build_dir}  --config ${build_config}
 
 fi
 else
@@ -325,7 +325,7 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
 echo "**** Building RAJA ${raja_version}"
 cmake --build ${raja_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing RAJA ${raja_version}"
-cmake --install ${raja_build_dir}
+cmake --install ${raja_build_dir}  --config ${build_config}
 
 fi
 else
@@ -371,7 +371,7 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
 echo "**** Building Umpire ${umpire_version}"
 cmake --build ${umpire_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing Umpire ${umpire_version}"
-cmake --install ${umpire_build_dir}
+cmake --install ${umpire_build_dir}  --config ${build_config}
 
 fi
 else
@@ -418,7 +418,7 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} \
 echo "**** Building MFEM ${vtkm_version}"
 cmake --build ${mfem_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing MFEM ${mfem_version}"
-cmake --install ${mfem_build_dir}
+cmake --install ${mfem_build_dir}  --config ${build_config}
 
 fi
 else
@@ -490,7 +490,7 @@ cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
 echo "**** Building Ascent"
 cmake --build ${ascent_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing Ascent"
-cmake --install ${ascent_build_dir}
+cmake --install ${ascent_build_dir}  --config ${build_config}
 
 fi
 else

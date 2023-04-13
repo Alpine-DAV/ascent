@@ -26,8 +26,6 @@ jobs:
         echo "**** Configuring Ascent"
         cmake -S src -B build `
               -C ascent-config.cmake `
-              -DENABLE_DRAY=OFF `
-              -DENABLE_APCOMP=OFF `
               -DENABLE_TESTS=ON `
               -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
