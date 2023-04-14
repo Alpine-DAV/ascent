@@ -22,6 +22,8 @@ set -eu -o pipefail
 ##############################################################################
 
 # shared options
+enable_cuda="${enable_cuda:=OFF}"
+enable_hip="${enable_hip:=OFF}"
 enable_fortran="${enable_fortran:=OFF}"
 enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
@@ -48,6 +50,33 @@ build_ascent="${build_ascent:=true}"
 
 # see if we are building on windows
 build_windows="${build_windows:=OFF}"
+
+
+if [[ "$enable_cuda" == "ON" ]]; then
+    echo "*** configuring with CUDA support"
+
+    CC="${CC:=gcc}"
+    CXX="${CXX:=g++}"
+    FTN="${FTN:=gfortran}"
+
+    CUDA_ARCH="${CUDA_ARCH:=80}"
+    CUDA_ARCH_VTKM="${CUDA_ARCH_VTKM:=ampere}"
+fi
+
+if [[ "$enable_hip" == "ON" ]]; then
+    echo "*** configuring with HIP support"
+
+    CC="${CC:=/opt/rocm/llvm/bin/amdclang}"
+    CXX="${CXX:=/opt/rocm/llvm/bin/amdclang++}"
+    # FTN?
+
+    ROCM_ARCH="${ROCM_ARCH:=gfx90a}"
+    ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
+
+    # this script only builds kokkos for hip support
+    build_kokkos="${build_kokkos:=false}"
+fi
+
 case "$OSTYPE" in
   win*)     build_windows="ON";;
   msys*)    build_windows="ON";;
@@ -201,6 +230,53 @@ else
 fi # build_conduit
 
 
+if [[ "$enable_hip" == "ON" ]]; then
+#########################
+# Kokkos (only for hip)
+#########################
+kokkos_version=3.6.01
+kokkos_src_dir=${root_dir}/kokkos-${kokkos_version}
+kokkos_build_dir=${root_dir}/build/kokkos-${kokkos_version}
+kokkos_install_dir=${root_dir}/install/kokkos-${kokkos_version}/
+kokkos_tarball=kokkos-${kokkos_version}.tar.gz
+
+# build only if install doesn't exist
+if [ ! -d ${kokkos_install_dir} ]; then
+if ${build_kokkos}; then
+if [ ! -d ${kokkos_src_dir} ]; then
+  echo "**** Downloading ${kokkos_tarball}"
+  curl -L https://github.com/kokkos/kokkos/archive/refs/tags/${kokkos_version}.tar.gz -o ${kokkos_tarball}
+  tar -xzf ${kokkos_tarball}
+fi
+
+echo "**** Configuring Kokkos ${kokkos_version}"
+cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
+  -DKokkos_ARCH_VEGA90A=ON \ # TODO: This needs to be controlled / mapped?
+  -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc \
+  -DKokkos_ENABLE_HIP=ON \
+  -DKokkos_ENABLE_SERIAL=ON \
+  -DKokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE=OFF \
+  -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
+  -DCMAKE_CXX_FLAGS="--amdgpu-target=${ROCM_ARCH}" \
+  -DBUILD_TESTING=OFF \
+  -DVTKm_ENABLE_BENCHMARKS=OFF\
+  -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir}
+
+echo "**** Building Kokkos ${kokkos_version}"
+cmake --build ${kokkos_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing VTK-m ${kokkos_version}"
+cmake --install ${kokkos_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Kokkos build, install found at: ${kokkos_install_dir}"
+fi # build_kokkos
+
+fi # if enable_hip
+
 ################
 # VTK-m
 ################
@@ -219,6 +295,19 @@ if [ ! -d ${vtkm_src_dir} ]; then
   tar -xzf ${vtkm_tarball}
 fi
 
+vtkm_extra_cmake_args=""
+if [[ "$enable_cuda" == "ON" ]]; then
+  vtkm_extra_cmake_args="-DVTKm_ENABLE_CUDA=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+fi
+
+if [[ "$enable_hip" == "ON" ]]; then
+  vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON "
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}""
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_COMPILER_TOOLKIT_ROOT=${ROCM_PATH}"
+fi
+
 echo "**** Configuring VTK-m ${vtkm_version}"
 cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
@@ -228,12 +317,12 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
   -DVTKm_USE_64BIT_IDS=OFF \
   -DVTKm_USE_DOUBLE_PRECISION=ON \
   -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
-  -DVTKm_ENABLE_MPI=OFF \
+  -DVTKm_ENABLE_MPI=${enable_mpi} \
   -DVTKm_ENABLE_OPENMP=${enable_openmp}\
   -DVTKm_ENABLE_RENDERING=ON \
   -DVTKm_ENABLE_TESTING=${enable_tests} \
   -DBUILD_TESTING=${enable_tests} \
-  -DVTKm_ENABLE_BENCHMARKS=OFF \
+  -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
 echo "**** Building VTK-m ${vtkm_version}"
@@ -267,13 +356,25 @@ if [ ! -d ${camp_src_dir} ]; then
   # tar -xzf ${camp_tarball} 
 fi
 
+camp_extra_cmake_args=""
+if [[ "$enable_cuda" == "ON" ]]; then
+  camp_extra_cmake_args="-DENABLE_CUDA=ON"
+  camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+fi
+
+if [[ "$enable_hip" == "ON" ]]; then
+    camp_extra_cmake_args="-DENABLE_HIP=ON"
+    camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
+    camp_extra_cmake_args="${camp_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
+fi
+
 echo "**** Configuring Camp ${camp_version}"
 cmake -S ${camp_src_dir} -B ${camp_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} \
+  -DENABLE_EXAMPLES=${enable_tests} ${camp_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${camp_install_dir}
 
 echo "**** Building Camp ${camp_version}"
@@ -309,6 +410,19 @@ if [ ! -d ${raja_src_dir} ]; then
   cd ${root_dir}
 fi
 
+raja_extra_cmake_args=""
+if [[ "$enable_cuda" == "ON" ]]; then
+  raja_extra_cmake_args="-DENABLE_CUDA=ON"
+  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+fi
+
+if [[ "$enable_cuda" == "ON" ]]; then
+  raja_extra_cmake_args="-DENABLE_HIP=ON"
+  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
+  raja_extra_cmake_args="${raja_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
+fi
+
+
 echo "**** Configuring RAJA ${raja_version}"
 cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
@@ -319,7 +433,7 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} \
   -DENABLE_TESTS=${enable_tests} \
   -DRAJA_ENABLE_TESTS=${enable_tests} \
   -DENABLE_EXAMPLES=${enable_tests} \
-  -DENABLE_EXERCISES=${enable_tests} \
+  -DENABLE_EXERCISES=${enable_tests} ${raja_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
 
 echo "**** Building RAJA ${raja_version}"
@@ -346,6 +460,17 @@ umpire_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_windows_cmake_flags}"
 fi 
+
+if [[ "$enable_cuda" == "ON" ]]; then
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_CUDA=ON"
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+fi
+
+if [[ "$enable_hip" == "ON" ]]; then
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_HIP=ON"
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
+fi
 
 # build only if install doesn't exist
 if [ ! -d ${umpire_install_dir} ]; then
@@ -437,6 +562,20 @@ ascent_install_dir=$(ospath ${root_dir}/install/ascent-${ascent_version}/)
 echo "**** Creating Ascent host-config (ascent-config.cmake)"
 #
 echo '# host-config file generated by build_ascent.sh' > ascent-config.cmake
+
+# capture compilers if they are provided via env vars
+if [ -z ${CC+x} ]; 
+    echo 'set(CMAKE_C_COMPILER ' ${CC} ' CACHE PATH "")' >> ascent-config.cmake
+fi
+
+if [ -z ${CXX+x} ]; 
+    echo 'set(CMAKE_CXX_COMPILER ' ${CXX} ' CACHE PATH "")' >> ascent-config.cmake
+fi
+
+if [ -z ${FTN+x} ]; 
+    echo 'set(CMAKE_Fortran_COMPILER ' ${FTN} ' CACHE PATH "")' >> ascent-config.cmake
+fi
+
 echo 'set(CMAKE_VERBOSE_MAKEFILE ' ${enable_verbose} ' CACHE BOOL "")' >> ascent-config.cmake
 echo 'set(CMAKE_BUILD_TYPE ' ${build_config} ' CACHE STRING "")' >> ascent-config.cmake
 echo 'set(BUILD_SHARED_LIBS ' ${build_shared_libs} ' CACHE STRING "")' >> ascent-config.cmake
@@ -457,6 +596,18 @@ echo 'set(ENABLE_VTKH ON CACHE BOOL "")' >> ascent-config.cmake
 echo 'set(ENABLE_APCOMP ON CACHE BOOL "")' >> ascent-config.cmake
 echo 'set(ENABLE_DRAY ON CACHE BOOL "")' >> ascent-config.cmake
 
+if [[ "$enable_cuda" == "ON" ]]; then
+    echo 'set(ENABLE_CUDA ON CACHE BOOL "")' >> ascent-config.cmake
+    echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE PATH "")' >> ascent-config.cmake
+fi
+
+if [[ "$enable_hip" == "ON" ]]; then
+    echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ascent-config.cmake
+    echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ascent-config.cmake
+    echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ascent-config.cmake
+    echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ascent-config.cmake
+fi
+
 # build only if install doesn't exist
 if [ ! -d ${ascent_install_dir} ]; then
 if ${build_ascent}; then
@@ -466,29 +617,11 @@ if [ ! -d ${ascent_src_dir} ]; then
 fi
 
 echo "**** Configuring Ascent"
-cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
-  -DCMAKE_BUILD_TYPE=${build_config} \
-  -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DCMAKE_INSTALL_PREFIX=${ascent_install_dir} \
-  -DENABLE_MPI=${enable_mpi} \
-  -DENABLE_FIND_MPI=${enable_find_mpi} \
-  -DENABLE_FORTRAN=${enable_fortran} \
-  -DENABLE_TESTS=${enable_tests} \
-  -DENABLE_PYTHON=${enable_python} \
-  -DBLT_CXX_STD=c++14 \
-  -DCONDUIT_DIR=${conduit_install_dir} \
-  -DVTKM_DIR=${vtkm_install_dir} \
-  -DENABLE_VTKH=ON \
-  -DCAMP_DIR=${camp_install_dir} \
-  -DRAJA_DIR=${raja_install_dir} \
-  -DUMPIRE_DIR=${umpire_install_dir} \
-  -DMFEM_DIR=${mfem_install_dir} \
-  -DENABLE_APCOMP=ON \
-  -DENABLE_DRAY=ON
+cmake -S ${ascent_src_dir} -B ${ascent_build_dir} -C ascent-config.cmake
 
 echo "**** Building Ascent"
 cmake --build ${ascent_build_dir} --config ${build_config} -j${build_jobs}
+
 echo "**** Installing Ascent"
 cmake --install ${ascent_build_dir}  --config ${build_config}
 
