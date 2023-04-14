@@ -16,8 +16,7 @@ jobs:
         submodules: 'recursive'
     - name: Install CMake
       run: |
-           sudo apt-get update
-           sudo apt-get install cmake
+           apt-get update && apt-get -y install cmake
            cmake --version
     - name: Build TPLs
       run: |
@@ -41,3 +40,6 @@ jobs:
       run: |
         echo "**** Installing Ascent"
         cmake --install  build --config Release
+RUN apt-get update && apt-get -y install sudo
+# install std packages
+RUN  \
