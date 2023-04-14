@@ -1,0 +1,37 @@
+name: build_ascent_hip
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_cuda:
+    name: Build Ascent HIP
+    runs-on: ubuntu-latest
+    container: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Build TPLs
+      run: |
+        env enable_mpi=ON \
+            enable_hip=ON \
+            enable_fortran=OFF \
+            enable_tests=OFF \
+            build_ascent=OFF \
+            enable_verbose=OFF \
+            build_jobs=2 \
+            ./scripts/build_ascent/build_ascent.sh
+    - name: Configure Ascent
+      run: |
+        echo "**** Configuring Ascent"
+        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        echo "**** Building Ascent"
+        cmake --build  build -j2 --config Release
+    - name: Install Ascent
+      run: |
+        echo "**** Installing Ascent"
+        cmake --install  build --config Release
