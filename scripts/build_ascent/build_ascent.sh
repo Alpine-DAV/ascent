@@ -73,8 +73,10 @@ if [[ "$enable_hip" == "ON" ]]; then
     ROCM_ARCH="${ROCM_ARCH:=gfx90a}"
     ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
 
-    # this script only builds kokkos for hip support
+    # NOTE: this script only builds kokkos when enable_hip=ON
     build_kokkos="${build_kokkos:=true}"
+else
+    build_kokkos="${build_kokkos:=false}"
 fi
 
 case "$OSTYPE" in
@@ -229,8 +231,6 @@ else
   echo "**** Skipping Conduit build, install found at: ${conduit_install_dir}"
 fi # build_conduit
 
-
-if [[ "$enable_hip" == "ON" ]]; then
 #########################
 # Kokkos (only for hip)
 #########################
@@ -240,6 +240,7 @@ kokkos_build_dir=${root_dir}/build/kokkos-${kokkos_version}
 kokkos_install_dir=${root_dir}/install/kokkos-${kokkos_version}/
 kokkos_tarball=kokkos-${kokkos_version}.tar.gz
 
+if [[ "$enable_hip" == "ON" ]]; then
 # build only if install doesn't exist
 if [ ! -d ${kokkos_install_dir} ]; then
 if ${build_kokkos}; then
