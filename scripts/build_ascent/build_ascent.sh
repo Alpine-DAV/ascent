@@ -74,7 +74,7 @@ if [[ "$enable_hip" == "ON" ]]; then
     ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
 
     # this script only builds kokkos for hip support
-    build_kokkos="${build_kokkos:=false}"
+    build_kokkos="${build_kokkos:=true}"
 fi
 
 case "$OSTYPE" in
