@@ -303,8 +303,9 @@ if [[ "$enable_cuda" == "ON" ]]; then
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON "
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}""
+  vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_COMPILER_TOOLKIT_ROOT=${ROCM_PATH}"
 fi
 
