@@ -21,7 +21,7 @@ jobs:
         curl -L https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz -o cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
         tar -xzf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
     - name: Add CMake to PATH
-    - run: |
+      run: |
         echo "cmake-${CMAKE_VERSION}-linux-x86_64/bin/" >> $GITHUB_PATH
         cmake --version
     - name: Build TPLs
