@@ -20,17 +20,10 @@ jobs:
       run: |
         curl -L https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz -o cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
         tar -xzf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
-        pwd
-        ls
-    - name: Add CMake to PATH
-      run: |
-        echo "cmake-${CMAKE_VERSION}-linux-x86_64/bin/" >> $GITHUB_PATH
-        pwd
-        ls
         cmake-${CMAKE_VERSION}-linux-x86_64/bin/cmake --version
-        cmake --version
     - name: Build TPLs
       run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
         env enable_hip=ON \
             enable_mpi=OFF \
             enable_fortran=OFF \
@@ -41,13 +34,16 @@ jobs:
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
         echo "**** Configuring Ascent"
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
       run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
         echo "**** Building Ascent"
         cmake --build  build -j2 --config Release
     - name: Install Ascent
       run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
         echo "**** Installing Ascent"
         cmake --install  build --config Release
