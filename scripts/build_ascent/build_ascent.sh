@@ -250,12 +250,14 @@ if [ ! -d ${kokkos_src_dir} ]; then
   tar -xzf ${kokkos_tarball}
 fi
 
+# TODO: DKokkos_ARCH_VEGA90A needs to be controlled / mapped?
+
 echo "**** Configuring Kokkos ${kokkos_version}"
 cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DKokkos_ARCH_VEGA90A=ON \ # TODO: This needs to be controlled / mapped?
+  -DKokkos_ARCH_VEGA90A=ON \
   -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc \
   -DKokkos_ENABLE_HIP=ON \
   -DKokkos_ENABLE_SERIAL=ON \
