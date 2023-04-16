@@ -108,6 +108,7 @@ root_dir=$(realpath ${root_dir})
 script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 
 # root_dir is where we will build and install
+# override with `prefix` env var
 if [ ! -d ${root_dir} ]; then
   mkdir -p ${root_dir}
 fi
@@ -118,6 +119,24 @@ echo "*** prefix:       ${root_dir}"
 echo "*** build root:   ${root_dir}/build"
 echo "*** install root: ${root_dir}/install"
 echo "*** script dir:   ${script_dir}"
+
+################
+# CMake Compiler Settings
+################
+cmake_compiler_settings=""
+
+# capture compilers if they are provided via env vars
+if [ ! -z ${CC+x} ]; then
+  cmake_compiler_settings="-DCMAKE_C_COMPILER:PATH=${CC}"
+fi
+
+if [ ! -z ${CXX+x} ]; then
+  cmake_compiler_settings="${cmake_compiler_settings} -DCMAKE_CXX_COMPILER:PATH=${CXX}"
+fi
+
+if [ ! -z ${FTN+x} ]; then
+  cmake_compiler_settings="${cmake_compiler_settings} -DCMAKE_Fortran_COMPILER:PATH=${FTN}"
+fi
 
 ################
 # Zlib
@@ -138,7 +157,7 @@ if [ ! -d ${zlib_src_dir} ]; then
 fi
 
 echo "**** Configuring Zlib ${zlib_version}"
-cmake -S ${zlib_src_dir} -B ${zlib_build_dir} \
+cmake -S ${zlib_src_dir} -B ${zlib_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DCMAKE_INSTALL_PREFIX=${zlib_install_dir}
@@ -183,7 +202,7 @@ fi
 
 
 echo "**** Configuring HDF5 ${hdf5_version}"
-cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} \
+cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DZLIB_INCLUDE_DIR:PATH=${zlib_install_dir}/include \
@@ -221,7 +240,7 @@ if [ ! -d ${conduit_src_dir} ]; then
 fi
 
 echo "**** Configuring Conduit ${conduit_version}"
-cmake -S ${conduit_src_dir} -B ${conduit_build_dir} \
+cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -267,7 +286,7 @@ fi
 # TODO: DKokkos_ARCH_VEGA90A needs to be controlled / mapped?
 
 echo "**** Configuring Kokkos ${kokkos_version}"
-cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} \
+cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -328,7 +347,7 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 echo "**** Configuring VTK-m ${vtkm_version}"
-cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} \
+cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -388,7 +407,7 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 echo "**** Configuring Camp ${camp_version}"
-cmake -S ${camp_src_dir} -B ${camp_build_dir} \
+cmake -S ${camp_src_dir} -B ${camp_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -442,7 +461,7 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 echo "**** Configuring RAJA ${raja_version}"
-cmake -S ${raja_src_dir} -B ${raja_build_dir} \
+cmake -S ${raja_src_dir} -B ${raja_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -500,7 +519,7 @@ if [ ! -d ${umpire_src_dir} ]; then
 fi
 
 echo "**** Configuring Umpire ${umpire_version}"
-cmake -S ${umpire_src_dir} -B ${umpire_build_dir} \
+cmake -S ${umpire_src_dir} -B ${umpire_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -548,7 +567,7 @@ fi
 
 
 echo "**** Configuring MFEM ${mfem_version}"
-cmake -S ${mfem_src_dir} -B ${mfem_build_dir} \
+cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
