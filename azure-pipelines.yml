@@ -14,14 +14,13 @@
 #  2023/04/16:
 #    - Dropped Ubuntu 18.04, migrated tests to Ubuntu 20.04
 #    - build_ascent.sh {TPLS + Ascent} x {Standard, CUDA, and HIP} are tested via Github Actions
-#    - Updated CUDA from Ubuntu 18.04 Cuda 11.4.0 to Ubuntu 22.04 Cuda 11.8.0
 #
 ########################
 
 variables:
   ubuntu_20_04_tag: alpinedav/ascent-ci:ubuntu-20.04-devel-tpls_2023-01-12-sha2d3c54
   ubuntu_22_04_tag: alpinedav/ascent-ci:ubuntu-22.04-devel-tpls_2023-01-26-shae01268
-  ubuntu_22_04_cuda_11_8_0_tag: alpinedav/ascent-ci:ubuntu-22.04-cuda-11.8.0-devel-tpls_2023-04-15-sha952a37
+  ubuntu_18_04_cuda_11_4_0_tag: alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls_2023-01-12-sha2d3c54
   ubuntu_20_04_rocm_5_1_3_tag:  alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel-tpls_2023-01-12-sha6036f9
 
 
@@ -439,8 +438,8 @@ stages:
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        ubuntu_22.04_static_cuda_11.8.0:
-          containerImage: ${{ variables.ubuntu_22_04_cuda_11_8_0_tag }}
+        ubuntu_18.04_static_cuda_11.4.0:
+          containerImage: ${{ variables.ubuntu_18_04_cuda_11_4_0_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
           ENABLE_DRAY: ON
@@ -449,8 +448,8 @@ stages:
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
-        ubuntu_22.04_static_cuda_11.8.0_no_mfem:
-          containerImage: ${{ variables.ubuntu_22_04_cuda_11_8_0_tag }}
+        ubuntu_18.04_static_cuda_11.4.0_no_mfem:
+          containerImage: ${{ variables.ubuntu_22_04_cuda_11_4_0_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: Release
           ENABLE_DRAY: ON
