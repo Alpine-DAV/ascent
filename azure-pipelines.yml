@@ -12,8 +12,8 @@
 # Container Notes: 
 ########################
 #  2023/04/16:
-#    - Dropped Ubuntu 18.04
-#    - Build Ascent (Standard, CUDA, and HIP) are all tested by Github Actions
+#    - Dropped Ubuntu 18.04, migrated tests to Ubuntu 20.04
+#    - build_ascent.sh {TPLS + Ascent} x {Standard, CUDA, and HIP} are tested via Github Actions
 #    - Updated CUDA from Ubuntu 18.04 Cuda 11.4.0 to Ubuntu 22.04 Cuda 11.8.0
 #
 ########################
@@ -189,7 +189,7 @@ stages:
         ############
         # Babelflow
         ############
-         ubuntu_20.04_shared_py_cxx14_bflow:
+        ubuntu_20.04_shared_py_cxx14_bflow:
           containerImage: ${{ variables.ubuntu_20_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
@@ -226,7 +226,6 @@ stages:
         #   ENABLE_FIDES: ON
         #   ENABLE_GENTEN: ON
         #   BLT_CXX_STD: c++14
- 
 
     container: $[ variables['containerImage'] ]
 

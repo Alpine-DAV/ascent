@@ -8,13 +8,6 @@ set -ev
 
 echo "[BUILDING BASE CONTAINERS]"
 
-#
-# ubuntu 18
-#
-echo "[ubuntu 18.04 base]"
-cd alpinedav_ubuntu_18.04_devel
-./build.sh 
-cd ..
 # ubuntu 20.04
 echo "[ubuntu 20.04 base]"
 cd alpinedav_ubuntu_20.04_devel
@@ -26,10 +19,10 @@ cd alpinedav_ubuntu_22.04_devel
 ./build.sh 
 cd ..
 #
-# ubuntu 18.04 cuda 11.4.0
+# ubuntu 22.04 cuda 11.8.0
 #
-echo "[ubuntu 18.04 cuda 11.4.0 base]"
-cd alpinedav_ubuntu_18.04_cuda_11.4.0_devel
+echo "[ubuntu 22.04 cuda 11.9.0 base]"
+cd alpinedav_ubuntu_22.04_cuda_11.9.0_devel
 ./build.sh 
 cd ..
 #
