@@ -71,6 +71,7 @@ template <typename T> T Array<T>::get_value (const int32 i) const
 }
 
 // Type Explicit instatiations
+template class Array<int8>;
 template class Array<uint8>;
 template class Array<int32>;
 template class Array<uint32>;

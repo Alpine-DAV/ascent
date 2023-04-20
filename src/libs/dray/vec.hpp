@@ -254,6 +254,18 @@ template <typename T, int32 S> class Vec
   {
     return S;
   }
+
+  DRAY_EXEC static Vec<T, S> zero ()
+  {
+    Vec<T, S> res;
+
+    for (int i = 0; i < S; ++i)
+    {
+      res[i] = 0;
+    }
+
+    return res;
+  }
 };
 
 

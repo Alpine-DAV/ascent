@@ -7,6 +7,8 @@
 #ifndef APCOMP_DIY_UTILS_HPP
 #define APCOMP_DIY_UTILS_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <diy/decomposition.hpp>
 #include <apcomp/bounds.hpp>
 

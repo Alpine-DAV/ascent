@@ -7,6 +7,8 @@
 #ifndef APCOMP_EMISSION_PARTIAL_HPP
 #define APCOMP_EMISSION_PARTIAL_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <assert.h>
 
 namespace apcomp {

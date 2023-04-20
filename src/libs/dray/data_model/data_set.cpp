@@ -205,6 +205,17 @@ void DataSet::add_field(std::shared_ptr<Field> field)
   m_fields.push_back(field);
 }
 
+void DataSet::remove_field(const std::string &field_name)
+{
+  std::vector<std::shared_ptr<Field>> keep;
+  for(auto f : m_fields)
+  {
+    if(f->name() != field_name)
+      keep.emplace_back(f);
+  }
+  m_fields = keep;
+}
+
 std::string DataSet::field_info()
 {
   std::stringstream ss;

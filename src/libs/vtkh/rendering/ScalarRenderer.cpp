@@ -225,7 +225,7 @@ ScalarRenderer::DoExecute()
         name.assign(array,len);
         field_names.push_back(name);
         memset(array, 0, sizeof(*array));
-        delete array;
+        delete[] array;
       }
     }
     if(vtkh::GetMPIRank() == winner)

@@ -16,7 +16,7 @@
 namespace dray
 {
 
-class LineRenderer
+class DRAY_API LineRenderer
 {
 public:
   // there are 3 rendering functions which accomplish virtually the same thing

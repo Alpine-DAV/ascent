@@ -8,12 +8,7 @@
 #include <ascent_logging.hpp>
 #include <conduit_blueprint.hpp>
 
-#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-#else
-#include <mpidummy.h>
-#define _NOMPI
-#endif
 
 #include <string.h> 
 #include <iostream>
@@ -120,10 +115,10 @@ int main(int argc, char **argv)
   // NOTE: PMT assumes Ghost Layers only in positive x,y,z directions
 
   // set the gloabl data
-  vector<float> global_data(data_size[0]*data_size[1]*data_size[2], 0);
+  vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
   {
-    float mx = -FLT_MAX;
-    float mn = FLT_MAX;
+    FunctionType mx = -DBL_MAX;
+    FunctionType mn = DBL_MAX;
     ifstream rf(dataset, ios::out | ios::binary);
     if(!rf) {
       cout << "Cannot open file!" << endl;
@@ -132,7 +127,7 @@ int main(int argc, char **argv)
 
     for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
     {
-      rf.read( (char *)&global_data[i], sizeof(float));
+      rf.read( (char *)&global_data[i], sizeof(FunctionType));
       mx = std::max( mx, global_data[i] );
       mn = std::min( mn, global_data[i] );
     }

@@ -17,10 +17,15 @@ else()
   set(_CAMP_SEARCH_PATH ${CAMP_DIR}/lib/cmake/camp)
 endif()
 
-set(_CAMP_SEARCH_PATH ${CAMP_DIR})
+set(CAMP_DIR_ORIG ${CAMP_DIR})
 find_package(camp REQUIRED
              NO_DEFAULT_PATH
              PATHS ${_CAMP_SEARCH_PATH})
              
 message(STATUS "Found Camp in: ${CAMP_DIR}")
 set(CAMP_FOUND TRUE)
+
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # if we are running tests with dlls, we need path to dlls
+    list(APPEND ASCENT_TPL_DLL_PATHS ${CAMP_DIR_ORIG}/lib/)
+endif()

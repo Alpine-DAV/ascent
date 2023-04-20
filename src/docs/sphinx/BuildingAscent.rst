@@ -220,32 +220,47 @@ CMake Options for Third-party Library Paths
      - Description
 
    * - ``CONDUIT_DIR``
-     - Path to an Conduit install **(required)**
+     - Path to a Conduit install **(required)**
+
+   * - ``CALIPER_DIR``
+     - Path to a Caliper install (optional)
+
+   * - ``ADIAK_DIR``
+     - Path to an Adiak install (optional) Caliper support requires Adiak.
 
    * - ``RAJA_DIR``
-     - Path to an RAJA install (optional)
+     - Path to a RAJA install (optional)
 
    * - ``UMPIRE_DIR``
-     - Path to an Umpire install (optional)
+     - Path to a Umpire install (optional)
 
    * - ``OCCA_DIR``
      - Path to an OCCA install (optional)
 
    * - ``VTKM_DIR``
-     - Path to an VTK-m install (optional)
+     - Path to a VTK-m install (optional)
 
    * - ``KOKKOS_DIR``
-     - Path to an Kokkos install (optional)
+     - Path to a Kokkos install (optional)
 
    * - ``ADIOS2_DIR``
-     - Path to an ADIOS 2 install (optional)
+     - Path to a ADIOS 2 install (optional)
 
    * - ``FIDES_DIR``
      - Path to a FIDES install (optional)
 
    * - ``BABELFLOW_DIR``
      - Path to a BabelFlow install (optional)
-
+     
+   * - ``PMT_DIR``
+     - Path to a ParallelMergeTree install (optional)
+     
+   * - ``StreamStat_DIR``
+     - Path to a StreamStat install (optional)
+     
+   * - ``TopoFileParser_DIR``
+     - Path to a TopoFileParser install (optional)
+     
    * - ``BLT_SOURCE_DIR``
      - Path to a BLT install (default = ``blt``)
 
@@ -478,6 +493,111 @@ Here is a `script <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/bui
 
 .. literalinclude:: ../../../scripts/build_ascent/build_ascent_cuda.sh
    :language: bash
+
+Here is script that shows how to build additional dependencies for bflow-stats (babelflow+pmt+streamstats+topo_reader):
+
+.. code:: bash
+
+   root_dir=$(pwd)
+    
+   # babelflow v1.0.1
+   git clone  --recursive https://github.com/sci-visus/BabelFlow.git
+   git checkout v1.0.1
+
+   # pmt v1.0.2
+   git clone https://bitbucket.org/cedmav/parallelmergetree.git
+   git checkout v1.0.2
+
+   # STREAMSTATS
+   git clone https://github.com/xuanhuang1/STREAMSTAT.git
+
+   # topo_reader
+   git clone https://github.com/xuanhuang1/topo_reader.git
+
+   # build
+   # build babelflow 1.0.1
+
+   babelflow_src_dir=${root_dir}/BabelFlow
+   babelflow_build_dir=${root_dir}/BabelFlow/build
+   babelflow_install_dir=${root_dir}/BabelFlow/install
+   
+   cmake -S ${babelflow_src_dir} -B ${babelflow_build_dir} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=${babelflow_install_dir} \
+      -DBUILD_SHARED_LIBS=ON \
+      -DCRAYPE_LINK_TYPE=dynamic \
+      -DENABLE_MPI=ON \
+      -DENABLE_FIND_MPI=OFF 
+  
+   cmake --build ${babelflow_build_dir} -j6
+   cmake --install ${babelflow_build_dir}
+
+
+   # build parallelmergetree 1.0.2                                                                           
+
+   parallelmergetree_src_dir=${root_dir}/parallelmergetree
+   parallelmergetree_build_dir=${root_dir}/parallelmergetree/build
+   parallelmergetree_install_dir=${root_dir}/parallelmergetree/install
+
+   cmake -S ${parallelmergetree_src_dir} -B ${parallelmergetree_build_dir} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=${parallelmergetree_install_dir} \
+      -DBUILD_SHARED_LIBS=ON \
+      -DCRAYPE_LINK_TYPE=dynamic \
+      -DLIBRARY_ONLY=ON\
+      -DBabelFlow_DIR=${babelflow_install_dir}
+
+   cmake --build ${parallelmergetree_build_dir} -j6
+   cmake --install ${parallelmergetree_build_dir}
+
+
+   # build topo_reader
+
+   topo_reader_src_dir=${root_dir}/topo_reader/TopologyFileParser
+   topo_reader_build_dir=${root_dir}/topo_reader/TopologyFileParser/build
+   topo_reader_install_dir=${root_dir}/topo_reader/TopologyFileParser/install
+
+   cmake -S ${topo_reader_src_dir} -B ${topo_reader_build_dir} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=${topo_reader_install_dir} \
+      -DBUILD_SHARED_LIBS=ON \
+      -DCRAYPE_LINK_TYPE=dynamic \
+      -DFUNCTION_TYPE=double
+
+   cmake --build ${topo_reader_build_dir} -j6
+   cmake --install ${topo_reader_build_dir}
+
+
+   # build STREAMSTAT
+
+   STREAMSTAT_src_dir=${root_dir}/STREAMSTAT/
+   STREAMSTAT_build_dir=${root_dir}/STREAMSTAT/build
+   STREAMSTAT_install_dir=${root_dir}/STREAMSTAT/install
+
+   cmake -S ${STREAMSTAT_src_dir} -B ${STREAMSTAT_build_dir} \
+      -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=${STREAMSTAT_install_dir} \
+      -DBUILD_SHARED_LIBS=ON \
+      -DCRAYPE_LINK_TYPE=dynamic 
+
+   cmake --build ${STREAMSTAT_build_dir} -j6
+   cmake --install ${STREAMSTAT_build_dir}
+   
+   # add the path in ascent build
+   
+   #ascent_src_dir=${root_dir}/ascent/src
+   #ascent_build_dir=${root_dir}/ascent/build
+   #ascent_install_dir=${root_dir}/ascent/install
+   
+   #cmake -S ${ascent_src_dir} -B ${ascent_build_dir} \ 
+   #   -DBABELFLOW_DIR=${babelflow_install_dir} \
+   #   -DPMT_DIR=${parallelmergetree_install_dir} \
+   #   -DStreamStat_DIR=${STREAMSTAT_install_dir}\
+   #   -DTopoFileParser_DIR=${topo_reader_install_dir}
 
 
 .. _paraview_ascent_support:

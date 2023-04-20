@@ -143,8 +143,6 @@ struct BinomTable // DEBUG
   }
 };
 
-extern BinomTable GlobBinomTable;
-
 template <typename T> struct BinomRow
 {
   // Does not require any global state or precomputed values.

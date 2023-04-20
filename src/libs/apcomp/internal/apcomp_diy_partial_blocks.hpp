@@ -7,6 +7,8 @@
 #ifndef APCOMP_IMAGE_BLOCKS_h
 #define APCOMP_IMAGE_BLOCKS_h
 
+#include <apcomp/apcomp_config.h>
+
 #include <diy/master.hpp>
 
 #include <apcomp/absorption_partial.hpp>

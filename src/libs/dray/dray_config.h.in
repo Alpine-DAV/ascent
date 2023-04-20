@@ -39,3 +39,8 @@
 #define DRAY_CPU_LAMBDA
 
 #endif
+
+// provide a unified define for when any device is on
+#if defined(DRAY_CUDA_ENABLED) || defined(DRAY_HIP_ENABLED)
+#define DRAY_DEVICE_ENABLED
+#endif

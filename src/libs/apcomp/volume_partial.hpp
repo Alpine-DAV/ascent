@@ -7,6 +7,8 @@
 #ifndef APCOMP_VOLUME_PARTIAL_HPP
 #define APCOMP_VOLUME_PARTIAL_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <limits>
 namespace apcomp {
 
@@ -71,7 +73,7 @@ struct VolumePartial
     // Gather the unique pixels into the output
     //
     const int total_pixels = static_cast<int>(partials.size());
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < total_pixels; ++i)

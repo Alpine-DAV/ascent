@@ -7,6 +7,8 @@
 #ifndef APCOMP_DIY_IMAGE_BLOCK_HPP
 #define APCOMP_DIY_IMAGE_BLOCK_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <apcomp/image.hpp>
 #include <apcomp/scalar_image.hpp>
 #include <diy/master.hpp>

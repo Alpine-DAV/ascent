@@ -1,6 +1,8 @@
 #ifndef APCOMP_IMAGE_COMPOSITOR_HPP
 #define APCOMP_IMAGE_COMPOSITOR_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <apcomp/image.hpp>
 #include <algorithm>
 
@@ -37,7 +39,7 @@ public:
 
    const int size = static_cast<int>(front.m_pixels.size() / 4);
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < size; ++i)
@@ -80,7 +82,7 @@ void ZBufferComposite(apcomp::Image &front, const apcomp::Image &image)
   if(gl_depth)
   {
     // Only composite values the GL depths range (0,1)
-#ifdef apcomp_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -100,7 +102,7 @@ void ZBufferComposite(apcomp::Image &front, const apcomp::Image &image)
   }
   else
   {
-#ifdef apcomp_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
@@ -170,7 +172,7 @@ void CombineImages(const std::vector<apcomp::Image> &images, std::vector<Pixel> 
 
     const int image_size = images[i].GetNumberOfPixels();
     const int offset = i * image_size;
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int j = 0; j < image_size; ++j)
@@ -193,7 +195,7 @@ void ZBufferBlend(std::vector<apcomp::Image> &images)
   const int num_images = static_cast<int>(images.size());
   std::vector<Pixel> pixels;
   CombineImages(images, pixels);
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
   for(int i = 0; i < image_pixels; ++i)
@@ -203,7 +205,7 @@ void ZBufferBlend(std::vector<apcomp::Image> &images)
     std::sort(pixels.begin() + begin, pixels.begin() + end);
   }
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
   for(int i = 0; i < image_pixels; ++i)

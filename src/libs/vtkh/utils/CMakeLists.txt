@@ -3,7 +3,6 @@
 #==============================================================================
 set(vtkh_utils_headers
     Mutex.hpp
-    PNGEncoder.hpp
     StreamUtil.hpp
     ThreadSafeContainer.hpp
     vtkm_array_utils.hpp
@@ -11,7 +10,6 @@ set(vtkh_utils_headers
     )
 
 set(vtkh_utils_sources
-    PNGEncoder.cpp
     Mutex.cpp
     vtkm_dataset_info.cpp
     )
@@ -20,7 +18,7 @@ set(vtkh_utils_sources
 ###############################################################################
  # always install headers
  install(FILES ${vtkh_utils_headers}
-         DESTINATION include/vtkh/utils)
+         DESTINATION include/ascent/vtkh/utils)
 
 # deps are same between mpi and non mpi
 set(vtkh_utils_deps vtkm ascent_lodepng ${vtkh_base_deps})

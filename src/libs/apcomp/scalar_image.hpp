@@ -7,6 +7,8 @@
 #ifndef APCOMP_SCALAR_IMAGE_HPP
 #define APCOMP_SCALAR_IMAGE_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <cmath>
 #include <vector>
 #include <vector>
@@ -123,7 +125,7 @@ struct APCOMP_API ScalarImage
       m_depths.resize(s_dx * s_dy);
 
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
       for(int y = start_y; y < end_y; ++y)
@@ -160,7 +162,7 @@ struct APCOMP_API ScalarImage
       const int start_x = m_bounds.m_min_x - image.m_bounds.m_min_x;
       const int start_y = m_bounds.m_min_y - image.m_bounds.m_min_y;
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
       for(int y = 0; y < s_dy; ++y)

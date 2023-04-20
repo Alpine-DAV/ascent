@@ -89,6 +89,7 @@ As we stand up the infrastructure necessary to support a wide variety filter we 
   - Threshold
   - Slice
   - Three Slice
+  - Automatic Slice 
   - Clip
   - Clip by field
   - Isovolume
@@ -292,6 +293,145 @@ all three offsets are ``0.0``.
     previous code sample with user specified offsets for each axis.
 
 :numref:`Figures %s <threeslicefig>` and :numref:`%s <threeslice2fig>` show an images produced from the three slice filter.
+The full example is located in the file `slice test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_slice.cpp>`_.
+
+Automatic Slice
+~~~~~~~~~~~~~~~
+The automatic slice filter extracts a 2d plane from a 3d data set by slicing the data set in a user-specified direction a user-specified number of times, and then selects the slice that has the highest entropy for the user-specified field.
+The slicing direction of the data set is determined by a normal (not required to be normalized), and the number of slices evaluated is specified by the number of levels, which will equally space the slices in the normal direction.
+Automatic slice is meant primarily for quick visual exploration of 3D data where the
+internal features cannot be readily observed from the outside.
+
+The slice planes will be automatically placed based on the ``normal`` provided and the number of ``levels`` specified.
+The final output slice will be the slice that has the highest entropy for the specified ``field``.
+
+Depending on the normal provided, the rendering camera may need to be adjusted in order to view the chosen slice. 
+By default, the camera is pointed down the z-axis, so a normal of ``(0,0,1)`` does not need any adjusting. 
+In contrast, if the normal is ``(1,0,0)``, the camera needs to be adjusted to point down the x-axis, this can be done by adjusting the ``azimuth`` to rotate the camera horizontally around data set. 
+Additionally, if the normal is ``(0,1,0)`` and the camera needs to point down the y-axis, this can be achieved by using the ``elevation`` camera parameter to rotate the camera vertically around the data set.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "auto_slice";
+
+  // filter knobs (not optional)
+  conduit::Node &slice_params = pipelines["pl1/f1/params"];
+  slice_params["normal/x"] = 0.f;   
+  slice_params["normal/y"] = 0.f;   
+  slice_params["normal/z"] = 1.f; 
+  slice_params["field"] = "braid";
+  slice_params["levels"] = 10;
+
+.. _autoslicefig:
+
+..  figure:: ../images/auto_slice_z_axis.png
+    :scale: 50 %
+    :align: center
+
+    An example image of the automatic slice filter using the previous code sample. 
+    This example uses a normal that points down the z-axis, the same as the default camera.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "auto_slice";
+
+  // filter knobs (not optional)
+  conduit::Node &slice_params = pipelines["pl1/f1/params"];
+  slice_params["normal/x"] = 1.f;   
+  slice_params["normal/y"] = 0.f;   
+  slice_params["normal/z"] = 0.f; 
+  slice_params["field"] = "braid";
+  slice_params["levels"] = 10;
+
+  conduit::Node scenes;
+  // add a plot of pipeline 1
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p1/field"] = "braid";
+  //Need to turn camera 90 degrees horizontally
+  //in order to point down x-axis
+  scenes["s1/renders/r1/camera/azimuth"] = 90.0;
+  scenes["s1/renders/r1/image_prefix"]     = output_file;
+
+.. _autoslice2fig:
+
+..  figure:: ../images/auto_slice_x_axis.png
+    :scale: 50 %
+    :align: center
+
+    An example image of the automatic slice filter using the previous code sample. 
+    This example uses a normal that points down the x-axis, meaning the angle camera needs to be adjusted using the azimuth.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "auto_slice";
+
+  // filter knobs (not optional)
+  conduit::Node &slice_params = pipelines["pl1/f1/params"];
+  slice_params["normal/x"] = 0.f;   
+  slice_params["normal/y"] = 1.f;   
+  slice_params["normal/z"] = 0.f; 
+  slice_params["field"] = "braid";
+  slice_params["levels"] = 10;
+
+  conduit::Node scenes;
+  // add a plot of pipeline 1
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p1/field"] = "braid";
+  //Need to turn camera 90 degrees vertically
+  //in order to point down y-axis
+  scenes["s1/renders/r1/camera/elevation"] = 90.0;
+  scenes["s1/renders/r1/image_prefix"]     = output_file;
+
+.. _autoslice3fig:
+
+..  figure:: ../images/auto_slice_y_axis.png
+    :scale: 50 %
+    :align: center
+
+    An example image of the automatic slice filter using the previous code sample. 
+    This example uses a normal that points down the y-axis, meaning the angle camera needs to be adjusted using the elevation.
+    
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "auto_slice";
+
+  // filter knobs (not optional)
+  conduit::Node &slice_params = pipelines["pl1/f1/params"];
+  slice_params["normal/x"] = 1.f;   
+  slice_params["normal/y"] = 1.f;   
+  slice_params["normal/z"] = 0.f; 
+  slice_params["field"] = "braid";
+  slice_params["levels"] = 10;
+
+  conduit::Node scenes;
+  // add a plot of pipeline 1
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p1/field"] = "braid";
+  //Need to turn camera 
+  //90 degrees horizontally
+  //and 45 degrees vertically
+  //based on normal
+  scenes["s1/renders/r1/camera/azimuth"] = 90.0;
+  scenes["s1/renders/r1/camera/elevation"] = 45.0;
+  scenes["s1/renders/r1/image_prefix"]     = output_file;
+
+.. _autoslice4fig:
+
+..  figure:: ../images/auto_slice_xy_axis.png
+    :scale: 50 %
+    :align: center
+
+    An example image of the automatic slice filter using the previous code sample. 
+    This example uses a normal that points in the xy-direction, meaning the angle camera needs to be adjusted using both the azimuth and elevation.
+
+:numref:`Figures %s <autoslicefig>`, :numref:`%s <autoslice2fig>` , :numref:`%s <autoslice3fig>` , and :numref:`%s <autoslice4fig>` show images produced from the automatic slice filter.
 The full example is located in the file `slice test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_slice.cpp>`_.
 
 Clip
@@ -523,12 +663,12 @@ and the resulting vector field will be a float64.
 
   conduit::Node pipelines;
   // pipeline 1
-  pipelines["pl1/f1/type"] = "vector_component";
+  pipelines["pl1/f1/type"] = "composite_vector";
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field1"] = "pressure";      // (required)
-  params["field1"] = "temperature";   // (required)
-  params["field1"] = "bananas";       // (optional, 2D vector if not present)
+  params["field2"] = "temperature";   // (required)
+  params["field3"] = "bananas";       // (optional, 2D vector if not present)
   params["output_name"] = "my_vec";   // (required) name of the output field
   params["component"] = 0; // (required) index of the component
 

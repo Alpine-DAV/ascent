@@ -104,6 +104,8 @@ Important variables to keep note of are:
  - ``xmin`` and ``xmax`` defines the spatial extents in the x direction for the problem
  - ``visit_freqency`` defines often the Ascent API is called
 
+.. _kripke_integration:
+
 Kripke
 ^^^^^^
 Kripke is a scalable deterministic neutron transport solver that has an embedded test problem.

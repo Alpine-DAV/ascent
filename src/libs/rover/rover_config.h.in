@@ -1,0 +1,16 @@
+// Copyright 2019 Lawrence Livermore National Security, LLC and other
+// Devil Ray Developers. See the top-level COPYRIGHT file for details.
+//
+// SPDX-License-Identifier: (BSD-3-Clause)
+
+#ifndef ROVER_H_CONFIG_HPP
+#define ROVER_H_CONFIG_HPP
+
+// config time defines
+#cmakedefine ROVER_CUDA_ENABLED
+#cmakedefine ROVER_HIP_ENABLED
+#cmakedefine ROVER_OPENMP_ENABLED
+#cmakedefine ROVER_KOKKOS_ENABLED
+#cmakedefine ROVER_ENABLE_LOGGING
+
+#endif

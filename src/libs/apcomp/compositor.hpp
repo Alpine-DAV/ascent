@@ -7,6 +7,8 @@
 #ifndef APCOMP_COMPOSITOR_BASE_HPP
 #define APCOMP_COMPOSITOR_BASE_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <sstream>
 #include <apcomp/apcomp_exports.h>
 #include <apcomp/image.hpp>
@@ -63,7 +65,7 @@ public:
     {
         unsigned char *ubytes = new unsigned char[size];
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
         #pragma omp parallel for
 #endif
         for(int i = 0; i < size; ++i)

@@ -8,7 +8,9 @@ set(vtkm_filters_headers
     vtkmCleanGrid.hpp
     vtkmClipWithField.hpp
     vtkmExtractStructured.hpp
+    vtkmGhostCellRemove.hpp
     vtkmGradient.hpp
+    vtkmHistogram.hpp
     vtkmLagrangian.hpp
     vtkmLog.hpp
     vtkmMarchingCubes.hpp
@@ -28,7 +30,9 @@ set(vtkm_filters_sources
     vtkmCleanGrid.cpp
     vtkmClipWithField.cpp
     vtkmExtractStructured.cpp
+    vtkmGhostCellRemove.cpp
     vtkmGradient.cpp
+    vtkmHistogram.cpp
     vtkmLagrangian.cpp
     vtkmLog.cpp
     vtkmMarchingCubes.cpp
@@ -64,8 +68,8 @@ if(ENABLE_HIDDEN_VISIBILITY)
 endif()
 
 if(KOKKOS_FOUND)
-      # vtkm + object libs are fun. Flags are not being propagated, so manually add them
-      set_target_properties(vtkm_compiled_filters PROPERTIES COMPILE_FLAGS "-I${KOKKOS_DIR}/include" )
+    # vtkm + object libs are fun. Flags are not being propagated, so manually add them
+    set_target_properties(vtkm_compiled_filters PROPERTIES COMPILE_FLAGS "-I${KOKKOS_DIR}/include" )
 endif()
 
 if(CUDA_FOUND)
@@ -78,5 +82,5 @@ if(CUDA_FOUND)
 endif()
 
 install(FILES ${vtkm_filters_install_headers}
-        DESTINATION include/vtkh/vtkm_filters)
+        DESTINATION include/ascent/vtkh/vtkm_filters)
 

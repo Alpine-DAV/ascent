@@ -1,6 +1,6 @@
 #include "Render.hpp"
 #include <vtkh/rendering/Annotator.hpp>
-#include <vtkh/utils/PNGEncoder.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkm/rendering/MapperRayTracer.h>
 #include <vtkm/rendering/View2D.h>
@@ -289,7 +289,7 @@ Render::Save()
   float* color_buffer = &GetVTKMPointer(m_canvas.GetColorBuffer())[0][0];
   int height = m_canvas.GetHeight();
   int width = m_canvas.GetWidth();
-  PNGEncoder encoder;
+  ascent::PNGEncoder encoder;
   encoder.Encode(color_buffer, width, height, m_comments);
   encoder.Save(m_image_name + ".png");
 }

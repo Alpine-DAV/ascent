@@ -1,0 +1,23 @@
+
+domain0: 
+  coordsets: 
+    coords: 
+      type: "explicit"
+      values: 
+        x: [0.0, 0.5, 0.399999976158142, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0]
+        y: [0.600000023841858, 0.0, 0.600000023841858, 0.600000023841858, 0.0, 0.0, 0.0, 0.0, 0.0]
+        z: [0.399999976158142, 0.0, 0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 0.0]
+  topologies: 
+    topology: 
+      coordset: "coords"
+      type: "unstructured"
+      elements: 
+        shape: "tet"
+        connectivity: [3, 6, 8, 1, 5, 6, 0, 4, 4, 1, 2, 7, 0, 3, 2, 4, 2, 3, 1, 4, 3, 6, 1, 4, 0, 6, 3, 4]
+  fields: 
+    height: 
+      topology: "topology"
+      association: "vertex"
+      values: [0.600000023841858, 0.0, 0.600000023841858, 0.600000023841858, 0.0, 0.0, 0.0, 0.0, 0.0]
+  state: 
+    domain_id: 0

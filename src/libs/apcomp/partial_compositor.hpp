@@ -7,6 +7,8 @@
 #ifndef APCOMP_PARTIAL_COMPOSITOR_HPP
 #define APCOMP_PARTIAL_COMPOSITOR_HPP
 
+#include <apcomp/apcomp_config.h>
+
 #include <vector>
 #include <iostream>
 #include <apcomp/apcomp_exports.h>

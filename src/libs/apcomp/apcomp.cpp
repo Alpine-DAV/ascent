@@ -140,7 +140,7 @@ mpi_enabled()
 bool
 openmp_enabled()
 {
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   return true;
 #else
   return false;

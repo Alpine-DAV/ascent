@@ -42,6 +42,11 @@ if(PYTHON_FOUND)
     endforeach()
 endif()
 
+# builtin var for shared libs
+if(BUILD_SHARED_LIBS)
+    set(ASCENT_BUILD_SHARED_LIBS TRUE)
+endif()
+
 # builtin libs vars for config.mk gen
 if(ENABLE_APCOMP)
     set(ASCENT_APCOMP_ENABLED TRUE)
@@ -59,10 +64,6 @@ endif()
 # While CMake knows to ignore these type of vals make does not,
 # so we regularize with explicit vars
 
-if(VTKH_DIR)
-    set(ASCENT_VTKH_DIR ${VTKH_DIR} )
-endif()
-
 if(VTKM_DIR)
     set(ASCENT_VTKM_DIR ${VTKM_DIR} )
     set(ASCENT_VTKM_VERSION  ${VTKm_VERSION} )
@@ -70,10 +71,6 @@ endif()
 
 if(MFEM_DIR)
     set(ASCENT_MFEM_DIR ${MFEM_DIR} )
-endif()
-
-if(DRAY_DIR)
-    set(ASCENT_DRAY_DIR ${DRAY_DIR} )
 endif()
 
 if(OCCA_DIR)
@@ -86,6 +83,10 @@ endif()
 
 if(UMPIRE_DIR_ORIG)
     set(ASCENT_UMPIRE_DIR ${UMPIRE_DIR_ORIG} )
+endif()
+
+if(CAMP_DIR_ORIG)
+    set(ASCENT_CAMP_DIR ${CAMP_DIR_ORIG} )
 endif()
 
 if(FIDES_DIR_ORIG)
@@ -107,6 +108,15 @@ endif()
 if(GENTEN_DIR_ORIG)
     set(ASCENT_GENTEN_DIR ${GENTEN_DIR_ORIG} )
 endif()
+
+if(STREAMSTAT_DIR_ORIG)
+    set(ASCENT_STREAMSTAT_DIR ${STREAMSTAT_DIR_ORIG} )
+endif()
+
+if(TOPOFILEPARSER_DIR_ORIG)
+    set(ASCENT_TOPOFILEPARSER_DIR ${TOPOFILEPARSER_DIR_ORIG} )
+endif()
+
 
 
 # generate the config.mk

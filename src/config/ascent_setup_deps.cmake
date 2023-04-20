@@ -63,6 +63,40 @@ find_dependency(Conduit REQUIRED
                 PATHS ${CONDUIT_DIR}/lib/cmake)
 
 ###############################################################################
+# Setup Caliper
+###############################################################################
+if(NOT CALIPER_DIR)
+    set(CALIPER_DIR ${ASCENT_CALIPER_DIR})
+endif()
+
+if(CALIPER_DIR)
+    if(NOT Ascent_FIND_QUIETLY)
+        message(STATUS "Ascent was built with Caliper Support")
+    endif()
+
+    if(NOT ADIAK_DIR)
+        set(ADIAK_DIR ${ASCENT_ADIAK_DIR})
+    endif()
+
+    if(ADIAK_DIR)
+        if(NOT Ascent_FIND_QUIETLY)
+            message(STATUS "Looking for Adiak at: ${ADIAK_DIR}/lib/cmake/adiak")
+        endif()
+        # find adiak first
+        find_package(adiak REQUIRED
+                     NO_DEFAULT_PATH
+                     PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+    endif()
+    if(NOT Ascent_FIND_QUIETLY)
+        message(STATUS "Looking for Caliper at: ${CALIPER_DIR}/share/cmake/caliper")
+    endif()
+    # find caliper
+    find_package(caliper REQUIRED
+                 NO_DEFAULT_PATH
+                 PATHS ${CALIPER_DIR}/share/cmake/caliper)
+endif()
+
+###############################################################################
 # Setup Kokkos
 ###############################################################################
 if(NOT KOKKOS_DIR)
@@ -89,29 +123,6 @@ if(KOKKOS_DIR)
     find_dependency(Kokkos REQUIRED
                     NO_DEFAULT_PATH
 		    PATHS ${KOKKOS_CMAKE_CONFIG_DIR})
-endif()
-
-
-
-
-###############################################################################
-# Setup VTK-h (external)
-###############################################################################
-if(NOT VTKH_DIR)
-    set(VTKH_DIR ${ASCENT_VTKH_DIR})
-endif()
-
-if(VTKH_DIR)
-    if(NOT EXISTS ${VTKH_DIR}/lib/VTKhConfig.cmake)
-      message(FATAL_ERROR "Could not find VTKh CMake include file (${VTKH_DIR}/lib/VTKhConfig.cmake)")
-    endif()
-
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(VTKh REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${VTKH_DIR}/lib)
 endif()
 
 ###############################################################################
@@ -204,16 +215,19 @@ endif()
 
 if(RAJA_DIR)
     set(_RAJA_SEARCH_PATH)
-    if(EXISTS ${RAJA_DIR}/share/umpire/cmake)
+    if(EXISTS ${RAJA_DIR}/share/raja/cmake)
       # old install layout
       set(_RAJA_SEARCH_PATH ${RAJA_DIR}/share/raja/cmake)
-    else()
+    elseif(EXISTS ${RAJA_DIR}/lib/cmake/raja)
       # new install layout
-      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/rajae)
+      set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/raja)
+    else ()
+      # try RAJA_DIR itself
+      set(_RAJA_SEARCH_PATH ${RAJA_DIR})
     endif()
-    
-    if(NOT EXISTS ${_UMPIRE_RAJA_PATH})
-        message(FATAL_ERROR "Could not find RAJA CMake include file (${_UMPIRE_RAJA_PATH})")
+
+    if(NOT EXISTS ${_RAJA_SEARCH_PATH})
+        message(FATAL_ERROR "Could not find RAJA CMake include file (${_RAJA_SEARCH_PATH})")
     endif()
 
     ###############################################################################
@@ -223,27 +237,6 @@ if(RAJA_DIR)
                     NO_DEFAULT_PATH
                     PATHS ${_RAJA_SEARCH_PATH})
 endif()
-
-###############################################################################
-# Setup Devil Ray
-###############################################################################
-if(NOT DRAY_DIR)
-    set(DRAY_DIR ${ASCENT_DRAY_DIR})
-endif()
-
-if(DRAY_DIR)
-    if(NOT EXISTS ${DRAY_DIR}/lib/cmake/DRayConfig.cmake)
-        message(FATAL_ERROR "Could not find Devil Ray CMake include file (${DRAY_DIR}/lib/cmake/DRayConfig.cmake)")
-    endif()
-
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(DRay REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${DRAY_DIR}/lib/cmake/)
-endif()
-
 
 ###############################################################################
 # Setup Adios2
@@ -288,43 +281,88 @@ endif()
 ###############################################################################
 # Setup BabelFlow
 ###############################################################################
-if(NOT BABELFLOW_DIR)
-    set(BABELFLOW_DIR ${ASCENT_BABELFLOW_DIR})
-endif()
-
-if(BABELFLOW_DIR)
-    if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake/)
-        message(FATAL_ERROR "Could not find BabelFLow CMake include info (${BABELFLOW_DIR}/lib/cmake/)")
+if(ASCENT_BABELFLOW_ENABLED)
+    ##########################################################################
+    # BabelFlow
+    ##########################################################################
+    if(NOT BABELFLOW_DIR)
+        set(BABELFLOW_DIR ${ASCENT_BABELFLOW_DIR})
     endif()
 
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(BabelFlow REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS ${BABELFLOW_DIR}/lib/cmake/)
-endif()
+    if(BABELFLOW_DIR)
+        if(NOT EXISTS ${BABELFLOW_DIR}/lib/cmake/)
+            message(FATAL_ERROR "Could not find BabelFLow CMake include info (${BABELFLOW_DIR}/lib/cmake/)")
+        endif()
 
-###############################################################################
-# Setup PMT
-###############################################################################
-if(NOT PMT_DIR)
-    set(PMT_DIR ${ASCENT_PMT_DIR})
-endif()
-
-if(PMT_DIR)
-    if(NOT EXISTS ${PMT_DIR}/lib/cmake)
-        message(FATAL_ERROR "Could not find PMT CMake include info (${PMT_DIR}/lib/cmake)")
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(BabelFlow REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS ${BABELFLOW_DIR}/lib/cmake/)
     endif()
 
-    ###############################################################################
-    # Import CMake targets
-    ###############################################################################
-    find_dependency(PMT REQUIRED
-                    NO_DEFAULT_PATH
-                    PATHS  ${PMT_DIR}/lib/cmake)
-endif()
+    ##########################################################################
+    # Setup PMT
+    ##########################################################################
+    if(NOT PMT_DIR)
+        set(PMT_DIR ${ASCENT_PMT_DIR})
+    endif()
 
+    if(PMT_DIR)
+        if(NOT EXISTS ${PMT_DIR}/lib/cmake)
+            message(FATAL_ERROR "Could not find PMT CMake include info (${PMT_DIR}/lib/cmake)")
+        endif()
+
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(PMT REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS  ${PMT_DIR}/lib/cmake)
+    endif()
+
+
+    ##########################################################################
+    # Setup StreamStat
+    ##########################################################################
+    if(NOT STREAMSTAT_DIR)
+        set(STREAMSTAT_DIR ${ASCENT_STREAMSTAT_DIR})
+    endif()
+
+    if(STREAMSTAT_DIR)
+        if(NOT EXISTS ${STREAMSTAT_DIR}/lib/cmake)
+            message(FATAL_ERROR "Could not find StreamStat CMake include info (${STREAMSTAT_DIR}/lib/cmake)")
+        endif()
+
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(StreamStat REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS  ${STREAMSTAT_DIR}/lib/cmake)
+    endif()
+
+    ##########################################################################
+    # Setup TopoFileParser
+    ##########################################################################
+    if(NOT TOPOFILEPARSER_DIR)
+        set(TOPOFILEPARSER_DIR ${ASCENT_TOPOFILEPARSER_DIR})
+    endif()
+
+    if(TOPOFILEPARSER_DIR)
+        if(NOT EXISTS ${TOPOFILEPARSER_DIR}/lib/cmake)
+            message(FATAL_ERROR "Could not find TopoFileParser CMake include info (${TOPOFILEPARSER_DIR}/lib/cmake)")
+        endif()
+
+        ######################################################################
+        # Import CMake targets
+        ######################################################################
+        find_dependency(TopoFileParser REQUIRED
+                        NO_DEFAULT_PATH
+                        PATHS  ${TOPOFILEPARSER_DIR}/lib/cmake)
+    endif()
+endif() # end if babelflow
 
 ###############################################################################
 # Setup GenTen
@@ -335,7 +373,7 @@ endif()
 
 if(GENTEN_DIR)
     if(NOT EXISTS ${GENTEN_DIR}/lib64/cmake/)
-        message(FATAL_ERROR "Could not find GenTent CMake include info (${GENTEN_DIR}/lib64/cmake/)")
+        message(FATAL_ERROR "Could not find GenTen CMake include info (${GENTEN_DIR}/lib64/cmake/)")
     endif()
 
     ###############################################################################

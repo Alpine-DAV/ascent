@@ -39,6 +39,12 @@ public:
 
   /**
    @brief Compute the point average value for the given field
+   @return A dataset containing the resulting point-centered field
+  */
+  DataSet execute(DataSet &);
+
+  /**
+   @brief Compute the point average value for the given field
    @return A collection with datasets containing the resulting
            point-centered field.
   */

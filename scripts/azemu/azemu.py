@@ -273,8 +273,11 @@ def main():
     # pipelines file is a symlink, on windows we need to 
     # handle this case
     root   = yaml.load(open(azurep_yaml_file), Loader=yaml.Loader)
-    if os.path.isfile(root):
-        root   = yaml.load(open(root), Loader=yaml.Loader)
+    try:
+        if os.path.isfile(root):
+            root   = yaml.load(open(root), Loader=yaml.Loader)
+    except:
+        pass
     config = yaml.load(open(config_yaml_file), Loader=yaml.Loader)
     config = proc_config(config)
     proc_root(root, config)

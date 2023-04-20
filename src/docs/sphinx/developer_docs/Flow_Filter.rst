@@ -10,7 +10,7 @@ Flow Filter Anatomy
 ===================
 Flow filters are the basic unit of execution inside of Ascent, and all functionality
 is implemented as a Flow filter. The full interface to a Flow filter can be found in the
-`Flow filter header file <https://github.com/Alpine-DAV/ascent/blob/develop/src/flow/flow_filter.hpp>`_.
+`Flow filter header file <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/flow/flow_filter.hpp>`_.
 Here is a summary of the functions relevant to a filter developer:
 
 .. code-block:: c++
@@ -42,12 +42,12 @@ as well. ``verify_params`` alerts users to input errors and unexpected parameter
     examples of basic Conduit usage. More Conduit tutorial resources can be found in the
     `Conduit documentation <https://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp.html>`_.
 
-Flow filter implementations are located in the ``src/ascent/runtimes/flow_filters`` directory.
+Flow filter implementations are located in the ``src/libs/ascent/runtimes/flow_filters`` directory.
 
 Implementing A New Filter
 -------------------------
 As a convenience, we have created the
-`VTKHNoOp <https://github.com/Alpine-DAV/ascent/blob/develop/src/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp>`_
+`VTKHNoOp <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp>`_
 filter as staring point and reference. Although the NoOp filter demonstrates how to use a
 VTK-h filter, the implementation is relevant to anyone developing flow filters in Ascent
 regardless of whether VTK-h or VTK-m is used.
@@ -158,7 +158,7 @@ Check Parameters
 ++++++++++++++++
 While you can use the Conduit API to check for expected paths and types of values, we
 provide a number of methods to streamline common checks. These
-`parameter checking helpers <https://github.com/Alpine-DAV/ascent/blob/develop/src/ascent/runtimes/flow_filters/ascent_runtime_param_check.hpp>`_
+`parameter checking helpers <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_param_check.hpp>`_
 provide two basic checking mechanisms:
 
 * ``check_string``: checks for the presence of a string parameter
@@ -200,7 +200,7 @@ inside of a pipeline. Be default, `transforms` are passed VTK-h data sets and
 `extracts` are called with either Conduit Blueprint data sets (i.e., the data
 published by the simulation) or VTK-h data sets, when the `extract` consumes
 the result of a pipeline. The data type can be checked by the filter and converted
-by one of Ascent's data adapters located in the ``src/ascent/runtimes`` directory.
+by one of Ascent's data adapters located in the ``src/libs/ascent/runtimes`` directory.
 
 .. code-block:: c++
     :caption: An example execute method
@@ -278,7 +278,7 @@ Registering Filters With Ascent
 """""""""""""""""""""""""""""""
 Newly created filters need to be registered with the Ascent runtime.
 The file
-`ascent_runtime_filters.cpp <https://github.com/Alpine-DAV/ascent/blob/develop/src/ascent/runtimes/flow_filters/ascent_runtime_filters.cpp>`_
+`ascent_runtime_filters.cpp <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_filters.cpp>`_
 is where all builtin filter are registered. Following the NoOp example:
 
 .. code-block:: c++

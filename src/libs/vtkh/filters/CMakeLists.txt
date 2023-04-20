@@ -83,7 +83,7 @@ set(vtkh_filters_base_deps vtkm_compiled_filters ${vtkh_base_deps})
 # Always install headers
 ############################################################
 install(FILES ${vtkh_filters_headers}
-        DESTINATION include/vtkh/filters)
+        DESTINATION include/ascent/vtkh/filters)
 
 ############################################################
 if (ENABLE_SERIAL)

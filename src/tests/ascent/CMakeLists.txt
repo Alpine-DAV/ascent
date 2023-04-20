@@ -14,8 +14,9 @@
 ################################
 set(BASIC_TESTS t_ascent_smoke
                 t_ascent_runtime_options
+                t_ascent_data_binning
                 t_ascent_utils
-                t_ascent_memory
+                t_ascent_annotations
                 t_ascent_derived
                 t_ascent_empty_runtime
                 t_ascent_expressions
@@ -37,8 +38,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_vorticity
                 t_ascent_relay
                 t_ascent_htg
-		t_ascent_flatten
-		t_ascent_partition
+                t_ascent_flatten
+                t_ascent_partition
                 t_ascent_clip_with_field
                 t_ascent_contour
                 t_ascent_iso_volume
@@ -59,15 +60,29 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_queries
                 t_ascent_failed_pipeline
                 t_ascent_triggers
-                t_ascent_hola
-                t_ascent_sampling)
+                t_ascent_blueprint_reductions
+                t_ascent_sampling
+                t_ascent_hola)
+
+set(DEVICE_TESTS  t_ascent_execution_policies
+                  t_ascent_memory)
+
+if(CUDA_FOUND)
+    list(APPEND ascent_device_deps cuda_runtime)
+endif()
+
+
+if(HIP_FOUND)
+    list(APPEND ascent_device_deps blt_hip_runtime)
+endif()
+
 
 set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_empty_runtime
                t_ascent_mpi_derived
                t_ascent_mpi_expressions
-	       t_ascent_mpi_flatten
-	       t_ascent_mpi_partition
+               t_ascent_mpi_flatten
+               t_ascent_mpi_partition
                t_ascent_mpi_render_2d
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics
@@ -114,6 +129,14 @@ if (ENABLE_SERIAL)
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
 
+    foreach(TEST ${DEVICE_TESTS})
+        if(CUDA_FOUND)
+            set_source_files_properties(${TEST}.cpp PROPERTIES LANGUAGE CUDA)
+        endif()
+        add_cpp_test(TEST ${TEST} DEPENDS_ON ascent ${ascent_device_deps})
+    endforeach()
+
+
     foreach(TEST ${VTKH_DEP_TESTS})
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
@@ -142,6 +165,7 @@ if(MPI_FOUND AND ENABLE_MPI)
   if(BABELFLOW_FOUND)
     # add the babelflow pmt mpi test
     add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
+    add_cpp_mpi_test(TEST t_ascent_babelflow_stat_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
     if(DRAY_FOUND)
       # babelflow compositing test requires dray
       add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)

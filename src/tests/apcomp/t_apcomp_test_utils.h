@@ -9,9 +9,8 @@
 /// file: t_test_utils.cpp
 ///
 //-----------------------------------------------------------------------------
-#include <apcomp/utils/png_compare.hpp>
-#include <apcomp/utils/png_encoder.hpp>
-#include <apcomp/utils/file_utils.hpp>
+#include <png_utils/ascent_png_compare.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
 #include <apcomp/volume_partial.hpp>
 #include "t_config.hpp"
 
@@ -117,7 +116,7 @@ void partials_to_png(std::vector<apcomp::VolumePartial<float>> &partials,
     image[offset + 3] = p.m_alpha;
   }
 
-  apcomp::PNGEncoder encoder;
+  ascent::PNGEncoder encoder;
   encoder.Encode(&image[0], width, height);
   encoder.Save(file_name  + ".png");
 
@@ -126,97 +125,8 @@ void partials_to_png(std::vector<apcomp::VolumePartial<float>> &partials,
 inline std::string
 t_apcomp_baseline_dir()
 {
-    std::string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"apcomp");
-    res = conduit::utils::join_file_path(res,"baseline_images");
+    std::string res = conduit::utils::join_file_path(ASCENT_T_SRC_DIR,"_baseline_images");
+    res = conduit::utils::join_file_path(res,"apcomp");
     std::cout << res << std::endl;
     return res;
 }
-
-
-// inline std::string
-// output_dir()
-// {
-//   return apcomp::join_file_path(ASCENT_T_BIN_DIR,"_output");
-// }
-//
-// inline void
-// remove_test_file(const std::string &path)
-// {
-//   if(apcomp::is_file(path))
-//   {
-//     apcomp::remove_file(path);
-//   }
-// }
-//
-// inline std::string
-// prepare_output_dir()
-// {
-//   std::string output_path = ASCENT_T_BIN_DIR;
-//
-//   output_path = apcomp::join_file_path(output_path,"_output");
-//
-//   if(!apcomp::is_directory(output_path))
-//   {
-//     apcomp::create_directory(output_path);
-//   }
-//
-//   return output_path;
-// }
-
-// inline bool
-// check_test_image(const std::string &path, const float tolerance = 0.01f)
-// {
-//   std::stringstream info;
-//   std::string png_path = path + ".png";
-//   // for now, just check if the file exists.
-//   bool res = apcomp::is_file(png_path);
-//   info<<"test_file/path: "<<png_path<<"\n";;
-//   if(res)
-//   {
-//     info<<"test_file/exists: true\n";
-//   }
-//   else
-//   {
-//     info<<"test_file/exists: false\n";
-//   }
-//
-//   std::string file_name;
-//   std::string path_b;
-//
-//   apcomp::rsplit_file_path(png_path,
-//                            file_name,
-//                            path_b);
-//
-//   std::string baseline_dir = apcomp::join_file_path(ASCENT_T_SRC_DIR,"apcomp");
-//   baseline_dir = apcomp::join_file_path(baseline_dir,"baseline_images");
-//   std::string baseline = apcomp::join_file_path(baseline_dir,file_name);
-//
-//   info<<"baseline_file/path: "<<baseline<<"\n";
-//   if(apcomp::is_file(baseline))
-//   {
-//     info<<"baseline_file/exists: true\n";
-//   }
-//   else
-//   {
-//     info<<"baseline_file/exists: false\n";
-//     res = false;
-//   }
-//
-//   if(res)
-//   {
-//     apcomp::PNGCompare compare;
-//     float diff;
-//     res &= compare.Compare(png_path, baseline, diff, tolerance);
-//     if(!res)
-//     {
-//       info<<"image_diff: "<<diff<<"\n";
-//     }
-//   }
-//
-//   if(!res)
-//   {
-//     std::cout<<info.str();
-//   }
-//
-//   return res;
-// }

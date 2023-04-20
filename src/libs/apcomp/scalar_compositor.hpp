@@ -7,6 +7,7 @@
 #ifndef APCOMP_PAYLOAD_COMPOSITOR_HPP
 #define APCOMP_PAYLOAD_COMPOSITOR_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <sstream>
 #include <apcomp/apcomp_exports.h>
 #include <apcomp/scalar_image.hpp>

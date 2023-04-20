@@ -1,0 +1,42 @@
+name: build_ascent_windows
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_windows_msvc_base:
+    name: MSVC Base Release
+    runs-on: windows-2019
+    steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build TPLs
+      run: |
+        env build_ascent=false `
+            enable_tests=OFF `
+            ./scripts/build_ascent/build_ascent.sh
+    - name: Configure Ascent
+      run: |
+        echo "**** Configuring Ascent"
+        cmake -S src -B build `
+              -C ascent-config.cmake `
+              -DENABLE_TESTS=ON `
+              -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        echo "**** Building Ascent"
+        cmake --build  build --config Release -j2
+    - name: Install Ascent
+      run: |
+        echo "**** Installing Ascent"
+        cmake --install  build --config Release
+    - name: Run Ascent Unit Tests
+      run: |
+        echo "**** Ascent Unit Tests"
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS

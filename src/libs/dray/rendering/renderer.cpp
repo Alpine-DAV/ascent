@@ -75,7 +75,7 @@ void convert_partials(std::vector<Array<VolumePartial>> &input,
     const VolumePartial *partial_ptr = input[a].get_host_ptr_const();
     const size_t offset = offsets[a];
     const size_t size = input[a].size();
-#ifdef ASCENT_USE_OPENMP
+#ifdef ASCENT_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)

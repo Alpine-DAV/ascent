@@ -43,6 +43,8 @@ class Conduit(CMakePackage):
     # is to bridge any spack dependencies that are still using the name master
     version("master", branch="develop", submodules=True)
     # note: 2021-05-05 latest tagged release is now preferred instead of develop
+    version("0.8.6", sha256="8ca5d37033143ed7181c7286dd25a3f6126ba0358889066f13a2b32f68fc647e")
+    version("0.8.5", sha256="b4a6f269a81570a4597e2565927fd0ed2ac45da0a2500ce5a71c26f7c92c5483")
     version("0.8.4", sha256="55c37ddc668dbc45d43b60c440192f76e688a530d64f9fe1a9c7fdad8cd525fd")
     version("0.8.3", sha256="a9e60945366f3b8c37ee6a19f62d79a8d5888be7e230eabc31af2f837283ed1a")
     version("0.8.2", sha256="928eb8496bc50f6d8404f5bfa70220250876645d68d4f35ce0b99ecb85546284")
@@ -62,6 +64,11 @@ class Conduit(CMakePackage):
     version("0.2.0", sha256="31eff8dbc654a4b235cfcbc326a319e1752728684296721535c7ca1c9b463061")
 
     maintainers = ["cyrush"]
+    
+    ###################################
+    # build phases used by this package
+    ###################################
+    phases = ['hostconfig', 'cmake', 'build', 'install']
 
     ###########################################################################
     # package variants
@@ -99,6 +106,8 @@ class Conduit(CMakePackage):
     # doxygen support is wip, since doxygen has several dependencies
     # we want folks to explicitly opt in to building doxygen
     variant("doxygen", default=False, description="Build Conduit's Doxygen documentation")
+    # caliper
+    variant("caliper", default=True, description="Build Conduit Caliper support")
 
     ###########################################################################
     # package dependencies
@@ -165,6 +174,11 @@ class Conduit(CMakePackage):
     depends_on("mpi", when="+mpi")
 
     #######################
+    # Caliper
+    #######################
+    depends_on("caliper", when="+caliper")
+
+    #######################
     # Documentation related
     #######################
     depends_on("py-sphinx", when="+python+doc", type="build")
@@ -224,7 +238,7 @@ class Conduit(CMakePackage):
     @run_after("build")
     @on_package_attributes(run_tests=True)
     def build_test(self):
-        with working_dir("spack-build"):
+        with working_dir(self.build_directory):
             print("Running Conduit Unit Tests...")
             make("test")
 
@@ -233,7 +247,8 @@ class Conduit(CMakePackage):
     def check_install(self):
         """
         Checks the spack install of conduit using conduit's
-        using-with-cmake example
+        using-with-cmake and using-with-make examples
+        (supports: spack install --test=root)
         """
         print("Checking Conduit installation...")
         spec = self.spec
@@ -256,6 +271,88 @@ class Conduit(CMakePackage):
             example = Executable("./conduit_example")
             example()
 
+    # TODO: Replace this method and its 'get' use for cmake path with
+    #   join_path(self.spec['cmake'].prefix.bin, 'cmake') once stand-alone
+    #   tests can access build dependencies through self.spec['cmake'].
+    def cmake_bin(self, set=True):
+        """(Hack) Set/get cmake dependency path."""
+        if not os.path.isdir(self.install_test_root):
+            os.mkdir(self.install_test_root)
+        filepath = join_path(self.install_test_root, "cmake_bin_path.txt")
+        if set:
+            with open(filepath, "w") as out_file:
+                cmake_bin = join_path(self.spec["cmake"].prefix.bin, "cmake")
+                out_file.write("{0}\n".format(cmake_bin))
+        else:
+            with open(filepath, "r") as in_file:
+                return in_file.read().strip()
+
+    @run_after("build")
+    def setup_smoke_test(self):
+        """Setup info needed for spack smoke tests"""
+        # TODO: Remove once self.spec['cmake'] is available in `spack test run`
+        self.cmake_bin(set=True)
+
+    def test(self):
+        """
+        Checks the spack install of conduit using conduit's
+        using-with-cmake and using-with-make examples
+        (supports: spack test run)
+        """
+        # Note: This looks similar to the `self.check_install` logic
+        # but there are subtle differences:
+        # (paths differ , and we use `self.run_test`)
+        print("Checking Conduit installation...")
+        install_prefix = self.spec.prefix
+        test_stage_dir = self.test_suite.test_dir_for_spec(self.spec)
+        #####
+        # using-with-cmake
+        #####
+        example_src_dir = join_path(install_prefix,
+                                    "examples",
+                                    "conduit",
+                                    "using-with-cmake")
+        print("Checking using-with-cmake example...")
+        with working_dir(join_path(test_stage_dir,
+                                   "check-post-conduit-using-with-cmake-example"),
+                         create=True):
+            opts = ["-DCONDUIT_DIR={0}".format(install_prefix), example_src_dir]
+            opts += self.std_cmake_args
+            #######
+            # TODO
+            #######
+            #  How do we properly locate 'cmake' and 'make' in the
+            # `spack test run` environment ?
+            #
+            # For now we are using a shared hack to locate cmake
+            # ( see cmake_bin def ) and assuming make is available.
+            self.run_test(self.cmake_bin(False), opts)
+            self.run_test("make", purpose="build example")
+            self.run_test("conduit_example", purpose="run example")
+        #####
+        # using-with-make
+        #####
+        print("Checking using-with-make example...")
+        example_src_dir = join_path(install_prefix,
+                                    "examples",
+                                    "conduit",
+                                    "using-with-make")
+        example_files = glob.glob(join_path(example_src_dir, "*"))
+        with working_dir(join_path(test_stage_dir,
+                                   "check-post-conduit-using-with-cmake-example"),
+                         create=True):
+            for example_file in example_files:
+                shutil.copy(example_file, ".")
+            opts = ["CONDUIT_DIR={0}".format(install_prefix)]
+            #######
+            # TODO
+            #######
+            # how do we properly locate 'make' in the
+            # `spack test run` environment ?
+            # For now we are assuming make is available.
+            self.run_test('make', opts, purpose="build example")
+            self.run_test('./conduit_example', purpose="build example")
+
     def _get_host_config_path(self, spec):
         sys_type = spec.architecture
         # if on llnl systems, we can use the SYS_TYPE
@@ -268,8 +365,7 @@ class Conduit(CMakePackage):
         host_config_path = os.path.abspath(join_path(dest_dir, host_config_path))
         return host_config_path
 
-    @run_before("cmake")
-    def hostconfig(self):
+    def hostconfig(self, spec, prefix):
         """
         This method creates a 'host-config' file that specifies
         all of the options used to configure and build conduit.
@@ -491,6 +587,16 @@ class Conduit(CMakePackage):
             cfg.write(cmake_cache_entry("ZFP_DIR", spec["zfp"].prefix))
         else:
             cfg.write("# zfp not built by spack \n")
+
+        #######################
+        # Caliper
+        #######################
+        cfg.write("# caliper from spack \n")
+        if "+caliper" in spec:
+            cfg.write(cmake_cache_entry("CALIPER_DIR", spec["caliper"].prefix))
+            cfg.write(cmake_cache_entry("ADIAK_DIR", spec["adiak"].prefix))
+        else:
+            cfg.write("# caliper not built by spack \n")
 
         #######################################################################
         # I/O Packages

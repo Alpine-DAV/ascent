@@ -1,0 +1,41 @@
+
+domain0: 
+  coordsets: 
+    coords: 
+      type: "explicit"
+      values: 
+        x: [10.0, 5.0, 5.0, 3.33333349227905, 10.0, 10.0, 10.0]
+        y: [10.0, 10.0, 10.0, -3.33333349227905, 10.0, 0.0, 0.0]
+        z: [-10.0, 10.0, -10.0, 0.0, 10.0, 10.0, -10.0]
+  topologies: 
+    topology: 
+      coordset: "coords"
+      type: "unstructured"
+      elements: 
+        shape: "tet"
+        connectivity: [6, 1, 0, 2, 6, 4, 0, 1, 6, 5, 4, 1]
+  fields: 
+    braid: 
+      topology: "topology"
+      association: "vertex"
+      values: [0.852490484714508, -1.2108952999115, 0.789104700088501, -0.232023268938065, -1.14750957489014, -1.14750814437866, 0.852491855621338]
+    radial: 
+      topology: "topology"
+      association: "element"
+      values: [141.421356201172, 141.421356201172, 141.421356201172]
+    vel: 
+      topology: "topology"
+      association: "vertex"
+      values: 
+        x: [10.0, 5.0, 5.0, 3.33333349227905, 10.0, 10.0, 10.0]
+        y: [10.0, 10.0, 10.0, -3.33333349227905, 10.0, 0.0, 0.0]
+        z: [-10.0, 10.0, -10.0, 0.0, 10.0, 10.0, -10.0]
+    vec: 
+      topology: "topology"
+      association: "vertex"
+      values: 
+        x: [0.0, 12.0, 0.0, 6.0, 12.0, 12.0, 0.0]
+        y: [0.0, -12.0, 0.0, -6.0, -12.0, -12.0, 0.0]
+        z: [0.0, 12.0, 0.0, 6.0, 12.0, 12.0, 0.0]
+  state: 
+    domain_id: 0

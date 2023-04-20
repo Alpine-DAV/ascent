@@ -30,7 +30,7 @@ void BlendPartials(const int &total_segments,
   //
   // Perform the compositing and output the result in the output
   //
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < total_segments; ++i)
@@ -73,7 +73,7 @@ BlendEmission(const int &total_segments,
   // This code computes the optical depth (total absorption)
   // along each rays path.
   //
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < total_segments; ++i)
@@ -108,7 +108,7 @@ BlendEmission(const int &total_segments,
   //  To calculate the optical depth of the remaining path, we
   //  do perform a reverse scan of absorption for each pixel id
   //
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < total_segments; ++i)
@@ -227,7 +227,7 @@ PartialCompositor<PartialType>::merge(const std::vector<std::vector<PartialType>
 
   partials.resize(total_partial_comps);
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < num_partial_images; ++i)
@@ -242,7 +242,7 @@ PartialCompositor<PartialType>::merge(const std::vector<std::vector<PartialType>
   // Calculate the range of pixel ids
   //
   int max_pixel = std::numeric_limits<int>::min();
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for reduction(max:max_pixel)
 #endif
   for(int i = 0; i < total_partial_comps; ++i)
@@ -255,7 +255,7 @@ PartialCompositor<PartialType>::merge(const std::vector<std::vector<PartialType>
   }
 
    int min_pixel = std::numeric_limits<int>::max();
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
     #pragma omp parallel for reduction(min:min_pixel)
 #endif
   for(int i = 0; i < total_partial_comps; ++i)
@@ -338,7 +338,7 @@ PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &par
   }
   const int n_minus_one =  total_partial_comps - 1;
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 1; i < n_minus_one; ++i)
@@ -371,7 +371,7 @@ PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &par
   // count the number of of unique pixels
   int total_segments = 0;
 
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for shared(work_flags) reduction(+:total_segments)
 #endif
   for(int i = 0; i < total_partial_comps; ++i)
@@ -380,7 +380,7 @@ PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &par
   }
 
   int total_unique_pixels = 0;
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for shared(unique_flags) reduction(+:total_unique_pixels)
 #endif
   for(int i = 0; i < total_partial_comps; ++i)
@@ -431,7 +431,7 @@ PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &par
   //
   // Gather the unique pixels into the output
   //
-#ifdef APCOMP_USE_OPENMP
+#ifdef APCOMP_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
   for(int i = 0; i < total_unique_pixels; ++i)

@@ -7,6 +7,7 @@
 #ifndef APCOMP_DIY_DIRECT_SEND_HPP
 #define APCOMP_DIY_DIRECT_SEND_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <apcomp/image.hpp>
 #include <diy/mpi.hpp>
 #include <sstream>

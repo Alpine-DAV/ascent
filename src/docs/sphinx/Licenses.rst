@@ -20,7 +20,11 @@ C and C++ Libraries
 """""""""""""""""""
 - *gtest*:  From BLT - (BSD Style License)
 - *lodepng*: thirdparty_builtin/lodepng/LICENSE (BSD Style License)
-- *rover*: src/rover (BSD Style License)
+- *tiny_obj*: thirdparty_builtin/tiny_obj/LICENSE (MIT Style License)
+- *apcomp*: src/libs/apcomp (BSD Style License)
+- *dray*: src/libs/dray (BSD Style License)
+- *vtk-h*: src/libs/vtkh (BSD Style License)
+- *rover*: src/libs/rover (BSD Style License)
 
 Python Libraries
 """""""""""""""""""

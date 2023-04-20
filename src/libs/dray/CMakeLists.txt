@@ -159,8 +159,14 @@ set(dray_headers dray.hpp
                  data_model/grid_function.hpp
                  data_model/unstructured_mesh.hpp
                  data_model/mesh.hpp
-
+                 filters/clip.hpp
+                 filters/clipfield.hpp
+                 filters/internal/marching_cubes_lookup_tables.hpp
                  filters/cell_average.hpp
+                 filters/extract_slice.hpp
+                 filters/extract_three_slice.hpp
+                 filters/isovolume.hpp
+                 filters/marching_cubes.hpp
                  filters/mesh_boundary.hpp
                  filters/point_average.hpp
                  filters/threshold.hpp
@@ -261,7 +267,13 @@ set(dray_sources dray.cpp
                  data_model/mesh_utils.cpp
                  data_model/unstructured_field.cpp
                  # filters
+                 filters/clip.cpp
+                 filters/clipfield.cpp
                  filters/cell_average.cpp
+                 filters/extract_slice.cpp
+                 filters/extract_three_slice.cpp
+                 filters/isovolume.cpp
+                 filters/marching_cubes.cpp
                  filters/mesh_boundary.cpp
                  filters/point_average.cpp
                  filters/threshold.cpp
@@ -287,6 +299,7 @@ set(dray_sources dray.cpp
 set(dray_thirdparty_libs
     RAJA
     umpire
+    camp
     conduit::conduit
     ascent_lodepng)
 
@@ -349,8 +362,10 @@ if(ENABLE_SERIAL)
     # build time only defs
     target_compile_definitions(dray PRIVATE ASCENT_EXPORTS_FLAG)
 
-    # TODO SYMBOL VIS
-    # set_target_properties(dray PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    # TODO
+    #if(ENABLE_HIDDEN_VISIBILITY)
+    #    set_target_properties(dray PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    #endif()
 
     # build includes
     # this allows us to include as <dray/header.hpp>
@@ -386,9 +401,11 @@ if(MPI_FOUND)
     target_compile_definitions(dray_mpi PRIVATE ASCENT_EXPORTS_FLAG)
     target_compile_definitions(dray_mpi PRIVATE DRAY_MPI_ENABLED)
 
-    # TODO SYMBOL VIS
-    # set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
-  
+    # TODO
+    # if(ENABLE_HIDDEN_VISIBILITY)
+    #     set_target_properties(dray_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    # endif()
+
     # build includes
     # this allows us to include as <dray/header.hpp>
     target_include_directories(dray_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
@@ -411,8 +428,16 @@ endif()
 ######################################################
 macro(install_headers_with_directory header_list)
   foreach(header ${${header_list}})
-    string(REGEX MATCH "(.*)[/\\]" DIR ${header})
-    install(FILES ${header} DESTINATION include/ascent/dray/${DIR})
+    # install with headers only works for headers presented
+    # with relative paths. We will have an abs path
+    # case for the generated config header, don't
+    # try to find the relative dir in that case
+    if(IS_ABSOLUTE ${header})
+        install(FILES ${header} DESTINATION include/ascent/dray/)
+    else()
+        get_filename_component(hdr_dir ${header} DIRECTORY)
+        install(FILES ${header} DESTINATION include/ascent/dray/${hdr_dir})
+    endif()
   endforeach(header)
 endmacro(install_headers_with_directory)
 
@@ -420,7 +445,7 @@ install_headers_with_directory(dray_headers)
 
 
 if(ENABLE_UTILS)
-   message(status "Dray Utilities Enabled")
+   message(STATUS "Dray Utilities Enabled")
    add_subdirectory(utilities)
 endif()
 

@@ -1,6 +1,7 @@
 #ifndef APCOMP_DIY_RADIX_K_HPP
 #define APCOMP_DIY_RADIX_K_HPP
 
+#include <apcomp/apcomp_config.h>
 #include <apcomp/image.hpp>
 #include <apcomp/scalar_image.hpp>
 #include <diy/mpi.hpp>
