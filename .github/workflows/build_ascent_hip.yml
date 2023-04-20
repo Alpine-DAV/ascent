@@ -1,0 +1,49 @@
+name: build_ascent_hip
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_cuda:
+    name: Build Ascent HIP
+    runs-on: ubuntu-latest
+    container: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel
+    env:
+      CMAKE_VERSION: 3.23.2
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Install CMake
+      run: |
+        curl -L https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz -o cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+        tar -xzf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+        cmake-${CMAKE_VERSION}-linux-x86_64/bin/cmake --version
+    - name: Build TPLs
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        env enable_hip=ON \
+            enable_mpi=OFF \
+            enable_fortran=OFF \
+            enable_tests=OFF \
+            build_ascent=OFF \
+            enable_verbose=OFF \
+            build_jobs=2 \
+            ./scripts/build_ascent/build_ascent.sh
+    - name: Configure Ascent
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        echo "**** Configuring Ascent"
+        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        echo "**** Building Ascent"
+        cmake --build  build -j2 --config Release
+    - name: Install Ascent
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        echo "**** Installing Ascent"
+        cmake --install  build --config Release

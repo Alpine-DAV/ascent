@@ -17,6 +17,9 @@
 ##############################################################################
 set -eu -o pipefail
 
+env enable_cuda=ON ./build_ascent.sh
+exit 0
+
 CC="${CC:=gcc}"
 CXX="${CXX:=g++}"
 FTN="${FTN:=gfortran}"

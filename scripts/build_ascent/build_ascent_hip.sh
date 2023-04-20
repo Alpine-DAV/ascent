@@ -17,6 +17,9 @@
 ##############################################################################
 set -eu -o pipefail
 
+env enable_hip=ON ./build_ascent.sh
+exit 0 
+
 CC="${CC:=/opt/rocm/llvm/bin/amdclang}"
 CXX="${CXX:=/opt/rocm/llvm/bin/amdclang++}"
 # FTN?

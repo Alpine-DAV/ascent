@@ -182,3 +182,9 @@ blt_register_library(NAME mfem
                      INCLUDES ${MFEM_INCLUDE_DIRS}
                      COMPILE_FLAGS ${mfem_tpl_inc_flags}
                      LIBRARIES ${MFEM_LIBRARIES} ${mfem_tpl_lnk_flags})
+
+
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # if we are running tests with dlls, we need path to dlls
+    list(APPEND ASCENT_TPL_DLL_PATHS ${MFEM_DIR}/bin/)
+endif()

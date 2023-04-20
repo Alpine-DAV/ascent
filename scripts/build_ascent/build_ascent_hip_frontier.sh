@@ -1,7 +1,9 @@
 module load cmake/3.23.2
+module load PrgEnv-cray
+module load cce/14.0.2
 module load craype-accel-amd-gfx90a
 module load rocm/5.2.0
-module load cray-mpich/8.1.16
+module load cray-mpich/8.1.23
 
 export MPICH_GPU_SUPPORT_ENABLED=1
 export ROCM_ARCH=gfx90a
