@@ -5,16 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Unreleased
-### Preferred dependency versions for ascent@develop
-- conduit@0.8.6
+## [0.9.1] - Released 2023-04-21
+### Preferred dependency versions for ascent@0.9.1
+- conduit@0.8.7
 - vtk-m@1.9.0
 
 ### Added
+- Added support for building on Windows.
 - Added runtime control option (in addition to existing compile time option) to Devil Ray stats.
+- Added CI testing for building Ascent and required third-party libs on Windows.
 
 ### Changed
 - Devil Ray stats are now opt in, instead of opt out to avoid accumulating memory.
+- build_ascent.sh is now a unified script that supports non-device, CUDA, and HIP builds.
+
 
 ### Fixed
 - Ensure ghost indicator fields survive field filtering.
