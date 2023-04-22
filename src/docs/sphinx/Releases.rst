@@ -15,10 +15,33 @@ to keep buildable via continuous integration testing. See our
 its dependencies.
 
 
-
 Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
+
+
+# 0.9.1 Release Highlights
+
+(adapted from Ascent's [Changelog](https://github.com/Alpine-DAV/ascent/blob/develop/CHANGELOG.md) )
+### Preferred dependency versions for ascent@0.9.1
+- conduit@0.8.7
+- vtk-m@1.9.0
+
+### Added
+- Added support for building and running on Windows.
+- Added runtime control option (in addition to existing compile time option) to Devil Ray stats.
+- Added CI testing for building Ascent and required third-party libs on Windows.
+
+### Changed
+- Devil Ray stats are now opt in, instead of opt out to avoid accumulating memory.
+- `build_ascent.sh` is now a unified script that supports non-device, CUDA, and HIP builds.
+
+### Fixed
+- Ensure ghost indicator fields survive field filtering.
+
+## Docker Containers
+ - **alpinedav/ascent:0.9.1**
+ - **alpinedav/ascent-jupyter:0.9.1**
 
 v0.9.0
 ---------------------------------
