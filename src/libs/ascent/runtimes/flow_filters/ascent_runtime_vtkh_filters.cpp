@@ -3903,6 +3903,112 @@ VTKHStreamline::~VTKHStreamline()
 // empty
 }
 
+//-----------------------------------------------------------------------------
+
+VTKHAutoCamera::VTKHAutoCamera()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAutoCamera::~VTKHAutoCamera()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAutoCamera::declare_interface(conduit::Node &i)
+{
+    i["type_name"]   = "auto_camera";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAutoCamera::verify_params(const conduit::Node &params,
+                          conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field",params, info, true);
+    bool metric = check_string("metric",params, info, true);
+    bool samples = check_numeric("samples",params, info, true);
+
+    if(!metric)
+    {
+      info["errors"].append() = "Missing required metric parameter."
+				" Currently only supports data_entropy"
+				" depth_entropy, shading_entropy, and"
+				" their sum, dds_entropy, for some scalar field\n";
+      res = false;
+    }
+
+    if(!samples)
+    {
+      info["errors"].append() = "Missing required numeric parameter. "
+				"Must specify number of samples.\n";
+      res = false;
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("metric");
+    valid_paths.push_back("samples");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+        res = false;
+        info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+//-----------------------------------------------------------------------------
+void
+VTKHAutoCamera::execute()
+{
+    #if ASCENT_MPI_ENABLED
+    int rank;
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    #endif  
+    if(!input(0).check_type<DataObject>())
+    {
+      ASCENT_ERROR("automatic camera input must be a DataObject");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    std::string metric     = params()["metric"].as_string();
+    int samples            = params()["samples"].as_int64();
+
+    if(!collection->has_field(field_name))
+    {
+      ASCENT_ERROR("Unknown field '"<<field_name<<"'");
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+    vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+
+    vtkh::AutoCamera auto_cam;
+    auto_cam.SetInput(&dataset);
+    auto_cam.SetField(field_name);
+    auto_cam.SetMetric(metric);
+    auto_cam.SetNumSamples(samples);
+    auto_cam.Update()
+
+    set_output<DataObject>(data_object);
+};
 
 //-----------------------------------------------------------------------------
 };

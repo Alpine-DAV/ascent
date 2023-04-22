@@ -409,6 +409,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHAutoCamera : public ::flow::Filter
+{
+public:
+    VTKHAutoCamera();
+    virtual ~VTKHAutoCamera();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHTriangulate : public ::flow::Filter
 {
 public:

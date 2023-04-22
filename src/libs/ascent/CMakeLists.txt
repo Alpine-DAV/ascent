@@ -106,66 +106,9 @@ mark_as_advanced(ASCENT_INSTALL_PREFIX
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_config.h")
 
-<<<<<<< HEAD:src/ascent/CMakeLists.txt
-set(ascent_device_sources )
-
-set(ascent_sources
-    # ascent interface
-    ascent.cpp
-    c/ascent_c.cpp
-    # runtimes
-    ascent_runtime.cpp
-    runtimes/ascent_main_runtime.cpp
-    runtimes/ascent_metadata.cpp
-    runtimes/ascent_empty_runtime.cpp
-    runtimes/ascent_expression_eval.cpp
-    runtimes/ascent_transmogrifier.cpp
-    runtimes/expressions/ascent_blueprint_architect.cpp
-    runtimes/expressions/ascent_blueprint_topologies.cpp
-    runtimes/expressions/ascent_conduit_reductions.cpp
-    runtimes/expressions/ascent_expression_filters.cpp
-    runtimes/expressions/ascent_expressions_ast.cpp
-    runtimes/expressions/ascent_expressions_tokens.cpp
-    runtimes/expressions/ascent_expressions_parser.cpp
-    runtimes/expressions/ascent_derived_jit.cpp
-    runtimes/expressions/ascent_jit_array.cpp
-    runtimes/expressions/ascent_jit_field.cpp
-    runtimes/expressions/ascent_jit_fusion.cpp
-    runtimes/expressions/ascent_jit_kernel.cpp
-    runtimes/expressions/ascent_jit_math.cpp
-    runtimes/expressions/ascent_jit_topology.cpp
-    runtimes/expressions/ascent_insertion_ordered_set.cpp
-    runtimes/expressions/ascent_expression_jit_filters.cpp
-    runtimes/ascent_flow_runtime.cpp
-    runtimes/flow_filters/ascent_runtime_filters.cpp
-    runtimes/flow_filters/ascent_runtime_camera_filters.cpp
-    runtimes/flow_filters/ascent_runtime_param_check.cpp
-    runtimes/flow_filters/ascent_runtime_relay_filters.cpp
-    runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp
-    runtimes/flow_filters/ascent_runtime_htg_filters.cpp
-    runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
-    runtimes/flow_filters/ascent_runtime_query_filters.cpp
-    runtimes/flow_filters/ascent_runtime_utils.cpp
-    # utils
-    utils/ascent_actions_utils.cpp
-    utils/ascent_data_logger.cpp
-    utils/ascent_file_system.cpp
-    utils/ascent_block_timer.cpp
-    utils/ascent_logging.cpp
-    utils/ascent_png_compare.cpp
-    utils/ascent_png_decoder.cpp
-    utils/ascent_png_encoder.cpp
-    utils/ascent_mpi_utils.cpp
-    utils/ascent_string_utils.cpp
-    utils/ascent_web_interface.cpp
-    utils/ascent_resources.cpp
-    # hola
-    hola/ascent_hola.cpp)
-=======
 ###############################################################################
 # setup base source lists
 ###############################################################################
->>>>>>> develop:src/libs/ascent/CMakeLists.txt
 
 set(ascent_headers
     # ascent interface
@@ -214,7 +157,6 @@ set(ascent_headers
     runtimes/expressions/ascent_expression_jit_filters.hpp
     # flow
     runtimes/flow_filters/ascent_runtime_filters.hpp
-    runtimes/flow_filters/ascent_runtime_camera_filters.hpp
     runtimes/flow_filters/ascent_runtime_param_check.hpp
     runtimes/flow_filters/ascent_runtime_relay_filters.hpp
     runtimes/flow_filters/ascent_runtime_blueprint_filters.hpp
@@ -326,7 +268,6 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
         runtimes/flow_filters/ascent_runtime_filters.hpp
-        runtimes/flow_filters/ascent_runtime_camera_filters.hpp
         runtimes/ascent_main_runtime.hpp)
 
     set(ascent_vtkh_dep_sources
@@ -339,7 +280,6 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
         runtimes/flow_filters/ascent_runtime_filters.cpp
-        runtimes/flow_filters/ascent_runtime_camera_filters.cpp
         runtimes/ascent_main_runtime.cpp)
 
     list(APPEND ascent_headers ${ascent_vtkh_dep_headers})
