@@ -41,6 +41,8 @@ public:
   bool FieldExists(const std::string &field_name) const;
   // check to see if this field exists in at least one domain on any rank
   bool GlobalFieldExists(const std::string &field_name) const;
+  // remove a field if it exists, otherwise no-op
+  void RemoveField(const std::string &field_name);
 
   // Use to indentify if the field is a scalar, vec2, vec3 ...
   // returns 0 if the field does not exist

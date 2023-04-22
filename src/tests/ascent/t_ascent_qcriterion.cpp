@@ -169,15 +169,23 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
     // pipelines["pl1/f2/params/output_name"] = "vel_qcriterion_0";
 
     // contour
-    pipelines["pl1/f3/type"] = "contour";
-    pipelines["pl1/f3/params/field"]  =  "QCriterion"; // name of the input field
-    pipelines["pl1/f3/params/levels"] = 5;
+    // pipelines["pl1/f3/type"] = "contour";
+    // pipelines["pl1/f3/params/field"]  =  "vel_qcriterion"; // name of the input field
+    // pipelines["pl1/f3/params/levels"] = 5;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "vel_qcriterion";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"]  = "pl1";
+    extracts["e1/params/path"] = "here_we_go";
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/params/path"] = "here_we_go";
+    extracts["e1/params/fields"].append() = "vel_qcriterion";
 
     conduit::Node actions;
     // add the pipeline
@@ -188,6 +196,10 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
     //
     // Run Ascent

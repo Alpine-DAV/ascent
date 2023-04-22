@@ -709,6 +709,21 @@ DataSet::FieldExists(const std::string &field_name) const
   return exists;
 }
 
+void
+DataSet::RemoveField(const std::string &field_name) const
+{
+  bool exists = false;
+
+  const size_t size = m_domains.size();
+  for(size_t i = 0; i < size; ++i)
+  {
+    if(m_domains[i].HasField(field_name))
+    {
+        //
+    }
+  }
+}
+
 bool
 DataSet::GlobalFieldExists(const std::string &field_name) const
 {
