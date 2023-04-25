@@ -59,3 +59,8 @@ endif()
 # Add ascent
 ################################
 add_subdirectory(ascent)
+
+# Catalyst's ascent implementation
+if(ENABLE_CATALYST)
+    add_subdirectory(catalyst)
+endif()
