@@ -41,7 +41,7 @@ if(FORTRAN_FOUND)
 endif()
 
 
-if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_hdf5_api.hpp)
+if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_io_hdf5.hpp)
     set(CONDUIT_HDF5_ENABLED TRUE)
     message(STATUS "FOUND conduit HDF5 support")
 endif()
@@ -142,3 +142,11 @@ if(MPI_FOUND)
                           LIBRARIES  conduit_relay_mpi conduit_blueprint_mpi)
 endif()
 
+
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # if we are running tests with dlls, we need path to dlls
+    list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_DIR}/bin)
+    if(CONDUIT_HDF5_ENABLED)
+        list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_HDF5_DIR}/bin)
+    endif()
+endif()

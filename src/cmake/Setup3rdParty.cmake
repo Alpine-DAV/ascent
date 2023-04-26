@@ -24,6 +24,9 @@ if(ENABLE_PYTHON)
     endif()
 endif()
 
+# clear DLL runtime path
+set(ASCENT_TPL_DLL_PATHS)
+
 ################################
 # Conduit
 ################################
