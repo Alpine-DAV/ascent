@@ -51,9 +51,6 @@ option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
 # Cuda Specific Options
 option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
 
-# Build an ascent backend for Catalyst
-option(ENABLE_CATALYST "Enable ascent backend for Catalyst" OFF)
-
 #####################################################
 # Note: Third party libs like MFEM, FIDES, etc are 
 #       enabled when you provide MFEM_DIR, etc

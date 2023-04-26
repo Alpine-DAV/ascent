@@ -61,6 +61,6 @@ endif()
 add_subdirectory(ascent)
 
 # Catalyst's ascent implementation
-if(ENABLE_CATALYST)
+if(CATALYST_FOUND)
     add_subdirectory(catalyst)
 endif()

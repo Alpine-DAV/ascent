@@ -137,6 +137,6 @@ if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
 
-if (ENABLE_CATALYST)
+if (CATALYST_DIR)
   include(cmake/thirdparty/SetupCatalyst.cmake)
 endif()
