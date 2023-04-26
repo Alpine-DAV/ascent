@@ -44,7 +44,7 @@ public:
   // remove a field if it exists, otherwise no-op
   void RemoveField(const std::string &field_name);
 
-  // Use to indentify if the field is a scalar, vec2, vec3 ...
+  // Use to identify if the field is a scalar, vec2, vec3 ...
   // returns 0 if the field does not exist
   vtkm::Id NumberOfComponents(const std::string &field_name) const;
 

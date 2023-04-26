@@ -19,6 +19,8 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay_io.hpp>
+#include <conduit_relay_io_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -32,6 +34,51 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
+
+
+float64 rand_float()
+{
+    return  static_cast <float64>(rand()) / static_cast <float64> (RAND_MAX);
+}
+
+void generate_example_mesh(index_t mesh_side_dim, conduit::Node &data)
+{
+    //
+    // Create an example mesh.
+    //
+    data.reset();
+    Node verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              mesh_side_dim,
+                                              mesh_side_dim,
+                                              mesh_side_dim,
+                                              data);
+    std::cout << data.to_yaml() << std::endl;
+    index_t npts = data["fields/vel/values"][0].dtype().number_of_elements();
+    // add a random vector field so we can have a non-zero
+    // q-crit
+
+    data["fields/rand_vec/association"] = "vertex";
+    data["fields/rand_vec/topology"] = "mesh";
+    data["fields/rand_vec/values/u"] = DataType::float32(npts);
+    data["fields/rand_vec/values/v"] = DataType::float32(npts);
+    data["fields/rand_vec/values/w"] = DataType::float32(npts);
+
+    float32 *u_vals = data["fields/rand_vec/values/u"].value();
+    float32 *v_vals = data["fields/rand_vec/values/v"].value();
+    float32 *w_vals = data["fields/rand_vec/values/w"].value();
+
+    srand(10);
+    for(index_t i=0;i<npts;i++)
+    {
+        u_vals[i] = rand_float();
+        v_vals[i] = rand_float();
+        w_vals[i] = rand_float();
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(ascent_qcriterion, vel_qcriterion)
@@ -48,13 +95,12 @@ TEST(ascent_qcriterion, vel_qcriterion)
     //
     // Create an example mesh.
     //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    Node data;
+    generate_example_mesh(EXAMPLE_MESH_SIDE_DIM,data);
+    
+    
+    conduit::relay::io::blueprint::save_mesh(data,"here_r","hdf5");
+    
 
     ASCENT_INFO("Testing the qcriterion of a field");
 
@@ -74,7 +120,7 @@ TEST(ascent_qcriterion, vel_qcriterion)
 
     pipelines["pl1/f2/type"] = "qcriterion";
     conduit::Node &params2 = pipelines["pl1/f2/params"];
-    params2["field"] = "vel";                  // name of the input field
+    params2["field"] = "rand_vec";                  // name of the input field
     params2["output_name"] = "vel_qcriterion";   // name of the output field
     params2["use_cell_gradient"] = "false";
 
@@ -132,13 +178,8 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
     //
     // Create an example mesh.
     //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    Node data;
+    generate_example_mesh(EXAMPLE_MESH_SIDE_DIM,data);
 
     ASCENT_INFO("Testing the qcriterion of a field");
 
@@ -162,30 +203,16 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
     pipelines["pl1/f1/params/output_name"] = "vel_qcriterion";
     pipelines["pl1/f1/params/use_cell_gradient"] = "false";
 
-    // // workaround
-    // pipelines["pl1/f2/type"] = "vector_component";
-    // pipelines["pl1/f2/params/field"]  =  "vel_qcriterion"; // name of the input field
-    // pipelines["pl1/f2/params/component"] = 0;
-    // pipelines["pl1/f2/params/output_name"] = "vel_qcriterion_0";
-
     // contour
-    // pipelines["pl1/f3/type"] = "contour";
-    // pipelines["pl1/f3/params/field"]  =  "vel_qcriterion"; // name of the input field
-    // pipelines["pl1/f3/params/levels"] = 5;
+    pipelines["pl1/f2/type"] = "contour";
+    pipelines["pl1/f2/params/field"]  =  "vel_qcriterion"; // name of the input field
+    pipelines["pl1/f2/params/levels"] = 5;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "vel_qcriterion";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
-
-    conduit::Node extracts;
-    extracts["e1/type"]  = "relay";
-    extracts["e1/pipeline"]  = "pl1";
-    extracts["e1/params/path"] = "here_we_go";
-    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-    extracts["e1/params/path"] = "here_we_go";
-    extracts["e1/params/fields"].append() = "vel_qcriterion";
 
     conduit::Node actions;
     // add the pipeline
@@ -196,10 +223,6 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
-    // add the extracts
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
 
     //
     // Run Ascent

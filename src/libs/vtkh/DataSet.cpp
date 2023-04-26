@@ -710,16 +710,31 @@ DataSet::FieldExists(const std::string &field_name) const
 }
 
 void
-DataSet::RemoveField(const std::string &field_name) const
+DataSet::RemoveField(const std::string &field_name)
 {
-  bool exists = false;
 
-  const size_t size = m_domains.size();
-  for(size_t i = 0; i < size; ++i)
+  const size_t ndomains = m_domains.size();
+  for(size_t i = 0; i < ndomains; ++i)
   {
     if(m_domains[i].HasField(field_name))
     {
-        //
+        // to remove, one must first clone
+        vtkm::cont::DataSet domain_new;
+        domain_new.CopyStructure(m_domains[i]);
+
+        // loop over fields and all add except for the
+        // one we want to remove
+        vtkm::IdComponent nfields = m_domains[i].GetNumberOfFields();
+                for(vtkm::IdComponent f_idx = 0; f_idx < nfields; f_idx++)
+        {
+            vtkm::cont::Field &field = m_domains[i].GetField(f_idx);
+            if(field.GetName() != field_name)
+            {
+                domain_new.AddField(field);
+            }
+        }
+
+        m_domains[i] = domain_new;
     }
   }
 }
