@@ -54,7 +54,7 @@ public:
 
     void AddActions(conduit::Node& node)
     {
-      actions.push_back(node);
+      actions.emplace_back(node);
     }
     std::vector<conduit::Node> GetActions()
     {
@@ -76,12 +76,11 @@ enum catalyst_status catalyst_initialize_ascent(const conduit_node* params)
   std::cout << "[pre] Executing Initialize" << std::endl;
   //Convert params to C++ node:
   const conduit_cpp::Node cpp_params = conduit_cpp::cpp_node(const_cast<conduit_node*>(params));
-  cpp_params.print();
   auto instance = detail::Instance::GetInstance();
   void* ascent = ascent_create();
   if(!ascent)
   {
-    std::cout << "Error creating ascent" << std::endl;
+    std::cerr << "Error creating ascent" << std::endl;
   }
   instance->SetAscent(ascent);
   // Assuming params contain information to initialize ascent
@@ -102,14 +101,13 @@ enum catalyst_status catalyst_initialize_ascent(const conduit_node* params)
       auto script = scripts.child(i);
       const auto fname =
         script.dtype().is_string() ? script.as_string() : script["filename"].as_string();
-      std::cout << " Provided script : " << fname << std::endl;
+      std::cout << "Ascent script : " << fname << std::endl;
       std::ifstream ifs(fname);
       std::string content;
       content.assign((std::istreambuf_iterator<char>(ifs)),
                      (std::istreambuf_iterator<char>()));
       conduit::Node node = conduit::Node();
       node.parse(content, "yaml");
-      node.print();
       instance->AddActions(node);
     }
   }
@@ -172,7 +170,7 @@ enum catalyst_status catalyst_about_ascent(conduit_node* params)
 enum catalyst_status catalyst_results_ascent(conduit_node* params)
 {
   std::cout << "[per] Executing Results" << std::endl;
-  // TODO: How to collect results from ascent?
+  // TODO: is this method required for ascent?
   std::cout << "[post] Executing Results" << std::endl;
   return catalyst_status_ok;
 }
