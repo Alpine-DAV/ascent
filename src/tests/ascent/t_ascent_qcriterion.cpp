@@ -41,42 +41,82 @@ float64 rand_float()
     return  static_cast <float64>(rand()) / static_cast <float64> (RAND_MAX);
 }
 
-void generate_example_mesh(index_t mesh_side_dim, conduit::Node &data)
+void generate_example_mesh(index_t mesh_side_dim, conduit::Node &mesh)
 {
     //
-    // Create an example mesh.
+    // We want input that is passable for q-crit calc 
+    // Create an example mesh based on "double gyre"
+    // https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/examples.html
     //
-    data.reset();
+
+    mesh.reset();
     Node verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              mesh_side_dim,
-                                              mesh_side_dim,
-                                              mesh_side_dim,
-                                              data);
-    std::cout << data.to_yaml() << std::endl;
-    index_t npts = data["fields/vel/values"][0].dtype().number_of_elements();
-    // add a random vector field so we can have a non-zero
-    // q-crit
 
-    data["fields/rand_vec/association"] = "vertex";
-    data["fields/rand_vec/topology"] = "mesh";
-    data["fields/rand_vec/values/u"] = DataType::float32(npts);
-    data["fields/rand_vec/values/v"] = DataType::float32(npts);
-    data["fields/rand_vec/values/w"] = DataType::float32(npts);
+    float64 time_val = 5;
+    mesh["state/cycle"] = 100;
+    mesh["coordsets/coords/type"] = "uniform";
+    mesh["coordsets/coords/dims/i"] = mesh_side_dim;
+    mesh["coordsets/coords/dims/j"] = mesh_side_dim;
+    mesh["coordsets/coords/dims/k"] = mesh_side_dim;
+    mesh["topologies/topo/type"] = "uniform";
+    mesh["topologies/topo/coordset"] = "coords";
 
-    float32 *u_vals = data["fields/rand_vec/values/u"].value();
-    float32 *v_vals = data["fields/rand_vec/values/v"].value();
-    float32 *w_vals = data["fields/rand_vec/values/w"].value();
+    index_t num_verts = mesh_side_dim*mesh_side_dim*mesh_side_dim;
 
-    srand(10);
-    for(index_t i=0;i<npts;i++)
+    Node &gyre_field = mesh["fields/gyre"];
+    gyre_field["association"] = "vertex";
+    gyre_field["topology"] = "topo";
+    gyre_field["values"].set(DataType::float64(num_verts));
+
+    Node &vel_field = mesh["fields/vel"];
+    vel_field["association"] = "vertex";
+    vel_field["topology"] = "topo";
+    vel_field["values/u"].set(DataType::float64(num_verts));
+    vel_field["values/v"].set(DataType::float64(num_verts));
+    vel_field["values/w"].set(DataType::float64(num_verts));
+
+    float64_array gyre_vals = gyre_field["values"].value();
+    float64_array u_vals = vel_field["values/u"].value();
+    float64_array v_vals = vel_field["values/u"].value();
+    float64_array w_vals = vel_field["values/w"].value();
+
+    float64 math_pi = 3.14159265359;
+    float64 e = 0.25;
+    float64 A = 0.1;
+    float64 w = (2.0 * math_pi) / 10.0;
+    float64 a_t = e * sin(w * time_val);
+    float64 b_t = 1.0 - 2 * e * sin(w * time_val);
+    index_t idx = 0;
+
+    for(index_t z=0;z<mesh_side_dim;z++)
     {
-        u_vals[i] = rand_float();
-        v_vals[i] = rand_float();
-        w_vals[i] = rand_float();
+        float64 z_n = float64(z)/float64(mesh_side_dim);
+
+        for(index_t y=0;y<mesh_side_dim;y++)
+        {
+            //  scale y to 0-1
+            float64 y_n = float64(y)/float64(mesh_side_dim);
+            float64 y_t = sin(math_pi * y_n);
+            for(index_t x=0;x<mesh_side_dim;x++)
+            {
+                // scale x to 0-1
+                float64 x_f = float64(x)/ (float64(mesh_side_dim) * .5);
+                float64 f_t = a_t * x_f * x_f + b_t * x_f;
+                float64 u = -math_pi * A * sin(math_pi * f_t) * cos(math_pi * y_n);
+                float64 df_dx = 2.0 * a_t + b_t;
+                float64 v = math_pi * A * cos(math_pi * f_t) * sin(math_pi * y_n) * df_dx;
+                gyre_vals[idx] = sqrt(u * u + v * v);
+                u_vals[idx] = u;
+                v_vals[idx] = v;
+                // create some pattern for z vel
+                w_vals[idx] = sqrt( (u -v) * ( u - v ));
+                idx = idx + 1;
+            }
+        }
     }
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    //std::cout << mesh.to_yaml() << std::endl;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
 }
 
 
@@ -99,7 +139,7 @@ TEST(ascent_qcriterion, vel_qcriterion)
     generate_example_mesh(EXAMPLE_MESH_SIDE_DIM,data);
     
     
-    conduit::relay::io::blueprint::save_mesh(data,"here_r","hdf5");
+    conduit::relay::io::blueprint::save_mesh(data,"gyre_test","hdf5");
     
 
     ASCENT_INFO("Testing the qcriterion of a field");
@@ -116,20 +156,22 @@ TEST(ascent_qcriterion, vel_qcriterion)
     //
 
     conduit::Node pipelines;
-    // pipeline 1
-
-    pipelines["pl1/f2/type"] = "qcriterion";
-    conduit::Node &params2 = pipelines["pl1/f2/params"];
-    params2["field"] = "rand_vec";                  // name of the input field
-    params2["output_name"] = "vel_qcriterion";   // name of the output field
-    params2["use_cell_gradient"] = "false";
+    pipelines["pl1/f1/type"] = "qcriterion";
+    pipelines["pl1/f1/params/field"] = "vel";
+    pipelines["pl1/f1/params/output_name"] = "vel_qcriterion";
+    pipelines["pl1/f1/params/use_cell_gradient"] = "false";
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "vel_qcriterion";
     scenes["s1/plots/p1/pipeline"] = "pl1";
-
     scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"] = "pl1";
+    extracts["e1/params/protocol"] = "hdf5";
+    extracts["e1/params/path"] = output_file + "_extract";
 
     conduit::Node actions;
     // add the pipeline
@@ -140,6 +182,10 @@ TEST(ascent_qcriterion, vel_qcriterion)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
+
+    conduit::Node &add_extracts= actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
     //
     // Run Ascent
@@ -185,7 +231,7 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_qcriterion_vel");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_qcriterion_contour");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -195,24 +241,28 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
     //
 
     conduit::Node pipelines;
-    // pipeline 1
-
-    // qcrit
     pipelines["pl1/f1/type"] = "qcriterion";
     pipelines["pl1/f1/params/field"] = "vel";
     pipelines["pl1/f1/params/output_name"] = "vel_qcriterion";
     pipelines["pl1/f1/params/use_cell_gradient"] = "false";
-
-    // contour
-    pipelines["pl1/f2/type"] = "contour";
-    pipelines["pl1/f2/params/field"]  =  "vel_qcriterion"; // name of the input field
-    pipelines["pl1/f2/params/levels"] = 5;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "vel_qcriterion";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
+
+    // contour
+    pipelines["pl1/f2/type"] = "contour";
+    pipelines["pl1/f2/params/field"]  =  "vel_qcriterion"; // name of the input field
+    pipelines["pl1/f2/params/levels"] = 5;
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"] = "pl1";
+    extracts["e1/params/protocol"] = "hdf5";
+    extracts["e1/params/path"] = output_file + "_extract";
+
 
     conduit::Node actions;
     // add the pipeline
@@ -223,6 +273,10 @@ TEST(ascent_qcriterion, vel_qcriterion_contour)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
+
+    conduit::Node &add_extracts= actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
     //
     // Run Ascent
