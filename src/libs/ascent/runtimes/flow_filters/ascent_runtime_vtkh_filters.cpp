@@ -2583,8 +2583,8 @@ VTKHQCriterion::execute()
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
     grad_params.compute_qcriterion = true;
-    
-    // set the output name of the gradient result to 
+
+    // set the output name of the gradient result to
     // a unique temp name
     grad_params.output_name = "__tmp_gradient";
 
@@ -2705,6 +2705,9 @@ VTKHDivergence::execute()
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
     grad_params.compute_divergence = true;
+    // set the output name of the gradient result to
+    // a unique temp name
+    grad_params.output_name = "__tmp_gradient";
 
     if(params().has_path("use_cell_gradient"))
     {
@@ -2723,6 +2726,10 @@ VTKHDivergence::execute()
     grad.Update();
 
     vtkh::DataSet *grad_output = grad.GetOutput();
+
+    // remove the gradient result
+    // since downstream filters may not be able to handle
+    grad_output->RemoveField("__tmp_gradient");
 
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
@@ -2819,6 +2826,9 @@ VTKHVorticity::execute()
     grad.SetField(field_name);
     vtkh::GradientParameters grad_params;
     grad_params.compute_vorticity = true;
+    // set the output name of the gradient result to
+    // a unique temp name
+    grad_params.output_name = "__tmp_gradient";
 
     if(params().has_path("use_cell_gradient"))
     {
@@ -2837,6 +2847,10 @@ VTKHVorticity::execute()
     grad.Update();
 
     vtkh::DataSet *grad_output = grad.GetOutput();
+
+    // remove the gradient result
+    // since downstream filters may not be able to handle
+    grad_output->RemoveField("__tmp_gradient");
 
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
