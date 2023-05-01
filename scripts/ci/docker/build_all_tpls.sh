@@ -22,7 +22,7 @@ cd ..
 
 # ubuntu 28.04 cuda 11.4.0 tpls
 echo "[ubuntu 18.04 cuda 11.4.0 tpls]"
-cd alpinedav_ubuntu_18.04_cuda_11.5.0_devel_tpls
+cd alpinedav_ubuntu_18.04_cuda_11.4.0_devel_tpls
 ./build.sh
 cd ..
 
