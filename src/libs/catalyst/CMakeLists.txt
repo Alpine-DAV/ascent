@@ -12,7 +12,7 @@ catalyst_implementation(
   NAME    ascent
   TARGET  catalyst-ascent
   SOURCES AscentCatalyst.cxx
-  LIBRARY_DESTINATION lib/catalyst
+  LIBRARY_DESTINATION lib
   CATALYST_TARGET catalyst::catalyst)
 
 if(ENABLE_MPI)
