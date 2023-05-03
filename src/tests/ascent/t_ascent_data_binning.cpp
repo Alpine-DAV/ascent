@@ -372,6 +372,188 @@ TEST(ascent_binning, filter_braid_binning_bins)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_binning, expr_braid_non_spatial_bins)
+{
+  // the vtkm runtime is currently our only rendering runtime
+  // Node n;
+  // ascent::about(n);
+  // // only run this test if ascent was built with vtkm support
+  // if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // {
+  //   ASCENT_INFO("Ascent support disabled, skipping test");
+  //   return;
+  // }
+
+  // string output_path = prepare_output_dir();
+  // std::string output_file =
+  //     conduit::utils::join_file_path(output_path, "tout_binning_braid_non_spatial");
+  //
+  // remove_test_image(output_file);
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs", 50, 50, 50, data);
+
+  conduit::Node pipelines;
+  
+  // braid is  vertex-assoced
+  // radial is element-assoced
+  
+  // recenter braid to be element-assoced
+  // so we can same assoc for binning
+  
+  
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "recenter";
+  pipelines["pl1/f1/params/field"] = "braid";
+  pipelines["pl1/f1/params/association"] = "element";
+ 
+
+  conduit::Node actions;
+  // add the pipeline
+  conduit::Node &add_pipelines= actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+  
+  Node &add_act = actions.append();
+  add_act["action"] = "add_queries";
+
+  // declare a queries to ask some questions
+  Node &queries = add_act["queries"];
+
+  // Create a 2D binning projected onto the x-y plane
+  queries["q2/params/expression"] = "binning('radial','max', [axis('radial',num_bins=10), axis( 'braid' ,num_bins=10)])";
+  queries["q2/params/name"] = "my_binning";
+  queries["q2/pipeline"] = "pl1";
+
+  // print our full actions tree
+  std::cout << actions.to_yaml() << std::endl;
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["runtime/type"] = "ascent";
+  ascent.open(ascent_opts);
+  ascent.publish(data);
+  ascent.execute(actions);
+  Node ascent_info;
+  ascent.info(ascent_info);
+  ascent_info["expressions/my_binning"].print();
+
+  ascent.close();
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_binning, filter_braid_non_spatial_bins)
+{
+  // the vtkm runtime is currently our only rendering runtime
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent support disabled, skipping test");
+    return;
+  }
+
+  string output_path = prepare_output_dir();
+  std::string output_file =
+      conduit::utils::join_file_path(output_path, "tout_binning_braid_non_spatial");
+
+  remove_test_image(output_file);
+  //
+  // Create an example mesh.
+  //
+  Node data, verify_info;
+  conduit::blueprint::mesh::examples::braid("hexs", 50, 50, 50, data);
+
+  conduit::Node pipelines;
+  
+  // braid is  vertex-assoced
+  // radial is element-assoced
+  
+  // recenter braid to be element-assoced
+  // so we can same assoc for binning
+  
+  
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "recenter";
+  pipelines["pl1/f1/params/field"] = "braid";
+  pipelines["pl1/f1/params/association"] = "element";
+ 
+  // now add binning
+  // pipeline 2
+  pipelines["pl1/f2/type"] = "binning";
+  // filter knobs
+  conduit::Node &params = pipelines["pl1/f2/params"];
+  params["reduction_op"] = "sum";
+  params["var"] = "braid";
+  params["output_field"] = "binning";
+  // reduced dataset of only the bins
+  params["output_type"] = "bins";
+
+  conduit::Node &axis0 = params["axes"].append();
+  axis0["var"] = "radial";
+  axis0["num_bins"] = 10;
+  axis0["clamp"] = 0;
+
+  conduit::Node &axis1 = params["axes"].append();
+  axis1["var"] = "braid";
+  axis1["num_bins"] = 10;
+  axis1["clamp"] = 0;
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "binning";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/image_prefix"] = output_file;
+
+  conduit::Node extracts;
+  extracts["e1/type"]  = "relay";
+  extracts["e1/pipeline"] = "pl1";
+  extracts["e1/params/protocol"] = "hdf5";
+  extracts["e1/params/path"] = output_file + "_extract";
+
+  conduit::Node actions;
+  // add the pipeline
+  conduit::Node &add_pipelines= actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+  // add the scenes
+  conduit::Node &add_scenes= actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
+
+  conduit::Node &add_extracts= actions.append();
+  add_extracts["action"] = "add_extracts";
+  add_extracts["extracts"] = extracts;
+
+  std::cout << actions.to_yaml() << std::endl;
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["runtime/type"] = "ascent";
+  ascent.open(ascent_opts);
+  ascent.publish(data);
+  ascent.execute(actions);
+  ascent.close();
+
+  EXPECT_TRUE(check_test_image(output_file, 0.1));
+}
+
+
+//-----------------------------------------------------------------------------
 int
 main(int argc, char *argv[])
 {
