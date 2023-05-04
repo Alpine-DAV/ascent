@@ -12,8 +12,8 @@ fi
 export PATH=$PATH:/${cmake_install_dir}/bin/
 
 # build rocm tpls with helper script
-chmod +x ascent/scripts/build_ascent/build_ascent_hip.sh
-env build_ascent=false ascent/scripts/build_ascent/build_ascent_hip.sh
+chmod +x ascent/scripts/build_ascent/build_ascent.sh
+env build_ascent=false enable_hip=true ascent/scripts/build_ascent/build_ascent.sh
 
 ############################
 # TODO: get spack working
