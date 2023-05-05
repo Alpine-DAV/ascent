@@ -374,21 +374,6 @@ TEST(ascent_binning, filter_braid_binning_bins)
 //-----------------------------------------------------------------------------
 TEST(ascent_binning, expr_braid_non_spatial_bins)
 {
-  // the vtkm runtime is currently our only rendering runtime
-  // Node n;
-  // ascent::about(n);
-  // // only run this test if ascent was built with vtkm support
-  // if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  // {
-  //   ASCENT_INFO("Ascent support disabled, skipping test");
-  //   return;
-  // }
-
-  // string output_path = prepare_output_dir();
-  // std::string output_file =
-  //     conduit::utils::join_file_path(output_path, "tout_binning_braid_non_spatial");
-  //
-  // remove_test_image(output_file);
   //
   // Create an example mesh.
   //
