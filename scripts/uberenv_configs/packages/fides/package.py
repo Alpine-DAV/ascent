@@ -13,7 +13,7 @@ class Fides(CMakePackage):
     url = "https://gitlab.kitware.com/vtk/fides/-/archive/v1.0.0/fides-v1.0.0.tar.gz"
     git = "https://gitlab.kitware.com/vtk/fides.git"
 
-    maintainers("caitlinross", "dpugmire")
+    #maintainers("caitlinross", "dpugmire")
 
     version("master", branch="master")
     version("1.2.0", sha256="12be939d75c765dab9241f9ed2b64af01cce2b10281de402f64fb685e6ccd7df")
