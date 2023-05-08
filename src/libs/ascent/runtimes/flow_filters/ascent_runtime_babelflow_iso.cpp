@@ -298,7 +298,7 @@ int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs,
   vtkm::cont::DataSet data_set;
   vtkm::Id domain_id;
   iso_surf_data.m_DataSet->GetDomain( 0, data_set, domain_id );
-  const vtkm::cont::DynamicCellSet &cellset = data_set.GetCellSet();
+  const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
   const vtkm::cont::Field &field = data_set.GetField( renderer.GetFieldName() );
   const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
 
