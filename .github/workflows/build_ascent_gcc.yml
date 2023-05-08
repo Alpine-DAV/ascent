@@ -6,18 +6,12 @@ on:
 
 jobs:
   build_basic:
-    strategy:
-      matrix:
-        include:
-        - cc: gcc
-          cxx: g++
-          fc: gfortran
     name: Ubuntu Build Ascent (${{ matrix.cc }})
     runs-on: ubuntu-latest
     env:
-      CC: ${{ matrix.cc }}
-      CXX: ${{ matrix.cxx }}
-      FC: ${{ matrix.fc }}
+      CC: gcc
+      CXX: g++
+      FC: gfortran
     steps:
     - name: Install System Deps
       run: |
@@ -56,8 +50,8 @@ jobs:
         env enable_mpi=ON \
             enable_fortran=ON \
             enable_tests=OFF \
-            build_ascent=OFF \
             enable_verbose=OFF \
+            build_ascent=false \
             build_jobs=2 \
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
