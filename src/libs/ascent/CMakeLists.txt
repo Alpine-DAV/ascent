@@ -515,12 +515,12 @@ if (ENABLE_SERIAL)
                     vtkm::cont
                     )
 
-        if(TARGET vtkmdiympi_nompi)
-            list(APPEND imported_targets_to_link vtkmdiympi_nompi)
+        if(TARGET vtkm::vtkmdiympi_nompi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi_nompi)
         endif()
 
-        if(TARGET vtkmdiympi)
-            list(APPEND imported_targets_to_link vtkmdiympi)
+        if(TARGET vtkm::vtkmdiympi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi)
         endif()
 
         if(RAJA_FOUND)
@@ -691,7 +691,7 @@ if(MPI_FOUND)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkmdiympi_nompi
+                    vtkm::vtkmdiympi_nompi
                     vtkm::io
                     vtkm::rendering
                     vtkm::filter_clean_grid
@@ -716,12 +716,12 @@ if(MPI_FOUND)
                     vtkm::cont
                     )
 
-        if(TARGET vtkmdiympi_nompi)
-            list(APPEND imported_targets_to_link vtkmdiympi_nompi)
+        if(TARGET vtkm::vtkmdiympi_nompi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi_nompi)
         endif()
 
-        if(TARGET vtkmdiympi)
-            list(APPEND imported_targets_to_link vtkmdiympi)
+        if(TARGET vtkm::vtkmdiympi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi)
         endif()
 
         if(RAJA_FOUND)
