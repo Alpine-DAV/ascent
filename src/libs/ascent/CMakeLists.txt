@@ -490,7 +490,7 @@ if (ENABLE_SERIAL)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkmdiympi_nompi
+                    vtkm::vtkmdiympi_nompi
                     vtkm::io
                     vtkm::rendering
                     vtkm::filter_clean_grid
