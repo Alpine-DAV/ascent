@@ -61,6 +61,7 @@ jobs:
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
+        cmake --version
         echo "**** Configuring Ascent"
         source /opt/intel/oneapi/setvars.sh
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
