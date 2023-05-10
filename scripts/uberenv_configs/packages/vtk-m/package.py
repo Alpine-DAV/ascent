@@ -98,7 +98,9 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("cuda@10.1.0:", when="+cuda_native")
     depends_on("tbb", when="+tbb")
     depends_on("mpi", when="+mpi")
-    depends_on("llvm-openmp", when="+openmp %apple-clang")
+    # this won't work with older spack, we see:
+    # => Error: Package 'apple-clang' not found.
+    #depends_on("llvm-openmp", when="+openmp %apple-clang")
 
     # VTK-m uses the default Kokkos backend
     depends_on("kokkos", when="+kokkos")
