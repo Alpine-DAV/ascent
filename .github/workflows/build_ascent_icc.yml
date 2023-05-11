@@ -1,4 +1,4 @@
-name: build_ascent
+name: build_ascent_icx
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_basic:
-    name: Ubuntu Build Ascent (${{ matrix.cc }})
+    name: Ubuntu Build Ascent OpenAPI
     runs-on: ubuntu-20.04
     env:
       CC: icx

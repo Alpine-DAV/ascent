@@ -1,4 +1,4 @@
-name: build_ascent
+name: build_ascent_gcc
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_basic:
-    name: Ubuntu Build Ascent (${{ matrix.cc }})
+    name: Ubuntu Build Ascent GCC
     runs-on: ubuntu-latest
     env:
       CC: gcc
@@ -39,14 +39,20 @@ jobs:
                                 libsqlite3-dev \
                                 libbz2-dev \
                                 mpich \
-                                libmpich-dev \
-                                cmake
+                                libmpich-dev
     - name: Checkout
       uses: actions/checkout@v2
       with:
         submodules: 'recursive'
+    - name: Setup CMake
+      run: |
+        curl -L https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.tar.gz -o cmake-3.23.2-linux-x86_64.tar.gz
+        tar -xzf cmake-3.23.2-linux-x86_64.tar.gz
+        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
+        cmake --version
     - name: Build TPLs
       run: |
+        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
         env enable_mpi=ON \
             enable_fortran=ON \
             enable_tests=OFF \
@@ -56,23 +62,27 @@ jobs:
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
+        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
         cmake --version
         echo "**** Configuring Ascent"
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
       run: |
+        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
         echo "**** Building Ascent"
         cmake --build  build -j2
     - name: Install Ascent
       run: |
+        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
         echo "**** Installing Ascent"
         cmake --install  build
     - name: Check Install
       run: |
+        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
         echo "**** Checking Ascent using-with-cmake-mpi example"
         export CC=/usr/bin/mpicc
         export CXX=/usr/bin/mpicxx
         cd install/examples/ascent/using-with-cmake-mpi
         cmake -S . -B build
-        cmake --build  build -j2
+        cmake --build  --verbose build -j2
         mpiexec -n 2 ./build/ascent_mpi_render_example
