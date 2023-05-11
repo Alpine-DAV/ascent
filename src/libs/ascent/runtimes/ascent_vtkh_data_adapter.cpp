@@ -1637,7 +1637,7 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
 bool
 VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                          const vtkm::cont::DataSet &data_set,
-                                         const std::string topo_name,
+                                         const std::string &topo_name,
                                          bool zero_copy)
 {
 
