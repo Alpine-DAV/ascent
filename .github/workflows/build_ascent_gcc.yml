@@ -75,7 +75,7 @@ jobs:
       run: |
         export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         echo "**** Installing Ascent"
-        cmake --install build -config Debug
+        cmake --install build --config Debug
     - name: Check Install
       run: |
         export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
