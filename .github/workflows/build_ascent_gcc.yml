@@ -48,11 +48,11 @@ jobs:
       run: |
         curl -L https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.tar.gz -o cmake-3.23.2-linux-x86_64.tar.gz
         tar -xzf cmake-3.23.2-linux-x86_64.tar.gz
-        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
+        export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         cmake --version
     - name: Build TPLs
       run: |
-        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
+        export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         env enable_mpi=ON \
             enable_fortran=ON \
             enable_tests=OFF \
@@ -62,23 +62,23 @@ jobs:
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
-        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
+        export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         cmake --version
         echo "**** Configuring Ascent"
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
       run: |
-        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
+        export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         echo "**** Building Ascent"
         cmake --build  build -j2
     - name: Install Ascent
       run: |
-        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
+        export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         echo "**** Installing Ascent"
         cmake --install  build
     - name: Check Install
       run: |
-        export PATH=$PATH:`pwd`/cmake-3.23.2-linux-x86_64/bin/
+        export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         echo "**** Checking Ascent using-with-cmake-mpi example"
         export CC=/usr/bin/mpicc
         export CXX=/usr/bin/mpicxx
