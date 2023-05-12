@@ -70,12 +70,12 @@ jobs:
       run: |
         export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         echo "**** Building Ascent"
-        cmake --build build --config Debug -j2
+        cmake --build build -j2
     - name: Install Ascent
       run: |
         export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
         echo "**** Installing Ascent"
-        cmake --install build --config Debug
+        cmake --install build
     - name: Check Install
       run: |
         export PATH=`pwd`/cmake-3.23.2-linux-x86_64/bin/:$PATH
@@ -84,5 +84,5 @@ jobs:
         export CXX=/usr/bin/mpicxx
         cd install/examples/ascent/using-with-cmake-mpi
         cmake -S . -B build
-        cmake --build build --config Debug --verbose -j2
+        cmake --build build --verbose -j2
         mpiexec -n 2 ./build/ascent_mpi_render_example
