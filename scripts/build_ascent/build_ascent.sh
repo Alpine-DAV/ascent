@@ -316,7 +316,7 @@ fi # if enable_hip
 ################
 # VTK-m
 ################
-vtkm_version=v1.9.0
+vtkm_version=v2.0.0
 vtkm_src_dir=$(ospath ${root_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${root_dir}/build/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${root_dir}/install/vtk-m-${vtkm_version}/)

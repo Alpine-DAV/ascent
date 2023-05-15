@@ -34,7 +34,7 @@ endif()
 
 set(VTKM_FOUND TRUE)
 
-set(VTKM_TARGETS vtkm_cont vtkm_filter vtkm_rendering)
+set(VTKM_TARGETS vtkm::cont vtkm::filter vtkm::rendering)
 
 if(ENABLE_CUDA)
     # we need to inject the vtkm cuda flags into CMAKE_CUDA_FLAGS
