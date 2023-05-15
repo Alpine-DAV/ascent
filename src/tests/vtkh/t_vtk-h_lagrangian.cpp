@@ -14,7 +14,6 @@
 #include "t_vtkm_test_utils.hpp"
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
-#include <vtkm/cont/DataSetFieldAdd.h>
 #include <iostream>
 
 vtkm::cont::DataSet MakeTestUniformDataSet(vtkm::Id time)

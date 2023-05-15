@@ -35,6 +35,7 @@ jobs:
     - name: Configure Ascent
       run: |
         export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        cmake --version
         echo "**** Configuring Ascent"
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent

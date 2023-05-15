@@ -8,6 +8,8 @@ namespace vtkh
 vtkm::cont::DataSet
 vtkmGhostStripper::Run(vtkm::cont::DataSet &input, std::string ghost_field_name)
 {
+  input.SetGhostCellFieldName(ghost_field_name);
+
   vtkm::filter::entity_extraction::GhostCellRemove ghost_buster;
   ghost_buster.SetActiveField(ghost_field_name);
   ghost_buster.RemoveAllGhost();
