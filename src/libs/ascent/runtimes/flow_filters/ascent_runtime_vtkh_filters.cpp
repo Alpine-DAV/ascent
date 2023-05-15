@@ -48,6 +48,7 @@
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/ScalarRenderer.hpp>
+#include <vtkh/filters/AutoCamera.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
@@ -3990,6 +3991,7 @@ VTKHAutoCamera::verify_params(const conduit::Node &params,
     return res;
 }
 //-----------------------------------------------------------------------------
+
 void
 VTKHAutoCamera::execute()
 {
@@ -4028,7 +4030,14 @@ VTKHAutoCamera::execute()
     auto_cam.SetField(field_name);
     auto_cam.SetMetric(metric);
     auto_cam.SetNumSamples(samples);
-    auto_cam.Update()
+    auto_cam.Update();
+    vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
+    *camera = auto_cam.GetCamera();
+
+    if(!graph().workspace().registry().has_entry("camera"))
+    {
+      graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
+    }
 
     set_output<DataObject>(data_object);
 };

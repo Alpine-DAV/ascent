@@ -2,8 +2,6 @@
 #include <vtkh/rendering/ScalarRenderer.hpp>
 #include <vtkh/Error.hpp>
 
-#include <flow_graph.hpp>
-
 #include <float.h>
 
 #include <vtkm/VectorAnalysis.h>
@@ -588,6 +586,12 @@ AutoCamera::GetNumSamples()
   return m_samples;
 }
 
+vtkmCamera
+AutoCamera::GetCamera()
+{
+  return m_camera;
+}
+
 void
 AutoCamera::PreExecute()
 {
@@ -709,11 +713,7 @@ AutoCamera::DoExecute()
 				best_c[1], 
 				best_c[2]}; 
   camera->SetPosition(pos);
-
-  if(!graph().workspace().registry().has_entry("camera"))
-  {
-    graph().workspace().registry().add<vtkm::rendering::Camera>("camera",camera,1);
-  }
+  m_camera = *camera;
 
   this->m_output = this->m_input;
 }

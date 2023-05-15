@@ -21,6 +21,7 @@ public:
   std::string GetName() const override;
   std::string GetField();
   std::string GetMetric();
+  vtkmCamera GetCamera();
   int GetNumSamples();
   void SetMetric(std::string metric);
   void SetField(std::string field);
@@ -33,6 +34,7 @@ protected:
   int m_samples;
   std::string m_field;
   std::string m_metric;
+  vtkmCamera m_camera;
 };
 
 } //namespace vtkh

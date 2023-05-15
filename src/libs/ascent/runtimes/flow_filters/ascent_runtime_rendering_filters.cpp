@@ -1247,12 +1247,6 @@ DefaultRender::execute()
       {
         vtkm::rendering::Camera *camera = graph().workspace().registry().fetch<vtkm::rendering::Camera>("camera");
 
-        /*render = vtkh::MakeRender(1024,
-                                  1024,
-                                  *camera,
-                                  data,
-                                  image_name);
-        */
 	render = vtkh::MakeRender(1024,
                                   1024,
                                   *bounds,
@@ -1261,16 +1255,6 @@ DefaultRender::execute()
       }
       else
       {  
-      /*  
-        render = vtkh::MakeRender(1024,
-                                  1024,
-                                  *bounds,
-                                  v_domain_ids,
-                                  image_name);*/
-        render = vtkh::MakeRender(1024,
-                                  1024,
-                                  *bounds,
-                                  image_name);
 
         vtkm::Bounds scene_bounds = *bounds;
         if(params().has_path("use_original_bounds"))
@@ -1280,12 +1264,12 @@ DefaultRender::execute()
             scene_bounds = original_bounds;
           }
         }
-      }
       
-      vtkh::Render render = vtkh::MakeRender(1024,
-                            1024,
-                            scene_bounds,
-                            image_name);
+        render = vtkh::MakeRender(1024,
+                              1024,
+                              scene_bounds,
+                              image_name);
+      }
       
       Node meta = Metadata::n_metadata;
       if(meta.has_path("comments"))
@@ -1295,17 +1279,11 @@ DefaultRender::execute()
         std::vector<std::string> comments;
         for(int i = 0; i < num_comments; ++i)
         {
-          const conduit::Node comments_node = meta["comments"];
-          const int num_comments = comments_node.number_of_children();
-          std::vector<std::string> comments;
-          for(int i = 0; i < num_comments; ++i)
-          {
-            comments.push_back(comments_node.child(i).as_string());
-          }
-          render.SetComments(comments);
+          comments.push_back(comments_node.child(i).as_string());
         }
-
+        render.SetComments(comments);
       }
+
       renders->push_back(render);
     }
     set_output<std::vector<vtkh::Render>>(renders);
