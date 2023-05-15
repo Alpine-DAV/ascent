@@ -139,3 +139,7 @@ endif()
 if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
+
+if (CATALYST_DIR)
+  include(cmake/thirdparty/SetupCatalyst.cmake)
+endif()
