@@ -4,7 +4,6 @@
 
 set(vtkh_filters_headers
     Filter.hpp
-    AutoCamera.hpp
     CellAverage.hpp
     CleanGrid.hpp
     Clip.hpp
@@ -41,7 +40,6 @@ endif()
 
 set(vtkh_filters_sources
     Filter.cpp
-    AutoCamera.cpp
     CellAverage.cpp
     CleanGrid.cpp
     Clip.cpp

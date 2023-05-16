@@ -1,5 +1,5 @@
 #include <vtkh/filters/AutoCamera.hpp>
-#include <vtkh/rendering/ScalarRenderer.hpp>
+#include "vtkh/rendering/ScalarRenderer.hpp"
 #include <vtkh/Error.hpp>
 
 #include <float.h>
@@ -20,22 +20,23 @@ namespace vtkh
 namespace detail
 {
 
-void fibonacci_sphere(int i, int samples, double* points)
+template <typename T>
+void fibonacci_sphere(int i, int samples, T* points)
 {
   int rnd = 1;
   //if randomize:
   //    rnd = random.random() * samples
 
-  double offset = 2./samples;
-  double increment = M_PI * (3. - sqrt(5.));
+  T offset = 2./samples;
+  T increment = M_PI * (3. - sqrt(5.));
 
-  double y = ((i * offset) - 1) + (offset / 2);
-  double r = sqrt(1 - pow(y,2));
+  T y = ((i * offset) - 1) + (offset / 2);
+  T r = sqrt(1 - pow(y,2));
 
-  double phi = ((i + rnd) % samples) * increment;
+  T phi = ((i + rnd) % samples) * increment;
 
-  double x = cos(phi) * r;
-  double z = sin(phi) * r;
+  T x = cos(phi) * r;
+  T z = sin(phi) * r;
 
   points[0] = x;
   points[1] = y;
@@ -43,27 +44,14 @@ void fibonacci_sphere(int i, int samples, double* points)
 }
 
 void
-GetCamera(int frame, int nframes, double radius, double* lookat, double *bounds, double *cam_pos)
+GetCamera(int frame, int nframes, double radius, float *lookat, double *cam_pos)
 {
   double points[3];
-  fibonacci_sphere(frame, nframes, points);
+  fibonacci_sphere<double>(frame, nframes, points);
   double zoom = 3.0;
   double near = zoom/8;
   double far = zoom*5;
   double angle = M_PI/6;
-
-/*  if(abs(points[0]) < radius && abs(points[1]) < radius && abs(points[2]) < radius)
-  {
-    if(points[2] >= 0)
-      points[2] += radius;
-    if(points[2] < 0)
-      points[2] -= radius;
-  }*/
-  /*
-  double x = (bounds[0] + bounds[1])/2;
-  double y = (bounds[2] + bounds[3])/2;
-  double z = (bounds[4] + bounds[5])/2;
-  */ 
 
   cam_pos[0] = (zoom*radius*points[0]) + lookat[0];
   cam_pos[1] = (zoom*radius*points[1]) + lookat[1];
@@ -113,7 +101,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
       long int size = field.GetNumberOfValues();
       
       using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
-      using data_f = vtkm::cont::ArrayHandle<vtkm::Float64>;
+      using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
       if(field.GetData().IsType<data_d>())
       {
         vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
@@ -158,7 +146,7 @@ struct CalculateEntropy
 };
 
 template <typename T>
-T calcEntropyMM(const vtkm::cont::ArrayHandle<T>& data, int nBins, T max, T min)
+T calcEntropyMM(const vtkm::cont::ArrayHandle<T>& data, int nBins, T min, T max)
 {
   vtkm::worklet::FieldHistogram worklet;
   vtkm::cont::ArrayHandle<vtkm::Id> hist;
@@ -380,7 +368,6 @@ GetScalarDataAsArrayHandle(vtkh::DataSet &vtkhData, std::string field_name)
         {
           const vtkm::cont::DataSet &dataset = vtkhData.GetDomain(domainId);
           const vtkm::cont::Field &field = dataset.GetField(field_name);
-
           return acc + field.GetData().GetNumberOfValues();
         });
 
@@ -400,7 +387,7 @@ GetScalarDataAsArrayHandle(vtkh::DataSet &vtkhData, std::string field_name)
 }
 
 double
-calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string field_name, double field_min, double field_max)
+calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double field_min, double field_max)
 {
   double entropy = 0.0;
   int rank = 0;
@@ -408,19 +395,54 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
   MPI_Comm_rank(mpi_comm, &rank);
   #endif
-
+//dataset->PrintSummary(std::cerr);
+  using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
+  using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+  
   if(rank == 0)
   {
-    auto field_data = GetScalarDataAsArrayHandle<double>(*dataset, field_name.c_str());
-    if (field_data.GetNumberOfValues() > 0) 
+    vtkm::cont::Field field = dataset->GetField(field_name,0);
+
+    if(field.GetData().IsType<data_d>())
     {
-      DataCheckFlags checks = CheckNan | CheckZero;
-      field_data = copyWithChecks<double>(field_data, checks);
-      entropy = calcEntropyMM(field_data, 1000, field_min, field_max);
-    } 
+      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float64>(*dataset, field_name.c_str());
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        DataCheckFlags checks = CheckNan | CheckZero;
+        field_data = copyWithChecks<vtkm::Float64>(field_data, checks);
+	std::cerr << "Double data" << std::endl;
+	for(int i = 0; i < 20; i++)
+		std::cerr << field_data.ReadPortal().Get(i) << " ";
+	std::cerr << std::endl;
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, 1000, field_min, field_max);
+      } 
+      else
+      {
+        entropy = 0;
+      }
+    }
     else
     {
-      entropy = 0;
+      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float32>(*dataset, field_name.c_str());
+      std::cerr << " NUM OF VALS: " << field_data.GetNumberOfValues() << std::endl;
+	std::cerr << "Float data" << std::endl;
+	int count = 0;
+	for(int i = 0; i < field_data.GetNumberOfValues(); i++)
+		if(field_data.ReadPortal().Get(i) == field_data.ReadPortal().Get(i))
+			count++;
+	std::cerr << "count: " << count << std::endl;
+	std::cerr << std::endl;
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        DataCheckFlags checks = CheckNan | CheckZero;
+        field_data = copyWithChecks<vtkm::Float32>(field_data, checks);
+	std::cerr << "number of values: " << field_data.GetNumberOfValues()<<std::endl;
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, 1000, vtkm::Float32(field_min), vtkm::Float32(field_max));
+      } 
+      else
+      {
+        entropy = 0;
+      }
     }
   }
 
@@ -431,7 +453,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, int height, int width,std::string f
 }
 
 double 
-calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, double diameter)
+calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double diameter)
 {
 
   double entropy = 0.0;
@@ -441,19 +463,42 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, double diam
   MPI_Comm_rank(mpi_comm, &rank);
   #endif
 
+  using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
+  using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+
   if(rank == 0)
   {
-    auto field_data = GetScalarDataAsArrayHandle<double>(*dataset, "depth");
-    if (field_data.GetNumberOfValues() > 0) 
+    vtkm::cont::Field field = dataset->GetField(field_name,0);
+
+    if(field.GetData().IsType<data_d>())
     {
-      DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-      DataCheckVals<double> checkVals { .Min = 0, .Max = double(INT_MAX) };
-      field_data = copyWithChecks<double>(field_data, checks, checkVals);
-      entropy = calcEntropyMM(field_data, 1000, double(0.0), diameter);
-    } 
+      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float64>(*dataset, "depth");
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
+        DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
+        field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, 1000, vtkm::Float64(0.0), diameter);
+      } 
+      else
+      {
+        entropy = 0;
+      }
+    }
     else
     {
-      entropy = 0;
+      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float32>(*dataset, "depth");
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
+        DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
+        field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, 1000, vtkm::Float32(0.0), diameter);
+      } 
+      else
+      {
+        entropy = 0;
+      }
     }
   }
   #if VTKH_PARALLEL
@@ -463,7 +508,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, int height, int width, double diam
 }
 
 double 
-calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width)
+calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name)
 {
 
   double entropy = 0.0;
@@ -473,19 +518,42 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width)
   MPI_Comm_rank(mpi_comm, &rank);
   #endif
 
+  using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
+  using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+
   if(rank == 0)
   {
-    auto field_data = GetScalarDataAsArrayHandle<double>(*dataset, "shading");
-    if (field_data.GetNumberOfValues() > 0) 
+    vtkm::cont::Field field = dataset->GetField(field_name,0);
+
+    if(field.GetData().IsType<data_d>())
     {
-      DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-      DataCheckVals<double> checkVals { .Min = 0, .Max = double(INT_MAX) };
-      field_data = copyWithChecks<double>(field_data, checks, checkVals);
-      entropy = calcEntropyMM(field_data, 1000, double(0.0), double(1.0));
-    } 
+      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float64>(*dataset, "shading");
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
+        DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
+        field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, 1000, vtkm::Float64(0.0), vtkm::Float64(1.0));
+      } 
+      else
+      {
+        entropy = 0;
+      }
+    }
     else
     {
-      entropy = 0;
+      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float32>(*dataset, "shading");
+      if (field_data.GetNumberOfValues() > 0) 
+      {
+        DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
+        DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
+        field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, 1000, vtkm::Float32(0.0), vtkm::Float32(1.0));
+      } 
+      else
+      {
+        entropy = 0;
+      }
     }
   }
   #if VTKH_PARALLEL
@@ -495,28 +563,28 @@ calculateShadingEntropy(vtkh::DataSet* dataset, int height, int width)
 }
 
 double
-calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, int height, int width, double field_min, double field_max, double diameter)
+calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, vtkm::Float64 field_min, vtkm::Float64 field_max, double diameter)
 {
   double score = 0.0;
 
   if(metric == "data_entropy")
   {
-    score = calculateDataEntropy(dataset, height, width, field_name, field_min, field_max);
+    score = calculateDataEntropy(dataset, field_name, field_min, field_max);
   }
   else if (metric == "dds_entropy")
   {
-    double shading_score = calculateShadingEntropy(dataset, height, width);
-    double data_score = calculateDataEntropy(dataset, height, width, field_name, field_min, field_max);
-    double depth_score = calculateDepthEntropy(dataset, height, width, diameter);
+    double shading_score = calculateShadingEntropy(dataset, field_name);
+    double data_score = calculateDataEntropy(dataset, field_name, field_min, field_max);
+    double depth_score = calculateDepthEntropy(dataset, field_name, diameter);
     score = shading_score+data_score+depth_score;
   }
   else if (metric == "shading_entropy")
   {
-    score = calculateShadingEntropy(dataset, height, width);
+    score = calculateShadingEntropy(dataset,field_name);
   }
   else if (metric == "depth_entropy")
   {
-    score = calculateDepthEntropy(dataset, height, width, diameter);
+    score = calculateDepthEntropy(dataset, field_name, diameter);
   }
   else
   {
@@ -604,48 +672,29 @@ AutoCamera::DoExecute()
   int width = 1000;
   int height = 1000;
 
-  std::vector<double> field_data;
-  field_data = detail::GetScalarData<double>(*this->m_input, m_field.c_str());
 
-  double field_min = 0.;
-  double field_max = 0.;
   int rank = 0;
   int world_size = 0;
   #if VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
   MPI_Comm_size(mpi_comm, &world_size);
   MPI_Comm_rank(mpi_comm, &rank);
-  double local_field_min = 0.;
-  double local_field_max = 0.;
-  
-  if(field_data.size())
-  {
-    local_field_min = (double)*min_element(field_data.begin(),field_data.end());
-    local_field_max = (double)*max_element(field_data.begin(),field_data.end());
-  }
-  MPI_Reduce(&local_field_min, &field_min, 1, MPI_DOUBLE, MPI_MIN, 0, mpi_comm);
-  MPI_Reduce(&local_field_max, &field_max, 1, MPI_DOUBLE, MPI_MAX, 0, mpi_comm);
-  #else
-  if(field_data.size())
-  {
-    field_min = (double)*min_element(field_data.begin(),field_data.end());
-    field_max = (double)*max_element(field_data.begin(),field_data.end());
-  }
   #endif
-
+  
+  vtkm::Range range = this->m_input->GetGlobalRange(m_field).ReadPortal().Get(0);
+  vtkm::Float64 field_min = range.Min;
+  vtkm::Float64 field_max = range.Max;
 
   vtkm::Bounds g_bounds = this->m_input->GetGlobalBounds();
-  double radius = 0;
-  double diameter = 0;
+  double radius = 0.0;
+  double diameter = 0.0;
   detail::calculateDiameter(g_bounds, radius, diameter);
-  double bounds[6] = {(double)g_bounds.X.Max, (double)g_bounds.X.Min, 
-			(double)g_bounds.Y.Max, (double)g_bounds.Y.Min, 
-	                (double)g_bounds.Z.Max, (double)g_bounds.Z.Min};
+  this->m_input->PrintSummary(std::cerr);
 
   vtkmCamera *camera = new vtkmCamera;
   camera->ResetToBounds(g_bounds);
-  vtkm::Vec<vtkm::Float64,3> lookat = camera->GetLookAt();
-  double focus[3] = {(double)lookat[0],(double)lookat[1],(double)lookat[2]};
+  vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+  float focus[3] = {lookat[0],lookat[1],lookat[2]};
 
   double winning_score  = -DBL_MAX;
   double losing_score   = DBL_MAX;
@@ -660,12 +709,14 @@ AutoCamera::DoExecute()
   /*================ Scalar Renderer Code ======================*/
 
     double cam_pos[3];
-    detail::GetCamera(sample, m_samples, radius, focus, bounds, cam_pos);
+    detail::GetCamera(sample, m_samples, radius, focus, cam_pos);
     vtkm::Vec<vtkm::Float64, 3> pos{cam_pos[0],
                             cam_pos[1],
                             cam_pos[2]};
 
     camera->SetPosition(pos);
+    std::cerr << "CAMERA: " << std::endl;
+    camera->Print();
     vtkh::ScalarRenderer tracer;
     tracer.SetWidth(width);
     tracer.SetHeight(height);
@@ -677,9 +728,9 @@ AutoCamera::DoExecute()
     //output->PrintSummary(std::cerr);
 
     double score = detail::calculateMetricScore(output, m_metric, m_field, 
-						height, width, field_min, 
-						field_max, diameter);
+						field_min, field_max, diameter);
     
+    std::cerr << "sample " << sample << " score: " << score << std::endl;
 
     delete output;
 
@@ -707,7 +758,7 @@ AutoCamera::DoExecute()
   }
 
   double best_c[3];
-  detail::GetCamera(winning_sample, m_samples, radius, focus, bounds, best_c);
+  detail::GetCamera(winning_sample, m_samples, radius, focus, best_c);
 
   vtkm::Vec<vtkm::Float64, 3> pos{best_c[0], 
 				best_c[1], 

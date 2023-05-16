@@ -3,6 +3,7 @@
 #==============================================================================
 set(vtkh_rendering_headers
     Annotator.hpp
+    AutoCamera.hpp
     LineRenderer.hpp
     MeshRenderer.hpp
     RayTracer.hpp
@@ -16,6 +17,7 @@ set(vtkh_rendering_headers
 
 set(vtkh_rendering_sources
     Annotator.cpp
+    AutoCamera.cpp
     LineRenderer.cpp
     MeshRenderer.cpp
     RayTracer.cpp

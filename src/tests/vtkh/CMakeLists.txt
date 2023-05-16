@@ -13,6 +13,7 @@
 # Core VTK-h Unit Tests
 ################################
 set(BASIC_TESTS t_vtk-h_smoke
+		t_vtk-h_auto_camera
                 t_vtk-h_dataset
                 t_vtk-h_clip
                 t_vtk-h_clip_field
