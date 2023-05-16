@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.9.1] - Released 2023-04-21
+### Preferred dependency versions for ascent@0.9.1
+- conduit@0.8.7
+- vtk-m@2.0.0
+
+### Added
+- Added support for building and running on Windows.
+- Added runtime control option (in addition to existing compile time option) to Devil Ray stats.
+- Added CI testing for building Ascent and required third-party libs on Windows.
+
+### Changed
+- Updated Ascent to use VTK-m 2.0
+- Devil Ray stats are now opt in, instead of opt out to avoid accumulating memory.
+- `build_ascent.sh` is now a unified script that supports non-device, CUDA, and HIP builds.
+
+### Fixed
+- Ensure ghost indicator fields survive field filtering.
+
 ## [0.9.0] - Released 2023-01-12
 
 ### Preferred dependency versions for ascent@0.9.0
@@ -169,8 +187,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.9.0...HEAD
-[0.8.0]: https://github.com/Alpine-DAV/ascent/compare/v0.8.0...v0.9.0
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/Alpine-DAV/ascent/compare/v0.9.0...v0.9.1
+[0.9.0]: https://github.com/Alpine-DAV/ascent/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/Alpine-DAV/ascent/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Alpine-DAV/ascent/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Alpine-DAV/ascent/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Alpine-DAV/ascent/compare/v0.5.1...v0.6.0

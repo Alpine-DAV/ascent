@@ -1065,6 +1065,14 @@ parse_params(const conduit::Node &params,
       cameras.push_back(camera);
     }
   }
+  else // if we don't have camera params, we need to add a default camera
+  {
+    dray::Camera camera;
+    camera.set_width(width);
+    camera.set_height(height);
+    camera.reset_to_bounds(bounds);
+    cameras.push_back(camera);
+  }
 
   int cycle = 0;
 

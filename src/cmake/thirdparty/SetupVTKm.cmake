@@ -59,3 +59,7 @@ blt_register_library(NAME vtkm
                      LIBRARIES ${VTKM_TARGETS}
                      )
 
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # if we are running tests with dlls, we need path to dlls
+    list(APPEND ASCENT_TPL_DLL_PATHS ${VTKM_DIR}/bin)
+endif()

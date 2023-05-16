@@ -35,8 +35,8 @@ simulation codes, regardless of the underlying mesh representation.
 
 Sampling and Aggregation
 ------------------------
-When specifying the number of bins on an axis, there will always be over smapling or undersampling.
-During spatial binning, each zone is placed into a bin based on it centriod, and as with all
+When specifying the number of bins on an axis, there will always be over sampling or undersampling.
+During spatial binning, each zone is placed into a bin based on its centriod, and as with all
 binning, this is subject to over sampling or under sampling.
 
 
@@ -62,7 +62,7 @@ example.
 
   An example of spatial over sampling.
 
-When oversamping data, the default value of an empy bin is 0. That said, the default empty
+When oversampling data, the default value of an empty bin is 0. That said, the default empty
 value can be overridden by an option named parameter, e.g., `empty_bin_val=100`.
 This is often useful when the default value is part of the data range, and setting
 the empty bin value to something known, allows the user to filter out empty bins

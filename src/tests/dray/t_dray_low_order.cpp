@@ -29,6 +29,12 @@ int EXAMPLE_MESH_SIDE_DIM = 20;
 // note: dray diff tolerance was 0.2f prior to import
 void render_2d(conduit::Node &data, std::string name, double diff_perc = 0.05)
 {
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
+  }
+  dray::stats::StatStore::clear();
+  
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, name);
@@ -66,13 +72,19 @@ void render_2d(conduit::Node &data, std::string name, double diff_perc = 0.05)
   // note: dray tolerance was 0.2f prior to import
   EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(), diff_perc));
   fb.save_depth (output_file + "_depth");
-  dray::stats::StatStore::write_ray_stats (c_width, c_height);
+  dray::stats::StatStore::write_ray_stats (output_file + "_stats",
+                                           c_width, c_height);
 }
 
 
 // note: dray diff tolerance was 0.2f prior to import
 void render_3d(conduit::Node &data, std::string name, double diff_perc = 0.05)
 {
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
+  }
+  dray::stats::StatStore::clear();
 
   std::string output_path = prepare_output_dir ();
   std::string output_file =
@@ -116,7 +128,9 @@ void render_3d(conduit::Node &data, std::string name, double diff_perc = 0.05)
   // note: dray tolerance was 0.2f prior to import
   EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(), diff_perc));
   fb.save_depth (output_file + "_depth");
-  dray::stats::StatStore::write_ray_stats (c_width, c_height);
+  dray::stats::StatStore::write_ray_stats (output_file + "_stats",
+                                           c_width, c_height);
+
 }
 
 TEST (dray_low_order, dray_uniform_quads)

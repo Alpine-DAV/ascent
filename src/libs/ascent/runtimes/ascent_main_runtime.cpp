@@ -1779,6 +1779,14 @@ AscentRuntime::Execute(const conduit::Node &actions)
             {
               ASCENT_ERROR("Field filtering failed to find any fields");
             }
+
+            // make sure ghost zone indicator fields are always
+            // implicitly included
+            const int num_ghosts = m_ghost_fields.number_of_children();
+            for(int i = 0; i < num_ghosts; ++i)
+            {
+              m_field_list.insert(m_ghost_fields.child(i).as_string());
+            }
           }
 
           // destroy existing graph an start anew

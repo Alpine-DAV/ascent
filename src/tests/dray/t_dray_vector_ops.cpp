@@ -20,6 +20,7 @@
 #include <dray/utils/appstats.hpp>
 
 #include <dray/math.hpp>
+#include <dray/array_registry.hpp>
 
 #include <fstream>
 #include <stdlib.h>
@@ -35,7 +36,7 @@ mfem_enabled()
 #endif
 }
 
-
+//---------------------------------------------------------------------------//
 TEST (dray_vector_ops, dray_vector_component)
 {
 
@@ -43,6 +44,16 @@ TEST (dray_vector_ops, dray_vector_component)
   {
     std::cout << "mfem disabled: skipping test that requires high order input " << std::endl;
     return;
+  }
+
+  EXPECT_EQ(dray::ArrayRegistry::number_of_arrays(),0);
+  EXPECT_EQ(dray::ArrayRegistry::host_usage(),0);
+  EXPECT_EQ(dray::ArrayRegistry::device_usage(),0);
+  dray::ArrayRegistry::summary();
+  dray::stats::StatStore::clear();
+  if(dray::stats::StatStore::stats_supported())
+  {
+    dray::stats::StatStore::enable_stats();
   }
 
   std::string root_file = std::string (ASCENT_T_DATA_DIR) + "taylor_green.cycle_001860.root";
@@ -88,5 +99,6 @@ TEST (dray_vector_ops, dray_vector_component)
   // note: dray diff tolerance was 0.2f prior to import
   EXPECT_TRUE (check_test_image (output_file,dray_baselines_dir(),0.05));
   fb.save_depth (output_file + "_depth");
-  dray::stats::StatStore::write_ray_stats (c_width, c_height);
+  dray::stats::StatStore::write_ray_stats (output_file + "_stats",
+                                          c_width, c_height);
 }

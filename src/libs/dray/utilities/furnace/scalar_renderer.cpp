@@ -67,7 +67,8 @@ int main (int argc, char *argv[])
     conduit::relay::io::blueprint::save_mesh(mesh, "scalars.blueprint_root_hdf5");
   }
 
-  dray::stats::StatStore::write_ray_stats (config.m_camera.get_width (),
+  dray::stats::StatStore::write_ray_stats ("out_furnace_scalar_renderer",
+                                           config.m_camera.get_width (),
                                            config.m_camera.get_height ());
 
   finalize_furnace();

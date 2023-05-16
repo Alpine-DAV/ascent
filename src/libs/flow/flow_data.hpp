@@ -99,7 +99,7 @@ private:
 
 //-----------------------------------------------------------------------------
 template <class T>
-class FLOW_API DataWrapper: public Data
+class DataWrapper: public Data
 {
  public:
 
