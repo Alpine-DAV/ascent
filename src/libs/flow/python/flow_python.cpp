@@ -893,12 +893,18 @@ PyFlow_Filter_info(PyFlow_Filter *self,
 }
 
 
-
 //---------------------------------------------------------------------------//
 static PyObject *
 PyFlow_Filter_to_json(PyFlow_Filter *self)
 {
     return Py_BuildValue("s", self->filter->to_json().c_str());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Filter_to_yaml(PyFlow_Filter *self)
+{
+    return Py_BuildValue("s", self->filter->to_yaml().c_str());
 }
 
 
@@ -1010,10 +1016,16 @@ static PyMethodDef PyFlow_Filter_METHODS[] = {
       METH_VARARGS | METH_KEYWORDS,
       "fills passed conduit.Node with info about this filter"},
     //-----------------------------------------------------------------------//
-    {"to_json",
+     {"to_json",
      (PyCFunction)PyFlow_Filter_to_json,
      METH_NOARGS,
-     "returns a json sting with info about this filter"},
+     "returns a json string with info about this filter"},
+    //-----------------------------------------------------------------------//
+     {"to_yaml",
+     (PyCFunction)PyFlow_Filter_to_yaml,
+     METH_NOARGS,
+     "returns a yaml string with info about this filter"},
+
     //-----------------------------------------------------------------------//
     // end flow.Filter methods table
     //-----------------------------------------------------------------------//
@@ -1349,8 +1361,6 @@ PyFlow_Registry_reset(PyFlow_Registry *self)
     Py_RETURN_NONE;
 }
 
-
-
 //---------------------------------------------------------------------------//
 static PyObject *
 PyFlow_Registry_to_json(PyFlow_Registry *self)
@@ -1358,12 +1368,19 @@ PyFlow_Registry_to_json(PyFlow_Registry *self)
     return Py_BuildValue("s", self->registry->to_json().c_str());
 }
 
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Registry_to_yaml(PyFlow_Registry *self)
+{
+    return Py_BuildValue("s", self->registry->to_yaml().c_str());
+}
+
 
 //---------------------------------------------------------------------------//
 static PyObject *
 PyFlow_Registry_str(PyFlow_Registry *self)
 {
-    return PyFlow_Registry_to_json(self);
+    return PyFlow_Registry_to_yaml(self);
 }
 
 //----------------------------------------------------------------------------//
@@ -1399,7 +1416,12 @@ static PyMethodDef PyFlow_Registry_METHODS[] = {
     {"to_json",
      (PyCFunction) PyFlow_Registry_to_json,
      METH_NOARGS,
-     "returns a json sting with info about this registry"},
+     "returns a json string with info about this registry"},
+    //-----------------------------------------------------------------------//
+    {"to_yaml",
+     (PyCFunction) PyFlow_Registry_to_json,
+     METH_NOARGS,
+     "returns a yaml string with info about this registry"},
     //-----------------------------------------------------------------------//
     // end flow.Registry methods table
     //-----------------------------------------------------------------------//
@@ -1870,6 +1892,12 @@ PyFlow_Graph_to_json(PyFlow_Graph *self)
     return Py_BuildValue("s", self->graph->to_json().c_str());
 }
 
+//---------------------------------------------------------------------------//
+static PyObject *
+PyFlow_Graph_to_yaml(PyFlow_Graph *self)
+{
+    return Py_BuildValue("s", self->graph->to_yaml().c_str());
+}
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -1878,12 +1906,11 @@ PyFlow_Graph_to_dot(PyFlow_Graph *self)
     return Py_BuildValue("s", self->graph->to_dot().c_str());
 }
 
-
 //---------------------------------------------------------------------------//
 static PyObject *
 PyFlow_Graph_str(PyFlow_Graph *self)
 {
-    return PyFlow_Graph_to_json(self);
+    return PyFlow_Graph_to_yaml(self);
 }
 
 
@@ -1928,7 +1955,12 @@ static PyMethodDef PyFlow_Graph_METHODS[] = {
      {"to_json",
       (PyCFunction)PyFlow_Graph_to_json,
       METH_NOARGS,
-      "returns a json sting with info about this graph"},
+      "returns a json string with info about this graph"},
+    //-----------------------------------------------------------------------//
+     {"to_yaml",
+      (PyCFunction)PyFlow_Graph_to_json,
+      METH_NOARGS,
+      "returns a yaml string with info about this graph"},
     //-----------------------------------------------------------------------//
      {"to_dot",
       (PyCFunction)PyFlow_Graph_to_json,
@@ -2220,9 +2252,16 @@ PyFlow_Workspace_to_json(PyFlow_Workspace *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyFlow_Workspace_to_yaml(PyFlow_Workspace *self)
+{
+    return Py_BuildValue("s", self->workspace->to_yaml().c_str());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyFlow_Workspace_str(PyFlow_Workspace *self)
 {
-    return PyFlow_Workspace_to_json(self);
+    return PyFlow_Workspace_to_yaml(self);
 }
 
 
@@ -2439,7 +2478,12 @@ static PyMethodDef PyFlow_Workspace_METHODS[] = {
      {"to_json",
       (PyCFunction)PyFlow_Workspace_to_json,
       METH_NOARGS,
-      "returns a json sting with info about this workspace"},
+      "returns a json string with info about this workspace"},
+    //-----------------------------------------------------------------------//
+     {"to_yaml",
+      (PyCFunction)PyFlow_Workspace_to_yaml,
+      METH_NOARGS,
+      "returns a json string with info about this workspace"},
     //------------------------------------------------
     //-----------------------------------------------------------------------//
     // end flow.Workspace methods table
