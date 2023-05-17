@@ -797,6 +797,84 @@ TEST(ascent_runtime_options, test_field_filtering_ghosts)
     EXPECT_TRUE(check_test_image(output_file));
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_field_filtering_sparse_fields_case)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data, verify_info;
+
+    conduit::blueprint::mesh::examples::spiral(2,data);
+
+    conduit::blueprint::mesh::examples::braid("quads",
+                                              10,
+                                              10,
+                                              0,
+                                              data["extra_domain"]);
+
+    data["extra_domain/state/domain_id"] = 3;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing field filtering with sparse fields");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                            "tout_field_filtering_sparse_fields");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    // in this case, we plot "braid", but the all the spiral mesh fields
+    // will be filtered. Make sure this doesn't result in a blueprint verify
+    // error for braid
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, test_field_filtering_error)
 {
