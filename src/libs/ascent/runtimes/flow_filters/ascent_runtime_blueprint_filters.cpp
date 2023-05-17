@@ -242,7 +242,7 @@ BlueprintPartition::verify_params(const conduit::Node &params,
     if(! params.has_child("target") ||
        ! params["target"].dtype().is_int() )
     {
-        info["params"].append() = "Missing required int parameter 'target'";
+        info["errors"].append() = "Missing required int parameter 'target'";
     }
 
     std::vector<std::string> valid_paths;
