@@ -170,7 +170,7 @@ BlueprintVerify::execute()
 
     // reduce flag for errors
     int global_verify_err = 0;
-    MPI_Allreduce((void *)(&global_verify_err),
+    MPI_Allreduce((void *)(&local_verify_err),
                   (void *)(&global_verify_err),
                   1,
                   MPI_INT,
