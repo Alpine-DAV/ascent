@@ -450,10 +450,22 @@ Filter::to_json() const
 }
 
 //-----------------------------------------------------------------------------
+std::string
+Filter::to_yaml() const
+{
+    Node out;
+    info(out);
+    ostringstream oss;
+    out.to_yaml_stream(oss);
+    return oss.str();
+}
+
+
+//-----------------------------------------------------------------------------
 void
 Filter::print() const
 {
-    CONDUIT_INFO(to_json());
+    CONDUIT_INFO(to_yaml());
 }
 
 
