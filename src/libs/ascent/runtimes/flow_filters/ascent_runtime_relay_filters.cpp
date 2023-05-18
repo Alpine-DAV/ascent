@@ -371,6 +371,7 @@ void mesh_blueprint_save(const Node &data,
     opts["number_of_files"] = num_files;
 
 #ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     conduit::relay::mpi::io::blueprint::save_mesh(data,
                                                   path,
                                                   file_protocol,
