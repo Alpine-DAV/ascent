@@ -45,7 +45,6 @@ if(KOKKOS_FOUND)
 endif()
 
 
-
 add_subdirectory(utils)
 
 

@@ -387,11 +387,23 @@ Workspace::to_json() const
     return oss.str();
 }
 
+
+//-----------------------------------------------------------------------------
+std::string
+Workspace::to_yaml() const
+{
+    Node out;
+    info(out);
+    ostringstream oss;
+    out.to_yaml_stream(oss);
+    return oss.str();
+}
+
 //-----------------------------------------------------------------------------
 void
 Workspace::print() const
 {
-    CONDUIT_INFO(to_json());
+    CONDUIT_INFO(to_yaml());
 }
 
 //-----------------------------------------------------------------------------
@@ -525,7 +537,7 @@ Workspace::register_filter_type(FilterFactoryMethod fr)
         CONDUIT_ERROR("filter type interface verify failed." << std::endl
                       << f_type_name   << std::endl
                       << "Details:" << std::endl
-                      << v_info.to_json());
+                      << v_info.to_yaml());
     }
 
     f_type_name =i_test["type_name"].as_string();
@@ -577,7 +589,7 @@ Workspace::register_filter_type(const std::string &filter_type_name,
         CONDUIT_ERROR("filter type interface verify failed." << std::endl
                       << f_type_name   << std::endl
                       << "Details:" << std::endl
-                      << v_info.to_json());
+                      << v_info.to_yaml());
     }
 
     f_type_name =i_test["type_name"].as_string();

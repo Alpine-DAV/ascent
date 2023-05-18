@@ -1376,7 +1376,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     conduit::Node scene = scenes.child(i);
     if(!scene.has_path("plots"))
     {
-      ASCENT_ERROR("Scene must have at least one plot: "<<scene.to_json());
+      ASCENT_ERROR("Scene must have at least one plot: "<<scene.to_yaml());
     }
 
     // create the default render
@@ -1779,6 +1779,14 @@ AscentRuntime::Execute(const conduit::Node &actions)
             {
               ASCENT_ERROR("Field filtering failed to find any fields");
             }
+
+            // make sure ghost zone indicator fields are always
+            // implicitly included
+            const int num_ghosts = m_ghost_fields.number_of_children();
+            for(int i = 0; i < num_ghosts; ++i)
+            {
+              m_field_list.insert(m_ghost_fields.child(i).as_string());
+            }
           }
 
           // destroy existing graph an start anew
@@ -1997,6 +2005,16 @@ void AscentRuntime::SourceFieldFilter()
             dom.remove("fields/"+names[f]);
         }
       } // for fields
+
+      // if all fields were removed - also remove the fields node
+      // or else blueprint verify will fail
+      // 
+      // (this can happen when some domains do not have selected fields)
+      //
+      if(dom["fields"].number_of_children() == 0)
+      {
+          dom.remove_child("fields");
+      }
     }
   } // for doms
 

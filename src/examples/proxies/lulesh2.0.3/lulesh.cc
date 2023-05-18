@@ -144,6 +144,16 @@ Additional BSD Notice
 
 */
 
+/*********************************/
+/*  2023/2/27 */
+/*********************************/
+/* CYRUSH NOTE: */
+/*********************************/
+/*
+  Modified to use conduit timers, to avoid non windows
+  headers related to timing APIs
+*/
+
 #include <climits>
 #include <vector>
 #include <math.h>
@@ -152,9 +162,8 @@ Additional BSD Notice
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
-#include <sys/time.h>
 #include <iostream>
-#include <unistd.h>
+
 
 #if LULESH_USE_OPENMP
 # include <omp.h>
@@ -2865,8 +2874,8 @@ int main(int argc, char *argv[])
 #if USE_MPI
    double start = MPI_Wtime();
 #else
-   timeval start;
-   gettimeofday(&start, NULL) ;
+   conduit::utils::Timer t;
+   t.reset();
 #endif
 
 //debug to see region sizes
@@ -2925,9 +2934,7 @@ int main(int argc, char *argv[])
 #if USE_MPI
    elapsed_time = MPI_Wtime() - start;
 #else
-   timeval end;
-   gettimeofday(&end, NULL) ;
-   elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000 ;
+   elapsed_time = t.elapsed();
 #endif
    double elapsed_timeG;
 #if USE_MPI
