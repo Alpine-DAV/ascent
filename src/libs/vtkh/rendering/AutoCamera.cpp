@@ -1,4 +1,4 @@
-#include <vtkh/filters/AutoCamera.hpp>
+#include <vtkh/rendering/AutoCamera.hpp>
 #include "vtkh/rendering/ScalarRenderer.hpp"
 #include <vtkh/Error.hpp>
 

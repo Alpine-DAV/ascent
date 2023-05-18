@@ -12,6 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/AutoCamera.hpp>
 #include <vtkh/rendering/Scene.hpp>
+#include <vtkm/io/VTKDataSetWriter.h>
 
 #include "t_vtkm_test_utils.hpp"
 
@@ -54,6 +55,11 @@ TEST(vtkh_auto_camera, vtkh_data_entropy)
   vtkm::Bounds bounds = data_set.GetGlobalBounds();
 
   vtkh::AutoCamera a_camera;
+  vtkm::cont::DataSet v_data;
+  vtkm::Id v_index; 
+  iso_output->GetDomain(0,v_data,v_index);
+  vtkm::io::VTKDataSetWriter writer("data.vtk");
+  writer.WriteDataSet(v_data);
 
   a_camera.SetMetric("data_entropy");
   a_camera.SetNumSamples(NUM_SAMPLES);
