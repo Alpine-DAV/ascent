@@ -666,7 +666,7 @@ RelayIOSave::execute()
     Node *in = n_input.get();
 
     Node selected;
-    conduit::Node test;
+
     if(params().has_path("fields"))
     {
       std::vector<std::string> field_selection;
@@ -708,11 +708,17 @@ RelayIOSave::execute()
       const int num_domains = selected.number_of_children();
       for(int i = 0; i < num_domains; ++i)
       {
+        // this could be external data, we don't want
+        // to modify the source so if the entry exists
+        // we remove and reset
         conduit::Node &dom = selected.child(i);
-        dom["state/cycle"] = cycle;
+        if(dom.has_path("state/cycle"))
+        {
+            dom.remove("state/cycle");
+            dom["state/cycle"] = cycle;
+        }
       }
     }
-
 
     int num_files = -1;
 
