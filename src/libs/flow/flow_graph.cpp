@@ -135,7 +135,7 @@ Graph::add_filter(const std::string &filter_type,
         CONDUIT_ERROR("Cannot create filter " << f_name
                       << " because verify_params failed." << std::endl
                       << "Details:" << std::endl
-                      << v_info.to_json());
+                      << v_info.to_yaml());
         return NULL;
     }
 
@@ -357,7 +357,7 @@ Graph::connections(Node &out) const
 void
 Graph::add_filters(const Node &filters)
 {
-    CONDUIT_INFO(filters.to_json());
+    // CONDUIT_INFO(filters.to_json());
 
     NodeConstIterator filters_itr = filters.children();
 
@@ -424,7 +424,7 @@ Graph::add_filters(const Node &filters)
 void
 Graph::add_connections(const Node &conns)
 {
-    CONDUIT_INFO(conns.to_json());
+    // CONDUIT_INFO(conns.to_json());
 
     NodeConstIterator conns_itr = conns.children();
     while(conns_itr.has_next())
@@ -702,7 +702,7 @@ Graph::save_dot_html(const std::string &ofile) const
 void
 Graph::print() const
 {
-    CONDUIT_INFO(to_json());
+    CONDUIT_INFO(to_yaml());
 }
 
 

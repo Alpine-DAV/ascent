@@ -29,7 +29,6 @@
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_metadata.hpp>
-#include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
@@ -655,11 +654,11 @@ void mesh_blueprint_save(const Node &data,
     if(par_rank == 0)
     {
         // check of the dir exists
-        dir_ok = directory_exists(output_dir);
+        dir_ok = conduit::utils::is_directory(output_dir);
         if(!dir_ok)
         {
             // if not try to let rank zero create it
-            dir_ok = create_directory(output_dir);
+            dir_ok = conduit::utils::create_directory(output_dir);
         }
     }
 

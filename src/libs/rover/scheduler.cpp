@@ -9,7 +9,7 @@
 #include <fstream>
 #include <vtkh/compositing/PartialCompositor.hpp>
 #include <scheduler.hpp>
-#include <utils/png_encoder.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
 #include <utils/rover_logging.hpp>
 #include <vtkm/rendering/CanvasRayTracer.h>
 #include <vtkm_typedefs.hpp>
@@ -509,7 +509,7 @@ void Scheduler<FloatType>::save_result(std::string file_name)
   assert( height > 0 );
   assert( width > 0 );
   ROVER_INFO("Saving file " << height << " "<<width);
-  PNGEncoder encoder;
+  ascent::PNGEncoder encoder;
 
   if(m_render_settings.m_render_mode == energy)
   {
@@ -554,7 +554,7 @@ void Scheduler<FloatType>::save_result(std::string file_name,
   assert( height > 0 );
   assert( width > 0 );
   ROVER_INFO("Saving file " << height << " "<<width);
-  PNGEncoder encoder;
+  ascent::PNGEncoder encoder;
   if(!(m_render_settings.m_render_mode == energy))
   {
     throw RoverException("Error: can only save images with min and max in enerhy mode");
@@ -584,7 +584,7 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
   assert( height > 0 );
   assert( width > 0 );
   ROVER_INFO("Saving bov file " << height << " "<<width);
-  PNGEncoder encoder;
+  ascent::PNGEncoder encoder;
   const int size = height * width;
   if(m_render_settings.m_render_mode == energy)
   {

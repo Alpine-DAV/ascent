@@ -78,7 +78,7 @@ copy_from_device_to_host(void *dest, void *src, int size)
 
 
 //-----------------------------------------------------------------------------
-TEST(raja_smoke, basic_use_default_policy)
+void run_test()
 {
 // setup exec policy
 #if defined (RAJA_ENABLE_OPENMP)
@@ -110,6 +110,13 @@ TEST(raja_smoke, basic_use_default_policy)
    }
 
    device_free(dev_vals_ptr);
+}
+
+//-----------------------------------------------------------------------------
+TEST(raja_smoke, basic_use_default_policy)
+{
+    // this is a separate func to avoid issue with lambda vs gtest macro
+    run_test();
 }
 
 

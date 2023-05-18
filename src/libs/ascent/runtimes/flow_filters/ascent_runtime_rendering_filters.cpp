@@ -1248,11 +1248,12 @@ DefaultRender::execute()
           scene_bounds = original_bounds;
         }
       }
-
+      
       vtkh::Render render = vtkh::MakeRender(1024,
-                                             1024,
-                                             scene_bounds,
-                                             image_name);
+                            1024,
+                            scene_bounds,
+                            image_name);
+      
       Node meta = Metadata::n_metadata;
       if(meta.has_path("comments"))
       {

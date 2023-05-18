@@ -75,7 +75,6 @@ set(rover_headers
       rover_exports.h
       vtkm_typedefs.hpp
       # utils headers
-      utils/png_encoder.hpp
       utils/rover_logging.hpp
       utils/vtk_dataset_reader.hpp
       #
@@ -96,7 +95,6 @@ set(rover_sources
       ray_generators/camera_generator.cpp
       ray_generators/visit_generator.cpp
       # utils sources
-      utils/png_encoder.cpp
       utils/rover_logging.cpp
       utils/vtk_dataset_reader.cpp
  )

@@ -30,7 +30,7 @@
 #include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_resources.hpp>
-#include <ascent_png_encoder.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -1064,6 +1064,14 @@ parse_params(const conduit::Node &params,
       detail::parse_camera(n_camera, camera);
       cameras.push_back(camera);
     }
+  }
+  else // if we don't have camera params, we need to add a default camera
+  {
+    dray::Camera camera;
+    camera.set_width(width);
+    camera.set_height(height);
+    camera.reset_to_bounds(bounds);
+    cameras.push_back(camera);
   }
 
   int cycle = 0;

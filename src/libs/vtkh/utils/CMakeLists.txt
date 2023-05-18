@@ -3,7 +3,6 @@
 #==============================================================================
 set(vtkh_utils_headers
     Mutex.hpp
-    PNGEncoder.hpp
     StreamUtil.hpp
     ThreadSafeContainer.hpp
     vtkm_array_utils.hpp
@@ -11,7 +10,6 @@ set(vtkh_utils_headers
     )
 
 set(vtkh_utils_sources
-    PNGEncoder.cpp
     Mutex.cpp
     vtkm_dataset_info.cpp
     )

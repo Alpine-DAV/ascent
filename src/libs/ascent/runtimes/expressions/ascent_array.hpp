@@ -8,6 +8,7 @@
 #define ASCENT_ARRAY_HPP
 
 #include <memory>
+#include <string>
 
 namespace ascent
 {

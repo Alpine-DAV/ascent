@@ -287,7 +287,11 @@ TEST(ascent_expressions, functional_correctness)
     }
     else if(i == 1)
     {
-      ele_nan_vals_ptr[i] = -1. / 0.;
+      // windows:
+      // 1.0 / 0., leads to compile time [error C2124: divide or mod by zero]
+      float64 vn = -1.;
+      float64 vd = 0.;
+      ele_nan_vals_ptr[i] = vn / vd;
     }
     else
     {

@@ -169,16 +169,13 @@ set(ascent_headers
     utils/ascent_actions_utils.hpp
     utils/ascent_data_logger.hpp
     utils/ascent_logging.hpp
-    utils/ascent_file_system.hpp
     utils/ascent_block_timer.hpp
-    utils/ascent_png_compare.hpp
-    utils/ascent_png_decoder.hpp
-    utils/ascent_png_encoder.hpp
     utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
     utils/ascent_web_interface.hpp
     utils/ascent_resources.hpp
     utils/ascent_resources_cinema_web.hpp
+    utils/ascent_resources_ascent_web.hpp
     utils/ascent_annotations.hpp
     # hola
     hola/ascent_hola.hpp)
@@ -234,12 +231,8 @@ set(ascent_sources
     # utils
     utils/ascent_actions_utils.cpp
     utils/ascent_data_logger.cpp
-    utils/ascent_file_system.cpp
     utils/ascent_block_timer.cpp
     utils/ascent_logging.cpp
-    utils/ascent_png_compare.cpp
-    utils/ascent_png_decoder.cpp
-    utils/ascent_png_encoder.cpp
     utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
@@ -369,7 +362,8 @@ endif()
 set(ascent_thirdparty_libs
     conduit::conduit
     ascent_flow
-    ascent_lodepng)
+    ascent_lodepng
+    ascent_png_utils)
 
 ##################
 # optional libs
@@ -496,37 +490,37 @@ if (ENABLE_SERIAL)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkmdiympi_nompi
-                    vtkm_io
-                    vtkm_rendering
-                    vtkm_filter_clean_grid
-                    vtkm_filter_contour
-                    vtkm_filter_core
-                    vtkm_filter_connected_components
-                    vtkm_filter_density_estimate
-                    vtkm_filter_entity_extraction
-                    vtkm_filter_field_conversion
-                    vtkm_filter_field_transform
-                    vtkm_filter_flow
-                    vtkm_filter_geometry_refinement
-                    vtkm_filter_image_processing
-                    vtkm_filter_mesh_info
-                    vtkm_filter_multi_block
-                    vtkm_filter_resampling
-                    vtkm_filter_scalar_topology
-                    vtkm_filter_vector_analysis
-                    vtkm_filter_zfp
-                    vtkm_worklet
-                    vtkm_source
-                    vtkm_cont
+                    vtkm::vtkmdiympi_nompi
+                    vtkm::io
+                    vtkm::rendering
+                    vtkm::filter_clean_grid
+                    vtkm::filter_contour
+                    vtkm::filter_core
+                    vtkm::filter_connected_components
+                    vtkm::filter_density_estimate
+                    vtkm::filter_entity_extraction
+                    vtkm::filter_field_conversion
+                    vtkm::filter_field_transform
+                    vtkm::filter_flow
+                    vtkm::filter_geometry_refinement
+                    vtkm::filter_image_processing
+                    vtkm::filter_mesh_info
+                    vtkm::filter_multi_block
+                    vtkm::filter_resampling
+                    vtkm::filter_scalar_topology
+                    vtkm::filter_vector_analysis
+                    vtkm::filter_zfp
+                    vtkm::worklet
+                    vtkm::source
+                    vtkm::cont
                     )
 
-        if(TARGET vtkmdiympi_nompi)
-            list(APPEND imported_targets_to_link vtkmdiympi_nompi)
+        if(TARGET vtkm::vtkmdiympi_nompi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi_nompi)
         endif()
 
-        if(TARGET vtkmdiympi)
-            list(APPEND imported_targets_to_link vtkmdiympi)
+        if(TARGET vtkm::vtkmdiympi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi)
         endif()
 
         if(RAJA_FOUND)
@@ -697,37 +691,37 @@ if(MPI_FOUND)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkmdiympi_nompi
-                    vtkm_io
-                    vtkm_rendering
-                    vtkm_filter_clean_grid
-                    vtkm_filter_contour
-                    vtkm_filter_core
-                    vtkm_filter_connected_components
-                    vtkm_filter_density_estimate
-                    vtkm_filter_entity_extraction
-                    vtkm_filter_field_conversion
-                    vtkm_filter_field_transform
-                    vtkm_filter_flow
-                    vtkm_filter_geometry_refinement
-                    vtkm_filter_image_processing
-                    vtkm_filter_mesh_info
-                    vtkm_filter_multi_block
-                    vtkm_filter_resampling
-                    vtkm_filter_scalar_topology
-                    vtkm_filter_vector_analysis
-                    vtkm_filter_zfp
-                    vtkm_worklet
-                    vtkm_source
-                    vtkm_cont
+                    vtkm::vtkmdiympi_nompi
+                    vtkm::io
+                    vtkm::rendering
+                    vtkm::filter_clean_grid
+                    vtkm::filter_contour
+                    vtkm::filter_core
+                    vtkm::filter_connected_components
+                    vtkm::filter_density_estimate
+                    vtkm::filter_entity_extraction
+                    vtkm::filter_field_conversion
+                    vtkm::filter_field_transform
+                    vtkm::filter_flow
+                    vtkm::filter_geometry_refinement
+                    vtkm::filter_image_processing
+                    vtkm::filter_mesh_info
+                    vtkm::filter_multi_block
+                    vtkm::filter_resampling
+                    vtkm::filter_scalar_topology
+                    vtkm::filter_vector_analysis
+                    vtkm::filter_zfp
+                    vtkm::worklet
+                    vtkm::source
+                    vtkm::cont
                     )
 
-        if(TARGET vtkmdiympi_nompi)
-            list(APPEND imported_targets_to_link vtkmdiympi_nompi)
+        if(TARGET vtkm::vtkmdiympi_nompi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi_nompi)
         endif()
 
-        if(TARGET vtkmdiympi)
-            list(APPEND imported_targets_to_link vtkmdiympi)
+        if(TARGET vtkm::vtkmdiympi)
+            list(APPEND imported_targets_to_link vtkm::vtkmdiympi)
         endif()
 
         if(RAJA_FOUND)

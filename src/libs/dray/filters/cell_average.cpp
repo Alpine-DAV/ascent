@@ -50,7 +50,7 @@ compute_cell_average(const UnstructuredField<FieldElemType> &in_field,
     [=] DRAY_LAMBDA (int i)
     {
       const int idx_idx = i * ndof;
-      Float sum[ncomp];
+      Float sum[FieldElemType::get_ncomp()];
       // Initialize with value at dof=0
       for(int c = 0; c < ncomp; c++)
       {

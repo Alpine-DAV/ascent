@@ -6,7 +6,7 @@
 
 #include "image.hpp"
 #include <apcomp/error.hpp>
-#include <apcomp/utils/png_encoder.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
 #include <limits>
 #include <assert.h>
 
@@ -327,7 +327,7 @@ void Image::Save(std::string name)
     throw Error("Image: cannot save empty image");
   }
 
-  PNGEncoder encoder;
+  ascent::PNGEncoder encoder;
   encoder.Encode(&m_pixels[0], width, height);
   encoder.Save(name +  ".png");
 }
@@ -373,7 +373,7 @@ void Image::SaveDepth(std::string name)
     ndepths[offset + 3] = 1.f;
   }
 
-  PNGEncoder encoder;
+  ascent::PNGEncoder encoder;
   encoder.Encode(&ndepths[0], width, height);
   encoder.Save(name +  ".png");
 }

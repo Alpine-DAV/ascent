@@ -87,6 +87,7 @@ public:
 
     void        info(conduit::Node &out) const;
     std::string to_json() const;
+    std::string to_yaml() const;
     void        print() const;
 
 protected:
@@ -99,7 +100,7 @@ private:
 
 //-----------------------------------------------------------------------------
 template <class T>
-class FLOW_API DataWrapper: public Data
+class DataWrapper: public Data
 {
  public:
 

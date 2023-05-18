@@ -218,11 +218,14 @@ if(RAJA_DIR)
     if(EXISTS ${RAJA_DIR}/share/raja/cmake)
       # old install layout
       set(_RAJA_SEARCH_PATH ${RAJA_DIR}/share/raja/cmake)
-    else()
+    elseif(EXISTS ${RAJA_DIR}/lib/cmake/raja)
       # new install layout
       set(_RAJA_SEARCH_PATH ${RAJA_DIR}/lib/cmake/raja)
+    else ()
+      # try RAJA_DIR itself
+      set(_RAJA_SEARCH_PATH ${RAJA_DIR})
     endif()
-    
+
     if(NOT EXISTS ${_RAJA_SEARCH_PATH})
         message(FATAL_ERROR "Could not find RAJA CMake include file (${_RAJA_SEARCH_PATH})")
     endif()

@@ -83,6 +83,18 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHAutoSliceLevels : public ::flow::Filter
+{
+public:
+    VTKHAutoSliceLevels();
+    virtual ~VTKHAutoSliceLevels();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKH3Slice : public ::flow::Filter
 {
 public:

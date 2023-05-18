@@ -346,14 +346,16 @@ namespace dray
   DRAY_EXEC IsocutInfo measure_isocut(ShapeTet, const ScalarDP & dofs, Float iota, int32 p)
   {
     THROW_LOGIC_ERROR("Not implemented in " __FILE__ " measure_isocut(ShapeTet)")
-    return *(IsocutInfo*)nullptr;
+    IsocutInfo res;
+    return res;
   }
 
 
   DRAY_EXEC Split<Simplex> pick_iso_simple_split(ShapeTet, const IsocutInfo &info)
   {
     THROW_LOGIC_ERROR("Not implemented in " __FILE__ " pick_iso_simple_split(ShapeTet)")
-    return *(Split<Simplex>*)nullptr;
+    Split<Simplex> res;
+    return res;
   }
 
 
@@ -777,27 +779,29 @@ namespace dray
     const uint8 cut_faces = get_cut_faces(ShapeHex(), in, iota, iP);
 
     using namespace hex_flags;
-
-    uint8 edge_ids[4];
+    constexpr int MAX_SPLITS = 5;
+    uint8 edge_ids[MAX_SPLITS];
     uint8 split_counter = 0;
     for (uint8 e = 0; e < 12; ++e)
     {
       if ((cut_edges & (1u<<e)))
       {
-#ifdef DEBUG_ISOSURFACE_FILTER
-        if(split_counter >= 4)
+        // always avoid writing if we exceed
+        // max splits supported
+        if(split_counter >= MAX_SPLITS)
         {
           split_counter++;
           continue;
         }
-#endif
         edge_ids[split_counter++] = e;
       }
     }
 #ifdef DEBUG_ISOSURFACE_FILTER
-    if(split_counter > 4)
+    if(split_counter >= MAX_SPLITS)
     {
-      std::cout << "ERROR: split_counter=" << split_counter;
+      std::cout << "ERROR: split_counter="
+                << static_cast<int>(split_counter)
+                << " exceeds max splits (" << MAX_SPLITS << ")"
                 << "\nEdge cases: \n  ";
       for(uint8 e = 0; e < 12; ++e)
       {
