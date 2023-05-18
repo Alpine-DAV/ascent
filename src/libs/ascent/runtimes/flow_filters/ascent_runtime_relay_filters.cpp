@@ -79,162 +79,6 @@ namespace filters
 namespace detail
 {
 
-//-----------------------------------------------------------------------------
-//
-// recalculate cycle num so that we are consistent.
-// Assumes that domains are valid
-//
-//-----------------------------------------------------------------------------
-void
-make_cycle_ids(conduit::Node &domains,
-               const std::string &path)
-{
-    int num_local_domains = domains.number_of_children();
-
-    int cycle = std::numeric_limits<int>::max();
-
-    // figure out what cycle we have
-    if(num_local_domains > 0)
-    {
-        Node dom = domains.child(0);
-        if(!dom.has_path("state/cycle"))
-        {
-            static std::map<string,int> counters;
-            ASCENT_INFO("Blueprint save: no 'state/cycle' present."
-                        " Defaulting to counter");
-            cycle = counters[path];
-            counters[path]++;
-        }
-        else
-        {
-            cycle = dom["state/cycle"].to_int();
-        }
-    }
-
-#ifdef ASCENT_MPI_ENABLED
-    int comm_id = flow::Workspace::default_mpi_comm();
-    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
-
-    Node n_cycle, n_min;
-    n_cycle.set(cycle);
-
-    mpi::min_all_reduce(n_cycle,
-                        n_min,
-                        mpi_comm);
-
-    cycle = n_min.to_int();
-#endif
-
-    // make sure they all have the same cycle
-    for(int i = 0; i < num_local_domains; ++i)
-    {
-        conduit::Node &dom = domains.child(i);
-        dom["state/cycle"] = cycle;
-    }
-}
-
-//-----------------------------------------------------------------------------
-//
-// recalculate domain ids so that we are consistent.
-// Assumes that domains are valid
-//
-//-----------------------------------------------------------------------------
-void
-make_domain_ids(conduit::Node &domains)
-{
-  int num_domains = domains.number_of_children();
-
-  int domain_offset = 0;
-
-#ifdef ASCENT_MPI_ENABLED
-  int comm_id = flow::Workspace::default_mpi_comm();
-  int comm_size = 1;
-  int rank = 0;
-
-  MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
-  MPI_Comm_rank(mpi_comm,&rank);
-
-  MPI_Comm_size(mpi_comm, &comm_size);
-  int *domains_per_rank = new int[comm_size];
-
-  MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
-
-  for(int i = 0; i < rank; ++i)
-  {
-    domain_offset += domains_per_rank[i];
-  }
-  delete[] domains_per_rank;
-#endif
-
-  for(int i = 0; i < num_domains; ++i)
-  {
-    conduit::Node &dom = domains.child(i);
-    dom["state/domain_id"] = domain_offset + i;
-  }
-}
-
-//-----------------------------------------------------------------------------
-//
-// This expects a single or multi_domain blueprint mesh and will iterate
-// through all domains to see if they are valid. Returns true
-// if it contains valid data and false if there is no valid
-// data.
-//
-// This is needed because after pipelines, it is possible to
-// have no data left in a domain because of something like a
-// clip
-//
-//-----------------------------------------------------------------------------
-bool
-clean_mesh(const conduit::Node &data,
-           const std::string &path, // used to imp unique cycle counter
-           conduit::Node &output)
-{
-  output.reset();
-  const int potential_doms = data.number_of_children();
-  bool maybe_multi_dom = true;
-
-  if(!data.dtype().is_object() && !data.dtype().is_list())
-  {
-    maybe_multi_dom = false;
-  }
-
-  if(maybe_multi_dom)
-  {
-    // check all the children for valid domains
-    for(int i = 0; i < potential_doms; ++i)
-    {
-      conduit::Node info;
-      const conduit::Node &child = data.child(i);
-      bool is_valid = blueprint::mesh::verify(child, info);
-      if(is_valid)
-      {
-        conduit::Node &dest_dom = output.append();
-        dest_dom.set_external(child);
-      }
-    }
-  }
-  // if there is nothing in the output, lets see if it is a
-  // valid single domain
-  if(output.number_of_children() == 0)
-  {
-    if(!data.dtype().is_empty())
-    {
-      // check to see if this is a single valid domain
-      conduit::Node info;
-      bool is_valid = blueprint::mesh::verify(data, info);
-      if(is_valid)
-      {
-        conduit::Node &dest_dom = output.append();
-        dest_dom.set_external(data);
-      }
-    }
-  }
-
-  make_domain_ids(output);
-  make_cycle_ids(output,path);
-  return output.number_of_children() > 0;
-}
 
 //-----------------------------------------------------------------------------
 // mfem needs special fields so look for them
@@ -505,47 +349,6 @@ verify_io_params(const conduit::Node &params,
     return res;
 }
 
-//-----------------------------------------------------------------------------
-void gen_domain_to_file_map(int num_domains,
-                            int num_files,
-                            Node &out)
-{
-    int num_domains_per_file = num_domains / num_files;
-    int left_overs = num_domains % num_files;
-
-    out["global_domains_per_file"].set(DataType::int32(num_files));
-    out["global_domain_offsets"].set(DataType::int32(num_files));
-    out["global_domain_to_file"].set(DataType::int32(num_domains));
-
-    int32_array v_domains_per_file = out["global_domains_per_file"].value();
-    int32_array v_domains_offsets  = out["global_domain_offsets"].value();
-    int32_array v_domain_to_file   = out["global_domain_to_file"].value();
-
-    // setup domains per file
-    for(int f=0; f < num_files; f++)
-    {
-        v_domains_per_file[f] = num_domains_per_file;
-        if( f < left_overs)
-            v_domains_per_file[f]+=1;
-    }
-
-    // prefix sum to calc offsets
-    for(int f=0; f < num_files; f++)
-    {
-        v_domains_offsets[f] = v_domains_per_file[f];
-        if(f > 0)
-            v_domains_offsets[f] += v_domains_offsets[f-1];
-    }
-
-    // do assignment, create simple map
-    int f_idx = 0;
-    for(int d=0; d < num_domains; d++)
-    {
-        if(d >= v_domains_offsets[f_idx])
-            f_idx++;
-        v_domain_to_file[d] = f_idx;
-    }
-}
 
 //-----------------------------------------------------------------------------
 void mesh_blueprint_save(const Node &data,
@@ -554,30 +357,10 @@ void mesh_blueprint_save(const Node &data,
                          int num_files,
                          std::string &root_file_out)
 {
-    // The assumption here is that everything is multi domain
-    Node multi_dom;
-    bool is_valid = detail::clean_mesh(data, path, multi_dom);
+    bool has_data = blueprint::mesh::number_of_domains(data) > 0;
+    has_data = global_someone_agrees(has_data);
 
-    int par_rank = 0;
-    int par_size = 1;
-
-    int local_boolean = is_valid ? 1 : 0;
-    int global_boolean = local_boolean;
-#ifdef ASCENT_MPI_ENABLED
-    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-    MPI_Comm_rank(mpi_comm, &par_rank);
-    MPI_Comm_size(mpi_comm, &par_size);
-
-    // check to see if any valid data exist
-    MPI_Allreduce((void *)(&local_boolean),
-                  (void *)(&global_boolean),
-                  1,
-                  MPI_INT,
-                  MPI_SUM,
-                  mpi_comm);
-#endif
-
-    if(global_boolean == 0)
+    if(!has_data)
     {
       ASCENT_INFO("Blueprint save: no valid data exists. Skipping save");
       return;
@@ -588,13 +371,13 @@ void mesh_blueprint_save(const Node &data,
     opts["number_of_files"] = num_files;
 
 #ifdef ASCENT_MPI_ENABLED
-    conduit::relay::mpi::io::blueprint::save_mesh(multi_dom,
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
                                                   path,
                                                   file_protocol,
                                                   opts,
                                                   mpi_comm);
 #else
-    conduit::relay::io::blueprint::save_mesh(multi_dom,
+    conduit::relay::io::blueprint::save_mesh(data,
                                              path,
                                              file_protocol,
                                              opts);
@@ -714,9 +497,10 @@ RelayIOSave::execute()
         conduit::Node &dom = selected.child(i);
         if(dom.has_path("state/cycle"))
         {
-            dom.remove("state/cycle");
-            dom["state/cycle"] = cycle;
+            dom["state/cycle"].reset();
         }
+
+        dom["state/cycle"] = cycle;
       }
     }
 
