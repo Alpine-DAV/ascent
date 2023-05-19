@@ -55,11 +55,6 @@ TEST(vtkh_auto_camera, vtkh_data_entropy)
   vtkm::Bounds bounds = data_set.GetGlobalBounds();
 
   vtkh::AutoCamera a_camera;
-  vtkm::cont::DataSet v_data;
-  vtkm::Id v_index; 
-  iso_output->GetDomain(0,v_data,v_index);
-  vtkm::io::VTKDataSetWriter writer("data.vtk");
-  writer.WriteDataSet(v_data);
 
   a_camera.SetMetric("data_entropy");
   a_camera.SetNumSamples(NUM_SAMPLES);
@@ -78,6 +73,134 @@ TEST(vtkh_auto_camera, vtkh_data_entropy)
                                          camera,
                                          *iso_output,
                                          "data_entropy",
+                                         bg_color);
+
+  vtkh::Scene scene;
+  scene.AddRender(render);
+
+  vtkh::RayTracer tracer;
+  tracer.SetInput(iso_output);
+  tracer.SetField("point_data_Float64");
+
+  scene.AddRenderer(&tracer);
+  scene.Render();
+
+}
+
+//----------------------------------------------------------------------------
+TEST(vtkh_auto_camera, vtkh_depth_entropy)
+{
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
+  vtkh::DataSet data_set;
+
+
+  for(int i = 0; i < NUM_BLOCKS; ++i)
+  {
+    data_set.AddDomain(CreateTestData(i, NUM_BLOCKS, SIZE), i);
+  }
+
+  //
+  // chop the data set at the center
+  //
+  vtkh::IsoVolume iso;
+
+  vtkm::Range iso_range;
+  iso_range.Min = 10.;
+  iso_range.Max = 30.;
+  iso.SetRange(iso_range);
+  iso.SetField("point_data_Float64");
+  iso.SetInput(&data_set);
+  iso.Update();
+
+  vtkh::DataSet *iso_output = iso.GetOutput();
+
+  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+
+  vtkh::AutoCamera a_camera;
+
+  a_camera.SetMetric("data_entropy");
+  a_camera.SetNumSamples(NUM_SAMPLES);
+  a_camera.SetInput(iso_output);
+  a_camera.SetField("point_data_Float64");
+  //a_camera.AddMapField("cell_data_Float64");
+  a_camera.Update();
+
+  vtkm::rendering::Camera camera;
+  camera = a_camera.GetCamera();
+
+  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *iso_output,
+                                         "depth_entropy",
+                                         bg_color);
+
+  vtkh::Scene scene;
+  scene.AddRender(render);
+
+  vtkh::RayTracer tracer;
+  tracer.SetInput(iso_output);
+  tracer.SetField("point_data_Float64");
+
+  scene.AddRenderer(&tracer);
+  scene.Render();
+
+}
+
+//----------------------------------------------------------------------------
+TEST(vtkh_auto_camera, vtkh_shading_entropy)
+{
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
+  vtkh::DataSet data_set;
+
+
+  for(int i = 0; i < NUM_BLOCKS; ++i)
+  {
+    data_set.AddDomain(CreateTestData(i, NUM_BLOCKS, SIZE), i);
+  }
+
+  //
+  // chop the data set at the center
+  //
+  vtkh::IsoVolume iso;
+
+  vtkm::Range iso_range;
+  iso_range.Min = 10.;
+  iso_range.Max = 30.;
+  iso.SetRange(iso_range);
+  iso.SetField("point_data_Float64");
+  iso.SetInput(&data_set);
+  iso.Update();
+
+  vtkh::DataSet *iso_output = iso.GetOutput();
+
+  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+
+  vtkh::AutoCamera a_camera;
+
+  a_camera.SetMetric("data_entropy");
+  a_camera.SetNumSamples(NUM_SAMPLES);
+  a_camera.SetInput(iso_output);
+  a_camera.SetField("point_data_Float64");
+  //a_camera.AddMapField("cell_data_Float64");
+  a_camera.Update();
+
+  vtkm::rendering::Camera camera;
+  camera = a_camera.GetCamera();
+
+  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *iso_output,
+                                         "shading_entropy",
                                          bg_color);
 
   vtkh::Scene scene;

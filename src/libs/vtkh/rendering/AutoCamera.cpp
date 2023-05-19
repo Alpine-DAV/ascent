@@ -48,7 +48,7 @@ GetCamera(int frame, int nframes, double radius, float *lookat, double *cam_pos)
 {
   double points[3];
   fibonacci_sphere<double>(frame, nframes, points);
-  double zoom = 3.0;
+  double zoom = 1.0;
   double near = zoom/8;
   double far = zoom*5;
   double angle = M_PI/6;
@@ -387,7 +387,7 @@ GetScalarDataAsArrayHandle(vtkh::DataSet &vtkhData, std::string field_name)
 }
 
 double
-calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double field_min, double field_max)
+calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double field_min, double field_max, int bins)
 {
   double entropy = 0.0;
   int rank = 0;
@@ -410,11 +410,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double fiel
       {
         DataCheckFlags checks = CheckNan | CheckZero;
         field_data = copyWithChecks<vtkm::Float64>(field_data, checks);
-	std::cerr << "Double data" << std::endl;
-	for(int i = 0; i < 20; i++)
-		std::cerr << field_data.ReadPortal().Get(i) << " ";
-	std::cerr << std::endl;
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, 1000, field_min, field_max);
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, field_min, field_max);
       } 
       else
       {
@@ -424,20 +420,11 @@ calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double fiel
     else
     {
       auto field_data = GetScalarDataAsArrayHandle<vtkm::Float32>(*dataset, field_name.c_str());
-      std::cerr << " NUM OF VALS: " << field_data.GetNumberOfValues() << std::endl;
-	std::cerr << "Float data" << std::endl;
-	int count = 0;
-	for(int i = 0; i < field_data.GetNumberOfValues(); i++)
-		if(field_data.ReadPortal().Get(i) == field_data.ReadPortal().Get(i))
-			count++;
-	std::cerr << "count: " << count << std::endl;
-	std::cerr << std::endl;
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckZero;
         field_data = copyWithChecks<vtkm::Float32>(field_data, checks);
-	std::cerr << "number of values: " << field_data.GetNumberOfValues()<<std::endl;
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, 1000, vtkm::Float32(field_min), vtkm::Float32(field_max));
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, vtkm::Float32(field_min), vtkm::Float32(field_max));
       } 
       else
       {
@@ -453,7 +440,7 @@ calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double fiel
 }
 
 double 
-calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double diameter)
+calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double diameter, int bins)
 {
 
   double entropy = 0.0;
@@ -478,7 +465,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, 1000, vtkm::Float64(0.0), diameter);
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, vtkm::Float64(0.0), diameter);
       } 
       else
       {
@@ -493,7 +480,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, 1000, vtkm::Float32(0.0), diameter);
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, vtkm::Float32(0.0), diameter);
       } 
       else
       {
@@ -508,7 +495,7 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
 }
 
 double 
-calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name)
+calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins)
 {
 
   double entropy = 0.0;
@@ -533,7 +520,7 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name)
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, 1000, vtkm::Float64(0.0), vtkm::Float64(1.0));
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, vtkm::Float64(0.0), vtkm::Float64(1.0));
       } 
       else
       {
@@ -548,7 +535,7 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name)
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, 1000, vtkm::Float32(0.0), vtkm::Float32(1.0));
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, vtkm::Float32(0.0), vtkm::Float32(1.0));
       } 
       else
       {
@@ -563,33 +550,33 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name)
 }
 
 double
-calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, vtkm::Float64 field_min, vtkm::Float64 field_max, double diameter)
+calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, vtkm::Float64 field_min, vtkm::Float64 field_max, double diameter, int bins)
 {
   double score = 0.0;
 
   if(metric == "data_entropy")
   {
-    score = calculateDataEntropy(dataset, field_name, field_min, field_max);
+    score = calculateDataEntropy(dataset, field_name, field_min, field_max, bins);
   }
   else if (metric == "dds_entropy")
   {
-    double shading_score = calculateShadingEntropy(dataset, field_name);
-    double data_score = calculateDataEntropy(dataset, field_name, field_min, field_max);
-    double depth_score = calculateDepthEntropy(dataset, field_name, diameter);
+    double shading_score = calculateShadingEntropy(dataset, field_name, bins);
+    double data_score = calculateDataEntropy(dataset, field_name, field_min, field_max, bins);
+    double depth_score = calculateDepthEntropy(dataset, field_name, diameter, bins);
     score = shading_score+data_score+depth_score;
   }
   else if (metric == "shading_entropy")
   {
-    score = calculateShadingEntropy(dataset,field_name);
+    score = calculateShadingEntropy(dataset, field_name, bins);
   }
   else if (metric == "depth_entropy")
   {
-    score = calculateDepthEntropy(dataset, field_name, diameter);
+    score = calculateDepthEntropy(dataset, field_name, diameter, bins);
   }
   else
   {
     std::stringstream msg;
-    msg<< "This metric is not supported. \n";
+    msg<< "This metric '" << metric << "' is not supported. \n";
     throw Error(msg.str());
   }
   return score;
@@ -609,6 +596,9 @@ calculateDiameter(vtkm::Bounds bounds, double &diameter, double &radius)
 } // namespace detail
 
 AutoCamera::AutoCamera()
+  : m_bins(256),
+    m_height(1024),
+    m_width(1024)
 {
 
 }
@@ -654,6 +644,42 @@ AutoCamera::GetNumSamples()
   return m_samples;
 }
 
+void 
+AutoCamera::SetNumBins(int bins)
+{
+  m_bins = bins;
+}
+
+int
+AutoCamera::GetNumBins()
+{
+  return m_bins;
+}
+
+void 
+AutoCamera::SetHeight(int height)
+{
+  m_height = height;
+}
+
+int
+AutoCamera::GetHeight()
+{
+  return m_height;
+}
+
+void 
+AutoCamera::SetWidth(int width)
+{
+  m_width = width;
+}
+
+int
+AutoCamera::GetWidth()
+{
+  return m_width;
+}
+
 vtkmCamera
 AutoCamera::GetCamera()
 {
@@ -669,9 +695,6 @@ AutoCamera::PreExecute()
 void
 AutoCamera::DoExecute()
 {
-  int width = 1000;
-  int height = 1000;
-
 
   int rank = 0;
   int world_size = 0;
@@ -689,7 +712,6 @@ AutoCamera::DoExecute()
   double radius = 0.0;
   double diameter = 0.0;
   detail::calculateDiameter(g_bounds, radius, diameter);
-  this->m_input->PrintSummary(std::cerr);
 
   vtkmCamera *camera = new vtkmCamera;
   camera->ResetToBounds(g_bounds);
@@ -715,11 +737,9 @@ AutoCamera::DoExecute()
                             cam_pos[2]};
 
     camera->SetPosition(pos);
-    std::cerr << "CAMERA: " << std::endl;
-    camera->Print();
     vtkh::ScalarRenderer tracer;
-    tracer.SetWidth(width);
-    tracer.SetHeight(height);
+    tracer.SetWidth(m_width);
+    tracer.SetHeight(m_height);
     tracer.SetInput(this->m_input); //vtkh dataset by toponame
     tracer.SetCamera(*camera);
     tracer.Update();
@@ -728,9 +748,10 @@ AutoCamera::DoExecute()
     //output->PrintSummary(std::cerr);
 
     double score = detail::calculateMetricScore(output, m_metric, m_field, 
-						field_min, field_max, diameter);
+						field_min, field_max, diameter, 
+						m_bins);
     
-    std::cerr << "sample " << sample << " score: " << score << std::endl;
+    //std::cerr << "sample " << sample << " score: " << score << std::endl;
 
     delete output;
 

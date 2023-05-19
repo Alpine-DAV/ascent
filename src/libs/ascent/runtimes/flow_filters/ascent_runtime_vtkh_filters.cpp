@@ -3980,6 +3980,9 @@ VTKHAutoCamera::verify_params(const conduit::Node &params,
     valid_paths.push_back("field");
     valid_paths.push_back("metric");
     valid_paths.push_back("samples");
+    valid_paths.push_back("height");
+    valid_paths.push_back("width");
+    valid_paths.push_back("bins");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -4015,7 +4018,7 @@ VTKHAutoCamera::execute()
 
     std::string field_name = params()["field"].as_string();
     std::string metric     = params()["metric"].as_string();
-    int samples            = params()["samples"].as_int64();
+    int samples            = params()["samples"].as_int32();
 
     if(!collection->has_field(field_name))
     {
@@ -4026,11 +4029,29 @@ VTKHAutoCamera::execute()
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
     vtkh::AutoCamera auto_cam;
+
+    if(params().has_path("bins"))
+    {
+      int bins = params()["bins"].as_int32();
+      auto_cam.SetNumBins(bins); 
+    }
+    if(params().has_path("height"))
+    {
+      int height = params()["height"].as_int32();
+      auto_cam.SetHeight(height); 
+    }
+    if(params().has_path("width"))
+    {
+      int width = params()["width"].as_int32();
+      auto_cam.SetWidth(width); 
+    }
+
     auto_cam.SetInput(&dataset);
     auto_cam.SetField(field_name);
     auto_cam.SetMetric(metric);
     auto_cam.SetNumSamples(samples);
     auto_cam.Update();
+    
     vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
     *camera = auto_cam.GetCamera();
 
