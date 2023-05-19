@@ -50,8 +50,8 @@ GetCamera(int frame, int nframes, double diameter, float *lookat, double *cam_po
 {
   double points[3];
   fibonacci_sphere<double>(frame, nframes, points);
-  double near = diagonal/10.0;
-  double far = diagonal*10.0;
+  double near = diameter/10.0;
+  double far = diameter*10.0;
 
   cam_pos[0] = (diameter*points[0]) + lookat[0];
   cam_pos[1] = (diameter*points[1]) + lookat[1];
@@ -467,7 +467,8 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, vtkm::Float64(0.0), diameter);
+	vtkm::Float64 min = 0.0;
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, min, diameter);
       } 
       else
       {
@@ -482,7 +483,8 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, vtkm::Float32(0.0), diameter);
+	vtkm::Float32 min = 0.0;
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, min, diameter);
       } 
       else
       {
@@ -522,7 +524,9 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, vtkm::Float64(0.0), vtkm::Float64(1.0));
+	vtkm::Float32 min = 0.0;
+	vtkm::Float32 max = 1.0;
+        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, min, max);
       } 
       else
       {
@@ -537,7 +541,9 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
         DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
         field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, vtkm::Float32(0.0), vtkm::Float32(1.0));
+	vtkm::Float32 min = 0.0;
+	vtkm::Float32 max = 1.0;
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, min, max);
       } 
       else
       {
