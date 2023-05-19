@@ -50,14 +50,12 @@ GetCamera(int frame, int nframes, double diameter, float *lookat, double *cam_po
 {
   double points[3];
   fibonacci_sphere<double>(frame, nframes, points);
-  double zoom = 1.0;
-  double near = zoom/8;
-  double far = zoom*5;
-  double angle = M_PI/6;
+  double near = diagonal/10.0;
+  double far = diagonal*10.0;
 
-  cam_pos[0] = (zoom*diameter*points[0]) + lookat[0];
-  cam_pos[1] = (zoom*diameter*points[1]) + lookat[1];
-  cam_pos[2] = (zoom*diameter*points[2]) + lookat[2];
+  cam_pos[0] = (diameter*points[0]) + lookat[0];
+  cam_pos[1] = (diameter*points[1]) + lookat[1];
+  cam_pos[2] = (diameter*points[2]) + lookat[2];
 
   //std::cerr << "zoom: " << zoom << std::endl;
   //std::cerr << "diameter: " << diameter << std::endl;
