@@ -1165,7 +1165,6 @@ DefaultRender::execute()
           manager.fill_renders(renders, render_node);
           manager.write_metadata();
         }
-
         else
         {
           // this render has a unique name

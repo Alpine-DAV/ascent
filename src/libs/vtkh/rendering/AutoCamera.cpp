@@ -9,6 +9,8 @@
 #include <vtkm/cont/TryExecute.h>
 #include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/filter/density_estimate/worklet/FieldHistogram.h>
+//take out
+#include <vtkm/io/VTKDataSetWriter.h>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -44,7 +46,7 @@ void fibonacci_sphere(int i, int samples, T* points)
 }
 
 void
-GetCamera(int frame, int nframes, double radius, float *lookat, double *cam_pos)
+GetCamera(int frame, int nframes, double diameter, float *lookat, double *cam_pos)
 {
   double points[3];
   fibonacci_sphere<double>(frame, nframes, points);
@@ -53,13 +55,15 @@ GetCamera(int frame, int nframes, double radius, float *lookat, double *cam_pos)
   double far = zoom*5;
   double angle = M_PI/6;
 
-  cam_pos[0] = (zoom*radius*points[0]) + lookat[0];
-  cam_pos[1] = (zoom*radius*points[1]) + lookat[1];
-  cam_pos[2] = (zoom*radius*points[2]) + lookat[2];
+  cam_pos[0] = (zoom*diameter*points[0]) + lookat[0];
+  cam_pos[1] = (zoom*diameter*points[1]) + lookat[1];
+  cam_pos[2] = (zoom*diameter*points[2]) + lookat[2];
 
-  //cerr << "radius: " << radius << endl;
-  //cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << endl;
-  //cerr << "camera position: " << c.position[0] << " " << c.position[1] << " " << c.position[2] << endl;
+  //std::cerr << "zoom: " << zoom << std::endl;
+  //std::cerr << "diameter: " << diameter << std::endl;
+  //std::cerr << "lookat: " << lookat[0] << " " << lookat[1] << " " << lookat[2] << std::endl;
+  //std::cerr << "points: " << points[0] << " " << points[1] << " " << points[2] << std::endl;
+  //std::cerr << "camera position: " << cam_pos[0] << " " << cam_pos[1] << " " << cam_pos[2] << std::endl;
 }
 
 struct print_f
@@ -583,13 +587,12 @@ calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string fie
 }
 
 void
-calculateDiameter(vtkm::Bounds bounds, double &diameter, double &radius)
+calculateDiameter(vtkm::Bounds bounds, double &diameter)
 {
   vtkm::Float64 xb = vtkm::Float64(bounds.X.Length());
   vtkm::Float64 yb = vtkm::Float64(bounds.Y.Length());
   vtkm::Float64 zb = vtkm::Float64(bounds.Z.Length());
-  radius = sqrt(xb*xb + yb*yb + zb*zb)/2.0;
-  diameter = sqrt(xb*xb + yb*yb + zb*zb)*6.0;
+  diameter = sqrt(xb*xb + yb*yb + zb*zb);
 
 }
 
@@ -709,9 +712,8 @@ AutoCamera::DoExecute()
   vtkm::Float64 field_max = range.Max;
 
   vtkm::Bounds g_bounds = this->m_input->GetGlobalBounds();
-  double radius = 0.0;
   double diameter = 0.0;
-  detail::calculateDiameter(g_bounds, radius, diameter);
+  detail::calculateDiameter(g_bounds, diameter);
 
   vtkmCamera *camera = new vtkmCamera;
   camera->ResetToBounds(g_bounds);
@@ -731,7 +733,7 @@ AutoCamera::DoExecute()
   /*================ Scalar Renderer Code ======================*/
 
     double cam_pos[3];
-    detail::GetCamera(sample, m_samples, radius, focus, cam_pos);
+    detail::GetCamera(sample, m_samples, diameter, focus, cam_pos);
     vtkm::Vec<vtkm::Float64, 3> pos{cam_pos[0],
                             cam_pos[1],
                             cam_pos[2]};
@@ -778,8 +780,10 @@ AutoCamera::DoExecute()
     throw Error(msg.str());
   }
 
+  //std::cerr << "winner is sample " << winning_sample << " with score: " << winning_score << std::endl;
+
   double best_c[3];
-  detail::GetCamera(winning_sample, m_samples, radius, focus, best_c);
+  detail::GetCamera(winning_sample, m_samples, diameter, focus, best_c);
 
   vtkm::Vec<vtkm::Float64, 3> pos{best_c[0], 
 				best_c[1], 

@@ -758,26 +758,20 @@ Automatic Camera
 ~~~~~~~~~~~~~~~~
 
 The camera filter is used to automatically choose a camera placement for rendering, basing the decision on a user-chosen viewpoint quality (VQ) metric.
-The camera filter requires a triangular mesh and scalar field data, and works in conjunction with other filters, taking as input the previous filter’s output.
+The camera filter requires a mesh and scalar field data, and works in conjunction with other filters, taking as input the previous filters output.
 The camera filter then analyzes the given data using the user-chosen metric and number of considered cameras.
-The number of cameras is chosen by the user and the respective camera placements are determined using Fibonacci’s Lattice, a method for placing points around a unit sphere, and the camera is pointed at the center of the data.
+The number of cameras is chosen by the user and the respective camera placements are determined using Fibonacci's Lattice, a method for placing points around a unit sphere, and the camera is pointed at the center of the data.
 The camera filter also requires a scene to execute the final rendering with the determined camera placement.
-
 
 A user can specify the number of camera samples (``samples``) to consider when determining the best camera placement. 
 The user also specifies the field data (``field``) the VQ metric will operate on, as well as the VQ metric (``metric``). 
 The current VQ metrics and respective keywords are:
   Data Entropy : ``data_entropy``
   Depth Entropy : ``depth_entropy``
-  DDS Entropy : ``dds_entropy``
-  Max Depth : ``max_depth``
-  PB : ``pb``
-  Projected Area : ``projected_area``
   Shading Entropy : ``shading_entropy``
-  Viewpoint Entropy : ``viewpoint_entropy``
-  Visibility Ratio : ``visibility_ratio``
-  Visible Triangles : ``visible_triangles``
-  VKL : ``vkl``
+  DDS Entropy : ``dds_entropy``
+
+There are also several optional parameters a user can specify, such as the number of bins (``bins=256``) to be used in the entropy calculations, as well as height (``height=1024``) and width (``width=1024``).
 
 Usage Recommendation:
 Automatically producing quality camera placements is a difficult task, and not all of the available VQ metrics consistently produce viewpoints that users want to see or find insightful.
@@ -800,7 +794,7 @@ The code below creates a pipeline that first applies a contour filter and then a
     //camera knobs
     conduit::Node &camera_params = pipelines["pl1/f2/params"];
     camera_params["field"] = "braid";
-    camera_params["metric"] = "data_entropy";
+    camera_params["metric"] = "dds_entropy";
     int64 samples = 10;
     camera_params["samples"] = samples;
 
@@ -824,13 +818,12 @@ The code below creates a pipeline that first applies a contour filter and then a
 
 .. _dataentropycam:
 
-..  figure:: ../images/cam_dataentropy.png
+..  figure:: ../images/cam_ddsentropy.png
     :scale: 50 %
     :align: center
 
-    The camera placement chosen by the VQ metric Data Entropy for this example.
-    Note: this rendering has a zoom of 3 whereas the default rendering has a zoom of 1. 
-    This example and implementation of the other VQ metrics can be found in `opt_viewpoint test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_opt_viewpoint.cpp>`_.
+    The camera placement chosen by the VQ metric DDS Entropy for this example.
+    This example and implementation of the other VQ metrics can be found in `auto_camera test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/vtkh/t_vtk-h_auto_camera.cpp>`_.
 
 =======
 Partitioning
