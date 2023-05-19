@@ -50,8 +50,6 @@ GetCamera(int frame, int nframes, double diameter, float *lookat, double *cam_po
 {
   double points[3];
   fibonacci_sphere<double>(frame, nframes, points);
-  double near = diameter/10.0;
-  double far = diameter*10.0;
 
   cam_pos[0] = (diameter*points[0]) + lookat[0];
   cam_pos[1] = (diameter*points[1]) + lookat[1];
