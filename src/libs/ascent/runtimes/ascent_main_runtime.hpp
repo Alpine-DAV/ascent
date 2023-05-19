@@ -87,7 +87,7 @@ private:
     void              ResetInfo();
     void              AddPublishedMeshInfo();
 
-    flow::Workspace w;
+    flow::Workspace   m_workspace;
     conduit::Node CreateDefaultFilters();
     void ConvertPipelineToFlow(const conduit::Node &pipeline,
                                const std::string pipeline_name);

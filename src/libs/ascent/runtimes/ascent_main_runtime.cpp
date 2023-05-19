@@ -469,7 +469,7 @@ AscentRuntime::Cleanup()
         std::string file_name = fname.str();
         file_name = conduit::utils::join_file_path(m_default_output_dir,file_name);
         ftimings.open(file_name, std::ofstream::out | std::ofstream::app);
-        ftimings << w.timing_info();
+        ftimings << m_workspace.timing_info();
         ftimings.close();
     }
 }
@@ -615,7 +615,7 @@ AscentRuntime::CreateDefaultFilters()
     endpoints["filters"] = endpoint;
     endpoints["queries"] = queries_endpoint;
 
-    if(w.graph().has_filter(endpoint))
+    if(m_workspace.graph().has_filter(endpoint))
     {
       return endpoints;
     }
@@ -627,13 +627,13 @@ AscentRuntime::CreateDefaultFilters()
     //
     conduit::Node params;
     params["protocol"] = "mesh";
-    w.graph().add_filter("blueprint_verify", // registered filter name
-                         "verify",           // "unique" filter name
-                         params);
+    m_workspace.graph().add_filter("blueprint_verify", // registered filter name
+                                   "verify",           // "unique" filter name
+                                   params);
 
-    w.graph().connect("source",
-                      "verify",
-                      0);        // default port
+    m_workspace.graph().connect("source",
+                                "verify",
+                                0);        // default port
 
     std::string prev_filter = "verify";
 
@@ -662,13 +662,13 @@ AscentRuntime::CreateDefaultFilters()
       threshold_params["min_value"] = 0;
       threshold_params["max_value"] = 1;
 
-      w.graph().add_filter("vtkh_ghost_stripper",
-                           filter_name,
-                           threshold_params);
+      m_workspace.graph().add_filter("vtkh_ghost_stripper",
+                                     filter_name,
+                                     threshold_params);
 
-      w.graph().connect(prev_filter,
-                        filter_name,
-                        0);        // default port
+      m_workspace.graph().connect(prev_filter,
+                                  filter_name,
+                                  0);        // default port
 
       prev_filter = filter_name;
     }
@@ -678,19 +678,19 @@ AscentRuntime::CreateDefaultFilters()
     // order of execution. Pipelines using expressions might
     // need the results of a query, so make them execute first
     // create an alias passthrough
-    w.graph().add_filter("alias",
-                         queries_endpoint);
+    m_workspace.graph().add_filter("alias",
+                                   queries_endpoint);
 
-    w.graph().connect(prev_filter,      // src
-                      queries_endpoint, // dest
-                      0);               // default port
+    m_workspace.graph().connect(prev_filter,      // src
+                                queries_endpoint, // dest
+                                0);               // default port
 
-    w.graph().add_filter("dependent_alias",
-                         endpoint);
+    m_workspace.graph().add_filter("dependent_alias",
+                                    endpoint);
 
-    w.graph().connect(queries_endpoint, // src
-                      endpoint,         // dest
-                      0);               // default port
+    m_workspace.graph().connect(queries_endpoint, // src
+                                endpoint,         // dest
+                                0);               // default port
 
     return endpoints;
 }
@@ -767,9 +767,9 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       std::stringstream ss;
       ss<<pipeline_name<<"_"<<cname<<"_"<<type;
       std::string name = ss.str();
-      w.graph().add_filter(filter_name,
-                           name,
-                           filter["params"]);
+      m_workspace.graph().add_filter(filter_name,
+                                     name,
+                                     filter["params"]);
 
       if((input_name == prev_name) && has_pipeline)
       {
@@ -778,15 +778,15 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
       }
       else
       {
-        w.graph().connect(prev_name, // src
-                          name,      // dest
-                          0);        // default port
+        m_workspace.graph().connect(prev_name, // src
+                                    name,      // dest
+                                    0);        // default port
       }
 
       prev_name = name;
     }
 
-    if(w.graph().has_filter(pipeline_name))
+    if(m_workspace.graph().has_filter(pipeline_name))
     {
       ASCENT_INFO("Duplicate pipeline name '"<<pipeline_name
                   <<"' this is usually the symptom of a larger problem."
@@ -795,12 +795,12 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
 
     // create an alias passthrough filter so plots and extracts
     // can connect to the end result by pipeline name
-    w.graph().add_filter("alias",
-                         pipeline_name);
+    m_workspace.graph().add_filter("alias",
+                                   pipeline_name);
 
-    w.graph().connect(prev_name,     // src
-                      pipeline_name, // dest
-                      0);            // default port
+    m_workspace.graph().connect(prev_name,     // src
+                                pipeline_name, // dest
+                                0);            // default port
 }
 
 //-----------------------------------------------------------------------------
@@ -951,7 +951,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   {
     ASCENT_ERROR("Unrecognized extract type "<<extract["type"].as_string());
   }
-  if(w.graph().has_filter(extract_name))
+  if(m_workspace.graph().has_filter(extract_name))
   {
     ASCENT_ERROR("Cannot add extract filter, extract named"
                  << " \"" << extract_name << "\""
@@ -959,9 +959,9 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
 
 
-  w.graph().add_filter(filter_name,
-                       extract_name,
-                       params);
+  m_workspace.graph().add_filter(filter_name,
+                                 extract_name,
+                                 params);
 
   //
   // We can't connect the extract to the pipeline since
@@ -999,9 +999,9 @@ AscentRuntime::ConvertTriggerToFlow(const conduit::Node &trigger,
     pipeline = trigger["pipeline"].as_string();
   }
 
-  w.graph().add_filter("basic_trigger",
-                       trigger_name,
-                       params);
+  m_workspace.graph().add_filter("basic_trigger",
+                                 trigger_name,
+                                 params);
 
   // this is the blueprint mesh
   m_connections[trigger_name] = pipeline;
@@ -1030,9 +1030,9 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
   }
 
 
-  w.graph().add_filter("basic_query",
-                       query_name,
-                       params);
+  m_workspace.graph().add_filter("basic_query",
+                                 query_name,
+                                 params);
 
 
   // connection port to enforce order of execution
@@ -1046,9 +1046,9 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
     conn_port = prev_name;
   }
 
-  w.graph().connect(conn_port,
-                    query_name,
-                    "dummy");
+  m_workspace.graph().connect(conn_port,
+                              query_name,
+                              "dummy");
 
   // this is the blueprint mesh
   m_connections[query_name] = pipeline;
@@ -1066,16 +1066,16 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 {
   std::string filter_name = "create_plot";
 
-  if(w.graph().has_filter(plot_name))
+  if(m_workspace.graph().has_filter(plot_name))
   {
     ASCENT_INFO("Duplicate plot name '"<<plot_name
                 <<"' this is usually the symptom of a larger problem."
                 <<" Locate the first error message to find the root cause");
   }
 
-  w.graph().add_filter(filter_name,
-                       plot_name,
-                       plot);
+  m_workspace.graph().add_filter(filter_name,
+                                 plot_name,
+                                 plot);
 
   //
   // We can't connect the plot to the pipeline since
@@ -1118,20 +1118,20 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
       std::string filter_name = strip_name + "_" + ghost_fields[i];
 
       // if this alread exists then it was created by another plot
-      if(!w.graph().has_filter(filter_name))
+      if(!m_workspace.graph().has_filter(filter_name))
       {
         conduit::Node threshold_params;
         threshold_params["field"] = ghost_fields[i];
         threshold_params["min_value"] = 0;
         threshold_params["max_value"] = 0;
 
-        w.graph().add_filter("vtkh_ghost_stripper",
-                             filter_name,
-                             threshold_params);
+        m_workspace.graph().add_filter("vtkh_ghost_stripper",
+                                       filter_name,
+                                       threshold_params);
 
-        w.graph().connect(prev_filter,
-                          filter_name,
-                          0);        // default port
+        m_workspace.graph().connect(prev_filter,
+                                    filter_name,
+                                    0);        // default port
 
         prev_filter = filter_name;
       }
@@ -1141,14 +1141,14 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
   // create an a consistent name
   std::string endpoint_name = pipeline_filter_name + "_plot_source";
 
-  if(!w.graph().has_filter(endpoint_name))
+  if(!m_workspace.graph().has_filter(endpoint_name))
   {
-    w.graph().add_filter("alias",
+    m_workspace.graph().add_filter("alias",
                          endpoint_name);
 
-    w.graph().connect(prev_filter,   // src
-                      endpoint_name, // dest
-                      0);            // default port
+    m_workspace.graph().connect(prev_filter,   // src
+                                endpoint_name, // dest
+                                0);            // default port
 
   }
 
@@ -1261,17 +1261,17 @@ AscentRuntime::ConnectSource()
     // the set_external updates everything,
     // we don't need to remove and re-add.
 
-    if(!w.registry().has_entry("_ascent_input_data"))
+    if(!m_workspace.registry().has_entry("_ascent_input_data"))
     {
-        w.registry().add<DataObject>("_ascent_input_data",
+        m_workspace.registry().add<DataObject>("_ascent_input_data",
                                      &m_data_object);
     }
 
-    if(!w.graph().has_filter("source"))
+    if(!m_workspace.graph().has_filter("source"))
     {
        Node p;
        p["entry"] = "_ascent_input_data";
-       w.graph().add_filter("registry_source","source",p);
+       m_workspace.graph().add_filter("registry_source","source",p);
     }
 }
 
@@ -1302,22 +1302,22 @@ AscentRuntime::ConnectGraphs()
     {
       pipeline = CreateDefaultFilters()["filters"].as_string();
     }
-    else if(!w.graph().has_filter(pipeline))
+    else if(!m_workspace.graph().has_filter(pipeline))
     {
       ASCENT_ERROR(names[i]<<"' references unknown pipeline: "<<pipeline);
     }
 
-    w.graph().connect(pipeline, // src
-                      names[i], // dest
-                      0);       // default port
+    m_workspace.graph().connect(pipeline, // src
+                                names[i], // dest
+                                0);       // default port
   }
 
-  if(w.graph().has_filter("default_filters_endpoint"))
+  if(m_workspace.graph().has_filter("default_filters_endpoint"))
   {
     // now connect the dummy port of the default_filters
-    w.graph().connect(default_dummy_connection,   // src
-                      "default_filters_endpoint", // dest
-                      1);                         // dummy port
+    m_workspace.graph().connect(default_dummy_connection,   // src
+                                "default_filters_endpoint", // dest
+                                1);                         // dummy port
   }
 }
 
@@ -1419,23 +1419,23 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                      << n_about["runtimes/ascent"].to_yaml());
     }
 
-    w.graph().add_filter("default_render",
-                          renders_name,
-                          render_params);
+    m_workspace.graph().add_filter("default_render",
+                                   renders_name,
+                                   render_params);
 
     // ------------ NEW -----------------
-    w.graph().add_filter("create_scene",
-                          "create_scene_" + names[i]);
+    m_workspace.graph().add_filter("create_scene",
+                                   "create_scene_" + names[i]);
 
     std::string exec_name = "exec_" + names[i];
-    w.graph().add_filter("exec_scene",
-                          exec_name);
+    m_workspace.graph().add_filter("exec_scene",
+                                   exec_name);
 
     // connect the renders to the scene exec
     // on the second port
-    w.graph().connect(renders_name,   // src
-                      exec_name,      // dest
-                      1);             // default port
+    m_workspace.graph().connect(renders_name,   // src
+                                exec_name,      // dest
+                                1);             // default port
 
     // ------------ NEW -----------------
 
@@ -1478,13 +1478,13 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       //
       std::string bounds_name = plot_names[p] + "_bounds";
       conduit::Node empty;
-      w.graph().add_filter("vtkh_bounds",
-                            bounds_name,
-                            empty);
+      m_workspace.graph().add_filter("vtkh_bounds",
+                                     bounds_name,
+                                     empty);
 
-      w.graph().connect(pipelines[p], // src
-                        bounds_name,  // dest
-                        0);           // default port
+      m_workspace.graph().connect(pipelines[p], // src
+                                  bounds_name,  // dest
+                                  0);           // default port
       bounds_names.push_back(bounds_name);
 
       //
@@ -1493,18 +1493,18 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       if(p > 0)
       {
         std::string union_bounds_name = plot_names[p] + "_union_bounds";
-        w.graph().add_filter("vtkh_union_bounds",
-                              union_bounds_name,
-                              empty);
+        m_workspace.graph().add_filter("vtkh_union_bounds",
+                                       union_bounds_name,
+                                       empty);
         union_bounds_names.push_back(union_bounds_name);
 
         if(p == 1)
         {
           // first union just needs the output
           // of the first bounds
-          w.graph().connect(bounds_names[p-1],  // src
-                            union_bounds_name,  // dest
-                            0);                 // default port
+          m_workspace.graph().connect(bounds_names[p-1],  // src
+                                      union_bounds_name,  // dest
+                                      0);                 // default port
         }
         else
         {
@@ -1512,22 +1512,22 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
           // the current plot and the output of the
           // previous union
           //
-          w.graph().connect(union_bounds_names[p-2],  // src
-                            union_bounds_name,        // dest
-                            0);                       // default port
+          m_workspace.graph().connect(union_bounds_names[p-2],  // src
+                                      union_bounds_name,        // dest
+                                      0);                       // default port
 
         }
 
-        w.graph().connect(bounds_name,        // src
-                          union_bounds_name,  // dest
-                          1);                 // default port
+        m_workspace.graph().connect(bounds_name,        // src
+                                    union_bounds_name,  // dest
+                                    1);                 // default port
 
       }
 
       // connect the plot with the scene
       std::string add_name = "add_plot_" + plot_names[p];
-      w.graph().add_filter("add_plot",
-                            add_name);
+      m_workspace.graph().add_filter("add_plot",
+                                     add_name);
 
       std::string src_scene = prev_add_plot_name;
 
@@ -1538,14 +1538,14 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       prev_add_plot_name = add_name;
 
       // connect the plot to add_plot
-      w.graph().connect(plot_names[p], // src
-                        add_name,      // dest
-                        1);            // plot port
+      m_workspace.graph().connect(plot_names[p], // src
+                                  add_name,      // dest
+                                  1);            // plot port
 
       // connect the scene to add_plot
-      w.graph().connect(src_scene,     // src
-                        add_name,      // dest
-                        0);            // scene port
+      m_workspace.graph().connect(src_scene,     // src
+                                  add_name,      // dest
+                                  0);            // scene port
 
     }
 
@@ -1565,19 +1565,19 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       bounds_output = union_bounds_names[union_size-1];
     }
 
-    w.graph().connect(bounds_output, // src
-                      renders_name,  // dest
-                      0);            // default port
+    m_workspace.graph().connect(bounds_output, // src
+                                renders_name,  // dest
+                                0);            // default port
 
     // connect Exec Scene to the output of the last
     // add_plot and to the renders
-    w.graph().connect(prev_add_plot_name, // src
-                      exec_name,          // dest
-                      0);                 // default port
+    m_workspace.graph().connect(prev_add_plot_name, // src
+                                exec_name,          // dest
+                                0);                 // default port
 
-    w.graph().connect(renders_name,       // src
-                      exec_name,          // dest
-                      1);                 // default port
+    m_workspace.graph().connect(renders_name,       // src
+                                exec_name,          // dest
+                                1);                 // default port
   } // each scene
 }
 
@@ -1588,12 +1588,12 @@ AscentRuntime::FindRenders(conduit::Node &image_params,
 {
     image_list.reset();
 
-    if(!w.registry().has_entry("image_list"))
+    if(!m_workspace.registry().has_entry("image_list"))
     {
       return;
     }
 
-    Node *images = w.registry().fetch<Node>("image_list");
+    Node *images = m_workspace.registry().fetch<Node>("image_list");
 
     const int size = images->number_of_children();
     image_params = *images;
@@ -1749,7 +1749,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
       log_timings = true;
     }
 
-    w.enable_timings(log_timings);
+    m_workspace.enable_timings(log_timings);
 
     // catch any errors that come up here and forward
     // them up as a conduit error
@@ -1790,7 +1790,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
           }
 
           // destroy existing graph an start anew
-          w.reset();
+          m_workspace.reset();
           ConnectSource();
           BuildGraph(actions);
         }
@@ -1807,11 +1807,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
         // add the source to the registry so we can access information
         // about the original mesh (like bounds)
-        w.registry().add<DataObject>("source_object", &m_data_object,1);
+        m_workspace.registry().add<DataObject>("source_object", &m_data_object,1);
 
-        w.info(m_info["flow_graph"]);
+        m_workspace.info(m_info["flow_graph"]);
         m_info["actions"] = actions;
-        // w.graph().save_dot_html("ascent_flow_graph.html");
+        // m_workspace.graph().save_dot_html("ascent_flow_graph.html");
 
 #if defined(ASCENT_VTKM_ENABLED)
         if(log_timings)
@@ -1828,7 +1828,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         }
 #endif
         // now execute the data flow graph
-        w.execute();
+        m_workspace.execute();
 
 #if defined(ASCENT_VTKM_ENABLED)
         if(log_timings)
@@ -1852,9 +1852,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
         }
 
         // add extract results to info
-        if(w.registry().has_entry("extract_list"))
+        if(m_workspace.registry().has_entry("extract_list"))
         {
-            Node *extracts_list = w.registry().fetch<Node>("extract_list");
+            Node *extracts_list = m_workspace.registry().fetch<Node>("extract_list");
             if(extracts_list->number_of_children() > 0)
             {
                 m_info["extracts"].set(*extracts_list);
@@ -1873,8 +1873,8 @@ AscentRuntime::Execute(const conduit::Node &actions)
         }
 
         // add flow graphviz details to info
-        m_info["flow_graph_dot"]      = w.graph().to_dot();
-        m_info["flow_graph_dot_html"] = w.graph().to_dot_html();
+        m_info["flow_graph_dot"]      = m_workspace.graph().to_dot();
+        m_info["flow_graph_dot_html"] = m_workspace.graph().to_dot_html();
 
         m_web_interface.PushRenders(render_file_names);
 
@@ -1883,7 +1883,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         ascent::about(msg["about"]);
         m_web_interface.PushMessage(msg);
 
-        w.registry().reset();
+        m_workspace.registry().reset();
 
         SetStatus("Ascent::execute completed");
         if(m_save_info_actions.number_of_children() > 0)
@@ -1900,28 +1900,28 @@ AscentRuntime::Execute(const conduit::Node &actions)
     // bottle vtkm and vtkh errors
     catch(vtkh::Error &e)
     {
-      w.reset();
+      m_workspace.reset();
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
     catch(vtkm::cont::Error &e)
     {
-      w.reset();
+      m_workspace.reset();
       ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
     }
 #endif
     catch(conduit::Error &e)
     {
-      w.reset();
+      m_workspace.reset();
       throw e;
     }
     catch(std::exception &e)
     {
-      w.reset();
+      m_workspace.reset();
       std::cerr<<"Execution failed with exception: "<<e.what()<<"\n";
     }
     catch(...)
     {
-      w.reset();
+      m_workspace.reset();
       ASCENT_ERROR("Ascent: unknown exception thrown");
     }
 }
