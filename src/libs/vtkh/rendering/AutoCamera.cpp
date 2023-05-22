@@ -2,7 +2,7 @@
 #include "vtkh/rendering/ScalarRenderer.hpp"
 #include <vtkh/Error.hpp>
 
-#include <float.h>
+#include <iostream>
 
 #include <vtkm/VectorAnalysis.h>
 #include <vtkm/cont/Algorithm.h>
