@@ -5,6 +5,7 @@
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
+#include "t_utils.hpp"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
@@ -263,7 +264,7 @@ void GetPartitionedDataSet( const vtkm::cont::DataSet& ds, const std::string &fi
 #endif
 
 //----------------------------------------------------------------------------
-bool ReadTestData(const char* filename, VDATASET &inDataSet,
+bool ReadTestData(const std::string& filename, VDATASET &inDataSet,
                   const int mpiRank, const int mpiSize)
 {
   std::ifstream inFile(filename);
@@ -486,21 +487,7 @@ bool ReadTestData(const char* filename, VDATASET &inDataSet,
 //----------------------------------------------------------------------------
 bool GetDataSet( vtkh::DataSet &data_set, const int mpiRank, const int mpiSize )
 {
-  const char *filename = "fuel.txt";
-
-  // Write Fuel data to file.
-  std::ofstream datafile;
-  datafile.open( filename );
-  if( datafile.is_open() )
-  {
-    datafile << FUEL_DATA;
-    datafile.close();
-  }
-  else
-  {
-    std::cout << "Error writing data file: " << filename << std::endl;
-    return( false );
-  }
+  const std::string filename = test_data_file("fuel.txt");
 
   VDATASET ds;
 
