@@ -2,7 +2,10 @@
 #include "vtkh/rendering/ScalarRenderer.hpp"
 #include <vtkh/Error.hpp>
 
-#include <iostream>
+#include <math.h>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #include <vtkm/VectorAnalysis.h>
 #include <vtkm/cont/Algorithm.h>
@@ -730,8 +733,8 @@ AutoCamera::DoExecute()
   vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
   float focus[3] = {lookat[0],lookat[1],lookat[2]};
 
-  double winning_score  = -DBL_MAX;
-  double losing_score   = DBL_MAX;
+  double winning_score  = -1;
+  double losing_score   = 10000;
   int   winning_sample = -1;
   int   losing_sample  = -1;
 
