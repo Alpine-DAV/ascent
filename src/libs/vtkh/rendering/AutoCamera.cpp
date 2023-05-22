@@ -463,7 +463,9 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
+        DataCheckVals<vtkm::Float64> checkVals; 
+	checkVals.Min = 0;
+       	checkVals.Max = vtkm::Float64(INT_MAX);
         field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
 	vtkm::Float64 min = 0.0;
         entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, min, diameter);
@@ -479,10 +481,12 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
+        DataCheckVals<vtkm::Float32> checkVals; 
+	checkVals.Min = 0;
+       	checkVals.Max = vtkm::Float32(INT_MAX);
         field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
 	vtkm::Float32 min = 0.0;
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, min, diameter);
+        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, min, vtkm::Float32(diameter));
       } 
       else
       {
@@ -520,7 +524,9 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float64> checkVals { .Min = 0, .Max = vtkm::Float64(INT_MAX) };
+        DataCheckVals<vtkm::Float64> checkVals; 
+	checkVals.Min = 0;
+       	checkVals.Max = vtkm::Float64(INT_MAX);
         field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
 	vtkm::Float32 min = 0.0;
 	vtkm::Float32 max = 1.0;
@@ -537,7 +543,9 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float32> checkVals { .Min = 0, .Max = vtkm::Float32(INT_MAX) };
+        DataCheckVals<vtkm::Float32> checkVals; 
+	checkVals.Min = 0;
+       	checkVals.Max = vtkm::Float32(INT_MAX);
         field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
 	vtkm::Float32 min = 0.0;
 	vtkm::Float32 max = 1.0;

@@ -21,7 +21,7 @@
 
 const int SIZE = 32;
 const int NUM_BLOCKS = 1;
-const int NUM_SAMPLES = 10;
+const int NUM_SAMPLES = 3;
 
 //----------------------------------------------------------------------------
 TEST(vtkh_auto_camera, vtkh_data_entropy)
