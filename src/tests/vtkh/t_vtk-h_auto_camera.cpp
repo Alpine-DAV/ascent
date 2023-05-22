@@ -19,9 +19,6 @@
 #include <iostream>
 
 
-const int SIZE = 32;
-const int NUM_BLOCKS = 1;
-const int NUM_SAMPLES = 3;
 
 //----------------------------------------------------------------------------
 TEST(vtkh_auto_camera, vtkh_data_entropy)
@@ -31,6 +28,9 @@ TEST(vtkh_auto_camera, vtkh_data_entropy)
 #endif
   vtkh::DataSet data_set;
 
+  const int SIZE = 32;
+  const int NUM_BLOCKS = 1;
+  const int NUM_SAMPLES = 3;
 
   for(int i = 0; i < NUM_BLOCKS; ++i)
   {
@@ -95,6 +95,9 @@ TEST(vtkh_auto_camera, vtkh_depth_entropy)
 #endif
   vtkh::DataSet data_set;
 
+  const int SIZE = 32;
+  const int NUM_BLOCKS = 1;
+  const int NUM_SAMPLES = 3;
 
   for(int i = 0; i < NUM_BLOCKS; ++i)
   {
@@ -159,6 +162,9 @@ TEST(vtkh_auto_camera, vtkh_shading_entropy)
 #endif
   vtkh::DataSet data_set;
 
+  const int SIZE = 32;
+  const int NUM_BLOCKS = 1;
+  const int NUM_SAMPLES = 3;
 
   for(int i = 0; i < NUM_BLOCKS; ++i)
   {
