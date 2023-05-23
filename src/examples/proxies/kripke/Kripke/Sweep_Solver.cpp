@@ -94,7 +94,7 @@ void writeAscentData(Ascent &ascent, Grid_Data *grid_data, int timeStep)
   conduit::Node verify_info;
   if(!conduit::blueprint::mesh::verify(data,verify_info))
   {
-      CONDUIT_INFO("blueprint verify failed!" + verify_info.to_json());
+      CONDUIT_INFO("blueprint verify failed!" + verify_info.to_yaml());
   }
   else
   {

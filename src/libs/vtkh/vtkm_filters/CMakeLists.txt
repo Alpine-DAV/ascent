@@ -8,6 +8,7 @@ set(vtkm_filters_headers
     vtkmCleanGrid.hpp
     vtkmClipWithField.hpp
     vtkmExtractStructured.hpp
+    vtkmGhostCellRemove.hpp
     vtkmGradient.hpp
     vtkmHistogram.hpp
     vtkmLagrangian.hpp
@@ -29,6 +30,7 @@ set(vtkm_filters_sources
     vtkmCleanGrid.cpp
     vtkmClipWithField.cpp
     vtkmExtractStructured.cpp
+    vtkmGhostCellRemove.cpp
     vtkmGradient.cpp
     vtkmHistogram.cpp
     vtkmLagrangian.cpp
@@ -49,7 +51,7 @@ set(vtkm_filters_install_headers
 
 # we use these specific vtk-m targets b/c our favorite version
 # of cmake does not yet support transitive deps for object libs
-set(vtkm_filters_deps vtkm_compiler_flags vtkm_diy ${vtkh_base_deps})
+set(vtkm_filters_deps vtkm::compiler_flags vtkm::diy ${vtkh_base_deps})
 
 
 blt_add_library(NAME vtkm_compiled_filters

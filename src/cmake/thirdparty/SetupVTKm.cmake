@@ -34,7 +34,7 @@ endif()
 
 set(VTKM_FOUND TRUE)
 
-set(VTKM_TARGETS vtkm_cont vtkm_filter vtkm_rendering)
+set(VTKM_TARGETS vtkm::cont vtkm::filter vtkm::rendering)
 
 if(ENABLE_CUDA)
     # we need to inject the vtkm cuda flags into CMAKE_CUDA_FLAGS
@@ -59,3 +59,7 @@ blt_register_library(NAME vtkm
                      LIBRARIES ${VTKM_TARGETS}
                      )
 
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # if we are running tests with dlls, we need path to dlls
+    list(APPEND ASCENT_TPL_DLL_PATHS ${VTKM_DIR}/bin)
+endif()

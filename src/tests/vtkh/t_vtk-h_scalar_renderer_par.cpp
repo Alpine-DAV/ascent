@@ -10,7 +10,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/ScalarRenderer.hpp>
-#include <vtkm/io/writer/VTKDataSetWriter.h>
+#include <vtkm/io/VTKDataSetWriter.h>
 #include "t_vtkm_test_utils.hpp"
 
 #include <iostream>

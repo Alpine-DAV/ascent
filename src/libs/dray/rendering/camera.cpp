@@ -647,14 +647,14 @@ Matrix<float32, 4, 4> Camera::projection_matrix (const AABB<3> bounds) const
   Matrix<float32, 4, 4> V = this->view_matrix();
 
   Vec<float32, 3> o,i,j,k,ij,ik,jk,ijk;
-  o = transform_point(V, ((Vec<float32,3>) {{minx, miny, minz}}));
-  i = transform_point(V, ((Vec<float32,3>) {{maxx, miny, minz}}));
-  j = transform_point(V, ((Vec<float32,3>) {{minx, maxy, minz}}));
-  k = transform_point(V, ((Vec<float32,3>) {{minx, miny, maxz}}));
-  ij = transform_point(V, ((Vec<float32,3>) {{maxx, maxy, minz}}));
-  ik = transform_point(V, ((Vec<float32,3>) {{maxx, miny, maxz}}));
-  jk = transform_point(V, ((Vec<float32,3>) {{minx, maxy, maxz}}));
-  ijk = transform_point(V, ((Vec<float32,3>) {{maxx, maxy, maxz}}));
+  o = transform_point(V, Vec<float32,3>({minx, miny, minz}));
+  i = transform_point(V, Vec<float32,3>({maxx, miny, minz}));
+  j = transform_point(V, Vec<float32,3>({minx, maxy, minz}));
+  k = transform_point(V, Vec<float32,3>({minx, miny, maxz}));
+  ij = transform_point(V, Vec<float32,3>({maxx, maxy, minz}));
+  ik = transform_point(V, Vec<float32,3>({maxx, miny, maxz}));
+  jk = transform_point(V, Vec<float32,3>({minx, maxy, maxz}));
+  ijk = transform_point(V, Vec<float32,3>({maxx, maxy, maxz}));
 
   float near, far;
   float z_values[] = {o[2], i[2], j[2], k[2], ij[2], ik[2], jk[2], ijk[2]};
