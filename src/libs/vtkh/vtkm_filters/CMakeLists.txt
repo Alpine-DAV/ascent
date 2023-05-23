@@ -8,6 +8,7 @@ set(vtkm_filters_headers
     vtkmCleanGrid.hpp
     vtkmClipWithField.hpp
     vtkmExtractStructured.hpp
+    vtkmGhostCellRemove.hpp
     vtkmGradient.hpp
     vtkmHistogram.hpp
     vtkmLagrangian.hpp
@@ -30,6 +31,7 @@ set(vtkm_filters_sources
     vtkmCleanGrid.cpp
     vtkmClipWithField.cpp
     vtkmExtractStructured.cpp
+    vtkmGhostCellRemove.cpp
     vtkmGradient.cpp
     vtkmHistogram.cpp
     vtkmLagrangian.cpp

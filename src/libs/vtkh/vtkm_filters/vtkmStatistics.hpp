@@ -1,8 +1,9 @@
-<<<<<<< HEAD
 #ifndef VTK_H_VTKM_STATISTICS_HPP
 #define VTK_H_VTKM_STATISTICS_HPP
 
 #include <vtkm/cont/PartitionedDataSet.h>
+#include <vtkm/cont/DataSet.h>
+#include <vtkm/filter/density_estimation/Statistics.h>
 
 namespace vtkh
 {

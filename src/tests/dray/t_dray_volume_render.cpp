@@ -85,7 +85,9 @@ TEST (dray_volume_render, dray_volume_render_triple)
     return;
   }
   
-  std::string root_file = std::string(ASCENT_T_DATA_DIR) + "tripple_point/field_dump.cycle_006700.root";
+  std::string root_file = conduit::utils::join_file_path( std::string(ASCENT_T_DATA_DIR),
+                                                          "tripple_point");
+  root_file = conduit::utils::join_file_path( root_file, "field_dump.cycle_006700.root");
   std::string output_path = prepare_output_dir ();
   std::string output_file =
   conduit::utils::join_file_path (output_path, "triple_vr");
