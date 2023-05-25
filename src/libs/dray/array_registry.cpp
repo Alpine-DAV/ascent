@@ -187,6 +187,41 @@ void ArrayRegistry::remove_array (ArrayInternalsBase *array)
   m_arrays.remove (array);
 }
 
+void
+ArrayRegistry::summary()
+{
+    std::cout << "ArrayRegistry Number of Arrays: " << number_of_arrays() << std::endl;
+    std::cout  << "Memory Usage:" << std::endl;
+    std::cout  << " Host:   " << host_usage() << std::endl;
+    std::cout  << " Device: " << device_usage() << std::endl;
+
+    std::cout  << "Umpire pool info:" << std::endl;
+
+    // umpire host pool info
+    auto &rm = umpire::ResourceManager::getInstance ();
+    const int host_allocator_id = ArrayRegistry::host_allocator_id();
+    umpire::Allocator host_allocator = rm.getAllocator(host_allocator_id);
+    std::cout  << " Host Current Size:   " << host_allocator.getCurrentSize() << std::endl;
+    std::cout  << " Host High Water:     " << host_allocator.getHighWatermark() << std::endl;
+
+#if defined(DRAY_DEVICE_ENABLED)
+    // umpire device pool info
+    const int dev_allocator_id = ArrayRegistry::device_allocator_id();
+    umpire::Allocator dev_allocator = rm.getAllocator(dev_allocator_id);
+    std::cout  << " Device Current Size: " << dev_allocator.getCurrentSize() << std::endl;
+    std::cout  << " Device High Water:   " << dev_allocator.getHighWatermark() << std::endl;
+#else
+    std::cout  << "(No Umpire Device Pool [DRAY_DEVICE_ENABLED == FALSE] )" << std::endl;
+#endif
+
+}
+
+int ArrayRegistry::number_of_arrays()
+{
+  return static_cast<int>(m_arrays.size());
+}
+
+
 size_t ArrayRegistry::device_usage ()
 {
   size_t tot = 0;

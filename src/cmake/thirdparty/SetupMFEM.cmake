@@ -42,7 +42,7 @@ string(REGEX REPLACE  "MFEM_TPLFLAGS +=" "" mfem_tpl_inc_flags ${mfem_tpl_inc_fl
 string(FIND  ${mfem_tpl_inc_flags} "\n" mfem_tpl_inc_flags_end_pos)
 string(SUBSTRING ${mfem_tpl_inc_flags} 0 ${mfem_tpl_inc_flags_end_pos} mfem_tpl_inc_flags)
 string(STRIP ${mfem_tpl_inc_flags} mfem_tpl_inc_flags)
-# this must b be a list style var, otherwise blt/cmake will quote it
+# NOTE: this must be a list style var, otherwise blt/cmake will quote it
 # some where down the line and undermine the flags
 string (REPLACE " " ";" mfem_tpl_inc_flags "${mfem_tpl_inc_flags}")
 
@@ -62,6 +62,9 @@ string(SUBSTRING ${mfem_tpl_lnk_flags} 0 ${mfem_tpl_lnl_flags_end_pos} mfem_tpl_
 string(REGEX REPLACE "\-L\/lib64" ""  mfem_tpl_lnk_flags ${mfem_tpl_lnk_flags})
 string(STRIP ${mfem_tpl_lnk_flags} mfem_tpl_lnk_flags)
 
+# NOTE: this must be a list style var, otherwise blt/cmake will quote it
+# some where down the line and undermine the flags
+string (REPLACE " " ";" mfem_tpl_lnk_flags "${mfem_tpl_lnk_flags}")
 
 
 # make sure mfem was built with with conduit support:
@@ -179,3 +182,9 @@ blt_register_library(NAME mfem
                      INCLUDES ${MFEM_INCLUDE_DIRS}
                      COMPILE_FLAGS ${mfem_tpl_inc_flags}
                      LIBRARIES ${MFEM_LIBRARIES} ${mfem_tpl_lnk_flags})
+
+
+if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+    # if we are running tests with dlls, we need path to dlls
+    list(APPEND ASCENT_TPL_DLL_PATHS ${MFEM_DIR}/bin/)
+endif()

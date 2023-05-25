@@ -31,7 +31,7 @@ int main (int argc, char *argv[])
     {
         conduit::Node info;
         ascent::about(info);
-        info.print();
+        std::cout <<info.to_yaml() << std::endl;
     }
 
 #ifdef ABOUT_MPI

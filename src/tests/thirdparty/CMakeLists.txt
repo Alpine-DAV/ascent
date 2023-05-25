@@ -68,7 +68,7 @@ endif()
 
 IF(MFEM_FOUND)
     message(STATUS "Adding mfem smoke test")
-    set(mfem_smoke_deps mfem conduit)
+    set(mfem_smoke_deps mfem conduit::conduit)
     #check if mfem has device deps
     if(MFEM_CUDA_ENABLED OR MFEM_HIP_ENABLED)
          list(APPEND mfem_smoke_deps ${smoke_device_deps})

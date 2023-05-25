@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vtkh/filters/Streamline.hpp>
-#include <vtkm/filter/Streamline.h>
+#include <vtkm/filter/flow/Streamline.h>
 #include <vtkm/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>

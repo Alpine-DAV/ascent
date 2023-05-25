@@ -19,12 +19,13 @@
 #include <ctype.h>
 #include <time.h>
 #include <sys/types.h>
-#include <unistd.h>
+
 #include <set>
 #include <map>
 #include <fstream>
 #ifdef ASCENT_PLATFORM_UNIX
 #include <sys/sysinfo.h>
+#include <unistd.h>
 #endif
 
 

@@ -261,7 +261,7 @@ Domain::Domain(Int_t numRanks, Int_t myRank,
    conduit::Node verify_info;
    if(!conduit::blueprint::mesh::verify(m_ascent_node,verify_info))
    {
-       CONDUIT_INFO("blueprint verify failed!" + verify_info.to_json());
+       CONDUIT_INFO("blueprint verify failed!" + verify_info.to_yaml());
    }
 
 /*--------------------------------------------------------------------------

@@ -141,7 +141,7 @@ EmptyRuntime::Publish(const conduit::Node &data)
     {
          ASCENT_ERROR("Mesh Blueprint Verify failed!"
                         << std::endl
-                        << verify_info.to_json());
+                        << verify_info.to_yaml());
     }
 #endif
 
