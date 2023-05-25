@@ -4,7 +4,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/filter/ContourTreeUniformAugmented.h>
+#include <vtkm/filter/scalar_topology/ContourTreeUniformAugmented.h>
 
 namespace vtkh
 {
