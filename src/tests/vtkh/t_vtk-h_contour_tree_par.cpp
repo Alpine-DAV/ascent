@@ -13,7 +13,6 @@
 #include "t_vtkm_test_utils.hpp"
 
 #include <vtkm/cont/DataSetBuilderUniform.h>
-#include <vtkm/cont/DataSetFieldAdd.h>
 #include <vtkm/cont/PartitionedDataSet.h>
 #include <vtkm/cont/EnvironmentTracker.h>
 
@@ -187,7 +186,7 @@ void GetPartitionedDataSet( const vtkm::cont::DataSet& ds, const std::string &fi
 {
   // Get dimensions of data set
   vtkm::Id3 globalSize;
-  ds.GetCellSet().CastAndCall(vtkm::worklet::contourtree_augmented::GetPointDimensions(), globalSize);
+  vtkm::cont::CastAndCall(ds.GetCellSet(), vtkm::worklet::contourtree_augmented::GetPointDimensions(), globalSize);
 
   // Determine split
   vtkm::Id3 blocksPerAxis = ComputeNumberOfBlocksPerAxis(globalSize, numberOfBlocks);
@@ -317,8 +316,7 @@ bool ReadTestData(const std::string& filename, VDATASET &inDataSet,
       vdims[2] = static_cast<vtkm::Id>(dims[2]);
       *pds = dsb.Create(vdims);
     }
-    vtkm::cont::DataSetFieldAdd dsf;
-    dsf.AddPointField(*pds, "values", values);
+    pds->AddPointField("values", values);
   }
 
 #ifdef VTKM_ENABLE_MPI
