@@ -450,20 +450,16 @@ void ContourTree::DoExecute()
 
 #ifndef VTKH_PARALLEL
     analyzerFunctor.SetDataFieldIsSorted(false);
-    vtkm::cont::CastAndCall(inDataSet.GetField(0).GetData(), analyzerFunctor);
+    vtkm::cont::CastAndCall(inDataSet.GetField(m_field_name).GetData(), analyzerFunctor);
 #else
     if(mpi_size == 1)
     {
       analyzerFunctor.SetDataFieldIsSorted(false);
-      vtkm::cont::CastAndCall(inDataSet.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
+      vtkm::cont::CastAndCall(inDataSet.GetPartitions()[0].GetField(m_field_name).GetData(), analyzerFunctor);
     } else {
       analyzerFunctor.SetDataFieldIsSorted(true);
 
-      if( result.GetPartitions()[0].GetNumberOfFields() > 1 ) {
-        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("values").GetData(), analyzerFunctor);
-      } else {
-        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
-      }
+      vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField(m_field_name).GetData(), analyzerFunctor);
     }
 #endif // VTKH_PARALLEL
   } // mpi_rank == 0
