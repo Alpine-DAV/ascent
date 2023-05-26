@@ -459,7 +459,15 @@ void ContourTree::DoExecute()
     } else {
       analyzerFunctor.SetDataFieldIsSorted(true);
 
-      vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField(m_field_name).GetData(), analyzerFunctor);
+      /*
+      if( result.GetPartitions()[0].GetNumberOfFields() > 1 ) {
+        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("values").GetData(), analyzerFunctor);
+      } else {
+        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
+      }*/
+
+      // TODO TO BE REVISITED. Tested with: srun -n 8 ./t_vtk-h_contour_tree_par 
+      vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("resultData").GetData(), analyzerFunctor);
     }
 #endif // VTKH_PARALLEL
   } // mpi_rank == 0
