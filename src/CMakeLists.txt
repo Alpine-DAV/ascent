@@ -46,7 +46,7 @@ option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
 
 # VTK-h Specific Options 
 
-option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
+option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" ON)
 
 # Cuda Specific Options
 option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
