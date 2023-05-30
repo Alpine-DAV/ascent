@@ -4,19 +4,20 @@
 #include <vtkh/vtkh_exports.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
+#include <vtkh/filters/Filter.hpp>
 
 namespace vtkh
 {
 
-class VTKH_API Statistics: putlic Filter
+class VTKH_API Statistics: public Filter
 {
 public:
   Statistics();
   virtual ~Statistics();
+  std::string GetName() const override;
 
   void SetField(const std::string &field_name);
   std::string GetField() const;
-  std::string GetName() const override;
 protected:
   void PreExecute() override;
   void PostExecute() override;

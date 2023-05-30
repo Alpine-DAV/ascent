@@ -1,9 +1,11 @@
 #include <vtkh/filters/Statistics.hpp>
+#include <vtkh/vtkm_filters/vtkmStatistics.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
 #include <vtkm/cont/Algorithm.h>
 #include <vtkm/cont/ArrayHandleCast.h>
 #include <vtkm/cont/Invoker.h>
+#include <vtkm/cont/PartitionedDataSet.h>
 #include <vector>
 
 #ifdef VTKH_PARALLEL
@@ -35,7 +37,7 @@ Statistics::SetField(const std::string &field_name)
 }
 
 std::string
-Statistics::GetField()
+Statistics::GetField() const
 {
   return m_field_name;
 }
@@ -70,10 +72,10 @@ void Statistics::DoExecute()
   {
     vtkm::Id domain_id;
     vtkm::cont::DataSet dom;
-    data_set.GetDomain(i, dom, domain_id);
-    if(dom.HasField(field_name))
+    this->m_input->GetDomain(i, dom, domain_id);
+    if(dom.HasField(m_field_name))
     {
-      data_pds.AddParititon(dom);
+      data_pds.AppendPartition(dom);
     }
   }
 

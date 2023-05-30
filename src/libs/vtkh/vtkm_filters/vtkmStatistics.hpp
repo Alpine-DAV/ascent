@@ -3,7 +3,7 @@
 
 #include <vtkm/cont/PartitionedDataSet.h>
 #include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/density_estimation/Statistics.h>
+#include <vtkm/filter/density_estimate/Statistics.h>
 
 namespace vtkh
 {
