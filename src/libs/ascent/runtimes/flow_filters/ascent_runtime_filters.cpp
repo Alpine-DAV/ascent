@@ -104,8 +104,6 @@ register_builtin()
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
 
-    //Magic Camera
-    AscentRuntime::register_filter_type<VTKHAutoCamera>("transforms","camera");
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
     // transforms, the current crop expect vtk-h input data

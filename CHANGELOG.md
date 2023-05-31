@@ -10,7 +10,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - vtk-m@2.0.0
 
 ### Added
-- Automatic camera placement filter that uses different types of entropy (data, depth, shading).
+- Automatic camera placement render that uses different types of entropy (data, depth, shading).
 ### Changed
 
 ### Fixed

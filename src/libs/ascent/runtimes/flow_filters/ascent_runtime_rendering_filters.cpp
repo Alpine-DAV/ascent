@@ -50,6 +50,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/AutoCamera.hpp>
 #include <vtkm/cont/DataSet.h>
 
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
@@ -168,6 +169,12 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("shading");
   r_valid_paths.push_back("use_original_bounds");
   r_valid_paths.push_back("dataset_bounds");
+  r_valid_paths.push_back("auto_camera/metric");
+  r_valid_paths.push_back("auto_camera/field");
+  r_valid_paths.push_back("auto_camera/samples");
+  r_valid_paths.push_back("auto_camera/bins");
+  r_valid_paths.push_back("auto_camera/height");
+  r_valid_paths.push_back("auto_camera/width");
 
   std::vector<std::string> r_ignore_paths;
   r_ignore_paths.push_back("phi_theta_positions");
@@ -1112,12 +1119,17 @@ DefaultRender::execute()
         std::string image_name;
 
         bool is_cinema = false;
+        bool is_auto_camera = false;
 
         if(render_node.has_path("type"))
         {
           if(render_node["type"].as_string() == "cinema")
           {
             is_cinema = true;
+          }
+          if(render_node["type"].as_string() == "auto_camera")
+          {
+            is_auto_camera = true;
           }
         }
 
@@ -1189,6 +1201,7 @@ DefaultRender::execute()
                          "'image_prefix' parameter");
           }
 
+
 	  if(render_node.has_path("dataset_bounds"))
 	  {
 	    float64_accessor d_bounds = render_node["dataset_bounds"].value();
@@ -1217,10 +1230,84 @@ DefaultRender::execute()
 	      scene_bounds.Z.Max = d_bounds[5];
 	  }
 
-          vtkh::Render render = detail::parse_render(render_node,
-                                                     scene_bounds,
-                                                     image_name);
-          renders->push_back(render);
+	  if(is_auto_camera)
+	  {
+            #if ASCENT_MPI_ENABLED
+            int rank;
+            int world_size;
+            MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            #endif  
+
+            DataObject *source
+              = graph().workspace().registry().fetch<DataObject>("source_object");
+            
+            std::shared_ptr<VTKHCollection> collection = source->as_vtkh_collection();
+      
+	    if(!render_node.has_path("auto_camera/field"))
+              ASCENT_ERROR("Auto Camera must specify a 'field'");
+	    if(!render_node.has_path("auto_camera/metric"))
+              ASCENT_ERROR("Auto Camera must specify a 'metric'");
+	    if(!render_node.has_path("auto_camera/samples"))
+              ASCENT_ERROR("Auto Camera must specify number of 'samples'");
+
+            std::string field_name = render_node["auto_camera/field"].as_string();
+            std::string metric     = render_node["auto_camera/metric"].as_string();
+            int samples            = render_node["auto_camera/samples"].as_int32();
+      
+            if(!collection->has_field(field_name))
+            {
+              ASCENT_ERROR("Unknown field '"<<field_name<<"' in Auto Camera");
+            }
+      
+            std::string topo_name = collection->field_topology(field_name);
+            vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+      
+            vtkh::AutoCamera auto_cam;
+      
+	    int height = 1024;
+	    int width  = 1024;
+            if(render_node.has_path("auto_camera/bins"))
+            {
+              int bins = render_node["auto_camera/bins"].as_int32();
+              auto_cam.SetNumBins(bins); 
+            }
+            if(render_node.has_path("auto_camera/height"))
+            {
+              height = render_node["auto_camera/height"].as_int32();
+              auto_cam.SetHeight(height); 
+            }
+            if(render_node.has_path("auto_camera/width"))
+            {
+              width = render_node["auto_camera/width"].as_int32();
+              auto_cam.SetWidth(width); 
+            }
+      
+            auto_cam.SetInput(&dataset);
+            auto_cam.SetField(field_name);
+            auto_cam.SetMetric(metric);
+            auto_cam.SetNumSamples(samples);
+            auto_cam.Update();
+            
+            vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
+            *camera = auto_cam.GetCamera();
+	    vtkh::Render render = vtkh::MakeRender(width,
+                                      height,
+                                      scene_bounds,
+	    			      *camera,
+                                      image_name);
+            renders->push_back(render);
+	    delete camera;
+
+	  }
+	  else
+	  {
+
+            vtkh::Render render = detail::parse_render(render_node,
+                                                       scene_bounds,
+                                                       image_name);
+            renders->push_back(render);
+	  }
         }
       }
     }
@@ -1239,36 +1326,19 @@ DefaultRender::execute()
         image_name = output_dir(image_name);
       }
 
-      //check for camera in registery
-      //
-      vtkh::Render render;
-      if(graph().workspace().registry().has_entry("camera"))
+      vtkm::Bounds scene_bounds = *bounds;
+      if(params().has_path("use_original_bounds"))
       {
-        vtkm::rendering::Camera *camera = graph().workspace().registry().fetch<vtkm::rendering::Camera>("camera");
-
-	render = vtkh::MakeRender(1024,
-                                  1024,
-                                  *bounds,
-				  *camera,
-                                  image_name);
-      }
-      else
-      {  
-
-        vtkm::Bounds scene_bounds = *bounds;
-        if(params().has_path("use_original_bounds"))
+        if(params()["use_original_bounds"].as_string() == "true")
         {
-          if(params()["use_original_bounds"].as_string() == "true")
-          {
-            scene_bounds = original_bounds;
-          }
+          scene_bounds = original_bounds;
         }
-      
-        render = vtkh::MakeRender(1024,
-                              1024,
-                              scene_bounds,
-                              image_name);
       }
+      
+      vtkh::Render render = vtkh::MakeRender(1024,
+                            1024,
+                            scene_bounds,
+                            image_name);
       
       Node meta = Metadata::n_metadata;
       if(meta.has_path("comments"))
