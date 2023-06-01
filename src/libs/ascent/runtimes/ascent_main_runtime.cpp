@@ -378,6 +378,13 @@ AscentRuntime::Info(conduit::Node &out)
 }
 
 //-----------------------------------------------------------------------------
+conduit::Node &
+AscentRuntime::Info()
+{
+    return m_info;
+}
+
+//-----------------------------------------------------------------------------
 void
 AscentRuntime::ResetInfo()
 {
@@ -1857,10 +1864,10 @@ AscentRuntime::Execute(const conduit::Node &actions)
             Node *extracts_list = m_workspace.registry().fetch<Node>("extract_list");
             if(extracts_list->number_of_children() > 0)
             {
-                m_info["extracts"].set(*extracts_list);
+                // info assumes all data from extract list
+                m_info["extracts"].move(*extracts_list);
             }
-            // always clear after fetch.
-            extracts_list->reset();
+            //extracts_list->reset();
         }
 
         // add expression results to info

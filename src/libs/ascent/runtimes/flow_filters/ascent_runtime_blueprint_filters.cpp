@@ -79,6 +79,10 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// BlueprintVerify
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 BlueprintVerify::BlueprintVerify()
 :Filter()
 {
@@ -209,6 +213,82 @@ BlueprintVerify::execute()
     set_output<DataObject>(d_input);
 }
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// ConduitExtract
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+ConduitExtract::ConduitExtract()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+ConduitExtract::~ConduitExtract()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ConduitExtract::declare_interface(Node &i)
+{
+    i["type_name"]   = "conduit_extract";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ConduitExtract::verify_params(const conduit::Node &params,
+                              conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    // so far, no params
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ConduitExtract::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("conduit_extract input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
+    // squirrel a copy away in the registry where it will
+    // be connected with exec info
+
+    // add this to the extract results in the registry
+    if(!graph().workspace().registry().has_entry("extract_list"))
+    {
+      conduit::Node *extract_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+    }
+
+    conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+
+    Node &einfo = extract_list->append();
+    einfo["type"] = "conduit";
+    einfo["data"].set(*n_input);
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// BlueprintPartition
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 BlueprintPartition::BlueprintPartition()
 :Filter()
@@ -287,24 +367,29 @@ BlueprintPartition::execute()
        params()["distributed"].as_string() == "false" )
     {
         conduit::blueprint::mesh::partition(*n_input,
-		     		            n_options,
-					    *n_output);
+                                            n_options,
+                                            *n_output);
     }
     else
     {
         conduit::blueprint::mpi::mesh::partition(*n_input,
-		    			         n_options,
-					         *n_output,
-					         mpi_comm);
+                                                 n_options,
+                                                 *n_output,
+                                                 mpi_comm);
     }
 #else
     conduit::blueprint::mesh::partition(*n_input,
-		     		        n_options,
-					*n_output);
+                                        n_options,
+                                        *n_output);
 #endif
     DataObject *d_output = new DataObject(n_output);
     set_output<DataObject>(d_output);
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// DataBinning
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 DataBinning::DataBinning()
 :Filter()
