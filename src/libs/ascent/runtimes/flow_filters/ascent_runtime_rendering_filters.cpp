@@ -1231,14 +1231,7 @@ DefaultRender::execute()
 	  }
 
 	  if(is_auto_camera)
-	  {
-            #if ASCENT_MPI_ENABLED
-            int rank;
-            int world_size;
-            MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-            #endif  
-
+	  { 
             DataObject *source
               = graph().workspace().registry().fetch<DataObject>("source_object");
             
