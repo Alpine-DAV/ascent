@@ -48,6 +48,7 @@
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/ScalarRenderer.hpp>
+#include <vtkh/rendering/AutoCamera.hpp>
 #include <vtkh/filters/Clip.hpp>
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
@@ -3928,7 +3929,6 @@ VTKHStreamline::~VTKHStreamline()
 {
 // empty
 }
-
 
 //-----------------------------------------------------------------------------
 };
