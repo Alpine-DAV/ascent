@@ -1867,7 +1867,6 @@ AscentRuntime::Execute(const conduit::Node &actions)
                 // info assumes all data from extract list
                 m_info["extracts"].move(*extracts_list);
             }
-            //extracts_list->reset();
         }
 
         // add expression results to info
