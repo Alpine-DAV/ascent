@@ -44,7 +44,6 @@ build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
-build_babelflow="${build_babelflow:=true}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -206,7 +205,6 @@ echo "**** Configuring HDF5 ${hdf5_version}"
 cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DHDF5_ENABLE_Z_LIB_SUPPORT=ON \
   -DZLIB_INCLUDE_DIR:PATH=${zlib_install_dir}/include \
   -DZLIB_LIBRARY_DIR:FILEPATH=${zlib_lib_file} \
   -DZLIB_USE_EXTERNAL=1 \
@@ -588,55 +586,6 @@ fi
 else
   echo "**** Skipping MFEM build, install found at: ${mfem_install_dir}"
 fi # build_mfem
-
-##########################
-# Babel Flow and related
-##########################
-
-mfem_version=4.5.2
-mfem_src_dir=$(ospath ${root_dir}/mfem-${mfem_version})
-mfem_build_dir=$(ospath ${root_dir}/build/mfem-${mfem_version})
-mfem_install_dir=$(ospath ${root_dir}/install/mfem-${mfem_version}/)
-mfem_tarball=mfem-${mfem_version}.tar.gz
-mfem_windows_cmake_flags="-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
-
-mfem_extra_cmake_args=""
-if [[ "$build_windows" == "ON" ]]; then
-  mfem_extra_cmake_args="${mfem_windows_cmake_flags}"
-fi 
-
-
-# build only if install doesn't exist
-if [ ! -d ${mfem_install_dir} ]; then
-if ${build_mfem}; then
-if [ ! -d ${mfem_src_dir} ]; then
-  echo "**** Downloading ${mfem_tarball}"
-  curl -L https://github.com/mfem/mfem/archive/refs/tags/v${mfem_version}.tar.gz -o ${mfem_tarball}
-  tar -xzf ${mfem_tarball}
-fi
-
-
-echo "**** Configuring MFEM ${mfem_version}"
-cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
-  -DCMAKE_BUILD_TYPE=${build_config} \
-  -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DMFEM_USE_CONDUIT=ON ${mfem_extra_cmake_args} \
-  -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
-  -DMFEM_ENABLE_TESTING=${enable_tests} \
-  -DMFEM_ENABLE_EXAMPLES=${enable_tests} \
-  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
-
-echo "**** Building MFEM ${vtkm_version}"
-cmake --build ${mfem_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing MFEM ${mfem_version}"
-cmake --install ${mfem_build_dir}  --config ${build_config}
-
-fi
-else
-  echo "**** Skipping MFEM build, install found at: ${mfem_install_dir}"
-fi # build_mfem
-
 
 
 ################
