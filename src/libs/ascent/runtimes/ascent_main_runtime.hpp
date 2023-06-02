@@ -42,7 +42,10 @@ public:
 
     void  Publish(const conduit::Node &data) override;
     void  Execute(const conduit::Node &actions) override;
-    void  Info(conduit::Node &out) override;
+
+
+    void                 Info(conduit::Node &out) override;
+    conduit::Node       &Info() override;
 
     void  Cleanup() override;
 
@@ -87,7 +90,7 @@ private:
     void              ResetInfo();
     void              AddPublishedMeshInfo();
 
-    flow::Workspace w;
+    flow::Workspace   m_workspace;
     conduit::Node CreateDefaultFilters();
     void ConvertPipelineToFlow(const conduit::Node &pipeline,
                                const std::string pipeline_name);

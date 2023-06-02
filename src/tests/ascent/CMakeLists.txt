@@ -38,6 +38,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_divergence
                 t_ascent_vorticity
                 t_ascent_relay
+                t_ascent_conduit_extract
                 t_ascent_htg
                 t_ascent_flatten
                 t_ascent_partition

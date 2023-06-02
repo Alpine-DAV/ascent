@@ -86,6 +86,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BlueprintVerify>();
     AscentRuntime::register_filter_type<BlueprintFlatten>("extracts","flatten");
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
+    AscentRuntime::register_filter_type<ConduitExtract>("extracts","conduit");
     AscentRuntime::register_filter_type<RelayIOLoad>();
     AscentRuntime::register_filter_type<HTGIOSave>("extracts","htg");
 
@@ -96,9 +97,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
     AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
-
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
-    
     AscentRuntime::register_filter_type<BlueprintPartition>("transforms","partition");
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -158,8 +157,6 @@ register_builtin()
     AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
     AscentRuntime::register_filter_type<DRayVectorComponent>("transforms", "dray_vector_component");
 #endif
-
-
 
 #if defined(ASCENT_MPI_ENABLED)
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");
