@@ -11,7 +11,13 @@ vtkmStatistics::Run(vtkm::cont::PartitionedDataSet &p_input,
 
   stats.SetActiveField(field_name);
 
+  std::cerr << "vtkm STATS Pre Execute" << std::endl;
+  std::cerr << "data going in pre Execute: " << std::endl;
+  p_input.PrintSummary(std::cerr);
   auto output = stats.Execute(p_input);
+  std::cerr << "vtkm STATS Post Execute" << std::endl;
+  std::cerr << "output: " << std::endl;
+  output.PrintSummary(std::cerr);
   return output;
 }
 

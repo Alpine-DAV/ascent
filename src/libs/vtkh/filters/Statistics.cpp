@@ -67,7 +67,9 @@ void Statistics::DoExecute()
     throw Error("Statistics: field : '"+m_field_name+"' does not exist'");
   }
 
-  vtkm::cont::PartitionedDataSet data_pds;
+  std::vector<vtkm::cont::DataSet> vtkm_ds;
+
+  
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::Id domain_id;
@@ -75,18 +77,34 @@ void Statistics::DoExecute()
     this->m_input->GetDomain(i, dom, domain_id);
     if(dom.HasField(m_field_name))
     {
-      data_pds.AppendPartition(dom);
+      vtkm_ds.push_back(dom);
     }
   }
 
+  vtkm::cont::PartitionedDataSet data_pds(vtkm_ds);
+  std::cerr << "data going in: " << std::endl;
+  data_pds.PrintSummary(std::cerr);
   vtkmStatistics stats;
   auto result = stats.Run(data_pds, m_field_name);
+  std::cerr << "vtkh STATs after stats.run" << std::endl;
+  std::cerr << "Result: " << std::endl;
+  result.PrintSummary(std::cerr);
 
-  std::vector<vtkm::cont::DataSet> v_datasets = result.GetPartitions();
-  int size = v_datasets.size();
+  int size = result.GetNumberOfFields();
+  vtkm::cont::DataSet dom;
+  std::cerr << "number of fields: " << size << std::endl;
+  
   for(int i = 0; i < size; i++)
-    this->m_output->AddDomain(v_datasets[i],i);
-
+  {
+    vtkm::cont::Field field = result.GetField(i);
+    if(field.GetAssociation() == vtkm::cont::Field::Association::Global)
+      std::cerr << "assoc: is global" << std::endl;
+    dom.AddField(field);
+    field.PrintSummary(std::cerr);
+  }
+//  this->m_output->AddDomain(dom,0);
+  std::cerr << "output: " << std::endl;
+  //this->m_output->PrintSummary(std::cerr);
 
   VTKH_DATA_CLOSE();
 }
