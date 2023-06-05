@@ -489,13 +489,13 @@ vtkh::Render parse_render(const conduit::Node &render_node,
 
   if(render_node.has_path("color_bar_position"))
   {
-    if(!render_node["color_bar_position"].dtype().is_number ||
+    if(!render_node["color_bar_position"].dtype().is_number() ||
 		    render_node["color_bar_position"].dtype().number_of_elements()%6 != 0)
     {
       ASCENT_ERROR("render/color_bar_position must be an array of 6 values for each color bar");
     }
 
-    int positions = render_node["color_bar_position"].dtype().number_of_elements()%6;
+    int positions = render_node["color_bar_position"].dtype().number_of_elements()/6;
     std::vector<vtkm::Bounds> cb_position;
     for(int i = 0; i < positions; i++)
     {

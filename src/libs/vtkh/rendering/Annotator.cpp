@@ -60,7 +60,7 @@ Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
 {
   m_canvas.SetViewToScreenSpace(m_camera, true);
   //a user can put as many color bars as they want anywhere they want
-  int num_bars = std::min(int(field_names.size()),color_bar_pos.size());
+  int num_bars = std::min(int(field_names.size()),int(color_bar_pos.size()));
   m_canvas.BeginTextRenderingBatch();
   m_world_annotator->BeginLineRenderingBatch();
   for(int i = 0; i < num_bars; ++i)

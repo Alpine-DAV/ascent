@@ -11,6 +11,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 - Automatic camera placement render that uses different types of entropy (data, depth, shading).
+- Scene/Render option to manually position color bars
 ### Changed
 
 ### Fixed
