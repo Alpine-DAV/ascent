@@ -396,7 +396,7 @@ parameters:
 - ``annotations`` : controls if annotations are rendered or not. Valid values are ``"true"`` and ``"false"``.
 - ``render_bg`` : controls if the background is rendered or not. If no background is rendered, the background will appear transparent. Valid values are ``"true"`` and ``"false"``.
 - ``dataset_bounds`` : controls the dimensions of the rendered bounding box around the dataset. This will overwrite the default bounding box based on the dataset's dimensions. A valid value is an array of six floats ([xMin,xMax,yMin,yMax,zMin,zMax]) that define dimensions larger than the default.  
-- ``color_bar_position`` : controls the position of 1 or more color bars. A valid value for positioning a single color bar is an array of six floats ([xMin,xMax,yMin,yMax,zMin,zMax]). A valid value for positioning N color bars is an array of 6*N floats ([xMin1_0,xMax1_0,yMin1_0,yMax1_0,zMin_0,zMax_0,...,xMin_n,xMax_n,yMin_n,yMax_n,zMin_n,zMax_n]). Minimum and maximum values are limited to the range [-1,1].
+- ``color_bar_position`` : controls the position of 1 or more color bars. A valid value for positioning a single color bar is an array of six floats ([xMin,xMax,yMin,yMax,zMin,zMax]). A valid value for positioning N color bars is an array of 6*N floats ([xMin1_0,xMax1_0,yMin1_0,yMax1_0,zMin_0,zMax_0,...,xMin_n,xMax_n,yMin_n,yMax_n,zMin_n,zMax_n]). Minimum and maximum values are limited to the range [-1,1]. Note: Ascent does not check for correctness of user positioned color bars.
 
 
 Automatic Camera
