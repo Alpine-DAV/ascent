@@ -487,6 +487,55 @@ Ascent::info(conduit::Node &info_out)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+conduit::Node &
+Ascent::info()
+{
+    try
+    {
+        if(m_runtime == NULL)
+        {
+            
+        }
+        else // we don't have info throw and error
+        {
+            conduit::Node &info = m_runtime->Info();
+            info["status"].set(m_status);
+            return info;
+        }
+    }
+    catch(conduit::Error &e)
+    {
+        set_status("Ascent::info failed",
+                   e.message());
+
+        if(m_forward_exceptions)
+        {
+            throw e;
+        }
+        else
+        {
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::info"
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::info"
+                     << e.message() << std::endl;
+          }
+        }
+    }
+
+    m_info.reset();
+    m_info["status"] = m_status;
+    return m_info;
+}
+
 //-----------------------------------------------------------------------------
 void
 Ascent::close()

@@ -4,6 +4,19 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [develop] - Released XXXX-XX-XX
+### Preferred dependency versions for ascent@develop
+- conduit@0.8.7
+- vtk-m@2.0.0
+
+### Added
+- Automatic camera placement render that uses different types of entropy (data, depth, shading).
+- Added in-memory conduit extract, which allows mesh data to be accessed via ascent.info()
+
+### Changed
+- Added C++ `Ascent::info()` method that returns a reference to execution info in addition the existing info() method that provides copy out semantics.
+
+### Fixed
 
 ## [0.9.1] - Released 2023-04-21
 ### Preferred dependency versions for ascent@0.9.1

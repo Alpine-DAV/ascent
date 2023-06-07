@@ -753,6 +753,8 @@ accurate but slower point based gradients (default).
   params["output_name"] = "my_q";        // (required) name of the output field
   params["use_cell_gradient"] = "false"; // (optional)
 
+
+
 Partitioning
 ~~~~~~~~~~~~
 Partitioning meshes is commonly needed in order to evenly distribute work
@@ -1013,3 +1015,4 @@ integer values to limit the set of domains over which the selection will be appl
      type: field
      domain_id: any
      field: fieldname
+
