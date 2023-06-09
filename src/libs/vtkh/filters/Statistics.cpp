@@ -61,6 +61,7 @@ void Statistics::DoExecute()
   VTKH_DATA_ADD("input_cells", this->m_input->GetNumberOfCells());
   VTKH_DATA_ADD("input_domains", this->m_input->GetNumberOfDomains());
   const int num_domains = this->m_input->GetNumberOfDomains();
+  this->m_output = new DataSet();
 
   if(!this->m_input->GlobalFieldExists(m_field_name))
   {
@@ -82,29 +83,21 @@ void Statistics::DoExecute()
   }
 
   vtkm::cont::PartitionedDataSet data_pds(vtkm_ds);
-  std::cerr << "data going in: " << std::endl;
-  data_pds.PrintSummary(std::cerr);
   vtkmStatistics stats;
   auto result = stats.Run(data_pds, m_field_name);
-  std::cerr << "vtkh STATs after stats.run" << std::endl;
-  std::cerr << "Result: " << std::endl;
-  result.PrintSummary(std::cerr);
 
   int size = result.GetNumberOfFields();
   vtkm::cont::DataSet dom;
-  std::cerr << "number of fields: " << size << std::endl;
   
   for(int i = 0; i < size; i++)
   {
-    vtkm::cont::Field field = result.GetField(i);
-    if(field.GetAssociation() == vtkm::cont::Field::Association::Global)
-      std::cerr << "assoc: is global" << std::endl;
+    //g_field will have assoc=Global which only goes with vtkm::PDS
+    //convert to new field with assoc=WholeDataSet to put in vtkm::DS
+    vtkm::cont::Field g_field = result.GetField(i);
+    vtkm::cont::Field field(g_field.GetName(),vtkm::cont::Field::Association::WholeDataSet,g_field.GetData());
     dom.AddField(field);
-    field.PrintSummary(std::cerr);
   }
-//  this->m_output->AddDomain(dom,0);
-  std::cerr << "output: " << std::endl;
-  //this->m_output->PrintSummary(std::cerr);
+  this->m_output->AddDomain(dom,0);
 
   VTKH_DATA_CLOSE();
 }
