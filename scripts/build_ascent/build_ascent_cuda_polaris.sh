@@ -2,7 +2,7 @@ module load cmake
 
 # Swap NVHPC with GNU compilers
 module swap PrgEnv-nvhpc PrgEnv-gnu
-module load cudatoolkit-standalone/11.8.0
+module load cudatoolkit-standalone
 
 export CC=$(which cc)
 export CXX=$(which CC)
