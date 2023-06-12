@@ -87,6 +87,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BlueprintVerify>();
     AscentRuntime::register_filter_type<BlueprintFlatten>("extracts","flatten");
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
+    AscentRuntime::register_filter_type<ConduitExtract>("extracts","conduit");
     AscentRuntime::register_filter_type<RelayIOLoad>();
     AscentRuntime::register_filter_type<HTGIOSave>("extracts","htg");
 
@@ -97,9 +98,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
     AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
-
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
-    
     AscentRuntime::register_filter_type<BlueprintPartition>("transforms","partition");
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -107,7 +106,6 @@ register_builtin()
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
-
     // transforms, the current crop expect vtk-h input data
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
@@ -121,6 +119,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHMarchingCubes>("transforms","contour");
     AscentRuntime::register_filter_type<VTKHThreshold>("transforms","threshold");
     AscentRuntime::register_filter_type<VTKHSlice>("transforms","slice");
+    AscentRuntime::register_filter_type<VTKHAutoSliceLevels>("transforms","auto_slice");
     AscentRuntime::register_filter_type<VTKH3Slice>("transforms","3slice");
     AscentRuntime::register_filter_type<VTKHCompositeVector>("transforms","composite_vector");
     AscentRuntime::register_filter_type<VTKHVectorComponent>("transforms","vector_component");
@@ -159,8 +158,6 @@ register_builtin()
     AscentRuntime::register_filter_type<DRayReflect>("transforms", "dray_reflect");
     AscentRuntime::register_filter_type<DRayVectorComponent>("transforms", "dray_vector_component");
 #endif
-
-
 
 #if defined(ASCENT_MPI_ENABLED)
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts","hola_mpi");

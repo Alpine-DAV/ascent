@@ -82,9 +82,9 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
 
     variant("openmp", default=(sys.platform != 'darwin'),
             description="build openmp support")
-    variant("mfem", default=False, description="Build MFEM filter support")
+    variant("mfem", default=True, description="Build MFEM filter support")
     variant("adios", default=False, description="Build Adios filter support")
-    variant("dray", default=False, description="Build with Devil Ray support")
+    variant("dray", default=True, description="Build with Devil Ray support")
     variant("adios2", default=False, description="Build Adios2 filter support")
     variant("fides", default=False, description="Build Fides filter support")
     variant("genten", default=False, description="Build with GenTen support")

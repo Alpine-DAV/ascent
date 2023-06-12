@@ -4106,10 +4106,7 @@ void
 Lineout::execute()
 {
 
-#if not defined(ASCENT_DRAY_ENABLED)
-  ASCENT_ERROR("Lineout only supported when Devil Ray is built");
-#else
-
+#if defined(ASCENT_DRAY_ENABLED)
   conduit::Node &n_samples = *input<Node>("samples");
   int32 samples = n_samples["value"].to_int32();;
   if(samples < 1)
@@ -4226,8 +4223,10 @@ Lineout::execute()
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
+  
+#else
+  ASCENT_ERROR("Lineout only supported when Devil Ray is built");
 #endif
-
 }
 
 //-----------------------------------------------------------------------------

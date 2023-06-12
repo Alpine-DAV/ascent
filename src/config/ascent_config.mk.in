@@ -26,6 +26,8 @@ ASCENT_DIR = @ASCENT_INSTALL_PREFIX@
 
 ASCENT_CONDUIT_DIR = @CONDUIT_DIR@
 
+ASCENT_BUILD_SHARED_LIBS = @ASCENT_BUILD_SHARED_LIBS@
+
 # optional built in libs
 ASCENT_APCOMP_ENABLED = @ASCENT_APCOMP_ENABLED@
 ASCENT_DRAY_ENABLED   = @ASCENT_DRAY_ENABLED@
@@ -183,8 +185,12 @@ ifeq ($(ASCENT_VTKH_ENABLED),TRUE)
    ifeq ($(ASCENT_CUDA_LIBS),)
       # not set, do not include config.mk
    else
-       ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
-       ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
+      # bcal objs are only needed for static libs,
+      # if ASCENT_BUILD_SHARED_LIBS isn't defined, we have static libs
+      ifeq ($(ASCENT_BUILD_SHARED_LIBS),)
+         ASCENT_DEVICE_OBJECT = $(ASCENT_DIR)/lib/bcal_vtkm.o
+         ASCENT_DEVICE_OBJECT_MPI = $(ASCENT_DIR)/lib/bcal_vtkm_mpi.o
+      endif
    endif  
 endif
 

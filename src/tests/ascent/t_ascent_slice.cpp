@@ -469,6 +469,354 @@ TEST(ascent_slice, test_3slice)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
+TEST(ascent_slice, test_auto_slice_z_axis)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing automatic slice with z-axis and 10 levels");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_auto_slice_z_axis");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "auto_slice";
+    // filter knobs
+    conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    slice_params["field"]    = "braid";
+    slice_params["levels"]   = 10;
+    slice_params["normal/x"] = 0.f;
+    slice_params["normal/y"] = 0.f;
+    slice_params["normal/z"] = 1.f;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]     = "pseudocolor";
+    scenes["s1/plots/p1/field"]    = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"]      = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
+    std::string msg = "An example of the automaic slice filter using a z-axis normal, 10 levels, and the default camera.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_slice, test_auto_slice_x_axis)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing automatic slice with x-axis and 10 levels");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_auto_slice_x_axis");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "auto_slice";
+    // filter knobs
+    conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    slice_params["field"]    = "braid";
+    slice_params["levels"]   = 10;
+    slice_params["normal/x"] = 1.f;
+    slice_params["normal/y"] = 0.f;
+    slice_params["normal/z"] = 0.f;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]             = "pseudocolor";
+    scenes["s1/plots/p1/field"]            = "braid";
+    scenes["s1/plots/p1/pipeline"]         = "pl1";
+    scenes["s1/renders/r1/camera/azimuth"] = 90.0;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
+    std::string msg = "An example of the automaic slice filter using an x-axis normal, 10 levels, and an adusted camera.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_slice, test_auto_slice_y_axis)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing automatic slice with y-axis and 10 levels");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_auto_slice_y_axis");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "auto_slice";
+    // filter knobs
+    conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    slice_params["field"]    = "braid";
+    slice_params["levels"]   = 10;
+    slice_params["normal/x"] = 0.f;
+    slice_params["normal/y"] = 1.f;
+    slice_params["normal/z"] = 0.f;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]               = "pseudocolor";
+    scenes["s1/plots/p1/field"]              = "braid";
+    scenes["s1/plots/p1/pipeline"]           = "pl1";
+    scenes["s1/renders/r1/camera/elevation"] = 90.0;
+    scenes["s1/renders/r1/image_prefix"]     = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
+    std::string msg = "An example of the automaic slice filter using a y-axis normal, 10 levels, and an adusted camera.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_slice, test_auto_slice_xy_axis)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing automatic slice with an xy-axis and 10 levels");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_auto_slice_xy_axis");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "auto_slice";
+    // filter knobs
+    conduit::Node &slice_params = pipelines["pl1/f1/params"];
+    slice_params["field"]    = "braid";
+    slice_params["levels"]   = 10;
+    slice_params["normal/x"] = 1.f;
+    slice_params["normal/y"] = 1.f;
+    slice_params["normal/z"] = 0.f;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]               = "pseudocolor";
+    scenes["s1/plots/p1/field"]              = "braid";
+    scenes["s1/plots/p1/pipeline"]           = "pl1";
+    scenes["s1/renders/r1/camera/azimuth"]   = 90.0;
+    scenes["s1/renders/r1/camera/elevation"] = 45.0;
+    scenes["s1/renders/r1/image_prefix"]     = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    // NOTE: RELAXED TOLERANCE TO FROM default
+    //       to mitigate differences between platforms
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
+    std::string msg = "An example of the automaic slice filter using an xy-axis normal, 10 levels, and an adusted camera.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

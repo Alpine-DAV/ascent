@@ -250,8 +250,8 @@ WorldAnnotator::add_axes(const Camera &camera)
   float32 dx = xmax - xmin, dy = ymax - ymin, dz = zmax - zmin;
   float32 size = sqrt(dx * dx + dy * dy + dz * dz);
 
-  Vec<float32, 3> center = ((Vec<float32, 3>) {{xmax - xmin, ymax - ymin, zmax - zmin}}) / 2.f +
-    ((Vec<float32, 3>) {{xmin, ymin, zmin}});
+  Vec<float32, 3> center = Vec<float32, 3>({xmax - xmin, ymax - ymin, zmax - zmin}) / 2.f +
+                           Vec<float32, 3>({xmin, ymin, zmin});
 
   const Vec<float32,3> look_at = camera.get_look_at();
   const Vec<float32,3> position = camera.get_pos();

@@ -30,16 +30,18 @@ public:
     Runtime();
     virtual ~Runtime();
 
-    virtual void  Initialize(const conduit::Node &options)=0;
+    virtual void           Initialize(const conduit::Node &options)=0;
 
-    virtual void  Publish(const conduit::Node &data)=0;
-    virtual void  Execute(const conduit::Node &actions)=0;
+    virtual void           Publish(const conduit::Node &data)=0;
+    virtual void           Execute(const conduit::Node &actions)=0;
 
-    virtual void  Info(conduit::Node &info_out)=0;
+    virtual void           Info(conduit::Node &info_out)=0;
 
-    virtual void  Cleanup()=0;
+    virtual conduit::Node &Info()=0;
 
-    virtual void  DisplayError(const std::string &msg);
+    virtual void           Cleanup()=0;
+
+    virtual void           DisplayError(const std::string &msg);
 };
 
 //-----------------------------------------------------------------------------

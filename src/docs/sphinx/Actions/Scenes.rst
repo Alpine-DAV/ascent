@@ -397,6 +397,74 @@ parameters:
 - ``render_bg`` : controls if the background is rendered or not. If no background is rendered, the background will appear transparent. Valid values are ``"true"`` and ``"false"``.
 - ``dataset_bounds`` : controls the dimensions of the rendered bounding box around the dataset. This will overwrite the default bounding box based on the dataset's dimensions. A valid value is an array of six doubles ([xMin,xMax,yMin,yMax,zMin,zMax]) that define dimensions larger than the default.  
 
+
+Automatic Camera
+----------------
+
+The automatic camera render is used to automatically choose a camera placement, basing the decision on a user-chosen viewpoint quality (VQ) metric.
+The automatic camera render requires a mesh and scalar field data, and works in conjunction with other Filters.
+The automatic camera render analyzes the data that will be rendered using a user-chosen metric and number of considered cameras.
+Given the number of cameras, the camera placements are determined using Fibonacci's Lattice, a method for placing points around a unit sphere, and the camera is pointed at the center of the data.
+
+A user can specify the number of camera samples (``auto_camera/samples``) to consider when determining the best camera placement. 
+The user also specifies the field data (``auto_camera/field``) the VQ metric will operate on, as well as the VQ metric (``auto_camera/metric``). 
+The current VQ metrics and respective keywords are:
+  Data Entropy : ``data_entropy``
+  Depth Entropy : ``depth_entropy``
+  Shading Entropy : ``shading_entropy``
+  DDS Entropy : ``dds_entropy``
+
+There are also several optional parameters a user can specify, such as the number of bins (``auto_camera/bins=256``) to be used in the entropy calculations, as well as height (``auto_camera/height=1024``) and width (``auto_camera/width=1024``).
+
+Usage Recommendation:
+Automatically producing quality camera placements is a difficult task, and not all of the available VQ metrics consistently produce viewpoints that users want to see or find insightful.
+If users do not have a prior preference, we recommend using the VQ metric DDS Entropy, which is the sum of Data Entropy, Depth Entropy, and Shading Entropy.
+Marsaglia et al. \cite{marsaglialdav} performed a user study that showed that out of the available VQ metrics, DDS Entropy produces viewpoints that scientific experts prefer.
+
+The code below creates a pipeline that first applies a contour filter and then applies the camera filter before declaring a scene. 
+
+
+.. code-block:: c++
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "isovolume";
+    // filter knobs
+    conduit::Node &clip_params = pipelines["pl1/f1/params"];
+    clip_params["field"] = "braid";
+    clip_params["min_value"] = 5.;
+    clip_params["max_value"] = 10.;
+
+    //scene 1
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "radial";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    
+    //camera knobs
+    scenes["s1/renders/r1/type"] = "auto_camera";
+    scenes["s1/renders/r1/auto_camera/metric"] = "dds_entropy";
+    scenes["s1/renders/r1/auto_camera/samples"] = 5;
+    scenes["s1/renders/r1/auto_camera/field"] = "radial";
+
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+
+.. _defaultcam:
+
+..  figure:: ../images/cam_default.png
+    :scale: 50 %
+    :align: center
+
+    The default camera placement for this example.
+
+.. _dataentropycam:
+
+..  figure:: ../images/cam_ddsentropy.png
+    :scale: 50 %
+    :align: center
+
+    The camera placement chosen by the VQ metric DDS Entropy for this example.
+    This example and implementation of the other VQ metrics can be found in `auto_camera test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/vtkh/t_vtk-h_auto_camera.cpp>`_.
+
 .. _actions_cinema:
 
 

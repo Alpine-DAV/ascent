@@ -13,7 +13,7 @@
 #include "ascent_jit_topology.hpp"
 #include <ascent_logging.hpp>
 #include "ascent_blueprint_topologies.hpp"
-#include <math.h>
+#include <cmath>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

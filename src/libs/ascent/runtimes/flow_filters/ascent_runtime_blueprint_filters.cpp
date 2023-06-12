@@ -79,6 +79,10 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// BlueprintVerify
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 BlueprintVerify::BlueprintVerify()
 :Filter()
 {
@@ -136,19 +140,18 @@ BlueprintVerify::execute()
     // some MPI tasks may not have data, that is fine
     // but blueprint verify will fail, so if the
     // input node is empty skip verify
-    int local_verify_ok = 0;
+    int local_verify_ok  = 0;
+    int local_verify_err = 0;
+    
+    std::string verify_err_msg = "";
     if(!n_input->dtype().is_empty())
     {
         if(!conduit::blueprint::verify(protocol,
                                        *n_input,
                                        v_info))
         {
-            n_input->schema().print();
-            v_info.print();
-            ASCENT_ERROR("blueprint verify failed for protocol"
-                          << protocol << std::endl
-                          << "details:" << std::endl
-                          << v_info.to_json());
+            verify_err_msg = v_info.to_yaml();
+            local_verify_err = 1;
         }
         else
         {
@@ -158,17 +161,50 @@ BlueprintVerify::execute()
 
     // make sure some MPI task actually had bp data
 #ifdef ASCENT_MPI_ENABLED
+    // reduce flag for some valid data
     int global_verify_ok = 0;
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     MPI_Allreduce((void *)(&local_verify_ok),
-                (void *)(&global_verify_ok),
-                1,
-                MPI_INT,
-                MPI_SUM,
-                mpi_comm);
+                  (void *)(&global_verify_ok),
+                  1,
+                  MPI_INT,
+                  MPI_SUM,
+                  mpi_comm);
     local_verify_ok = global_verify_ok;
+
+    // reduce flag for errors
+    int global_verify_err = 0;
+    MPI_Allreduce((void *)(&local_verify_err),
+                  (void *)(&global_verify_err),
+                  1,
+                  MPI_INT,
+                  MPI_SUM,
+                  mpi_comm);
+    local_verify_err = global_verify_err;
+
+
 #endif
 
+    // check for an error on any rank
+    if(local_verify_err == 1)
+    {
+        if(verify_err_msg != "")
+        {
+            ASCENT_ERROR("blueprint verify failed for protocol"
+                          << protocol << std::endl
+                          << "one one more more ranks." << std::endl
+                          << "Details:" << std::endl
+                          << verify_err_msg);
+        } 
+        else
+        {
+            ASCENT_ERROR("blueprint verify failed for protocol"
+                          << protocol << std::endl
+                          << "one one more more ranks." << std::endl);
+        }
+    }
+
+    // check for no data
     if(local_verify_ok == 0)
     {
         ASCENT_ERROR("blueprint verify failed: published data is empty");
@@ -177,6 +213,82 @@ BlueprintVerify::execute()
     set_output<DataObject>(d_input);
 }
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// ConduitExtract
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+ConduitExtract::ConduitExtract()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+ConduitExtract::~ConduitExtract()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ConduitExtract::declare_interface(Node &i)
+{
+    i["type_name"]   = "conduit_extract";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ConduitExtract::verify_params(const conduit::Node &params,
+                              conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    // so far, no params
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ConduitExtract::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("conduit_extract input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
+    // squirrel a copy away in the registry where it will
+    // be connected with exec info
+
+    // add this to the extract results in the registry
+    if(!graph().workspace().registry().has_entry("extract_list"))
+    {
+      conduit::Node *extract_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+    }
+
+    conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+
+    Node &einfo = extract_list->append();
+    einfo["type"] = "conduit";
+    einfo["data"].set(*n_input);
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// BlueprintPartition
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 BlueprintPartition::BlueprintPartition()
 :Filter()
@@ -255,24 +367,29 @@ BlueprintPartition::execute()
        params()["distributed"].as_string() == "false" )
     {
         conduit::blueprint::mesh::partition(*n_input,
-		     		            n_options,
-					    *n_output);
+                                            n_options,
+                                            *n_output);
     }
     else
     {
         conduit::blueprint::mpi::mesh::partition(*n_input,
-		    			         n_options,
-					         *n_output,
-					         mpi_comm);
+                                                 n_options,
+                                                 *n_output,
+                                                 mpi_comm);
     }
 #else
     conduit::blueprint::mesh::partition(*n_input,
-		     		        n_options,
-					*n_output);
+                                        n_options,
+                                        *n_output);
 #endif
     DataObject *d_output = new DataObject(n_output);
     set_output<DataObject>(d_output);
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// DataBinning
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 DataBinning::DataBinning()
 :Filter()

@@ -152,6 +152,15 @@ void dray::finalize ()
 {
 }
 
+bool dray::device_enabled ()
+{
+#ifdef DRAY_DEVICE_ENABLED
+  return true;
+#else
+  return false;
+#endif
+}
+
 bool dray::cuda_enabled ()
 {
 #ifdef DRAY_CUDA_ENABLED

@@ -217,7 +217,9 @@ public:
     void           info(conduit::Node &out) const;
     /// create json string from info
     std::string    to_json() const;
-    /// print json version of info
+    /// create  yaml string from info
+    std::string    to_yaml() const;
+    /// print yaml version of info
     void           print() const;
 
 

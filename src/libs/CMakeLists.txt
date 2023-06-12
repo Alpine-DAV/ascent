@@ -29,6 +29,10 @@ else()
 endif()
 
 
+# ascent_png_utils object lib
+# shared for testing of all libs
+add_subdirectory(png_utils)
+
 ################################
 # Add ap comp
 ################################
@@ -55,3 +59,8 @@ endif()
 # Add ascent
 ################################
 add_subdirectory(ascent)
+
+# Catalyst's ascent implementation
+if(CATALYST_FOUND)
+    add_subdirectory(catalyst)
+endif()

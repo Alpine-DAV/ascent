@@ -14,6 +14,7 @@
 #include <dray/aabb.hpp>
 #include <dray/array_utils.hpp>
 #include <dray/dispatcher.hpp>
+#include <dray/data_model/elem_ops.hpp>
 
 #include <RAJA/RAJA.hpp>
 #include <dray/policies.hpp>
@@ -302,9 +303,9 @@ Array<Vec<int32, 4>> extract_faces(UnstructuredMesh<Element<3, ncomp, ElemType::
     const int32 *el_ptr = device_mesh.m_idx_ptr + el_offset;
 
     int32 corners[4];
-    corners[0] = el_ptr[detail::cartesian_to_tet_idx(p, 0, 0, p+1)];
-    corners[1] = el_ptr[detail::cartesian_to_tet_idx(0, p, 0, p+1)];
-    corners[2] = el_ptr[detail::cartesian_to_tet_idx(0, 0, p, p+1)];
+    corners[0] = el_ptr[cartesian_to_tet_idx(p, 0, 0, p+1)];
+    corners[1] = el_ptr[cartesian_to_tet_idx(0, p, 0, p+1)];
+    corners[2] = el_ptr[cartesian_to_tet_idx(0, 0, p, p+1)];
     corners[3] = el_ptr[0];
 
     // The reference tetrahedron. Vertex v3 is at the origin.
@@ -561,9 +562,14 @@ BVH construct_bvh (UnstructuredMesh<ElemT> &mesh, Array<typename get_subref<Elem
 
     const ElemT this_elem_tag = device_mesh.get_elem(el_id);
     const int32 p_order = this_elem_tag.get_order();
-
-    AABB<> boxs[splits + 1];
-    SubRef<dim, etype> ref_boxs[splits + 1];
+    //
+    // NOTE: MS Visual Studio 
+    // Either `dim_outside` and `splits` need to be delcared static above, or we have to re-eval them to 
+    // make sure the constexpr does not degrade due to lambda capture 
+    // 
+    constexpr int lambda_splits = 2 * (2 << ElemT::get_dim());
+    AABB<> boxs[lambda_splits + 1];
+    SubRef<dim, etype> ref_boxs[lambda_splits + 1];
     const int32 * el_split_scratch_idx = split_scratch_idx_ptr + el_id * (splits+1) * nodes_per_elem;
     AABB<> tot;
 

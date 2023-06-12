@@ -11,7 +11,7 @@ cmake_policy(SET CMP0048 NEW)
 # Ascent
 ################################
 
-project(ascent VERSION "0.8.0")
+project(ascent VERSION "0.9.1")
 
 ################################
 # Build Options
@@ -46,11 +46,10 @@ option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
 
 # VTK-h Specific Options 
 
-option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" OFF)
+option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" ON)
 
 # Cuda Specific Options
 option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
-
 
 #####################################################
 # Note: Third party libs like MFEM, FIDES, etc are 

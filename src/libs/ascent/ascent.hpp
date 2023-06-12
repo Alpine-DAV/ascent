@@ -20,7 +20,6 @@
 
 
 #include <ascent_logging.hpp>
-#include <ascent_file_system.hpp>
 #include <ascent_block_timer.hpp>
 
 #include <conduit.hpp>
@@ -45,12 +44,13 @@ public:
            Ascent();
           ~Ascent();
 
-    void   open(); // open with default options
-    void   open(const conduit::Node &options);
-    void   publish(const conduit::Node &data);
-    void   execute(const conduit::Node &actions);
-    void   info(conduit::Node &info_out);
-    void   close();
+    void             open(); // open with default options
+    void             open(const conduit::Node &options);
+    void             publish(const conduit::Node &data);
+    void             execute(const conduit::Node &actions);
+    void             info(conduit::Node &info_out);
+    conduit::Node   &info();
+    void             close();
 
 private:
     
@@ -63,6 +63,7 @@ private:
     std::string    m_actions_file;
     conduit::Node  m_options;
     conduit::Node  m_status;
+    conduit::Node  m_info;
 };
 
 

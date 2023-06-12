@@ -33,20 +33,23 @@ public:
     virtual ~EmptyRuntime();
 
     // Main runtime interface methods used by the ascent interface.
-    void  Initialize(const conduit::Node &options);
+    void                 Initialize(const conduit::Node &options) override;
 
-    void  Publish(const conduit::Node &data);
-    void  Execute(const conduit::Node &actions);
+    void                 Publish(const conduit::Node &data)   override;
+    void                 Execute(const conduit::Node &actions) override;
 
-    void  Info(conduit::Node &out);
+    void                 Info(conduit::Node &out) override;
+    conduit::Node       &Info() override;
 
-    void  Cleanup();
+    void  Cleanup() override;
 
 private:
     // holds options passed to initialize
     conduit::Node     m_runtime_options;
     // conduit node that (externally) holds the data from the simulation
     conduit::Node     m_data;
+    // conduit node that holds exec info
+    conduit::Node     m_info;
 };
 
 //-----------------------------------------------------------------------------

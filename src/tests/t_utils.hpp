@@ -20,7 +20,7 @@
 
 #include "t_config.hpp"
 #include <ascent.hpp>
-#include <utils/ascent_png_compare.hpp>
+#include <png_utils/ascent_png_compare.hpp>
 
 using namespace std;
 using namespace conduit;

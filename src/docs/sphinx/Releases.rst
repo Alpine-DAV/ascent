@@ -15,10 +15,98 @@ to keep buildable via continuous integration testing. See our
 its dependencies.
 
 
-
 Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
+
+
+v0.9.1
+---------------------------------
+
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.1/ascent-v0.9.1-src-with-blt.tar.gz>`__
+
+* Docker Containers
+   * ``alpinedav/ascent:0.9.1``
+   * ``alpinedav/ascent-jupyter:0.9.1``
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Preferred dependency versions for ascent@0.9.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * conduit@0.8.7
+ * vtk-m@1.9.0
+
+Added
+~~~~~
+
+ * Added support for building and running on Windows.
+ * Added runtime control option (in addition to existing compile time option) to Devil Ray stats.
+ * Added CI testing for building Ascent and required third-party libs on Windows.
+
+Changed
+~~~~~~~
+
+ * Devil Ray stats are now opt in, instead of opt out to avoid accumulating memory.
+ * ``build_ascent.sh`` is now a unified script that supports non-device, CUDA, and HIP builds.
+
+Fixed
+~~~~~
+
+ * Ensure ghost indicator fields survive field filtering.
+
+
+v0.9.0
+---------------------------------
+
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.0/ascent-v0.9.0-src-with-blt.tar.gz>`__
+
+* Docker Containers
+   * ``alpinedav/ascent:0.9.0``
+   * ``alpinedav/ascent-jupyter:0.9.0``
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Preferred dependency versions for ascent@0.9.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * conduit@0.8.6
+ * vtk-m@1.9.0
+
+Added
+~~~~~
+
+ * Added support for HIP and running on AMD GPUs
+ * Added RAJA expressions infrastructure
+ * Added pipeline ``partition`` transform from Conduit Blueprint
+ * Added extract ``flatten`` from Conduit Blueprint
+ * Added Log base 10 filter. Filter type is ``log10``
+ * Added Log base 2 filter. Filter type is ``log2``
+ * Added Feature Map in the docs. Detailing Devil Ray and VTKh features
+ * Added ``scripts/build_ascent/build_ascent.sh`` a script that demonstrates how to manually build Ascent and its main dependencies
+ * Added ability to override dimensions for the rendered bounding box around a dataset
+ * Added CMake option ``ENABLE_HIDDEN_VISIBILITY`` (default=ON), which controls if hidden visibility is used for private symbols
+ * Added documentation for how to use ROCm's rocprof profiler for GPUs with Ascent
+ * Added support for Caliper performance annotations
+ * Added automatic slice filter that evaluates a number of slices and outputs the one with the highest entropy
+
+Changed
+~~~~~~~
+
+ * **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
+ * ``apcomp``, ``dray``, ``flow``, ``rover``, and ``vtkh`` are now developed in ``src/libs``.
+ * Updated to VTK-m 1.9
+ * Update docs related to building Ascent.
+ * Updated to BLT v0.5.2
+
 
 v0.8.0
 ---------------------------------

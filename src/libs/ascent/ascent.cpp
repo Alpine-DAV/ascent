@@ -487,6 +487,55 @@ Ascent::info(conduit::Node &info_out)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+conduit::Node &
+Ascent::info()
+{
+    try
+    {
+        if(m_runtime == NULL)
+        {
+            
+        }
+        else // we don't have info throw and error
+        {
+            conduit::Node &info = m_runtime->Info();
+            info["status"].set(m_status);
+            return info;
+        }
+    }
+    catch(conduit::Error &e)
+    {
+        set_status("Ascent::info failed",
+                   e.message());
+
+        if(m_forward_exceptions)
+        {
+            throw e;
+        }
+        else
+        {
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::info"
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::info"
+                     << e.message() << std::endl;
+          }
+        }
+    }
+
+    m_info.reset();
+    m_info["status"] = m_status;
+    return m_info;
+}
+
 //-----------------------------------------------------------------------------
 void
 Ascent::close()
@@ -556,7 +605,6 @@ about()
 {
     Node n;
     ascent::about(n);
-
 
     std::string ASCENT_MASCOT = "\n"
     "                                       \n"
@@ -665,18 +713,60 @@ about(conduit::Node &n)
 #else
     n["mpi"] = "disabled";
 #endif
+
+#if defined(ASCENT_OPENMP_ENABLED)
+    n["openmp"] = "enabled";
+#else
+    n["openmp"] = "disabled";
+#endif
+
+#if defined(ASCENT_CUDA_ENABLED)
+    n["cuda"] = "enabled";
+#else
+    n["cuda"] = "disabled";
+#endif
+
+#if defined(ASCENT_HIP_ENABLED)
+    n["hip"] = "enabled";
+#else
+    n["hip"] = "disabled";
+#endif
+
     // we will always have the main runtime available
     n["runtimes/ascent/status"] = "enabled";
+
+// optional runtime eatures
+
+// raja
+#if defined(ASCENT_RAJA_ENABLED)
+    n["runtimes/ascent/raja/status"] = "enabled";
+#else
+    n["runtimes/ascent/raja/status"] = "disabled";
+#endif
+
+// umpire
+#if defined(ASCENT_UMPIRE_ENABLED)
+    n["runtimes/ascent/umpire/status"] = "enabled";
+#else
+    n["runtimes/ascent/umpire/status"] = "disabled";
+#endif
+
+// dray
 #if defined(ASCENT_DRAY_ENABLED)
     n["runtimes/ascent/dray/status"] = "enabled";
 #else
     n["runtimes/ascent/dray/status"] = "disabled";
 #endif
+
+// occa jit
 #if defined(ASCENT_JIT_ENABLED)
     n["runtimes/ascent/jit/status"] = "enabled";
 #else
     n["runtimes/ascent/jit/status"] = "disabled";
 #endif
+    
+    
+// vtk-m + vtk-h
 #if defined(ASCENT_VTKH_ENABLED)
     // call this vtkm so people don't have to know
     // about vtkh
@@ -707,6 +797,14 @@ about(conduit::Node &n)
     {
         n["runtimes/ascent/vtkm/backends/cuda"] = "disabled";
     }
+    if(vtkh::IsKokkosAvailable())
+    {
+        n["runtimes/ascent/vtkm/backends/kokkos"] = "enabled";
+    }
+    else
+    {
+        n["runtimes/ascent/vtkm/backends/kokkos"] = "disabled";
+    }
 #else
      n["runtimes/ascent/vtkm/status"] = "disabled";
 #endif
@@ -724,10 +822,39 @@ about(conduit::Node &n)
 #endif
 
 
+#if defined(ASCENT_ADIOS2_ENABLED)
+    n["runtimes/ascent/adios2/status"] = "enabled";
+#else
+    n["runtimes/ascent/adios2/status"] = "disabled";
+#endif
+
+#if defined(ASCENT_FIDES_ENABLED)
+    n["runtimes/ascent/fides/status"] = "enabled";
+#else
+    n["runtimes/ascent/fides/status"] = "disabled";
+#endif
+
+#if defined(ASCENT_GENTEN_ENABLED)
+    n["runtimes/ascent/genten/status"] = "enabled";
+#else
+    n["runtimes/ascent/genten/status"] = "disabled";
+#endif
+
+#if defined(ASCENT_BABELFLOW_ENABLED)
+    n["runtimes/ascent/babelflow/status"] = "enabled";
+#else
+    n["runtimes/ascent/babelflow/status"] = "disabled";
+#endif
+
+#if defined(ASCENT_WEBSERVER_ENABLED)
+    n["runtimes/ascent/webserver/status"] = "enabled";
+#else
+    n["runtimes/ascent/webserver/status"] = "disabled";
+#endif
+
     n["runtimes/flow/status"] = "enabled";
 
     n["default_runtime"] = "ascent";
-
 
 }
 
