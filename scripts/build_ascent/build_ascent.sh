@@ -434,6 +434,7 @@ raja_src_dir=$(ospath ${root_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${root_dir}/build/raja-${raja_version})
 raja_install_dir=$(ospath ${root_dir}/install/raja-${raja_version}/)
 raja_tarball=RAJA-${raja_version}.tar.gz
+raja_enable_vectorization="${raja_enable_vectorization:=ON}"
 
 # build only if install doesn't exist
 if [ ! -d ${raja_install_dir} ]; then
@@ -471,7 +472,8 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} ${cmake_compiler_settings} \
   -DRAJA_ENABLE_TESTS=${enable_tests} \
   -DENABLE_EXAMPLES=${enable_tests} \
   -DENABLE_EXERCISES=${enable_tests} ${raja_extra_cmake_args} \
-  -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
+  -DCMAKE_INSTALL_PREFIX=${raja_install_dir} \
+  -DRAJA_ENABLE_VECTORIZATION=${raja_enable_vectorization}
 
 echo "**** Building RAJA ${raja_version}"
 cmake --build ${raja_build_dir} --config ${build_config} -j${build_jobs}
