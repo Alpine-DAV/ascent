@@ -19,8 +19,10 @@
 
 // conduit includes
 #include <conduit.hpp>
+#include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mesh.hpp>
+#include <conduit_relay_io_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -28,7 +30,6 @@
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_metadata.hpp>
-#include <ascent_file_system.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
@@ -39,7 +40,10 @@
 // mpi related includes
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+// -- conduit relay mpi
+#include <conduit_relay_mpi.hpp>
 #include <conduit_blueprint_mpi_mesh.hpp>
+#include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
 // std includes
@@ -48,6 +52,7 @@
 
 using namespace std;
 using namespace conduit;
+using namespace conduit::relay;
 using namespace flow;
 
 //-----------------------------------------------------------------------------
