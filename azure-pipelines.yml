@@ -609,7 +609,7 @@ stages:
            ${CMAKE_EXE} --version
            cat /ascent-config.cmake
            # configure
-           ${CMAKE_EXE} -S src -B build -C /ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+           ${CMAKE_EXE} -S src -B build -C /ascent-config.cmake -DENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install
         displayName: 'Configure with CMake'
 
       - script: |
