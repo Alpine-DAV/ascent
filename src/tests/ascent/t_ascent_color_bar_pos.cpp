@@ -67,8 +67,7 @@ TEST(ascent_color_bar_pos, test_color_bar_pos)
     scenes["scene1/plots/plt1/type"]         = "pseudocolor";
     scenes["scene1/plots/plt1/field"]        = "braid";
     scenes["scene1/renders/r1/image_prefix"] = output_file;
-    double bounds[4] = {0.84,0.92,-0.8,-0.1};
-    scenes["scene1/renders/r1/color_bar_position"].set_float64_ptr(bounds,6); 
+    scenes["scene1/renders/r1/color_bar_position"].set({0.84,0.92,-0.8,-0.1}); 
 
     conduit::Node &add_scenes = actions.append();
     add_scenes["action"] = "add_scenes";
