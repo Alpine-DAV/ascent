@@ -104,8 +104,8 @@ function ospath()
 root_dir=$(pwd)
 root_dir="${prefix:=${root_dir}}"
 root_dir=$(ospath ${root_dir})
-root_dir=$(realpath ${root_dir})
-script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+root_dir=$(ospath ${root_dir})
+script_dir=$(ospath "$(dirname "${BASH_SOURCE[0]}")")
 
 # root_dir is where we will build and install
 # override with `prefix` env var
@@ -176,8 +176,10 @@ fi # build_zlib
 ################
 # HDF5
 ################
-hdf5_version=1.12.2
-hdf5_short_version=1.12
+# release 1-2 GAH!
+hdf5_version=1.14.1-2
+hdf5_middle_version=1.14.1
+hdf5_short_version=1.14
 hdf5_src_dir=$(ospath ${root_dir}/hdf5-${hdf5_version})
 hdf5_build_dir=$(ospath ${root_dir}/build/hdf5-${hdf5_version}/)
 hdf5_install_dir=$(ospath ${root_dir}/install/hdf5-${hdf5_version}/)
@@ -188,11 +190,11 @@ if [ ! -d ${hdf5_install_dir} ]; then
 if ${build_hdf5}; then
 if [ ! -d ${hdf5_src_dir} ]; then
   echo "**** Downloading ${hdf5_tarball}"
-  curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
+  curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_middle_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
   tar -xzf ${hdf5_tarball}
 fi
 
-# hdf5 needs the actual zlib lib, just the install dir -- sort all of this out 
+# hdf5 needs the actual zlib lib, just the install dir -- sort all of this out
 # Note: always use static b/c paths aren't plumbed for windows dlls yet
 if [[ "$build_windows" == "ON" ]]; then
     zlib_lib_file=${zlib_install_dir}/lib/zlibstatic.lib
@@ -200,14 +202,21 @@ else
     zlib_lib_file=${zlib_install_dir}/lib/zlib.a
 fi
 
+#################
+#
+# hdf5 1.14.x CMake recipe for using zlib
+#
+# -DHDF5_ENABLE_Z_LIB_SUPPORT=ON
+# Add zlib install dir to CMAKE_PREFIX_PATH
+#
+#################
 
 echo "**** Configuring HDF5 ${hdf5_version}"
 cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DZLIB_INCLUDE_DIR:PATH=${zlib_install_dir}/include \
-  -DZLIB_LIBRARY_DIR:FILEPATH=${zlib_lib_file} \
-  -DZLIB_USE_EXTERNAL=1 \
+  -DHDF5_ENABLE_Z_LIB_SUPPORT=ON \
+  -DCMAKE_PREFIX_PATH=${zlib_install_dir} \
   -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir}
 
 echo "**** Building HDF5 ${hdf5_version}"
