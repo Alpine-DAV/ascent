@@ -11,6 +11,7 @@ jobs:
     env:
       CC: clang
       CXX: clang++
+    steps:
     - name: Checkout
       uses: actions/checkout@v2
       with:
