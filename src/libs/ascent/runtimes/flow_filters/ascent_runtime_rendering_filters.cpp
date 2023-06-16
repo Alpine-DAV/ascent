@@ -490,21 +490,21 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   if(render_node.has_path("color_bar_position"))
   {
     if(!render_node["color_bar_position"].dtype().is_number() ||
-		    render_node["color_bar_position"].dtype().number_of_elements()%6 != 0)
+		    render_node["color_bar_position"].dtype().number_of_elements()%4 != 0)
     {
-      ASCENT_ERROR("render/color_bar_position must be an array of 6 values for each color bar");
+      ASCENT_ERROR("render/color_bar_position must be an array of 4 values for each color bar");
     }
 
-    int positions = render_node["color_bar_position"].dtype().number_of_elements()/6;
+    int positions = render_node["color_bar_position"].dtype().number_of_elements()/4;
     std::vector<vtkm::Bounds> cb_position;
     for(int i = 0; i < positions; i++)
     {
       conduit::Node n;
       render_node["color_bar_position"].to_float32_array(n);
       const float32 *cb_pos = n.as_float32_ptr();
-      vtkm::Bounds pos(vtkm::Range(cb_pos[0+6*i],cb_pos[1+6*i]), 
-			vtkm::Range(cb_pos[2+6*i],cb_pos[3+6*i]), 
-			vtkm::Range(cb_pos[4+6*i],cb_pos[5+6*i]));
+      vtkm::Bounds pos(vtkm::Range(cb_pos[0+4*i],cb_pos[1+4*i]), 
+			vtkm::Range(cb_pos[2+4*i],cb_pos[3+4*i]), 
+			vtkm::Range(0.0,0.0));
       cb_position.push_back(pos);
     }
     render.SetColorBarPosition(cb_position);
