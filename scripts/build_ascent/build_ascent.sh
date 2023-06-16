@@ -51,6 +51,9 @@ build_ascent="${build_ascent:=true}"
 # see if we are building on windows
 build_windows="${build_windows:=OFF}"
 
+# see if we are building on macOS
+build_windows="${build_macos:=OFF}"
+
 if [[ "$enable_cuda" == "ON" ]]; then
     echo "*** configuring with CUDA support"
 
@@ -81,6 +84,7 @@ fi
 case "$OSTYPE" in
   win*)     build_windows="ON";;
   msys*)    build_windows="ON";;
+  darwin*)  build_macos="ON";;
   *)        ;;
 esac
 
@@ -89,11 +93,10 @@ if [[ "$build_windows" == "ON" ]]; then
 fi 
 
 ################
-# path helper
+# path helpers
 ################
 function ospath()
 {
-  respath=""
   if [[ "$build_windows" == "ON" ]]; then
     echo `cygpath -m $1`
   else
@@ -101,11 +104,20 @@ function ospath()
   fi 
 }
 
+function abs_path()
+{
+  if [[ "$build_macos" == "ON" ]]; then
+    echo "$(cd $(dirname "$1");pwd)/$(basename "$1")"
+  else
+    echo `realpath $1`
+  fi
+}
+
 root_dir=$(pwd)
 root_dir="${prefix:=${root_dir}}"
 root_dir=$(ospath ${root_dir})
-root_dir=$(ospath ${root_dir})
-script_dir=$(ospath "$(dirname "${BASH_SOURCE[0]}")")
+root_dir=$(abs_path ${root_dir})
+script_dir=$(abs_path "$(dirname "${BASH_SOURCE[0]}")")
 
 # root_dir is where we will build and install
 # override with `prefix` env var
