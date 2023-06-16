@@ -90,7 +90,11 @@ esac
 
 if [[ "$build_windows" == "ON" ]]; then
   echo "*** configuring for windows"
-fi 
+fi
+
+if [[ "$build_macos" == "ON" ]]; then
+  echo "*** configuring for macos"
+fi
 
 ################
 # path helpers
