@@ -52,7 +52,7 @@ build_ascent="${build_ascent:=true}"
 build_windows="${build_windows:=OFF}"
 
 # see if we are building on macOS
-build_windows="${build_macos:=OFF}"
+build_macos="${build_macos:=OFF}"
 
 if [[ "$enable_cuda" == "ON" ]]; then
     echo "*** configuring with CUDA support"
@@ -210,14 +210,6 @@ if [ ! -d ${hdf5_src_dir} ]; then
   tar -xzf ${hdf5_tarball}
 fi
 
-# hdf5 needs the actual zlib lib, just the install dir -- sort all of this out
-# Note: always use static b/c paths aren't plumbed for windows dlls yet
-if [[ "$build_windows" == "ON" ]]; then
-    zlib_lib_file=${zlib_install_dir}/lib/zlibstatic.lib
-else
-    zlib_lib_file=${zlib_install_dir}/lib/zlib.a
-fi
-
 #################
 #
 # hdf5 1.14.x CMake recipe for using zlib
@@ -249,7 +241,7 @@ fi # build_hdf5
 ################
 # Conduit
 ################
-conduit_version=v0.8.7
+conduit_version=v0.8.8
 conduit_src_dir=$(ospath ${root_dir}/conduit-${conduit_version}/src)
 conduit_build_dir=$(ospath ${root_dir}/build/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${root_dir}/install/conduit-${conduit_version}/)
