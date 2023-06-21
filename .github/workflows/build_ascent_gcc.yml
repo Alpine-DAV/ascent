@@ -38,8 +38,9 @@ jobs:
                                 libreadline-dev \
                                 libsqlite3-dev \
                                 libbz2-dev \
-                                mpich \
-                                libmpich-dev \
+                                openmpi-bin \
+                                openmpi-common \
+                                libopenmpi-dev \
                                 cmake
     - name: Checkout
       uses: actions/checkout@v2
