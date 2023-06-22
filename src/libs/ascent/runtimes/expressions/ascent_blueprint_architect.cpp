@@ -996,45 +996,38 @@ field_histogram(const conduit::Node &dataset,
 conduit::Node
 derived_field_add(const conduit::Node &dataset,
                 const std::string &field1,
-                const std::string &field2)
+                const std::string &field2,
+		const std::string &out_field)
 {
 
   conduit::Node res;
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
+    const std::string path1 = "fields/" + field1;
+    const std::string path2 = "fields/" + field2;
     const conduit::Node &dom = dataset.child(i);
-    if(dom.has_path("fields/" + field1) && dom.has_path("fields/" + field2))
+    if(dom.has_path(path1) && dom.has_path(path2)) //has both
     {
-      const std::string path1 = "fields/" + field1;
-      const std::string path2 = "fields/" + field2;
       conduit::Node values;
       values = derived_field_add_reduction(dom[path1], dom[path2]);
+      double *values = values["values"].value();
+      res[out_field].set(values); //need to preserve domain structure?
+				  //save all into mega_values 
+				  //then set at end?
 
     }
-    else if(dom.has_path("fields/" + field1)) //TODO
+    else if(dom.has_path(path1)) //only has path1
     {
+      res[out_field].set(dom[path1].value()); 
     }
-    else if(dom.has_path("fields/" + field2)) //TODO
+    else if(dom.has_path(path2)) //only has path2
     {
+      res[out_field].set(dom[path2].value()); 
     }
     else //has neither field
 	 continue; //?
   }
 
-#ifdef ASCENT_MPI_ENABLED
-  double *global_bins = new double[num_bins];
-
-  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Allreduce(bins, global_bins, num_bins, MPI_DOUBLE, MPI_SUM, mpi_comm);
-
-  delete[] bins;
-  bins = global_bins;
-#endif
-  res["value"].set(bins, num_bins);
-  res["min_val"] = min_val;
-  res["max_val"] = max_val;
-  res["num_bins"] = num_bins;
-  delete[] bins;
   return res;
 }
 
