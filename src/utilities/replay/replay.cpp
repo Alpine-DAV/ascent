@@ -34,9 +34,9 @@ void usage()
   std::cout<<"  --actions : a json file containing ascent actions. Default value\n";
   std::cout<<"              is 'ascent_actions.json'.\n\n";
   std::cout<<"======================== Examples =========================\n";
-  std::cout<<"./relay_ser --root=clover.cycle_000060.root\n";
-  std::cout<<"./relay_ser --root=clover.cycle_000060.root --actions=my_actions.json\n";
-  std::cout<<"srun -n 4 relay_mpi --cycles=cycles_file\n";
+  std::cout<<"./replay_ser --root=clover.cycle_000060.root\n";
+  std::cout<<"./replay_ser --root=clover.cycle_000060.root --actions=my_actions.json\n";
+  std::cout<<"srun -n 4 replay_mpi --cycles=cycles_file\n";
   std::cout<<"\n\n";
 }
 
