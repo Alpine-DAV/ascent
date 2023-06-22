@@ -91,6 +91,9 @@ ASCENT_API
 conduit::Node global_bounds(const conduit::Node &dataset,
                             const std::string &topo_name);
 
+ASCENT_API
+conduit::Node derived_field_add(const conduit::Node &l_field,
+                              const conduit::Node &r_field);
 //
 // NOTE: ascent_data_binning contains a RAJA version
 // of binning that needs more work, but should eventually

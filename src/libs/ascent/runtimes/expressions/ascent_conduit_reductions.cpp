@@ -882,7 +882,7 @@ array_sum(const conduit::Node &array,
 }
 
 conduit::Node
-derived_field_add(const conduit::Node &l_field, const conduit::Node &r_field, const std::string &component)
+derived_field_add_reduction(const conduit::Node &l_field, const conduit::Node &r_field, const std::string &component)
 {
   return detail::exec_dispatch_DF(l_field, r_field, component, detail::DFAddFunctor());
 }
