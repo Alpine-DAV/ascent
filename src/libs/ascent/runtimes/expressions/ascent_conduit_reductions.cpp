@@ -153,6 +153,77 @@ conduit::Node dispatch_memory(const conduit::Node &field,
   return res;
 }
 
+//dispatch memory for a derived field (DF)
+template<typename Function, typename Exec>
+conduit::Node dispatch_memory_DF(const conduit::Node &l_field,
+			      const conduit::Node &r_field,
+                              std::string component,
+                              const Function &func,
+                              const Exec &exec)
+{
+  const std::string mem_space = Exec::memory_space;
+
+  conduit::Node res;
+  if(field_is_float32(l_field))
+  {
+    if(!field_is_float32(r_field))
+      ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                  l_field.schema().to_string() << 
+		  "\n vs. \n" << 
+		  r_field.schema().to_string());
+    MemoryInterface<conduit::float32> l_farray(l_field);
+    MemoryInterface<conduit::float32> r_farray(r_field);
+    MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
+    MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
+    func(l_accessor, r_accessor, res, exec);
+  }
+  else if(field_is_float64(l_field))
+  {
+    if(!field_is_float64(r_field))
+      ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                  l_field.schema().to_string() << 
+		  "\n vs. \n" << 
+		  r_field.schema().to_string());
+    MemoryInterface<conduit::float32> l_farray(l_field);
+    MemoryInterface<conduit::float32> r_farray(r_field);
+    MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
+    MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
+    func(l_accessor, r_accessor, res, exec);
+  }
+  else if(field_is_int32(l_field))
+  {
+    if(!field_is_int32(r_field))
+      ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                  l_field.schema().to_string() << 
+		  "\n vs. \n" << 
+		  r_field.schema().to_string());
+    MemoryInterface<conduit::float32> l_farray(l_field);
+    MemoryInterface<conduit::float32> r_farray(r_field);
+    MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
+    MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
+    func(l_accessor, r_accessor, res, exec);
+  }
+  else if(field_is_int64(l_field))
+  {
+    if(!field_is_int64(r_field))
+      ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                  l_field.schema().to_string() << 
+		  "\n vs. \n" << 
+		  r_field.schema().to_string());
+    MemoryInterface<conduit::float32> l_farray(l_field);
+    MemoryInterface<conduit::float32> r_farray(r_field);
+    MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
+    MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
+    func(l_accessor, r_accessor, res, exec);
+  }
+  else
+  {
+    ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                  l_field.schema().to_string());
+  }
+  return res;
+}
+
 template<typename Function>
 conduit::Node
 exec_dispatch(const conduit::Node &field, std::string component, const Function &func)
@@ -185,6 +256,48 @@ exec_dispatch(const conduit::Node &field, std::string component, const Function 
   {
     HipExec exec;
     res = dispatch_memory(field, component, func, exec);
+  }
+#endif
+  else
+  {
+    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+                  exec_policy);
+  }
+  return res;
+}
+
+template<typename Function>
+conduit::Node
+exec_dispatch_DF(const conduit::Node &l_field, const conduit::Node &r_field, std::string component, const Function &func)
+{
+
+  conduit::Node res;
+  const std::string exec_policy = ExecutionManager::execution_policy();
+  //std::cout<<"Exec policy "<<exec_policy<<"\n";
+  if(exec_policy == "serial")
+  {
+    SerialExec exec;
+    res = dispatch_memory_DF(l_field, r_field, component, func, exec);
+  }
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED) 
+  else if(exec_policy == "openmp")
+  {
+    OpenMPExec exec;
+    res = dispatch_memory_DF(l_field, r_field, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_CUDA_ENABLED)
+  else if(exec_policy == "cuda")
+  {
+    CudaExec exec;
+    res = dispatch_memory_DF(l_field, r_field, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    res = dispatch_memory_DF(l_field, r_field, component, func, exec);
   }
 #endif
   else
@@ -481,6 +594,31 @@ struct SumFunctor
   }
 };
 
+struct DFAddFunctor
+{
+  template<typename T, typename Exec>
+  void operator()(const MemoryAccessor<T> l_accessor,
+  			   const MemoryAccessor<T> r_accessor,
+  			   MemoryAccessor<T> output,
+                           const Exec &) const
+  {
+    const int size = accessor.m_size;
+    using for_policy = typename Exec::for_policy;
+    using reduce_policy = typename Exec::reduce_policy;
+
+    ascent::ReduceSum<reduce_policy,T> sum(static_cast<T>(0));
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
+      const T val = l_accessor[i] + r_accessor[i];
+      output[i] = val;
+
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
+
+    return;
+  }
+};
+
 struct NanFunctor
 {
   template<typename T, typename Exec>
@@ -742,6 +880,13 @@ array_sum(const conduit::Node &array,
 
   return res;
 }
+
+conduit::Node
+derived_field_add(const conduit::Node &l_field, const conduit::Node &r_field, const std::string &component)
+{
+  return detail::exec_dispatch_DF(l_field, r_field, component, detail::DFAddFunctor());
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

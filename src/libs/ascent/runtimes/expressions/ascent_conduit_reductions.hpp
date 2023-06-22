@@ -74,6 +74,10 @@ conduit::Node ASCENT_API array_min(const conduit::Node &array,
 conduit::Node ASCENT_API array_sum(const conduit::Node &array,
                         const std::string &exec_loc,
                         const std::string &component = "");
+
+conduit::Node ASCENT_API derived_field_add(const conduit::Node &l_field,
+					const conduit::Node &r_field,
+                                        const std::string &component = "");
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
