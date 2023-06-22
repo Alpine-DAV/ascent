@@ -602,19 +602,55 @@ struct DFAddFunctor
   			   MemoryAccessor<T> output,
                            const Exec &) const
   {
-    const int size = accessor.m_size;
+    const int l_size = l_accessor.m_size;
+    const int r_size = r_accessor.m_size;
+    bool diff_sizes = false;
+    const int size; 
+    const int max_size;
+
+    size = max_size = l_size; 
+    if(l_size != r_size)
+    {
+      size = min(l_size, r_size);
+      max_size = max(l_size, r_size);
+      diff_sizes = true;
+    }
+
+    double values[max_size];
+
     using for_policy = typename Exec::for_policy;
     using reduce_policy = typename Exec::reduce_policy;
 
-    ascent::ReduceSum<reduce_policy,T> sum(static_cast<T>(0));
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       const T val = l_accessor[i] + r_accessor[i];
-      output[i] = val;
-
+      values[i] = val;
     });
     ASCENT_DEVICE_ERROR_CHECK();
 
+    if(diff_sizes)
+    {
+      if(l_size > r_size)
+      {
+        ascent::forall<for_policy>(size, l_size, [=] ASCENT_LAMBDA(index_t i)
+        {
+          const T val = l_accessor[i];
+          values[i] = val;
+        });
+        ASCENT_DEVICE_ERROR_CHECK();
+      }
+      else
+      {
+        ascent::forall<for_policy>(size, r_size, [=] ASCENT_LAMBDA(index_t i)
+        {
+          const T val = r_accessor[i];
+          values[i] = val;
+        });
+        ASCENT_DEVICE_ERROR_CHECK();
+      }
+    }
+
+    output["values"].set(values);
     return;
   }
 };
