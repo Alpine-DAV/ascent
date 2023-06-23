@@ -255,6 +255,7 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::FieldNanCount>();
   flow::Workspace::register_filter_type<expressions::FieldInfCount>();
   flow::Workspace::register_filter_type<expressions::FieldSum>();
+  flow::Workspace::register_filter_type<expressions::AddFields>();
   flow::Workspace::register_filter_type<expressions::ArrayMax>();
   flow::Workspace::register_filter_type<expressions::ArrayMin>();
   flow::Workspace::register_filter_type<expressions::ArrayAvg>();
@@ -680,7 +681,10 @@ initialize_functions()
   conduit::Node &df_add = (*functions)["add_fields"].append();
   df_add["return_type"] = "field";
   df_add["filter_name"] = "add_fields";
-  df_add["args/arg1/type"] = "array";
+  df_add["args/field1/type"] = "string";
+  df_add["args/field2/type"] = "string";
+  df_add["args/num_fields/type"] = "int";
+  df_add["args/output_name/type"] = "string";
   df_add["description"] =
     "Returns the derived field from adding two or more fields of matching type";
 
