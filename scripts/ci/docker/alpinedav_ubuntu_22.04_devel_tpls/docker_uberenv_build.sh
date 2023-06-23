@@ -10,7 +10,7 @@ export SPACK_SPEC="${SPACK_SPEC}"
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/"
 
-cd ascent && python scripts/uberenv/uberenv.py \
+cd ascent && python3 scripts/uberenv/uberenv.py \
      -k \
      --spec="${SPACK_SPEC}" \
      --spack-config-dir="${SPACK_CONFIG}" \
