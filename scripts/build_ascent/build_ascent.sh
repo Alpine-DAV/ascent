@@ -631,7 +631,8 @@ cmake -S ${catalyst_src_dir} -B ${catalyst_build_dir} ${cmake_compiler_settings}
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DCATALYST_BUILD_TESTING=${enable_tests} \
-  -DCATALYST_USE_MPI=${enable_mpi}
+  -DCATALYST_USE_MPI=${enable_mpi} \
+  -DCMAKE_INSTALL_PREFIX=${catalyst_install_dir} \
 
 echo "**** Building Catalyst ${catalyst_version}"
 cmake --build ${catalyst_build_dir} --config ${build_config} -j${build_jobs}
