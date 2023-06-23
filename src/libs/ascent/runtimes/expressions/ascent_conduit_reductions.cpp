@@ -175,7 +175,7 @@ conduit::Node dispatch_memory_DF(const conduit::Node &l_field,
     MemoryInterface<conduit::float32> r_farray(r_field);
     MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
     MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
-    func(l_accessor, r_accessor, res, exec);
+    res = func(l_accessor, r_accessor, exec);
   }
   else if(field_is_float64(l_field))
   {
@@ -184,11 +184,11 @@ conduit::Node dispatch_memory_DF(const conduit::Node &l_field,
                   l_field.schema().to_string() << 
 		  "\n vs. \n" << 
 		  r_field.schema().to_string());
-    MemoryInterface<conduit::float32> l_farray(l_field);
-    MemoryInterface<conduit::float32> r_farray(r_field);
-    MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
-    MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
-    func(l_accessor, r_accessor, res, exec);
+    MemoryInterface<conduit::float64> l_farray(l_field);
+    MemoryInterface<conduit::float64> r_farray(r_field);
+    MemoryAccessor<conduit::float64> l_accessor = l_farray.accessor(mem_space,component);
+    MemoryAccessor<conduit::float64> r_accessor = r_farray.accessor(mem_space,component);
+    res = func(l_accessor, r_accessor, exec);
   }
   else if(field_is_int32(l_field))
   {
@@ -197,11 +197,11 @@ conduit::Node dispatch_memory_DF(const conduit::Node &l_field,
                   l_field.schema().to_string() << 
 		  "\n vs. \n" << 
 		  r_field.schema().to_string());
-    MemoryInterface<conduit::float32> l_farray(l_field);
-    MemoryInterface<conduit::float32> r_farray(r_field);
-    MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
-    MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
-    func(l_accessor, r_accessor, res, exec);
+    MemoryInterface<conduit::int32> l_farray(l_field);
+    MemoryInterface<conduit::int32> r_farray(r_field);
+    MemoryAccessor<conduit::int32> l_accessor = l_farray.accessor(mem_space,component);
+    MemoryAccessor<conduit::int32> r_accessor = r_farray.accessor(mem_space,component);
+    res = func(l_accessor, r_accessor, exec);
   }
   else if(field_is_int64(l_field))
   {
@@ -210,11 +210,11 @@ conduit::Node dispatch_memory_DF(const conduit::Node &l_field,
                   l_field.schema().to_string() << 
 		  "\n vs. \n" << 
 		  r_field.schema().to_string());
-    MemoryInterface<conduit::float32> l_farray(l_field);
-    MemoryInterface<conduit::float32> r_farray(r_field);
-    MemoryAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space,component);
-    MemoryAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space,component);
-    func(l_accessor, r_accessor, res, exec);
+    MemoryInterface<conduit::int64> l_farray(l_field);
+    MemoryInterface<conduit::int64> r_farray(r_field);
+    MemoryAccessor<conduit::int64> l_accessor = l_farray.accessor(mem_space,component);
+    MemoryAccessor<conduit::int64> r_accessor = r_farray.accessor(mem_space,component);
+    res = func(l_accessor, r_accessor, exec);
   }
   else
   {
@@ -597,16 +597,15 @@ struct SumFunctor
 struct DFAddFunctor
 {
   template<typename T, typename Exec>
-  void operator()(const MemoryAccessor<T> l_accessor,
+  conduit::Node operator()(const MemoryAccessor<T> l_accessor,
   			   const MemoryAccessor<T> r_accessor,
-  			   MemoryAccessor<T> output,
                            const Exec &) const
   {
     const int l_size = l_accessor.m_size;
     const int r_size = r_accessor.m_size;
     bool diff_sizes = false;
-    const int size; 
-    const int max_size;
+    int size; 
+    int max_size;
 
     size = max_size = l_size; 
     if(l_size != r_size)
@@ -616,15 +615,22 @@ struct DFAddFunctor
       diff_sizes = true;
     }
 
-    double values[max_size];
+
+    // conduit zero initializes this array
+    conduit::Node res;
+    res["values"].set(conduit::DataType::float64(max_size));
+    double *res_array = res["values"].value();
+
+    Array<double> field_sums(res_array, max_size);
+
+    double *sums_ptr = field_sums.get_ptr(Exec::memory_space);
 
     using for_policy = typename Exec::for_policy;
-    using reduce_policy = typename Exec::reduce_policy;
 
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
       const T val = l_accessor[i] + r_accessor[i];
-      values[i] = val;
+      sums_ptr[i] = val;
     });
     ASCENT_DEVICE_ERROR_CHECK();
 
@@ -635,7 +641,7 @@ struct DFAddFunctor
         ascent::forall<for_policy>(size, l_size, [=] ASCENT_LAMBDA(index_t i)
         {
           const T val = l_accessor[i];
-          values[i] = val;
+          sums_ptr[i] = val;
         });
         ASCENT_DEVICE_ERROR_CHECK();
       }
@@ -644,14 +650,16 @@ struct DFAddFunctor
         ascent::forall<for_policy>(size, r_size, [=] ASCENT_LAMBDA(index_t i)
         {
           const T val = r_accessor[i];
-          values[i] = val;
+          sums_ptr[i] = val;
         });
         ASCENT_DEVICE_ERROR_CHECK();
       }
     }
 
-    output["values"].set(values);
-    return;
+    // synch the values back to the host
+    (void) field_sums.get_host_ptr();
+
+    return res;
   }
 };
 

@@ -3555,6 +3555,80 @@ BinByValue::execute()
 }
 
 //-----------------------------------------------------------------------------
+AddFields::AddFields() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+AddFields::~AddFields()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+AddFields::declare_interface(Node &i)
+{
+  i["type_name"] = "histogram";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "num_bins";
+  i["port_names"].append() = "min_val";
+  i["port_names"].append() = "max_val";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+AddFields::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+AddFields::execute()
+{
+	std::cerr << " IN AddFields experssions_filters" << std::endl;
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::vector<std::string> fields = (*arg1)["value"].value();
+  std::cerr << "fields size: " << fields.size()<< std::endl;
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("AddFields: axis for histogram must be a scalar field. "
+                 "Invalid axis field: '"
+                 << field << "'.");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "histogram";
+  (*output)["attrs/value/value"] =
+      field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
+  (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/min_val/value"] = min_val;
+  (*output)["attrs/min_val/type"] = "double";
+  (*output)["attrs/max_val/value"] = max_val;
+  (*output)["attrs/max_val/type"] = "double";
+  (*output)["attrs/num_bins/value"] = num_bins;
+  (*output)["attrs/num_bins/type"] = "int";
+  (*output)["attrs/clamp/value"] = true;
+  (*output)["attrs/clamp/type"] = "bool";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 FieldSum::FieldSum() : Filter()
 {
   // empty

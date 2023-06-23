@@ -1010,19 +1010,21 @@ derived_field_add(const conduit::Node &dataset,
     {
       conduit::Node values;
       values = derived_field_add_reduction(dom[path1], dom[path2]);
-      double *values = values["values"].value();
-      res[out_field].set(values); //need to preserve domain structure?
+      const double *values_array = values["values"].value();
+      res[out_field].set(values_array); //need to preserve domain structure?
 				  //save all into mega_values 
 				  //then set at end?
 
     }
     else if(dom.has_path(path1)) //only has path1
     {
-      res[out_field].set(dom[path1].value()); 
+      const double *values_array = dom[path1].value();
+      res[out_field].set(values_array); 
     }
     else if(dom.has_path(path2)) //only has path2
     {
-      res[out_field].set(dom[path2].value()); 
+      const double *values_array = dom[path2].value();
+      res[out_field].set(values_array); 
     }
     else //has neither field
 	 continue; //?
