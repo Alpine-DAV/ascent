@@ -3570,11 +3570,11 @@ AddFields::~AddFields()
 void
 AddFields::declare_interface(Node &i)
 {
-  i["type_name"] = "histogram";
-  i["port_names"].append() = "arg1";
-  i["port_names"].append() = "num_bins";
-  i["port_names"].append() = "min_val";
-  i["port_names"].append() = "max_val";
+  i["type_name"] = "add_fields";
+  i["port_names"].append() = "field1";
+  i["port_names"].append() = "field2";
+  i["port_names"].append() = "num_fields";
+  i["port_names"].append() = "output_name";
   i["output_port"] = "true";
 }
 
@@ -3592,35 +3592,33 @@ void
 AddFields::execute()
 {
 	std::cerr << " IN AddFields experssions_filters" << std::endl;
-  const conduit::Node *arg1 = input<Node>("arg1");
 
-  const std::vector<std::string> fields = (*arg1)["value"].value();
-  std::cerr << "fields size: " << fields.size()<< std::endl;
+  conduit::Node &n_fields = *input<Node>("num_fields");
+  conduit::Node &n_field1 = *input<Node>("field1");
+  conduit::Node &n_field2 = *input<Node>("field2");
+  conduit::Node &n_output = *input<Node>("output_name");
+  int32 num_fields = n_fields["value"].to_int32();;
+  const std::string field1 = n_field1["value"].as_string();
+  const std::string field2 = n_field2["value"].as_string();
+  const std::string out_field = n_output["value"].as_string();
+  std::cerr << "fields size; num_fields: " << num_fields<< std::endl;
 
   DataObject *data_object =
     graph().workspace().registry().fetch<DataObject>("dataset");
   const conduit::Node *const dataset = data_object->as_low_order_bp().get();
 
-  if(!is_scalar_field(*dataset, field))
+  if(!is_scalar_field(*dataset, field1) || !is_scalar_field(*dataset, field2))
   {
-    ASCENT_ERROR("AddFields: axis for histogram must be a scalar field. "
-                 "Invalid axis field: '"
-                 << field << "'.");
+    ASCENT_ERROR("AddFields: input fields for AddFields must be scalar fields. "
+                 "Invalid fields: '"
+                 << field1 << " or " << field2 << ".");
   }
 
   conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "histogram";
+  (*output)["type"] = "field";
   (*output)["attrs/value/value"] =
-      field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
+      derived_field_add(*dataset, field1, field2, out_field)["value"];
   (*output)["attrs/value/type"] = "array";
-  (*output)["attrs/min_val/value"] = min_val;
-  (*output)["attrs/min_val/type"] = "double";
-  (*output)["attrs/max_val/value"] = max_val;
-  (*output)["attrs/max_val/type"] = "double";
-  (*output)["attrs/num_bins/value"] = num_bins;
-  (*output)["attrs/num_bins/type"] = "int";
-  (*output)["attrs/clamp/value"] = true;
-  (*output)["attrs/clamp/type"] = "bool";
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);

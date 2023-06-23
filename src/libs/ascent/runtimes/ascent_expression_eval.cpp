@@ -677,6 +677,15 @@ initialize_functions()
 
   // -------------------------------------------------------------
 
+  conduit::Node &df_add = (*functions)["add_fields"].append();
+  df_add["return_type"] = "field";
+  df_add["filter_name"] = "add_fields";
+  df_add["args/arg1/type"] = "array";
+  df_add["description"] =
+    "Returns the derived field from adding two or more fields of matching type";
+
+  // -------------------------------------------------------------
+
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
@@ -876,7 +885,7 @@ initialize_functions()
   field_sig["args/component/optional"];
   field_sig["args/component/description"] =
       "Used to specify a single component if the field is a vector field.";
-  field_sig["description"] = "Return a mesh field given a its name.";
+  field_sig["description"] = "Return a mesh field given its name.";
 
   //---------------------------------------------------------------------------
 
@@ -884,7 +893,7 @@ initialize_functions()
   topo_sig["return_type"] = "topo";
   topo_sig["filter_name"] = "topo";
   topo_sig["args/arg1/type"] = "string";
-  topo_sig["description"] = "Return a mesh topology given a its name.";
+  topo_sig["description"] = "Return a mesh topology given its name.";
 
   //---------------------------------------------------------------------------
 
