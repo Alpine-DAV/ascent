@@ -586,6 +586,13 @@ AutoSliceLevels::GetRadius()
   return m_radius;
 }
 
+std::string 
+AutoSliceLevels::GetInfo()
+{
+	return "";
+}
+
+
 
 void
 AutoSliceLevels::PreExecute()
@@ -614,14 +621,6 @@ GetPoint(int level, int num_levels, vtkm::Bounds bounds)
   return point;
 }
 
-bool invalidChar (char c)
-{
-    return !(c>=0 && c <128);
-}
-void stripUnicode(std::string & str)
-{
-    str.erase(remove_if(str.begin(),str.end(), invalidChar), str.end());
-}
 
 void
 AutoSliceLevels::DoExecute()
@@ -700,7 +699,9 @@ AutoSliceLevels::DoExecute()
     
     if(current_score > winning_score)
     {
-      winning_score = current_score;
+      winning_score  = current_score;
+      m_winning_normal = normal;
+      m_winning_point  = point;
       this->m_output = output;
     }
   } // each slice
