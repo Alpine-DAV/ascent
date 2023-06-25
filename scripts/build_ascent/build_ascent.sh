@@ -722,6 +722,10 @@ cmake --build ${ascent_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing Ascent"
 cmake --install ${ascent_build_dir}  --config ${build_config}
 
+if ${build_catalyst}; then
+    mv ${ascent_install_dir}/lib/libcatalyst-ascent.so ${catalyst_install_dir}lib64/catalyst/libcatalyst-ascent.so
+fi
+
 fi
 else
   echo "**** Skipping Ascent build, install found at: ${ascent_install_dir}"
