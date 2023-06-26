@@ -6,4 +6,4 @@
         p1:
           type: "pseudocolor"
           field: "braid"
-      image_name: "out_ascent_catalyst_mpi_example"
+      image_name: "out_ascent_catalyst_example"
