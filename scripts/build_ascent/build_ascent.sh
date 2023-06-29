@@ -44,6 +44,7 @@ build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
+build_catalyst="${build_catalyst:=false}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -596,7 +597,7 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DMFEM_ENABLE_EXAMPLES=${enable_tests} \
   -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
 
-echo "**** Building MFEM ${vtkm_version}"
+echo "**** Building MFEM ${mfem_version}"
 cmake --build ${mfem_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing MFEM ${mfem_version}"
 cmake --install ${mfem_build_dir}  --config ${build_config}
@@ -606,6 +607,42 @@ else
   echo "**** Skipping MFEM build, install found at: ${mfem_install_dir}"
 fi # build_mfem
 
+################
+# Catalyst
+################
+catalyst_version=2.0.0-rc3
+catalyst_src_dir=$(ospath ${root_dir}/catalyst-v${catalyst_version})
+catalyst_build_dir=$(ospath ${root_dir}/build/catalyst-v${catalyst_version})
+catalyst_install_dir=$(ospath ${root_dir}/install/catalyst-v${catalyst_version}/)
+catalyst_cmake_dir=${catalyst_install_dir}lib64/cmake/catalyst-2.0/
+catalyst_tarball=catalyst-v${catalyst_version}.tar.gz
+
+# build only if install doesn't exist
+if [ ! -d ${catalyst_install_dir} ]; then
+if ${build_catalyst}; then
+if [ ! -d ${catalyst_src_dir} ]; then
+  echo "**** Downloading ${catalyst_tarball}"
+  curl -L https://gitlab.kitware.com/paraview/catalyst/-/archive/v${catalyst_version}/catalyst-v${catalyst_version}.tar.gz -o ${catalyst_tarball}
+  tar -xzf ${catalyst_tarball}
+fi
+
+echo "**** Configuring Catalyst ${catalyst_version}"
+cmake -S ${catalyst_src_dir} -B ${catalyst_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DCATALYST_BUILD_TESTING=${enable_tests} \
+  -DCATALYST_USE_MPI=${enable_mpi} \
+  -DCMAKE_INSTALL_PREFIX=${catalyst_install_dir} \
+
+echo "**** Building Catalyst ${catalyst_version}"
+cmake --build ${catalyst_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Catalyst ${catalyst_version}"
+cmake --install ${catalyst_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Catalyst build, install found at: ${catalyst_install_dir}"
+fi # build_catalyst
 
 ################
 # Ascent
@@ -652,6 +689,10 @@ echo 'set(ENABLE_VTKH ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_APCOMP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DRAY ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 
+if ${build_catalyst}; then
+    echo 'set(CATALYST_DIR ' ${catalyst_cmake_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+
 if [[ "$enable_cuda" == "ON" ]]; then
     echo 'set(ENABLE_CUDA ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
@@ -681,10 +722,11 @@ cmake --build ${ascent_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing Ascent"
 cmake --install ${ascent_build_dir}  --config ${build_config}
 
+if ${build_catalyst}; then
+    mv ${ascent_install_dir}/lib/libcatalyst-ascent.so ${catalyst_install_dir}lib64/catalyst/libcatalyst-ascent.so
+fi
+
 fi
 else
   echo "**** Skipping Ascent build, install found at: ${ascent_install_dir}"
 fi # build_ascent
-
-
-

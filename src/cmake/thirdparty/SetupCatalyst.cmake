@@ -20,6 +20,6 @@ if(NOT Catalyst_DIR)
     MESSAGE(FATAL_ERROR "Failed to find CATALYST at CATALYST_DIR=${CATALYST_DIR}")
 endif()
 
-find_package(Catalyst REQUIRED SDK)
+find_package(Catalyst REQUIRED COMPONENTS SDK)
 
 set(CATALYST_FOUND TRUE)
