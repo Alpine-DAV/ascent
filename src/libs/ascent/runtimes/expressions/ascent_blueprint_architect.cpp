@@ -992,56 +992,48 @@ field_histogram(const conduit::Node &dataset,
   return res;
 }
 
-//returns a node that is field1 + field2
-conduit::Node
-derived_field_add(const conduit::Node &dataset,
+//Adds a new field that is field1 + field2
+//TODO:Take in an array of fields
+//TODO: add new field that is field1 + .. + fieldn
+void
+derived_field_add(conduit::Node &dataset,
                 const std::string &field1,
                 const std::string &field2,
 		const std::string &out_field)
 {
 	std::cerr << "blueprint_architect derived_field_add " << std::endl;
 
-  conduit::Node res;
-  res.update(dataset);
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const std::string path1 = "fields/" + field1;
     const std::string path2 = "fields/" + field2;
     const std::string output_path = "fields/" + out_field;
-//    std::cerr << " path1: " << path1 << " path2: " << path2 << std::endl;
-    const conduit::Node &dom = dataset.child(i);
-    conduit::Node tmp;
-    tmp.update(dom);
+    std::cerr << " path1: " << path1 << " path2: " << path2 << std::endl;
+    conduit::Node &dom = dataset.child(i);
     if(dom.has_path(path1) && dom.has_path(path2)) //has both
     {
-      conduit::Node values;
-      values = derived_field_add_reduction(dom[path1], dom[path2]);
-//      std::cerr << "derive_field_add_reduction output values " << std::endl;
-//      values.print();
-      double* val_array = values["values"].value();
-      tmp[output_path].set(val_array);
-//      std::cerr << "tmp print: " << std::endl;
-//      tmp.print();
-      res.update(tmp); //corrupted double linked list
+      dom[output_path]["association"] = dom[path1]["association"];
+      dom[output_path]["topology"] = dom[path1]["topology"];
+      dom[output_path]["values"] = derived_field_add_reduction(dom[path1], dom[path2])["values"];
 
     }
     else if(dom.has_path(path1)) //only has path1
     {
-	    std::cerr << "only path 1=========" << std::endl;
-      tmp[output_path].set(dom[path1]); 
- //     res.update(tmp);
+      dom[output_path]["association"] = dom[path1]["association"];
+      dom[output_path]["topology"] = dom[path1]["topology"];
+      dom[output_path]["values"].set(dom[path1]["values"]); 
     }
     else if(dom.has_path(path2)) //only has path2
     {
-	    std::cerr << "only path 2=========" << std::endl;
-      tmp[output_path].set(dom[path2]); 
-  //    res.update(tmp);
+      dom[output_path]["association"] = dom[path2]["association"];
+      dom[output_path]["topology"] = dom[path2]["topology"];
+      dom[output_path]["values"].set(dom[path2]["values"]); 
     }
     else //has neither field
 	 continue; //?
   }
 
-  return res;
+  return;
 }
 
 // returns a Node containing the min, max and dim for x,y,z given a topology

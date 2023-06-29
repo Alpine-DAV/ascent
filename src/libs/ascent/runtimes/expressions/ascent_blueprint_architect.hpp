@@ -92,7 +92,7 @@ conduit::Node global_bounds(const conduit::Node &dataset,
                             const std::string &topo_name);
 
 ASCENT_API
-conduit::Node derived_field_add(const conduit::Node &dataset,
+void derived_field_add(conduit::Node &dataset,
                               const std::string &l_field,
                               const std::string &r_field,
 			      const std::string &output_field);

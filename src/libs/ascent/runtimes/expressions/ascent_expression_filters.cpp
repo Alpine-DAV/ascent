@@ -3608,7 +3608,7 @@ AddFields::execute()
 
   DataObject *data_object =
     graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
 
   if(!is_scalar_field(*dataset, field1) || !is_scalar_field(*dataset, field2))
   {
@@ -3617,16 +3617,12 @@ AddFields::execute()
                  << field1 << " or " << field2 << ".");
   }
 
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "field";
-  (*output)["attrs/value/value"] =
-      derived_field_add(*dataset, field1, field2, out_field)["value"];
-  (*output)["attrs/value/type"] = "array";
+  derived_field_add(*dataset, field1, field2, out_field);
+  std::cerr << "dataset after add" << std::endl;
+  dataset->print();
 
-  resolve_symbol_result(graph(), output, this->name());
-  std::cerr << "ADDFields output.print()" << std::endl;
-  output->print();
-  set_output<conduit::Node>(output);
+//  resolve_symbol_result(graph(), output, this->name());
+  //set_output<conduit::Node>(output);
 }
 
 //-----------------------------------------------------------------------------
