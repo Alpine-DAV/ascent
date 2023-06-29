@@ -999,32 +999,43 @@ derived_field_add(const conduit::Node &dataset,
                 const std::string &field2,
 		const std::string &out_field)
 {
+	std::cerr << "blueprint_architect derived_field_add " << std::endl;
 
   conduit::Node res;
+  res.update(dataset);
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
     const std::string path1 = "fields/" + field1;
     const std::string path2 = "fields/" + field2;
+    const std::string output_path = "fields/" + out_field;
+//    std::cerr << " path1: " << path1 << " path2: " << path2 << std::endl;
     const conduit::Node &dom = dataset.child(i);
+    conduit::Node tmp;
+    tmp.update(dom);
     if(dom.has_path(path1) && dom.has_path(path2)) //has both
     {
       conduit::Node values;
       values = derived_field_add_reduction(dom[path1], dom[path2]);
-      const double *values_array = values["values"].value();
-      res[out_field].set(values_array); //need to preserve domain structure?
-				  //save all into mega_values 
-				  //then set at end?
+//      std::cerr << "derive_field_add_reduction output values " << std::endl;
+//      values.print();
+      double* val_array = values["values"].value();
+      tmp[output_path].set(val_array);
+//      std::cerr << "tmp print: " << std::endl;
+//      tmp.print();
+      res.update(tmp); //corrupted double linked list
 
     }
     else if(dom.has_path(path1)) //only has path1
     {
-      const double *values_array = dom[path1].value();
-      res[out_field].set(values_array); 
+	    std::cerr << "only path 1=========" << std::endl;
+      tmp[output_path].set(dom[path1]); 
+ //     res.update(tmp);
     }
     else if(dom.has_path(path2)) //only has path2
     {
-      const double *values_array = dom[path2].value();
-      res[out_field].set(values_array); 
+	    std::cerr << "only path 2=========" << std::endl;
+      tmp[output_path].set(dom[path2]); 
+  //    res.update(tmp);
     }
     else //has neither field
 	 continue; //?

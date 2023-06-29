@@ -1205,6 +1205,8 @@ FieldMax::execute()
   (*output)["attrs/element/index"] = n_max["index"];
   (*output)["attrs/element/assoc"] = n_max["assoc"];
 
+  std::cerr << "FieldMax output: " << std::endl;
+  output->print();
   set_output<conduit::Node>(output);
 }
 
@@ -3602,6 +3604,7 @@ AddFields::execute()
   const std::string field2 = n_field2["value"].as_string();
   const std::string out_field = n_output["value"].as_string();
   std::cerr << "fields size; num_fields: " << num_fields<< std::endl;
+  std::cerr << "field1: " << field1 << " field2: " << field2 << " output_field: " << out_field << std::endl;
 
   DataObject *data_object =
     graph().workspace().registry().fetch<DataObject>("dataset");
@@ -3621,6 +3624,8 @@ AddFields::execute()
   (*output)["attrs/value/type"] = "array";
 
   resolve_symbol_result(graph(), output, this->name());
+  std::cerr << "ADDFields output.print()" << std::endl;
+  output->print();
   set_output<conduit::Node>(output);
 }
 
