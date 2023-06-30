@@ -2003,8 +2003,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
       else
       {
-        ASCENT_ERROR("Mixed explicit types not implemented");
         data_set.PrintSummary(std::cout);
+        ASCENT_ERROR("Mixed explicit types not implemented");
         MixedType cells = dyn_cells.AsCellSet<MixedType>();
       }
 

@@ -603,6 +603,8 @@ struct DFAddFunctor
   {
     const int l_size = l_accessor.m_size;
     const int r_size = r_accessor.m_size;
+    std::cerr << "left size: " << l_size << std::endl;
+    std::cerr << "right size: " << r_size << std::endl;
     bool diff_sizes = false;
     int size; 
     int max_size;
@@ -614,6 +616,7 @@ struct DFAddFunctor
       max_size = max(l_size, r_size);
       diff_sizes = true;
     }
+    std::cerr << "diff sizes: " << diff_sizes<<  std::endl;
 
 
     // conduit zero initializes this array
@@ -626,11 +629,20 @@ struct DFAddFunctor
     double *sums_ptr = field_sums.get_ptr(Exec::memory_space);
 
     using for_policy = typename Exec::for_policy;
+    using atomic_policy = typename Exec::atomic_policy;
+    
+    // init device array
+    ascent::forall<for_policy>(0, max_size, [=] ASCENT_LAMBDA(index_t i)
+    {
+      sums_ptr[i]=0.0;
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
 
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
     {
-      const T val = l_accessor[i] + r_accessor[i];
-      sums_ptr[i] = val;
+      const double val = l_accessor[i] + r_accessor[i];
+      //sums_ptr[i] = val;
+      int old = ascent::atomic_add<atomic_policy>(&(sums_ptr[i]), val);
     });
     ASCENT_DEVICE_ERROR_CHECK();
 

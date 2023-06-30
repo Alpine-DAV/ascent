@@ -1009,37 +1009,24 @@ derived_field_add(conduit::Node &dataset,
       const std::string path = "fields/" + fields[field];
       if(dom.has_path(path)) //has both
       {
-	if(!dom.has_path(output_path))
+	if(!dom.has_path(output_path)) //setup output path
 	{
-		std::cerr << "DOMAIN does not have OUTPUT PATH" << std::endl;
+		std::cerr << "DOMAIN does not have OUTPUT PATH for field: " << field << " " << path << std::endl;
 		std::cerr << "setting output with initial info: " << std::endl;
           dom[output_path]["association"] = dom[path]["association"];
           dom[output_path]["topology"] = dom[path]["topology"];
-          if(field_is_float32(dom[path]))
+          if(field_is_float32(dom[path]))//Todo:: Ints. longs? 
 	  {
             const int vals = dom[path]["values"].dtype().number_of_elements();
-	    std::cerr << "num vals: " << vals << std::endl;
-	    std::vector<conduit::float32> zeroes(vals,0.0);
-	    std::cerr << "zeroes size: " << zeroes.size() << std::endl;
-	    dom[output_path]["values"].set(zeroes); 
+	    dom[output_path]["values"].set(conduit::DataType::float32(vals)); 
 	  }
 	  else
 	  {
             const int vals = dom[path]["values"].dtype().number_of_elements();
-	    std::cerr << "num vals: " << vals << std::endl;
-	    std::vector<conduit::float64> zeroes(vals,0.0);
-	    dom[output_path]["values"].set(zeroes); 
-	    std::cerr << "zeroes size: " << zeroes.size() << std::endl;
-	    std::cerr << "output path initialized to zeroes: " << std::endl;
-	    dom[output_path]["values"].print();
+	    dom[output_path]["values"].set(conduit::DataType::float64(vals)); 
 	  }
-	  std::string out_assoc = dom[output_path]["association"].to_string();
-	  std::string out_topo  = dom[output_path]["topology"].to_string();
-	  std::cerr << "set output topo as: " << out_topo << std::endl;
-	  std::cerr << "set output assoc as: " << out_assoc << std::endl;
-	  std::cerr << "number of elements: " << dom[path]["values"].dtype().number_of_elements() << std::endl;
 	}
-	else
+	else //has output path already
 	{
 		std::cerr << "DOMAIN HAS OUTPUT PATH" << std::endl;
 	  std::string out_assoc = dom[output_path]["association"].to_string();
@@ -1059,16 +1046,20 @@ derived_field_add(conduit::Node &dataset,
 			     "Field " << out_field << " has topology " << out_topo << "\n");
 	  }
 	}
-	std::cerr << "dom before add_reduction" << std::endl;
-	dom.print();
-        dom[output_path]["values"] = derived_field_add_reduction(dom[output_path], dom[path])["values"];
+	std::cerr << "dom before add_reduction; adding " << path << std::endl;
+        conduit::Node tmp;
+	tmp[output_path] = dom[output_path]; 
+        tmp[output_path]["values"] = derived_field_add_reduction(dom[output_path], dom[path])["values"];
+	dom[output_path]["values"] = tmp[output_path]["values"];
 	std::cerr << "dom after add_reduction" << std::endl;
-	dom.print();
       }
       else //does not have field
+      {
+	      std::cerr << "DOES NOT HAVE FIELD: " << path << std::endl;
 	 continue; 
-    }
-  }
+      }
+    }//fields
+  }//domains
 
   return;
 }
