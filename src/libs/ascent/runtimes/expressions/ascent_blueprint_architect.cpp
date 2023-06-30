@@ -992,45 +992,53 @@ field_histogram(const conduit::Node &dataset,
   return res;
 }
 
-//Adds a new field that is field1 + field2
-//TODO:Take in an array of fields
-//TODO: add new field that is field1 + .. + fieldn
+//Take in an array of fields
+//add new field that is field1 + .. + fieldn
 void
 derived_field_add(conduit::Node &dataset,
-                const std::string &field1,
-                const std::string &field2,
+                const std::vector<std::string> &fields,
 		const std::string &out_field)
 {
-	std::cerr << "blueprint_architect derived_field_add " << std::endl;
-
+  const int num_fields = fields.size();
+  const std::string output_path = "fields/" + out_field;
   for(int i = 0; i < dataset.number_of_children(); ++i)
   {
-    const std::string path1 = "fields/" + field1;
-    const std::string path2 = "fields/" + field2;
-    const std::string output_path = "fields/" + out_field;
-    std::cerr << " path1: " << path1 << " path2: " << path2 << std::endl;
     conduit::Node &dom = dataset.child(i);
-    if(dom.has_path(path1) && dom.has_path(path2)) //has both
+    for(int field = 0; field < num_fields; field++)
     {
-      dom[output_path]["association"] = dom[path1]["association"];
-      dom[output_path]["topology"] = dom[path1]["topology"];
-      dom[output_path]["values"] = derived_field_add_reduction(dom[path1], dom[path2])["values"];
-
+      const std::string path = "fields/" + fields[field];
+      if(dom.has_path(path)) //has both
+      {
+	if(!dom.has_path(output_path))
+	{
+          dom[output_path]["association"] = dom[path]["association"];
+          dom[output_path]["topology"] = dom[path]["topology"];
+	  dom[output_path]["values"].set(dom[path]["values"].number_of_children()); 
+	}
+	else
+	{
+	  std::string out_assoc = dom[output_path]["association"].to_string();
+	  std::string out_topo  = dom[output_path]["topology"].to_string();
+	  std::string f_assoc = dom[path]["association"].to_string();
+	  std::string f_topo  = dom[path]["topology"].to_string();
+	  if(out_assoc != f_assoc)
+	  {
+	    ASCENT_ERROR("Field associations do not match:\n " <<
+			    "Field " << fields[field] << " has association " << f_assoc << "\n" << 
+			    "Field " << out_field << " has association " << out_assoc << "\n");
+	  }
+	  if(out_topo != f_topo)
+	  {
+	    ASCENT_ERROR("Field topologies do not match:\n " <<
+			     "Field " << fields[field] << " has topology " << f_topo << "\n" << 
+			     "Field " << out_field << " has topology " << out_topo << "\n");
+	  }
+	}
+        dom[output_path]["values"] = derived_field_add_reduction(dom[output_path], dom[path])["values"];
+      }
+      else //does not have field
+	 continue; 
     }
-    else if(dom.has_path(path1)) //only has path1
-    {
-      dom[output_path]["association"] = dom[path1]["association"];
-      dom[output_path]["topology"] = dom[path1]["topology"];
-      dom[output_path]["values"].set(dom[path1]["values"]); 
-    }
-    else if(dom.has_path(path2)) //only has path2
-    {
-      dom[output_path]["association"] = dom[path2]["association"];
-      dom[output_path]["topology"] = dom[path2]["topology"];
-      dom[output_path]["values"].set(dom[path2]["values"]); 
-    }
-    else //has neither field
-	 continue; //?
   }
 
   return;

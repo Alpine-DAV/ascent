@@ -93,8 +93,7 @@ conduit::Node global_bounds(const conduit::Node &dataset,
 
 ASCENT_API
 void derived_field_add(conduit::Node &dataset,
-                              const std::string &l_field,
-                              const std::string &r_field,
+                              const std::vector<std::string> &fields,
 			      const std::string &output_field);
 //
 // NOTE: ascent_data_binning contains a RAJA version
