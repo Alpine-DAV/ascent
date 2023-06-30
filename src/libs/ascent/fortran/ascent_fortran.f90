@@ -81,13 +81,13 @@ module ascent
     end subroutine ascent_info
 
     !--------------------------------------------------------------------------
-    function ascent_info(cascent) result(cnode) &
-            bind(C, name="ascent_info")
+    function ascent_info_ref(cascent) result(cnode) &
+            bind(C, name="ascent_info_ref")
         use iso_c_binding
         implicit none
         type(C_PTR), value, intent(IN) ::cascent
         type(C_PTR) :: cnode
-    end function ascent_info
+    end function ascent_info_ref
 
     !--------------------------------------------------------------------------
     subroutine ascent_close(cascent) &
