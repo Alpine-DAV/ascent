@@ -53,6 +53,8 @@ void ASCENT_API ascent_execute(Ascent *c_ascent, conduit_node *actions);
 
 void ASCENT_API ascent_info(Ascent *c_ascent, conduit_node *result);
 
+conduit_node ASCENT_API *ascent_info(Ascent *c_ascent);
+
 void ASCENT_API ascent_close(Ascent *c_ascent);
 
 void ASCENT_API ascent_timer_start(char *name);
