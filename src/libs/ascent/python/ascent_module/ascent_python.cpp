@@ -410,27 +410,32 @@ PyAscent_Ascent_info(PyAscent_Ascent *self,
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "O",
+                                     "|O",
                                      const_cast<char**>(kwlist),
                                      &py_node))
     {
         return NULL;
     }
 
-
-    if(!PyConduit_Node_Check(py_node))
-    {
-        PyErr_SetString(PyExc_TypeError,
-                        "Ascent::Info 'out' argument must be a "
-                        "conduit::Node");
-        return NULL;
-    }
-
-    Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-
     try
     {
+        if(py_node != NULL) // copy out case 
+        {
+            if(!PyConduit_Node_Check(py_node))
+            {
+                PyErr_SetString(PyExc_TypeError,
+                                "Ascent::Info 'out' argument must be a "
+                                "conduit::Node");
+                return NULL;
+            }
+            
+            Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
             self->ascent->info(*node);
+        }
+        else // return wrapped internal info ref case
+        {
+            return PyConduit_Node_Python_Wrap(&self->ascent->info(),0);
+        }
     }
     catch(conduit::Error e)
     {
@@ -449,7 +454,6 @@ PyAscent_Ascent_info(PyAscent_Ascent *self,
         PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
         return NULL;
     }
-
 
     Py_RETURN_NONE;
 }

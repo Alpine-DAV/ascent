@@ -47,12 +47,14 @@ Added
  * Automatic camera placement render that uses different types of entropy (data, depth, shading).
  * Scene/Render option to manually position color bars
  * Added in-memory conduit extract, which allows mesh data to be accessed via ascent.info()
+ * Added examples that demonstrate how to use Ascent via the Catalyst Conduit Interface.
 
 Changed
 ~~~~~~~
 
  * Updated Ascent to use VTK-m 2.0
  * Added C++ ``Ascent::info()`` method that returns a reference to execution info in addition the existing info() method that provides copy out semantics.
+
 
 v0.9.1
 ---------------------------------

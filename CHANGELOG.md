@@ -4,7 +4,7 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.2] - Released 2023-06-23
+## [0.9.2] - Released 2023-06-30
 ### Preferred dependency versions for ascent@0.9.2
 - conduit@0.8.8
 - vtk-m@2.0.0
@@ -13,6 +13,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Automatic camera placement render that uses different types of entropy (data, depth, shading).
 - Scene/Render option to manually position color bars
 - Added in-memory conduit extract, which allows mesh data to be accessed via ascent.info()
+- Added examples that demonstrate how to use Ascent via the Catalyst Conduit Interface.
 
 ### Changed
 - Updated Ascent to use VTK-m 2.0
