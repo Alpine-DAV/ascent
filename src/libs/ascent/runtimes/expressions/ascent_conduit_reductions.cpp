@@ -624,8 +624,6 @@ struct DFAddFunctor
 
     const int l_size = l_accessor.m_size;
     const int r_size = r_accessor.m_size;
-    std::cerr << "left size: " << l_size << std::endl;
-    std::cerr << "right size: " << r_size << std::endl;
 
     bool diff_sizes = false;
     int size; 
@@ -638,7 +636,6 @@ struct DFAddFunctor
         max_size = max(l_size, r_size);
         diff_sizes = true;
     }
-    std::cerr << "diff sizes: " << diff_sizes<<  std::endl;
 
 
     // conduit zero initializes this array

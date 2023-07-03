@@ -758,8 +758,6 @@ AddFields::execute()
   DataObject  *d_output = new DataObject();
   d_output->reset(n_input);
   expressions::derived_field_add_fields(*n_input.get(), fields, out_field);
-  std::cerr << "dataset after add" << std::endl;
-  (*n_input.get()).print();
   set_output<DataObject>(d_output);
 
 }

@@ -1205,8 +1205,6 @@ FieldMax::execute()
   (*output)["attrs/element/index"] = n_max["index"];
   (*output)["attrs/element/assoc"] = n_max["assoc"];
 
-  std::cerr << "FieldMax output: " << std::endl;
-  output->print();
   set_output<conduit::Node>(output);
 }
 

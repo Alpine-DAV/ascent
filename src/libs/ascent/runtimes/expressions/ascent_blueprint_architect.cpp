@@ -1011,9 +1011,6 @@ derived_field_add_fields(conduit::Node &dataset,
             {
                 if(!dom.has_path(output_path)) //setup output path
                 {
-                    std::cerr << "DOMAIN does not have OUTPUT PATH for field: " << field_idx << " " << path << std::endl;
-                    std::cerr << "setting output with initial info: " << std::endl;
-
                     dom[output_path]["association"] = dom[path]["association"];
                     dom[output_path]["topology"]    = dom[path]["topology"];
                     if(field_is_float32(dom[path]))//Todo:: Ints. longs?
@@ -1029,7 +1026,6 @@ derived_field_add_fields(conduit::Node &dataset,
                 }
                 else //has output path already
                 {
-                    std::cerr << "DOMAIN HAS OUTPUT PATH" << std::endl;
                     // check that the field assoc and topo 
                     std::string out_assoc = dom[output_path]["association"].to_string();
                     std::string out_topo  = dom[output_path]["topology"].to_string();
@@ -1052,19 +1048,19 @@ derived_field_add_fields(conduit::Node &dataset,
                     }
                 }
 
-                std::cerr << "dom before add_reduction; adding " << path << std::endl;
+		//make tmp input
+		conduit::Node tmp_a,tmp_b;
+		tmp_a.set_external(dom[output_path]);
+		tmp_b.set_external(dom[path]);
                 // execute 
                 // add out result to next field
-                conduit::Node n_add_res = derived_field_binary_add(dom[output_path], dom[path]);
+                conduit::Node n_add_res = derived_field_binary_add(tmp_a, tmp_b);
                 // replace out with new result
                 dom[output_path]["values"] = n_add_res["values"];
-                std::cerr << "dom after add_reduction" << std::endl;
-                dom.print();
             }
             else //does not have field
             {
                 // some domains may not have this field, simply skip
-                std::cerr << "DOES NOT HAVE FIELD: " << path << std::endl;
                 continue; 
             }
         }//fields
