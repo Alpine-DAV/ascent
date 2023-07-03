@@ -549,6 +549,13 @@ TEST(ascent_derived, df_add_fields)
   Node n;
   ascent::about(n);
 
+  // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      return;
+  }
+
   conduit::Node data;
   conduit::blueprint::mesh::examples::braid("uniform",
                                             EXAMPLE_MESH_SIDE_DIM,
