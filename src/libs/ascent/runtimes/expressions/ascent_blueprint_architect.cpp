@@ -995,71 +995,80 @@ field_histogram(const conduit::Node &dataset,
 //Take in an array of fields
 //add new field that is field1 + .. + fieldn
 void
-derived_field_add(conduit::Node &dataset,
-                const std::vector<std::string> &fields,
-		const std::string &out_field)
+derived_field_add_fields(conduit::Node &dataset,
+                         const std::vector<std::string> &field_names,
+                         const std::string &out_field_name)
 {
-  const int num_fields = fields.size();
-  const std::string output_path = "fields/" + out_field;
-  for(int i = 0; i < dataset.number_of_children(); ++i)
-  {
-    conduit::Node &dom = dataset.child(i);
-    for(int field = 0; field < num_fields; field++)
+    const int num_fields = field_names.size();
+    const std::string output_path = "fields/" + out_field_name;
+    for(int i = 0; i < dataset.number_of_children(); ++i)
     {
-      const std::string path = "fields/" + fields[field];
-      if(dom.has_path(path)) //has both
-      {
-	if(!dom.has_path(output_path)) //setup output path
-	{
-		std::cerr << "DOMAIN does not have OUTPUT PATH for field: " << field << " " << path << std::endl;
-		std::cerr << "setting output with initial info: " << std::endl;
-          dom[output_path]["association"] = dom[path]["association"];
-          dom[output_path]["topology"] = dom[path]["topology"];
-          if(field_is_float32(dom[path]))//Todo:: Ints. longs? 
-	  {
-            const int vals = dom[path]["values"].dtype().number_of_elements();
-	    dom[output_path]["values"].set(conduit::DataType::float32(vals)); 
-	  }
-	  else
-	  {
-            const int vals = dom[path]["values"].dtype().number_of_elements();
-	    dom[output_path]["values"].set(conduit::DataType::float64(vals)); 
-	  }
-	}
-	else //has output path already
-	{
-		std::cerr << "DOMAIN HAS OUTPUT PATH" << std::endl;
-	  std::string out_assoc = dom[output_path]["association"].to_string();
-	  std::string out_topo  = dom[output_path]["topology"].to_string();
-	  std::string f_assoc = dom[path]["association"].to_string();
-	  std::string f_topo  = dom[path]["topology"].to_string();
-	  if(out_assoc != f_assoc)
-	  {
-	    ASCENT_ERROR("Field associations do not match:\n " <<
-			    "Field " << fields[field] << " has association " << f_assoc << "\n" << 
-			    "Field " << out_field << " has association " << out_assoc << "\n");
-	  }
-	  if(out_topo != f_topo)
-	  {
-	    ASCENT_ERROR("Field topologies do not match:\n " <<
-			     "Field " << fields[field] << " has topology " << f_topo << "\n" << 
-			     "Field " << out_field << " has topology " << out_topo << "\n");
-	  }
-	}
-	std::cerr << "dom before add_reduction; adding " << path << std::endl;
-        conduit::Node tmp;
-	tmp[output_path] = dom[output_path]; 
-        tmp[output_path]["values"] = derived_field_add_reduction(dom[output_path], dom[path])["values"];
-	dom[output_path]["values"] = tmp[output_path]["values"];
-	std::cerr << "dom after add_reduction" << std::endl;
-      }
-      else //does not have field
-      {
-	      std::cerr << "DOES NOT HAVE FIELD: " << path << std::endl;
-	 continue; 
-      }
-    }//fields
-  }//domains
+        conduit::Node &dom = dataset.child(i);
+        for(int field_idx = 0; field_idx < num_fields; field_idx++)
+        {
+            const std::string path = "fields/" + field_names[field_idx];
+            if(dom.has_path(path)) //has both
+            {
+                if(!dom.has_path(output_path)) //setup output path
+                {
+                    std::cerr << "DOMAIN does not have OUTPUT PATH for field: " << field_idx << " " << path << std::endl;
+                    std::cerr << "setting output with initial info: " << std::endl;
+
+                    dom[output_path]["association"] = dom[path]["association"];
+                    dom[output_path]["topology"]    = dom[path]["topology"];
+                    if(field_is_float32(dom[path]))//Todo:: Ints. longs?
+                    {
+                        const int vals = dom[path]["values"].dtype().number_of_elements();
+                        dom[output_path]["values"].set(conduit::DataType::float32(vals));
+                    }
+                    else
+                    {
+                        const int vals = dom[path]["values"].dtype().number_of_elements();
+                        dom[output_path]["values"].set(conduit::DataType::float64(vals));
+                    }
+                }
+                else //has output path already
+                {
+                    std::cerr << "DOMAIN HAS OUTPUT PATH" << std::endl;
+                    // check that the field assoc and topo 
+                    std::string out_assoc = dom[output_path]["association"].to_string();
+                    std::string out_topo  = dom[output_path]["topology"].to_string();
+                    std::string f_assoc   = dom[path]["association"].to_string();
+                    std::string f_topo    = dom[path]["topology"].to_string();
+                    if(out_assoc != f_assoc)
+                    {
+                        ASCENT_ERROR("Field associations do not match:\n " <<
+                                     "Field " << field_names[field_idx]
+                                      << " has association " << f_assoc << "\n" <<
+                                     "Field " << out_field_name
+                                     << " has association " << out_assoc << "\n");
+                    }
+                    if(out_topo != f_topo)
+                    {
+                        ASCENT_ERROR("Field topologies do not match:\n " <<
+                                     "Field " << field_names[field_idx]
+                                      << " has topology " << f_topo << "\n" <<
+                                     "Field " << out_field_name << " has topology " << out_topo << "\n");
+                    }
+                }
+
+                std::cerr << "dom before add_reduction; adding " << path << std::endl;
+                // execute 
+                // add out result to next field
+                conduit::Node n_add_res = derived_field_binary_add(dom[output_path], dom[path]);
+                // replace out with new result
+                dom[output_path]["values"] = n_add_res["values"];
+                std::cerr << "dom after add_reduction" << std::endl;
+                dom.print();
+            }
+            else //does not have field
+            {
+                // some domains may not have this field, simply skip
+                std::cerr << "DOES NOT HAVE FIELD: " << path << std::endl;
+                continue; 
+            }
+        }//fields
+    }//domains
 
   return;
 }
@@ -1774,6 +1783,7 @@ binning(const conduit::Node &dataset,
   delete[] bins;
   bins = global_bins;
 #endif
+
 
   conduit::Node res;
   res["value"].set(conduit::DataType::c_double(num_bins));
