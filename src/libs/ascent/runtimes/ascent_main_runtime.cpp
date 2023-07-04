@@ -109,7 +109,7 @@ AscentRuntime::AscentRuntime()
  m_session_name("ascent_session"),
  m_field_filtering(false)
 {
-    m_ghost_fields.append() = "ascent_ghosts";
+    m_persistent_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
     ResetInfo();
 }
@@ -298,13 +298,15 @@ AscentRuntime::Initialize(const conduit::Node &options)
     {
       if(options["ghost_field_name"].dtype().is_string())
       {
-        m_ghost_fields.reset();
+        m_persistent_ghost_fields.reset();
 
         std::string ghost_name = options["ghost_field_name"].as_string();
-        m_ghost_fields.append() = ghost_name;
+        m_persistent_ghost_fields.append() = ghost_name;
       }
       else if(options["ghost_field_name"].dtype().is_list())
       {
+        m_persistent_ghost_fields.reset();
+
         const int num_children = options["ghost_field_name"].number_of_children();
         for(int i = 0; i < num_children; ++i)
         {
@@ -313,6 +315,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
           {
             ASCENT_ERROR("ghost_field_name list child is not a string");
           }
+          m_persistent_ghost_fields.append() = child.as_string();
         }
       }
       else
@@ -511,6 +514,24 @@ AscentRuntime::Publish(const conduit::Node &data)
     {
       m_comments.append() = "Comment";
       m_comments.append() = data["state/comment"].as_string();
+    }
+
+    if(data.has_path("state/temporary_ghost_fields"))
+    {
+      m_ghost_fields = m_persistent_ghost_fields;
+
+      const conduit::Node ghosts = data["state/temporary_ghost_fields"];  
+      for(int i = 0; i < ghosts.number_of_children(); ++i)
+      {
+        for(int k = 0; k < m_persistent_ghost_fields.number_of_children(); ++k)
+        {
+          const std::string gn = ghosts.child(i).as_string();
+          if (m_persistent_ghost_fields.child(i).as_string() != gn)
+          {
+            m_ghost_fields.append() = gn;
+          }
+        }
+      }
     }
 
     blueprint::mesh::to_multi_domain(data, m_source);
