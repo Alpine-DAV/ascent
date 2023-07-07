@@ -416,7 +416,7 @@ BuildGraphVisitor::visit(const ASTExpression &expr)
 void
 BuildGraphVisitor::visit(const ASTInteger &expr)
 {
-  // create a unique name for each expression so we can reuse subexpressions
+  // create a unique name for each ast leaf so we can reuse subexpressions
   std::stringstream ss;
   ss << "integer_" << expr.m_value;
   const std::string verbose_name = ss.str();
@@ -451,6 +451,7 @@ BuildGraphVisitor::visit(const ASTInteger &expr)
 void
 BuildGraphVisitor::visit(const ASTDouble &expr)
 {
+  // create a unique name for each ast leaf so we can reuse subexpressions
   std::stringstream ss;
   ss << "double_" << expr.m_value;
   const std::string verbose_name = ss.str();

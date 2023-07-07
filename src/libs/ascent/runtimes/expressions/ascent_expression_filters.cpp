@@ -3893,7 +3893,7 @@ ExprMeshFieldReductionMin::~ExprMeshFieldReductionMin()
 void
 ExprMeshFieldReductionMin::declare_interface(Node &i)
 {
-  i["type_name"] = "expr_field_reduction_min";
+  i["type_name"] = "expr_mesh_field_reduction_min";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
