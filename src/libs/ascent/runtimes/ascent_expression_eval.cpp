@@ -237,58 +237,82 @@ Cache::~Cache()
 void
 register_builtin()
 {
-  flow::Workspace::register_filter_type<expressions::NullArg>();
-  flow::Workspace::register_filter_type<expressions::Boolean>();
-  flow::Workspace::register_filter_type<expressions::Double>();
-  flow::Workspace::register_filter_type<expressions::Integer>();
-  flow::Workspace::register_filter_type<expressions::Identifier>();
-  flow::Workspace::register_filter_type<expressions::History>();
-  flow::Workspace::register_filter_type<expressions::HistoryRange>();
-  flow::Workspace::register_filter_type<expressions::BinaryOp>();
-  flow::Workspace::register_filter_type<expressions::String>();
-  flow::Workspace::register_filter_type<expressions::IfExpr>();
-  flow::Workspace::register_filter_type<expressions::ScalarMax>();
-  flow::Workspace::register_filter_type<expressions::ScalarMin>();
-  flow::Workspace::register_filter_type<expressions::FieldMax>();
-  flow::Workspace::register_filter_type<expressions::FieldMin>();
-  flow::Workspace::register_filter_type<expressions::FieldAvg>();
-  flow::Workspace::register_filter_type<expressions::FieldNanCount>();
-  flow::Workspace::register_filter_type<expressions::FieldInfCount>();
-  flow::Workspace::register_filter_type<expressions::FieldSum>();
-  flow::Workspace::register_filter_type<expressions::ArrayMax>();
-  flow::Workspace::register_filter_type<expressions::ArrayMin>();
-  flow::Workspace::register_filter_type<expressions::ArrayAvg>();
-  flow::Workspace::register_filter_type<expressions::ScalarGradient>();
-  flow::Workspace::register_filter_type<expressions::ArrayGradient>();
-  flow::Workspace::register_filter_type<expressions::ArraySum>();
-  flow::Workspace::register_filter_type<expressions::Vector>();
-  flow::Workspace::register_filter_type<expressions::Magnitude>();
-  flow::Workspace::register_filter_type<expressions::Abs>();
-  flow::Workspace::register_filter_type<expressions::Pow>();
-  flow::Workspace::register_filter_type<expressions::Exp>();
-  flow::Workspace::register_filter_type<expressions::Log>();
-  flow::Workspace::register_filter_type<expressions::Field>();
-  flow::Workspace::register_filter_type<expressions::Topo>();
+  // basic lang:
+  // boolean, integer, double, string, nan, null, identifier, dot access,
+  // if (conditional), binary operations (math, logical, etc)
+  flow::Workspace::register_filter_type<expressions::ExprBoolean>();
+  flow::Workspace::register_filter_type<expressions::ExprInteger>();
+  flow::Workspace::register_filter_type<expressions::ExprDouble>();
+  flow::Workspace::register_filter_type<expressions::ExprString>();
+  flow::Workspace::register_filter_type<expressions::ExprNan>();
+  flow::Workspace::register_filter_type<expressions::ExprNull>();
+  flow::Workspace::register_filter_type<expressions::ExprIdentifier>();
+  flow::Workspace::register_filter_type<expressions::ExprObjectDotAccess>();
+  flow::Workspace::register_filter_type<expressions::ExprIf>();
+  flow::Workspace::register_filter_type<expressions::ExprBinaryOp>();
+
+  // scalar ops
+  //  max, min, abs, exp, log, pow
+  flow::Workspace::register_filter_type<expressions::ExprScalarMax>();
+  flow::Workspace::register_filter_type<expressions::ExprScalarMin>();
+  flow::Workspace::register_filter_type<expressions::ExprScalarAbs>();
+  flow::Workspace::register_filter_type<expressions::ExprScalarPow>();
+  flow::Workspace::register_filter_type<expressions::ExprScalarExp>();
+  flow::Workspace::register_filter_type<expressions::ExprScalarLog>();
+
+  // vec ops
+  //   vector, vector_magnitude
+  flow::Workspace::register_filter_type<expressions::ExprVector>();
+  flow::Workspace::register_filter_type<expressions::ExprVectorMagnitude>();
+
+  // array ops
+  // access, replace, max, min, avg, sum
+  flow::Workspace::register_filter_type<expressions::ExprArrayAccess>();
+  flow::Workspace::register_filter_type<expressions::ExprArrayReplace>();
+  flow::Workspace::register_filter_type<expressions::ExprArrayReductionMax>();
+  flow::Workspace::register_filter_type<expressions::ExprArrayReductionMin>();
+  flow::Workspace::register_filter_type<expressions::ExprArrayReductionAvg>();
+  flow::Workspace::register_filter_type<expressions::ExprArrayReductionSum>();
+
+  // history ops
+  //  history, history_range, history_gradient, history_range_gradient
+  flow::Workspace::register_filter_type<expressions::ExprHistory>();
+  flow::Workspace::register_filter_type<expressions::ExprHistoryRange>();
+  flow::Workspace::register_filter_type<expressions::ExprHistoryGradient>();
+  flow::Workspace::register_filter_type<expressions::ExprHistoryGradientRange>();
+
+  // histogram ops
+  // histogram, entropy, pdf, cdf, quantile
+  flow::Workspace::register_filter_type<expressions::ExprHistogram>();
+  flow::Workspace::register_filter_type<expressions::ExprHistogramEntropy>();
+  flow::Workspace::register_filter_type<expressions::ExprHistogramPDF>();
+  flow::Workspace::register_filter_type<expressions::ExprHistogramCDF>();
+  flow::Workspace::register_filter_type<expressions::ExprHistogramCDFQuantile>();
+  // mesh ops
+  //   cycle, time, field, topology, bounds, lineout
+  flow::Workspace::register_filter_type<expressions::ExprMeshCycle>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshTime>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshField>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshTopology>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshBounds>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshLineout>();
+
+  // mesh field reduce ops
+  //  max reduce, min reduce, avg reduce, nan count, inf count, sum reduce
+  flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionMax>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionMin>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionAvg>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionSum>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionNanCount>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionInfCount>();
+
   flow::Workspace::register_filter_type<expressions::Axis>();
-  flow::Workspace::register_filter_type<expressions::Histogram>();
   flow::Workspace::register_filter_type<expressions::Binning>();
-  flow::Workspace::register_filter_type<expressions::Entropy>();
-  flow::Workspace::register_filter_type<expressions::Pdf>();
-  flow::Workspace::register_filter_type<expressions::Cdf>();
-  flow::Workspace::register_filter_type<expressions::Quantile>();
   flow::Workspace::register_filter_type<expressions::BinByValue>();
   flow::Workspace::register_filter_type<expressions::BinByIndex>();
-  flow::Workspace::register_filter_type<expressions::Cycle>();
-  flow::Workspace::register_filter_type<expressions::Nan>();
-  flow::Workspace::register_filter_type<expressions::Replace>();
-  flow::Workspace::register_filter_type<expressions::Time>();
-  flow::Workspace::register_filter_type<expressions::ArrayAccess>();
-  flow::Workspace::register_filter_type<expressions::DotAccess>();
   flow::Workspace::register_filter_type<expressions::PointAndAxis>();
   flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
   flow::Workspace::register_filter_type<expressions::Bin>();
-  flow::Workspace::register_filter_type<expressions::Bounds>();
-  flow::Workspace::register_filter_type<expressions::Lineout>();
 
   initialize_functions();
   initialize_objects();
@@ -297,7 +321,7 @@ register_builtin()
 ExpressionEval::ExpressionEval(conduit::Node *data)
 {
   // wrap the pointer in a data object we can assume that this
-  // is a valid multidomain dataset
+  // is a valid multi-domain dataset
   conduit::Node *data_node = new conduit::Node();
   data_node->set_external(*data);
   m_data_object.reset(data_node);
@@ -365,18 +389,10 @@ initialize_functions()
   g_function_table.reset();
   conduit::Node *functions = &g_function_table;
 
-  //---------------------------------------------------------------------------
-
-  conduit::Node &array_avg_sig = (*functions)["avg"].append();
-  array_avg_sig["return_type"] = "double";
-  array_avg_sig["filter_name"] = "array_avg"; // matches the filter's type_name
-  array_avg_sig["args/arg1/type"] = "array"; // arg names match input port names
-  array_avg_sig["description"] = "Return the average of an array.";
-
   // -------------------------------------------------------------
   conduit::Node &array_replace_sig = (*functions)["replace"].append();
   array_replace_sig["return_type"] = "array";
-  array_replace_sig["filter_name"] = "replace"; // matches the filter's type_name
+  array_replace_sig["filter_name"] = "expr_array_replace"; // matches the filter's type_name
   array_replace_sig["args/arg1/type"] = "array";
   array_replace_sig["args/find/type"] = "double";
   array_replace_sig["args/find/description"] = "Value in the array to find and replace.";
@@ -387,17 +403,10 @@ initialize_functions()
   // -------------------------------------------------------------
   conduit::Node &nan_sig = (*functions)["nan"].append();
   nan_sig["return_type"] = "double";
-  nan_sig["filter_name"] = "nan"; // matches the filter's type_name
+  nan_sig["filter_name"] = "expr_nan"; // matches the filter's type_name
   nan_sig["args"] = conduit::DataType::empty();
   nan_sig["description"] = "Generates a NaN value.";
 
-  // -------------------------------------------------------------
-
-  conduit::Node &field_avg_sig = (*functions)["avg"].append();
-  field_avg_sig["return_type"] = "double";
-  field_avg_sig["filter_name"] = "field_avg";
-  field_avg_sig["args/arg1/type"] = "field";
-  field_avg_sig["description"] = "Return the field average of a field.";
 
   //---------------------------------------------------------------------------
 
@@ -518,54 +527,110 @@ initialize_functions()
   // -------------------------------------------------------------
 
 
+  //---------------------------------------------------------------------------
+  // abs()
+  //---------------------------------------------------------------------------
+  conduit::Node &abs_sig = (*functions)["abs"].append();
+  abs_sig["return_type"] = "scalar";
+  abs_sig["filter_name"] = "expr_scalar_abs";
+  abs_sig["args/arg1/type"] = "scalar";
+  abs_sig["description"] = "Return the absolute value of the input.";
+
+  //---------------------------------------------------------------------------
+  // exp()
+  //---------------------------------------------------------------------------
+  conduit::Node &exp_sig = (*functions)["exp"].append();
+  exp_sig["return_type"] = "double";
+  exp_sig["filter_name"] = "expr_scalar_exp";
+  exp_sig["args/arg1/type"] = "scalar";
+  exp_sig["description"] = "Return the base e exponential.";
+
+  //---------------------------------------------------------------------------
+  // pow()
+  //---------------------------------------------------------------------------
+  conduit::Node &pow_sig = (*functions)["pow"].append();
+  pow_sig["return_type"] = "double";
+  pow_sig["filter_name"] = "exp_scalar_pow";
+  pow_sig["args/arg1/type"] = "scalar";
+  pow_sig["args/arg2/type"] = "scalar";
+  pow_sig["description"] =
+    "Returns base raised to the power exponent."
+    " pow(base, exponent)";
+
+  //---------------------------------------------------------------------------
+  // log()
+  //---------------------------------------------------------------------------
+  conduit::Node &log_sig = (*functions)["log"].append();
+  log_sig["return_type"] = "double";
+  log_sig["filter_name"] = "expr_scalar_log";
+  log_sig["args/arg1/type"] = "scalar";
+  log_sig["description"] =
+    "Returns the natural logarithm of the argument";
+
+  // -------------------------------------------------------------
+  // vector()
+  // -------------------------------------------------------------
+  conduit::Node &vector = (*functions)["vector"].append();
+  vector["return_type"] = "vector";
+  vector["filter_name"] = "expr_vector";
+  vector["args/arg1/type"] = "scalar";
+  vector["args/arg2/type"] = "scalar";
+  vector["args/arg3/type"] = "scalar";
+  vector["description"] = "Return the 3D position vector for the input value.";
+
+  // -------------------------------------------------------------
+  // magnitude()
+  // -------------------------------------------------------------
+  conduit::Node &mag_sig = (*functions)["magnitude"].append();
+  mag_sig["return_type"] = "double";
+  mag_sig["filter_name"] = "expr_vector_magnitude";
+  mag_sig["args/arg1/type"] = "vector";
+  mag_sig["description"] = "Return the magnitude of the input vector.";
+
+
+  //---------------------------------------------------------------------------
+  //  field_nan_count() 
+  //---------------------------------------------------------------------------
   conduit::Node &field_nan_sig = (*functions)["field_nan_count"].append();
   field_nan_sig["return_type"] = "double";
-  field_nan_sig["filter_name"] = "field_nan_count";
+  field_nan_sig["filter_name"] = "expr_mesh_field_reduction_nan_count";
   field_nan_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_nan_sig["description"] = "Return the number  of NaNs in a field.";
 
   //---------------------------------------------------------------------------
-
+  //  field_inf_count() 
+  //---------------------------------------------------------------------------
   conduit::Node &field_inf_sig = (*functions)["field_inf_count"].append();
   field_inf_sig["return_type"] = "double";
-  field_inf_sig["filter_name"] = "field_inf_count";
+  field_inf_sig["filter_name"] = "expr_mesh_field_reduction_inf_count";
   field_inf_sig["args/arg1/type"] = "field"; // arg names match input port names
   field_inf_sig["description"] =
       "Return the number  of -inf and +inf in a field.";
 
-  //---------------------------------------------------------------------------
-
-  conduit::Node &scalar_max_sig = (*functions)["max"].append();
-  scalar_max_sig["return_type"] = "double";
-  scalar_max_sig["filter_name"] = "scalar_max";
-  scalar_max_sig["args/arg1/type"] = "scalar";
-  scalar_max_sig["args/arg2/type"] = "scalar";
-  scalar_max_sig["description"] = "Return the maximum of two scalars.";
 
   //---------------------------------------------------------------------------
-
-  conduit::Node &field_max_sig = (*functions)["max"].append();
-  field_max_sig["return_type"] = "value_position";
-  field_max_sig["filter_name"] = "field_max";
-  field_max_sig["args/arg1/type"] = "field";
-  field_max_sig["description"] =
-      "Return the maximum value from the meshvar. Its position is also "
-      "stored "
-      "and is accessible via the `position` function.";
-
+  //  min() 
   //---------------------------------------------------------------------------
 
-  conduit::Node &array_max_sig = (*functions)["max"].append();
-  array_max_sig["return_type"] = "double";
-  array_max_sig["filter_name"] = "array_max";
-  array_max_sig["args/arg1/type"] = "array";
-  array_max_sig["description"] = "Return the maximum of an array.";
+  //---------------------------------------------------------------------------
+  conduit::Node &scalar_min_sig = (*functions)["min"].append();
+  scalar_min_sig["return_type"] = "double";
+  scalar_min_sig["filter_name"] = "expr_scalar_min";
+  scalar_min_sig["args/arg1/type"] = "scalar";
+  scalar_min_sig["args/arg2/type"] = "scalar";
+  scalar_min_sig["description"] = "Return the minimum of two scalars.";
 
   //---------------------------------------------------------------------------
+  conduit::Node &array_min_sig = (*functions)["min"].append();
+  array_min_sig["return_type"] = "double";
+  array_min_sig["filter_name"] = "expr_array_min";
+  array_min_sig["args/arg1/type"] = "array";
+  array_min_sig["description"] = "Return the minimum of an array.";
 
+  //---------------------------------------------------------------------------
   conduit::Node &field_min_sig = (*functions)["min"].append();
   field_min_sig["return_type"] = "value_position";
-  field_min_sig["filter_name"] = "field_min";
+  field_min_sig["filter_name"] = "expr_mesh_field_reduction_min";
   field_min_sig["args/arg1/type"] = "field";
   field_min_sig["description"] =
       "Return the minimum value from the meshvar. Its position is also "
@@ -573,110 +638,89 @@ initialize_functions()
       "and is accessible via the `position` function.";
 
   //---------------------------------------------------------------------------
-
-  conduit::Node &scalar_min_sig = (*functions)["min"].append();
-  scalar_min_sig["return_type"] = "double";
-  scalar_min_sig["filter_name"] = "scalar_min";
-  scalar_min_sig["args/arg1/type"] = "scalar";
-  scalar_min_sig["args/arg2/type"] = "scalar";
-  scalar_min_sig["description"] = "Return the minimum of two scalars.";
-
+  //  max()
   //---------------------------------------------------------------------------
 
-  conduit::Node &array_min_sig = (*functions)["min"].append();
-  array_min_sig["return_type"] = "double";
-  array_min_sig["filter_name"] = "array_min";
-  array_min_sig["args/arg1/type"] = "array";
-  array_min_sig["description"] = "Return the minimum of an array.";
+  //---------------------------------------------------------------------------
+  conduit::Node &scalar_max_sig = (*functions)["max"].append();
+  scalar_max_sig["return_type"] = "double";
+  scalar_max_sig["filter_name"] = "expr_scalar_max";
+  scalar_max_sig["args/arg1/type"] = "scalar";
+  scalar_max_sig["args/arg2/type"] = "scalar";
+  scalar_max_sig["description"] = "Return the maximum of two scalars.";
 
   //---------------------------------------------------------------------------
-
-  conduit::Node &field_sum_sig = (*functions)["sum"].append();
-  field_sum_sig["return_type"] = "double";
-  field_sum_sig["filter_name"] = "field_sum";
-  field_sum_sig["args/arg1/type"] = "field";
-  field_sum_sig["description"] = "Return the sum of a field.";
+  conduit::Node &array_max_sig = (*functions)["max"].append();
+  array_max_sig["return_type"] = "double";
+  array_max_sig["filter_name"] = "eexpr_array_reduction_max";
+  array_max_sig["args/arg1/type"] = "array";
+  array_max_sig["description"] = "Return the maximum of an array.";
 
   //---------------------------------------------------------------------------
+  conduit::Node &field_max_sig = (*functions)["max"].append();
+  field_max_sig["return_type"] = "value_position";
+  field_max_sig["filter_name"] = "expr_mesh_field_reduction_max";
+  field_max_sig["args/arg1/type"] = "field";
+  field_max_sig["description"] =
+      "Return the maximum value from the meshvar. Its position is also "
+      "stored "
+      "and is accessible via the `position` function.";
 
+  //---------------------------------------------------------------------------
+  //  avg()
+  //---------------------------------------------------------------------------
+
+  //---------------------------------------------------------------------------
+  conduit::Node &array_avg_sig = (*functions)["avg"].append();
+  array_avg_sig["return_type"] = "double";
+  array_avg_sig["filter_name"] = "expr_array_reduction_avg"; // matches the filter's type_name
+  array_avg_sig["args/arg1/type"] = "array"; // arg names match input port names
+  array_avg_sig["description"] = "Return the average of an array.";
+
+  // -------------------------------------------------------------
+  conduit::Node &field_avg_sig = (*functions)["avg"].append();
+  field_avg_sig["return_type"] = "double";
+  field_avg_sig["filter_name"] = "expr_mesh_field_reduction_avg";
+  field_avg_sig["args/arg1/type"] = "field";
+  field_avg_sig["description"] = "Return the field average of a field.";
+
+  //---------------------------------------------------------------------------
+  //  sum()
+  //---------------------------------------------------------------------------
+
+  //---------------------------------------------------------------------------
   conduit::Node &array_sum_sig = (*functions)["sum"].append();
   array_sum_sig["return_type"] = "double";
-  array_sum_sig["filter_name"] = "array_sum";
+  array_sum_sig["filter_name"] = "expr_array_reduction_sum";
   array_sum_sig["args/arg1/type"] = "array";
   array_sum_sig["description"] = "Return the sum of an array.";
 
   //---------------------------------------------------------------------------
+  conduit::Node &field_sum_sig = (*functions)["sum"].append();
+  field_sum_sig["return_type"] = "double";
+  field_sum_sig["filter_name"] = "expr_mesh_field_reduction_sum";
+  field_sum_sig["args/arg1/type"] = "field";
+  field_sum_sig["description"] = "Return the sum of a field.";
 
+  //---------------------------------------------------------------------------
+  //  cycle()
+  //---------------------------------------------------------------------------
   conduit::Node &cycle_sig = (*functions)["cycle"].append();
   cycle_sig["return_type"] = "int";
-  cycle_sig["filter_name"] = "cycle";
+  cycle_sig["filter_name"] = "expr_mesh_cycle";
   cycle_sig["args"] = conduit::DataType::empty();
   cycle_sig["description"] = "Return the current simulation cycle.";
 
   //---------------------------------------------------------------------------
-
+  //  time()
+  //---------------------------------------------------------------------------
   conduit::Node &time_sig = (*functions)["time"].append();
   time_sig["return_type"] = "double";
-  time_sig["filter_name"] = "time";
+  time_sig["filter_name"] = "expr_mesh_time";
   time_sig["args"] = conduit::DataType::empty();
   time_sig["description"] = "Return the current simulation time.";
 
   // -------------------------------------------------------------
-
-  conduit::Node &vector = (*functions)["vector"].append();
-  vector["return_type"] = "vector";
-  vector["filter_name"] = "vector";
-  vector["args/arg1/type"] = "scalar";
-  vector["args/arg2/type"] = "scalar";
-  vector["args/arg3/type"] = "scalar";
-  vector["description"] = "Return the 3D position vector for the input value.";
-
-  //---------------------------------------------------------------------------
-
-  conduit::Node &mag_sig = (*functions)["magnitude"].append();
-  mag_sig["return_type"] = "double";
-  mag_sig["filter_name"] = "magnitude";
-  mag_sig["args/arg1/type"] = "vector";
-  mag_sig["description"] = "Return the magnitude of the input vector.";
-
-  //---------------------------------------------------------------------------
-
-  conduit::Node &abs_sig = (*functions)["abs"].append();
-  abs_sig["return_type"] = "scalar";
-  abs_sig["filter_name"] = "abs";
-  abs_sig["args/arg1/type"] = "scalar";
-  abs_sig["description"] = "Return the absolute value of the input.";
-
-  // -------------------------------------------------------------
-
-  conduit::Node &exp_sig = (*functions)["exp"].append();
-  exp_sig["return_type"] = "double";
-  exp_sig["filter_name"] = "exp";
-  exp_sig["args/arg1/type"] = "scalar";
-  exp_sig["description"] = "Return the base e exponential.";
-
-  // -------------------------------------------------------------
-
-  conduit::Node &pow_sig = (*functions)["pow"].append();
-  pow_sig["return_type"] = "double";
-  pow_sig["filter_name"] = "pow";
-  pow_sig["args/arg1/type"] = "scalar";
-  pow_sig["args/arg2/type"] = "scalar";
-  pow_sig["description"] =
-    "Returns base raised to the power exponent."
-    " pow(base, exponent)";
-
-  // -------------------------------------------------------------
-
-  conduit::Node &log_sig = (*functions)["log"].append();
-  log_sig["return_type"] = "double";
-  log_sig["filter_name"] = "log";
-  log_sig["args/arg1/type"] = "scalar";
-  log_sig["description"] =
-    "Returns the natural logarithm of the argument";
-
-  // -------------------------------------------------------------
-
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
   hist_sig["filter_name"] = "histogram";
@@ -697,10 +741,11 @@ initialize_functions()
   hist_sig["description"] = "Return a histogram of the field.";
 
   //---------------------------------------------------------------------------
-
+  // history()
+  //---------------------------------------------------------------------------
   conduit::Node &history_sig = (*functions)["history"].append();
   history_sig["return_type"] = "anytype";
-  history_sig["filter_name"] = "history";
+  history_sig["filter_name"] = "expr_history";
 
   history_sig["args/expr_name/type"] = "anytype";
   history_sig["args/expr_name/description"] =
@@ -735,11 +780,12 @@ initialize_functions()
   used.";
 
   //---------------------------------------------------------------------------
-
+  // history_range()
+  //---------------------------------------------------------------------------
   conduit::Node &history_range_sig = (*functions)["history_range"].append();
   // history_range_sig["return_type"] = "anytype";
   history_range_sig["return_type"] = "array";
-  history_range_sig["filter_name"] = "history_range";
+  history_range_sig["filter_name"] = "expr_history_range";
 
   history_range_sig["args/expr_name/type"] = "anytype";
   history_range_sig["args/expr_name/description"] =
@@ -819,30 +865,62 @@ initialize_functions()
   first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
 
   // -------------------------------------------------------------
+  // entropy()
+  // -------------------------------------------------------------
   conduit::Node &entropy_sig = (*functions)["entropy"].append();
   entropy_sig["return_type"] = "double";
-  entropy_sig["filter_name"] = "entropy";
+  entropy_sig["filter_name"] = "expr_histogram_entropy";
   entropy_sig["args/hist/type"] = "histogram";
   entropy_sig["description"] =
       "Return the Shannon entropy given a histogram of the field.";
 
   //---------------------------------------------------------------------------
-
+  // pdf()
+  //---------------------------------------------------------------------------
   conduit::Node &pdf_sig = (*functions)["pdf"].append();
   pdf_sig["return_type"] = "histogram";
-  pdf_sig["filter_name"] = "pdf";
+  pdf_sig["filter_name"] = "expr_histogram_pdf";
   pdf_sig["args/hist/type"] = "histogram";
   pdf_sig["description"] =
       "Return the probability distribution function (pdf) from a histogram.";
 
   //---------------------------------------------------------------------------
-
+  // cdf()
+  //---------------------------------------------------------------------------
   conduit::Node &cdf_sig = (*functions)["cdf"].append();
   cdf_sig["return_type"] = "histogram";
-  cdf_sig["filter_name"] = "cdf";
+  cdf_sig["filter_name"] = "expr_histogram_cdf";
   cdf_sig["args/hist/type"] = "histogram";
   cdf_sig["description"] =
       "Return the cumulative distribution function (cdf) from a histogram.";
+
+  //---------------------------------------------------------------------------
+  // quantile()
+  //---------------------------------------------------------------------------
+  conduit::Node &quantile_sig = (*functions)["quantile"].append();
+  quantile_sig["return_type"] = "double";
+  quantile_sig["filter_name"] = "expr_histogram_cdf_quantile";
+  quantile_sig["args/cdf/type"] = "histogram";
+  quantile_sig["args/cdf/description"] = "CDF of a histogram.";
+
+  quantile_sig["args/q/type"] = "double";
+  quantile_sig["args/q/description"] = "Quantile between 0 and 1 inclusive.";
+
+  quantile_sig["args/interpolation/type"] = "string";
+  quantile_sig["args/interpolation/optional"];
+  quantile_sig["args/interpolation/description"] =
+      "Specifies the interpolation \
+  method to use when the quantile lies between two data points ``i < j``: \n\n \
+  - linear (default): ``i + (j - i) * fraction``, where fraction is the \
+  fractional part of the index surrounded by ``i`` and ``j``. \n \
+  - lower: ``i``. \n \
+  - higher: ``j``. \n \
+  - nearest: ``i`` or ``j``, whichever is nearest. \n \
+  - midpoint: ``(i + j) / 2``";
+
+  quantile_sig["description"] = "Return the `q`-th quantile of the data along \
+  the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the \
+  x-axis which 50 percent of the data lies below.";
 
   //---------------------------------------------------------------------------
 
@@ -867,10 +945,11 @@ initialize_functions()
       "Return the value of the bin with axis-value `val` on the histogram.";
 
   //---------------------------------------------------------------------------
-
+  // field()
+  //---------------------------------------------------------------------------
   conduit::Node &field_sig = (*functions)["field"].append();
   field_sig["return_type"] = "field";
-  field_sig["filter_name"] = "field";
+  field_sig["filter_name"] = "expr_mesh_field";
   field_sig["args/field_name/type"] = "string";
   field_sig["args/component/type"] = "string";
   field_sig["args/component/optional"];
@@ -879,21 +958,47 @@ initialize_functions()
   field_sig["description"] = "Return a mesh field given a its name.";
 
   //---------------------------------------------------------------------------
-
+  // topo()
+  //---------------------------------------------------------------------------
   conduit::Node &topo_sig = (*functions)["topo"].append();
   topo_sig["return_type"] = "topo";
-  topo_sig["filter_name"] = "topo";
+  topo_sig["filter_name"] = "expr_mesh_topology";
   topo_sig["args/arg1/type"] = "string";
   topo_sig["description"] = "Return a mesh topology given a its name.";
 
   //---------------------------------------------------------------------------
+  // topology()
+  //---------------------------------------------------------------------------
+  conduit::Node &topology_sig = (*functions)["topology"].append();
+  topo_sig["return_type"] = "topo";
+  topo_sig["filter_name"] = "expr_mesh_topology";
+  topo_sig["args/arg1/type"] = "string";
+  topo_sig["description"] = "Return a mesh topology given a its name.";
 
+  //---------------------------------------------------------------------------
+  // bounds()
+  //---------------------------------------------------------------------------
   conduit::Node &bounds_sig = (*functions)["bounds"].append();
   bounds_sig["return_type"] = "aabb";
-  bounds_sig["filter_name"] = "bounds";
+  bounds_sig["filter_name"] = "expr_mesh_bounds";
   bounds_sig["args/topology/type"] = "string";
   bounds_sig["args/topology/optional"];
   bounds_sig["description"] = "Returns the spatial bounds of a mesh.";
+
+  //---------------------------------------------------------------------------
+  // lineout()
+  //---------------------------------------------------------------------------
+  conduit::Node &lineout = (*functions)["lineout"].append();
+  lineout["return_type"] = "array";
+  lineout["filter_name"] = "expr_mesh_lineout";
+  lineout["args/samples/type"] = "int";
+  lineout["args/start/type"] = "vector";
+  lineout["args/end/type"] = "vector";
+  lineout["args/fields/type"] = "list";
+  lineout["args/fields/optional"];
+  lineout["args/empty_val/type"] = "double";
+  lineout["args/empty_val/optional"];
+  lineout["description"] = "returns a sampled based line out";
 
   // -------------------------------------------------------------
 
@@ -931,46 +1036,7 @@ initialize_functions()
       "returns the closest max"
       " value from a reference point on an axis";
 
-  // -------------------------------------------------------------
 
-  conduit::Node &lineout = (*functions)["lineout"].append();
-  lineout["return_type"] = "array";
-  lineout["filter_name"] = "lineout";
-  lineout["args/samples/type"] = "int";
-  lineout["args/start/type"] = "vector";
-  lineout["args/end/type"] = "vector";
-  lineout["args/fields/type"] = "list";
-  lineout["args/fields/optional"];
-  lineout["args/empty_val/type"] = "double";
-  lineout["args/empty_val/optional"];
-  lineout["description"] = "returns a sampled based line out";
-
-  // -------------------------------------------------------------
-
-  conduit::Node &quantile_sig = (*functions)["quantile"].append();
-  quantile_sig["return_type"] = "double";
-  quantile_sig["filter_name"] = "quantile";
-  quantile_sig["args/cdf/type"] = "histogram";
-  quantile_sig["args/cdf/description"] = "CDF of a histogram.";
-
-  quantile_sig["args/q/type"] = "double";
-  quantile_sig["args/q/description"] = "Quantile between 0 and 1 inclusive.";
-
-  quantile_sig["args/interpolation/type"] = "string";
-  quantile_sig["args/interpolation/optional"];
-  quantile_sig["args/interpolation/description"] =
-      "Specifies the interpolation \
-  method to use when the quantile lies between two data points ``i < j``: \n\n \
-  - linear (default): ``i + (j - i) * fraction``, where fraction is the \
-  fractional part of the index surrounded by ``i`` and ``j``. \n \
-  - lower: ``i``. \n \
-  - higher: ``j``. \n \
-  - nearest: ``i`` or ``j``, whichever is nearest. \n \
-  - midpoint: ``(i + j) / 2``";
-
-  quantile_sig["description"] = "Return the `q`-th quantile of the data along \
-  the axis of `cdf`. For example, if `q` is 0.5 the result is the value on the \
-  x-axis which 50 percent of the data lies below.";
 
   //---------------------------------------------------------------------------
 
@@ -1147,7 +1213,7 @@ initialize_functions()
   paint_binning_sig["args/assoc/type"] = "topo";
   paint_binning_sig["args/assoc/optional"];
   paint_binning_sig["args/assoc/description"] =
-      "Defaults to the association infered from the bin axes and and "
+      "Defaults to the association inferred from the bin axes and and "
       "reduction variable. The association of the resultant field. This "
       "topology must have all the fields used for the axes of ``binning``. It "
       "only makes sense to specify this when the ``bin_axes`` are a subset of "

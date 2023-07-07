@@ -261,1234 +261,6 @@ logic_op(const bool lhs, const bool rhs, const std::string &op)
   return res;
 }
 
-} // namespace detail
-
-void resolve_symbol_result(flow::Graph &graph,
-                           const conduit::Node *output,
-                           const std::string filter_name)
-{
-  conduit::Node *symbol_table =
-    graph.workspace().registry().fetch<conduit::Node>("symbol_table");
-  const int num_symbols = symbol_table->number_of_children();
-  for(int i = 0; i < num_symbols; ++i)
-  {
-    conduit::Node &symbol = symbol_table->child(i);
-    if(symbol["filter_name"].as_string() == filter_name)
-    {
-      symbol["value"] = output->fetch("value");
-      break;
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-NullArg::NullArg() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-NullArg::~NullArg()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-NullArg::declare_interface(Node &i)
-{
-  i["type_name"] = "null_arg";
-  i["port_names"] = DataType::empty();
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-NullArg::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-NullArg::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Identifier::Identifier() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Identifier::~Identifier()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Identifier::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_identifier";
-  i["port_names"] = DataType::empty();
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Identifier::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required string parameter 'value'";
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Identifier::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  std::string i_name = params()["value"].as_string();
-
-  const conduit::Node *const cache =
-      graph().workspace().registry().fetch<Node>("cache");
-  if(!cache->has_path(i_name))
-  {
-    ASCENT_ERROR("Unknown expression identifier: '" << i_name << "'");
-  }
-
-  const int entries = (*cache)[i_name].number_of_children();
-  if(entries < 1)
-  {
-    ASCENT_ERROR("Expression identifier: needs at least one entry");
-  }
-  // grab the last one calculated so we have type info
-  (*output) = (*cache)[i_name].child(entries - 1);
-  // we need to keep the name to retrieve the chache
-  // if history is called.
-  (*output)["name"] = i_name;
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Boolean::Boolean() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Boolean::~Boolean()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Boolean::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_bool";
-  i["port_names"] = DataType::empty();
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Boolean::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Boolean::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = params()["value"].to_uint8();
-  (*output)["type"] = "bool";
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-Integer::Integer() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Integer::~Integer()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-
-void
-Integer::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_integer";
-  i["port_names"] = DataType::empty();
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Integer::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Integer::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = params()["value"].to_int32();
-  (*output)["type"] = "int";
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Double::Double() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Double::~Double()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Double::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_double";
-  i["port_names"] = DataType::empty();
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Double::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Double::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = params()["value"].to_float64();
-  (*output)["type"] = "double";
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-String::String() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-String::~String()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-String::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_string";
-  i["port_names"] = DataType::empty();
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-String::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required string parameter 'value'";
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-String::execute()
-{
-  conduit::Node *output = new conduit::Node();
-
-  (*output)["value"] = params()["value"].as_string();
-  (*output)["type"] = "string";
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-BinaryOp::BinaryOp() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-BinaryOp::~BinaryOp()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-BinaryOp::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_binary_op";
-  i["port_names"].append() = "lhs";
-  i["port_names"].append() = "rhs";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-BinaryOp::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("op_string"))
-  {
-    info["errors"].append() = "Missing required string parameter 'op_string'";
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-BinaryOp::execute()
-{
-  const conduit::Node *n_lhs = input<Node>("lhs");
-  const conduit::Node *n_rhs = input<Node>("rhs");
-
-  const conduit::Node &lhs = (*n_lhs)["value"];
-  const conduit::Node &rhs = (*n_rhs)["value"];
-
-
-
-  std::string op_str = params()["op_string"].as_string();
-  const std::string l_type = (*n_lhs)["type"].as_string();
-  const std::string r_type = (*n_rhs)["type"].as_string();
-
-  conduit::Node *output = new conduit::Node();
-  std::stringstream msg;
-
-  if(detail::is_math(op_str))
-  {
-    if(detail::is_scalar(l_type) && detail::is_scalar(r_type))
-    {
-      // promote to double if at least one is a double
-      if(l_type == "double" || r_type == "double")
-      {
-        double d_rhs = rhs.to_float64();
-        double d_lhs = lhs.to_float64();
-        (*output)["value"] = detail::math_op(d_lhs, d_rhs, op_str);
-        (*output)["type"] = "double";
-      }
-      else
-      {
-        int i_rhs = rhs.to_int32();
-        int i_lhs = lhs.to_int32();
-        (*output)["value"] = detail::math_op(i_lhs, i_rhs, op_str);
-        (*output)["type"] = "int";
-      }
-    }
-    else
-    {
-      if(detail::is_scalar(l_type) != detail::is_scalar(r_type))
-      {
-        msg << "' " << l_type << " " << op_str << " " << r_type << "'";
-        ASCENT_ERROR(
-            "Mixed vector and scalar quantities not implemented / supported: "
-            << msg.str());
-      }
-
-      double res[3];
-      detail::vector_op(lhs.value(), rhs.value(), op_str, res);
-
-      (*output)["value"].set(res, 3);
-      (*output)["type"] = "vector";
-    }
-  }
-  else if(detail::is_logic(op_str))
-  {
-
-    bool b_lhs = lhs.to_uint8();
-    bool b_rhs = rhs.to_uint8();
-    (*output)["value"] = detail::logic_op(b_lhs, b_rhs, op_str);
-    (*output)["type"] = "bool";
-  }
-  else
-  {
-    double d_rhs = rhs.to_float64();
-    double d_lhs = lhs.to_float64();
-
-    (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op_str);
-    (*output)["type"] = "bool";
-  }
-
-  // std::cout<<" operation "<<op_str<<"\n";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-IfExpr::IfExpr() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-IfExpr::~IfExpr()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-IfExpr::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_if";
-  i["port_names"].append() = "condition";
-  i["port_names"].append() = "if";
-  i["port_names"].append() = "else";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-IfExpr::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-IfExpr::execute()
-{
-  conduit::Node *n_condition = input<Node>("condition");
-  conduit::Node *n_if = input<Node>("if");
-  conduit::Node *n_else = input<Node>("else");
-
-  conduit::Node *output;
-  if((*n_condition)["value"].to_uint8() == 1)
-  {
-    output = n_if;
-  }
-  else
-  {
-    output = n_else;
-  }
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ArrayAccess::ArrayAccess() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ArrayAccess::~ArrayAccess()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayAccess::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_array";
-  i["port_names"].append() = "array";
-  i["port_names"].append() = "index";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ArrayAccess::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayAccess::execute()
-{
-  const conduit::Node *n_array = input<Node>("array");
-  const conduit::Node *n_index = input<Node>("index");
-
-  conduit::Node *output = new conduit::Node();
-
-  int index = (*n_index)["value"].as_int32();
-  int length = (*n_array)["value"].dtype().number_of_elements();
-  if(index > length - 1)
-  {
-    ASCENT_ERROR("ArrayAccess: array index out of bounds: [0," << length - 1
-                                                               << "]");
-  }
-  const double *arr = (*n_array)["value"].value();
-  (*output)["value"] = arr[index];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-DotAccess::DotAccess() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-DotAccess::~DotAccess()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-DotAccess::declare_interface(Node &i)
-{
-  i["type_name"] = "expr_dot";
-  i["port_names"].append() = "obj";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-DotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("name"))
-  {
-    info["errors"].append() = "DotAccess: Missing required parameter 'name'";
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-DotAccess::execute()
-{
-  conduit::Node *n_obj = input<Node>("obj");
-  std::string name = params()["name"].as_string();
-
-  conduit::Node *output = new conduit::Node();
-
-  // fills attrs for basic types like vectors
-  detail::fill_attrs(*n_obj);
-
-  // TODO test accessing non-existant attribute
-  if(!n_obj->has_path("attrs/" + name))
-  {
-    n_obj->print();
-    std::stringstream ss;
-    if(n_obj->has_path("attrs"))
-    {
-      std::string attr_yaml = (*n_obj)["attrs"].to_yaml();
-      if(attr_yaml == "")
-      {
-        ss<<" No known attribtues.";
-      }
-      else
-      {
-        ss<<" Known attributes: "<<attr_yaml;
-      }
-    }
-    else
-    {
-      ss<<" No known attributes.";
-    }
-
-    ASCENT_ERROR("'"<<name << "' is not a valid object attribute for"
-                      <<" type '"<<(*n_obj)["type"].as_string()<<"'."
-                      <<ss.str());
-  }
-
-  (*output) = (*n_obj)["attrs/" + name];
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ArrayMin::ArrayMin() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ArrayMin::~ArrayMin()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayMin::declare_interface(Node &i)
-{
-  i["type_name"] = "array_min";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ArrayMin::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayMin::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_policy();
-  (*output)["value"] = array_min((*input<Node>("arg1"))["value"], exec)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ScalarMin::ScalarMin() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ScalarMin::~ScalarMin()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ScalarMin::declare_interface(Node &i)
-{
-  i["type_name"] = "scalar_min";
-  i["port_names"].append() = "arg1";
-  i["port_names"].append() = "arg2";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ScalarMin::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ScalarMin::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-  const conduit::Node *arg2 = input<Node>("arg2");
-
-  conduit::Node *output = new conduit::Node();
-
-  if((*arg1)["type"].as_string() == "double" ||
-     (*arg2)["type"].as_string() == "double")
-  {
-    double d_rhs = (*arg1)["value"].to_float64();
-    double d_lhs = (*arg2)["value"].to_float64();
-    (*output)["value"] = std::min(d_lhs, d_rhs);
-    (*output)["type"] = "double";
-  }
-  else
-  {
-    int i_rhs = (*arg1)["value"].to_int32();
-    int i_lhs = (*arg2)["value"].to_int32();
-    (*output)["value"] = std::min(i_lhs, i_rhs);
-    (*output)["type"] = "int";
-  }
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ScalarMax::ScalarMax() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ScalarMax::~ScalarMax()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ScalarMax::declare_interface(Node &i)
-{
-  i["type_name"] = "scalar_max";
-  i["port_names"].append() = "arg1";
-  i["port_names"].append() = "arg2";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ScalarMax::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ScalarMax::execute()
-{
-
-  const conduit::Node *arg1 = input<Node>("arg1");
-  const conduit::Node *arg2 = input<Node>("arg2");
-
-  conduit::Node *output = new conduit::Node();
-
-  if((*arg1)["type"].as_string() == "double" ||
-     (*arg2)["type"].as_string() == "double")
-  {
-    double d_rhs = (*arg1)["value"].to_float64();
-    double d_lhs = (*arg2)["value"].to_float64();
-    (*output)["value"] = std::max(d_lhs, d_rhs);
-    (*output)["type"] = "double";
-  }
-  else
-  {
-    int i_rhs = (*arg1)["value"].to_int32();
-    int i_lhs = (*arg2)["value"].to_int32();
-    (*output)["value"] = std::max(i_lhs, i_rhs);
-    (*output)["type"] = "int";
-  }
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-FieldMin::FieldMin() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-FieldMin::~FieldMin()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldMin::declare_interface(Node &i)
-{
-  i["type_name"] = "field_min";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-FieldMin::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldMin::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-
-  const std::string field = (*arg1)["value"].as_string();
-
-  conduit::Node *output = new conduit::Node();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
-
-  if(!is_scalar_field(*dataset, field))
-  {
-    ASCENT_ERROR("FieldMin: field '" << field << "' is not a scalar field");
-  }
-
-  conduit::Node n_min = field_min(*dataset, field);
-
-  (*output)["type"] = "value_position";
-  (*output)["attrs/value/value"] = n_min["value"];
-  (*output)["attrs/value/type"] = "double";
-  (*output)["attrs/position/value"] = n_min["position"];
-  (*output)["attrs/position/type"] = "vector";
-  // information about the element/field
-  (*output)["attrs/element/rank"] = n_min["rank"];
-  (*output)["attrs/element/domain_index"] = n_min["domain_id"];
-  (*output)["attrs/element/index"] = n_min["index"];
-  (*output)["attrs/element/assoc"] = n_min["assoc"];
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ArrayMax::ArrayMax() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ArrayMax::~ArrayMax()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayMax::declare_interface(Node &i)
-{
-  i["type_name"] = "array_max";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ArrayMax::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayMax::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_policy();
-  (*output)["value"] = array_max((*input<Node>("arg1"))["value"], exec)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-FieldMax::FieldMax() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-FieldMax::~FieldMax()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldMax::declare_interface(Node &i)
-{
-  i["type_name"] = "field_max";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-FieldMax::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldMax::execute()
-{
-
-  const conduit::Node *arg1 = input<Node>("arg1");
-
-  const std::string field = (*arg1)["value"].as_string();
-
-  conduit::Node *output = new conduit::Node();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
-
-  if(!is_scalar_field(*dataset, field))
-  {
-    ASCENT_ERROR("FieldMax: field '" << field << "' is not a scalar field");
-  }
-
-  conduit::Node n_max = field_max(*dataset, field);
-
-  (*output)["type"] = "value_position";
-  (*output)["attrs/value/value"] = n_max["value"];
-  (*output)["attrs/value/type"] = "double";
-  (*output)["attrs/position/value"] = n_max["position"];
-  (*output)["attrs/position/type"] = "vector";
-  // information about the element/field
-  (*output)["attrs/element/rank"] = n_max["rank"];
-  (*output)["attrs/element/domain_index"] = n_max["domain_id"];
-  (*output)["attrs/element/index"] = n_max["index"];
-  (*output)["attrs/element/assoc"] = n_max["assoc"];
-
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ArrayAvg::ArrayAvg() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ArrayAvg::~ArrayAvg()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayAvg::declare_interface(Node &i)
-{
-  i["type_name"] = "array_avg";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ArrayAvg::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ArrayAvg::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_policy();
-  conduit::Node sum = array_sum((*input<Node>("arg1"))["value"], exec);
-  (*output)["value"] = sum["value"].to_float64() / sum["count"].to_float64();
-  (*output)["type"] = "double";
-
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ScalarGradient::ScalarGradient() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ScalarGradient::~ScalarGradient()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ScalarGradient::declare_interface(Node &i)
-{
-  i["type_name"] = "scalar_gradient";
-  i["port_names"].append() = "expr_name";
-  i["port_names"].append() = "window_length";
-  i["port_names"].append() = "window_length_unit";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ScalarGradient::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ScalarGradient::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
-  conduit::Node &n_window_length = *input<Node>("window_length");
-  conduit::Node &n_window_length_unit = *input<Node>("window_length_unit");
-
-  const conduit::Node *const cache =
-      graph().workspace().registry().fetch<Node>("cache");
-
-  if(!cache->has_path(expr_name))
-  {
-    ASCENT_ERROR("ScalarGradient: unknown identifier "<<  expr_name);
-  }
-
-  // handle the optional inputs
-  double window_length = 1;
-  if(!n_window_length.dtype().is_empty())
-  {
-    window_length = n_window_length["value"].to_float64();
-  }
-  if(window_length < 0)
-  {
-     ASCENT_ERROR("ScalarGradient: window_length must non-negative." );
-  }
-
-  string units = "index";
-  if(!n_window_length_unit.dtype().is_empty())
-  {
-    units = n_window_length_unit["value"].as_string();
-  }
-
-  bool execution_points = units == "index";
-  bool time = units == "time";
-  bool cycles = units == "cycle";
-  int total = execution_points + time + cycles;
-
-  if(total == 0 && !n_window_length_unit.dtype().is_empty())
-  {
-     ASCENT_ERROR("ScalarGradient: if a ``window_length_unit`` value is provided,"
-                  <<" it must be set to either: 1). \"index\", 2). \"time\", or 3). \"cycle\"." );
-  }
-
-  if((execution_points || cycles) && window_length < 1) {
-     ASCENT_ERROR("ScalarGradient: window_length must be at least 1 if the window length unit is \"index\" or \"cycle\"." );
-  }
-
-  const conduit::Node &history = (*cache)[expr_name];
-
-  const int entries = history.number_of_children();
-  if(entries < 2)
-  {
-    (*output)["value"] = -std::numeric_limits<double>::infinity();
-    (*output)["type"] = "double";
-    set_output<conduit::Node>(output);
-    return;
-  }
-
-  int first_index = 0, current_index = entries - 1;
-  if(execution_points)
-  {
-    //clamp the first index if the window length has gone too far
-    if(window_length - current_index > 0)
-    {
-      first_index = 0;
-      window_length = current_index;
-    }
-    else
-    {
-      first_index = current_index - window_length;
-    }
-  }
-  else if(time)
-  {
-   string time_path = "time";
-   if(!history.child(current_index).has_path(time_path))
-    {
-      ASCENT_ERROR("ScalarGradient: interal error. current time point does not have the child " + time_path);
-    }
-    const double current_time = history.child(current_index)[time_path].to_float64();
-    const double first_time = current_time - window_length;
-    double time;
-    for(int index = 0; index < entries; index++)
-    {
-      if(history.child(index).has_path(time_path))
-      {
-        time = history.child(index)[time_path].to_float64();
-      }
-      else
-      {
-        ASCENT_ERROR("ScalarGradient: a time point in evaluation window (for the calculation at absolute index: " + to_string(index) + ") does not have the child " + time_path );
-      }
-      if(time >= first_time) {
-        first_index = index;
-        //adjust so our window length is accurate (since we may not have performed a calculation at precisely the requested time)
-        window_length = current_time - time;
-        break;
-      }
-    }
-  }
-  else if(cycles)
-  {
-    vector<string> child_names = history.child_names();
-    if(child_names.size() != entries)
-    {
-      ASCENT_ERROR("ScalarGradient: internal error. number of history "
-                   <<"entries: " << to_string(entries)
-                   <<", but number of history child names: "
-                   <<to_string(child_names.size()));
-    }
-    const unsigned long long current_cycle = stoull(child_names[current_index]);
-    const unsigned long long first_cycle = current_cycle - window_length;
-
-    unsigned long long cycle;
-    for(int index = 0; index < entries; index++)
-    {
-      cycle = stoull(child_names[index]);
-      if(cycle >= first_cycle)
-      {
-        first_index = index;
-        //adjust so our window length is accurate (since we may not have performed a calculation at precisely the requested time)
-        window_length = current_cycle - cycle;
-        break;
-      }
-    }
-  }
-
-  string value_path = "";
-  vector<string> value_paths = {"value", "attrs/value/value"};
-  if(current_index < 0 || current_index >= entries)
-  {
-    ASCENT_ERROR("Scalar gradient: bad current index: "<<current_index);
-  }
-  for(const string &path : value_paths)
-  {
-    if(history.child(current_index).has_path(path))
-    {
-      value_path = path;
-      break;
-    }
-  }
-
-  if(value_path.size() == 0)
-  {
-    ASCENT_ERROR("ScalarGradient: interal error. current index does not "
-                  <<"have one of the expected value paths");
-  }
-
-  if(first_index < 0 || first_index >= entries)
-  {
-    ASCENT_ERROR("Scalar gradient: bad first index: "<<first_index);
-  }
-
-  double first_value = history.child(first_index)[value_path].to_float64();
-  double current_value = history.child(current_index)[value_path].to_float64();
-
-  // dy / dx
-  double gradient = (current_value - first_value) / window_length;
-
-  (*output)["value"] = gradient;
-  (*output)["type"] = "double";
-
-  set_output<conduit::Node>(output);
-}
-
-
-//-----------------------------------------------------------------------------
-ArrayGradient::ArrayGradient() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ArrayGradient::~ArrayGradient()
-{
-  // empty
-}
-
-
-// -----------------------------------------------------------------------------
-void
-ArrayGradient::declare_interface(Node &i)
-{
-  i["type_name"] = "gradient_range";
-  i["port_names"].append() = "expr_name";
-  i["port_names"].append() = "first_absolute_index";
-  i["port_names"].append() = "last_absolute_index";
-  i["port_names"].append() = "first_relative_index";
-  i["port_names"].append() = "last_relative_index";
-  i["port_names"].append() = "first_absolute_time";
-  i["port_names"].append() = "last_absolute_time";
-  i["port_names"].append() = "first_absolute_cycle";
-  i["port_names"].append() = "last_absolute_cycle";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ArrayGradient::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
 
 void get_first_and_last_index(const string &operator_name,
                               const conduit::Node &history,
@@ -1672,7 +444,7 @@ void set_values_from_history(const string &operator_name,
 
   if(value_path.size() == 0)
   {
-    ASCENT_ERROR("ScalarGradient: interal error. first index does not have one of the expected value paths");
+    ASCENT_ERROR(operator_name + " internal error. first index does not have one of the expected value paths");
   }
 
   conduit::DataType dtype = history.child(first_index)[value_path].dtype();
@@ -1886,89 +658,825 @@ range_values_helper(const conduit::Node &history,
 }
 
 
+
+
+} // namespace detail
+
+void resolve_symbol_result(flow::Graph &graph,
+                           const conduit::Node *output,
+                           const std::string filter_name)
+{
+  conduit::Node *symbol_table =
+    graph.workspace().registry().fetch<conduit::Node>("symbol_table");
+  const int num_symbols = symbol_table->number_of_children();
+  for(int i = 0; i < num_symbols; ++i)
+  {
+    conduit::Node &symbol = symbol_table->child(i);
+    if(symbol["filter_name"].as_string() == filter_name)
+    {
+      symbol["value"] = output->fetch("value");
+      break;
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Base Language Components
+// boolean, integer, double, string, nan, null, identifier, 
+// if (conditional), binary operations (math, logical, comparison etc)
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprBoolean
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprBoolean::ExprBoolean()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprBoolean::~ExprBoolean()
+{
+  // empty
+}
+
 //-----------------------------------------------------------------------------
 void
-ArrayGradient::execute()
+ExprBoolean::declare_interface(Node &i)
 {
-  string operator_name = "ArrayGradient";
+  i["type_name"] = "expr_boolean";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
 
- const std::string expr_name  = (*input<conduit::Node>("expr_name"))["name"].as_string();
+//-----------------------------------------------------------------------------
+bool
+ExprBoolean::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprBoolean::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = params()["value"].to_uint8();
+  (*output)["type"] = "bool";
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprInteger
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprInteger::ExprInteger() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprInteger::~ExprInteger()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprInteger::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_integer";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprInteger::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprInteger::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = params()["value"].to_int32();
+  (*output)["type"] = "int";
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprDouble
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprDouble::ExprDouble()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprDouble::~ExprDouble()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprDouble::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_double";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprDouble::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required numeric parameter 'value'";
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprDouble::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = params()["value"].to_float64();
+  (*output)["type"] = "double";
+  set_output<conduit::Node>(output);
+}
+
+
+//*****************************************************************************
+// ExprString
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprString::ExprString()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprString::~ExprString()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprString::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_string";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprString::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required string parameter 'value'";
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprString::execute()
+{
+  conduit::Node *output = new conduit::Node();
+
+  (*output)["value"] = params()["value"].as_string();
+  (*output)["type"] = "string";
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprNan
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprNan::ExprNan() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprNan::~ExprNan()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprNan::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_nan";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprNan::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprNan::execute()
+{
+  conduit::Node *output = new conduit::Node();
+
+  (*output)["type"] = "double";
+  (*output)["value"] = nan("");;
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprNull
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprNull::ExprNull()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprNull::~ExprNull()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprNull::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_null";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprNull::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprNull::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprIdentifier
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprIdentifier::ExprIdentifier()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprIdentifier::~ExprIdentifier()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprIdentifier::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_identifier";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprIdentifier::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  if(!params.has_path("value"))
+  {
+    info["errors"].append() = "Missing required string parameter 'value'";
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprIdentifier::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  std::string i_name = params()["value"].as_string();
 
   const conduit::Node *const cache =
-      graph().workspace().registry().fetch<conduit::Node>("cache");
-
-  if(!cache->has_path(expr_name))
+      graph().workspace().registry().fetch<Node>("cache");
+  if(!cache->has_path(i_name))
   {
-    ASCENT_ERROR(operator_name + ": unknown identifier "<<  expr_name);
-  }
-  const conduit::Node &history = (*cache)[expr_name];
-
-  const conduit::Node *n_first_absolute_index = input<conduit::Node>("first_absolute_index");
-  const conduit::Node *n_last_absolute_index = input<conduit::Node>("last_absolute_index");
-  const conduit::Node *n_first_relative_index = input<conduit::Node>("first_relative_index");
-  const conduit::Node *n_last_relative_index = input<conduit::Node>("last_relative_index");
-  const conduit::Node *n_first_absolute_time = input<conduit::Node>("first_absolute_time");
-  const conduit::Node *n_last_absolute_time = input<conduit::Node>("last_absolute_time");
-  const conduit::Node *n_first_absolute_cycle = input<conduit::Node>("first_absolute_cycle");
-  const conduit::Node *n_last_absolute_cycle = input<conduit::Node>("last_absolute_cycle");
-
-  conduit::Node *output = range_values_helper(history,
-                                              n_first_absolute_index,
-                                              n_last_absolute_index,
-                                              n_first_relative_index,
-                                              n_last_relative_index,
-                                              n_first_absolute_time,
-                                              n_last_absolute_time,
-                                              n_first_absolute_cycle,
-                                              n_last_absolute_cycle,
-                                              operator_name,
-                                              "time");
-
-  size_t num_array_elems = (*output)["value"].dtype().number_of_elements();
-
-  if(num_array_elems < 2)
-  {
-    double neg_inf[1] = {-std::numeric_limits<double>::infinity()};
-    (*output)["value"].set(neg_inf,1);
-    (*output)["type"] = "array";
-    set_output<conduit::Node>(output);
-    return;
+    ASCENT_ERROR("Unknown expression identifier: '" << i_name << "'");
   }
 
-  conduit::Node gradient = array_gradient((*output)["value"], (*output)["time"]);
+  const int entries = (*cache)[i_name].number_of_children();
+  if(entries < 1)
+  {
+    ASCENT_ERROR("Expression identifier: needs at least one entry");
+  }
+  // grab the last one calculated so we have type info
+  (*output) = (*cache)[i_name].child(entries - 1);
+  // we need to keep the name to retrieve the cache
+  // if history is called.
+  (*output)["name"] = i_name;
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprObjectDotAccess
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprObjectDotAccess::ExprObjectDotAccess() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprObjectDotAccess::~ExprObjectDotAccess()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprObjectDotAccess::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_dot";
+  i["port_names"].append() = "obj";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprObjectDotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  if(!params.has_path("name"))
+  {
+    info["errors"].append() = "DotAccess: Missing required parameter 'name'";
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprObjectDotAccess::execute()
+{
+  conduit::Node *n_obj = input<Node>("obj");
+  std::string name = params()["name"].as_string();
+
+  conduit::Node *output = new conduit::Node();
+
+  // fills attrs for basic types like vectors
+  detail::fill_attrs(*n_obj);
+
+  // TODO test accessing non-existent attribute
+  if(!n_obj->has_path("attrs/" + name))
+  {
+    n_obj->print();
+    std::stringstream ss;
+    if(n_obj->has_path("attrs"))
+    {
+      std::string attr_yaml = (*n_obj)["attrs"].to_yaml();
+      if(attr_yaml == "")
+      {
+        ss<<" No known attributes.";
+      }
+      else
+      {
+        ss<<" Known attributes: "<<attr_yaml;
+      }
+    }
+    else
+    {
+      ss<<" No known attributes.";
+    }
+
+    ASCENT_ERROR("'"<<name << "' is not a valid object attribute for"
+                      <<" type '"<<(*n_obj)["type"].as_string()<<"'."
+                      <<ss.str());
+  }
+
+  (*output) = (*n_obj)["attrs/" + name];
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprIf
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprIf::ExprIf()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprIf::~ExprIf()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprIf::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_if";
+  i["port_names"].append() = "condition";
+  i["port_names"].append() = "if";
+  i["port_names"].append() = "else";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprIf::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprIf::execute()
+{
+  conduit::Node *n_condition = input<Node>("condition");
+  conduit::Node *n_if = input<Node>("if");
+  conduit::Node *n_else = input<Node>("else");
+
+  conduit::Node *output;
+  if((*n_condition)["value"].to_uint8() == 1)
+  {
+    output = n_if;
+  }
+  else
+  {
+    output = n_else;
+  }
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
 
 
-  (*output)["value"] = gradient["value"];
-  (*output)["type"] = "array";
+//*****************************************************************************
+// ExprBinaryOp
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprBinaryOp::ExprBinaryOp()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprBinaryOp::~ExprBinaryOp()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprBinaryOp::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_binary_op";
+  i["port_names"].append() = "lhs";
+  i["port_names"].append() = "rhs";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprBinaryOp::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  if(!params.has_path("op_string"))
+  {
+    info["errors"].append() = "Missing required string parameter 'op_string'";
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprBinaryOp::execute()
+{
+  const conduit::Node *n_lhs = input<Node>("lhs");
+  const conduit::Node *n_rhs = input<Node>("rhs");
+
+  const conduit::Node &lhs = (*n_lhs)["value"];
+  const conduit::Node &rhs = (*n_rhs)["value"];
+
+  std::string op_str = params()["op_string"].as_string();
+  const std::string l_type = (*n_lhs)["type"].as_string();
+  const std::string r_type = (*n_rhs)["type"].as_string();
+
+  conduit::Node *output = new conduit::Node();
+  std::stringstream msg;
+
+  if(detail::is_math(op_str))
+  {
+    if(detail::is_scalar(l_type) && detail::is_scalar(r_type))
+    {
+      // promote to double if at least one is a double
+      if(l_type == "double" || r_type == "double")
+      {
+        double d_rhs = rhs.to_float64();
+        double d_lhs = lhs.to_float64();
+        (*output)["value"] = detail::math_op(d_lhs, d_rhs, op_str);
+        (*output)["type"] = "double";
+      }
+      else
+      {
+        int i_rhs = rhs.to_int32();
+        int i_lhs = lhs.to_int32();
+        (*output)["value"] = detail::math_op(i_lhs, i_rhs, op_str);
+        (*output)["type"] = "int";
+      }
+    }
+    else
+    {
+      if(detail::is_scalar(l_type) != detail::is_scalar(r_type))
+      {
+        msg << "' " << l_type << " " << op_str << " " << r_type << "'";
+        ASCENT_ERROR(
+            "Mixed vector and scalar quantities not implemented / supported: "
+            << msg.str());
+      }
+
+      double res[3];
+      detail::vector_op(lhs.value(), rhs.value(), op_str, res);
+
+      (*output)["value"].set(res, 3);
+      (*output)["type"] = "vector";
+    }
+  }
+  else if(detail::is_logic(op_str))
+  {
+
+    bool b_lhs = lhs.to_uint8();
+    bool b_rhs = rhs.to_uint8();
+    (*output)["value"] = detail::logic_op(b_lhs, b_rhs, op_str);
+    (*output)["type"] = "bool";
+  }
+  else // comparison
+  {
+    double d_rhs = rhs.to_float64();
+    double d_lhs = lhs.to_float64();
+
+    (*output)["value"] = detail::comp_op(d_lhs, d_rhs, op_str);
+    (*output)["type"] = "bool";
+  }
+
+  // std::cout<<" operation "<<op_str<<"\n";
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
 //-----------------------------------------------------------------------------
-FieldAvg::FieldAvg() : Filter()
+//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------//
+// Scalar Operations
+//  min, max, abs, exp, log, pow
+//---------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprScalarMin
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprScalarMin::ExprScalarMin() : Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-FieldAvg::~FieldAvg()
+ExprScalarMin::~ExprScalarMin()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-FieldAvg::declare_interface(Node &i)
+ExprScalarMin::declare_interface(Node &i)
 {
-  i["type_name"] = "field_avg";
+  i["type_name"] = "scalar_min";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "arg2";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprScalarMin::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprScalarMin::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
+
+  conduit::Node *output = new conduit::Node();
+
+  if((*arg1)["type"].as_string() == "double" ||
+     (*arg2)["type"].as_string() == "double")
+  {
+    double d_rhs = (*arg1)["value"].to_float64();
+    double d_lhs = (*arg2)["value"].to_float64();
+    (*output)["value"] = std::min(d_lhs, d_rhs);
+    (*output)["type"] = "double";
+  }
+  else
+  {
+    int i_rhs = (*arg1)["value"].to_int32();
+    int i_lhs = (*arg2)["value"].to_int32();
+    (*output)["value"] = std::min(i_lhs, i_rhs);
+    (*output)["type"] = "int";
+  }
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprScalarMax
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprScalarMax::ExprScalarMax() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprScalarMax::~ExprScalarMax()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprScalarMax::declare_interface(Node &i)
+{
+  i["type_name"] = "scalar_max";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "arg2";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprScalarMax::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprScalarMax::execute()
+{
+
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
+
+  conduit::Node *output = new conduit::Node();
+
+  if((*arg1)["type"].as_string() == "double" ||
+     (*arg2)["type"].as_string() == "double")
+  {
+    double d_rhs = (*arg1)["value"].to_float64();
+    double d_lhs = (*arg2)["value"].to_float64();
+    (*output)["value"] = std::max(d_lhs, d_rhs);
+    (*output)["type"] = "double";
+  }
+  else
+  {
+    int i_rhs = (*arg1)["value"].to_int32();
+    int i_lhs = (*arg2)["value"].to_int32();
+    (*output)["value"] = std::max(i_lhs, i_rhs);
+    (*output)["type"] = "int";
+  }
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprScalarAbs
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprScalarAbs::ExprScalarAbs()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprScalarAbs::~ExprScalarAbs()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprScalarAbs::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_scalar_abs";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-FieldAvg::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprScalarAbs::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -1977,56 +1485,64 @@ FieldAvg::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-FieldAvg::execute()
+ExprScalarAbs::execute()
 {
   const conduit::Node *arg1 = input<Node>("arg1");
 
-  const std::string field = (*arg1)["value"].as_string();
-
-  conduit::Node *output = new conduit::Node();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
-
-  if(!is_scalar_field(*dataset, field))
+  if((*arg1)["type"].as_string() == "double")
   {
-    ASCENT_ERROR("FieldAvg: field '" << field << "' is not a scalar field");
+    double res = 0.;
+    res = abs((*arg1)["value"].to_float64());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "double";
+    (*output)["value"] = res;
+
+    resolve_symbol_result(graph(), output, this->name());
+    set_output<conduit::Node>(output);
   }
+  else
+  {
+    int res = 0;
+    res = abs((*arg1)["value"].to_int32());
+    conduit::Node *output = new conduit::Node();
+    (*output)["type"] = "int";
+    (*output)["value"] = res;
 
-  conduit::Node n_avg = field_avg(*dataset, field);
-
-  (*output)["value"] = n_avg["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
+    resolve_symbol_result(graph(), output, this->name());
+    set_output<conduit::Node>(output);
+  }
 }
 
+
+//*****************************************************************************
+// ExprScalarExp
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-Cycle::Cycle() : Filter()
+ExprScalarExp::ExprScalarExp()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Cycle::~Cycle()
+ExprScalarExp::~ExprScalarExp()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Cycle::declare_interface(Node &i)
+ExprScalarExp::declare_interface(Node &i)
 {
-  i["type_name"] = "cycle";
-  i["port_names"] = DataType::empty();
+  i["type_name"] = "expr_scalar_exp";
+  i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Cycle::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprScalarExp::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2035,52 +1551,49 @@ Cycle::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Cycle::execute()
+ExprScalarExp::execute()
 {
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  res = exp((*arg1)["value"].to_float64());
   conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
 
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  // we are just getting state so we don't care if its high or low
-  // order
-  const conduit::Node *const dataset = data_object->as_node().get();
-
-  conduit::Node state = get_state_var(*dataset, "cycle");
-  if(!state.dtype().is_number())
-  {
-    ASCENT_ERROR("Expressions: cycle() is not a number");
-  }
-
-  (*output)["type"] = "int";
-  (*output)["value"] = state;
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprScalarLog
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-Time::Time() : Filter()
+ExprScalarLog::ExprScalarLog()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Time::~Time()
+ExprScalarLog::~ExprScalarLog()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Time::declare_interface(Node &i)
+ExprScalarLog::declare_interface(Node &i)
 {
-  i["type_name"] = "time";
-  i["port_names"] = DataType::empty();
+  i["type_name"] = "expr_scalar_log";
+  i["port_names"].append() = "arg1";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Time::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprScalarLog::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2089,45 +1602,589 @@ Time::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Time::execute()
+ExprScalarLog::execute()
 {
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  res = log((*arg1)["value"].to_float64());
   conduit::Node *output = new conduit::Node();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  // we are just getting state so we don't care if its high or low
-  // order
-  const conduit::Node *const dataset = data_object->as_node().get();
-
-  conduit::Node state = get_state_var(*dataset, "time");
-  if(!state.dtype().is_number())
-  {
-    ASCENT_ERROR("Expressions: time() is not a number");
-  }
-
   (*output)["type"] = "double";
-  (*output)["value"] = state;
+  (*output)["value"] = res;
+
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprScalarPow
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-History::History() : Filter()
+ExprScalarPow::ExprScalarPow() : Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-History::~History()
+ExprScalarPow::~ExprScalarPow()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-History::declare_interface(Node &i)
+ExprScalarPow::declare_interface(Node &i)
 {
-  i["type_name"] = "history";
+  i["type_name"] = "pow";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "arg2";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprScalarPow::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprScalarPow::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
+
+  double res = 0.;
+  double base = (*arg1)["value"].to_float64();
+  double exponent = (*arg2)["value"].to_float64();
+  res = pow(base, exponent);
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Vector Operations
+//   vector, vector_magnitude
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprVector
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprVector::ExprVector()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprVector::~ExprVector()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprVector::declare_interface(Node &i)
+{
+  i["type_name"] = "vector";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "arg2";
+  i["port_names"].append() = "arg3";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprVector::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprVector::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *arg2 = input<Node>("arg2");
+  const conduit::Node *arg3 = input<Node>("arg3");
+
+  double vec[3] = {0., 0., 0.};
+  vec[0] = (*arg1)["value"].to_float64();
+  vec[1] = (*arg2)["value"].to_float64();
+  vec[2] = (*arg3)["value"].to_float64();
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "vector";
+  (*output)["value"].set(vec, 3);
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprVectorMagnitude
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprVectorMagnitude::ExprVectorMagnitude()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprVectorMagnitude::~ExprVectorMagnitude()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprVectorMagnitude::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_vector_magnitude";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprVectorMagnitude::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprVectorMagnitude::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  double res = 0.;
+  const double *vec = (*arg1)["value"].value();
+  res = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "double";
+  (*output)["value"] = res;
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Array Operations
+//  access, replace, min, max, avg, sum
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprArrayAccess
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprArrayAccess::ExprArrayAccess()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprArrayAccess::~ExprArrayAccess()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayAccess::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_array_access";
+  i["port_names"].append() = "array";
+  i["port_names"].append() = "index";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprArrayAccess::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayAccess::execute()
+{
+  const conduit::Node *n_array = input<Node>("array");
+  const conduit::Node *n_index = input<Node>("index");
+
+  conduit::Node *output = new conduit::Node();
+
+  int index = (*n_index)["value"].as_int32();
+  int length = (*n_array)["value"].dtype().number_of_elements();
+  if(index > length - 1)
+  {
+    ASCENT_ERROR("ArrayAccess: array index out of bounds: [0," << length - 1
+                                                               << "]");
+  }
+  const double *arr = (*n_array)["value"].value();
+  (*output)["value"] = arr[index];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+
+//*****************************************************************************
+// ExprArrayReplace
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprArrayReplace::ExprArrayReplace()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprArrayReplace::~ExprArrayReplace()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReplace::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_array_replace";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "find";
+  i["port_names"].append() = "replace";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprArrayReplace::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReplace::execute()
+{
+  const conduit::Node *n_array= input<Node>("arg1");
+  const conduit::Node *n_find = input<Node>("find");
+  const conduit::Node *n_replace = input<Node>("replace");
+
+  if(n_array->fetch_existing("type").as_string() != "array")
+  {
+    ASCENT_ERROR("replace is not an array");
+  }
+
+  if(n_find->fetch_existing("type").as_string() != "double")
+  {
+    ASCENT_ERROR("'find' is not a double");
+  }
+
+  if(n_replace->fetch_existing("type").as_string() != "double")
+  {
+    ASCENT_ERROR("'replace' is not a double");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  // copy the input into the ouptut
+  *output = *n_array;
+  conduit::Node &array = output->fetch_existing("value");
+
+  if(!array.dtype().is_float64())
+  {
+    ASCENT_ERROR("Replace is only implemented for doubles");
+  }
+
+  const int size = array.dtype().number_of_elements();
+  conduit::float64 *ptr =  array.as_float64_ptr();
+  const double find = n_find->fetch_existing("value").to_float64();
+  const double replace = n_replace->fetch_existing("value").to_float64();
+
+  bool find_nan = find != find;
+
+  if( !find_nan)
+  {
+    for(int i = 0; i < size; ++i)
+    {
+      if(ptr[i] == find)
+      {
+        ptr[i] = replace;
+      }
+    }
+  }
+  else
+  {
+    for(int i = 0; i < size; ++i)
+    {
+      if(ptr[i] != ptr[i])
+      {
+        ptr[i] = replace;
+      }
+    }
+  }
+
+  set_output<conduit::Node>(output);
+}
+
+
+//*****************************************************************************
+// ExprArrayReductionMin
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionMin::ExprArrayReductionMin()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionMin::~ExprArrayReductionMin()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionMin::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_array_reduction_min";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprArrayReductionMin::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionMin::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  (*output)["value"] = array_min((*input<Node>("arg1"))["value"], exec)["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprArrayReductionMax
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionMax::ExprArrayReductionMax()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionMax::~ExprArrayReductionMax()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionMax::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_array_reduction_max";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprArrayReductionMax::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionMax::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  (*output)["value"] = array_max((*input<Node>("arg1"))["value"], exec)["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprArrayReductionAvg
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionAvg::ExprArrayReductionAvg()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionAvg::~ExprArrayReductionAvg()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionAvg::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_array_reduction_avg";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprArrayReductionAvg::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionAvg::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  conduit::Node sum = array_sum((*input<Node>("arg1"))["value"], exec);
+  (*output)["value"] = sum["value"].to_float64() / sum["count"].to_float64();
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprArrayReductionAvg
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionSum::ExprArrayReductionSum()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprArrayReductionSum::~ExprArrayReductionSum()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionSum::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_array_reduction_sum";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprArrayReductionSum::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprArrayReductionSum::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  std::string exec = ExecutionManager::preferred_cpu_policy();
+  (*output)["value"] = array_sum((*input<Node>("arg1"))["value"], exec)["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// History Operations
+//  history, history_range, history_gradient, history_range_gradient
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprHistory
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprHistory::ExprHistory()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprHistory::~ExprHistory()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistory::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_history";
   i["port_names"].append() = "expr_name";
   i["port_names"].append() = "absolute_index";
   i["port_names"].append() = "relative_index";
@@ -2136,7 +2193,7 @@ History::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-History::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprHistory::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2145,7 +2202,7 @@ History::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-History::execute()
+ExprHistory::execute()
 {
   conduit::Node *output = new conduit::Node();
 
@@ -2217,24 +2274,28 @@ History::execute()
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprHistoryRange
+//*****************************************************************************
 
 //-----------------------------------------------------------------------------
-HistoryRange::HistoryRange() : Filter()
+ExprHistoryRange::ExprHistoryRange()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-HistoryRange::~HistoryRange()
+ExprHistoryRange::~ExprHistoryRange()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-HistoryRange::declare_interface(Node &i)
+ExprHistoryRange::declare_interface(Node &i)
 {
-  i["type_name"] = "history_range";
+  i["type_name"] = "expr_history_range";
   i["port_names"].append() = "expr_name";
   i["port_names"].append() = "first_absolute_index";
   i["port_names"].append() = "last_absolute_index";
@@ -2249,7 +2310,7 @@ HistoryRange::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-HistoryRange::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprHistoryRange::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2259,9 +2320,295 @@ HistoryRange::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-HistoryRange::execute()
+ExprHistoryRange::execute()
 {
   const string operator_name = "HistoryRange";
+  const std::string expr_name  = (*input<conduit::Node>("expr_name"))["name"].as_string();
+
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<conduit::Node>("cache");
+
+  if(!cache->has_path(expr_name))
+  {
+    ASCENT_ERROR(operator_name + ": unknown identifier "<<  expr_name);
+  }
+  const conduit::Node &history = (*cache)[expr_name];
+
+  const conduit::Node *n_first_absolute_index = input<conduit::Node>("first_absolute_index");
+  const conduit::Node *n_last_absolute_index  = input<conduit::Node>("last_absolute_index");
+  const conduit::Node *n_first_relative_index = input<conduit::Node>("first_relative_index");
+  const conduit::Node *n_last_relative_index  = input<conduit::Node>("last_relative_index");
+  const conduit::Node *n_first_absolute_time  = input<conduit::Node>("first_absolute_time");
+  const conduit::Node *n_last_absolute_time   = input<conduit::Node>("last_absolute_time");
+  const conduit::Node *n_first_absolute_cycle = input<conduit::Node>("first_absolute_cycle");
+  const conduit::Node *n_last_absolute_cycle  = input<conduit::Node>("last_absolute_cycle");
+
+  conduit::Node *output = detail::range_values_helper(history,
+                                                      n_first_absolute_index,
+                                                      n_last_absolute_index,
+                                                      n_first_relative_index,
+                                                      n_last_relative_index,
+                                                      n_first_absolute_time,
+                                                      n_last_absolute_time,
+                                                      n_first_absolute_cycle,
+                                                      n_last_absolute_cycle,
+                                                      operator_name);
+
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprHistoryGradient
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprHistoryGradient::ExprHistoryGradient()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprHistoryGradient::~ExprHistoryGradient()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistoryGradient::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_history_gradient";
+  i["port_names"].append() = "expr_name";
+  i["port_names"].append() = "window_length";
+  i["port_names"].append() = "window_length_unit";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprHistoryGradient::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistoryGradient::execute()
+{
+  conduit::Node *output = new conduit::Node();
+  const std::string expr_name  = (*input<Node>("expr_name"))["name"].as_string();
+  conduit::Node &n_window_length = *input<Node>("window_length");
+  conduit::Node &n_window_length_unit = *input<Node>("window_length_unit");
+
+  const conduit::Node *const cache =
+      graph().workspace().registry().fetch<Node>("cache");
+
+  if(!cache->has_path(expr_name))
+  {
+    ASCENT_ERROR("ScalarGradient: unknown identifier "<<  expr_name);
+  }
+
+  // handle the optional inputs
+  double window_length = 1;
+  if(!n_window_length.dtype().is_empty())
+  {
+    window_length = n_window_length["value"].to_float64();
+  }
+  if(window_length < 0)
+  {
+     ASCENT_ERROR("ScalarGradient: window_length must non-negative." );
+  }
+
+  string units = "index";
+  if(!n_window_length_unit.dtype().is_empty())
+  {
+    units = n_window_length_unit["value"].as_string();
+  }
+
+  bool execution_points = units == "index";
+  bool time = units == "time";
+  bool cycles = units == "cycle";
+  int total = execution_points + time + cycles;
+
+  if(total == 0 && !n_window_length_unit.dtype().is_empty())
+  {
+     ASCENT_ERROR("HistoryGradient: if a ``window_length_unit`` value is provided,"
+                  <<" it must be set to either: 1). \"index\", 2). \"time\", or 3). \"cycle\"." );
+  }
+
+  if((execution_points || cycles) && window_length < 1) {
+     ASCENT_ERROR("HistoryGradient: window_length must be at least 1 if the window length unit is \"index\" or \"cycle\"." );
+  }
+
+  const conduit::Node &history = (*cache)[expr_name];
+
+  const int entries = history.number_of_children();
+  if(entries < 2)
+  {
+    (*output)["value"] = -std::numeric_limits<double>::infinity();
+    (*output)["type"] = "double";
+    set_output<conduit::Node>(output);
+    return;
+  }
+
+  int first_index = 0, current_index = entries - 1;
+  if(execution_points)
+  {
+    //clamp the first index if the window length has gone too far
+    if(window_length - current_index > 0)
+    {
+      first_index = 0;
+      window_length = current_index;
+    }
+    else
+    {
+      first_index = current_index - window_length;
+    }
+  }
+  else if(time)
+  {
+   string time_path = "time";
+   if(!history.child(current_index).has_path(time_path))
+    {
+      ASCENT_ERROR("HistoryGradient: internal error. current time point does not have the child " + time_path);
+    }
+    const double current_time = history.child(current_index)[time_path].to_float64();
+    const double first_time = current_time - window_length;
+    double time;
+    for(int index = 0; index < entries; index++)
+    {
+      if(history.child(index).has_path(time_path))
+      {
+        time = history.child(index)[time_path].to_float64();
+      }
+      else
+      {
+        ASCENT_ERROR("HistoryGradient: a time point in evaluation window (for the calculation at absolute index: " + to_string(index) + ") does not have the child " + time_path );
+      }
+      if(time >= first_time) {
+        first_index = index;
+        //adjust so our window length is accurate (since we may not have performed a calculation at precisely the requested time)
+        window_length = current_time - time;
+        break;
+      }
+    }
+  }
+  else if(cycles)
+  {
+    vector<string> child_names = history.child_names();
+    if(child_names.size() != entries)
+    {
+      ASCENT_ERROR("HistoryGradient: internal error. number of history "
+                   <<"entries: " << to_string(entries)
+                   <<", but number of history child names: "
+                   <<to_string(child_names.size()));
+    }
+    const unsigned long long current_cycle = stoull(child_names[current_index]);
+    const unsigned long long first_cycle = current_cycle - window_length;
+
+    unsigned long long cycle;
+    for(int index = 0; index < entries; index++)
+    {
+      cycle = stoull(child_names[index]);
+      if(cycle >= first_cycle)
+      {
+        first_index = index;
+        //adjust so our window length is accurate (since we may not have performed a calculation at precisely the requested time)
+        window_length = current_cycle - cycle;
+        break;
+      }
+    }
+  }
+
+  string value_path = "";
+  vector<string> value_paths = {"value", "attrs/value/value"};
+  if(current_index < 0 || current_index >= entries)
+  {
+    ASCENT_ERROR("HistoryGradient: bad current index: "<<current_index);
+  }
+  for(const string &path : value_paths)
+  {
+    if(history.child(current_index).has_path(path))
+    {
+      value_path = path;
+      break;
+    }
+  }
+
+  if(value_path.size() == 0)
+  {
+    ASCENT_ERROR("HistoryGradient: internal error. current index does not "
+                  <<"have one of the expected value paths");
+  }
+
+  if(first_index < 0 || first_index >= entries)
+  {
+    ASCENT_ERROR("HistoryGradient: bad first index: "<<first_index);
+  }
+
+  double first_value = history.child(first_index)[value_path].to_float64();
+  double current_value = history.child(current_index)[value_path].to_float64();
+
+  // dy / dx
+  double gradient = (current_value - first_value) / window_length;
+
+  (*output)["value"] = gradient;
+  (*output)["type"] = "double";
+
+  set_output<conduit::Node>(output);
+}
+
+
+//-----------------------------------------------------------------------------
+ExprHistoryGradientRange::ExprHistoryGradientRange()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprHistoryGradientRange::~ExprHistoryGradientRange()
+{
+  // empty
+}
+
+
+// -----------------------------------------------------------------------------
+void
+ExprHistoryGradientRange::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_history_gradient_range";
+  i["port_names"].append() = "expr_name";
+  i["port_names"].append() = "first_absolute_index";
+  i["port_names"].append() = "last_absolute_index";
+  i["port_names"].append() = "first_relative_index";
+  i["port_names"].append() = "last_relative_index";
+  i["port_names"].append() = "first_absolute_time";
+  i["port_names"].append() = "last_absolute_time";
+  i["port_names"].append() = "first_absolute_cycle";
+  i["port_names"].append() = "last_absolute_cycle";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprHistoryGradientRange::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+ExprHistoryGradientRange::execute()
+{
+  string operator_name = "HistoryGradientRange";
+
   const std::string expr_name  = (*input<conduit::Node>("expr_name"))["name"].as_string();
 
   const conduit::Node *const cache =
@@ -2282,205 +2629,191 @@ HistoryRange::execute()
   const conduit::Node *n_first_absolute_cycle = input<conduit::Node>("first_absolute_cycle");
   const conduit::Node *n_last_absolute_cycle = input<conduit::Node>("last_absolute_cycle");
 
-  conduit::Node *output = range_values_helper(history,
-                                              n_first_absolute_index,
-                                              n_last_absolute_index,
-                                              n_first_relative_index,
-                                              n_last_relative_index,
-                                              n_first_absolute_time,
-                                              n_last_absolute_time,
-                                              n_first_absolute_cycle,
-                                              n_last_absolute_cycle,
-                                              operator_name);
+  conduit::Node *output = detail::range_values_helper(history,
+                                                      n_first_absolute_index,
+                                                      n_last_absolute_index,
+                                                      n_first_relative_index,
+                                                      n_last_relative_index,
+                                                      n_first_absolute_time,
+                                                      n_last_absolute_time,
+                                                      n_first_absolute_cycle,
+                                                      n_last_absolute_cycle,
+                                                      operator_name,
+                                                      "time");
 
-  set_output<conduit::Node>(output);
-}
+  size_t num_array_elems = (*output)["value"].dtype().number_of_elements();
 
-
-//-----------------------------------------------------------------------------
-Vector::Vector() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Vector::~Vector()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Vector::declare_interface(Node &i)
-{
-  i["type_name"] = "vector";
-  i["port_names"].append() = "arg1";
-  i["port_names"].append() = "arg2";
-  i["port_names"].append() = "arg3";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Vector::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Vector::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-  const conduit::Node *arg2 = input<Node>("arg2");
-  const conduit::Node *arg3 = input<Node>("arg3");
-
-  double vec[3] = {0., 0., 0.};
-  vec[0] = (*arg1)["value"].to_float64();
-  vec[1] = (*arg2)["value"].to_float64();
-  vec[2] = (*arg3)["value"].to_float64();
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "vector";
-  (*output)["value"].set(vec, 3);
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Magnitude::Magnitude() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Magnitude::~Magnitude()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Magnitude::declare_interface(Node &i)
-{
-  i["type_name"] = "magnitude";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Magnitude::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Magnitude::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-
-  double res = 0.;
-  const double *vec = (*arg1)["value"].value();
-  res = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "double";
-  (*output)["value"] = res;
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Abs::Abs() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Abs::~Abs()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Abs::declare_interface(Node &i)
-{
-  i["type_name"] = "abs";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Abs::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Abs::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-
-  if((*arg1)["type"].as_string() == "double")
+  if(num_array_elems < 2)
   {
-    double res = 0.;
-    res = abs((*arg1)["value"].to_float64());
-    conduit::Node *output = new conduit::Node();
-    (*output)["type"] = "double";
-    (*output)["value"] = res;
-
-    resolve_symbol_result(graph(), output, this->name());
+    double neg_inf[1] = {-std::numeric_limits<double>::infinity()};
+    (*output)["value"].set(neg_inf,1);
+    (*output)["type"] = "array";
     set_output<conduit::Node>(output);
+    return;
+  }
+
+  conduit::Node gradient = array_gradient((*output)["value"], (*output)["time"]);
+
+
+  (*output)["value"] = gradient["value"];
+  (*output)["type"] = "array";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Histogram Operations
+// histogram, entropy, pdf, cdf, quantile
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprHistogram
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprHistogram::ExprHistogram()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprHistogram::~ExprHistogram()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistogram::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_histogram";
+  i["port_names"].append() = "arg1";
+  i["port_names"].append() = "num_bins";
+  i["port_names"].append() = "min_val";
+  i["port_names"].append() = "max_val";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprHistogram::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistogram::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+  // optional inputs
+  const conduit::Node *n_bins = input<Node>("num_bins");
+  const conduit::Node *n_max = input<Node>("max_val");
+  const conduit::Node *n_min = input<Node>("min_val");
+
+  const std::string field = (*arg1)["value"].as_string();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("Histogram: axis for histogram must be a scalar field. "
+                 "Invalid axis field: '"
+                 << field << "'.");
+  }
+
+  // handle the optional inputs
+  int num_bins = 256;
+  if(!n_bins->dtype().is_empty())
+  {
+    num_bins = (*n_bins)["value"].as_int32();
+  }
+
+  double min_val;
+  double max_val;
+
+  if(!n_max->dtype().is_empty())
+  {
+    max_val = (*n_max)["value"].to_float64();
   }
   else
   {
-    int res = 0;
-    res = abs((*arg1)["value"].to_int32());
-    conduit::Node *output = new conduit::Node();
-    (*output)["type"] = "int";
-    (*output)["value"] = res;
-
-    resolve_symbol_result(graph(), output, this->name());
-    set_output<conduit::Node>(output);
+    max_val = field_max(*dataset, field)["value"].to_float64();
   }
+
+  if(!n_min->dtype().is_empty())
+  {
+    min_val = (*n_min)["value"].to_float64();
+  }
+  else
+  {
+    min_val = field_min(*dataset, field)["value"].to_float64();
+  }
+
+  if(min_val >= max_val)
+  {
+    ASCENT_ERROR("Histogram: min value ("
+                 << min_val << ") must be smaller than max (" << max_val
+                 << ")");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "histogram";
+  (*output)["attrs/value/value"] =
+      field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
+  (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/min_val/value"] = min_val;
+  (*output)["attrs/min_val/type"] = "double";
+  (*output)["attrs/max_val/value"] = max_val;
+  (*output)["attrs/max_val/type"] = "double";
+  (*output)["attrs/num_bins/value"] = num_bins;
+  (*output)["attrs/num_bins/type"] = "int";
+  (*output)["attrs/clamp/value"] = true;
+  (*output)["attrs/clamp/type"] = "bool";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprHistogramEntropy
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-Exp::Exp() : Filter()
+ExprHistogramEntropy::ExprHistogramEntropy()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Exp::~Exp()
+ExprHistogramEntropy::~ExprHistogramEntropy()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Exp::declare_interface(Node &i)
+ExprHistogramEntropy::declare_interface(Node &i)
 {
-  i["type_name"] = "exp";
-  i["port_names"].append() = "arg1";
+  i["type_name"] = "expr_histogram_entropy";
+  i["port_names"].append() = "hist";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Exp::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprHistogramEntropy::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2489,44 +2822,51 @@ Exp::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Exp::execute()
+ExprHistogramEntropy::execute()
 {
-  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *hist = input<conduit::Node>("hist");
 
-  double res = 0.;
-  res = exp((*arg1)["value"].to_float64());
+  if((*hist)["type"].as_string() != "histogram")
+  {
+    ASCENT_ERROR("Entropy: hist must be a histogram");
+  }
+
   conduit::Node *output = new conduit::Node();
+  (*output)["value"] = histogram_entropy(*hist)["value"];
   (*output)["type"] = "double";
-  (*output)["value"] = res;
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprHistogramPDF
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-Log::Log() : Filter()
+ExprHistogramPDF::ExprHistogramPDF() : Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Log::~Log()
+ExprHistogramPDF::~ExprHistogramPDF()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Log::declare_interface(Node &i)
+ExprHistogramPDF::declare_interface(Node &i)
 {
-  i["type_name"] = "log";
-  i["port_names"].append() = "arg1";
+  i["type_name"] = "expr_histogram_pdf";
+  i["port_names"].append() = "hist";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Log::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprHistogramPDF::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2535,45 +2875,50 @@ Log::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Log::execute()
+ExprHistogramPDF::execute()
 {
-  const conduit::Node *arg1 = input<Node>("arg1");
+  const conduit::Node *hist = input<conduit::Node>("hist");
 
-  double res = 0.;
-  res = log((*arg1)["value"].to_float64());
   conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "double";
-  (*output)["value"] = res;
+  (*output)["type"] = "histogram";
+  (*output)["attrs/value/value"] = histogram_pdf(*hist)["value"];
+  (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
+  (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
+  (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprHistogramCDF
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-Pow::Pow() : Filter()
+ExprHistogramCDF::ExprHistogramCDF() : Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Pow::~Pow()
+ExprHistogramCDF::~ExprHistogramCDF()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Pow::declare_interface(Node &i)
+ExprHistogramCDF::declare_interface(Node &i)
 {
-  i["type_name"] = "pow";
-  i["port_names"].append() = "arg1";
-  i["port_names"].append() = "arg2";
+  i["type_name"] = "expr_histogram_cdf";
+  i["port_names"].append() = "hist";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Pow::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprHistogramCDF::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2582,40 +2927,245 @@ Pow::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Pow::execute()
+ExprHistogramCDF::execute()
 {
-  const conduit::Node *arg1 = input<Node>("arg1");
-  const conduit::Node *arg2 = input<Node>("arg2");
+  const conduit::Node *hist = input<conduit::Node>("hist");
 
-  double res = 0.;
-  double base = (*arg1)["value"].to_float64();
-  double exponent = (*arg2)["value"].to_float64();
-  res = pow(base, exponent);
   conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "double";
-  (*output)["value"] = res;
+  (*output)["type"] = "histogram";
+  (*output)["attrs/value/value"] = histogram_cdf(*hist)["value"];
+  (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
+  (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
+  (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprHistogramCDFQuantile
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-Field::Field() : Filter()
+ExprHistogramCDFQuantile::ExprHistogramCDFQuantile()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Field::~Field()
+ExprHistogramCDFQuantile::~ExprHistogramCDFQuantile()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Field::declare_interface(Node &i)
+ExprHistogramCDFQuantile::declare_interface(Node &i)
 {
-  i["type_name"] = "field";
+  i["type_name"] = "expr_histogram_cdf_quantile";
+  i["port_names"].append() = "cdf";
+  i["port_names"].append() = "q";
+  i["port_names"].append() = "interpolation";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprHistogramCDFQuantile::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistogramCDFQuantile::execute()
+{
+  const conduit::Node *n_cdf = input<conduit::Node>("cdf");
+  const conduit::Node *n_val = input<conduit::Node>("q");
+  // optional inputs
+  const conduit::Node *n_interpolation = input<conduit::Node>("interpolation");
+
+  const double val = (*n_val)["value"].as_float64();
+
+  if(val < 0 || val > 1)
+  {
+    ASCENT_ERROR("Quantile: val must be between 0 and 1");
+  }
+
+  // handle the optional inputs
+  std::string interpolation = "linear";
+  if(!n_interpolation->dtype().is_empty())
+  {
+    interpolation = (*n_interpolation)["value"].as_string();
+    if(interpolation != "linear" && interpolation != "lower" &&
+       interpolation != "higher" && interpolation != "midpoint" &&
+       interpolation != "nearest")
+    {
+      ASCENT_ERROR("Known interpolation types are: linear, lower, higher, "
+                   "midpoint, nearest");
+    }
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = quantile(*n_cdf, val, interpolation)["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Mesh Operations
+// cycle, time, field, topology, bounds, lineout
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprMeshCycle
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshCycle::ExprMeshCycle()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshCycle::~ExprMeshCycle()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshCycle::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_cycle";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshCycle::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshCycle::execute()
+{
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  // we are just getting state so we don't care if its high or low
+  // order
+  const conduit::Node *const dataset = data_object->as_node().get();
+
+  conduit::Node state = get_state_var(*dataset, "cycle");
+  if(!state.dtype().is_number())
+  {
+    ASCENT_ERROR("Expressions: cycle() is not a number");
+  }
+
+  (*output)["type"] = "int";
+  (*output)["value"] = state;
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshTime
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshTime::ExprMeshTime() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshTime::~ExprMeshTime()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshTime::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_time";
+  i["port_names"] = DataType::empty();
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshTime::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshTime::execute()
+{
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  // we are just getting state so we don't care if its high or low
+  // order
+  const conduit::Node *const dataset = data_object->as_node().get();
+
+  conduit::Node state = get_state_var(*dataset, "time");
+  if(!state.dtype().is_number())
+  {
+    ASCENT_ERROR("Expressions: time() is not a number");
+  }
+
+  (*output)["type"] = "double";
+  (*output)["value"] = state;
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshField
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshField::ExprMeshField()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshField::~ExprMeshField()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshField::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_field";
   i["port_names"].append() = "field_name";
   i["port_names"].append() = "component";
   i["output_port"] = "true";
@@ -2623,7 +3173,7 @@ Field::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-Field::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprMeshField::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -2632,7 +3182,7 @@ Field::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Field::execute()
+ExprMeshField::execute()
 {
   const conduit::Node *n_field_name = input<Node>("field_name");
   std::string field_name = (*n_field_name)["value"].as_string();
@@ -2717,6 +3267,716 @@ Field::execute()
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
+
+//*****************************************************************************
+// ExprMeshTopology
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshTopology::ExprMeshTopology() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshTopology::~ExprMeshTopology()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshTopology::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_topology";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshTopology::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshTopology::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::string topo = (*arg1)["value"].as_string();
+
+  if(!graph().workspace().registry().has_entry("dataset"))
+  {
+    ASCENT_ERROR("Topology: Missing dataset");
+  }
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!has_topology(*dataset, topo))
+  {
+    std::set<std::string> names = topology_names(*dataset);
+    std::stringstream msg;
+    msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
+    for(auto &name : names)
+    {
+      msg<<" "<<name;
+    }
+    msg<<" ]";
+    ASCENT_ERROR(msg.str());
+  }
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = topo;
+  (*output)["type"] = "topology";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshBounds
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshBounds::ExprMeshBounds()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshBounds::~ExprMeshBounds()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshBounds::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_bounds";
+  i["port_names"].append() = "topology";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshBounds::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshBounds::execute()
+{
+  conduit::Node &n_topology = *input<Node>("topology");
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  std::set<std::string> topos;
+
+  if(!n_topology.dtype().is_empty())
+  {
+    std::string topo = n_topology["value"].as_string();
+    if(!has_topology(*dataset, topo))
+    {
+      std::set<std::string> names = topology_names(*dataset);
+      std::stringstream msg;
+      msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
+      for(auto &name : names)
+      {
+        msg<<" "<<name;
+      }
+      msg<<" ]";
+      ASCENT_ERROR(msg.str());
+    }
+    topos.insert(topo);
+  }
+  else
+  {
+    topos = topology_names(*dataset);
+  }
+
+  double inf = std::numeric_limits<double>::infinity();
+  double min_vec[3] = {inf, inf, inf};
+  double max_vec[3] = {-inf, -inf, -inf};
+  for(auto &topo_name : topos)
+  {
+    conduit::Node n_aabb = global_bounds(*dataset, topo_name);
+    double *t_min = n_aabb["min_coords"].as_float64_ptr();
+    double *t_max = n_aabb["max_coords"].as_float64_ptr();
+    for(int i = 0; i < 3; ++i)
+    {
+      min_vec[i] = std::min(t_min[i],min_vec[i]);
+      max_vec[i] = std::max(t_max[i],max_vec[i]);
+    }
+  }
+
+  (*output)["type"] = "aabb";
+  (*output)["attrs/min/value"].set(min_vec, 3);
+  (*output)["attrs/min/type"] = "vector";
+  (*output)["attrs/max/value"].set(max_vec, 3);
+  (*output)["attrs/max/type"] = "vector";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshLineout
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshLineout::ExprMeshLineout() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshLineout::~ExprMeshLineout()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshLineout::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_lineout";
+  i["port_names"].append() = "samples";
+  i["port_names"].append() = "start";
+  i["port_names"].append() = "end";
+  i["port_names"].append() = "fields";
+  i["port_names"].append() = "empty_val";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshLineout::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshLineout::execute()
+{
+
+#if defined(ASCENT_DRAY_ENABLED)
+  conduit::Node &n_samples = *input<Node>("samples");
+  int32 samples = n_samples["value"].to_int32();;
+  if(samples < 1)
+  {
+    ASCENT_ERROR("Lineout: samples must be greater than zero: '"<<samples<<"'\n");
+  }
+
+  conduit::Node &n_start = *input<Node>("start");
+  double *p_start = n_start["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> start;
+  start[0] = static_cast<dray::Float>(p_start[0]);
+  start[1] = static_cast<dray::Float>(p_start[1]);
+  start[2] = static_cast<dray::Float>(p_start[2]);
+
+  conduit::Node &n_end= *input<Node>("end");
+  double *p_end = n_end["value"].as_float64_ptr();
+
+  dray::Vec<dray::Float,3> end;
+  end[0] = static_cast<dray::Float>(p_end[0]);
+  end[1] = static_cast<dray::Float>(p_end[1]);
+  end[2] = static_cast<dray::Float>(p_end[2]);
+
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  dray::Collection * collection = data_object->as_dray_collection().get();
+
+  dray::Lineout lineout;
+
+  lineout.samples(samples);
+
+  conduit::Node &n_empty_val = *input<Node>("empty_val");
+  if(!n_empty_val.dtype().is_empty())
+  {
+    double empty_val = n_empty_val["value"].to_float64();
+    lineout.empty_val(empty_val);
+  }
+
+  // figure out the number of fields we will use
+  conduit::Node &n_fields = (*input<Node>("fields"))["value"];
+  const int num_fields = n_fields.number_of_children();
+  if(num_fields > 0)
+  {
+    for(int i = 0; i < num_fields; ++i)
+    {
+      const conduit::Node &n_field = n_fields.child(i);
+      if(n_field["type"].as_string() != "string")
+      {
+        ASCENT_ERROR("Lineout: field list item is not a string");
+      }
+
+      lineout.add_var(n_field["value"].as_string());
+    }
+  }
+  else
+  {
+    std::set<std::string> field_names;
+    // use all fields
+    for(int i = 0; i < collection->size(); ++i)
+    {
+      dray::DataSet dset = collection->domain(i);
+      std::vector<std::string> d_names = dset.fields();
+      for(int n = 0; n < d_names.size(); ++n)
+      {
+        field_names.insert(d_names[n]);
+      }
+    }
+    gather_strings(field_names);
+  }
+
+  lineout.add_line(start, end);
+
+  dray::Lineout::Result res = lineout.execute(*collection);
+  (*output)["type"] = "lineout";
+  (*output)["attrs/empty_value/value"] = double(res.m_empty_val);
+  (*output)["attrs/empty_value/type"] = "double";
+  (*output)["attrs/samples/value"] = int(res.m_points_per_line);
+  (*output)["attrs/samples/type"] = "int";
+  // we only have one line so the size of points is the size of everything
+  const int size = res.m_points.size();
+  (*output)["attrs/coordinates/x/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/x/type"] = "array";
+  (*output)["attrs/coordinates/y/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/y/type"] = "array";
+  (*output)["attrs/coordinates/z/value"] = conduit::DataType::float64(size);
+  (*output)["attrs/coordinates/z/type"] = "array";
+  float64_array x = (*output)["attrs/coordinates/x/value"].value();
+  float64_array y = (*output)["attrs/coordinates/y/value"].value();
+  float64_array z = (*output)["attrs/coordinates/z/value"].value();
+  for(int i = 0; i < size; ++i)
+  {
+    dray::Vec<dray::Float,3> p = res.m_points.get_value(i);
+    x[i] = static_cast<double>(p[0]);
+    y[i] = static_cast<double>(p[1]);
+    z[i] = static_cast<double>(p[2]);
+  }
+
+  const int var_size = res.m_vars.size();
+  for(int v = 0; v < var_size; ++v)
+  {
+    std::string var = res.m_vars[v];
+    (*output)["attrs/vars/"+var+"/value"] = conduit::DataType::float64(size);
+    (*output)["attrs/vars/"+var+"/type"] = "array";
+    float64_array var_array = (*output)["attrs/vars/"+var+"/value"].value();
+    for(int i = 0; i < size; ++i)
+    {
+      var_array[i] = static_cast<double>(res.m_values[v].get_value(i));
+    }
+  }
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+  
+#else
+  ASCENT_ERROR("Lineout only supported when Devil Ray is built");
+#endif
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Mesh Field Operations
+//  min reduce, max reduce, avg reduce, sum reduce, nan count, inf count
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//*****************************************************************************
+// ExprMeshFieldReductionMin
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionMin::ExprMeshFieldReductionMin()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionMin::~ExprMeshFieldReductionMin()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionMin::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_field_reduction_min";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshFieldReductionMin::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionMin::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::string field = (*arg1)["value"].as_string();
+
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("ExprFieldReductionMin: field '"
+                 << field << "' is not a scalar field");
+  }
+
+  // TODO
+  conduit::Node n_min = field_min(*dataset, field);
+
+  (*output)["type"] = "value_position";
+  (*output)["attrs/value/value"] = n_min["value"];
+  (*output)["attrs/value/type"] = "double";
+  (*output)["attrs/position/value"] = n_min["position"];
+  (*output)["attrs/position/type"] = "vector";
+  // information about the element/field
+  (*output)["attrs/element/rank"] = n_min["rank"];
+  (*output)["attrs/element/domain_index"] = n_min["domain_id"];
+  (*output)["attrs/element/index"] = n_min["index"];
+  (*output)["attrs/element/assoc"] = n_min["assoc"];
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshFieldReductionMax
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionMax::ExprMeshFieldReductionMax()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionMax::~ExprMeshFieldReductionMax()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionMax::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_field_reduction_max";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshFieldReductionMax::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionMax::execute()
+{
+
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::string field = (*arg1)["value"].as_string();
+
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("FieldMax: field '" << field << "' is not a scalar field");
+  }
+
+  conduit::Node n_max = field_max(*dataset, field);
+
+  (*output)["type"] = "value_position";
+  (*output)["attrs/value/value"] = n_max["value"];
+  (*output)["attrs/value/type"] = "double";
+  (*output)["attrs/position/value"] = n_max["position"];
+  (*output)["attrs/position/type"] = "vector";
+  // information about the element/field
+  (*output)["attrs/element/rank"] = n_max["rank"];
+  (*output)["attrs/element/domain_index"] = n_max["domain_id"];
+  (*output)["attrs/element/index"] = n_max["index"];
+  (*output)["attrs/element/assoc"] = n_max["assoc"];
+
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshFieldReductionAvg
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionAvg::ExprMeshFieldReductionAvg()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionAvg::~ExprMeshFieldReductionAvg()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionAvg::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_field_reduction_avg";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshFieldReductionAvg::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionAvg::execute()
+{
+  const conduit::Node *arg1 = input<Node>("arg1");
+
+  const std::string field = (*arg1)["value"].as_string();
+
+  conduit::Node *output = new conduit::Node();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  if(!is_scalar_field(*dataset, field))
+  {
+    ASCENT_ERROR("FieldAvg: field '" << field << "' is not a scalar field");
+  }
+
+  conduit::Node n_avg = field_avg(*dataset, field);
+
+  (*output)["value"] = n_avg["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshFieldReductionSum
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionSum::ExprMeshFieldReductionSum() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionSum::~ExprMeshFieldReductionSum()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionSum::declare_interface(Node &i)
+{
+  i["type_name"] = "field_sum";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshFieldReductionSum::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionSum::execute()
+{
+  std::string field = (*input<Node>("arg1"))["value"].as_string();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_sum(*dataset, field)["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshFieldReductionNanCount
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionNanCount::ExprMeshFieldReductionNanCount() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionNanCount::~ExprMeshFieldReductionNanCount()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionNanCount::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_field_reduction_nan_count";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshFieldReductionNanCount::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionNanCount::execute()
+{
+  std::string field = (*input<Node>("arg1"))["value"].as_string();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_nan_count(*dataset, field)["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprMeshFieldReductionInfCount
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionInfCount::ExprMeshFieldReductionInfCount()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshFieldReductionInfCount::~ExprMeshFieldReductionInfCount()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionInfCount::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_field_reduction_inf_count";
+  i["port_names"].append() = "arg1";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshFieldReductionInfCount::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshFieldReductionInfCount::execute()
+{
+  std::string field = (*input<Node>("arg1"))["value"].as_string();
+
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["value"] = field_inf_count(*dataset, field)["value"];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+
+
+
+
+
 
 //-----------------------------------------------------------------------------
 Axis::Axis() : Filter()
@@ -2895,114 +4155,6 @@ Axis::execute()
   set_output<conduit::Node>(output);
 }
 
-//-----------------------------------------------------------------------------
-Histogram::Histogram() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Histogram::~Histogram()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Histogram::declare_interface(Node &i)
-{
-  i["type_name"] = "histogram";
-  i["port_names"].append() = "arg1";
-  i["port_names"].append() = "num_bins";
-  i["port_names"].append() = "min_val";
-  i["port_names"].append() = "max_val";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Histogram::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Histogram::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-  // optional inputs
-  const conduit::Node *n_bins = input<Node>("num_bins");
-  const conduit::Node *n_max = input<Node>("max_val");
-  const conduit::Node *n_min = input<Node>("min_val");
-
-  const std::string field = (*arg1)["value"].as_string();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
-
-  if(!is_scalar_field(*dataset, field))
-  {
-    ASCENT_ERROR("Histogram: axis for histogram must be a scalar field. "
-                 "Invalid axis field: '"
-                 << field << "'.");
-  }
-
-  // handle the optional inputs
-  int num_bins = 256;
-  if(!n_bins->dtype().is_empty())
-  {
-    num_bins = (*n_bins)["value"].as_int32();
-  }
-
-  double min_val;
-  double max_val;
-
-  if(!n_max->dtype().is_empty())
-  {
-    max_val = (*n_max)["value"].to_float64();
-  }
-  else
-  {
-    max_val = field_max(*dataset, field)["value"].to_float64();
-  }
-
-  if(!n_min->dtype().is_empty())
-  {
-    min_val = (*n_min)["value"].to_float64();
-  }
-  else
-  {
-    min_val = field_min(*dataset, field)["value"].to_float64();
-  }
-
-  if(min_val >= max_val)
-  {
-    ASCENT_ERROR("Histogram: min value ("
-                 << min_val << ") must be smaller than max (" << max_val
-                 << ")");
-  }
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] =
-      field_histogram(*dataset, field, min_val, max_val, num_bins)["value"];
-  (*output)["attrs/value/type"] = "array";
-  (*output)["attrs/min_val/value"] = min_val;
-  (*output)["attrs/min_val/type"] = "double";
-  (*output)["attrs/max_val/value"] = max_val;
-  (*output)["attrs/max_val/type"] = "double";
-  (*output)["attrs/num_bins/value"] = num_bins;
-  (*output)["attrs/num_bins/type"] = "int";
-  (*output)["attrs/clamp/value"] = true;
-  (*output)["attrs/clamp/type"] = "bool";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
 
 //-----------------------------------------------------------------------------
 Binning::Binning() : Filter()
@@ -3222,220 +4374,7 @@ Binning::execute()
 
 }
 
-//-----------------------------------------------------------------------------
-Entropy::Entropy() : Filter()
-{
-  // empty
-}
 
-//-----------------------------------------------------------------------------
-Entropy::~Entropy()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Entropy::declare_interface(Node &i)
-{
-  i["type_name"] = "entropy";
-  i["port_names"].append() = "hist";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Entropy::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Entropy::execute()
-{
-  const conduit::Node *hist = input<conduit::Node>("hist");
-
-  if((*hist)["type"].as_string() != "histogram")
-  {
-    ASCENT_ERROR("Entropy: hist must be a histogram");
-  }
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = histogram_entropy(*hist)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Pdf::Pdf() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Pdf::~Pdf()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Pdf::declare_interface(Node &i)
-{
-  i["type_name"] = "pdf";
-  i["port_names"].append() = "hist";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Pdf::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Pdf::execute()
-{
-  const conduit::Node *hist = input<conduit::Node>("hist");
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] = histogram_pdf(*hist)["value"];
-  (*output)["attrs/value/type"] = "array";
-  (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
-  (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
-  (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Cdf::Cdf() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Cdf::~Cdf()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Cdf::declare_interface(Node &i)
-{
-  i["type_name"] = "cdf";
-  i["port_names"].append() = "hist";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Cdf::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Cdf::execute()
-{
-  const conduit::Node *hist = input<conduit::Node>("hist");
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "histogram";
-  (*output)["attrs/value/value"] = histogram_cdf(*hist)["value"];
-  (*output)["attrs/value/type"] = "array";
-  (*output)["attrs/min_val"] = (*hist)["attrs/min_val"];
-  (*output)["attrs/max_val"] = (*hist)["attrs/max_val"];
-  (*output)["attrs/num_bins"] = (*hist)["attrs/num_bins"];
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Quantile::Quantile() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Quantile::~Quantile()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Quantile::declare_interface(Node &i)
-{
-  i["type_name"] = "quantile";
-  i["port_names"].append() = "cdf";
-  i["port_names"].append() = "q";
-  i["port_names"].append() = "interpolation";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Quantile::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Quantile::execute()
-{
-  const conduit::Node *n_cdf = input<conduit::Node>("cdf");
-  const conduit::Node *n_val = input<conduit::Node>("q");
-  // optional inputs
-  const conduit::Node *n_interpolation = input<conduit::Node>("interpolation");
-
-  const double val = (*n_val)["value"].as_float64();
-
-  if(val < 0 || val > 1)
-  {
-    ASCENT_ERROR("Quantile: val must be between 0 and 1");
-  }
-
-  // handle the optional inputs
-  std::string interpolation = "linear";
-  if(!n_interpolation->dtype().is_empty())
-  {
-    interpolation = (*n_interpolation)["value"].as_string();
-    if(interpolation != "linear" && interpolation != "lower" &&
-       interpolation != "higher" && interpolation != "midpoint" &&
-       interpolation != "nearest")
-    {
-      ASCENT_ERROR("Known interpolation types are: linear, lower, higher, "
-                   "midpoint, nearest");
-    }
-  }
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = quantile(*n_cdf, val, interpolation)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
 
 //-----------------------------------------------------------------------------
 BinByIndex::BinByIndex() : Filter()
@@ -3554,192 +4493,8 @@ BinByValue::execute()
   set_output<conduit::Node>(output);
 }
 
-//-----------------------------------------------------------------------------
-FieldSum::FieldSum() : Filter()
-{
-  // empty
-}
 
-//-----------------------------------------------------------------------------
-FieldSum::~FieldSum()
-{
-  // empty
-}
 
-//-----------------------------------------------------------------------------
-void
-FieldSum::declare_interface(Node &i)
-{
-  i["type_name"] = "field_sum";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-FieldSum::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldSum::execute()
-{
-  std::string field = (*input<Node>("arg1"))["value"].as_string();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field_sum(*dataset, field)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-FieldNanCount::FieldNanCount() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-FieldNanCount::~FieldNanCount()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldNanCount::declare_interface(Node &i)
-{
-  i["type_name"] = "field_nan_count";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-FieldNanCount::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldNanCount::execute()
-{
-  std::string field = (*input<Node>("arg1"))["value"].as_string();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  conduit::Node *dataset = data_object->as_low_order_bp().get();
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field_nan_count(*dataset, field)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-FieldInfCount::FieldInfCount() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-FieldInfCount::~FieldInfCount()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldInfCount::declare_interface(Node &i)
-{
-  i["type_name"] = "field_inf_count";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-FieldInfCount::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-FieldInfCount::execute()
-{
-  std::string field = (*input<Node>("arg1"))["value"].as_string();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  conduit::Node *dataset = data_object->as_low_order_bp().get();
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = field_inf_count(*dataset, field)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-ArraySum::ArraySum() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-ArraySum::~ArraySum()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-ArraySum::declare_interface(Node &i)
-{
-  i["type_name"] = "array_sum";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ArraySum::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ArraySum::execute()
-{
-  conduit::Node *output = new conduit::Node();
-  std::string exec = ExecutionManager::preferred_cpu_policy();
-  (*output)["value"] = array_sum((*input<Node>("arg1"))["value"], exec)["value"];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
 //-----------------------------------------------------------------------------
 PointAndAxis::PointAndAxis() : Filter()
 {
@@ -4067,466 +4822,8 @@ Bin::execute()
   set_output<conduit::Node>(output);
 }
 
-//-----------------------------------------------------------------------------
-Lineout::Lineout() : Filter()
-{
-  // empty
-}
 
 //-----------------------------------------------------------------------------
-Lineout::~Lineout()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Lineout::declare_interface(Node &i)
-{
-  i["type_name"] = "lineout";
-  i["port_names"].append() = "samples";
-  i["port_names"].append() = "start";
-  i["port_names"].append() = "end";
-  i["port_names"].append() = "fields";
-  i["port_names"].append() = "empty_val";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Lineout::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Lineout::execute()
-{
-
-#if defined(ASCENT_DRAY_ENABLED)
-  conduit::Node &n_samples = *input<Node>("samples");
-  int32 samples = n_samples["value"].to_int32();;
-  if(samples < 1)
-  {
-    ASCENT_ERROR("Lineout: samples must be greater than zero: '"<<samples<<"'\n");
-  }
-
-  conduit::Node &n_start = *input<Node>("start");
-  double *p_start = n_start["value"].as_float64_ptr();
-
-  dray::Vec<dray::Float,3> start;
-  start[0] = static_cast<dray::Float>(p_start[0]);
-  start[1] = static_cast<dray::Float>(p_start[1]);
-  start[2] = static_cast<dray::Float>(p_start[2]);
-
-  conduit::Node &n_end= *input<Node>("end");
-  double *p_end = n_end["value"].as_float64_ptr();
-
-  dray::Vec<dray::Float,3> end;
-  end[0] = static_cast<dray::Float>(p_end[0]);
-  end[1] = static_cast<dray::Float>(p_end[1]);
-  end[2] = static_cast<dray::Float>(p_end[2]);
-
-  conduit::Node *output = new conduit::Node();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  dray::Collection * collection = data_object->as_dray_collection().get();
-
-  dray::Lineout lineout;
-
-  lineout.samples(samples);
-
-  conduit::Node &n_empty_val = *input<Node>("empty_val");
-  if(!n_empty_val.dtype().is_empty())
-  {
-    double empty_val = n_empty_val["value"].to_float64();
-    lineout.empty_val(empty_val);
-  }
-
-  // figure out the number of fields we will use
-  conduit::Node &n_fields = (*input<Node>("fields"))["value"];
-  const int num_fields = n_fields.number_of_children();
-  if(num_fields > 0)
-  {
-    for(int i = 0; i < num_fields; ++i)
-    {
-      const conduit::Node &n_field = n_fields.child(i);
-      if(n_field["type"].as_string() != "string")
-      {
-        ASCENT_ERROR("Lineout: field list item is not a string");
-      }
-
-      lineout.add_var(n_field["value"].as_string());
-    }
-  }
-  else
-  {
-    std::set<std::string> field_names;
-    // use all fields
-    for(int i = 0; i < collection->size(); ++i)
-    {
-      dray::DataSet dset = collection->domain(i);
-      std::vector<std::string> d_names = dset.fields();
-      for(int n = 0; n < d_names.size(); ++n)
-      {
-        field_names.insert(d_names[n]);
-      }
-    }
-    gather_strings(field_names);
-  }
-
-
-
-  lineout.add_line(start, end);
-
-  dray::Lineout::Result res = lineout.execute(*collection);
-  (*output)["type"] = "lineout";
-  (*output)["attrs/empty_value/value"] = double(res.m_empty_val);
-  (*output)["attrs/empty_value/type"] = "double";
-  (*output)["attrs/samples/value"] = int(res.m_points_per_line);
-  (*output)["attrs/samples/type"] = "int";
-  // we only have one line so the size of points is the size of everything
-  const int size = res.m_points.size();
-  (*output)["attrs/coordinates/x/value"] = conduit::DataType::float64(size);
-  (*output)["attrs/coordinates/x/type"] = "array";
-  (*output)["attrs/coordinates/y/value"] = conduit::DataType::float64(size);
-  (*output)["attrs/coordinates/y/type"] = "array";
-  (*output)["attrs/coordinates/z/value"] = conduit::DataType::float64(size);
-  (*output)["attrs/coordinates/z/type"] = "array";
-  float64_array x = (*output)["attrs/coordinates/x/value"].value();
-  float64_array y = (*output)["attrs/coordinates/y/value"].value();
-  float64_array z = (*output)["attrs/coordinates/z/value"].value();
-  for(int i = 0; i < size; ++i)
-  {
-    dray::Vec<dray::Float,3> p = res.m_points.get_value(i);
-    x[i] = static_cast<double>(p[0]);
-    y[i] = static_cast<double>(p[1]);
-    z[i] = static_cast<double>(p[2]);
-  }
-
-  const int var_size = res.m_vars.size();
-  for(int v = 0; v < var_size; ++v)
-  {
-    std::string var = res.m_vars[v];
-    (*output)["attrs/vars/"+var+"/value"] = conduit::DataType::float64(size);
-    (*output)["attrs/vars/"+var+"/type"] = "array";
-    float64_array var_array = (*output)["attrs/vars/"+var+"/value"].value();
-    for(int i = 0; i < size; ++i)
-    {
-      var_array[i] = static_cast<double>(res.m_values[v].get_value(i));
-    }
-  }
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-  
-#else
-  ASCENT_ERROR("Lineout only supported when Devil Ray is built");
-#endif
-}
-
-//-----------------------------------------------------------------------------
-Bounds::Bounds() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Bounds::~Bounds()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Bounds::declare_interface(Node &i)
-{
-  i["type_name"] = "bounds";
-  i["port_names"].append() = "topology";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Bounds::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Bounds::execute()
-{
-  conduit::Node &n_topology = *input<Node>("topology");
-  conduit::Node *output = new conduit::Node();
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
-
-  std::set<std::string> topos;
-
-  if(!n_topology.dtype().is_empty())
-  {
-    std::string topo = n_topology["value"].as_string();
-    if(!has_topology(*dataset, topo))
-    {
-      std::set<std::string> names = topology_names(*dataset);
-      std::stringstream msg;
-      msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
-      for(auto &name : names)
-      {
-        msg<<" "<<name;
-      }
-      msg<<" ]";
-      ASCENT_ERROR(msg.str());
-    }
-    topos.insert(topo);
-  }
-  else
-  {
-    topos = topology_names(*dataset);
-  }
-
-  double inf = std::numeric_limits<double>::infinity();
-  double min_vec[3] = {inf, inf, inf};
-  double max_vec[3] = {-inf, -inf, -inf};
-  for(auto &topo_name : topos)
-  {
-    conduit::Node n_aabb = global_bounds(*dataset, topo_name);
-    double *t_min = n_aabb["min_coords"].as_float64_ptr();
-    double *t_max = n_aabb["max_coords"].as_float64_ptr();
-    for(int i = 0; i < 3; ++i)
-    {
-      min_vec[i] = std::min(t_min[i],min_vec[i]);
-      max_vec[i] = std::max(t_max[i],max_vec[i]);
-    }
-  }
-
-  (*output)["type"] = "aabb";
-  (*output)["attrs/min/value"].set(min_vec, 3);
-  (*output)["attrs/min/type"] = "vector";
-  (*output)["attrs/max/value"].set(max_vec, 3);
-  (*output)["attrs/max/type"] = "vector";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Topo::Topo() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Topo::~Topo()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Topo::declare_interface(Node &i)
-{
-  i["type_name"] = "topo";
-  i["port_names"].append() = "arg1";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Topo::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Topo::execute()
-{
-  const conduit::Node *arg1 = input<Node>("arg1");
-
-  const std::string topo = (*arg1)["value"].as_string();
-
-  if(!graph().workspace().registry().has_entry("dataset"))
-  {
-    ASCENT_ERROR("Topo: Missing dataset");
-  }
-
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-  const conduit::Node *const dataset = data_object->as_low_order_bp().get();
-
-  if(!has_topology(*dataset, topo))
-  {
-    std::set<std::string> names = topology_names(*dataset);
-    std::stringstream msg;
-    msg<<"Unknown topology: '"<<topo<<"'. Known topologies: [";
-    for(auto &name : names)
-    {
-      msg<<" "<<name;
-    }
-    msg<<" ]";
-    ASCENT_ERROR(msg.str());
-  }
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["value"] = topo;
-  (*output)["type"] = "topo";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-Nan::Nan() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Nan::~Nan()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Nan::declare_interface(Node &i)
-{
-  i["type_name"] = "nan";
-  i["port_names"] = DataType::empty();
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Nan::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Nan::execute()
-{
-  conduit::Node *output = new conduit::Node();
-
-  (*output)["type"] = "double";
-  (*output)["value"] = nan("");;
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Replace::Replace() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Replace::~Replace()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Replace::declare_interface(Node &i)
-{
-  i["type_name"] = "replace";
-  i["port_names"].append() = "arg1";
-  i["port_names"].append() = "find";
-  i["port_names"].append() = "replace";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Replace::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Replace::execute()
-{
-  const conduit::Node *n_array= input<Node>("arg1");
-  const conduit::Node *n_find = input<Node>("find");
-  const conduit::Node *n_replace = input<Node>("replace");
-
-  if(n_array->fetch_existing("type").as_string() != "array")
-  {
-    ASCENT_ERROR("replace is not an array");
-  }
-
-  if(n_find->fetch_existing("type").as_string() != "double")
-  {
-    ASCENT_ERROR("'find' is not a double");
-  }
-
-  if(n_replace->fetch_existing("type").as_string() != "double")
-  {
-    ASCENT_ERROR("'replace' is not a double");
-  }
-
-  conduit::Node *output = new conduit::Node();
-  // copy the input into the ouptut
-  *output = *n_array;
-  conduit::Node &array = output->fetch_existing("value");
-
-  if(!array.dtype().is_float64())
-  {
-    ASCENT_ERROR("Replace is only implemented for doubles");
-  }
-
-  const int size = array.dtype().number_of_elements();
-  conduit::float64 *ptr =  array.as_float64_ptr();
-  const double find = n_find->fetch_existing("value").to_float64();
-  const double replace = n_replace->fetch_existing("value").to_float64();
-
-  bool find_nan = find != find;
-
-  if( !find_nan)
-  {
-    for(int i = 0; i < size; ++i)
-    {
-      if(ptr[i] == find)
-      {
-        ptr[i] = replace;
-      }
-    }
-  }
-  else
-  {
-    for(int i = 0; i < size; ++i)
-    {
-      if(ptr[i] != ptr[i])
-      {
-        ptr[i] = replace;
-      }
-    }
-  }
-
-  set_output<conduit::Node>(output);
-}
-
-
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions --
