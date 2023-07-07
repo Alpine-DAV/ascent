@@ -282,12 +282,15 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::ExprHistoryGradientRange>();
 
   // histogram ops
-  // histogram, entropy, pdf, cdf, quantile
+  // histogram, entropy, pdf, cdf, quantile, bin_by_value, bin_by_index
   flow::Workspace::register_filter_type<expressions::ExprHistogram>();
   flow::Workspace::register_filter_type<expressions::ExprHistogramEntropy>();
   flow::Workspace::register_filter_type<expressions::ExprHistogramPDF>();
   flow::Workspace::register_filter_type<expressions::ExprHistogramCDF>();
   flow::Workspace::register_filter_type<expressions::ExprHistogramCDFQuantile>();
+  flow::Workspace::register_filter_type<expressions::ExprHistogramBinByValue>();
+  flow::Workspace::register_filter_type<expressions::ExprHistogramBinByIndex>();
+
   // mesh ops
   //   cycle, time, field, topology, bounds, lineout
   flow::Workspace::register_filter_type<expressions::ExprMeshCycle>();
@@ -306,13 +309,13 @@ register_builtin()
   flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionNanCount>();
   flow::Workspace::register_filter_type<expressions::ExprMeshFieldReductionInfCount>();
 
-  flow::Workspace::register_filter_type<expressions::Axis>();
-  flow::Workspace::register_filter_type<expressions::Binning>();
-  flow::Workspace::register_filter_type<expressions::BinByValue>();
-  flow::Workspace::register_filter_type<expressions::BinByIndex>();
-  flow::Workspace::register_filter_type<expressions::PointAndAxis>();
-  flow::Workspace::register_filter_type<expressions::MaxFromPoint>();
-  flow::Workspace::register_filter_type<expressions::Bin>();
+  // binning ops
+  //  binning, binning_axis, bin_by_index, point_and_axis, max_from_point
+  flow::Workspace::register_filter_type<expressions::ExprMeshBinning>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshBinningAxis>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshBinningBinByIndex>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshBinningPointAndAxis>();
+  flow::Workspace::register_filter_type<expressions::ExprMeshBinningMaxFromPoint>();
 
   initialize_functions();
   initialize_objects();
@@ -923,25 +926,25 @@ initialize_functions()
   x-axis which 50 percent of the data lies below.";
 
   //---------------------------------------------------------------------------
-
+  // bin()
+  //---------------------------------------------------------------------------
   // gets histogram bin by index
-  conduit::Node &bin_by_index_sig = (*functions)["bin"].append();
-  bin_by_index_sig["return_type"] = "double";
-  bin_by_index_sig["filter_name"] = "bin_by_index";
-  bin_by_index_sig["args/hist/type"] = "histogram";
-  bin_by_index_sig["args/bin/type"] = "int";
-  bin_by_index_sig["description"] =
+  conduit::Node &hist_bin_by_index_sig = (*functions)["bin"].append();
+  hist_bin_by_index_sig["return_type"] = "double";
+  hist_bin_by_index_sig["filter_name"] = "expr_hisrogram_bin_by_index";
+  hist_bin_by_index_sig["args/hist/type"] = "histogram";
+  hist_bin_by_index_sig["args/bin/type"] = "int"; // index?
+  hist_bin_by_index_sig["description"] =
       "Return the value of the bin at index `bin` of a histogram.";
 
   //---------------------------------------------------------------------------
-
   // gets histogram bin by value
-  conduit::Node &bin_by_value_sig = (*functions)["bin"].append();
-  bin_by_value_sig["return_type"] = "double";
-  bin_by_value_sig["filter_name"] = "bin_by_value";
-  bin_by_value_sig["args/hist/type"] = "histogram";
-  bin_by_value_sig["args/val/type"] = "scalar";
-  bin_by_value_sig["description"] =
+  conduit::Node &hist_bin_by_value_sig = (*functions)["bin"].append();
+  hist_bin_by_value_sig["return_type"] = "double";
+  hist_bin_by_value_sig["filter_name"] = "expr_histogram_bin_by_value";
+  hist_bin_by_value_sig["args/hist/type"] = "histogram";
+  hist_bin_by_value_sig["args/val/type"] = "scalar";
+  hist_bin_by_value_sig["description"] =
       "Return the value of the bin with axis-value `val` on the histogram.";
 
   //---------------------------------------------------------------------------
@@ -1000,11 +1003,15 @@ initialize_functions()
   lineout["args/empty_val/optional"];
   lineout["description"] = "returns a sampled based line out";
 
-  // -------------------------------------------------------------
 
+
+
+  //---------------------------------------------------------------------------
+  // point_and_axis()
+  //---------------------------------------------------------------------------
   conduit::Node &point_and_axis_sig = (*functions)["point_and_axis"].append();
   point_and_axis_sig["return_type"] = "bin";
-  point_and_axis_sig["filter_name"] = "point_and_axis";
+  point_and_axis_sig["filter_name"] = "expr_mesh_binning_point_and_axis";
   point_and_axis_sig["args/binning/type"] = "binning";
   point_and_axis_sig["args/axis/type"] = "string";
   point_and_axis_sig["args/threshold/type"] = "double";
@@ -1019,16 +1026,17 @@ initialize_functions()
 
   conduit::Node &bin_sig = (*functions)["bin"].append();
   bin_sig["return_type"] = "bin";
-  bin_sig["filter_name"] = "bin";
+  bin_sig["filter_name"] = "expr_mesh_binning_bin_by_index";
   bin_sig["args/binning/type"] = "binning";
   bin_sig["args/index/type"] = "int";
   bin_sig["description"] = "returns a bin from a binning by index";
 
-  // -------------------------------------------------------------
-
+  //---------------------------------------------------------------------------
+  // max_from_point()
+  //---------------------------------------------------------------------------
   conduit::Node &max_from_point_sig = (*functions)["max_from_point"].append();
   max_from_point_sig["return_type"] = "value_position";
-  max_from_point_sig["filter_name"] = "max_from_point";
+  max_from_point_sig["filter_name"] = "expr_mesh_binning_max_from_point";
   max_from_point_sig["args/binning/type"] = "binning";
   max_from_point_sig["args/axis/type"] = "string";
   max_from_point_sig["args/point/type"] = "double";
@@ -1037,12 +1045,14 @@ initialize_functions()
       " value from a reference point on an axis";
 
 
-
   //---------------------------------------------------------------------------
-
+  // axis()
+  //---------------------------------------------------------------------------
+  
+  //---------------------------------------------------------------------------
   conduit::Node &axis_sig = (*functions)["axis"].append();
   axis_sig["return_type"] = "axis";
-  axis_sig["filter_name"] = "axis";
+  axis_sig["filter_name"] = "expr_mesh_binning_axis";
   axis_sig["args/name/type"] = "string";
   axis_sig["args/name/description"] =
       "The name of a scalar field on the mesh "
@@ -1085,10 +1095,9 @@ initialize_functions()
       "put into the bins on the boundaries.";
 
   //---------------------------------------------------------------------------
-
   conduit::Node &axis_sig2 = (*functions)["axis"].append();
   axis_sig2["return_type"] = "axis";
-  axis_sig2["filter_name"] = "axis";
+  axis_sig2["filter_name"] = "expr_mesh_binning_axis";
   axis_sig2["args/var/type"] = "string";
   axis_sig2["args/var/description"] = "One of the strings ``'x', 'y', 'z'`` "
                                       "corresponding to a spacial coordinate.";
@@ -1109,10 +1118,11 @@ initialize_functions()
       "of the strings ``'x', 'y', 'z'``";
 
   //---------------------------------------------------------------------------
-
+  // binning()
+  //---------------------------------------------------------------------------
   conduit::Node &binning_sig = (*functions)["binning"].append();
   binning_sig["return_type"] = "binning";
-  binning_sig["filter_name"] = "binning";
+  binning_sig["filter_name"] = "expr_mesh_binning";
   binning_sig["args/reduction_var/type"] = "string";
   binning_sig["args/reduction_var/description"] =
       "The variable being reduced. Either the name of a scalar field on the "
@@ -1256,7 +1266,7 @@ initialize_functions()
   field_scalar_max_sig["return_type"] = "jitable";
   field_scalar_max_sig["filter_name"] = "field_field_max";
   field_scalar_max_sig["args/arg1/type"] = "field";
-  field_scalar_max_sig["args/arg2/type"] = "scalar";
+  field_scalar_max_sig["args/arg2/type"] = "scalar"; // should this be field?
   field_scalar_max_sig["description"] =
       "Return a derived field that is the max of two fields.";
   field_scalar_max_sig["jitable"];
@@ -1372,7 +1382,7 @@ initialize_functions()
   conduit::Node &derived_field2 = (*functions)["derived_field"].append();
   derived_field2["return_type"] = "jitable";
   derived_field2["filter_name"] = "derived_field";
-  derived_field2["args/arg1/type"] = "field";
+  derived_field2["args/arg1/type"] = "field"; // ?
   derived_field2["args/arg1/description"] =
       "The scalar to be cast to a derived field.";
   derived_field2["args/topo/type"] = "string";

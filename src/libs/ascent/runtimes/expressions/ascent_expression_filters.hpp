@@ -445,7 +445,7 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Histogram Operations
-// histogram, entropy, pdf, cdf, quantile
+// histogram, entropy, pdf, cdf, quantile, bin_by_value, bin_by_index
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -504,6 +504,31 @@ class  ExprHistogramCDFQuantile : public ::flow::Filter
 public:
   ExprHistogramCDFQuantile();
   ~ExprHistogramCDFQuantile();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+
+//-----------------------------------------------------------------------------
+class ExprHistogramBinByIndex : public ::flow::Filter
+{
+public:
+  ExprHistogramBinByIndex();
+  ~ExprHistogramBinByIndex();
+
+  virtual void declare_interface(conduit::Node &i);
+  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
+  virtual void execute();
+};
+
+//-----------------------------------------------------------------------------
+class ExprHistogramBinByValue : public ::flow::Filter
+{
+public:
+  ExprHistogramBinByValue();
+  ~ExprHistogramBinByValue();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -674,27 +699,20 @@ public:
 
 
 //-----------------------------------------------------------------------------
-// Grab bag (mostly binning related)
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Binning Operations
+//  binning, binning_axis, bin_by_index, point_and_axis, max_from_point
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class Binning : public ::flow::Filter
+class ExprMeshBinning : public ::flow::Filter
 {
 public:
-  Binning();
-  ~Binning();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
-
-//-----------------------------------------------------------------------------
-class BinByIndex : public ::flow::Filter
-{
-public:
-  BinByIndex();
-  ~BinByIndex();
+  ExprMeshBinning();
+  ~ExprMeshBinning();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -702,64 +720,52 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class BinByValue : public ::flow::Filter
+class ExprMeshBinningAxis : public ::flow::Filter
 {
 public:
-  BinByValue();
-  ~BinByValue();
+  ExprMeshBinningAxis();
+  ~ExprMeshBinningAxis();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
-
-class PointAndAxis : public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ExprMeshBinningBinByIndex: public ::flow::Filter
 {
 public:
-  PointAndAxis();
-  ~PointAndAxis();
+  ExprMeshBinningBinByIndex();
+  ~ExprMeshBinningBinByIndex();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
-class MaxFromPoint : public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ExprMeshBinningPointAndAxis : public ::flow::Filter
 {
 public:
-  MaxFromPoint();
-  ~MaxFromPoint();
+  ExprMeshBinningPointAndAxis();
+  ~ExprMeshBinningPointAndAxis();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
-class Bin : public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ExprMeshBinningMaxFromPoint : public ::flow::Filter
 {
 public:
-  Bin();
-  ~Bin();
+  ExprMeshBinningMaxFromPoint();
+  ~ExprMeshBinningMaxFromPoint();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
-
-class Axis : public ::flow::Filter
-{
-public:
-  Axis();
-  ~Axis();
-
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
-};
-
-
-
 
 };
 //-----------------------------------------------------------------------------

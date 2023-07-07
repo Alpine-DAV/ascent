@@ -658,8 +658,6 @@ range_values_helper(const conduit::Node &history,
 }
 
 
-
-
 } // namespace detail
 
 void resolve_symbol_result(flow::Graph &graph,
@@ -679,6 +677,142 @@ void resolve_symbol_result(flow::Graph &graph,
     }
   }
 }
+void binning_interface(const std::string &reduction_var,
+                       const std::string &reduction_op,
+                       const conduit::Node &n_empty_bin_val,
+                       const conduit::Node &n_component,
+                       const conduit::Node &n_axis_list,
+                       conduit::Node &dataset,
+                       conduit::Node &n_binning,
+                       conduit::Node &n_output_axes)
+{
+  std::string component = "";
+  if(!n_component.dtype().is_empty())
+  {
+    component = n_component["value"].as_string();
+  }
+
+  if(!n_axis_list.has_path("type"))
+  {
+    ASCENT_ERROR("Binning: axis list missing object type.");
+  }
+  std::string obj_type = n_axis_list["type"].as_string();
+  if(obj_type != "list")
+  {
+    ASCENT_ERROR("Binning: axis list is not type 'list'."
+                  <<" type is '"<<obj_type<<"'");
+  }
+  // verify n_axes_list and put the values in n_output_axes
+  int num_axes = n_axis_list["value"].number_of_children();
+  for(int i = 0; i < num_axes; ++i)
+  {
+    const conduit::Node &axis = n_axis_list["value"].child(i);
+    if(axis["type"].as_string() != "axis")
+    {
+      ASCENT_ERROR("Binning: bin_axes must be a list of axis");
+    }
+    n_output_axes.update(axis["value"]);
+  }
+
+  // verify reduction_var
+  if(reduction_var.empty())
+  {
+    if(reduction_op != "sum" && reduction_op != "pdf")
+    {
+      ASCENT_ERROR("Binning: reduction_var can only be left empty if "
+                   "reduction_op is 'sum' or 'pdf'.");
+    }
+  }
+  else if(!is_xyz(reduction_var))
+  {
+    if(!has_field(dataset, reduction_var))
+    {
+      std::string known;
+      if(dataset.number_of_children() > 0 )
+      {
+        std::vector<std::string> names = dataset.child(0)["fields"].child_names();
+        std::stringstream ss;
+        ss << "[";
+        for(size_t i = 0; i < names.size(); ++i)
+        {
+          ss << " '" << names[i]<<"'";
+        }
+        ss << "]";
+        known = ss.str();
+      }
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var
+                   << "' must be a scalar field in the dataset or x/y/z or empty."
+                   << " known = " << known);
+    }
+
+    bool scalar = is_scalar_field(dataset, reduction_var);
+    if(!scalar && component == "")
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " has multiple components and no 'component' is"
+                   << " specified."
+                   << " known components = "
+                   << possible_components(dataset, reduction_var));
+    }
+    if(scalar && component != "")
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var <<"'"
+                   << " is a scalar(i.e., has not components "
+                   << " but 'component' " << " '"<<component<<"' was"
+                   << " specified. Remove the 'component' argument"
+                   << " or choose a vector variable.");
+    }
+    if(!has_component(dataset, reduction_var, component))
+    {
+      ASCENT_ERROR("Binning: reduction variable '"
+                   << reduction_var << "'"
+                   << " does not have component '"<<component<<"'."
+                   << " known components = "
+                   << possible_components(dataset, reduction_var));
+
+    }
+  }
+
+  // verify reduction_op
+  if(reduction_op != "sum" && reduction_op != "min" && reduction_op != "max" &&
+     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "std" &&
+     reduction_op != "var" && reduction_op != "rms")
+  {
+    ASCENT_ERROR(
+        "Unknown reduction_op: '"
+        << reduction_op
+        << "'. Known reduction operators are: cnt, sum, min, max, avg, pdf, "
+           "std, var, rms");
+  }
+
+  double empty_bin_val = 0;
+  if(!n_empty_bin_val.dtype().is_empty())
+  {
+    empty_bin_val = n_empty_bin_val["value"].to_float64();
+  }
+
+  n_binning = binning(dataset,
+                      n_output_axes,
+                      reduction_var,
+                      reduction_op,
+                      empty_bin_val,
+                      component);
+
+  // // TODO THIS IS THE RAJA VERSION
+  // std::map<int, Array<int>> bindexes;
+  // n_binning = data_binning(dataset,
+  //                          n_output_axes,
+  //                          reduction_var,
+  //                          reduction_op,
+  //                          empty_bin_val,
+  //                          component,
+  //                          bindexes);
+
+}
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -2666,7 +2800,7 @@ ExprHistoryGradientRange::execute()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Histogram Operations
-// histogram, entropy, pdf, cdf, quantile
+// histogram, entropy, pdf, cdf, quantile, bin_by_value, bin_by_index
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3017,6 +3151,136 @@ ExprHistogramCDFQuantile::execute()
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
+
+
+//*****************************************************************************
+// ExprHistogramBinByIndex
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprHistogramBinByIndex::ExprHistogramBinByIndex()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprHistogramBinByIndex::~ExprHistogramBinByIndex()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistogramBinByIndex::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_histogram_bin_by_index";
+  i["port_names"].append() = "hist";
+  i["port_names"].append() = "bin";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprHistogramBinByIndex::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistogramBinByIndex::execute()
+{
+  const conduit::Node *n_bin = input<conduit::Node>("bin");
+  const conduit::Node *n_hist = input<conduit::Node>("hist");
+
+  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32();
+  int bin = (*n_bin)["value"].as_int32();
+
+  if(bin < 0 || bin > num_bins - 1)
+  {
+    ASCENT_ERROR("BinByIndex: bin index must be within the bounds of hist [0, "
+                 << num_bins - 1 << "]");
+  }
+
+  conduit::Node *output = new conduit::Node();
+  const double *bins = (*n_hist)["attrs/value/value"].value();
+  (*output)["value"] = bins[bin];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
+//*****************************************************************************
+// ExprHistogramBinByValue
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprHistogramBinByValue::ExprHistogramBinByValue()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprHistogramBinByValue::~ExprHistogramBinByValue()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistogramBinByValue::declare_interface(Node &i)
+{
+  i["type_name"] = "exp_histogram_bin_by_value";
+  i["port_names"].append() = "hist";
+  i["port_names"].append() = "val";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprHistogramBinByValue::verify_params(const conduit::Node &params,
+                                       conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprHistogramBinByValue::execute()
+{
+  const conduit::Node *n_val = input<conduit::Node>("val");
+  const conduit::Node *n_hist = input<conduit::Node>("hist");
+
+  double val = (*n_val)["value"].to_float64();
+  double min_val = (*n_hist)["attrs/min_val/value"].to_float64();
+  double max_val = (*n_hist)["attrs/max_val/value"].to_float64();
+  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32();
+
+  if(val < min_val || val > max_val)
+  {
+    ASCENT_ERROR("BinByValue: val must within the bounds of hist ["
+                 << min_val << ", " << max_val << "]");
+  }
+
+  const double inv_delta = num_bins / (max_val - min_val);
+  int bin = static_cast<int>((val - min_val) * inv_delta);
+
+  conduit::Node *output = new conduit::Node();
+  const double *bins = (*n_hist)["attrs/value/value"].value();
+  (*output)["value"] = bins[bin];
+  (*output)["type"] = "double";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+}
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3973,28 +4237,124 @@ ExprMeshFieldReductionInfCount::execute()
 }
 
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Binning Operations
+//  binning, binning_axis, bin_by_index, point_and_axis, max_from_point
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-
-
-
+//*****************************************************************************
+// ExprMeshBinning
+//*****************************************************************************
 
 //-----------------------------------------------------------------------------
-Axis::Axis() : Filter()
+ExprMeshBinning::ExprMeshBinning()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Axis::~Axis()
+ExprMeshBinning::~ExprMeshBinning()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Axis::declare_interface(Node &i)
+ExprMeshBinning::declare_interface(Node &i)
 {
-  i["type_name"] = "axis";
+  i["type_name"] = "expr_mesh_binning";
+  i["port_names"].append() = "reduction_var";
+  i["port_names"].append() = "reduction_op";
+  i["port_names"].append() = "bin_axes";
+  i["port_names"].append() = "empty_bin_val";
+  i["port_names"].append() = "component";
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprMeshBinning::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  info.reset();
+  bool res = true;
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshBinning::execute()
+{
+  DataObject *data_object =
+    graph().workspace().registry().fetch<DataObject>("dataset");
+
+  conduit::Node *dataset = data_object->as_low_order_bp().get();
+
+  const std::string reduction_var =
+      (*input<Node>("reduction_var"))["value"].as_string();
+  const std::string reduction_op =
+      (*input<Node>("reduction_op"))["value"].as_string();
+  const conduit::Node *n_axes_list = input<Node>("bin_axes");
+  // optional arguments
+  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
+  const conduit::Node *n_component = input<conduit::Node>("component");
+
+  conduit::Node n_binning;
+  conduit::Node n_bin_axes;
+
+  binning_interface(reduction_var,
+                    reduction_op,
+                    *n_empty_bin_val,
+                    *n_component,
+                    *n_axes_list,
+                    *dataset,
+                    n_binning,
+                    n_bin_axes);
+
+  conduit::Node *output = new conduit::Node();
+  (*output)["type"] = "binning";
+  (*output)["attrs/value/value"] = n_binning["value"];
+  (*output)["attrs/value/type"] = "array";
+  (*output)["attrs/reduction_var/value"] = reduction_var;
+  (*output)["attrs/reduction_var/type"] = "string";
+  (*output)["attrs/reduction_op/value"] = reduction_op;
+  (*output)["attrs/reduction_op/type"] = "string";
+  (*output)["attrs/bin_axes/value"] = n_bin_axes;
+  //(*output)["attrs/bin_axes/type"] = "list";
+  (*output)["attrs/association/value"] = n_binning["association"];
+  (*output)["attrs/association/type"] = "string";
+
+  resolve_symbol_result(graph(), output, this->name());
+  set_output<conduit::Node>(output);
+
+}
+
+//*****************************************************************************
+// ExprMeshBinningAxis
+//*****************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprMeshBinningAxis::ExprMeshBinningAxis()
+: Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+ExprMeshBinningAxis::~ExprMeshBinningAxis()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprMeshBinningAxis::declare_interface(Node &i)
+{
+  i["type_name"] = "expr_mesh_binning_axis";
   i["port_names"].append() = "name";
   i["port_names"].append() = "min_val";
   i["port_names"].append() = "max_val";
@@ -4006,7 +4366,8 @@ Axis::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-Axis::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprMeshBinningAxis::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -4015,7 +4376,7 @@ Axis::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-Axis::execute()
+ExprMeshBinningAxis::execute()
 {
   const std::string name = (*input<Node>("name"))["value"].as_string();
   // uniform binning
@@ -4029,7 +4390,7 @@ Axis::execute()
 
   if(!graph().workspace().registry().has_entry("dataset"))
   {
-    ASCENT_ERROR("Field: Missing dataset");
+    ASCENT_ERROR("Axis: Missing dataset");
   }
 
   DataObject *data_object =
@@ -4052,7 +4413,7 @@ Axis::execute()
       known = ss.str();
     }
 
-    ASCENT_ERROR("Axis: Axes must be scalar fields or x/y/z. Dataset does not "
+    ASCENT_ERROR("Binning Axis: Axes must be scalar fields or x/y/z. Dataset does not "
                  "contain scalar field '"
                  << name << "'. Possible field names "<<known<<".");
   }
@@ -4065,7 +4426,7 @@ Axis::execute()
     if(!n_min->dtype().is_empty() || !n_max->dtype().is_empty() ||
        !n_num_bins->dtype().is_empty())
     {
-      ASCENT_ERROR("Axis: Only pass in arguments for uniform or rectilinear "
+      ASCENT_ERROR("Binning Axis: Only pass in arguments for uniform or rectilinear "
                    "binning, not both.");
     }
 
@@ -4073,7 +4434,7 @@ Axis::execute()
 
     if(bins_len < 2)
     {
-      ASCENT_ERROR("Axis: bins must have at least 2 items.");
+      ASCENT_ERROR("Binning Axis: bins must have at least 2 items.");
     }
 
     output = new conduit::Node();
@@ -4087,13 +4448,13 @@ Axis::execute()
       if(!detail::is_scalar(bin["type"].as_string()))
       {
         delete output;
-        ASCENT_ERROR("Axis: bins must be a list of scalars.");
+        ASCENT_ERROR("Binning Axis: bins must be a list of scalars.");
       }
       bins[i] = bin["value"].to_float64();
       if(i != 0 && bins[i - 1] >= bins[i])
       {
         delete output;
-        ASCENT_ERROR("Axis: bins of strictly increasing scalars.");
+        ASCENT_ERROR("Binning Axis: bin extents must be strictly increasing scalars.");
       }
     }
   }
@@ -4138,7 +4499,7 @@ Axis::execute()
     if(min_found && max_found && min_val >= max_val)
     {
       delete output;
-      ASCENT_ERROR("Axis: axis with name '"
+      ASCENT_ERROR("Binning Axis: axis with name '"
                    << name << "': min_val (" << min_val
                    << ") must be smaller than max_val (" << max_val << ")");
     }
@@ -4156,251 +4517,37 @@ Axis::execute()
 }
 
 
+//*****************************************************************************
+// ExprMeshBinningBinByIndex
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-Binning::Binning() : Filter()
+ExprMeshBinningBinByIndex::ExprMeshBinningBinByIndex()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-Binning::~Binning()
+ExprMeshBinningBinByIndex::~ExprMeshBinningBinByIndex()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Binning::declare_interface(Node &i)
+ExprMeshBinningBinByIndex::declare_interface(Node &i)
 {
-  i["type_name"] = "binning";
-  i["port_names"].append() = "reduction_var";
-  i["port_names"].append() = "reduction_op";
-  i["port_names"].append() = "bin_axes";
-  i["port_names"].append() = "empty_bin_val";
-  i["port_names"].append() = "component";
+  i["type_name"] = "expr_mesh_binning_bin_by_index";
+  i["port_names"].append() = "binning";
+  i["port_names"].append() = "index";
   i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Binning::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-void binning_interface(const std::string &reduction_var,
-                       const std::string &reduction_op,
-                       const conduit::Node &n_empty_bin_val,
-                       const conduit::Node &n_component,
-                       const conduit::Node &n_axis_list,
-                       conduit::Node &dataset,
-                       conduit::Node &n_binning,
-                       conduit::Node &n_output_axes)
-{
-  std::string component = "";
-  if(!n_component.dtype().is_empty())
-  {
-    component = n_component["value"].as_string();
-  }
-
-  if(!n_axis_list.has_path("type"))
-  {
-    ASCENT_ERROR("Binning: axis list missing object type.");
-  }
-  std::string obj_type = n_axis_list["type"].as_string();
-  if(obj_type != "list")
-  {
-    ASCENT_ERROR("Binning: axis list is not type 'list'."
-                  <<" type is '"<<obj_type<<"'");
-  }
-  // verify n_axes_list and put the values in n_output_axes
-  int num_axes = n_axis_list["value"].number_of_children();
-  for(int i = 0; i < num_axes; ++i)
-  {
-    const conduit::Node &axis = n_axis_list["value"].child(i);
-    if(axis["type"].as_string() != "axis")
-    {
-      ASCENT_ERROR("Binning: bin_axes must be a list of axis");
-    }
-    n_output_axes.update(axis["value"]);
-  }
-
-  // verify reduction_var
-  if(reduction_var.empty())
-  {
-    if(reduction_op != "sum" && reduction_op != "pdf")
-    {
-      ASCENT_ERROR("Binning: reduction_var can only be left empty if "
-                   "reduction_op is 'sum' or 'pdf'.");
-    }
-  }
-  else if(!is_xyz(reduction_var))
-  {
-    if(!has_field(dataset, reduction_var))
-    {
-      std::string known;
-      if(dataset.number_of_children() > 0 )
-      {
-        std::vector<std::string> names = dataset.child(0)["fields"].child_names();
-        std::stringstream ss;
-        ss << "[";
-        for(size_t i = 0; i < names.size(); ++i)
-        {
-          ss << " '" << names[i]<<"'";
-        }
-        ss << "]";
-        known = ss.str();
-      }
-      ASCENT_ERROR("Binning: reduction variable '"
-                   << reduction_var
-                   << "' must be a scalar field in the dataset or x/y/z or empty."
-                   << " known = " << known);
-    }
-
-    bool scalar = is_scalar_field(dataset, reduction_var);
-    if(!scalar && component == "")
-    {
-      ASCENT_ERROR("Binning: reduction variable '"
-                   << reduction_var <<"'"
-                   << " has multiple components and no 'component' is"
-                   << " specified."
-                   << " known components = "
-                   << possible_components(dataset, reduction_var));
-    }
-    if(scalar && component != "")
-    {
-      ASCENT_ERROR("Binning: reduction variable '"
-                   << reduction_var <<"'"
-                   << " is a scalar(i.e., has not components "
-                   << " but 'component' " << " '"<<component<<"' was"
-                   << " specified. Remove the 'component' argument"
-                   << " or choose a vector variable.");
-    }
-    if(!has_component(dataset, reduction_var, component))
-    {
-      ASCENT_ERROR("Binning: reduction variable '"
-                   << reduction_var << "'"
-                   << " does not have component '"<<component<<"'."
-                   << " known components = "
-                   << possible_components(dataset, reduction_var));
-
-    }
-  }
-
-  // verify reduction_op
-  if(reduction_op != "sum" && reduction_op != "min" && reduction_op != "max" &&
-     reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "std" &&
-     reduction_op != "var" && reduction_op != "rms")
-  {
-    ASCENT_ERROR(
-        "Unknown reduction_op: '"
-        << reduction_op
-        << "'. Known reduction operators are: cnt, sum, min, max, avg, pdf, "
-           "std, var, rms");
-  }
-
-  double empty_bin_val = 0;
-  if(!n_empty_bin_val.dtype().is_empty())
-  {
-    empty_bin_val = n_empty_bin_val["value"].to_float64();
-  }
-
-  n_binning = binning(dataset,
-                      n_output_axes,
-                      reduction_var,
-                      reduction_op,
-                      empty_bin_val,
-                      component);
-
-  // // TODO THIS IS THE RAJA VERSION
-  // std::map<int, Array<int>> bindexes;
-  // n_binning = data_binning(dataset,
-  //                          n_output_axes,
-  //                          reduction_var,
-  //                          reduction_op,
-  //                          empty_bin_val,
-  //                          component,
-  //                          bindexes);
-
-}
-//-----------------------------------------------------------------------------
-void
-Binning::execute()
-{
-  DataObject *data_object =
-    graph().workspace().registry().fetch<DataObject>("dataset");
-
-  conduit::Node *dataset = data_object->as_low_order_bp().get();
-
-  const std::string reduction_var =
-      (*input<Node>("reduction_var"))["value"].as_string();
-  const std::string reduction_op =
-      (*input<Node>("reduction_op"))["value"].as_string();
-  const conduit::Node *n_axes_list = input<Node>("bin_axes");
-  // optional arguments
-  const conduit::Node *n_empty_bin_val = input<conduit::Node>("empty_bin_val");
-  const conduit::Node *n_component = input<conduit::Node>("component");
-
-  conduit::Node n_binning;
-  conduit::Node n_bin_axes;
-
-  binning_interface(reduction_var,
-                    reduction_op,
-                    *n_empty_bin_val,
-                    *n_component,
-                    *n_axes_list,
-                    *dataset,
-                    n_binning,
-                    n_bin_axes);
-
-
-  conduit::Node *output = new conduit::Node();
-  (*output)["type"] = "binning";
-  (*output)["attrs/value/value"] = n_binning["value"];
-  (*output)["attrs/value/type"] = "array";
-  (*output)["attrs/reduction_var/value"] = reduction_var;
-  (*output)["attrs/reduction_var/type"] = "string";
-  (*output)["attrs/reduction_op/value"] = reduction_op;
-  (*output)["attrs/reduction_op/type"] = "string";
-  (*output)["attrs/bin_axes/value"] = n_bin_axes;
-  //(*output)["attrs/bin_axes/type"] = "list";
-  (*output)["attrs/association/value"] = n_binning["association"];
-  (*output)["attrs/association/type"] = "string";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-
-}
-
-
-
-//-----------------------------------------------------------------------------
-BinByIndex::BinByIndex() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-BinByIndex::~BinByIndex()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-BinByIndex::declare_interface(Node &i)
-{
-  i["type_name"] = "bin_by_index";
-  i["port_names"].append() = "hist";
-  i["port_names"].append() = "bin";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-BinByIndex::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprMeshBinningBinByIndex::verify_params(const conduit::Node &params,
+                                         conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -4409,109 +4556,79 @@ BinByIndex::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-BinByIndex::execute()
+ExprMeshBinningBinByIndex::execute()
 {
-  const conduit::Node *n_bin = input<conduit::Node>("bin");
-  const conduit::Node *n_hist = input<conduit::Node>("hist");
+  conduit::Node &in_binning = *input<Node>("binning");
+  conduit::Node &in_index =  *input<Node>("index");
+  conduit::Node *output = new conduit::Node();
 
-  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32();
-  int bin = (*n_bin)["value"].as_int32();
-
-  if(bin < 0 || bin > num_bins - 1)
+  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
+  if(num_axes > 1)
   {
-    ASCENT_ERROR("BinByIndex: bin index must be within the bounds of hist [0, "
-                 << num_bins - 1 << "]");
+    ASCENT_ERROR("bin: only one axis is implemented");
   }
 
-  conduit::Node *output = new conduit::Node();
-  const double *bins = (*n_hist)["attrs/value/value"].value();
-  (*output)["value"] = bins[bin];
-  (*output)["type"] = "double";
+  int bindex = in_index["value"].to_int32();
+
+  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
+  const int num_bins = axis["num_bins"].to_int32();
+
+  if(bindex < 0 || bindex >= num_bins)
+  {
+    ASCENT_ERROR("bin: invalid bin "<<bindex<<"."
+                <<" Number of bins "<<num_bins);
+  }
+
+  const double min_val = axis["min_val"].to_float64();
+  const double max_val = axis["max_val"].to_float64();
+  const double bin_size = (max_val - min_val) / double(num_bins);
+  double *bins = in_binning["attrs/value/value"].value();
+
+  double left = min_val + double(bindex) * bin_size;
+  double right = min_val + double(bindex+1) * bin_size;
+  double center = left + (right-left) / 2.0;
+  double val = bins[bindex];
+
+  (*output)["type"] = "bin";
+
+  (*output)["attrs/value/value"] = val;
+  (*output)["attrs/value/type"] = "double";
+
+  (*output)["attrs/min/value"] = left;
+  (*output)["attrs/min/type"] = "double";
+
+  (*output)["attrs/max/value"] = right;
+  (*output)["attrs/max/type"] = "double";
+
+  (*output)["attrs/center/value"] = center;
+  (*output)["attrs/center/type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprMeshBinningPointAndAxis
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-BinByValue::BinByValue() : Filter()
+ExprMeshBinningPointAndAxis::ExprMeshBinningPointAndAxis()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-BinByValue::~BinByValue()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-BinByValue::declare_interface(Node &i)
-{
-  i["type_name"] = "bin_by_value";
-  i["port_names"].append() = "hist";
-  i["port_names"].append() = "val";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-BinByValue::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-BinByValue::execute()
-{
-  const conduit::Node *n_val = input<conduit::Node>("val");
-  const conduit::Node *n_hist = input<conduit::Node>("hist");
-
-  double val = (*n_val)["value"].to_float64();
-  double min_val = (*n_hist)["attrs/min_val/value"].to_float64();
-  double max_val = (*n_hist)["attrs/max_val/value"].to_float64();
-  int num_bins = (*n_hist)["attrs/num_bins/value"].as_int32();
-
-  if(val < min_val || val > max_val)
-  {
-    ASCENT_ERROR("BinByValue: val must within the bounds of hist ["
-                 << min_val << ", " << max_val << "]");
-  }
-
-  const double inv_delta = num_bins / (max_val - min_val);
-  int bin = static_cast<int>((val - min_val) * inv_delta);
-
-  conduit::Node *output = new conduit::Node();
-  const double *bins = (*n_hist)["attrs/value/value"].value();
-  (*output)["value"] = bins[bin];
-  (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-
-
-//-----------------------------------------------------------------------------
-PointAndAxis::PointAndAxis() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-PointAndAxis::~PointAndAxis()
+ExprMeshBinningPointAndAxis::~ExprMeshBinningPointAndAxis()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-PointAndAxis::declare_interface(Node &i)
+ExprMeshBinningPointAndAxis::declare_interface(Node &i)
 {
-  i["type_name"] = "point_and_axis";
+  i["type_name"] = "expr_mesh_binning_point_and_axis";
   i["port_names"].append() = "binning";
   i["port_names"].append() = "axis";
   i["port_names"].append() = "threshold";
@@ -4523,7 +4640,8 @@ PointAndAxis::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-PointAndAxis::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprMeshBinningPointAndAxis::verify_params(const conduit::Node &params,
+                                           conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -4532,7 +4650,7 @@ PointAndAxis::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-PointAndAxis::execute()
+ExprMeshBinningPointAndAxis::execute()
 {
   conduit::Node &in_binning = *input<Node>("binning");
   conduit::Node &in_axis =  *input<Node>("axis");
@@ -4629,23 +4747,28 @@ PointAndAxis::execute()
   set_output<conduit::Node>(output);
 }
 
+//*****************************************************************************
+// ExprMeshBinningMaxFromPoint
+//*****************************************************************************
+
 //-----------------------------------------------------------------------------
-MaxFromPoint::MaxFromPoint() : Filter()
+ExprMeshBinningMaxFromPoint::ExprMeshBinningMaxFromPoint()
+: Filter()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-MaxFromPoint::~MaxFromPoint()
+ExprMeshBinningMaxFromPoint::~ExprMeshBinningMaxFromPoint()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-MaxFromPoint::declare_interface(Node &i)
+ExprMeshBinningMaxFromPoint::declare_interface(Node &i)
 {
-  i["type_name"] = "max_from_point";
+  i["type_name"] = "expr_mesh_binning_max_from_point";
   i["port_names"].append() = "binning";
   i["port_names"].append() = "axis";
   i["port_names"].append() = "point";
@@ -4654,7 +4777,8 @@ MaxFromPoint::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-MaxFromPoint::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprMeshBinningMaxFromPoint::verify_params(const conduit::Node &params,
+                                           conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -4663,12 +4787,12 @@ MaxFromPoint::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-MaxFromPoint::execute()
+ExprMeshBinningMaxFromPoint::execute()
 {
   conduit::Node &in_binning = *input<Node>("binning");
-  conduit::Node &in_axis =  *input<Node>("axis");
-  conduit::Node &in_point =  *input<Node>("point");
-  conduit::Node *output = new conduit::Node();
+  conduit::Node &in_axis    = *input<Node>("axis");
+  conduit::Node &in_point   = *input<Node>("point");
+  conduit::Node *output     = new conduit::Node();
 
   const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
   if(num_axes > 1)
@@ -4733,90 +4857,6 @@ MaxFromPoint::execute()
 
   (*output)["value"] = min_dist;
   (*output)["type"] = "double";
-
-  resolve_symbol_result(graph(), output, this->name());
-  set_output<conduit::Node>(output);
-}
-
-//-----------------------------------------------------------------------------
-Bin::Bin() : Filter()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-Bin::~Bin()
-{
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-Bin::declare_interface(Node &i)
-{
-  i["type_name"] = "bin";
-  i["port_names"].append() = "binning";
-  i["port_names"].append() = "index";
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-Bin::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-Bin::execute()
-{
-  conduit::Node &in_binning = *input<Node>("binning");
-  conduit::Node &in_index =  *input<Node>("index");
-  conduit::Node *output = new conduit::Node();
-
-  const int num_axes = in_binning["attrs/bin_axes"].number_of_children();
-  if(num_axes > 1)
-  {
-    ASCENT_ERROR("bin: only one axis is implemented");
-  }
-
-  int bindex = in_index["value"].to_int32();
-
-  const conduit::Node &axis = in_binning["attrs/bin_axes/value"].child(0);
-  const int num_bins = axis["num_bins"].to_int32();
-
-  if(bindex < 0 || bindex >= num_bins)
-  {
-    ASCENT_ERROR("bin: invalid bin "<<bindex<<"."
-                <<" Number of bins "<<num_bins);
-  }
-
-  const double min_val = axis["min_val"].to_float64();
-  const double max_val = axis["max_val"].to_float64();
-  const double bin_size = (max_val - min_val) / double(num_bins);
-  double *bins = in_binning["attrs/value/value"].value();
-
-  double left = min_val + double(bindex) * bin_size;
-  double right = min_val + double(bindex+1) * bin_size;
-  double center = left + (right-left) / 2.0;
-  double val = bins[bindex];
-
-  (*output)["type"] = "bin";
-
-  (*output)["attrs/value/value"] = val;
-  (*output)["attrs/value/type"] = "double";
-
-  (*output)["attrs/min/value"] = left;
-  (*output)["attrs/min/type"] = "double";
-
-  (*output)["attrs/max/value"] = right;
-  (*output)["attrs/max/type"] = "double";
-
-  (*output)["attrs/center/value"] = center;
-  (*output)["attrs/center/type"] = "double";
 
   resolve_symbol_result(graph(), output, this->name());
   set_output<conduit::Node>(output);
