@@ -427,7 +427,7 @@ initialize_functions()
   //---------------------------------------------------------------------------
   conduit::Node &scalar_gradient_sig = (*functions)["gradient"].append();
   scalar_gradient_sig["return_type"] = "double";
-  scalar_gradient_sig["filter_name"] = "scalar_gradient";
+  scalar_gradient_sig["filter_name"] = "expr_history_gradient";
 
   //scalar_gradient_sig["args/expr_name/type"] = "string";
   scalar_gradient_sig["args/expr_name/type"] = "anytype";
@@ -452,7 +452,7 @@ initialize_functions()
 
   conduit::Node &array_gradient_sig = (*functions)["gradient_range"].append();
   array_gradient_sig["return_type"] = "array";
-  array_gradient_sig["filter_name"] = "gradient_range";
+  array_gradient_sig["filter_name"] = "expr_history_gradient_range";
 
   array_gradient_sig["args/expr_name/type"] = "anytype";
   array_gradient_sig["args/expr_name/description"] =
@@ -553,7 +553,7 @@ initialize_functions()
   //---------------------------------------------------------------------------
   conduit::Node &pow_sig = (*functions)["pow"].append();
   pow_sig["return_type"] = "double";
-  pow_sig["filter_name"] = "exp_scalar_pow";
+  pow_sig["filter_name"] = "expr_scalar_pow";
   pow_sig["args/arg1/type"] = "scalar";
   pow_sig["args/arg2/type"] = "scalar";
   pow_sig["description"] =
@@ -626,7 +626,7 @@ initialize_functions()
   //---------------------------------------------------------------------------
   conduit::Node &array_min_sig = (*functions)["min"].append();
   array_min_sig["return_type"] = "double";
-  array_min_sig["filter_name"] = "expr_array_min";
+  array_min_sig["filter_name"] = "expr_array_reduction_min";
   array_min_sig["args/arg1/type"] = "array";
   array_min_sig["description"] = "Return the minimum of an array.";
 
@@ -655,7 +655,7 @@ initialize_functions()
   //---------------------------------------------------------------------------
   conduit::Node &array_max_sig = (*functions)["max"].append();
   array_max_sig["return_type"] = "double";
-  array_max_sig["filter_name"] = "eexpr_array_reduction_max";
+  array_max_sig["filter_name"] = "expr_array_reduction_max";
   array_max_sig["args/arg1/type"] = "array";
   array_max_sig["description"] = "Return the maximum of an array.";
 
@@ -726,7 +726,7 @@ initialize_functions()
   // -------------------------------------------------------------
   conduit::Node &hist_sig = (*functions)["histogram"].append();
   hist_sig["return_type"] = "histogram";
-  hist_sig["filter_name"] = "histogram";
+  hist_sig["filter_name"] = "expr_histogram";
   hist_sig["args/arg1/type"] = "field";
   // In a flow filter, these become parameters
   hist_sig["args/num_bins/type"] = "int";
@@ -931,7 +931,7 @@ initialize_functions()
   // gets histogram bin by index
   conduit::Node &hist_bin_by_index_sig = (*functions)["bin"].append();
   hist_bin_by_index_sig["return_type"] = "double";
-  hist_bin_by_index_sig["filter_name"] = "expr_hisrogram_bin_by_index";
+  hist_bin_by_index_sig["filter_name"] = "expr_histogram_bin_by_index";
   hist_bin_by_index_sig["args/hist/type"] = "histogram";
   hist_bin_by_index_sig["args/bin/type"] = "int"; // index?
   hist_bin_by_index_sig["description"] =
@@ -1192,67 +1192,71 @@ initialize_functions()
 //
   //---------------------------------------------------------------------------
 
-  // this does not jit but binning_value does
-  conduit::Node &paint_binning_sig = (*functions)["paint_binning"].append();
-  paint_binning_sig["return_type"] = "field";
-  paint_binning_sig["filter_name"] = "paint_binning";
-  paint_binning_sig["args/binning/type"] = "binning";
-  paint_binning_sig["args/binning/description"] =
-      "The values in ``binning`` are used to generate the new field.";
-  paint_binning_sig["args/name/type"] = "string";
-  paint_binning_sig["args/name/optional"];
-  paint_binning_sig["args/name/description"] =
-      "The name of the new field to be generated. If not specified, a name "
-      "is automatically generated and the field is treated as a temporary and "
-      "removed from the dataset when the expression is done executing.";
-  paint_binning_sig["args/default_val/type"] = "scalar";
-  paint_binning_sig["args/default_val/optional"];
-  paint_binning_sig["args/default_val/description"] =
-      "The value given to elements which do not fall into "
-      "any of the bins. Defaults to ``0``.";
-  paint_binning_sig["args/topo/type"] = "topo";
-  paint_binning_sig["args/topo/optional"];
-  paint_binning_sig["args/topo/description"] =
-      " The topology to paint the bin values back onto. Defaults to the "
-      "topology associated with the bin axes. This topology must have "
-      "all the fields used for the axes of ``binning``. It only makes sense "
-      "to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, "
-      "``z``. Additionally, it must be specified in this case since there is "
-      "not enough info to infer the topology assuming there are multiple "
-      "topologies in the dataset.";
-  paint_binning_sig["args/assoc/type"] = "topo";
-  paint_binning_sig["args/assoc/optional"];
-  paint_binning_sig["args/assoc/description"] =
-      "Defaults to the association inferred from the bin axes and and "
-      "reduction variable. The association of the resultant field. This "
-      "topology must have all the fields used for the axes of ``binning``. It "
-      "only makes sense to specify this when the ``bin_axes`` are a subset of "
-      "``x``, ``y``, ``z``.";
-  paint_binning_sig["description"] =
-      "Paints back the bin values onto an existing mesh by binning the "
-      "elements of the mesh and creating a new field there the value at each "
-      "element is the value in the bin it falls into.";
+  // 2023-07-07 CYRUS NOTE
+  // I DON"T THINK paint_binning or binning_mesh exprs are 
+  // fully wired up or tests, I am commenting them out 
 
-  //---------------------------------------------------------------------------
-
-  conduit::Node &binning_mesh_sig = (*functions)["binning_mesh"].append();
-  binning_mesh_sig["return_type"] = "field";
-  binning_mesh_sig["filter_name"] = "binning_mesh";
-  binning_mesh_sig["args/binning/type"] = "binning";
-  binning_mesh_sig["args/binning/description"] =
-      "The values in ``binning`` are used to generate the new field.";
-  binning_mesh_sig["args/name/type"] = "string";
-  binning_mesh_sig["args/name/optional"];
-  binning_mesh_sig["args/name/description"] =
-      "The name of the new field to be generated, the corresponding topology "
-      "topology and coordinate sets will be named '``name``_topo' and "
-      "'``name``_coords' respectively. If not specified, a name is "
-      "automatically generated and the field is treated as a temporary and "
-      "removed from the dataset when the expression is done executing.";
-  binning_mesh_sig["description"] =
-      "A binning with 3 or fewer dimensions will be output as a new element "
-      "associated field on a new topology on the dataset. This is useful for "
-      "directly visualizing the binning.";
+  // // this does not jit but binning_value does
+  // conduit::Node &paint_binning_sig = (*functions)["paint_binning"].append();
+  // paint_binning_sig["return_type"] = "field";
+  // paint_binning_sig["filter_name"] = "paint_binning";
+  // paint_binning_sig["args/binning/type"] = "binning";
+  // paint_binning_sig["args/binning/description"] =
+  //     "The values in ``binning`` are used to generate the new field.";
+  // paint_binning_sig["args/name/type"] = "string";
+  // paint_binning_sig["args/name/optional"];
+  // paint_binning_sig["args/name/description"] =
+  //     "The name of the new field to be generated. If not specified, a name "
+  //     "is automatically generated and the field is treated as a temporary and "
+  //     "removed from the dataset when the expression is done executing.";
+  // paint_binning_sig["args/default_val/type"] = "scalar";
+  // paint_binning_sig["args/default_val/optional"];
+  // paint_binning_sig["args/default_val/description"] =
+  //     "The value given to elements which do not fall into "
+  //     "any of the bins. Defaults to ``0``.";
+  // paint_binning_sig["args/topo/type"] = "topo";
+  // paint_binning_sig["args/topo/optional"];
+  // paint_binning_sig["args/topo/description"] =
+  //     " The topology to paint the bin values back onto. Defaults to the "
+  //     "topology associated with the bin axes. This topology must have "
+  //     "all the fields used for the axes of ``binning``. It only makes sense "
+  //     "to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, "
+  //     "``z``. Additionally, it must be specified in this case since there is "
+  //     "not enough info to infer the topology assuming there are multiple "
+  //     "topologies in the dataset.";
+  // paint_binning_sig["args/assoc/type"] = "topo";
+  // paint_binning_sig["args/assoc/optional"];
+  // paint_binning_sig["args/assoc/description"] =
+  //     "Defaults to the association inferred from the bin axes and and "
+  //     "reduction variable. The association of the resultant field. This "
+  //     "topology must have all the fields used for the axes of ``binning``. It "
+  //     "only makes sense to specify this when the ``bin_axes`` are a subset of "
+  //     "``x``, ``y``, ``z``.";
+  // paint_binning_sig["description"] =
+  //     "Paints back the bin values onto an existing mesh by binning the "
+  //     "elements of the mesh and creating a new field there the value at each "
+  //     "element is the value in the bin it falls into.";
+  //
+  // //---------------------------------------------------------------------------
+  //
+  // conduit::Node &binning_mesh_sig = (*functions)["binning_mesh"].append();
+  // binning_mesh_sig["return_type"] = "field";
+  // binning_mesh_sig["filter_name"] = "binning_mesh";
+  // binning_mesh_sig["args/binning/type"] = "binning";
+  // binning_mesh_sig["args/binning/description"] =
+  //     "The values in ``binning`` are used to generate the new field.";
+  // binning_mesh_sig["args/name/type"] = "string";
+  // binning_mesh_sig["args/name/optional"];
+  // binning_mesh_sig["args/name/description"] =
+  //     "The name of the new field to be generated, the corresponding topology "
+  //     "topology and coordinate sets will be named '``name``_topo' and "
+  //     "'``name``_coords' respectively. If not specified, a name is "
+  //     "automatically generated and the field is treated as a temporary and "
+  //     "removed from the dataset when the expression is done executing.";
+  // binning_mesh_sig["description"] =
+  //     "A binning with 3 or fewer dimensions will be output as a new element "
+  //     "associated field on a new topology on the dataset. This is useful for "
+  //     "directly visualizing the binning.";
 
   //---------------------------------------------------------------------------
   // Jitable Functions

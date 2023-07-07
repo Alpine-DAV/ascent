@@ -814,7 +814,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
         if(!w.graph().has_filter("null_arg"))
         {
           conduit::Node null_params;
-          w.graph().add_filter("null_arg", "null_arg", null_params);
+          w.graph().add_filter("expr_null", "null_arg", null_params);
         }
       }
 
@@ -874,7 +874,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
     if(output_type == "anytype")
     {
       // the history function's return type is the type of its first argument
-      if(func["filter_name"].as_string() == "history")
+      if(func["filter_name"].as_string() == "expr_history")
       {
         output_type = (*args_map["expr_name"])["type"].as_string();
       }
@@ -1278,7 +1278,7 @@ BuildGraphVisitor::visit(const ASTArrayAccess &expr)
     ASCENT_ERROR("Cannot get index of non-array type: " << obj_type);
   }
 
-  w.graph().add_filter("expr_array", name, params);
+  w.graph().add_filter("expr_array_access", name, params);
 
   // src, dest, port
   w.graph().connect(n_array["filter_name"].as_string(), name, "array");

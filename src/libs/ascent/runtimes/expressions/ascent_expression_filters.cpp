@@ -845,7 +845,7 @@ ExprBoolean::~ExprBoolean()
 void
 ExprBoolean::declare_interface(Node &i)
 {
-  i["type_name"] = "expr_boolean";
+  i["type_name"] = "expr_bool";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
 }
@@ -1473,7 +1473,7 @@ ExprScalarMin::~ExprScalarMin()
 void
 ExprScalarMin::declare_interface(Node &i)
 {
-  i["type_name"] = "scalar_min";
+  i["type_name"] = "expr_scalar_min";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["output_port"] = "true";
@@ -1537,7 +1537,7 @@ ExprScalarMax::~ExprScalarMax()
 void
 ExprScalarMax::declare_interface(Node &i)
 {
-  i["type_name"] = "scalar_max";
+  i["type_name"] = "expr_scalar_max";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["output_port"] = "true";
@@ -1770,7 +1770,7 @@ ExprScalarPow::~ExprScalarPow()
 void
 ExprScalarPow::declare_interface(Node &i)
 {
-  i["type_name"] = "pow";
+  i["type_name"] = "expr_scalar_pow";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["output_port"] = "true";
@@ -1834,7 +1834,7 @@ ExprVector::~ExprVector()
 void
 ExprVector::declare_interface(Node &i)
 {
-  i["type_name"] = "vector";
+  i["type_name"] = "expr_vector";
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["port_names"].append() = "arg3";
@@ -3235,7 +3235,7 @@ ExprHistogramBinByValue::~ExprHistogramBinByValue()
 void
 ExprHistogramBinByValue::declare_interface(Node &i)
 {
-  i["type_name"] = "exp_histogram_bin_by_value";
+  i["type_name"] = "expr_histogram_bin_by_value";
   i["port_names"].append() = "hist";
   i["port_names"].append() = "val";
   i["output_port"] = "true";
