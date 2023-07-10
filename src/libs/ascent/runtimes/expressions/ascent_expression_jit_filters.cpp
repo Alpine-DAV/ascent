@@ -213,7 +213,7 @@ JitFilter::execute()
         Jitable &jitable = new_jitables.back();
         input_jitables.push_back(&jitable);
 
-        if(type == "topo")
+        if(type == "topology")
         {
           // topo is special because it can build different kernels for each
           // domain (kernel types)

@@ -964,7 +964,7 @@ initialize_functions()
   // topo()
   //---------------------------------------------------------------------------
   conduit::Node &topo_sig = (*functions)["topo"].append();
-  topo_sig["return_type"] = "topo";
+  topo_sig["return_type"] = "topology";
   topo_sig["filter_name"] = "expr_mesh_topology";
   topo_sig["args/arg1/type"] = "string";
   topo_sig["description"] = "Return a mesh topology given a its name.";
@@ -973,7 +973,7 @@ initialize_functions()
   // topology()
   //---------------------------------------------------------------------------
   conduit::Node &topology_sig = (*functions)["topology"].append();
-  topo_sig["return_type"] = "topo";
+  topo_sig["return_type"] = "topology";
   topo_sig["filter_name"] = "expr_mesh_topology";
   topo_sig["args/arg1/type"] = "string";
   topo_sig["description"] = "Return a mesh topology given a its name.";
@@ -1170,7 +1170,7 @@ initialize_functions()
 //      "List of Axis objects which define the bin axes.";
 //  binning_sig2["args/empty_val/type"] = "scalar";
 //  binning_sig2["args/empty_val/optional"];
-//  binning_sig2["args/topo/type"] = "topo";
+//  binning_sig2["args/topo/type"] = "topology";
 //  binning_sig2["args/topo/optional"];
 //  binning_sig2["args/topo/description"] =
 //      "The topology to bin. Defaults to the "
@@ -1214,7 +1214,7 @@ initialize_functions()
   // paint_binning_sig["args/default_val/description"] =
   //     "The value given to elements which do not fall into "
   //     "any of the bins. Defaults to ``0``.";
-  // paint_binning_sig["args/topo/type"] = "topo";
+  // paint_binning_sig["args/topo/type"] = "topology";
   // paint_binning_sig["args/topo/optional"];
   // paint_binning_sig["args/topo/description"] =
   //     " The topology to paint the bin values back onto. Defaults to the "
@@ -1224,7 +1224,7 @@ initialize_functions()
   //     "``z``. Additionally, it must be specified in this case since there is "
   //     "not enough info to infer the topology assuming there are multiple "
   //     "topologies in the dataset.";
-  // paint_binning_sig["args/assoc/type"] = "topo";
+  // paint_binning_sig["args/assoc/type"] = "topology";
   // paint_binning_sig["args/assoc/optional"];
   // paint_binning_sig["args/assoc/description"] =
   //     "Defaults to the association inferred from the bin axes and and "
@@ -1418,7 +1418,7 @@ initialize_functions()
   binning_value_sig["args/default_val/description"] =
       "The value given to elements which do not fall into "
       "any of the bins. Defaults to ``0``.";
-  binning_value_sig["args/topo/type"] = "topo";
+  binning_value_sig["args/topo/type"] = "topology";
   binning_value_sig["args/topo/optional"];
   binning_value_sig["args/topo/description"] =
       "The topology to bin. Defaults to the "
@@ -1426,7 +1426,7 @@ initialize_functions()
       "all the fields used for the axes of ``binning``. It only makes sense "
       "to specify this when the ``bin_axes`` are a subset of ``x``, ``y``, "
       "``z``.";
-  binning_value_sig["args/assoc/type"] = "topo";
+  binning_value_sig["args/assoc/type"] = "topology";
   binning_value_sig["args/assoc/optional"];
   binning_value_sig["args/assoc/description"] =
       "The association of the resultant field. Defaults to the association "
@@ -1483,7 +1483,7 @@ initialize_objects()
   value_position["value/type"] = "double";
   value_position["position/type"] = "vector";
 
-  conduit::Node &topo = (*objects)["topo/attrs"];
+  conduit::Node &topo = (*objects)["topology/attrs"];
   topo["cell/type"] = "cell";
   topo["cell/description"] = "Holds ``jitable`` cell attributes.";
   topo["vertex/type"] = "vertex";
