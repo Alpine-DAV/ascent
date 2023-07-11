@@ -973,10 +973,10 @@ initialize_functions()
   // topology()
   //---------------------------------------------------------------------------
   conduit::Node &topology_sig = (*functions)["topology"].append();
-  topo_sig["return_type"] = "topology";
-  topo_sig["filter_name"] = "expr_mesh_topology";
-  topo_sig["args/arg1/type"] = "string";
-  topo_sig["description"] = "Return a mesh topology given a its name.";
+  topology_sig["return_type"] = "topology";
+  topology_sig["filter_name"] = "expr_mesh_topology";
+  topology_sig["args/arg1/type"] = "string";
+  topology_sig["description"] = "Return a mesh topology given a its name.";
 
   //---------------------------------------------------------------------------
   // bounds()
