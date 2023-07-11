@@ -377,7 +377,7 @@ JitableFusion::expr_dot()
                                                 << "' of field at runtime.");
     }
   }
-  else if(obj["type"].as_string() == "topo")
+  else if(obj["type"].as_string() == "topology")
   {
     // needs to run for every domain not just every kernel type to
     // populate entries
