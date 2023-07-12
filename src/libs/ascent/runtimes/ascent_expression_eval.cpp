@@ -418,7 +418,7 @@ initialize_functions()
   // things will happen (get a syntax error or something).
   conduit::Node &field_gradient_sig = (*functions)["gradient"].append();
   field_gradient_sig["return_type"] = "jitable";
-  field_gradient_sig["filter_name"] = "gradient";
+  field_gradient_sig["filter_name"] = "expr_jit_mesh_field_gradient";
   field_gradient_sig["args/field/type"] = "field";
   field_gradient_sig["description"] =
       "Return a derived field that is the gradient of a field.";
@@ -447,6 +447,13 @@ initialize_functions()
     Defaults to ``index`` (the window_length is in number of expression execution points).";
 
   scalar_gradient_sig["description"] = "Return the temporal gradient of the given expression for the current point in time.";
+
+  // -------------------------------------------------------------
+  // NOTE: 2023-07-13 CYRUS
+  // `history_gradient` is a new user facing name for what was `gradient` applied to history
+  conduit::Node &hist_gradient_sig = (*functions)["history_gradient"].append();
+  // same sig as old "gradient_range"
+  hist_gradient_sig.set(scalar_gradient_sig);
 
   // -------------------------------------------------------------
 
@@ -528,6 +535,11 @@ initialize_functions()
   first_relative_index and last_relative_index, 3). first_absolute_time and last_absolute_time, or 4). first_absolute_cycle and last_absolute_cycle.";
 
   // -------------------------------------------------------------
+  // NOTE: 2023-07-13 CYRUS
+  // `history_gradient_range` is a new user facing name for what was `gradient_range` applied to history
+  conduit::Node &hist_gradient_range_sig = (*functions)["history_gradient_range"].append();
+  // same sig as old "gradient_range"
+  hist_gradient_range_sig.set(array_gradient_sig);
 
 
   //---------------------------------------------------------------------------
@@ -1266,20 +1278,11 @@ initialize_functions()
   // filter_name is passed to JitFilter so that it can determine which function
   // to execute
 
-  conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
-  field_scalar_max_sig["return_type"] = "jitable";
-  field_scalar_max_sig["filter_name"] = "field_field_max";
-  field_scalar_max_sig["args/arg1/type"] = "field";
-  field_scalar_max_sig["args/arg2/type"] = "scalar"; // should this be field?
-  field_scalar_max_sig["description"] =
-      "Return a derived field that is the max of two fields.";
-  field_scalar_max_sig["jitable"];
-
   //---------------------------------------------------------------------------
 
   conduit::Node &field_field_min_sig = (*functions)["min"].append();
   field_field_min_sig["return_type"] = "jitable";
-  field_field_min_sig["filter_name"] = "field_field_min";
+  field_field_min_sig["filter_name"] = "expr_jit_mesh_field_min";
   field_field_min_sig["args/arg1/type"] = "field";
   field_field_min_sig["args/arg2/type"] = "field";
   field_field_min_sig["description"] =
@@ -1287,10 +1290,22 @@ initialize_functions()
   field_field_min_sig["jitable"];
 
   //---------------------------------------------------------------------------
+  
+  conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
+  field_scalar_max_sig["return_type"] = "jitable";
+  field_scalar_max_sig["filter_name"] = "expr_jit_mesh_field_max";
+  field_scalar_max_sig["args/arg1/type"] = "field";
+  field_scalar_max_sig["args/arg2/type"] = "field";
+  field_scalar_max_sig["description"] =
+      "Return a derived field that is the max of two fields.";
+  field_scalar_max_sig["jitable"];
+
+
+  //---------------------------------------------------------------------------
 
   conduit::Node &field_sin_sig = (*functions)["sin"].append();
   field_sin_sig["return_type"] = "jitable";
-  field_sin_sig["filter_name"] = "field_sin";
+  field_sin_sig["filter_name"] = "expr_jit_mesh_field_sin";
   field_sin_sig["args/arg1/type"] = "field";
   field_sin_sig["description"] =
       "Return a derived field that is the sin of a field.";
@@ -1300,18 +1315,18 @@ initialize_functions()
 
   conduit::Node &field_pow_sig = (*functions)["pow"].append();
   field_pow_sig["return_type"] = "jitable";
-  field_pow_sig["filter_name"] = "field_pow";
+  field_pow_sig["filter_name"] = "expr_jit_mesh_field_pow";
   field_pow_sig["args/arg1/type"] = "field";
   field_pow_sig["args/arg1/type"] = "scalar";
   field_pow_sig["description"] =
-      "Return a derived field that is the pow(field,exponent) of a field.";
+      "Return a derived field that is the pow(field, exponent) of a field.";
   field_pow_sig["jitable"];
 
   //---------------------------------------------------------------------------
 
   conduit::Node &field_abs_sig = (*functions)["abs"].append();
   field_abs_sig["return_type"] = "jitable";
-  field_abs_sig["filter_name"] = "field_abs";
+  field_abs_sig["filter_name"] = "expr_jit_mesh_field_abs";
   field_abs_sig["args/arg1/type"] = "field";
   field_abs_sig["description"] =
       "Return a derived field that is the absolute value of a field.";
@@ -1321,7 +1336,7 @@ initialize_functions()
 
   conduit::Node &field_sqrt_sig = (*functions)["sqrt"].append();
   field_sqrt_sig["return_type"] = "jitable";
-  field_sqrt_sig["filter_name"] = "field_sqrt";
+  field_sqrt_sig["filter_name"] = "expr_jit_mesh_field_sqrt";
   field_sqrt_sig["args/arg1/type"] = "field";
   field_sqrt_sig["description"] =
       "Return a derived field that is the square root value of a field.";
@@ -1332,7 +1347,7 @@ initialize_functions()
 
   conduit::Node &field_curl_sig = (*functions)["curl"].append();
   field_curl_sig["return_type"] = "jitable";
-  field_curl_sig["filter_name"] = "curl";
+  field_curl_sig["filter_name"] = "expr_jit_mesh_field_curl";
   field_curl_sig["args/field/type"] = "field";
   field_curl_sig["description"] =
       "Return a derived field that is the curl of a vector field.";
@@ -1342,7 +1357,7 @@ initialize_functions()
 
   conduit::Node &field_magnitude_sig = (*functions)["magnitude"].append();
   field_magnitude_sig["return_type"] = "jitable";
-  field_magnitude_sig["filter_name"] = "magnitude";
+  field_magnitude_sig["filter_name"] = "expr_jit_mesh_field_vector_magnitude";
   field_magnitude_sig["args/vector/type"] = "field";
   field_magnitude_sig["description"] =
       "Return a derived field that is the magnitude of a vector field.";
@@ -1352,7 +1367,7 @@ initialize_functions()
 
   conduit::Node &field_vector = (*functions)["vector"].append();
   field_vector["return_type"] = "jitable";
-  field_vector["filter_name"] = "vector";
+  field_vector["filter_name"] = "expr_jit_mesh_field_vector_compose";
   field_vector["args/arg1/type"] = "field";
   field_vector["args/arg2/type"] = "field";
   field_vector["args/arg3/type"] = "field";
@@ -1360,56 +1375,79 @@ initialize_functions()
   field_vector["jitable"];
 
   //---------------------------------------------------------------------------
-
-  conduit::Node &derived_field = (*functions)["derived_field"].append();
-  derived_field["return_type"] = "jitable";
-  derived_field["filter_name"] = "derived_field";
-  derived_field["args/arg1/type"] = "scalar";
-  derived_field["args/arg1/description"] =
-      "The scalar to be cast to a derived field.";
-  derived_field["args/topo/type"] = "string";
-  derived_field["args/topo/optional"];
-  derived_field["args/topo/description"] =
-      "The topology to put the derived field onto. The language tries to infer "
+  // NOTE:  2023-07-12 cyrush:
+  // changed `derived_field` to `constant_field`
+  conduit::Node &const_field = (*functions)["constant_field"].append();
+  const_field["return_type"] = "jitable";
+  const_field["filter_name"] = "expr_jit_mesh_field_constant";
+  const_field["args/arg1/type"] = "scalar";
+  const_field["args/arg1/description"] =
+      "The scalar to be cast to a constant mesh field.";
+  const_field["args/topo/type"] = "string";
+  const_field["args/topo/optional"];
+  const_field["args/topo/description"] =
+      "The topology to put the field onto. The language tries to infer "
       "this if not specified.";
-  derived_field["args/assoc/type"] = "string";
-  derived_field["args/assoc/optional"];
-  derived_field["args/assoc/description"] =
-      "The association of the derived field. The language tries to infer "
+  const_field["args/assoc/type"] = "string";
+  const_field["args/assoc/optional"];
+  const_field["args/assoc/description"] =
+      "The association of the field. The language tries to infer "
       "this if not specified.";
-  derived_field["description"] =
-      "Cast a scalar to a derived field (type `jitable`).";
-  derived_field["jitable"];
+  const_field["description"] =
+      "Cast a scalar to a constant mesh field (type `jitable`).";
+  const_field["jitable"];
 
   //---------------------------------------------------------------------------
-
-  conduit::Node &derived_field2 = (*functions)["derived_field"].append();
-  derived_field2["return_type"] = "jitable";
-  derived_field2["filter_name"] = "derived_field";
-  derived_field2["args/arg1/type"] = "field"; // ?
-  derived_field2["args/arg1/description"] =
-      "The scalar to be cast to a derived field.";
-  derived_field2["args/topo/type"] = "string";
-  derived_field2["args/topo/optional"];
-  derived_field2["args/topo/description"] =
-      "The topology to put the derived field onto. The language tries to infer "
+  // NOTE:  2023-07-12 cyrush:
+  // changed `derived_field` to `constant_field`
+  conduit::Node &const_field2 = (*functions)["constant_field"].append();
+  const_field2["return_type"] = "jitable";
+  const_field2["filter_name"] = "expr_jit_mesh_field_constant";
+  const_field2["args/arg1/type"] = "field";
+  const_field2["args/arg1/description"] =
+      "The scalar to be cast to a constant mesh field.";
+  const_field2["args/topo/type"] = "string";
+  const_field2["args/topo/optional"];
+  const_field2["args/topo/description"] =
+      "The topology to put the field onto. The language tries to infer "
       "this if not specified.";
-  derived_field2["args/assoc/type"] = "string";
-  derived_field2["args/assoc/optional"];
-  derived_field2["args/assoc/description"] =
-      "The association of the derived field. The language tries to infer "
+  const_field2["args/assoc/type"] = "string";
+  const_field2["args/assoc/optional"];
+  const_field2["args/assoc/description"] =
+      "The association of the field. The language tries to infer "
       "this if not specified.";
-  derived_field2["description"] =
-      "Used to explicitly specify the topology and association of a derived "
+  const_field2["description"] =
+      "Used to explicitly specify the topology and association of a constant "
       "field (e.g. in case it cannot be inferred or needs to be changed).";
-  derived_field2["jitable"];
+  const_field2["jitable"];
+
+  //---------------------------------------------------------------------------
+  conduit::Node &recenter_sig = (*functions)["recenter"].append();
+  recenter_sig["return_type"] = "jitable";
+  recenter_sig["filter_name"] = "expr_jit_mesh_field_recenter";
+  recenter_sig["args/field/type"] = "field";
+  recenter_sig["args/mode/type"] = "string";
+  recenter_sig["args/mode/optional"] = "string";
+  recenter_sig["args/mode/description"] =
+      "One of ``'toggle', 'vertex', 'element'``. Defaults to ``'toggle'``.";
+  recenter_sig["description"] = "Recenter a field from vertex association to "
+                                "element association or vice versa.";
+  recenter_sig["jitable"];
+
+  //---------------------------------------------------------------------------
+  conduit::Node &rand_sig = (*functions)["rand"].append();
+  rand_sig["return_type"] = "jitable";
+  rand_sig["filter_name"] = "expr_jit_rand";
+  rand_sig["description"] = "Return a random number between 0 and 1.";
+  rand_sig["jitable"];
+
 
   //---------------------------------------------------------------------------
 
   // essentially the jit version of paint_binning
   conduit::Node &binning_value_sig = (*functions)["binning_value"].append();
   binning_value_sig["return_type"] = "jitable";
-  binning_value_sig["filter_name"] = "binning_value";
+  binning_value_sig["filter_name"] = "expr_jit_mesh_binning_value"; // still not a great name
   binning_value_sig["args/binning/type"] = "binning";
   binning_value_sig["args/binning/description"] =
       "The ``binning`` to lookup values in.";
@@ -1438,27 +1476,6 @@ initialize_functions()
       "bin the cell and return the value found in that bin of ``binning``.";
   binning_value_sig["jitable"];
 
-  //---------------------------------------------------------------------------
-
-  conduit::Node &rand_sig = (*functions)["rand"].append();
-  rand_sig["return_type"] = "jitable";
-  rand_sig["filter_name"] = "rand";
-  rand_sig["description"] = "Return a random number between 0 and 1.";
-  rand_sig["jitable"];
-
-  //---------------------------------------------------------------------------
-
-  conduit::Node &recenter_sig = (*functions)["recenter"].append();
-  recenter_sig["return_type"] = "jitable";
-  recenter_sig["filter_name"] = "recenter";
-  recenter_sig["args/field/type"] = "field";
-  recenter_sig["args/mode/type"] = "string";
-  recenter_sig["args/mode/optional"] = "string";
-  recenter_sig["args/mode/description"] =
-      "One of ``'toggle', 'vertex', 'element'``. Defaults to ``'toggle'``.";
-  recenter_sig["description"] = "Recenter a field from vertex association to "
-                                "element association or vice versa.";
-  recenter_sig["jitable"];
   //---------------------------------------------------------------------------
 
   count_params();
