@@ -712,7 +712,7 @@ public:
   JitFilterFactoryFunctor(const std::string &filter_type_name)
   {
     // gen generic jit filter with # inputs and exec polic
-    return new JitFilter(m_num_inputs, m_exec_policy);
+    return new ExprJitFilter(m_num_inputs, m_exec_policy);
   }
 
 private:
@@ -722,8 +722,8 @@ private:
 
 //-----------------------------------------------------------------------------
 // declare ExprJitFilterFactoryFunctor static members
-int JitFilterFactoryFunctor::m_num_inputs;
-std::shared_ptr<const JitExecutionPolicy> JitFilterFactoryFunctor::m_exec_policy;
+int ExprJitFilterFactoryFunctor::m_num_inputs;
+std::shared_ptr<const JitExecutionPolicy> ExprJitFilterFactoryFunctor::m_exec_policy;
 
 
 //-----------------------------------------------------------------------------
