@@ -403,7 +403,7 @@ BuildGraphVisitor::visit(const ASTExpression &expr)
   {
     conduit::Node placeholder_params;
     placeholder_params["value"] = true;
-    w.graph().add_filter("expr_bool"
+    w.graph().add_filter("expr_bool",
                          "expr_binary_op_placeholder",
                          placeholder_params);
   }
