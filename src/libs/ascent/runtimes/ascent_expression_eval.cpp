@@ -1279,30 +1279,50 @@ initialize_functions()
   // to execute
 
   //---------------------------------------------------------------------------
-
+  // min(field, scalar)
   conduit::Node &field_field_min_sig = (*functions)["min"].append();
   field_field_min_sig["return_type"] = "jitable";
   field_field_min_sig["filter_name"] = "expr_jit_mesh_field_min";
   field_field_min_sig["args/arg1/type"] = "field";
-  field_field_min_sig["args/arg2/type"] = "field";
+  field_field_min_sig["args/arg2/type"] = "scalar";
   field_field_min_sig["description"] =
-      "Return a derived field that is the min of two fields.";
-  field_field_min_sig["jitable"];
+      "Return a derived field that is the min of a field and a scalar.";
 
   //---------------------------------------------------------------------------
-  
+  // min(field, field)
+  field_field_min_sig["jitable"];
+  conduit::Node &field_scalar_min_sig = (*functions)["min"].append();
+  field_scalar_min_sig["return_type"] = "jitable";
+  field_scalar_min_sig["filter_name"] = "expr_jit_mesh_field_min";
+  field_scalar_min_sig["args/arg1/type"] = "field";
+  field_scalar_min_sig["args/arg2/type"] = "field";
+  field_scalar_min_sig["description"] =
+      "Return a derived field that is the min of two fields.";
+  field_scalar_min_sig["jitable"];
+
+  //---------------------------------------------------------------------------
+  // max(field, scalar)
   conduit::Node &field_scalar_max_sig = (*functions)["max"].append();
   field_scalar_max_sig["return_type"] = "jitable";
   field_scalar_max_sig["filter_name"] = "expr_jit_mesh_field_max";
   field_scalar_max_sig["args/arg1/type"] = "field";
-  field_scalar_max_sig["args/arg2/type"] = "field";
+  field_scalar_max_sig["args/arg2/type"] = "scalar";
   field_scalar_max_sig["description"] =
-      "Return a derived field that is the max of two fields.";
+      "Return a derived field that is the max of a field and a scalar.";
   field_scalar_max_sig["jitable"];
 
+  //---------------------------------------------------------------------------
+  // max(field, field)
+  conduit::Node &field_file_max_sig = (*functions)["max"].append();
+  field_field_max_sig["return_type"] = "jitable";
+  field_field_max_sig["filter_name"] = "expr_jit_mesh_field_max";
+  field_field_max_sig["args/arg1/type"] = "field";
+  field_field_max_sig["args/arg2/type"] = "field";
+  field_field_max_sig["description"] =
+      "Return a derived field that is the max of two fields.";
+  field_file_max_sig["jitable"];
 
   //---------------------------------------------------------------------------
-
   conduit::Node &field_sin_sig = (*functions)["sin"].append();
   field_sin_sig["return_type"] = "jitable";
   field_sin_sig["filter_name"] = "expr_jit_mesh_field_sin";
