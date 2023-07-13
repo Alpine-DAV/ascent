@@ -33,7 +33,7 @@ using namespace ascent;
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_relay, test_relay)
+TEST(ascent_relay, test_relay_hdf5)
 {
     Node n;
     ascent::about(n);
@@ -158,6 +158,103 @@ TEST(ascent_relay, test_relay_hdf5_2)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_hdf5_opts)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::basic("uniform",
+                                              101,
+                                              11,
+                                              11,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // zeros should compress well, so blank out the values
+    float64_array vals = data["fields/field/values"].value();
+    vals.fill(0);
+
+    ASCENT_INFO("Testing relay extract in serial with hdf5 opts");
+
+    string output_path = prepare_output_dir();
+
+    string output_file_pre = conduit::utils::join_file_path(output_path,"tout_relay_hdf5_opts_000");
+    string output_root_pre = output_file_pre + ".cycle_000100.root";
+
+    string output_file_opts = conduit::utils::join_file_path(output_path,"tout_relay_hdf5_opts_001");
+    string output_root_opts = output_file_opts + ".cycle_000100.root";
+
+    string output_file_post = conduit::utils::join_file_path(output_path,"tout_relay_hdf5_opts_002");
+    string output_root_post = output_file_post + ".cycle_000100.root";
+
+
+    // remove old files before executing
+    remove_test_image(output_root_pre);
+    remove_test_image(output_root_opts);
+    remove_test_image(output_root_post);
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    Node &extracts = add_extracts["extracts"];
+
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = output_file_pre;
+    extracts["e1/params/protocol"] = "hdf5";
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+
+    // run again with hdf5 options that will trigger
+    // compression for the known inputs in this tests
+    extracts["e1/params/path"] = output_file_opts;
+    extracts["e1/params/hdf5_options/chunking/enabled"]  = "true";
+    extracts["e1/params/hdf5_options/chunking/threshold"]  = 80000-1;
+    extracts["e1/params/hdf5_options/chunking/chunk_size"] = 80000;
+    extracts["e1/params/hdf5_options/chunking/compression/level"] = 9;
+
+    ascent.execute(actions);
+
+    // back to default
+    extracts["e1/params/path"] = output_file_post;
+    extracts.remove("e1/params/hdf5_options");
+
+    ascent.execute(actions);
+
+    ascent.close();
+
+    index_t fsize_pre  = conduit::utils::file_size(output_root_pre);
+    index_t fsize_opts = conduit::utils::file_size(output_root_opts);
+    index_t fsize_post = conduit::utils::file_size(output_root_post);
+    // pre and post should be the same
+    EXPECT_EQ(fsize_pre,fsize_post);
+
+    // all we can predict right now about pre vs opts, is they
+    // won't be the same
+    EXPECT_FALSE(fsize_pre == fsize_opts);
+
+    std::cout << "pre  " << output_root_pre << std::endl;
+    std::cout << "opts " << output_root_pre << std::endl;
+    std::cout << "post " << output_root_pre << std::endl;
+
+    std::cout << "pre  size: " << fsize_pre  << std::endl;
+    std::cout << "opts size: " << fsize_opts << std::endl;
+    std::cout << "post size: " << fsize_post << std::endl;
+
+}//
 
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, test_relay_json)
@@ -787,7 +884,7 @@ TEST(ascent_relay, test_relay_sparse_topos)
 
     Node data;
     ostringstream oss;
-    
+
     // three domains with different topos
     for(index_t d =0; d<4; d++)
     {
@@ -821,7 +918,7 @@ TEST(ascent_relay, test_relay_sparse_topos)
         // reference the coordinate set by name
         mesh["topologies"][t_name]["coordset"] = c_name;
 
-        // add a simple element-associated field 
+        // add a simple element-associated field
         mesh["fields"][f_name]["association"] =  "element";
         // reference the topology this field is defined on by name
         mesh["fields"][f_name]["topology"] =  t_name;
@@ -835,7 +932,7 @@ TEST(ascent_relay, test_relay_sparse_topos)
             ele_vals_ptr[i] = float64(d);
         }
     }
-    
+
     data.print();
 
     Node verify_info;
@@ -879,14 +976,12 @@ TEST(ascent_relay, test_relay_sparse_topos)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
-    
-    
+
+
     Node n_root;
     conduit::relay::io::load(output_file + ".cycle_000000.root","hdf5",n_root);
     n_root.print();
 }
-
-
 
 
 //-----------------------------------------------------------------------------

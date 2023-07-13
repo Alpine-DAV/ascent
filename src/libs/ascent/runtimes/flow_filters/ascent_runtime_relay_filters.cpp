@@ -23,6 +23,7 @@
 #include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mesh.hpp>
 #include <conduit_relay_io_blueprint.hpp>
+#include <conduit_relay_io_hdf5.hpp>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -298,7 +299,6 @@ verify_io_params(const conduit::Node &params,
         res = false;
     }
 
-
     if( params.has_child("protocol") )
     {
         if(!params["protocol"].dtype().is_string())
@@ -330,6 +330,77 @@ verify_io_params(const conduit::Node &params,
         }
     }
 
+    if( params.has_child("hdf5_options") )
+    {
+        //
+        // HDF5 OPTIONS Example:
+        //
+        // compact_storage:
+        //   enabled: "true"
+        //   threshold: 1024
+        // chunking:
+        //   enabled: "true"
+        //   threshold: 2000000
+        //   chunk_size: 1000000
+        //   compression:
+        //     method: "gzip"
+        //     level: 5
+        
+        
+        const Node &params_hdf5_opts = params["hdf5_options"];
+
+        res &= check_object("compact_storage",
+                            params_hdf5_opts,
+                            info,
+                            false);
+
+        res &= check_bool("compact_storage/enabled",
+                            params_hdf5_opts,
+                            info,
+                            false);
+
+        res &= check_numeric("compact_storage/threshold",
+                             params_hdf5_opts,
+                             info,
+                             false);
+
+        res &= check_object("chunking",
+                            params_hdf5_opts,
+                            info,
+                            false);
+
+        res &= check_bool("chunking/enabled",
+                          params_hdf5_opts,
+                          info,
+                          false);
+
+
+        res &= check_numeric("chunking/threshold",
+                             params_hdf5_opts,
+                             info,
+                             false);
+
+        res &= check_numeric("chunking/chunk_size",
+                             params_hdf5_opts,
+                             info,
+                             false);
+
+        res &= check_object("chunking/compression",
+                            params_hdf5_opts,
+                            info,
+                            false);
+
+        res &= check_string("chunking/compression/method",
+                            params_hdf5_opts,
+                            info,
+                            false);
+
+        res &= check_numeric("compact_storage/level",
+                             params_hdf5_opts,
+                             info,
+                             false);
+    }
+
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
     valid_paths.push_back("path");
@@ -337,6 +408,7 @@ verify_io_params(const conduit::Node &params,
     valid_paths.push_back("fields");
     valid_paths.push_back("num_files");
     ignore_paths.push_back("fields");
+    ignore_paths.push_back("hdf5_options");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -355,6 +427,7 @@ void mesh_blueprint_save(const Node &data,
                          const std::string &path,
                          const std::string &file_protocol,
                          int num_files,
+                         const Node &extra_opts,
                          std::string &root_file_out)
 {
     bool has_data = blueprint::mesh::number_of_domains(data) > 0;
@@ -369,7 +442,23 @@ void mesh_blueprint_save(const Node &data,
     // setup our options
     Node opts;
     opts["number_of_files"] = num_files;
+    bool using_hdf5_opts = (file_protocol == "hdf5" &&
+                            extra_opts.number_of_children() > 0);
+    Node hdf5_opts_orig;
+    if(using_hdf5_opts)
+    {
+        // push / pop hdf5 io settings
+        Node relay_io_about;
+        conduit::relay::io::about(relay_io_about);
+        hdf5_opts_orig = relay_io_about["options/hdf5"];
 
+        // copy
+        Node hdf5_opts_orig_curr(hdf5_opts_orig);
+        // override
+        hdf5_opts_orig_curr.update(extra_opts);
+        // set
+        conduit::relay::io::hdf5_set_options(hdf5_opts_orig_curr);
+    }
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     conduit::relay::mpi::io::blueprint::save_mesh(data,
@@ -384,6 +473,11 @@ void mesh_blueprint_save(const Node &data,
                                              opts);
 #endif
 
+    if(using_hdf5_opts)
+    {
+        // pop hdf5 io settings
+        conduit::relay::io::hdf5_set_options(hdf5_opts_orig);
+    }
     return;
 
 }
@@ -511,6 +605,13 @@ RelayIOSave::execute()
     {
         num_files = params()["num_files"].to_int();
     }
+    
+    Node extra_opts;
+
+    if(params().has_path("hdf5_options"))
+    {
+        extra_opts = params()["hdf5_options"];
+    }
 
     std::string result_path;
     if(protocol.empty())
@@ -524,6 +625,7 @@ RelayIOSave::execute()
                             path,
                             "hdf5",
                             num_files,
+                            extra_opts,
                             result_path);
     }
     else if( protocol == "blueprint/mesh/json" || protocol == "json")
@@ -532,6 +634,7 @@ RelayIOSave::execute()
                             path,
                             "json",
                             num_files,
+                            extra_opts,
                             result_path);
 
     }
@@ -541,6 +644,7 @@ RelayIOSave::execute()
                             path,
                             "yaml",
                             num_files,
+                            extra_opts,
                             result_path);
 
     }
