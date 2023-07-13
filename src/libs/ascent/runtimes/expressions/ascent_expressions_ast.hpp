@@ -4,8 +4,8 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef ASCENT_RUNTIME_AST
-#define ASCENT_RUNTIME_AST
+#ifndef ASCENT_RUNTIME_EXPRESSIONS_AST
+#define ASCENT_RUNTIME_EXPRESSIONS_AST
 
 #include "ascent_derived_jit.hpp"
 #include "flow_workspace.hpp"

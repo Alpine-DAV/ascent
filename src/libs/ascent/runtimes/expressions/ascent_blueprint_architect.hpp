@@ -94,7 +94,7 @@ conduit::Node global_bounds(const conduit::Node &dataset,
 //
 // NOTE: ascent_data_binning contains a RAJA version
 // of binning that needs more work, but should eventually
-// supercede these versions
+// supersede these versions
 // 
 
 ASCENT_API

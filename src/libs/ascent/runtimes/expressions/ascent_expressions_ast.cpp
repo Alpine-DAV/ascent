@@ -23,11 +23,7 @@
 namespace detail
 {
 
-void cast_to_value()
-{
-
-}
-
+//-----------------------------------------------------------------------------
 std::string
 strip_single_quotes(const std::string str)
 {
@@ -41,6 +37,7 @@ strip_single_quotes(const std::string str)
   return stripped;
 }
 
+//-----------------------------------------------------------------------------
 std::string
 print_match_error(const std::string &fname,
                   const std::vector<conduit::Node> &pos_arg_nodes,
@@ -122,7 +119,7 @@ is_field_type(const std::string &type)
 } // namespace detail
 
 //-----------------------------------------------------------------------------
-// -- Accept Methods
+// -- Accept Methods --
 //-----------------------------------------------------------------------------
 //{{{
 void
@@ -402,13 +399,15 @@ void
 BuildGraphVisitor::visit(const ASTExpression &expr)
 {
   // placeholder to make binary op work with "not"
-  if(!w.graph().has_filter("bop_placeholder"))
+  if(!w.graph().has_filter("expr_binary_op_placeholder"))
   {
     conduit::Node placeholder_params;
     placeholder_params["value"] = true;
-    w.graph().add_filter("expr_bool", "bop_placeholder", placeholder_params);
+    w.graph().add_filter("expr_bool"
+                         "expr_binary_op_placeholder",
+                         placeholder_params);
   }
-  output["filter_name"] = "bop_placeholder";
+  output["filter_name"] = "expr_binary_op_placeholder";
   output["type"] = "bool";
 }
 
@@ -418,7 +417,7 @@ BuildGraphVisitor::visit(const ASTInteger &expr)
 {
   // create a unique name for each ast leaf so we can reuse subexpressions
   std::stringstream ss;
-  ss << "integer_" << expr.m_value;
+  ss << "expr_integer_" << expr.m_value;
   const std::string verbose_name = ss.str();
   if(subexpr_cache.has_path(verbose_name))
   {
@@ -434,7 +433,7 @@ BuildGraphVisitor::visit(const ASTInteger &expr)
   else
   {
     std::stringstream ss;
-    ss << "integer_" << ast_counter++;
+    ss << "expr_integer_" << ast_counter++;
     name = ss.str();
   }
 
@@ -453,7 +452,7 @@ BuildGraphVisitor::visit(const ASTDouble &expr)
 {
   // create a unique name for each ast leaf so we can reuse subexpressions
   std::stringstream ss;
-  ss << "double_" << expr.m_value;
+  ss << "expr_double_" << expr.m_value;
   const std::string verbose_name = ss.str();
   if(subexpr_cache.has_path(verbose_name))
   {
@@ -469,7 +468,7 @@ BuildGraphVisitor::visit(const ASTDouble &expr)
   else
   {
     std::stringstream ss;
-    ss << "double_" << ast_counter++;
+    ss << "expr_double_" << ast_counter++;
     name = ss.str();
   }
 
@@ -496,7 +495,7 @@ BuildGraphVisitor::visit(const ASTIdentifier &expr)
 
   // look in the cache
   std::stringstream ss;
-  ss << "ident_" << expr.m_name;
+  ss << "expr_ident_" << expr.m_name;
   const std::string name = ss.str();
   if(subexpr_cache.has_path(name))
   {
@@ -717,7 +716,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
     if(func.has_path("jitable"))
     {
       // jit case
-      ss << "jit_method_" << func["filter_name"].as_string() << "(";
+      ss << "expr_jit_method_" << func["filter_name"].as_string() << "(";
       bool first = true;
       for(auto const &arg : args_map)
       {
@@ -742,7 +741,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
       else
       {
         std::stringstream ss;
-        ss << "jit_method_" << ast_counter++ << "_"
+        ss << "expr_jit_method_" << ast_counter++ << "_"
            << func["filter_name"].as_string();
 
         name = ss.str();
@@ -779,7 +778,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
     else
     {
       // non-jit case
-      ss << "method_" << func["filter_name"].as_string() << "(";
+      ss << "expr_method_" << func["filter_name"].as_string() << "(";
       bool first = true;
       for(auto const &arg : args_map)
       {
@@ -804,7 +803,7 @@ BuildGraphVisitor::visit(const ASTMethodCall &call)
       else
       {
         std::stringstream ss;
-        ss << "method_" << ast_counter++ << "_"
+        ss << "expr_method_" << ast_counter++ << "_"
            << func["filter_name"].as_string();
         name = ss.str();
       }
@@ -951,7 +950,7 @@ BuildGraphVisitor::visit(const ASTIfExpr &expr)
   if(output_type == "jitable")
   {
     std::stringstream ss;
-    ss << "jit_if_" << n_condition["filter_name"].as_string() << "_then_"
+    ss << "expr_jit_if_" << n_condition["filter_name"].as_string() << "_then_"
        << n_if["filter_name"].as_string() << "_else_"
        << n_else["filter_name"].as_string();
     verbose_name = ss.str();
@@ -967,7 +966,7 @@ BuildGraphVisitor::visit(const ASTIfExpr &expr)
     else
     {
       std::stringstream ss;
-      ss << "jit_if_" << ast_counter++;
+      ss << "expr_jit_if_" << ast_counter++;
       name = ss.str();
     }
     conduit::Node params;
@@ -1058,7 +1057,7 @@ BuildGraphVisitor::visit(const ASTBinaryOp &expr)
 
   std::stringstream ss;
   // flow doesn't like it when we have a / in the filter name
-  ss << "binary_op"
+  ss << "expr_binary_op"
      << "(" << l_in["filter_name"].as_string()
      << (op_str == "/" ? "div" : op_str) << r_in["filter_name"].as_string()
      << ")";
@@ -1075,7 +1074,7 @@ BuildGraphVisitor::visit(const ASTBinaryOp &expr)
   else
   {
     std::stringstream ss;
-    ss << "binary_op_" << ast_counter++;
+    ss << "expr_binary_op_" << ast_counter++;
     name = ss.str();
   }
 
@@ -1086,6 +1085,9 @@ BuildGraphVisitor::visit(const ASTBinaryOp &expr)
   std::string output_type;
   if(detail::is_math(op_str))
   {
+    // TODO
+    // this mapping means any field ops only map to jit
+    // we need to control this better
     if((detail::is_scalar(l_type) && detail::is_field_type(r_type)) ||
        (detail::is_scalar(r_type) && detail::is_field_type(l_type)) ||
        (detail::is_field_type(l_type) && detail::is_field_type(r_type)))
@@ -1156,9 +1158,8 @@ BuildGraphVisitor::visit(const ASTBinaryOp &expr)
 
   if(output_type == "jitable")
   {
-
     conduit::Node params;
-    params["func"] = "binary_op";
+    params["func"] = "expr_jit_binary_op";
     params["filter_name"] = name;
     params["op_string"] = op_str;
     conduit::Node &l_param = params["inputs/lhs"];
@@ -1199,7 +1200,7 @@ BuildGraphVisitor::visit(const ASTString &expr)
   std::string stripped = detail::strip_single_quotes(expr.m_name);
 
   std::stringstream ss;
-  ss << "string_" << stripped;
+  ss << "expr_string_" << stripped;
   const std::string name = ss.str();
   if(subexpr_cache.has_path(name))
   {
@@ -1230,7 +1231,7 @@ BuildGraphVisitor::visit(const ASTBoolean &expr)
   }
 
   std::stringstream ss;
-  ss << "bool_" << value;
+  ss << "expr_bool_" << value;
   const std::string name = ss.str();
   if(subexpr_cache.has_path(name))
   {
@@ -1257,7 +1258,7 @@ BuildGraphVisitor::visit(const ASTArrayAccess &expr)
   conduit::Node n_index = output;
 
   std::stringstream ss;
-  ss << "array_access_" << n_array["filter_name"].as_string() << "["
+  ss << "expr_array_access_" << n_array["filter_name"].as_string() << "["
      << n_index["filter_name"].as_string() << "]";
   const std::string name = ss.str();
   if(subexpr_cache.has_path(name))
@@ -1296,18 +1297,19 @@ void
 BuildGraphVisitor::visit(const ASTDotAccess &expr)
 {
   expr.obj->accept(this);
-  const conduit::Node input_obj = output;
 
+  // input is broadly an expr name "object"
+  const conduit::Node input_obj = output;
   std::string obj_type = input_obj["type"].as_string();
 
-  // load the object table
+  // load the object table to find what type of object
   if(!w.registry().has_entry("object_table"))
   {
     ASCENT_ERROR("Missing object table");
   }
   conduit::Node *o_table = w.registry().fetch<conduit::Node>("object_table");
 
-  // get the object
+  // get the object's attribute type def
   if(!o_table->has_path(obj_type))
   {
     ASCENT_ERROR("Cannot get attribute of non-object type: '"
@@ -1315,7 +1317,7 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
   }
   const conduit::Node &o_table_obj = (*o_table)[obj_type];
 
-  // resolve attribute type
+  // check if the attribute name ask for exists
   std::string path = "attrs/" + expr.name + "/type";
   if(!o_table_obj.has_path(path))
   {
@@ -1325,7 +1327,7 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
       std::string attr_yaml = o_table_obj["attrs"].to_yaml();
       if(attr_yaml == "")
       {
-        ss << " No know attribtues.";
+        ss << " No known attributes.";
       }
       else
       {
@@ -1343,10 +1345,12 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
 
   std::string f_name;
   std::string verbose_name;
+
+  // identify and map to jit case
   if(o_table->has_path(expr.name + "/jitable") || output_type == "jitable")
   {
     std::stringstream ss;
-    ss << "jit_dot_(" << input_obj["filter_name"].as_string() << ")__"
+    ss << "expr_jit_dot_(" << input_obj["filter_name"].as_string() << ")__"
        << expr.name;
     verbose_name = ss.str();
     if(subexpr_cache.has_path(verbose_name))
@@ -1361,7 +1365,7 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
     else
     {
       std::stringstream ss;
-      ss << "jit_dot_" << ast_counter++ << "__" << expr.name;
+      ss << "expr_jit_dot_" << ast_counter++ << "__" << expr.name;
       f_name = ss.str();
     }
 
@@ -1370,8 +1374,9 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
     {
       jit_filter_obj["type"] = "jitable";
     }
+
     conduit::Node params;
-    params["func"] = "expr_dot";
+    params["func"] = "expr_jit_dot";
     params["filter_name"] = f_name;
     params["inputs/obj"] = jit_filter_obj;
     params["inputs/obj/port"] = 0;
@@ -1381,10 +1386,10 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
     // src, dest, port
     w.graph().connect(input_obj["filter_name"].as_string(), f_name, 0);
   }
-  else
+  else // non jit case
   {
     std::stringstream ss;
-    ss << "dot_(" << input_obj["filter_name"].as_string() << ")__" << expr.name;
+    ss << "expr_dot_(" << input_obj["filter_name"].as_string() << ")__" << expr.name;
     verbose_name = ss.str();
     if(subexpr_cache.has_path(verbose_name))
     {
@@ -1398,7 +1403,7 @@ BuildGraphVisitor::visit(const ASTDotAccess &expr)
     else
     {
       std::stringstream ss;
-      ss << "dot_" << ast_counter++ << "__" << expr.name;
+      ss << "expr_dot_" << ast_counter++ << "__" << expr.name;
       f_name = ss.str();
     }
 
@@ -1422,7 +1427,7 @@ BuildGraphVisitor::visit(const ASTExpressionList &list)
   const size_t list_size = list.exprs.size();
 
   std::stringstream ss;
-  ss << "list_[";
+  ss << "expr_list_[";
   std::vector<conduit::Node> items;
   for(size_t i = 0; i < list_size; ++i)
   {
@@ -1448,7 +1453,7 @@ BuildGraphVisitor::visit(const ASTExpressionList &list)
   else
   {
     std::stringstream ss;
-    ss << "list_" << ast_counter++;
+    ss << "expr_list_" << ast_counter++;
     name = ss.str();
   }
 
