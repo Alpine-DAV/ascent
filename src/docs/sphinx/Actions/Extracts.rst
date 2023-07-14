@@ -10,14 +10,134 @@ Extracts
 ========
 Extracts are an abstraction that enables the user to specify how they want to capture their data.
 In terms of Ascent, data capture sends data outside the Ascent infrastructure.
-Examples include writing out the raw simulation data to the file system, creating HDF5 files, or sending the data off node (e.g., ADIOS).
+Examples include writing out simulation data to the file system, storing data for in-memory use, or executing custom python scripts.
+
+.. , or sending the data off node (e.g., ADIOS).
 
 Currently supported extracts include:
 
-    * Python : use a python script with NumPy to analyze mesh data
     * Relay : leverages Conduit's Relay library to do parallel I/O
-    * HTG : write a VTK HTG (HyperTreeGrid) file
-    * ADIOS : use ADIOS to send data to a separate resource
+    * Conduit: stores mesh data as a Conduit in-memory tree, accessible via ``Ascent::info``
+    * Python : uses a python script with NumPy to analyze mesh data
+    * HTG : writes a VTK HTG (HyperTreeGrid) file
+
+
+.. * ADIOS : use ADIOS to send data to a separate resource
+
+.. _extracts_relay:
+
+Relay
+-----
+Relay extracts save data to the file system. Currently, Relay supports saving data to Blueprint HDF5, YAML, or JSON files.
+By default, Relay saves the published mesh data to the file system, but if a pipeline is specified, then the result of the
+pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
+
+.. code-block:: c++
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "contour";
+    // filter knobs
+    conduit::Node &contour_params = pipelines["pl1/f1/params"];
+    contour_params["field"] = "radial_vert";
+    contour_params["iso_values"] = 250.;
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"]  = "pl1";
+
+    extracts["e1/params/path"] = output_file;
+
+In this example, a contour of a field is saved to the file system in json form.
+To save the files in HDF5 format:
+
+.. code-block:: c++
+
+    extracts["e1/params/protocol"] = "hdf5";
+
+``yaml`` and ``json`` are also valid ``protocol`` options.
+
+
+By default, the relay extract creates one file per mesh domain saved. You can control
+the number of files written (aggregating multiple domains per file) using the
+``num_files`` parameter:
+
+.. code-block:: c++
+
+    extracts["e1/params/num_files"] = 2;
+
+
+Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
+strings that indicate which fields should be saved.
+
+.. code-block:: c++
+
+    extracts["e1/params/fields"].append("density");
+    extracts["e1/params/fields"].append("pressure");
+
+Relay HDF5 extracts use gzip to compress leaf data arrays to reduce I/O and file size.
+Compression support is enabled when leaf arrays are greater than a heuristic size in bytes.
+These thresholds are controlled via an optional parameter tree ``hdf5_options``.
+The expected parameter tree mirrors Conduit Relay's controls for HDF5 features.
+
+Here is an example that lowers the compression threshold while writing an extract to 10,000 bytes:
+
+.. code-block:: c++
+
+    // compress any leaf array larger than 10,000 bytes
+    extracts["e1/params/hdf5_options/chunking/threshold"]  = 10000-1;
+    // use 10,000 chunk size
+    extracts["e1/params/hdf5_options/chunking/chunk_size"] = 10000;
+    // use level 9 gzip
+    extracts["e1/params/hdf5_options/chunking/compression/level"] = 9;
+
+
+Here is a yaml representation of the full default parameter tree:
+
+.. code-block:: yaml
+
+    compact_storage:
+      enabled: "true"
+      threshold: 1024
+    chunking:
+      enabled: "true"
+      threshold: 2000000
+      chunk_size: 1000000
+      compression:
+        method: "gzip"
+        level: 5
+
+
+.. _extracts_conduit:
+
+Conduit
+---------
+Conduit extracts store mesh data as a Conduit in-memory tree which can be accessed after execution via the ``Ascent::info`` call. Enables in-memory access to Ascent pipeline results outside of Ascent.
+
+.. code-block:: c++
+
+    conduit::Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    // add the extract
+    extracts["e1/type"]  = "conduit";
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    conduit::Node &info =  ascent.info();
+
+    // access the mesh data
+    conduit::Node &my_mesh = info["extracts"][0];
+    // ...
+    // process my_mesh or copy out before ascent.close()
+    // ...
+    ascent.close();
 
 .. _extracts_python:
 
@@ -106,56 +226,7 @@ In addition to performing custom python analysis, your can create new data sets 
 through a new instance of Ascent. We call this technique Inception.
 
 
-.. _extracts_relay:
 
-Relay
------
-Relay extracts save data to the file system. Currently, Relay supports saving data to Blueprint HDF5, YAML, or JSON files.
-By default, Relay saves the published mesh data to the file system, but if a pipeline is specified, then the result of the
-pipeline is saved. Relay extracts can be opened by post-hoc tools such as VisIt.
-
-.. code-block:: c++
-
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "contour";
-    // filter knobs
-    conduit::Node &contour_params = pipelines["pl1/f1/params"];
-    contour_params["field"] = "radial_vert";
-    contour_params["iso_values"] = 250.;
-
-    conduit::Node extracts;
-    extracts["e1/type"]  = "relay";
-    extracts["e1/pipeline"]  = "pl1";
-
-    extracts["e1/params/path"] = output_file;
-
-In this example, a contour of a field is saved to the file system in json form.
-To save the files in HDF5 format:
-
-.. code-block:: c++
-
-    extracts["e1/params/protocol"] = "hdf5";
-
-``yaml`` and ``json`` are also valid ``protocol`` options.
-
-
-By default, the relay extract creates one file per mesh domain saved. You can control
-the number of files written (aggregating multiple domains per file) using the
-``num_files`` parameter:
-
-.. code-block:: c++
-
-    extracts["e1/params/num_files"] = 2;
-
-
-Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
-strings that indicate which fields should be saved.
-
-.. code-block:: c++
-
-    extracts["e1/params/fields"].append("density");
-    extracts["e1/params/fields"].append("pressure");
 
 .. _extracts_htg:
 
@@ -230,6 +301,6 @@ This extract generates two files: one for vertex data and one for element data.
 This extract requires a ``path`` for the location of the resulting files. 
 Optional parameters include ``protocol`` for the type of output file (default is CSV), and ``fields``, which specifies the fields to be included in the files (default is all present fields). 
 
-ADIOS
------
-The current ADIOS extract is experimental and this section is under construction.
+.. ADIOS
+.. -----
+.. The current ADIOS extract is experimental and this section is under construction.
