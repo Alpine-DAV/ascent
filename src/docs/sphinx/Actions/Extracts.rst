@@ -157,6 +157,23 @@ strings that indicate which fields should be saved.
     extracts["e1/params/fields"].append("density");
     extracts["e1/params/fields"].append("pressure");
 
+Relay HDF5 extracts use gzip to compress leaf data arrays to reduce I/O and file size.
+Compression support is enabled when leaf arrays are greater than a heuristic size in bytes.
+These thresholds are controlled via an optional parameter tree ``hdf5_options``.
+The expected parameter tree mirrors Conduit Relay's controls for HDF5 features.
+
+Here is an example that lowers the compression threshold while writing an extract to 10,000 bytes:
+
+.. code-block:: c++
+
+    // compress any leaf array larger than 10,000 bytes
+    extracts["e1/params/hdf5_options/chunking/threshold"]  = 10000-1;
+    // use 10,000 chunk size
+    extracts["e1/params/hdf5_options/chunking/chunk_size"] = 10000;
+    // use level 9 gzip
+    extracts["e1/params/hdf5_options/chunking/compression/level"] = 9;
+
+
 .. _extracts_htg:
 
 HTG

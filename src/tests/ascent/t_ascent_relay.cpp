@@ -165,23 +165,26 @@ TEST(ascent_relay, test_relay_hdf5_opts)
     Node n;
     ascent::about(n);
 
+    ASCENT_INFO("Testing relay extract in serial with hdf5 gzip opts");
+
     //
     // Create an example mesh.
     //
     Node data, verify_info;
     conduit::blueprint::mesh::examples::basic("uniform",
-                                              101,
+                                              1001,
                                               11,
                                               11,
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    // zeros should compress well, so blank out the values
+    // change values -- zeros compress nicely .... 
     float64_array vals = data["fields/field/values"].value();
     vals.fill(0);
+    index_t nele = vals.number_of_elements();
 
-    ASCENT_INFO("Testing relay extract in serial with hdf5 opts");
+    std::cout << "Field Number of Elements: " << nele << std::endl;
+    std::cout << "Field Number of Bytes:    " << nele * 8 << std::endl;
 
     string output_path = prepare_output_dir();
 
@@ -222,8 +225,9 @@ TEST(ascent_relay, test_relay_hdf5_opts)
     // compression for the known inputs in this tests
     extracts["e1/params/path"] = output_file_opts;
     extracts["e1/params/hdf5_options/chunking/enabled"]  = "true";
-    extracts["e1/params/hdf5_options/chunking/threshold"]  = 80000-1;
-    extracts["e1/params/hdf5_options/chunking/chunk_size"] = 80000;
+    // Note: https://github.com/LLNL/conduit/issues/1137
+    extracts["e1/params/hdf5_options/chunking/threshold"]  = 800000-1;
+    extracts["e1/params/hdf5_options/chunking/chunk_size"] = 800000;
     extracts["e1/params/hdf5_options/chunking/compression/level"] = 9;
 
     ascent.execute(actions);
@@ -242,13 +246,12 @@ TEST(ascent_relay, test_relay_hdf5_opts)
     // pre and post should be the same
     EXPECT_EQ(fsize_pre,fsize_post);
 
-    // all we can predict right now about pre vs opts, is they
-    // won't be the same
-    EXPECT_FALSE(fsize_pre == fsize_opts);
+    // compression should help us out
+    EXPECT_TRUE(fsize_pre > fsize_opts);
 
-    std::cout << "pre  " << output_root_pre << std::endl;
-    std::cout << "opts " << output_root_pre << std::endl;
-    std::cout << "post " << output_root_pre << std::endl;
+    std::cout << "pre file:  " << output_root_pre << std::endl;
+    std::cout << "opts file: " << output_root_opts << std::endl;
+    std::cout << "post file: " << output_root_post << std::endl;
 
     std::cout << "pre  size: " << fsize_pre  << std::endl;
     std::cout << "opts size: " << fsize_opts << std::endl;
