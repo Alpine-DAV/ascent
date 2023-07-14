@@ -10,7 +10,7 @@ export SPACK_SPEC="${SPACK_SPEC} ^raja+cuda~openmp cuda_arch=70 ^umpire+cuda~ope
 # config
 export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_cuda_11.4.0_devel/"
 
-cd ascent && python scripts/uberenv/uberenv.py \
+cd ascent && python3 scripts/uberenv/uberenv.py \
      -k \
      --spec="${SPACK_SPEC}" \
      --spack-config-dir="${SPACK_CONFIG}" \

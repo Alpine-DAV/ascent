@@ -98,7 +98,7 @@ void derived_field_add_fields(conduit::Node &dataset,
 //
 // NOTE: ascent_data_binning contains a RAJA version
 // of binning that needs more work, but should eventually
-// supercede these versions
+// supersede these versions
 // 
 
 ASCENT_API

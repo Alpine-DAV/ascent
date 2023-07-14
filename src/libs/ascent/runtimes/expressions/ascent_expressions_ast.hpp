@@ -4,8 +4,8 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef ASCENT_RUNTIME_AST
-#define ASCENT_RUNTIME_AST
+#ifndef ASCENT_RUNTIME_EXPRESSIONS_AST
+#define ASCENT_RUNTIME_EXPRESSIONS_AST
 
 #include "ascent_derived_jit.hpp"
 #include "flow_workspace.hpp"
@@ -17,6 +17,7 @@ namespace expressions = ascent::runtime::expressions;
 
 class ASTVisitor;
 
+//-----------------------------------------------------------------------------
 class ASTNode
 {
 public:
@@ -26,12 +27,14 @@ public:
   virtual void accept(ASTVisitor *visitor) const = 0;
 };
 
+//-----------------------------------------------------------------------------
 class ASTExpression : public ASTNode
 {
 public:
   virtual void accept(ASTVisitor *visitor) const override;
 };
 
+//-----------------------------------------------------------------------------
 class ASTIdentifier : public ASTExpression
 {
 public:
@@ -42,6 +45,7 @@ public:
   virtual void accept(ASTVisitor *visitor) const override;
 };
 
+//-----------------------------------------------------------------------------
 class ASTNamedExpression : public ASTExpression
 {
 public:
@@ -60,8 +64,10 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 using ASTNamedExpressionList = std::vector<ASTNamedExpression *>;
 
+//-----------------------------------------------------------------------------
 class ASTBlock : public ASTNode
 {
 public:
@@ -85,6 +91,7 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 class ASTInteger : public ASTExpression
 {
 public:
@@ -95,6 +102,7 @@ public:
   virtual void accept(ASTVisitor *visitor) const override;
 };
 
+//-----------------------------------------------------------------------------
 class ASTDouble : public ASTExpression
 {
 public:
@@ -105,6 +113,7 @@ public:
   virtual void accept(ASTVisitor *visitor) const override;
 };
 
+//-----------------------------------------------------------------------------
 class ASTString : public ASTExpression
 {
 public:
@@ -115,6 +124,7 @@ public:
   virtual void accept(ASTVisitor *visitor) const override;
 };
 
+//-----------------------------------------------------------------------------
 class ASTBoolean : public ASTExpression
 {
 public:
@@ -125,6 +135,7 @@ public:
   virtual void accept(ASTVisitor *visitor) const override;
 };
 
+//-----------------------------------------------------------------------------
 class ASTExpressionList : public ASTExpression
 {
 public:
@@ -140,6 +151,7 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 class ASTArguments
 {
 public:
@@ -166,6 +178,7 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 class ASTMethodCall : public ASTExpression
 {
 public:
@@ -187,6 +200,7 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 class ASTBinaryOp : public ASTExpression
 {
 public:
@@ -206,6 +220,7 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 class ASTIfExpr : public ASTExpression
 {
 public:
@@ -228,6 +243,7 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 class ASTArrayAccess : public ASTExpression
 {
 public:
@@ -246,6 +262,7 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 class ASTDotAccess : public ASTExpression
 {
 public:
@@ -263,7 +280,9 @@ public:
   }
 };
 
+//-----------------------------------------------------------------------------
 // abstract base class for visiting ASTs using the visitor pattern
+//-----------------------------------------------------------------------------
 class ASTVisitor
 {
 public:
@@ -286,6 +305,9 @@ public:
   virtual void visit(const ASTExpressionList &list) = 0;
 };
 
+//-----------------------------------------------------------------------------
+// visitor that prints info
+//-----------------------------------------------------------------------------
 class PrintVisitor final : public ASTVisitor
 {
 public:
@@ -305,6 +327,9 @@ public:
   void visit(const ASTExpressionList &list) override;
 };
 
+//-----------------------------------------------------------------------------
+// main visitor that builds a flow graph from a parsed AST
+//-----------------------------------------------------------------------------
 class BuildGraphVisitor final : public ASTVisitor
 {
 public:

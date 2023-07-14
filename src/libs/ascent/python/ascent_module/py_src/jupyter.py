@@ -196,14 +196,14 @@ class AscentResultsViewer(object):
             tab = ipywidgets.Tab()
             tab.children = widgets
             for i,v in enumerate(widget_titles):
-                tab.set_title(i,v)
+                tab.set_title(i,"[ " + v + " ] ")
             self.main = ipywidgets.VBox([tab,
                                          status.show()],
-                                         layout=ipywidgets.Layout(overflow_x="hidden"))
+                                         layout=ipywidgets.Layout(overflow="hidden"))
         else:
             # only the status button
             self.main = ipywidgets.VBox([status.show()],
-                                        layout=ipywidgets.Layout(overflow_x="hidden"))
+                                        layout=ipywidgets.Layout(overflow="hidden"))
 
     def show(self):
         return self.main
