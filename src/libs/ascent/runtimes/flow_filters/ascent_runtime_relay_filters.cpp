@@ -345,8 +345,7 @@ verify_io_params(const conduit::Node &params,
         //   compression:
         //     method: "gzip"
         //     level: 5
-        
-        
+
         const Node &params_hdf5_opts = params["hdf5_options"];
 
         res &= check_object("compact_storage",
@@ -395,7 +394,7 @@ verify_io_params(const conduit::Node &params,
                             info,
                             false);
 
-        res &= check_numeric("compact_storage/level",
+        res &= check_numeric("chunking/compression/level",
                              params_hdf5_opts,
                              info,
                              false);
