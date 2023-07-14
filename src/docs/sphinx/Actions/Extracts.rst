@@ -17,8 +17,10 @@ Examples include executing custom python scripts, writing out the raw simulation
 Currently supported extracts include:
 
     * Relay : leverages Conduit's Relay library to do parallel I/O
+    * Conduit: store mesh data as a Conduit in-memory tree, accessible via ``Ascent::info``
     * Python : use a python script with NumPy to analyze mesh data
     * HTG : write a VTK HTG (HyperTreeGrid) file
+
 
 .. * ADIOS : use ADIOS to send data to a separate resource
 
@@ -90,7 +92,7 @@ Here is an example that lowers the compression threshold while writing an extrac
     extracts["e1/params/hdf5_options/chunking/compression/level"] = 9;
 
 
-Here is a yaml representation of the default parameter tree:
+Here is a yaml representation of the full default parameter tree:
 
 .. code-block:: yaml
 
@@ -105,6 +107,37 @@ Here is a yaml representation of the default parameter tree:
         method: "gzip"
         level: 5
 
+
+.. _extracts_conduit:
+
+Conduit
+---------
+Conduit extracts store mesh data as a Conduit in-memory tree which can be accessed after execution via the ``Ascent::info`` call. Enables in-memory access to Ascent pipeline results outside of Ascent.
+
+.. code-block:: c++
+
+    conduit::Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    // add the extract
+    extracts["e1/type"]  = "conduit";
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    conduit::Node &info =  ascent.info();
+
+    // access the mesh data
+    conduit::Node &my_mesh = info["extracts"][0];
+    // ...
+    // process my_mesh or copy out before ascent.close()
+    // ...
+    ascent.close();
 
 .. _extracts_python:
 
