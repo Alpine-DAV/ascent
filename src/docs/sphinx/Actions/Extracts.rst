@@ -17,9 +17,9 @@ Examples include writing out simulation data to the file system, storing data fo
 Currently supported extracts include:
 
     * Relay : leverages Conduit's Relay library to do parallel I/O
-    * Conduit: store mesh data as a Conduit in-memory tree, accessible via ``Ascent::info``
-    * Python : use a python script with NumPy to analyze mesh data
-    * HTG : write a VTK HTG (HyperTreeGrid) file
+    * Conduit: stores mesh data as a Conduit in-memory tree, accessible via ``Ascent::info``
+    * Python : uses a python script with NumPy to analyze mesh data
+    * HTG : writes a VTK HTG (HyperTreeGrid) file
 
 
 .. * ADIOS : use ADIOS to send data to a separate resource
