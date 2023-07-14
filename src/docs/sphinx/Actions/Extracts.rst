@@ -10,7 +10,7 @@ Extracts
 ========
 Extracts are an abstraction that enables the user to specify how they want to capture their data.
 In terms of Ascent, data capture sends data outside the Ascent infrastructure.
-Examples include executing custom python scripts, writing out the raw simulation data to the file system, or creating HDF5 files.
+Examples include writing out simulation data to the file system, storing data for in-memory use, or executing custom python scripts.
 
 .. , or sending the data off node (e.g., ADIOS).
 
