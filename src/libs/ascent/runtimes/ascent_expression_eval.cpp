@@ -1313,14 +1313,14 @@ initialize_functions()
 
   //---------------------------------------------------------------------------
   // max(field, field)
-  conduit::Node &field_file_max_sig = (*functions)["max"].append();
+  conduit::Node &field_field_max_sig = (*functions)["max"].append();
   field_field_max_sig["return_type"] = "jitable";
   field_field_max_sig["filter_name"] = "expr_jit_mesh_field_max";
   field_field_max_sig["args/arg1/type"] = "field";
   field_field_max_sig["args/arg2/type"] = "field";
   field_field_max_sig["description"] =
       "Return a derived field that is the max of two fields.";
-  field_file_max_sig["jitable"];
+  field_field_max_sig["jitable"];
 
   //---------------------------------------------------------------------------
   conduit::Node &field_sin_sig = (*functions)["sin"].append();
