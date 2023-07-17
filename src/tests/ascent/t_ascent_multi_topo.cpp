@@ -40,22 +40,28 @@ TEST(ascent_multi_topo, test_render)
         return;
     }
 
+    ASCENT_INFO("Render multiple topologies");
+
     //
     // Create an example mesh.
     //
     Node data;
     build_multi_topo(data,10);
 
-    conduit::relay::io::blueprint::save_mesh(data,"my_multi","hdf5");
-
-    ASCENT_INFO("Render multiple topologies");
-
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_multi_topo");
-
     // remove old images before rendering
     remove_test_image(output_file);
+
+    // save the dataset so we can explore in visit
+    Node opts;
+    opts["file_style"] = "root_only";
+    opts["suffix"] = "none";
+    conduit::relay::io::blueprint::save_mesh(data,"my_multi","hdf5",opts);
+
+    string output_dataset = conduit::utils::join_file_path(output_path,"tout_multi_topo_dataset");
+    remove_test_image(output_dataset);
 
 
     //
