@@ -246,7 +246,7 @@ TEST(ascent_multi_topo, single_ghost_vol_render)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.02));
-    std::string msg = "Example of adding 1 ghost field with 2 topologies";
+    std::string msg = "Example volume rendering a ragged ghost field";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
