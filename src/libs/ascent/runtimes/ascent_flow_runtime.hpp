@@ -41,6 +41,8 @@ public:
     // Main runtime interface methods used by the ascent interface.
     void  Initialize(const conduit::Node &options) override;
 
+    void  RegisterCallback(const std::string &callback_name,
+                           void (*callback_function)(void)) override;
     void  Publish(const conduit::Node &data)    override;
     void  Execute(const conduit::Node &actions) override;
 

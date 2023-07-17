@@ -99,12 +99,18 @@ EmptyRuntime::Info()
     return m_info;
 }
 
-
 //-----------------------------------------------------------------------------
 void
 EmptyRuntime::Cleanup()
 {
 
+}
+
+//-----------------------------------------------------------------------------
+void
+EmptyRuntime::RegisterCallback(const std::string &callback_name,
+                               void (*callback_function)(void)) {
+    // Do nothing, no implementation for now
 }
 
 //-----------------------------------------------------------------------------

@@ -34,6 +34,7 @@ namespace flow
 // pick a safe non-inited value w/o the mpi headers, but
 // we will try this strategy.
 int Workspace::m_default_mpi_comm = -1;
+std::map<std::string, void (*)(void)> Workspace::m_callback_map;
 static int g_timing_exec_count = 0;
 
 //-----------------------------------------------------------------------------
@@ -639,6 +640,26 @@ void
 Workspace::clear_supported_filter_types()
 {
     FilterFactory::registered_types().clear();
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Workspace::register_callback(const std::string &callback_name,
+                             void (*callback_function)(void))
+{
+    m_callback_map.insert(std::make_pair(callback_name, callback_function));
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Workspace::fire_callback(const std::string &callback_name)
+{
+    // TODO: Gracefully handle the case where the callback wasn't registered
+    auto callback_pair = m_callback_map.find(callback_name);
+    auto callback_function = callback_pair->second;
+    callback_function();
 }
 
 //-----------------------------------------------------------------------------

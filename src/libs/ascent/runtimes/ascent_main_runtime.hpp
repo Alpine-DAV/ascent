@@ -40,6 +40,8 @@ public:
     // Main runtime interface methods used by the ascent interface.
     void  Initialize(const conduit::Node &options) override;
 
+    void  RegisterCallback(const std::string &callback_name,
+                           void (*callback_function)(void)) override;
     void  Publish(const conduit::Node &data) override;
     void  Execute(const conduit::Node &actions) override;
 
@@ -103,10 +105,16 @@ private:
     void ConvertQueryToFlow(const conduit::Node &trigger,
                             const std::string trigger_name,
                             const std::string prev_name);
+    void ConvertShellCommandToFlow(const conduit::Node &shell_command,
+                                   const std::string shell_command_name);
+    void ConvertCallbackToFlow(const conduit::Node &callback,
+                               const std::string callback_name);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreateExtracts(const conduit::Node &extracts);
     void CreateTriggers(const conduit::Node &triggers);
     void CreateQueries(const conduit::Node &queries);
+    void CreateShellCommands(const conduit::Node &shell_commands);
+    void CreateCallbacks(const conduit::Node &callbacks);
     void CreatePlots(const conduit::Node &plots);
     std::vector<std::string> GetPipelines(const conduit::Node &plots);
     void CreateScenes(const conduit::Node &scenes);

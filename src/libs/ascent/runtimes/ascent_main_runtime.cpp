@@ -484,6 +484,14 @@ AscentRuntime::Cleanup()
 
 //-----------------------------------------------------------------------------
 void
+AscentRuntime::RegisterCallback(const std::string &callback_name,
+                                void (*callback_function)(void))
+{
+  m_workspace.register_callback(callback_name, callback_function);
+}
+
+//-----------------------------------------------------------------------------
+void
 AscentRuntime::Publish(const conduit::Node &data)
 {
     // Process the comments.
@@ -1069,6 +1077,60 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
 }
 //-----------------------------------------------------------------------------
 void
+AscentRuntime::ConvertShellCommandToFlow(const conduit::Node &shell_command,
+                                         const std::string shell_command_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(shell_command.has_path("params"))
+  {
+    params = shell_command["params"];
+  }
+
+  std::string pipeline = "source";
+  if(shell_command.has_path("pipeline"))
+  {
+    pipeline = shell_command["pipeline"].as_string();
+  }
+
+  m_workspace.graph().add_filter("shell_command",
+                                 shell_command_name,
+                                 params);
+
+  // this is the blueprint mesh
+  m_connections[shell_command_name] = pipeline;
+
+}
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::ConvertCallbackToFlow(const conduit::Node &callback,
+                                     const std::string callback_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(callback.has_path("params"))
+  {
+    params = callback["params"];
+  }
+
+  std::string pipeline = "source";
+  if(callback.has_path("pipeline"))
+  {
+    pipeline = callback["pipeline"].as_string();
+  }
+
+  m_workspace.graph().add_filter("callback",
+                                 callback_name,
+                                 params);
+
+  // this is the blueprint mesh
+  m_connections[callback_name] = pipeline;
+
+}
+//-----------------------------------------------------------------------------
+void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name)
 {
@@ -1211,6 +1273,30 @@ AscentRuntime::CreateQueries(const conduit::Node &queries)
     conduit::Node query = queries.child(i);
     ConvertQueryToFlow(query, names[i], prev_name);
     prev_name = names[i];
+  }
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::CreateShellCommands(const conduit::Node &shell_commands)
+{
+  std::vector<std::string> names = shell_commands.child_names();
+  for(int i = 0; i < shell_commands.number_of_children(); ++i)
+  {
+    conduit::Node shell_command = shell_commands.child(i);
+    ConvertShellCommandToFlow(shell_command, names[i]);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::CreateCallbacks(const conduit::Node &callbacks)
+{
+  std::vector<std::string> names = callbacks.child_names();
+  for(int i = 0; i < callbacks.number_of_children(); ++i)
+  {
+    conduit::Node callback = callbacks.child(i);
+    ConvertCallbackToFlow(callback, names[i]);
   }
 }
 
@@ -1626,6 +1712,8 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   m_save_info_actions.reset();
 
   // execution will be enforced in the following order:
+  conduit::Node callbacks;
+  conduit::Node shell_commands;
   conduit::Node queries;
   conduit::Node triggers;
   conduit::Node pipelines;
@@ -1697,6 +1785,28 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
           ASCENT_ERROR("action 'add_queries' missing child 'queries'");
         }
       }
+      else if(action_name == "add_shell_commands")
+      {
+        if(action.has_path("shell_commands"))
+        {
+          shell_commands.append() = action["shell_commands"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_shell_commands' missing child 'shell_commands'");
+        }
+      }
+      else if(action_name == "add_callbacks")
+      {
+        if(action.has_path("callbacks"))
+        {
+          callbacks.append() = action["callbacks"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_callbacks' missing child 'callbacks'");
+        }
+      }
       else if( action_name == "execute" ||
                action_name == "reset")
       {
@@ -1726,6 +1836,14 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     CreatePipelines(pipelines.child(i));
+  }
+  for(int i = 0; i < callbacks.number_of_children(); ++i)
+  {
+    CreateCallbacks(callbacks.child(i));
+  }
+  for(int i = 0; i < shell_commands.number_of_children(); ++i)
+  {
+    CreateShellCommands(shell_commands.child(i));
   }
   for(int i = 0; i < queries.number_of_children(); ++i)
   {
