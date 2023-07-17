@@ -44,6 +44,12 @@ build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
+build_babelflow="${build_babelflow:=true}"
+build_pmt="${build_pmt:=true}"
+build_topo_reader="${build_topo_reader:=true}"
+build_streamstat="${build_streamstat:=true}"
+
+
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -589,9 +595,160 @@ fi # build_mfem
 
 
 ################
+# Babelflow
+################
+babelflow_version=v1.1.0
+babelflow_src_dir=$(ospath ${root_dir}/babelflow-${babelflow_version})
+babelflow_build_dir=$(ospath ${root_dir}/build/babelflow-${babelflow_version})
+babelflow_install_dir=$(ospath ${root_dir}/install/babelflow-${babelflow_version}/)
+
+
+# build only if install doesn't exist
+if [ ! -d ${babelflow_install_dir} ]; then
+if ${build_babelflow}; then
+if [ ! -d ${babelflow_src_dir} ]; then
+    echo "**** cloning Babelflow"
+    git clone  --recursive --branch ${babelflow_version} https://github.com/sci-visus/BabelFlow.git babelflow-${babelflow_version}
+fi
+
+
+echo "**** Configuring BABELFLOW ${babelflow_version}"
+cmake -S ${babelflow_src_dir} -B ${babelflow_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=${babelflow_install_dir} \
+  -DBUILD_SHARED_LIBS=ON \
+  -DCRAYPE_LINK_TYPE=dynamic \
+  -DENABLE_MPI=ON \
+  -DENABLE_FIND_MPI=OFF
+
+echo "**** Building BABELFLOW ${babelflow_version}"
+cmake --build ${babelflow_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing BABELFLOW ${babelflow_version}"
+cmake --install ${babelflow_build_dir}  --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Babelflow build, install found at: ${babelflow_install_dir}"
+fi # build_babelfow
+
+
+################
+# Pmt
+################
+pmt_version=v1.1.2
+pmt_src_dir=$(ospath ${root_dir}/pmt-${pmt_version})
+pmt_build_dir=$(ospath ${root_dir}/build/pmt-${pmt_version})
+pmt_install_dir=$(ospath ${root_dir}/install/pmt-${pmt_version}/)
+
+
+# build only if install doesn't exist
+if [ ! -d ${pmt_install_dir} ]; then
+if ${build_pmt}; then
+if [ ! -d ${pmt_src_dir} ]; then
+    echo "**** cloning Pmt"
+    git clone --branch ${pmt_version} https://bitbucket.org/cedmav/parallelmergetree.git pmt-${pmt_version}
+fi
+
+cmake -S ${pmt_src_dir} -B ${pmt_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=${pmt_install_dir} \
+  -DBUILD_SHARED_LIBS=ON \
+  -DCRAYPE_LINK_TYPE=dynamic \
+  -DLIBRARY_ONLY=ON\
+  -DBabelFlow_DIR=${babelflow_install_dir}
+
+
+echo "**** Building PMT ${pmt_version}"
+cmake --build ${pmt_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing PMT ${pmt_version}"
+cmake --install ${pmt_build_dir}  --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Pmt build, install found at: ${pmt_install_dir}"
+fi # build_babelfow
+
+
+
+################
+# Topo_Reader
+################
+topo_reader_src_dir=$(ospath ${root_dir}/topo_reader/TopologyFileParser)
+topo_reader_build_dir=$(ospath ${root_dir}/build/topo_reader/TopologyFileParser)
+topo_reader_install_dir=$(ospath ${root_dir}/install/topo_reader/TopologyFileParser)
+
+
+# build only if install doesn't exist
+if [ ! -d ${topo_reader_install_dir} ]; then
+if ${build_topo_reader}; then
+if [ ! -d ${topo_reader_src_dir} ]; then
+    echo "**** cloning Topo_Reader"
+    git clone https://github.com/xuanhuang1/topo_reader.git topo_reader
+fi
+
+cmake -S ${topo_reader_src_dir} -B ${topo_reader_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=${topo_reader_install_dir} \
+  -DBUILD_SHARED_LIBS=ON \
+  -DCRAYPE_LINK_TYPE=dynamic \
+  -DFUNCTION_TYPE=double
+
+echo "**** Building TOPO_READER"
+cmake --build ${topo_reader_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing TOPO_READER"
+cmake --install ${topo_reader_build_dir}  --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Topo_Reader build, install found at: ${topo_reader_install_dir}"
+fi # build_babelfow
+
+
+
+################
+# Streamstat
+################
+streamstat_src_dir=$(ospath ${root_dir}/streamstat)
+streamstat_build_dir=$(ospath ${root_dir}/build/streamstat)
+streamstat_install_dir=$(ospath ${root_dir}/install/streamstat/)
+
+
+# build only if install doesn't exist
+if [ ! -d ${streamstat_install_dir} ]; then
+if ${build_streamstat}; then
+if [ ! -d ${streamstat_src_dir} ]; then
+    echo "**** cloning Streamstat"
+    git clone https://github.com/xuanhuang1/STREAMSTAT.git streamstat
+fi
+
+cmake -S ${streamstat_src_dir} -B ${streamstat_build_dir} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=${streamstat_install_dir} \
+  -DBUILD_SHARED_LIBS=ON \
+  -DCRAYPE_LINK_TYPE=dynamic
+
+
+echo "**** Building STREAMSTAT"
+cmake --build ${streamstat_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing STREAMSTAT "
+cmake --install ${streamstat_build_dir}  --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Streamstat build, install found at: ${streamstat_install_dir}"
+fi # build_babelfow
+
+
+
+
+################
 # Ascent
 ################
-ascent_version=develop
+ascent_version=bflow-topo-stats
 ascent_src_dir=$(ospath ${root_dir}/ascent/src)
 ascent_build_dir=$(ospath ${root_dir}/build/ascent-${ascent_version}/)
 ascent_install_dir=$(ospath ${root_dir}/install/ascent-${ascent_version}/)
@@ -629,6 +786,11 @@ echo 'set(CAMP_DIR ' ${camp_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent
 echo 'set(RAJA_DIR ' ${raja_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(UMPIRE_DIR ' ${umpire_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(MFEM_DIR ' ${mfem_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(BABELFLOW_DIR ' ${babelflow_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(PMT_DIR ' ${pmt_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(STREAMSTAT_DIR ' ${streamstat_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(TOPOFILEPARSER_DIR ' ${topo_reader_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+
 echo 'set(ENABLE_VTKH ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_APCOMP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DRAY ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
