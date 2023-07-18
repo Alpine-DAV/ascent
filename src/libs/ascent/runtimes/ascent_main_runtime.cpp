@@ -294,30 +294,54 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     m_runtime_options = options;
 
+    // NOTE:
+    // if both ghost_field_name and ghost_field_names
+    // are present, ghost_field_names is used
     if(options.has_path("ghost_field_name"))
     {
       if(options["ghost_field_name"].dtype().is_string())
       {
         m_ghost_fields.reset();
-
-        std::string ghost_name = options["ghost_field_name"].as_string();
-        m_ghost_fields.append() = ghost_name;
+        m_ghost_fields.append().set(options["ghost_field_name"]);
       }
       else if(options["ghost_field_name"].dtype().is_list())
       {
+        m_ghost_fields.reset();
         const int num_children = options["ghost_field_name"].number_of_children();
         for(int i = 0; i < num_children; ++i)
         {
           const conduit::Node &child = options["ghost_field_name"].child(i);
           if(!child.dtype().is_string())
           {
-            ASCENT_ERROR("ghost_field_name list child is not a string");
+            ASCENT_ERROR("ghost_field_name list child "
+                         << i << " is not a string");
           }
+          m_ghost_fields.append().set(child);
         }
       }
       else
       {
         ASCENT_ERROR("ghost_field_name is not a string or a list");
+      }
+    }
+
+    if(options.has_path("ghost_field_names"))
+    { 
+      if(!options["ghost_field_names"].dtype().is_list())
+      {
+        ASCENT_ERROR("ghost_field_names is not a list");
+      }
+
+      m_ghost_fields.reset();
+      const int num_children = options["ghost_field_names"].number_of_children();
+      for(int i = 0; i < num_children; ++i)
+      {
+        const conduit::Node &child = options["ghost_field_names"].child(i);
+        if(!child.dtype().is_string())
+        {
+          ASCENT_ERROR("ghost_field_names list child " << i << " is not a string");
+        }
+        m_ghost_fields.append().set(child);
       }
     }
 
