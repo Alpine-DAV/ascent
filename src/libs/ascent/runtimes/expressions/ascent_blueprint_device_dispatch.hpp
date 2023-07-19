@@ -32,135 +32,27 @@ namespace runtime
 namespace expressions
 {
 
-template<typename Function, typename Exec>
-conduit::Node dispatch_memory(const conduit::Node &field,
-                              std::string component,
-                              const Function &func,
-                              const Exec &exec)
-{
-  const std::string mem_space = Exec::memory_space;
 
-  conduit::Node res;
-  if(field_is_float32(field))
-  {
-    MCArray<conduit::float32> farray(field["values"]);
-    DeviceAccessor<conduit::float32> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else if(field_is_float64(field))
-  {
-    MCArray<conduit::float64> farray(field["values"]);
-    DeviceAccessor<conduit::float64> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else if(field_is_int32(field))
-  {
-    MCArray<conduit::int32> farray(field["values"]);
-    DeviceAccessor<conduit::int32> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else if(field_is_int64(field))
-  {
-    MCArray<conduit::int64> farray(field["values"]);
-    DeviceAccessor<conduit::int64> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else
-  {
-    ASCENT_ERROR("Type dispatch: unsupported array type "<<
-                  field.schema().to_string());
-  }
-  return res;
-}
-
-template<typename Function>
-conduit::Node
-exec_dispatch(const conduit::Node &field, std::string component, const Function &func)
-{
-
-  conduit::Node res;
-  const std::string exec_policy = ExecutionManager::execution_policy();
-  //std::cout<<"Exec policy "<<exec_policy<<"\n";
-  if(exec_policy == "serial")
-  {
-    SerialExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED) 
-  else if(exec_policy == "openmp")
-  {
-    OpenMPExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#endif
-#if defined(ASCENT_CUDA_ENABLED)
-  else if(exec_policy == "cuda")
-  {
-    CudaExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#endif
-#if defined(ASCENT_HIP_ENABLED)
-  else if(exec_policy == "hip")
-  {
-    HipExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#endif
-  else
-  {
-    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
-                  exec_policy);
-  }
-  return res;
-}
-
-template<typename Function>
-conduit::Node
-field_dispatch(const conduit::Node &field, const Function &func)
-{
-  // check for single component scalar
-  int num_children = field["values"].number_of_children();
-  if(num_children > 1)
-  {
-    ASCENT_ERROR("Field Dispatch internal error: expected scalar array.");
-  }
-  conduit::Node res;
-
-  if(field_is_float32(field))
-  {
-    MCArray<conduit::float32> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else if(field_is_float64(field))
-  {
-    MCArray<conduit::float64> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else if(field_is_int32(field))
-  {
-    MCArray<conduit::int32> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else if(field_is_int64(field))
-  {
-    MCArray<conduit::int64> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else
-  {
-    ASCENT_ERROR("Type dispatch: unsupported array type "<<
-                  field.schema().to_string());
-  }
-  return res;
-}
+//-----------------------------------------------------------------------------
+// exec_dispatch_{type} variants:
+//   exec_dispatch_function
+//   exec_dispatch_array
+//   exec_dispatch_mcarray_component
+//   exec_dispatch_mesh
+//
+//   exec_dispatch_two_leaves <-- bad name!
+//
+//-----------------------------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////////////////////////
-
+// TODO NEEDS A BETTER NAME !!!!!
 // TODO THIS NEEDS TO BE RAJAFIED
 template<typename Function>
 conduit::Node
-type_dispatch(const conduit::Node &values0, const conduit::Node &values1, const bool is_list, const Function &func)
+exec_dispatch_two_leaves(const conduit::Node &values0,
+                         const conduit::Node &values1,
+                         const bool is_list,
+                         const Function &func)
 {
   // check for single component scalar
   int num_children0 = values0.number_of_children();
@@ -275,13 +167,106 @@ type_dispatch(const conduit::Node &values0, const conduit::Node &values1, const 
   }
   return res;
 }
+////////////////////////////////////////////////////////////////////////////////////
 
+
+//-----------------------------------------------------------------------------
+template<typename Function, typename Exec>
+conduit::Node exec_dispatch_mcarray_component(const conduit::Node &node,
+                                              std::string component,
+                                              const Function &func,
+                                              const Exec &exec)
+{
+  const std::string mem_space = Exec::memory_space;
+
+  conduit::Node res;
+  if(field_is_float32(node))
+  {
+    MCArray<conduit::float32> farray(node);
+    DeviceAccessor<conduit::float32> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
+  }
+  else if(field_is_float64(node))
+  {
+    MCArray<conduit::float64> farray(node);
+    DeviceAccessor<conduit::float64> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
+  }
+  else if(field_is_int32(node))
+  {
+    MCArray<conduit::int32> farray(node);
+    DeviceAccessor<conduit::int32> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
+  }
+  else if(field_is_int64(node))
+  {
+    MCArray<conduit::int64> farray(node);
+    DeviceAccessor<conduit::int64> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
+  }
+  else
+  {
+    ASCENT_ERROR("exec_dispatch_mcarray_component: unsupported type "<<
+                  node.schema().to_string());
+  }
+  return res;
+}
+
+
+
+//-----------------------------------------------------------------------------
+template<typename Function>
+conduit::Node
+exec_dispatch_mcarray_component(const conduit::Node &node,
+                                std::string component,
+                                const Function &func)
+{
+
+  conduit::Node res;
+  const std::string exec_policy = ExecutionManager::execution_policy();
+  //std::cout<<"Exec policy "<<exec_policy<<"\n";
+  if(exec_policy == "serial")
+  {
+    SerialExec exec;
+    res = exec_dispatch_mcarray_component(node, component, func, exec);
+  }
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED) 
+  else if(exec_policy == "openmp")
+  {
+    OpenMPExec exec;
+    res = exec_dispatch_mcarray_component(node, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_CUDA_ENABLED)
+  else if(exec_policy == "cuda")
+  {
+    CudaExec exec;
+    res = exec_dispatch_mcarray_component(node, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    res = exec_dispatch_mcarray_component(node, component, func, exec);
+  }
+#endif
+  else
+  {
+    ASCENT_ERROR("exec_dispatch_mcarray_component: unsupported execution policy "<<
+                  exec_policy);
+  }
+  return res;
+}
+
+
+//-----------------------------------------------------------------------------
 template<typename Function, typename Exec>
 void
-dispatch_memory_mesh(const conduit::Node &n_coords,
-                     const conduit::Node &n_topo,
-                     Function &func,
-                     const Exec &exec)
+exec_dispatch_mesh(const conduit::Node &n_coords,
+                   const conduit::Node &n_topo,
+                   Function &func,
+                   const Exec &exec)
 {
   const std::string mem_space = Exec::memory_space;
   const std::string mesh_type = n_topo["type"].as_string();
@@ -454,12 +439,13 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
   }
   else
   {
-    std::cout<<"mesh type not implemented:  "<<mesh_type<<"\n";
+    std::cout<<"exec_dispatch_mesh: mesh type not implemented:  "<<mesh_type<<"\n";
   }
 
 
 }
 
+//-----------------------------------------------------------------------------
 // TODO could make this a variadic template, maybe
 template<typename Function>
 void
@@ -474,37 +460,39 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
   if(exec_policy == "serial")
   {
     SerialExec exec;
-    dispatch_memory_mesh(n_coords,n_topo, func, exec);
+    exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
-    dispatch_memory_mesh(n_coords,n_topo, func, exec);
+    exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #endif
 #if defined(ASCENT_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
-    dispatch_memory_mesh(n_coords,n_topo, func, exec);
+    exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #endif
 #if defined(ASCENT_HIP_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
-    dispatch_memory_mesh(n_coords,n_topo, func, exec);
+    exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #endif
   else
   {
     //TODO: log error this could hang things
-    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+    ASCENT_ERROR("exec_dispatch_mesh: unsupported execution policy "<<
                   exec_policy);
   }
 }
 
+
+//-----------------------------------------------------------------------------
 template<typename Function, typename T>
 void
 exec_dispatch_array(Array<T> &array, Function &func)
@@ -541,14 +529,15 @@ exec_dispatch_array(Array<T> &array, Function &func)
   else
   {
     //TODO: log error this could hang things
-    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+    ASCENT_ERROR("exec_dispatch_array: unsupported execution policy "<<
                   exec_policy);
   }
 }
 
+//-----------------------------------------------------------------------------
 template<typename Function>
 void
-exec_dispatch(Function &func)
+exec_dispatch_function(Function &func)
 {
   const std::string exec_policy = ExecutionManager::execution_policy();
 
@@ -582,7 +571,7 @@ exec_dispatch(Function &func)
   else
   {
     //TODO: log error this could hang things
-    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+    ASCENT_ERROR("exec_dispatch_function: unsupported execution policy "<<
                   exec_policy);
   }
 }

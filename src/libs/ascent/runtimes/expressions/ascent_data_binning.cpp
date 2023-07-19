@@ -1085,7 +1085,7 @@ conduit::Node data_binning(conduit::Node &dataset,
                                     component,
                                     reduction_var);
 
-  exec_dispatch(bindexer);
+  exec_dispatch_function(bindexer);
 
   // we now have the all of the bin setup, all we have to
   // do now is the reduction
@@ -1099,7 +1099,7 @@ conduit::Node data_binning(conduit::Node &dataset,
   // return the bindexes so we can paint later
   bindexes = bindexer.m_bindexes;
 
-  exec_dispatch(binner);
+  exec_dispatch_function(binner);
   //std::cout<<"DONE BINinng\n";
   // mpi exchange
   detail::exchange_bins(bins, reduction_op);
@@ -1113,7 +1113,7 @@ conduit::Node data_binning(conduit::Node &dataset,
                                     reduction_op,
                                     empty_bin_val);
 
-  exec_dispatch(banana);
+  exec_dispatch_function(banana);
 
   res["association"] = assoc_str;
   //std::cout<<"res "<<res.to_summary_string()<<"\n";

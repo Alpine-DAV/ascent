@@ -60,49 +60,6 @@ namespace expressions
 namespace detail
 {
 
-// TODO THIS NEEDS TO BE RAJAFIED
-struct GradientFunctor
-{
-  template<typename T, typename T2>
-  conduit::Node operator()(const T* y_values, const T2* dx_values, const int &size_y_values, const int &size_dx_values) const
-  {
-    bool single_dx = (size_dx_values == 1);
-
-    if(!single_dx && size_dx_values < (size_y_values-1)) {
-        ASCENT_ERROR("Must either supply a single uniform delta_x value, or provide at least len(y_values)-1 delta_x values (indicating the delta_x from each y value to the next).");                
-    }
-
-    int num_gradients = size_y_values-1;
-    double *gradients = new double[num_gradients];
-
-    if(single_dx) {    
-    #ifdef ASCENT_OPENMP_ENABLED
-        #pragma omp parallel for
-    #endif
-        for(int v = 0; v < num_gradients; ++v)
-        {
-            gradients[v] = ( (y_values[v+1] - y_values[v]) / (double) *dx_values);
-        }
-    }
-    else {
-    #ifdef ASCENT_OPENMP_ENABLED
-        #pragma omp parallel for
-    #endif
-        for(int v = 0; v < num_gradients; ++v)
-        {
-            gradients[v] = ( (y_values[v+1] - y_values[v]) / (double) dx_values[v]);
-        }
-    }
-
-    conduit::Node res;
-    res["value"].set(gradients, num_gradients);
-    res["count"] = num_gradients;
-    return res;
-  }
-};
-
-////////////////////////////////////////////////////////////////////////////////////
-
 struct MaxFunctor
 {
   template<typename T, typename Exec>
@@ -331,6 +288,51 @@ struct HistogramFunctor
     return res;
   }
 };
+
+////////////////////////////////////////////////////////////////////////////////////
+// TODO THIS NEEDS TO BE RAJAFIED
+struct GradientFunctor
+{
+  template<typename T, typename T2>
+  conduit::Node operator()(const T* y_values, const T2* dx_values, const int &size_y_values, const int &size_dx_values) const
+  {
+    bool single_dx = (size_dx_values == 1);
+
+    if(!single_dx && size_dx_values < (size_y_values-1)) {
+        ASCENT_ERROR("Must either supply a single uniform delta_x value, or provide at least len(y_values)-1 delta_x values (indicating the delta_x from each y value to the next).");
+    }
+
+    int num_gradients = size_y_values-1;
+    double *gradients = new double[num_gradients];
+
+    if(single_dx) {    
+    #ifdef ASCENT_OPENMP_ENABLED
+        #pragma omp parallel for
+    #endif
+        for(int v = 0; v < num_gradients; ++v)
+        {
+            gradients[v] = ( (y_values[v+1] - y_values[v]) / (double) *dx_values);
+        }
+    }
+    else {
+    #ifdef ASCENT_OPENMP_ENABLED
+        #pragma omp parallel for
+    #endif
+        for(int v = 0; v < num_gradients; ++v)
+        {
+            gradients[v] = ( (y_values[v+1] - y_values[v]) / (double) dx_values[v]);
+        }
+    }
+
+    conduit::Node res;
+    res["value"].set(gradients, num_gradients);
+    res["count"] = num_gradients;
+    return res;
+  }
+};
+////////////////////////////////////////////////////////////////////////////////////
+
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
@@ -345,38 +347,38 @@ array_gradient(const conduit::Node &y_values,
                const bool is_list)
 {
   // TODO THIS NEEDS TO BE PORTED TO RAJA ?
-  return type_dispatch(y_values, dx_values, is_list, detail::GradientFunctor());
+  return exec_dispatch_two_leaves(y_values, dx_values, is_list, detail::GradientFunctor());
 }
 
 
 conduit::Node
 field_reduction_max(const conduit::Node &field, const std::string &component)
 {
-  return exec_dispatch(field, component, detail::MaxFunctor());
+  return exec_dispatch_mcarray_component(field["values"], component, detail::MaxFunctor());
 }
 
 conduit::Node
 field_reduction_min(const conduit::Node &field, const std::string &component)
 {
-  return exec_dispatch(field, component, detail::MinFunctor());
+  return exec_dispatch_mcarray_component(field["values"], component, detail::MinFunctor());
 }
 
 conduit::Node
 field_reduction_sum(const conduit::Node &field, const std::string &component)
 {
-  return exec_dispatch(field, component, detail::SumFunctor());
+  return exec_dispatch_mcarray_component(field["values"], component, detail::SumFunctor());
 }
 
 conduit::Node
 field_reduction_nan_count(const conduit::Node &field, const std::string &component)
 {
-  return exec_dispatch(field, component, detail::NanFunctor());
+  return exec_dispatch_mcarray_component(field["values"], component, detail::NanFunctor());
 }
 
 conduit::Node
 field_reduction_inf_count(const conduit::Node &field, const std::string &component)
 {
-  return exec_dispatch(field, component, detail::InfFunctor());
+  return exec_dispatch_mcarray_component(field["values"], component, detail::InfFunctor());
 }
 
 conduit::Node
@@ -387,7 +389,7 @@ field_reduction_histogram(const conduit::Node &field,
                           const std::string &component)
 {
   detail::HistogramFunctor histogram(min_value, max_value, num_bins);
-  return exec_dispatch(field, component, histogram);
+  return exec_dispatch_mcarray_component(field["values"], component, histogram);
 }
 
 conduit::Node
