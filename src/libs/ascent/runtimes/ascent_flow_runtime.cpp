@@ -135,14 +135,15 @@ FlowRuntime::Info()
 void
 FlowRuntime::Cleanup()
 {
+
 }
 
 //-----------------------------------------------------------------------------
 void
 FlowRuntime::RegisterCallback(const std::string &callback_name,
-                              void (*callback_function)(void))
+                              bool (*callback_function)(void))
 {
-    // Do nothing, no implementation for now
+
 }
 
 //-----------------------------------------------------------------------------

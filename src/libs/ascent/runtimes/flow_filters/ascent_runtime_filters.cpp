@@ -25,8 +25,7 @@
 #include <ascent_runtime_blueprint_filters.hpp>
 #include <ascent_runtime_trigger_filters.hpp>
 #include <ascent_runtime_query_filters.hpp>
-#include <ascent_runtime_shell_command_filters.hpp>
-#include <ascent_runtime_callback_filters.hpp>
+#include <ascent_runtime_command_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
@@ -99,8 +98,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicTrigger>();
     AscentRuntime::register_filter_type<BasicQuery>();
     AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
-    AscentRuntime::register_filter_type<ShellCommand>();
-    AscentRuntime::register_filter_type<Callback>();
+    AscentRuntime::register_filter_type<Command>();
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
     AscentRuntime::register_filter_type<BlueprintPartition>("transforms","partition");
 

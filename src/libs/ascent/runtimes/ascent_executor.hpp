@@ -7,12 +7,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime.hpp
+/// file: ascent_executor.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_HPP
-#define ASCENT_RUNTIME_HPP
+#ifndef ASCENT_EXECUTOR_HPP
+#define ASCENT_EXECUTOR_HPP
 
 #include <ascent.hpp>
 
@@ -22,39 +22,24 @@
 namespace ascent
 {
 
-// Pipeline Interface Class
+static std::map<std::string, bool (*)(void)> m_callback_map;
 
-class ASCENT_API Runtime
+class ASCENT_API Executor
 {
 public:
-    Runtime();
-    virtual ~Runtime();
 
-    virtual void           Initialize(const conduit::Node &options)=0;
+  void static register_callback(const std::string &callback_name,
+                                bool (*callback_function)(void));
+  void static execute(const std::string &command,
+                      const std::string &command_type);
+  void static execute_callback(const std::string &callback_name);
+  void static execute_shell_command(const std::string &command);
 
-    virtual void           RegisterCallback(const std::string &callback_name,
-                                            bool (*callback_function)(void))=0;
-    virtual void           Publish(const conduit::Node &data)=0;
-    virtual void           Execute(const conduit::Node &actions)=0;
-
-    virtual void           Info(conduit::Node &info_out)=0;
-
-    virtual conduit::Node &Info()=0;
-
-    virtual void           Cleanup()=0;
-
-    virtual void           DisplayError(const std::string &msg);
 };
 
 //-----------------------------------------------------------------------------
 };
+#endif
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
-

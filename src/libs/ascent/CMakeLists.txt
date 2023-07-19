@@ -122,6 +122,7 @@ set(ascent_headers
     runtimes/ascent_flow_runtime.hpp
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_data_object.hpp
+    runtimes/ascent_executor.hpp
     runtimes/ascent_metadata.hpp
     runtimes/ascent_transmogrifier.hpp
     # expressions
@@ -163,8 +164,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_htg_filters.hpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
-    runtimes/flow_filters/ascent_runtime_shell_command_filters.hpp
-    runtimes/flow_filters/ascent_runtime_callback_filters.hpp
+    runtimes/flow_filters/ascent_runtime_command_filters.hpp
     runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
@@ -192,6 +192,7 @@ set(ascent_sources
     runtimes/ascent_flow_runtime.cpp
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_data_object.cpp
+    runtimes/ascent_executor.cpp
     runtimes/ascent_metadata.cpp
     runtimes/ascent_transmogrifier.cpp
     # expressions
@@ -229,8 +230,7 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_htg_filters.cpp
     runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
-    runtimes/flow_filters/ascent_runtime_shell_command_filters.cpp
-    runtimes/flow_filters/ascent_runtime_callback_filters.cpp
+    runtimes/flow_filters/ascent_runtime_command_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
     utils/ascent_actions_utils.cpp

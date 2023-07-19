@@ -4,20 +4,21 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_callback_filters.cpp
+/// file: ascent_runtime_command_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_callback_filters.hpp"
+#include "ascent_runtime_command_filters.hpp"
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
 
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#endif
 
 // conduit includes
 #include <conduit.hpp>
@@ -26,8 +27,9 @@
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
-#include <ascent_expression_eval.hpp>
+#include "ascent_executor.hpp"
 #include <ascent_data_object.hpp>
+#include <ascent_expression_eval.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_runtime_param_check.hpp>
 
@@ -57,51 +59,77 @@ namespace runtime
 namespace filters
 {
 
-
 //-----------------------------------------------------------------------------
-Callback::Callback()
-:Filter()
+Command::Command()
+    : Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-Callback::~Callback()
+Command::~Command()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-Callback::declare_interface(Node &i)
+Command::declare_interface(Node &i)
 {
-    i["type_name"]   = "callback";
+    i["type_name"] = "command";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
 bool
-Callback::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
+Command::verify_params(const conduit::Node &params,
+                       conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("name", params, info, true);
+
+    bool has_callback = params.has_path("callback");
+    bool has_shell_command = params.has_path("shell_command");
+
+    bool res = false;
+    if (has_callback ^ has_shell_command)
+    {
+        res = true;
+        command_type = has_callback ? "callback" : "shell_command";
+    }
+    else
+    {
+        info["errors"].append() = "Both a callback and shell command are "
+                                "present. Choose one or the other.";
+    }
+
+    has_mpi_behavior = params.has_path("mpi_behavior");
+    if (has_mpi_behavior)
+    {
+        std::string mpi_behavior = params["mpi_behavior"].as_string();
+        if (mpi_behavior != "root" && mpi_behavior != "all")
+        {
+            res = false;
+            info["errors"].append() = "Valid choices for mpi_behavior are "
+                                      "'root' or 'all'.";
+        }
+    }
 
     std::vector<std::string> valid_paths;
-    valid_paths.push_back("name");
+    valid_paths.push_back("callback");
+    valid_paths.push_back("shell_command");
     valid_paths.push_back("mpi_behavior");
 
     std::vector<std::string> ignore_paths;
     // don't go down the actions path
     ignore_paths.push_back("actions");
 
-    std::string surprises = surprise_check(valid_paths, ignore_paths,params);
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
-    if(surprises != "")
+    if (surprises != "")
     {
-      res = false;
-      info["errors"].append() = surprises;
+        res = false;
+        info["errors"].append() = surprises;
     }
 
     return res;
@@ -109,31 +137,46 @@ Callback::verify_params(const conduit::Node &params,
 
 //-----------------------------------------------------------------------------
 void
-Callback::execute()
+Command::execute()
 {
-    if(!input(0).check_type<DataObject>())
+
+    if (!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("Callback input must be a data object");
+        ASCENT_ERROR("Command input must be a data object");
     }
 
-    std::string callback_name = params()["name"].as_string();
+    std::string command;
+    if (command_type == "callback")
+    {
+        command = params()["callback"].as_string();
+    }
+    else
+    {
+        command = params()["shell_command"].as_string();
+    }
 
     #ifdef ASCENT_MPI_ENABLED
-        std::string mpi_behavior = params()["mpi_behavior"].as_string();
-        if (mpi_behavior == "root") {
-            int comm = Workspace::default_mpi_comm();
-            int rank;
-            MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
-            if (rank == 0) {
-                Workspace::fire_callback(callback_name);
-            }
-            return;
+    std::string mpi_behavior = "all";
+    if (has_mpi_behavior)
+    {
+        mpi_behavior = params()["mpi_behavior"].as_string();
+    }
+    
+    if (mpi_behavior == "root")
+    {
+        int comm = Workspace::default_mpi_comm();
+        int rank;
+        MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
+        if (rank == 0)
+        {
+            Executor::execute(command, command_type);
         }
+        return;
+    }
     #endif
 
-    Workspace::fire_callback(callback_name);
+    Executor::execute(command, command_type);
 }
-
 
 //-----------------------------------------------------------------------------
 };
@@ -141,21 +184,14 @@ Callback::execute()
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

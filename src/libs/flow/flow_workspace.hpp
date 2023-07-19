@@ -145,10 +145,6 @@ public:
 
     void enable_timings(bool enabled);
 
-    void static register_callback(const std::string &callback_name,
-                                  void (*callback_function)(void));
-    void static fire_callback(const std::string &callback_name);
-
 private:
 
     static Filter *create_filter(const std::string &filter_type);
@@ -162,8 +158,6 @@ private:
     Registry          m_registry;
     std::stringstream m_timing_info;
     bool              m_enable_timings;
-
-    static std::map<std::string, void (*)(void)> m_callback_map;
 
 };
 

@@ -7,14 +7,11 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime.hpp
+/// file: ascent_executor.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_HPP
-#define ASCENT_RUNTIME_HPP
-
-#include <ascent.hpp>
+#include "ascent_executor.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -22,39 +19,39 @@
 namespace ascent
 {
 
-// Pipeline Interface Class
-
-class ASCENT_API Runtime
+void Executor::register_callback(const std::string &callback_name,
+                                bool (*callback_function)(void))
 {
-public:
-    Runtime();
-    virtual ~Runtime();
+  m_callback_map.insert(std::make_pair(callback_name, callback_function));
+}
 
-    virtual void           Initialize(const conduit::Node &options)=0;
+void Executor::execute(const std::string &command,
+                       const std::string &command_type)
+{
+  if (command_type == "callback")
+  {
+    execute_callback(command);
+  }
+  else
+  {
+    execute_shell_command(command);
+  }
+}
 
-    virtual void           RegisterCallback(const std::string &callback_name,
-                                            bool (*callback_function)(void))=0;
-    virtual void           Publish(const conduit::Node &data)=0;
-    virtual void           Execute(const conduit::Node &actions)=0;
+void Executor::execute_callback(const std::string &callback_name)
+{
+  auto callback_pair = m_callback_map.find(callback_name);
+  auto callback_function = callback_pair->second;
+  callback_function();
+}
 
-    virtual void           Info(conduit::Node &info_out)=0;
-
-    virtual conduit::Node &Info()=0;
-
-    virtual void           Cleanup()=0;
-
-    virtual void           DisplayError(const std::string &msg);
-};
+void Executor::execute_shell_command(const std::string &shell_command)
+{
+  system(shell_command.c_str());
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-#endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
-

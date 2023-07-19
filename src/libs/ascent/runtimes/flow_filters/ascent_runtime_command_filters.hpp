@@ -4,20 +4,18 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_callback_filters.hpp
+/// file: ascent_runtime_command_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_CALLBACK_FILTERS
-#define ASCENT_RUNTIME_CALLBACK_FILTERS
+#ifndef ASCENT_RUNTIME_COMMAND_FILTERS
+#define ASCENT_RUNTIME_COMMAND_FILTERS
 
 #include <ascent.hpp>
 
 #include <flow_filter.hpp>
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -44,18 +42,20 @@ namespace filters
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-class ASCENT_API Callback : public ::flow::Filter
+class ASCENT_API Command : public ::flow::Filter
 {
 public:
-    Callback();
-   ~Callback();
+    Command();
+    ~Command();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+private:
+    std::string command_type;
+    bool has_mpi_behavior;
 };
-
 
 };
 //-----------------------------------------------------------------------------
@@ -73,9 +73,6 @@ public:
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
 
 #endif
 //-----------------------------------------------------------------------------

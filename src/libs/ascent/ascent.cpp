@@ -325,7 +325,7 @@ Ascent::open(const conduit::Node &options)
 //-----------------------------------------------------------------------------
 void
 Ascent::register_callback(const std::string &callback_name,
-                          void (*callback_function)(void))
+                          bool (*callback_function)(void))
 {
      try
     {
