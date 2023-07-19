@@ -135,14 +135,13 @@ set(ascent_headers
     runtimes/expressions/ascent_expressions_parser.hpp
     runtimes/expressions/ascent_math.hpp
     runtimes/expressions/ascent_dispatch.hpp
-    runtimes/expressions/ascent_meshes.hpp
+    runtimes/expressions/ascent_device_mesh_blueprint.hpp
     runtimes/expressions/ascent_array.hpp
     runtimes/expressions/ascent_array_utils.hpp
     runtimes/expressions/ascent_array_internals.hpp
     runtimes/expressions/ascent_array_internals_base.hpp
     runtimes/expressions/ascent_array_registry.hpp
     runtimes/expressions/ascent_data_binning.hpp
-    runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
     runtimes/expressions/ascent_execution_policies.hpp
     runtimes/expressions/ascent_execution_manager.hpp

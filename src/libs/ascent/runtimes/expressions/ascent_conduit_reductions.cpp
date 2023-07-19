@@ -13,7 +13,7 @@
 
 #include "ascent_conduit_reductions.hpp"
 #include "ascent_memory_manager.hpp"
-#include "ascent_memory_interface.hpp"
+#include "ascent_device_mesh_blueprint.hpp"
 #include "ascent_array.hpp"
 #include "ascent_execution_policies.hpp"
 #include "ascent_execution_manager.hpp"
@@ -123,26 +123,26 @@ conduit::Node dispatch_memory(const conduit::Node &field,
   conduit::Node res;
   if(field_is_float32(field))
   {
-    MemoryInterface<conduit::float32> farray(field);
-    MemoryAccessor<conduit::float32> accessor = farray.accessor(mem_space,component);
+    MCArray<conduit::float32> farray(field["values"]);
+    DeviceAccessor<conduit::float32> accessor = farray.accessor(mem_space,component);
     res = func(accessor, exec);
   }
   else if(field_is_float64(field))
   {
-    MemoryInterface<conduit::float64> farray(field);
-    MemoryAccessor<conduit::float64> accessor = farray.accessor(mem_space,component);
+    MCArray<conduit::float64> farray(field["values"]);
+    DeviceAccessor<conduit::float64> accessor = farray.accessor(mem_space,component);
     res = func(accessor, exec);
   }
   else if(field_is_int32(field))
   {
-    MemoryInterface<conduit::int32> farray(field);
-    MemoryAccessor<conduit::int32> accessor = farray.accessor(mem_space,component);
+    MCArray<conduit::int32> farray(field["values"]);
+    DeviceAccessor<conduit::int32> accessor = farray.accessor(mem_space,component);
     res = func(accessor, exec);
   }
   else if(field_is_int64(field))
   {
-    MemoryInterface<conduit::int64> farray(field);
-    MemoryAccessor<conduit::int64> accessor = farray.accessor(mem_space,component);
+    MCArray<conduit::int64> farray(field["values"]);
+    DeviceAccessor<conduit::int64> accessor = farray.accessor(mem_space,component);
     res = func(accessor, exec);
   }
   else
@@ -209,22 +209,22 @@ field_dispatch(const conduit::Node &field, const Function &func)
 
   if(field_is_float32(field))
   {
-    MemoryInterface<conduit::float32> farray(field);
+    MCArray<conduit::float32> farray(field["values"]);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_float64(field))
   {
-    MemoryInterface<conduit::float64> farray(field);
+    MCArray<conduit::float64> farray(field["values"]);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_int32(field))
   {
-    MemoryInterface<conduit::int32> farray(field);
+    MCArray<conduit::int32> farray(field["values"]);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else if(field_is_int64(field))
   {
-    MemoryInterface<conduit::int64> farray(field);
+    MCArray<conduit::int64> farray(field["values"]);
     res = func(farray.ptr_const(), farray.size(0));
   }
   else
@@ -402,7 +402,7 @@ struct GradientFunctor
 struct MaxFunctor
 {
   template<typename T, typename Exec>
-  conduit::Node operator()(const MemoryAccessor<T> accessor,
+  conduit::Node operator()(const DeviceAccessor<T> accessor,
                            const Exec &) const
   {
     T identity = std::numeric_limits<T>::lowest();
@@ -430,7 +430,7 @@ struct MaxFunctor
 struct MinFunctor
 {
   template<typename T, typename Exec>
-  conduit::Node operator()(const MemoryAccessor<T> accessor,
+  conduit::Node operator()(const DeviceAccessor<T> accessor,
                            const Exec &) const
   {
     T identity = std::numeric_limits<T>::max();
@@ -458,7 +458,7 @@ struct MinFunctor
 struct SumFunctor
 {
   template<typename T, typename Exec>
-  conduit::Node operator()(const MemoryAccessor<T> accessor,
+  conduit::Node operator()(const DeviceAccessor<T> accessor,
                            const Exec &) const
   {
     const int size = accessor.m_size;
@@ -484,7 +484,7 @@ struct SumFunctor
 struct NanFunctor
 {
   template<typename T, typename Exec>
-  conduit::Node operator()(const MemoryAccessor<T> accessor,
+  conduit::Node operator()(const DeviceAccessor<T> accessor,
                            const Exec &) const
   {
     const int size = accessor.m_size;
@@ -517,7 +517,7 @@ struct InfFunctor
 {
   // default template for non floating point types
   template<typename T, typename Exec>
-  conduit::Node operator()(const MemoryAccessor<T> accessor, Exec &) const
+  conduit::Node operator()(const DeviceAccessor<T> accessor, Exec &) const
   {
     const int size = accessor.m_size;
     T sum = 0;
@@ -528,7 +528,7 @@ struct InfFunctor
   }
 
   template<typename T, typename Exec>
-  conduit::Node impl(const MemoryAccessor<T> accessor, Exec &) const
+  conduit::Node impl(const DeviceAccessor<T> accessor, Exec &) const
   {
     using for_policy = typename Exec::for_policy;
     using reduce_policy = typename Exec::reduce_policy;
@@ -556,13 +556,13 @@ struct InfFunctor
   }
 
   template<typename Exec>
-  conduit::Node operator()(const MemoryAccessor<float> accessor, Exec &exec) const
+  conduit::Node operator()(const DeviceAccessor<float> accessor, Exec &exec) const
   {
     return impl(accessor, exec);
   }
 
   template<typename Exec>
-  conduit::Node operator()(const MemoryAccessor<double> accessor, Exec &exec) const
+  conduit::Node operator()(const DeviceAccessor<double> accessor, Exec &exec) const
   {
     return impl(accessor, exec);
   }
@@ -582,7 +582,7 @@ struct HistogramFunctor
   {}
 
   template<typename T, typename Exec>
-  conduit::Node operator()(const MemoryAccessor<T> accessor,
+  conduit::Node operator()(const DeviceAccessor<T> accessor,
                            const Exec &) const
   {
     const int size = accessor.m_size;

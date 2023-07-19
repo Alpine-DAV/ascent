@@ -503,8 +503,8 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
   const std::string mem_space = Exec::memory_space;
 
 
-  MemoryInterface<T> farray(field);
-  MemoryAccessor<T> accessor = farray.accessor(mem_space,component);
+  MCArray<T> farray(field["values"]);
+  DeviceAccessor<T> accessor = farray.accessor(mem_space,component);
   Array<double> res;
   const int size = accessor.m_size;
   res.resize(size);

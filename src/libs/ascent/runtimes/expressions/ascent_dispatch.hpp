@@ -2,8 +2,7 @@
 #define ASCENT_DISPATCH_HPP
 
 #include "ascent_memory_manager.hpp"
-#include "ascent_memory_interface.hpp"
-#include "ascent_meshes.hpp"
+#include "ascent_device_mesh_blueprint.hpp"
 #include "ascent_array.hpp"
 #include "ascent_execution_policies.hpp"
 #include "ascent_execution_manager.hpp"
@@ -85,11 +84,11 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
     // figure out the types of coords
     if(is_conduit_type<conduit::float32>(n_coords["values/x"]))
     {
-      MemoryInterface<conduit::float32> coords(n_coords);
+      MCArray<conduit::float32> coords(n_coords["values"]);
 
       if(is_conduit_type<conduit::int32>(n_topo[conn_path]))
       {
-        MemoryInterface<conduit::int32> conn(n_topo, conn_path);
+        MCArray<conduit::int32> conn(n_topo[conn_path]);
         UnstructuredMesh<conduit::float32,conduit::int32> mesh(mem_space,
                                                                coords,
                                                                conn,
@@ -99,7 +98,7 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
       }
       else if(is_conduit_type<conduit::int64>(n_topo[conn_path]))
       {
-        MemoryInterface<conduit::int64> conn(n_topo, conn_path);
+        MCArray<conduit::int64> conn(n_topo[conn_path]);
         UnstructuredMesh<conduit::float32,conduit::int64> mesh(mem_space,
                                                                coords,
                                                                conn,
@@ -115,11 +114,11 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
     }
     else if(is_conduit_type<conduit::float64>(n_coords["values/x"]))
     {
-      MemoryInterface<conduit::float64> coords(n_coords);
+      MCArray<conduit::float64> coords(n_coords["values"]);
 
       if(is_conduit_type<conduit::int32>(n_topo[conn_path]))
       {
-        MemoryInterface<conduit::int32> conn(n_topo, conn_path);
+        MCArray<conduit::int32> conn(n_topo["conn_path"]);
         UnstructuredMesh<conduit::float64,conduit::int32> mesh(mem_space,
                                                                coords,
                                                                conn,
@@ -129,7 +128,7 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
       }
       else if(is_conduit_type<conduit::int64>(n_topo[conn_path]))
       {
-        MemoryInterface<conduit::int64> conn(n_topo, conn_path);
+        MCArray<conduit::int64> conn(n_topo[conn_path]);
         UnstructuredMesh<conduit::float64,conduit::int64> mesh(mem_space,
                                                                coords,
                                                                conn,
@@ -170,7 +169,7 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
     // figure out the types of coords
     if(is_conduit_type<conduit::float32>(n_coords["values/x"]))
     {
-      MemoryInterface<conduit::float32> coords(n_coords);
+      MCArray<conduit::float32> coords(n_coords["values"]);
       RectilinearMesh<conduit::float32> mesh(mem_space,
                                              coords,
                                              dims);
@@ -178,7 +177,7 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
     }
     else if(is_conduit_type<conduit::float64>(n_coords["values/x"]))
     {
-      MemoryInterface<conduit::float32> coords(n_coords);
+      MCArray<conduit::float32> coords(n_coords["values"]);
       RectilinearMesh<conduit::float32> mesh(mem_space,
                                              coords,
                                              dims);
@@ -215,7 +214,7 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
     // figure out the types of coords
     if(is_conduit_type<conduit::float32>(n_coords["values/x"]))
     {
-      MemoryInterface<conduit::float32> coords(n_coords);
+      MCArray<conduit::float32> coords(n_coords["values"]);
       StructuredMesh<conduit::float32> mesh(mem_space,
                                             coords,
                                             dims,
@@ -224,7 +223,7 @@ dispatch_memory_mesh(const conduit::Node &n_coords,
     }
     else if(is_conduit_type<conduit::float64>(n_coords["values/x"]))
     {
-      MemoryInterface<conduit::float32> coords(n_coords);
+      MCArray<conduit::float32> coords(n_coords["values"]);
       StructuredMesh<conduit::float32> mesh(mem_space,
                                             coords,
                                             dims,

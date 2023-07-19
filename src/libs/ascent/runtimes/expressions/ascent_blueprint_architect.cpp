@@ -14,7 +14,7 @@
 #include "ascent_array.hpp"
 #include "ascent_array_utils.hpp"
 #include "ascent_dispatch.hpp"
-#include "ascent_memory_interface.hpp"
+#include "ascent_device_mesh_blueprint.hpp"
 #include "ascent_execution_manager.hpp"
 #include "ascent_conduit_reductions.hpp"
 
@@ -197,7 +197,7 @@ get_element_indices(const conduit::Node &n_topo,
     // this is an array that could be on the GPU, so we have to
     // use special care
     const conduit::Node &n_topo_conn = n_topo_eles["connectivity"];
-    MemoryInterface<int> conn(n_topo_eles, "connectivity");
+    MCArray<int> conn(n_topo_eles["connectivity"]);
     const int offset = index * num_indices;
     for(int i = 0; i < num_indices; ++i)
     {
@@ -288,22 +288,22 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
   double vert[3] = {0., 0., 0.};
   if(is_float64)
   {
-    MemoryInterface<double> array(n_coords);
-    vert[0] = array.value(index,"x");
-    vert[1] = array.value(index,"y");
-    if(array.components() == 3)
+    MCArray<double> coords_vals(n_coords["values"]);
+    vert[0] = coords_vals.value(index,"x");
+    vert[1] = coords_vals.value(index,"y");
+    if(coords_vals.components() == 3)
     {
-      vert[2] = array.value(index,"z");
+      vert[2] = coords_vals.value(index,"z");
     }
   }
   else
   {
-    MemoryInterface<float> array(n_coords);
-    vert[0] = array.value(index,"x");
-    vert[1] = array.value(index,"y");
-    if(array.components() == 3)
+    MCArray<float> coords_vals(n_coords["values"]);
+    vert[0] = coords_vals.value(index,"x");
+    vert[1] = coords_vals.value(index,"y");
+    if(coords_vals.components() == 3)
     {
-      vert[2] = array.value(index,"z");
+      vert[2] = coords_vals.value(index,"z");
     }
   }
 
@@ -345,7 +345,7 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
 
   if(is_float64)
   {
-    MemoryInterface<double> f_coords(n_coords);
+    MCArray<double> f_coords(n_coords["values"]);
     vert[0] = f_coords.value(logical_index[0],"x");
     vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
@@ -355,7 +355,7 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
   }
   else
   {
-    MemoryInterface<float> f_coords(n_coords);
+    MCArray<float> f_coords(n_coords["values"]);
     vert[0] = f_coords.value(logical_index[0],"x");
     vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
