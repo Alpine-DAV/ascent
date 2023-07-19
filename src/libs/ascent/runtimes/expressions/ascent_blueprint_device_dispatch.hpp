@@ -51,7 +51,6 @@ template<typename Function>
 conduit::Node
 exec_dispatch_two_leaves(const conduit::Node &values0,
                          const conduit::Node &values1,
-                         const bool is_list,
                          const Function &func)
 {
   // check for single component scalar
@@ -59,7 +58,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
   int num_children1 = values1.number_of_children();
   if(num_children0 > 1 || num_children1 > 1)
   {
-    ASCENT_ERROR("Internal error: expected scalar array.");
+    ASCENT_ERROR("exec_dispatch_two_leaves: Internal error: expected leaf arrays.");
   }
   const conduit::Node &vals0 = num_children0 == 0 ? values0 : values0.child(0);
   const conduit::Node &vals1 = num_children1 == 0 ? values1 : values1.child(0);
@@ -75,7 +74,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
-    else if(vals1.dtype().is_float64() || is_list) {
+    else if(vals1.dtype().is_float64()) {
       const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
@@ -88,7 +87,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
     else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+      ASCENT_ERROR("exec_dispatch_two_leaves: unsupported array type for array1: "<< values1.schema().to_string());
     }
   }
   else if(vals0.dtype().is_float64())
@@ -98,7 +97,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
-    else if(vals1.dtype().is_float64() || is_list) {
+    else if(vals1.dtype().is_float64()) {
       const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
@@ -111,7 +110,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
     else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+      ASCENT_ERROR("exec_dispatch_two_leaves: unsupported array type for array1: "<< values1.schema().to_string());
     }
   }
   else if(vals0.dtype().is_int32())
@@ -121,7 +120,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
-    else if(vals1.dtype().is_float64() || is_list) {
+    else if(vals1.dtype().is_float64()) {
       const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
@@ -134,7 +133,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
     else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+      ASCENT_ERROR("exec_dispatch_two_leaves: unsupported array type for array1: "<< values1.schema().to_string());
     }
   }
   else if(vals0.dtype().is_int64())
@@ -144,7 +143,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
-    else if(vals1.dtype().is_float64() || is_list) {
+    else if(vals1.dtype().is_float64()) {
       const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
@@ -157,12 +156,12 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
       res = func(ptr0, ptr1, num_vals0, num_vals1);
     }
     else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+      ASCENT_ERROR("exec_dispatch_two_leaves: unsupported array type for array1: "<< values1.schema().to_string());
     }
   }
   else
   {
-    ASCENT_ERROR("Type dispatch: unsupported array type for array0: "<<
+    ASCENT_ERROR("exec_dispatch_two_leavesh: unsupported array type for array0: "<<
                   values0.schema().to_string());
   }
   return res;
@@ -173,7 +172,7 @@ exec_dispatch_two_leaves(const conduit::Node &values0,
 //-----------------------------------------------------------------------------
 template<typename Function, typename Exec>
 conduit::Node exec_dispatch_mcarray_component(const conduit::Node &node,
-                                              std::string component,
+                                              const std::string &component,
                                               const Function &func,
                                               const Exec &exec)
 {
@@ -218,7 +217,7 @@ conduit::Node exec_dispatch_mcarray_component(const conduit::Node &node,
 template<typename Function>
 conduit::Node
 exec_dispatch_mcarray_component(const conduit::Node &node,
-                                std::string component,
+                                const std::string &component,
                                 const Function &func)
 {
 

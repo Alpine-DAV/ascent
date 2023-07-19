@@ -2786,7 +2786,7 @@ ExprHistoryGradientRange::execute()
     return;
   }
 
-  conduit::Node gradient = array_gradient((*output)["value"], (*output)["time"]);
+  conduit::Node gradient = history_gradient_range((*output)["value"], (*output)["time"]);
 
 
   (*output)["value"] = gradient["value"];

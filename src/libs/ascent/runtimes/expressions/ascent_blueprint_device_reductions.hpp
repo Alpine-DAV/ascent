@@ -37,9 +37,8 @@ namespace expressions
 {
 
 
-conduit::Node ASCENT_API array_gradient(const conduit::Node &y_values,
-                             const conduit::Node &dx_values,
-                             bool is_list = false);
+conduit::Node ASCENT_API history_gradient_range(const conduit::Node &y_values,
+                                                const conduit::Node &dx_values);
 
 conduit::Node ASCENT_API field_reduction_max(const conduit::Node &field,
                                   const std::string &component = "");

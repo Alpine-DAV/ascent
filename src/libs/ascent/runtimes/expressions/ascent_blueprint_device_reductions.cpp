@@ -291,7 +291,7 @@ struct HistogramFunctor
 
 ////////////////////////////////////////////////////////////////////////////////////
 // TODO THIS NEEDS TO BE RAJAFIED
-struct GradientFunctor
+struct HistoryGradientRangeFunctor
 {
   template<typename T, typename T2>
   conduit::Node operator()(const T* y_values, const T2* dx_values, const int &size_y_values, const int &size_dx_values) const
@@ -340,14 +340,11 @@ struct GradientFunctor
 //-----------------------------------------------------------------------------
 
 conduit::Node
-
-
-array_gradient(const conduit::Node &y_values,
-               const conduit::Node &dx_values,
-               const bool is_list)
+history_gradient_range(const conduit::Node &y_values,
+                       const conduit::Node &dx_values)
 {
   // TODO THIS NEEDS TO BE PORTED TO RAJA ?
-  return exec_dispatch_two_leaves(y_values, dx_values, is_list, detail::GradientFunctor());
+  return exec_dispatch_two_leaves(y_values, dx_values, detail::HistoryGradientRangeFunctor());
 }
 
 
