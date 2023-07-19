@@ -44,7 +44,6 @@
 #include <expressions/ascent_derived_jit.hpp>
 #include <flow_filters/ascent_runtime_command_filters.hpp>
 #include <ascent_transmogrifier.hpp>
-#include <ascent_executor.hpp>
 #include <ascent_data_object.hpp>
 #include <ascent_data_logger.hpp>
 
@@ -513,7 +512,7 @@ void
 AscentRuntime::RegisterCallback(const std::string &callback_name,
                                 bool (*callback_function)(void))
 {
-  m_executor.register_callback(callback_name, callback_function);
+  runtime::filters::Command::register_callback(callback_name, callback_function);
 }
 
 //-----------------------------------------------------------------------------

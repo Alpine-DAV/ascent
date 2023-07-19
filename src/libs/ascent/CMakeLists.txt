@@ -122,7 +122,6 @@ set(ascent_headers
     runtimes/ascent_flow_runtime.hpp
     runtimes/ascent_main_runtime.hpp
     runtimes/ascent_data_object.hpp
-    runtimes/ascent_executor.hpp
     runtimes/ascent_metadata.hpp
     runtimes/ascent_transmogrifier.hpp
     # expressions
@@ -192,7 +191,6 @@ set(ascent_sources
     runtimes/ascent_flow_runtime.cpp
     runtimes/ascent_main_runtime.cpp
     runtimes/ascent_data_object.cpp
-    runtimes/ascent_executor.cpp
     runtimes/ascent_metadata.cpp
     runtimes/ascent_transmogrifier.cpp
     # expressions

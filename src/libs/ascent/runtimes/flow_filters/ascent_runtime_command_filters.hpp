@@ -41,6 +41,8 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 
+static std::map<std::string, bool (*)(void)> m_callback_map;
+
 //-----------------------------------------------------------------------------
 class ASCENT_API Command : public ::flow::Filter
 {
@@ -51,10 +53,11 @@ public:
     virtual bool verify_params(const conduit::Node &params,
                                conduit::Node &info);
     virtual void execute();
-
-private:
-    std::string command_type;
-    bool has_mpi_behavior;
+    
+    void static register_callback(const std::string &callback_name,
+                                  bool (*callback_function)(void));
+    void static execute_command(const std::string &command,
+                                const std::string &command_type);
 };
 
 };

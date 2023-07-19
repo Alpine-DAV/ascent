@@ -27,7 +27,6 @@
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
-#include "ascent_executor.hpp"
 #include <ascent_data_object.hpp>
 #include <ascent_expression_eval.hpp>
 #include <ascent_logging.hpp>
@@ -61,7 +60,7 @@ namespace filters
 
 //-----------------------------------------------------------------------------
 Command::Command()
-    : Filter()
+:Filter()
 {
 // empty
 }
@@ -91,28 +90,11 @@ Command::verify_params(const conduit::Node &params,
     bool has_callback = params.has_path("callback");
     bool has_shell_command = params.has_path("shell_command");
 
-    bool res = false;
-    if (has_callback ^ has_shell_command)
-    {
-        res = true;
-        command_type = has_callback ? "callback" : "shell_command";
-    }
-    else
+    bool res = has_callback ^ has_shell_command;
+    if (!res)
     {
         info["errors"].append() = "Both a callback and shell command are "
-                                "present. Choose one or the other.";
-    }
-
-    has_mpi_behavior = params.has_path("mpi_behavior");
-    if (has_mpi_behavior)
-    {
-        std::string mpi_behavior = params["mpi_behavior"].as_string();
-        if (mpi_behavior != "root" && mpi_behavior != "all")
-        {
-            res = false;
-            info["errors"].append() = "Valid choices for mpi_behavior are "
-                                      "'root' or 'all'.";
-        }
+                                  "present. Choose one or the other.";
     }
 
     std::vector<std::string> valid_paths;
@@ -145,37 +127,55 @@ Command::execute()
         ASCENT_ERROR("Command input must be a data object");
     }
 
-    std::string command;
-    if (command_type == "callback")
-    {
-        command = params()["callback"].as_string();
-    }
-    else
-    {
-        command = params()["shell_command"].as_string();
-    }
+    bool has_callback = params().has_path("callback");
+    std::string command_type = has_callback ? "callback" : "shell_command";
+    std::string command = params()[command_type].as_string();    
 
     #ifdef ASCENT_MPI_ENABLED
-    std::string mpi_behavior = "all";
+
+    bool has_mpi_behavior = params().has_path("mpi_behavior");
     if (has_mpi_behavior)
     {
-        mpi_behavior = params()["mpi_behavior"].as_string();
-    }
-    
-    if (mpi_behavior == "root")
-    {
-        int comm = Workspace::default_mpi_comm();
-        int rank;
-        MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
-        if (rank == 0)
+        std::string mpi_behavior = params()["mpi_behavior"].as_string();
+        if (mpi_behavior == "root")
         {
-            Executor::execute(command, command_type);
+            int comm = Workspace::default_mpi_comm();
+            int rank;
+            MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
+            if (rank == 0)
+            {
+                execute_command(command, command_type);
+            }
+            return;
         }
-        return;
     }
     #endif
 
-    Executor::execute(command, command_type);
+    execute_command(command, command_type);
+}
+
+//-----------------------------------------------------------------------------
+void
+Command::register_callback(const std::string &callback_name,
+                           bool (*callback_function)(void))
+{
+  m_callback_map.insert(std::make_pair(callback_name, callback_function));
+}
+
+//-----------------------------------------------------------------------------
+void
+Command::execute_command(const std::string &command,
+                const std::string &command_type)
+{
+    if (command_type == "callback")
+    {
+        auto callback_pair = m_callback_map.find(command);
+        auto callback_function = callback_pair->second;
+        callback_function();
+    } else if (command_type == "shell_command")
+    {
+        system(command.c_str());
+    }
 }
 
 //-----------------------------------------------------------------------------

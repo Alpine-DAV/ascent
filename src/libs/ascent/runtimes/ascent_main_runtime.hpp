@@ -18,7 +18,6 @@
 #include <ascent_exports.h>
 #include <ascent_runtime.hpp>
 #include <ascent_data_object.hpp>
-#include <ascent_executor.hpp>
 #include <ascent_web_interface.hpp>
 #include <flow.hpp>
 
@@ -92,8 +91,6 @@ private:
 
     void              ResetInfo();
     void              AddPublishedMeshInfo();
-
-    Executor          m_executor;
 
     flow::Workspace   m_workspace;
     conduit::Node CreateDefaultFilters();
