@@ -52,56 +52,69 @@ We also provide spack settings for several well known HPC clusters, here is an e
 For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
-Public Installs of Ascent
+build_ascent.sh
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We also provide public installs of Ascent for the default compilers at a few  DOE HPC centers.
+We also provide a stand alone shell script ``build_ascent.sh`` that builds Ascent and its dependencies. This script serves both to help with automatically building Ascent as well as documenting the steps necessary to build Ascent manually.
 
-Summary table of public ascent installs:
-
-.. list-table::
-   :widths: 10 15 10 10 20 50
-   :header-rows: 1
-
-   * - Site
-     - System
-     - Compiler
-     - Runtime
-     - Modules
-     - Install Path
-
-   * - OLCF
-     - Summit
-     - gcc 9.3.0
-     - CUDA 11.0.3
-     -  ``gcc/9.3.0`` ``cuda/11.0.3``
-     - ``/sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/``
-
-   * - OLCF
-     - Summit
-     - gcc 9.3.0
-     - OpenMP
-     - ``gcc/9.3.0``
-     - ``/sw/summit/ums/ums010/ascent/current/summit/openmp/gnu/ascent-install/``
-
-   * - NERSC
-     - Permutter
-     - gcc 9.3.0
-     - CUDA 11.4.0
-     - ``PrgEnv-gnu`` ``cpe-cuda/21.12``  ``cudatoolkit/21.9_11.4``
-     - ``/global/cfs/cdirs/alpine/software/ascent/current/perlmutter/cuda/gnu/ascent-install/``
-
-   * - LLNL LC
-     - CZ TOSS 3 (Pascal)
-     - gcc 4.9.3
-     - OpenMP
-     - (none)
-     - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
+ * `https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_
 
 
-`Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
+There are also wrapper scripts for specific HPC platforms (e.g. ``build_ascent_hip_frontier.sh`` for ORNL's Frontier, etc) script that you can leverage. Here is the Frontier HIP script:
 
-See :ref:`tutorial_setup_public_installs` for more details on using these installs.
+ * `https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_hip_frontier.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_hip_frontier.sh>`_
+
+
+.. Public Installs of Ascent
+.. ~~~~~~~~~~~~~~~~~~~~~~~~~
+..
+.. We also provide public installs of Ascent for the default compilers at a few  DOE HPC centers.
+..
+.. Summary table of public ascent installs:
+..
+.. .. list-table::
+..    :widths: 10 15 10 10 20 50
+..    :header-rows: 1
+..
+..    * - Site
+..      - System
+..      - Compiler
+..      - Runtime
+..      - Modules
+..      - Install Path
+..
+..    * - OLCF
+..      - Summit
+..      - gcc 9.3.0
+..      - CUDA 11.0.3
+..      -  ``gcc/9.3.0`` ``cuda/11.0.3``
+..      - ``/sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/``
+..
+..    * - OLCF
+..      - Summit
+..      - gcc 9.3.0
+..      - OpenMP
+..      - ``gcc/9.3.0``
+..      - ``/sw/summit/ums/ums010/ascent/current/summit/openmp/gnu/ascent-install/``
+..
+..    * - NERSC
+..      - Permutter
+..      - gcc 9.3.0
+..      - CUDA 11.4.0
+..      - ``PrgEnv-gnu`` ``cpe-cuda/21.12``  ``cudatoolkit/21.9_11.4``
+..      - ``/global/cfs/cdirs/alpine/software/ascent/current/perlmutter/cuda/gnu/ascent-install/``
+..
+..    * - LLNL LC
+..      - CZ TOSS 3 (Pascal)
+..      - gcc 4.9.3
+..      - OpenMP
+..      - (none)
+..      - ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install``
+..
+..
+.. `Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
+..
+.. See :ref:`tutorial_setup_public_installs` for more details on using these installs.
 
 .. _using_in_your_project:
 
