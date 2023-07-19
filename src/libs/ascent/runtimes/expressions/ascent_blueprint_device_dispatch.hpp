@@ -1,11 +1,18 @@
-#ifndef ASCENT_DISPATCH_HPP
-#define ASCENT_DISPATCH_HPP
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+#ifndef ASCENT_BLUEPRINT_DEVICE_DISPATCH_HPP
+#define ASCENT_BLUEPRINT_DEVICE_DISPATCH_HPP
 
-#include "ascent_memory_manager.hpp"
-#include "ascent_device_mesh_blueprint.hpp"
-#include "ascent_array.hpp"
 #include "ascent_execution_policies.hpp"
 #include "ascent_execution_manager.hpp"
+#include "ascent_memory_manager.hpp"
+#include "ascent_array.hpp"
+
+#include "ascent_blueprint_type_utils.hpp"
+#include "ascent_blueprint_device_mesh_objects.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -25,38 +32,248 @@ namespace runtime
 namespace expressions
 {
 
-static inline int cell_shape(const std::string shape_type)
+template<typename Function, typename Exec>
+conduit::Node dispatch_memory(const conduit::Node &field,
+                              std::string component,
+                              const Function &func,
+                              const Exec &exec)
 {
-  int shape_id = 0;
-  if(shape_type == "tri")
+  const std::string mem_space = Exec::memory_space;
+
+  conduit::Node res;
+  if(field_is_float32(field))
   {
-      shape_id = 5;
+    MCArray<conduit::float32> farray(field["values"]);
+    DeviceAccessor<conduit::float32> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
   }
-  else if(shape_type == "quad")
+  else if(field_is_float64(field))
   {
-      shape_id = 9;
+    MCArray<conduit::float64> farray(field["values"]);
+    DeviceAccessor<conduit::float64> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
   }
-  else if(shape_type == "tet")
+  else if(field_is_int32(field))
   {
-      shape_id = 10;
+    MCArray<conduit::int32> farray(field["values"]);
+    DeviceAccessor<conduit::int32> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
   }
-  else if(shape_type == "hex")
+  else if(field_is_int64(field))
   {
-      shape_id = 12;
-  }
-  else if(shape_type == "point")
-  {
-      shape_id = 1;
-  }
-  else if(shape_type == "line")
-  {
-      shape_id = 3;
+    MCArray<conduit::int64> farray(field["values"]);
+    DeviceAccessor<conduit::int64> accessor = farray.accessor(mem_space,component);
+    res = func(accessor, exec);
   }
   else
   {
-    ASCENT_ERROR("Unsupported cell type "<<shape_type);
+    ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                  field.schema().to_string());
   }
-  return shape_id;
+  return res;
+}
+
+template<typename Function>
+conduit::Node
+exec_dispatch(const conduit::Node &field, std::string component, const Function &func)
+{
+
+  conduit::Node res;
+  const std::string exec_policy = ExecutionManager::execution_policy();
+  //std::cout<<"Exec policy "<<exec_policy<<"\n";
+  if(exec_policy == "serial")
+  {
+    SerialExec exec;
+    res = dispatch_memory(field, component, func, exec);
+  }
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED) 
+  else if(exec_policy == "openmp")
+  {
+    OpenMPExec exec;
+    res = dispatch_memory(field, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_CUDA_ENABLED)
+  else if(exec_policy == "cuda")
+  {
+    CudaExec exec;
+    res = dispatch_memory(field, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    res = dispatch_memory(field, component, func, exec);
+  }
+#endif
+  else
+  {
+    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+                  exec_policy);
+  }
+  return res;
+}
+
+template<typename Function>
+conduit::Node
+field_dispatch(const conduit::Node &field, const Function &func)
+{
+  // check for single component scalar
+  int num_children = field["values"].number_of_children();
+  if(num_children > 1)
+  {
+    ASCENT_ERROR("Field Dispatch internal error: expected scalar array.");
+  }
+  conduit::Node res;
+
+  if(field_is_float32(field))
+  {
+    MCArray<conduit::float32> farray(field["values"]);
+    res = func(farray.ptr_const(), farray.size(0));
+  }
+  else if(field_is_float64(field))
+  {
+    MCArray<conduit::float64> farray(field["values"]);
+    res = func(farray.ptr_const(), farray.size(0));
+  }
+  else if(field_is_int32(field))
+  {
+    MCArray<conduit::int32> farray(field["values"]);
+    res = func(farray.ptr_const(), farray.size(0));
+  }
+  else if(field_is_int64(field))
+  {
+    MCArray<conduit::int64> farray(field["values"]);
+    res = func(farray.ptr_const(), farray.size(0));
+  }
+  else
+  {
+    ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                  field.schema().to_string());
+  }
+  return res;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+// TODO THIS NEEDS TO BE RAJAFIED
+template<typename Function>
+conduit::Node
+type_dispatch(const conduit::Node &values0, const conduit::Node &values1, const bool is_list, const Function &func)
+{
+  // check for single component scalar
+  int num_children0 = values0.number_of_children();
+  int num_children1 = values1.number_of_children();
+  if(num_children0 > 1 || num_children1 > 1)
+  {
+    ASCENT_ERROR("Internal error: expected scalar array.");
+  }
+  const conduit::Node &vals0 = num_children0 == 0 ? values0 : values0.child(0);
+  const conduit::Node &vals1 = num_children1 == 0 ? values1 : values1.child(0);
+
+  conduit::Node res;
+  const int num_vals0 = vals0.dtype().number_of_elements();
+  const int num_vals1 = vals1.dtype().number_of_elements();
+
+  if(vals0.dtype().is_float32())
+  {
+    const conduit::float32 *ptr0 =  vals0.as_float32_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else if(vals0.dtype().is_float64())
+  {
+    const conduit::float64 *ptr0 =  vals0.as_float64_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else if(vals0.dtype().is_int32())
+  {
+    const conduit::int32 *ptr0 =  vals0.as_int32_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else if(vals0.dtype().is_int64())
+  {
+    const conduit::int64 *ptr0 =  vals0.as_int64_ptr();
+    if(vals1.dtype().is_float32()) {
+      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_float64() || is_list) {
+      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int32()) {
+      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else if(vals1.dtype().is_int64()) {
+      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
+      res = func(ptr0, ptr1, num_vals0, num_vals1);
+    }
+    else {
+      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
+    }
+  }
+  else
+  {
+    ASCENT_ERROR("Type dispatch: unsupported array type for array0: "<<
+                  values0.schema().to_string());
+  }
+  return res;
 }
 
 template<typename Function, typename Exec>

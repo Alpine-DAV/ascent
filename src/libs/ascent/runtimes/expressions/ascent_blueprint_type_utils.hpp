@@ -1,10 +1,14 @@
-#include <expressions/ascent_array_utils.hpp>
-#include <ascent_config.h>
-#include <expressions/ascent_blueprint_device_dispatch.hpp>
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#if defined(ASCENT_RAJA_ENABLED)
-#include <RAJA/RAJA.hpp>
-#endif
+#ifndef ASCENT_BLUEPRINT_TYPE_UTILS
+#define ASCENT_BLUEPRINT_TYPE_UTILS
+
+#include <conduit.hpp>
+#include <ascent_logging.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -24,58 +28,51 @@ namespace runtime
 namespace expressions
 {
 
-namespace detail
-{
-
 //-----------------------------------------------------------------------------
-template<typename T>
-struct MemsetFunctor
+static inline int cell_shape(const std::string &shape_type)
 {
-    T m_value = T(0);
+  int shape_id = 0;
+  if(shape_type == "tri")
+  {
+      shape_id = 5;
+  }
+  else if(shape_type == "quad")
+  {
+      shape_id = 9;
+  }
+  else if(shape_type == "tet")
+  {
+      shape_id = 10;
+  }
+  else if(shape_type == "hex")
+  {
+      shape_id = 12;
+  }
+  else if(shape_type == "point")
+  {
+      shape_id = 1;
+  }
+  else if(shape_type == "line")
+  {
+      shape_id = 3;
+  }
+  else
+  {
+      ASCENT_ERROR("Unsupported cell type " << shape_type);
+  }
 
-    //---------------------------------------------------------------------------
-    template<typename Exec>
-    void operator()(Array<T> &array,
-                  const Exec &) const
-    {
-        const int size = array.size();
-        const T value = m_value;
-        T *array_ptr = array.get_ptr(Exec::memory_space);
-        using for_policy = typename Exec::for_policy;
-        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
-        {
-            array_ptr[i] = value;
-        });
-        ASCENT_DEVICE_ERROR_CHECK();
-    }
-};
-
-//-----------------------------------------------------------------------------
-template <typename T>
-void
-array_memset_impl(Array<T> &array, const T val)
-{
-    detail::MemsetFunctor<T> func;
-    func.m_value = val;
-    exec_dispatch_array(array, func);
+  return shape_id;
 }
 
-} // namespace detail
-
 
 //-----------------------------------------------------------------------------
-void
-array_memset(Array<double> &array, const double val)
-{
-    detail::array_memset_impl(array,val);
-}
-
+bool field_is_float32(const conduit::Node &field);
 //-----------------------------------------------------------------------------
-void
-array_memset(Array<int> &array, const int val)
-{
-    detail::array_memset_impl(array,val);
-}
+bool field_is_float64(const conduit::Node &field);
+//-----------------------------------------------------------------------------
+bool field_is_int32(const conduit::Node &field);
+//-----------------------------------------------------------------------------
+bool field_is_int64(const conduit::Node &field);
 
 //-----------------------------------------------------------------------------
 };
@@ -94,3 +91,5 @@ array_memset(Array<int> &array, const int val)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
+
+#endif

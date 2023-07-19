@@ -1,11 +1,16 @@
-#ifndef ASCENT_MESHES_HPP
-#define ASCENT_MESHES_HPP
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+// Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+// Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+// other details. No copyright assignment is required to contribute to Ascent.
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+#ifndef ASCENT_BLUEPRINT_DEVICE_MESH_OBJECTS_HPP
+#define ASCENT_BLUEPRINT_DEVICE_MESH_OBJECTS_HPP
 
 #include <conduit.hpp>
 #include "ascent_execution_policies.hpp"
 #include <ascent_logging.hpp>
 #include "ascent_memory_manager.hpp"
-#include "ascent_device_mesh_blueprint.hpp"
+#include "ascent_blueprint_device_mesh_objects.hpp"
 #include "ascent_array.hpp"
 #include "ascent_execution_policies.hpp"
 

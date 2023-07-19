@@ -7,13 +7,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_conduit_reductions.cpp
+/// file: ascent_blueprint_device_reductions.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_conduit_reductions.hpp"
+#include "ascent_blueprint_device_reductions.hpp"
 #include "ascent_memory_manager.hpp"
-#include "ascent_device_mesh_blueprint.hpp"
+#include "ascent_blueprint_device_dispatch.hpp"
+#include "ascent_blueprint_device_mesh_objects.hpp"
 #include "ascent_array.hpp"
 #include "ascent_execution_policies.hpp"
 #include "ascent_execution_manager.hpp"
@@ -53,308 +54,11 @@ namespace runtime
 namespace expressions
 {
 
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::expressions::detail --
+//-----------------------------------------------------------------------------
 namespace detail
 {
-
-bool field_is_float32(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_float32();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_float32();
-  }
-}
-
-bool field_is_float64(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_float64();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_float64();
-  }
-}
-
-bool field_is_int32(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_int32();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_int32();
-  }
-}
-
-bool field_is_int64(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_int64();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_int64();
-  }
-}
-
-template<typename Function, typename Exec>
-conduit::Node dispatch_memory(const conduit::Node &field,
-                              std::string component,
-                              const Function &func,
-                              const Exec &exec)
-{
-  const std::string mem_space = Exec::memory_space;
-
-  conduit::Node res;
-  if(field_is_float32(field))
-  {
-    MCArray<conduit::float32> farray(field["values"]);
-    DeviceAccessor<conduit::float32> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else if(field_is_float64(field))
-  {
-    MCArray<conduit::float64> farray(field["values"]);
-    DeviceAccessor<conduit::float64> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else if(field_is_int32(field))
-  {
-    MCArray<conduit::int32> farray(field["values"]);
-    DeviceAccessor<conduit::int32> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else if(field_is_int64(field))
-  {
-    MCArray<conduit::int64> farray(field["values"]);
-    DeviceAccessor<conduit::int64> accessor = farray.accessor(mem_space,component);
-    res = func(accessor, exec);
-  }
-  else
-  {
-    ASCENT_ERROR("Type dispatch: unsupported array type "<<
-                  field.schema().to_string());
-  }
-  return res;
-}
-
-template<typename Function>
-conduit::Node
-exec_dispatch(const conduit::Node &field, std::string component, const Function &func)
-{
-
-  conduit::Node res;
-  const std::string exec_policy = ExecutionManager::execution_policy();
-  //std::cout<<"Exec policy "<<exec_policy<<"\n";
-  if(exec_policy == "serial")
-  {
-    SerialExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED) 
-  else if(exec_policy == "openmp")
-  {
-    OpenMPExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#endif
-#if defined(ASCENT_CUDA_ENABLED)
-  else if(exec_policy == "cuda")
-  {
-    CudaExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#endif
-#if defined(ASCENT_HIP_ENABLED)
-  else if(exec_policy == "hip")
-  {
-    HipExec exec;
-    res = dispatch_memory(field, component, func, exec);
-  }
-#endif
-  else
-  {
-    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
-                  exec_policy);
-  }
-  return res;
-}
-
-template<typename Function>
-conduit::Node
-field_dispatch(const conduit::Node &field, const Function &func)
-{
-  // check for single component scalar
-  int num_children = field["values"].number_of_children();
-  if(num_children > 1)
-  {
-    ASCENT_ERROR("Field Dispatch internal error: expected scalar array.");
-  }
-  conduit::Node res;
-
-  if(field_is_float32(field))
-  {
-    MCArray<conduit::float32> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else if(field_is_float64(field))
-  {
-    MCArray<conduit::float64> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else if(field_is_int32(field))
-  {
-    MCArray<conduit::int32> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else if(field_is_int64(field))
-  {
-    MCArray<conduit::int64> farray(field["values"]);
-    res = func(farray.ptr_const(), farray.size(0));
-  }
-  else
-  {
-    ASCENT_ERROR("Type dispatch: unsupported array type "<<
-                  field.schema().to_string());
-  }
-  return res;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-
-// TODO THIS NEEDS TO BE RAJAFIED
-template<typename Function>
-conduit::Node
-type_dispatch(const conduit::Node &values0, const conduit::Node &values1, const bool is_list, const Function &func)
-{
-  // check for single component scalar
-  int num_children0 = values0.number_of_children();
-  int num_children1 = values1.number_of_children();
-  if(num_children0 > 1 || num_children1 > 1)
-  {
-    ASCENT_ERROR("Internal error: expected scalar array.");
-  }
-  const conduit::Node &vals0 = num_children0 == 0 ? values0 : values0.child(0);
-  const conduit::Node &vals1 = num_children1 == 0 ? values1 : values1.child(0);
-
-  conduit::Node res;
-  const int num_vals0 = vals0.dtype().number_of_elements();
-  const int num_vals1 = vals1.dtype().number_of_elements();
-
-  if(vals0.dtype().is_float32())
-  {
-    const conduit::float32 *ptr0 =  vals0.as_float32_ptr();
-    if(vals1.dtype().is_float32()) {
-      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_float64() || is_list) {
-      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int32()) {
-      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int64()) {
-      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
-    }
-  }
-  else if(vals0.dtype().is_float64())
-  {
-    const conduit::float64 *ptr0 =  vals0.as_float64_ptr();
-    if(vals1.dtype().is_float32()) {
-      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_float64() || is_list) {
-      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int32()) {
-      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int64()) {
-      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
-    }
-  }
-  else if(vals0.dtype().is_int32())
-  {
-    const conduit::int32 *ptr0 =  vals0.as_int32_ptr();
-    if(vals1.dtype().is_float32()) {
-      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_float64() || is_list) {
-      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int32()) {
-      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int64()) {
-      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
-    }
-  }
-  else if(vals0.dtype().is_int64())
-  {
-    const conduit::int64 *ptr0 =  vals0.as_int64_ptr();
-    if(vals1.dtype().is_float32()) {
-      const conduit::float32 *ptr1 =  vals1.as_float32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_float64() || is_list) {
-      const conduit::float64 *ptr1 =  vals1.as_float64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int32()) {
-      const conduit::int32 *ptr1 =  vals1.as_int32_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else if(vals1.dtype().is_int64()) {
-      const conduit::int64 *ptr1 =  vals1.as_int64_ptr();
-      res = func(ptr0, ptr1, num_vals0, num_vals1);
-    }
-    else {
-      ASCENT_ERROR("Type dispatch: unsupported array type for array1: "<< values1.schema().to_string());
-    }
-  }
-  else
-  {
-    ASCENT_ERROR("Type dispatch: unsupported array type for array0: "<<
-                  values0.schema().to_string());
-  }
-  return res;
-}
 
 // TODO THIS NEEDS TO BE RAJAFIED
 struct GradientFunctor
@@ -425,7 +129,6 @@ struct MaxFunctor
     return res;
   }
 };
-
 
 struct MinFunctor
 {
@@ -642,38 +345,38 @@ array_gradient(const conduit::Node &y_values,
                const bool is_list)
 {
   // TODO THIS NEEDS TO BE PORTED TO RAJA ?
-  return detail::type_dispatch(y_values, dx_values, is_list, detail::GradientFunctor());
+  return type_dispatch(y_values, dx_values, is_list, detail::GradientFunctor());
 }
 
 
 conduit::Node
 field_reduction_max(const conduit::Node &field, const std::string &component)
 {
-  return detail::exec_dispatch(field, component, detail::MaxFunctor());
+  return exec_dispatch(field, component, detail::MaxFunctor());
 }
 
 conduit::Node
 field_reduction_min(const conduit::Node &field, const std::string &component)
 {
-  return detail::exec_dispatch(field, component, detail::MinFunctor());
+  return exec_dispatch(field, component, detail::MinFunctor());
 }
 
 conduit::Node
 field_reduction_sum(const conduit::Node &field, const std::string &component)
 {
-  return detail::exec_dispatch(field, component, detail::SumFunctor());
+  return exec_dispatch(field, component, detail::SumFunctor());
 }
 
 conduit::Node
 field_reduction_nan_count(const conduit::Node &field, const std::string &component)
 {
-  return detail::exec_dispatch(field, component, detail::NanFunctor());
+  return exec_dispatch(field, component, detail::NanFunctor());
 }
 
 conduit::Node
 field_reduction_inf_count(const conduit::Node &field, const std::string &component)
 {
-  return detail::exec_dispatch(field, component, detail::InfFunctor());
+  return exec_dispatch(field, component, detail::InfFunctor());
 }
 
 conduit::Node
@@ -684,7 +387,7 @@ field_reduction_histogram(const conduit::Node &field,
                           const std::string &component)
 {
   detail::HistogramFunctor histogram(min_value, max_value, num_bins);
-  return detail::exec_dispatch(field, component, histogram);
+  return exec_dispatch(field, component, histogram);
 }
 
 conduit::Node

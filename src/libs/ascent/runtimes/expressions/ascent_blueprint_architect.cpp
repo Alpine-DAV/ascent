@@ -13,10 +13,10 @@
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_array.hpp"
 #include "ascent_array_utils.hpp"
-#include "ascent_dispatch.hpp"
-#include "ascent_device_mesh_blueprint.hpp"
+#include "ascent_blueprint_device_dispatch.hpp"
+#include "ascent_blueprint_device_mesh_objects.hpp"
 #include "ascent_execution_manager.hpp"
-#include "ascent_conduit_reductions.hpp"
+#include "ascent_blueprint_device_reductions.hpp"
 
 #include <ascent_logging.hpp>
 
@@ -2692,61 +2692,6 @@ std::set<std::string> topology_names(const conduit::Node &dataset)
   return topos;
 }
 
-bool field_is_float32(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_float32();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_float32();
-  }
-}
-
-bool field_is_float64(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_float64();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_float64();
-  }
-}
-
-bool field_is_int32(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_int32();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_int32();
-  }
-}
-
-bool field_is_int64(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_int64();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_int64();
-  }
-}
 
 Array<double>
 centroids(const conduit::Node &domain, const std::string topo)
