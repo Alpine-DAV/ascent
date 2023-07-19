@@ -55,12 +55,12 @@ For more details about building and installing Ascent see :ref:`building`. This 
 build_ascent.sh
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We also provide a stand alone shell script ``build_ascent.sh`` that builds Ascent and its dependencies. This script serves both to help with automatically building Ascent as well as documenting the steps necessary to build Ascent manually.
+We provide a stand alone shell script ``build_ascent.sh`` that builds Ascent and its dependencies. This script serves both to help with automatically building Ascent as well as documenting the steps necessary to build Ascent manually:
 
  * `https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_
 
 
-There are also wrapper scripts for specific HPC platforms (e.g. ``build_ascent_hip_frontier.sh`` for ORNL's Frontier, etc) script that you can leverage. Here is the Frontier HIP script:
+We also provide also wrapper scripts for specific HPC platforms (e.g. ``build_ascent_hip_frontier.sh`` for ORNL's Frontier, etc) script that you can leverage. Here is the Frontier HIP build script:
 
  * `https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_hip_frontier.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_hip_frontier.sh>`_
 
