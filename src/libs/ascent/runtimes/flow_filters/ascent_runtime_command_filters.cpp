@@ -90,9 +90,15 @@ Command::verify_params(const conduit::Node &params,
     bool has_callback = params.has_path("callback");
     bool has_shell_command = params.has_path("shell_command");
 
-    bool res = has_callback ^ has_shell_command;
-    if (!res)
+    bool res = true;
+    if (!has_callback && !has_shell_command)
     {
+        res = false;
+        info["errors"].append() = "There was no callback or shell command defined";
+    }
+    else if (has_callback && has_shell_command)
+    {
+        res = false;
         info["errors"].append() = "Both a callback and shell command are "
                                   "present. Choose one or the other.";
     }
