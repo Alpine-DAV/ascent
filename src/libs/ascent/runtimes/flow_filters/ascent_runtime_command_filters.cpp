@@ -154,7 +154,6 @@ Command::execute()
     }
 
     #ifdef ASCENT_MPI_ENABLED
-
     bool has_mpi_behavior = params().has_path("mpi_behavior");
     if (has_mpi_behavior)
     {

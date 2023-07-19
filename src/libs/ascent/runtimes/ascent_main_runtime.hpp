@@ -106,7 +106,7 @@ private:
                             const std::string trigger_name,
                             const std::string prev_name);
     void ConvertCommandToFlow(const conduit::Node &command,
-                               const std::string command_name);
+                              const std::string command_name);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreateExtracts(const conduit::Node &extracts);
     void CreateTriggers(const conduit::Node &triggers);
