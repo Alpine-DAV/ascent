@@ -102,6 +102,16 @@ Command::verify_params(const conduit::Node &params,
         info["errors"].append() = "Both a callback and shell command are "
                                   "present. Choose one or the other.";
     }
+    else if(has_callback && !params["callback"].dtype().is_string())
+    {
+        res = false;
+        info["errors"].append() = "Callbacks must be a string";  
+    }
+    else if(has_shell_command && !params["shell_command"].dtype().is_string())
+    {
+        res = false;
+        info["errors"].append() = "Shell commands must be a string";  
+    }
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("callback");
@@ -109,8 +119,6 @@ Command::verify_params(const conduit::Node &params,
     valid_paths.push_back("mpi_behavior");
 
     std::vector<std::string> ignore_paths;
-    // don't go down the actions path
-    ignore_paths.push_back("actions");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -135,7 +143,15 @@ Command::execute()
 
     bool has_callback = params().has_path("callback");
     std::string command_type = has_callback ? "callback" : "shell_command";
-    std::string command = params()[command_type].as_string();    
+
+    std::stringstream ss(params()[command_type].as_string());
+
+    std::vector<std::string> commands;
+    std::string command;
+    while(std::getline(ss, command, '\n'))
+    {
+        commands.push_back(command);
+    }
 
     #ifdef ASCENT_MPI_ENABLED
 
@@ -150,14 +166,14 @@ Command::execute()
             MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
             if (rank == 0)
             {
-                execute_command(command, command_type);
+                execute_commands(commands, command_type);
             }
             return;
         }
     }
     #endif
 
-    execute_command(command, command_type);
+    execute_commands(commands, command_type);
 }
 
 //-----------------------------------------------------------------------------
@@ -170,17 +186,23 @@ Command::register_callback(const std::string &callback_name,
 
 //-----------------------------------------------------------------------------
 void
-Command::execute_command(const std::string &command,
-                const std::string &command_type)
+Command::execute_commands(const std::vector<std::string> commands,
+                          const std::string &command_type)
 {
     if (command_type == "callback")
     {
-        auto callback_pair = m_callback_map.find(command);
-        auto callback_function = callback_pair->second;
-        callback_function();
+        for (int i = 0; i < commands.size(); i++)
+        {
+            auto callback_pair = m_callback_map.find(commands.at(i));
+            auto callback_function = callback_pair->second;
+            callback_function();
+        }
     } else if (command_type == "shell_command")
     {
-        system(command.c_str());
+        for (int i = 0; i < commands.size(); i++)
+        {
+            system(commands.at(i).c_str());
+        }
     }
 }
 

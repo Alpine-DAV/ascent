@@ -53,11 +53,11 @@ public:
     virtual bool verify_params(const conduit::Node &params,
                                conduit::Node &info);
     virtual void execute();
-    
+
     void static register_callback(const std::string &callback_name,
                                   bool (*callback_function)(void));
-    void static execute_command(const std::string &command,
-                                const std::string &command_type);
+    void static execute_commands(std::vector<std::string> commands,
+                                 const std::string &command_type);
 };
 
 };
