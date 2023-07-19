@@ -83,33 +83,33 @@ inline bool is_conduit_type<conduit::int64>(const conduit::Node &values)
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 template<typename T>
-inline T* conduit_ptr(conduit::Node &values);
+inline T* conduit_ptr(const conduit::Node &values);
 
 //---------------------------------------------------------------------------//
 template<>
-inline conduit::float64 * conduit_ptr<conduit::float64>(conduit::Node &values)
+inline conduit::float64 * conduit_ptr<conduit::float64>(const conduit::Node &values)
 {
-  return values.as_float64_ptr();
+  return const_cast<conduit::float64*>(values.as_float64_ptr());
 }
 
 //---------------------------------------------------------------------------//
 template<>
-inline conduit::float32 * conduit_ptr<conduit::float32>(conduit::Node &values)
+inline conduit::float32 * conduit_ptr<conduit::float32>(const conduit::Node &values)
 {
-  return values.as_float32_ptr();
+  return const_cast<conduit::float32*>(values.as_float32_ptr());
 }
 
 //---------------------------------------------------------------------------//
 template<>
-inline conduit::int32 * conduit_ptr<conduit::int32>(conduit::Node &values)
+inline conduit::int32 * conduit_ptr<conduit::int32>(const conduit::Node &values)
 {
-  return values.as_int32_ptr();
+  return const_cast<conduit::int32*>(values.as_int32_ptr());
 }
 //---------------------------------------------------------------------------//
 template<>
-inline conduit::int64 * conduit_ptr<conduit::int64>(conduit::Node &values)
+inline conduit::int64 * conduit_ptr<conduit::int64>(const conduit::Node &values)
 {
-  return values.as_int64_ptr();
+  return const_cast<conduit::int64*>(values.as_int64_ptr());
 }
 
 //---------------------------------------------------------------------------//
@@ -214,9 +214,10 @@ class MCArray
 {
 private:
   // src node
-  // TODO: MAKE THIS TRULY CONST, add m_dev_node;
-  conduit::Node        &m_src_node;
-  // num comps
+  const conduit::Node  &m_src_node;
+  // used if we need to make any host or device copies
+  conduit::Node        m_tmps;
+   // num comps
   int                  m_components;
   // sizes for each comp
   std::vector<index_t> m_sizes;
@@ -229,7 +230,7 @@ public:
   //==---------------------------------------------------------------------==//
   // Main constructor
   MCArray(const conduit::Node &node)
-    : m_src_node(const_cast<conduit::Node&>(node))
+    : m_src_node(node)
   {
     int children = m_src_node.number_of_children();
     if(children == 0 || children == 1)
@@ -397,17 +398,17 @@ public:
 
       //std::cout<<"leaf_path '"<<leaf_path<<"' device _path '"<<d_path<<"'\n";
       //std::cout<<"size "<<m_sizes[component]<<"\n";
-      if(!m_src_node.has_path(d_path))
+      if(!m_tmps.has_path(d_path))
       {
         //std::cout<<"Creating device pointer\n";
-        conduit::Node &n_device = m_src_node[d_path];
+        conduit::Node &n_device = m_tmps[d_path];
         n_device.set_allocator(AllocationManager::conduit_device_allocator_id());
         //std::cout<<"setting...\n";
         n_device.set(ptr, m_sizes[component]);
         //std::cout<<"set\n";
       }
       //else std::cout<<"already device_values\n";
-      return conduit_ptr<T>(m_src_node[d_path]);
+      return conduit_ptr<T>(m_tmps[d_path]);
     }
 #else
     //std::cout<<"just returning ptr\n";
@@ -445,15 +446,15 @@ public:
     else
     {
       std::string h_path = "host_" + leaf_path;
-      if(!m_src_node.has_path(h_path))
+      if(!m_tmps.has_path(h_path))
       {
         //std::cout<<"Creating host pointer\n";
-        conduit::Node &n_host = m_src_node[h_path];
+        conduit::Node &n_host = m_tmps[h_path];
         n_host.set_allocator(AllocationManager::conduit_host_allocator_id());
         n_host.set(ptr, m_sizes[component]);
       }
       //else std::cout<<"already host_values\n";
-      return conduit_ptr<T>(m_src_node[h_path]);
+      return conduit_ptr<T>(m_tmps[h_path]);
     }
 #else
     //std::cout<<"just returning ptr\n";
