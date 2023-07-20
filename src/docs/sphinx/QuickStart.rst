@@ -31,7 +31,11 @@ This container automatically launches a Jupyter Notebook server on port 8888. As
 Installing Ascent and Third Party Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The quickest path to install Ascent and its dependencies is via :ref:`uberenv <building_with_uberenv>`:
+We provide two scripted options to quickly install Ascent and its dependencies.
+
+uberenv.py
+++++++++++++++++++
+You can use :ref:`uberenv <building_with_uberenv>`, a python script that leverages spack to build Ascent and its dependencies:
 
 .. code:: bash
 
@@ -53,9 +57,20 @@ For more details about building and installing Ascent see :ref:`building`. This 
 
 
 build_ascent.sh
-~~~~~~~~~~~~~~~~~~~~~~~~~
+++++++++++++++++++
 
-We provide a stand alone shell script ``build_ascent.sh`` that builds Ascent and its dependencies. This script serves both to help with automatically building Ascent as well as documenting the steps necessary to build Ascent manually:
+You can use ``build_ascent.sh``, a stand alone shell script to build Ascent and its dependencies:
+
+.. code:: bash
+
+    # prerequisite: `cmake` must be in your path
+    git clone --recursive https://github.com/alpine-dav/ascent.git
+    cd ascent
+    env prefix=build ./scripts/build_ascent/build_ascent.sh
+
+After this completes, ``build/install/ascent-develop`` will contain an Ascent install.
+
+``build_ascent.sh`` serves both to help with automatically building Ascent as well as documenting the steps necessary to configure and build Ascent and its dependencies using CMake:
 
  * `https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_
 
