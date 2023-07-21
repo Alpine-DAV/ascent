@@ -354,6 +354,13 @@ endif()
 ##################################
 if(CUDA_FOUND)
   set_source_files_properties(${ascent_device_sources} PROPERTIES LANGUAGE CUDA)
+
+  set(CUDA_ARCH_FLAGS)
+  foreach(arch ${CMAKE_CUDA_ARCHITECTURES})
+    list(APPEND CUDA_ARCH_FLAGS -gencode;arch=compute_${arch},code=compute_${arch})
+  endforeach()
+  message(STATUS "CUDA_ARCH_FLAGS: ${CUDA_ARCH_FLAGS}")
+
 endif()
 
 if(HIP_FOUND)
@@ -550,11 +557,11 @@ if (ENABLE_SERIAL)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
 
         add_custom_command(TARGET ascent PRE_LINK
                            DEPENDS ascent rover vtkh
-                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
+                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
                            COMMENT "manual device link step for Ascent"
                            )
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm.o DESTINATION lib)
@@ -750,10 +757,10 @@ if(MPI_FOUND)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
         add_custom_command(TARGET ascent_mpi PRE_LINK
                             DEPENDS ascent_mpi rover_mpi
-                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
                             COMMENT "manual device link step for Ascent parallel"
                             )
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm_mpi.o DESTINATION lib)
