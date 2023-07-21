@@ -40,6 +40,7 @@ namespace runtime
 namespace filters
 {
 
+//-----------------------------------------------------------------------------
 // this detects if the syntax is valid, not
 // whether the expression will actually work
 bool is_valid_expression(const std::string expr, std::string &err_msg)
@@ -57,6 +58,7 @@ bool is_valid_expression(const std::string expr, std::string &err_msg)
   return res;
 }
 
+//-----------------------------------------------------------------------------
 bool
 check_numeric(const std::string path,
               const conduit::Node &params,
@@ -87,7 +89,7 @@ check_numeric(const std::string path,
     {
       if(supports_expressions)
       {
-        std::string msg = "Numeric parameter '" + path +
+        std::string msg = "Expected numeric parameter '" + path +
                           " : " + params[path].to_yaml()
                              + "'  is not numeric and is not a valid expression."
                              + " Error message '" + err_msg + "'";
@@ -95,7 +97,7 @@ check_numeric(const std::string path,
       }
       else
       {
-        std::string msg = "Numeric parameter '" + path +
+        std::string msg = "Expected numeric parameter '" + path +
                           " : " + params[path].to_yaml()
                              + "'  is not numeric and does not support expressions";
       }
@@ -105,6 +107,7 @@ check_numeric(const std::string path,
   return res;
 }
 
+//-----------------------------------------------------------------------------
 bool
 check_string(const std::string path,
              const conduit::Node &params,
@@ -114,19 +117,100 @@ check_string(const std::string path,
   bool res = true;
   if(!params.has_path(path) && required)
   {
-    info["errors"].append() = "Missing required string parameter '" + path + "'";
+    info["errors"].append() = "Missing required string parameter '" +
+                              path + "'";
     res = false;
   }
 
   if(params.has_path(path) && !params[path].dtype().is_string())
   {
-    std::string msg = "String parameter '" + path + "' is not a string'";
+    std::string msg = "Expected string parameter '" + path +
+                      "' is not a string'";
     info["errors"].append() = msg;
     res = false;
   }
   return res;
 }
 
+//-----------------------------------------------------------------------------
+// bools are a string with "true" or "false"
+bool
+check_bool(const std::string path,
+           const conduit::Node &params,
+           conduit::Node &info,
+           bool required)
+{
+  bool res = true;
+  if(!params.has_path(path) && required)
+  {
+    info["errors"].append() = "Missing required bool string parameter '" +
+                              path + "'";
+    res = false;
+  }
+
+    if(params.has_path(path))
+    {
+        if(!params[path].dtype().is_string())
+        {
+          std::string msg = "Expected bool string parameter '" + path +
+                            "' is not a string";
+          info["errors"].append() = msg;
+          res = false;
+        }
+        else
+        {
+            // get value and check true or false
+            std::string value = params[path].as_string();
+            if( value != "true" && value != "false" )
+            {
+                std::string msg = "Expected bool string parameter '" + path +
+                                  "' is not \"true\" or \"false\", " +
+                                  " value = \"" + value + "\"";
+                info["errors"].append() = msg;
+                res = false;
+            }
+        }
+    }
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+bool
+check_object(const std::string path,
+             const conduit::Node &params,
+             conduit::Node &info,
+             bool required)
+{
+    bool res = true;
+    if(!params.has_path(path) && required)
+    {
+        info["errors"].append() = "Missing required object parameter '" + path + "'";
+        res = false;
+    }
+
+    if(params.has_path(path))
+    {
+        if(!params[path].dtype().is_object())
+        {
+            std::string msg = "Expected object parameter '" + path +
+                              "' is not a object";
+            info["errors"].append() = msg;
+            res = false;
+        }
+        else if(params[path].number_of_children() == 0)
+        {
+            std::string msg = "Expected object parameter '" + path +
+                          "' has no children";
+            info["errors"].append() = msg;
+            res = false;
+        }
+    }
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
 std::string
 surprise_check(const std::vector<std::string> &valid_paths,
                const std::vector<std::string> &ignore_paths,
@@ -160,6 +244,7 @@ surprise_check(const std::vector<std::string> &valid_paths,
   return ss.str();
 }
 
+//-----------------------------------------------------------------------------
 std::string
 surprise_check(const std::vector<std::string> &valid_paths,
                const conduit::Node &params)
@@ -192,6 +277,7 @@ surprise_check(const std::vector<std::string> &valid_paths,
   return ss.str();
 }
 
+//-----------------------------------------------------------------------------
 void
 path_helper(std::vector<std::string> &paths, const conduit::Node &node)
 {
@@ -210,6 +296,7 @@ path_helper(std::vector<std::string> &paths, const conduit::Node &node)
 
 }
 
+//-----------------------------------------------------------------------------
 void
 path_helper(std::vector<std::string> &paths,
             const std::vector<std::string> &ignore,
@@ -241,27 +328,32 @@ path_helper(std::vector<std::string> &paths,
 
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 T conduit_cast(const conduit::Node &node);
 
+//-----------------------------------------------------------------------------
 template<>
 int conduit_cast<int>(const conduit::Node &node)
 {
   return node.to_int32();
 }
 
+//-----------------------------------------------------------------------------
 template<>
 double conduit_cast<double>(const conduit::Node &node)
 {
   return node.to_float64();
 }
 
+//-----------------------------------------------------------------------------
 template<>
 float conduit_cast<float>(const conduit::Node &node)
 {
   return node.to_float32();
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 T get_value(const conduit::Node &node, DataObject *dataset)
 {
@@ -279,8 +371,8 @@ T get_value(const conduit::Node &node, DataObject *dataset)
     {
       ASCENT_ERROR("Numeric parameter is an expression(string)"
                    <<" but we can not evaluate the expression."
-                   <<" This is usaully for a parameter that is "
-                   <<"not meant to have an expression. expression '"
+                   <<" This is usually for a parameter that is"
+                   <<" not meant to have an expression. expression '"
                    <<node.to_string()<<"'");
 
     }
@@ -312,16 +404,19 @@ T get_value(const conduit::Node &node, DataObject *dataset)
   return value;
 }
 
+//-----------------------------------------------------------------------------
 double get_float64(const conduit::Node &node, DataObject *dataset)
 {
   return get_value<double>(node, dataset);
 }
 
+//-----------------------------------------------------------------------------
 float get_float32(const conduit::Node &node, DataObject *dataset)
 {
   return get_value<float>(node, dataset);
 }
 
+//-----------------------------------------------------------------------------
 int get_int32(const conduit::Node &node, DataObject *dataset)
 {
   return get_value<int>(node, dataset);

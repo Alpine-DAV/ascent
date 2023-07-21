@@ -60,7 +60,7 @@ TEST(ascent_jit_expressions, derived_support_test)
   std::string expr;
 
   expr = "builtin_avg = avg(sin(field('radial')))\n"
-         "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
+         "num_elements = sum(constant_field(1.0, 'mesh', 'element'))\n"
          "manual_avg = sum(sin(field('radial'))) / num_elements\n"
          "builtin_avg == manual_avg";
 
@@ -136,7 +136,7 @@ TEST(ascent_expressions, derived_simple)
   res = eval.evaluate(expr);
 
   expr = "builtin_avg = avg(sin(field('radial')))\n"
-         "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
+         "num_elements = sum(constant_field(1.0, 'mesh', 'element'))\n"
          "manual_avg = sum(sin(field('radial'))) / num_elements\n"
          "builtin_avg == manual_avg";
   res = eval.evaluate(expr);
@@ -322,7 +322,7 @@ TEST(ascent_expressions, derived_mesh_specific_paths)
     EXPECT_EQ(res["type"].as_string(), "double");
 
     expr = "builtin_avg = avg(sin(field('radial')))\n"
-           "num_elements = sum(derived_field(1.0, 'mesh', 'element'))\n"
+           "num_elements = sum(constant_field(1.0, 'mesh', 'element'))\n"
            "manual_avg = sum(sin(field('radial'))) / num_elements\n"
            "builtin_avg == manual_avg";
     res = eval.evaluate(expr);

@@ -623,7 +623,7 @@ Jitable::fuse_vars(const Jitable &from)
   // none is set when we try to fuse kernels with different topologies or
   // associations. This allows the expression to have multiple topologies but
   // we'll need a way of figuring out where to output things can't infer it
-  // anymore. The derived_field() function can be used to explicitly specify
+  // anymore. The constant_field() function can be used to explicitly specify
   // the topology and association.
   if(!from.topology.empty())
   {
@@ -771,14 +771,14 @@ Jitable::execute(conduit::Node &dataset, const std::string &field_name)
     if(topology.empty() || topology == "none")
     {
       ASCENT_ERROR("Error while executing derived field: Could not infer the "
-                   "topology. Try using the derived_field function to set it "
-                   "explicitely.");
+                   "topology. Try using the constant_field function to set it "
+                   "explicitly.");
     }
     if(association.empty() || association == "none")
     {
       ASCENT_ERROR("Error while executing derived field: Could not determine the "
-                   "association. Try using the derived_field function to set it "
-                   "explicitely.");
+                   "association. Try using the constant_field function to set it "
+                   "explicitly.");
     }
 
     const int num_domains = dataset.number_of_children();

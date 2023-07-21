@@ -377,7 +377,7 @@ JitableFusion::expr_dot()
                                                 << "' of field at runtime.");
     }
   }
-  else if(obj["type"].as_string() == "topo")
+  else if(obj["type"].as_string() == "topology")
   {
     // needs to run for every domain not just every kernel type to
     // populate entries
@@ -444,7 +444,7 @@ JitableFusion::expr_if()
 }
 
 void
-JitableFusion::derived_field()
+JitableFusion::constant_field()
 {
   // setting association and topology should run once for Jitable not for
   // each domain, but won't hurt
@@ -455,7 +455,7 @@ JitableFusion::derived_field()
     const std::string &new_association = string_obj["value"].as_string();
     if(new_association != "vertex" && new_association != "element")
     {
-      ASCENT_ERROR("derived_field: Unknown association '"
+      ASCENT_ERROR("constant_field: Unknown association '"
                    << new_association
                    << "'. Known associations are 'vertex' and 'element'.");
     }
@@ -502,9 +502,9 @@ JitableFusion::derived_field()
         if(new_entries != cur_entries)
         {
           ASCENT_ERROR(
-              "derived_field: cannot put a derived field with "
+              "constant_field: cannot put a constant field with "
               << cur_entries << " entries as a " << out_jitable.association
-              << "-associated derived field on the topology '" << new_topology
+              << "-associated field on the topology '" << new_topology
               << "' since the resulting field would need to have "
               << new_entries << " entries.");
         }

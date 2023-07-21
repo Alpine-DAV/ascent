@@ -39,60 +39,12 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace expressions
 {
-
+    
 //-----------------------------------------------------------------------------
-JitFilter::JitFilter(
-    const int num_inputs,
-    const std::shared_ptr<const JitExecutionPolicy> exec_policy)
-    : Filter(), num_inputs(num_inputs), exec_policy(exec_policy)
-{
-}
-
+// -- begin ascent::runtime::expressions::detail --
 //-----------------------------------------------------------------------------
-JitFilter::~JitFilter()
+namespace detail
 {
-  // empty
-}
-
-//-----------------------------------------------------------------------------
-void
-JitFilter::declare_interface(Node &i)
-{
-  stringstream ss;
-  ss << "jit_filter_" << num_inputs << "_" << exec_policy->get_name();
-  i["type_name"] = ss.str();
-  for(int inp_num = 0; inp_num < num_inputs; ++inp_num)
-  {
-    std::stringstream ss;
-    ss << "arg" << inp_num;
-    i["port_names"].append() = ss.str();
-  }
-  i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-JitFilter::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = filters::check_string("func", params, info, true);
-  res &= filters::check_string("filter_name", params, info, true);
-  if(!params.has_path("inputs"))
-  {
-    info["errors"].append() = "Missing required JitFilter parameter 'inputs'";
-    res = false;
-  }
-  else if(params["inputs"].number_of_children() != num_inputs)
-  {
-    stringstream ss;
-    ss << "Expected parameter 'inputs' to have " << num_inputs
-       << " inputs but it has " << params["inputs"].number_of_children()
-       << " inputs.";
-    info["errors"].append() = ss.str();
-    res = false;
-  }
-  return res;
-}
 
 //-----------------------------------------------------------------------------
 std::string
@@ -131,6 +83,7 @@ fused_kernel_type(const std::vector<std::string> kernel_types)
   return ss.str();
 }
 
+//-----------------------------------------------------------------------------
 void
 topo_to_jitable(const std::string &topology,
                 const conduit::Node &dataset,
@@ -148,7 +101,73 @@ topo_to_jitable(const std::string &topology,
   }
   jitable.topology = topology;
 }
+}
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime::expressions::detail --
+//-----------------------------------------------------------------------------
 
+//******************************************************************************
+// ExprJitFilter
+//******************************************************************************
+
+//-----------------------------------------------------------------------------
+ExprJitFilter::ExprJitFilter(
+    const int num_inputs,
+    const std::shared_ptr<const JitExecutionPolicy> exec_policy)
+: Filter(),
+  num_inputs(num_inputs),
+  exec_policy(exec_policy)
+{
+}
+
+//-----------------------------------------------------------------------------
+ExprJitFilter::~ExprJitFilter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ExprJitFilter::declare_interface(Node &i)
+{
+  stringstream ss;
+  ss << "expr_jit_filter_" << num_inputs << "_" << exec_policy->get_name();
+  i["type_name"] = ss.str();
+  for(int inp_num = 0; inp_num < num_inputs; ++inp_num)
+  {
+    std::stringstream ss;
+    ss << "arg" << inp_num;
+    i["port_names"].append() = ss.str();
+  }
+  i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ExprJitFilter::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+  info.reset();
+  bool res = filters::check_string("func", params, info, true);
+  res &= filters::check_string("filter_name", params, info, true);
+  if(!params.has_path("inputs"))
+  {
+    info["errors"].append() = "Missing required parameter 'inputs'";
+    res = false;
+  }
+  else if(params["inputs"].number_of_children() != num_inputs)
+  {
+    stringstream ss;
+    ss << "Expected parameter 'inputs' to have " << num_inputs
+       << " inputs but it has " << params["inputs"].number_of_children()
+       << " inputs.";
+    info["errors"].append() = ss.str();
+    res = false;
+  }
+  return res;
+}
+
+//-----------------------------------------------------------------------------
 // each jitable has kernels and dom_info
 // dom_info holds number of entries, kernel_type, and args for the dom
 // kernel_type maps to a kernel in kernels
@@ -158,8 +177,9 @@ topo_to_jitable(const std::string &topology,
 // kernel_body: code that we already generated but aren't touching (i.e. past
 // for-loops). for_body gets wrapped in a for-loop and added to kernel_body when
 // we need to generate an temporary field.
+//-----------------------------------------------------------------------------
 void
-JitFilter::execute()
+ExprJitFilter::execute()
 {
   // There are a lot of possible code paths that each rank/domain could
   // follow. All JIT code should not contain any MPI calls, but things
@@ -213,11 +233,13 @@ JitFilter::execute()
         Jitable &jitable = new_jitables.back();
         input_jitables.push_back(&jitable);
 
-        if(type == "topo")
+        if(type == "topology")
         {
           // topo is special because it can build different kernels for each
           // domain (kernel types)
-          topo_to_jitable((*inp)["value"].as_string(), *dataset, jitable);
+          detail::topo_to_jitable((*inp)["value"].as_string(),
+                                  *dataset,
+                                  jitable);
           jitable.obj = *inp;
         }
         else
@@ -234,7 +256,7 @@ JitFilter::execute()
 
           if(type == "int" || type == "double" || type == "bool")
           {
-            // force everthing to a double
+            // force everything to a double
             for(int i = 0; i < num_domains; ++i)
             {
               jitable.dom_info.child(i)["args/" + input_fname] = (*inp)["value"];
@@ -451,15 +473,17 @@ JitFilter::execute()
     // some functions need to pack the topology but don't take it in as an
     // argument. hack: add a new input jitable to the end with the topology and
     // fuse it
-    if(func == "gradient" || func == "curl" || func == "recenter" ||
-       (func == "binning_value" && !inputs.has_path("topo")))
+    if(func == "expr_jit_mesh_field_gradient" ||
+       func == "expr_jit_mesh_field_curl"     ||
+       func == "expr_jit_mesh_field_recenter" ||
+       (func == "expr_jit_mesh_binning_value" && !inputs.has_path("topo")))
     {
       new_jitables.emplace_back(num_domains);
       Jitable &jitable = new_jitables.back();
       input_jitables.push_back(&jitable);
 
       std::string topology;
-      if(func == "binning_value")
+      if(func == "expr_jit_mesh_binning_value")
       {
         // if a topology wasn't passed in get the one associated with the binning
         const int binning_port = inputs["binning/port"].to_int32();
@@ -482,7 +506,7 @@ JitFilter::execute()
       {
         topology = out_jitable->topology;
       }
-      topo_to_jitable(topology, *dataset, jitable);
+      detail::topo_to_jitable(topology, *dataset, jitable);
 
       out_jitable->fuse_vars(jitable);
     }
@@ -494,15 +518,6 @@ JitFilter::execute()
     }
     else
     {
-      // These are functions that can just be called in OCCA
-      // filter_name from the function signature : function name in OCCA
-      std::map<std::string, std::string> builtin_funcs = {
-          {"field_field_max", "max"},
-          {"field_sin", "sin"},
-          {"field_sqrt", "sqrt"},
-          {"field_sqrt", "pow"},
-          {"field_abs", "abs"}};
-      const auto builtin_func_it = builtin_funcs.find(func);
       // fuse kernels
       std::unordered_set<std::string> fused_kernel_types;
       for(int dom_idx = 0; dom_idx < num_domains; ++dom_idx)
@@ -518,7 +533,7 @@ JitFilter::execute()
           input_kernel_types.push_back(kernel_type);
           input_kernels.push_back(&(input_jitable->kernels.at(kernel_type)));
         }
-        const std::string out_kernel_type = fused_kernel_type(input_kernel_types);
+        const std::string out_kernel_type = detail::fused_kernel_type(input_kernel_types);
         (*out_jitable).dom_info.child(dom_idx)["kernel_type"] = out_kernel_type;
         Kernel &out_kernel = out_jitable->kernels[out_kernel_type];
         const bool not_fused =
@@ -535,59 +550,83 @@ JitFilter::execute()
                                         *out_jitable,
                                         out_kernel);
 
-        if(func == "binary_op")
+        if(func == "expr_jit_binary_op")
         {
           jitable_functions.binary_op();
         }
-        else if(builtin_func_it != builtin_funcs.cend())
+        // ---------------------------------------------------------------------
+        // These cases are functions that can just be called in OCCA
+        // Map filter_name from the function signature to function name in OCCA
+        // ---------------------------------------------------------------------
+        else if(func == "expr_jit_mesh_field_min")
         {
-          jitable_functions.builtin_functions(builtin_func_it->second);
+            jitable_functions.builtin_functions("min");
         }
-        else if(func == "expr_dot")
+        else if(func == "expr_jit_mesh_field_max")
+        {
+            jitable_functions.builtin_functions("max");
+        }
+        else if(func == "expr_jit_mesh_field_sin")
+        {
+            jitable_functions.builtin_functions("sin");
+        }
+        else if(func == "expr_jit_mesh_field_sqrt")
+        {
+            jitable_functions.builtin_functions("sqrt");
+        }
+        else if(func == "expr_jit_mesh_field_pow")
+        {
+            jitable_functions.builtin_functions("pow");
+        }
+        else if(func == "expr_jit_mesh_field_abs")
+        {
+            jitable_functions.builtin_functions("abs");
+        }
+        else if(func == "expr_jit_rand")
+        {
+          jitable_functions.rand();
+        }
+        else if(func == "expr_jit_dot")
         {
           jitable_functions.expr_dot();
         }
-        else if(func == "expr_if")
+        else if(func == "expr_jit_if")
         {
           jitable_functions.expr_if();
         }
-        else if(func == "derived_field")
+        else if(func == "expr_jit_mesh_field_constant")
         {
-          jitable_functions.derived_field();
+          jitable_functions.constant_field();
         }
-        else if(func == "vector")
+        else if(func == "expr_jit_mesh_field_vector_compose")
         {
           jitable_functions.vector();
         }
-        else if(func == "magnitude")
+        else if(func == "expr_jit_vector_magnitude")
         {
           jitable_functions.magnitude();
         }
-        else if(func == "gradient")
+        else if(func == "expr_jit_mesh_field_gradient")
         {
           jitable_functions.gradient();
         }
-        else if(func == "curl")
+        else if(func == "expr_jit_mesh_field_curl")
         {
           jitable_functions.curl();
         }
-        else if(func == "binning_value")
+        else if(func == "expr_jit_mesh_binning_paint_binning")
         {
           const int binning_port = inputs["binning/port"].to_int32();
           const conduit::Node &binning = *input<conduit::Node>(binning_port);
           jitable_functions.binning_value(binning);
         }
-        else if(func == "rand")
-        {
-          jitable_functions.rand();
-        }
-        else if(func == "recenter")
+        else if(func == "expr_jit_mesh_field_recenter")
         {
           jitable_functions.recenter();
         }
         else
         {
-          ASCENT_ERROR("JitFilter: Unknown func: '" << func << "'");
+          ASCENT_ERROR("ExprJitFilter: Unknown func: '" << func << "'");
         }
         fused_kernel_types.insert(out_kernel_type);
       }
@@ -598,11 +637,13 @@ JitFilter::execute()
       std::string field_name;
       if(params().has_path("field_name"))
       {
+        // perm name for the new node
         field_name = params()["field_name"].as_string();
       }
       else
       {
         field_name = filter_name;
+        // mark this for cleanup
         (*remove)["fields/" + filter_name];
       }
 
@@ -631,7 +672,7 @@ JitFilter::execute()
   }
   catch(...)
   {
-    errors.append() = "Unknown error occured in JIT";
+    errors.append() = "Unknown error occurred in JIT";
   }
 
   bool error = errors.number_of_children() > 0;
@@ -653,56 +694,69 @@ JitFilter::execute()
   }
 }
 //-----------------------------------------------------------------------------
-class JitFilterFactoryFunctor
+class ExprJitFilterFactoryFunctor
 {
 public:
+  //---------------------------------------------------------------------------
   static void
-  set(const int num_inputs_,
-      const std::shared_ptr<const JitExecutionPolicy> exec_policy_)
+  set(const int num_inputs,
+      const std::shared_ptr<const JitExecutionPolicy> exec_policy)
   {
-    num_inputs = num_inputs_;
-    exec_policy = exec_policy_;
+    // set static members
+    m_num_inputs  = num_inputs;
+    m_exec_policy = exec_policy;
   }
+
+  //---------------------------------------------------------------------------
   static Filter *
-  JitFilterFactory(const std::string &filter_type_name)
+  JitFilterFactoryFunctor(const std::string &filter_type_name)
   {
-    return new JitFilter(num_inputs, exec_policy);
+    // gen generic jit filter with # inputs and exec polic
+    return new ExprJitFilter(m_num_inputs, m_exec_policy);
   }
 
 private:
-  static int num_inputs;
-  static std::shared_ptr<const JitExecutionPolicy> exec_policy;
+  static int                                       m_num_inputs;
+  static std::shared_ptr<const JitExecutionPolicy> m_exec_policy;
 };
 
-// apparently I have to do this for the linker to be happy
-int JitFilterFactoryFunctor::num_inputs;
-std::shared_ptr<const JitExecutionPolicy> JitFilterFactoryFunctor::exec_policy;
+//-----------------------------------------------------------------------------
+// declare ExprJitFilterFactoryFunctor static members
+int ExprJitFilterFactoryFunctor::m_num_inputs;
+std::shared_ptr<const JitExecutionPolicy> ExprJitFilterFactoryFunctor::m_exec_policy;
 
+
+//-----------------------------------------------------------------------------
 std::string
 register_jit_filter(flow::Workspace &w,
                     const int num_inputs,
                     const std::shared_ptr<const JitExecutionPolicy> exec_policy)
 {
-  JitFilterFactoryFunctor::set(num_inputs, exec_policy);
+  ExprJitFilterFactoryFunctor::set(num_inputs, exec_policy);
   std::stringstream ss;
-  ss << "jit_filter_" << num_inputs << "_" << exec_policy->get_name();
+  ss << "expr_jit_filter_" << num_inputs << "_" << exec_policy->get_name();
   if(!w.supports_filter_type(ss.str()))
   {
     flow::Workspace::register_filter_type(
-        ss.str(), JitFilterFactoryFunctor::JitFilterFactory);
+        ss.str(), ExprJitFilterFactoryFunctor::JitFilterFactoryFunctor);
   }
   return ss.str();
 }
 
+//******************************************************************************
+// ExprExpressionList
+//******************************************************************************
+
 //-----------------------------------------------------------------------------
-ExpressionList::ExpressionList(int num_inputs)
+ExprExpressionList::ExprExpressionList(int num_inputs)
   : Filter(),
     m_num_inputs(num_inputs)
 {
   // empty
 }
 
-ExpressionList::ExpressionList()
+//-----------------------------------------------------------------------------
+ExprExpressionList::ExprExpressionList()
   : Filter(),
     m_num_inputs(256)
 {
@@ -710,21 +764,21 @@ ExpressionList::ExpressionList()
 }
 
 //-----------------------------------------------------------------------------
-ExpressionList::~ExpressionList()
+ExprExpressionList::~ExprExpressionList()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-ExpressionList::declare_interface(Node &i)
+ExprExpressionList::declare_interface(Node &i)
 {
-  i["type_name"] = "expr_list";
+  i["type_name"] = "expr_expr_list";
   // We can't have an arbitrary number of input ports so we choose 256
   for(int item_num = 0; item_num < m_num_inputs; ++item_num)
   {
     std::stringstream ss;
-    ss << "item" << item_num;
+    ss << "item_" << item_num;
     i["port_names"].append() = ss.str();
   }
   i["output_port"] = "true";
@@ -732,7 +786,7 @@ ExpressionList::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-ExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
+ExprExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   info.reset();
   bool res = true;
@@ -741,7 +795,7 @@ ExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
 
 //-----------------------------------------------------------------------------
 void
-ExpressionList::execute()
+ExprExpressionList::execute()
 {
   conduit::Node *output = new conduit::Node();
 
@@ -749,13 +803,12 @@ ExpressionList::execute()
   for(int item_num = 0; item_num < m_num_inputs; ++item_num)
   {
     std::stringstream ss;
-    ss << "item" << item_num;
+    ss << "item_" << item_num;
     const conduit::Node *n_item = input<Node>(ss.str());
     if(n_item->dtype().is_empty())
     {
       break;
     }
-    //output->append() = *n_item;
     value.append() = *n_item;
   }
   (*output)["type"] = "list";
@@ -764,25 +817,25 @@ ExpressionList::execute()
 
 //-----------------------------------------------------------------------------
 Filter *
-ExpressionListFilterFactoryMethod(const std::string &filter_type_name)
+ExprExpressionListFilterFactoryMethod(const std::string &filter_type_name)
 {
-  // "expr_list_" is 10 characters long
-  const std::string num_inputs_str =
-      filter_type_name.substr(10, filter_type_name.size() - 10);
+  size_t prefix_size = std::char_traits<char>::length("expr_expr_list_");
+  const std::string num_inputs_str = filter_type_name.substr(prefix_size,
+                                         filter_type_name.size() - prefix_size);
   const int num_inputs = std::stoi(num_inputs_str);
-  return new ExpressionList(num_inputs);
+  return new ExprExpressionList(num_inputs);
 }
-//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
 std::string
 register_expression_list_filter(flow::Workspace &w, const int num_inputs)
 {
   std::stringstream ss;
-  ss << "expr_list_" << num_inputs;
+  ss << "expr_expr_list_" << num_inputs;
   if(!w.supports_filter_type(ss.str()))
   {
     flow::Workspace::register_filter_type(ss.str(),
-                                          ExpressionListFilterFactoryMethod);
+                                         ExprExpressionListFilterFactoryMethod);
   }
   return ss.str();
 }

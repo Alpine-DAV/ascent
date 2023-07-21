@@ -30,12 +30,13 @@ namespace runtime
 namespace expressions
 {
 
-class JitFilter : public ::flow::Filter
+//-----------------------------------------------------------------------------
+class ExprJitFilter : public ::flow::Filter
 {
 public:
-  JitFilter(const int num_inputs,
+  ExprJitFilter(const int num_inputs,
             const std::shared_ptr<const JitExecutionPolicy> exec_policy);
-  ~JitFilter();
+  ~ExprJitFilter();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
@@ -46,23 +47,26 @@ private:
   const std::shared_ptr<const JitExecutionPolicy> exec_policy;
 };
 
-class ExpressionList : public ::flow::Filter
+//-----------------------------------------------------------------------------
+// TODO: IS THIS JUST FOR JIT,  OR GENERAL SUPPORT?
+//-----------------------------------------------------------------------------
+class ExprExpressionList : public ::flow::Filter
 {
-protected:
-  int m_num_inputs;
 public:
-  ExpressionList();
-  ExpressionList(int num_inputs);
-  ~ExpressionList();
+  ExprExpressionList();
+  ExprExpressionList(int num_inputs);
+  ~ExprExpressionList();
 
   virtual void declare_interface(conduit::Node &i);
   virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 
-private:
-  int num_inputs;
+protected:
+  int m_num_inputs;
+
 };
 
+//-----------------------------------------------------------------------------
 // register a JitFilter with the correct number of inputs and execution policy
 // or return its type_name if it exists
 std::string register_jit_filter(
@@ -70,6 +74,7 @@ std::string register_jit_filter(
     const int num_inputs,
     const std::shared_ptr<const JitExecutionPolicy> exec_policy);
 
+//-----------------------------------------------------------------------------
 std::string register_expression_list_filter(flow::Workspace &w,
                                             const int num_inputs);
 };

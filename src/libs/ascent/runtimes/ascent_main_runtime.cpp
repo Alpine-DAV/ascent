@@ -294,33 +294,54 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
     m_runtime_options = options;
 
+    // NOTE:
+    // if both ghost_field_name and ghost_field_names
+    // are present, ghost_field_names is used
     if(options.has_path("ghost_field_name"))
     {
       if(options["ghost_field_name"].dtype().is_string())
       {
         m_persistent_ghost_fields.reset();
-
-        std::string ghost_name = options["ghost_field_name"].as_string();
-        m_persistent_ghost_fields.append() = ghost_name;
+        m_persistent_ghost_fields.append().set(options["ghost_field_name"]);
       }
       else if(options["ghost_field_name"].dtype().is_list())
       {
         m_persistent_ghost_fields.reset();
-
         const int num_children = options["ghost_field_name"].number_of_children();
         for(int i = 0; i < num_children; ++i)
         {
           const conduit::Node &child = options["ghost_field_name"].child(i);
           if(!child.dtype().is_string())
           {
-            ASCENT_ERROR("ghost_field_name list child is not a string");
+            ASCENT_ERROR("ghost_field_name list child "
+                         << i << " is not a string");
           }
-          m_persistent_ghost_fields.append() = child.as_string();
+          m_persistent_ghost_fields.append().set(child);
         }
       }
       else
       {
         ASCENT_ERROR("ghost_field_name is not a string or a list");
+      }
+    }
+
+    if(options.has_path("ghost_field_names"))
+    { 
+      if(!options["ghost_field_names"].dtype().is_list())
+      {
+        ASCENT_ERROR("ghost_field_names is not a list");
+      }
+
+      m_persistent_ghost_fields.reset();
+      const int num_children = options["ghost_field_names"].number_of_children();
+      for(int i = 0; i < num_children; ++i)
+      {
+        const conduit::Node &child = options["ghost_field_names"].child(i);
+        if(!child.dtype().is_string())
+        {
+          ASCENT_ERROR("ghost_field_names list child " << i << " is not a string");
+        }
+        m_persistent_ghost_fields.append().set(child);
       }
     }
 
@@ -393,6 +414,7 @@ AscentRuntime::ResetInfo()
 {
     m_info.reset();
     m_info["runtime/type"] = "ascent";
+    m_info["runtime/options"] = m_runtime_options;
     m_info["registered_filter_types"] = registered_filter_types();
 }
 
@@ -519,18 +541,6 @@ AscentRuntime::Publish(const conduit::Node &data)
     if(data.has_path("state/temporary_ghost_fields"))
     {
       m_ghost_fields = data["state/temporary_ghost_fields"];
-      // const conduit::Node ghosts = data["state/temporary_ghost_fields"];  
-      // for(int i = 0; i < ghosts.number_of_children(); ++i)
-      // {
-      //   for(int k = 0; k < m_persistent_ghost_fields.number_of_children(); ++k)
-      //   {
-      //     const std::string gn = ghosts.child(i).as_string();
-      //     if (m_persistent_ghost_fields.child(i).as_string() != gn)
-      //     {
-      //       m_ghost_fields.append() = gn;
-      //     }
-      //   }
-      // }
     }
     else 
     {

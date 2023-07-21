@@ -44,12 +44,16 @@ build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
+build_catalyst="${build_catalyst:=false}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
 
 # see if we are building on windows
 build_windows="${build_windows:=OFF}"
+
+# see if we are building on macOS
+build_macos="${build_macos:=OFF}"
 
 if [[ "$enable_cuda" == "ON" ]]; then
     echo "*** configuring with CUDA support"
@@ -81,19 +85,23 @@ fi
 case "$OSTYPE" in
   win*)     build_windows="ON";;
   msys*)    build_windows="ON";;
+  darwin*)  build_macos="ON";;
   *)        ;;
 esac
 
 if [[ "$build_windows" == "ON" ]]; then
   echo "*** configuring for windows"
-fi 
+fi
+
+if [[ "$build_macos" == "ON" ]]; then
+  echo "*** configuring for macos"
+fi
 
 ################
-# path helper
+# path helpers
 ################
 function ospath()
 {
-  respath=""
   if [[ "$build_windows" == "ON" ]]; then
     echo `cygpath -m $1`
   else
@@ -101,11 +109,20 @@ function ospath()
   fi 
 }
 
+function abs_path()
+{
+  if [[ "$build_macos" == "ON" ]]; then
+    echo "$(cd $(dirname "$1");pwd)/$(basename "$1")"
+  else
+    echo `realpath $1`
+  fi
+}
+
 root_dir=$(pwd)
 root_dir="${prefix:=${root_dir}}"
 root_dir=$(ospath ${root_dir})
-root_dir=$(realpath ${root_dir})
-script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+root_dir=$(abs_path ${root_dir})
+script_dir=$(abs_path "$(dirname "${BASH_SOURCE[0]}")")
 
 # root_dir is where we will build and install
 # override with `prefix` env var
@@ -176,8 +193,10 @@ fi # build_zlib
 ################
 # HDF5
 ################
-hdf5_version=1.12.2
-hdf5_short_version=1.12
+# release 1-2 GAH!
+hdf5_version=1.14.1-2
+hdf5_middle_version=1.14.1
+hdf5_short_version=1.14
 hdf5_src_dir=$(ospath ${root_dir}/hdf5-${hdf5_version})
 hdf5_build_dir=$(ospath ${root_dir}/build/hdf5-${hdf5_version}/)
 hdf5_install_dir=$(ospath ${root_dir}/install/hdf5-${hdf5_version}/)
@@ -188,26 +207,25 @@ if [ ! -d ${hdf5_install_dir} ]; then
 if ${build_hdf5}; then
 if [ ! -d ${hdf5_src_dir} ]; then
   echo "**** Downloading ${hdf5_tarball}"
-  curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
+  curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_middle_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
   tar -xzf ${hdf5_tarball}
 fi
 
-# hdf5 needs the actual zlib lib, just the install dir -- sort all of this out 
-# Note: always use static b/c paths aren't plumbed for windows dlls yet
-if [[ "$build_windows" == "ON" ]]; then
-    zlib_lib_file=${zlib_install_dir}/lib/zlibstatic.lib
-else
-    zlib_lib_file=${zlib_install_dir}/lib/zlib.a
-fi
-
+#################
+#
+# hdf5 1.14.x CMake recipe for using zlib
+#
+# -DHDF5_ENABLE_Z_LIB_SUPPORT=ON
+# Add zlib install dir to CMAKE_PREFIX_PATH
+#
+#################
 
 echo "**** Configuring HDF5 ${hdf5_version}"
 cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DZLIB_INCLUDE_DIR:PATH=${zlib_install_dir}/include \
-  -DZLIB_LIBRARY_DIR:FILEPATH=${zlib_lib_file} \
-  -DZLIB_USE_EXTERNAL=1 \
+  -DHDF5_ENABLE_Z_LIB_SUPPORT=ON \
+  -DCMAKE_PREFIX_PATH=${zlib_install_dir} \
   -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir}
 
 echo "**** Building HDF5 ${hdf5_version}"
@@ -224,7 +242,7 @@ fi # build_hdf5
 ################
 # Conduit
 ################
-conduit_version=v0.8.7
+conduit_version=v0.8.8
 conduit_src_dir=$(ospath ${root_dir}/conduit-${conduit_version}/src)
 conduit_build_dir=$(ospath ${root_dir}/build/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${root_dir}/install/conduit-${conduit_version}/)
@@ -434,6 +452,7 @@ raja_src_dir=$(ospath ${root_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${root_dir}/build/raja-${raja_version})
 raja_install_dir=$(ospath ${root_dir}/install/raja-${raja_version}/)
 raja_tarball=RAJA-${raja_version}.tar.gz
+raja_enable_vectorization="${raja_enable_vectorization:=ON}"
 
 # build only if install doesn't exist
 if [ ! -d ${raja_install_dir} ]; then
@@ -471,7 +490,8 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} ${cmake_compiler_settings} \
   -DRAJA_ENABLE_TESTS=${enable_tests} \
   -DENABLE_EXAMPLES=${enable_tests} \
   -DENABLE_EXERCISES=${enable_tests} ${raja_extra_cmake_args} \
-  -DCMAKE_INSTALL_PREFIX=${raja_install_dir}
+  -DCMAKE_INSTALL_PREFIX=${raja_install_dir} \
+  -DRAJA_ENABLE_VECTORIZATION=${raja_enable_vectorization}
 
 echo "**** Building RAJA ${raja_version}"
 cmake --build ${raja_build_dir} --config ${build_config} -j${build_jobs}
@@ -577,7 +597,7 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DMFEM_ENABLE_EXAMPLES=${enable_tests} \
   -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
 
-echo "**** Building MFEM ${vtkm_version}"
+echo "**** Building MFEM ${mfem_version}"
 cmake --build ${mfem_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing MFEM ${mfem_version}"
 cmake --install ${mfem_build_dir}  --config ${build_config}
@@ -587,6 +607,42 @@ else
   echo "**** Skipping MFEM build, install found at: ${mfem_install_dir}"
 fi # build_mfem
 
+################
+# Catalyst
+################
+catalyst_version=2.0.0-rc3
+catalyst_src_dir=$(ospath ${root_dir}/catalyst-v${catalyst_version})
+catalyst_build_dir=$(ospath ${root_dir}/build/catalyst-v${catalyst_version})
+catalyst_install_dir=$(ospath ${root_dir}/install/catalyst-v${catalyst_version}/)
+catalyst_cmake_dir=${catalyst_install_dir}lib64/cmake/catalyst-2.0/
+catalyst_tarball=catalyst-v${catalyst_version}.tar.gz
+
+# build only if install doesn't exist
+if [ ! -d ${catalyst_install_dir} ]; then
+if ${build_catalyst}; then
+if [ ! -d ${catalyst_src_dir} ]; then
+  echo "**** Downloading ${catalyst_tarball}"
+  curl -L https://gitlab.kitware.com/paraview/catalyst/-/archive/v${catalyst_version}/catalyst-v${catalyst_version}.tar.gz -o ${catalyst_tarball}
+  tar -xzf ${catalyst_tarball}
+fi
+
+echo "**** Configuring Catalyst ${catalyst_version}"
+cmake -S ${catalyst_src_dir} -B ${catalyst_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DCATALYST_BUILD_TESTING=${enable_tests} \
+  -DCATALYST_USE_MPI=${enable_mpi} \
+  -DCMAKE_INSTALL_PREFIX=${catalyst_install_dir} \
+
+echo "**** Building Catalyst ${catalyst_version}"
+cmake --build ${catalyst_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Catalyst ${catalyst_version}"
+cmake --install ${catalyst_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Catalyst build, install found at: ${catalyst_install_dir}"
+fi # build_catalyst
 
 ################
 # Ascent
@@ -633,6 +689,10 @@ echo 'set(ENABLE_VTKH ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_APCOMP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DRAY ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 
+if ${build_catalyst}; then
+    echo 'set(CATALYST_DIR ' ${catalyst_cmake_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+
 if [[ "$enable_cuda" == "ON" ]]; then
     echo 'set(ENABLE_CUDA ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
@@ -662,10 +722,11 @@ cmake --build ${ascent_build_dir} --config ${build_config} -j${build_jobs}
 echo "**** Installing Ascent"
 cmake --install ${ascent_build_dir}  --config ${build_config}
 
+if ${build_catalyst}; then
+    mv ${ascent_install_dir}/lib/libcatalyst-ascent.so ${catalyst_install_dir}lib64/catalyst/libcatalyst-ascent.so
+fi
+
 fi
 else
   echo "**** Skipping Ascent build, install found at: ${ascent_install_dir}"
 fi # build_ascent
-
-
-

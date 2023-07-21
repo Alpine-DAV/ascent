@@ -56,7 +56,7 @@ public:
   void builtin_functions(const std::string &function_name);
   void expr_dot();
   void expr_if();
-  void derived_field();
+  void constant_field();
   void gradient();
   void curl();
   void recenter();
