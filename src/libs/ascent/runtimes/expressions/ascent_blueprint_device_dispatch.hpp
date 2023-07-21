@@ -179,25 +179,25 @@ conduit::Node exec_dispatch_mcarray_component(const conduit::Node &node,
   const std::string mem_space = Exec::memory_space;
 
   conduit::Node res;
-  if(field_is_float32(node))
+  if(mcarray_is_float32(node))
   {
     MCArray<conduit::float32> farray(node);
     DeviceAccessor<conduit::float32> accessor = farray.accessor(mem_space,component);
     res = func(accessor, exec);
   }
-  else if(field_is_float64(node))
+  else if(mcarray_is_float64(node))
   {
     MCArray<conduit::float64> farray(node);
     DeviceAccessor<conduit::float64> accessor = farray.accessor(mem_space,component);
     res = func(accessor, exec);
   }
-  else if(field_is_int32(node))
+  else if(mcarray_is_int32(node))
   {
     MCArray<conduit::int32> farray(node);
     DeviceAccessor<conduit::int32> accessor = farray.accessor(mem_space,component);
     res = func(accessor, exec);
   }
-  else if(field_is_int64(node))
+  else if(mcarray_is_int64(node))
   {
     MCArray<conduit::int64> farray(node);
     DeviceAccessor<conduit::int64> accessor = farray.accessor(mem_space,component);

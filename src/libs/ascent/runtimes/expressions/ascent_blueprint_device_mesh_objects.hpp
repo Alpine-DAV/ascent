@@ -302,8 +302,16 @@ public:
     const T * ptr = raw_ptr(component,path);
     // elemen_index is extremely missleading. Its actually the byte offset to
     // the element. 2 hours to learn this
-    index_t el_idx = m_src_node[path].dtype().element_index(idx) / sizeof(T);
     T val;
+    index_t el_idx = 0;
+    if(path != "")
+    {
+        el_idx = m_src_node[path].dtype().element_index(idx) / sizeof(T);
+    }
+    else
+    {
+        el_idx = m_src_node.dtype().element_index(idx) / sizeof(T);
+    }
 
     if(DeviceMemory::is_device_ptr(ptr))
     {
@@ -344,8 +352,14 @@ public:
   const T *raw_ptr(int component, std::string &leaf_path)
   {
     leaf_path = component_path(component);
-    const T * ptr = conduit_ptr<T>(m_src_node[leaf_path]);
-    return ptr;
+    if(leaf_path != "")
+    {
+        return conduit_ptr<T>(m_src_node[leaf_path]);
+    }
+    else
+    {
+        return conduit_ptr<T>(m_src_node);
+    }
   }
 
   //==---------------------------------------------------------------------==//
@@ -394,7 +408,11 @@ public:
     }
     else
     {
-      std::string d_path = "device_"+leaf_path;
+      std::string d_path = "device"
+      if(leaf_path != "")
+      {
+          d_path += "_" + leaf_path;
+      }
 
       //std::cout<<"leaf_path '"<<leaf_path<<"' device _path '"<<d_path<<"'\n";
       //std::cout<<"size "<<m_sizes[component]<<"\n";
@@ -445,7 +463,12 @@ public:
     }
     else
     {
-      std::string h_path = "host_" + leaf_path;
+      std::string d_path = "host"
+      if(leaf_path != "")
+      {
+          d_path += "_" + leaf_path;
+      }
+
       if(!m_tmps.has_path(h_path))
       {
         //std::cout<<"Creating host pointer\n";
@@ -510,7 +533,14 @@ public:
     //std::cout<<"giving out access "<<leaf_path<<" "<<location<<"\n";
 
     const T* ptr = location == "device" ? device_ptr_const(comp_idx) : host_ptr_const(comp_idx);
-    return DeviceAccessor<T>(ptr, m_src_node[leaf_path].dtype());
+    if(leaf_path != "")
+    {
+        return DeviceAccessor<T>(ptr, m_src_node[leaf_path].dtype());
+    }
+    else
+    {
+        return DeviceAccessor<T>(ptr, m_src_node.dtype());
+    }
   }
 
 };

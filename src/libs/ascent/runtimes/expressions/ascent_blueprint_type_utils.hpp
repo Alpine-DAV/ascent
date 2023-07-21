@@ -64,15 +64,24 @@ static inline int cell_shape(const std::string &shape_type)
   return shape_id;
 }
 
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_float32(const conduit::Node &node);
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_float64(const conduit::Node &node);
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_int32(const conduit::Node &node);
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_int64(const conduit::Node &node);
+
 
 //-----------------------------------------------------------------------------
-bool field_is_float32(const conduit::Node &field);
+ASCENT_API bool field_is_float32(const conduit::Node &field);
 //-----------------------------------------------------------------------------
-bool field_is_float64(const conduit::Node &field);
+ASCENT_API bool field_is_float64(const conduit::Node &field);
 //-----------------------------------------------------------------------------
-bool field_is_int32(const conduit::Node &field);
+ASCENT_API bool field_is_int32(const conduit::Node &field);
 //-----------------------------------------------------------------------------
-bool field_is_int64(const conduit::Node &field);
+ASCENT_API bool field_is_int64(const conduit::Node &field);
 
 //-----------------------------------------------------------------------------
 };
