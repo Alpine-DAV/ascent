@@ -23,3 +23,5 @@ AZEMU-SCRIPT-*.sh
 build/
 install/
 diva/
+scripts/build_ascent/*/
+scripts/build_ascent/ascent-config.cmake

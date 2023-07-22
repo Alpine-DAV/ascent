@@ -695,7 +695,7 @@ fi
 
 if [[ "$enable_cuda" == "ON" ]]; then
     echo 'set(ENABLE_CUDA ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
-    echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
