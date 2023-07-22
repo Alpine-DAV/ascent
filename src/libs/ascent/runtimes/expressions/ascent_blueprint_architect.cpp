@@ -1035,6 +1035,8 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
       int num_dims = n_coords["values"].number_of_children();
       for(int i = 0; i < num_dims; ++i)
       {
+          // note: these aren't really fields, but the are close enough
+          // to be exec-ed this way
         const std::string axis_path = "values/" + axes[i][0];
         min_coords[i] = std::min(
             min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].as_double());

@@ -262,7 +262,7 @@ public:
     if(!types_match)
     {
       std::string schema = m_src_node.schema().to_yaml();
-      ASCENT_ERROR("Field type does not match conduit type: "<<schema);
+      ASCENT_ERROR("MCArray type does not match conduit type: "<<schema);
     }
   }
 

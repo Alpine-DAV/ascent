@@ -35,7 +35,7 @@ bool mcarray_is_float32(const conduit::Node &node)
   else
   {
     // there has to be one or more children so ask the first
-    return node.child(0).dtype().is_float64();
+    return node.child(0).dtype().is_float32();
   }
 }
 
