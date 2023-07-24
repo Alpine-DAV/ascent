@@ -17,6 +17,7 @@
 #include <ascent.hpp>
 
 #include <flow_filter.hpp>
+#include <ascent_runtime_command_filters.hpp>
 
 
 //-----------------------------------------------------------------------------

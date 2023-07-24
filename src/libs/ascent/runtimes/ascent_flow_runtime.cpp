@@ -141,6 +141,14 @@ FlowRuntime::Cleanup()
 //-----------------------------------------------------------------------------
 void
 FlowRuntime::RegisterCallback(const std::string &callback_name,
+                              void (*callback_function)(void))
+{
+
+}
+
+//-----------------------------------------------------------------------------
+void
+FlowRuntime::RegisterCallback(const std::string &callback_name,
                               bool (*callback_function)(void))
 {
 

@@ -325,6 +325,51 @@ Ascent::open(const conduit::Node &options)
 //-----------------------------------------------------------------------------
 void
 Ascent::register_callback(const std::string &callback_name,
+                          void (*callback_function)(void))
+{
+     try
+    {
+        if(m_runtime != NULL)
+        {
+            m_runtime->RegisterCallback(callback_name, callback_function);
+        }
+        else
+        {
+            ASCENT_ERROR("Ascent Runtime is not initialized");
+        }
+
+        set_status("Ascent::register_callback completed");
+    }
+    catch(conduit::Error &e)
+    {
+        set_status("Ascent::register_callback failed",
+                   e.message());
+
+        if(m_forward_exceptions)
+        {
+            throw e;
+        }
+        else
+        {
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::register_callback "
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::register_callback "
+                    << e.message() << std::endl;
+          }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Ascent::register_callback(const std::string &callback_name,
                           bool (*callback_function)(void))
 {
      try

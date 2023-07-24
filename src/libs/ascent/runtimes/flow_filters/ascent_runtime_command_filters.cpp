@@ -178,9 +178,17 @@ Command::execute()
 //-----------------------------------------------------------------------------
 void
 Command::register_callback(const std::string &callback_name,
+                           void (*callback_function)(void))
+{
+    m_void_callback_map.insert(std::make_pair(callback_name, callback_function));
+}
+
+//-----------------------------------------------------------------------------
+void
+Command::register_callback(const std::string &callback_name,
                            bool (*callback_function)(void))
 {
-  m_callback_map.insert(std::make_pair(callback_name, callback_function));
+    m_bool_callback_map.insert(std::make_pair(callback_name, callback_function));
 }
 
 //-----------------------------------------------------------------------------
@@ -192,7 +200,7 @@ Command::execute_commands(const std::vector<std::string> commands,
     {
         for (int i = 0; i < commands.size(); i++)
         {
-            auto callback_pair = m_callback_map.find(commands.at(i));
+            auto callback_pair = m_void_callback_map.find(commands.at(i));
             auto callback_function = callback_pair->second;
             callback_function();
         }
@@ -203,6 +211,15 @@ Command::execute_commands(const std::vector<std::string> commands,
             system(commands.at(i).c_str());
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+bool
+Command::execute_query(std::string callback_name)
+{
+    auto callback_pair = m_bool_callback_map.find(callback_name);
+    auto callback_function = callback_pair->second;
+    return callback_function();
 }
 
 //-----------------------------------------------------------------------------
