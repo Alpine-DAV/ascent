@@ -408,7 +408,7 @@ public:
     }
     else
     {
-      std::string d_path = "device"
+      std::string d_path = "device";
       if(leaf_path != "")
       {
           d_path += "_" + leaf_path;
@@ -463,7 +463,7 @@ public:
     }
     else
     {
-      std::string d_path = "host"
+      std::string d_path = "host";
       if(leaf_path != "")
       {
           d_path += "_" + leaf_path;
