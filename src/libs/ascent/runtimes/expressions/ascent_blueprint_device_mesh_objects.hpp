@@ -463,10 +463,10 @@ public:
     }
     else
     {
-      std::string d_path = "host";
+      std::string h_path = "host";
       if(leaf_path != "")
       {
-          d_path += "_" + leaf_path;
+          h_path += "_" + leaf_path;
       }
 
       if(!m_tmps.has_path(h_path))
