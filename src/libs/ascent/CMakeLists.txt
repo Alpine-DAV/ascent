@@ -357,7 +357,7 @@ if(CUDA_FOUND)
 
   set(CUDA_ARCH_FLAGS)
   foreach(arch ${CMAKE_CUDA_ARCHITECTURES})
-    list(APPEND CUDA_ARCH_FLAGS -gencode;arch=compute_${arch},code=compute_${arch})
+    list(APPEND CUDA_ARCH_FLAGS --generate-code=arch=compute_${arch},code=sm_${arch})
   endforeach()
   message(STATUS "CUDA_ARCH_FLAGS: ${CUDA_ARCH_FLAGS}")
 

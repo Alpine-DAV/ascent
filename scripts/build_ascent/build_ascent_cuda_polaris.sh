@@ -7,9 +7,7 @@ export http_proxy="http://proxy-01.pub.alcf.anl.gov:3128"
 export https_proxy="http://proxy-01.pub.alcf.anl.gov:3128"
 export ftp_proxy="http://proxy-01.pub.alcf.anl.gov:3128"
 
-source /home/qiwu/env-polaris.sh
-module load conda/2022-09-08
-conda activate base
+source /home/qiwu/projects/diva_superbuild/setup-env.sh
 
 export CC=$(which cc)
 export CXX=$(which CC)
