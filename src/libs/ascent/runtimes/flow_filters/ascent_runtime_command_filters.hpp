@@ -59,9 +59,11 @@ public:
                                   void (*callback_function)(void));
     void static register_callback(const std::string &callback_name,
                                   bool (*callback_function)(void));
-    void static execute_commands(std::vector<std::string> commands,
-                                 const std::string &command_type);
-    bool static execute_query(std::string callback_name);
+    void static execute_command_list(const std::vector<std::string> commands,
+                                     const std::string &command_type);
+    void static execute_shell_command(std::string command);
+    void static execute_void_callback(std::string callback_name);
+    bool static execute_bool_callback(std::string callback_name);
 };
 
 };

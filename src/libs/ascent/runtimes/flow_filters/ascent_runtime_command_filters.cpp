@@ -90,27 +90,27 @@ Command::verify_params(const conduit::Node &params,
     bool has_callback = params.has_path("callback");
     bool has_shell_command = params.has_path("shell_command");
 
-    bool res = true;
+    bool res = false;
     if (!has_callback && !has_shell_command)
     {
-        res = false;
         info["errors"].append() = "There was no callback or shell command defined";
     }
     else if (has_callback && has_shell_command)
     {
-        res = false;
         info["errors"].append() = "Both a callback and shell command are "
                                   "present. Choose one or the other.";
     }
     else if(has_callback && !params["callback"].dtype().is_string())
     {
-        res = false;
         info["errors"].append() = "Callbacks must be a string";  
     }
     else if(has_shell_command && !params["shell_command"].dtype().is_string())
     {
-        res = false;
         info["errors"].append() = "Shell commands must be a string";  
+    }
+    else
+    {
+        res = true;
     }
 
     std::vector<std::string> valid_paths;
@@ -165,14 +165,14 @@ Command::execute()
             MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
             if (rank == 0)
             {
-                execute_commands(commands, command_type);
+                execute_command_list(commands, command_type);
             }
             return;
         }
     }
     #endif
 
-    execute_commands(commands, command_type);
+    execute_command_list(commands, command_type);
 }
 
 //-----------------------------------------------------------------------------
@@ -180,6 +180,14 @@ void
 Command::register_callback(const std::string &callback_name,
                            void (*callback_function)(void))
 {
+    if (m_void_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register more than one void callback under the name '" << callback_name << "'");
+    }
+    else if (m_bool_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register both a void and bool callback under the same name '" << callback_name << "'");
+    }
     m_void_callback_map.insert(std::make_pair(callback_name, callback_function));
 }
 
@@ -188,37 +196,65 @@ void
 Command::register_callback(const std::string &callback_name,
                            bool (*callback_function)(void))
 {
+    if (m_bool_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register more than one bool callback under the name '" << callback_name << "'");
+    }
+    else if (m_void_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register both a void and bool callback under the same name '" << callback_name << "'");
+    }
     m_bool_callback_map.insert(std::make_pair(callback_name, callback_function));
 }
 
 //-----------------------------------------------------------------------------
 void
-Command::execute_commands(const std::vector<std::string> commands,
-                          const std::string &command_type)
+Command::execute_command_list(const std::vector<std::string> commands,
+                              const std::string &command_type)
 {
     if (command_type == "callback")
     {
         for (int i = 0; i < commands.size(); i++)
         {
-            auto callback_pair = m_void_callback_map.find(commands.at(i));
-            auto callback_function = callback_pair->second;
-            callback_function();
+            execute_void_callback(commands.at(i));
         }
     } else if (command_type == "shell_command")
     {
         for (int i = 0; i < commands.size(); i++)
         {
-            system(commands.at(i).c_str());
+            execute_shell_command(commands.at(i));
         }
     }
 }
 
 //-----------------------------------------------------------------------------
-bool
-Command::execute_query(std::string callback_name)
+void
+Command::execute_shell_command(std::string command)
 {
-    auto callback_pair = m_bool_callback_map.find(callback_name);
-    auto callback_function = callback_pair->second;
+    system(command.c_str());
+}
+
+//-----------------------------------------------------------------------------
+void
+Command::execute_void_callback(std::string callback_name)
+{
+    if (m_void_callback_map.count(callback_name) != 1)
+    {
+        ASCENT_ERROR("requested void callback '" << callback_name << "' was never registered");
+    }
+    auto callback_function = m_void_callback_map.at(callback_name);
+    callback_function();
+}
+
+//-----------------------------------------------------------------------------
+bool
+Command::execute_bool_callback(std::string callback_name)
+{
+    if (m_bool_callback_map.count(callback_name) != 1)
+    {
+        ASCENT_ERROR("requested bool callback '" << callback_name << "' was never registered");
+    }
+    auto callback_function = m_bool_callback_map.at(callback_name);
     return callback_function();
 }
 
