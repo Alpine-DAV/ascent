@@ -149,8 +149,6 @@ BasicTrigger::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
-    
-
     bool use_actions_file = params().has_path("actions_file");
 
     std::string actions_file = "";
@@ -186,6 +184,10 @@ BasicTrigger::execute()
       {
         ASCENT_ERROR("result of expression '"<<expression<<"' is not an bool");
       }
+    }
+    else
+    {
+      ASCENT_ERROR("must provide either a condition or a callback");
     }
 
     bool fire = res["value"].to_uint8() != 0;
