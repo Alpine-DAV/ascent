@@ -313,11 +313,25 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   }
   else
   {
+
       //
-      // TODO:
       // use ArrayHandleStride to create new field
       //
-      ASCENT_ERROR("ALMOST READY FOR THIS CASE!");
+
+      // NOTE: In this case, the num_vals, needs to be 
+      // the full extent of the strided area3
+      
+      int num_vals_expanded = num_vals * element_stride;
+      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(values_ptr,
+                                                                             num_vals_expanded,
+                                                                             copy);
+      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
+                                                    num_vals,
+                                                    element_stride,
+                                                    0);
+      field =  vtkm::cont::Field(field_name,
+                                 vtkm_assoc,
+                                 stride_array);
   }
 
   return field;
@@ -1389,7 +1403,10 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // check that the byte stride is a multiple of native stride
             index_t stride = n_vals.dtype().stride();
             index_t element_stride = stride / sizeof(float32);
-
+            
+            std::cout << "field name: " << field_name << " <float32>"
+                      << " byte stride: " << stride
+                      << " element_stride: " << element_stride << std::endl;
             // if element_stride is evenly divided by native, we are good to 
             // use vtk m array handles
             if( stride % sizeof(float32) == 0 )
@@ -1409,7 +1426,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // check that the byte stride is a multiple of native stride
             index_t stride = n_vals.dtype().stride();
             index_t element_stride = stride / sizeof(float64);
-
+            std::cout << "field name: " << field_name << " <float64>"
+                      << " byte stride: " << stride
+                      << " element_stride: " << element_stride << std::endl;
             // if element_stride is evenly divided by native, we are good to 
             // use vtk m array handles
             if( stride % sizeof(float64) == 0 )
