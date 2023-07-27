@@ -276,6 +276,8 @@ vtkm::cont::Field GetField(const conduit::Node &node,
                            const std::string &topo_str,
                            index_t element_stride,
                            bool zero_copy)
+                           bool zero_copy,
+			   bool compact)
 {
   vtkm::CopyFlag copy = vtkm::CopyFlag::On;
   if(zero_copy)
@@ -301,7 +303,6 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   const T *values_ptr = node.value();
 
   vtkm::cont::Field field;
-
   // base case is naturally stride data
   if(element_stride == 1)
   {
@@ -538,6 +539,7 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     // We must separate different topologies into
     // different vtkh data sets
 
+    
     const int num_domains = n.number_of_children();
 //    if(num_domains == 0)
 //      return nullptr;
@@ -548,6 +550,19 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     double time = 0;
     std::vector<vtkm::UInt64> allCycles;
     std::vector<double> allTimes;
+
+    int rank = 0;
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+      
+    std::stringstream log_name;
+    std::string log_prefix = "b_to_vm_dataset_total_";
+    log_name << log_prefix << rank<<".csv";
+    std::ofstream stream;
+    stream.open(log_name.str().c_str(),std::ofstream::app);
+    conduit::utils::Timer b_to_vtkm_ds_timer;
 
     for(int i = 0; i < num_domains; ++i)
     {
@@ -572,7 +587,6 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
         time = dom["state/time"].to_float64();
 	allTimes.push_back(time);
       }
-      
       for(int t = 0; t < topo_names.size(); ++t)
       {
         const std::string topo_name = topo_names[t];
@@ -580,8 +594,12 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
         datasets[topo_name].AddDomain(*dset,domain_id);
         delete dset;
       }
-
     }
+
+    float b_to_vtkm_ds_time = b_to_vtkm_ds_timer.elapsed();
+    std::stringstream b_to_vtkm_ds_log;
+    b_to_vtkm_ds_log << "blueprint to vtkm dataset time: " << b_to_vtkm_ds_time << "\n";
+    stream << b_to_vtkm_ds_log.str();
 
     //check to make sure there is data to grab
     if(num_domains > 0)
@@ -663,6 +681,16 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                         bool zero_copy,
                                         const std::string &topo_name_str)
 {
+    int rank = 0;
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    std::stringstream log_name;
+    std::string log_prefix = "convert_blueprint_to_vtkm_";
+    log_name << log_prefix << rank<<".csv";
+    std::ofstream stream;
+    stream.open(log_name.str().c_str(),std::ofstream::app);
     vtkm::cont::DataSet * result = NULL;
 
     std::string topo_name = topo_name_str;
@@ -686,12 +714,17 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
     if( mesh_type ==  "uniform")
     {
+        conduit::utils::Timer uniform_timer;
         result = UniformBlueprintToVTKmDataSet(coords_name,
                                                n_coords,
                                                topo_name,
                                                n_topo,
                                                neles,
                                                nverts);
+	float uniform_time = uniform_timer.elapsed();
+	std::stringstream uniform_log;
+	uniform_log << "uniform time: " << uniform_time << "\n";
+	stream << uniform_log.str();
     }
     else if(mesh_type == "rectilinear")
     {
@@ -716,6 +749,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     }
     else if( mesh_type ==  "unstructured")
     {
+	conduit::utils::Timer unstructured_timer;
         result =  UnstructuredBlueprintToVTKmDataSet(coords_name,
                                                      n_coords,
                                                      topo_name,
@@ -723,6 +757,10 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                                      neles,
                                                      nverts,
                                                      zero_copy);
+	float unstructured_time = unstructured_timer.elapsed();
+	std::stringstream unstructured_log;
+	unstructured_log << "unstructured time: " << unstructured_time << "\n";
+	stream << unstructured_log.str();
     }
     else
     {
@@ -732,13 +770,15 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
     if(node.has_child("fields"))
     {
+	conduit::utils::Timer add_field_timer;
         // add all of the fields:
         NodeConstIterator itr = node["fields"].children();
+	std::string field_name;
         while(itr.has_next())
         {
 
             const Node &n_field = itr.next();
-            std::string field_name = itr.name();
+            field_name = itr.name();
             if(n_field["topology"].as_string() != topo_name)
             {
               // these are not the fields we are looking for
@@ -787,7 +827,12 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
               ASCENT_INFO("skipping field "<<field_name<<" with "<<num_children<<" comps");
             }
         }
+	float add_field_time = add_field_timer.elapsed();
+	std::stringstream add_field_log;
+	add_field_log << "add_field " << field_name << "  time: " << add_field_time << "\n";
+	stream << add_field_log.str();
     }
+    stream.close();
     return result;
 }
 
@@ -1450,6 +1495,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         // use float64 by default
         if(!supported_type)
         {
+		std::cerr << "WE ARE IN UNSUPPORTED DATA TYPE" << std::endl;
             // convert to float64, we use this as a comprise to cover the widest range
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
             vtkm_arr.Allocate(num_vals);
