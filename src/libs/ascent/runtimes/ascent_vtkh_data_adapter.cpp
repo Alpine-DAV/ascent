@@ -274,6 +274,7 @@ vtkm::cont::Field GetField(const conduit::Node &node,
                            const std::string &field_name,
                            const std::string &assoc_str,
                            const std::string &topo_str,
+                           index_t element_stride,
                            bool zero_copy)
 {
   vtkm::CopyFlag copy = vtkm::CopyFlag::On;
@@ -300,13 +301,42 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   const T *values_ptr = node.value();
 
   vtkm::cont::Field field;
-  field = vtkm::cont::make_Field(field_name,
+
+  // base case is naturally stride data
+  if(element_stride == 1)
+  {
+      field = vtkm::cont::make_Field(field_name,
+                                     vtkm_assoc,
+                                     values_ptr,
+                                     num_vals,
+                                     copy);
+  }
+  else
+  {
+
+      //
+      // use ArrayHandleStride to create new field
+      //
+
+      // NOTE: In this case, the num_vals, needs to be 
+      // the full extent of the strided area3
+      
+      int num_vals_expanded = num_vals * element_stride;
+      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(values_ptr,
+                                                                             num_vals_expanded,
+                                                                             copy);
+      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
+                                                    num_vals,
+                                                    element_stride,
+                                                    0);
+      field =  vtkm::cont::Field(field_name,
                                  vtkm_assoc,
-                                 values_ptr,
-                                 num_vals,
-                                 copy);
+                                 stride_array);
+  }
+
   return field;
 }
+
 
 template<typename T>
 vtkm::cont::Field GetVectorField(T *values_ptr,
@@ -1350,20 +1380,71 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     {
         bool supported_type = false;
 
-        if(n_vals.is_compact())
+        // if(n_vals.is_compact())
+        // {
+        //     // we compile vtk-h with fp types
+        //     if(n_vals.dtype().is_float32())
+        //     {
+        //         dset->AddField(detail::GetField<float32>(n_vals, field_name, assoc_str, topo_name, zero_copy));
+        //         supported_type = true;
+        //     }
+        //     else if(n_vals.dtype().is_float64())
+        //     {
+        //         dset->AddField(detail::GetField<float64>(n_vals, field_name, assoc_str, topo_name, zero_copy));
+        //         supported_type = true;
+        //     }
+        // }
+
+        // vtk-m can stride as long as the strides are a multiple of the native stride
+
+        // we compile vtk-h with fp types
+        if(n_vals.dtype().is_float32())
         {
-            // we compile vtk-h with fp types
-            if(n_vals.dtype().is_float32())
+            // check that the byte stride is a multiple of native stride
+            index_t stride = n_vals.dtype().stride();
+            index_t element_stride = stride / sizeof(float32);
+            
+            std::cout << "field name: " << field_name << " <float32>"
+                      << " byte stride: " << stride
+                      << " element_stride: " << element_stride << std::endl;
+            // if element_stride is evenly divided by native, we are good to 
+            // use vtk m array handles
+            if( stride % sizeof(float32) == 0 )
             {
-                dset->AddField(detail::GetField<float32>(n_vals, field_name, assoc_str, topo_name, zero_copy));
-                supported_type = true;
-            }
-            else if(n_vals.dtype().is_float64())
-            {
-                dset->AddField(detail::GetField<float64>(n_vals, field_name, assoc_str, topo_name, zero_copy));
+                // in this case we can use a strided array handle 
+                dset->AddField(detail::GetField<float32>(n_vals,
+                                                         field_name,
+                                                         assoc_str,
+                                                         topo_name,
+                                                         element_stride,
+                                                         zero_copy));
                 supported_type = true;
             }
         }
+        else if(n_vals.dtype().is_float64())
+        {   
+            // check that the byte stride is a multiple of native stride
+            index_t stride = n_vals.dtype().stride();
+            index_t element_stride = stride / sizeof(float64);
+            std::cout << "field name: " << field_name << " <float64>"
+                      << " byte stride: " << stride
+                      << " element_stride: " << element_stride << std::endl;
+            // if element_stride is evenly divided by native, we are good to 
+            // use vtk m array handles
+            if( stride % sizeof(float64) == 0 )
+            {
+                // in this case we can use a strided array handle 
+                dset->AddField(detail::GetField<float64>(n_vals,
+                                                         field_name,
+                                                         assoc_str,
+                                                         topo_name,
+                                                         element_stride,
+                                                         zero_copy));
+                supported_type = true;
+            }
+        }
+
+
 
         // vtk-m cant support zero copy for this layout or was not compiled to expose this datatype
         // use float64 by default
