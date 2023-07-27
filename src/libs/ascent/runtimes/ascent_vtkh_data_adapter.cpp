@@ -276,8 +276,6 @@ vtkm::cont::Field GetField(const conduit::Node &node,
                            const std::string &topo_str,
                            index_t element_stride,
                            bool zero_copy)
-                           bool zero_copy,
-			   bool compact)
 {
   vtkm::CopyFlag copy = vtkm::CopyFlag::On;
   if(zero_copy)
