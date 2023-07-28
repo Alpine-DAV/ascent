@@ -131,10 +131,27 @@ vtkm::cont::CoordinateSystem
 GetExplicitCoordinateSystem(const conduit::Node &n_coords,
                             const std::string &name,
                             int &ndims,
+			    index_t &x_element_stride,
+			    index_t &y_element_stride,
+			    index_t &z_element_stride,
                             bool zero_copy)
 {
+    int rank = 0;
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+      
+    std::stringstream log_name;
+    std::string log_prefix = "getExplicitCoordinateSystem_times_";
+    log_name << log_prefix << rank<<".csv";
+    std::ofstream stream;
+    stream.open(log_name.str().c_str(),std::ofstream::app);
+    conduit::utils::Timer explicit_timer;
+
     int nverts = n_coords["values/x"].dtype().number_of_elements();
     bool is_interleaved = blueprint::mcarray::is_interleaved(n_coords["values"]);
+    stream << "is_interleaved bool: " << is_interleaved << "\n";
 
     // some interleaved cases aren't working
     // disabling this path until we find out what is going wrong.
@@ -154,46 +171,146 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     // directly use the pointer with vtk-m.
     // otherwise, we need to compact.
 
-    if(is_interleaved || n_coords["values/x"].is_compact())
+    conduit::utils::Timer compact_timer;
+    //if(is_interleaved || n_coords["values/x"].is_compact())
+    //{
+    //    x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+    //}
+    //else
+    //{
+    //    n_coords["values/x"].compact_to(n_coords_conv["x"]);
+    //    x_coords_ptr = GetNodePointer<T>(n_coords_conv["x"]);
+    //    // since we had to copy and compact the data, we can't zero copy
+    //    zero_copy = false;
+    //}
+
+    //if(is_interleaved || n_coords["values/y"].is_compact())
+    //{
+    //    y_coords_ptr = GetNodePointer<T>(n_coords["values/y"]);
+    //}
+    //else
+    //{
+    //    n_coords["values/y"].compact_to(n_coords_conv["y"]);
+    //    y_coords_ptr = GetNodePointer<T>(n_coords_conv["y"]);
+    //    // since we had to copy and compact the data, we can't zero copy
+    //    zero_copy = false;
+    //}
+
+    //if(n_coords.has_path("values/z"))
+    //{
+    //    ndims = 3;
+    //    if(is_interleaved || n_coords["values/z"].is_compact())
+    //    {
+    //        z_coords_ptr = GetNodePointer<T>(n_coords["values/z"]);
+    //    }
+    //    else
+    //    {
+    //        n_coords["values/z"].compact_to(n_coords_conv["z"]);
+    //        z_coords_ptr = GetNodePointer<T>(n_coords_conv["z"]);
+    //        // since we had to copy and compact the data, we can't zero copy
+    //        zero_copy = false;
+    //    }
+    //}
+    if(x_element_stride == 1 && y_element == 1 && z_element == 1)
     {
-        x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+      const T *x_verts_ptr = n_coords["values/x"].value();
+      const T *y_verts_ptr = n_coords["values/x"].value();
+      const T *z_verts_ptr = n_coords["values/x"].value();
+      vtkm::cont::ArrayHandle<T> x_coords_handle = vtkm::cont::make_ArrayHandle(x_verts_ptr,
+		      							     num_verts,
+									     copy);
+      vtkm::cont::ArrayHandle<T> y_coords_handle = vtkm::cont::make_ArrayHandle(y_verts_ptr,
+		      							     num_verts,
+									     copy);
+      vtkm::cont::ArrayHandle<T> z_coords_handle = vtkm::cont::make_ArrayHandle(z_verts_ptr,
+		      							     num_verts,
+									     copy);
+      return vtkm::cont::CoordinateSystem(name,
+                                          make_ArrayHandleSOA(x_coords_handle,
+                                                              y_coords_handle,
+                                                              z_coords_handle));
+    }
+    else //TODO: interleaved data
+    {
+      int num_verts_expanded = num_verts * x_element_stride;
+      const T *x_verts_ptr = n_coords["values/x"].value();
+      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(x_verts_ptr,
+		      							     num_verts_expanded,
+									     copy);
+      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
+		      				    num_verts,
+						    x_element_stride,
+						    0);
+    }
+
+    float compact_time = compact_timer.elapsed();
+    std::stringstream compact_log;
+    compact_log << "compact check & get coords ptr: " << compact_time << "\n";
+    stream << compact_log.str();
+
+    conduit::utils::Timer interleaved_timer;
+    if(!is_interleaved)
+    {
+      vtkm::cont::ArrayHandle<T> x_coords_handle;
+      vtkm::cont::ArrayHandle<T> y_coords_handle;
+      vtkm::cont::ArrayHandle<T> z_coords_handle;
+
+      detail::CopyArray(x_coords_handle, x_coords_ptr, nverts, zero_copy);
+      return vtkm::cont::CoordinateSystem(name,
+                                          make_ArrayHandleSOA(x_coords_handle,
+                                                              y_coords_handle,
+                                                              z_coords_handle));
     }
     else
     {
-        n_coords["values/x"].compact_to(n_coords_conv["x"]);
-        x_coords_ptr = GetNodePointer<T>(n_coords_conv["x"]);
-        // since we had to copy and compact the data, we can't zero copy
-        zero_copy = false;
+      int num_verts_expanded = num_verts * x_element_stride;
+      const T *x_verts_ptr = n_coords["values/x"].value();
+      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(x_verts_ptr,
+		      							     num_verts_expanded,
+									     copy);
+      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
+		      				    num_verts,
+						    x_element_stride,
+						    0);
     }
 
-    if(is_interleaved || n_coords["values/y"].is_compact())
+    float compact_time = compact_timer.elapsed();
+    std::stringstream compact_log;
+    compact_log << "compact check & get coords ptr: " << compact_time << "\n";
+    stream << compact_log.str();
+
+    conduit::utils::Timer interleaved_timer;
+    if(!is_interleaved)
     {
-        y_coords_ptr = GetNodePointer<T>(n_coords["values/y"]);
+      vtkm::cont::ArrayHandle<T> x_coords_handle;
+      vtkm::cont::ArrayHandle<T> y_coords_handle;
+      vtkm::cont::ArrayHandle<T> z_coords_handle;
+
+      detail::CopyArray(x_coords_handle, x_coords_ptr, nverts, zero_copy);
+      return vtkm::cont::CoordinateSystem(name,
+                                          make_ArrayHandleSOA(x_coords_handle,
+                                                              y_coords_handle,
+                                                              z_coords_handle));
     }
     else
     {
-        n_coords["values/y"].compact_to(n_coords_conv["y"]);
-        y_coords_ptr = GetNodePointer<T>(n_coords_conv["y"]);
-        // since we had to copy and compact the data, we can't zero copy
-        zero_copy = false;
+      int num_verts_expanded = num_verts * x_element_stride;
+      const T *x_verts_ptr = n_coords["values/x"].value();
+      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(x_verts_ptr,
+		      							     num_verts_expanded,
+									     copy);
+      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
+		      				    num_verts,
+						    x_element_stride,
+						    0);
     }
 
-    if(n_coords.has_path("values/z"))
-    {
-        ndims = 3;
-        if(is_interleaved || n_coords["values/z"].is_compact())
-        {
-            z_coords_ptr = GetNodePointer<T>(n_coords["values/z"]);
-        }
-        else
-        {
-            n_coords["values/z"].compact_to(n_coords_conv["z"]);
-            z_coords_ptr = GetNodePointer<T>(n_coords_conv["z"]);
-            // since we had to copy and compact the data, we can't zero copy
-            zero_copy = false;
-        }
-    }
+    float compact_time = compact_timer.elapsed();
+    std::stringstream compact_log;
+    compact_log << "compact check & get coords ptr: " << compact_time << "\n";
+    stream << compact_log.str();
 
+    conduit::utils::Timer interleaved_timer;
     if(!is_interleaved)
     {
       vtkm::cont::ArrayHandle<T> x_coords_handle;
@@ -214,6 +331,17 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
           T *z = vtkh::GetVTKMPointer(z_coords_handle);
           memset(z, 0.0, nverts * sizeof(T));
       }
+      float interleaved_time = interleaved_timer.elapsed();
+      std::stringstream interleaved_log;
+      interleaved_log << "is_interleaved: " << interleaved_time << "\n";
+      interleaved_log << "num dims: " << ndims << "\n" << std::endl;
+      stream << interleaved_log.str();
+
+      float explicit_time = explicit_timer.elapsed();
+      std::stringstream explicit_log;
+      explicit_log << "GetExplicitCoordinateSystem [TOTAL]: " << explicit_time << "\n";
+      stream << explicit_log.str();
+      stream.close();
 
       return vtkm::cont::CoordinateSystem(name,
                                           make_ArrayHandleSOA(x_coords_handle,
@@ -1273,24 +1401,65 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
+    int rank = 0;
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+      
+    std::stringstream log_name;
+    std::string log_prefix = "unstructured_times_";
+    log_name << log_prefix << rank<<".csv";
+    std::ofstream stream;
+    stream.open(log_name.str().c_str(),std::ofstream::app);
+    conduit::utils::Timer unstructured_timer;
+
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
     nverts = n_coords["values/x"].dtype().number_of_elements();
 
+    conduit::utils::Timer explicit_timer;
     int32 ndims;
     vtkm::cont::CoordinateSystem coords;
     if(n_coords["values/x"].dtype().is_float64())
     {
+      index_t x_stride = n_coords["values/x"].dtype().stride();
+      index_t x_element_stride = x_stride / sizeof(float64);
+      index_t y_stride = n_coords["values/y"].dtype().stride();
+      index_t y_element_stride = y_stride / sizeof(float64);
+      index_t z_element_stride = 0.0;
+      if(n_coords.has_path("values/z"))
+      {
+        index_t z_stride = n_coords["values/z"].dtype().stride();
+        index_t z_element_stride = z_stride / sizeof(float64);
+      }
+      //todo check stride % float64 == 0
       coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
                                                             coords_name,
                                                             ndims,
+							    x_element_stride,
+							    y_element_stride,
+							    z_element_stride,
                                                             zero_copy);
     }
     else if(n_coords["values/x"].dtype().is_float32())
     {
+      index_t x_stride = n_coords["values/x"].dtype().stride();
+      index_t x_element_stride = x_stride / sizeof(float32);
+      index_t y_stride = n_coords["values/y"].dtype().stride();
+      index_t y_element_stride = y_stride / sizeof(float32);
+      index_t z_element_stride = 0.0;
+      if(n_coords.has_path("values/z"))
+      {
+        index_t z_stride = n_coords["values/z"].dtype().stride();
+        index_t z_element_stride = z_stride / sizeof(float32);
+      }
       coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
                                                             coords_name,
                                                             ndims,
+							    x_element_stride,
+							    y_element_stride,
+							    z_element_stride,
                                                             zero_copy);
     }
     else
@@ -1298,7 +1467,17 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
       ASCENT_ERROR("Coordinate system must be floating point values");
     }
 
+    float explicit_time = explicit_timer.elapsed();
+    std::stringstream explicit_log;
+    explicit_log << "blueprint to explicit: " << explicit_time << "\n";
+    stream << explicit_log.str();
+
+    conduit::utils::Timer add_coords_timer;
     result->AddCoordinateSystem(coords);
+    float add_coords_time = add_coords_timer.elapsed();
+    std::stringstream add_coords_log;
+    add_coords_log << "result add_coords: " << add_coords_time << "\n";
+    stream << add_coords_log.str();
 
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
@@ -1316,6 +1495,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
 
     int conn_size = n_topo_conn.dtype().number_of_elements();
 
+    conduit::utils::Timer connectivity_timer;
     if( sizeof(vtkm::Id) == 4)
     {
          if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
@@ -1326,6 +1506,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
          else
          {
              // convert to int32
+		 std::cerr << "INT32 unstructured conversion: non zero copy" << std::endl;
              connectivity.Allocate(conn_size);
              void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
              Node n_tmp;
@@ -1343,6 +1524,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
         else
         {
              // convert to int64
+	     std::cerr << "INT64 unstructured conversion: non zero copy" << std::endl;
              connectivity.Allocate(conn_size);
              void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
              Node n_tmp;
@@ -1350,7 +1532,12 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
              n_topo_conn.to_int64_array(n_tmp);
         }
     }
+    float connectivity_time = connectivity_timer.elapsed();
+    std::stringstream connectivity_log;
+    connectivity_log << "copy connectivity: " << connectivity_time << "\n";
+    stream << connectivity_log.str();
 
+    conduit::utils::Timer misc_timer;
     vtkm::UInt8 shape_id;
     vtkm::IdComponent indices_per;
     detail::VTKmCellShape(ele_shape, shape_id, indices_per);
@@ -1359,6 +1546,16 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     neles = cellset.GetNumberOfCells();
     result->SetCellSet(cellset);
 
+    float misc_time = misc_timer.elapsed();
+    std::stringstream misc_log;
+    misc_log << "misc as the end: " << misc_time << "\n";
+    stream << misc_log.str();
+
+    float unstructured_time = unstructured_timer.elapsed();
+    std::stringstream unstructured_log;
+    unstructured_log << "blueprint to unstructured [TOTAL]: " << unstructured_time << "\n";
+    stream << unstructured_log.str();
+    stream.close();
     return result;
 }
 
@@ -1447,9 +1644,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             index_t stride = n_vals.dtype().stride();
             index_t element_stride = stride / sizeof(float32);
             
-            std::cout << "field name: " << field_name << " <float32>"
-                      << " byte stride: " << stride
-                      << " element_stride: " << element_stride << std::endl;
+            //std::cout << "field name: " << field_name << " <float32>"
+            //          << " byte stride: " << stride
+            //          << " element_stride: " << element_stride << std::endl;
             // if element_stride is evenly divided by native, we are good to 
             // use vtk m array handles
             if( stride % sizeof(float32) == 0 )
@@ -1469,9 +1666,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // check that the byte stride is a multiple of native stride
             index_t stride = n_vals.dtype().stride();
             index_t element_stride = stride / sizeof(float64);
-            std::cout << "field name: " << field_name << " <float64>"
-                      << " byte stride: " << stride
-                      << " element_stride: " << element_stride << std::endl;
+            //std::cout << "field name: " << field_name << " <float64>"
+            //          << " byte stride: " << stride
+            //          << " element_stride: " << element_stride << std::endl;
             // if element_stride is evenly divided by native, we are good to 
             // use vtk m array handles
             if( stride % sizeof(float64) == 0 )
@@ -1491,9 +1688,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // check that the byte stride is a multiple of native stride
             index_t stride = n_vals.dtype().stride();
             index_t element_stride = stride / sizeof(int32);
-            std::cout << "field name: " << field_name << " <int32>"
-                      << " byte stride: " << stride
-                      << " element_stride: " << element_stride << std::endl;
+            //std::cout << "field name: " << field_name << " <int32>"
+            //          << " byte stride: " << stride
+            //          << " element_stride: " << element_stride << std::endl;
             // if element_stride is evenly divided by native, we are good to 
             // use vtk m array handles
             if( stride % sizeof(int32) == 0 )
@@ -1513,9 +1710,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // check that the byte stride is a multiple of native stride
             index_t stride = n_vals.dtype().stride();
             index_t element_stride = stride / sizeof(int64);
-            std::cout << "field name: " << field_name << " <int64>"
-                      << " byte stride: " << stride
-                      << " element_stride: " << element_stride << std::endl;
+            //std::cout << "field name: " << field_name << " <int64>"
+            //          << " byte stride: " << stride
+            //          << " element_stride: " << element_stride << std::endl;
             // if element_stride is evenly divided by native, we are good to 
             // use vtk m array handles
             if( stride % sizeof(int64) == 0 )
