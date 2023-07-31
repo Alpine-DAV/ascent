@@ -30,6 +30,7 @@
 // VTKm includes
 #define VTKM_USE_DOUBLE_PRECISION
 #include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/Algorithm.h>
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayHandleExtractComponent.h>
 #include <vtkm/cont/CoordinateSystem.h>
@@ -136,6 +137,11 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
 			    index_t &z_element_stride,
                             bool zero_copy)
 {
+    vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+    if(zero_copy)
+    {
+      copy = vtkm::CopyFlag::Off;
+    }
     int rank = 0;
 #if defined(ASCENT_MPI_ENABLED)
     MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
@@ -163,9 +169,9 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     // non-interleaved values
     Node n_coords_conv;
 
-    const T* x_coords_ptr = NULL;
-    const T* y_coords_ptr = NULL;
-    const T *z_coords_ptr = NULL;
+    //const T* x_coords_ptr = NULL;
+    //const T* y_coords_ptr = NULL;
+    //const T *z_coords_ptr = NULL;
 
     // if we are an interleaved mcarray, or compact we can
     // directly use the pointer with vtk-m.
@@ -211,20 +217,32 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     //        zero_copy = false;
     //    }
     //}
-    if(x_element_stride == 1 && y_element == 1 && z_element == 1)
+    if(x_element_stride == 1 && y_element_stride == 1 && z_element_stride == 1)
     {
       const T *x_verts_ptr = n_coords["values/x"].value();
       const T *y_verts_ptr = n_coords["values/x"].value();
       const T *z_verts_ptr = n_coords["values/x"].value();
-      vtkm::cont::ArrayHandle<T> x_coords_handle = vtkm::cont::make_ArrayHandle(x_verts_ptr,
-		      							     num_verts,
+      vtkm::cont::ArrayHandle<T> x_coords_handle = vtkm::cont::make_ArrayHandle<T>(x_verts_ptr,
+		      							     nverts,
 									     copy);
-      vtkm::cont::ArrayHandle<T> y_coords_handle = vtkm::cont::make_ArrayHandle(y_verts_ptr,
-		      							     num_verts,
+      vtkm::cont::ArrayHandle<T> y_coords_handle = vtkm::cont::make_ArrayHandle<T>(y_verts_ptr,
+		      							     nverts,
 									     copy);
-      vtkm::cont::ArrayHandle<T> z_coords_handle = vtkm::cont::make_ArrayHandle(z_verts_ptr,
-		      							     num_verts,
+      vtkm::cont::ArrayHandle<T> z_coords_handle = vtkm::cont::make_ArrayHandle<T>(z_verts_ptr,
+		      							     nverts,
 									     copy);
+      float compact_time = compact_timer.elapsed();
+      std::stringstream compact_log;
+      compact_log << "compact check & get coords ptr: " << compact_time << "\n";
+      compact_log << "x_element_stride: " << x_element_stride << "\n";
+      compact_log << "y_element_stride: " << y_element_stride << "\n";
+      compact_log << "z_element_stride: " << z_element_stride << "\n";
+      stream << compact_log.str();
+      float explicit_time = explicit_timer.elapsed();
+      std::stringstream explicit_log;
+      explicit_log << "GetExplicitCoordinateSystem [TOTAL]: " << explicit_time << "\n";
+      stream << explicit_log.str();
+      stream.close();
       return vtkm::cont::CoordinateSystem(name,
                                           make_ArrayHandleSOA(x_coords_handle,
                                                               y_coords_handle,
@@ -232,97 +250,46 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     }
     else //TODO: interleaved data
     {
-      int num_verts_expanded = num_verts * x_element_stride;
-      const T *x_verts_ptr = n_coords["values/x"].value();
-      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(x_verts_ptr,
-		      							     num_verts_expanded,
-									     copy);
-      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
-		      				    num_verts,
-						    x_element_stride,
-						    0);
-    }
-
-    float compact_time = compact_timer.elapsed();
-    std::stringstream compact_log;
-    compact_log << "compact check & get coords ptr: " << compact_time << "\n";
-    stream << compact_log.str();
-
-    conduit::utils::Timer interleaved_timer;
-    if(!is_interleaved)
-    {
       vtkm::cont::ArrayHandle<T> x_coords_handle;
       vtkm::cont::ArrayHandle<T> y_coords_handle;
       vtkm::cont::ArrayHandle<T> z_coords_handle;
 
-      detail::CopyArray(x_coords_handle, x_coords_ptr, nverts, zero_copy);
-      return vtkm::cont::CoordinateSystem(name,
-                                          make_ArrayHandleSOA(x_coords_handle,
-                                                              y_coords_handle,
-                                                              z_coords_handle));
-    }
-    else
-    {
-      int num_verts_expanded = num_verts * x_element_stride;
+      int x_verts_expanded = nverts * x_element_stride;
       const T *x_verts_ptr = n_coords["values/x"].value();
-      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(x_verts_ptr,
-		      							     num_verts_expanded,
+      vtkm::cont::ArrayHandle<T> x_source_array = vtkm::cont::make_ArrayHandle<T>(x_verts_ptr,
+		      							     x_verts_expanded,
 									     copy);
-      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
-		      				    num_verts,
-						    x_element_stride,
-						    0);
-    }
+      vtkm::cont::ArrayHandleStride<T> x_stride_handle(x_source_array,
+		      				       nverts,
+						       x_element_stride,
+						       0);
 
-    float compact_time = compact_timer.elapsed();
-    std::stringstream compact_log;
-    compact_log << "compact check & get coords ptr: " << compact_time << "\n";
-    stream << compact_log.str();
-
-    conduit::utils::Timer interleaved_timer;
-    if(!is_interleaved)
-    {
-      vtkm::cont::ArrayHandle<T> x_coords_handle;
-      vtkm::cont::ArrayHandle<T> y_coords_handle;
-      vtkm::cont::ArrayHandle<T> z_coords_handle;
-
-      detail::CopyArray(x_coords_handle, x_coords_ptr, nverts, zero_copy);
-      return vtkm::cont::CoordinateSystem(name,
-                                          make_ArrayHandleSOA(x_coords_handle,
-                                                              y_coords_handle,
-                                                              z_coords_handle));
-    }
-    else
-    {
-      int num_verts_expanded = num_verts * x_element_stride;
-      const T *x_verts_ptr = n_coords["values/x"].value();
-      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(x_verts_ptr,
-		      							     num_verts_expanded,
+      vtkm::cont::Algorithm::Copy(x_stride_handle, x_coords_handle);
+      
+      int y_verts_expanded = nverts * y_element_stride;
+      const T *y_verts_ptr = n_coords["values/y"].value();
+      vtkm::cont::ArrayHandle<T> y_source_array = vtkm::cont::make_ArrayHandle<T>(y_verts_ptr,
+		      							     y_verts_expanded,
 									     copy);
-      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
-		      				    num_verts,
-						    x_element_stride,
-						    0);
-    }
+      vtkm::cont::ArrayHandleStride<T> y_stride_handle(y_source_array,
+		      				       nverts,
+						       y_element_stride,
+						       0);
 
-    float compact_time = compact_timer.elapsed();
-    std::stringstream compact_log;
-    compact_log << "compact check & get coords ptr: " << compact_time << "\n";
-    stream << compact_log.str();
-
-    conduit::utils::Timer interleaved_timer;
-    if(!is_interleaved)
-    {
-      vtkm::cont::ArrayHandle<T> x_coords_handle;
-      vtkm::cont::ArrayHandle<T> y_coords_handle;
-      vtkm::cont::ArrayHandle<T> z_coords_handle;
-
-      detail::CopyArray(x_coords_handle, x_coords_ptr, nverts, zero_copy);
-      detail::CopyArray(y_coords_handle, y_coords_ptr, nverts, zero_copy);
+      vtkm::cont::Algorithm::Copy(y_stride_handle, y_coords_handle);
 
       if(ndims == 3)
       {
-        detail::CopyArray(z_coords_handle, z_coords_ptr, nverts, zero_copy);
+        int z_verts_expanded = nverts * z_element_stride;
+        const T *z_verts_ptr = n_coords["values/z"].value();
+        vtkm::cont::ArrayHandle<T> z_source_array = vtkm::cont::make_ArrayHandle<T>(z_verts_ptr,
+  		      							     z_verts_expanded,
+  									     copy);
+        vtkm::cont::ArrayHandleStride<T> z_stride_handle(z_source_array,
+  		      				       nverts,
+  						       z_element_stride,
+  						       0);
+	vtkm::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
       }
       else
       {
@@ -331,69 +298,105 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
           T *z = vtkh::GetVTKMPointer(z_coords_handle);
           memset(z, 0.0, nverts * sizeof(T));
       }
-      float interleaved_time = interleaved_timer.elapsed();
-      std::stringstream interleaved_log;
-      interleaved_log << "is_interleaved: " << interleaved_time << "\n";
-      interleaved_log << "num dims: " << ndims << "\n" << std::endl;
-      stream << interleaved_log.str();
 
+      float compact_time = compact_timer.elapsed();
+      std::stringstream compact_log;
+      compact_log << "compact check & get coords ptr: " << compact_time << "\n";
+      compact_log << "x_element_stride: " << x_element_stride << "\n";
+      compact_log << "y_element_stride: " << y_element_stride << "\n";
+      compact_log << "z_element_stride: " << z_element_stride << "\n";
+      stream << compact_log.str();
       float explicit_time = explicit_timer.elapsed();
       std::stringstream explicit_log;
       explicit_log << "GetExplicitCoordinateSystem [TOTAL]: " << explicit_time << "\n";
       stream << explicit_log.str();
       stream.close();
-
       return vtkm::cont::CoordinateSystem(name,
                                           make_ArrayHandleSOA(x_coords_handle,
                                                               y_coords_handle,
                                                               z_coords_handle));
     }
-    else // NOTE: This case is disabled.
-    {
-      // we have interleaved coordinates x0,y0,z0,x1,y1,z1...
-      const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
-      vtkm::cont::ArrayHandle<vtkm::Vec<T, 3>> coords;
-      // we cannot zero copy 2D interleaved arrays into vtkm
-      if(ndims == 3 || true) // TODO: need way to detect 3d interleaved components that has
-                             //       only has xy in conduit
-      {
-        // this case was failing from Nyx + AMReX
-        // still haven't been able to reproduce with a simpler test
-        detail::CopyArray(coords, (vtkm::Vec<T,3>*)coords_ptr, nverts, zero_copy);
-      }
-      else
-      {
-        // 2D interleaved array case
-        vtkm::cont::ArrayHandle<T> x_coords_handle;
-        vtkm::cont::ArrayHandle<T> y_coords_handle;
-        vtkm::cont::ArrayHandle<T> z_coords_handle;
 
-        x_coords_handle.Allocate(nverts);
-        y_coords_handle.Allocate(nverts);
-        z_coords_handle.Allocate(nverts);
 
-        auto x_portal = x_coords_handle.WritePortal();
-        auto y_portal = y_coords_handle.WritePortal();
+    //conduit::utils::Timer interleaved_timer;
+    //if(!is_interleaved)
+    //{
+    //  vtkm::cont::ArrayHandle<T> x_coords_handle;
+    //  vtkm::cont::ArrayHandle<T> y_coords_handle;
+    //  vtkm::cont::ArrayHandle<T> z_coords_handle;
 
-        const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+    //  detail::CopyArray(x_coords_handle, x_coords_ptr, nverts, zero_copy);
+    //  detail::CopyArray(y_coords_handle, y_coords_ptr, nverts, zero_copy);
 
-        T *z = (T*) vtkh::GetVTKMPointer(z_coords_handle);
-        memset(z, 0.0, nverts * sizeof(T));
+    //  if(ndims == 3)
+    //  {
+    //    detail::CopyArray(z_coords_handle, z_coords_ptr, nverts, zero_copy);
+    //  }
+    //  else
+    //  {
+    //      z_coords_handle.Allocate(nverts);
+    //      // This does not get initialized to zero
+    //      T *z = vtkh::GetVTKMPointer(z_coords_handle);
+    //      memset(z, 0.0, nverts * sizeof(T));
+    //  }
+    //  float interleaved_time = interleaved_timer.elapsed();
+    //  std::stringstream interleaved_log;
+    //  interleaved_log << "is_interleaved: " << interleaved_time << "\n";
+    //  interleaved_log << "num dims: " << ndims << "\n" << std::endl;
+    //  stream << interleaved_log.str();
 
-        for(int i = 0; i < nverts; ++i)
-        {
-          x_portal.Set(i, coords_ptr[i*2+0]);
-          y_portal.Set(i, coords_ptr[i*2+1]);
-        }
 
-        return vtkm::cont::CoordinateSystem(name,
-                                            make_ArrayHandleSOA(x_coords_handle,
-                                                                y_coords_handle,
-                                                                z_coords_handle));
-      }
+    //  return vtkm::cont::CoordinateSystem(name,
+    //                                      make_ArrayHandleSOA(x_coords_handle,
+    //                                                          y_coords_handle,
+    //                                                          z_coords_handle));
+    //}
+    //else // NOTE: This case is disabled.
+    //{
+    //  // we have interleaved coordinates x0,y0,z0,x1,y1,z1...
+    //  const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+    //  vtkm::cont::ArrayHandle<vtkm::Vec<T, 3>> coords;
+    //  // we cannot zero copy 2D interleaved arrays into vtkm
+    //  if(ndims == 3 || true) // TODO: need way to detect 3d interleaved components that has
+    //                         //       only has xy in conduit
+    //  {
+    //    // this case was failing from Nyx + AMReX
+    //    // still haven't been able to reproduce with a simpler test
+    //    detail::CopyArray(coords, (vtkm::Vec<T,3>*)coords_ptr, nverts, zero_copy);
+    //  }
+    //  else
+    //  {
+    //    // 2D interleaved array case
+    //    vtkm::cont::ArrayHandle<T> x_coords_handle;
+    //    vtkm::cont::ArrayHandle<T> y_coords_handle;
+    //    vtkm::cont::ArrayHandle<T> z_coords_handle;
 
-      return vtkm::cont::CoordinateSystem(name, coords);
-    }
+    //    x_coords_handle.Allocate(nverts);
+    //    y_coords_handle.Allocate(nverts);
+    //    z_coords_handle.Allocate(nverts);
+
+    //    auto x_portal = x_coords_handle.WritePortal();
+    //    auto y_portal = y_coords_handle.WritePortal();
+
+    //    const T* coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
+
+    //    T *z = (T*) vtkh::GetVTKMPointer(z_coords_handle);
+    //    memset(z, 0.0, nverts * sizeof(T));
+
+    //    for(int i = 0; i < nverts; ++i)
+    //    {
+    //      x_portal.Set(i, coords_ptr[i*2+0]);
+    //      y_portal.Set(i, coords_ptr[i*2+1]);
+    //    }
+
+    //    return vtkm::cont::CoordinateSystem(name,
+    //                                        make_ArrayHandleSOA(x_coords_handle,
+    //                                                            y_coords_handle,
+    //                                                            z_coords_handle));
+    //  }
+
+    //  return vtkm::cont::CoordinateSystem(name, coords);
+    //}
 
 }
 
@@ -1338,16 +1341,42 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     vtkm::cont::CoordinateSystem coords;
     if(n_coords["values/x"].dtype().is_float64())
     {
+      index_t x_stride = n_coords["values/x"].dtype().stride();
+      index_t x_element_stride = x_stride / sizeof(float64);
+      index_t y_stride = n_coords["values/y"].dtype().stride();
+      index_t y_element_stride = y_stride / sizeof(float64);
+      index_t z_element_stride = 0.0;
+      if(n_coords.has_path("values/z"))
+      {
+        index_t z_stride = n_coords["values/z"].dtype().stride();
+        z_element_stride = z_stride / sizeof(float64);
+      }
       coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
                                                             coords_name,
                                                             ndims,
+							    x_element_stride,
+							    y_element_stride,
+							    z_element_stride,
                                                             zero_copy);
     }
     else if(n_coords["values/x"].dtype().is_float32())
     {
+      index_t x_stride = n_coords["values/x"].dtype().stride();
+      index_t x_element_stride = x_stride / sizeof(float32);
+      index_t y_stride = n_coords["values/y"].dtype().stride();
+      index_t y_element_stride = y_stride / sizeof(float32);
+      index_t z_element_stride = 0.0;
+      if(n_coords.has_path("values/z"))
+      {
+        index_t z_stride = n_coords["values/z"].dtype().stride();
+        z_element_stride = z_stride / sizeof(float32);
+      }
       coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
                                                             coords_name,
                                                             ndims,
+							    x_element_stride,
+							    y_element_stride,
+							    z_element_stride,
                                                             zero_copy);
     }
     else
@@ -1431,7 +1460,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
       if(n_coords.has_path("values/z"))
       {
         index_t z_stride = n_coords["values/z"].dtype().stride();
-        index_t z_element_stride = z_stride / sizeof(float64);
+        z_element_stride = z_stride / sizeof(float64);
       }
       //todo check stride % float64 == 0
       coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
