@@ -41,7 +41,7 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 
-static std::map<std::string, void (*)(void)> m_void_callback_map;
+static std::map<std::string, void (*)(conduit::Node &)> m_void_callback_map;
 static std::map<std::string, bool (*)(void)> m_bool_callback_map;
 
 //-----------------------------------------------------------------------------
@@ -56,13 +56,13 @@ public:
     virtual void execute();
 
     void static register_callback(const std::string &callback_name,
-                                  void (*callback_function)(void));
+                                  void (*callback_function)(conduit::Node &));
     void static register_callback(const std::string &callback_name,
                                   bool (*callback_function)(void));
     void static execute_command_list(const std::vector<std::string> commands,
                                      const std::string &command_type);
     void static execute_shell_command(std::string command);
-    void static execute_void_callback(std::string callback_name);
+    void static execute_void_callback(std::string callback_name, conduit::Node &params);
     bool static execute_bool_callback(std::string callback_name);
 };
 
