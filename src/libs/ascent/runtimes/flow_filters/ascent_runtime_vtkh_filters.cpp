@@ -1127,33 +1127,18 @@ VTKHGhostStripper::verify_params(const conduit::Node &params,
 void
 VTKHGhostStripper::execute()
 {
-#ifdef ASCENT_MPI_ENABLED
-    int rank; 
-    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-    MPI_Comm_rank(mpi_comm, &rank);
-    if(rank == 547)
-	std::cerr << "ENTERING VTKH FILTERS GHOST STRIPPER" << std::endl;
-#endif
 
     if(!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("VTKHGhostStripper input must be a data object");
     }
 
-#ifdef ASCENT_MPI_ENABLED
-    if(rank == 547)
-	std::cerr << "HERE1" << std::endl;
-#endif
     DataObject *data_object = input<DataObject>(0);
     if(!data_object->is_valid())
     {
       set_output<DataObject>(data_object);
       return;
     }
-#ifdef ASCENT_MPI_ENABLED
-    if(rank == 547)
-	std::cerr << "HERE2" << std::endl;
-#endif
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
     set_output<DataObject>(data_object);
     return;
@@ -1161,27 +1146,12 @@ VTKHGhostStripper::execute()
     // ask what topology this field is associated with and
     // get the right data set
     std::string field_name = params()["field"].as_string();
-#ifdef ASCENT_MPI_ENABLED
-    if(rank == 547)
-	std::cerr << "HERE3, fieldname: "<< field_name << std::endl;
-    if(collection!=NULL && rank==547)
-	std::cerr << "collection is not null" << std::endl;
-
-#endif
 
     std::string topo_name = collection->field_topology(field_name);
-#ifdef ASCENT_MPI_ENABLED
-    if(rank == 547)
-	std::cerr << "HERE4" << std::endl;
-#endif
 
     bool field_exists = topo_name != "";
     // Check to see of the ghost field even exists
     bool do_strip = field_exists;
-#ifdef ASCENT_MPI_ENABLED
-    if(rank == 547)
-	std::cerr << "HERE5" << std::endl;
-#endif
 
     if(do_strip)
     {
@@ -1218,10 +1188,6 @@ VTKHGhostStripper::execute()
     {
       set_output<DataObject>(data_object);
     }
-#ifdef ASCENT_MPI_ENABLED
-    if(rank == 547)
-	std::cerr << "LEAVING VTKH FILTERS GHOST STRIPPER" << std::endl;
-#endif
 }
 
 //-----------------------------------------------------------------------------
