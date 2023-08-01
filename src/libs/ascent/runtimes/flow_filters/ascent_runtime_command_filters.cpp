@@ -58,6 +58,9 @@ namespace runtime
 namespace filters
 {
 
+std::map<std::string, void (*)(conduit::Node &)> Command::m_void_callback_map;
+std::map<std::string, bool (*)(void)> Command::m_bool_callback_map;
+
 //-----------------------------------------------------------------------------
 Command::Command()
 :Filter()

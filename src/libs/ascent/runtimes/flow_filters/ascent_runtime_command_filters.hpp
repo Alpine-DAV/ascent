@@ -41,9 +41,6 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 
-static std::map<std::string, void (*)(conduit::Node &)> m_void_callback_map;
-static std::map<std::string, bool (*)(void)> m_bool_callback_map;
-
 //-----------------------------------------------------------------------------
 class ASCENT_API Command : public ::flow::Filter
 {
@@ -64,6 +61,9 @@ public:
     void static execute_shell_command(std::string command);
     void static execute_void_callback(std::string callback_name, conduit::Node &params);
     bool static execute_bool_callback(std::string callback_name);
+
+    static std::map<std::string, void (*)(conduit::Node &)> m_void_callback_map;
+    static std::map<std::string, bool (*)(void)> m_bool_callback_map;
 };
 
 };

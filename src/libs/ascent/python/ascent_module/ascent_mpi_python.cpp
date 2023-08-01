@@ -39,6 +39,7 @@
 #include "conduit.hpp"
 #include "ascent.hpp"
 #include "ascent_mpi_python_exports.h"
+#include "runtimes/flow_filters/ascent_runtime_command_filters.hpp"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
@@ -151,6 +152,29 @@ struct PyAscent_MPI_Ascent
     Ascent *ascent; // NoteIterator is light weight, we can deal with copies
 };
 
+//---------------------------------------------------------------------------//
+// Helper that promotes ascent error to python error
+//---------------------------------------------------------------------------//
+static void
+PyAscent_MPI_Ascent_Error_To_PyErr(const conduit::Error &e)
+{
+    std::ostringstream oss;
+    oss << "Ascent Error: " << e.message();
+    PyErr_SetString(PyExc_RuntimeError,
+                    oss.str().c_str());
+}
+
+//---------------------------------------------------------------------------//
+// Helper that promotes ascent error to python error
+//---------------------------------------------------------------------------//
+static void
+PyAscent_MPI_Cpp_Error_To_PyErr(const char *msg)
+{
+    std::ostringstream oss;
+    oss << "Ascent Error: " << msg;
+    PyErr_SetString(PyExc_RuntimeError,
+                    oss.str().c_str());
+}
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -364,6 +388,65 @@ PyAscent_MPI_Ascent_str(PyAscent_MPI_Ascent *self)
     return (Py_BuildValue("s", "{Ascent}"));
 }
 
+//---------------------------------------------------------------------------//
+// ascent::execute_callback
+//---------------------------------------------------------------------------//
+static PyObject *
+PyAscent_MPI_Ascent_execute_callback(PyAscent_MPI_Ascent *self,
+                                     PyObject *args)
+{
+    char *callback_name;
+    PyObject *py_node = NULL;
+
+    if (!PyArg_ParseTuple(args,
+                          "sO",
+                          &callback_name,
+                          &py_node))
+    {
+        return NULL;
+    }
+
+    if(py_node != NULL)
+    {
+        if(!PyConduit_Node_Check(py_node))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "Ascent::execute_callback 'params' argument must be a "
+                            "conduit::Node");
+            return NULL;
+        }
+    }
+    try
+    {
+        if(py_node != NULL)
+        {
+            std::string callback_name_string = callback_name;
+            Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
+            ascent::runtime::filters::Command::execute_void_callback(callback_name, *node);
+        }
+    }
+    catch(conduit::Error e)
+    {
+        PyAscent_MPI_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_MPI_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_MPI_Cpp_Error_To_PyErr("unknown cpp exception thrown");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+
 //----------------------------------------------------------------------------//
 // Ascent methods table
 //----------------------------------------------------------------------------//
@@ -383,6 +466,11 @@ static PyMethodDef PyAscent_MPI_Ascent_METHODS[] = {
      (PyCFunction)PyAscent_MPI_Ascent_execute,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
+    //-----------------------------------------------------------------------//
+    {"execute_callback",
+     (PyCFunction)PyAscent_MPI_Ascent_execute_callback,
+      METH_VARARGS,
+      "{todo}"},
     //-----------------------------------------------------------------------//
     {"info",
      (PyCFunction)PyAscent_MPI_Ascent_info,
