@@ -307,26 +307,9 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
       }
     }
 
-    int rank = 0;
-#if defined(ASCENT_MPI_ENABLED)
-    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    MPI_Comm_rank(mpi_comm, &rank);
-#endif
-    std::stringstream log_name;
-    std::string log_prefix = "b_to_vh_collection_total_";
-    log_name << log_prefix << rank<<".csv";
-    std::ofstream stream;
-    stream.open(log_name.str().c_str(),std::ofstream::app);
-    conduit::utils::Timer b_to_v_timer;
     // convert to vtkh
     std::shared_ptr<VTKHCollection>
       vtkh_dset(VTKHDataAdapter::BlueprintToVTKHCollection(*to_vtkh, zero_copy));
-
-    float b_to_v_time = b_to_v_timer.elapsed();
-    std::stringstream b_to_v_log;
-    b_to_v_log << "blueprint to vtkh collection total time: " << b_to_v_time << "\n";
-    stream << b_to_v_log.str();
-    stream.close();
 
     m_vtkh = vtkh_dset;
     

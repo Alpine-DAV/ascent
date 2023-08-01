@@ -142,22 +142,9 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     {
       copy = vtkm::CopyFlag::Off;
     }
-    int rank = 0;
-#if defined(ASCENT_MPI_ENABLED)
-    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    MPI_Comm_rank(mpi_comm, &rank);
-#endif
       
-    std::stringstream log_name;
-    std::string log_prefix = "getExplicitCoordinateSystem_times_";
-    log_name << log_prefix << rank<<".csv";
-    std::ofstream stream;
-    stream.open(log_name.str().c_str(),std::ofstream::app);
-    conduit::utils::Timer explicit_timer;
-
     int nverts = n_coords["values/x"].dtype().number_of_elements();
     bool is_interleaved = blueprint::mcarray::is_interleaved(n_coords["values"]);
-    stream << "is_interleaved bool: " << is_interleaved << "\n";
 
     // some interleaved cases aren't working
     // disabling this path until we find out what is going wrong.
@@ -177,7 +164,6 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     // directly use the pointer with vtk-m.
     // otherwise, we need to compact.
 
-    conduit::utils::Timer compact_timer;
     //if(is_interleaved || n_coords["values/x"].is_compact())
     //{
     //    x_coords_ptr = GetNodePointer<T>(n_coords["values/x"]);
@@ -231,18 +217,6 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       vtkm::cont::ArrayHandle<T> z_coords_handle = vtkm::cont::make_ArrayHandle<T>(z_verts_ptr,
 		      							     nverts,
 									     copy);
-      float compact_time = compact_timer.elapsed();
-      std::stringstream compact_log;
-      compact_log << "compact check & get coords ptr: " << compact_time << "\n";
-      compact_log << "x_element_stride: " << x_element_stride << "\n";
-      compact_log << "y_element_stride: " << y_element_stride << "\n";
-      compact_log << "z_element_stride: " << z_element_stride << "\n";
-      stream << compact_log.str();
-      float explicit_time = explicit_timer.elapsed();
-      std::stringstream explicit_log;
-      explicit_log << "GetExplicitCoordinateSystem [TOTAL]: " << explicit_time << "\n";
-      stream << explicit_log.str();
-      stream.close();
       return vtkm::cont::CoordinateSystem(name,
                                           make_ArrayHandleSOA(x_coords_handle,
                                                               y_coords_handle,
@@ -299,18 +273,6 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
           memset(z, 0.0, nverts * sizeof(T));
       }
 
-      float compact_time = compact_timer.elapsed();
-      std::stringstream compact_log;
-      compact_log << "compact check & get coords ptr: " << compact_time << "\n";
-      compact_log << "x_element_stride: " << x_element_stride << "\n";
-      compact_log << "y_element_stride: " << y_element_stride << "\n";
-      compact_log << "z_element_stride: " << z_element_stride << "\n";
-      stream << compact_log.str();
-      float explicit_time = explicit_timer.elapsed();
-      std::stringstream explicit_log;
-      explicit_log << "GetExplicitCoordinateSystem [TOTAL]: " << explicit_time << "\n";
-      stream << explicit_log.str();
-      stream.close();
       return vtkm::cont::CoordinateSystem(name,
                                           make_ArrayHandleSOA(x_coords_handle,
                                                               y_coords_handle,
@@ -680,19 +642,6 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     std::vector<vtkm::UInt64> allCycles;
     std::vector<double> allTimes;
 
-    int rank = 0;
-#if defined(ASCENT_MPI_ENABLED)
-    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    MPI_Comm_rank(mpi_comm, &rank);
-#endif
-      
-    std::stringstream log_name;
-    std::string log_prefix = "b_to_vm_dataset_total_";
-    log_name << log_prefix << rank<<".csv";
-    std::ofstream stream;
-    stream.open(log_name.str().c_str(),std::ofstream::app);
-    conduit::utils::Timer b_to_vtkm_ds_timer;
-
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = n.child(i);
@@ -724,11 +673,6 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
         delete dset;
       }
     }
-
-    float b_to_vtkm_ds_time = b_to_vtkm_ds_timer.elapsed();
-    std::stringstream b_to_vtkm_ds_log;
-    b_to_vtkm_ds_log << "blueprint to vtkm dataset time: " << b_to_vtkm_ds_time << "\n";
-    stream << b_to_vtkm_ds_log.str();
 
     //check to make sure there is data to grab
     if(num_domains > 0)
@@ -810,16 +754,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                         bool zero_copy,
                                         const std::string &topo_name_str)
 {
-    int rank = 0;
-#if defined(ASCENT_MPI_ENABLED)
-    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    MPI_Comm_rank(mpi_comm, &rank);
-#endif
-    std::stringstream log_name;
-    std::string log_prefix = "convert_blueprint_to_vtkm_";
-    log_name << log_prefix << rank<<".csv";
-    std::ofstream stream;
-    stream.open(log_name.str().c_str(),std::ofstream::app);
     vtkm::cont::DataSet * result = NULL;
 
     std::string topo_name = topo_name_str;
@@ -843,17 +777,12 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
     if( mesh_type ==  "uniform")
     {
-        conduit::utils::Timer uniform_timer;
         result = UniformBlueprintToVTKmDataSet(coords_name,
                                                n_coords,
                                                topo_name,
                                                n_topo,
                                                neles,
                                                nverts);
-	float uniform_time = uniform_timer.elapsed();
-	std::stringstream uniform_log;
-	uniform_log << "uniform time: " << uniform_time << "\n";
-	stream << uniform_log.str();
     }
     else if(mesh_type == "rectilinear")
     {
@@ -878,7 +807,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     }
     else if( mesh_type ==  "unstructured")
     {
-	conduit::utils::Timer unstructured_timer;
         result =  UnstructuredBlueprintToVTKmDataSet(coords_name,
                                                      n_coords,
                                                      topo_name,
@@ -886,10 +814,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                                      neles,
                                                      nverts,
                                                      zero_copy);
-	float unstructured_time = unstructured_timer.elapsed();
-	std::stringstream unstructured_log;
-	unstructured_log << "unstructured time: " << unstructured_time << "\n";
-	stream << unstructured_log.str();
     }
     else
     {
@@ -899,7 +823,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
     if(node.has_child("fields"))
     {
-	conduit::utils::Timer add_field_timer;
         // add all of the fields:
         NodeConstIterator itr = node["fields"].children();
 	std::string field_name;
@@ -956,12 +879,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
               ASCENT_INFO("skipping field "<<field_name<<" with "<<num_children<<" comps");
             }
         }
-	float add_field_time = add_field_timer.elapsed();
-	std::stringstream add_field_log;
-	add_field_log << "add_field " << field_name << "  time: " << add_field_time << "\n";
-	stream << add_field_log.str();
     }
-    stream.close();
     return result;
 }
 
@@ -1430,24 +1348,11 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
-    int rank = 0;
-#if defined(ASCENT_MPI_ENABLED)
-    MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    MPI_Comm_rank(mpi_comm, &rank);
-#endif
-      
-    std::stringstream log_name;
-    std::string log_prefix = "unstructured_times_";
-    log_name << log_prefix << rank<<".csv";
-    std::ofstream stream;
-    stream.open(log_name.str().c_str(),std::ofstream::app);
-    conduit::utils::Timer unstructured_timer;
 
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
     nverts = n_coords["values/x"].dtype().number_of_elements();
 
-    conduit::utils::Timer explicit_timer;
     int32 ndims;
     vtkm::cont::CoordinateSystem coords;
     if(n_coords["values/x"].dtype().is_float64())
@@ -1496,17 +1401,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
       ASCENT_ERROR("Coordinate system must be floating point values");
     }
 
-    float explicit_time = explicit_timer.elapsed();
-    std::stringstream explicit_log;
-    explicit_log << "blueprint to explicit: " << explicit_time << "\n";
-    stream << explicit_log.str();
-
-    conduit::utils::Timer add_coords_timer;
     result->AddCoordinateSystem(coords);
-    float add_coords_time = add_coords_timer.elapsed();
-    std::stringstream add_coords_log;
-    add_coords_log << "result add_coords: " << add_coords_time << "\n";
-    stream << add_coords_log.str();
 
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
@@ -1524,7 +1419,6 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
 
     int conn_size = n_topo_conn.dtype().number_of_elements();
 
-    conduit::utils::Timer connectivity_timer;
     if( sizeof(vtkm::Id) == 4)
     {
          if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
@@ -1561,12 +1455,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
              n_topo_conn.to_int64_array(n_tmp);
         }
     }
-    float connectivity_time = connectivity_timer.elapsed();
-    std::stringstream connectivity_log;
-    connectivity_log << "copy connectivity: " << connectivity_time << "\n";
-    stream << connectivity_log.str();
 
-    conduit::utils::Timer misc_timer;
     vtkm::UInt8 shape_id;
     vtkm::IdComponent indices_per;
     detail::VTKmCellShape(ele_shape, shape_id, indices_per);
@@ -1575,16 +1464,6 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     neles = cellset.GetNumberOfCells();
     result->SetCellSet(cellset);
 
-    float misc_time = misc_timer.elapsed();
-    std::stringstream misc_log;
-    misc_log << "misc as the end: " << misc_time << "\n";
-    stream << misc_log.str();
-
-    float unstructured_time = unstructured_timer.elapsed();
-    std::stringstream unstructured_log;
-    unstructured_log << "blueprint to unstructured [TOTAL]: " << unstructured_time << "\n";
-    stream << unstructured_log.str();
-    stream.close();
     return result;
 }
 
