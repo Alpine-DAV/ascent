@@ -159,9 +159,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     if(x_element_stride == 1)
     {
       const T *x_verts_ptr = n_coords["values/x"].value();
-      x_coords_handle = vtkm::cont::make_ArrayHandle<T>(x_verts_ptr,
-                                                        nverts,
-                                                        copy);
+      detail::CopyArray(x_coords_handle, x_verts_ptr, nverts, zero_copy);
     }
     else
     {
@@ -181,9 +179,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     if(y_element_stride == 1)
     {
       const T *y_verts_ptr = n_coords["values/y"].value();
-      y_coords_handle = vtkm::cont::make_ArrayHandle<T>(y_verts_ptr,
-                                                        nverts,
-                                                        copy);
+      detail::CopyArray(y_coords_handle, y_verts_ptr, nverts, zero_copy);
     }
     else
     {
@@ -211,9 +207,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     {
       ndims = 3;
       const T *z_verts_ptr = n_coords["values/z"].value();
-      z_coords_handle = vtkm::cont::make_ArrayHandle<T>(z_verts_ptr,
-                                                        nverts,
-                                                        copy);
+      detail::CopyArray(z_coords_handle, z_verts_ptr, nverts, zero_copy);
     }
     else
     {
