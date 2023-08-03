@@ -47,7 +47,7 @@ public:
     void             open(); // open with default options
     void             open(const conduit::Node &options);
     void             register_callback(const std::string &callback_name,
-                                       void (*callback_function)(conduit::Node &));
+                                       void (*callback_function)(conduit::Node &, conduit::Node &));
     void             register_callback(const std::string &callback_name,
                                        bool (*callback_function)(void));
     void             publish(const conduit::Node &data);

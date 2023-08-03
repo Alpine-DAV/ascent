@@ -24,7 +24,6 @@ def about():
         raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
     return None
 
-
 def Ascent():
     try:
         from .ascent_mpi_python import Ascent as ascent_obj

@@ -141,7 +141,7 @@ FlowRuntime::Cleanup()
 //-----------------------------------------------------------------------------
 void
 FlowRuntime::RegisterCallback(const std::string &callback_name,
-                              void (*callback_function)(conduit::Node &))
+                              void (*callback_function)(conduit::Node &, conduit::Node &))
 {
 
 }

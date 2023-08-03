@@ -33,7 +33,7 @@ public:
     virtual void           Initialize(const conduit::Node &options)=0;
 
     virtual void           RegisterCallback(const std::string &callback_name,
-                                            void (*callback_function)(conduit::Node &))=0;
+                                            void (*callback_function)(conduit::Node &, conduit::Node &))=0;
     virtual void           RegisterCallback(const std::string &callback_name,
                                             bool (*callback_function)(void))=0;
     virtual void           Publish(const conduit::Node &data)=0;

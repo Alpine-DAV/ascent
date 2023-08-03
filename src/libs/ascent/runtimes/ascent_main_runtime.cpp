@@ -510,7 +510,7 @@ AscentRuntime::Cleanup()
 //-----------------------------------------------------------------------------
 void
 AscentRuntime::RegisterCallback(const std::string &callback_name,
-                                void (*callback_function)(conduit::Node &))
+                                void (*callback_function)(conduit::Node &, conduit::Node &))
 {
   runtime::filters::Command::register_callback(callback_name, callback_function);
 }

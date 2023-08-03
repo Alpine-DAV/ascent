@@ -58,7 +58,7 @@ namespace runtime
 namespace filters
 {
 
-std::map<std::string, void (*)(conduit::Node &)> Command::m_void_callback_map;
+std::map<std::string, void (*)(conduit::Node &, conduit::Node &)> Command::m_void_callback_map;
 std::map<std::string, bool (*)(void)> Command::m_bool_callback_map;
 
 //-----------------------------------------------------------------------------
@@ -181,7 +181,7 @@ Command::execute()
 //-----------------------------------------------------------------------------
 void
 Command::register_callback(const std::string &callback_name,
-                           void (*callback_function)(conduit::Node &))
+                           void (*callback_function)(conduit::Node &, conduit::Node &))
 {
     if (m_void_callback_map.count(callback_name) != 0)
     {
@@ -218,9 +218,10 @@ Command::execute_command_list(const std::vector<std::string> commands,
     if (command_type == "callback")
     {
         conduit::Node params;
+        conduit::Node output;
         for (int i = 0; i < commands.size(); i++)
         {
-            execute_void_callback(commands.at(i), params);
+            execute_void_callback(commands.at(i), params, output);
         }
     } else if (command_type == "shell_command")
     {
@@ -240,14 +241,14 @@ Command::execute_shell_command(std::string command)
 
 //-----------------------------------------------------------------------------
 void
-Command::execute_void_callback(std::string callback_name, conduit::Node &params)
+Command::execute_void_callback(std::string callback_name, conduit::Node &params, conduit::Node &output)
 {
     if (m_void_callback_map.count(callback_name) != 1)
     {
         ASCENT_ERROR("requested void callback '" << callback_name << "' was never registered");
     }
     auto callback_function = m_void_callback_map.at(callback_name);
-    callback_function(params);
+    return callback_function(params, output);
 }
 
 //-----------------------------------------------------------------------------
