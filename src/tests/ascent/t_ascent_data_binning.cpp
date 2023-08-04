@@ -233,25 +233,25 @@ TEST(ascent_binning, filter_braid_binning_mesh)
   // filter knobs
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["reduction_op"] = "sum";
-  params["var"] = "braid";
+  params["reduction_field"] = "braid";
   params["output_field"] = "binning";
   // paint the field onto the original mesh
   params["output_type"] = "mesh";
 
   conduit::Node &axis0 = params["axes"].append();
-  axis0["var"] = "x";
+  axis0["field"] = "x";
   axis0["num_bins"] = 10;
   axis0["min_val"] = -10.0;
   axis0["max_val"] = 10.0;
   axis0["clamp"] = 1;
 
   conduit::Node &axis1 = params["axes"].append();
-  axis1["var"] = "y";
+  axis1["field"] = "y";
   axis1["num_bins"] = 10;
   axis1["clamp"] = 0;
 
   conduit::Node &axis2 = params["axes"].append();
-  axis2["var"] = "z";
+  axis2["field"] = "z";
   axis2["num_bins"] = 10;
   axis2["clamp"] = 10;
 
@@ -276,10 +276,7 @@ TEST(ascent_binning, filter_braid_binning_mesh)
   //
 
   Ascent ascent;
-
-  Node ascent_opts;
-  ascent_opts["runtime/type"] = "ascent";
-  ascent.open(ascent_opts);
+  ascent.open();
   ascent.publish(data);
   ascent.execute(actions);
   ascent.close();
@@ -317,25 +314,25 @@ TEST(ascent_binning, filter_braid_binning_bins)
   // filter knobs
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["reduction_op"] = "sum";
-  params["var"] = "braid";
+  params["reduction_field"] = "braid";
   params["output_field"] = "binning";
   // reduced dataset of only the bins
   params["output_type"] = "bins";
 
   conduit::Node &axis0 = params["axes"].append();
-  axis0["var"] = "x";
+  axis0["field"] = "x";
   axis0["num_bins"] = 10;
   axis0["min_val"] = -10.0;
   axis0["max_val"] = 10.0;
   axis0["clamp"] = 1;
 
   conduit::Node &axis1 = params["axes"].append();
-  axis1["var"] = "y";
+  axis1["field"] = "y";
   axis1["num_bins"] = 10;
   axis1["clamp"] = 0;
 
   conduit::Node &axis2 = params["axes"].append();
-  axis2["var"] = "z";
+  axis2["field"] = "z";
   axis2["num_bins"] = 10;
   axis2["clamp"] = 10;
 
@@ -360,16 +357,13 @@ TEST(ascent_binning, filter_braid_binning_bins)
   //
 
   Ascent ascent;
-
-  Node ascent_opts;
-  ascent_opts["runtime/type"] = "ascent";
-  ascent.open(ascent_opts);
+  ascent.open();
   ascent.publish(data);
   ascent.execute(actions);
   ascent.close();
 
   EXPECT_TRUE(check_test_image(output_file, 0.1));
-  std::string msg = "An example of data binning, spatial binning and summing a field.";
+  std::string msg = "An example of data binning, binning spatially and summing a field.";
   ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
@@ -407,25 +401,25 @@ TEST(ascent_binning, filter_braid_binning_bins_int64_params)
   // filter knobs
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["reduction_op"] = "sum";
-  params["var"] = "braid";
+  params["reduction_field"] = "braid";
   params["output_field"] = "binning";
   // reduced dataset of only the bins
   params["output_type"] = "bins";
 
   conduit::Node &axis0 = params["axes"].append();
-  axis0["var"] = "x";
+  axis0["field"] = "x";
   axis0["num_bins"] = (int64)10;
   axis0["min_val"] = -10.0;
   axis0["max_val"] = 10.0;
   axis0["clamp"] =  (int64)1;
 
   conduit::Node &axis1 = params["axes"].append();
-  axis1["var"] = "y";
+  axis1["field"] = "y";
   axis1["num_bins"] = (int64)10;
   axis1["clamp"] = (int64)0;
 
   conduit::Node &axis2 = params["axes"].append();
-  axis2["var"] = "z";
+  axis2["field"] = "z";
   axis2["num_bins"] = (int64)10;
   axis2["clamp"] = 1; // <--?
 
@@ -450,10 +444,7 @@ TEST(ascent_binning, filter_braid_binning_bins_int64_params)
   //
 
   Ascent ascent;
-
-  Node ascent_opts;
-  ascent_opts["runtime/type"] = "ascent";
-  ascent.open(ascent_opts);
+  ascent.open();
   ascent.publish(data);
   ascent.execute(actions);
   ascent.close();
@@ -511,10 +502,7 @@ TEST(ascent_binning, expr_braid_non_spatial_bins)
   //
 
   Ascent ascent;
-
-  Node ascent_opts;
-  ascent_opts["runtime/type"] = "ascent";
-  ascent.open(ascent_opts);
+  ascent.open();
   ascent.publish(data);
   ascent.execute(actions);
   Node ascent_info;
@@ -569,18 +557,18 @@ TEST(ascent_binning, filter_braid_non_spatial_bins)
   // filter knobs
   conduit::Node &params = pipelines["pl1/f2/params"];
   params["reduction_op"] = "sum";
-  params["var"] = "braid";
+  params["reduction_field"] = "braid";
   params["output_field"] = "binning";
   // reduced dataset of only the bins
   params["output_type"] = "bins";
 
   conduit::Node &axis0 = params["axes"].append();
-  axis0["var"] = "radial";
+  axis0["field"] = "radial";
   axis0["num_bins"] = 10;
   axis0["clamp"] = 0;
 
   conduit::Node &axis1 = params["axes"].append();
-  axis1["var"] = "braid";
+  axis1["field"] = "braid";
   axis1["num_bins"] = 10;
   axis1["clamp"] = 0;
 
@@ -617,10 +605,7 @@ TEST(ascent_binning, filter_braid_non_spatial_bins)
   //
 
   Ascent ascent;
-
-  Node ascent_opts;
-  ascent_opts["runtime/type"] = "ascent";
-  ascent.open(ascent_opts);
+  ascent.open();
   ascent.publish(data);
   ascent.execute(actions);
   ascent.close();

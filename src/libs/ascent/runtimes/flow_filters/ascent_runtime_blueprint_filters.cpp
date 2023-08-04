@@ -426,14 +426,19 @@ DataBinning::verify_params(const conduit::Node &params,
       info["errors"].append() = "Missing 'reduction_op'";
     }
 
-    if(!params.has_path("var"))
+    // note: `var` is deprecated, new arg reduction_field
+    if(!params.has_path("reduction_field"))
     {
-      res = false;
-      info["errors"].append() = "Missing 'var'";
+      if(!params.has_path("var"))
+      {
+        res = false;
+        info["errors"].append() = "Missing 'reduction_field'";
+      }
     }
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("reduction_op");
+    valid_paths.push_back("reduction_field");
     valid_paths.push_back("empty_bin_val");
     valid_paths.push_back("output_type");
     valid_paths.push_back("output_field");
@@ -466,7 +471,7 @@ DataBinning::verify_params(const conduit::Node &params,
       if(num_axes < 1 || num_axes > 3)
       {
         res = false;
-        info["errors"].append() = "Number of axes num be between 1 and 3";
+        info["errors"].append() = "Number of axes must be between 1 and 3";
       }
       else
       {
@@ -478,16 +483,24 @@ DataBinning::verify_params(const conduit::Node &params,
             res = false;
             info["errors"].append() = "Axis missing 'num_bins'";
           }
-          if(!axis.has_path("var"))
+          
+          if(!axis.has_child("field"))
           {
-            res = false;
-            info["errors"].append() = "Axis missing 'var'";
+            if(!axis.has_child("var"))
+            {
+              std::ostringstream oss;
+              oss << "Axis " << i << " missing 'field' parameter";
+              res = false;
+              info["errors"].append() = oss.str();
+            }
           }
+
           std::vector<std::string> avalid_paths;
           avalid_paths.push_back("min_val");
           avalid_paths.push_back("max_val");
           avalid_paths.push_back("num_bins");
           avalid_paths.push_back("clamp");
+          avalid_paths.push_back("field");
           avalid_paths.push_back("var");
 
           surprises += surprise_check(avalid_paths, axis);
@@ -519,7 +532,21 @@ DataBinning::execute()
     std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
 
     std::string reduction_op = params()["reduction_op"].as_string();
-    std::string var = params()["var"].as_string();
+    std::string reduction_field;
+
+    // `var` is deprecated, new style arg: `reduction_field`
+    if(params().has_child("reduction_field"))
+    {
+      reduction_field = params()["reduction_field"].as_string();
+    }
+    else if(params().has_child("var"))
+    {
+      reduction_field = params()["var"].as_string();
+    }
+    else
+    {
+        ASCENT_ERROR("Data Binning: Missing `reduction_field` parameter");
+    }
     conduit::Node n_component;
 
     std::string output_type = "mesh";
@@ -555,7 +582,24 @@ DataBinning::execute()
       const conduit::Node &in_axis = params()["axes"].child(i);
       // transform into a for that expressions wants
       conduit::Node &axis = n_axes.append();
-      std::string axis_name = "value/"+in_axis["var"].as_string()+"/";
+      
+      std::string axis_field_name;
+
+      if(in_axis.has_path("field"))
+      {
+        axis_field_name = in_axis["field"].as_string();
+      }
+      else if(in_axis.has_path("var"))
+      {
+        axis_field_name = in_axis["var"].as_string();
+      }
+      else
+      {
+          ASCENT_ERROR("Data Binning: axis " << i <<
+                       " is missing `field` parameter");
+      }
+
+      std::string axis_name = "value/" + axis_field_name + "/";
       axis["type"] = "axis";
       axis[axis_name+"num_bins"] = in_axis["num_bins"];
       if(in_axis.has_path("min_val"))
@@ -578,7 +622,7 @@ DataBinning::execute()
     conduit::Node n_binning;
     conduit::Node n_output_axes;
 
-    expressions::binning_interface(var,
+    expressions::binning_interface(reduction_field,
                                    reduction_op,
                                    n_empty_bin_val,
                                    n_component,
@@ -587,14 +631,13 @@ DataBinning::execute()
                                    n_binning,
                                    n_output_axes);
 
-
-
   // setup the input to the painting functions
   conduit::Node mesh_in;
   mesh_in["type"] = "binning";
   mesh_in["attrs/value/value"] = n_binning["value"];
   mesh_in["attrs/value/type"] = "array";
-  mesh_in["attrs/reduction_var/value"] = var;
+  // TODO: Re plumb binning mesh args
+  mesh_in["attrs/reduction_var/value"] = reduction_field;
   mesh_in["attrs/reduction_var/type"] = "string";
   mesh_in["attrs/reduction_op/value"] = reduction_op;
   mesh_in["attrs/reduction_op/type"] = "string";
