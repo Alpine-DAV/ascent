@@ -718,6 +718,17 @@ Resulting image:
 
 .. image:: examples/tout_gradient_mag_braid100.png
 
+An example of data binning, binning spatially and summing a field.
+-------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_binning_filter_bins100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_binning_filter_bins100.png
+
 An example of using the log10 filter and clamping the min value. This can help when there are negative values present.
 -----------------------------------------------------------------------------------------------------------------------
 
