@@ -1266,7 +1266,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
       //TODO:
       //can we assume all by checking one? 
       //or check ystride & zstride % float64 == 0? 
-      if(x_stride % sizeof(float32))
+      if(x_stride % sizeof(float32) == 0)
       {
         coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
                                                               coords_name,
