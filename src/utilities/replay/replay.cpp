@@ -13,7 +13,6 @@
 #include <ascent.hpp>
 #include <flow_timer.hpp>
 #include <ascent_hola.hpp>
-#include <runtimes/expressions/ascent_memory_manager.hpp>
 
 #include <fstream>
 #include <vector>
@@ -21,50 +20,6 @@
 #ifdef REPLAY_MPI
 #include <mpi.h>
 #endif
-
-void copy_imporant_stuff_to_gpu(const conduit::Node &src,
-                                conduit::index_t device_alloc_id,
-                                conduit::Node &dest)
-{
-    bool has_children = src.number_of_children() > 0;
-
-    if(has_children)
-    {
-	conduit::NodeConstIterator itr = src.children();
-        while(itr.has_next())
-        {
-            const conduit::Node &src_child = itr.next();
-            std::string src_child_name = itr.name();
-            if(src.dtype().is_object())
-            {
-                // recurse
-                copy_imporant_stuff_to_gpu(src_child, device_alloc_id,
-                                           dest[src_child_name]);
-            }
-            else if(src.dtype().is_list()) // nameless children
-            {
-                 // recurse
-                copy_imporant_stuff_to_gpu(src_child,device_alloc_id,dest.append());
-            }
-            else // should be object or list!
-            {
-                // YIKES!
-            }
-        }
-    }
-    else if(src.dtype().is_number() &&
-            src.dtype().number_of_elements() >= 42 )  // this is a crazy heuristic for bigger than small 
-    {
-        dest.set_allocator(device_alloc_id);
-        dest.set(src);
-    }
-    else // general leaf, just copy
-    {
-        dest.set(src);
-        // or 
-        // dest.set_external(src);
-    }
-}
 
 void usage()
 {
@@ -262,10 +217,7 @@ int main (int argc, char *argv[])
     float load_time = load.elapsed();
       
     flow::Timer publish;
-    conduit::Node gpu_replay_data;
-    copy_imporant_stuff_to_gpu(replay_data,ascent::AllocationManager::conduit_device_allocator_id(),gpu_replay_data);
-//    ascent.publish(replay_data);
-    ascent.publish(gpu_replay_data);
+    ascent.publish(replay_data);
 #ifdef REPLAY_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif

@@ -1140,8 +1140,6 @@ VTKHGhostStripper::execute()
       return;
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-    set_output<DataObject>(data_object);
-    return;
 
     // ask what topology this field is associated with and
     // get the right data set
@@ -1170,19 +1168,18 @@ VTKHGhostStripper::execute()
       stripper.SetMaxValue(max_val);
       stripper.SetMinValue(min_val);
 
-      //stripper.Update();
+      stripper.Update();
 
-      vtkh::DataSet *stripper_output = new vtkh::DataSet;// = stripper.GetOutput();
+      vtkh::DataSet *stripper_output = stripper.GetOutput();
 
       // we need to pass through the rest of the topologies, untouched,
       // and add the result of this operation
-      //VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-      //new_coll->add(*stripper_output, topo_name);
-      //// re wrap in data object
-      //DataObject *res =  new DataObject(new_coll);
+      VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+      new_coll->add(*stripper_output, topo_name);
+      // re wrap in data object
+      DataObject *res =  new DataObject(new_coll);
       delete stripper_output;
-      set_output<DataObject>(data_object);
-      //set_output<DataObject>(res);
+      set_output<DataObject>(res);
     }
     else
     {
