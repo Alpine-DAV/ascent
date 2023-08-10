@@ -10,10 +10,6 @@
 /// file: ascent_data_object.hpp
 ///
 //-----------------------------------------------------------------------------
-#if defined(ASCENT_MPI_ENABLED)
-#include <mpi.h>
-#endif
-
 
 #include "ascent_data_object.hpp"
 #include "ascent_metadata.hpp"
