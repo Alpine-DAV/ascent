@@ -25,6 +25,8 @@ Resulting image:
 
 .. image:: examples/tout_render_3d_points_const_radius100.png
 
+.. _screen_annotations_off:
+
 An example of rendering with no screen annotations.
 ----------------------------------------------------
 
@@ -79,6 +81,8 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_vector_component100.png
+
+.. _world_annotations_off:
 
 An example of rendering with no world annotations.
 ---------------------------------------------------
