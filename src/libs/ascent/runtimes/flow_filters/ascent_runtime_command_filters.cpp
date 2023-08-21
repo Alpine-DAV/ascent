@@ -183,7 +183,11 @@ void
 Command::register_callback(const std::string &callback_name,
                            void (*callback_function)(conduit::Node &, conduit::Node &))
 {
-    if (m_void_callback_map.count(callback_name) != 0)
+    if (callback_name == "")
+    {
+        ASCENT_ERROR("cannot register an anonymous void callback");
+    }
+    else if (m_void_callback_map.count(callback_name) != 0)
     {
         ASCENT_ERROR("cannot register more than one void callback under the name '" << callback_name << "'");
     }
@@ -199,7 +203,11 @@ void
 Command::register_callback(const std::string &callback_name,
                            bool (*callback_function)(void))
 {
-    if (m_bool_callback_map.count(callback_name) != 0)
+    if (callback_name == "")
+    {
+        ASCENT_ERROR("cannot register an anonymous bool callback");
+    }
+    else if (m_bool_callback_map.count(callback_name) != 0)
     {
         ASCENT_ERROR("cannot register more than one bool callback under the name '" << callback_name << "'");
     }
