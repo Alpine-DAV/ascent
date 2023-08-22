@@ -108,22 +108,6 @@ EmptyRuntime::Cleanup()
 
 //-----------------------------------------------------------------------------
 void
-EmptyRuntime::RegisterCallback(const std::string &callback_name,
-                               void (*callback_function)(conduit::Node &, conduit::Node &))
-{
-
-}
-
-//-----------------------------------------------------------------------------
-void
-EmptyRuntime::RegisterCallback(const std::string &callback_name,
-                               bool (*callback_function)(void))
-{
-
-}
-
-//-----------------------------------------------------------------------------
-void
 EmptyRuntime::Publish(const conduit::Node &data)
 {
     Node verify_info;

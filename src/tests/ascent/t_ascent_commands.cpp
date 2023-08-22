@@ -78,7 +78,7 @@ TEST(ascent_commands, register_no_name_void)
     ascent.open(ascent_opts);
 
     // An error should be thrown due to not including a name
-    ascent.register_callback("", void_callback_1);
+    ascent::register_callback("", void_callback_1);
 
     Node actions;
     std::string msg = "An example of registering a void callback";
@@ -101,7 +101,7 @@ TEST(ascent_commands, register_no_name_bool)
     ascent.open(ascent_opts);
 
     // An error should be thrown due to not including a name
-    ascent.register_callback("", bool_callback_1);
+    ascent::register_callback("", bool_callback_1);
 
     Node actions;
         std::string msg = "An example of registering a bool callback";
@@ -124,8 +124,8 @@ TEST(ascent_commands, register_void_callbacks)
     ascent.open(ascent_opts);
 
     // No error should be thrown
-    ascent.register_callback("void_callback_1", void_callback_1);
-    ascent.register_callback("void_callback_2", void_callback_2);
+    ascent::register_callback("void_callback_1", void_callback_1);
+    ascent::register_callback("void_callback_2", void_callback_2);
 
     Node actions;
     std::string msg = "An example of registering void callbacks.";
@@ -147,8 +147,8 @@ TEST(ascent_commands, register_bool_callbacks)
     ascent.open(ascent_opts);
 
     // No error should be thrown
-    ascent.register_callback("bool_callback_1", bool_callback_1);
-    ascent.register_callback("bool_callback_2", bool_callback_2);
+    ascent::register_callback("bool_callback_1", bool_callback_1);
+    ascent::register_callback("bool_callback_2", bool_callback_2);
 
     Node actions;
     std::string msg = "An example of registering bool callbacks.";
@@ -170,8 +170,8 @@ TEST(ascent_commands, register_same_callback_twice_mixed)
     ascent.open(ascent_opts);
 
     // An error should be thrown for reregistering the callback name
-    ascent.register_callback("test_callback", void_callback_1);
-    ascent.register_callback("test_callback", bool_callback_1);
+    ascent::register_callback("test_callback", void_callback_1);
+    ascent::register_callback("test_callback", bool_callback_1);
 
     Node actions;
     std::string msg = "An example of registering a void and bool callback with";
@@ -194,8 +194,8 @@ TEST(ascent_commands, register_same_void_callback_twice)
     ascent.open(ascent_opts);
 
     // An error should be thrown due to registering the same name twice
-    ascent.register_callback("void_callback", void_callback_1);
-    ascent.register_callback("void_callback", void_callback_2);
+    ascent::register_callback("void_callback", void_callback_1);
+    ascent::register_callback("void_callback", void_callback_2);
 
     Node actions;
     std::string msg = "An example of registering a void callback twice with";
@@ -218,8 +218,8 @@ TEST(ascent_commands, register_same_bool_callback_twice)
     ascent.open(ascent_opts);
 
     // An error should be thrown due to registering the same name twice
-    ascent.register_callback("bool_callback", bool_callback_1);
-    ascent.register_callback("bool_callback", bool_callback_2);
+    ascent::register_callback("bool_callback", bool_callback_1);
+    ascent::register_callback("bool_callback", bool_callback_2);
 
     Node actions;
     std::string msg = "An example of registering a bool callback twice with";
@@ -230,9 +230,56 @@ TEST(ascent_commands, register_same_bool_callback_twice)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_commands, direct_shell_command_invocation)
+TEST(ascent_commands, direct_void_callback_invocation)
 {
-    string file_name = "direct_shell_command_invocation_test";
+    // Register callbacks, should not require an Ascent instance
+    ascent::register_callback("void_callback_1", void_callback_1);
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    // default is now ascent
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+
+
+    Node params;
+    Node output;
+    ascent::execute_callback("void_callback_1", params, output);
+
+    // We didn't pass a parameter, so we expect param_was_passed to be false
+    bool has_output = false;
+    if (output.has_path("param_was_passed"))
+    {
+        has_output = params["param_was_passed"].to_uint8();
+    }
+    EXPECT_FALSE(has_output);
+
+    params.reset();
+    output.reset();
+    params["example_param"] = 1234;
+    ascent::execute_callback("void_callback_1", params, output);
+
+    // We passed a parameter, so we expect param_was_passed to be true
+    if (output.has_path("param_was_passed"))
+    {
+        has_output = params["param_was_passed"].to_uint8();
+    }
+    EXPECT_TRUE(has_output);
+
+    Node actions;
+    std::string msg = "An example of invoking void callbacks directly";
+    ASCENT_ACTIONS_DUMP(actions, std::string("direct_void_callback_invocation"), msg);
+
+    ascent.close();
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_commands, actions_shell_command_invocation)
+{
+    string file_name = "actions_shell_command_invocation_test";
     string output_path = prepare_output_dir();
     string file_path = conduit::utils::join_file_path(output_path,file_name);
     // remove old file
@@ -271,13 +318,13 @@ TEST(ascent_commands, direct_shell_command_invocation)
 
     std::string msg = "An example of directly invoking a shell command"
                       " from Ascent actions.";
-    ASCENT_ACTIONS_DUMP(actions, std::string("direct_shell_command_invocation"), msg);
+    ASCENT_ACTIONS_DUMP(actions, std::string("actions_shell_command_invocation"), msg);
 
     ascent.close();
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_commands, direct_void_callback_invocation)
+TEST(ascent_commands, actions_void_callback_invocation)
 {
     //
     // Create the actions.
@@ -302,16 +349,15 @@ TEST(ascent_commands, direct_void_callback_invocation)
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
 
-    ascent.register_callback("void_callback_2", void_callback_2);
+    ascent::register_callback("void_callback_2", void_callback_2);
 
     // void_callback_2 should make example_bool true
     EXPECT_FALSE(example_bool);
     ascent.execute(actions);
     EXPECT_TRUE(example_bool);
 
-    std::string msg = "An example of directly invoking a void callback"
-                      " from Ascent actions.";
-    ASCENT_ACTIONS_DUMP(actions, std::string("direct_void_callback_invocation"), msg);
+    std::string msg = "An example of invoking a void callback from Ascent actions.";
+    ASCENT_ACTIONS_DUMP(actions, std::string("actions_void_callback_invocation"), msg);
 
     ascent.close();
 }
@@ -391,7 +437,7 @@ TEST(ascent_commands, bool_callback_trigger_condition)
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
 
-    ascent.register_callback("bool_callback_1", bool_callback_1);
+    ascent::register_callback("bool_callback_1", bool_callback_1);
 
     ascent.publish(data);
     ascent.execute(actions);
@@ -401,8 +447,7 @@ TEST(ascent_commands, bool_callback_trigger_condition)
     std::string path = "expressions/" + condition + "/100/value";
     info["expressions"].print();
     EXPECT_TRUE(info[path].to_int32() == 1);
-    std::string msg = "A simple example of triggering actions based on a bool"
-                      " callback.";
+    std::string msg = "An example of triggering actions using a bool callback.";
     ASCENT_ACTIONS_DUMP(actions, std::string("bool_callback_trigger_condition"), msg);
 
     ascent.close();

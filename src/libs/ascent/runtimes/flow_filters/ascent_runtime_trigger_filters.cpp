@@ -171,7 +171,7 @@ BasicTrigger::execute()
     if(has_callback)
     {
       std::string callback_name = params()["callback"].as_string();
-      res["value"] = runtime::filters::Command::execute_bool_callback(callback_name);
+      res["value"] = ascent::execute_callback(callback_name);
       res["type"] = "bool";
     }
     else if(has_condition)

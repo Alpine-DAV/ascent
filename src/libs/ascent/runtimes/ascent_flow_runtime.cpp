@@ -140,22 +140,6 @@ FlowRuntime::Cleanup()
 
 //-----------------------------------------------------------------------------
 void
-FlowRuntime::RegisterCallback(const std::string &callback_name,
-                              void (*callback_function)(conduit::Node &, conduit::Node &))
-{
-
-}
-
-//-----------------------------------------------------------------------------
-void
-FlowRuntime::RegisterCallback(const std::string &callback_name,
-                              bool (*callback_function)(void))
-{
-
-}
-
-//-----------------------------------------------------------------------------
-void
 FlowRuntime::Publish(const conduit::Node &data)
 {
     // create our own tree, with all data zero copied.

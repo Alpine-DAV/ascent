@@ -336,72 +336,6 @@ PyAscent_MPI_Ascent_execute(PyAscent_MPI_Ascent *self,
     Py_RETURN_NONE;
 }
 
-//---------------------------------------------------------------------------//
-// ascent::execute_callback
-//---------------------------------------------------------------------------//
-static PyObject *
-PyAscent_MPI_Ascent_execute_callback(PyAscent_MPI_Ascent *self,
-                                     PyObject *args)
-{
-    char *callback_name;
-    PyObject *py_params = NULL;
-    PyObject *py_output = NULL;
-
-    if (!PyArg_ParseTuple(args,
-                          "sOO",
-                          &callback_name,
-                          &py_params,
-                          &py_output))
-    {
-        return NULL;
-    }
-
-    try
-    {
-        if(py_params != NULL && py_output != NULL)
-        {
-            if(!PyConduit_Node_Check(py_params))
-            {
-                PyErr_SetString(PyExc_TypeError,
-                                "Ascent::execute_callback 'params' argument must be a "
-                                "conduit::Node");
-                return NULL;
-            }
-            else if (!PyConduit_Node_Check(py_output))
-            {
-                PyErr_SetString(PyExc_TypeError,
-                                "Ascent::execute_callback 'output' argument must be a "
-                                "conduit::Node");
-                return NULL;
-            }
-            std::string callback_name_string = callback_name;
-            Node *params = PyConduit_Node_Get_Node_Ptr(py_params);
-            Node *output = PyConduit_Node_Get_Node_Ptr(py_output);
-            runtime::filters::Command::execute_void_callback(callback_name, *params, *output);
-            Py_RETURN_NONE;
-        }
-    }
-    catch(conduit::Error e)
-    {
-        PyAscent_MPI_Ascent_Error_To_PyErr(e);
-        return NULL;
-    }
-    // also try to bottle other errors, to prevent python
-    // from crashing due to uncaught exception
-    catch(std::exception &e)
-    {
-        PyAscent_MPI_Cpp_Error_To_PyErr(e.what());
-        return NULL;
-    }
-    catch(...)
-    {
-        PyAscent_MPI_Cpp_Error_To_PyErr("unknown cpp exception thrown");
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
-}
-
 //-----------------------------------------------------------------------------
 static PyObject *
 PyAscent_MPI_Ascent_info(PyAscent_MPI_Ascent *self,
@@ -472,11 +406,6 @@ static PyMethodDef PyAscent_MPI_Ascent_METHODS[] = {
     {"execute",
      (PyCFunction)PyAscent_MPI_Ascent_execute,
      METH_VARARGS | METH_KEYWORDS,
-     "{todo}"},
-    //-----------------------------------------------------------------------//
-    {"execute_callback",
-     (PyCFunction)PyAscent_MPI_Ascent_execute_callback,
-     METH_VARARGS,
      "{todo}"},
     //-----------------------------------------------------------------------//
     {"info",
@@ -561,6 +490,72 @@ PyAscent_MPI_about()
 }
 
 //---------------------------------------------------------------------------//
+// ascent::execute_callback
+//---------------------------------------------------------------------------//
+static PyObject *
+PyAscent_MPI_execute_callback(PyObject *self,
+                              PyObject *args)
+{
+    char *callback_name;
+    PyObject *py_params = NULL;
+    PyObject *py_output = NULL;
+
+    if (!PyArg_ParseTuple(args,
+                          "sOO",
+                          &callback_name,
+                          &py_params,
+                          &py_output))
+    {
+        return NULL;
+    }
+
+    try
+    {
+        if(py_params != NULL && py_output != NULL)
+        {
+            if(!PyConduit_Node_Check(py_params))
+            {
+                PyErr_SetString(PyExc_TypeError,
+                                "Ascent::execute_callback 'params' argument must be a "
+                                "conduit::Node");
+                return NULL;
+            }
+            else if (!PyConduit_Node_Check(py_output))
+            {
+                PyErr_SetString(PyExc_TypeError,
+                                "Ascent::execute_callback 'output' argument must be a "
+                                "conduit::Node");
+                return NULL;
+            }
+            std::string callback_name_string = callback_name;
+            Node *params = PyConduit_Node_Get_Node_Ptr(py_params);
+            Node *output = PyConduit_Node_Get_Node_Ptr(py_output);
+            ascent::execute_callback(callback_name, *params, *output);
+            Py_RETURN_NONE;
+        }
+    }
+    catch(conduit::Error e)
+    {
+        PyAscent_MPI_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_MPI_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_MPI_Cpp_Error_To_PyErr("unknown cpp exception thrown");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
 static PyMethodDef ascent_mpi_python_funcs[] =
@@ -569,6 +564,11 @@ static PyMethodDef ascent_mpi_python_funcs[] =
     {"about",
      (PyCFunction)PyAscent_MPI_about,
       METH_NOARGS,
+      NULL},
+    //-----------------------------------------------------------------------//
+    {"execute_callback",
+     (PyCFunction)PyAscent_MPI_execute_callback,
+      METH_VARARGS,
       NULL},
     //-----------------------------------------------------------------------//
     // end ascent methods table

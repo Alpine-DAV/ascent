@@ -58,9 +58,6 @@ namespace runtime
 namespace filters
 {
 
-std::map<std::string, void (*)(conduit::Node &, conduit::Node &)> Command::m_void_callback_map;
-std::map<std::string, bool (*)(void)> Command::m_bool_callback_map;
-
 //-----------------------------------------------------------------------------
 Command::Command()
 :Filter()
@@ -180,46 +177,6 @@ Command::execute()
 
 //-----------------------------------------------------------------------------
 void
-Command::register_callback(const std::string &callback_name,
-                           void (*callback_function)(conduit::Node &, conduit::Node &))
-{
-    if (callback_name == "")
-    {
-        ASCENT_ERROR("cannot register an anonymous void callback");
-    }
-    else if (m_void_callback_map.count(callback_name) != 0)
-    {
-        ASCENT_ERROR("cannot register more than one void callback under the name '" << callback_name << "'");
-    }
-    else if (m_bool_callback_map.count(callback_name) != 0)
-    {
-        ASCENT_ERROR("cannot register both a void and bool callback under the same name '" << callback_name << "'");
-    }
-    m_void_callback_map.insert(std::make_pair(callback_name, callback_function));
-}
-
-//-----------------------------------------------------------------------------
-void
-Command::register_callback(const std::string &callback_name,
-                           bool (*callback_function)(void))
-{
-    if (callback_name == "")
-    {
-        ASCENT_ERROR("cannot register an anonymous bool callback");
-    }
-    else if (m_bool_callback_map.count(callback_name) != 0)
-    {
-        ASCENT_ERROR("cannot register more than one bool callback under the name '" << callback_name << "'");
-    }
-    else if (m_void_callback_map.count(callback_name) != 0)
-    {
-        ASCENT_ERROR("cannot register both a void and bool callback under the same name '" << callback_name << "'");
-    }
-    m_bool_callback_map.insert(std::make_pair(callback_name, callback_function));
-}
-
-//-----------------------------------------------------------------------------
-void
 Command::execute_command_list(const std::vector<std::string> commands,
                               const std::string &command_type)
 {
@@ -229,46 +186,15 @@ Command::execute_command_list(const std::vector<std::string> commands,
         conduit::Node output;
         for (int i = 0; i < commands.size(); i++)
         {
-            execute_void_callback(commands.at(i), params, output);
+            ascent::execute_callback(commands.at(i), params, output);
         }
     } else if (command_type == "shell_command")
     {
         for (int i = 0; i < commands.size(); i++)
         {
-            execute_shell_command(commands.at(i));
+            system(commands.at(i).c_str());
         }
     }
-}
-
-//-----------------------------------------------------------------------------
-void
-Command::execute_shell_command(std::string command)
-{
-    system(command.c_str());
-}
-
-//-----------------------------------------------------------------------------
-void
-Command::execute_void_callback(std::string callback_name, conduit::Node &params, conduit::Node &output)
-{
-    if (m_void_callback_map.count(callback_name) != 1)
-    {
-        ASCENT_ERROR("requested void callback '" << callback_name << "' was never registered");
-    }
-    auto callback_function = m_void_callback_map.at(callback_name);
-    return callback_function(params, output);
-}
-
-//-----------------------------------------------------------------------------
-bool
-Command::execute_bool_callback(std::string callback_name)
-{
-    if (m_bool_callback_map.count(callback_name) != 1)
-    {
-        ASCENT_ERROR("requested bool callback '" << callback_name << "' was never registered");
-    }
-    auto callback_function = m_bool_callback_map.at(callback_name);
-    return callback_function();
 }
 
 //-----------------------------------------------------------------------------
