@@ -27,7 +27,8 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
-bool example_bool = true;
+index_t EXAMPLE_MESH_SIDE_DIM = 32;
+bool example_bool = false;
 
 //-----------------------------------------------------------------------------
 void void_callback_1(conduit::Node &params, conduit::Node &output)
@@ -65,8 +66,11 @@ bool bool_callback_2()
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_callbacks, register_no_name_void)
+TEST(ascent_commands, register_no_name_void)
 {
+    //
+    // Run Ascent
+    //
     Ascent ascent;
     Node ascent_opts;
     // default is now ascent
@@ -85,8 +89,11 @@ TEST(ascent_callbacks, register_no_name_void)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_callbacks, register_no_name_bool)
+TEST(ascent_commands, register_no_name_bool)
 {
+    //
+    // Run Ascent
+    //
     Ascent ascent;
     Node ascent_opts;
     // default is now ascent
@@ -105,8 +112,11 @@ TEST(ascent_callbacks, register_no_name_bool)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_callbacks, register_void_callbacks)
+TEST(ascent_commands, register_void_callbacks)
 {
+    //
+    // Run Ascent
+    //
     Ascent ascent;
     Node ascent_opts;
     // default is now ascent
@@ -125,8 +135,11 @@ TEST(ascent_callbacks, register_void_callbacks)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_callbacks, register_bool_callbacks)
+TEST(ascent_commands, register_bool_callbacks)
 {
+    //
+    // Run Ascent
+    //
     Ascent ascent;
     Node ascent_opts;
     // default is now ascent
@@ -145,8 +158,11 @@ TEST(ascent_callbacks, register_bool_callbacks)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_callbacks, register_same_callback_twice_mixed)
+TEST(ascent_commands, register_same_callback_twice_mixed)
 {
+    //
+    // Run Ascent
+    //
     Ascent ascent;
     Node ascent_opts;
     // default is now ascent
@@ -166,8 +182,11 @@ TEST(ascent_callbacks, register_same_callback_twice_mixed)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_callbacks, register_same_void_callback_twice)
+TEST(ascent_commands, register_same_void_callback_twice)
 {
+    //
+    // Run Ascent
+    //
     Ascent ascent;
     Node ascent_opts;
     // default is now ascent
@@ -187,8 +206,11 @@ TEST(ascent_callbacks, register_same_void_callback_twice)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_callbacks, register_same_bool_callback_twice)
+TEST(ascent_commands, register_same_bool_callback_twice)
 {
+    //
+    // Run Ascent
+    //
     Ascent ascent;
     Node ascent_opts;
     // default is now ascent
@@ -208,11 +230,196 @@ TEST(ascent_callbacks, register_same_bool_callback_twice)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_commands, direct_shell_command_invocation)
+{
+    string file_name = "direct_shell_command_invocation_test";
+    string output_path = prepare_output_dir();
+    string file_path = conduit::utils::join_file_path(output_path,file_name);
+    // remove old file
+    if(conduit::utils::is_file(file_path))
+    {
+        conduit::utils::remove_file(file_path);
+    }
+
+    //
+    // Create the actions.
+    //
+    Node actions;
+
+    conduit::Node commands;
+    string shell_command = "touch " + file_path;
+    commands["c1/params/shell_command"] = shell_command;
+    commands["c1/params/mpi_behavior"] = "root";
+
+    conduit::Node &add_commands = actions.append();
+    add_commands["action"] = "add_commands";
+    add_commands["commands"] = commands;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    // default is now ascent
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.execute(actions);
+
+    // This file should have been created by the shell command invocation
+    EXPECT_TRUE(conduit::utils::is_file(file_path));
+
+    std::string msg = "An example of directly invoking a shell command"
+                      " from Ascent actions.";
+    ASCENT_ACTIONS_DUMP(actions, std::string("direct_shell_command_invocation"), msg);
+
+    ascent.close();
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_commands, direct_void_callback_invocation)
+{
+    //
+    // Create the actions.
+    //
+    Node actions;
+
+    conduit::Node commands;
+    commands["c1/params/callback"] = "void_callback_2";
+    commands["c1/params/mpi_behavior"] = "all";
+
+    conduit::Node &add_commands = actions.append();
+    add_commands["action"] = "add_commands";
+    add_commands["commands"] = commands;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    // default is now ascent
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+
+    ascent.register_callback("void_callback_2", void_callback_2);
+
+    // void_callback_2 should make example_bool true
+    EXPECT_FALSE(example_bool);
+    ascent.execute(actions);
+    EXPECT_TRUE(example_bool);
+
+    std::string msg = "An example of directly invoking a void callback"
+                      " from Ascent actions.";
+    ASCENT_ACTIONS_DUMP(actions, std::string("direct_void_callback_invocation"), msg);
+
+    ascent.close();
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_commands, bool_callback_trigger_condition)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string trigger_file = conduit::utils::join_file_path(output_path,"simple_trigger_actions");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_simple_trigger_actions");
+    // remove old file
+    if(conduit::utils::is_file(trigger_file))
+    {
+        conduit::utils::remove_file(trigger_file);
+    }
+
+    //
+    // Create trigger actions.
+    //
+    Node trigger_actions;
+
+    conduit::Node extracts;
+
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node &add_ext= trigger_actions.append();
+    add_ext["action"] = "add_extracts";
+    add_ext["extracts"] = extracts;
+
+    trigger_actions.save(trigger_file, "json");
+
+    //
+    // Create the actions.
+    //
+    Node actions;
+
+    std::string condition = "bool_callback_1";
+    conduit::Node triggers;
+    triggers["t1/params/condition"] = condition;
+    triggers["t1/params/actions_file"] = trigger_file;
+
+    conduit::Node &add_triggers= actions.append();
+    add_triggers["action"] = "add_triggers";
+    add_triggers["triggers"] = triggers;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    // default is now ascent
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+
+    ascent.register_callback("bool_callback_1", bool_callback_1);
+
+    ascent.publish(data);
+    ascent.execute(actions);
+
+    conduit::Node info;
+    ascent.info(info);
+    std::string path = "expressions/" + condition + "/100/value";
+    info["expressions"].print();
+    EXPECT_TRUE(info[path].to_int32() == 1);
+    std::string msg = "A simple example of triggering actions based on a bool"
+                      " callback.";
+    ASCENT_ACTIONS_DUMP(actions, std::string("bool_callback_trigger_condition"), msg);
+
+    ascent.close();
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
+    
+    // allow override of the data size via the command line
+    if(argc == 2)
+    {
+        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
+    }
 
     result = RUN_ALL_TESTS();
     return result;
