@@ -420,7 +420,7 @@ TEST(ascent_commands, bool_callback_trigger_condition)
 
     std::string condition = "bool_callback_1";
     conduit::Node triggers;
-    triggers["t1/params/condition"] = condition;
+    triggers["t1/params/callback"] = condition;
     triggers["t1/params/actions_file"] = trigger_file;
 
     conduit::Node &add_triggers= actions.append();
