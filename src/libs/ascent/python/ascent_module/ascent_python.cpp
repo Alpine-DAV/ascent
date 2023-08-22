@@ -40,7 +40,6 @@
 #include "conduit.hpp"
 #include "ascent.hpp"
 #include "ascent_python_exports.h"
-#include "runtimes/flow_filters/ascent_runtime_command_filters.hpp"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
@@ -673,7 +672,7 @@ static PyMethodDef ascent_python_funcs[] =
      (PyCFunction)PyAscent_about,
       METH_NOARGS,
       NULL},
-        //-----------------------------------------------------------------------//
+    //-----------------------------------------------------------------------//
     {"execute_callback",
      (PyCFunction)PyAscent_execute_callback,
       METH_VARARGS,

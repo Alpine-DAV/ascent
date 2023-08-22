@@ -39,7 +39,6 @@
 #include "conduit.hpp"
 #include "ascent.hpp"
 #include "ascent_mpi_python_exports.h"
-#include "runtimes/flow_filters/ascent_runtime_command_filters.hpp"
 
 // conduit python module capi header
 #include "conduit_python.hpp"
