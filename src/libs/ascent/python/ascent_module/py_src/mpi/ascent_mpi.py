@@ -24,6 +24,13 @@ def about():
         raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
     return None
 
+def execute_callback(callback_name, params, output):
+    try:
+        from .ascent_mpi_python import execute_callback as ascent_execute_callback
+        return ascent_execute_callback(callback_name, params, output)
+    except ImportError:
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with serial support ENABLE_SERIAL=ON ?')
+    return None
 
 def Ascent():
     try:

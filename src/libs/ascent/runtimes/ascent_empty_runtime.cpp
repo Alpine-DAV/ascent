@@ -99,7 +99,6 @@ EmptyRuntime::Info()
     return m_info;
 }
 
-
 //-----------------------------------------------------------------------------
 void
 EmptyRuntime::Cleanup()

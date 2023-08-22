@@ -1093,6 +1093,33 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
 }
 //-----------------------------------------------------------------------------
 void
+AscentRuntime::ConvertCommandToFlow(const conduit::Node &command,
+                                    const std::string command_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(command.has_path("params"))
+  {
+    params = command["params"];
+  }
+
+  std::string pipeline = "source";
+  if(command.has_path("pipeline"))
+  {
+    pipeline = command["pipeline"].as_string();
+  }
+
+  m_workspace.graph().add_filter("command",
+                                 command_name,
+                                 params);
+
+  // this is the blueprint mesh
+  m_connections[command_name] = pipeline;
+
+}
+//-----------------------------------------------------------------------------
+void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name)
 {
@@ -1235,6 +1262,18 @@ AscentRuntime::CreateQueries(const conduit::Node &queries)
     conduit::Node query = queries.child(i);
     ConvertQueryToFlow(query, names[i], prev_name);
     prev_name = names[i];
+  }
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::CreateCommands(const conduit::Node &commands)
+{
+  std::vector<std::string> names = commands.child_names();
+  for(int i = 0; i < commands.number_of_children(); ++i)
+  {
+    conduit::Node command = commands.child(i);
+    ConvertCommandToFlow(command, names[i]);
   }
 }
 
@@ -1650,6 +1689,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   m_save_info_actions.reset();
 
   // execution will be enforced in the following order:
+  conduit::Node commands;
   conduit::Node queries;
   conduit::Node triggers;
   conduit::Node pipelines;
@@ -1721,6 +1761,17 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
           ASCENT_ERROR("action 'add_queries' missing child 'queries'");
         }
       }
+      else if(action_name == "add_commands")
+      {
+        if(action.has_path("commands"))
+        {
+          commands.append() = action["commands"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_commands' missing child 'commands'");
+        }
+      }
       else if( action_name == "execute" ||
                action_name == "reset")
       {
@@ -1750,6 +1801,10 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     CreatePipelines(pipelines.child(i));
+  }
+  for(int i = 0; i < commands.number_of_children(); ++i)
+  {
+    CreateCommands(commands.child(i));
   }
   for(int i = 0; i < queries.number_of_children(); ++i)
   {

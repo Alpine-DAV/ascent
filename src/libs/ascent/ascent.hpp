@@ -66,12 +66,30 @@ private:
     conduit::Node  m_info;
 };
 
+// Callback maps
+static std::map<std::string, void (*)(conduit::Node &, conduit::Node &)> m_void_callback_map;
+static std::map<std::string, bool (*)(void)> m_bool_callback_map;
 
 //-----------------------------------------------------------------------------
 std::string ASCENT_API about();
 
 //-----------------------------------------------------------------------------
 void        ASCENT_API about(conduit::Node &node);
+
+//-----------------------------------------------------------------------------
+void        ASCENT_API register_callback(const std::string &callback_name,
+                                         void (*callback_function)(conduit::Node &, conduit::Node &));
+//-----------------------------------------------------------------------------
+void        ASCENT_API register_callback(const std::string &callback_name,
+                                         bool (*callback_function)(void));
+
+//-----------------------------------------------------------------------------
+void        ASCENT_API execute_callback(std::string callback_name,
+                                        conduit::Node &params,
+                                        conduit::Node &output);
+
+//-----------------------------------------------------------------------------
+bool        ASCENT_API execute_callback(std::string callback_name);
 
 };
 //-----------------------------------------------------------------------------
