@@ -40,6 +40,9 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <ray_generators/camera_generator.hpp>
+
+#include <vtkm/rendering/CanvasRayTracer.h>
+
 namespace rover {
 
 CameraGenerator::CameraGenerator()
