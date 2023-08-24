@@ -42,6 +42,7 @@
 #include <ray_generators/visit_generator.hpp>
 #include <utils/rover_logging.hpp>
 #include <vtkm/VectorAnalysis.h>
+#include <vtkm/Version.h>
 #include <vtkm/rendering/raytracing/RayOperations.h>
 #include <assert.h>
 #include <limits>
@@ -76,9 +77,15 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 
   const int size = m_width * m_height;
 
-  //vtkm::cont::DeviceAdapterTagSerial() ?
-  vtkm::rendering::raytracing::RayOperations::Resize(rays,
-                                                     size);
+#if (VTKM_VERSION_MAJOR >= 2) && (VTKM_VERSION_MINOR >= 1)
+    vtkm::rendering::raytracing::RayOperations::Resize(rays,
+                                                       size);
+#else
+    vtkm::rendering::raytracing::RayOperations::Resize(rays,
+                                                       size,
+                                                       vtkm::cont::DeviceAdapterTagSerial());
+#endif
+
 
   vtkm::Vec<T,3> view_side;
 
