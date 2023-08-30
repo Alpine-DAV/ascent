@@ -302,7 +302,8 @@ TEST(ascent_relay, test_relay_json)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
 
-    actions.save("for_chris.yaml");
+    std::cout << actions.to_yaml() << std::endl;
+
     //
     // Run Ascent
     //
@@ -364,7 +365,7 @@ TEST(ascent_relay, test_relay_json_2)
     conduit::Node &execute  = actions.append();
     execute["action"] = "execute";
 
-    actions.save("for_chris.yaml");
+    std::cout << actions.to_yaml() << std::endl;
 
     //
     // Run Ascent

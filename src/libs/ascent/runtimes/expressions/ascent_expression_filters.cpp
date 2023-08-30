@@ -24,7 +24,7 @@
 //-----------------------------------------------------------------------------
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_data_binning.hpp"
-#include "ascent_conduit_reductions.hpp"
+#include "ascent_blueprint_device_reductions.hpp"
 #include "ascent_execution_manager.hpp"
 #include <ascent_config.h>
 #include <ascent_logging.hpp>
@@ -2786,7 +2786,7 @@ ExprHistoryGradientRange::execute()
     return;
   }
 
-  conduit::Node gradient = array_gradient((*output)["value"], (*output)["time"]);
+  conduit::Node gradient = history_gradient_range((*output)["value"], (*output)["time"]);
 
 
   (*output)["value"] = gradient["value"];

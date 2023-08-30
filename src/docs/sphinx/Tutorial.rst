@@ -8,7 +8,7 @@
 Tutorial Overview
 ==================
 
-`Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2022_08_23_ascent_intro.pdf>`_
+`Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2023_08_22_ascent_intro.pdf>`_
 
 
 This tutorial introduces how to use Ascent, including basics about:
@@ -22,12 +22,11 @@ Ascent installs include standalone C++, Python, and Python-based Jupyter noteboo
 You can find the tutorial source code and notebooks in your Ascent install directory under ``examples/ascent/tutorial/ascent_intro/`` and the Cloverleaf3D demo files under ``examples/ascent/tutorial/cloverleaf_demos/``.
 
 
-Scheduled Tutorials:
 
+Tutorials:
+ * `In-Situ Analysis and Visualization with Ascent and ParaView Catalyst <https://sc23.supercomputing.org/presentation/?id=tut133&sess=sess211>`_ - November 2023, Denver, CO, USA
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2023 <https://software.llnl.gov/radiuss/event/2023/07/11/radiuss-on-aws/>`_ - August 2023, Virtual
  * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2022 <https://software.llnl.gov/radiuss/event/2022/07/07/radiuss-on-aws/>`_ - August 2022, Virtual
-
-
-Past Tutorials:
  * `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany 
  * ECP 2022 Annual Meeting - May 2022, Virtual
  * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
