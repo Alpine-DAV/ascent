@@ -573,7 +573,6 @@ AscentRuntime::EnsureDomainIds()
       }
     }
 
-
 #ifdef ASCENT_MPI_ENABLED
     int comm_id = flow::Workspace::default_mpi_comm();
 
@@ -616,6 +615,8 @@ AscentRuntime::EnsureDomainIds()
     }
 
     int domain_offset = 0;
+    int max_num_domains = num_domains;
+
 #ifdef ASCENT_MPI_ENABLED
     int *domains_per_rank = new int[comm_size];
     MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
@@ -623,8 +624,17 @@ AscentRuntime::EnsureDomainIds()
     {
       domain_offset += domains_per_rank[i];
     }
+    for(int i = 0; i < comm_size; i++)
+    {
+      if(domains_per_rank[i] > max_num_domains)
+        max_num_domains = domains_per_rank[i];
+    }
     delete[] domains_per_rank;
 #endif
+
+    std::unordered_set<int> local_unique_ids;
+
+    int *domain_ids = new int[max_num_domains];
     for(int i = 0; i < num_domains; ++i)
     {
       conduit::Node &dom = m_source.child(i);
@@ -632,8 +642,50 @@ AscentRuntime::EnsureDomainIds()
       if(!dom.has_path("state/domain_id"))
       {
          dom["state/domain_id"] = domain_offset + i;
+         domain_ids[i] = domain_offset + i;
+         local_unique_ids.insert(domain_ids[i]);
+      }
+      else
+      {
+         domain_ids[i] = dom["state/domain_id"].as_int32();
+         local_unique_ids.insert(domain_ids[i]);
       }
     }
+
+    if(local_unique_ids.size() != num_domains)
+    {
+      ASCENT_ERROR("Local Domain IDS are not unique ");
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+
+    int total_domains = 0;
+    MPI_Allreduce(&num_domains, &total_domains, 1, MPI_INT, MPI_SUM, mpi_comm);
+    for(int i = num_domains; i < max_num_domains; i++)
+    {
+      domain_ids[i] = 0;
+    }
+
+    int *domain_ids_per_rank = new int[comm_size*max_num_domains];
+    for(int i = 0; i < comm_size*max_num_domains; i++)
+        domain_ids_per_rank[i] = 0;
+    MPI_Allgather(domain_ids, max_num_domains, MPI_INT, domain_ids_per_rank, max_num_domains, MPI_INT, mpi_comm);
+    std::unordered_set<int> global_unique_ids;
+    for(int i = 0; i < comm_size*max_num_domains; i++)
+    {
+      global_unique_ids.insert(domain_ids_per_rank[i]);
+    }
+    
+    delete[] domain_ids_per_rank;
+ 
+    if(global_unique_ids.size() != total_domains)
+    {
+      ASCENT_ERROR("Global Domain IDS are not unique ");
+    }
+
+#endif
+    delete[] domain_ids;
+
 }
 
 //-----------------------------------------------------------------------------
