@@ -647,7 +647,7 @@ AscentRuntime::EnsureDomainIds()
       }
       else
       {
-         domain_ids[i] = dom["state/domain_id"].as_int32();
+         domain_ids[i] = dom["state/domain_id"].to_int32();
          local_unique_ids.insert(domain_ids[i]);
       }
     }
