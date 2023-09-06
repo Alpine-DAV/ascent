@@ -654,7 +654,7 @@ AscentRuntime::EnsureDomainIds()
 
     if(local_unique_ids.size() != num_domains)
     {
-      ASCENT_ERROR("Local Domain IDS are not unique ");
+      ASCENT_ERROR("Local Domain IDs are not unique ");
     }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -680,7 +680,7 @@ AscentRuntime::EnsureDomainIds()
  
     if(global_unique_ids.size() != total_domains)
     {
-      ASCENT_ERROR("Global Domain IDS are not unique ");
+      ASCENT_ERROR("Global Domain IDs are not unique ");
     }
 
 #endif
