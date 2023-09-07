@@ -334,7 +334,7 @@ fi # if enable_hip
 ################
 # VTK-m
 ################
-vtkm_version=v2.0.0
+vtkm_version=v2.1.0-rc1
 vtkm_src_dir=$(ospath ${root_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${root_dir}/build/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${root_dir}/install/vtk-m-${vtkm_version}/)
@@ -347,6 +347,11 @@ if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/${vtkm_tarball} -o ${vtkm_tarball}
   tar -xzf ${vtkm_tarball}
+
+  # apply vtkm patch
+  cd  ${vtkm_src_dir}
+  patch -p1 < ${script_dir}/2023_08_30_vtkm.patch
+  cd ${root_dir}
 fi
 
 vtkm_extra_cmake_args=""

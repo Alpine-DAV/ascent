@@ -245,7 +245,7 @@ DataSet::GetDomainBounds(const int &domain_index,
     std::stringstream msg;
     msg<<"GetBounds call failed. vtk-m error was encountered while "
        <<"attempting to get coordinate system "<<index<<" from "
-       <<"domaim "<<domain_index<<". vtkm error message: "<<error.GetMessage();
+       <<"domain "<<domain_index<<". vtkm error message: "<<error.GetMessage();
     throw Error(msg.str());
   }
 

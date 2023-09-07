@@ -8,6 +8,12 @@
 #include <vtkm/worklet/DispatcherMapField.h>
 #include <vtkm/worklet/WorkletMapField.h>
 
+#include <vtkh/vtkm_filters/vtkmMarchingCubes.hpp>
+#include <vtkh/vtkm_filters/vtkmCleanGrid.hpp>
+#include <vtkm/filter/clean_grid/CleanGrid.h>
+#include <vtkm/filter/contour/Contour.h>
+#include <vtkm/io/VTKDataSetWriter.h>
+
 namespace vtkh
 {
 
@@ -483,44 +489,157 @@ Slice::DoExecute()
     throw Error("Slice: no slice planes specified");
   }
 
-  std::vector<vtkh::DataSet*> slices;
-  for(int s = 0; s < num_slices; ++s)
-  {
-    vtkm::Vec<vtkm::Float32,3> point = m_points[s];
-    vtkm::Vec<vtkm::Float32,3> normal = m_normals[s];
-    vtkh::DataSet temp_ds = *(this->m_input);
-    // shallow copy the input so we don't propagate the slice field
-    // to the input data set, since it might be used in other places
-    for(int i = 0; i < num_domains; ++i)
-    {
-      vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+  // shallow copy the input so we don't propagate the slice field
+  // to the input data set, since it might be used in other places
+  vtkh::DataSet temp_ds = *(this->m_input);
+  vtkh::DataSet *result = new vtkh::DataSet();
 
+  for(int i = 0; i < num_domains; ++i)
+  {
+    // get current domain and domain _id
+    vtkm::cont::DataSet dom;
+    vtkm::Id domain_id;
+    temp_ds.GetDomain(i,dom,domain_id);
+
+    // slice each plane
+    std::vector<vtkm::cont::DataSet> slices;
+    for(int s = 0; s < num_slices; ++s)
+    {
+      vtkm::Vec<vtkm::Float32,3> point = m_points[s];
+      vtkm::Vec<vtkm::Float32,3> normal = m_normals[s];
+
+      // paint distance field for this slice
       vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
       vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
         .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
 
       dom.AddField(vtkm::cont::Field(fname,
-                                      vtkm::cont::Field::Association::Points,
-                                      slice_field));
-    } // each domain
+                                     vtkm::cont::Field::Association::Points,
+                                     slice_field));
 
-    vtkh::MarchingCubes marcher;
-    marcher.SetInput(&temp_ds);
-    marcher.SetIsoValue(0.);
-    marcher.SetField(fname);
-    marcher.Update();
-    slices.push_back(marcher.GetOutput());
-  } // each slice
 
-  if(slices.size() > 1)
-  {
-    detail::MergeContours merger(slices, fname);
-    this->m_output = merger.Merge();
-  }
-  else
-  {
-    this->m_output = slices[0];
-  }
+      // exec contour slice on this domain
+      std::vector<double> slice_iso_values = {0.0};
+      // vtkh::vtkmMarchingCubes marcher;
+      // auto dom_res_marcher = marcher.Run(dom,
+      //                                    fname,
+      //                                    slice_iso_values,
+      //                                    this->GetFieldSelection());
+      //vtkm::filter::FieldSelection map_fields = this->GetFieldSelection();
+
+      std::cout << " DOMAIN ID ============ " << domain_id << std::endl;
+      std::cout << " SLICE     ============ " << s << std::endl;
+      vtkm::filter::contour::Contour marcher;
+      std::cout << "Slice Input" << std::endl;
+      dom.PrintSummary(std::cout);
+
+      std::ostringstream oss;
+      oss << "zout_slice_input_domain_" << domain_id << ".vtk";
+
+      vtkm::io::VTKDataSetWriter input_writer(oss.str());
+      input_writer.WriteDataSet(dom);
+
+      vtkm::filter::FieldSelection map_fields(vtkm::filter::FieldSelection::Mode::All);
+
+      marcher.SetFieldsToPass(map_fields);
+      marcher.SetIsoValues(slice_iso_values);
+      marcher.SetMergeDuplicatePoints(false);
+      marcher.SetActiveField(fname);
+
+      auto dom_res_marcher = marcher.Execute(dom);
+
+      // std::cout << "Slice Result" << std::endl;
+      // dom_res_marcher.PrintSummary(std::cout);
+
+      // clean this domain
+      vtkm::filter::clean_grid::CleanGrid cleaner;
+      cleaner.SetFieldsToPass(map_fields);
+      cleaner.SetRemoveDegenerateCells(true);
+      auto dom_res_clean = cleaner.Execute(dom_res_marcher);
+
+      std::cout << "Slice Result" << std::endl;
+      dom_res_clean.PrintSummary(std::cout);
+
+      oss.str("");
+      oss << "zout_slice_output_domain_" << domain_id << ".vtk";
+
+      vtkm::io::VTKDataSetWriter output_writer(oss.str());
+      output_writer.WriteDataSet(dom_res_clean);
+
+      // add these to the list of slices outputs
+      slices.push_back(dom_res_clean);
+
+       // slices.push_back(dom_res_marcher);
+    }
+
+    // merge slices within each domain
+    if(slices.size() > 1)
+    {
+      // merge contours takes a vector of `vtkh` datasets
+      std::cout << "USING MERGER!" << std::endl;
+      std::vector<vtkh::DataSet *>merge_input;
+      for(size_t i=0;i<slices.size();i++)
+      {
+        vtkh::DataSet *curr = new vtkh::DataSet();
+        curr->AddDomain(slices[i],domain_id);
+        merge_input.push_back(curr);
+      }
+
+      detail::MergeContours merger(merge_input, fname);
+      auto res_merge = merger.Merge();
+      // this is a vtk-h dataset, but it should only have one domain
+
+      result->AddDomain(res_merge->GetDomain(0),domain_id);
+    }
+    else
+    {
+      std::cout << "NOT USING MERGER!" << std::endl;
+      result->AddDomain(slices[0],domain_id);
+    }
+
+  } // each domain
+
+  this->m_output = result;
+
+
+  // std::vector<vtkh::DataSet*> slices;
+  // for(int s = 0; s < num_slices; ++s)
+  // {
+  //   vtkm::Vec<vtkm::Float32,3> point = m_points[s];
+  //   vtkm::Vec<vtkm::Float32,3> normal = m_normals[s];
+  //   vtkh::DataSet temp_ds = *(this->m_input);
+  //   // shallow copy the input so we don't propagate the slice field
+  //   // to the input data set, since it might be used in other places
+  //   for(int i = 0; i < num_domains; ++i)
+  //   {
+  //     vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+  //
+  //     vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
+  //     vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
+  //       .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
+  //
+  //     dom.AddField(vtkm::cont::Field(fname,
+  //                                     vtkm::cont::Field::Association::Points,
+  //                                     slice_field));
+  //   } // each domain
+  //
+  //   vtkh::MarchingCubes marcher;
+  //   marcher.SetInput(&temp_ds);
+  //   marcher.SetIsoValue(0.);
+  //   marcher.SetField(fname);
+  //   marcher.Update();
+  //   slices.push_back(marcher.GetOutput());
+  // } // each slice
+  //
+  // if(slices.size() > 1)
+  // {
+  //   detail::MergeContours merger(slices, fname);
+  //   this->m_output = merger.Merge();
+  // }
+  // else
+  // {
+  //   this->m_output = slices[0];
+  // }
 }
 
 void
