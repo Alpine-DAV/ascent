@@ -345,7 +345,7 @@ if [ ! -d ${vtkm_install_dir} ]; then
 if ${build_vtkm}; then
 if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
-  curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/${vtkm_tarball} -o ${vtkm_tarball}
+  curl -kL https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/${vtkm_tarball} -o ${vtkm_tarball}
   tar -xzf ${vtkm_tarball}
 fi
 
@@ -506,7 +506,7 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=2022.10.0
+umpire_version=2023.06.0
 umpire_src_dir=$(ospath ${root_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${root_dir}/build/umpire-${umpire_version})
 umpire_install_dir=$(ospath ${root_dir}/install/umpire-${umpire_version}/)
@@ -536,6 +536,10 @@ if [ ! -d ${umpire_src_dir} ]; then
   echo "**** Downloading ${umpire_tarball}"
   curl -L https://github.com/LLNL/Umpire/releases/download/v${umpire_version}/${umpire_tarball} -o ${umpire_tarball}
   tar -xzf ${umpire_tarball}
+  # apply umpire patch
+  cd  ${umpire_src_dir}
+  patch -p1 < ${script_dir}/2023_09_07_umpire.patch
+  cd ${root_dir}
 fi
 
 echo "**** Configuring Umpire ${umpire_version}"
@@ -545,6 +549,7 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
+  -DENABLE_MPI=${enable_mpi} \
   -DENABLE_TESTS=${enable_tests} \
   -DUMPIRE_ENABLE_TOOLS=Off \
   -DUMPIRE_ENABLE_BENCHMARKS=${enable_tests} ${umpire_extra_cmake_args} \
