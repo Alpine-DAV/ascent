@@ -57,7 +57,7 @@ index fc351369..6e82ab6e 100644
 -      install(EXPORT bltTargets
 -        DESTINATION  lib/cmake/umpire)
 +        install(TARGETS              ${dep}
-+                EXPORT               bltTargets_umpire
++                EXPORT               umpire-targets
 +                DESTINATION          lib/cmake/umpire)
 +        # Namespace target to avoid conflicts
 +        set_target_properties(${dep} PROPERTIES EXPORT_NAME umpire::blt_tpl_exports_${dep})

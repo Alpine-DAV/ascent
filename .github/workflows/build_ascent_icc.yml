@@ -55,7 +55,7 @@ jobs:
         env enable_mpi=OFF \
             enable_fortran=ON \
             enable_tests=OFF \
-            build_ascent=OFF \
+            build_ascent=false \
             enable_verbose=OFF \
             build_jobs=2 \
             ./scripts/build_ascent/build_ascent.sh
