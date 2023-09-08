@@ -63,7 +63,6 @@
 using namespace conduit;
 using namespace std;
 
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -615,7 +614,6 @@ AscentRuntime::EnsureDomainIds()
     }
 
     int domain_offset = 0;
-    int max_num_domains = num_domains;
 
 #ifdef ASCENT_MPI_ENABLED
     int *domains_per_rank = new int[comm_size];
@@ -624,67 +622,106 @@ AscentRuntime::EnsureDomainIds()
     {
       domain_offset += domains_per_rank[i];
     }
+    int total_domains = 0;
     for(int i = 0; i < comm_size; i++)
     {
-      if(domains_per_rank[i] > max_num_domains)
-        max_num_domains = domains_per_rank[i];
+      total_domains += domains_per_rank[i];
     }
     delete[] domains_per_rank;
 #endif
 
     std::unordered_set<int> local_unique_ids;
-
-    int *domain_ids = new int[max_num_domains];
     for(int i = 0; i < num_domains; ++i)
     {
       conduit::Node &dom = m_source.child(i);
 
       if(!dom.has_path("state/domain_id"))
       {
-         dom["state/domain_id"] = domain_offset + i;
-         domain_ids[i] = domain_offset + i;
-         local_unique_ids.insert(domain_ids[i]);
+        dom["state/domain_id"] = domain_offset + i;
+        local_unique_ids.insert(domain_offset + i);
       }
       else
       {
-         domain_ids[i] = dom["state/domain_id"].to_int32();
-         local_unique_ids.insert(domain_ids[i]);
+        local_unique_ids.insert(dom["state/domain_id"].to_int32());
       }
     }
 
+    int unique_ids = 1;
     if(local_unique_ids.size() != num_domains)
     {
-      ASCENT_ERROR("Local Domain IDs are not unique ");
+      unique_ids = 0;
     }
+#ifdef ASCENT_MPI_ENABLED
+    conduit::Node n_ids;
+    n_ids.set(int[comm_size]);
+    int *unique_ids_array = n_ids.value();//new int[comm_size];
+    MPI_Allgather(&unique_ids, 1, MPI_INT, unique_ids_array, 1, MPI_INT, mpi_comm);
+    for(int i = 0; i < comm_size; i++)
+    {
+      if(unique_ids_array[i] == 0)
+      {
+	unique_ids = 0;
+//        delete[] unique_ids_array;
+        ASCENT_ERROR("Local Domain IDs are not unique on rank: " << i);
+      } 
+    }
+#endif
+    if(!unique_ids)
+      ASCENT_ERROR("Local Domain IDs are not unique ");
 
 #ifdef ASCENT_MPI_ENABLED
 
-    int total_domains = 0;
-    MPI_Allreduce(&num_domains, &total_domains, 1, MPI_INT, MPI_SUM, mpi_comm);
-    for(int i = num_domains; i < max_num_domains; i++)
+    int *domain_ids_per_rank = new int[total_domains];
+    int *global_domain_ids = new int[total_domains];
+    int *domain_rank = new int[total_domains];
+    int *global_domain_rank = new int[total_domains];
+
+    for(int i = 0; i < total_domains; i++)
     {
-      domain_ids[i] = 0;
+      domain_ids_per_rank[i] = -1;
+      domain_rank[i] = -1;
+    }
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = m_source.child(i);
+      domain_ids_per_rank[domain_offset + i] = dom["state/domain_id"].to_int32();
+      domain_rank[domain_offset + i] = m_rank;
     }
 
-    int *domain_ids_per_rank = new int[comm_size*max_num_domains];
-    for(int i = 0; i < comm_size*max_num_domains; i++)
-        domain_ids_per_rank[i] = 0;
-    MPI_Allgather(domain_ids, max_num_domains, MPI_INT, domain_ids_per_rank, max_num_domains, MPI_INT, mpi_comm);
-    std::unordered_set<int> global_unique_ids;
-    for(int i = 0; i < comm_size*max_num_domains; i++)
+    MPI_Allreduce(&domain_ids_per_rank, &global_domain_ids, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+    MPI_Allreduce(&domain_rank, &global_domain_rank, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+
+    std::multimap<int,int> global_ids;
+    for(int i = 0; i < total_domains; i++)
     {
-      global_unique_ids.insert(domain_ids_per_rank[i]);
+      global_ids.insert(pair<int,int>(global_domain_ids[i],global_domain_rank[i]));
     }
     
     delete[] domain_ids_per_rank;
+    delete[] global_domain_ids;
+    delete[] domain_rank;
+    delete[] global_domain_rank;
  
-    if(global_unique_ids.size() != total_domains)
+    if(global_ids.size() != total_domains)
     {
-      ASCENT_ERROR("Global Domain IDs are not unique ");
+      std::multimap<int,int>::iterator itr;
+      std::stringstream ss;
+      for(itr = global_ids.begin(); itr != global_ids.end(); ++itr)
+      {
+        if(map.count(itr.first)>1)
+	{
+	  std::pair <std::multimap<int,int>::iterator, std::multimap<int,int>::iterator> list;
+	  list = global_ids.equal_range(itr.first);
+	  ss << "domain: " << itr.first << " on ranks: ";
+	  for(std::multimap<int,int>::iterator it=list.first; it!=list.second; ++it)
+	  {
+            ss << it->second << " ";
+	  }
+	}
+      }
+      ASCENT_ERROR("Global Domain IDs are not unique for " << ss.str());
     }
-
 #endif
-    delete[] domain_ids;
 
 }
 
