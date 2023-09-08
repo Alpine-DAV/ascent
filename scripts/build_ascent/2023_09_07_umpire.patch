@@ -43,7 +43,7 @@ index fc351369..6e82ab6e 100644
 +set(UMPIRE_BLT_TPL_DEPS_EXPORTS)
 +
 +blt_list_append(TO UMPIRE_BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF UMPIRE_ENABLE_CUDA)
-+blt_list_append(TO UMPIRE_BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt::hip_runtime IF UMPIRE_ENABLE_HIP)
++blt_list_append(TO UMPIRE_BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF UMPIRE_ENABLE_HIP)
 +
 +foreach(dep ${UMPIRE_BLT_TPL_DEPS_EXPORTS})
      # If the target is EXPORTABLE, add it to the export set
