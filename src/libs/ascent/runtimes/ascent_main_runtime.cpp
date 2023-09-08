@@ -326,7 +326,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
     if(options.has_path("ghost_field_names"))
-    { 
+    {
       if(!options["ghost_field_names"].dtype().is_list())
       {
         ASCENT_ERROR("ghost_field_names is not a list");
@@ -433,7 +433,7 @@ AscentRuntime::AddPublishedMeshInfo()
 #ifdef ASCENT_MPI_ENABLED
     int comm_id = flow::Workspace::default_mpi_comm();
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
-  
+
     Node n_src, n_reduce;
     n_src = src_tbytes;
     // all reduce to get total number of bytes across mpi tasks
@@ -510,33 +510,6 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
-    // Process the comments.
-    m_comments.reset();
-    if(data.has_path("state/software"))
-    {
-      m_comments.append() = "Software";
-      m_comments.append() = data["state/software"].as_string();
-    }
-    if(data.has_path("state/source"))
-    {
-      m_comments.append() = "Source";
-      m_comments.append() = data["state/source"].as_string();
-    }
-    if(data.has_path("state/title"))
-    {
-      m_comments.append() = "Title";
-      m_comments.append() = data["state/title"].as_string();
-    }
-    if(data.has_path("state/info"))
-    {
-      m_comments.append() = "Description";
-      m_comments.append() = data["state/info"].as_string();
-    }
-    if(data.has_path("state/comment"))
-    {
-      m_comments.append() = "Comment";
-      m_comments.append() = data["state/comment"].as_string();
-    }
 
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
@@ -1250,6 +1223,29 @@ AscentRuntime::PopulateMetadata()
   for(int i = 0; i < num_domains; ++i)
   {
     const conduit::Node &dom = m_source.child(i);
+    if (i == 0 && dom.has_path("state"))
+    {
+      m_comments.reset();
+      conduit::NodeConstIterator itr = dom["state"].children();
+
+      while(itr.has_next())
+      {
+        conduit::Node cld = itr.next();
+        if(cld.has_path("keyword") && cld.has_path("data"))
+        {
+          m_comments.append() = cld["keyword"].as_string();
+          try
+          {
+            m_comments.append() = cld["data"].as_string();
+          }
+          catch(const conduit::Error)
+          {
+            m_comments.append() = cld["data"].to_string();
+          }
+        }
+      }
+    }
+
     if(dom.has_path("state/cycle"))
     {
       cycle = dom["state/cycle"].to_int32();
@@ -1259,7 +1255,6 @@ AscentRuntime::PopulateMetadata()
       time = dom["state/time"].to_float32();
     }
   }
-
 
   if(cycle != -1)
   {
@@ -1921,7 +1916,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           SaveInfo();
         }
-        
+
     }
     // --- close try --- //
 
@@ -2039,7 +2034,7 @@ void AscentRuntime::SourceFieldFilter()
 
       // if all fields were removed - also remove the fields node
       // or else blueprint verify will fail
-      // 
+      //
       // (this can happen when some domains do not have selected fields)
       //
       if(dom["fields"].number_of_children() == 0)
