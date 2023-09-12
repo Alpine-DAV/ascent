@@ -145,6 +145,12 @@ Render::SetComments(const std::vector<std::string> &comments)
 }
 
 void
+Render::SetColorBarPosition(std::vector<vtkm::Bounds> color_bar_position)
+{
+  m_color_bar_position = color_bar_position;
+}
+
+void
 Render::SetBackgroundColor(float bg_color[4])
 {
   m_bg_color.Components[0] = bg_color[0];
@@ -212,7 +218,10 @@ Render::RenderScreenAnnotations(const std::vector<std::string> &field_names,
 
   if(!m_render_annotations) return;
   Annotator annotator(m_canvas, m_camera, m_scene_bounds);
-  annotator.RenderScreenAnnotations(field_names, ranges, colors);
+  if(m_color_bar_position.size() == 0)
+    annotator.RenderScreenAnnotations(field_names, ranges, colors);
+  else
+    annotator.RenderScreenAnnotations(field_names, ranges, colors, m_color_bar_position);
 }
 
 Render
@@ -231,6 +240,7 @@ Render::Copy() const
   copy.m_shading = m_shading;
   copy.m_canvas = CreateCanvas();
   copy.m_world_annotation_scale = m_world_annotation_scale;
+  copy.m_color_bar_position = m_color_bar_position;
   return copy;
 }
 

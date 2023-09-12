@@ -390,6 +390,7 @@ AscentRuntime::ResetInfo()
 {
     m_info.reset();
     m_info["runtime/type"] = "ascent";
+    m_info["runtime/options"] = m_runtime_options;
     m_info["registered_filter_types"] = registered_filter_types();
 }
 

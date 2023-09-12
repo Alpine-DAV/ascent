@@ -27,16 +27,13 @@ RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     bash_kernel \
     jupyter \
     jupyterlab \
+    ipywidgets \
     matplotlib \
     pyyaml \
     cinemasci \
     scipy \
     scikit-learn \
     ipympl
-
-# finish jupyter lab setup
-RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/jupyter \
-    labextension install @jupyter-widgets/jupyterlab-manager
 
 # configure a debug build with cmake
 RUN cd /ascent && mkdir build 

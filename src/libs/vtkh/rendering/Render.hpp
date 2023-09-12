@@ -50,6 +50,7 @@ public:
   void                            SetCamera(const vtkm::rendering::Camera &camera);
   void                            SetImageName(const std::string &name);
   void                            SetComments(const std::vector<std::string> &comments);
+  void                            SetColorBarPosition(std::vector<vtkm::Bounds> color_bar_position);
   void                            SetBackgroundColor(float bg_color[4]);
   void                            SetForegroundColor(float fg_color[4]);
   void                            SetShadingOn(bool on);
@@ -69,6 +70,7 @@ protected:
   vtkm::rendering::Color       m_bg_color;
   vtkm::rendering::Color       m_fg_color;
   vtkmCanvas                   CreateCanvas() const;
+  std::vector<vtkm::Bounds>    m_color_bar_position;
   bool                         m_render_annotations;
   bool                         m_render_world_annotations;
   bool                         m_render_screen_annotations;

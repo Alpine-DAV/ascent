@@ -97,6 +97,14 @@ ascent_info(Ascent *c_ascent,
 }
 
 //---------------------------------------------------------------------------//
+conduit_node *
+ascent_info_ref(Ascent *c_ascent)
+{
+    ascent::Ascent *v = cpp_ascent(c_ascent);
+    return conduit::c_node(&v->info());
+}
+
+//---------------------------------------------------------------------------//
 void
 ascent_close(Ascent *c_ascent)
 {
