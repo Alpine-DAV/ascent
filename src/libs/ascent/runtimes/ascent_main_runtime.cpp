@@ -670,51 +670,52 @@ AscentRuntime::EnsureDomainIds()
     if(!unique_ids)
       ASCENT_ERROR("Local Domain IDs are not unique ");
 
-//#ifdef ASCENT_MPI_ENABLED
-//
-////    conduit::Node n_dom_ids;
-////    conduit::Node n_global_dom_ids;
-////    conduit::Node n_dom_rank;
-////    conduit::Node n_global_dom_rank;
-////    n_dom_ids.set(DataType::c_int(total_domains));
-////    n_global_dom_ids.set(DataType::c_int(total_domains));
-////    n_dom_rank.set(DataType::c_int(total_domains));
-////    n_global_dom_rank.set(DataType::c_int(total_domains));
-////    int *domain_ids_per_rank = n_dom_ids.value();
-////    int *global_domain_ids = n_global_dom_ids.value();
-////    int *domain_rank = n_dom_rank.value();
-////    int *global_domain_rank = n_global_dom_rank.value();
-//    int *domain_ids_per_rank = new int[total_domains];
-//    int *global_domain_ids = new int[total_domains];
-//    int *domain_rank = new int[total_domains];
-//    int *global_domain_rank = new int[total_domains];
-//
-//    for(int i = 0; i < total_domains; i++)
-//    {
-//      domain_ids_per_rank[i] = -1;
-//      domain_rank[i] = -1;
-//    }
-//    for(int i = 0; i < num_domains; ++i)
-//    {
-//      conduit::Node &dom = m_source.child(i);
-//      domain_ids_per_rank[domain_offset + i] = dom["state/domain_id"].to_int32();
-//      domain_rank[domain_offset + i] = m_rank;
-//    }
-//
-//    MPI_Allreduce(&domain_ids_per_rank, &global_domain_ids, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
-//    MPI_Allreduce(&domain_rank, &global_domain_rank, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
-//
-//    std::multimap<int,int> global_ids;
-//    for(int i = 0; i < total_domains; i++)
-//    {
-//      global_ids.insert(pair<int,int>(global_domain_ids[i],global_domain_rank[i]));
-//    }
-//
-//    delete[] domain_ids_per_rank;
-//    delete[] global_domain_ids;
-//    delete[] domain_rank;
-//    delete[] global_domain_rank;
-//    
+#ifdef ASCENT_MPI_ENABLED
+
+//    conduit::Node n_dom_ids;
+//    conduit::Node n_global_dom_ids;
+//    conduit::Node n_dom_rank;
+//    conduit::Node n_global_dom_rank;
+//    n_dom_ids.set(DataType::c_int(total_domains));
+//    n_global_dom_ids.set(DataType::c_int(total_domains));
+//    n_dom_rank.set(DataType::c_int(total_domains));
+//    n_global_dom_rank.set(DataType::c_int(total_domains));
+//    int *domain_ids_per_rank = n_dom_ids.value();
+//    int *global_domain_ids = n_global_dom_ids.value();
+//    int *domain_rank = n_dom_rank.value();
+//    int *global_domain_rank = n_global_dom_rank.value();
+    int *domain_ids_per_rank = new int[total_domains];
+    int *global_domain_ids = new int[total_domains];
+    int *domain_rank = new int[total_domains];
+    int *global_domain_rank = new int[total_domains];
+
+    for(int i = 0; i < total_domains; i++)
+    {
+      domain_ids_per_rank[i] = -1;
+      domain_rank[i] = -1;
+    }
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = m_source.child(i);
+      domain_ids_per_rank[domain_offset + i] = dom["state/domain_id"].to_int32();
+      domain_rank[domain_offset + i] = m_rank;
+    }
+
+    MPI_Allreduce(&domain_ids_per_rank, &global_domain_ids, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+    MPI_Allreduce(&domain_rank, &global_domain_rank, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+
+    std::multimap<int,int> global_ids;
+    for(int i = 0; i < total_domains; i++)
+    {
+      global_ids.insert(pair<int,int>(global_domain_ids[i],global_domain_rank[i]));
+    }
+
+    delete[] domain_ids_per_rank;
+    delete[] global_domain_ids;
+    delete[] domain_rank;
+    delete[] global_domain_rank;
+    
+#endif
 //    if(global_ids.size() != total_domains)
 //    {
 //      std::multimap<int,int>::iterator itr;
