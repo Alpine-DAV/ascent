@@ -715,27 +715,26 @@ AscentRuntime::EnsureDomainIds()
     delete[] domain_rank;
     delete[] global_domain_rank;
     
+    if(global_ids.size() != total_domains)
+    {
+      std::multimap<int,int>::iterator itr;
+      std::stringstream ss;
+      for(itr = global_ids.begin(); itr != global_ids.end(); ++itr)
+      {
+        if(global_ids.count(itr->first)>1)
+	{
+	  std::pair <std::multimap<int,int>::iterator, std::multimap<int,int>::iterator> list;
+	  list = global_ids.equal_range(itr->first);
+	  ss << "domain: " << itr->first << " on ranks: ";
+	  for(std::multimap<int,int>::iterator it=list.first; it!=list.second; ++it)
+	  {
+            ss << it->second << " ";
+	  }
+	}
+      }
+      ASCENT_ERROR("Global Domain IDs are not unique for " << ss.str());
+    }
 #endif
-//    if(global_ids.size() != total_domains)
-//    {
-//      std::multimap<int,int>::iterator itr;
-//      std::stringstream ss;
-//      for(itr = global_ids.begin(); itr != global_ids.end(); ++itr)
-//      {
-//        if(global_ids.count(itr->first)>1)
-//	{
-//	  std::pair <std::multimap<int,int>::iterator, std::multimap<int,int>::iterator> list;
-//	  list = global_ids.equal_range(itr->first);
-//	  ss << "domain: " << itr->first << " on ranks: ";
-//	  for(std::multimap<int,int>::iterator it=list.first; it!=list.second; ++it)
-//	  {
-//            ss << it->second << " ";
-//	  }
-//	}
-//      }
-//      ASCENT_ERROR("Global Domain IDs are not unique for " << ss.str());
-//    }
-//#endif
 
 }
 
