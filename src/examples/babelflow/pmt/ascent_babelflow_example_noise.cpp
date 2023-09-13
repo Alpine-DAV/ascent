@@ -490,51 +490,14 @@ int main(int argc, char **argv)
   div.m_maxs[2] = options.m_dims[2] - 1;
   DataSet data_set(options, div);
   
-  //InitNoise(div, options, data_set, mpi_rank, mpi_size);
-  if (0)
-  {
-    FunctionType mx = -DBL_MAX;
-    FunctionType mn = DBL_MAX;
-    //ifstream rf(dataset, ios::out | ios::binary);
-    //if(!rf) {
-    //  cout << "Cannot open file!" << endl;
-    //  return 1;
-    //}
-
-    for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
-    {
-        //rf.read( (char *)&global_data[i], sizeof(FunctionType));
-        //global_data[i] = data_set.m_zonal_scalars[i];
-        //mx = std::max( mx, global_data[i] );
-        //mn = std::min( mn, global_data[i] );
-    }
-
-    //rf.close();
-
-    if( mpi_rank == 0 )
-      std::cout << "Data range -- mx = " << mx << ", mn = " << mn << std::endl;
-  }
-
   // size of the local data
   int32_t num_x = high[0] - low[0] + 1;
   int32_t num_y = high[1] - low[1] + 1;
   int32_t num_z = high[2] - low[2] + 1;
   vector<FunctionType> block_data(num_x * num_y * num_z, 0.f);
 
-  // copy values from global data
+  // get values from noise
   {
-    // copy the subsection of data
-    // uint32_t offset = 0;
-    // uint32_t start = low[0] + low[1] * data_size[0] + low[2] * data_size[0] * data_size[1];
-    //for (uint32_t bz = 0; bz < num_z; ++bz) {
-    //  for (uint32_t by = 0; by < num_y; ++by) {
-    //    int data_idx = start + bz * data_size[0] * data_size[1] + by * data_size[0];
-    //    for (uint32_t i = 0; i < num_x; ++i) {
-    //      block_data[offset + i] = static_cast<FunctionType>(global_data[data_idx + i]);
-    //    }
-    //    offset += num_x;
-    //  }
-    //}
 
     double spatial_extents[3];
     spatial_extents[0] = options.m_spacing[0] * options.m_dims[0] + 1;
@@ -554,6 +517,10 @@ int main(int argc, char **argv)
       //
       // update scalars
       //
+      if(mpi_rank == 0) std::cout << "generating noise data: "
+				  << num_x <<" "<<num_y <<" "<<num_z
+				  <<"\n"; 
+
       
       FunctionType mx = -DBL_MAX;
       FunctionType mn = DBL_MAX;
@@ -584,13 +551,13 @@ int main(int argc, char **argv)
       time += options.m_time_delta;
       cycle++;
 
-      //if( mpi_rank == 0 )
-      //std::cout << "[" << low[0]<<", " <<high[0] <<" "
-      //		<< low[1]<<", " <<high[1] <<" "
-      //	<< low[2]<<", " <<high[2] <<" ] "
-      //	<< "Data range -- mx = " << mx << ", mn = " << mn << std::endl;
-    }
-  }
+      if( mpi_rank == 0 )
+      std::cout << "[" << low[0]<<", " <<high[0] <<" "
+      		<< low[1]<<", " <<high[1] <<" "
+      	<< low[2]<<", " <<high[2] <<" ] "
+      	<< "Data range -- mx = " << mx << ", mn = " << mn << std::endl;
+    } // done filling vector
+  } // done noise
 
   if(mpi_rank == 0) options.Print();
 
