@@ -175,7 +175,7 @@ if [ ! -d ${zlib_install_dir} ]; then
 if ${build_zlib}; then
 if [ ! -d ${zlib_src_dir} ]; then
   echo "**** Downloading ${zlib_tarball}"
-  curl -L https://www.zlib.net/zlib-${zlib_version}.tar.gz -o ${zlib_tarball}
+  curl -L https://github.com/madler/zlib/releases/download/v${zlib_version}/zlib-${zlib_version}.tar.gz -o ${zlib_tarball}
   tar -xzf ${zlib_tarball}
 fi
 

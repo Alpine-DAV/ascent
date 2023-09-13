@@ -4,19 +4,11 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#ifndef ASCENT_BLUEPRINT_TYPE_UTILS
+#define ASCENT_BLUEPRINT_TYPE_UTILS
 
-//-----------------------------------------------------------------------------
-///
-/// file: ascent_runtime_relay_filters.hpp
-///
-//-----------------------------------------------------------------------------
-
-#ifndef ASCENT_FLOW_PIPELINE_RELAY_FILTERS_HPP
-#define ASCENT_FLOW_PIPELINE_RELAY_FILTERS_HPP
-
-#include <flow_filter.hpp>
-
-#include <ascent_exports.h>
+#include <conduit.hpp>
+#include <ascent_logging.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -30,70 +22,72 @@ namespace ascent
 namespace runtime
 {
 
-
 //-----------------------------------------------------------------------------
-// -- begin ascent::runtime::filters --
+// -- begin ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
-namespace filters
+namespace expressions
 {
 
 //-----------------------------------------------------------------------------
-///
-/// Filters Related to Conduit Relay IO
-///
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void mesh_blueprint_save(const conduit::Node &data,
-                         const std::string &path,
-                         const std::string &file_protocol,
-                         int num_files,
-                         const conduit::Node &extra_opts,
-                         std::string &root_file_out);
-
-class ASCENT_API RelayIOSave : public ::flow::Filter
+static inline int cell_shape(const std::string &shape_type)
 {
-public:
-    RelayIOSave();
-   ~RelayIOSave();
+  int shape_id = 0;
+  if(shape_type == "tri")
+  {
+      shape_id = 5;
+  }
+  else if(shape_type == "quad")
+  {
+      shape_id = 9;
+  }
+  else if(shape_type == "tet")
+  {
+      shape_id = 10;
+  }
+  else if(shape_type == "hex")
+  {
+      shape_id = 12;
+  }
+  else if(shape_type == "point")
+  {
+      shape_id = 1;
+  }
+  else if(shape_type == "line")
+  {
+      shape_id = 3;
+  }
+  else
+  {
+      ASCENT_ERROR("Unsupported cell type " << shape_type);
+  }
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+  return shape_id;
+}
+
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_float32(const conduit::Node &node);
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_float64(const conduit::Node &node);
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_int32(const conduit::Node &node);
+//-----------------------------------------------------------------------------
+ASCENT_API bool mcarray_is_int64(const conduit::Node &node);
+
+
+//-----------------------------------------------------------------------------
+ASCENT_API bool field_is_float32(const conduit::Node &field);
+//-----------------------------------------------------------------------------
+ASCENT_API bool field_is_float64(const conduit::Node &field);
+//-----------------------------------------------------------------------------
+ASCENT_API bool field_is_int32(const conduit::Node &field);
+//-----------------------------------------------------------------------------
+ASCENT_API bool field_is_int64(const conduit::Node &field);
+
+//-----------------------------------------------------------------------------
 };
-
 //-----------------------------------------------------------------------------
-class ASCENT_API RelayIOLoad : public ::flow::Filter
-{
-public:
-    RelayIOLoad();
-   ~RelayIOLoad();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
+// -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
-class ASCENT_API BlueprintFlatten : public ::flow::Filter
-{
-public:
-    BlueprintFlatten();
-   ~BlueprintFlatten();
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-};
-
-//-----------------------------------------------------------------------------
-
-};
-//-----------------------------------------------------------------------------
-// -- end ascent::runtime::filters --
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 };
@@ -107,10 +101,4 @@ public:
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
-
 #endif
-//-----------------------------------------------------------------------------
-// -- end header ifdef guard
-//-----------------------------------------------------------------------------
-
-

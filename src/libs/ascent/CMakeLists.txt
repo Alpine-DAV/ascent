@@ -126,23 +126,23 @@ set(ascent_headers
     runtimes/ascent_transmogrifier.hpp
     # expressions
     runtimes/ascent_expression_eval.hpp
-    runtimes/expressions/ascent_blueprint_architect.hpp
-    runtimes/expressions/ascent_blueprint_topologies.hpp
-    runtimes/expressions/ascent_conduit_reductions.hpp
     runtimes/expressions/ascent_expression_filters.hpp
     runtimes/expressions/ascent_expressions_ast.hpp
     runtimes/expressions/ascent_expressions_tokens.hpp
     runtimes/expressions/ascent_expressions_parser.hpp
     runtimes/expressions/ascent_math.hpp
-    runtimes/expressions/ascent_dispatch.hpp
-    runtimes/expressions/ascent_meshes.hpp
+    runtimes/expressions/ascent_blueprint_architect.hpp
+    runtimes/expressions/ascent_blueprint_topologies.hpp
+    runtimes/expressions/ascent_blueprint_device_reductions.hpp
+    runtimes/expressions/ascent_blueprint_device_dispatch.hpp
+    runtimes/expressions/ascent_blueprint_device_mesh_objects.hpp
+    runtimes/expressions/ascent_blueprint_type_utils.hpp
     runtimes/expressions/ascent_array.hpp
     runtimes/expressions/ascent_array_utils.hpp
     runtimes/expressions/ascent_array_internals.hpp
     runtimes/expressions/ascent_array_internals_base.hpp
     runtimes/expressions/ascent_array_registry.hpp
     runtimes/expressions/ascent_data_binning.hpp
-    runtimes/expressions/ascent_memory_interface.hpp
     runtimes/expressions/ascent_memory_manager.hpp
     runtimes/expressions/ascent_execution_policies.hpp
     runtimes/expressions/ascent_execution_manager.hpp
@@ -196,7 +196,8 @@ set(ascent_sources
     runtimes/ascent_expression_eval.cpp
     runtimes/expressions/ascent_blueprint_architect.cpp
     runtimes/expressions/ascent_blueprint_topologies.cpp
-    runtimes/expressions/ascent_conduit_reductions.cpp
+    runtimes/expressions/ascent_blueprint_device_reductions.cpp
+    runtimes/expressions/ascent_blueprint_type_utils.cpp
     runtimes/expressions/ascent_expression_filters.cpp
     runtimes/expressions/ascent_expressions_ast.cpp
     runtimes/expressions/ascent_expressions_tokens.cpp
@@ -243,7 +244,7 @@ set(ascent_sources
 
 # explicit list of any sources that need to be device linked
 set(ascent_device_sources runtimes/expressions/ascent_memory_manager.cpp
-                          runtimes/expressions/ascent_conduit_reductions.cpp
+                          runtimes/expressions/ascent_blueprint_device_reductions.cpp
                           runtimes/expressions/ascent_array.cpp
                           runtimes/expressions/ascent_array_utils.cpp
                           runtimes/expressions/ascent_array_internals.cpp
