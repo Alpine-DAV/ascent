@@ -694,21 +694,21 @@ AscentRuntime::EnsureDomainIds()
       domain_ids_per_rank[i] = -1;
       domain_rank[i] = -1;
     }
-//    for(int i = 0; i < num_domains; ++i)
-//    {
-//      conduit::Node &dom = m_source.child(i);
-//      domain_ids_per_rank[domain_offset + i] = dom["state/domain_id"].to_int32();
-//      domain_rank[domain_offset + i] = m_rank;
-//    }
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = m_source.child(i);
+      domain_ids_per_rank[domain_offset + i] = dom["state/domain_id"].to_int32();
+      domain_rank[domain_offset + i] = m_rank;
+    }
 
-    MPI_Allreduce(&domain_ids_per_rank, &global_domain_ids, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
-    MPI_Allreduce(&domain_rank, &global_domain_rank, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+    MPI_Allreduce(domain_ids_per_rank, global_domain_ids, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+    MPI_Allreduce(domain_rank, global_domain_rank, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
 
-//    std::multimap<int,int> global_ids;
-//    for(int i = 0; i < total_domains; i++)
-//    {
-//      global_ids.insert(pair<int,int>(global_domain_ids[i],global_domain_rank[i]));
-//    }
+    std::multimap<int,int> global_ids;
+    for(int i = 0; i < total_domains; i++)
+    {
+      global_ids.insert(pair<int,int>(global_domain_ids[i],global_domain_rank[i]));
+    }
 
     delete[] domain_ids_per_rank;
     delete[] global_domain_ids;
