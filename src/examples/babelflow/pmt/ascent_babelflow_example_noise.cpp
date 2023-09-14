@@ -474,7 +474,7 @@ int main(int argc, char **argv)
 
   // set the gloabl data
   // Switch to noise function instead
-  vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
+  //  vector<FunctionType> global_data(data_size[0]*data_size[1]*data_size[2], 0);
 
   Options options;
   options.m_dims[0] = data_size_[0];
@@ -490,52 +490,65 @@ int main(int argc, char **argv)
   div.m_maxs[2] = options.m_dims[2] - 1;
   DataSet data_set(options, div);
   
-  InitNoise(div, options, data_set, mpi_rank, mpi_size);
-  
-  {
-    FunctionType mx = -DBL_MAX;
-    FunctionType mn = DBL_MAX;
-    //ifstream rf(dataset, ios::out | ios::binary);
-    //if(!rf) {
-    //  cout << "Cannot open file!" << endl;
-    //  return 1;
-    //}
-
-    for(int i = 0; i < data_size[0]*data_size[1]*data_size[2] ; i++)
-    {
-        //rf.read( (char *)&global_data[i], sizeof(FunctionType));
-        global_data[i] = data_set.m_zonal_scalars[i];
-        mx = std::max( mx, global_data[i] );
-        mn = std::min( mn, global_data[i] );
-    }
-
-    //rf.close();
-
-    if( mpi_rank == 0 )
-      std::cout << "Data range -- mx = " << mx << ", mn = " << mn << std::endl;
-  }
-
   // size of the local data
   int32_t num_x = high[0] - low[0] + 1;
   int32_t num_y = high[1] - low[1] + 1;
   int32_t num_z = high[2] - low[2] + 1;
   vector<FunctionType> block_data(num_x * num_y * num_z, 0.f);
 
-  // copy values from global data
+  // get values from noise
   {
-    // copy the subsection of data
-    uint32_t offset = 0;
-    uint32_t start = low[0] + low[1] * data_size[0] + low[2] * data_size[0] * data_size[1];
-    for (uint32_t bz = 0; bz < num_z; ++bz) {
-      for (uint32_t by = 0; by < num_y; ++by) {
-        int data_idx = start + bz * data_size[0] * data_size[1] + by * data_size[0];
-        for (uint32_t i = 0; i < num_x; ++i) {
-          block_data[offset + i] = static_cast<FunctionType>(global_data[data_idx + i]);
-        }
-        offset += num_x;
-      }
-    }
-  }
+
+    double spatial_extents[3];
+    spatial_extents[0] = options.m_spacing[0] * options.m_dims[0] + 1;
+    spatial_extents[1] = options.m_spacing[1] * options.m_dims[1] + 1;
+    spatial_extents[2] = options.m_spacing[2] * options.m_dims[2] + 1;
+
+    struct osn_context *ctx_zonal;
+    struct osn_context *ctx_nodal;
+    open_simplex_noise(77374, &ctx_nodal);
+    open_simplex_noise(59142, &ctx_zonal);
+
+    double time = 0;
+    int cycle = 0;
+  
+    // fill vector
+    {
+      //
+      // update scalars
+      //
+      
+      FunctionType mx = -DBL_MAX;
+      FunctionType mn = DBL_MAX;
+  
+      uint32_t offset = 0;
+      for(int z = low[2]; z <= high[2]; ++z)
+	for(int y = low[1]; y <= high[1]; ++y)
+	  for(int x = low[0]; x <= high[0]; ++x)
+	    {
+	      double coord[4];
+	      data_set.GetCoord(x,y,z,coord);
+	      coord[3] = time;
+	      //double val_point = open_simplex_noise4(ctx_nodal, coord[0], coord[1], coord[2], coord[3]);
+	      double val_cell = open_simplex_noise4(ctx_zonal, coord[0], coord[1], coord[2], coord[3]);
+	      block_data[offset] = val_cell;
+	      offset ++;
+	      mx = std::max( mx, val_cell );
+	      mn = std::min( mn, val_cell );
+	    }
+
+      time += options.m_time_delta;
+      cycle++;
+
+      //if( mpi_rank == 0 )
+      //std::cout << "[" << low[0]<<", " <<high[0] <<" "
+      //		<< low[1]<<", " <<high[1] <<" "
+      //	<< low[2]<<", " <<high[2] <<" ] "
+      //	<< "Data range -- mx = " << mx << ", mn = " << mn << std::endl;
+    } // done filling vector
+  } // done noise
+
+  if(mpi_rank == 0) options.Print();
 
   // build the local mesh.
   Node mesh;

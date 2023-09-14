@@ -941,8 +941,8 @@ void merge_tree_stats_helper( std::vector<BabelFlow::Payload> &inputs,
   merge_trees_algorithm( trees_input_v, stat_tree_combined.mTree, task );
 
   
-  std::cout << "sizes tree vs statmap: "<< stat_tree_combined.mTree.nodes().size()
-            << " " << stat_tree_combined.mStatMap.mapSize() <<" \n";
+  //std::cout << "sizes tree vs statmap: "<< stat_tree_combined.mTree.nodes().size()
+  //          << " " << stat_tree_combined.mStatMap.mapSize() <<" \n";
 }
 
 int merge_tree_stats( std::vector<BabelFlow::Payload> &inputs,
