@@ -652,17 +652,15 @@ AscentRuntime::EnsureDomainIds()
       unique_ids = 0;
     }
 #ifdef ASCENT_MPI_ENABLED
-//    conduit::Node n_ids;
-//    n_ids.set(DataType::c_int(comm_size));
-//    int *unique_ids_array = n_ids.value();//new int[comm_size];
-    int *unique_ids_array = new int[comm_size];
+    conduit::Node n_ids;
+    n_ids.set(DataType::c_int(comm_size));
+    int *unique_ids_array = n_ids.value();//new int[comm_size];
     MPI_Allgather(&unique_ids, 1, MPI_INT, unique_ids_array, 1, MPI_INT, mpi_comm);
     for(int i = 0; i < comm_size; i++)
     {
       if(unique_ids_array[i] == 0)
       {
 	unique_ids = 0;
-        delete[] unique_ids_array;
         ASCENT_ERROR("Local Domain IDs are not unique on rank: " << i);
       } 
     }
@@ -684,10 +682,6 @@ AscentRuntime::EnsureDomainIds()
     int *global_domain_ids = n_global_dom_ids.value();
     int *domain_rank = n_dom_rank.value();
     int *global_domain_rank = n_global_dom_rank.value();
-//    int *domain_ids_per_rank = new int[total_domains];
-//    int *global_domain_ids = new int[total_domains];
-//    int *domain_rank = new int[total_domains];
-//    int *global_domain_rank = new int[total_domains];
 
     for(int i = 0; i < total_domains; i++)
     {
@@ -710,11 +704,6 @@ AscentRuntime::EnsureDomainIds()
       global_ids.insert(pair<int,int>(global_domain_ids[i],global_domain_rank[i]));
     }
 
-//    delete[] domain_ids_per_rank;
-//    delete[] global_domain_ids;
-//    delete[] domain_rank;
-//    delete[] global_domain_rank;
-    
     if(global_ids.size() != total_domains)
     {
       std::multimap<int,int>::iterator itr;
@@ -730,6 +719,7 @@ AscentRuntime::EnsureDomainIds()
 	  {
             ss << it->second << " ";
 	  }
+	  ss << "\n";
 	}
       }
       ASCENT_ERROR("Global Domain IDs are not unique for " << ss.str());
