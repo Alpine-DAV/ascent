@@ -656,17 +656,22 @@ AscentRuntime::EnsureDomainIds()
     n_ids.set(DataType::c_int(comm_size));
     int *unique_ids_array = n_ids.value();//new int[comm_size];
     MPI_Allgather(&unique_ids, 1, MPI_INT, unique_ids_array, 1, MPI_INT, mpi_comm);
+    std::stringstream ss;
     for(int i = 0; i < comm_size; i++)
     {
       if(unique_ids_array[i] == 0)
       {
 	unique_ids = 0;
-        ASCENT_ERROR("Local Domain IDs are not unique on rank: " << i);
+	ss << i << " ";
       } 
     }
-#endif
+
+    if(!unique_ids)
+      ASCENT_ERROR("Local Domain IDs are not unique on ranks: " << ss.str());
+#else
     if(!unique_ids)
       ASCENT_ERROR("Local Domain IDs are not unique ");
+#endif
 
 #ifdef ASCENT_MPI_ENABLED
 
@@ -707,7 +712,6 @@ AscentRuntime::EnsureDomainIds()
     if(global_ids.size() != total_domains)
     {
       std::multimap<int,int>::iterator itr;
-      std::stringstream ss;
       for(itr = global_ids.begin(); itr != global_ids.end(); ++itr)
       {
         if(global_ids.count(itr->first)>1)
