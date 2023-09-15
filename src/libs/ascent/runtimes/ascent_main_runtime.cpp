@@ -703,25 +703,27 @@ AscentRuntime::EnsureDomainIds()
     MPI_Allreduce(domain_ids_per_rank, global_domain_ids, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
     MPI_Allreduce(domain_rank, global_domain_rank, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
 
-    std::multimap<int,int> global_ids;
+    std::unordered_set<int> global_ids;
     for(int i = 0; i < total_domains; i++)
     {
-      global_ids.insert(pair<int,int>(global_domain_ids[i],global_domain_rank[i]));
+      global_ids.insert(global_domain_ids[i]);
     }
 
     if(global_ids.size() != total_domains)
     {
-      std::multimap<int,int>::iterator itr;
-      for(itr = global_ids.begin(); itr != global_ids.end(); ++itr)
+      std::map<int,std::vector<int>> map_global_ids;
+      for(int i = 0; i < total_domains; i++)
       {
-        if(global_ids.count(itr->first)>1)
+        map_global_ids[global_domain_ids[i]].push_back(global_domain_rank[i]);
+      }
+      for(auto itr = map_global_ids.begin(); itr != map_global_ids.end(); ++itr)
+      {
+        if(itr->second.size() > 1)
 	{
-	  std::pair <std::multimap<int,int>::iterator, std::multimap<int,int>::iterator> list;
-	  list = global_ids.equal_range(itr->first);
 	  ss << "domain: " << itr->first << " on ranks: ";
-	  for(std::multimap<int,int>::iterator it=list.first; it!=list.second; ++it)
+	  for(auto iitr = itr->second.begin(); iitr != itr->second.end(); ++iitr)
 	  {
-            ss << it->second << " ";
+            ss << *iitr << " ";
 	  }
 	  ss << "\n";
 	}
