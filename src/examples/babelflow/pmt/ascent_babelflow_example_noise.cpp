@@ -220,8 +220,8 @@ struct DataSet
                 0. + double(div.m_mins[2]) * m_spacing[2]}
 
    {
-     m_nodal_scalars = new double[m_point_size];
-     m_zonal_scalars = new double[m_cell_size];
+     //m_nodal_scalars = new double[m_point_size];
+     //m_zonal_scalars = new double[m_cell_size];
    }
 
    inline void GetCoord(const int &x, const int &y, const int &z, double *coord)
@@ -286,8 +286,8 @@ struct DataSet
 
    ~DataSet()
    {
-     if(m_nodal_scalars) delete[] m_nodal_scalars;
-     if(m_zonal_scalars) delete[] m_zonal_scalars;
+     //if(m_nodal_scalars) delete[] m_nodal_scalars;
+     //if(m_zonal_scalars) delete[] m_zonal_scalars;
    }
 private:
   DataSet()
@@ -514,6 +514,8 @@ int main(int argc, char **argv)
   
     // fill vector
     {
+      if (mpi_rank == 0)
+	std::cout << "filling noise: " <<num_x <<" "<<num_y<<" "<<num_z<<std::endl;
       //
       // update scalars
       //
