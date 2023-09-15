@@ -33,104 +33,7 @@ using namespace conduit;
 using namespace ascent;
 
 //-----------------------------------------------------------------------------
-//TEST(ascent_partition, test_local_ranks_non_unique)
-//{
-//    Node n;
-//    ascent::about(n);
-//
-//    //
-//    // Create an example mesh.
-//    //
-//    Node data, verify_info;
-//
-//    //
-//    //Set Up MPI
-//    //
-//    int par_rank;
-//    int par_size;
-//    MPI_Comm comm = MPI_COMM_WORLD;
-//    MPI_Comm_rank(comm, &par_rank);
-//    MPI_Comm_size(comm, &par_size);
-//
-//    // use spiral , with 7 domains
-//    conduit::blueprint::mesh::examples::spiral(7,data);
-//
-//    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-//
-//    int root = 0;
-//    if(par_rank == root)
-//    	ASCENT_INFO("Testing blueprint partition of multi-domain mesh with MPI where the target is distributed amongst all ranks");
-//
-//    string output_path = prepare_output_dir();
-//    std::ostringstream oss;
-//
-//    oss << "tout_distributed_partition_multi_dom_mpi";
-//    string output_base = conduit::utils::join_file_path(output_path,
-//                                                        oss.str());
-//    std::ostringstream ossjson;
-//    ossjson << "tout_distributed_partition_multi_dom_mpi_json";
-//    string output_json = conduit::utils::join_file_path(output_base,
-//		    					ossjson.str());
-//    // remove existing files
-//    if(par_rank == root)
-//    {
-//    	if(utils::is_file(output_base))
-//    	{
-//    	    utils::remove_file(output_base);
-//    	}
-//    	if(utils::is_file(output_json))
-//    	{
-//    	    utils::remove_file(output_json);
-//    	}
-//    }
-//
-//    conduit::Node actions;
-//    int target = 1;
-//    // add the pipeline
-//    conduit::Node &add_pipelines = actions.append();
-//    add_pipelines["action"] = "add_pipelines";
-//    conduit::Node &pipelines = add_pipelines["pipelines"];
-//    pipelines["pl1/f1/type"]  = "partition";
-//    pipelines["pl1/f1/params/target"] = target;
-//    
-//    //add the extract
-//    conduit::Node &add_extracts = actions.append();
-//    add_extracts["action"] = "add_extracts";
-//    conduit::Node &extracts = add_extracts["extracts"];
-//    extracts["e1/type"] = "relay";
-//    extracts["e1/pipeline"] = "pl1";
-//    extracts["e1/params/path"] = output_base;
-//
-//    //
-//    // Run Ascent
-//    //
-//
-//    Ascent ascent;
-//
-//    Node ascent_opts;
-//    ascent_opts["runtime"] = "ascent";
-//    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-//    ascent.open(ascent_opts);
-//    ascent.publish(data);
-//    ascent.execute(actions);
-//    ascent.close();
-//
-//    if(par_rank == root)
-//    {
-//        //Two files in _output directory:
-//        //tout_partition_multi_dom_mpi
-//        //tout_partition_multi_dom_mpi_json
-//        EXPECT_TRUE(conduit::utils::is_file(output_base));
-//        Node read_csv;
-//        conduit::relay::io::load(output_base,read_csv);
-//
-//        int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
-//        EXPECT_TRUE(num_doms == target);
-//    }
-//}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_partition, test_global_ranks_non_unique)
+TEST(ascent_partition, test_indiv_rank_non_unique)
 {
     Node n;
     ascent::about(n);
@@ -167,14 +70,6 @@ TEST(ascent_partition, test_global_ranks_non_unique)
 	dom["state/domain_id"] = 0;
       }
     }
-
-    //conduit::Node actions;
-    //// add the scene
-    //conduit::Node &add_scenes = actions.append();
-    //add_scenes["action"] = "add_scenes";
-    //conduit::Node &scenes = add_scenes["scenes"];
-    //scenes["scene1/plots/plt1/type"]  = "pseudocolor";
-    //scenes["scene1/plots/plt1/field"]  = "dist";
     
     //
     // Run Ascent
@@ -199,6 +94,66 @@ TEST(ascent_partition, test_global_ranks_non_unique)
     ascent.close();
     EXPECT_TRUE(threw);
 }
+//-----------------------------------------------------------------------------
+TEST(ascent_partition, test_global_ranks_non_unique)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+
+    //
+    //Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    // use spiral , with 20 domains
+    conduit::blueprint::mpi::mesh::examples::spiral_round_robin(20,data,comm);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    int root = 0;
+    if(par_rank == root)
+    	ASCENT_INFO("Testing local non unique IDs");
+
+    int num_domains = data.number_of_children();
+    for(int i = 0; i < num_domains; i++)
+    {
+      conduit::Node &dom = data.child(i);
+      dom["state/domain_id"] = i;
+    }
+    
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime"] = "ascent";
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent.open(ascent_opts);
+
+    bool threw = false;
+    try
+    {
+      ascent.publish(data);
+    }
+    catch(conduit::Error &e)
+    {
+      threw = true;
+    }
+    ascent.close();
+    EXPECT_TRUE(threw);
+}
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
