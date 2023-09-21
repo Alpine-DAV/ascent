@@ -552,6 +552,22 @@ AscentRuntime::Publish(const conduit::Node &data)
 void
 AscentRuntime::EnsureDomainIds()
 {
+    //add debug timing file in case these checks
+    //add a lot of overhead
+#define _DEBUG 0
+
+#if _DEBUG
+      std::stringstream log_name;
+      std::string log_prefix = "EnsureDomainIDs_times_";
+#ifdef ASCENT_MPI_ENABLED
+      log_name << log_prefix << m_rank<<".csv";
+#else
+      log_name << log_prefix << "0.csv";
+#endif
+      std::ofstream stream;
+      stream.open(log_name.str().c_str(),std::ofstream::app);
+      conduit::utils::Timer ensureDomainIDsTimer;
+#endif
     // if no domain ids were provided add them now
     int num_domains = 0;
     bool has_ids = true;
@@ -615,6 +631,10 @@ AscentRuntime::EnsureDomainIds()
 
     int domain_offset = 0;
 
+#if _DEBUG
+    conduit::utils::Timer local_check_timer;
+#endif
+
 #ifdef ASCENT_MPI_ENABLED
     int *domains_per_rank = new int[comm_size];
     MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
@@ -672,9 +692,19 @@ AscentRuntime::EnsureDomainIds()
     if(!unique_ids)
       ASCENT_ERROR("Local Domain IDs are not unique ");
 #endif
+#if _DEBUG
+    float local_check_timer_time = local_check_timer.elapsed();
+    std::stringstream local_check_timer_log;
+    local_check_timer_log << "Local Uniqueness Check: " << local_check_timer_time << "\n";
+    stream << local_check_timer_log.str();
+#endif
+
 
 #ifdef ASCENT_MPI_ENABLED
 
+#if _DEBUG
+    conduit::utils::Timer global_check_timer;
+#endif
     conduit::Node n_dom_ids;
     conduit::Node n_global_dom_ids;
     conduit::Node n_dom_rank;
@@ -730,8 +760,21 @@ AscentRuntime::EnsureDomainIds()
       }
       ASCENT_ERROR("Global Domain IDs are not unique for " << ss.str());
     }
+#if _DEBUG
+    float global_check_timer_time = global_check_timer.elapsed();
+    std::stringstream global_check_timer_log;
+    global_check_timer_log << "Global Uniqueness Check: " << global_check_timer_time << "\n";
+    stream << global_check_timer_log.str();
+#endif
 #endif
 
+#if _DEBUG
+    float ensureDomainIDs_time = ensureDomainIDsTimer.elapsed();
+    std::stringstream ensureDomainIDs_log;
+    ensureDomainIDs_log << "AscentRuntime::EnsureDomainIDs [TOTAL]: " << ensureDomainIDs_time << "\n";
+    stream << ensureDomainIDs_log.str();
+    stream.close();
+#endif
 }
 
 //-----------------------------------------------------------------------------
