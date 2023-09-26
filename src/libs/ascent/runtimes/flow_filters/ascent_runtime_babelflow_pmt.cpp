@@ -1330,22 +1330,19 @@ void ParallelMergeTree::Initialize()
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::WRITE_RES_CB, write_results );
   BabelFlow::TaskGraph::registerCallback( 1, KWayMerge::RELAY_CB, BabelFlow::relay_message );
 
-  // XUAN : disable for test
-  if (0){
-      BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::LEAF_TASK_CB, compute_loc_stats );
-      BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::MID_TASK_CB, merge_stats );
-      // BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, write_stats );
-      BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, merge_stats );
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::LEAF_TASK_CB, compute_loc_stats );
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::MID_TASK_CB, merge_stats );
+  // BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, write_stats );
+  BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::RadixKExchange::ROOT_TASK_CB, merge_stats );
 
-      // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::LEAF_TASK_CB, BabelFlow::relay_message );
-      // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::MID_TASK_CB,  merge_stats );
-      // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::ROOT_TASK_CB, write_stats_topo );
+  // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::LEAF_TASK_CB, BabelFlow::relay_message );
+  // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::MID_TASK_CB,  merge_stats );
+  // BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::ROOT_TASK_CB, write_stats_topo );
 
-      BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::LEAF_TASK_CB, init_tree_stats );
-      BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::MID_TASK_CB,  merge_tree_stats );
-      BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::ROOT_TASK_CB, write_stats_topo );
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::LEAF_TASK_CB, init_tree_stats );
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::MID_TASK_CB,  merge_tree_stats );
+  BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::KWayReduction::ROOT_TASK_CB, write_stats_topo );
 
-  }
 #ifdef BFLOW_PMT_DEBUG
   if( my_rank == 0 ) 
   {
@@ -1353,7 +1350,7 @@ void ParallelMergeTree::Initialize()
   }
 #endif
 
-  if( StatisticsMap::sRequestedStats.size() && false)
+  if( StatisticsMap::sRequestedStats.size() )
   {
       //m_defGraphConnector_1 = BabelFlow::DefGraphConnector( &m_preProcTaskGr, 0, &m_kWayMergeGr, 1 );
       //m_defGraphConnector_2 = BabelFlow::DefGraphConnector( &m_kWayMergeGr, 1, &m_treeStatsGr, 2 );
