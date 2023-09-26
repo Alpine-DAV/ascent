@@ -534,25 +534,17 @@ int main(int argc, char **argv)
 	      //double val_point = open_simplex_noise4(ctx_nodal, coord[0], coord[1], coord[2], coord[3]);
 	      double val_cell = open_simplex_noise4(ctx_zonal, coord[0], coord[1], coord[2], coord[3]);
 	      block_data[offset] = val_cell;
-	      // XUAN: force a maxima per rank
-	      if ((z == low[2] + num_z/2) && (y == low[1] + num_y/2) && (x == low[0] + num_x/2) ){
-	        block_data[offset] = 1.0f;
-	      	block_data[offset-1] = -1.0f;
-	      }
-	      
 	      offset ++;
 	      mx = std::max( mx, val_cell );
 	      mn = std::min( mn, val_cell );
 	    }
-      
-      
 
       time += options.m_time_delta;
       cycle++;
 
       //if( mpi_rank == 0 )
       //std::cout << "[" << low[0]<<", " <<high[0] <<" "
-      //       	<< low[1]<<", " <<high[1] <<" "
+      //		<< low[1]<<", " <<high[1] <<" "
       //	<< low[2]<<", " <<high[2] <<" ] "
       //	<< "Data range -- mx = " << mx << ", mn = " << mn << std::endl;
     } // done filling vector
