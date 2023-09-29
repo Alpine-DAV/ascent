@@ -1,0 +1,38 @@
+#An example of data binning, binning spatially and summing a field.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "binning"
+        params: 
+          reduction_op: "sum"
+          reduction_field: "braid"
+          output_field: "binning"
+          output_type: "bins"
+          axes: 
+            - 
+              field: "x"
+              num_bins: 10
+              min_val: -10.0
+              max_val: 10.0
+              clamp: 1
+            - 
+              field: "y"
+              num_bins: 10
+              clamp: 0
+            - 
+              field: "z"
+              num_bins: 10
+              clamp: 10
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "binning"
+          pipeline: "pl1"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_binning_filter_bins"

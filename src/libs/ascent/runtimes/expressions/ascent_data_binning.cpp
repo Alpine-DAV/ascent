@@ -1,7 +1,7 @@
 #include <expressions/ascent_array_utils.hpp>
 #include <ascent_config.h>
 #include <expressions/ascent_math.hpp>
-#include <expressions/ascent_dispatch.hpp>
+#include <expressions/ascent_blueprint_device_dispatch.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
 
 #if defined(ASCENT_RAJA_ENABLED)
@@ -503,8 +503,8 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
   const std::string mem_space = Exec::memory_space;
 
 
-  MemoryInterface<T> farray(field);
-  MemoryAccessor<T> accessor = farray.accessor(mem_space,component);
+  MCArray<T> farray(field["values"]);
+  DeviceAccessor<T> accessor = farray.accessor(mem_space,component);
   Array<double> res;
   const int size = accessor.m_size;
   res.resize(size);
@@ -1085,7 +1085,7 @@ conduit::Node data_binning(conduit::Node &dataset,
                                     component,
                                     reduction_var);
 
-  exec_dispatch(bindexer);
+  exec_dispatch_function(bindexer);
 
   // we now have the all of the bin setup, all we have to
   // do now is the reduction
@@ -1099,7 +1099,7 @@ conduit::Node data_binning(conduit::Node &dataset,
   // return the bindexes so we can paint later
   bindexes = bindexer.m_bindexes;
 
-  exec_dispatch(binner);
+  exec_dispatch_function(binner);
   //std::cout<<"DONE BINinng\n";
   // mpi exchange
   detail::exchange_bins(bins, reduction_op);
@@ -1113,7 +1113,7 @@ conduit::Node data_binning(conduit::Node &dataset,
                                     reduction_op,
                                     empty_bin_val);
 
-  exec_dispatch(banana);
+  exec_dispatch_function(banana);
 
   res["association"] = assoc_str;
   //std::cout<<"res "<<res.to_summary_string()<<"\n";

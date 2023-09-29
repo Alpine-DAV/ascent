@@ -12,6 +12,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Added parameters to control HDF5 compression options to the Relay Extract.
 
+### Changed
+- Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
 
 ## [0.9.2] - Released 2023-06-30
 ### Preferred dependency versions for ascent@0.9.2

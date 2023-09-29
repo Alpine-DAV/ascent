@@ -942,7 +942,7 @@ TEST(ascent_runtime_options, test_field_filtering_error)
     EXPECT_TRUE(error);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_runtime_options, test_field_filtering_binning)
+TEST(ascent_runtime_options, test_field_filtering_binning_expression)
 {
     Node n;
     ascent::about(n);
@@ -1006,6 +1006,105 @@ TEST(ascent_runtime_options, test_field_filtering_binning)
     ascent.publish(data);
     ascent.execute(actions);
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_field_filtering_binning_filter)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    data["fields/bananas"] = data["fields/braid"];
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    data["state/cycle"] = 100;
+    data["state/time"] = 1.3;
+    data["state/domain_id"] = 0;
+
+    ASCENT_INFO("Testing data binning field filtering support");
+
+
+    string output_path = prepare_output_dir();
+    std::string output_file =
+      conduit::utils::join_file_path(output_path, "tout_ascent_field_filtering_binning_filter");
+
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "binning";
+    // filter knobs
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["reduction_op"] = "sum";
+    params["reduction_field"] = "braid";
+    params["output_field"] = "binning";
+    // reduced dataset of only the bins
+    params["output_type"] = "bins";
+
+    conduit::Node &axis0 = params["axes"].append();
+    axis0["field"] = "x";
+    axis0["num_bins"] = 10;
+    axis0["min_val"] = -10.0;
+    axis0["max_val"] = 10.0;
+    axis0["clamp"] = 1;
+
+    conduit::Node &axis1 = params["axes"].append();
+    axis1["field"] = "y";
+    axis1["num_bins"] = 10;
+    axis1["clamp"] = 0;
+
+    conduit::Node &axis2 = params["axes"].append();
+    axis2["field"] = "braid";
+    axis2["num_bins"] = 10;
+    axis2["clamp"] = 0;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "binning";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["field_filtering"] = "true";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    
+    EXPECT_TRUE(check_test_image(output_file, 0.1));
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, test_field_filtering_lineout)
