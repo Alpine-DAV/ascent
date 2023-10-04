@@ -1219,20 +1219,22 @@ AscentRuntime::PopulateMetadata()
   const int num_domains = m_source.number_of_children();
   int cycle = -1;
   float time = -1.f;
+  bool metadata_set = false;
 
   for(int i = 0; i < num_domains; ++i)
   {
     const conduit::Node &dom = m_source.child(i);
-    if (i == 0 && dom.has_path("state"))
+    if (!metadata_set && dom.has_path("state"))
     {
       m_comments.reset();
       conduit::NodeConstIterator itr = dom["state"].children();
 
       while(itr.has_next())
       {
-        conduit::Node cld = itr.next();
+        const conduit::Node &cld = itr.next();
         if(cld.has_path("keyword") && cld.has_path("data"))
         {
+          metadata_set = true;
           m_comments.append() = cld["keyword"].as_string();
           try
           {
