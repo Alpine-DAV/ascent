@@ -1,17 +1,19 @@
-#ifndef VTK_H_LOGGER_HPP
-#define VTK_H_LOGGER_HPP
+#ifndef LOGGER_HPP
+#define LOGGER_HPP
 
-#include <vtkh/vtkh_exports.h>
-#include <vtkh/Timer.hpp>
-#include <vtkh/utils/StreamUtil.hpp>
 
 #include <stack>
+#include <iostream>
 #include <sstream>
-//from rover logging
-namespace vtkh
+#include <fstream>
+#include <map>
+
+#include "Timer.hpp"
+//from vtkh logging
+namespace logging
 {
 
-class VTKH_API Logger
+class Logger
 {
 public:
   static Logger *GetInstance(const std::string& name);
@@ -28,7 +30,7 @@ protected:
   static std::map<std::string, Logger*> Loggers;
 };
 
-class VTKH_API DataLogger
+class DataLogger
 {
 public:
   struct Block
@@ -73,24 +75,24 @@ protected:
   int Rank;
 };
 
-#ifdef VTKH_ENABLE_LOGGING
-#define VTKH_INFO(msg) vtkh::Logger::GetInstance("info")->GetStream()<<msg<<std::endl;
-#define VTKH_WARN(msg) vtkh::Logger::GetInstance("warning")->GetStream()<<msg<<std::endl;
-#define VTKH_ERROR(msg) vtkh::Logger::GetInstance("error")->GetStream()<<msg<<std::endl;
-#define VTKH_DATA_OPEN(key) vtkh::DataLogger::GetInstance()->OpenLogEntry(key);
-#define VTKH_DATA_CLOSE() vtkh::DataLogger::GetInstance()->CloseLogEntry();
-#define VTKH_DATA_ADD(key,value) vtkh::DataLogger::GetInstance()->AddLogData(key, value);
+#ifdef ENABLE_LOGGING
+#define LOGGING_INFO(msg) logging::Logger::GetInstance("info")->GetStream()<<msg<<std::endl;
+#define LOGGING_WARN(msg) logging::Logger::GetInstance("warning")->GetStream()<<msg<<std::endl;
+#define LOGGING_ERROR(msg) logging::Logger::GetInstance("error")->GetStream()<<msg<<std::endl;
+#define LOGGING_DATA_OPEN(key) logging::DataLogger::GetInstance()->OpenLogEntry(key);
+#define LOGGING_DATA_CLOSE() logging::DataLogger::GetInstance()->CloseLogEntry();
+#define LOGGING_DATA_ADD(key,value) logging::DataLogger::GetInstance()->AddLogData(key, value);
 
 #else
-#define VTKH_INFO(msg)
-#define VTKH_WARN(msg)
-#define VTKH_ERROR(msg)
-#define VTKH_DATA_ADD(key,value)
-#define VTKH_DATA_OPEN(key)
-#define VTKH_DATA_CLOSE()
+#define LOGGING_INFO(msg)
+#define LOGGING_WARN(msg)
+#define LOGGING_ERROR(msg)
+#define LOGGING_DATA_ADD(key,value)
+#define LOGGING_DATA_OPEN(key)
+#define LOGGING_DATA_CLOSE()
 #endif
 
 
-}; // namespace vtkh
+}; // namespace logging
 
-#endif //VTK_H_LOGGER_HPP
+#endif //LOGGER_HPP

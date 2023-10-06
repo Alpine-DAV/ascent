@@ -3,16 +3,18 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/logger_config.h.in"
-                "${CMAKE_CURRENT_BINARY_DIR}/logger_config.h")
+#configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/logger_config.h.in"
+#                "${CMAKE_CURRENT_BINARY_DIR}/logger_config.h")
 
 
 set(logger_headers
     Logger.hpp
+    Timer.hpp
   )
 
 set(logger_sources
     Logger.cpp
+    Timer.cpp
   )
 
 
