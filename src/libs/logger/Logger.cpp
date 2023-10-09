@@ -18,15 +18,15 @@ Logger::Logger(const std::string& name)
 #endif
   logName<<".log";
 
-  Stream.open(logName.str().c_str(), std::ofstream::out);
-  if(!Stream.is_open())
+  m_stream.open(logName.str().c_str(), std::ofstream::out);
+  if(!m_stream.is_open())
     std::cout<<"Warning: could not open the log file\n";
 }
 
 Logger::~Logger()
 {
-  if (Stream.is_open())
-    Stream.close();
+  if (m_stream.is_open())
+    m_stream.close();
 }
 
 Logger* Logger::GetInstance(const std::string& name)
@@ -41,24 +41,24 @@ void
 Logger::Write(const int level, const std::string &message, const char *file, int line)
 {
   if(level == 0)
-    Stream<<"<Info> \n";
+    m_stream<<"<Info> \n";
   else if (level == 1)
-    Stream<<"<Warning> \n";
+    m_stream<<"<Warning> \n";
   else if (level == 2)
-    Stream<<"<Error> \n";
-  Stream<<"  message: "<<message<<" \n  file: "<<file<<" \n  line: "<<line<<"\n";
+    m_stream<<"<Error> \n";
+  m_stream<<"  message: "<<message<<" \n  file: "<<file<<" \n  line: "<<line<<"\n";
 }
 
 // ---------------------------------------------------------------------------------------
 
-DataLogger DataLogger::Instance;
+DataLogger DataLogger::m_instance;
 
 DataLogger::DataLogger()
-  : AtBlockStart(true),
-    Rank(0)
+  : m_at_block_start(true),
+    m_rank(0)
 {
-  Blocks.push(Block(0));
-  KeyCounters.push(std::map<std::string,int>());
+  m_blocks.push(Block(0));
+  m_key_counters.push(std::map<std::string,int>());
 }
 
 DataLogger::~DataLogger()
@@ -66,32 +66,32 @@ DataLogger::~DataLogger()
 #ifdef ENABLE_LOGGING
   WriteLog();
 #endif
-  Stream.str("");
+  m_stream.str("");
 }
 
 DataLogger*
 DataLogger::GetInstance()
 {
-  return &DataLogger::Instance;
+  return &DataLogger::m_instance;
 }
 
 DataLogger::Block&
 DataLogger::CurrentBlock()
 {
-  return Blocks.top();
+  return m_blocks.top();
 }
 
 void
 DataLogger::SetRank(int rank)
 {
-  Rank = rank;
+  m_rank = rank;
 }
 
 void
 DataLogger::WriteIndent()
 {
-  int indent = this->CurrentBlock().Indent;
-  bool listStart = this->CurrentBlock().AtListItemStart;
+  int indent = this->CurrentBlock().m_indent;
+  bool listStart = this->CurrentBlock().m_at_list_item_start;
 
   if (listStart)
   {
@@ -100,13 +100,13 @@ DataLogger::WriteIndent()
 
   for (int i = 0; i < indent; ++i)
   {
-    Stream << "  ";
+    m_stream << "  ";
   }
 
   if (listStart)
   {
-    Stream << "- ";
-    CurrentBlock().AtListItemStart = false;
+    m_stream << "- ";
+    CurrentBlock().m_at_list_item_start = false;
   }
 }
 
@@ -122,7 +122,7 @@ DataLogger::WriteLog()
   }
 
   log_name<<log_prefix<<"_";
-  log_name<<std::setfill('0')<<std::setw(6)<<Rank;
+  log_name<<std::setfill('0')<<std::setw(6)<<m_rank;
   log_name<<".yaml";
 
   std::ofstream stream;
@@ -133,7 +133,7 @@ DataLogger::WriteLog()
     std::cerr<<"Warning: could not open the logger data file\n";
     return;
   }
-  stream<<Stream.str();
+  stream<<m_stream.str();
   stream.close();
 }
 
@@ -142,34 +142,34 @@ DataLogger::OpenLogEntry(const std::string &entryName)
 {
     WriteIndent();
     // ensure that we have unique keys for valid yaml
-    int key_count = KeyCounters.top()[entryName]++;
+    int key_count = m_key_counters.top()[entryName]++;
 
     if(key_count != 0)
     {
-      Stream<<entryName<<"_"<<key_count<<":"<<"\n";
+      m_stream<<entryName<<"_"<<key_count<<":"<<"\n";
     }
     else
     {
-      Stream<<entryName<<":"<<"\n";
+      m_stream<<entryName<<":"<<"\n";
     }
 
-    int indent = this->CurrentBlock().Indent;
-    Blocks.push(Block(indent+1));
-    KeyCounters.push(std::map<std::string,int>());
+    int indent = this->CurrentBlock().m_indent;
+    m_blocks.push(Block(indent+1));
+    m_key_counters.push(std::map<std::string,int>());
 
     Timer timer;
-    Timers.push(timer);
-    AtBlockStart = true;
+    m_timers.push(timer);
+    m_at_block_start = true;
 
 }
 void
 DataLogger::CloseLogEntry()
 {
   WriteIndent();
-  this->Stream<<"time : "<<Timers.top().elapsed()<<"\n";
-  Timers.pop();
-  Blocks.pop();
-  KeyCounters.pop();
-  AtBlockStart = false;
+  this->m_stream<<"time : "<<m_timers.top().elapsed()<<"\n";
+  m_timers.pop();
+  m_blocks.pop();
+  m_key_counters.pop();
+  m_at_block_start = false;
 }
 };

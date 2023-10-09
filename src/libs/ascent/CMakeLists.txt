@@ -364,6 +364,7 @@ endif()
 ##################
 set(ascent_thirdparty_libs
     conduit::conduit
+    logger
     ascent_flow
     ascent_lodepng
     ascent_png_utils)

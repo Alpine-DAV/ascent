@@ -44,13 +44,14 @@
 #include <expressions/ascent_derived_jit.hpp>
 #include <ascent_transmogrifier.hpp>
 #include <ascent_data_object.hpp>
-#include <ascent_data_logger.hpp>
+//#include <ascent_data_logger.hpp>
+#include <logger/Logger.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <vtkm/cont/Error.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
-#include <vtkh/Logger.hpp>
+//#include <vtkh/Logger.hpp>
 
 #ifdef VTKM_CUDA
 #include <vtkm/cont/cuda/ChooseCudaDevice.h>
@@ -150,7 +151,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     MPI_Comm_rank(comm,&m_rank);
     InfoHandler::m_rank = m_rank;
-    DataLogger::instance()->rank(m_rank);
+    logging::DataLogger::GetInstance()->SetRank(m_rank);
 #else  // non mpi version
     if(options.has_child("mpi_comm"))
     {
@@ -1855,19 +1856,17 @@ AscentRuntime::Execute(const conduit::Node &actions)
           }
           std::stringstream ss;
           ss<<"cycle_"<<cycle;
-          vtkh::DataLogger::GetInstance()->OpenLogEntry(ss.str());
-          vtkh::DataLogger::GetInstance()->AddLogData("cycle", cycle);
+          logging::DataLogger::GetInstance()->OpenLogEntry(ss.str());
+          logging::DataLogger::GetInstance()->AddLogData("cycle", cycle);
         }
 #endif
         // now execute the data flow graph
         m_workspace.execute();
 
-#if defined(ASCENT_VTKM_ENABLED)
         if(log_timings)
         {
-          vtkh::DataLogger::GetInstance()->CloseLogEntry();
+          logging::DataLogger::GetInstance()->CloseLogEntry();
         }
-#endif
         if(m_save_session_actions.number_of_children() > 0)
         {
           SaveSession();

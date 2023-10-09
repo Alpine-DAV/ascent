@@ -20,12 +20,12 @@ public:
 
   ~Logger();
   void Write(const int level, const std::string &message, const char *file, int line);
-  std::ofstream & GetStream() { return Stream; }
+  std::ofstream & GetStream() { return m_stream; }
 
 protected:
   Logger(const std::string& name);
   Logger(Logger const &);
-  std::ofstream Stream;
+  std::ofstream m_stream;
 
   static std::map<std::string, Logger*> Loggers;
 };
@@ -35,12 +35,12 @@ class DataLogger
 public:
   struct Block
   {
-    int Indent;
-    bool IsList;
-    bool AtListItemStart;
+    int m_indent;
+    bool m_is_list;
+    bool m_at_list_item_start;
 
     Block(int indent)
-      : Indent(indent), IsList(false), AtListItemStart(false)
+      : m_indent(indent), m_is_list(false), m_at_list_item_start(false)
     {  }
   };
 
@@ -54,11 +54,11 @@ public:
   void AddLogData(const std::string key, const T &value)
   {
     WriteIndent();
-    this->Stream << key << ": " << value <<"\n";
-    AtBlockStart = false;
+    this->m_stream << key << ": " << value <<"\n";
+    m_at_block_start = false;
   }
 
-  std::stringstream& GetStream() { return Stream; }
+  std::stringstream& GetStream() { return m_stream; }
 protected:
   DataLogger();
   DataLogger(DataLogger const &);
@@ -66,13 +66,13 @@ protected:
   void WriteLog();
   void WriteIndent();
   DataLogger::Block& CurrentBlock();
-  std::stringstream Stream;
-  static class DataLogger Instance;
-  std::stack<Block> Blocks;
-  std::stack<Timer> Timers;
-  std::stack<std::map<std::string,int>> KeyCounters;
-  bool AtBlockStart;
-  int Rank;
+  std::stringstream m_stream;
+  static class DataLogger m_instance;
+  std::stack<Block> m_blocks;
+  std::stack<Timer> m_timers;
+  std::stack<std::map<std::string,int>> m_key_counters;
+  bool m_at_block_start;
+  int m_rank;
 };
 
 #ifdef ENABLE_LOGGING
