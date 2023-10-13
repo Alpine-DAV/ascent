@@ -65,6 +65,7 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Streamline.hpp>
+#include <vtkh/filters/WarpXStreamline.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/Triangulate.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
@@ -3925,6 +3926,159 @@ VTKHStreamline::declare_interface(Node &i)
 VTKHStreamline::~VTKHStreamline()
 {
 // empty
+}
+
+//-----------------------------------------------------------------------------
+
+VTKHWarpXStreamline::VTKHWarpXStreamline()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHWarpXStreamline::~VTKHWarpXStreamline()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHWarpXStreamline::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_warpx_streamline";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHWarpXStreamline::verify_params(const conduit::Node &params,
+                                     conduit::Node &info)
+{
+    info.reset();
+    bool res = check_string("field", params, info, true);
+    bool res &= check_numeric("num_steps", params, info, true, true);
+    res &= check_numeric("step_size", params, info, true, true);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("num_steps");
+    valid_paths.push_back("step_size");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+//-----------------------------------------------------------------------------
+void
+VTKHWarpXStreamline::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_warpx_streamline input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+    if(!collection->has_field("Momentum"))
+    {
+      bool throw_error = false;
+      detail::field_error("Momentum", this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+    if(!collection->has_field("Mass"))
+    {
+      bool throw_error = false;
+      detail::field_error("Mass", this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+    if(!collection->has_field("Charge"))
+    {
+      bool throw_error = false;
+      detail::field_error("Charge", this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+    if(!collection->has_field("Weighting"))
+    {
+      bool throw_error = false;
+      detail::field_error("Weighting", this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+    if(!collection->has_field("E"))
+    {
+      bool throw_error = false;
+      detail::field_error("E", this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+    if(!collection->has_field("B"))
+    {
+      bool throw_error = false;
+      detail::field_error("B", this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    std::string topo_name = collection->field_topology(field_name);
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+
+    int numSteps = get_int32(params()["num_steps"], data_object);
+    float stepSize = get_float32(params()["step_size"], data_object);
+
+
+    vtkh::DataSet *output = nullptr;
+    vtkh::WarpXStreamline sl;
+    sl.SetStepSize(stepSize);
+    sl.SetNumberOfSteps(numSteps);
+    sl.SetField(field_name);
+    sl.SetInput(&data);
+    sl.Update();
+    output = sl.GetOutput();
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
