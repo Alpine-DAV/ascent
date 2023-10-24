@@ -3958,7 +3958,7 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
 {
     info.reset();
     bool res = check_string("field", params, info, true);
-    bool res &= check_numeric("num_steps", params, info, true, true);
+    res &= check_numeric("num_steps", params, info, true, true);
     res &= check_numeric("step_size", params, info, true, true);
 
     std::vector<std::string> valid_paths;

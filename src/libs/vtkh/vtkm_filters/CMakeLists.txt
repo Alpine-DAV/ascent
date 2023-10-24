@@ -21,7 +21,6 @@ set(vtkm_filters_headers
     vtkmTriangulate.hpp
     vtkmThreshold.hpp
     vtkmVectorMagnitude.hpp
-    vtkmWarpXStreamline.hpp
     GradientParameters.hpp
     )
 
@@ -44,7 +43,6 @@ set(vtkm_filters_sources
     vtkmTriangulate.cpp
     vtkmThreshold.cpp
     vtkmVectorMagnitude.cpp
-    vtkmWarpXStreamline.cpp
     )
 
 # these are the only headers we need to install

@@ -22,7 +22,8 @@ void GenerateChargedParticles(const vtkm::cont::ArrayHandle<vtkm::Vec3f>& pos,
                               const vtkm::cont::ArrayHandle<vtkm::Float64>& mass,
                               const vtkm::cont::ArrayHandle<vtkm::Float64>& charge,
                               const vtkm::cont::ArrayHandle<vtkm::Float64>& weight,
-                              vtkm::cont::ArrayHandle<vtkm::ChargedParticle>& seeds)
+                              vtkm::cont::ArrayHandle<vtkm::ChargedParticle>& seeds,
+			      const int id_offset)
 {
   auto pPortal = pos.ReadPortal();
   auto uPortal = mom.ReadPortal();
@@ -39,7 +40,7 @@ void GenerateChargedParticles(const vtkm::cont::ArrayHandle<vtkm::Vec3f>& pos,
   {
     vtkm::ChargedParticle electron(
       pPortal.Get(i), i, mPortal.Get(i), qPortal.Get(i), wPortal.Get(i), uPortal.Get(i));
-    sPortal.Set(i, electron);
+    sPortal.Set(i + id_offset, electron);
   }
 }
 
@@ -83,13 +84,14 @@ void WarpXStreamline::DoExecute()
     throw Error("Domain does not contain specified vector field for WarpXStreamline analysis.");
   }
 
-  vtkm::cont::DataSet inputs;
+  vtkm::cont::PartitionedDataSet inputs;
 
   vtkm::cont::ArrayHandle<vtkm::ChargedParticle> seeds;
   //Create charged particles for all domains with the vel and particle fields.
   if (this->m_input->FieldExists(m_field_name))
   {
     const int num_domains = this->m_input->GetNumberOfDomains();
+    int id_offset = 0;
     for (int i = 0; i < num_domains; i++)
     {
       vtkm::Id domain_id;
@@ -104,13 +106,20 @@ void WarpXStreamline::DoExecute()
         dom.GetField("Mass").GetData().AsArrayHandle(mass);
         dom.GetField("Charge").GetData().AsArrayHandle(charge);
         dom.GetField("Weighting").GetData().AsArrayHandle(w);
-	//Todo: global unique ids? 
-	//is this zero copy? 
-        detail::GenerateChargedParticle(pos,mom,mass,charge,w,seeds);
-//todo:: how to handle parallel? 
-//call vtkm WarpxStreamline on each vtkm dataset dom
-//collect output
-//or use a partitioned data set composed of each vtkm dataset dom at the end? 
+        detail::GenerateChargedParticle(pos,mom,mass,charge,w,seeds, id_offset);
+	//Actual: local unique ids
+	//Question: do we global unique ids? 
+	id_offset += pos.GetNumberOfValues();
+      }
+      if(dom.HasField(m_field_name))
+      {
+        using vectorField_d = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>>;
+        using vectorField_f = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 3>>;
+        auto field = dom.GetField(m_field_name).GetData();
+        if(field.IsType<vectorField_d>() && !field.IsType<vectorField_f>())
+        {
+          inputs.AppendPartition(dom);
+        }
       }
     }
   }
@@ -137,11 +146,10 @@ void WarpXStreamline::DoExecute()
   //Everything is valid. Call the VTKm filter.
 
   vtkm::filter::flow::WarpXStreamline warpxStreamlineFilter;
-  auto seedsAH = vtkm::cont::make_ArrayHandle(m_seeds, vtkm::CopyFlag::Off);
 
   warpxStreamlineFilter.SetStepSize(m_step_size);
   warpxStreamlineFilter.SetActiveField(m_field_name);
-  warpxStreamlineFilter.SetSeeds(seedsAH);
+  warpxStreamlineFilter.SetSeeds(seeds);
   warpxStreamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = warpxStreamlineFilter.Execute(inputs);
 
