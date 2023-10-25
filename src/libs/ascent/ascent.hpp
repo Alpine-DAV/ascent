@@ -91,6 +91,9 @@ void        ASCENT_API execute_callback(std::string callback_name,
 //-----------------------------------------------------------------------------
 bool        ASCENT_API execute_callback(std::string callback_name);
 
+//-----------------------------------------------------------------------------
+void        ASCENT_API reset_callbacks();
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
