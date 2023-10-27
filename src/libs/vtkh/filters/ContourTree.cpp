@@ -3,13 +3,15 @@
 #include <vtkh/filters/Recenter.hpp>
 
 // vtkm includes
-#include <vtkm/cont/DeviceAdapter.h>
-#include <vtkm/cont/Storage.h>
-#include <vtkm/internal/Configure.h>
+#include <vtkm/filter/scalar_topology/ContourTreeUniformDistributed.h>
+#include <vtkm/filter/scalar_topology/DistributedBranchDecompositionFilter.h>
+#include <vtkm/filter/scalar_topology/SelectTopVolumeContoursFilter.h>
+#include <vtkm/filter/scalar_topology/worklet/branch_decomposition/HierarchicalVolumetricBranchDecomposer.h>
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/PrintVectors.h>
 #include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/ProcessContourTree.h>
-#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
-#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/PiecewiseLinearFunction.h>
+#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/Types.h>
+#include <vtkm/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h>
+#include <vtkm/filter/scalar_topology/worklet/contourtree_distributed/TreeCompiler.h>
 
 #include <vtkh/filters/GhostStripper.hpp> 
 
@@ -17,6 +19,69 @@
 
 namespace caugmented_ns = vtkm::worklet::contourtree_augmented;
 
+#ifdef DEBUG
+void SaveToBDEM(const vtkm::cont::DataSet& ds,
+                const std::string& fieldname,
+                const std::string& filename)
+{
+  std::cout << "Saving block to " << filename << std::endl;
+  vtkm::Id3 blockSize;
+  vtkm::Id3 globalSize;
+  vtkm::Id3 pointIndexStart;
+  vtkm::cont::CastAndCall(ds.GetCellSet(),
+                          vtkm::worklet::contourtree_augmented::GetLocalAndGlobalPointDimensions(),
+                          blockSize,
+                          globalSize,
+                          pointIndexStart);
+  std::ofstream os(filename, std::ios::binary);
+  os << "#GLOBAL_EXTENTS " << globalSize[1] << " " << globalSize[0];
+  if (globalSize[2] > 1)
+  {
+    os << " " << globalSize[2];
+  }
+  os << std::endl;
+  os << "#OFFSET " << pointIndexStart[1] << " " << pointIndexStart[0];
+  if (globalSize[2] > 1)
+  {
+    os << " " << pointIndexStart[2];
+  }
+  os << std::endl;
+  os << blockSize[1] << " " << blockSize[0];
+  if (globalSize[2] > 1)
+  {
+    os << " " << blockSize[2];
+  }
+  os << std::endl;
+  try
+  {
+    auto dataArray =
+      ds.GetField(fieldname).GetData().AsArrayHandle<vtkm::cont::ArrayHandleBasic<vtkm::Float32>>();
+    os.write(reinterpret_cast<const char*>(dataArray.GetReadPointer()),
+             dataArray.GetNumberOfValues() * sizeof(vtkm::Float32));
+  }
+  catch (vtkm::cont::ErrorBadType& e)
+  {
+    std::cerr << "Error: Cannot get as ArrayHandleBasic<vtkm::Float32>: " << e.GetMessage()
+              << std::endl;
+  }
+}
+
+void SaveToBDEM(const vtkm::cont::PartitionedDataSet& pds,
+                const std::string& fieldname,
+                const std::string& basefilename,
+                int rank,
+                int blocksPerRank)
+{
+  for (vtkm::Id i = 0; i < pds.GetNumberOfPartitions(); ++i)
+  {
+    std::string filename = basefilename + '_' + std::to_string(rank*blocksPerRank+i) + ".bdem";
+    std::cout << "Saving partition " << i << " to " << filename << std::endl;
+    SaveToBDEM(pds.GetPartition(i), fieldname, filename);
+  }
+}
+#endif
+
+#ifdef VTKH_PARALLEL
 static void ShiftLogicalOriginToZero(vtkm::cont::PartitionedDataSet& pds)
 {
   // Shift the logical origin (minimum of LocalPointIndexStart) to zero
@@ -118,7 +183,6 @@ static void ComputeGlobalPointSize(vtkm::cont::PartitionedDataSet& pds)
   }
 }
 
-#ifdef VTKH_PARALLEL
 #include <mpi.h>
 
 // This is from VTK-m diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
@@ -198,14 +262,52 @@ void ContourTree::PostExecute()
   Filter::PostExecute();
 }
 
+struct TopVolumeBranchSaddleIsoValueFunctor
+{
+  vtkm::Id nSelectedBranches;
+  std::vector<vtkm::Float64> dbranches;
+
+  public:
+
+  TopVolumeBranchSaddleIsoValueFunctor(vtkm::Id nSelectedBranches) : nSelectedBranches(nSelectedBranches) {
+  }
+  void operator()(const vtkm::cont::ArrayHandle<vtkm::Float32> &arr)
+  {
+     auto topVolBranchSaddleIsoValue = arr.ReadPortal();
+
+     for (vtkm::Id branch = 0; branch < nSelectedBranches; ++branch) {
+          dbranches.push_back(topVolBranchSaddleIsoValue.Get(branch));
+     }
+  }
+
+  void operator()(const vtkm::cont::ArrayHandle<vtkm::Float64> &arr)
+  {
+     auto topVolBranchSaddleIsoValue = arr.ReadPortal();
+
+     for (vtkm::Id branch = 0; branch < nSelectedBranches; ++branch) {
+          dbranches.push_back(topVolBranchSaddleIsoValue.Get(branch));
+     }
+  }
+  template <typename T>
+  void operator()(const T&)
+  {
+    throw vtkm::cont::ErrorBadValue("TopVolumeBranchSaddleIsoValueFunctor Expected Float32 or Float64!");
+  }
+
+  vtkm::Float64 Get(vtkm::Id branch)
+  {
+     return dbranches[branch];
+  }
+};
+
 struct AnalyzerFunctor
 {
-  vtkm::filter::scalar_topology::ContourTreeAugmented& filter;
+  vtkm::filter::scalar_topology::ContourTreeAugmented* filter;
   vtkh::ContourTree& contourTree;
   bool dataFieldIsSorted;
 
   public:
-  AnalyzerFunctor(vtkh::ContourTree& contourTree, vtkm::filter::scalar_topology::ContourTreeAugmented& filter): contourTree(contourTree), filter(filter)  {
+  AnalyzerFunctor(vtkh::ContourTree& contourTree, vtkm::filter::scalar_topology::ContourTreeAugmented* filter): contourTree(contourTree), filter(filter)  {
   }
 
   void SetDataFieldIsSorted(bool dataFieldIsSorted) {
@@ -214,12 +316,12 @@ struct AnalyzerFunctor
 
   void operator()(const vtkm::cont::ArrayHandle<vtkm::Float32> &arr) const
   {
-     contourTree.analysis<vtkm::Float32>(filter, dataFieldIsSorted, arr);
+     contourTree.analysis<vtkm::Float32>(*filter, dataFieldIsSorted, arr);
   }
 
   void operator()(const vtkm::cont::ArrayHandle<vtkm::Float64> &arr) const
   {
-     contourTree.analysis<vtkm::Float64>(filter, dataFieldIsSorted, arr);
+     contourTree.analysis<vtkm::Float64>(*filter, dataFieldIsSorted, arr);
   }
 
   template <typename T>
@@ -343,10 +445,77 @@ template<typename DataValueType> void ContourTree::analysis(vtkm::filter::scalar
   }
 }
 
+void ContourTree::distributed_analysis(const vtkm::cont::PartitionedDataSet& result, int mpi_rank) {
+  vtkm::filter::scalar_topology::DistributedBranchDecompositionFilter bd_filter;
+  auto bd_result = bd_filter.Execute(result);
+
+#if 0
+  for (vtkm::Id ds_no = 0; ds_no < result.GetNumberOfPartitions(); ++ds_no)
+  {
+    auto ds = bd_result.GetPartition(ds_no);
+    std::string branchDecompositionFileName = std::string("BranchDecomposition_Rank_") +
+    std::to_string(static_cast<int>(mpi_rank)) + std::string("_Block_") +
+    std::to_string(static_cast<int>(ds_no)) + std::string(".txt");
+
+    std::ofstream treeStream(branchDecompositionFileName.c_str());
+    treeStream
+      << vtkm::filter::scalar_topology::HierarchicalVolumetricBranchDecomposer::PrintBranches(ds);
+  }
+#endif
+
+  vtkm::filter::scalar_topology::SelectTopVolumeContoursFilter tp_filter;
+  vtkm::Id numBranches = m_levels;
+
+  tp_filter.SetSavedBranches(numBranches);
+  bd_result = tp_filter.Execute(bd_result);
+
+  for (vtkm::Id ds_no = 0; ds_no < result.GetNumberOfPartitions(); ++ds_no)
+  {
+    auto ds = bd_result.GetPartition(ds_no);
+    auto topVolBranchGRId = ds.GetField("TopVolumeBranchGlobalRegularIds")
+                              .GetData()
+                              .AsArrayHandle<vtkm::cont::ArrayHandle<vtkm::Id>>()
+                              .ReadPortal();
+
+    auto topVolBranchSaddleEpsilon = ds.GetField("TopVolumeBranchSaddleEpsilon")
+                                       .GetData()
+                                       .AsArrayHandle<vtkm::cont::ArrayHandle<vtkm::Id>>()
+                                       .ReadPortal();
+
+    vtkm::Id nSelectedBranches = topVolBranchGRId.GetNumberOfValues();
+
+    TopVolumeBranchSaddleIsoValueFunctor iso_functor(nSelectedBranches);
+
+    vtkm::cont::CastAndCall(ds.GetField("TopVolumeBranchSaddleIsoValue").GetData(), iso_functor);
+
+
+    vtkm::Float32 eps = 0.00001;
+
+    for (vtkm::Id branch = 0; branch < nSelectedBranches; ++branch)
+    {
+      m_iso_values[branch] = iso_functor.Get(branch) + (eps * topVolBranchSaddleEpsilon.Get(branch));
+    }
+
+    break;
+  }
+
+  std::sort(m_iso_values.begin(), m_iso_values.end());
+}
+
 void ContourTree::DoExecute()
+{ 
 {
+#ifdef VTKH_PARALLEL
+  int mpi_rank = 0;
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+  vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+
+  MPI_Comm_rank(mpi_comm, &mpi_rank);
+#endif
+}
+
   vtkh::DataSet *old_input = this->m_input;
-  const int before_num_domains = this->m_input->GetNumberOfDomains();
 
   // make sure we have a node-centered field
   bool valid_field = false;
@@ -388,7 +557,6 @@ void ContourTree::DoExecute()
   this->m_output = new DataSet();
 
   const int num_domains = this->m_input->GetNumberOfDomains();
-  assert(num_domains == 1);
 
 #ifndef VTKH_PARALLEL
   vtkm::cont::DataSet inDataSet;
@@ -409,12 +577,17 @@ void ContourTree::DoExecute()
 
   vtkm::cont::PartitionedDataSet inDataSet;
 
-  vtkm::Id domain_id;
-  vtkm::cont::DataSet dom;
+  for (int i = 0; i < num_domains; ++i)
+  {
+     vtkm::Id domain_id;
+     vtkm::cont::DataSet dom;
 
-  this->m_input->GetDomain(0, dom, domain_id);
-  inDataSet.AppendPartition(dom);
+     this->m_input->GetDomain(i, dom, domain_id);
+     inDataSet.AppendPartition(dom);
+     this->m_output->AddDomain(dom, domain_id);
+  }
 
+#ifdef DEBUG
   if( mpi_size != 1 )
   {
     std::ostringstream ostr;
@@ -422,10 +595,12 @@ void ContourTree::DoExecute()
        << " coord system range: " << dom.GetCoordinateSystem(0).GetRange() << std::endl;
     std::cout << ostr.str();
   }
-#ifdef DEBUG
 #endif
 #endif // VTKH_PARALLEL
 
+  vtkm::filter::Filter *filterField;
+
+#ifndef VTKH_PARALLEL
   bool useMarchingCubes = false;
   // Compute the fully augmented contour tree.
   // This should always be true for now in order for the isovalue selection to work.
@@ -433,44 +608,54 @@ void ContourTree::DoExecute()
 
   //Convert the mesh of values into contour tree, pairs of vertex ids
   vtkm::filter::scalar_topology::ContourTreeAugmented filter(useMarchingCubes, computeRegularStructure);
+#else // VTKH_PARALLEL
+  // TODO SET VTKM to do vtkm::cont::LogLovel::Info
+  // vtkm::filter::scalar_topology::ContourTreeUniformDistributed filter(vtkm::cont::LogLevel::Info, vtkm::cont::LogLevel::Info);
+  vtkm::filter::scalar_topology::ContourTreeUniformDistributed filter;
+  vtkm::filter::scalar_topology::ContourTreeAugmented aug_filter(false, true);
 
-  filter.SetActiveField(m_field_name);
-
-#ifdef VTKH_PARALLEL
+  if (mpi_size == 1) {
+    filterField = &aug_filter;
+  } else {
+    filter.SetUseBoundaryExtremaOnly(true);
+    filter.SetUseMarchingCubes(false);
+    filter.SetAugmentHierarchicalTree(true);
     ShiftLogicalOriginToZero(inDataSet);
     ComputeGlobalPointSize(inDataSet);
+    filterField = &filter;
+  }
+
 #endif // VTKH_PARALLEL
 
-  auto result = filter.Execute(inDataSet);
+  filterField->SetActiveField(m_field_name);
+
+#ifdef DEBUG
+  SaveToBDEM(inDataSet, m_field_name, "debug-ascent", mpi_rank, num_domains);
+#endif
+
+  auto result = filterField->Execute(inDataSet);
 
   m_iso_values.resize(m_levels);
 
-  if (mpi_rank == 0) {
-    AnalyzerFunctor analyzerFunctor(*this, filter);
-
 #ifndef VTKH_PARALLEL
+  if (mpi_rank == 0) {
+    AnalyzerFunctor analyzerFunctor(*this, &filter);
     analyzerFunctor.SetDataFieldIsSorted(false);
     vtkm::cont::CastAndCall(inDataSet.GetField(m_field_name).GetData(), analyzerFunctor);
-#else
-    if(mpi_size == 1)
-    {
-      analyzerFunctor.SetDataFieldIsSorted(false);
-      vtkm::cont::CastAndCall(inDataSet.GetPartitions()[0].GetField(m_field_name).GetData(), analyzerFunctor);
-    } else {
-      analyzerFunctor.SetDataFieldIsSorted(true);
-
-      /*
-      if( result.GetPartitions()[0].GetNumberOfFields() > 1 ) {
-        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("values").GetData(), analyzerFunctor);
-      } else {
-        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
-      }*/
-
-      // TODO TO BE REVISITED. Tested with: srun -n 8 ./t_vtk-h_contour_tree_par 
-      vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("resultData").GetData(), analyzerFunctor);
-    }
-#endif // VTKH_PARALLEL
   } // mpi_rank == 0
+#else
+  if (mpi_size > 1) 
+  { // BranchDecomposition
+    distributed_analysis(result, mpi_rank);
+  } 
+  else
+  {
+    AnalyzerFunctor analyzerFunctor(*this, (vtkm::filter::scalar_topology::ContourTreeAugmented *) filterField);
+
+    analyzerFunctor.SetDataFieldIsSorted(false);
+    vtkm::cont::CastAndCall(inDataSet.GetPartitions()[0].GetField(m_field_name).GetData(), analyzerFunctor);
+  }
+#endif // VTKH_PARALLEL
 
 #ifdef VTKH_PARALLEL
   MPI_Bcast(&m_iso_values[0], m_levels, MPI_DOUBLE, 0, mpi_comm);

@@ -27,6 +27,7 @@ protected:
 private:
   friend class AnalyzerFunctor;
   template<typename DataValueType> void analysis(vtkm::filter::scalar_topology::ContourTreeAugmented& filter, bool dataFieldIsSorted, const vtkm::cont::UnknownArrayHandle&  arr);
+  void distributed_analysis(const vtkm::cont::PartitionedDataSet& result, int rank);
 
   std::string m_field_name;
   int m_levels;
