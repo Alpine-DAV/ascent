@@ -229,21 +229,21 @@ exec_dispatch_mcarray_component(const conduit::Node &node,
     SerialExec exec;
     res = exec_dispatch_mcarray_component(node, component, func, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED) 
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     res = exec_dispatch_mcarray_component(node, component, func, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED)
+#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     res = exec_dispatch_mcarray_component(node, component, func, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -468,14 +468,14 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
     exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED)
+#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -511,14 +511,14 @@ exec_dispatch_array(Array<T> &array, Function &func)
     func(array, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED)
+#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     func(array, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -553,14 +553,14 @@ exec_dispatch_function(Function &func)
     func(exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED)
+#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     func(exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
