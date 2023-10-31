@@ -858,6 +858,10 @@ about(conduit::Node &n)
 
 }
 
+// Callback maps
+static std::map<std::string, void (*)(conduit::Node &, conduit::Node &)> m_void_callback_map;
+static std::map<std::string, bool (*)(void)> m_bool_callback_map;
+
 //-----------------------------------------------------------------------------
 void
 register_callback(const std::string &callback_name,

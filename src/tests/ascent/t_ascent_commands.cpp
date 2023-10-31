@@ -156,15 +156,6 @@ TEST(ascent_commands, direct_void_callback_invocation)
     // Register callbacks
     ascent::register_callback("void_callback_1", void_callback_1);
 
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    Node ascent_opts;
-    // default is now ascent
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-
     Node params;
     Node output;
     ascent::execute_callback("void_callback_1", params, output);
@@ -189,12 +180,6 @@ TEST(ascent_commands, direct_void_callback_invocation)
         has_output = output["param_was_passed"].to_uint8();
     }
     EXPECT_TRUE(has_output);
-
-    Node actions;
-    std::string msg = "An example of invoking void callbacks directly";
-    ASCENT_ACTIONS_DUMP(actions, std::string("direct_void_callback_invocation"), msg);
-
-    ascent.close();
 }
 
 //-----------------------------------------------------------------------------
