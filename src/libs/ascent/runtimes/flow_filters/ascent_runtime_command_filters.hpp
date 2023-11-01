@@ -4,27 +4,18 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent.hpp
+/// file: ascent_runtime_command_filters.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_HPP
-#define ASCENT_HPP
+#ifndef ASCENT_RUNTIME_COMMAND_FILTERS
+#define ASCENT_RUNTIME_COMMAND_FILTERS
 
+#include <ascent.hpp>
 
-#include <ascent_config.h>
-#include <ascent_exports.h>
-
-
-#include <ascent_logging.hpp>
-#include <ascent_block_timer.hpp>
-
-#include <conduit.hpp>
-#include <conduit_blueprint.hpp>
-
+#include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -32,64 +23,51 @@
 namespace ascent
 {
 
-// Forward Declare the ascent::Runtime interface class.
-class Runtime;
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
+{
 
 //-----------------------------------------------------------------------------
-/// Ascent Interface
+// -- begin ascent::runtime::filters --
 //-----------------------------------------------------------------------------
-class ASCENT_API Ascent
+namespace filters
+{
+
+//-----------------------------------------------------------------------------
+///
+/// Filters Related to Blueprint
+///
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+class ASCENT_API Command : public ::flow::Filter
 {
 public:
-           Ascent();
-          ~Ascent();
+    Command();
+    ~Command();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 
-    void             open(); // open with default options
-    void             open(const conduit::Node &options);
-    void             publish(const conduit::Node &data);
-    void             execute(const conduit::Node &actions);
-    void             info(conduit::Node &info_out);
-    conduit::Node   &info();
-    void             close();
-
-private:
-    
-    void           set_status(const std::string &msg);
-    void           set_status(const std::string &msg,
-                              const std::string &details);
-    Runtime       *m_runtime;
-    bool           m_verbose_msgs;
-    bool           m_forward_exceptions;
-    std::string    m_actions_file;
-    conduit::Node  m_options;
-    conduit::Node  m_status;
-    conduit::Node  m_info;
+    void static  execute_command_list(const std::vector<std::string> commands,
+                                      const std::string &command_type);
 };
 
+};
 //-----------------------------------------------------------------------------
-std::string ASCENT_API about();
+// -- end ascent::runtime::filters --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void        ASCENT_API about(conduit::Node &node);
+};
+//-----------------------------------------------------------------------------
+// -- end ascent::runtime --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void        ASCENT_API register_callback(const std::string &callback_name,
-                                         void (*callback_function)(conduit::Node &, conduit::Node &));
-//-----------------------------------------------------------------------------
-void        ASCENT_API register_callback(const std::string &callback_name,
-                                         bool (*callback_function)(void));
-
-//-----------------------------------------------------------------------------
-void        ASCENT_API execute_callback(std::string callback_name,
-                                        conduit::Node &params,
-                                        conduit::Node &output);
-
-//-----------------------------------------------------------------------------
-bool        ASCENT_API execute_callback(std::string callback_name);
-
-//-----------------------------------------------------------------------------
-void        ASCENT_API reset_callbacks();
-
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
@@ -99,4 +77,3 @@ void        ASCENT_API reset_callbacks();
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-

@@ -24,6 +24,14 @@ def about():
         raise ImportError('failed to import ascent_python, was Ascent built with serial support ENABLE_SERIAL=ON ?')
     return None
 
+def execute_callback(callback_name, params, output):
+    try:
+        from .ascent_python import execute_callback as ascent_execute_callback
+        return ascent_execute_callback(callback_name, params, output)
+    except ImportError:
+        raise ImportError('failed to import ascent_python, was Ascent built with serial support ENABLE_SERIAL=ON ?')
+    return None
+
 def Ascent():
     try:
         from .ascent_python import Ascent as ascent_obj

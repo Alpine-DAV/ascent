@@ -4,18 +4,21 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_trigger_filters.cpp
+/// file: ascent_runtime_command_filters.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_trigger_filters.hpp"
+#include "ascent_runtime_command_filters.hpp"
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
+
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#endif
 
 // conduit includes
 #include <conduit.hpp>
@@ -24,8 +27,8 @@
 //-----------------------------------------------------------------------------
 // ascent includes
 //-----------------------------------------------------------------------------
-#include <ascent_expression_eval.hpp>
 #include <ascent_data_object.hpp>
+#include <ascent_expression_eval.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_runtime_param_check.hpp>
 
@@ -55,159 +58,144 @@ namespace runtime
 namespace filters
 {
 
-
 //-----------------------------------------------------------------------------
-BasicTrigger::BasicTrigger()
+Command::Command()
 :Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-BasicTrigger::~BasicTrigger()
+Command::~Command()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-BasicTrigger::declare_interface(Node &i)
+Command::declare_interface(Node &i)
 {
-    i["type_name"]   = "basic_trigger";
+    i["type_name"] = "command";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
 bool
-BasicTrigger::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
+Command::verify_params(const conduit::Node &params,
+                       conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("condition",params, info, false);
 
-    res &= check_string("actions_file",params, info, false);
-    if(params.has_path("actions"))
+    bool has_callback = params.has_path("callback");
+    bool has_shell_command = params.has_path("shell_command");
+
+    bool res = false;
+    if (!has_callback && !has_shell_command)
     {
-      // basic actions node check
-      if(!params["actions"].dtype().is_list())
-      {
-        res = false;
-        info["errors"].append() = "trigger actions must be a node.";
-      }
+        info["errors"].append() = "There was no callback or shell command defined";
     }
-
-    bool has_actions  = params.has_path("actions");
-    bool has_actions_file  = params.has_path("actions_file");
-
-    if(has_actions && has_actions_file)
+    else if (has_callback && has_shell_command)
     {
-      res = false;
-      info["errors"].append() = "Both actions and actions file are "
-                                "present. Choose one or the other.";
+        info["errors"].append() = "Both a callback and shell command are "
+                                  "present. Choose one or the other.";
     }
-
-    if(!has_actions && !has_actions_file)
+    else if(has_callback && !params["callback"].dtype().is_string())
     {
-      res = false;
-      info["errors"].append() = "No trigger actions provided. Please "
-                                "specify either 'actions_file' or "
-                                "'actions'.";
+        info["errors"].append() = "Callbacks must be a string";  
+    }
+    else if(has_shell_command && !params["shell_command"].dtype().is_string())
+    {
+        info["errors"].append() = "Shell commands must be a string";  
+    }
+    else
+    {
+        res = true;
     }
 
     std::vector<std::string> valid_paths;
-    valid_paths.push_back("condition");
     valid_paths.push_back("callback");
-    valid_paths.push_back("actions_file");
-    valid_paths.push_back("actions");
+    valid_paths.push_back("shell_command");
+    valid_paths.push_back("mpi_behavior");
 
     std::vector<std::string> ignore_paths;
-    // don't go down the actions path
-    ignore_paths.push_back("actions");
 
-    std::string surprises = surprise_check(valid_paths, ignore_paths,params);
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
-    if(surprises != "")
+    if (surprises != "")
     {
-      res = false;
-      info["errors"].append() = surprises;
+        res = false;
+        info["errors"].append() = surprises;
     }
 
     return res;
 }
 
+//-----------------------------------------------------------------------------
+void
+Command::execute()
+{
+
+    if (!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("Command input must be a data object");
+    }
+
+    bool has_callback = params().has_path("callback");
+    std::string command_type = has_callback ? "callback" : "shell_command";
+
+    std::stringstream ss(params()[command_type].as_string());
+
+    std::vector<std::string> commands;
+    std::string command;
+    while(std::getline(ss, command, '\n'))
+    {
+        commands.push_back(command);
+    }
+
+    #ifdef ASCENT_MPI_ENABLED
+    bool has_mpi_behavior = params().has_path("mpi_behavior");
+    if (has_mpi_behavior)
+    {
+        std::string mpi_behavior = params()["mpi_behavior"].as_string();
+        if (mpi_behavior == "root")
+        {
+            int comm = Workspace::default_mpi_comm();
+            int rank;
+            MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
+            if (rank == 0)
+            {
+                execute_command_list(commands, command_type);
+            }
+            return;
+        }
+    }
+    #endif
+
+    execute_command_list(commands, command_type);
+}
 
 //-----------------------------------------------------------------------------
 void
-BasicTrigger::execute()
+Command::execute_command_list(const std::vector<std::string> commands,
+                              const std::string &command_type)
 {
-    if(!input(0).check_type<DataObject>())
+    if (command_type == "callback")
     {
-        ASCENT_ERROR("Trigger input must be a data object");
-    }
-
-    DataObject *data_object = input<DataObject>(0);
-    std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
-
-    bool use_actions_file = params().has_path("actions_file");
-
-    std::string actions_file = "";
-    conduit::Node actions;
-
-    if(use_actions_file)
+        conduit::Node params;
+        conduit::Node output;
+        for (int i = 0; i < commands.size(); i++)
+        {
+            ascent::execute_callback(commands.at(i), params, output);
+        }
+    } else if (command_type == "shell_command")
     {
-      actions_file = params()["actions_file"].as_string();
-    }
-    else
-    {
-      actions = params()["actions"];
-    }
-
-    conduit::Node res;
-
-    bool has_callback = params().has_path("callback");
-    bool has_condition = params().has_path("condition");
-
-    if(has_callback)
-    {
-      std::string callback_name = params()["callback"].as_string();
-      res["value"] = ascent::execute_callback(callback_name);
-      res["type"] = "bool";
-    }
-    else if(has_condition)
-    {
-      runtime::expressions::ExpressionEval eval(n_input.get());
-      std::string expression = params()["condition"].as_string();
-      res = eval.evaluate(expression);
-
-      if(res["type"].as_string() != "bool")
-      {
-        ASCENT_ERROR("result of expression '"<<expression<<"' is not an bool");
-      }
-    }
-    else
-    {
-      ASCENT_ERROR("must provide either a condition or a callback");
-    }
-
-    bool fire = res["value"].to_uint8() != 0;
-    if(fire)
-    {
-      Ascent ascent;
-
-      Node ascent_opts;
-      ascent_opts["runtime/type"] = "ascent";
-#ifdef ASCENT_MPI_ENABLED
-      ascent_opts["mpi_comm"] = Workspace::default_mpi_comm();
-#endif
-      ascent_opts["actions_file"] = actions_file;
-      ascent.open(ascent_opts);
-      ascent.publish(*n_input);
-      ascent.execute(actions);
-      ascent.close();
+        for (int i = 0; i < commands.size(); i++)
+        {
+            system(commands.at(i).c_str());
+        }
     }
 }
-
 
 //-----------------------------------------------------------------------------
 };
@@ -215,21 +203,14 @@ BasicTrigger::execute()
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-
