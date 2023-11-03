@@ -8,6 +8,6 @@ export TAG_BASE=alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel-tpls
 
 date
 
-python ../build_and_tag.py ${TAG_BASE}
+python3 ../build_and_tag.py ${TAG_BASE}
 
 date
