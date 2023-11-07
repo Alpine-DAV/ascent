@@ -7,12 +7,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_conduit_reductions.hpp
+/// file: ascent_blueprint_device_reductions.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_CONDUIT_REDUCTIONS
-#define ASCENT_CONDUIT_REDUCTIONS
+#ifndef ASCENT_BLUEPRINT_DEVICE_REDUCTIONS_HPP
+#define ASCENT_BLUEPRINT_DEVICE_REDUCTIONS_HPP
 
 #include <ascent.hpp>
 #include <conduit.hpp>
@@ -54,9 +54,8 @@ conduit::Node ASCENT_API array_sum(const conduit::Node &array,
 // ----------------------
 // derived arrays
 // ----------------------
-conduit::Node ASCENT_API array_gradient(const conduit::Node &y_values,
-                             const conduit::Node &dx_values,
-                             bool is_list = false);
+conduit::Node ASCENT_API history_gradient_range(const conduit::Node &y_values,
+                                                const conduit::Node &dx_values);
 
 //----------------------
 // field reductions

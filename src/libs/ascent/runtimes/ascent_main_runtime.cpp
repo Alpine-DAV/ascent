@@ -63,7 +63,6 @@
 using namespace conduit;
 using namespace std;
 
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -326,7 +325,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
     if(options.has_path("ghost_field_names"))
-    { 
+    {
       if(!options["ghost_field_names"].dtype().is_list())
       {
         ASCENT_ERROR("ghost_field_names is not a list");
@@ -433,7 +432,7 @@ AscentRuntime::AddPublishedMeshInfo()
 #ifdef ASCENT_MPI_ENABLED
     int comm_id = flow::Workspace::default_mpi_comm();
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
-  
+
     Node n_src, n_reduce;
     n_src = src_tbytes;
     // all reduce to get total number of bytes across mpi tasks
@@ -510,33 +509,6 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
-    // Process the comments.
-    m_comments.reset();
-    if(data.has_path("state/software"))
-    {
-      m_comments.append() = "Software";
-      m_comments.append() = data["state/software"].as_string();
-    }
-    if(data.has_path("state/source"))
-    {
-      m_comments.append() = "Source";
-      m_comments.append() = data["state/source"].as_string();
-    }
-    if(data.has_path("state/title"))
-    {
-      m_comments.append() = "Title";
-      m_comments.append() = data["state/title"].as_string();
-    }
-    if(data.has_path("state/info"))
-    {
-      m_comments.append() = "Description";
-      m_comments.append() = data["state/info"].as_string();
-    }
-    if(data.has_path("state/comment"))
-    {
-      m_comments.append() = "Comment";
-      m_comments.append() = data["state/comment"].as_string();
-    }
 
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
@@ -553,6 +525,22 @@ AscentRuntime::Publish(const conduit::Node &data)
 void
 AscentRuntime::EnsureDomainIds()
 {
+    //add debug timing file in case these checks
+    //add a lot of overhead
+#define _DEBUG 0
+
+#if _DEBUG
+      std::stringstream log_name;
+      std::string log_prefix = "EnsureDomainIDs_times_";
+#ifdef ASCENT_MPI_ENABLED
+      log_name << log_prefix << m_rank<<".csv";
+#else
+      log_name << log_prefix << "0.csv";
+#endif
+      std::ofstream stream;
+      stream.open(log_name.str().c_str(),std::ofstream::app);
+      conduit::utils::Timer ensureDomainIDsTimer;
+#endif
     // if no domain ids were provided add them now
     int num_domains = 0;
     bool has_ids = true;
@@ -572,7 +560,6 @@ AscentRuntime::EnsureDomainIds()
         has_ids = false;
       }
     }
-
 
 #ifdef ASCENT_MPI_ENABLED
     int comm_id = flow::Workspace::default_mpi_comm();
@@ -616,6 +603,11 @@ AscentRuntime::EnsureDomainIds()
     }
 
     int domain_offset = 0;
+
+#if _DEBUG
+    conduit::utils::Timer local_check_timer;
+#endif
+
 #ifdef ASCENT_MPI_ENABLED
     int *domains_per_rank = new int[comm_size];
     MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
@@ -623,17 +615,139 @@ AscentRuntime::EnsureDomainIds()
     {
       domain_offset += domains_per_rank[i];
     }
+    int total_domains = 0;
+    for(int i = 0; i < comm_size; i++)
+    {
+      total_domains += domains_per_rank[i];
+    }
     delete[] domains_per_rank;
 #endif
+
+    std::unordered_set<int> local_unique_ids;
     for(int i = 0; i < num_domains; ++i)
     {
       conduit::Node &dom = m_source.child(i);
 
       if(!dom.has_path("state/domain_id"))
       {
-         dom["state/domain_id"] = domain_offset + i;
+        dom["state/domain_id"] = domain_offset + i;
+        local_unique_ids.insert(domain_offset + i);
+      }
+      else
+      {
+        local_unique_ids.insert(dom["state/domain_id"].to_int32());
       }
     }
+
+    int unique_ids = 1;
+    if(local_unique_ids.size() != num_domains)
+    {
+      unique_ids = 0;
+    }
+#ifdef ASCENT_MPI_ENABLED
+    conduit::Node n_ids;
+    n_ids.set(DataType::c_int(comm_size));
+    int *unique_ids_array = n_ids.value();//new int[comm_size];
+    MPI_Allgather(&unique_ids, 1, MPI_INT, unique_ids_array, 1, MPI_INT, mpi_comm);
+    std::stringstream ss;
+    for(int i = 0; i < comm_size; i++)
+    {
+      if(unique_ids_array[i] == 0)
+      {
+	unique_ids = 0;
+	ss << i << " ";
+      } 
+    }
+
+    if(!unique_ids)
+      ASCENT_ERROR("Local Domain IDs are not unique on ranks: " << ss.str());
+#else
+    if(!unique_ids)
+      ASCENT_ERROR("Local Domain IDs are not unique ");
+#endif
+#if _DEBUG
+    float local_check_timer_time = local_check_timer.elapsed();
+    std::stringstream local_check_timer_log;
+    local_check_timer_log << "Local Uniqueness Check: " << local_check_timer_time << "\n";
+    stream << local_check_timer_log.str();
+#endif
+
+
+#ifdef ASCENT_MPI_ENABLED
+
+#if _DEBUG
+    conduit::utils::Timer global_check_timer;
+#endif
+    conduit::Node n_dom_ids;
+    conduit::Node n_global_dom_ids;
+    conduit::Node n_dom_rank;
+    conduit::Node n_global_dom_rank;
+    n_dom_ids.set(DataType::c_int(total_domains));
+    n_global_dom_ids.set(DataType::c_int(total_domains));
+    n_dom_rank.set(DataType::c_int(total_domains));
+    n_global_dom_rank.set(DataType::c_int(total_domains));
+    int *domain_ids_per_rank = n_dom_ids.value();
+    int *global_domain_ids = n_global_dom_ids.value();
+    int *domain_rank = n_dom_rank.value();
+    int *global_domain_rank = n_global_dom_rank.value();
+
+    for(int i = 0; i < total_domains; i++)
+    {
+      domain_ids_per_rank[i] = -1;
+      domain_rank[i] = -1;
+    }
+    for(int i = 0; i < num_domains; ++i)
+    {
+      conduit::Node &dom = m_source.child(i);
+      domain_ids_per_rank[domain_offset + i] = dom["state/domain_id"].to_int32();
+      domain_rank[domain_offset + i] = m_rank;
+    }
+
+    MPI_Allreduce(domain_ids_per_rank, global_domain_ids, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+    MPI_Allreduce(domain_rank, global_domain_rank, total_domains, MPI_INT, MPI_MAX,  mpi_comm);
+
+    std::unordered_set<int> global_ids;
+    for(int i = 0; i < total_domains; i++)
+    {
+      global_ids.insert(global_domain_ids[i]);
+    }
+
+    if(global_ids.size() != total_domains)
+    {
+      std::map<int,std::vector<int>> map_global_ids;
+      for(int i = 0; i < total_domains; i++)
+      {
+        map_global_ids[global_domain_ids[i]].push_back(global_domain_rank[i]);
+      }
+      for(auto itr = map_global_ids.begin(); itr != map_global_ids.end(); ++itr)
+      {
+        if(itr->second.size() > 1)
+	{
+	  ss << "domain: " << itr->first << " on ranks: ";
+	  for(auto iitr = itr->second.begin(); iitr != itr->second.end(); ++iitr)
+	  {
+            ss << *iitr << " ";
+	  }
+	  ss << "\n";
+	}
+      }
+      ASCENT_ERROR("Global Domain IDs are not unique for " << ss.str());
+    }
+#if _DEBUG
+    float global_check_timer_time = global_check_timer.elapsed();
+    std::stringstream global_check_timer_log;
+    global_check_timer_log << "Global Uniqueness Check: " << global_check_timer_time << "\n";
+    stream << global_check_timer_log.str();
+#endif
+#endif
+
+#if _DEBUG
+    float ensureDomainIDs_time = ensureDomainIDsTimer.elapsed();
+    std::stringstream ensureDomainIDs_log;
+    ensureDomainIDs_log << "AscentRuntime::EnsureDomainIDs [TOTAL]: " << ensureDomainIDs_time << "\n";
+    stream << ensureDomainIDs_log.str();
+    stream.close();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1093,6 +1207,33 @@ AscentRuntime::ConvertQueryToFlow(const conduit::Node &query,
 }
 //-----------------------------------------------------------------------------
 void
+AscentRuntime::ConvertCommandToFlow(const conduit::Node &command,
+                                    const std::string command_name)
+{
+  std::string filter_name;
+
+  conduit::Node params;
+  if(command.has_path("params"))
+  {
+    params = command["params"];
+  }
+
+  std::string pipeline = "source";
+  if(command.has_path("pipeline"))
+  {
+    pipeline = command["pipeline"].as_string();
+  }
+
+  m_workspace.graph().add_filter("command",
+                                 command_name,
+                                 params);
+
+  // this is the blueprint mesh
+  m_connections[command_name] = pipeline;
+
+}
+//-----------------------------------------------------------------------------
+void
 AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
                                  const std::string plot_name)
 {
@@ -1240,16 +1381,53 @@ AscentRuntime::CreateQueries(const conduit::Node &queries)
 
 //-----------------------------------------------------------------------------
 void
+AscentRuntime::CreateCommands(const conduit::Node &commands)
+{
+  std::vector<std::string> names = commands.child_names();
+  for(int i = 0; i < commands.number_of_children(); ++i)
+  {
+    conduit::Node command = commands.child(i);
+    ConvertCommandToFlow(command, names[i]);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void
 AscentRuntime::PopulateMetadata()
 {
   // add global state meta data to the registry
   const int num_domains = m_source.number_of_children();
   int cycle = -1;
   float time = -1.f;
+  bool metadata_set = false;
 
   for(int i = 0; i < num_domains; ++i)
   {
     const conduit::Node &dom = m_source.child(i);
+    if (!metadata_set && dom.has_path("state"))
+    {
+      m_comments.reset();
+      conduit::NodeConstIterator itr = dom["state"].children();
+
+      while(itr.has_next())
+      {
+        const conduit::Node &cld = itr.next();
+        if(cld.has_path("keyword") && cld.has_path("data"))
+        {
+          metadata_set = true;
+          m_comments.append() = cld["keyword"].as_string();
+          try
+          {
+            m_comments.append() = cld["data"].as_string();
+          }
+          catch(const conduit::Error)
+          {
+            m_comments.append() = cld["data"].to_string();
+          }
+        }
+      }
+    }
+
     if(dom.has_path("state/cycle"))
     {
       cycle = dom["state/cycle"].to_int32();
@@ -1259,7 +1437,6 @@ AscentRuntime::PopulateMetadata()
       time = dom["state/time"].to_float32();
     }
   }
-
 
   if(cycle != -1)
   {
@@ -1650,6 +1827,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   m_save_info_actions.reset();
 
   // execution will be enforced in the following order:
+  conduit::Node commands;
   conduit::Node queries;
   conduit::Node triggers;
   conduit::Node pipelines;
@@ -1721,6 +1899,17 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
           ASCENT_ERROR("action 'add_queries' missing child 'queries'");
         }
       }
+      else if(action_name == "add_commands")
+      {
+        if(action.has_path("commands"))
+        {
+          commands.append() = action["commands"];
+        }
+        else
+        {
+          ASCENT_ERROR("action 'add_commands' missing child 'commands'");
+        }
+      }
       else if( action_name == "execute" ||
                action_name == "reset")
       {
@@ -1750,6 +1939,10 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
   for(int i = 0; i < pipelines.number_of_children(); ++i)
   {
     CreatePipelines(pipelines.child(i));
+  }
+  for(int i = 0; i < commands.number_of_children(); ++i)
+  {
+    CreateCommands(commands.child(i));
   }
   for(int i = 0; i < queries.number_of_children(); ++i)
   {
@@ -1921,7 +2114,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         {
           SaveInfo();
         }
-        
+
     }
     // --- close try --- //
 
@@ -2039,7 +2232,7 @@ void AscentRuntime::SourceFieldFilter()
 
       // if all fields were removed - also remove the fields node
       // or else blueprint verify will fail
-      // 
+      //
       // (this can happen when some domains do not have selected fields)
       //
       if(dom["fields"].number_of_children() == 0)

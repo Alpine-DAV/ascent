@@ -25,6 +25,8 @@ Resulting image:
 
 .. image:: examples/tout_render_3d_points_const_radius100.png
 
+.. _screen_annotations_off:
+
 An example of rendering with no screen annotations.
 ----------------------------------------------------
 
@@ -79,6 +81,8 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_vector_component100.png
+
+.. _world_annotations_off:
 
 An example of rendering with no world annotations.
 ---------------------------------------------------
@@ -717,6 +721,17 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_gradient_mag_braid100.png
+
+An example of data binning, binning spatially and summing a field.
+-------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_binning_filter_bins100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_binning_filter_bins100.png
 
 An example of using the log10 filter and clamping the min value. This can help when there are negative values present.
 -----------------------------------------------------------------------------------------------------------------------

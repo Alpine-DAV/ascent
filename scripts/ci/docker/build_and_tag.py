@@ -86,7 +86,7 @@ def main():
     os.chdir("../../../../")
 
     # get current copy of the ascent source
-    cmd ='python package.py {0}'
+    cmd ='python3 package.py {0}'
     sexe(cmd.format(pjoin(orig_dir, "ascent.docker.src.tar.gz")))
 
     # change back to orig working dir

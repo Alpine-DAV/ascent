@@ -395,7 +395,7 @@ parameters:
 - ``fg_color`` : an array of three floating point values that controls the foreground color. The foreground color is used to color annotations and mesh plot lines.
 - ``annotations`` : controls if annotations are rendered or not. Valid values are ``"true"`` and ``"false"``.
 - ``render_bg`` : controls if the background is rendered or not. If no background is rendered, the background will appear transparent. Valid values are ``"true"`` and ``"false"``.
-- ``dataset_bounds`` : controls the dimensions of the rendered bounding box around the dataset. This will overwrite the default bounding box based on the dataset's dimensions. A valid value is an array of six floats ([xMin,xMax,yMin,yMax,zMin,zMax]) that define dimensions larger than the default.  
+- ``dataset_bounds`` : controls the dimensions of the rendered bounding box around the dataset. This will overwrite the default bounding box based on the dataset's dimensions. A valid value is an array of six floats ([xMin,xMax,yMin,yMax,zMin,zMax]) that define dimensions larger than the default. Note: this does not control annotations. To turn off dataset annotations, see :ref:`world_annotations_off`. To turn off screen annotations, see :ref:`screen_annotations_off`.
 - ``color_bar_position`` : controls the position of 1 or more color bars. A valid value for positioning a single color bar is an array of four floats ([xMin,xMax,yMin,yMax]). A valid value for positioning N color bars is an array of 4*N floats ([xMin1_0,xMax1_0,yMin1_0,yMax1_0,...,xMin_n,xMax_n,yMin_n,yMax_n]). This repositioning is performed in Screen Space, so valid minimum and maximum values are limited to the range [-1,1] (i.e. the origin (0,0) is in the center of the image, (-1,-1) is the bottom-left corner, and (1,1) is the top-right corner). Note: Ascent does not check for correctness of user positioned color bars.
 
 
@@ -464,7 +464,7 @@ The code below creates a pipeline that first applies a contour filter and then a
     :align: center
 
     The camera placement chosen by the VQ metric DDS Entropy for this example.
-    This example and implementation of the other VQ metrics can be found in `auto_camera test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/vtkh/t_vtk-h_auto_camera.cpp>`_.
+    This example and implementation of the other VQ metrics can be found in `auto_camera test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_render_auto_camera.cpp>`_.
 
 .. _actions_cinema:
 

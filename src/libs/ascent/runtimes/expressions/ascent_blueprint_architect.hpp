@@ -137,7 +137,6 @@ bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
 ASCENT_API
 std::set<std::string> topology_names(const conduit::Node &dataset);
 
-//std::string known_topos(const conduit::Node &dataset);
 
 ASCENT_API
 bool has_component(const conduit::Node &dataset,
@@ -182,17 +181,6 @@ int num_points(const conduit::Node &domain, const std::string &topo_name);
 ASCENT_API
 int num_cells(const conduit::Node &domain, const std::string &topo_name);
 
-ASCENT_API
-bool field_is_float32(const conduit::Node &field);
-
-ASCENT_API
-bool field_is_float64(const conduit::Node &field);
-
-ASCENT_API
-bool field_is_int32(const conduit::Node &field);
-
-ASCENT_API
-bool field_is_int64(const conduit::Node &field);
 
 ASCENT_API
 Array<double>

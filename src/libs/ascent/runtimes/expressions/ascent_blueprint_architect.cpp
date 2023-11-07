@@ -13,10 +13,10 @@
 #include "ascent_blueprint_architect.hpp"
 #include "ascent_array.hpp"
 #include "ascent_array_utils.hpp"
-#include "ascent_dispatch.hpp"
-#include "ascent_memory_interface.hpp"
+#include "ascent_blueprint_device_dispatch.hpp"
+#include "ascent_blueprint_device_mesh_objects.hpp"
 #include "ascent_execution_manager.hpp"
-#include "ascent_conduit_reductions.hpp"
+#include "ascent_blueprint_device_reductions.hpp"
 
 #include <ascent_logging.hpp>
 
@@ -197,7 +197,7 @@ get_element_indices(const conduit::Node &n_topo,
     // this is an array that could be on the GPU, so we have to
     // use special care
     const conduit::Node &n_topo_conn = n_topo_eles["connectivity"];
-    MemoryInterface<int> conn(n_topo_eles, "connectivity");
+    MCArray<int> conn(n_topo_eles["connectivity"]);
     const int offset = index * num_indices;
     for(int i = 0; i < num_indices; ++i)
     {
@@ -288,22 +288,22 @@ get_explicit_vert(const conduit::Node &n_coords, const int &index)
   double vert[3] = {0., 0., 0.};
   if(is_float64)
   {
-    MemoryInterface<double> array(n_coords);
-    vert[0] = array.value(index,"x");
-    vert[1] = array.value(index,"y");
-    if(array.components() == 3)
+    MCArray<double> coords_vals(n_coords["values"]);
+    vert[0] = coords_vals.value(index,"x");
+    vert[1] = coords_vals.value(index,"y");
+    if(coords_vals.components() == 3)
     {
-      vert[2] = array.value(index,"z");
+      vert[2] = coords_vals.value(index,"z");
     }
   }
   else
   {
-    MemoryInterface<float> array(n_coords);
-    vert[0] = array.value(index,"x");
-    vert[1] = array.value(index,"y");
-    if(array.components() == 3)
+    MCArray<float> coords_vals(n_coords["values"]);
+    vert[0] = coords_vals.value(index,"x");
+    vert[1] = coords_vals.value(index,"y");
+    if(coords_vals.components() == 3)
     {
-      vert[2] = array.value(index,"z");
+      vert[2] = coords_vals.value(index,"z");
     }
   }
 
@@ -345,7 +345,7 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
 
   if(is_float64)
   {
-    MemoryInterface<double> f_coords(n_coords);
+    MCArray<double> f_coords(n_coords["values"]);
     vert[0] = f_coords.value(logical_index[0],"x");
     vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
@@ -355,7 +355,7 @@ get_rectilinear_vert(const conduit::Node &n_coords, const int &index)
   }
   else
   {
-    MemoryInterface<float> f_coords(n_coords);
+    MCArray<float> f_coords(n_coords["values"]);
     vert[0] = f_coords.value(logical_index[0],"x");
     vert[1] = f_coords.value(logical_index[1],"y");
     if(dims[2] != 0)
@@ -1112,6 +1112,8 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
       int num_dims = n_coords["values"].number_of_children();
       for(int i = 0; i < num_dims; ++i)
       {
+          // note: these aren't really fields, but the are close enough
+          // to be exec-ed this way
         const std::string axis_path = "values/" + axes[i][0];
         min_coords[i] = std::min(
             min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].as_double());
@@ -1309,7 +1311,7 @@ int find_bin(const T* bins, const int size, const T val, bool clamp)
 }
 
 // returns -1 if value lies outside the range
-int
+conduit::index_t
 get_bin_index(const conduit::float64 value, const conduit::Node &axis)
 {
   const bool clamp = axis["clamp"].to_uint8();
@@ -1325,8 +1327,8 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
       axis["num_bins"].to_float64() /
       (axis["max_val"].to_float64() - axis["min_val"].to_float64());
 
-  const int bin_index =
-      static_cast<int>((value - axis["min_val"].to_float64()) * inv_delta);
+  const conduit::index_t bin_index =
+      static_cast<conduit::index_t>((value - axis["min_val"].to_float64()) * inv_delta);
 
   if(clamp)
   {
@@ -1334,12 +1336,12 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
     {
       return 0;
     }
-    else if(bin_index >= axis["num_bins"].as_int32())
+    else if(bin_index >= axis["num_bins"].to_index_t())
     {
-      return axis["num_bins"].as_int32() - 1;
+      return axis["num_bins"].to_index_t() - 1;
     }
   }
-  else if(bin_index < 0 || bin_index >= axis["num_bins"].as_int32())
+  else if(bin_index < 0 || bin_index >= axis["num_bins"].to_index_t())
   {
     return -1;
   }
@@ -1471,7 +1473,7 @@ populate_homes(const conduit::Node &dom,
     if(bin_axes.child(axis_index).has_path("num_bins"))
     {
       // uniform axis
-      stride *= bin_axes.child(axis_index)["num_bins"].as_int32();
+      stride *= bin_axes.child(axis_index)["num_bins"].to_index_t();
     }
     else
     {
@@ -1615,7 +1617,7 @@ binning(const conduit::Node &dataset,
   int num_axes = bin_axes.number_of_children();
 
   // create bins
-  size_t num_bins = 1;
+  index_t num_bins = 1;
   for(int axis_index = 0; axis_index < num_axes; ++axis_index)
   {
     conduit::Node &axis = bin_axes.child(axis_index);
@@ -1623,18 +1625,18 @@ binning(const conduit::Node &dataset,
 
     if(!bin_axes.child(axis_index).has_child("min_val"))
     {
-      axis["min_val"] = field_min(dataset, axis_name)["value"].as_float64();
+      axis["min_val"] = field_min(dataset, axis_name)["value"].to_float64();
     }
     if(!axis.has_child("max_val"))
     {
       // TODO: FIXME THE BASELINES REQUIRE +1 here, not good.
-      axis["max_val"] = field_max(dataset, axis_name)["value"].as_float64() + 1.0;
+      axis["max_val"] = field_max(dataset, axis_name)["value"].to_float64() + 1.0;
     }
 
     if(bin_axes.child(axis_index).has_path("num_bins"))
     {
       // uniform axis
-      num_bins *= bin_axes.child(axis_index)["num_bins"].as_int32();
+      num_bins *= bin_axes.child(axis_index)["num_bins"].to_index_t();
     }
     else
     {
@@ -2062,7 +2064,7 @@ binning_mesh(const conduit::Node &binning,
     else
     {
       // uniform
-      const int dim = axis["num_bins"].as_int32() + 1;
+      const conduit::index_t dim = axis["num_bins"].to_index_t() + 1;
       const double delta =
           (axis["max_val"].to_float64() - axis["min_val"].to_float64()) /
           (dim - 1);
@@ -2572,17 +2574,17 @@ void paint_nestsets(const std::string nestset_name,
     ASCENT_ERROR("Paint nestsets: cannot paint on unstructured topology");
   }
 
-  int el_dims[3] = {1,1,1};
+  conduit::index_t el_dims[3] = {1,1,1};
   bool is_3d = false;
 
   if(topo["type"].as_string() == "structured")
   {
-    el_dims[0] = topo["elements/dims/i"].to_int32();
-    el_dims[1] = topo["elements/dims/j"].to_int32();
+    el_dims[0] = topo["elements/dims/i"].to_index_t();
+    el_dims[1] = topo["elements/dims/j"].to_index_t();
     if(topo.has_path("elements/dims/k"))
     {
       is_3d = true;
-      el_dims[2] = topo["elements/dims/k"].to_int32();
+      el_dims[2] = topo["elements/dims/k"].to_index_t();
     }
 
   }
@@ -2592,13 +2594,13 @@ void paint_nestsets(const std::string nestset_name,
     const conduit::Node &coords = dom["coordsets/"+coord_name];
     if(coords["type"].as_string() == "uniform")
     {
-      el_dims[0] = coords["dims/i"].as_int32() - 1;
-      el_dims[1] = coords["dims/j"].as_int32() - 1;
+      el_dims[0] = coords["dims/i"].to_index_t() - 1;
+      el_dims[1] = coords["dims/j"].to_index_t() - 1;
 
       if(coords.has_path("dims/k"))
       {
         is_3d = true;
-        el_dims[2] = coords["dims/k"].to_int32() -1;
+        el_dims[2] = coords["dims/k"].to_index_t() -1;
       }
     }
     else if(coords["type"].as_string() == "rectilinear")
@@ -2617,13 +2619,13 @@ void paint_nestsets(const std::string nestset_name,
     }
   }
 
-  conduit::int32 field_size = el_dims[0] * el_dims[1];
+  conduit::index_t field_size = el_dims[0] * el_dims[1];
   if(is_3d)
   {
     field_size *= el_dims[2];
   }
 
-  conduit::int32_array levels;
+  conduit::index_t_array levels;
   // check to see if the field already has data or if
   // we need to create a new field
   if(field.has_path("values"))
@@ -2640,7 +2642,7 @@ void paint_nestsets(const std::string nestset_name,
   {
     field["association"] = "element";
     field["topology"] = topo_name;
-    field["values"] = conduit::DataType::int32(field_size);
+    field["values"] = conduit::DataType::index_t(field_size);
     levels = field["values"].value();
     for(int i = 0; i < field_size; ++i)
     {
@@ -2653,8 +2655,8 @@ void paint_nestsets(const std::string nestset_name,
   // across all domains
   if(!dom.has_path("nestsets/"+nestset_name))
   {
-    // we alrady init'd it to zero if its a new field, so we are good to go
-    // if it wasnt' a new field, it should already have the correct values
+    // we already init'd it to zero if its a new field, so we are good to go
+    // if it wasn't' a new field, it should already have the correct values
     return;
   }
 
@@ -2671,36 +2673,36 @@ void paint_nestsets(const std::string nestset_name,
       continue;
     }
 
-    int origin[3];
-    origin[0] = window["origin/i"].to_int32();
-    origin[1] = window["origin/j"].to_int32();
+    conduit::index_t origin[3];
+    origin[0] = window["origin/i"].to_index_t();
+    origin[1] = window["origin/j"].to_index_t();
 
     if(is_3d)
     {
-      origin[2] = window["origin/k"].to_int32();
+      origin[2] = window["origin/k"].to_index_t();
     }
 
-    int dims[3];
-    dims[0] = window["dims/i"].to_int32();
-    dims[1] = window["dims/j"].to_int32();
+    conduit::index_t dims[3];
+    dims[0] = window["dims/i"].to_index_t();
+    dims[1] = window["dims/j"].to_index_t();
     if(is_3d)
     {
-      dims[2] = window["dims/k"].to_int32();
+      dims[2] = window["dims/k"].to_index_t();
     }
     if(is_3d)
     {
       // all the nesting relationship is local
-      for(int z = origin[2]; z < origin[2] + dims[2]; ++z)
+      for(index_t z = origin[2]; z < origin[2] + dims[2]; ++z)
       {
-        const int z_offset = z * el_dims[0] * el_dims[1];
+        const conduit::index_t z_offset = z * el_dims[0] * el_dims[1];
         for(int y = origin[1]; y < origin[1] + dims[1]; ++y)
         {
-          const conduit::int32 y_offset = y * el_dims[0];
+          const conduit::index_t y_offset = y * el_dims[0];
           for(int x = origin[0]; x < origin[0] + dims[0]; ++x)
           {
             // this might a ghost field, but we only want to
             // mask real zones that are masked by finer grids
-            conduit::int32 value = levels[z_offset + y_offset + x];
+            conduit::index_t value = levels[z_offset + y_offset + x];
             if(value == 0)
             {
               levels[z_offset + y_offset + x] = 1;
@@ -2712,14 +2714,14 @@ void paint_nestsets(const std::string nestset_name,
     else
     {
       // all the nesting relationship is local
-      for(int y = origin[1]; y < origin[1] + dims[1]; ++y)
+      for(conduit::index_t y = origin[1]; y < origin[1] + dims[1]; ++y)
       {
-        const conduit::int32 y_offset = y * el_dims[0];
-        for(int x = origin[0]; x < origin[0] + dims[0]; ++x)
+        const conduit::index_t y_offset = y * el_dims[0];
+        for(conduit::index_t x = origin[0]; x < origin[0] + dims[0]; ++x)
         {
           // this might a ghost field, but we only want to
           // mask real zones that are masked by finer grids
-          conduit::int32 value = levels[y_offset + x];
+          conduit::index_t value = levels[y_offset + x];
           if(value == 0)
           {
             levels[y_offset + x] = 1;
@@ -2770,61 +2772,6 @@ std::set<std::string> topology_names(const conduit::Node &dataset)
   return topos;
 }
 
-bool field_is_float32(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_float32();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_float32();
-  }
-}
-
-bool field_is_float64(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_float64();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_float64();
-  }
-}
-
-bool field_is_int32(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_int32();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_int32();
-  }
-}
-
-bool field_is_int64(const conduit::Node &field)
-{
-  const int children = field["values"].number_of_children();
-  if(children == 0)
-  {
-    return field["values"].dtype().is_int64();
-  }
-  else
-  {
-    // there has to be one or more children so ask the first
-    return field["values"].child(0).dtype().is_int64();
-  }
-}
 
 Array<double>
 centroids(const conduit::Node &domain, const std::string topo)

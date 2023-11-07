@@ -21,16 +21,23 @@ def about():
         from .ascent_mpi_python import about as ascent_about
         return ascent_about()
     except ImportError:
-        raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with MPI support ENABLE_MPI=ON ?')
     return None
 
+def execute_callback(callback_name, params, output):
+    try:
+        from .ascent_mpi_python import execute_callback as ascent_execute_callback
+        return ascent_execute_callback(callback_name, params, output)
+    except ImportError:
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with MPI support ENABLE_MPI=ON ?')
+    return None
 
 def Ascent():
     try:
         from .ascent_mpi_python import Ascent as ascent_obj
         return ascent_obj()
     except ImportError:
-        raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with MPI support ENABLE_MPI=ON ?')
     return None
 
 def jupyter_bridge():
@@ -38,7 +45,7 @@ def jupyter_bridge():
         from ..bridge_kernel.server import jupyter_extract
         return jupyter_extract()
     except ImportError:
-        raise ImportError('failed to import ascent_mpi_python, was Ascent built with mpi support?')
+        raise ImportError('failed to import ascent_mpi_python, was Ascent built with MPI support ENABLE_MPI=ON ?')
     return None
 
 
