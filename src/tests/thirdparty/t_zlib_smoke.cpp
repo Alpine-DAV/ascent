@@ -19,13 +19,13 @@ TEST(zlib_smoke, zlib_basic)
 
   // exercise compress and uncompress interface
 
-  Bytef compress_dest[32];
   Bytef compress_src[32];
+  Bytef compress_dest[64];
   Bytef uncompress_dest[64];
 
-  uLongf compress_dest_len   = 32;
   uLongf compress_src_len    = 32;
-  uLongf uncompress_dest_len = 32;
+  uLongf compress_dest_len   = 64;
+  uLongf uncompress_dest_len = 64;
 
   for(int i=0;i<32;i++)
   {
