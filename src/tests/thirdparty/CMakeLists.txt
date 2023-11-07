@@ -22,8 +22,8 @@ set(conduit_smoke_deps conduit::conduit)
 
 if(ZLIB_FOUND)
     message(STATUS "Adding zlib smoke test")
-    list(APPEND conduit_smoke_deps ${ZLIB_LIBRARIES})
-    add_cpp_test(TEST t_zlib_smoke DEPENDS_ON ${ZLIB_LIBRARIES})
+    list(APPEND conduit_smoke_deps ZLIB::ZLIB)
+    add_cpp_test(TEST t_zlib_smoke DEPENDS_ON ZLIB::ZLIB)
 endif()
 
 message(STATUS "Adding conduit smoke test")
