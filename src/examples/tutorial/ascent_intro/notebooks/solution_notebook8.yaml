@@ -1,0 +1,17 @@
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "gyre"
+      renders:
+        r1:
+          camera:
+            azimuth: 10.0
+          image_name: "cycle_trigger_out_r1"
+        r2:
+          camera:
+            zoom: 3.0
+          image_name: "cycle_trigger_out_r2"
