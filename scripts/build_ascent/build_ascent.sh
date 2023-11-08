@@ -158,7 +158,7 @@ fi
 ################
 # Zlib
 ################
-zlib_version=1.2.13
+zlib_version=1.3
 zlib_src_dir=$(ospath ${root_dir}/zlib-${zlib_version})
 zlib_build_dir=$(ospath ${root_dir}/build/zlib-${zlib_version}/)
 zlib_install_dir=$(ospath ${root_dir}/install/zlib-${zlib_version}/)
