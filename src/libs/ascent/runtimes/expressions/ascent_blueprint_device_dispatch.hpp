@@ -513,8 +513,8 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                        r_field.schema().to_string());
         }
 
-        MCArray<conduit::float32> l_farray(l_field);
-        MCArray<conduit::float32> r_farray(r_field);
+        MCArray<conduit::float32> l_farray(l_field["values"]);
+        MCArray<conduit::float32> r_farray(r_field["values"]);
         DeviceAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space, component);
         DeviceAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
@@ -530,8 +530,8 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                               r_field.schema().to_string());
         }
 
-        MCArray<conduit::float64> l_farray(l_field);
-        MCArray<conduit::float64> r_farray(r_field);
+        MCArray<conduit::float64> l_farray(l_field["values"]);
+        MCArray<conduit::float64> r_farray(r_field["values"]);
         DeviceAccessor<conduit::float64>  l_accessor = l_farray.accessor(mem_space, component);
         DeviceAccessor<conduit::float64>  r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
@@ -546,8 +546,8 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                              r_field.schema().to_string());
         }
 
-        MCArray<conduit::int32> l_farray(l_field);
-        MCArray<conduit::int32> r_farray(r_field);
+        MCArray<conduit::int32> l_farray(l_field["values"]);
+        MCArray<conduit::int32> r_farray(r_field["values"]);
         DeviceAccessor<conduit::int32>  l_accessor = l_farray.accessor(mem_space, component);
         DeviceAccessor<conduit::int32>  r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
@@ -563,8 +563,8 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                        r_field.schema().to_string());
         }
 
-        MCArray<conduit::int64> l_farray(l_field);
-        MCArray<conduit::int64> r_farray(r_field);
+        MCArray<conduit::int64> l_farray(l_field["values"]);
+        MCArray<conduit::int64> r_farray(r_field["values"]);
         DeviceAccessor<conduit::int64>  l_accessor = l_farray.accessor(mem_space, component);
         DeviceAccessor<conduit::int64>  r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
