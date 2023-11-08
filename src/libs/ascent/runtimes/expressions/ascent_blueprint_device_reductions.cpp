@@ -144,8 +144,8 @@ struct SumFunctor
 struct DFAddFunctor
 {
     template<typename T, typename Exec>
-    conduit::Node operator()(const MemoryAccessor<T> l_accessor,
-                             const MemoryAccessor<T> r_accessor,
+    conduit::Node operator()(const DeviceAccessor<T> l_accessor,
+                             const DeviceAccessor<T> r_accessor,
                              const Exec &) const
     {
 

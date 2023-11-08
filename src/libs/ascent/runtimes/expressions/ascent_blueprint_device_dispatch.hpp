@@ -513,10 +513,10 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                        r_field.schema().to_string());
         }
 
-        MemoryInterface<conduit::float32> l_farray(l_field);
-        MemoryInterface<conduit::float32> r_farray(r_field);
-        MemoryAccessor<conduit::float32>  l_accessor = l_farray.accessor(mem_space, component);
-        MemoryAccessor<conduit::float32>  r_accessor = r_farray.accessor(mem_space, component);
+        MCArray<conduit::float32> l_farray(l_field);
+        MCArray<conduit::float32> r_farray(r_field);
+        DeviceAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
 
     }
@@ -530,10 +530,10 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                               r_field.schema().to_string());
         }
 
-        MemoryInterface<conduit::float64> l_farray(l_field);
-        MemoryInterface<conduit::float64> r_farray(r_field);
-        MemoryAccessor<conduit::float64>  l_accessor = l_farray.accessor(mem_space, component);
-        MemoryAccessor<conduit::float64>  r_accessor = r_farray.accessor(mem_space, component);
+        MCArray<conduit::float64> l_farray(l_field);
+        MCArray<conduit::float64> r_farray(r_field);
+        DeviceAccessor<conduit::float64>  l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::float64>  r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
     }
     else if(field_is_int32(l_field))
@@ -546,10 +546,10 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                              r_field.schema().to_string());
         }
 
-        MemoryInterface<conduit::int32> l_farray(l_field);
-        MemoryInterface<conduit::int32> r_farray(r_field);
-        MemoryAccessor<conduit::int32>  l_accessor = l_farray.accessor(mem_space, component);
-        MemoryAccessor<conduit::int32>  r_accessor = r_farray.accessor(mem_space, component);
+        MCArray<conduit::int32> l_farray(l_field);
+        MCArray<conduit::int32> r_farray(r_field);
+        DeviceAccessor<conduit::int32>  l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::int32>  r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
     }
     else if(field_is_int64(l_field))
@@ -563,10 +563,10 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
                        r_field.schema().to_string());
         }
 
-        MemoryInterface<conduit::int64> l_farray(l_field);
-        MemoryInterface<conduit::int64> r_farray(r_field);
-        MemoryAccessor<conduit::int64>  l_accessor = l_farray.accessor(mem_space, component);
-        MemoryAccessor<conduit::int64>  r_accessor = r_farray.accessor(mem_space, component);
+        MCArray<conduit::int64> l_farray(l_field);
+        MCArray<conduit::int64> r_farray(r_field);
+        DeviceAccessor<conduit::int64>  l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::int64>  r_accessor = r_farray.accessor(mem_space, component);
         res = func(l_accessor, r_accessor, exec);
     }
     else
