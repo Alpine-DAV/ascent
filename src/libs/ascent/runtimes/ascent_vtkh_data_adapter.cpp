@@ -132,9 +132,9 @@ vtkm::cont::CoordinateSystem
 GetExplicitCoordinateSystem(const conduit::Node &n_coords,
                             const std::string &name,
                             int &ndims,
-			    index_t &x_element_stride,
-			    index_t &y_element_stride,
-			    index_t &z_element_stride,
+                            index_t &x_element_stride,
+                            index_t &y_element_stride,
+                            index_t &z_element_stride,
                             bool zero_copy)
 {
     vtkm::CopyFlag copy = vtkm::CopyFlag::On;
@@ -1152,9 +1152,9 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
                                                             coords_name,
                                                             ndims,
-							    x_element_stride,
-							    y_element_stride,
-							    z_element_stride,
+                                                            x_element_stride,
+                                                            y_element_stride,
+                                                            z_element_stride,
                                                             zero_copy);
     }
     else if(n_coords["values/x"].dtype().is_float32())
@@ -1172,9 +1172,9 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
                                                             coords_name,
                                                             ndims,
-							    x_element_stride,
-							    y_element_stride,
-							    z_element_stride,
+                                                            x_element_stride,
+                                                            y_element_stride,
+                                                            z_element_stride,
                                                             zero_copy);
     }
     else
@@ -1234,16 +1234,42 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
     vtkm::cont::CoordinateSystem coords;
     if(n_coords["values/x"].dtype().is_float64())
     {
+      index_t x_stride = n_coords["values/x"].dtype().stride();
+      index_t x_element_stride = x_stride / sizeof(float64);
+      index_t y_stride = n_coords["values/y"].dtype().stride();
+      index_t y_element_stride = y_stride / sizeof(float64);
+      index_t z_element_stride = 0.0;
+      if(n_coords.has_path("values/z"))
+      {
+        index_t z_stride = n_coords["values/z"].dtype().stride();
+        z_element_stride = z_stride / sizeof(float64);
+      }
       coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
                                                             coords_name,
                                                             ndims,
+                                                            x_element_stride,
+                                                            y_element_stride,
+                                                            z_element_stride,
                                                             zero_copy);
     }
     else if(n_coords["values/x"].dtype().is_float32())
     {
+      index_t x_stride = n_coords["values/x"].dtype().stride();
+      index_t x_element_stride = x_stride / sizeof(float32);
+      index_t y_stride = n_coords["values/y"].dtype().stride();
+      index_t y_element_stride = y_stride / sizeof(float32);
+      index_t z_element_stride = 0.0;
+      if(n_coords.has_path("values/z"))
+      {
+        index_t z_stride = n_coords["values/z"].dtype().stride();
+        z_element_stride = z_stride / sizeof(float32);
+      }
       coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
                                                             coords_name,
                                                             ndims,
+                                                            x_element_stride,
+                                                            y_element_stride,
+                                                            z_element_stride,
                                                             zero_copy);
     }
     else
