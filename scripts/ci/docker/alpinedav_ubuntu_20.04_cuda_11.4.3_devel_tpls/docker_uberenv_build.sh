@@ -8,7 +8,7 @@ export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa~genten~python~openmp~shared
 # constraints
 export SPACK_SPEC="${SPACK_SPEC} ^raja+cuda~openmp cuda_arch=70 ^umpire+cuda~openmp cuda_arch=70 ^camp+cuda~openmp cuda_arch=70 ^hdf5~mpi ^mfem~cuda~petsc~sundials~slepc ^hypre~cuda ^vtk-m+cuda~kokkos cuda_arch=70"
 # config
-export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_cuda_11.4.0_devel/"
+export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_22.04_cuda_11.8.0_devel/"
 
 cd ascent && python3 scripts/uberenv/uberenv.py \
      -k \

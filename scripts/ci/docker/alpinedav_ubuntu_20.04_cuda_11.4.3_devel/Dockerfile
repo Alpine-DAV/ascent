@@ -2,7 +2,8 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM nvidia/cuda:11.4.0-devel-ubuntu18.04
+FROM nvidia/cuda:11.4.3-devel-ubuntu20.04
+
 # add sudo to base cuda devel env
 # so we can install additional packages as
 # non-root, but admin default user on azure pipelines
@@ -13,8 +14,18 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 RUN apt-get update && apt-get -y install \
                git \
                git-lfs \
-               python \
                gfortran \
+               python3 \
+               python3-dev \
+               python-is-python3 \
+               perl \
+               git \
+               git-lfs \
+               curl \
+               wget \
+               tar \
+               unzip \
+               file \
                zlib1g-dev \
                curl \
                mpich \
@@ -22,8 +33,6 @@ RUN apt-get update && apt-get -y install \
                libblas-dev \
                liblapack-dev \
                liblapacke-dev \
-               libcublas10 \
-               libcublas-dev \
                unzip \
                openssh-server \
                vim
