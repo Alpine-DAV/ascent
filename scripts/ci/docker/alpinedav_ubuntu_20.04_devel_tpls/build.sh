@@ -6,7 +6,7 @@ set -ev
 
 export REPO_NAME="ascent"
 export TAG_ARCH=`uname -m`
-export TAG_BASE=alpinedav/ascent-devel::ubuntu-20.04-${TAG_ARCH}-tpls
+export TAG_BASE=alpinedav/ascent-devel:ubuntu-20.04-${TAG_ARCH}-tpls
 
 date
 

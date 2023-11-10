@@ -3,7 +3,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 
 ARG ARCH_TAG="x86_64"
-FROM alpinedav/ascent-devel:ubuntu-20.04-devel-${ARCH_TAG}
+FROM alpinedav/ascent-devel:ubuntu-20.04-${ARCH_TAG}
 
 # obtain a copy of ascent source from host env,
 # which we use to call uberenv
