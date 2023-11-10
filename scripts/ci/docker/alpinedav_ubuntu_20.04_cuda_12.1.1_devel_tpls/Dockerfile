@@ -2,7 +2,8 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM alpinedav/ascent-ci:ubuntu-20.04-cuda-12.1.1-devel
+ARG ARCH_TAG="x86_64"
+FROM alpinedav/ascent-devel:ubuntu-20.04-cuda-12.1.1-${ARCH_TAG}
 
 # obtain a copy of ascent source from host env,
 # which we use to call uberenv

@@ -4,7 +4,8 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 set -ev
 
-export TAG_NAME=alpinedav/ascent-ci:ubuntu-18.04-cuda-11.4.0-devel
+export TAG_ARCH=`uname -m`
+export TAG_NAME=alpinedav/ascent-devel:ubuntu-18.04-cuda-11.4.0-${TAG_ARCH}
 
 # exec docker build to create image
 echo "docker build -t ${TAG_NAME} ."
