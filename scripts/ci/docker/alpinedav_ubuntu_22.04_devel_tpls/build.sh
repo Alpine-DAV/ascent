@@ -4,14 +4,17 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 set -ev
 
+export REPO_NAME="ascent"
 export TAG_ARCH=`uname -m`
 export TAG_BASE=alpinedav/ascent-devel:ubuntu-22.04-${TAG_ARCH}-tpls
 
-echo "TAG_BASE: ${TAG_BASE}"
+echo "REPO_NAME:  ${REPO_NAME}"
+echo "TAG_ARCH:   ${TAG_ARCH}"
+echo "TAG_BASE:   ${TAG_BASE}"
 
 date
 
-python3 ../build_and_tag.py ${TAG_BASE}
+python3 ../../../docker_build_and_tag.py ${REPO_NAME} ${TAG_ARCH} ${TAG_BASE}
 
 date
 

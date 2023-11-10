@@ -1,1 +1,0 @@
-../../docker_build_and_tag.py
