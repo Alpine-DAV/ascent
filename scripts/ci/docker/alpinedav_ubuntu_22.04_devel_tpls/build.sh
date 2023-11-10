@@ -4,7 +4,10 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 set -ev
 
-export TAG_BASE=alpinedav/ascent-ci:ubuntu-22.04-devel-tpls
+export TAG_ARCH=`uname -m`
+export TAG_BASE=alpinedav/ascent-devel:ubuntu-22.04-${TAG_ARCH}-tpls
+
+echo "TAG_BASE: ${TAG_BASE}"
 
 date
 
