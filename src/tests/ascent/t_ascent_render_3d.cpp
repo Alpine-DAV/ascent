@@ -2108,6 +2108,8 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
     ASCENT_INFO("Testing 3D Rendering of fields with different data types");
 
+    std::cout << std::endl;
+
     int num_vals = data["fields/braid/values"].dtype().number_of_elements();
     //
     // Create the actions.
@@ -2132,6 +2134,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
     // int 8
     {
+        std::cout << "braid_int8" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_int8");
         // remove old images before rendering
@@ -2152,6 +2155,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     }
     // int 16
     {
+        std::cout << "braid_int16" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_int16");
         // remove old images before rendering
@@ -2171,6 +2175,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
     // int 32
     {
+        std::cout << "braid_int32" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_int32");
         // remove old images before rendering
@@ -2191,6 +2196,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     }
     // int 64
     {
+        std::cout << "braid_int64" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_int64");
         // remove old images before rendering
@@ -2213,6 +2219,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
     // uint 8
     {
+        std::cout << "braid_uint8" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_uint8");
         // remove old images before rendering
@@ -2233,6 +2240,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     }
     // uint 16
     {
+        std::cout << "braid_uint16" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_uint16");
         // remove old images before rendering
@@ -2252,6 +2260,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
     // uint 32
     {
+        std::cout << "braid_uint32" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_uint32");
         // remove old images before rendering
@@ -2272,6 +2281,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     }
     // uint 64
     {
+        std::cout << "braid_uint64" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_uint64");
         // remove old images before rendering
@@ -2294,6 +2304,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
     // float 32
     {
+        std::cout << "braid_float32" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_float32");
         // remove old images before rendering
@@ -2314,6 +2325,7 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
 
     // float 64
     {
+        std::cout << "braid_float64" << std::endl;
         string output_file = conduit::utils::join_file_path(output_path,
                                         "tout_render_3d_braid_float64");
         // remove old images before rendering

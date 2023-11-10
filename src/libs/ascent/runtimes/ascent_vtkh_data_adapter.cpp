@@ -1615,7 +1615,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         // use float64 by default
         if(!supported_type)
         {
-		std::cerr << "WE ARE IN UNSUPPORTED DATA TYPE" << std::endl;
+            std::cerr << "WE ARE IN UNSUPPORTED DATA TYPE" << std::endl;
             // convert to float64, we use this as a comprise to cover the widest range
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
             vtkm_arr.Allocate(num_vals);
