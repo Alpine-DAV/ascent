@@ -9,7 +9,7 @@
 #####
 
 ########################
-# Container Notes: 
+# Container Notes:
 ########################
 #  2023/11/10:
 #    - Base container names changed from alpinedav/ascent-ci to alpinedav/ascent-devel
