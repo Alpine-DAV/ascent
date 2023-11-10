@@ -8,10 +8,6 @@ export REPO_NAME="ascent"
 export TAG_ARCH=`uname -m`
 export TAG_BASE=alpinedav/ascent-devel:ubuntu-22.04-${TAG_ARCH}-tpls
 
-echo "REPO_NAME:  ${REPO_NAME}"
-echo "TAG_ARCH:   ${TAG_ARCH}"
-echo "TAG_BASE:   ${TAG_BASE}"
-
 date
 
 python3 ../../../docker_build_and_tag.py ${REPO_NAME} ${TAG_ARCH} ${TAG_BASE}

@@ -79,6 +79,11 @@ def main():
     if len(sys.argv) > 4:
         extra_args = "".join(sys.argv[4:])
 
+    print("repo_name:  {0}".format(repo_name))
+    print("tag_arch:   {0}".format(tag_arch))
+    print("tag_base:   {0}".format(tag_base))
+    print("extra_args: {0}".format(extra_args))
+
     # remove old source tarball if it exists
     remove_if_exists("{0}.docker.src.tar.gz".format(repo_name))
 
