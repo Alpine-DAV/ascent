@@ -275,7 +275,12 @@ Render::Print() const
 void
 Render::RenderBackground()
 {
-  if(m_render_background) m_canvas.BlendBackground();
+  if(m_render_background)
+  {
+    m_canvas.SetBackgroundColor(m_bg_color);
+    m_canvas.SetForegroundColor(m_fg_color);
+    m_canvas.BlendBackground();
+  }
 }
 
 Render::vtkmCanvas
