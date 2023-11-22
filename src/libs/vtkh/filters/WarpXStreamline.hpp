@@ -17,7 +17,8 @@ public:
   WarpXStreamline();
   virtual ~WarpXStreamline();
   std::string GetName() const override { return "vtkh::WarpXStreamline";}
-  void SetField(const std::string &field_name) {  m_field_name = field_name; }
+  void SetBField(const std::string &field_name) {  m_b_field_name = field_name; }
+  void SetEField(const std::string &field_name) {  m_e_field_name = field_name; }
   void SetStepSize(const double &step_size) {   m_step_size = step_size; }
   void SetNumberOfSteps(int numSteps) { m_num_steps = numSteps; }
 
@@ -26,7 +27,8 @@ protected:
   void PostExecute() override;
   void DoExecute() override;
 
-  std::string m_field_name;
+  std::string m_b_field_name;
+  std::string m_e_field_name;
   double m_step_size;
   int m_num_steps;
 };

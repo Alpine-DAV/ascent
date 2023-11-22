@@ -11,6 +11,7 @@
 #include <mpi.h>
 #endif
 
+
 namespace vtkh
 {
 
@@ -42,12 +43,16 @@ void GenerateChargedParticles(const vtkm::cont::ArrayHandle<vtkm::Vec3f>& pos,
       pPortal.Get(i), i, mPortal.Get(i), qPortal.Get(i), wPortal.Get(i), uPortal.Get(i));
     sPortal.Set(i + id_offset, electron);
   }
+  
 }
+
 
 } //end detail
 
 WarpXStreamline::WarpXStreamline()
+: m_e_field_name("E"), m_b_field_name("B")
 {
+	
 }
 
 WarpXStreamline::~WarpXStreamline()
@@ -58,7 +63,8 @@ WarpXStreamline::~WarpXStreamline()
 void WarpXStreamline::PreExecute()
 {
   Filter::PreExecute();
-  Filter::CheckForRequiredField(m_field_name);
+  Filter::CheckForRequiredField(m_e_field_name);
+  Filter::CheckForRequiredField(m_b_field_name);
 }
 
 void WarpXStreamline::PostExecute()
@@ -78,17 +84,23 @@ void WarpXStreamline::DoExecute()
   vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
 #endif
 
-  //Make sure that the field exists on any domain.
-  if (!this->m_input->GlobalFieldExists(m_field_name))
+  //Make sure that the E field exists on any domain.
+  if (!this->m_input->GlobalFieldExists(m_e_field_name))
   {
-    throw Error("Domain does not contain specified vector field for WarpXStreamline analysis.");
+    throw Error("Domain does not contain specified E vector field for WarpXStreamline analysis.");
+  }
+  //Make sure that the B field exists on any domain.
+  if (!this->m_input->GlobalFieldExists(m_b_field_name))
+  {
+    throw Error("Domain does not contain specified B vector field for WarpXStreamline analysis.");
   }
 
   vtkm::cont::PartitionedDataSet inputs;
 
   vtkm::cont::ArrayHandle<vtkm::ChargedParticle> seeds;
-  //Create charged particles for all domains with the vel and particle fields.
-  if (this->m_input->FieldExists(m_field_name))
+  //Create charged particles for all domains with the particle spec fields.
+  //TODO: user specified momentum,mass,charge,weighting?
+  if (this->m_input->FieldExists("Momentum"))
   {
     const int num_domains = this->m_input->GetNumberOfDomains();
     int id_offset = 0;
@@ -106,16 +118,22 @@ void WarpXStreamline::DoExecute()
         dom.GetField("Mass").GetData().AsArrayHandle(mass);
         dom.GetField("Charge").GetData().AsArrayHandle(charge);
         dom.GetField("Weighting").GetData().AsArrayHandle(w);
-        detail::GenerateChargedParticle(pos,mom,mass,charge,w,seeds, id_offset);
+	detail::GenerateChargedParticles(pos,mom,mass,charge,w,seeds, id_offset);
 	//Actual: local unique ids
 	//Question: do we global unique ids? 
 	id_offset += pos.GetNumberOfValues();
       }
-      if(dom.HasField(m_field_name))
+      if(dom.HasField(m_b_field_name))
       {
         using vectorField_d = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>>;
         using vectorField_f = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 3>>;
-        auto field = dom.GetField(m_field_name).GetData();
+	std::cerr << "HERE 1" << std::endl;
+        auto field = dom.GetField(m_b_field_name).GetData();
+	std::cerr << "HERE 2" << std::endl;
+	if(field.IsType<vectorField_d>())
+		std::cerr << "Vector field is DOUBLE" << std::endl;
+	if(field.IsType<vectorField_f>())
+		std::cerr << "Vector field is FLOAT" << std::endl;
         if(field.IsType<vectorField_d>() && !field.IsType<vectorField_f>())
         {
           inputs.AppendPartition(dom);
@@ -148,7 +166,8 @@ void WarpXStreamline::DoExecute()
   vtkm::filter::flow::WarpXStreamline warpxStreamlineFilter;
 
   warpxStreamlineFilter.SetStepSize(m_step_size);
-  warpxStreamlineFilter.SetActiveField(m_field_name);
+  warpxStreamlineFilter.SetBField(m_b_field_name);
+  warpxStreamlineFilter.SetEField(m_e_field_name);
   warpxStreamlineFilter.SetSeeds(seeds);
   warpxStreamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = warpxStreamlineFilter.Execute(inputs);

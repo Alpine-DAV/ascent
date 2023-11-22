@@ -3957,12 +3957,14 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
                                      conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("field", params, info, true);
+    bool res = check_string("b_field", params, info, false);
+    res &= check_string("e_field", params, info, false);
     res &= check_numeric("num_steps", params, info, true, true);
     res &= check_numeric("step_size", params, info, true, true);
 
     std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
+    valid_paths.push_back("b_field");
+    valid_paths.push_back("e_field");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
 
@@ -3996,15 +3998,30 @@ VTKHWarpXStreamline::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string field_name = params()["field"].as_string();
-    if(!collection->has_field(field_name))
+    std::string b_field = "B";
+    std::string e_field = "E";
+    if(params().has_path("b_field"))
+      b_field = params()["b_field"].as_string();
+    if(params().has_path("e_field"))
+      e_field = params()["e_field"].as_string();
+
+    if(!collection->has_field(e_field))
     {
       bool throw_error = false;
-      detail::field_error(field_name, this->name(), collection, throw_error);
+      detail::field_error(e_field, this->name(), collection, throw_error);
       // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
+    if(!collection->has_field(b_field))
+    {
+      bool throw_error = false;
+      detail::field_error(b_field, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+    
     if(!collection->has_field("Momentum"))
     {
       bool throw_error = false;
@@ -4037,24 +4054,8 @@ VTKHWarpXStreamline::execute()
       set_output<DataObject>(new DataObject());
       return;
     }
-    if(!collection->has_field("E"))
-    {
-      bool throw_error = false;
-      detail::field_error("E", this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
-    if(!collection->has_field("B"))
-    {
-      bool throw_error = false;
-      detail::field_error("B", this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
 
-    std::string topo_name = collection->field_topology(field_name);
+    std::string topo_name = collection->field_topology(b_field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
 
@@ -4066,7 +4067,8 @@ VTKHWarpXStreamline::execute()
     vtkh::WarpXStreamline sl;
     sl.SetStepSize(stepSize);
     sl.SetNumberOfSteps(numSteps);
-    sl.SetField(field_name);
+    sl.SetBField(b_field);
+    sl.SetEField(e_field);
     sl.SetInput(&data);
     sl.Update();
     output = sl.GetOutput();

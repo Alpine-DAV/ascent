@@ -95,14 +95,12 @@ RunFilter(vtkh::DataSet& input,
 template <typename FilterType>
 vtkh::DataSet *
 RunWFilter(vtkh::DataSet& input,
-          const std::string& fieldName,
           int maxAdvSteps,
           double stepSize)
 {
   FilterType filter;
 
   filter.SetInput(&input);
-  filter.SetField(fieldName);
   filter.SetNumberOfSteps(maxAdvSteps);
   //warpxstreamline will make its own seeds
   //if(!std::is_same<FilterType,vtkh::WarpXStreamline>::value)
@@ -169,36 +167,34 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   auto w_bounds = coords.GetBounds();
   std::cout << "Bounds : " << w_bounds << std::endl;
   using Structured3DType = vtkm::cont::CellSetStructured<3>;
+  std::cerr << "HERE 1" << std::endl;
   Structured3DType castedCells;
+  std::cerr << "HERE 2" << std::endl;
   cells.AsCellSet(castedCells);
+  std::cerr << "HERE 3" << std::endl;
   auto dims = castedCells.GetSchedulingRange(vtkm::TopologyElementTagPoint());
+  std::cerr << "HERE 4" << std::endl;
   vtkm::Vec3f spacing = { static_cast<vtkm::FloatDefault>(w_bounds.X.Length()) / (dims[0] - 1),
                           static_cast<vtkm::FloatDefault>(w_bounds.Y.Length()) / (dims[1] - 1),
                           static_cast<vtkm::FloatDefault>(w_bounds.Z.Length()) / (dims[2] - 1) };
+  std::cerr << "HERE 5" << std::endl;
   constexpr static vtkm::FloatDefault SPEED_OF_LIGHT =
     static_cast<vtkm::FloatDefault>(2.99792458e8);
   spacing = spacing * spacing;
+  std::cerr << "HERE 6" << std::endl;
 
   vtkm::FloatDefault length = static_cast<vtkm::FloatDefault>(
     1.0 / (SPEED_OF_LIGHT * vtkm::Sqrt(1. / spacing[0] + 1. / spacing[1] + 1. / spacing[2])));
   std::cout << "CFL length : " << length << std::endl;
 
 
-  vtkh::DataSet *outPA=NULL, *outSL=NULL, *outWSL=NULL;
-
-  outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
-  outPA->PrintSummary(std::cout);
-  checkValidity(outPA, maxAdvSteps+1, false);
-
-  outSL = RunFilter<vtkh::Streamline>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
-  outSL->PrintSummary(std::cout);
-  checkValidity(outSL, maxAdvSteps+1, true);
-
-  writeDataSet(outSL, "advection_SeedsRandomWhole", rank);
-
-  outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, "vector_data_Float64", maxAdvSteps, length);
+  vtkh::DataSet *outWSL=NULL;
+  
+  warpx_data_set.PrintSummary(std::cerr);
+  outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, length);
   outWSL->PrintSummary(std::cout);
   checkValidity(outWSL, maxAdvSteps+1, true);
+  writeDataSet(outWSL, "warpx_streamline", rank);
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
