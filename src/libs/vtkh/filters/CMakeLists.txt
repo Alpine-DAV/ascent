@@ -32,6 +32,7 @@ set(vtkh_filters_headers
     Slice.hpp
     VectorComponent.hpp
     VectorMagnitude.hpp
+    WarpXStreamline.hpp
     )
 
 if(ENABLE_FILTER_CONTOUR_TREE)
@@ -68,6 +69,7 @@ set(vtkh_filters_sources
     Streamline.cpp
     VectorComponent.cpp
     VectorMagnitude.cpp
+    WarpXStreamline.cpp
     )
 
 if(VTKH_ENABLE_FILTER_CONTOUR_TREE)
