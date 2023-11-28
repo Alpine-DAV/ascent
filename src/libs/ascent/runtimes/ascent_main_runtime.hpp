@@ -103,10 +103,13 @@ private:
     void ConvertQueryToFlow(const conduit::Node &trigger,
                             const std::string trigger_name,
                             const std::string prev_name);
+    void ConvertCommandToFlow(const conduit::Node &command,
+                              const std::string command_name);
     void CreatePipelines(const conduit::Node &pipelines);
     void CreateExtracts(const conduit::Node &extracts);
     void CreateTriggers(const conduit::Node &triggers);
     void CreateQueries(const conduit::Node &queries);
+    void CreateCommands(const conduit::Node &commands);
     void CreatePlots(const conduit::Node &plots);
     std::vector<std::string> GetPipelines(const conduit::Node &plots);
     void CreateScenes(const conduit::Node &scenes);

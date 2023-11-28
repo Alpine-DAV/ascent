@@ -11,6 +11,7 @@ import sys
 import subprocess
 import shutil
 import datetime
+import platform
 
 from os.path import join as pjoin
 
@@ -38,10 +39,10 @@ def sexe(cmd,ret_output=False,echo = True):
     if ret_output:
         p = subprocess.Popen(cmd,
                              shell=True,
+                             universal_newlines=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
         res = p.communicate()[0]
-        res = res.decode('utf8')
         return p.returncode,res
     else:
         return subprocess.call(cmd,shell=True)
@@ -67,34 +68,46 @@ def gen_docker_tag():
 
 def main():
     # get tag-base
-    if len(sys.argv) < 2:
-        print("usage: build_and_tag.py {tag_base} <extra docker build args>")
+    if len(sys.argv) < 4:
+        print("usage: docker_build_and_tag.py {repo_name} {tag_arch} {tag_base} <extra docker build args>")
         sys.exit(-1)
-    tag_base = sys.argv[1]
+    repo_name = sys.argv[1]
+    tag_arch  = sys.argv[2]
+    tag_base  = sys.argv[3]
 
     extra_args = ""
-    if len(sys.argv) > 2:
-        extra_args = sys.argv[2]
+    if len(sys.argv) > 4:
+        extra_args = "".join(sys.argv[4:])
+
+    print("repo_name:  {0}".format(repo_name))
+    print("tag_arch:   {0}".format(tag_arch))
+    print("tag_base:   {0}".format(tag_base))
+    print("extra_args: {0}".format(extra_args))
 
     # remove old source tarball if it exists
-    remove_if_exists("ascent.docker.src.tar.gz")
+    remove_if_exists("{0}.docker.src.tar.gz".format(repo_name))
 
     # save current working dir so we can get back here
     orig_dir = os.path.abspath(os.getcwd())
 
-    # get current copy of the ascent source
-    os.chdir("../../../../")
+    # move to git root dir to get current copy of git source
+    rcode, root_dir = sexe("git rev-parse --show-toplevel",ret_output=True)
+    root_dir = root_dir.strip()
+    print("[repo root dir: {0}]".format(root_dir))
+    os.chdir(root_dir)
 
-    # get current copy of the ascent source
-    cmd ='python package.py {0}'
-    sexe(cmd.format(pjoin(orig_dir, "ascent.docker.src.tar.gz")))
+    # get current copy of the source
+    cmd ='python3 package.py {0}'
+    sexe(cmd.format(pjoin(orig_dir, "{0}.docker.src.tar.gz".format(repo_name))))
 
     # change back to orig working dir
     os.chdir(orig_dir)
 
     # exec docker build to create image
     # tag with date + git hash
-    sexe('docker build -t {0}_{1} . {2}'.format(tag_base,
+    sexe('docker build --build-arg "TAG_ARCH={0}" -t {1}_{2} . {3}'.format(
+                                             tag_arch,
+                                             tag_base,
                                              gen_docker_tag(),
                                              extra_args))
 

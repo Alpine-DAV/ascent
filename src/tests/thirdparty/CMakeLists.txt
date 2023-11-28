@@ -18,6 +18,17 @@ if(HIP_FOUND)
     list(APPEND smoke_device_deps blt_hip)
 endif()
 
+set(conduit_smoke_deps conduit::conduit)
+
+if(ZLIB_FOUND)
+    message(STATUS "Adding zlib smoke test")
+    list(APPEND conduit_smoke_deps ZLIB::ZLIB)
+    add_cpp_test(TEST t_zlib_smoke DEPENDS_ON ZLIB::ZLIB)
+endif()
+
+message(STATUS "Adding conduit smoke test")
+add_cpp_test(TEST t_conduit_smoke DEPENDS_ON ${conduit_smoke_deps})
+
 if(CALIPER_FOUND)
     message(STATUS "Adding caliper smoke test")
     add_cpp_test(TEST t_caliper_smoke DEPENDS_ON caliper)

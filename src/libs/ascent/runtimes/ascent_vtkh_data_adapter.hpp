@@ -123,6 +123,14 @@ private:
                                                                   int &nverts,
                                                                   bool zero_copy);
 
+     static vtkm::cont::DataSet *PointsImplicitBlueprintToVTKmDataSet(const std::string &coords_name,
+                                                                      const conduit::Node &n_coords,
+                                                                      const std::string &topo_name,
+                                                                      const conduit::Node &n_topo,
+                                                                      int &neles,
+                                                                      int &nverts,
+                                                                      bool zero_copy);
+
      static vtkm::cont::DataSet *UnstructuredBlueprintToVTKmDataSet(const std::string &coords_name,
                                                                     const conduit::Node &n_coords,
                                                                     const std::string &topo_name,
