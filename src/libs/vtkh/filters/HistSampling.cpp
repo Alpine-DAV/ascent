@@ -231,24 +231,26 @@ public:
 };
 
 
-void PrintStatInfo(vtkm::worklet::DescriptiveStatistics<vtkm::Float64>::StatInfo statinfo)
+void PrintStatInfo(vtkm::worklet::DescriptiveStatistics::StatState<vtkm::Float64> statinfo)
 {
-  std::cout << "   Median " << statinfo.median << std::endl;
-  std::cout << "   Minimum " << statinfo.minimum << std::endl;
-  std::cout << "   Maximum " << statinfo.maximum << std::endl;
-  std::cout << "   Mean " << statinfo.mean << std::endl;
-  std::cout << "   Variance " << statinfo.variance << std::endl;
-  std::cout << "   Standard Deviation " << statinfo.stddev << std::endl;
-  std::cout << "   Skewness " << statinfo.skewness << std::endl;
-  std::cout << "   Kurtosis " << statinfo.kurtosis << std::endl;
-  std::cout << "   Raw Moment 1-4 [ ";
-  for (vtkm::Id i = 0; i < 4; i++)
-    std::cout << statinfo.rawMoment[i] << " ";
-  std::cout << "]" << std::endl;
-  std::cout << "   Central Moment 1-4 [ ";
-  for (vtkm::Id i = 0; i < 4; i++)
-    std::cout << statinfo.centralMoment[i] << " ";
-  std::cout << "]" << std::endl;
+  std::cout << "   Minimum " << statinfo.Min() << std::endl;
+  std::cout << "   Maximum " << statinfo.Max() << std::endl;
+  std::cout << "   Mean " << statinfo.Mean() << std::endl;
+  std::cout << "   Population Variance " << statinfo.PopulationVariance() << std::endl;
+  std::cout << "   Sample Variance " << statinfo.SampleVariance() << std::endl;
+  std::cout << "   Population Standard Deviation " << statinfo.SampleStddev() << std::endl;
+  std::cout << "   Sample Standard Deviation " << statinfo.PopulationStddev() << std::endl;
+  std::cout << "   Skewness " << statinfo.Skewness() << std::endl;
+  std::cout << "   Kurtosis " << statinfo.Kurtosis() << std::endl;
+//below was removed with vtkm 2.1
+//  std::cout << "   Raw Moment 1-4 [ ";
+//  for (vtkm::Id i = 0; i < 4; i++)
+//    std::cout << statinfo.rawMoment[i] << " ";
+//  std::cout << "]" << std::endl;
+//  std::cout << "   Central Moment 1-4 [ ";
+//  for (vtkm::Id i = 0; i < 4; i++)
+//    std::cout << statinfo.centralMoment[i] << " ";
+//  std::cout << "]" << std::endl;
 }
 
 void HistSampling::DoExecute()
@@ -307,7 +309,7 @@ void HistSampling::DoExecute()
 
 
     //vtkm::worklet::FieldStatistics<vtkm::Float64>::StatInfo statinfo;
-    //vtkm::worklet::FieldStatistics<vtkm::Float64>().Run(data, statinfo);
+    auto statinfo = vtkm::worklet::DescriptiveStatistics::Run(data);
 
     //std::cout << "Statistics for CELL data:" << std::endl;
     //PrintStatInfo(statinfo);
