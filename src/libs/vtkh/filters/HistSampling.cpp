@@ -7,7 +7,7 @@
 #include <vtkm/worklet/DispatcherMapField.h>
 #include <vtkm/worklet/WorkletMapField.h>
 
-#include <vtkm/worklet/FieldStatistics.h>
+#include <vtkm/worklet/DescriptiveStatistics.h>
 //#include <vtkm/filter/CreateResult.h>
 #include <vtkm/cont/ArrayHandleTransform.h>
 #include <vtkm/worklet/DispatcherMapField.h>
@@ -231,7 +231,7 @@ public:
 };
 
 
-void PrintStatInfo(vtkm::worklet::FieldStatistics<vtkm::Float64>::StatInfo statinfo)
+void PrintStatInfo(vtkm::worklet::DescriptiveStatistics<vtkm::Float64>::StatInfo statinfo)
 {
   std::cout << "   Median " << statinfo.median << std::endl;
   std::cout << "   Minimum " << statinfo.minimum << std::endl;
