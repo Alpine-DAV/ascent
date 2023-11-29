@@ -147,6 +147,8 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("raja~cuda+shared", when="~cuda+shared")
     depends_on("raja~cuda~shared", when="~cuda~shared")
 
+    # llvm-openmp doesn't seem to work with raja
+    depends_on("raja~openmp", when="%apple-clang")
 
     #############################
     # Umpire
@@ -450,6 +452,13 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
                                         f_compiler))
         else:
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "OFF"))
+
+        rpath_flags = ""
+        for rpath in self.compiler.extra_rpaths:
+            rpath_flags += " -Wl,-rpath,{0}".format(rpath)
+        if rpath_flags != "":
+            cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS",
+                                        rpath_flags))
 
         # shared vs static libs
         if "+shared" in spec:
