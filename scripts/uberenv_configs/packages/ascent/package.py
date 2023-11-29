@@ -281,8 +281,22 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     #######################
     # Documentation related
     #######################
-    depends_on("py-sphinx", when="+python+doc", type='build')
-    depends_on("py-sphinx-rtd-theme", when="+python+doc", type='build')
+    #
+    # NOTE: Why aren't these tagged `build`?
+    #
+    # Removed `build` as the simplest way to get sphinx
+    # to be added to the spack view.
+    #
+    # Also tried adding py-sphinx to the env, however
+    # that caused the concertizer to flip  uberenv-package python variant
+    # to ~python, undermining python completely.
+    #
+    #depends_on("py-sphinx", when="+python+doc", type="build")
+    #depends_on("py-sphinx-rtd-theme", when="+python+doc", type="build")
+    # NOTE: sphinx 7.0.0 is not compatible with sphinx-rtd-theme
+    # depends_on("py-sphinx@:6.99.99", when="+python+doc")
+    depends_on("py-sphinx", when="+python+doc")
+    depends_on("py-sphinx-rtd-theme", when="+python+doc")
 
     ###########
     # Conflicts
