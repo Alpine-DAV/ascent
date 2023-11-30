@@ -50,7 +50,12 @@ void GenerateChargedParticles(const vtkm::cont::ArrayHandle<vtkm::Vec3f>& pos,
 } //end detail
 
 WarpXStreamline::WarpXStreamline()
-: m_e_field_name("E"), m_b_field_name("B")
+: m_e_field_name("E"), 
+	m_b_field_name("B"), 
+	m_charge_field_name("Charge"), 
+	m_mass_field_name("Mass"),
+	m_momentum_field_name("Momentum"), 
+	m_weighting_field_name("Weighting")
 {
 	
 }
@@ -63,8 +68,13 @@ WarpXStreamline::~WarpXStreamline()
 void WarpXStreamline::PreExecute()
 {
   Filter::PreExecute();
-  Filter::CheckForRequiredField(m_e_field_name);
   Filter::CheckForRequiredField(m_b_field_name);
+  Filter::CheckForRequiredField(m_e_field_name);
+  Filter::CheckForRequiredField(m_charge_field_name);
+  Filter::CheckForRequiredField(m_mass_field_name);
+  Filter::CheckForRequiredField(m_momentum_field_name);
+  Filter::CheckForRequiredField(m_weighting_field_name);
+
 }
 
 void WarpXStreamline::PostExecute()
@@ -100,7 +110,7 @@ void WarpXStreamline::DoExecute()
   vtkm::cont::ArrayHandle<vtkm::ChargedParticle> seeds;
   //Create charged particles for all domains with the particle spec fields.
   //TODO: user specified momentum,mass,charge,weighting?
-  if (this->m_input->FieldExists("Momentum"))
+  if (this->m_input->FieldExists(m_momentum_field_name))
   {
     const int num_domains = this->m_input->GetNumberOfDomains();
     int id_offset = 0;
@@ -109,15 +119,15 @@ void WarpXStreamline::DoExecute()
       vtkm::Id domain_id;
       vtkm::cont::DataSet dom;
       this->m_input->GetDomain(i, dom, domain_id);
-      if(dom.HasField("Momentum"))
+      if(dom.HasField(m_momentum_field_name))
       {
         vtkm::cont::ArrayHandle<vtkm::Vec3f> pos, mom;
         vtkm::cont::ArrayHandle<vtkm::Float64> mass, charge, w;
         dom.GetCoordinateSystem().GetData().AsArrayHandle(pos);
-        dom.GetField("Momentum").GetData().AsArrayHandle(mom);
-        dom.GetField("Mass").GetData().AsArrayHandle(mass);
-        dom.GetField("Charge").GetData().AsArrayHandle(charge);
-        dom.GetField("Weighting").GetData().AsArrayHandle(w);
+        dom.GetField(m_momentum_field_name).GetData().AsArrayHandle(mom);
+        dom.GetField(m_mass_field_name).GetData().AsArrayHandle(mass);
+        dom.GetField(m_charge_field_name).GetData().AsArrayHandle(charge);
+        dom.GetField(m_weighting_field_name).GetData().AsArrayHandle(w);
 	detail::GenerateChargedParticles(pos,mom,mass,charge,w,seeds, id_offset);
 	//Actual: local unique ids
 	//Question: do we global unique ids? 
@@ -125,25 +135,20 @@ void WarpXStreamline::DoExecute()
       }
       if(dom.HasField(m_b_field_name))
       {
-        using vectorField_d = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>>;
-        using vectorField_f = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 3>>;
-	std::cerr << "HERE 1" << std::endl;
         auto field = dom.GetField(m_b_field_name).GetData();
-	std::cerr << "HERE 2" << std::endl;
-	if(field.IsType<vectorField_d>())
-		std::cerr << "Vector field is DOUBLE" << std::endl;
-	if(field.IsType<vectorField_f>())
-		std::cerr << "Vector field is FLOAT" << std::endl;
-        if(field.IsType<vectorField_d>() && !field.IsType<vectorField_f>())
-        {
-          inputs.AppendPartition(dom);
-        }
+        inputs.AppendPartition(dom);
       }
     }
   }
+  else
+  {
+    throw Error("Domain is missing one or more neccessary fields to create a charged particle: \
+		   Charge, Mass, Momentum, and/or Weighting.");
+  }
 
   bool validField = (inputs.GetNumberOfPartitions() > 0);
-
+//Don't really need this check
+//since we got rid of the other check
 #ifdef VTKH_PARALLEL
   int localNum = static_cast<int>(inputs.GetNumberOfPartitions());
   int globalNum = 0;
@@ -158,7 +163,7 @@ void WarpXStreamline::DoExecute()
 
   if (!validField)
   {
-    throw Error("Vector field type does not match <vtkm::Vec<vtkm::Float32,3>> or <vtkm::Vec<vtkm::Float64,3>>");
+    throw Error("Vector field type does not match a supportable type.");
   }
 
   //Everything is valid. Call the VTKm filter.
@@ -171,10 +176,11 @@ void WarpXStreamline::DoExecute()
   warpxStreamlineFilter.SetSeeds(seeds);
   warpxStreamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = warpxStreamlineFilter.Execute(inputs);
-
+  //out.PrintSummary(std::cerr);
+  int num_domains = m_output->GetNumberOfDomains();
   for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
   {
-    this->m_output->AddDomain(out.GetPartition(i), i);
+    this->m_output->AddDomain(out.GetPartition(i), num_domains + i);
   }
 #endif
 }

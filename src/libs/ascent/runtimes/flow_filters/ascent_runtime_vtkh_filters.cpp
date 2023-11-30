@@ -3965,6 +3965,10 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
     std::vector<std::string> valid_paths;
     valid_paths.push_back("b_field");
     valid_paths.push_back("e_field");
+    valid_paths.push_back("charge_field");
+    valid_paths.push_back("mass_field");
+    valid_paths.push_back("momentum_field");
+    valid_paths.push_back("weighting_field");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
 
@@ -4000,19 +4004,23 @@ VTKHWarpXStreamline::execute()
 
     std::string b_field = "B";
     std::string e_field = "E";
+    std::string charge_field = "Charge";
+    std::string mass_field = "Mass";
+    std::string momentum_field = "Momentum";
+    std::string weighting_field = "Weighting";
     if(params().has_path("b_field"))
       b_field = params()["b_field"].as_string();
     if(params().has_path("e_field"))
       e_field = params()["e_field"].as_string();
+    if(params().has_path("charge_field"))
+      charge_field = params()["charge_field"].as_string();
+    if(params().has_path("mass_field"))
+      mass_field = params()["mass_field"].as_string();
+    if(params().has_path("momentum_field"))
+      momentum_field = params()["momentum_field"].as_string();
+    if(params().has_path("weighting_field"))
+      weighting_field = params()["weighting_field"].as_string();
 
-    if(!collection->has_field(e_field))
-    {
-      bool throw_error = false;
-      detail::field_error(e_field, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
     if(!collection->has_field(b_field))
     {
       bool throw_error = false;
@@ -4021,40 +4029,15 @@ VTKHWarpXStreamline::execute()
       set_output<DataObject>(new DataObject());
       return;
     }
+    if(!collection->has_field(e_field))
+    {
+      bool throw_error = false;
+      detail::field_error(e_field, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
     
-    if(!collection->has_field("Momentum"))
-    {
-      bool throw_error = false;
-      detail::field_error("Momentum", this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
-    if(!collection->has_field("Mass"))
-    {
-      bool throw_error = false;
-      detail::field_error("Mass", this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
-    if(!collection->has_field("Charge"))
-    {
-      bool throw_error = false;
-      detail::field_error("Charge", this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
-    if(!collection->has_field("Weighting"))
-    {
-      bool throw_error = false;
-      detail::field_error("Weighting", this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
-
     std::string topo_name = collection->field_topology(b_field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
@@ -4069,6 +4052,10 @@ VTKHWarpXStreamline::execute()
     sl.SetNumberOfSteps(numSteps);
     sl.SetBField(b_field);
     sl.SetEField(e_field);
+    sl.SetChargeField(charge_field);
+    sl.SetMassField(mass_field);
+    sl.SetMomentumField(momentum_field);
+    sl.SetWeightingField(weighting_field);
     sl.SetInput(&data);
     sl.Update();
     output = sl.GetOutput();

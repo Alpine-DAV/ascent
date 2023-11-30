@@ -165,23 +165,16 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   vtkm::cont::CoordinateSystem coords = fieldsData.GetCoordinateSystem();
 
   auto w_bounds = coords.GetBounds();
-  std::cout << "Bounds : " << w_bounds << std::endl;
   using Structured3DType = vtkm::cont::CellSetStructured<3>;
-  std::cerr << "HERE 1" << std::endl;
   Structured3DType castedCells;
-  std::cerr << "HERE 2" << std::endl;
   cells.AsCellSet(castedCells);
-  std::cerr << "HERE 3" << std::endl;
   auto dims = castedCells.GetSchedulingRange(vtkm::TopologyElementTagPoint());
-  std::cerr << "HERE 4" << std::endl;
   vtkm::Vec3f spacing = { static_cast<vtkm::FloatDefault>(w_bounds.X.Length()) / (dims[0] - 1),
                           static_cast<vtkm::FloatDefault>(w_bounds.Y.Length()) / (dims[1] - 1),
                           static_cast<vtkm::FloatDefault>(w_bounds.Z.Length()) / (dims[2] - 1) };
-  std::cerr << "HERE 5" << std::endl;
   constexpr static vtkm::FloatDefault SPEED_OF_LIGHT =
     static_cast<vtkm::FloatDefault>(2.99792458e8);
   spacing = spacing * spacing;
-  std::cerr << "HERE 6" << std::endl;
 
   vtkm::FloatDefault length = static_cast<vtkm::FloatDefault>(
     1.0 / (SPEED_OF_LIGHT * vtkm::Sqrt(1. / spacing[0] + 1. / spacing[1] + 1. / spacing[2])));
@@ -190,9 +183,9 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
 
   vtkh::DataSet *outWSL=NULL;
   
-  warpx_data_set.PrintSummary(std::cerr);
+  //warpx_data_set.PrintSummary(std::cerr);
   outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, length);
-  outWSL->PrintSummary(std::cout);
+  //outWSL->PrintSummary(std::cerr);
   checkValidity(outWSL, maxAdvSteps+1, true);
   writeDataSet(outWSL, "warpx_streamline", rank);
 
