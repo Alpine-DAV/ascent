@@ -43,8 +43,11 @@ jobs:
         echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | \
           sudo tee /etc/apt/sources.list.d/oneAPI.list > /dev/null
         sudo apt-get update
-        sudo apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic \
-                       intel-oneapi-compiler-fortran
+        # NOTE: Need to pin dates for openapi compilers.
+        # Why? b/c we hit a case were 2023 cpp and 2024 fortran compilers ended up getting installed
+        # And then only one or the other were avaible via oneapi/setvars.sh
+        sudo apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic-2023.1.0 \
+                       intel-oneapi-compiler-fortran-2023.1.0
     - name: Checkout
       uses: actions/checkout@v2
       with:
@@ -53,10 +56,6 @@ jobs:
       run: |
         source /opt/intel/oneapi/setvars.sh
         # print env vars to see what is going on
-        env
-        which icx
-        which icpx
-        which ifx
         env enable_mpi=OFF \
             enable_fortran=ON \
             enable_tests=OFF \
