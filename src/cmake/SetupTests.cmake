@@ -58,6 +58,51 @@ if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
 endif()
 
 ##------------------------------------------------------------------------------
+## - Helper to setup env vars needed for python for a given test
+##
+## setup_test_py_env( TEST test  )
+##------------------------------------------------------------------------------
+function(setup_test_py_env)
+    set(options)
+    set(singleValueArgs TEST)
+    set(multiValueArgs )
+
+    # parse our arguments
+    cmake_parse_arguments(arg
+                         "${options}"
+                         "${singleValueArgs}"
+                         "${multiValueArgs}" ${ARGN} )
+
+    if(PYTHON_FOUND AND ENABLE_PYTHON)
+        # make sure python can pick up the modules we built
+        # use proper env var path sep for current platform
+        if(WIN32)
+            set(ENV_PATH_SEP "\\;")
+        else()
+            set(ENV_PATH_SEP ":")
+        endif()
+
+        # if python path is already set -- we need to append to it
+        # this is important for running in spack's build-env
+        set(PYTHON_TEST_PATH "")
+
+        if(DEFINED ENV{PYTHONPATH})
+            set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
+        endif()
+
+        #message(STATUS "EXTRA_PYTHON_MODULE_DIRS ${EXTRA_PYTHON_MODULE_DIRS}")
+
+        set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
+        if(EXTRA_PYTHON_MODULE_DIRS)
+            foreach(EXTRA_PYTHON_MODULE_DIR ${EXTRA_PYTHON_MODULE_DIRS})
+                set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIR}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
+            endforeach()
+        endif()
+        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+    endif()
+endfunction()
+
+##------------------------------------------------------------------------------
 ## - Builds and adds a test that uses gtest
 ##
 ## add_cpp_test( TEST test DEPENDS_ON dep1 dep2... )
@@ -85,83 +130,7 @@ function(add_cpp_test)
                   COMMAND ${arg_TEST}
                     )
 
-    if(PYTHON_FOUND AND ENABLE_PYTHON)
-        # make sure python can pick up the modules we built
-        # use proper env var path sep for current platform
-        if(WIN32)
-            set(ENV_PATH_SEP "\\;")
-        else()
-            set(ENV_PATH_SEP ":")
-        endif()
-
-        # if python path is already set -- we need to append to it
-        # this is important for running in spack's build-env
-        set(PYTHON_TEST_PATH "")
-
-        if(DEFINED ENV{PYTHONPATH})
-            set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
-        endif()
-
-        set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
-        if(EXTRA_PYTHON_MODULE_DIRS)
-            set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
-        endif()
-        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
-    endif()
-endfunction()
-
-
-##------------------------------------------------------------------------------
-## - Builds and adds a test that uses gtest
-##
-## add_cuda_test( TEST test DEPENDS_ON dep1 dep2... )
-##------------------------------------------------------------------------------
-function(add_cuda_test)
-
-    set(options)
-    set(singleValueArgs TEST)
-    set(multiValueArgs DEPENDS_ON)
-
-    # parse our arguments
-    cmake_parse_arguments(arg
-                         "${options}"
-                         "${singleValueArgs}"
-                         "${multiValueArgs}" ${ARGN} )
-
-    message(STATUS " [*] Adding CUDA Unit Test: ${arg_TEST}")
-
-    blt_add_executable( NAME ${arg_TEST}
-                        SOURCES ${arg_TEST}.cpp ${fortran_driver_source}
-                        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-                        DEPENDS_ON "${arg_DEPENDS_ON}" gtest cuda)
-
-    blt_add_test( NAME ${arg_TEST}
-                  COMMAND ${arg_TEST}
-                    )
-
-    if(PYTHON_FOUND AND ENABLE_PYTHON)
-        # make sure python can pick up the modules we built
-        # use proper env var path sep for current platform
-        if(WIN32)
-            set(ENV_PATH_SEP "\\;")
-        else()
-            set(ENV_PATH_SEP ":")
-        endif()
-
-        # if python path is already set -- we need to append to it
-        # this is important for running in spack's build-env
-        set(PYTHON_TEST_PATH "")
-
-        if(DEFINED ENV{PYTHONPATH})
-            set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
-        endif()
-
-        set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
-        if(EXTRA_PYTHON_MODULE_DIRS)
-            set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
-        endif()
-        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
-    endif()
+    setup_test_py_env(TEST ${arg_TEST})
 
 endfunction()
 
@@ -195,29 +164,7 @@ function(add_cpp_mpi_test)
                   COMMAND ${arg_TEST}
                   NUM_MPI_TASKS ${arg_NUM_MPI_TASKS})
 
-    if(PYTHON_FOUND AND ENABLE_PYTHON)
-        # make sure python can pick up the modules we built
-        # use proper env var path sep for current platform
-        if(WIN32)
-            set(ENV_PATH_SEP "\\;")
-        else()
-            set(ENV_PATH_SEP ":")
-        endif()
-
-        # if python path is already set -- we need to append to it
-        # this is important for running in spack's build-env
-        set(PYTHON_TEST_PATH "")
-
-        if(DEFINED ENV{PYTHONPATH})
-            set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
-        endif()
-
-        set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
-        if(EXTRA_PYTHON_MODULE_DIRS)
-            set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
-        endif()
-        set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
-    endif()
+    setup_test_py_env(TEST ${arg_TEST})
 
     ###########################################################################
     # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
@@ -248,19 +195,7 @@ function(add_python_test TEST)
         set(ENV_PATH_SEP ":")
     endif()
 
-    # if python path is already set -- we need to append to it
-    # this is important for running in spack's build-env
-    set(PYTHON_TEST_PATH "")
-
-    if(DEFINED ENV{PYTHONPATH})
-        set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
-    endif()
-
-    set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
-    if(EXTRA_PYTHON_MODULE_DIRS)
-        set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
-    endif()
-    set_property(TEST ${TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+    setup_test_py_env(TEST ${arg_TEST})
 
 endfunction(add_python_test)
 
@@ -292,27 +227,7 @@ function(add_python_mpi_test)
     add_test(NAME ${arg_TEST}
              COMMAND ${test_command} )
 
-     # make sure python can pick up the modules we built
-     # use proper env var path sep for current platform
-     if(WIN32)
-         set(ENV_PATH_SEP "\\;")
-     else()
-         set(ENV_PATH_SEP ":")
-     endif()
-
-     # if python path is already set -- we need to append to it
-     # this is important for running in spack's build-env
-     set(PYTHON_TEST_PATH "")
-
-     if(DEFINED ENV{PYTHONPATH})
-       set(PYTHON_TEST_PATH "$ENV{PYTHONPATH}${ENV_PATH_SEP}")
-     endif()
-
-     set(PYTHON_TEST_PATH "${PYTHON_TEST_PATH}${CMAKE_BINARY_DIR}/python-modules/${ENV_PATH_SEP}${CMAKE_CURRENT_SOURCE_DIR}")
-     if(EXTRA_PYTHON_MODULE_DIRS)
-         set(PYTHON_TEST_PATH "${EXTRA_PYTHON_MODULE_DIRS}${ENV_PATH_SEP}${PYTHON_TEST_PATH}")
-     endif()
-     set_property(TEST ${arg_TEST} PROPERTY ENVIRONMENT  "PYTHONPATH=${PYTHON_TEST_PATH}")
+    setup_test_py_env(TEST ${arg_TEST})
 
      ###########################################################################
      # Newer versions of OpenMPI require OMPI_MCA_rmaps_base_oversubscribe=1
@@ -351,6 +266,8 @@ macro(add_fortran_test)
 
     blt_add_test( NAME ${arg_TEST}
                   COMMAND ${arg_TEST})
+
+    setup_test_py_env(TEST ${arg_TEST})
 
 endmacro(add_fortran_test)
 

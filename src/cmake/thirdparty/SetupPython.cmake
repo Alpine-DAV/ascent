@@ -18,8 +18,10 @@ endif()
 
 find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
-        
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
+
+        # clear extra python module dirs
+        set(EXTRA_PYTHON_MODULE_DIRS "")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                         "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
@@ -47,7 +49,9 @@ if(PYTHONINTERP_FOUND)
             MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
         endif()
 
-        
+        # for embedded python, we need to know where the site packages dir is
+        list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
+
         # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;import sysconfig;sys.stdout.write(sysconfig.get_config_var('LDSHARED'))"
@@ -231,6 +235,7 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
             --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
             install
             --install-purelib="${abs_dest_path}"
+            --old-and-unmanageable
             DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -251,6 +256,7 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
                 COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
                     build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
                     install --install-purelib=${py_mod_inst_prefix}
+                    --old-and-unmanageable
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
@@ -262,6 +268,7 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
                 COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
                     build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
                     install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+                    --old-and-unmanageable
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")

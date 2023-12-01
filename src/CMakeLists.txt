@@ -91,6 +91,13 @@ if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
+# allow FindPythonInterp and FindPythonLibs
+# https://cmake.org/cmake/help/latest/policy/CMP0148.html
+if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+endif()
+
+
 ################################
 # Populate the cmake gui
 ################################
