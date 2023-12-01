@@ -52,6 +52,11 @@ jobs:
     - name: Build TPLs
       run: |
         source /opt/intel/oneapi/setvars.sh
+        # print env vars to see what is going on
+        env
+        which icx
+        which icpx
+        which ifx
         env enable_mpi=OFF \
             enable_fortran=ON \
             enable_tests=OFF \
