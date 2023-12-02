@@ -195,7 +195,7 @@ function(add_python_test TEST)
         set(ENV_PATH_SEP ":")
     endif()
 
-    setup_test_py_env(TEST ${arg_TEST})
+    setup_test_py_env(TEST ${TEST})
 
 endfunction(add_python_test)
 
