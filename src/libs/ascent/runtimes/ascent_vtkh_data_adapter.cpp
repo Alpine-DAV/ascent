@@ -684,6 +684,16 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                                    nverts,
                                                    zero_copy);
     }
+    else if( mesh_type ==  "points")
+    {
+        result =  PointsImplicitBlueprintToVTKmDataSet(coords_name,
+                                                       n_coords,
+                                                       topo_name,
+                                                       n_topo,
+                                                       neles,
+                                                       nverts,
+                                                       zero_copy);
+    }
     else if( mesh_type ==  "unstructured")
     {
         result =  UnstructuredBlueprintToVTKmDataSet(coords_name,
@@ -1183,6 +1193,62 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       neles = x_elems * y_elems * z_elems;
 
     }
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+
+vtkm::cont::DataSet *
+VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
+    (const std::string &coords_name, // input string with coordset name
+     const Node &n_coords,           // input mesh bp coordset (assumed unstructured)
+     const std::string &topo_name,   // input string with topo name
+     const Node &n_topo,             // input mesh bp topo
+     int &neles,                     // output, number of eles  (will be the same as nverts)
+     int &nverts,                    // output, number of verts (will be the same as neles)
+     bool zero_copy)                 // attempt to zero copy
+{
+    vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
+
+    nverts = n_coords["values/x"].dtype().number_of_elements();
+
+    int32 ndims;
+    vtkm::cont::CoordinateSystem coords;
+    if(n_coords["values/x"].dtype().is_float64())
+    {
+      coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
+                                                            coords_name,
+                                                            ndims,
+                                                            zero_copy);
+    }
+    else if(n_coords["values/x"].dtype().is_float32())
+    {
+      coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
+                                                            coords_name,
+                                                            ndims,
+                                                            zero_copy);
+    }
+    else
+    {
+      ASCENT_ERROR("Coordinate system must be floating point values");
+    }
+
+    result->AddCoordinateSystem(coords);
+
+    vtkm::UInt8 shape_id = 1;
+    vtkm::IdComponent indices_per = 1;
+    vtkm::cont::CellSetSingleType<> cellset;
+    // alloc conn to nverts, fill with 0 --> nverts-1)
+    vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+    connectivity.Allocate(nverts);
+    auto conn_portal = connectivity.WritePortal();
+    for(int i = 0; i < nverts; ++i)
+    {
+        conn_portal.Set(i, i);
+    }
+    cellset.Fill(nverts, shape_id, indices_per, connectivity);
+    neles = cellset.GetNumberOfCells();
+    result->SetCellSet(cellset);
     return result;
 }
 

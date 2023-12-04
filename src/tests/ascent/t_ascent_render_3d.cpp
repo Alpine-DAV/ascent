@@ -2510,6 +2510,69 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
     ascent.close();
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_points_implicit_topo)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("points_implicit",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering of implicit points topology");
+
+    //
+    // Create the actions.
+    //
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+
+
+    string output_path = prepare_output_dir();
+
+
+    string output_file = conduit::utils::join_file_path(output_path,
+                                    "tout_render_3d_braid_points_implicit");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    scenes["s1/image_prefix"] = output_file;
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+
+}
+
+
 // //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_extreme_extents)
 {

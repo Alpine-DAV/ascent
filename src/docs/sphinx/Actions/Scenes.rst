@@ -464,7 +464,7 @@ The code below creates a pipeline that first applies a contour filter and then a
     :align: center
 
     The camera placement chosen by the VQ metric DDS Entropy for this example.
-    This example and implementation of the other VQ metrics can be found in `auto_camera test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/vtkh/t_vtk-h_auto_camera.cpp>`_.
+    This example and implementation of the other VQ metrics can be found in `auto_camera test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_render_auto_camera.cpp>`_.
 
 .. _actions_cinema:
 
