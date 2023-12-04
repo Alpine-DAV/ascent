@@ -364,7 +364,6 @@ endif()
 ##################
 set(ascent_thirdparty_libs
     conduit::conduit
-    logger
     ascent_flow
     ascent_lodepng
     ascent_png_utils)
@@ -372,6 +371,10 @@ set(ascent_thirdparty_libs
 ##################
 # optional libs
 ##################
+#if(ENABLE_LOGGING)
+    list(APPEND ascent_thirdparty_libs logger)
+#endif()
+
 if(OCCA_FOUND)
     list(APPEND ascent_thirdparty_libs occa)
 endif()
@@ -470,7 +473,11 @@ if (ENABLE_SERIAL)
             ARCHIVE DESTINATION lib
             RUNTIME DESTINATION lib
             )
-
+    #logging
+    #if(ENABLE_LOGGING)
+    list(APPEND internal_targets_to_link
+           $<TARGET_FILE:logger>)
+    #endif()
     # manual device link for CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
         set(internal_targets_to_link $<TARGET_FILE:rover>)
@@ -609,6 +616,11 @@ if(MPI_FOUND)
 
     # this combines our mpi specific deps to the broader list of ascent deps
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
+
+    #if(ENABLE_LOGGING)
+    list(REMOVE_ITEM ascent_mpi_thirdparty_libs logger)
+    list(APPEND ascent_mpi_thirdparty_libs logger_mpi)
+    #endif()
 
     if(VTKM_FOUND)
         # swap vtkh_mpi for vtkh

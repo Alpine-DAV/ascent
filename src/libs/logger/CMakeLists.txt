@@ -6,10 +6,16 @@
 #configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/logger_config.h.in"
 #                "${CMAKE_CURRENT_BINARY_DIR}/logger_config.h")
 
+set(logger_base_deps conduit::conduit ascent_png_utils)
+
+if(ENABLE_OPENMP)
+    list(APPEND logger_base_deps ${ascent_blt_openmp_deps})
+endif()
 
 set(logger_headers
     Logger.hpp
     Timer.hpp
+    #    ${CMAKE_CURRENT_BINARY_DIR}/logger_config.h
   )
 
 set(logger_sources
@@ -20,15 +26,14 @@ set(logger_sources
 
 install(FILES ${logger_headers} DESTINATION include/ascent/logger)
 
+
 #------------------------------------------------------------------------------
 # serial (non mpi) logger lib
 #------------------------------------------------------------------------------
 if (ENABLE_SERIAL)
-    set(logger_deps conduit::conduit ascent_png_utils)
 
-    if(ENABLE_OPENMP)
-        list(APPEND logger_deps ${ascent_blt_openmp_deps})
-    endif()
+    set(logger_deps ${logger_base_deps})
+
 
     blt_add_library(NAME logger
                     SOURCES ${logger_sources}
@@ -100,9 +105,9 @@ if (MPI_FOUND)
     target_compile_definitions(logger_mpi PRIVATE LOGGER_PARALLEL)
     target_compile_definitions(logger_mpi PRIVATE ASCENT_EXPORTS_FLAG)
 
-    if(ENABLE_HIDDEN_VISIBILITY)
-        set_target_properties(logger_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
-    endif()
+    # if(ENABLE_HIDDEN_VISIBILITY)
+    #     set_target_properties(logger_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    # endif()
 
     # install target
     install(TARGETS logger_mpi

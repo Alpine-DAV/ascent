@@ -36,9 +36,9 @@ add_subdirectory(png_utils)
 ################################
 # Add logging
 ################################
-if(ENABLE_LOGGING)
-    add_subdirectory(logger)
-endif()
+#if(ENABLE_LOGGING)
+add_subdirectory(logger)
+    #endif()
 
 ################################
 # Add ap comp

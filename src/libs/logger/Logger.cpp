@@ -172,4 +172,5 @@ DataLogger::CloseLogEntry()
   m_key_counters.pop();
   m_at_block_start = false;
 }
+
 };
