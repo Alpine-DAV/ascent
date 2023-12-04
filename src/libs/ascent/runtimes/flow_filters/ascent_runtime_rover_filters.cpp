@@ -301,8 +301,14 @@ RoverXRay::execute()
         }
       }
 
+      conduit::Node extra_opts;
       std::string result_path;
-      mesh_blueprint_save(multi_domain, filename, protocol, -1, result_path);
+      mesh_blueprint_save(multi_domain,
+                          filename,
+                          protocol,
+                          -1,
+                          extra_opts,
+                          result_path);
     }
 
     if(params().has_path("image_params"))

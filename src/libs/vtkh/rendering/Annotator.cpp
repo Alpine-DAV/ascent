@@ -51,6 +51,30 @@ Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
   m_canvas.EndTextRenderingBatch();
 }
 
+void
+Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
+                                    const std::vector<vtkm::Range> &ranges,
+                                    const std::vector<vtkm::cont::ColorTable> &color_tables,
+				    const std::vector<vtkm::Bounds> &color_bar_pos)
+	                         
+{
+  m_canvas.SetViewToScreenSpace(m_camera, true);
+  //a user can put as many color bars as they want anywhere they want
+  int num_bars = std::min(int(field_names.size()),int(color_bar_pos.size()));
+  m_canvas.BeginTextRenderingBatch();
+  m_world_annotator->BeginLineRenderingBatch();
+  for(int i = 0; i < num_bars; ++i)
+  {
+    this->m_color_bar_annotation.SetRange(ranges[i], 5);
+    this->m_color_bar_annotation.SetFieldName(field_names[i]);
+    this->m_color_bar_annotation.SetPosition(color_bar_pos[i]);
+    this->m_color_bar_annotation.SetColorTable(color_tables[i]);
+    this->m_color_bar_annotation.Render(m_camera, *m_world_annotator, m_canvas);
+  }
+  m_world_annotator->EndLineRenderingBatch();
+  m_canvas.EndTextRenderingBatch();
+}
+
 void Annotator::RenderWorldAnnotations(vtkm::Vec<float,3> axis_scale)
 {
   if(!m_is_3d) return;

@@ -658,7 +658,7 @@ TEST(ascent_expressions, test_history)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_expressions, test_gradient_scalar)
+TEST(ascent_expressions, test_history_gradient)
 {
   Node n;
   ascent::about(n);

@@ -188,6 +188,60 @@ void filter_fields(const conduit::Node &node,
       {
         parse_expression(child.as_string(), fields);
       }
+
+      // ---------
+      // special cases for data binning
+      // ---------
+      // OLD STYLE BINNING:
+      // params:
+      //   reduction_op: "sum"
+      //   var: "braid"
+      //   output_field: "binning"
+      //   output_type: "bins"
+      //   axes:
+      //     -
+      //       var: "x"
+      //       num_bins: 10
+      //       min_val: -10.0
+      //       max_val: 10.0
+      //       clamp: 1
+      //     -
+      //       var: "y"
+      //       num_bins: 10
+      //       clamp: 0
+      //     -
+      //       var: "z"
+      //       num_bins: 10
+      //       clamp: 10
+      //
+      // NEW STYLE BINNING:
+      // params:
+      //   reduction_op: "sum"
+      //   reduction_field: "braid"
+      //   output_field: "binning"
+      //   output_type: "bins"
+      //   axes:
+      //     -
+      //       field: "x"
+      //       num_bins: 10
+      //       min_val: -10.0
+      //       max_val: 10.0
+      //       clamp: 1
+      //     -
+      //       field: "y"
+      //       num_bins: 10
+      //       clamp: 0
+      //     -
+      //       field: "z"
+      //       num_bins: 10
+      //       clamp: 10
+      //
+      //  1) data binning: reduction `var` or `reduction_field`
+      if(names[i] == "var" || names[i] == "reduction_field" )
+      {
+        fields.insert(child.as_string());
+      }
+
       // special detection for filters that use
       // all fields by default
       if(names[i] == "type")
@@ -216,7 +270,7 @@ void filter_fields(const conduit::Node &node,
         conduit::Node &error = info.append();
         error["message"] = "Field filtering does not support "
                            "scanning actions files specified "
-                           "by triggers. Please specifiy the "
+                           "by triggers. Please specify the "
                            "trigger actions directly in the "
                            "trigger parameters.";
       } // actions file
@@ -224,6 +278,7 @@ void filter_fields(const conduit::Node &node,
 
     if(!is_leaf)
     {
+      // if we are an object, run on each child
       if(!child.dtype().is_list())
       {
         filter_fields(child, fields, info);
@@ -243,6 +298,11 @@ void filter_fields(const conduit::Node &node,
             }
           } // for list  entries
         } // is  field list
+        else if(names[i] == "axes") // axis list (data binning)
+        {
+          // normal logic applies
+          filter_fields(child, fields, info);
+        }
       } //  list processing
     } // inner node
   } // for children

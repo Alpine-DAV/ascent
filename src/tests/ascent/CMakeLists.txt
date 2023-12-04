@@ -21,6 +21,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_empty_runtime
                 t_ascent_expressions
                 t_ascent_cinema_a
+		t_ascent_color_bar_pos
                 t_ascent_render_2d
                 t_ascent_render_3d
                 t_ascent_render_2d_poly
@@ -38,6 +39,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_divergence
                 t_ascent_vorticity
                 t_ascent_relay
+                t_ascent_conduit_extract
                 t_ascent_htg
                 t_ascent_flatten
                 t_ascent_partition
@@ -60,6 +62,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_amr
                 t_ascent_queries
                 t_ascent_failed_pipeline
+                t_ascent_commands
                 t_ascent_triggers
                 t_ascent_blueprint_reductions
                 t_ascent_sampling
@@ -88,7 +91,8 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics
                t_ascent_mpi_multi_topo
-               t_ascent_mpi_slice)
+               t_ascent_mpi_slice
+	       t_ascent_mpi_unique_ids)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
 # same for t_ascent_babelflow_pmt_mpi and t_ascent_babelflow_comp_mpi

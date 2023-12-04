@@ -304,7 +304,7 @@ DeviceMemory::allocate(size_t bytes)
                   "Cannot use DeviceMemory::alloc().");
 #endif
 
-#if defined(ASCENT_DEVICE_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED) && defined(ASCENT_UMPIRE_ENABLED)
   m_total_bytes_alloced += bytes;
   m_alloc_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
@@ -334,7 +334,7 @@ DeviceMemory::deallocate(void *data_ptr)
                   "Cannot use DeviceMemory::free().");
 #endif
 
-#if defined(ASCENT_DEVICE_ENABLED)
+#if defined(ASCENT_DEVICE_ENABLED) && defined(ASCENT_UMPIRE_ENABLED)
   m_free_count++;
   auto &rm = umpire::ResourceManager::getInstance ();
   const int allocator_id = AllocationManager::device_allocator_id();

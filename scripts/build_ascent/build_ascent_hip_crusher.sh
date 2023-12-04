@@ -1,6 +1,7 @@
 module load cmake/3.23.2
 module load craype-accel-amd-gfx90a
 module load rocm/5.2.0
+module load cce/15.0.1
 module load cray-mpich/8.1.16
 
 export MPICH_GPU_SUPPORT_ENABLED=1

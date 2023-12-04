@@ -20,6 +20,42 @@ Source distributions for Ascent are hosted on github:
 https://github.com/Alpine-DAV/ascent/releases
 
 
+v0.9.2
+---------------------------------
+
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.2/ascent-v0.9.2-src-with-blt.tar.gz>`__
+
+* Docker Containers
+   * ``alpinedav/ascent:0.9.2``
+   * ``alpinedav/ascent-jupyter:0.9.2``
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Preferred dependency versions for ascent@0.9.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * conduit@0.8.8
+ * vtk-m@2.0.0
+
+Added
+~~~~~
+
+ * Automatic camera placement render that uses different types of entropy (data, depth, shading).
+ * Scene/Render option to manually position color bars
+ * Added in-memory conduit extract, which allows mesh data to be accessed via ascent.info()
+ * Added examples that demonstrate how to use Ascent via the Catalyst Conduit Interface.
+
+Changed
+~~~~~~~
+
+ * Updated Ascent to use VTK-m 2.0
+ * Added C++ ``Ascent::info()`` method that returns a reference to execution info in addition the existing info() method that provides copy out semantics.
+
+
 v0.9.1
 ---------------------------------
 
