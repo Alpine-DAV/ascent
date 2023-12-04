@@ -84,7 +84,7 @@ BasicTrigger::verify_params(const conduit::Node &params,
                             conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("condition",params, info, true);
+    bool res = check_string("condition",params, info, false);
 
     res &= check_string("actions_file",params, info, false);
     if(params.has_path("actions"))
@@ -117,6 +117,7 @@ BasicTrigger::verify_params(const conduit::Node &params,
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("condition");
+    valid_paths.push_back("callback");
     valid_paths.push_back("actions_file");
     valid_paths.push_back("actions");
 
@@ -148,8 +149,6 @@ BasicTrigger::execute()
     DataObject *data_object = input<DataObject>(0);
     std::shared_ptr<Node> n_input = data_object->as_low_order_bp();
 
-    std::string expression = params()["condition"].as_string();
-
     bool use_actions_file = params().has_path("actions_file");
 
     std::string actions_file = "";
@@ -164,13 +163,31 @@ BasicTrigger::execute()
       actions = params()["actions"];
     }
 
+    conduit::Node res;
 
-    runtime::expressions::ExpressionEval eval(n_input.get());
-    conduit::Node res = eval.evaluate(expression);
+    bool has_callback = params().has_path("callback");
+    bool has_condition = params().has_path("condition");
 
-    if(res["type"].as_string() != "bool")
+    if(has_callback)
     {
-      ASCENT_ERROR("result of expression '"<<expression<<"' is not an bool");
+      std::string callback_name = params()["callback"].as_string();
+      res["value"] = ascent::execute_callback(callback_name);
+      res["type"] = "bool";
+    }
+    else if(has_condition)
+    {
+      runtime::expressions::ExpressionEval eval(n_input.get());
+      std::string expression = params()["condition"].as_string();
+      res = eval.evaluate(expression);
+
+      if(res["type"].as_string() != "bool")
+      {
+        ASCENT_ERROR("result of expression '"<<expression<<"' is not an bool");
+      }
+    }
+    else
+    {
+      ASCENT_ERROR("must provide either a condition or a callback");
     }
 
     bool fire = res["value"].to_uint8() != 0;

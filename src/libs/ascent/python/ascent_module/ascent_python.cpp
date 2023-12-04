@@ -410,27 +410,32 @@ PyAscent_Ascent_info(PyAscent_Ascent *self,
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "O",
+                                     "|O",
                                      const_cast<char**>(kwlist),
                                      &py_node))
     {
         return NULL;
     }
 
-
-    if(!PyConduit_Node_Check(py_node))
-    {
-        PyErr_SetString(PyExc_TypeError,
-                        "Ascent::Info 'out' argument must be a "
-                        "conduit::Node");
-        return NULL;
-    }
-
-    Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
-
     try
     {
+        if(py_node != NULL) // copy out case 
+        {
+            if(!PyConduit_Node_Check(py_node))
+            {
+                PyErr_SetString(PyExc_TypeError,
+                                "Ascent::Info 'out' argument must be a "
+                                "conduit::Node");
+                return NULL;
+            }
+            
+            Node *node = PyConduit_Node_Get_Node_Ptr(py_node);
             self->ascent->info(*node);
+        }
+        else // return wrapped internal info ref case
+        {
+            return PyConduit_Node_Python_Wrap(&self->ascent->info(),0);
+        }
     }
     catch(conduit::Error e)
     {
@@ -449,7 +454,6 @@ PyAscent_Ascent_info(PyAscent_Ascent *self,
         PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
         return NULL;
     }
-
 
     Py_RETURN_NONE;
 }
@@ -506,7 +510,7 @@ static PyMethodDef PyAscent_Ascent_METHODS[] = {
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
     //-----------------------------------------------------------------------//
-     {"execute",
+    {"execute",
      (PyCFunction)PyAscent_Ascent_execute,
      METH_VARARGS | METH_KEYWORDS,
      "{todo}"},
@@ -593,6 +597,72 @@ PyAscent_about()
 }
 
 //---------------------------------------------------------------------------//
+// ascent::execute_callback
+//---------------------------------------------------------------------------//
+static PyObject *
+PyAscent_execute_callback(PyObject *self,
+                          PyObject *args)
+{
+    char *callback_name;
+    PyObject *py_params = NULL;
+    PyObject *py_output = NULL;
+
+    if (!PyArg_ParseTuple(args,
+                          "sOO",
+                          &callback_name,
+                          &py_params,
+                          &py_output))
+    {
+        return NULL;
+    }
+
+    try
+    {
+        if(py_params != NULL && py_output != NULL)
+        {
+            if(!PyConduit_Node_Check(py_params))
+            {
+                PyErr_SetString(PyExc_TypeError,
+                                "Ascent::execute_callback 'params' argument must be a "
+                                "conduit::Node");
+                return NULL;
+            }
+            else if (!PyConduit_Node_Check(py_output))
+            {
+                PyErr_SetString(PyExc_TypeError,
+                                "Ascent::execute_callback 'output' argument must be a "
+                                "conduit::Node");
+                return NULL;
+            }
+            std::string callback_name_string = callback_name;
+            Node *params = PyConduit_Node_Get_Node_Ptr(py_params);
+            Node *output = PyConduit_Node_Get_Node_Ptr(py_output);
+            ascent::execute_callback(callback_name, *params, *output);
+            Py_RETURN_NONE;
+        }
+    }
+    catch(conduit::Error e)
+    {
+        PyAscent_Ascent_Error_To_PyErr(e);
+        return NULL;
+    }
+    // also try to bottle other errors, to prevent python
+    // from crashing due to uncaught exception
+    catch(std::exception &e)
+    {
+        PyAscent_Cpp_Error_To_PyErr(e.what());
+        return NULL;
+    }
+    catch(...)
+    {
+        PyAscent_Cpp_Error_To_PyErr("unknown cpp exception thrown");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
 static PyMethodDef ascent_python_funcs[] =
@@ -601,6 +671,11 @@ static PyMethodDef ascent_python_funcs[] =
     {"about",
      (PyCFunction)PyAscent_about,
       METH_NOARGS,
+      NULL},
+    //-----------------------------------------------------------------------//
+    {"execute_callback",
+     (PyCFunction)PyAscent_execute_callback,
+      METH_VARARGS,
       NULL},
     //-----------------------------------------------------------------------//
     // end ascent methods table

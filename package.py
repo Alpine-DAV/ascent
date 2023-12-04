@@ -27,7 +27,7 @@ def create_package(output_file=None):
          suffix = "tar"
          t = datetime.datetime.now()
          output_file = "%s.%04d.%02d.%02d.%s" % (repo_name,t.year,t.month,t.day,suffix)
-    cmd = "python " + pkg_script + " --prefix=ascent " + output_file
+    cmd = "python3 " + pkg_script + " --prefix=ascent " + output_file
     print("[exe: {}]".format(cmd))
     subprocess.call(cmd,shell=True)
 

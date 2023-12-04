@@ -57,6 +57,22 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// In-memory conduit extract, published to registry
+//-----------------------------------------------------------------------------
+class ASCENT_API ConduitExtract: public ::flow::Filter
+{
+public:
+    ConduitExtract();
+   ~ConduitExtract();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+
+//-----------------------------------------------------------------------------
 class ASCENT_API BlueprintPartition : public ::flow::Filter
 {
 public:

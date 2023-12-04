@@ -19,6 +19,7 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay_io_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -39,20 +40,28 @@ TEST(ascent_multi_topo, test_render)
         return;
     }
 
+    ASCENT_INFO("Render multiple topologies");
+
     //
     // Create an example mesh.
     //
     Node data;
     build_multi_topo(data,10);
 
-    ASCENT_INFO("Render multiple topologies");
-
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_multi_topo");
-
     // remove old images before rendering
     remove_test_image(output_file);
+
+    // save the dataset so we can explore in visit
+    Node opts;
+    opts["file_style"] = "root_only";
+    opts["suffix"] = "none";
+    conduit::relay::io::blueprint::save_mesh(data,"my_multi","hdf5",opts);
+
+    string output_dataset = conduit::utils::join_file_path(output_path,"tout_multi_topo_dataset");
+    remove_test_image(output_dataset);
 
 
     //
@@ -167,6 +176,86 @@ TEST(ascent_multi_topo, single_ghost)
     std::string msg = "Example of adding 1 ghost field with 2 topologies";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_multi_topo, single_ghost_vol_render)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data;
+    build_multi_topo(data,10);
+
+    ASCENT_INFO("single ghost test with multiple topologies");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_multi_topo_single_ghost_vol_render");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node actions;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node & scenes = add_scenes["scenes"];
+    scenes["s1/plots/p1/type"] = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/min_value"] =  -0.5;
+    scenes["s1/plots/p1/max_value"] =   0.5;
+    scenes["s1/plots/p1/color_table/name"] =   "rainbow desaturated";
+
+    conduit::Node &cp1 = scenes["s1/plots/p1/color_table/control_points"].append();
+    cp1["type"] = "alpha";
+    cp1["position"] = 0.0;
+    cp1["alpha"] = 0.2 ;
+
+    conduit::Node &cp2 = scenes["s1/plots/p1/color_table/control_points"].append();
+    cp2["type"] = "alpha";
+    cp2["position"] = 1.0;
+    cp2["alpha"]=  0.5 ;
+
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/annotations"] = "false";
+    scenes["s1/renders/r1/camera/azimuth"] = 170;
+    scenes["s1/renders/r1/camera/elevation"] = 11;
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["ghost_field_name"] = "cell_ghosts";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.02));
+    std::string msg = "Example volume rendering a ragged ghost field";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
 //-----------------------------------------------------------------------------
 TEST(ascent_multi_topo, multi_ghosts)
 {
@@ -209,7 +298,7 @@ TEST(ascent_multi_topo, multi_ghosts)
 
     scenes["s1/renders/r1/image_prefix"] = output_file;
     scenes["s1/renders/r1/annotations"] = "false";
-    scenes["s1/renders/r1/camera/azimuth"] = 30;
+    scenes["s1/renders/r1/camera/azimuth"] = 170;
     scenes["s1/renders/r1/camera/elevation"] = 11;
 
     conduit::Node actions;

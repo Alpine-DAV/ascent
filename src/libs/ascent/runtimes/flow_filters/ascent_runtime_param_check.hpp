@@ -52,6 +52,16 @@ bool ASCENT_API check_string(const std::string path,
                              conduit::Node &info,
                              bool required);
 
+bool ASCENT_API check_bool(const std::string path,
+                           const conduit::Node &params,
+                           conduit::Node &info,
+                           bool required);
+
+bool ASCENT_API check_object(const std::string path,
+                             const conduit::Node &params,
+                             conduit::Node &info,
+                             bool required);
+
 void ASCENT_API path_helper(std::vector<std::string> &paths,
                             const conduit::Node &params);
 
@@ -63,17 +73,17 @@ void ASCENT_API path_helper(std::vector<std::string> &paths,
 std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
                                       const conduit::Node &node);
 //
-// Ignore paths only ignores top level paths, deffering lower level
-// paths to another surpise check.
+// Ignore paths only ignores top level paths, differing lower level
+// paths to another surprise check.
 //
 std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
                                       const std::vector<std::string> &ignore_paths,
                                       const conduit::Node &node);
 
-// evalute expression or return value
+// evaluate expression or return value
 double ASCENT_API get_float64(const conduit::Node &node, DataObject *dataset);
-float ASCENT_API get_float32(const conduit::Node &node, DataObject *dataset);
-int ASCENT_API get_int32(const conduit::Node &node, DataObject *dataset);
+float ASCENT_API  get_float32(const conduit::Node &node, DataObject *dataset);
+int ASCENT_API    get_int32(const conduit::Node &node, DataObject *dataset);
 
 //-----------------------------------------------------------------------------
 };

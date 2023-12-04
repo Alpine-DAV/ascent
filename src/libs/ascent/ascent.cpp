@@ -487,6 +487,55 @@ Ascent::info(conduit::Node &info_out)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+conduit::Node &
+Ascent::info()
+{
+    try
+    {
+        if(m_runtime == NULL)
+        {
+            
+        }
+        else // we don't have info throw and error
+        {
+            conduit::Node &info = m_runtime->Info();
+            info["status"].set(m_status);
+            return info;
+        }
+    }
+    catch(conduit::Error &e)
+    {
+        set_status("Ascent::info failed",
+                   e.message());
+
+        if(m_forward_exceptions)
+        {
+            throw e;
+        }
+        else
+        {
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::info"
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::info"
+                     << e.message() << std::endl;
+          }
+        }
+    }
+
+    m_info.reset();
+    m_info["status"] = m_status;
+    return m_info;
+}
+
 //-----------------------------------------------------------------------------
 void
 Ascent::close()
@@ -809,6 +858,83 @@ about(conduit::Node &n)
 
 }
 
+// Callback maps
+static std::map<std::string, void (*)(conduit::Node &, conduit::Node &)> m_void_callback_map;
+static std::map<std::string, bool (*)(void)> m_bool_callback_map;
+
+//-----------------------------------------------------------------------------
+void
+register_callback(const std::string &callback_name,
+                  void (*callback_function)(conduit::Node &, conduit::Node &))
+{
+    if (callback_name == "")
+    {
+        ASCENT_ERROR("cannot register an anonymous void callback");
+    }
+    else if (m_void_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register more than one void callback under the name '" << callback_name << "'");
+    }
+    else if (m_bool_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register both a void and bool callback under the same name '" << callback_name << "'");
+    }
+    m_void_callback_map.insert(std::make_pair(callback_name, callback_function));
+}
+
+//-----------------------------------------------------------------------------
+void
+register_callback(const std::string &callback_name,
+                  bool (*callback_function)(void))
+{
+    if (callback_name == "")
+    {
+        ASCENT_ERROR("cannot register an anonymous bool callback");
+    }
+    else if (m_bool_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register more than one bool callback under the name '" << callback_name << "'");
+    }
+    else if (m_void_callback_map.count(callback_name) != 0)
+    {
+        ASCENT_ERROR("cannot register both a void and bool callback under the same name '" << callback_name << "'");
+    }
+    m_bool_callback_map.insert(std::make_pair(callback_name, callback_function));
+}
+
+//-----------------------------------------------------------------------------
+void
+execute_callback(std::string callback_name,
+                 conduit::Node &params,
+                 conduit::Node &output)
+{
+    if (m_void_callback_map.count(callback_name) != 1)
+    {
+        ASCENT_ERROR("requested void callback '" << callback_name << "' was never registered");
+    }
+    auto callback_function = m_void_callback_map.at(callback_name);
+    return callback_function(params, output);
+}
+
+//-----------------------------------------------------------------------------
+bool
+execute_callback(std::string callback_name)
+{
+    if (m_bool_callback_map.count(callback_name) != 1)
+    {
+        ASCENT_ERROR("requested bool callback '" << callback_name << "' was never registered");
+    }
+    auto callback_function = m_bool_callback_map.at(callback_name);
+    return callback_function();
+}
+
+//-----------------------------------------------------------------------------
+void
+reset_callbacks()
+{
+    m_void_callback_map.clear();
+    m_bool_callback_map.clear();
+}
 
 //-----------------------------------------------------------------------------
 // -- end ascent:: --

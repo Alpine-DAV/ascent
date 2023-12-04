@@ -2,7 +2,8 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM alpinedav/ascent-ci:ubuntu-22.04-devel
+ARG TAG_ARCH=x86_64
+FROM alpinedav/ascent-devel:ubuntu-22.04-${TAG_ARCH}
 
 # nodejs is needed by jupyterlab for widgets
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
@@ -27,16 +28,13 @@ RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     bash_kernel \
     jupyter \
     jupyterlab \
+    ipywidgets \
     matplotlib \
     pyyaml \
     cinemasci \
     scipy \
     scikit-learn \
     ipympl
-
-# finish jupyter lab setup
-RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/jupyter \
-    labextension install @jupyter-widgets/jupyterlab-manager
 
 # configure a debug build with cmake
 RUN cd /ascent && mkdir build 

@@ -4,6 +4,20 @@
 
 # adjust cmake options into proper defs for generate dray_config.h
 
+if(ENABLE_OPENMP)
+    set(DRAY_OPENMP_ENABLED TRUE)
+    message(STATUS "DRay OpenMP Support Enabled")
+endif()
+
+if(ENABLE_CUDA)
+    set(DRAY_CUDA_ENABLED TRUE)
+    message(STATUS "DRay CUDA Support Enabled")
+endif()
+
+if(ENABLE_HIP)
+    set(DRAY_HIP_ENABLED TRUE)
+    message(STATUS "DRay HIP Support Enabled")
+endif()
 
 if(MFEM_FOUND)
     set(DRAY_MFEM_ENABLED TRUE)
@@ -18,11 +32,6 @@ endif()
 if(DRAY_USE_DOUBLE_PRECISION)
     # this option is used directly in config.h
     message(STATUS "DRay using double precision")
-endif()
-
-if(ENABLE_OPENMP)
-    set(DRAY_OPENMP_ENABLED TRUE)
-    message(STATUS "DRay OpenMP Support Enabled")
 endif()
 
 if(DRAY_ENABLE_STATS)
