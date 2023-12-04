@@ -1,0 +1,47 @@
+name: build_ascent_macos
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_basic:
+    name: macOS Build Ascent Clang
+    runs-on: macos-latest
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Build TPLs
+      run: |
+        env enable_mpi=OFF \
+            enable_tests=OFF \
+            enable_verbose=OFF \
+            build_ascent=false \
+            build_jobs=2 \
+            ./scripts/build_ascent/build_ascent.sh
+    - name: Configure Ascent
+      run: |
+        cmake --version
+        echo "**** Configuring Ascent"
+        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        echo "**** Building Ascent"
+        cmake --build build -j2
+    - name: Install Ascent
+      run: |
+        echo "**** Installing Ascent"
+        cmake --install build
+    - name: Check Install
+      run: |
+        echo "**** Checking Ascent using-with-cmake example"
+        cd install/examples/ascent/using-with-cmake
+        cmake -S . -B build
+        cmake --build build --verbose -j2
+        export DYLD_LIBRARY_PATH=/home/runner/work/ascent/ascent/install/vtk-m-v2.0.0/lib/:${DYLD_LIBRARY_PATH}
+        ./build/ascent_render_example

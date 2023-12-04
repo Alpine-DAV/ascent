@@ -79,6 +79,10 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// BlueprintVerify
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 BlueprintVerify::BlueprintVerify()
 :Filter()
 {
@@ -136,19 +140,18 @@ BlueprintVerify::execute()
     // some MPI tasks may not have data, that is fine
     // but blueprint verify will fail, so if the
     // input node is empty skip verify
-    int local_verify_ok = 0;
+    int local_verify_ok  = 0;
+    int local_verify_err = 0;
+    
+    std::string verify_err_msg = "";
     if(!n_input->dtype().is_empty())
     {
         if(!conduit::blueprint::verify(protocol,
                                        *n_input,
                                        v_info))
         {
-            n_input->schema().print();
-            v_info.print();
-            ASCENT_ERROR("blueprint verify failed for protocol"
-                          << protocol << std::endl
-                          << "details:" << std::endl
-                          << v_info.to_json());
+            verify_err_msg = v_info.to_yaml();
+            local_verify_err = 1;
         }
         else
         {
@@ -158,17 +161,50 @@ BlueprintVerify::execute()
 
     // make sure some MPI task actually had bp data
 #ifdef ASCENT_MPI_ENABLED
+    // reduce flag for some valid data
     int global_verify_ok = 0;
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     MPI_Allreduce((void *)(&local_verify_ok),
-                (void *)(&global_verify_ok),
-                1,
-                MPI_INT,
-                MPI_SUM,
-                mpi_comm);
+                  (void *)(&global_verify_ok),
+                  1,
+                  MPI_INT,
+                  MPI_SUM,
+                  mpi_comm);
     local_verify_ok = global_verify_ok;
+
+    // reduce flag for errors
+    int global_verify_err = 0;
+    MPI_Allreduce((void *)(&local_verify_err),
+                  (void *)(&global_verify_err),
+                  1,
+                  MPI_INT,
+                  MPI_SUM,
+                  mpi_comm);
+    local_verify_err = global_verify_err;
+
+
 #endif
 
+    // check for an error on any rank
+    if(local_verify_err == 1)
+    {
+        if(verify_err_msg != "")
+        {
+            ASCENT_ERROR("blueprint verify failed for protocol"
+                          << protocol << std::endl
+                          << "one one more more ranks." << std::endl
+                          << "Details:" << std::endl
+                          << verify_err_msg);
+        } 
+        else
+        {
+            ASCENT_ERROR("blueprint verify failed for protocol"
+                          << protocol << std::endl
+                          << "one one more more ranks." << std::endl);
+        }
+    }
+
+    // check for no data
     if(local_verify_ok == 0)
     {
         ASCENT_ERROR("blueprint verify failed: published data is empty");
@@ -177,6 +213,82 @@ BlueprintVerify::execute()
     set_output<DataObject>(d_input);
 }
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// ConduitExtract
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+ConduitExtract::ConduitExtract()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+ConduitExtract::~ConduitExtract()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+ConduitExtract::declare_interface(Node &i)
+{
+    i["type_name"]   = "conduit_extract";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+ConduitExtract::verify_params(const conduit::Node &params,
+                              conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+    // so far, no params
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+ConduitExtract::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("conduit_extract input must be a DataObject");
+    }
+
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
+    // squirrel a copy away in the registry where it will
+    // be connected with exec info
+
+    // add this to the extract results in the registry
+    if(!graph().workspace().registry().has_entry("extract_list"))
+    {
+      conduit::Node *extract_list = new conduit::Node();
+      graph().workspace().registry().add<Node>("extract_list",
+                                               extract_list,
+                                               -1); // TODO keep forever?
+    }
+
+    conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+
+    Node &einfo = extract_list->append();
+    einfo["type"] = "conduit";
+    einfo["data"].set(*n_input);
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// BlueprintPartition
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 BlueprintPartition::BlueprintPartition()
 :Filter()
@@ -255,24 +367,29 @@ BlueprintPartition::execute()
        params()["distributed"].as_string() == "false" )
     {
         conduit::blueprint::mesh::partition(*n_input,
-		     		            n_options,
-					    *n_output);
+                                            n_options,
+                                            *n_output);
     }
     else
     {
         conduit::blueprint::mpi::mesh::partition(*n_input,
-		    			         n_options,
-					         *n_output,
-					         mpi_comm);
+                                                 n_options,
+                                                 *n_output,
+                                                 mpi_comm);
     }
 #else
     conduit::blueprint::mesh::partition(*n_input,
-		     		        n_options,
-					*n_output);
+                                        n_options,
+                                        *n_output);
 #endif
     DataObject *d_output = new DataObject(n_output);
     set_output<DataObject>(d_output);
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// DataBinning
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 DataBinning::DataBinning()
 :Filter()
@@ -309,14 +426,19 @@ DataBinning::verify_params(const conduit::Node &params,
       info["errors"].append() = "Missing 'reduction_op'";
     }
 
-    if(!params.has_path("var"))
+    // note: `var` is deprecated, new arg reduction_field
+    if(!params.has_path("reduction_field"))
     {
-      res = false;
-      info["errors"].append() = "Missing 'var'";
+      if(!params.has_path("var"))
+      {
+        res = false;
+        info["errors"].append() = "Missing 'reduction_field'";
+      }
     }
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("reduction_op");
+    valid_paths.push_back("reduction_field");
     valid_paths.push_back("empty_bin_val");
     valid_paths.push_back("output_type");
     valid_paths.push_back("output_field");
@@ -349,7 +471,7 @@ DataBinning::verify_params(const conduit::Node &params,
       if(num_axes < 1 || num_axes > 3)
       {
         res = false;
-        info["errors"].append() = "Number of axes num be between 1 and 3";
+        info["errors"].append() = "Number of axes must be between 1 and 3";
       }
       else
       {
@@ -361,16 +483,24 @@ DataBinning::verify_params(const conduit::Node &params,
             res = false;
             info["errors"].append() = "Axis missing 'num_bins'";
           }
-          if(!axis.has_path("var"))
+          
+          if(!axis.has_child("field"))
           {
-            res = false;
-            info["errors"].append() = "Axis missing 'var'";
+            if(!axis.has_child("var"))
+            {
+              std::ostringstream oss;
+              oss << "Axis " << i << " missing 'field' parameter";
+              res = false;
+              info["errors"].append() = oss.str();
+            }
           }
+
           std::vector<std::string> avalid_paths;
           avalid_paths.push_back("min_val");
           avalid_paths.push_back("max_val");
           avalid_paths.push_back("num_bins");
           avalid_paths.push_back("clamp");
+          avalid_paths.push_back("field");
           avalid_paths.push_back("var");
 
           surprises += surprise_check(avalid_paths, axis);
@@ -402,7 +532,21 @@ DataBinning::execute()
     std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
 
     std::string reduction_op = params()["reduction_op"].as_string();
-    std::string var = params()["var"].as_string();
+    std::string reduction_field;
+
+    // `var` is deprecated, new style arg: `reduction_field`
+    if(params().has_child("reduction_field"))
+    {
+      reduction_field = params()["reduction_field"].as_string();
+    }
+    else if(params().has_child("var"))
+    {
+      reduction_field = params()["var"].as_string();
+    }
+    else
+    {
+        ASCENT_ERROR("Data Binning: Missing `reduction_field` parameter");
+    }
     conduit::Node n_component;
 
     std::string output_type = "mesh";
@@ -438,7 +582,24 @@ DataBinning::execute()
       const conduit::Node &in_axis = params()["axes"].child(i);
       // transform into a for that expressions wants
       conduit::Node &axis = n_axes.append();
-      std::string axis_name = "value/"+in_axis["var"].as_string()+"/";
+      
+      std::string axis_field_name;
+
+      if(in_axis.has_path("field"))
+      {
+        axis_field_name = in_axis["field"].as_string();
+      }
+      else if(in_axis.has_path("var"))
+      {
+        axis_field_name = in_axis["var"].as_string();
+      }
+      else
+      {
+          ASCENT_ERROR("Data Binning: axis " << i <<
+                       " is missing `field` parameter");
+      }
+
+      std::string axis_name = "value/" + axis_field_name + "/";
       axis["type"] = "axis";
       axis[axis_name+"num_bins"] = in_axis["num_bins"];
       if(in_axis.has_path("min_val"))
@@ -461,7 +622,7 @@ DataBinning::execute()
     conduit::Node n_binning;
     conduit::Node n_output_axes;
 
-    expressions::binning_interface(var,
+    expressions::binning_interface(reduction_field,
                                    reduction_op,
                                    n_empty_bin_val,
                                    n_component,
@@ -470,14 +631,13 @@ DataBinning::execute()
                                    n_binning,
                                    n_output_axes);
 
-
-
   // setup the input to the painting functions
   conduit::Node mesh_in;
   mesh_in["type"] = "binning";
   mesh_in["attrs/value/value"] = n_binning["value"];
   mesh_in["attrs/value/type"] = "array";
-  mesh_in["attrs/reduction_var/value"] = var;
+  // TODO: Re plumb binning mesh args
+  mesh_in["attrs/reduction_var/value"] = reduction_field;
   mesh_in["attrs/reduction_var/type"] = "string";
   mesh_in["attrs/reduction_op/value"] = reduction_op;
   mesh_in["attrs/reduction_op/type"] = "string";

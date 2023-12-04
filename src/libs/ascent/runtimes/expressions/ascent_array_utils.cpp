@@ -1,6 +1,6 @@
 #include <expressions/ascent_array_utils.hpp>
 #include <ascent_config.h>
-#include <expressions/ascent_dispatch.hpp>
+#include <expressions/ascent_blueprint_device_dispatch.hpp>
 
 #if defined(ASCENT_RAJA_ENABLED)
 #include <RAJA/RAJA.hpp>

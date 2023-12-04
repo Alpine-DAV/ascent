@@ -15,7 +15,7 @@
 #include <ascent_expression_eval.hpp>
 #include <expressions/ascent_blueprint_architect.hpp>
 #include <runtimes/expressions/ascent_memory_manager.hpp>
-#include <runtimes/expressions/ascent_conduit_reductions.hpp>
+#include <runtimes/expressions/ascent_blueprint_device_reductions.hpp>
 #include <runtimes/expressions/ascent_execution_manager.hpp>
 
 #include <cmath>
@@ -33,9 +33,8 @@ using namespace ascent;
 index_t EXAMPLE_MESH_SIDE_DIM = 5;
 
 
-
 //-----------------------------------------------------------------------------
-TEST(ascent_conduit_reductions, go)
+TEST(ascent_blueprint_reductions, go)
 {
   conduit::Node input, res;
 

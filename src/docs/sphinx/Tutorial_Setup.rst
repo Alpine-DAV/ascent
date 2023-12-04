@@ -62,95 +62,95 @@ You can also launch the a Jupyter Notebook server from this image using the foll
 The url (http://localhost:8888) and password (``learn``) are the same as above.
 
 
-.. _tutorial_setup_public_installs:
-
-Using Public Installs of Ascent
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This section provides info about public installs we provide on several HPC machines.
-
-Additionally, here is a `link to the scripts used to build our public installs <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_ .
-
-OLCF Summit Installs
-+++++++++++++++++++++++
-
-
-* Build Details: gcc 9.3.0 with OpenMP and MPI support
-* Modules: ``gcc/9.3.0``
-* Location: ``/sw/summit/ums/ums010/ascent/current/summit/openmp/gnu/ascent-install/``
-
-You can copy the tutorial examples from this install and use them as follows:
-
-.. literalinclude:: tutorial_setup_olcf_summit_openmp_test.sh
-   :language: bash
-
-* Build Details: gcc 9.3.0 with CUDA 11.0.3 and MPI support
-* Modules: ``gcc/9.3.0`` ``cuda/11.0.3``
-* Location: ``/sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/``
-
-You can copy the tutorial examples from this install and use them as follows:
-
-.. literalinclude:: tutorial_setup_olcf_summit_cuda_test.sh
-   :language: bash
-
-
-NERSC Perlmuter Install
-+++++++++++++++++++++++
-
-* Build Details: gcc 10.3.0 with CUDA 11.4.0 and MPI support
-* Modules: ``PrgEnv-gnu`` ``cpe-cuda/21.12``  ``cudatoolkit/21.9_11.4``
-* Location: ``/global/cfs/cdirs/alpine/software/ascent/current/perlmutter/cuda/gnu/ascent-install/``
-
-
-You can copy the tutorial examples from this install and use them as follows:
-
-.. literalinclude:: tutorial_setup_nersc_perlmutter_test.sh
-   :language: bash
-
-
-LLNL CZ TOSS 3 Install
-+++++++++++++++++++++++
-
-* Build Details: gcc 4.9.3 with OpenMP and MPI support
-* Modules: (none)
-* Location: ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``
-
-You can copy the tutorial examples from this install and use them as follows:
-
-.. literalinclude:: tutorial_setup_llnl_pascal_openmp_test.sh
-   :language: bash
-
-
-Register Ascent's Python as a Jupyter Kernel
-+++++++++++++++++++++++++++++++++++++++++++++
-
-.. warning::
-    This works the LLNL LC TOSS3 CZ OpenMP install, we are working on recipes for other HPC centers.
-
-You can register Ascent's Python as a custom Jupyter kernel with Jupyter Hub.
-
-LLNL CZ TOSS 3 Jupyter Kernel Register Example:
-
-.. literalinclude:: tutorial_setup_llnl_pascal_openmp_jhub.sh
-   :language: bash
-
-After you register you will see an option to launch an Ascent kernel in Jupyter Hub:
-
-.. image:: images/llnl_jhub_kernel_select.png
-
-With this kernel you can access Ascent's Python modules or run the tutorial notebooks:
-
-.. image:: images/llnl_jhub_kernel_example.png
+.. .. _tutorial_setup_public_installs:
+..
+.. Using Public Installs of Ascent
+.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+..
+.. This section provides info about public installs we provide on several HPC machines.
+..
+.. Additionally, here is a `link to the scripts used to build our public installs <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_ .
+..
+.. OLCF Summit Installs
+.. +++++++++++++++++++++++
+..
+..
+.. * Build Details: gcc 9.3.0 with OpenMP and MPI support
+.. * Modules: ``gcc/9.3.0``
+.. * Location: ``/sw/summit/ums/ums010/ascent/current/summit/openmp/gnu/ascent-install/``
+..
+.. You can copy the tutorial examples from this install and use them as follows:
+..
+.. .. literalinclude:: tutorial_setup_olcf_summit_openmp_test.sh
+..    :language: bash
+..
+.. * Build Details: gcc 9.3.0 with CUDA 11.0.3 and MPI support
+.. * Modules: ``gcc/9.3.0`` ``cuda/11.0.3``
+.. * Location: ``/sw/summit/ums/ums010/ascent/current/summit/cuda/gnu/ascent-install/``
+..
+.. You can copy the tutorial examples from this install and use them as follows:
+..
+.. .. literalinclude:: tutorial_setup_olcf_summit_cuda_test.sh
+..    :language: bash
+..
+..
+.. NERSC Perlmuter Install
+.. +++++++++++++++++++++++
+..
+.. * Build Details: gcc 10.3.0 with CUDA 11.4.0 and MPI support
+.. * Modules: ``PrgEnv-gnu`` ``cpe-cuda/21.12``  ``cudatoolkit/21.9_11.4``
+.. * Location: ``/global/cfs/cdirs/alpine/software/ascent/current/perlmutter/cuda/gnu/ascent-install/``
+..
+..
+.. You can copy the tutorial examples from this install and use them as follows:
+..
+.. .. literalinclude:: tutorial_setup_nersc_perlmutter_test.sh
+..    :language: bash
+..
+..
+.. LLNL CZ TOSS 3 Install
+.. +++++++++++++++++++++++
+..
+.. * Build Details: gcc 4.9.3 with OpenMP and MPI support
+.. * Modules: (none)
+.. * Location: ``/usr/gapps/conduit/software/ascent/current/toss_3_x86_64_ib/openmp/gnu/ascent-install/``
+..
+.. You can copy the tutorial examples from this install and use them as follows:
+..
+.. .. literalinclude:: tutorial_setup_llnl_pascal_openmp_test.sh
+..    :language: bash
 
 
-If you want to remove the registered kernel, you can use:
-
-.. code::
-  
-  # show list of registered kernels
-  jupyter kernelspec list
-  # remove our Ascent custom kernel
-  jupyter kernelspec uninstall ascent_kernel
+.. Register Ascent's Python as a Jupyter Kernel
+.. +++++++++++++++++++++++++++++++++++++++++++++
+..
+.. .. warning::
+..     This works the LLNL LC TOSS3 CZ OpenMP install, we are working on recipes for other HPC centers.
+..
+.. You can register Ascent's Python as a custom Jupyter kernel with Jupyter Hub.
+..
+.. LLNL CZ TOSS 3 Jupyter Kernel Register Example:
+..
+.. .. literalinclude:: tutorial_setup_llnl_pascal_openmp_jhub.sh
+..    :language: bash
+..
+.. After you register you will see an option to launch an Ascent kernel in Jupyter Hub:
+..
+.. .. image:: images/llnl_jhub_kernel_select.png
+..
+.. With this kernel you can access Ascent's Python modules or run the tutorial notebooks:
+..
+.. .. image:: images/llnl_jhub_kernel_example.png
+..
+..
+.. If you want to remove the registered kernel, you can use:
+..
+.. .. code::
+..
+..   # show list of registered kernels
+..   jupyter kernelspec list
+..   # remove our Ascent custom kernel
+..   jupyter kernelspec uninstall ascent_kernel
 
 ..
 .. SC19 Tutorial VM Option

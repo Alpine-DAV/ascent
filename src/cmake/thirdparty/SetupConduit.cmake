@@ -146,7 +146,15 @@ endif()
 if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
     # if we are running tests with dlls, we need path to dlls
     list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_DIR}/bin)
+
+    # zlib dll
+    if(CONDUIT_ZLIB_DIR)
+        list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_ZLIB_DIR}/bin/)
+    endif()
+
+    # hdf5 dlls
     if(CONDUIT_HDF5_ENABLED)
         list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_HDF5_DIR}/bin)
     endif()
+
 endif()

@@ -4,11 +4,40 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased 
+### Preferred dependency versions for ascent@develop
+- conduit@0.8.8
+- vtk-m@2.0.0
+
+### Added
+- Added parameters to control HDF5 compression options to the Relay Extract.
+- Added check to make sure all domain IDs are unique
+
+### Changed
+- Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
+
+## [0.9.2] - Released 2023-06-30
+### Preferred dependency versions for ascent@0.9.2
+- conduit@0.8.8
+- vtk-m@2.0.0
+
+### Added
+- Automatic camera placement render that uses different types of entropy (data, depth, shading).
+- Scene/Render option to manually position color bars
+- Added in-memory conduit extract, which allows mesh data to be accessed via ascent.info()
+- Added examples that demonstrate how to use Ascent via the Catalyst Conduit Interface.
+
+### Changed
+- Updated Ascent to use VTK-m 2.0
+- Added C++ `Ascent::info()` method that returns a reference to execution info in addition the existing info() method that provides copy out semantics.
+
+
+### Fixed
 
 ## [0.9.1] - Released 2023-04-21
 ### Preferred dependency versions for ascent@0.9.1
 - conduit@0.8.7
-- vtk-m@2.0.0
+- vtk-m@1.9.0
 
 ### Added
 - Added support for building and running on Windows.
@@ -16,7 +45,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added CI testing for building Ascent and required third-party libs on Windows.
 
 ### Changed
-- Updated Ascent to use VTK-m 2.0
 - Devil Ray stats are now opt in, instead of opt out to avoid accumulating memory.
 - `build_ascent.sh` is now a unified script that supports non-device, CUDA, and HIP builds.
 
