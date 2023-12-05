@@ -116,7 +116,8 @@ if(PYTHON_FOUND AND ENABLE_PYTHON)
     list(APPEND MPI_TESTS t_ascent_mpi_python_extract)
 endif()
 
-if(ENABLE_DRAY)
+# ascent's dray test requires dray + mfem
+if(ENABLE_DRAY AND MFEM_FOUND)
     list(APPEND BASIC_TESTS t_ascent_dray)
 endif()
 
