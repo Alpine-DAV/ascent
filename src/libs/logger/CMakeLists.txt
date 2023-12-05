@@ -6,7 +6,7 @@
 #configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/logger_config.h.in"
 #                "${CMAKE_CURRENT_BINARY_DIR}/logger_config.h")
 
-set(logger_base_deps conduit::conduit ascent_png_utils)
+set(logger_base_deps conduit::conduit)
 
 if(ENABLE_OPENMP)
     list(APPEND logger_base_deps ${ascent_blt_openmp_deps})
@@ -44,9 +44,9 @@ if (ENABLE_SERIAL)
     # extra defs and props
     target_compile_definitions(logger PRIVATE ASCENT_EXPORTS_FLAG)
 
-    if(ENABLE_HIDDEN_VISIBILITY)
-        set_target_properties(logger PROPERTIES CXX_VISIBILITY_PRESET hidden)
-    endif()
+    #    if(ENABLE_HIDDEN_VISIBILITY)
+    #        set_target_properties(logger PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    #    endif()
 
     # build includes
     # this allows us to include as <logger/header.hpp>

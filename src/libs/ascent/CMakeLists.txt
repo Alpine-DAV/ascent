@@ -373,10 +373,6 @@ set(ascent_thirdparty_libs
 ##################
 # optional libs
 ##################
-#if(ENABLE_LOGGING)
-    list(APPEND ascent_thirdparty_libs logger)
-#endif()
-
 if(OCCA_FOUND)
     list(APPEND ascent_thirdparty_libs occa)
 endif()
@@ -392,6 +388,11 @@ endif()
 if(VTKM_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
 endif()
+
+#if(ENABLE_LOGGING)
+list(APPEND ascent_thirdparty_libs logger)
+#endif()
+
 
 if(CALIPER_FOUND)
     list(APPEND ascent_thirdparty_libs caliper)

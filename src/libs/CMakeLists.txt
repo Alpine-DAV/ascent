@@ -33,12 +33,6 @@ endif()
 # shared for testing of all libs
 add_subdirectory(png_utils)
 
-################################
-# Add logging
-################################
-#if(ENABLE_LOGGING)
-add_subdirectory(logger)
-    #endif()
 
 ################################
 # Add ap comp
@@ -61,6 +55,13 @@ if(ENABLE_VTKH)
     add_subdirectory(vtkh)
     add_subdirectory(rover)
 endif()
+
+################################
+# Add logging
+################################
+#if(ENABLE_LOGGING)
+add_subdirectory(logger)
+    #endif()
 
 ################################
 # Add ascent
