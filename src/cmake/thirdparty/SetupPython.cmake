@@ -252,7 +252,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
                     --target ${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
@@ -262,7 +262,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
                     --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
