@@ -12,7 +12,7 @@ vtkmGhostStripper::Run(vtkm::cont::DataSet &input, std::string ghost_field_name)
 
   vtkm::filter::entity_extraction::GhostCellRemove ghost_buster;
   ghost_buster.SetActiveField(ghost_field_name);
-  ghost_buster.RemoveAllGhost();
+  ghost_buster.SetTypesToRemoveToAll();
   auto output = ghost_buster.Execute(input);
   
   return output;

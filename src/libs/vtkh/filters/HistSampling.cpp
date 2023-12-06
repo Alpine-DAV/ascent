@@ -7,7 +7,7 @@
 #include <vtkm/worklet/DispatcherMapField.h>
 #include <vtkm/worklet/WorkletMapField.h>
 
-#include <vtkm/worklet/FieldStatistics.h>
+#include <vtkm/worklet/DescriptiveStatistics.h>
 //#include <vtkm/filter/CreateResult.h>
 #include <vtkm/cont/ArrayHandleTransform.h>
 #include <vtkm/worklet/DispatcherMapField.h>
@@ -231,7 +231,7 @@ public:
 };
 
 
-void PrintStatInfo(vtkm::worklet::FieldStatistics<vtkm::Float64>::StatInfo statinfo)
+void PrintStatInfo(vtkm::worklet::DescriptiveStatistics::StatState<vtkm::Float64> statinfo)
 {
   std::cout << "   Median " << statinfo.median << std::endl;
   std::cout << "   Minimum " << statinfo.minimum << std::endl;
@@ -304,10 +304,8 @@ void HistSampling::DoExecute()
 
     vtkm::cont::ArrayHandle<vtkm::Float64> data;
     dom.GetField(m_field_name).GetData().AsArrayHandle(data);
-
-
-    //vtkm::worklet::FieldStatistics<vtkm::Float64>::StatInfo statinfo;
-    //vtkm::worklet::FieldStatistics<vtkm::Float64>().Run(data, statinfo);
+ 
+    //auto vtkm::worklet::DescriptiveStatistics::Run(data);
 
     //std::cout << "Statistics for CELL data:" << std::endl;
     //PrintStatInfo(statinfo);
