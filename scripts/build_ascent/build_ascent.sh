@@ -342,10 +342,16 @@ vtkm_tarball=vtk-m-${vtkm_version}.tar.gz
 # build only if install doesn't exist
 if [ ! -d ${vtkm_install_dir} ]; then
 if ${build_vtkm}; then
-if [ ! -d ${vtkm_src_dir} ]; then
+if [ ! -d ${vtkm_src_dir} ]; thenf
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/${vtkm_tarball} -o ${vtkm_tarball}
   tar -xzf ${vtkm_tarball}
+fi
+
+# apply vtk-m patch
+  cd  ${vtkm_src_dir}
+  patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
+  cd ${root_dir}
 fi
 
 vtkm_extra_cmake_args=""
