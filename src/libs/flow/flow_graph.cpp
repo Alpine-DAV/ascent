@@ -213,7 +213,9 @@ Graph::connect(const std::string &src_name,
         CONDUIT_WARN("destination filter: "
                      << des_filter->detailed_name()
                      << " does not have input port named:"
-                     << port_name);
+                     << port_name << std::endl
+                     << "known ports:"
+                     << des_filter->port_names().to_yaml() );
         return;
     }
 

@@ -129,7 +129,7 @@ TEST(ascent_conduit_extract, test_pipeline_result)
     slice_params["point/z"] = 0.f;
 
     slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
+    slice_params["normal/y"] = 1.f;
     slice_params["normal/z"] = 1.f;
 
     conduit::Node &add_extracts = actions.append();
