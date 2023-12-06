@@ -285,7 +285,7 @@ fi # build_conduit
 #########################
 # Kokkos (only for hip)
 #########################
-kokkos_version=3.6.01
+kokkos_version=3.7.2
 kokkos_src_dir=$(ospath ${root_dir}/kokkos-${kokkos_version})
 kokkos_build_dir=$(ospath ${root_dir}/build/kokkos-${kokkos_version})
 kokkos_install_dir=$(ospath ${root_dir}/install/kokkos-${kokkos_version}/)
