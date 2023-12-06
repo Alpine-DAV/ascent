@@ -234,6 +234,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
     # TODO: we might want to  explore this in the future
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
             COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+            --disable-pip-version-check --no-warn-script-location
             --target "${abs_dest_path}"
             DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -253,7 +254,8 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
-                    --target ${py_mod_inst_prefix}
+                --disable-pip-version-check --no-warn-script-location
+                --target ${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
@@ -263,7 +265,8 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
-                    --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+                --disable-pip-version-check --no-warn-script-location
+                --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
