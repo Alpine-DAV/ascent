@@ -24,12 +24,12 @@ def wrap_function(func):
             i.fetch("type_name").set(self.func.__name__);
             i.fetch("output_port").set("true");
             sig = inspect.signature(self.func)
-            for k,v in sig.parameters:
+            for k in sig.parameters:
                 i["port_names"].append().set(k)
         def execute(self):
             arg_vals = []
             sig = inspect.signature(self.func)
-            for k,v in sig.parameters:
+            for k in sig.parameters:
                 arg_vals.append(self.input(k))
             self.set_output(func(*arg_vals))
     return FilterWrap
