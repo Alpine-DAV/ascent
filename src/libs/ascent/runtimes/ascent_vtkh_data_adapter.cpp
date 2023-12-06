@@ -166,12 +166,12 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       int x_verts_expanded = nverts * x_element_stride;
       const T *x_verts_ptr = n_coords["values/x"].value();
       vtkm::cont::ArrayHandle<T> x_source_array = vtkm::cont::make_ArrayHandle<T>(x_verts_ptr,
-		      							     x_verts_expanded,
-									     copy);
+                                                                                  x_verts_expanded,
+                                                                                  copy);
       vtkm::cont::ArrayHandleStride<T> x_stride_handle(x_source_array,
-		      				       nverts,
-						       x_element_stride,
-						       0);
+                                                       nverts,
+                                                       x_element_stride,
+                                                       0); // offset
 
       vtkm::cont::Algorithm::Copy(x_stride_handle, x_coords_handle);
     }
@@ -186,12 +186,12 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       int y_verts_expanded = nverts * y_element_stride;
       const T *y_verts_ptr = n_coords["values/y"].value();
       vtkm::cont::ArrayHandle<T> y_source_array = vtkm::cont::make_ArrayHandle<T>(y_verts_ptr,
-		      							     y_verts_expanded,
-									     copy);
+                                                                                  y_verts_expanded,
+                                                                                  copy);
       vtkm::cont::ArrayHandleStride<T> y_stride_handle(y_source_array,
-		      				       nverts,
-						       y_element_stride,
-						       0);
+                                                       nverts,
+                                                       y_element_stride,
+                                                       0); // offset
 
       vtkm::cont::Algorithm::Copy(y_stride_handle, y_coords_handle);
     }
@@ -199,9 +199,10 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     if(z_element_stride == 0)
     {
       z_coords_handle.Allocate(nverts);
+      // TODO: Set on device?
       // This does not get initialized to zero
       T *z = vtkh::GetVTKMPointer(z_coords_handle);
-      memset(z, 0.0, nverts * sizeof(T));
+      memset(z, 0, nverts * sizeof(T));
     }
     else if(z_element_stride == 1)
     {
@@ -215,12 +216,12 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       int z_verts_expanded = nverts * z_element_stride;
       const T *z_verts_ptr = n_coords["values/z"].value();
       vtkm::cont::ArrayHandle<T> z_source_array = vtkm::cont::make_ArrayHandle<T>(z_verts_ptr,
-		      							     z_verts_expanded,
-									     copy);
+                                                                                  z_verts_expanded,
+                                                                                  copy);
       vtkm::cont::ArrayHandleStride<T> z_stride_handle(z_source_array,
-		      				       nverts,
-						       z_element_stride,
-						       0);
+                                                       nverts,
+                                                       z_element_stride,
+                                                       0); // offset
 
       vtkm::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
     }
@@ -1144,12 +1145,13 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       index_t x_element_stride = x_stride / sizeof(float64);
       index_t y_stride = n_coords["values/y"].dtype().stride();
       index_t y_element_stride = y_stride / sizeof(float64);
-      index_t z_element_stride = 0.0;
+      index_t z_element_stride = 0;
       if(n_coords.has_path("values/z"))
       {
         index_t z_stride = n_coords["values/z"].dtype().stride();
         z_element_stride = z_stride / sizeof(float64);
       }
+
       coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
                                                             coords_name,
                                                             ndims,
@@ -1164,12 +1166,13 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       index_t x_element_stride = x_stride / sizeof(float32);
       index_t y_stride = n_coords["values/y"].dtype().stride();
       index_t y_element_stride = y_stride / sizeof(float32);
-      index_t z_element_stride = 0.0;
+      index_t z_element_stride = 0;
       if(n_coords.has_path("values/z"))
       {
         index_t z_stride = n_coords["values/z"].dtype().stride();
         z_element_stride = z_stride / sizeof(float32);
       }
+
       coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
                                                             coords_name,
                                                             ndims,
@@ -1239,12 +1242,13 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
       index_t x_element_stride = x_stride / sizeof(float64);
       index_t y_stride = n_coords["values/y"].dtype().stride();
       index_t y_element_stride = y_stride / sizeof(float64);
-      index_t z_element_stride = 0.0;
+      index_t z_element_stride = 0;
       if(n_coords.has_path("values/z"))
       {
         index_t z_stride = n_coords["values/z"].dtype().stride();
         z_element_stride = z_stride / sizeof(float64);
       }
+
       coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
                                                             coords_name,
                                                             ndims,
@@ -1259,12 +1263,13 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
       index_t x_element_stride = x_stride / sizeof(float32);
       index_t y_stride = n_coords["values/y"].dtype().stride();
       index_t y_element_stride = y_stride / sizeof(float32);
-      index_t z_element_stride = 0.0;
+      index_t z_element_stride = 0;
       if(n_coords.has_path("values/z"))
       {
         index_t z_stride = n_coords["values/z"].dtype().stride();
         z_element_stride = z_stride / sizeof(float32);
       }
+
       coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
                                                             coords_name,
                                                             ndims,
@@ -1324,12 +1329,13 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
       index_t x_element_stride = x_stride / sizeof(float64);
       index_t y_stride = n_coords["values/y"].dtype().stride();
       index_t y_element_stride = y_stride / sizeof(float64);
-      index_t z_element_stride = 0.0;
+      index_t z_element_stride = 0;
       if(n_coords.has_path("values/z"))
       {
         index_t z_stride = n_coords["values/z"].dtype().stride();
         z_element_stride = z_stride / sizeof(float64);
       }
+
       //TODO:
       //can we assume all by checking one? 
       //or check ystride & zstride % float64 == 0? 
@@ -1350,12 +1356,13 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
       index_t x_element_stride = x_stride / sizeof(float32);
       index_t y_stride = n_coords["values/y"].dtype().stride();
       index_t y_element_stride = y_stride / sizeof(float32);
-      index_t z_element_stride = 0.0;
+      index_t z_element_stride = 0;
       if(n_coords.has_path("values/z"))
       {
         index_t z_stride = n_coords["values/z"].dtype().stride();
-        index_t z_element_stride = z_stride / sizeof(float32);
+        z_element_stride = z_stride / sizeof(float32);
       }
+
       //TODO:
       //can we assume all by checking one? 
       //or check ystride & zstride % float64 == 0? 
