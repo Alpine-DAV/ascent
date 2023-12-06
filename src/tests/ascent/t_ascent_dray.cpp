@@ -661,6 +661,85 @@ TEST(ascent_devil_ray, test_scalar_rendering)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_scalar_rendering_lo)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Devil Ray Scalar Renderer (Low Order)");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_scalar_renderer_lo");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "dray_project_2d";
+    // filter knobs
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["image_width"] = 512;
+    params["image_height"] = 512;
+    params["fields"].append() = "braid";
+
+    // add the extracts
+
+    // hdf5 output
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"] = "pl1";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    // in-memory output
+    extracts["e2/type"]  = "conduit";
+    extracts["e2/pipeline"] = "pl1";
+
+    std::cout << "Actions:" << std::endl << actions.to_yaml();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    
+    conduit::Node &info = ascent.info();
+    info["extracts"][1].print();
+
+    ascent.close();
+
+    // check that we created an image
+    std::string msg = "An example of using devil ray scalar rendering on a low order dataset.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
 //-----------------------------------------------------------------------------
 TEST(ascent_devil_ray, test_scalar_rendering_plane)
 {

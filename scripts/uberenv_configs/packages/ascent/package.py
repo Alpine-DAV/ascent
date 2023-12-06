@@ -147,6 +147,8 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("raja~cuda+shared", when="~cuda+shared")
     depends_on("raja~cuda~shared", when="~cuda~shared")
 
+    # llvm-openmp doesn't seem to work with raja
+    depends_on("raja~openmp", when="%apple-clang")
 
     #############################
     # Umpire
@@ -281,8 +283,22 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
     #######################
     # Documentation related
     #######################
-    depends_on("py-sphinx", when="+python+doc", type='build')
-    depends_on("py-sphinx-rtd-theme", when="+python+doc", type='build')
+    #
+    # NOTE: Why aren't these tagged `build`?
+    #
+    # Removed `build` as the simplest way to get sphinx
+    # to be added to the spack view.
+    #
+    # Also tried adding py-sphinx to the env, however
+    # that caused the concertizer to flip  uberenv-package python variant
+    # to ~python, undermining python completely.
+    #
+    #depends_on("py-sphinx", when="+python+doc", type="build")
+    #depends_on("py-sphinx-rtd-theme", when="+python+doc", type="build")
+    # NOTE: sphinx 7.0.0 is not compatible with sphinx-rtd-theme
+    # depends_on("py-sphinx@:6.99.99", when="+python+doc")
+    depends_on("py-sphinx", when="+python+doc")
+    depends_on("py-sphinx-rtd-theme", when="+python+doc")
 
     ###########
     # Conflicts
@@ -436,6 +452,13 @@ class Ascent(CMakePackage, CudaPackage, ROCmPackage):
                                         f_compiler))
         else:
             cfg.write(cmake_cache_entry("ENABLE_FORTRAN", "OFF"))
+
+        rpath_flags = ""
+        for rpath in self.compiler.extra_rpaths:
+            rpath_flags += " -Wl,-rpath,{0}".format(rpath)
+        if rpath_flags != "":
+            cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS",
+                                        rpath_flags))
 
         # shared vs static libs
         if "+shared" in spec:

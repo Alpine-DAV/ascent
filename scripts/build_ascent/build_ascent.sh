@@ -158,7 +158,7 @@ fi
 ################
 # Zlib
 ################
-zlib_version=1.2.13
+zlib_version=1.3
 zlib_src_dir=$(ospath ${root_dir}/zlib-${zlib_version})
 zlib_build_dir=$(ospath ${root_dir}/build/zlib-${zlib_version}/)
 zlib_install_dir=$(ospath ${root_dir}/install/zlib-${zlib_version}/)
@@ -316,7 +316,6 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
   -DCMAKE_CXX_FLAGS="--amdgpu-target=${ROCM_ARCH}" \
   -DBUILD_TESTING=OFF \
-  -DVTKm_ENABLE_BENCHMARKS=OFF\
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir}
 
 echo "**** Building Kokkos ${kokkos_version}"

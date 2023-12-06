@@ -14,11 +14,11 @@ SET(ascent_py_python_sources  py_src/__init__.py
                               )
 
 # built the pure python module
-PYTHON_ADD_DISTUTILS_SETUP(NAME ascent_python_py
-                           DEST_DIR python-modules
-                           PY_MODULE_DIR ascent
-                           PY_SETUP_FILE setup.py
-                           PY_SOURCES "${ascent_py_python_sources}")
+PYTHON_ADD_PIP_SETUP(NAME ascent_python_py
+                     DEST_DIR python-modules
+                     PY_MODULE_DIR ascent
+                     PY_SETUP_FILE setup.py
+                     PY_SOURCES "${ascent_py_python_sources}")
 
 # build non-mpi linked compiled ascent module 
 if (ENABLE_SERIAL)
