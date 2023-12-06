@@ -233,8 +233,7 @@ public:
 
 void PrintStatInfo(vtkm::worklet::DescriptiveStatistics::StatState<vtkm::Float64> statinfo)
 {
-  // Not supported in VTK-m 2.1
-  // std::cout << "   Median " << statinfo.median << std::endl;
+
   std::cout << "   Minimum " << statinfo.Min() << std::endl;
   std::cout << "   Maximum " << statinfo.Max() << std::endl;
   std::cout << "   Mean " << statinfo.Mean() << std::endl;
@@ -244,6 +243,7 @@ void PrintStatInfo(vtkm::worklet::DescriptiveStatistics::StatState<vtkm::Float64
   std::cout << "   Kurtosis " << statinfo.Kurtosis() << std::endl;
   
   // Not supported by VTK-m 2.1
+  // std::cout << "   Median " << statinfo.median << std::endl;
   // std::cout << "   Raw Moment 1-4 [ ";
   // for (vtkm::Id i = 0; i < 4; i++)
   //   std::cout << statinfo.rawMoment[i] << " ";
