@@ -32,7 +32,7 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
     version(
         "2.1.0",
-        sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        sha256="9cf3522b6dc0675281a1a16839464ebd1cc5f9c08c20eabee1719b3bcfdcf41f",
         preferred=True,
     )
 
