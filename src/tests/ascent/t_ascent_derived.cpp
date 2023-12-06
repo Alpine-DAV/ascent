@@ -542,6 +542,81 @@ TEST(ascent_expressions, multi_topos)
 
   EXPECT_TRUE(check_test_image(output_image, 0.1));
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_derived, df_add_fields)
+{
+  Node n;
+  ascent::about(n);
+
+  // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      return;
+  }
+
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+
+  // 3 copies of braid
+  data["fields/braid_a"] = data["fields/braid"];
+  data["fields/braid_b"] = data["fields/braid"];
+  data["fields/braid_c"] = data["fields/braid"];
+
+  const std::string output_path = prepare_output_dir();
+
+  std::string output_image =
+      conduit::utils::join_file_path(output_path, "tout_df_add_fields");
+
+  conduit::Node actions;
+  conduit::Node &add_pipelines = actions.append();
+  add_pipelines["action"]  = "add_pipelines";
+  conduit::Node &pipelines = add_pipelines["pipelines"];
+
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "add_fields";
+  // filter knobs
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["output_field"] = "braid_composite";
+  params["fields"].append() = "braid_a";
+  params["fields"].append() = "braid_b";
+  params["fields"].append() = "braid_c";
+
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  conduit::Node &scenes = add_plots["scenes"];
+
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "braid_composite";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/renders/r1/image_prefix"] = output_image;
+
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["ascent_info"] = "verbose";
+  ascent_opts["timings"] = "true";
+  ascent_opts["runtime/type"] = "ascent";
+
+  ascent.open(ascent_opts);
+  ascent.publish(data);
+  ascent.execute(actions);
+  ascent.close();
+
+  EXPECT_TRUE(check_test_image(output_image, 0.1));
+}
+
 //-----------------------------------------------------------------------------
 
 int
