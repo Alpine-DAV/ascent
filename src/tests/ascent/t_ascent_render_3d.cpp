@@ -141,7 +141,6 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     // remove old images before rendering
     remove_test_image(output_file);
 
-
     //
     // Create the actions.
     //
@@ -2643,7 +2642,7 @@ TEST(ascent_render_3d, test_render_3d_extreme_extents)
     Ascent ascent;
     ascent.open();
     ascent.publish(mesh);
-    
+
     scenes["s1/image_prefix"] = output_file;
     ascent.execute(actions);
     // check that we created an image
@@ -2679,11 +2678,11 @@ TEST(ascent_render_3d, test_render_3d_extreme_extents)
     // check that we created an image
     // TODO: We expect this to fail until we address float64 vs float32 issues
     EXPECT_FALSE(check_test_image(output_file));
-    
+
 
     //now with unstructured:
     Node mesh_unstruct;
-    
+
     conduit::blueprint::mesh::topology::rectilinear::to_unstructured(mesh["topologies/topo"],
                                                                      mesh_unstruct["topologies/topo"],
                                                                      mesh_unstruct["coordsets/coords"]);
@@ -2712,7 +2711,7 @@ TEST(ascent_render_3d, test_render_3d_extreme_extents)
     // TODO: We expect this to fail until we address float64 vs float32 issues
     EXPECT_FALSE(check_test_image(output_file));
 
-    
+
 }
 
 
