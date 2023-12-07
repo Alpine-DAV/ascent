@@ -503,7 +503,11 @@ AscentRuntime::Cleanup()
         ftimings.open(file_name, std::ofstream::out | std::ofstream::app);
         ftimings << m_workspace.timing_info();
         ftimings.close();
+
     }
+        logging::DataLogger::GetInstance()->CloseLogEntry();
+	std::cerr << "ALLING WRITE LOG" << std::endl;
+        logging::DataLogger::GetInstance()->WriteLog();
 }
 
 //-----------------------------------------------------------------------------
@@ -2039,9 +2043,9 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         // m_workspace.graph().save_dot_html("ascent_flow_graph.html");
 
-#if defined(ASCENT_VTKM_ENABLED)
-        if(log_timings)
-        {
+//#if defined(ASCENT_VTKM_ENABLED)
+//        if(log_timings)
+//        {
           int cycle = 0;
           if(Metadata::n_metadata.has_path("cycle"))
           {
@@ -2049,10 +2053,11 @@ AscentRuntime::Execute(const conduit::Node &actions)
           }
           std::stringstream ss;
           ss<<"cycle_"<<cycle;
+	  std::cerr << "BOUT TO CALL DATALOGGER" <<std::endl;
           logging::DataLogger::GetInstance()->OpenLogEntry(ss.str());
           logging::DataLogger::GetInstance()->AddLogData("cycle", cycle);
-        }
-#endif
+//        }
+//#endif
         // now execute the data flow graph
         m_workspace.execute();
 

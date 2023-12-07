@@ -48,6 +48,7 @@ public:
   static DataLogger *GetInstance();
   void OpenLogEntry(const std::string &entryName);
   void CloseLogEntry();
+  void WriteLog();
   void SetRank(int rank);
 
   template<typename T>
@@ -63,7 +64,6 @@ protected:
   DataLogger();
   DataLogger(DataLogger const &);
 
-  void WriteLog();
   void WriteIndent();
   DataLogger::Block& CurrentBlock();
   std::stringstream m_stream;
