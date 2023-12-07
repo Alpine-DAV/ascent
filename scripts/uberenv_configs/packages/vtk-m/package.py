@@ -102,7 +102,6 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
     # VTK-m uses the default Kokkos backend
     depends_on("kokkos", when="+kokkos")
-    depends_on("kokkos@3.7:3.9", when="@2.0 +kokkos")
     # VTK-m native CUDA and Kokkos CUDA backends are not compatible
     depends_on("kokkos ~cuda", when="+kokkos +cuda +cuda_native")
     depends_on("kokkos +cuda", when="+kokkos +cuda ~cuda_native")
@@ -123,8 +122,11 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
         )
 
     depends_on("hip@3.7:", when="+rocm")
-    # CUDA thrust is already include in the CUDA pkg
-    depends_on("rocthrust", when="@2.1: +kokkos+rocm")
+    
+    # NOTE: CYRUSH: skip rocthrust and use DVTKm_ENABLE_KOKKOS_THRUST=OFF
+
+    ## CUDA thrust is already include in the CUDA pkg
+    # depends_on("rocthrust", when="@2.1: +kokkos+rocm")
 
     # The rocm variant is only valid options for >= 1.7. It would be better if
     # this could be expressed as a when clause to disable the rocm variant,
@@ -134,6 +136,7 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+rocm", when="+cuda")
     conflicts("+rocm", when="~kokkos", msg="VTK-m does not support HIP without Kokkos")
     conflicts("+rocm", when="+virtuals", msg="VTK-m does not support virtual functions with ROCm")
+    depends_on("kokkos@3.7:3.9", when="@2.0 +kokkos")
 
     # Can build +shared+cuda after @1.7:
     conflicts("+shared", when="@:1.6 +cuda_native")
@@ -141,6 +144,10 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+cuda~cuda_native", when="@:1.5", msg="Cannot have +cuda without a cuda device")
 
     conflicts("+cuda", when="cuda_arch=none", msg="vtk-m +cuda requires that cuda_arch be set")
+
+    conflicts(
+        "+ascent_types", when="+64bitids", msg="Ascent types requires 32 bit IDs for compatibility"
+    )
 
     # Patch
     patch("diy-include-cstddef.patch", when="@1.5.3:1.8.0")
@@ -173,28 +180,73 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
             "86": "ampere",
         }
         with working_dir("spack-build", create=True):
-            is_release = spec.variants["build_type"].value == "Release"
-            options = [
-                self.define("VTKm_ENABLE_TESTING", False),
-                self.define("VTKm_NO_ASSERT", is_release),
-                self.define_from_variant("BUILD_SHARED_LIBS", "shared"),
-                self.define_from_variant("VTKm_ENABLE_KOKKOS", "kokkos"),
-                self.define_from_variant("VTKm_ENABLE_LOGGING", "logging"),
-                self.define_from_variant("VTKm_ENABLE_MPI", "mpi"),
-                self.define_from_variant("VTKm_ENABLE_OPENMP", "openmp"),
-                self.define_from_variant("VTKm_ENABLE_RENDERING", "rendering"),
-                self.define_from_variant("VTKm_ENABLE_TBB", "tbb"),
-                self.define_from_variant("VTKm_ENABLE_TESTING_LIBRARY", "testlib"),
-                self.define_from_variant("VTKm_INSTALL_EXAMPLES", "examples"),
-                self.define_from_variant("VTKm_NO_DEPRECATED_VIRTUAL", "virtuals"),
-                self.define_from_variant("VTKm_USE_64BIT_IDS", "64bitids"),
-                self.define_from_variant("VTKm_USE_DEFAULT_TYPES_FOR_ASCENT", "ascent_types"),
-                self.define_from_variant("VTKm_USE_DOUBLE_PRECISION", "doubleprecision"),
-            ]
+            options = ["-DVTKm_ENABLE_TESTING:BOOL=OFF"]
+            # shared vs static libs logic
+            # force building statically with cuda
+            if "+shared" in spec:
+                options.append("-DBUILD_SHARED_LIBS=ON")
+            else:
+                options.append("-DBUILD_SHARED_LIBS=OFF")
 
-            if "+tbb" in spec:
-                # vtk-m detectes tbb via TBB_ROOT env var
-                os.environ["TBB_ROOT"] = spec["tbb"].prefix
+            # double precision
+            if "+doubleprecision" in spec:
+                options.append("-DVTKm_USE_DOUBLE_PRECISION:BOOL=ON")
+            else:
+                options.append("-DVTKm_USE_DOUBLE_PRECISION:BOOL=OFF")
+
+            # logging support
+            if "+logging" in spec:
+                if not spec.satisfies("@1.3.0:"):
+                    raise InstallError(
+                        "logging is not supported for\
+                            vtkm version lower than 1.3"
+                    )
+                options.append("-DVTKm_ENABLE_LOGGING:BOOL=ON")
+            else:
+                options.append("-DVTKm_ENABLE_LOGGING:BOOL=OFF")
+
+            # mpi support
+            if "+mpi" in spec:
+                if not spec.satisfies("@1.3.0:"):
+                    raise InstallError(
+                        "mpi is not supported for\
+                            vtkm version lower than 1.3"
+                    )
+                options.append("-DVTKm_ENABLE_MPI:BOOL=ON")
+            else:
+                options.append("-DVTKm_ENABLE_MPI:BOOL=OFF")
+
+            # rendering support
+            if "+rendering" in spec:
+                options.append("-DVTKm_ENABLE_RENDERING:BOOL=ON")
+            else:
+                options.append("-DVTKm_ENABLE_RENDERING:BOOL=OFF")
+
+            # Support for ascent types
+            if "+ascent_types" in spec:
+                options.append("-DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT:BOOL=ON")
+            else:
+                options.append("-DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT:BOOL=OFF")
+
+            # Support for deprecated virtual functions
+            if "+virtuals" in spec:
+                options.append("-DVTKm_NO_DEPRECATED_VIRTUAL:BOOL=OFF")
+            else:
+                options.append("-DVTKm_NO_DEPRECATED_VIRTUAL:BOOL=ON")
+
+            # 64 bit ids
+            if "+64bitids" in spec:
+                options.append("-DVTKm_USE_64BIT_IDS:BOOL=ON")
+                print("64 bit ids enabled")
+            else:
+                options.append("-DVTKm_USE_64BIT_IDS:BOOL=OFF")
+
+            # Support for the testing header files
+            if "+testlib" in spec and spec.satisfies("@1.7.0:"):
+                options.append("-DVTKm_ENABLE_TESTING_LIBRARY:BOOL=ON")
+
+            if spec.variants["build_type"].value != "Release":
+                options.append("-DVTKm_NO_ASSERT:BOOL=ON")
 
             # Support for relocatable code
             if "~shared" in spec and "+fpic" in spec:
@@ -204,31 +256,60 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
             if "+cuda_native" in spec:
                 options.append("-DVTKm_ENABLE_CUDA:BOOL=ON")
                 options.append("-DCMAKE_CUDA_HOST_COMPILER={0}".format(env["SPACK_CXX"]))
-
-                if spec.satisfies("@1.9.0:") and spec.satisfies("^cmake@3.18:"):
-                    options.append(self.builder.define_cuda_architectures(self))
-
+                if "cuda_arch" in spec.variants:
+                    cuda_value = spec.variants["cuda_arch"].value
+                    cuda_arch = cuda_value[0]
+                    if cuda_arch in gpu_name_table:
+                        vtkm_cuda_arch = gpu_name_table[cuda_arch]
+                        options.append("-DVTKm_CUDA_Architecture={0}".format(vtkm_cuda_arch))
                 else:
-                    # VTKm_CUDA_Architecture only accepts a single CUDA arch
-                    num_cuda_arch = spec.variants["cuda_arch"].value[0]
-                    str_cuda_arch = str()
-
-                    try:
-                        str_cuda_arch = gpu_name_table[num_cuda_arch]
-                    except KeyError:
-                        raise InstallError(
-                            f"cuda_arch={num_cuda_arch} needs cmake>=3.18 & VTK-m>=1.9.0"
-                        )
-                    options.append(f"-DVTKm_CUDA_Architecture={str_cuda_arch}")
-
+                    # this fix is necessary if compiling platform has cuda, but
+                    # no devices (this is common for front end nodes on hpc
+                    # clusters). We choose volta as a lowest common denominator
+                    options.append("-DVTKm_CUDA_Architecture=volta")
             else:
                 options.append("-DVTKm_ENABLE_CUDA:BOOL=OFF")
 
             # hip support
             if "+rocm" in spec:
-                options.append(self.builder.define_hip_architectures(self))
+                archs = ",".join(self.spec.variants["amdgpu_target"].value)
+                options.append("-DCMAKE_HIP_ARCHITECTURES:STRING={0}".format(archs))
 
-        return options
+            # openmp support
+            if "+openmp" in spec:
+                # openmp is added since version 1.3.0
+                if not spec.satisfies("@1.3.0:"):
+                    raise InstallError(
+                        "OpenMP is not supported for\
+                            vtkm version lower than 1.3"
+                    )
+                options.append("-DVTKm_ENABLE_OPENMP:BOOL=ON")
+            else:
+                options.append("-DVTKm_ENABLE_OPENMP:BOOL=OFF")
+
+            if "+kokkos" in spec:
+                options.append("-DVTKm_ENABLE_KOKKOS:BOOL=ON")
+                # NOTE: CYRUSH: skip rocthrust and use DVTKm_ENABLE_KOKKOS_THRUST=OFF
+                if "+rocm" in spec:
+                    options.append("-DVTKm_ENABLE_KOKKOS_THRUST:BOOL=OFF")
+            else:
+                options.append("-DVTKm_ENABLE_KOKKOS:BOOL=OFF")
+
+            # tbb support
+            if "+tbb" in spec:
+                # vtk-m detectes tbb via TBB_ROOT env var
+                os.environ["TBB_ROOT"] = spec["tbb"].prefix
+                options.append("-DVTKm_ENABLE_TBB:BOOL=ON")
+            else:
+                options.append("-DVTKm_ENABLE_TBB:BOOL=OFF")
+
+            # Install examples
+            if "+examples" in spec:
+                options.append("-DVTKm_INSTALL_EXAMPLES:BOOL=ON")
+            else:
+                options.append("-DVTKm_INSTALL_EXAMPLES:BOOL=OFF")
+
+            return options
 
     # Delegate in the vtk-m built smoke test
     def smoke_test(self):
