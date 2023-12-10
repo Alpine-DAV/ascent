@@ -77,5 +77,5 @@ jobs:
         cmake -S . -B build
         cmake --build build --verbose -j2
         export VTKM_INSTALL_DIR=`ls /home/runner/work/ascent/ascent/install/vtk-m-*/`
-        export LD_LIBRARY_PATH=/home/runner/work/ascent/ascent/install/${VTKM_INSTALL_DIR}/lib/:${LD_LIBRARY_PATH}
+        export LD_LIBRARY_PATH=${VTKM_INSTALL_DIR}/lib/:${LD_LIBRARY_PATH}
         mpiexec -n 2 ./build/ascent_mpi_render_example
