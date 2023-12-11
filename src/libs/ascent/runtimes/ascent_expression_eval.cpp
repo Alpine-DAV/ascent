@@ -970,7 +970,7 @@ initialize_functions()
   field_sig["args/component/optional"];
   field_sig["args/component/description"] =
       "Used to specify a single component if the field is a vector field.";
-  field_sig["description"] = "Return a mesh field given a its name.";
+  field_sig["description"] = "Return a mesh field given its name.";
 
   //---------------------------------------------------------------------------
   // topo()
@@ -979,7 +979,7 @@ initialize_functions()
   topo_sig["return_type"] = "topology";
   topo_sig["filter_name"] = "expr_mesh_topology";
   topo_sig["args/arg1/type"] = "string";
-  topo_sig["description"] = "Return a mesh topology given a its name.";
+  topo_sig["description"] = "Return a mesh topology given its name.";
 
   //---------------------------------------------------------------------------
   // topology()

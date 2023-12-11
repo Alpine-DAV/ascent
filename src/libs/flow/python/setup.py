@@ -6,24 +6,18 @@
 
 ###############################################################################
 # file: setup.py
-# Purpose: disutils setup for flow python module.
+# Purpose: setuptools setup for flow python module.
 #
 ###############################################################################
 
+from setuptools import setup
 import sys
-from distutils.core import setup
-from distutils.command.install_egg_info import install_egg_info
-
-# disable install_egg_info
-class SkipEggInfo(install_egg_info):
-    def run(self):
-        pass
-
 
 setup (name = 'flow',
        description = 'flow',
        package_dir = {'flow':'py_src'},
-       packages=['flow'],
-       cmdclass={'install_egg_info': SkipEggInfo})
+       zip_safe=False,
+       packages=['flow'])
+
 
 

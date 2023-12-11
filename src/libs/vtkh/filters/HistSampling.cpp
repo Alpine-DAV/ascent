@@ -7,7 +7,7 @@
 #include <vtkm/worklet/DispatcherMapField.h>
 #include <vtkm/worklet/WorkletMapField.h>
 
-#include <vtkm/worklet/FieldStatistics.h>
+#include <vtkm/worklet/DescriptiveStatistics.h>
 //#include <vtkm/filter/CreateResult.h>
 #include <vtkm/cont/ArrayHandleTransform.h>
 #include <vtkm/worklet/DispatcherMapField.h>
@@ -231,24 +231,27 @@ public:
 };
 
 
-void PrintStatInfo(vtkm::worklet::FieldStatistics<vtkm::Float64>::StatInfo statinfo)
+void PrintStatInfo(vtkm::worklet::DescriptiveStatistics::StatState<vtkm::Float64> statinfo)
 {
-  std::cout << "   Median " << statinfo.median << std::endl;
-  std::cout << "   Minimum " << statinfo.minimum << std::endl;
-  std::cout << "   Maximum " << statinfo.maximum << std::endl;
-  std::cout << "   Mean " << statinfo.mean << std::endl;
-  std::cout << "   Variance " << statinfo.variance << std::endl;
-  std::cout << "   Standard Deviation " << statinfo.stddev << std::endl;
-  std::cout << "   Skewness " << statinfo.skewness << std::endl;
-  std::cout << "   Kurtosis " << statinfo.kurtosis << std::endl;
-  std::cout << "   Raw Moment 1-4 [ ";
-  for (vtkm::Id i = 0; i < 4; i++)
-    std::cout << statinfo.rawMoment[i] << " ";
-  std::cout << "]" << std::endl;
-  std::cout << "   Central Moment 1-4 [ ";
-  for (vtkm::Id i = 0; i < 4; i++)
-    std::cout << statinfo.centralMoment[i] << " ";
-  std::cout << "]" << std::endl;
+
+  std::cout << "   Minimum " << statinfo.Min() << std::endl;
+  std::cout << "   Maximum " << statinfo.Max() << std::endl;
+  std::cout << "   Mean " << statinfo.Mean() << std::endl;
+  std::cout << "   Variance " << statinfo.PopulationVariance() << std::endl;
+  std::cout << "   Standard Deviation " << statinfo.PopulationStddev() << std::endl;
+  std::cout << "   Skewness " << statinfo.Skewness() << std::endl;
+  std::cout << "   Kurtosis " << statinfo.Kurtosis() << std::endl;
+  
+  // Not supported by VTK-m 2.1
+  // std::cout << "   Median " << statinfo.median << std::endl;
+  // std::cout << "   Raw Moment 1-4 [ ";
+  // for (vtkm::Id i = 0; i < 4; i++)
+  //   std::cout << statinfo.rawMoment[i] << " ";
+  // std::cout << "]" << std::endl;
+  // std::cout << "   Central Moment 1-4 [ ";
+  // for (vtkm::Id i = 0; i < 4; i++)
+  //   std::cout << statinfo.centralMoment[i] << " ";
+  // std::cout << "]" << std::endl;
 }
 
 void HistSampling::DoExecute()
@@ -304,10 +307,8 @@ void HistSampling::DoExecute()
 
     vtkm::cont::ArrayHandle<vtkm::Float64> data;
     dom.GetField(m_field_name).GetData().AsArrayHandle(data);
-
-
-    //vtkm::worklet::FieldStatistics<vtkm::Float64>::StatInfo statinfo;
-    //vtkm::worklet::FieldStatistics<vtkm::Float64>().Run(data, statinfo);
+ 
+    //auto vtkm::worklet::DescriptiveStatistics::Run(data);
 
     //std::cout << "Statistics for CELL data:" << std::endl;
     //PrintStatInfo(statinfo);
