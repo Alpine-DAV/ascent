@@ -699,6 +699,113 @@ DataBinning::execute()
   }
 
 }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// AddFields (derived field)
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+AddFields::AddFields() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+AddFields::~AddFields()
+{
+  // empty
+}
+//-----------------------------------------------------------------------------
+void
+AddFields::declare_interface(Node &i)
+{
+    i["type_name"]   = "add_fields";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+AddFields::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+
+    if(!params.has_path("output_field"))
+    {
+      res = false;
+      info["errors"].append() = "Missing param 'output_field'";
+    }
+
+    if(!params.has_path("fields"))
+    {
+      res = false;
+      info["errors"].append() = "Missing 'fields'";
+    }
+    else if(!params["fields"].dtype().is_list())
+    {
+      res = false;
+      info["errors"].append() = "fields is not a list";
+    }
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+    valid_paths.push_back("fields");
+    valid_paths.push_back("output_field");
+    ignore_paths.push_back("fields");
+
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+AddFields::execute()
+{
+  if(!input(0).check_type<DataObject>())
+  {
+      ASCENT_ERROR("add fields input must be a DataObject");
+  }
+
+  Node v_info;
+  DataObject *d_input = input<DataObject>(0);
+  std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
+
+  std::string out_field = params()["output_field"].as_string();
+  std::vector<std::string> fields;
+  const conduit::Node &flist = params()["fields"];
+  const int num_fields = flist.number_of_children();
+  if(num_fields == 0)
+  {
+    ASCENT_ERROR("'fields' list must be non-empty");
+  }
+  for(int i = 0; i < num_fields; i++)
+  {
+    const conduit::Node &f = flist.child(i); 
+    if(!f.dtype().is_string())
+    {
+      ASCENT_ERROR("'fields' list values must be a string");
+    }
+    fields.push_back(f.as_string());
+  }
+
+  DataObject  *d_output = new DataObject();
+  d_output->reset(n_input);
+  expressions::derived_field_add_fields(*n_input.get(), fields, out_field);
+  set_output<DataObject>(d_output);
+
+}
+
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 };

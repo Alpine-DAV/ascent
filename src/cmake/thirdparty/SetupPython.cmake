@@ -18,8 +18,10 @@ endif()
 
 find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
-        
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
+
+        # clear extra python module dirs
+        set(EXTRA_PYTHON_MODULE_DIRS "")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                         "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
@@ -47,7 +49,9 @@ if(PYTHONINTERP_FOUND)
             MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
         endif()
 
-        
+        # for embedded python, we need to know where the site packages dir is
+        list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
+
         # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;import sysconfig;sys.stdout.write(sysconfig.get_config_var('LDSHARED'))"
@@ -182,7 +186,7 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 ##############################################################################
 # Macro to use a pure python distutils setup script
 ##############################################################################
-FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
+FUNCTION(PYTHON_ADD_PIP_SETUP)
     set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
     set(multiValuedArgs  PY_SOURCES)
 
@@ -216,28 +220,29 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
        "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SOURCES")
     endif()
 
-    MESSAGE(STATUS "Configuring python distutils setup: ${args_NAME}")
+    MESSAGE(STATUS "Configuring python pip setup: ${args_NAME}")
 
     # dest for build dir
     set(abs_dest_path ${CMAKE_BINARY_DIR}/${args_DEST_DIR})
     if(WIN32)
-        # on windows, distutils seems to need standard "\" style paths
+        # on windows, python seems to need standard "\" style paths
         string(REGEX REPLACE "/" "\\\\" abs_dest_path  ${abs_dest_path})
     endif()
 
+    # NOTE: With pip, you can't directly control build dir with an arg
+    # like we were able to do with distutils, you have to use TMPDIR
+    # TODO: we might want to  explore this in the future
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
-            COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-            build
-            --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
-            install
-            --install-purelib="${abs_dest_path}"
+            COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+            --disable-pip-version-check --no-warn-script-location
+            --target "${abs_dest_path}"
             DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
     add_custom_target(${args_NAME} ALL DEPENDS
                       ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build)
 
-    # also use distutils for the install ...
+    # also use pip for the install ...
     # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
     if(PYTHON_MODULE_INSTALL_PREFIX)
         set(py_mod_inst_prefix ${PYTHON_MODULE_INSTALL_PREFIX})
@@ -248,9 +253,9 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
-                    install --install-purelib=${py_mod_inst_prefix}
+                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                --disable-pip-version-check --no-warn-script-location
+                --target ${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
@@ -259,9 +264,9 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
-                    install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                --disable-pip-version-check --no-warn-script-location
+                --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
@@ -272,7 +277,7 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         blt_set_target_folder(TARGET ${args_NAME} FOLDER ${args_FOLDER})
     endif()
 
-ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
+ENDFUNCTION(PYTHON_ADD_PIP_SETUP)
 
 ##############################################################################
 # Macro to create a compiled python module 
@@ -365,7 +370,7 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE)
 ENDFUNCTION(PYTHON_ADD_COMPILED_MODULE)
 
 ##############################################################################
-# Macro to create a compiled distutils and compiled python module
+# Macro to create a pip script and compiled python module
 ##############################################################################
 FUNCTION(PYTHON_ADD_HYBRID_MODULE)
     set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
@@ -408,12 +413,12 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
     MESSAGE(STATUS "Configuring hybrid python module: ${args_NAME}")
 
-    PYTHON_ADD_DISTUTILS_SETUP(NAME          "${args_NAME}_py_setup"
-                               DEST_DIR      ${args_DEST_DIR}
-                               PY_MODULE_DIR ${args_PY_MODULE_DIR}
-                               PY_SETUP_FILE ${args_PY_SETUP_FILE}
-                               PY_SOURCES    ${args_PY_SOURCES}
-                               FOLDER        ${args_FOLDER})
+    PYTHON_ADD_PIP_SETUP(NAME          "${args_NAME}_py_setup"
+                         DEST_DIR      ${args_DEST_DIR}
+                         PY_MODULE_DIR ${args_PY_MODULE_DIR}
+                         PY_SETUP_FILE ${args_PY_SETUP_FILE}
+                         PY_SOURCES    ${args_PY_SOURCES}
+                         FOLDER        ${args_FOLDER})
 
     PYTHON_ADD_COMPILED_MODULE(NAME          ${args_NAME}
                                DEST_DIR      ${args_DEST_DIR}

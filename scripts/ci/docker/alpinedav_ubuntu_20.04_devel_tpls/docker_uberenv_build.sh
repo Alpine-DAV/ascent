@@ -8,12 +8,12 @@ export SPACK_SPEC="%gcc+mpi+python+dray+mfem+occa+fides+adios2+babelflow~genten"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC}"
 # config
-export SPACK_CONFIG="scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/"
+export SPACK_ENV_YAML="scripts/uberenv_configs/spack_configs/envs/alpinedav-ubuntu_18.04_devel/spack.yaml"
 
 cd ascent && python3 scripts/uberenv/uberenv.py \
      -k \
      --spec="${SPACK_SPEC}" \
-     --spack-config-dir="${SPACK_CONFIG}" \
+     --spack-env-file="${SPACK_ENV_YAML}" \
      --prefix="/uberenv_libs"
 
 # cleanup the spack build stuff to free up space
