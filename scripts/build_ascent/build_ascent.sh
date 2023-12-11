@@ -285,7 +285,7 @@ fi # build_conduit
 #########################
 # Kokkos (only for hip)
 #########################
-kokkos_version=3.6.01
+kokkos_version=3.7.02
 kokkos_src_dir=$(ospath ${root_dir}/kokkos-${kokkos_version})
 kokkos_build_dir=$(ospath ${root_dir}/build/kokkos-${kokkos_version})
 kokkos_install_dir=$(ospath ${root_dir}/install/kokkos-${kokkos_version}/)
@@ -316,7 +316,6 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
   -DCMAKE_CXX_FLAGS="--amdgpu-target=${ROCM_ARCH}" \
   -DBUILD_TESTING=OFF \
-  -DVTKm_ENABLE_BENCHMARKS=OFF\
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir}
 
 echo "**** Building Kokkos ${kokkos_version}"
@@ -334,7 +333,7 @@ fi # if enable_hip
 ################
 # VTK-m
 ################
-vtkm_version=v2.0.0
+vtkm_version=v2.1.0
 vtkm_src_dir=$(ospath ${root_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${root_dir}/build/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${root_dir}/install/vtk-m-${vtkm_version}/)
@@ -347,7 +346,13 @@ if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/${vtkm_tarball} -o ${vtkm_tarball}
   tar -xzf ${vtkm_tarball}
+  
+  # apply vtk-m patch
+  cd  ${vtkm_src_dir}
+  patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
+  cd ${root_dir}
 fi
+
 
 vtkm_extra_cmake_args=""
 if [[ "$enable_cuda" == "ON" ]]; then
@@ -360,8 +365,7 @@ if [[ "$enable_hip" == "ON" ]]; then
   vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_COMPILER_TOOLKIT_ROOT=${ROCM_PATH}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
 fi
 
 echo "**** Configuring VTK-m ${vtkm_version}"

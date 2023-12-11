@@ -101,20 +101,21 @@ if(ENABLE_PYTHON)
                                         ERROR_VARIABLE  _FIND_CONDUIT_PYTHON_ERROR_VALUE
                                         OUTPUT_STRIP_TRAILING_WHITESPACE)
                 if(_FIND_CONDUIT_PYTHON_RESULT MATCHES 0)
-                    # we will use this to make sure we can setup tests correctly
-                    set(EXTRA_PYTHON_MODULE_DIRS "${CONDUIT_DIR}/python-modules/")
+                    # we use this to make sure we can setup unit tests env path correctly
+                    list(APPEND EXTRA_PYTHON_MODULE_DIRS "${CONDUIT_DIR}/python-modules/")
                     message(STATUS "FOUND conduit python module at: ${_FIND_CONDUIT_PYTHON_OUT}")
                 else()
                     message(FATAL_ERROR
                     "conduit python import failure:\n${_FIND_CONDUIT_PYTHON_OUT}")
-
                 endif()
             endif()
         else()
             message(FATAL_ERROR "PYTHON_FOUND = TRUE, but could not find a python interpreter.")
         endif()
-
         set(CONDUIT_PYTHON_INCLUDE_DIR ${_FIND_CONDUIT_PYTHON_OUT})
+    else()
+        # we use this to make sure we can setup unit tests env path correctly
+        list(APPEND EXTRA_PYTHON_MODULE_DIRS ${CONDUIT_PYTHON_MODULE_DIR})
     endif ()
 
     # Verify that the python header was found, if not abort

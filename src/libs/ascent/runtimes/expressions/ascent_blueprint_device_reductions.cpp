@@ -141,6 +141,85 @@ struct SumFunctor
   }
 };
 
+struct DFAddFunctor
+{
+    template<typename T, typename Exec>
+    conduit::Node operator()(const DeviceAccessor<T> l_accessor,
+                             const DeviceAccessor<T> r_accessor,
+                             const Exec &) const
+    {
+
+    const int l_size = l_accessor.m_size;
+    const int r_size = r_accessor.m_size;
+
+    bool diff_sizes = false;
+    int size; 
+    int max_size;
+
+    size = max_size = l_size; 
+    if(l_size != r_size)
+    {
+        size = min(l_size, r_size);
+        max_size = max(l_size, r_size);
+        diff_sizes = true;
+    }
+
+
+    // conduit zero initializes this array
+    conduit::Node res;
+    res["values"].set(conduit::DataType::float64(max_size));
+    double *res_array = res["values"].value();
+
+    Array<double> field_sums(res_array, max_size);
+    double *sums_ptr = field_sums.get_ptr(Exec::memory_space);
+
+    using for_policy = typename Exec::for_policy;
+    using atomic_policy = typename Exec::atomic_policy;
+
+    // init device array
+    ascent::forall<for_policy>(0, max_size, [=] ASCENT_LAMBDA(index_t i)
+    {
+        sums_ptr[i]=0.0;
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
+
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
+      const double val = l_accessor[i] + r_accessor[i];
+      //sums_ptr[i] = val;
+      int old = ascent::atomic_add<atomic_policy>(&(sums_ptr[i]), val);
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
+
+    if(diff_sizes)
+    {
+      if(l_size > r_size)
+      {
+        ascent::forall<for_policy>(size, l_size, [=] ASCENT_LAMBDA(index_t i)
+        {
+          const T val = l_accessor[i];
+          sums_ptr[i] = val;
+        });
+        ASCENT_DEVICE_ERROR_CHECK();
+      }
+      else
+      {
+        ascent::forall<for_policy>(size, r_size, [=] ASCENT_LAMBDA(index_t i)
+        {
+          const T val = r_accessor[i];
+          sums_ptr[i] = val;
+        });
+        ASCENT_DEVICE_ERROR_CHECK();
+      }
+    }
+
+    // synch the values back to the host
+    (void) field_sums.get_host_ptr();
+
+    return res;
+    }
+};
+
 struct NanFunctor
 {
   template<typename T, typename Exec>
@@ -444,6 +523,18 @@ array_sum(const conduit::Node &array,
 
   return res;
 }
+
+conduit::Node
+derived_field_binary_add(const conduit::Node &l_field,
+                         const conduit::Node &r_field,
+                         const std::string &component)
+{
+  return exec_dispatch_binary_df(l_field,
+                                 r_field,
+                                 component,
+                                 detail::DFAddFunctor());
+}
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

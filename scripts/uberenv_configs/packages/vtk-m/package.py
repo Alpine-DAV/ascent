@@ -1,4 +1,4 @@
-# Copyright 2013-2022 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2023 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -19,7 +19,7 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     architectures."""
 
     homepage = "https://m.vtk.org/"
-    maintainers = ["kmorel", "vicentebolea"]
+    maintainers("kmorel", "vicentebolea")
 
     url = "https://gitlab.kitware.com/vtk/vtk-m/-/archive/v1.5.1/vtk-m-v1.5.1.tar.gz"
     git = "https://gitlab.kitware.com/vtk/vtk-m.git"
@@ -29,18 +29,13 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
     version("master", branch="master")
     version("release", branch="release")
-
     version(
-        "2.0.0",
-        sha256="32643cf3564fa77f8e2a2a5456a574b6b2355bb68918eb62ccde493993ade1a3",
+        "2.1.0",
+        sha256="9cf3522b6dc0675281a1a16839464ebd1cc5f9c08c20eabee1719b3bcfdcf41f",
         preferred=True,
     )
-
-    version(
-        "1.9.0",
-        sha256="12355dea1a24ec32767260068037adeb71abb3df2f9f920c92ce483f35ff46e4",
-    )
-
+    version("2.0.0", sha256="32643cf3564fa77f8e2a2a5456a574b6b2355bb68918eb62ccde493993ade1a3")
+    version("1.9.0", sha256="12355dea1a24ec32767260068037adeb71abb3df2f9f920c92ce483f35ff46e4")
     version("1.8.0", sha256="fcedee6e8f4ac50dde56e8c533d48604dbfb663cea1561542a837e8e80ba8768")
     version("1.7.1", sha256="7ea3e945110b837a8c2ba49b41e45e1a1d8d0029bb472b291f7674871dbbbb63")
     version("1.7.0", sha256="a86667ac22057462fc14495363cfdcc486da125b366cb568ec23c86946439be4")
@@ -56,26 +51,26 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     version("1.2.0", sha256="607272992e05f8398d196f0acdcb4af025a4a96cd4f66614c6341f31d4561763")
     version("1.1.0", sha256="78618c81ca741b1fbba0853cb5d7af12c51973b514c268fc96dfb36b853cdb18")
 
-    # use release, instead of release with debug symbols b/c vtkm libs
-    # can overwhelm compilers with too many symbols
-    variant(
-        "build_type",
-        default="Release",
-        description="CMake build type",
-        values=("Debug", "Release", "RelWithDebInfo", "MinSizeRel"),
-    )
     variant("shared", default=False, description="build shared libs")
 
     variant("doubleprecision", default=True, description="enable double precision")
-    variant("logging", default=False, description="build logging support")
-    variant("ascent_types", default=True, description="build support for ascent types")
+    variant("logging", default=False, when="@1.3:", description="build logging support")
     variant(
-        "virtuals", default=False, description="enable support for deprecated virtual functions"
+        "ascent_types",
+        default=True,
+        when="~64bitids",
+        description="build support for ascent types",
     )
-    variant("mpi", default=False, description="build mpi support")
+    variant(
+        "virtuals",
+        default=False,
+        description="enable support for deprecated virtual functions",
+        when="@:1.9",
+    )
+    variant("mpi", default=False, when="@1.3:", description="build mpi support")
     variant("rendering", default=True, description="build rendering support")
     variant("64bitids", default=False, description="enable 64 bits ids")
-    variant("testlib", default=False, description="build test library")
+    variant("testlib", default=False, when="@1.7:", description="build test library")
     variant("fpic", default=False, description="build fpic support")
     variant("examples", default=True, when="@1.8:", description="Install builtin examples")
 
@@ -86,7 +81,12 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     variant(
         "cuda_native", default=True, description="build using native cuda backend", when="+cuda"
     )
-    variant("openmp", default=(sys.platform != "darwin"), description="build openmp support")
+    variant(
+        "openmp",
+        default=(sys.platform != "darwin"),
+        when="@1.3:",
+        description="build openmp support",
+    )
     variant("tbb", default=(sys.platform == "darwin"), description="build TBB support")
 
     depends_on("cmake@3.12:", type="build")  # CMake >= 3.12
@@ -98,9 +98,7 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("cuda@10.1.0:", when="+cuda_native")
     depends_on("tbb", when="+tbb")
     depends_on("mpi", when="+mpi")
-    # this won't work with older spack, we see:
-    # => Error: Package 'apple-clang' not found.
-    #depends_on("llvm-openmp", when="+openmp %apple-clang")
+    depends_on("llvm-openmp", when="+openmp %apple-clang")
 
     # VTK-m uses the default Kokkos backend
     depends_on("kokkos", when="+kokkos")
@@ -124,6 +122,11 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
         )
 
     depends_on("hip@3.7:", when="+rocm")
+    
+    # NOTE: CYRUSH: skip rocthrust and use DVTKm_ENABLE_KOKKOS_THRUST=OFF
+
+    ## CUDA thrust is already include in the CUDA pkg
+    # depends_on("rocthrust", when="@2.1: +kokkos+rocm")
 
     # The rocm variant is only valid options for >= 1.7. It would be better if
     # this could be expressed as a when clause to disable the rocm variant,
@@ -132,6 +135,8 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+rocm", when="@:1.6")
     conflicts("+rocm", when="+cuda")
     conflicts("+rocm", when="~kokkos", msg="VTK-m does not support HIP without Kokkos")
+    conflicts("+rocm", when="+virtuals", msg="VTK-m does not support virtual functions with ROCm")
+    depends_on("kokkos@3.7:3.9", when="@2.0 +kokkos")
 
     # Can build +shared+cuda after @1.7:
     conflicts("+shared", when="@:1.6 +cuda_native")
@@ -140,8 +145,20 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
     conflicts("+cuda", when="cuda_arch=none", msg="vtk-m +cuda requires that cuda_arch be set")
 
+    conflicts(
+        "+ascent_types", when="+64bitids", msg="Ascent types requires 32 bit IDs for compatibility"
+    )
+
     # Patch
     patch("diy-include-cstddef.patch", when="@1.5.3:1.8.0")
+
+    # VTK-M PR#2972
+    # https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/2972
+    patch("vtkm-cuda-swap-conflict-pr2972.patch", when="@1.9 +cuda ^cuda@12:")
+
+    # VTK-M PR#3160
+    # https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3160
+    patch("mr3160-rocthrust-fix.patch", when="@2.1:")
 
     def cmake_args(self):
         spec = self.spec
@@ -255,8 +272,6 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
             # hip support
             if "+rocm" in spec:
-                options.append("-DVTKm_NO_DEPRECATED_VIRTUAL:BOOL=ON")
-
                 archs = ",".join(self.spec.variants["amdgpu_target"].value)
                 options.append("-DCMAKE_HIP_ARCHITECTURES:STRING={0}".format(archs))
 
@@ -274,6 +289,9 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
             if "+kokkos" in spec:
                 options.append("-DVTKm_ENABLE_KOKKOS:BOOL=ON")
+                # NOTE: CYRUSH: skip rocthrust and use DVTKm_ENABLE_KOKKOS_THRUST=OFF
+                if "+rocm" in spec:
+                    options.append("-DVTKm_ENABLE_KOKKOS_THRUST:BOOL=OFF")
             else:
                 options.append("-DVTKm_ENABLE_KOKKOS:BOOL=OFF")
 

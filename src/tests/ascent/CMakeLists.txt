@@ -116,7 +116,8 @@ if(PYTHON_FOUND AND ENABLE_PYTHON)
     list(APPEND MPI_TESTS t_ascent_mpi_python_extract)
 endif()
 
-if(DRAY_FOUND)
+# ascent's dray test requires dray + mfem
+if(ENABLE_DRAY AND MFEM_FOUND)
     list(APPEND BASIC_TESTS t_ascent_dray)
 endif()
 
@@ -171,7 +172,7 @@ if(MPI_FOUND AND ENABLE_MPI)
     # add the babelflow pmt mpi test
     add_cpp_mpi_test(TEST t_ascent_babelflow_pmt_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
     add_cpp_mpi_test(TEST t_ascent_babelflow_stat_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
-    if(DRAY_FOUND)
+    if(ENABLE_DRAY)
       # babelflow compositing test requires dray
       add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
     endif()
