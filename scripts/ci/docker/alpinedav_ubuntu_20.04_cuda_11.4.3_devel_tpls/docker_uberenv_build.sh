@@ -12,6 +12,7 @@ export SPACK_ENV_YAML="scripts/uberenv_configs/spack_configs/envs/alpinedav-ubun
 
 cd ascent && python3 scripts/uberenv/uberenv.py \
      -k \
+     -j 6 \
      --spec="${SPACK_SPEC}" \
      --spack-env-file="${SPACK_ENV_YAML}" \
      --prefix="/uberenv_libs"
