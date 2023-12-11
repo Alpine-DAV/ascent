@@ -1,2 +1,2 @@
-vtkm branch='master' commit='982e965536b41b334bd2bbb765373e6503c823ec'
+vtkm branch='master' commit='a057f62e756efc43095e72c5813aaaf2dea36ebb'
 blt  branch='main' commit='84fe0d15d841a79d923e97a9105b86b59147bfed'
