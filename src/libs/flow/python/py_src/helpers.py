@@ -23,11 +23,13 @@ def wrap_function(func):
         def declare_interface(self,i):
             i.fetch("type_name").set(self.func.__name__);
             i.fetch("output_port").set("true");
-            for arg in inspect.getargspec(self.func)[0]:
-                i["port_names"].append().set(arg)
+            sig = inspect.signature(self.func)
+            for k in sig.parameters:
+                i["port_names"].append().set(k)
         def execute(self):
             arg_vals = []
-            for arg in inspect.getargspec(self.func)[0]:
-                arg_vals.append(self.input(arg))
+            sig = inspect.signature(self.func)
+            for k in sig.parameters:
+                arg_vals.append(self.input(k))
             self.set_output(func(*arg_vals))
     return FilterWrap

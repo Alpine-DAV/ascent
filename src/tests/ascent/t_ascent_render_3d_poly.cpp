@@ -40,7 +40,6 @@ TEST(ascent_pipeline, test_render_3d_poly)
     index_t length = 10;
 
     conduit::blueprint::mesh::examples::polychain(length, data);
-
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
     string output_path = prepare_output_dir();
@@ -52,15 +51,14 @@ TEST(ascent_pipeline, test_render_3d_poly)
     //
     // Create the actions.
     //
-    conduit::Node scenes;
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = "chain";
     scenes["s1/image_prefix"] = output_file;
 
-    conduit::Node actions;
-    conduit::Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
     actions.print();
 
     //
@@ -68,18 +66,10 @@ TEST(ascent_pipeline, test_render_3d_poly)
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    Node ascent_info;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
-    ascent.info(ascent_info);
-    EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
-    ascent_info.print();
     ascent.close();
-
     //
     // // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
@@ -134,15 +124,13 @@ TEST(ascent_pipeline, test_render_3d_poly_multi)
     //
     // Create the actions.
     //
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "level";
-    scenes["s1/image_prefix"] = output_file;
-
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "level";
+    scenes["s1/image_prefix"] = output_file;
     actions.print();
 
     //
@@ -152,14 +140,9 @@ TEST(ascent_pipeline, test_render_3d_poly_multi)
     Ascent ascent;
 
     Node ascent_opts;
-    Node ascent_info;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(root);
     ascent.execute(actions);
-    ascent.info(ascent_info);
-    EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
-    ascent_info.print();
     ascent.close();
 
     //

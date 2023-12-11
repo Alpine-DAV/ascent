@@ -36,10 +36,30 @@ namespace runtime
 namespace expressions
 {
 
+// ----------------------
+// array reductions
+// ----------------------
+conduit::Node ASCENT_API array_max(const conduit::Node &array,
+                                   const std::string &exec_loc,
+                                   const std::string &component = "");
 
+conduit::Node ASCENT_API array_min(const conduit::Node &array,
+                                   const std::string &exec_loc,
+                                   const std::string &component = "");
+
+conduit::Node ASCENT_API array_sum(const conduit::Node &array,
+                                   const std::string &exec_loc,
+                                   const std::string &component = "");
+
+// ----------------------
+// derived arrays
+// ----------------------
 conduit::Node ASCENT_API history_gradient_range(const conduit::Node &y_values,
                                                 const conduit::Node &dx_values);
 
+//----------------------
+// field reductions
+//----------------------
 conduit::Node ASCENT_API field_reduction_max(const conduit::Node &field,
                                   const std::string &component = "");
 
@@ -62,17 +82,12 @@ conduit::Node ASCENT_API field_reduction_histogram(const conduit::Node &field,
                                         const int &num_bins,
                                         const std::string &component = "");
 
-conduit::Node ASCENT_API array_max(const conduit::Node &array,
-                        const std::string &exec_loc,
-                        const std::string &component = "");
-
-conduit::Node ASCENT_API array_min(const conduit::Node &array,
-                        const std::string &exec_loc,
-                        const std::string &component = "");
-                        
-conduit::Node ASCENT_API array_sum(const conduit::Node &array,
-                        const std::string &exec_loc,
-                        const std::string &component = "");
+//----------------------
+// derived fields
+//----------------------
+conduit::Node ASCENT_API derived_field_binary_add(const conduit::Node &l_field,
+                                                  const conduit::Node &r_field,
+                                            const std::string &component = "");
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--

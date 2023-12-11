@@ -53,15 +53,14 @@ TEST(ascent_pipeline, test_render_2d_poly)
     //
     // Create the actions.
     //
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "level";
-    scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "level";
+    scenes["s1/image_prefix"] = output_file;
     actions.print();
 
     //
@@ -69,16 +68,9 @@ TEST(ascent_pipeline, test_render_2d_poly)
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    Node ascent_info;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
-    ascent.info(ascent_info);
-    EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
-    ascent_info.print();
     ascent.close();
 
     //
@@ -134,32 +126,23 @@ TEST(ascent_pipeline, test_render_2d_poly_multi)
     //
     // Create the actions.
     //
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "level";
-    scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "level";
+    scenes["s1/image_prefix"] = output_file;
     actions.print();
 
     //
     // Run Ascent
     //
-
     Ascent ascent;
-
-    Node ascent_opts;
-    Node ascent_info;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(root);
     ascent.execute(actions);
-    ascent.info(ascent_info);
-    EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
-    ascent_info.print();
     ascent.close();
 
     //
@@ -209,18 +192,18 @@ TEST(ascent_pipeline, test_render_2d_poly_and_nonpoly)
     //
     // Create the actions.
     //
-    conduit::Node scenes;
+    
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = "level";
     scenes["s1/image_prefix"] = output_file + "polytess";
     scenes["s2/plots/p1/type"] = "pseudocolor";
     scenes["s2/plots/p1/field"] = "braid";
     scenes["s2/image_prefix"] = output_file + "braid";
-
-    conduit::Node actions;
-    conduit::Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
     actions.print();
 
     //
@@ -228,16 +211,9 @@ TEST(ascent_pipeline, test_render_2d_poly_and_nonpoly)
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    Node ascent_info;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
-    ascent.info(ascent_info);
-    EXPECT_EQ(ascent_info["runtime/type"].as_string(), "ascent");
-    ascent_info.print();
     ascent.close();
 
     //

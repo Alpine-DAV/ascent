@@ -490,6 +490,141 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
   }
 }
 
+//-----------------------------------------------------------------------------
+//dispatch memory for a derived field (DF) binary operation
+template<typename Function, typename Exec>
+conduit::Node
+dispatch_memory_binary_df(const conduit::Node &l_field,
+                          const conduit::Node &r_field,
+                          std::string component,
+                          const Function &func,
+                          const Exec &exec)
+{
+    const std::string mem_space = Exec::memory_space;
+
+    conduit::Node res;
+    if(field_is_float32(l_field))
+    {
+        if(!field_is_float32(r_field))
+        {
+          ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                       l_field.schema().to_string() <<
+                       "\n vs. \n" <<
+                       r_field.schema().to_string());
+        }
+
+        MCArray<conduit::float32> l_farray(l_field["values"]);
+        MCArray<conduit::float32> r_farray(r_field["values"]);
+        DeviceAccessor<conduit::float32> l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::float32> r_accessor = r_farray.accessor(mem_space, component);
+        res = func(l_accessor, r_accessor, exec);
+
+    }
+    else if(field_is_float64(l_field))
+    {
+        if(!field_is_float64(r_field))
+        {
+            ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                         l_field.schema().to_string() <<
+                          "\n vs. \n" <<
+                              r_field.schema().to_string());
+        }
+
+        MCArray<conduit::float64> l_farray(l_field["values"]);
+        MCArray<conduit::float64> r_farray(r_field["values"]);
+        DeviceAccessor<conduit::float64>  l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::float64>  r_accessor = r_farray.accessor(mem_space, component);
+        res = func(l_accessor, r_accessor, exec);
+    }
+    else if(field_is_int32(l_field))
+    {
+        if(!field_is_int32(r_field))
+        {
+            ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                         l_field.schema().to_string() <<
+                         "\n vs. \n" <<
+                             r_field.schema().to_string());
+        }
+
+        MCArray<conduit::int32> l_farray(l_field["values"]);
+        MCArray<conduit::int32> r_farray(r_field["values"]);
+        DeviceAccessor<conduit::int32>  l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::int32>  r_accessor = r_farray.accessor(mem_space, component);
+        res = func(l_accessor, r_accessor, exec);
+    }
+    else if(field_is_int64(l_field))
+    {
+
+        if(!field_is_int64(r_field))
+        {
+          ASCENT_ERROR("Type dispatch: mismatch array types\n"<<
+                       l_field.schema().to_string() <<
+                       "\n vs. \n" <<
+                       r_field.schema().to_string());
+        }
+
+        MCArray<conduit::int64> l_farray(l_field["values"]);
+        MCArray<conduit::int64> r_farray(r_field["values"]);
+        DeviceAccessor<conduit::int64>  l_accessor = l_farray.accessor(mem_space, component);
+        DeviceAccessor<conduit::int64>  r_accessor = r_farray.accessor(mem_space, component);
+        res = func(l_accessor, r_accessor, exec);
+    }
+    else
+    {
+        ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                      l_field.schema().to_string());
+    }
+
+    return res;
+}
+
+
+
+template<typename Function>
+conduit::Node
+exec_dispatch_binary_df(const conduit::Node &l_field,
+                        const conduit::Node &r_field,
+                        std::string component,
+                        const Function &func)
+{
+
+  conduit::Node res;
+  const std::string exec_policy = ExecutionManager::execution_policy();
+  //std::cout<<"Exec policy "<<exec_policy<<"\n";
+  if(exec_policy == "serial")
+  {
+    SerialExec exec;
+    res = dispatch_memory_binary_df(l_field, r_field, component, func, exec);
+  }
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+  else if(exec_policy == "openmp")
+  {
+    OpenMPExec exec;
+    res = dispatch_memory_binary_df(l_field, r_field, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_CUDA_ENABLED)
+  else if(exec_policy == "cuda")
+  {
+    CudaExec exec;
+    res = dispatch_memory_binary_df(l_field, r_field, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    res = dispatch_memory_binary_df(l_field, r_field, component, func, exec);
+  }
+#endif
+  else
+  {
+    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+                  exec_policy);
+  }
+  return res;
+}
+
 
 //-----------------------------------------------------------------------------
 template<typename Function, typename T>
