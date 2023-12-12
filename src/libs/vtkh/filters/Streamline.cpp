@@ -1,9 +1,10 @@
 #include <iostream>
 #include <vtkh/filters/Streamline.hpp>
-#include <vtkm/filter/flow/Streamline.h>
-#include <vtkm/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
+#include <vtkm/filter/flow/Streamline.h>
+#include <vtkm/cont/EnvironmentTracker.h>
+#include <vtkm/filter/geometry_refinement/Tube.h>
 
 #if VTKH_PARALLEL
 #include <vtkm/thirdparty/diy/diy.h>
@@ -106,9 +107,23 @@ void Streamline::DoExecute()
   streamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = streamlineFilter.Execute(inputs);
 
+  std::cerr << "streamline advection output: " << std::endl;
+  out.PrintSummary(std::cerr);
+  //call tube filter so we can render PA output
+  vtkm::filter::geometry_refinement::Tube tubeFilter;
+  tubeFilter.SetCapping(true);
+  tubeFilter.SetNumberOfSides(3);
+  tubeFilter.SetRadius(0.2);
+
+ // auto tubeOut = tubeFilter.Execute(out);
+ // std::cerr << "TUBEOUT: " << std::endl;
+ // tubeOut.PrintSummary(std::cerr);
+
   for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
   {
     this->m_output->AddDomain(out.GetPartition(i), i);
+    std::cerr << "DOMAIN: " << i << std::endl;
+    out.GetPartition(i).PrintSummary(std::cerr);
   }
 #endif
 }

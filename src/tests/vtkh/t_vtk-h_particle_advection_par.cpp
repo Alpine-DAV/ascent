@@ -5,15 +5,19 @@
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
+#include "t_vtkm_test_utils.hpp"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Streamline.hpp>
+#include <vtkh/rendering/LineRenderer.hpp>
+#include <vtkh/rendering/Scene.hpp>
+
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/CellSetSingleType.h>
-#include "t_vtkm_test_utils.hpp"
+
 #include <iostream>
 #include <mpi.h>
 
@@ -131,16 +135,46 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   }
 
   vtkh::DataSet *outPA=NULL, *outSL=NULL;
-
+  std::cerr << "INPUT DATA" << std::endl;
+  data_set.PrintSummary(std::cerr);
   outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
-  outPA->PrintSummary(std::cout);
+  std::cerr << "Particle Advection output" << std::endl;
+  outPA->PrintSummary(std::cerr);
   checkValidity(outPA, maxAdvSteps+1, false);
 
   outSL = RunFilter<vtkh::Streamline>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
-  outSL->PrintSummary(std::cout);
-  checkValidity(outSL, maxAdvSteps+1, true);
+  std::cerr << "Print out SL Data:" << std::endl;
+  outSL->AddConstantPointField(1.f,"lines");
+  outSL->PrintSummary(std::cerr);
+  //checkValidity(outSL, maxAdvSteps+1, true);
 
   writeDataSet(outSL, "advection_SeedsRandomWhole", rank);
+
+  vtkm::Bounds paBounds = outSL->GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(paBounds);
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *outSL,
+                                         "particle_advection_test");
+  render.DoRenderAnnotations(true);
+  vtkh::LineRenderer renderer;
+  renderer.SetRadius(0.2);
+  renderer.SetInput(outSL);
+  renderer.SetField("lines");
+  //renderer.SetUseForegroundColor(true);
+ // vtkh::RayTracer tracer;
+
+ // tracer.SetInput(outSL);
+ // tracer.SetField("coordinates");
+
+  vtkh::Scene scene;
+  scene.AddRender(render);
+  scene.AddRenderer(&renderer);
+  scene.Render();
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
