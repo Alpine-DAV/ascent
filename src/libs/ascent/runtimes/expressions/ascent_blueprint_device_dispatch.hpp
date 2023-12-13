@@ -319,7 +319,7 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
 
       if(is_conduit_type<conduit::int32>(n_topo[conn_path]))
       {
-        MCArray<conduit::int32> conn(n_topo["conn_path"]);
+        MCArray<conduit::int32> conn(n_topo[conn_path]);
         UnstructuredMesh<conduit::float64,conduit::int32> mesh(mem_space,
                                                                coords,
                                                                conn,
