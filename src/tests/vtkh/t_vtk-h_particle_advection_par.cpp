@@ -21,6 +21,34 @@
 #include <iostream>
 #include <mpi.h>
 
+void render_output(vtkh::DataSet *data, std::string file_name)
+{
+  data->AddConstantPointField(1.f,"lines");
+
+  vtkm::Bounds bounds = data->GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds);
+  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *data,
+                                         file_name,
+                                         bg_color);
+
+  vtkh::Scene scene;
+  scene.AddRender(render);
+
+  vtkh::LineRenderer tracer;
+  tracer.SetRadius(.1f);
+  tracer.SetInput(data);
+  tracer.SetField("lines");
+
+  scene.AddRenderer(&tracer);
+  scene.Render();
+}
+
 void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
 {
   int numDomains = data->GetNumberOfDomains();
@@ -143,6 +171,7 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   checkValidity(outPA, maxAdvSteps+1, false);
 
   outSL = RunFilter<vtkh::Streamline>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
+  render_output(outSL,"second_render");
   std::cerr << "Print out SL Data:" << std::endl;
   outSL->AddConstantPointField(1.f,"lines");
   outSL->PrintSummary(std::cerr);
@@ -162,7 +191,7 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
                                          "particle_advection_test");
   render.DoRenderAnnotations(true);
   vtkh::LineRenderer renderer;
-  renderer.SetRadius(0.2);
+  renderer.SetRadius(.1f);
   renderer.SetInput(outSL);
   renderer.SetField("lines");
   //renderer.SetUseForegroundColor(true);
