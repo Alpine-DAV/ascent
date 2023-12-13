@@ -899,7 +899,7 @@ void exchange_bins(Array<double> &bins, const std::string op)
   global_bins.resize(bins_size);
   double *global_ptr = global_bins.get_host_ptr();
 
-  if(op == "sum" || op == "pdf" || op == "avg" || op == "count"
+  if(op == "sum" || op == "pdf" || op == "avg" || op == "count" ||
      op == "std" || op == "var" || op == "rms")
   {
     MPI_Allreduce(bins_ptr, global_ptr, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
