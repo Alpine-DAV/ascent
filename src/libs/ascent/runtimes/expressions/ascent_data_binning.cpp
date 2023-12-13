@@ -923,7 +923,6 @@ struct BinningReductionFunctor
   const int          m_num_bins;
   const std::string  m_op;
   const double       m_empty_val;
-  // int m_op_code;
 
   BinningReductionFunctor() = delete;
   BinningReductionFunctor(conduit::Node &res,
@@ -937,35 +936,7 @@ struct BinningReductionFunctor
       m_op(op),
       m_empty_val(empty_val)
   {
-    // m_op_code = -1;
-    // if(m_op == "min")
-    // {
-    //   m_op_code = 0;
-    // }
-    // else if(m_op == "max")
-    // {
-    //   m_op_code = 1;
-    // }
-    // else if(m_op == "sum")
-    // {
-    //   m_op_code = 2;
-    // }
-    // else if(m_op == "pdf")
-    // {
-    //   m_op_code = 3;
-    // }
-    // else if(m_op == "avg")
-    // {
-    //   m_op_code = 4;
-    // }
-    // else if(m_op == "rms")
-    // {
-    //   m_op_code = 5;
-    // }
-    // else if(m_op == "std")
-    // {
-    //   m_op_code = 6;
-    // }
+    // empty
   }
 
   template<typename Exec>
@@ -974,7 +945,6 @@ struct BinningReductionFunctor
     double *bins_ptr = m_bins.get_ptr(Exec::memory_space);
     const int size = m_num_bins;
 
-    // int op_code = m_op_code;
     const double min_default = std::numeric_limits<double>::max();
     const double max_default = std::numeric_limits<double>::lowest();
     const double empty_val = m_empty_val;
@@ -1130,111 +1100,7 @@ struct BinningReductionFunctor
         res_ptr[i] = val;
       });
     }
-
-    // ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
-    // {
-      // double result;
-      // if(op_code == 0)
-      // {
-      //   // min
-      //   double val = bins_ptr[i];
-      //   if(val == min_default)
-      //   {
-      //     val = empty_val;
-      //   }
-      //   res_ptr[i] = val;
-      // }
-      // if(op_code == 1)
-      // {
-      //   // max
-      //   double val = bins_ptr[i];
-      //   if(val == max_default)
-      //   {
-      //     val = empty_val;
-      //   }
-      //   res_ptr[i] = val;
-      // }
-
-      // if(op_code == 2)
-      // {
-      //   // sum
-      //   double val = bins_ptr[i*2];
-      //   double count = bins_ptr[i*2+1];
-      //   if(count == 0.)
-      //   {
-      //     val = empty_val;
-      //   }
-      //   res_ptr[i] = val;
-      //   //printf("sum bin %i value %f\n", i, val);
-      // }
-      // if(op_code == 3)
-      // {
-      //   // pdf
-      //   double val = bins_ptr[i*2 + 1];
-      //   if(val == 0)
-      //   {
-      //     val = empty_val;
-      //   }
-      //   else
-      //   {
-      //     val /= pdf_total;
-      //   }
-      //   res_ptr[i] = val;
-      // }
-
-      // if(op_code == 4)
-      // {
-      //   // avg
-      //   const double sum = bins_ptr[2 * i];
-      //   const double count = bins_ptr[2 * i + 1];
-      //   double val;
-      //   if(count == 0)
-      //   {
-      //     val = empty_val;
-      //   }
-      //   else
-      //   {
-      //     val = sum / count;
-      //   }
-      //   res_ptr[i] = val;
-      // }
-
-      // if(op_code == 5)
-      // {
-      //   // rms
-      //   const double sum_x = bins_ptr[2 * i];
-      //   const double n = bins_ptr[2 * i + 1];
-      //   double val;
-      //   if(n == 0)
-      //   {
-      //     val = empty_val;
-      //   }
-      //   else
-      //   {
-      //     val = sqrt(sum_x / n);
-      //   }
-      //   res_ptr[i] = val;
-      // }
-
-    //   if(op_code == 6)
-    //   {
-    //     // std
-    //     const double sum_x2 = bins_ptr[3 * i];
-    //     const double sum_x = bins_ptr[3 * i + 1];
-    //     const double n = bins_ptr[3 * i + 2];
-    //     double val;
-    //     if(n == 0)
-    //     {
-    //       val = empty_val;
-    //     }
-    //     else
-    //     {
-    //       val = (sum_x2 / n) - pow(sum_x / n, 2);
-    //     }
-    //     res_ptr[i] = val;
-    //   }
-    //
-    // });
+    // // debugging: 
     // double *host_ptr = results.get_host_ptr();
     // for(int i = 0; i < m_num_bins; ++i)
     // {
