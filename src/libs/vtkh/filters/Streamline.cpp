@@ -106,24 +106,39 @@ void Streamline::DoExecute()
   streamlineFilter.SetSeeds(seedsAH);
   streamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = streamlineFilter.Execute(inputs);
-
-  std::cerr << "streamline advection output: " << std::endl;
+  std::cerr << "START STREAMLINE OUT" << std::endl;
   out.PrintSummary(std::cerr);
-  //call tube filter so we can render PA output
-  vtkm::filter::geometry_refinement::Tube tubeFilter;
-  tubeFilter.SetCapping(true);
-  tubeFilter.SetNumberOfSides(3);
-  tubeFilter.SetRadius(0.2);
-
- // auto tubeOut = tubeFilter.Execute(out);
- // std::cerr << "TUBEOUT: " << std::endl;
- // tubeOut.PrintSummary(std::cerr);
-
-  for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+  std::cerr << "END STREAMLINE OUT" << std::endl;
+  //call tube filter if we want to render output
+  std::cerr << "m_tubes: " << m_tubes << std::endl;
+  std::cerr << "m_tube_capping: " << m_tube_capping << std::endl;
+  std::cerr << "m_tube_sides: " << m_tube_sides << std::endl;
+  std::cerr << "m_tube_size: " << m_tube_size << std::endl;
+  if(m_tubes)
   {
-    this->m_output->AddDomain(out.GetPartition(i), i);
-    std::cerr << "DOMAIN: " << i << std::endl;
-    out.GetPartition(i).PrintSummary(std::cerr);
+    vtkm::filter::geometry_refinement::Tube tubeFilter;
+    tubeFilter.SetCapping(m_tube_capping);
+    tubeFilter.SetNumberOfSides(m_tube_sides);
+    tubeFilter.SetRadius(m_tube_size);
+
+    auto tubeOut = tubeFilter.Execute(out);
+    std::cerr << "START TUBE OUT: " << std::endl;
+    tubeOut.PrintSummary(std::cerr);
+    std::cerr << "END TUBE OUT: " << std::endl;
+    
+
+    for (vtkm::Id i = 0; i < tubeOut.GetNumberOfPartitions(); i++)
+    {
+      this->m_output->AddDomain(tubeOut.GetPartition(i), i);
+    }
+    this->m_output->AddConstantPointField(m_tube_val, m_output_field_name);
+  }
+  else
+  {
+    for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+    {
+      this->m_output->AddDomain(out.GetPartition(i), i);
+    }
   }
 #endif
 }

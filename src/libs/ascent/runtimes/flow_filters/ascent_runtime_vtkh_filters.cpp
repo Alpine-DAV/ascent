@@ -3783,6 +3783,12 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     valid_paths.push_back("seed_bounding_box_ymax");
     valid_paths.push_back("seed_bounding_box_zmin");
     valid_paths.push_back("seed_bounding_box_zmax");
+    valid_paths.push_back("enable_tubes");
+    valid_paths.push_back("tube_capping");
+    valid_paths.push_back("tube_size");
+    valid_paths.push_back("tube_sides");
+    valid_paths.push_back("tube_value");
+    valid_paths.push_back("output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3832,6 +3838,37 @@ VTKHParticleAdvection::execute()
     int numSeeds = get_int32(params()["num_seeds"], data_object);
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
+    
+    //tube params
+    bool draw_tubes = true;
+    bool tube_capping = true;
+    int tube_sides = 2;
+    double tube_value = 1.0;
+    double tube_size = 0.1;
+    std::string output_field = "lines";
+
+    if(params().has_path("enable_tubes"))
+    {
+      if(params()["enable_tubes"].as_string() == "false")
+      {
+        draw_tubes = false;
+      }
+    }
+    if(draw_tubes)
+    {
+      if(params().has_path("output_field")) output_field = params()["output_field"].as_string();
+      if(params().has_path("tube_value")) tube_value = params()["tube_value"].as_float64();
+      if(params().has_path("tube_size")) tube_size = params()["tube_size"].as_float64();
+      if(params().has_path("tube_sides")) tube_sides = params()["tube_sides"].as_int32();
+      if(params().has_path("tube_capping"))
+      {
+        if(params()["tube_capping"].as_string() == "false")
+        {
+          tube_capping = false;
+        }
+      }
+
+    }
 
     float seedBBox[6];
     seedBBox[0] = get_float32(params()["seed_bounding_box_xmin"], data_object);
@@ -3879,6 +3916,15 @@ VTKHParticleAdvection::execute()
       sl.SetNumberOfSteps(numSteps);
       sl.SetSeeds(seeds);
       sl.SetField(field_name);
+      if(draw_tubes)
+      {
+	sl.SetOutputField(output_field);
+        sl.SetTubes(draw_tubes);
+	sl.SetTubeValue(tube_value);
+	sl.SetTubeSize(tube_size);
+	sl.SetTubeSides(tube_sides);
+	sl.SetTubeCapping(tube_capping);
+      }
       sl.SetInput(&data);
       sl.Update();
       output = sl.GetOutput();
