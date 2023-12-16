@@ -441,7 +441,7 @@ void calc_bindex(const Array<double> &values,
                  Exec)
 {
   const std::string mem_space = Exec::memory_space;
-
+  axis.print();
   // number of values to bin
   const int size = bindexes.size();
   // values we want to bin
@@ -456,12 +456,13 @@ void calc_bindex(const Array<double> &values,
   const double *bins_ptr = bins.get_ptr_const(mem_space);
 
   bool clamp = axis["clamp"].to_int32() == 1;
-  //std::cout<<"**** bindex size "<<size<<"\n";
+  // std::cout<<"**** bindex size "<<size<<"\n";
 
   using for_policy = typename Exec::for_policy;
 
   ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
   {
+    // std::cout<<"**** bindex idx "<< i <<"\n";
     // calc location of bin result
     const int v_offset = i * num_components + component_id;
     const double value = values_ptr[v_offset];
@@ -520,6 +521,7 @@ void calc_bindex(const Array<double> &values,
       bindex =  bindex * bin_stride + prev_bindex;
     }
     bindex_ptr[i] = bindex;
+    // std::cout << "final bindex for " << i << " " << bindex_ptr[i] << std::endl;
   });
   ASCENT_DEVICE_ERROR_CHECK();
 }
@@ -650,7 +652,9 @@ struct BinningFunctor
       {
         ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
+
           const int bindex = bindex_ptr[i];
+          // std::cout << " size "<< size << " i" << i << " bindex" << bindex << std::endl;
           if(bindex>= 0)
           {
             ascent::atomic_add<atomic_policy>(bins_ptr + bindex, 1.);
@@ -698,6 +702,9 @@ struct BinningFunctor
       }
       else if(m_op == "var" || m_op == "std")
       {
+        // use basic 2-pass, since single pass sum of squares method is not
+        // numerically stable
+        // http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/
         ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
           const int bindex = bindex_ptr[i];
@@ -705,9 +712,25 @@ struct BinningFunctor
           {
             const double value = values_ptr[i];
             const int offset = bindex * 3;
-            ascent::atomic_add<atomic_policy>(bins_ptr + offset, value * value);
-            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, value);
-            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 2, 1.);
+            // accum value
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset, value);
+            // count
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
+          }
+        });
+        // NOTE: in second pass we only read [0] and [1], and write [2]
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
+        {
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            const double value = values_ptr[i];
+            const int offset = bindex * 3;
+            const double val_avg = bins_ptr[offset] / bins_ptr[offset +1];
+            // (v - mean) ^ 2
+            double val_cal = (value - val_avg); 
+            val_cal = val_cal * val_cal;
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 2, val_cal);
           }
         });
       }
@@ -757,8 +780,14 @@ struct BindexingFunctor
     // loop over domains
     for(int dom_index = 0; dom_index < num_domains; ++dom_index)
     {
-      // ensure this domain has the necessary fields
+      // ensure this domain has the necessary topo and fields
       conduit::Node &dom = m_dataset.child(dom_index);
+
+      if(!dom["topologies"].has_child(m_topo_name))
+      {
+        continue;
+      }
+
       for(int axis_index = 0; axis_index < num_axes; ++axis_index)
       {
         const conduit::Node &axis   = m_axes.child(axis_index);
@@ -770,6 +799,11 @@ struct BindexingFunctor
           continue;
         }
       }
+      // find the coordset name for the topo
+      std::string coords_name = dom["topologies"][m_topo_name]["coordset"].as_string();
+
+      // find the mesh dims
+      int coords_dims = conduit::blueprint::mesh::coordset::dims(dom["coordsets"][coords_name]);
 
       // Calculate the size of homes
       conduit::index_t homes_size = 0;
@@ -840,13 +874,32 @@ struct BindexingFunctor
             do_once = false;
             if(m_assoc == "vertex")
             {
-              //std::cout<<"**** Getting vertices\n";
+              std::cout<<"**** Getting vertices\n";
               spatial_values = vertices(dom, m_topo_name);
             }
             else
             {
-              //std::cout<<"**** Getting centroids\n";
+              std::cout<<"**** Getting centroids\n";
               spatial_values = centroids(dom, m_topo_name);
+              std::cout << spatial_values.size() << std::endl;
+              double *sval_ptr = spatial_values.get_host_ptr();
+              index_t sidx = 0;
+              for(index_t e_idx = 0; e_idx < homes_size; e_idx++)
+              {
+                std::cout << sval_ptr[sidx]   << " "
+                          << sval_ptr[sidx+1] << " ";
+
+                if(coords_dims == 3)
+                { 
+                    std::cout << sval_ptr[sidx+2] << "   ";
+                }
+                else 
+                {
+                    std::cout << "  ";
+                }
+                sidx+=coords_dims;
+              }
+              std::cout << std::endl;
             }
             //std::cout<<"*** spatial values "<<spatial_values.size()<<"\n";
           }
@@ -854,7 +907,7 @@ struct BindexingFunctor
 
           int comp = detail::spatial_component(axis_name);
           detail::calc_bindex(spatial_values,
-                              3, // number of components
+                              coords_dims, // number of components
                               comp, // which component
                               axis,
                               bin_stride,
@@ -953,17 +1006,6 @@ struct BinningReductionFunctor
     using for_policy = typename Exec::for_policy;
     using reduce_policy = typename Exec::reduce_policy;
 
-    if(m_op == "pdf")
-    {
-      // we need the total count to generate a pdf
-      ascent::ReduceSum<reduce_policy, double> sum(0.0);
-      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
-      {
-        sum += bins_ptr[i];
-      });
-      pdf_total = sum.get();
-    }
-
     Array<double> results;
     results.resize(size);
     //std::cout<<"Num bins "<<size<<"\n";
@@ -1050,28 +1092,58 @@ struct BinningReductionFunctor
         res_ptr[i] = val;
       });
     }
-    else if(m_op == "std")
-    {
+    else if(m_op == "var")
+    { 
       ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
-        // std
-        const double sum_x2 = bins_ptr[3 * i];
-        const double sum_x = bins_ptr[3 * i + 1];
-        const double n = bins_ptr[3 * i + 2];
+        // std =  sum( v[i] - avg(vs)^2) / count
+        const double count = bins_ptr[3 * i + 1];
+        const double var   = bins_ptr[3 * i + 2];
         double val;
-        if(n == 0)
+        if(count == 0)
         {
           val = empty_val;
         }
         else
         {
-          val = (sum_x2 / n) - pow(sum_x / n, 2);
+          val = var/count;
         }
         res_ptr[i] = val;
       });
     }
+    else if(m_op == "std")
+    {
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+      {
+        // std =  sqrt( sum( v[i] - avg(vs)^2) / count )
+        const double count = bins_ptr[3 * i + 1];
+        const double var   = bins_ptr[3 * i + 2];
+
+        double val;
+        if(count == 0)
+        {
+          val = empty_val;
+        }
+        else
+        {
+          val = sqrt(var/count);
+        }
+        res_ptr[i] = val;
+      });
+    }
+    
     else if(m_op == "pdf")
     {
+      // two pass
+      double pdf_total = 0.0;
+      // we need the total count to generate a pdf
+      ascent::ReduceSum<reduce_policy, double> sum(0.0);
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+      {
+        sum += bins_ptr[i];
+      });
+      pdf_total = sum.get();
+
       ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
         // pdf

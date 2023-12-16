@@ -529,13 +529,14 @@ struct VertexFunctor
 struct CentroidFunctor
 {
   Array<double> m_centroids;
-  int m_dims;
 
   template<typename MeshType, typename Exec>
   void operator()(MeshType &mesh, const Exec &)
   {
     const int size = mesh.m_num_cells;
     const int dims = mesh.m_dims;
+
+    // std::cout << " centroid mesh dims " << dims << std::endl;
 
     // one component for each dim
     m_centroids.resize(size * mesh.m_dims);
@@ -1579,6 +1580,9 @@ binning_mesh(const conduit::Node &binning,
              const std::string field_name)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
+
+
+  std::cout << "Creating binning mesh from " << binning.to_yaml();
 
   if(num_axes > 3)
   {

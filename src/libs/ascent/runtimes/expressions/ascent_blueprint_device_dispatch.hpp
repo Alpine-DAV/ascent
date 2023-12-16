@@ -370,17 +370,39 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
     // figure out the types of coords
     if(is_conduit_type<conduit::float32>(n_coords["values/x"]))
     {
-      MCArray<conduit::float32> coords(n_coords["values"]);
+      MCArray<conduit::float32> x_coords(n_coords["values/x"]);
+      MCArray<conduit::float32> y_coords(n_coords["values/y"]);
+      std::string zvalue_path = "values/z";
+
+      if(!n_coords.has_path("values/z"))
+      {
+        zvalue_path = "values/x";
+      }
+      MCArray<conduit::float32> z_coords(n_coords[zvalue_path]);
+
       RectilinearMesh<conduit::float32> mesh(mem_space,
-                                             coords,
+                                             x_coords,
+                                             y_coords,
+                                             z_coords,
                                              dims);
       func(mesh,exec);
     }
     else if(is_conduit_type<conduit::float64>(n_coords["values/x"]))
     {
-      MCArray<conduit::float32> coords(n_coords["values"]);
-      RectilinearMesh<conduit::float32> mesh(mem_space,
-                                             coords,
+      MCArray<conduit::float64> x_coords(n_coords["values/x"]);
+      MCArray<conduit::float64> y_coords(n_coords["values/y"]);
+      std::string zvalue_path = "values/z";
+
+      if(!n_coords.has_path("values/z"))
+      {
+        zvalue_path = "values/x";
+      }
+      MCArray<conduit::float64> z_coords(n_coords[zvalue_path]);
+
+      RectilinearMesh<conduit::float64> mesh(mem_space,
+                                             x_coords,
+                                             y_coords,
+                                             z_coords,
                                              dims);
       func(mesh,exec);
     }
