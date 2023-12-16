@@ -106,14 +106,7 @@ void Streamline::DoExecute()
   streamlineFilter.SetSeeds(seedsAH);
   streamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = streamlineFilter.Execute(inputs);
-  std::cerr << "START STREAMLINE OUT" << std::endl;
-  out.PrintSummary(std::cerr);
-  std::cerr << "END STREAMLINE OUT" << std::endl;
   //call tube filter if we want to render output
-  std::cerr << "m_tubes: " << m_tubes << std::endl;
-  std::cerr << "m_tube_capping: " << m_tube_capping << std::endl;
-  std::cerr << "m_tube_sides: " << m_tube_sides << std::endl;
-  std::cerr << "m_tube_size: " << m_tube_size << std::endl;
   if(m_tubes)
   {
     vtkm::filter::geometry_refinement::Tube tubeFilter;
@@ -122,9 +115,6 @@ void Streamline::DoExecute()
     tubeFilter.SetRadius(m_tube_size);
 
     auto tubeOut = tubeFilter.Execute(out);
-    std::cerr << "START TUBE OUT: " << std::endl;
-    tubeOut.PrintSummary(std::cerr);
-    std::cerr << "END TUBE OUT: " << std::endl;
     
 
     for (vtkm::Id i = 0; i < tubeOut.GetNumberOfPartitions(); i++)

@@ -3822,6 +3822,7 @@ VTKHParticleAdvection::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string field_name = params()["field"].as_string();
+    std::cerr << "STRING params['field']:" << field_name << std::endl;
     if(!collection->has_field(field_name))
     {
       bool throw_error = false;

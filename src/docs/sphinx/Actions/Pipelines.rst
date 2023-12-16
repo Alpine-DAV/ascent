@@ -607,6 +607,66 @@ values are removed from the data set.
 
     An example of creating a iso-volume of values between 5.0 and 10.0.
 
+Particle Advection
+~~~~~~~~~~~~~~~~
+Particle advection randomly distributes some number (``num_seeds``) of weightless particles over a user-specified vector field and, given some advection distance (``step_size``), advects them for some number of advection steps (``num_steps``).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "particle_advection";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";                 // name of the vector field
+  params["num_seeds"] = 20;                // number of particles
+  params["step_size"] = 0.01;              // advection step size
+  params["num_steps"] = 100;               // number of advection steps
+  params["seed_bounding_box_x_min"] = 0.0; 
+  params["seed_bounding_box_x_max"] = 1.0; // define the boundary
+  params["seed_bounding_box_y_min"] = 0.0; // for the distibution
+  params["seed_bounding_box_y_max"] = 1.0; // of the particles 
+  params["seed_bounding_box_z_min"] = 0.0; // starting locations
+  params["seed_bounding_box_z_max"] = 1.0;
+
+At this time, Ascent can only save the output of the particle advection filter as an extract. For rendering, consider using the streamline filter. 
+
+Streamlines
+~~~~~~~~~~~~
+The streamline filter behaves similarly to the particle advection filter, but as the particles are advected, the path of the particle is is collected as a streamline that can be rendered or saved as an extract. 
+The streamlines are rendered using tubes, which transform the streamline data into a 3D surface. 
+Tubes are on by default but they can be diabled, though this would also diable rendering capabilities. 
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] =  "streamline";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";                 // name of the vector field
+  params["num_seeds"] = 20;                // number of particles
+  params["step_size"] = 0.01;              // advection step size
+  params["num_steps"] = 100;               // number of advection steps
+  params["seed_bounding_box_x_min"] = 0.0; 
+  params["seed_bounding_box_x_max"] = 1.0; // define the boundary
+  params["seed_bounding_box_y_min"] = 0.0; // for the distibution
+  params["seed_bounding_box_y_max"] = 1.0; // of the particles 
+  params["seed_bounding_box_z_min"] = 0.0; // starting locations
+  params["seed_bounding_box_z_max"] = 1.0;
+  //all tubing params are optional
+  params["enable_tubes"] = "true";
+  params["tube_size"] = 0.1;
+  params["tube_sides"] = 4;
+  params["tube_val"] = 0.0;
+  params["tube_capping"] = "true";
+  params["output_field"] = "lines"; // name of tubes and field to be rendered
+
+Streamlines with Charged Particles (WarpX)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
 Vector Magnitude
 ~~~~~~~~~~~~~~~~
 Vector magnitude creates a new field on the data set representing the magitude

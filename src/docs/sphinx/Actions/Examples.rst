@@ -755,6 +755,18 @@ Resulting image:
 
 .. image:: examples/tout_cell_gradient_mag_radial100.png
 
+An example of using the streamline filter and associated tube parameters to produce a rendering.
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_streamline_render100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_streamline_render100.png
+
+
 An example of using the xray extract.
 --------------------------------------
 

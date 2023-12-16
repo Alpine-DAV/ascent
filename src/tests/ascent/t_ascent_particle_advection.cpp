@@ -95,21 +95,49 @@ void testFilter(bool isStreamline)
     // filter knobs
     conduit::Node &sl_params = pipelines["pl1/f1/params"];
     sl_params["field"] = "vel";
-    sl_params["num_seeds"] = 2;
+    sl_params["num_seeds"] = 30;
     sl_params["num_steps"] = 100;
     sl_params["step_size"] = 0.01;
     sl_params["seed_bounding_box_xmin"] = 0.0;
-    sl_params["seed_bounding_box_xmax"] = 1.0;
+    sl_params["seed_bounding_box_xmax"] = 10.0;
     sl_params["seed_bounding_box_ymin"] = 0.0;
-    sl_params["seed_bounding_box_ymax"] = 1.0;
+    sl_params["seed_bounding_box_ymax"] = 10.0;
     sl_params["seed_bounding_box_zmin"] = 0.0;
-    sl_params["seed_bounding_box_zmax"] = 1.0;
+    sl_params["seed_bounding_box_zmax"] = 10.0;
+    if (isStreamline)
+    {
+      sl_params["enable_tubes"] = "true";
+      sl_params["tube_capping"] = "true";
+      sl_params["tube_size"] = 0.1;
+      sl_params["tube_sides"] = 4;
+      sl_params["tube_value"] = 0.0;
+      sl_params["output_field"] = "lines";
+    }
 
     conduit::Node actions;
     // add the pipeline
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
+    if(isStreamline)
+    {
+      string image_path = ASCENT_T_BIN_DIR;
+
+      image_path = conduit::utils::join_file_path(image_path,"/_output");
+      string output_image = conduit::utils::join_file_path(image_path,
+                                      "tout_render_streamlines");
+      conduit::Node &add_plots = actions.append();
+      add_plots["action"] = "add_scenes";
+      conduit::Node &scenes = add_plots["scenes"];
+      scenes["s1/plots/p1/type"]  = "pseudocolor";
+      scenes["s1/plots/p1/field"] = "lines";
+      scenes["s1/plots/p1/pipeline"] = "pl1";
+      scenes["s1/image_prefix"] = output_image;
+
+      // remove old image before rendering
+      remove_test_image(output_image);
+    }
+    actions.print();
 
     //
     // Run Ascent
