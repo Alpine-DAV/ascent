@@ -446,6 +446,21 @@ public:
   virtual void   declare_interface(conduit::Node &i);
 };
 
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHWarpXStreamline : public ::flow::Filter
+{
+public:
+    VTKHWarpXStreamline();
+    virtual ~VTKHWarpXStreamline();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+protected:
+    bool record_trajectories = false;
+};
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
