@@ -651,16 +651,19 @@ Tubes are on by default but they can be diabled, though this would also diable r
   params["seed_bounding_box_x_min"] = 0.0; 
   params["seed_bounding_box_x_max"] = 1.0; // define the boundary
   params["seed_bounding_box_y_min"] = 0.0; // for the distibution
-  params["seed_bounding_box_y_max"] = 1.0; // of the particles 
+  params["seed_bounding_box_y_max"] = 1.0; // of the particles'
   params["seed_bounding_box_z_min"] = 0.0; // starting locations
   params["seed_bounding_box_z_max"] = 1.0;
   //all tubing params are optional
-  params["enable_tubes"] = "true";
-  params["tube_size"] = 0.1;
-  params["tube_sides"] = 4;
-  params["tube_val"] = 0.0;
-  params["tube_capping"] = "true";
-  params["output_field"] = "lines"; // name of tubes and field to be rendered
+  params["enable_tubes"] = "true";         //default: true
+  params["tube_size"] = 0.1;               //default: 0.1
+  params["tube_sides"] = 4;                //default: 
+  params["tube_val"] = 0.0;                //default:
+  params["tube_capping"] = "true";         //default: true
+  params["output_field"] = "lines";        //name of streamline tubes for rendering
+                                           //default: "field" + "_streamlines" 
+                                           //e.g "vel_streamlines"
+
 
 Streamlines with Charged Particles (WarpX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

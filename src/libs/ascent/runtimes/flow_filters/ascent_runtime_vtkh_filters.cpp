@@ -3846,7 +3846,7 @@ VTKHParticleAdvection::execute()
     int tube_sides = 2;
     double tube_value = 1.0;
     double tube_size = 0.1;
-    std::string output_field = "lines";
+    std::string output_field = field_name + "_streamlines";
 
     if(params().has_path("enable_tubes"))
     {
