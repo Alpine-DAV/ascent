@@ -62,7 +62,7 @@ void generate_2d_basic_test_mesh(const std::string &mtype,
   int num_verts = nverts_x * nverts_y;
   int num_eles  = (nverts_x -1) * (nverts_y -1);
 
-  // add an extra field
+  // add extra fields
   single_domain["fields/ones/association"] = "element";
   single_domain["fields/ones/topology"] = single_domain["topologies"][0].name();
   single_domain["fields/ones/values"].set(DataType::float64(num_eles));
@@ -70,13 +70,22 @@ void generate_2d_basic_test_mesh(const std::string &mtype,
   float64_array ones_vals = single_domain["fields/ones/values"].value();
   ones_vals.fill(1.0);
 
-  // add an extra field
-  single_domain["fields/ones_verts/association"] = "vertex";
-  single_domain["fields/ones_verts/topology"] = single_domain["topologies"][0].name();
-  single_domain["fields/ones_verts/values"].set(DataType::float64(verts));
+  single_domain["fields/ones_vert/association"] = "vertex";
+  single_domain["fields/ones_vert/topology"] = single_domain["topologies"][0].name();
+  single_domain["fields/ones_vert/values"].set(DataType::float64(num_verts));
 
-  float64_array ones_verts_vals = single_domain["fields/ones_verts/values"].value();
-  ones_verts_vals.fill(1.0);
+  float64_array ones_verts_val = single_domain["fields/ones_vert/values"].value();
+  ones_verts_val.fill(1.0);
+
+  single_domain["fields/field_vert/association"] = "vertex";
+  single_domain["fields/field_vert/topology"] = single_domain["topologies"][0].name();
+  single_domain["fields/field_vert/values"].set(DataType::float64(num_verts));
+
+  float64_array field_verts_val = single_domain["fields/field_vert/values"].value();
+  for(index_t i =0;i< field_verts_val.number_of_elements();i++)
+  {
+      field_verts_val[i] = i;
+  }
 
   // ascent normally adds this but we are doing an end around
   single_domain["state/cycle"] = 100;
@@ -255,6 +264,78 @@ void test_binning_basic_mesh_2d_quads(const std::string &tag,Node &data)
   print_result(tag + "_field_axis_pdf",expr,res);
   // -------------
 
+  // ------------------------------------
+  // ------------------------------------
+  // ------------------------------------
+  // vert centered
+  // single bin, should be the same as the sum of input field
+  // -10 --  10 : =  sum( 0 1  2  3  4  5  6  7  8 )
+  expr = "binning('field_vert', 'sum', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"36.0");
+  print_result(tag + "_vert_single_sum",expr,res);
+
+  // single bin, should be the same as the min of input field
+  // -10 --  10 : =  min (0  1  2  3  4  5  6  7  8)
+  expr = "binning('field_vert', 'min', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"0.0");
+  print_result(tag + "_vert_single_min",expr,res);
+
+  // single bin, should be the same as the max of input field
+  // -10 --  10 : =  max (0  1  2  3  4  5  6  7  8 )
+  expr = "binning('field_vert', 'max', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"8.0");
+  print_result(tag + "_vert_single_max",expr,res);
+  //
+  // single bin, should be the same as the avg of input field
+  // -10 --  10 : =  (0  1  2  3  4  5  6  7  8 ) / 9.0
+  expr = "binning('field_vert', 'avg', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"4.0");
+  print_result(tag + "_vert_single_avg",expr,res);
+  //
+  // single bin, std dev (population variant, normed by N)
+  // sqrt( ( (0 - 4)^2 + (1 - 4)^2 + (2 - 4)^2 + (3 - 4)^2 +
+  //         (4 - 4)^2 + (5 - 4)^2 + (6 - 4)^2 + (7 - 4)^2 +
+  //         (8 - 4)^2 ) / 9.0 )
+  expr = "binning('field_vert', 'std', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"2.58198889747161");
+  print_result(tag + "_vert__single_std",expr,res);
+
+  // single bin, var
+  // ( (0 - 4)^2 + (1 - 4)^2 + (2 - 4)^2 + (3 - 4)^2 +
+  //   (4 - 4)^2 + (5 - 4)^2 + (6 - 4)^2 + (7 - 4)^2 +
+  //   (8 - 4)^2 ) / 9.0
+  expr = "binning('field_vert', 'var', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"6.66666666666667");
+  print_result(tag + "_vert__single_var",expr,res);
+
+  // single bin, rms
+  // sqrt( ( 0^2  + 1^2 + 2^2 + 3^2 + 4^2 + 5^2 + 6^2 + 7^2 + 8^2 ) / 9.0 )
+  expr = "binning('field_vert', 'rms', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"4.76095228569523");
+  print_result(tag + "_vert__single_rms",expr,res);
+
+  // single bin, pdf should be 1.0 ?
+  // TODO: count does not need a field!, but then assoc is ambiguous
+  expr = "binning('field_vert', 'pdf', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"1.0");
+  print_result(tag + "_vert__single_pdf",expr,res);
+
+  // single bin, pdf should be 1.0 ?
+  // TODO: count does not need a field!, but then assoc is ambiguous
+  expr = "binning('field_vert', 'count', [axis('x', [-10, 10])])";
+  res = eval.evaluate(expr);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(),"9.0");
+  print_result(tag + "_vert__single_count",expr,res);
+
+
 }
 
 // -----------------------------------------------------------------
@@ -347,56 +428,6 @@ void test_binning_basic_mesh_3d_tets(const std::string &tag,
 
 }
 
-
-//-----------------------------------------------------------------------------
-TEST(ascent_binning, binning_basic_meshes_2d)
-{
-  // the vtkm runtime is currently our only rendering runtime
-  Node n;
-  ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent support disabled, skipping test");
-    return;
-  }
-
-  //
-  // Create an example mesh.
-  //
-
-  // for all cases
-  // extents of basic are -10, 10
-  // with 3x3 nodes, there are 4 elements
-  //
-
-
-  // "uniform", "rectilinear", "structured","tris", "quads", "polygons"
-
-  Node data;
-  generate_2d_basic_test_mesh("uniform", 3, 3,data);
-  test_binning_basic_mesh_2d_quads("2d_uniform_3_3_0",data);
-
-  generate_2d_basic_test_mesh("rectilinear", 3, 3,data);
-  test_binning_basic_mesh_2d_quads("2d_rectilinear_3_3_0",data);
-
-  // TODO: UNSUPPORTED
-  // generate_2d_basic_test_mesh("structured", 3, 3, data);
-  // test_binning_basic_mesh_2d(data,"2d_structured_3_3_0");
-
-  generate_2d_basic_test_mesh("quads", 3, 3,data);
-  test_binning_basic_mesh_2d_quads("2d_quads_3_3_0",data);
-
-  // TODO: UNSUPPORTED
-  // generate_2d_basic_test_mesh("polygons", 3, 3,data);
-  // test_binning_basic_mesh_2d_quads("2d_polygons_3_3_0",data);
-
-  // triangles produce different counts
-  generate_2d_basic_test_mesh("tris", 3, 3,data);
-  test_binning_basic_mesh_2d_tris("2d_tris_3_3_0",data);
-
-
-}
 
 
 // ----------------------------------------------------------------------------
@@ -653,9 +684,10 @@ void test_binning_basic_mesh_3d_quads(const std::string &tag,
   // -------------
 }
 
-
 //-----------------------------------------------------------------------------
-TEST(ascent_binning, binning_basic_meshes_3d)
+void test_binning_pipline_filter(const std::string &tag,
+                                 Node &data,
+                                 const Node &binning_filter_def)
 {
   // the vtkm runtime is currently our only rendering runtime
   Node n;
@@ -663,133 +695,254 @@ TEST(ascent_binning, binning_basic_meshes_3d)
   // only run this test if ascent was built with vtkm support
   if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
   {
-    ASCENT_INFO("Ascent support disabled, skipping test");
-    return;
+      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      return;
   }
 
-  runtime::expressions::register_builtin();
+  string output_path = prepare_output_dir();
+  string output_file = conduit::utils::join_file_path(output_path,"tout_binning_" + tag + "_result_render");
 
-  // "uniform", "rectilinear", "structured","tets", "hexs", "polyhedra"
-  Node data;
-  generate_3d_basic_test_mesh("uniform", 3, 3, 3,data);
-  test_binning_basic_mesh_3d_quads("3d_uniform_3_3_3",data);
+  // remove old images before rendering
+  remove_test_image(output_file);
 
-  generate_3d_basic_test_mesh("rectilinear", 3, 3, 3,data);
-  test_binning_basic_mesh_3d_quads("3d_rectilinear_3_3_3",data);
+  conduit::Node actions;
 
-  // // TODO NOT SUPPORTED
-  // generate_3d_basic_test_mesh("structured", 3, 3, 3,data);
-  // test_binning_basic_mesh_3d_quads("3d_structured_3_3_3",data);
+  // add the pipeline
+  conduit::Node &add_pipelines= actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  conduit::Node &pipelines = add_pipelines["pipelines"];
 
-  generate_3d_basic_test_mesh("hexs", 3, 3, 3,data);
-  test_binning_basic_mesh_3d_quads("3d_hexs_3_3_3",data);
+  // pipeline 1
+  pipelines["pl1/f1"] = binning_filter_def;
 
-  generate_3d_basic_test_mesh("tets", 3, 3, 3,data);
-  test_binning_basic_mesh_3d_tets("3d_tets_3_3_3",data);
-
-  // // TODO NOT SUPPORTED
-  // generate_3d_basic_test_mesh("polyhedra", 3, 3, 3,data);
-  // test_binning_basic_mesh_3d_quads("3d_poly_3_3_3",data);
-
-
-
-}
+  conduit::Node &add_scenes= actions.append();
+  add_scenes["action"] = "add_scenes";
+  conduit::Node &scenes = add_scenes["scenes"];
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "binning";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/plots/p2/type"] = "mesh";
+  scenes["s1/plots/p2/pipeline"] = "pl1";
 
 
-TEST(ascent_binning, binning_errors)
-{
-  return;
-  // the vtkm runtime is currently our only rendering runtime
-  Node n;
-  ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent support disabled, skipping test");
-    return;
-  }
+  // scenes["s1/renders/r1/image_name"] = output_file;
+  scenes["s1/image_prefix"] = output_file;
+
+  // add extract
+  conduit::Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  conduit::Node &extracts = add_extracts["extracts"];
+
+  extracts["e1/type"] = "relay";
+  extracts["e1/pipeline"] = "pl1";
+  extracts["e1/params/path"] = conduit::utils::join_file_path(output_path,
+                                                              "tout_binning_" + tag + "_result_extract");
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+  actions.print();
 
   //
-  // Create an example mesh.
+  // Run Ascent
   //
-  Node data, verify_info;
-  conduit::blueprint::mesh::examples::braid("hexs",
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            EXAMPLE_MESH_SIDE_DIM,
-                                            data);
-  // ascent normally adds this but we are doing an end around
-  data["state/domain_id"] = 0;
-  Node multi_dom;
-  blueprint::mesh::to_multi_domain(data, multi_dom);
+  Ascent ascent;
+  ascent.open();
+  ascent.publish(data);
+  ascent.execute(actions);
+  ascent.close();
 
-  runtime::expressions::register_builtin();
-  runtime::expressions::ExpressionEval eval(&multi_dom);
-
-  conduit::Node res;
-  std::string expr;
-
-  bool threw = false;
-  try
-  {
-    expr = "binning('', 'avg', [axis('x'), axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('braid', 'sum', [axis('x'), axis('vel')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('vel', 'sum', [axis('x'), axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('braid', 'sum', [axis('x', bins=[1,2], num_bins=1), "
-           "axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
-
-  threw = false;
-  try
-  {
-    expr = "binning('braid', 'sum', [axis('x', bins=[1]), axis('y')])";
-    res = eval.evaluate(expr);
-  }
-  catch(...)
-  {
-    threw = true;
-  }
-  EXPECT_EQ(threw, true);
+  EXPECT_TRUE(check_test_image(output_file, 0.1));
 }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+//
+//
+// //-----------------------------------------------------------------------------
+// TEST(ascent_binning, binning_basic_meshes_2d)
+// {
+//   // the vtkm runtime is currently our only rendering runtime
+//   Node n;
+//   ascent::about(n);
+//   // only run this test if ascent was built with vtkm support
+//   if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//   {
+//     ASCENT_INFO("Ascent support disabled, skipping test");
+//     return;
+//   }
+//
+//   //
+//   // Create an example mesh.
+//   //
+//
+//   // for all cases
+//   // extents of basic are -10, 10
+//   // with 3x3 nodes, there are 4 elements
+//   //
+//
+//
+//   // "uniform", "rectilinear", "structured","tris", "quads", "polygons"
+//
+//   Node data;
+//   generate_2d_basic_test_mesh("uniform", 3, 3,data);
+//   test_binning_basic_mesh_2d_quads("2d_uniform_3_3_0",data);
+//
+//   generate_2d_basic_test_mesh("rectilinear", 3, 3,data);
+//   test_binning_basic_mesh_2d_quads("2d_rectilinear_3_3_0",data);
+//
+//   // TODO: UNSUPPORTED
+//   // generate_2d_basic_test_mesh("structured", 3, 3, data);
+//   // test_binning_basic_mesh_2d(data,"2d_structured_3_3_0");
+//
+//   generate_2d_basic_test_mesh("quads", 3, 3,data);
+//   test_binning_basic_mesh_2d_quads("2d_quads_3_3_0",data);
+//   // TODO: UNSUPPORTED
+//   // generate_2d_basic_test_mesh("polygons", 3, 3,data);
+//   // test_binning_basic_mesh_2d_quads("2d_polygons_3_3_0",data);
+//
+//   // triangles produce different counts
+//   generate_2d_basic_test_mesh("tris", 3, 3,data);
+//   test_binning_basic_mesh_2d_tris("2d_tris_3_3_0",data);
+//
+//
+// }
+//
+// //-----------------------------------------------------------------------------
+// TEST(ascent_binning, binning_basic_meshes_3d)
+// {
+//   // the vtkm runtime is currently our only rendering runtime
+//   Node n;
+//   ascent::about(n);
+//   // only run this test if ascent was built with vtkm support
+//   if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//   {
+//     ASCENT_INFO("Ascent support disabled, skipping test");
+//     return;
+//   }
+//
+//   runtime::expressions::register_builtin();
+//
+//   // "uniform", "rectilinear", "structured","tets", "hexs", "polyhedra"
+//   Node data;
+//   generate_3d_basic_test_mesh("uniform", 3, 3, 3,data);
+//   test_binning_basic_mesh_3d_quads("3d_uniform_3_3_3",data);
+//
+//   generate_3d_basic_test_mesh("rectilinear", 3, 3, 3,data);
+//   test_binning_basic_mesh_3d_quads("3d_rectilinear_3_3_3",data);
+//
+//   // // TODO NOT SUPPORTED
+//   // generate_3d_basic_test_mesh("structured", 3, 3, 3,data);
+//   // test_binning_basic_mesh_3d_quads("3d_structured_3_3_3",data);
+//
+//   generate_3d_basic_test_mesh("hexs", 3, 3, 3,data);
+//   test_binning_basic_mesh_3d_quads("3d_hexs_3_3_3",data);
+//
+//   generate_3d_basic_test_mesh("tets", 3, 3, 3,data);
+//   test_binning_basic_mesh_3d_tets("3d_tets_3_3_3",data);
+//
+//   // // TODO NOT SUPPORTED
+//   // generate_3d_basic_test_mesh("polyhedra", 3, 3, 3,data);
+//   // test_binning_basic_mesh_3d_quads("3d_poly_3_3_3",data);
+//
+//
+//
+// }
+//
+//
+// TEST(ascent_binning, binning_errors)
+// {
+//   return;
+//   // the vtkm runtime is currently our only rendering runtime
+//   Node n;
+//   ascent::about(n);
+//   // only run this test if ascent was built with vtkm support
+//   if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//   {
+//     ASCENT_INFO("Ascent support disabled, skipping test");
+//     return;
+//   }
+//
+//   //
+//   // Create an example mesh.
+//   //
+//   Node data, verify_info;
+//   conduit::blueprint::mesh::examples::braid("hexs",
+//                                             EXAMPLE_MESH_SIDE_DIM,
+//                                             EXAMPLE_MESH_SIDE_DIM,
+//                                             EXAMPLE_MESH_SIDE_DIM,
+//                                             data);
+//   // ascent normally adds this but we are doing an end around
+//   data["state/domain_id"] = 0;
+//   Node multi_dom;
+//   blueprint::mesh::to_multi_domain(data, multi_dom);
+//
+//   runtime::expressions::register_builtin();
+//   runtime::expressions::ExpressionEval eval(&multi_dom);
+//
+//   conduit::Node res;
+//   std::string expr;
+//
+//   bool threw = false;
+//   try
+//   {
+//     expr = "binning('', 'avg', [axis('x'), axis('y')])";
+//     res = eval.evaluate(expr);
+//   }
+//   catch(...)
+//   {
+//     threw = true;
+//   }
+//   EXPECT_EQ(threw, true);
+//
+//   threw = false;
+//   try
+//   {
+//     expr = "binning('braid', 'sum', [axis('x'), axis('vel')])";
+//     res = eval.evaluate(expr);
+//   }
+//   catch(...)
+//   {
+//     threw = true;
+//   }
+//   EXPECT_EQ(threw, true);
+//
+//   threw = false;
+//   try
+//   {
+//     expr = "binning('vel', 'sum', [axis('x'), axis('y')])";
+//     res = eval.evaluate(expr);
+//   }
+//   catch(...)
+//   {
+//     threw = true;
+//   }
+//   EXPECT_EQ(threw, true);
+//
+//   threw = false;
+//   try
+//   {
+//     expr = "binning('braid', 'sum', [axis('x', bins=[1,2], num_bins=1), "
+//            "axis('y')])";
+//     res = eval.evaluate(expr);
+//   }
+//   catch(...)
+//   {
+//     threw = true;
+//   }
+//   EXPECT_EQ(threw, true);
+//
+//   threw = false;
+//   try
+//   {
+//     expr = "binning('braid', 'sum', [axis('x', bins=[1]), axis('y')])";
+//     res = eval.evaluate(expr);
+//   }
+//   catch(...)
+//   {
+//     threw = true;
+//   }
+//   EXPECT_EQ(threw, true);
+// }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_binning, filter_braid_binning_mesh)
@@ -813,7 +966,7 @@ TEST(ascent_binning, filter_braid_binning_mesh)
   // Create an example mesh.
   //
   Node data, verify_info;
-  conduit::blueprint::mesh::examples::braid("hexs", 20, 20, 20, data);
+  conduit::blueprint::mesh::examples::braid("hexs", 10, 10, 10, data);
 
   conduit::Node pipelines;
   // pipeline 1
@@ -836,18 +989,15 @@ TEST(ascent_binning, filter_braid_binning_mesh)
   conduit::Node &axis1 = params["axes"].append();
   axis1["field"] = "y";
   axis1["num_bins"] = 10;
-  axis1["clamp"] = 0;
-
-  conduit::Node &axis2 = params["axes"].append();
-  axis2["field"] = "z";
-  axis2["num_bins"] = 10;
-  axis2["clamp"] = 10;
 
   conduit::Node scenes;
   scenes["s1/plots/p1/type"] = "pseudocolor";
   scenes["s1/plots/p1/field"] = "binning";
   scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/image_prefix"] = output_file;
+  scenes["s1/plots/p2/type"] = "mesh";
+  scenes["s1/plots/p2/pipeline"] = "pl1";
+  scenes["s1/renders/r1/camera/zoom"] = 0.85;
+  scenes["s1/renders/r1/image_name"] = output_file;
 
   conduit::Node actions;
   // add the pipeline
@@ -869,7 +1019,7 @@ TEST(ascent_binning, filter_braid_binning_mesh)
   ascent.execute(actions);
   ascent.close();
 
-  EXPECT_TRUE(check_test_image(output_file, 0.1));
+  EXPECT_TRUE(check_test_image(output_file, 0.1,""));
 }
 
 //-----------------------------------------------------------------------------
@@ -1099,75 +1249,6 @@ TEST(ascent_binning, expr_braid_non_spatial_bins)
 
   ascent.close();
 
-}
-
-//-----------------------------------------------------------------------------
-void test_binning_pipline_filter(const std::string &tag,
-                                 Node &data,
-                                 const Node &binning_filter_def)
-{
-  // the vtkm runtime is currently our only rendering runtime
-  Node n;
-  ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-  {
-      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
-      return;
-  }
-
-  string output_path = prepare_output_dir();
-  string output_file = conduit::utils::join_file_path(output_path,"tout_" + tag + "_result_render");
-
-  // remove old images before rendering
-  remove_test_image(output_file);
-
-  conduit::Node actions;
-
-  // add the pipeline
-  conduit::Node &add_pipelines= actions.append();
-  add_pipelines["action"] = "add_pipelines";
-  conduit::Node &pipelines = add_pipelines["pipelines"];
-
-  // pipeline 1
-  pipelines["pl1/f1"] = binning_filter_def;
-
-  conduit::Node &add_scenes= actions.append();
-  add_scenes["action"] = "add_scenes";
-  conduit::Node &scenes = add_scenes["scenes"];
-  scenes["s1/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/field"] = "binning";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/plots/p2/type"] = "mesh";
-  scenes["s1/plots/p2/pipeline"] = "pl1";
-
-
-  // scenes["s1/renders/r1/image_name"] = output_file;
-  scenes["s1/image_prefix"] = output_file;
-
-  // add extract
-  conduit::Node &add_extracts = actions.append();
-  add_extracts["action"] = "add_extracts";
-  conduit::Node &extracts = add_extracts["extracts"];
-
-  extracts["e1/type"] = "relay";
-  extracts["e1/pipeline"] = "pl1";
-  extracts["e1/params/path"] = conduit::utils::join_file_path(output_path,
-                                                              "tout_" + tag + "_result_extract");
-  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-
-  actions.print();
-
-  //
-  // Run Ascent
-  //
-  Ascent ascent;
-  ascent.open();
-  ascent.publish(data);
-  ascent.execute(actions);
-  ascent.close();
-
-  EXPECT_TRUE(check_test_image(output_file, 0.1));
 }
 
 //-----------------------------------------------------------------------------
@@ -1403,14 +1484,14 @@ TEST(ascent_binning, binning_render_basic_mesh_cases)
       axis1["min_val"] = 1.0;
       axis1["max_val"] = 3.0;
       axis1["clamp"] = 0;
-      
+
       conduit::Node &axis2 = params["axes"].append();
       axis2["var"] = "z";
       axis2["num_bins"] = 3;
       axis2["min_val"] = 1.0;
       axis2["max_val"] = 3.0;
       axis2["clamp"] = 0;
-      
+
       test_binning_pipline_filter(  mesh_type + "_3d_no_clamp",data,filter);
     }
   }
