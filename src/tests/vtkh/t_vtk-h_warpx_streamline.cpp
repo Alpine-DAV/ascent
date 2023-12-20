@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 ///
-/// file: t_vtk-h_particle_advection_par.cpp
+/// file: t_vtk-h_warpx_steamlines_par.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -33,11 +33,10 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
     auto cs = currentDomain.GetCellSet();
     if (isSL)
     {
-      auto cellSet = cs.AsCellSet<vtkm::cont::CellSetExplicit<>>();
       //Ensure that streamlines took <= to the max number of steps
-      for(int j = 0; j < cellSet.GetNumberOfCells(); j++)
+      for(int j = 0; j < cs.GetNumberOfCells(); j++)
       {
-        EXPECT_LE(cellSet.GetNumberOfPointsInCell(j), maxSteps);
+        EXPECT_LE(cs.GetNumberOfPointsInCell(j), maxSteps);
       }
     }
     else
@@ -105,17 +104,19 @@ RunWFilter(vtkh::DataSet& input,
 
   filter.SetInput(&input);
   filter.SetNumberOfSteps(maxAdvSteps);
-  //warpxstreamline will make its own seeds
-  //if(!std::is_same<FilterType,vtkh::WarpXStreamline>::value)
-  //  filter.SetSeeds(seeds);
   filter.SetStepSize(stepSize);
+  //warpxstreamline will make its own seeds
+  filter.SetTubeSize(0.1);
+  filter.SetTubeCapping(true);
+  filter.SetTubeValue(1.0);
+  filter.SetTubeSides(2);
   filter.SetOutputField(output_field);
   filter.Update();
 
   return filter.GetOutput();
 }
 //----------------------------------------------------------------------------
-TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
+TEST(vtkh_warpx_particle_advection, vtkh_warpx_particle_advection)
 {
 #ifdef VTKM_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
@@ -128,7 +129,7 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   vtkh::SetMPICommHandle(MPI_Comm_c2f(MPI_COMM_WORLD));
 
-  std::cout << "Running parallel Particle Advection, vtkh - with " << comm_size << " ranks" << std::endl;
+  std::cout << "Running parallel WarpX Charged Particle Advection, vtkh - with " << comm_size << " ranks" << std::endl;
 
   vtkh::DataSet warpx_data_set;
   
@@ -164,44 +165,30 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   
   //warpx_data_set.PrintSummary(std::cerr);
 
-  std::cerr << "HERE 1 " << std::endl;
   outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, "streamlines", length);
-  //outWSL->PrintSummary(std::cerr);
+  outWSL->PrintSummary(std::cerr);
 
-  std::cerr << "HERE 10 " << std::endl;
-  std::cerr << "HERE 11 " << std::endl;
-  //checkValidity(outWSL, maxAdvSteps+1, true);
-  std::cerr << "HERE 12 " << std::endl;
+  checkValidity(outWSL, maxAdvSteps+1, true);
   writeDataSet(outWSL, "warpx_streamline", rank);
-  std::cerr << "HERE 13 " << std::endl;
   vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
 
-  std::cerr << "HERE 14 " << std::endl;
   vtkm::rendering::Camera camera;
   camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
-  std::cerr << "HERE 2 " << std::endl;
   camera.ResetToBounds(tBounds);
-  std::cerr << "HERE 3 " << std::endl;
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
                                          camera,
                                          *outWSL,
                                          "tout_warpx_streamline_render");
 
-  std::cerr << "HERE 4 " << std::endl;
   vtkh::RayTracer tracer;
   tracer.SetInput(outWSL);
-  std::cerr << "HERE 5 " << std::endl;
   tracer.SetField("streamlines");
 
-  std::cerr << "HERE 6 " << std::endl;
   vtkh::Scene scene;
   scene.AddRender(render);
-  std::cerr << "HERE 7 " << std::endl;
   scene.AddRenderer(&tracer);
-  std::cerr << "HERE 8 " << std::endl;
   scene.Render();
-  std::cerr << "HERE 9 " << std::endl;
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
 }

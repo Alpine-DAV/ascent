@@ -177,7 +177,10 @@ void WarpXStreamline::DoExecute()
   warpxStreamlineFilter.SetSeeds(seeds);
   warpxStreamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = warpxStreamlineFilter.Execute(inputs);
+
+  //std::cerr << "streamline output:" << std::endl;
   //out.PrintSummary(std::cerr);
+
   //call tube filter if we want to render output
   if(m_tubes)
   {
