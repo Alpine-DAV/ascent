@@ -678,15 +678,23 @@ Otherwise, the resulting streamlines can be saved via an extract.
   pipelines["pl1/f1/type"] =  "streamline";
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
-  //all tubing params are optional
-  params["enable_tubes"] = "true";         //default: true
-  params["tube_size"] = 0.2;               //default: 0.1
-  params["tube_sides"] = 4;                //default: 3
-  params["tube_val"] = 1.0;                //default: 0.0
-  params["tube_capping"] = "true";         //default: true
-  params["output_field"] = "lines";        //name of streamline tubes for rendering
-                                           //default: "field" + "_streamlines" 
-                                           //e.g "vel_streamlines"
+  //vector fields
+  params["b_field"] = "magnetic_field"; //default: B
+  params["e_field"] = "electric_field"; //default: E
+  //charged particle params
+  params["charge_field"] = "charge_field";       //default: Charge
+  params["mass_field"] = "mass_field";           //default: Mass
+  params["momentum_field"] = "momentum_field";   //default: Momentum
+  params["weighting_field"] = "weighting_field"; //default: Weighting
+  //tubing params
+  params["enable_tubes"] = "true";  //default: true
+  params["tube_size"] = 0.2;        //default: 0.1
+  params["tube_sides"] = 4;         //default: 3
+  params["tube_val"] = 1.0;         //default: 0.0
+  params["tube_capping"] = "true";  //default: true
+  params["output_field"] = "lines"; //name of streamline tubes for rendering
+                                    //default: "b_field" + "e_field" + "_streamlines" 
+                                    //e.g "B_E_streamlines"
 
 Vector Magnitude
 ~~~~~~~~~~~~~~~~
