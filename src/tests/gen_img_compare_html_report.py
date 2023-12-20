@@ -77,7 +77,7 @@ def gen_html_report():
         if "pass" in v.keys():
             ofile.write(v["pass"])
         else:
-            ofile.write(v["unknown"])
+            ofile.write("unknown")
         ofile.write("</td>\n")
         # details
         # put all info in details
