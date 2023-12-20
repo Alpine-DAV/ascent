@@ -11,7 +11,6 @@
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Streamline.hpp>
-#include <vtkh/rendering/LineRenderer.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
@@ -21,34 +20,6 @@
 
 #include <iostream>
 #include <mpi.h>
-
-void render_output(vtkh::DataSet *data, std::string file_name)
-{
-  data->AddConstantPointField(1.f,"lines");
-
-  vtkm::Bounds bounds = data->GetGlobalBounds();
-
-  vtkm::rendering::Camera camera;
-  camera.ResetToBounds(bounds);
-  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkh::Render render = vtkh::MakeRender(512,
-                                         512,
-                                         camera,
-                                         *data,
-                                         file_name,
-                                         bg_color);
-
-  vtkh::Scene scene;
-  scene.AddRender(render);
-
-  vtkh::LineRenderer tracer;
-  tracer.SetRadius(.1f);
-  tracer.SetInput(data);
-  tracer.SetField("lines");
-
-  scene.AddRenderer(&tracer);
-  scene.Render();
-}
 
 void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
 {

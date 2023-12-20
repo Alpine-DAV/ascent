@@ -656,9 +656,9 @@ Tubes are on by default but they can be diabled, though this would also diable r
   params["seed_bounding_box_z_max"] = 1.0;
   //all tubing params are optional
   params["enable_tubes"] = "true";         //default: true
-  params["tube_size"] = 0.1;               //default: 0.1
-  params["tube_sides"] = 4;                //default: 
-  params["tube_val"] = 0.0;                //default:
+  params["tube_size"] = 0.2;               //default: 0.1
+  params["tube_sides"] = 4;                //default: 3
+  params["tube_val"] = 1.0;                //default: 0.0
   params["tube_capping"] = "true";         //default: true
   params["output_field"] = "lines";        //name of streamline tubes for rendering
                                            //default: "field" + "_streamlines" 
@@ -667,8 +667,26 @@ Tubes are on by default but they can be diabled, though this would also diable r
 
 Streamlines with Charged Particles (WarpX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The streamlines with charged particles filter behaves similarly to the streamline filter, but instead utilizes charged particles, which are particles with physical attributes (``charge``, ``mass``, ``momentum``, ``weighting``), that are advected using magnetic (``b_field``) and electric (``e_field``) vector fields.
+The resulting streamlines are rendered using tubes, which transform the streamline data into a 3D surface. 
+Otherwise, the resulting streamlines can be saved via an extract.
 
+.. code-block:: c++
 
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] =  "streamline";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  //all tubing params are optional
+  params["enable_tubes"] = "true";         //default: true
+  params["tube_size"] = 0.2;               //default: 0.1
+  params["tube_sides"] = 4;                //default: 3
+  params["tube_val"] = 1.0;                //default: 0.0
+  params["tube_capping"] = "true";         //default: true
+  params["output_field"] = "lines";        //name of streamline tubes for rendering
+                                           //default: "field" + "_streamlines" 
+                                           //e.g "vel_streamlines"
 
 Vector Magnitude
 ~~~~~~~~~~~~~~~~

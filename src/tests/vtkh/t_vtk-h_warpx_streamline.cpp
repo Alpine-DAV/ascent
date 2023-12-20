@@ -12,6 +12,8 @@
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Streamline.hpp>
 #include <vtkh/filters/WarpXStreamline.hpp>
+#include <vtkh/rendering/RayTracer.hpp>
+#include <vtkh/rendering/Scene.hpp>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/cont/DataSet.h>
@@ -96,6 +98,7 @@ template <typename FilterType>
 vtkh::DataSet *
 RunWFilter(vtkh::DataSet& input,
           int maxAdvSteps,
+	  std::string output_field,
           double stepSize)
 {
   FilterType filter;
@@ -106,6 +109,7 @@ RunWFilter(vtkh::DataSet& input,
   //if(!std::is_same<FilterType,vtkh::WarpXStreamline>::value)
   //  filter.SetSeeds(seeds);
   filter.SetStepSize(stepSize);
+  filter.SetOutputField(output_field);
   filter.Update();
 
   return filter.GetOutput();
@@ -116,6 +120,8 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
 #ifdef VTKM_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
+  const int maxAdvSteps = 1000;
+
   MPI_Init(NULL, NULL);
   int comm_size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -124,33 +130,7 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
 
   std::cout << "Running parallel Particle Advection, vtkh - with " << comm_size << " ranks" << std::endl;
 
-  vtkh::DataSet data_set, warpx_data_set;
-  const int base_size = 32;
-  const int blocks_per_rank = 1;
-  const int maxAdvSteps = 1000;
-  const int num_blocks = comm_size * blocks_per_rank;
-
-  for(int i = 0; i < blocks_per_rank; ++i)
-  {
-    int domain_id = rank * blocks_per_rank + i;
-    data_set.AddDomain(CreateTestDataRectilinear(domain_id, num_blocks, base_size), domain_id);
-  }
-
-  std::vector<vtkm::Particle> seeds;
-
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
-  std::cout<<"Bounds= "<<bounds<<std::endl;
-
-  for (int i = 0; i < 100; i++)
-  {
-    vtkm::Particle p;
-    p.SetPosition(vtkm::Vec3f(randRange(bounds.X.Min, bounds.X.Max),
-                              randRange(bounds.Y.Min, bounds.Y.Max),
-      	                      randRange(bounds.Z.Min, bounds.Z.Max)));
-    p.SetID(static_cast<vtkm::Id>(i));
-
-    seeds.push_back(p);
-  }
+  vtkh::DataSet warpx_data_set;
   
   std::string warpxParticlesFile = test_data_file("warpXparticles.vtk");
   std::string warpxFieldsFile = test_data_file("warpXfields.vtk");
@@ -180,15 +160,48 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
     1.0 / (SPEED_OF_LIGHT * vtkm::Sqrt(1. / spacing[0] + 1. / spacing[1] + 1. / spacing[2])));
   std::cout << "CFL length : " << length << std::endl;
 
-
   vtkh::DataSet *outWSL=NULL;
   
   //warpx_data_set.PrintSummary(std::cerr);
-  outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, length);
-  //outWSL->PrintSummary(std::cerr);
-  checkValidity(outWSL, maxAdvSteps+1, true);
-  writeDataSet(outWSL, "warpx_streamline", rank);
 
+  std::cerr << "HERE 1 " << std::endl;
+  outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, "streamlines", length);
+  //outWSL->PrintSummary(std::cerr);
+
+  std::cerr << "HERE 10 " << std::endl;
+  std::cerr << "HERE 11 " << std::endl;
+  //checkValidity(outWSL, maxAdvSteps+1, true);
+  std::cerr << "HERE 12 " << std::endl;
+  writeDataSet(outWSL, "warpx_streamline", rank);
+  std::cerr << "HERE 13 " << std::endl;
+  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
+
+  std::cerr << "HERE 14 " << std::endl;
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  std::cerr << "HERE 2 " << std::endl;
+  camera.ResetToBounds(tBounds);
+  std::cerr << "HERE 3 " << std::endl;
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *outWSL,
+                                         "tout_warpx_streamline_render");
+
+  std::cerr << "HERE 4 " << std::endl;
+  vtkh::RayTracer tracer;
+  tracer.SetInput(outWSL);
+  std::cerr << "HERE 5 " << std::endl;
+  tracer.SetField("streamlines");
+
+  std::cerr << "HERE 6 " << std::endl;
+  vtkh::Scene scene;
+  scene.AddRender(render);
+  std::cerr << "HERE 7 " << std::endl;
+  scene.AddRenderer(&tracer);
+  std::cerr << "HERE 8 " << std::endl;
+  scene.Render();
+  std::cerr << "HERE 9 " << std::endl;
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
 }

@@ -1,9 +1,10 @@
 #include <iostream>
+#include <vtkh/vtkh.hpp>
+#include <vtkh/Error.hpp>
 #include <vtkh/filters/WarpXStreamline.hpp>
 #include <vtkm/filter/flow/WarpXStreamline.h>
 #include <vtkm/cont/EnvironmentTracker.h>
-#include <vtkh/vtkh.hpp>
-#include <vtkh/Error.hpp>
+#include <vtkm/filter/geometry_refinement/Tube.h>
 
 #if VTKH_PARALLEL
 #include <vtkm/thirdparty/diy/diy.h>
@@ -177,10 +178,30 @@ void WarpXStreamline::DoExecute()
   warpxStreamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = warpxStreamlineFilter.Execute(inputs);
   //out.PrintSummary(std::cerr);
-  int num_domains = m_output->GetNumberOfDomains();
-  for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+  //call tube filter if we want to render output
+  if(m_tubes)
   {
-    this->m_output->AddDomain(out.GetPartition(i), num_domains + i);
+    vtkm::filter::geometry_refinement::Tube tubeFilter;
+    tubeFilter.SetCapping(m_tube_capping);
+    tubeFilter.SetNumberOfSides(m_tube_sides);
+    tubeFilter.SetRadius(m_tube_size);
+
+    auto tubeOut = tubeFilter.Execute(out);
+    
+    int num_domains = tubeOut.GetNumberOfPartitions();
+    for (vtkm::Id i = 0; i < num_domains; i++)
+    {
+      this->m_output->AddDomain(tubeOut.GetPartition(i), i);
+    }
+    this->m_output->AddConstantPointField(m_tube_val, m_output_field_name);
+  }
+  else
+  {
+    int num_domains = out.GetNumberOfPartitions();
+    for (vtkm::Id i = 0; i < num_domains; i++)
+    {
+      this->m_output->AddDomain(out.GetPartition(i), i);
+    }
   }
 #endif
 }

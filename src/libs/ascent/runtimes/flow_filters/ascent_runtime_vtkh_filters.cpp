@@ -3844,8 +3844,8 @@ VTKHParticleAdvection::execute()
     //tube params
     bool draw_tubes = true;
     bool tube_capping = true;
-    int tube_sides = 2;
-    double tube_value = 1.0;
+    int tube_sides = 3;
+    double tube_value = 0.0;
     double tube_size = 0.1;
     std::string output_field = field_name + "_streamlines";
 
@@ -4018,6 +4018,12 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
     valid_paths.push_back("weighting_field");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
+    valid_paths.push_back("enable_tubes");
+    valid_paths.push_back("tube_capping");
+    valid_paths.push_back("tube_size");
+    valid_paths.push_back("tube_sides");
+    valid_paths.push_back("tube_value");
+    valid_paths.push_back("output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -4091,6 +4097,36 @@ VTKHWarpXStreamline::execute()
 
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
+    //tube params
+    bool draw_tubes = true;
+    bool tube_capping = true;
+    int tube_sides = 3;
+    double tube_value = 0.0;
+    double tube_size = 0.1;
+    std::string output_field = b_field+ "_" + e_field + "_streamlines";
+
+    if(params().has_path("enable_tubes"))
+    {
+      if(params()["enable_tubes"].as_string() == "false")
+      {
+        draw_tubes = false;
+      }
+    }
+    if(draw_tubes)
+    {
+      if(params().has_path("output_field")) output_field = params()["output_field"].as_string();
+      if(params().has_path("tube_value")) tube_value = params()["tube_value"].as_float64();
+      if(params().has_path("tube_size")) tube_size = params()["tube_size"].as_float64();
+      if(params().has_path("tube_sides")) tube_sides = params()["tube_sides"].as_int32();
+      if(params().has_path("tube_capping"))
+      {
+        if(params()["tube_capping"].as_string() == "false")
+        {
+          tube_capping = false;
+        }
+      }
+
+    }
 
 
     vtkh::DataSet *output = nullptr;
@@ -4103,6 +4139,15 @@ VTKHWarpXStreamline::execute()
     sl.SetMassField(mass_field);
     sl.SetMomentumField(momentum_field);
     sl.SetWeightingField(weighting_field);
+    if(draw_tubes)
+    {
+      sl.SetOutputField(output_field);
+      sl.SetTubes(draw_tubes);
+      sl.SetTubeValue(tube_value);
+      sl.SetTubeSize(tube_size);
+      sl.SetTubeSides(tube_sides);
+      sl.SetTubeCapping(tube_capping);
+    }
     sl.SetInput(&data);
     sl.Update();
     output = sl.GetOutput();
