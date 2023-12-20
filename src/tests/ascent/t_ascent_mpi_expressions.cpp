@@ -23,6 +23,7 @@
 #include <mpi.h>
 
 #include <conduit_blueprint.hpp>
+#include "conduit_relay_mpi_io_blueprint.hpp"
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -195,7 +196,18 @@ TEST(ascent_mpi_expressions, mpi_binning_bins)
       output_path = output_dir();
     }
 
-    string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_binning_bins");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_binning_bins_input");
+
+    Node opts;
+
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  output_file,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
+
+    // for render
+    output_file = conduit::utils::join_file_path(output_path,"tout_mpi_binning_bins");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -227,7 +239,7 @@ TEST(ascent_mpi_expressions, mpi_binning_bins)
     conduit::Node &axis2 = params["axes"].append();
     axis2["var"] = "z";
     axis2["num_bins"] = 10;
-    axis2["clamp"] = 10;
+    axis2["clamp"] = 0;
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";
@@ -244,6 +256,17 @@ TEST(ascent_mpi_expressions, mpi_binning_bins)
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
+
+    // add extract
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+
+    extracts["e1/type"] = "relay";
+    extracts["e1/pipeline"] = "pl1";
+    extracts["e1/params/path"] = conduit::utils::join_file_path(output_path,
+                                                                "tout_mpi_binning_bins_result_extract");
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
     //
     // Run Ascent
