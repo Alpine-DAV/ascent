@@ -32,11 +32,10 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
     auto cs = currentDomain.GetCellSet();
     if (isSL)
     {
-      auto cellSet = cs.AsCellSet<vtkm::cont::CellSetExplicit<>>();
       //Ensure that streamlines took <= to the max number of steps
-      for(int j = 0; j < cellSet.GetNumberOfCells(); j++)
+      for(int j = 0; j < cs.GetNumberOfCells(); j++)
       {
-        EXPECT_LE(cellSet.GetNumberOfPointsInCell(j), maxSteps);
+        EXPECT_LE(cs.GetNumberOfPointsInCell(j), maxSteps);
       }
     }
     else
@@ -154,6 +153,7 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   outSL = streamline.GetOutput();
   //outSL = RunFilter<vtkh::Streamline>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
   checkValidity(outSL, maxAdvSteps+1, true);
+  outSL->PrintSummary(std::cerr);
 
   writeDataSet(outSL, "advection_SeedsRandomWhole", rank);
 

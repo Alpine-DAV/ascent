@@ -4098,7 +4098,7 @@ VTKHWarpXStreamline::execute()
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
     //tube params
-    bool draw_tubes = true;
+    bool draw_tubes = false;
     bool tube_capping = true;
     int tube_sides = 3;
     double tube_value = 0.0;
@@ -4107,9 +4107,9 @@ VTKHWarpXStreamline::execute()
 
     if(params().has_path("enable_tubes"))
     {
-      if(params()["enable_tubes"].as_string() == "false")
+      if(params()["enable_tubes"].as_string() == "true")
       {
-        draw_tubes = false;
+        draw_tubes = true;
       }
     }
     if(draw_tubes)

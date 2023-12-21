@@ -56,7 +56,8 @@ WarpXStreamline::WarpXStreamline()
 	m_charge_field_name("Charge"), 
 	m_mass_field_name("Mass"),
 	m_momentum_field_name("Momentum"), 
-	m_weighting_field_name("Weighting")
+	m_weighting_field_name("Weighting"),
+	m_tubes(false)
 {
 	
 }
