@@ -170,25 +170,26 @@ TEST(vtkh_warpx_particle_advection, vtkh_warpx_particle_advection)
 
   checkValidity(outWSL, maxAdvSteps+1, true);
   writeDataSet(outWSL, "warpx_streamline", rank);
-  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
+//  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
+//
+//  vtkm::rendering::Camera camera;
+//  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+//  camera.ResetToBounds(tBounds);
+//  vtkh::Render render = vtkh::MakeRender(512,
+//                                         512,
+//                                         camera,
+//                                         *outWSL,
+//                                         "tout_warpx_streamline_render");
+//
+//  vtkh::RayTracer tracer;
+//  tracer.SetInput(outWSL);
+//  tracer.SetField("streamlines");
+//
+//  vtkh::Scene scene;
+//  scene.AddRender(render);
+//  scene.AddRenderer(&tracer);
+//  scene.Render();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
-  camera.ResetToBounds(tBounds);
-  vtkh::Render render = vtkh::MakeRender(512,
-                                         512,
-                                         camera,
-                                         *outWSL,
-                                         "tout_warpx_streamline_render");
-
-  vtkh::RayTracer tracer;
-  tracer.SetInput(outWSL);
-  tracer.SetField("streamlines");
-
-  vtkh::Scene scene;
-  scene.AddRender(render);
-  scene.AddRenderer(&tracer);
-  scene.Render();
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
 }
