@@ -20,6 +20,7 @@
 #include <vtkm/cont/CellSetSingleType.h>
 #include "t_vtkm_test_utils.hpp"
 #include <iostream>
+#include <mpi.h>
 
 void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
 {
@@ -115,14 +116,20 @@ RunWFilter(vtkh::DataSet& input,
   return filter.GetOutput();
 }
 //----------------------------------------------------------------------------
-TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
+TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
 {
 #ifdef VTKM_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   const int maxAdvSteps = 1000;
 
-  std::cout << "Running serial WarpX Charged Particle Advection" << std::endl;
+  MPI_Init(NULL, NULL);
+  int comm_size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  vtkh::SetMPICommHandle(MPI_Comm_c2f(MPI_COMM_WORLD));
+
+  std::cout << "Running parallel WarpX Charged Particle Advection, vtkh - with " << comm_size << " ranks" << std::endl;
 
   vtkh::DataSet warpx_data_set;
   
@@ -183,4 +190,6 @@ TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
 //  scene.AddRenderer(&tracer);
 //  scene.Render();
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
 }
