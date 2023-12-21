@@ -46,14 +46,14 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
   }
 }
 
-void writeDataSet(vtkh::DataSet *data, std::string fName, int rank)
+void writeDataSet(vtkh::DataSet *data, std::string fName)
 {
   int numDomains = data->GetNumberOfDomains();
   std::cerr << "num domains " << numDomains << std::endl;
   for(int i = 0; i < numDomains; i++)
   {
     char fileNm[128];
-    sprintf(fileNm, "%s.rank%d.domain%d.vtk", fName.c_str(), rank, i);
+    sprintf(fileNm, "%s.domain%d.vtk", fName.c_str(), i);
     vtkm::io::VTKDataSetWriter write(fileNm);
     write.WriteDataSet(data->GetDomain(i));
   }
@@ -162,7 +162,7 @@ TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
   outWSL->PrintSummary(std::cerr);
 
   checkValidity(outWSL, maxAdvSteps+1, true);
-  writeDataSet(outWSL, "warpx_streamline", rank);
+  writeDataSet(outWSL, "warpx_streamline");
 //  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
 //
 //  vtkm::rendering::Camera camera;
