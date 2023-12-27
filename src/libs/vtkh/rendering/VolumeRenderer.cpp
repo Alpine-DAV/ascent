@@ -693,8 +693,12 @@ VolumeRenderer::PreExecute()
   extent[0] = static_cast<vtkm::Float32>(this->m_bounds.X.Length());
   extent[1] = static_cast<vtkm::Float32>(this->m_bounds.Y.Length());
   extent[2] = static_cast<vtkm::Float32>(this->m_bounds.Z.Length());
-  vtkm::Float32 dist = vtkm::Magnitude(extent) / m_num_samples;
-  m_sample_dist = dist;
+
+  // vtkm::Float32 dist = vtkm::Magnitude(extent) / m_num_samples;
+  // m_sample_dist = dist;
+
+  m_sample_dist = 0.5f;
+  m_num_samples = vtkm::Magnitude(extent) / m_sample_dist;
 }
 
 void
