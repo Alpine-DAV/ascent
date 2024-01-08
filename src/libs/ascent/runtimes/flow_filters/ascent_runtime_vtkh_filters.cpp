@@ -21,6 +21,7 @@
 #include <conduit.hpp>
 #include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
+#include <conduit_fmt/conduit_fmt.h>
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -37,6 +38,7 @@
 // mpi
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#include <conduit_relay_mpi.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -74,7 +76,7 @@
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
 #include <vtkm/cont/DataSet.h>
-
+#include <vtkm/io/VTKDataSetWriter.h>
 #include <ascent_vtkh_data_adapter.hpp>
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
@@ -420,7 +422,7 @@ VTKH3Slice::execute()
                                                      throw_error);
     if(topo_name == "")
     {
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
@@ -4161,6 +4163,218 @@ VTKHWarpXStreamline::execute()
     delete output;
     set_output<DataObject>(res);
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// VTKHVTKFileExtract
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+VTKHVTKFileExtract::VTKHVTKFileExtract()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHVTKFileExtract::~VTKHVTKFileExtract()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVTKFileExtract::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_vtk_file_extract";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHVTKFileExtract::verify_params(const conduit::Node &params,
+                                  conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    if( !params.has_child("path") )
+    {
+        info["errors"].append() = "missing required entry 'path'";
+        res = false;
+    }
+
+    res = check_string("topology",params, info, false) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("path");
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHVTKFileExtract::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHVTKFileExtract input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      return;
+    }
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     true // throw error
+                                                     );
+    // we create
+    // file: basename.visit
+    // directory: basename + "_vtk_files"
+    // files: basename + "_vtk_files/basename_%08d.vtk"
+
+    std::string output_base = params()["path"].as_string();
+    
+    std::string output_files_dir  = output_base + "_vtk_files";
+    std::string output_visit_file = output_base + ".visit";
+
+    std::string output_file_pattern = conduit::utils::join_path(output_files_dir,
+                                                                "domain_{:08d}.vtk");
+
+    int par_rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &par_rank);
+#endif
+
+    if(par_rank == 0 && !conduit::utils::is_directory(output_files_dir))
+    {
+        // mkdir output dir
+        conduit::utils::create_directory(output_files_dir);
+    }
+
+    int error_occured = 0;
+    std::string error_message;
+
+    vtkh::DataSet &vtkh_dset = collection->dataset_by_topology(topo_name);
+
+    // loop over all local domains and save each to a legacy vtk file.
+
+    vtkm::cont::DataSet vtkm_dset;
+    vtkm::Id            domain_id;
+
+    vtkm::Id num_local_domains  = vtkh_dset.GetNumberOfDomains();
+    vtkm::Id num_global_domains = vtkh_dset.GetGlobalNumberOfDomains();
+
+    // keep list of domain ids
+    Node n_local_domain_ids(DataType::index_t(num_local_domains));
+    index_t_array local_domain_ids = n_local_domain_ids.value();
+
+    for(vtkm::Id idx = 0; idx < num_local_domains; idx++ )
+    {
+        vtkh_dset.GetDomain(idx,
+                            vtkm_dset,
+                            domain_id);
+        local_domain_ids[idx] = domain_id;
+        vtkm::io::VTKDataSetWriter writer(conduit_fmt::format(output_file_pattern,
+                                                              domain_id));
+        writer.WriteDataSet(vtkm_dset);
+    }
+
+    // create .visit file on rank 0
+
+    // broadcast list of domain ids for mpi case
+    Node n_global_domain_ids;
+#ifdef ASCENT_MPI_ENABLED
+        Node n_recv;
+        conduit::relay::mpi::all_gather_using_schema(n_local_domain_ids,
+                                                     n_recv,
+                                                     MPI_COMM_WORLD);
+        n_global_domain_ids.set(DataType::index_t(num_global_domains));
+        n_global_domain_ids.print();
+        index_t_array global_vals = n_global_domain_ids.value();
+        // each child will an array with its domain ids
+        index_t idx = 0;
+        for(index_t chld_idx = 0; chld_idx < n_recv.number_of_children();chld_idx++)
+        {
+            const Node &cld = n_recv.child(chld_idx);
+            index_t_array cld_vals = cld.value();
+            for(index_t local_idx = 0; local_idx < cld_vals.number_of_elements();local_idx++)
+            {
+              global_vals[idx] = cld_vals[local_idx];
+              idx++;
+            } 
+        }
+#else
+        n_global_domain_ids.set_external(n_local_domain_ids);
+#endif
+
+    if(par_rank == 0)
+    {
+        std::ofstream ofs;
+        ofs.open(output_visit_file.c_str());
+
+        if(!ofs.is_open())
+        {
+          error_occured = 1;
+        }
+        else
+        {
+      
+          // make sure this is relative to output dir
+          std::string output_files_dir_rel;
+          std::string tmp;
+          utils::rsplit_path(output_files_dir,
+                             output_files_dir_rel,
+                             tmp);
+        
+          std::string output_file_pattern_rel = conduit::utils::join_path(output_files_dir_rel,
+                                                                  "domain_{:08d}.vtk");
+
+          index_t_array global_domain_ids = n_global_domain_ids.value();
+          ofs << "!NBLOCKS " << num_global_domains << std::endl;
+          for(size_t i=0;i< global_domain_ids.number_of_elements();i++)
+          {
+              ofs << conduit_fmt::format(output_file_pattern_rel,
+                                         global_domain_ids[i]) << std::endl;
+          }
+        }
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+    Node n_local_err, n_global_err;
+    n_local_err = error_occured;
+    conduit::relay::mpi::max_all_reduce(n_local_err,
+                                        n_global_err,
+                                        mpi_comm);
+    n_local_err = n_global_err.to_index_t();
+#endif
+
+    if(error_occured == 1)
+    {
+        ASCENT_ERROR("failed to save vtk files to path:" << output_base);
+    }
+
+}
+
+
 
 //-----------------------------------------------------------------------------
 };
