@@ -461,6 +461,24 @@ public:
 protected:
     bool record_trajectories = false;
 };
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHVTKFileExtract : public ::flow::Filter
+{
+public:
+    VTKHVTKFileExtract();
+    virtual ~VTKHVTKFileExtract();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+};
+
+
+
+
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
