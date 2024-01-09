@@ -115,7 +115,6 @@ void Streamline::DoExecute()
     tubeFilter.SetRadius(m_tube_size);
 
     auto tubeOut = tubeFilter.Execute(out);
-    
 
     for (vtkm::Id i = 0; i < tubeOut.GetNumberOfPartitions(); i++)
     {

@@ -135,6 +135,7 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
 
   vtkh::DataSet *outPA=NULL, *outSL=NULL;
   outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
+  std::cerr << "Particle Advection Output:" << std::endl;
   outPA->PrintSummary(std::cerr);
   checkValidity(outPA, maxAdvSteps+1, false);
 
@@ -148,11 +149,13 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   streamline.SetTubeCapping(true);
   streamline.SetTubeSize(0.1);
   streamline.SetTubeSides(3);
+  streamline.SetOutputField("lines");
   streamline.Update();
 
   outSL = streamline.GetOutput();
   //outSL = RunFilter<vtkh::Streamline>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
   checkValidity(outSL, maxAdvSteps+1, true);
+  std::cerr << "Streamline Output:" << std::endl;
   outSL->PrintSummary(std::cerr);
 
   writeDataSet(outSL, "advection_SeedsRandomWhole", rank);
