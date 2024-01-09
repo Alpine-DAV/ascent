@@ -14,6 +14,11 @@
 #include "ascent_runtime_relay_filters.hpp"
 
 //-----------------------------------------------------------------------------
+// ascent config (include early to enable feature checks)
+//-----------------------------------------------------------------------------
+#include <ascent_config.h>
+
+//-----------------------------------------------------------------------------
 // thirdparty includes
 //-----------------------------------------------------------------------------
 
@@ -23,7 +28,9 @@
 #include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mesh.hpp>
 #include <conduit_relay_io_blueprint.hpp>
+#if defined(ASCENT_HDF5_ENABLED)
 #include <conduit_relay_io_hdf5.hpp>
+#endif
 
 //-----------------------------------------------------------------------------
 // ascent includes
@@ -330,6 +337,7 @@ verify_io_params(const conduit::Node &params,
         }
     }
 
+#if defined(ASCENT_HDF5_ENABLED)
     if( params.has_child("hdf5_options") )
     {
         //
@@ -399,6 +407,7 @@ verify_io_params(const conduit::Node &params,
                              info,
                              false);
     }
+#endif
 
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
@@ -407,7 +416,9 @@ verify_io_params(const conduit::Node &params,
     valid_paths.push_back("fields");
     valid_paths.push_back("num_files");
     ignore_paths.push_back("fields");
+#if defined(ASCENT_HDF5_ENABLED)
     ignore_paths.push_back("hdf5_options");
+#endif
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -441,6 +452,8 @@ void mesh_blueprint_save(const Node &data,
     // setup our options
     Node opts;
     opts["number_of_files"] = num_files;
+
+#ifdef ASCENT_HDF5_ENABLED
     bool using_hdf5_opts = (file_protocol == "hdf5" &&
                             extra_opts.number_of_children() > 0);
     Node hdf5_opts_orig;
@@ -458,6 +471,8 @@ void mesh_blueprint_save(const Node &data,
         // set
         conduit::relay::io::hdf5_set_options(hdf5_opts_orig_curr);
     }
+#endif
+
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     conduit::relay::mpi::io::blueprint::save_mesh(data,
@@ -472,11 +487,13 @@ void mesh_blueprint_save(const Node &data,
                                              opts);
 #endif
 
+#ifdef ASCENT_HDF5_ENABLED
     if(using_hdf5_opts)
     {
         // pop hdf5 io settings
         conduit::relay::io::hdf5_set_options(hdf5_opts_orig);
     }
+#endif
     return;
 
 }
@@ -607,10 +624,12 @@ RelayIOSave::execute()
     
     Node extra_opts;
 
+#if defined(ASCENT_HDF5_ENABLED)
     if(params().has_path("hdf5_options"))
     {
         extra_opts = params()["hdf5_options"];
     }
+#endif
 
     std::string result_path;
     if(protocol.empty())
@@ -618,6 +637,7 @@ RelayIOSave::execute()
         conduit::relay::io::save(selected,path);
         result_path = path;
     }
+#if defined(ASCENT_HDF5_ENABLED)
     else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
     {
         mesh_blueprint_save(selected,
@@ -627,6 +647,7 @@ RelayIOSave::execute()
                             extra_opts,
                             result_path);
     }
+#endif
     else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
         mesh_blueprint_save(selected,
