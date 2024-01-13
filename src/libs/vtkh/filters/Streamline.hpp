@@ -25,8 +25,8 @@ public:
   void SetOutputField(const std::string &output_field_name) {  m_output_field_name = output_field_name; }
   void SetTubes(bool tubes) {m_tubes = tubes;}
   void SetTubeCapping(bool capping) {m_tube_capping = capping;}
-  void SetTubeValue(double val) {m_tube_val = val;}
-  void SetTubeSize(double size) {m_tube_size = size;}
+  void SetTubeValue(double val) {m_tube_value = val;}
+  void SetTubeSize(double size) {m_tube_size = size; m_radius_set = true;}
   void SetTubeSides(double sides) {m_tube_sides = sides;}
 
 protected:
@@ -38,7 +38,8 @@ protected:
   std::string m_output_field_name;
   bool m_tubes;
   bool m_tube_capping;
-  double m_tube_val;
+  bool m_radius_set;
+  double m_tube_value;
   double m_tube_size;
   double m_tube_sides;
   double m_step_size;

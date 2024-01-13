@@ -21,6 +21,7 @@
 #include "t_vtkm_test_utils.hpp"
 #include <iostream>
 
+
 void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
 {
   int numDomains = data->GetNumberOfDomains();
@@ -105,10 +106,10 @@ RunWFilter(vtkh::DataSet& input,
   filter.SetNumberOfSteps(maxAdvSteps);
   filter.SetStepSize(stepSize);
   //warpxstreamline will make its own seeds
-  filter.SetTubeSize(0.1);
+  filter.SetTubeSize(0.00000007);
   filter.SetTubeCapping(true);
   filter.SetTubeValue(1.0);
-  filter.SetTubeSides(2);
+  filter.SetTubeSides(3);
   filter.SetOutputField(output_field);
   filter.Update();
 
@@ -172,15 +173,16 @@ TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
 //                                         512,
 //                                         camera,
 //                                         *outWSL,
-//                                         "tout_warpx_streamline_render");
+//                                         "tout_warpx_render");
 //
 //  vtkh::RayTracer tracer;
 //  tracer.SetInput(outWSL);
 //  tracer.SetField("streamlines");
+//  std::string fieldName = "streamlines";
 //
 //  vtkh::Scene scene;
 //  scene.AddRender(render);
 //  scene.AddRenderer(&tracer);
 //  scene.Render();
-
+//
 }
