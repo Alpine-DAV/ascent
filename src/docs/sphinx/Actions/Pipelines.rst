@@ -656,7 +656,7 @@ Tubes are on by default but they can be diabled, though this would also diable r
   params["seed_bounding_box_z_max"] = 1.0;
   //all tubing params are optional
   params["enable_tubes"] = "true";         //default: true
-  params["tube_size"] = 0.2;               //default: 0.1
+  params["tube_size"] = 0.2;               //default: based on bounds
   params["tube_sides"] = 4;                //default: 3
   params["tube_val"] = 1.0;                //default: 0.0
   params["tube_capping"] = "true";         //default: true
@@ -689,7 +689,7 @@ Otherwise, the resulting streamlines, sans tubes, can be saved via an extract.
   params["weighting_field"] = "weighting_field"; //default: Weighting
   //tubing params
   params["enable_tubes"] = "true";  //default: false
-  params["tube_size"] = 0.2;        //default: 0.1
+  params["tube_size"] = 0.2;        //default: based on bounds
   params["tube_sides"] = 4;         //default: 3
   params["tube_val"] = 1.0;         //default: 0.0
   params["tube_capping"] = "true";  //default: true
