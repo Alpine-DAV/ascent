@@ -13,7 +13,7 @@ jobs:
       CMAKE_VERSION: 3.23.2
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         submodules: 'recursive'
     - name: Install CMake
