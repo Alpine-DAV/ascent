@@ -3845,7 +3845,7 @@ VTKHParticleAdvection::execute()
     //tube params
     std::string output_field = field_name + "_streamlines";
 
-    bool draw_tubes = false;
+    bool draw_tubes = true;
     if(params().has_path("enable_tubes"))
     {
       if(params()["enable_tubes"].as_string() == "false")

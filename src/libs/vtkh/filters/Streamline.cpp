@@ -16,7 +16,7 @@ namespace vtkh
 {
 
 Streamline::Streamline()
-:  m_tubes(false),
+:  m_tubes(true),
    m_radius_set(false),
    m_tube_sides(3.0),
    m_tube_capping(true),
@@ -115,6 +115,7 @@ void Streamline::DoExecute()
   //call tube filter if we want to render output
   if(m_tubes)
   {
+
     if(!m_radius_set)
     {
       vtkm::Float32 radius = 0.0;
@@ -129,6 +130,7 @@ void Streamline::DoExecute()
       radius = static_cast<vtkm::Float32>(mag / heuristic);
       m_tube_size = radius;
     }
+
     //if the tubes are too small they cannot be rendered
     float min_tube_size = 0.00000001;
     if(m_tube_size < min_tube_size)

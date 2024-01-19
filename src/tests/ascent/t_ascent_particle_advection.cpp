@@ -119,12 +119,14 @@ void testFilter(bool isStreamline)
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
+
+    std::string output_image;
     if(isStreamline)
     {
       string image_path = ASCENT_T_BIN_DIR;
 
-      image_path = conduit::utils::join_file_path(image_path,"/_output");
-      string output_image = conduit::utils::join_file_path(image_path,
+      image_path = conduit::utils::join_file_path(image_path,"_output");
+      output_image = conduit::utils::join_file_path(image_path,
                                       "tout_render_streamlines");
       conduit::Node &add_plots = actions.append();
       add_plots["action"] = "add_scenes";
@@ -154,7 +156,11 @@ void testFilter(bool isStreamline)
 
    // check that we created the right output
    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-   //EXPECT_TRUE(check_test_file(output_file));
+   if(isStreamline)
+   {
+     output_image = output_image + "10";
+     EXPECT_TRUE(check_test_image(output_image, 0.001f, "0"));
+   }
 
    // clean up
    remove_test_file(output_file);
