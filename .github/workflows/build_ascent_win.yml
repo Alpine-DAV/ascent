@@ -19,7 +19,6 @@ jobs:
     - name: Build TPLs
       run: |
         env build_ascent=false `
-            enable_python=ON `
             enable_tests=OFF `
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
