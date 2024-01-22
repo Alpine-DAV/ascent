@@ -3887,6 +3887,7 @@ VTKHParticleAdvection::execute()
       float x = seedBBox[0] + dx * distribution(generator);
       float y = seedBBox[2] + dy * distribution(generator);
       float z = seedBBox[4] + dz * distribution(generator);
+      std::cerr << "seed " << i << ": " << x << " " << y << " " << z << std::endl;
       seeds.push_back(vtkm::Particle({x,y,z}, i));
     }
     auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
