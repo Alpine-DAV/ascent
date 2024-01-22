@@ -143,6 +143,7 @@ void testFilter(bool isStreamline)
       scenes["s1/renders/r3/camera/azimuth"] = 180;
       scenes["s1/renders/r4/image_name"] = output_image + "_azimuth270_30seed";
       scenes["s1/renders/r4/camera/azimuth"] = 270;
+      scenes["s1/renders/r4/image_name"] = output_image;
 
       // remove old image before rendering
       remove_test_image(output_image);
