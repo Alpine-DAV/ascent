@@ -2998,9 +2998,9 @@ VTKHSampleGrid::~VTKHSampleGrid()
 void
 VTKHSampleGrid::declare_interface(Node &i)
 {
-    i["type_name"]   = "vtkh_stats";
+    i["type_name"]   = "vtkh_sample_grid";
     i["port_names"].append() = "in";
-    i["output_port"] = "false";
+    i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
@@ -3010,10 +3010,29 @@ VTKHSampleGrid::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_numeric("origin",params, info, true);
-    res = check_numeric("spacing",params, info, true);
+    bool res = check_string("field",params, info, true);
+    res &= check_numeric("dims/i",params, info, true);
+    res &= check_numeric("dims/j",params, info, true);
+    res &= check_numeric("dims/k",params, info, true);
+    res &= check_numeric("origin/x",params, info, true);
+    res &= check_numeric("origin/y",params, info, true);
+    res &= check_numeric("origin/z",params, info, true);
+    res &= check_numeric("spacing/dx",params, info, true);
+    res &= check_numeric("spacing/dx",params, info, true);
+    res &= check_numeric("spacing/dy",params, info, true);
+    res &= check_numeric("spacing/dz",params, info, true);
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("dims/i");
+    valid_paths.push_back("dims/j");
+    valid_paths.push_back("dims/k");
+    valid_paths.push_back("origin/x");
+    valid_paths.push_back("origin/y");
+    valid_paths.push_back("origin/z");
+    valid_paths.push_back("spacing/dx");
+    valid_paths.push_back("spacing/dy");
+    valid_paths.push_back("spacing/dz");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3049,16 +3068,21 @@ VTKHSampleGrid::execute()
     {
       bool throw_error = false;
       detail::field_error(field_name, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
 
     const Node &n_origin = params()["origin"];
     const Node &n_spacing = params()["spacing"];
+    const Node &n_dims = params()["dims"];
 
-    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+    using Vec3f = vtkm::Vec<vtkm::Float64,3>;
 
+    Vec3f v_dims;
+    v_dims[0] = get_float32(n_dims["i"], data_object);
+    v_dims[1] = get_float32(n_dims["j"], data_object);
+    v_dims[2] = get_float32(n_dims["k"], data_object);
     Vec3f v_origin;
     v_origin[0] = get_float32(n_origin["x"], data_object);
     v_origin[1] = get_float32(n_origin["y"], data_object);
@@ -3074,11 +3098,21 @@ VTKHSampleGrid::execute()
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::SampleGrid grid_probe;
+    grid_probe.Dims(v_dims);
     grid_probe.Origin(v_origin);
     grid_probe.Spacing(v_spacing);
+    grid_probe.SetInput(&data);
     grid_probe.Update();
 
     vtkh::DataSet *grid_output = grid_probe.GetOutput();
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*grid_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grid_output;
+    set_output<DataObject>(res);
 }
 //-----------------------------------------------------------------------------
 

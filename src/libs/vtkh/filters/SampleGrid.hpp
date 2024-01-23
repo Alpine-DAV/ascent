@@ -18,12 +18,14 @@ public:
   SampleGrid();
   virtual ~SampleGrid();
   std::string GetName() const override;
+  void Dims(const Vec3f dims);
   void Origin(const Vec3f origin);
   void Spacing(const Vec3f spacing);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
+  Vec3f m_dims;
   Vec3f m_origin;
   Vec3f m_spacing;
 };

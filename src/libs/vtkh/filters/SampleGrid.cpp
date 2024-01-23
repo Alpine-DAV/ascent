@@ -37,6 +37,7 @@ SampleGrid::DoExecute()
     this->m_input->GetDomain(i, dom, domain_id);
 
     vtkh::vtkmProbe probe;
+    probe.dims(m_dims);
     probe.origin(m_origin);
     probe.spacing(m_spacing);
 
@@ -59,10 +60,17 @@ SampleGrid::GetName() const
 }
 
 void
+SampleGrid::Dims(const Vec3f dims)
+{
+  m_dims = dims;
+}
+
+void
 SampleGrid::Origin(const Vec3f origin)
 {
   m_origin = origin;
 }
+
 void
 SampleGrid::Spacing(const Vec3f spacing)
 {

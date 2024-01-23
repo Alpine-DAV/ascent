@@ -11,9 +11,11 @@ using Vec3f = vtkm::Vec<vtkm::Float64,3>;
 class vtkmProbe
 {
 protected:
+  Vec3f m_dims;
   Vec3f m_origin;
   Vec3f m_spacing;
 public:
+  void dims(const Vec3f dims);
   void origin(const Vec3f origin);
   void spacing(const Vec3f spacing);
 

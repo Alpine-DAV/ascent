@@ -66,6 +66,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_commands
                 t_ascent_triggers
                 t_ascent_blueprint_reductions
+		t_ascent_sample_grid
                 t_ascent_sampling
                 t_ascent_hola)
 
