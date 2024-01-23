@@ -95,7 +95,7 @@ void testFilter(bool isStreamline)
     // filter knobs
     conduit::Node &sl_params = pipelines["pl1/f1/params"];
     sl_params["field"] = "vel";
-    sl_params["num_seeds"] = 10;
+    sl_params["num_seeds"] = 30;
     sl_params["num_steps"] = 100;
     sl_params["step_size"] = 0.01;
     sl_params["seed_bounding_box_xmin"] = 0.0;
@@ -143,7 +143,7 @@ void testFilter(bool isStreamline)
       scenes["s1/renders/r3/camera/azimuth"] = 180;
       scenes["s1/renders/r4/image_name"] = output_image + "_azimuth270_30seed";
       scenes["s1/renders/r4/camera/azimuth"] = 270;
-      scenes["s1/renders/r4/image_name"] = output_image;
+      scenes["s1/renders/r5/image_name"] = output_image;
 
       // remove old image before rendering
       remove_test_image(output_image);
