@@ -3033,6 +3033,7 @@ VTKHSampleGrid::verify_params(const conduit::Node &params,
     valid_paths.push_back("spacing/dx");
     valid_paths.push_back("spacing/dy");
     valid_paths.push_back("spacing/dz");
+    valid_paths.push_back("invalid_value");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3092,16 +3093,25 @@ VTKHSampleGrid::execute()
     v_spacing[1] = get_float32(n_spacing["dy"], data_object);
     v_spacing[2] = get_float32(n_spacing["dz"], data_object);
 
+    
+
 
     std::string topo_name = collection->field_topology(field_name);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::SampleGrid grid_probe;
+
+    if(params().has_path("invalid_value"))
+    {
+      vtkm::Float64 invalid_value = params()["invalid_value"].as_float64();
+      grid_probe.InvalidValue(invalid_value);
+    }
     grid_probe.Dims(v_dims);
     grid_probe.Origin(v_origin);
     grid_probe.Spacing(v_spacing);
     grid_probe.SetInput(&data);
+
     grid_probe.Update();
 
     vtkh::DataSet *grid_output = grid_probe.GetOutput();

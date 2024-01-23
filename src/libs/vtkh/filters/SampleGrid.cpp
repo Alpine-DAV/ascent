@@ -3,11 +3,13 @@
 #include <vtkh/Error.hpp>
 
 #include <vtkh/vtkm_filters/vtkmProbe.hpp>
+#include <limits>
 
 namespace vtkh
 {
 
 SampleGrid::SampleGrid()
+	: m_invalid_value(std::numeric_limits<double>::min())
 {
 
 }
@@ -75,6 +77,12 @@ void
 SampleGrid::Spacing(const Vec3f spacing)
 {
   m_spacing = spacing;
+}
+
+void
+SampleGrid::InvalidValue(const vtkm::Float64 invalid_value)
+{
+  m_invalid_value = invalid_value;
 }
 
 } // namespace vtkh

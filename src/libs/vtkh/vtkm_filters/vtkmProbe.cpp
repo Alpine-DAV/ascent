@@ -1,5 +1,6 @@
 #include "vtkmProbe.hpp"
 #include <vtkm/filter/resampling/Probe.h>
+#include <vtkm/cont/DataSetBuilderUniform.h>
 
 namespace vtkh
 {
@@ -22,31 +23,27 @@ vtkmProbe::spacing(const Vec3f spacing)
   m_spacing = spacing;
 }
 
+void
+vtkmProbe::invalidValue(const vtkm::Float64 invalid_value)
+{
+  m_invalid_value = invalid_value;
+}
+
 vtkm::cont::DataSet
 vtkmProbe::Run(vtkm::cont::DataSet &input)
 {
   vtkm::filter::resampling::Probe probe;
-  vtkm::cont::DataSet ds_probe;
 
   std::string name = "coords";
-  int dims = 3;
+  vtkm::Id3 dims = 3;
   if(m_dims[2] == 0)
     dims = 2;
 
-  vtkm::cont::CoordinateSystem cs(name, dims, m_origin, m_spacing);
-  ds_probe.AddCoordinateSystem(cs);
+  vtkm::cont::DataSet ds_probe = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
   probe.SetGeometry(ds_probe);
-  std::cerr << "INPUT VTKM DATA " << std::endl;
-  input.PrintSummary(std::cerr);
-  std::cerr << "END INPUT VTKM DATA " << std::endl;
-  std::cerr << std::endl;
-  std::cerr << "INPUT GEOMETRY" << std::endl;
-  ds_probe.PrintSummary(std::cerr);
-  std::cerr << "END INPUT GEOMETRY" << std::endl;
+  probe.SetInvalidValue(m_invalid_value);
 
-  std::cerr << "BEFORE VTKM EXECUTE" << std::endl;
   auto output = probe.Execute(input);
-  std::cerr << "AFTER VTKM EXECUTE" << std::endl;
   return output;
 }
 
