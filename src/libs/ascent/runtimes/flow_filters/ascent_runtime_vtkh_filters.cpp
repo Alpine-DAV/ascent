@@ -55,8 +55,8 @@
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
-#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
+#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
@@ -64,6 +64,7 @@
 #include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
+#include <vtkh/filters/SampleGrid.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Streamline.hpp>
@@ -2979,6 +2980,107 @@ VTKHGradient::execute()
     delete grad_output;
     set_output<DataObject>(res);
 }
+//-----------------------------------------------------------------------------
+
+VTKHSampleGrid::VTKHSampleGrid()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHSampleGrid::~VTKHSampleGrid()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHSampleGrid::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_stats";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHSampleGrid::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_numeric("origin",params, info, true);
+    res = check_numeric("spacing",params, info, true);
+
+    std::vector<std::string> valid_paths;
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHSampleGrid::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_sample_grid input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field_name = params()["field"].as_string();
+    if(!collection->has_field(field_name))
+    {
+      bool throw_error = false;
+      detail::field_error(field_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    const Node &n_origin = params()["origin"];
+    const Node &n_spacing = params()["spacing"];
+
+    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+
+    Vec3f v_origin;
+    v_origin[0] = get_float32(n_origin["x"], data_object);
+    v_origin[1] = get_float32(n_origin["y"], data_object);
+    v_origin[2] = get_float32(n_origin["z"], data_object);
+    Vec3f v_spacing;
+    v_spacing[0] = get_float32(n_spacing["dx"], data_object);
+    v_spacing[1] = get_float32(n_spacing["dy"], data_object);
+    v_spacing[2] = get_float32(n_spacing["dz"], data_object);
+
+
+    std::string topo_name = collection->field_topology(field_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkh::SampleGrid grid_probe;
+    grid_probe.Origin(v_origin);
+    grid_probe.Spacing(v_spacing);
+    grid_probe.Update();
+
+    vtkh::DataSet *grid_output = grid_probe.GetOutput();
+}
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 

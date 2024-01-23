@@ -6,22 +6,16 @@
 namespace vtkh
 {
 
+using Vec3f = vtkm::Vec<vtkm::Float64,3>;
+
 class vtkmProbe
 {
 protected:
-  vtkm::Float64 m_x_origin;
-  vtkm::Float64 m_y_origin;
-  vtkm::Float64 m_z_origin;
-  vtkm::Float64 m_x_spacing;
-  vtkm::Float64 m_y_spacing;
-  vtkm::Float64 m_z_spacing;
+  Vec3f m_origin;
+  Vec3f m_spacing;
 public:
-  void x_origin(const vtkm::Float64 x);
-  void y_origin(const vtkm::Float64 y);
-  void z_origin(const vtkm::Float64 z);
-  void x_spacing(const vtkm::Float64 dx);
-  void y_spacing(const vtkm::Float64 dy);
-  void z_spacing(const vtkm::Float64 dz);
+  void origin(const Vec3f origin);
+  void spacing(const Vec3f spacing);
 
   vtkm::cont::DataSet Run(vtkm::cont::DataSet &input);
 };
