@@ -61,7 +61,7 @@ void testFilter(bool isStreamline)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
+    data["state/cycle"] = 100;
     string output_file, msg;
     if (isStreamline)
     {
@@ -135,15 +135,6 @@ void testFilter(bool isStreamline)
       scenes["s1/plots/p1/field"] = "lines";
       scenes["s1/plots/p1/pipeline"] = "pl1";
       scenes["s1/image_prefix"] = output_image;
-      scenes["s1/renders/r1/image_name"] = output_image + "_azimuth0_30seed";
-      scenes["s1/renders/r1/camera/azimuth"] = 0;
-      scenes["s1/renders/r2/image_name"] = output_image + "_azimuth90_30seed";
-      scenes["s1/renders/r2/camera/azimuth"] = 90;
-      scenes["s1/renders/r3/image_name"] = output_image + "_azimuth180_30seed";
-      scenes["s1/renders/r3/camera/azimuth"] = 180;
-      scenes["s1/renders/r4/image_name"] = output_image + "_azimuth270_30seed";
-      scenes["s1/renders/r4/camera/azimuth"] = 270;
-      scenes["s1/renders/r5/image_name"] = output_image;
 
       // remove old image before rendering
       remove_test_image(output_image);
@@ -167,8 +158,8 @@ void testFilter(bool isStreamline)
    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
    if(isStreamline)
    {
-     output_image = output_image + "10";
-     EXPECT_TRUE(check_test_image(output_image, 0.001f, "0"));
+     output_image = output_image + "100";
+     EXPECT_TRUE(check_test_file(output_image));
    }
 
    // clean up
