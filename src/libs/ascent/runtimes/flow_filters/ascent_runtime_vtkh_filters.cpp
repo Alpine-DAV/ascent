@@ -3010,8 +3010,7 @@ VTKHSampleGrid::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_string("field",params, info, true);
-    res &= check_numeric("dims/i",params, info, true);
+    bool res = check_numeric("dims/i",params, info, true);
     res &= check_numeric("dims/j",params, info, true);
     res &= check_numeric("dims/k",params, info, true);
     res &= check_numeric("origin/x",params, info, true);
@@ -3021,9 +3020,9 @@ VTKHSampleGrid::verify_params(const conduit::Node &params,
     res &= check_numeric("spacing/dx",params, info, true);
     res &= check_numeric("spacing/dy",params, info, true);
     res &= check_numeric("spacing/dz",params, info, true);
+    res &= check_numeric("invalid_value",params, info, true);
 
     std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
     valid_paths.push_back("dims/i");
     valid_paths.push_back("dims/j");
     valid_paths.push_back("dims/k");
@@ -3064,15 +3063,19 @@ VTKHSampleGrid::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string field_name = params()["field"].as_string();
-    if(!collection->has_field(field_name))
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
     {
-      bool throw_error = false;
-      detail::field_error(field_name, this->name(), collection, throw_error);
-      // this creates a data object with an invalid source
+      // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     const Node &n_origin = params()["origin"];
     const Node &n_spacing = params()["spacing"];
@@ -3093,20 +3096,11 @@ VTKHSampleGrid::execute()
     v_spacing[1] = get_float32(n_spacing["dy"], data_object);
     v_spacing[2] = get_float32(n_spacing["dz"], data_object);
 
-    
-
-
-    std::string topo_name = collection->field_topology(field_name);
-
-    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkm::Float64 invalid_value = params()["invalid_value"].as_float64();
 
     vtkh::SampleGrid grid_probe;
 
-    if(params().has_path("invalid_value"))
-    {
-      vtkm::Float64 invalid_value = params()["invalid_value"].as_float64();
-      grid_probe.InvalidValue(invalid_value);
-    }
+    grid_probe.InvalidValue(invalid_value);
     grid_probe.Dims(v_dims);
     grid_probe.Origin(v_origin);
     grid_probe.Spacing(v_spacing);

@@ -42,6 +42,7 @@ SampleGrid::DoExecute()
     probe.dims(m_dims);
     probe.origin(m_origin);
     probe.spacing(m_spacing);
+    probe.invalidValue(m_invalid_value);
 
     auto dataset = probe.Run(dom);
     this->m_output->AddDomain(dataset, domain_id);
