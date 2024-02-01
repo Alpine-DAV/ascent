@@ -692,6 +692,27 @@ the data set has more than one domain. Without ghost, the averaging will not be 
   params["association"] = "vertex";   // output field association
   // or params["association"] = "element";   // output field association
 
+Sample (a Regular) Grid
+~~~~~~~~~~~~~~~~~~~~~
+Sample grid changes the coordinate system of the input mesh to that of the user-specified regular mesh. Input fields are transferred by sampling the data at the vertex locations of the output geometry. For the output geometry, users need to specify the origin (`origin`), the number of points along each axis (`dims`), and the spacing between these points (`spacing`). 
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "sample_grid";
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["origin/x"] = 0.0;   //center of dataset in x dim
+  params["origin/y"] = 0.0;   //center of dataset in y dim
+  params["origin/z"] = 0.0;   //center of dataset in z dim
+  params["dims/i"] = 10.0;    //number of points on either side of origin in x dim
+  params["dims/j"] = 10.0;    //number of points on either side of origin in y dim
+  params["dims/k"] = 10.0;    //number of points on either side of origin in z dim
+  params["spacing/dx"] = 1.0; //space between points in x dim
+  params["spacing/dy"] = 1.0; //space between points in y dim
+  params["spacing/dz"] = 1.0; //space between points in z dim
+  params["invalid_value"] = -100.0; //field value for sampled points outside of input mesh
+
 Gradient
 ~~~~~~~~
 Computes the gradient of a vertex-centered input field for every element
