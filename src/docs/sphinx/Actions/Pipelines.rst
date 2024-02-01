@@ -702,12 +702,12 @@ Sample grid changes the coordinate system of the input mesh to that of the user-
   // pipeline 1
   pipelines["pl1/f1/type"] = "sample_grid";
   conduit::Node &params = pipelines["pl1/f1/params"];
-  params["origin/x"] = 0.0;   //center of dataset in x dim
-  params["origin/y"] = 0.0;   //center of dataset in y dim
-  params["origin/z"] = 0.0;   //center of dataset in z dim
-  params["dims/i"] = 10.0;    //number of points on either side of origin in x dim
-  params["dims/j"] = 10.0;    //number of points on either side of origin in y dim
-  params["dims/k"] = 10.0;    //number of points on either side of origin in z dim
+  params["origin/x"] = 0.0;   //minimum value in x dim
+  params["origin/y"] = 0.0;   //minimum value in y dim
+  params["origin/z"] = 0.0;   //minimum value in z dim
+  params["dims/i"] = 10.0;    //number of points from origin in x dim
+  params["dims/j"] = 10.0;    //number of points from origin in y dim
+  params["dims/k"] = 10.0;    //number of points from origin in z dim
   params["spacing/dx"] = 1.0; //space between points in x dim
   params["spacing/dy"] = 1.0; //space between points in y dim
   params["spacing/dz"] = 1.0; //space between points in z dim

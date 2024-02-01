@@ -93,6 +93,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_render_3d
                t_ascent_mpi_statistics
                t_ascent_mpi_multi_topo
+               t_ascent_mpi_sample_grid
                t_ascent_mpi_slice
                t_ascent_mpi_vtk_file_extract
                t_ascent_mpi_unique_ids)
