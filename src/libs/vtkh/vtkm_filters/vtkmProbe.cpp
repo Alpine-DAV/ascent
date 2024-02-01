@@ -34,16 +34,6 @@ vtkmProbe::Run(vtkm::cont::DataSet &input)
 {
   vtkm::filter::resampling::Probe probe;
 
-  std::string name = "coords";
-  vtkm::Id3 dims = 3;
-  if(m_dims[2] == 0)
-    dims = 2;
-
-  //move origin to lower left corner
-  m_origin[0] = m_origin[0] - (m_dims[0]/2);
-  m_origin[1] = m_origin[1] - (m_dims[1]/2);
-  m_origin[2] = m_origin[2] - (m_dims[2]/2);
-  
   vtkm::cont::DataSet ds_probe = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
   probe.SetGeometry(ds_probe);
   probe.SetInvalidValue(m_invalid_value);
