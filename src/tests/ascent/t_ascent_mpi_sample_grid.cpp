@@ -20,6 +20,7 @@
 #include <mpi.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_blueprint_mpi_mesh_examples.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -32,8 +33,8 @@ using namespace conduit;
 using namespace ascent;
 
 
-index_t EXAMPLE_MESH_SIDE_DIM = 20;
-int NUM_DOMAINS = 20;
+index_t EXAMPLE_MESH_SIDE_DIM = 1000;
+int NUM_DOMAINS = 8;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
@@ -62,6 +63,7 @@ TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
     Node data, verify_info;
     conduit::blueprint::mpi::mesh::examples::spiral_round_robin(NUM_DOMAINS,data,comm);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    data.print();
 
     ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
 
@@ -72,7 +74,6 @@ TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
     // remove old images before rendering
     remove_test_image(output_file);
 
-    data["state/cycle"] = 100;
     //
     // Create the actions.
     //
@@ -81,9 +82,9 @@ TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
     // pipeline 1
     pipelines["pl1/f1/type"] = "sample_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
-    params["dims/i"] = 20;
-    params["dims/j"] = 20;
-    params["dims/k"] = 20;
+    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM;
+    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM;
+    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM;
     params["origin/x"] = 0.0;        
     params["origin/y"] = 0.0;        
     params["origin/z"] = 0.0;        
@@ -117,6 +118,8 @@ TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
@@ -134,14 +137,10 @@ int main(int argc, char* argv[])
     int result = 0;
 
     ::testing::InitGoogleTest(&argc, argv);
-
-    // allow override of the data size via the command line
-    if(argc == 2)
-    {
-        EXAMPLE_MESH_SIDE_DIM = atoi(argv[1]);
-    }
+    MPI_Init(&argc, &argv);
 
     result = RUN_ALL_TESTS();
+    MPI_Finalize();
     return result;
 }
 
