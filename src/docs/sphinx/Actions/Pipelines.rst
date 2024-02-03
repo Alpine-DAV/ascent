@@ -694,24 +694,26 @@ the data set has more than one domain. Without ghost, the averaging will not be 
 
 Sample (a Regular) Grid
 ~~~~~~~~~~~~~~~~~~~~~
-Sample grid changes the coordinate system of the input mesh to that of the user-specified regular mesh. Input fields are transferred by sampling the data at the vertex locations of the output geometry. For the output geometry, users need to specify the origin (`origin`), the number of points along each axis (`dims`), and the spacing between these points (`spacing`). 
+Sample grid changes the coordinate system of the input mesh to that of the user-specified regular mesh. Input fields are transferred by sampling the data at the vertex locations of the output geometry. For the output geometry, users have the option to specify the origin (`origin`), the number of points along each axis (`dims`) from the origin, and the spacing between these points (`spacing`). 
 
 .. code-block:: c++
 
   conduit::Node pipelines;
   // pipeline 1
   pipelines["pl1/f1/type"] = "sample_grid";
+  //params optional
   conduit::Node &params = pipelines["pl1/f1/params"];
-  params["origin/x"] = 0.0;   //minimum value in x dim
-  params["origin/y"] = 0.0;   //minimum value in y dim
-  params["origin/z"] = 0.0;   //minimum value in z dim
-  params["dims/i"] = 10.0;    //number of points from origin in x dim
-  params["dims/j"] = 10.0;    //number of points from origin in y dim
-  params["dims/k"] = 10.0;    //number of points from origin in z dim
-  params["spacing/dx"] = 1.0; //space between points in x dim
-  params["spacing/dy"] = 1.0; //space between points in y dim
-  params["spacing/dz"] = 1.0; //space between points in z dim
-  params["invalid_value"] = -100.0; //field value for sampled points outside of input mesh
+  params["origin/x"] = 0.0;   //default: minimum point in x dim
+  params["origin/y"] = 0.0;   //default: minimum point in y dim
+  params["origin/z"] = 0.0;   //default: minimum point in z dim
+  params["dims/i"] = 10.0;    //default: x extents
+  params["dims/j"] = 10.0;    //default: y extents
+  params["dims/k"] = 10.0;    //default: z extents
+  params["spacing/dx"] = 1.0; //default: 1.0
+  params["spacing/dy"] = 1.0; //default: 1.0
+  params["spacing/dz"] = 1.0; //default: 1.0
+  //field value for sampled points outside of input mesh
+  params["invalid_value"] = -100.0; //default: 0.0
 
 Gradient
 ~~~~~~~~

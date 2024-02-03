@@ -12,11 +12,11 @@ namespace vtkh
 
 using Vec3f = vtkm::Vec<vtkm::Float64,3>;
 
-class VTKH_API SampleGrid : public Filter
+class VTKH_API UniformGrid : public Filter
 {
 public:
-  SampleGrid();
-  virtual ~SampleGrid();
+  UniformGrid();
+  virtual ~UniformGrid();
   std::string GetName() const override;
   void Dims(const Vec3f dims);
   void Origin(const Vec3f origin);

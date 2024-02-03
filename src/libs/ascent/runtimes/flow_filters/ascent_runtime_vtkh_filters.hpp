@@ -355,11 +355,11 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHSampleGrid : public ::flow::Filter
+class ASCENT_API VTKHUniformGrid : public ::flow::Filter
 {
 public:
-    VTKHSampleGrid();
-    virtual ~VTKHSampleGrid();
+    VTKHUniformGrid();
+    virtual ~VTKHUniformGrid();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,

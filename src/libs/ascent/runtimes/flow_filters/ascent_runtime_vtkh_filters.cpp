@@ -64,7 +64,7 @@
 #include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
-#include <vtkh/filters/SampleGrid.hpp>
+#include <vtkh/filters/UniformGrid.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Streamline.hpp>
@@ -2982,45 +2982,46 @@ VTKHGradient::execute()
 }
 //-----------------------------------------------------------------------------
 
-VTKHSampleGrid::VTKHSampleGrid()
+VTKHUniformGrid::VTKHUniformGrid()
 :Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-VTKHSampleGrid::~VTKHSampleGrid()
+VTKHUniformGrid::~VTKHUniformGrid()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-VTKHSampleGrid::declare_interface(Node &i)
+VTKHUniformGrid::declare_interface(Node &i)
 {
-    i["type_name"]   = "vtkh_sample_grid";
+    i["type_name"]   = "vtkh_uniform_grid";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-VTKHSampleGrid::verify_params(const conduit::Node &params,
+VTKHUniformGrid::verify_params(const conduit::Node &params,
                          conduit::Node &info)
 {
     info.reset();
 
-    bool res = check_numeric("dims/i",params, info, true);
-    res &= check_numeric("dims/j",params, info, true);
-    res &= check_numeric("dims/k",params, info, true);
-    res &= check_numeric("origin/x",params, info, true);
-    res &= check_numeric("origin/y",params, info, true);
-    res &= check_numeric("origin/z",params, info, true);
-    res &= check_numeric("spacing/dx",params, info, true);
-    res &= check_numeric("spacing/dx",params, info, true);
-    res &= check_numeric("spacing/dy",params, info, true);
-    res &= check_numeric("spacing/dz",params, info, true);
-    res &= check_numeric("invalid_value",params, info, true);
+    bool res = true;
+    res &= check_numeric("dims/i",params, info, false);
+    res &= check_numeric("dims/j",params, info, false);
+    res &= check_numeric("dims/k",params, info, false);
+    res &= check_numeric("origin/x",params, info, false);
+    res &= check_numeric("origin/y",params, info, false);
+    res &= check_numeric("origin/z",params, info, false);
+    res &= check_numeric("spacing/dx",params, info, false);
+    res &= check_numeric("spacing/dx",params, info, false);
+    res &= check_numeric("spacing/dy",params, info, false);
+    res &= check_numeric("spacing/dz",params, info, false);
+    res &= check_numeric("invalid_value",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("dims/i");
@@ -3034,7 +3035,9 @@ VTKHSampleGrid::verify_params(const conduit::Node &params,
     valid_paths.push_back("spacing/dz");
     valid_paths.push_back("invalid_value");
 
-    std::string surprises = surprise_check(valid_paths, params);
+    std::string surprises = "";
+    if(params.number_of_children() != 0)
+      surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
     {
@@ -3047,12 +3050,12 @@ VTKHSampleGrid::verify_params(const conduit::Node &params,
 
 //-----------------------------------------------------------------------------
 void
-VTKHSampleGrid::execute()
+VTKHUniformGrid::execute()
 {
 
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_sample_grid input must be a data object");
+        ASCENT_ERROR("vtkh_uniform_grid input must be a data object");
     }
 
     DataObject *data_object = input<DataObject>(0);
@@ -3077,28 +3080,54 @@ VTKHSampleGrid::execute()
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
-    const Node &n_origin = params()["origin"];
-    const Node &n_spacing = params()["spacing"];
-    const Node &n_dims = params()["dims"];
+    vtkm::Bounds d_bounds = data.GetGlobalBounds();
+    vtkm::Float64 x_extents = d_bounds.X.Max - d_bounds.X.Min;
+    vtkm::Float64 y_extents = d_bounds.Y.Max - d_bounds.Y.Min;
+    vtkm::Float64 z_extents = d_bounds.Z.Max - d_bounds.Z.Min;
 
+    vtkm::Float64 invalid_value = 0.0;
+    
     using Vec3f = vtkm::Vec<vtkm::Float64,3>;
+    Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
+    Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
+    Vec3f v_spacing = {1.,1.,1.};
 
-    Vec3f v_dims;
-    v_dims[0] = get_float32(n_dims["i"], data_object);
-    v_dims[1] = get_float32(n_dims["j"], data_object);
-    v_dims[2] = get_float32(n_dims["k"], data_object);
-    Vec3f v_origin;
-    v_origin[0] = get_float32(n_origin["x"], data_object);
-    v_origin[1] = get_float32(n_origin["y"], data_object);
-    v_origin[2] = get_float32(n_origin["z"], data_object);
-    Vec3f v_spacing;
-    v_spacing[0] = get_float32(n_spacing["dx"], data_object);
-    v_spacing[1] = get_float32(n_spacing["dy"], data_object);
-    v_spacing[2] = get_float32(n_spacing["dz"], data_object);
+    if(params().has_path("dims"))
+    {
+      const Node &n_dims = params()["dims"];
+      if(n_dims.has_path("i"))
+        v_dims[0] = get_float64(n_dims["i"], data_object);
+      if(n_dims.has_path("j"))
+        v_dims[1] = get_float64(n_dims["j"], data_object);
+      if(n_dims.has_path("k"))
+        v_dims[2] = get_float64(n_dims["k"], data_object);
+    }
+    if(params().has_path("origin"))
+    {
+      const Node &n_origin = params()["origin"];
+      if(n_origin.has_path("x"))
+        v_origin[0] = get_float64(n_origin["x"], data_object);
+      if(n_origin.has_path("y"))
+        v_origin[1] = get_float64(n_origin["y"], data_object);
+      if(n_origin.has_path("z"))
+        v_origin[2] = get_float64(n_origin["z"], data_object);
+    }
+    if(params().has_path("spacing"))
+    {
+      const Node &n_spacing = params()["spacing"];
+      if(n_spacing.has_path("dx"))
+        v_spacing[0] = get_float64(n_spacing["dx"], data_object);
+      if(n_spacing.has_path("dy"))
+        v_spacing[1] = get_float64(n_spacing["dy"], data_object);
+      if(n_spacing.has_path("dz"))
+        v_spacing[2] = get_float64(n_spacing["dz"], data_object);
+    }
+    if(params().has_path("invalid_value"))
+    {
+      invalid_value = params()["invalid_value"].as_float64();
+    }
 
-    vtkm::Float64 invalid_value = params()["invalid_value"].as_float64();
-
-    vtkh::SampleGrid grid_probe;
+    vtkh::UniformGrid grid_probe;
 
     grid_probe.InvalidValue(invalid_value);
     grid_probe.Dims(v_dims);
