@@ -242,7 +242,7 @@ fi # build_hdf5
 ################
 # Conduit
 ################
-conduit_version=v0.8.8
+conduit_version=v0.9.1
 conduit_src_dir=$(ospath ${root_dir}/conduit-${conduit_version}/src)
 conduit_build_dir=$(ospath ${root_dir}/build/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${root_dir}/install/conduit-${conduit_version}/)
@@ -399,7 +399,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=2022.10.1
+camp_version=v2024.02.0
 camp_src_dir=$(ospath ${root_dir}/camp-${camp_version})
 camp_build_dir=$(ospath ${root_dir}/build/camp-${camp_version})
 camp_install_dir=$(ospath ${root_dir}/install/camp-${camp_version}/)
