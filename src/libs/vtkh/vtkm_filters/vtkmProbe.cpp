@@ -33,12 +33,34 @@ vtkm::cont::DataSet
 vtkmProbe::Run(vtkm::cont::DataSet &input)
 {
   vtkm::filter::resampling::Probe probe;
+  vtkm::cont::DataSet ds_probe;
 
-  vtkm::cont::DataSet ds_probe = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
+    std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
+    std::cerr << "m_origin: " << m_origin[0] << " " << m_origin[1] << " " << m_origin[2] << std::endl;
+    std::cerr << "m_spacing: " << m_spacing[0] << " " << m_spacing[1] << " " << m_spacing[2] << std::endl;
+  if(m_dims[2] <= 1)
+  {
+    Vec2f t_dims = {m_dims[0],m_dims[1]};
+    Vec2f t_origin = {m_origin[0],m_origin[1]};
+    Vec2f t_spacing = {m_spacing[0],m_spacing[1]};
+    ds_probe = vtkm::cont::DataSetBuilderUniform::Create(t_dims, t_origin, t_spacing);
+  }
+  else
+  {
+    ds_probe = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
+  }
+  std::cerr << "VTKM INPUT START " << std::endl;
+  input.PrintSummary(std::cerr);
+  std::cerr << "VTKM INPUT END " << std::endl;
+  std::cerr << "vtkm ds_probe: " << std::endl;
+  ds_probe.PrintSummary(std::cerr);
   probe.SetGeometry(ds_probe);
   probe.SetInvalidValue(m_invalid_value);
 
   auto output = probe.Execute(input);
+  std::cerr << "RESULT START" << std::endl;
+  output.PrintSummary(std::cerr);
+  std::cerr << "RESULT END" << std::endl;
   return output;
 }
 

@@ -3081,9 +3081,9 @@ VTKHUniformGrid::execute()
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkm::Bounds d_bounds = data.GetGlobalBounds();
-    vtkm::Float64 x_extents = d_bounds.X.Max - d_bounds.X.Min;
-    vtkm::Float64 y_extents = d_bounds.Y.Max - d_bounds.Y.Min;
-    vtkm::Float64 z_extents = d_bounds.Z.Max - d_bounds.Z.Min;
+    vtkm::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
+    vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
+    vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
 
     vtkm::Float64 invalid_value = 0.0;
     

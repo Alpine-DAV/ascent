@@ -7,6 +7,7 @@ namespace vtkh
 {
 
 using Vec3f = vtkm::Vec<vtkm::Float64,3>;
+using Vec2f = vtkm::Vec<vtkm::Float64,2>;
 
 class vtkmProbe
 {

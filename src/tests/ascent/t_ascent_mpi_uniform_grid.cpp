@@ -6,7 +6,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_sample_grid.cpp
+/// file: t_ascent_uniform_grid.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -34,10 +34,10 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 1000;
-int NUM_DOMAINS = 8;
+int NUM_DOMAINS = 2;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
 {
     //
     //Set Up MPI
@@ -65,14 +65,16 @@ TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
     data.print();
 
-    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+    ASCENT_INFO("Testing mpi uniform grid of conduit::blueprint spiral input\n");
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_larger_grid");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid");
+    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid10");
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    if(par_rank == 0)
+      remove_test_image(output_file);
 
     //
     // Create the actions.
@@ -80,25 +82,16 @@ TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
 
     conduit::Node pipelines;
     // pipeline 1
-    pipelines["pl1/f1/type"] = "sample_grid";
+    pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
-    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM;
-    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM;
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM;
-    params["origin/x"] = 0.0;        
-    params["origin/y"] = 0.0;        
-    params["origin/z"] = 0.0;        
-    params["spacing/dx"] = 1.0;      
-    params["spacing/dy"] = 1.0;      
-    params["spacing/dz"] = 1.0;      
     params["invalid_value"] = -10.0;      
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = "dist";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
+    //scenes["s1/plots/p1/pipeline"] = "pl1";
 
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/image_prefix"] = image_file;
 
     conduit::Node actions;
     // add the pipeline
@@ -126,9 +119,12 @@ TEST(ascent_sample_regular_grid, test_sample_grid_smaller_by1_than_input)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample grid filter.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    if(par_rank == 0)
+    {
+      EXPECT_TRUE(check_test_image(output_file));
+      std::string msg = "An example of using the uniform grid filter.";
+      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    }
 }
 
 //-----------------------------------------------------------------------------
