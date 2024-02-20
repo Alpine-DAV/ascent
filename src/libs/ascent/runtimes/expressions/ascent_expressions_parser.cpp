@@ -171,7 +171,8 @@ extern int ascentdebug;
     TMUL = 286,                    /* TMUL  */
     TDIV = 287,                    /* TDIV  */
     TMOD = 288,                    /* TMOD  */
-    TNEG = 289                     /* TNEG  */
+    TNEG = 289,                    /* TNEG  */
+    TPOW = 290                     /* TPOW  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -271,7 +272,8 @@ enum yysymbol_kind_t
   YYSYMBOL_dot_access = 49,                /* dot_access  */
   YYSYMBOL_list = 50,                      /* list  */
   YYSYMBOL_bool_literal = 51,              /* bool_literal  */
-  YYSYMBOL_expr = 52                       /* expr  */
+  YYSYMBOL_expr = 52,                      /* expr  */
+  YYSYMBOL_TPOW = 53                       /* TPOW  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -667,8 +669,8 @@ static const char *const yytname[] =
   "TFALSE", "TIF", "TTHEN", "TELSE", "TAEQ", "TCEQ", "TCNE", "TCLT",
   "TCLE", "TCGT", "TCGE", "TLPAREN", "TRPAREN", "TLBRACKET", "TRBRACKET",
   "TCOMMA", "TDOT", "TENDEXPR", "TPLUS", "TMINUS", "TMUL", "TDIV", "TMOD",
-  "TNEG", "$accept", "root", "block", "stmts", "stmt", "ident", "numeric",
-  "call_args", "pos_args", "named_args", "named_arg", "if_expr",
+  "TNEG", "TPOW", "$accept", "root", "block", "stmts", "stmt", "ident",
+  "numeric","call_args", "pos_args", "named_args", "named_arg", "if_expr",
   "string_literal", "array_access", "dot_access", "list", "bool_literal",
   "expr", YY_NULLPTR
 };
@@ -688,7 +690,7 @@ static const yytype_int16 yytoknum[] =
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
      275,   276,   277,   278,   279,   280,   281,   282,   283,   284,
-     285,   286,   287,   288,   289
+     285,   286,   287,   288,   289, 290
 };
 #endif
 

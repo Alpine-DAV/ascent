@@ -96,7 +96,7 @@ print_match_error(const std::string &fname,
 bool
 is_math(const std::string &op)
 {
-  return op == "*" || op == "+" || op == "/" || op == "-" || op == "%";
+  return op == "*" || op == "+" || op == "/" || op == "-" || op == "%" || op == "^";
 }
 
 bool
@@ -305,6 +305,7 @@ PrintVisitor::visit(const ASTBinaryOp &expr)
   case TCGE: op_str = ">="; break;
   case TCGT: op_str = ">"; break;
   case TCLT: op_str = "<"; break;
+  case TPOW: op_str = "^"; break;
   case TOR: op_str = "or"; break;
   case TAND: op_str = "and"; break;
   case TNOT: op_str = "not"; break;
@@ -1045,6 +1046,7 @@ BuildGraphVisitor::visit(const ASTBinaryOp &expr)
   case TCGE: op_str = ">="; break;
   case TCGT: op_str = ">"; break;
   case TCLT: op_str = "<"; break;
+  case TPOW: op_str = "^"; break;
   case TOR: op_str = "or"; break;
   case TAND: op_str = "and"; break;
   case TNOT: op_str = "not"; break;

@@ -91,7 +91,8 @@ extern int ascentdebug;
     TMUL = 286,                    /* TMUL  */
     TDIV = 287,                    /* TDIV  */
     TMOD = 288,                    /* TMOD  */
-    TNEG = 289                     /* TNEG  */
+    TNEG = 289,                    /* TNEG  */
+    TPOW = 290                     /* TPOW  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif

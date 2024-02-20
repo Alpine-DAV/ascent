@@ -162,6 +162,10 @@ math_op(const double lhs, const double rhs, const std::string &op)
   {
     res = lhs / rhs;
   }
+  else if(op == "^")
+  {
+    res = std::pow(lhs,rhs);
+  }
   else
   {
     ASCENT_ERROR("unknown math op " << op << " for type double");
@@ -193,6 +197,10 @@ math_op(const int lhs, const int rhs, const std::string &op)
   else if(op == "%")
   {
     res = lhs % rhs;
+  }
+  else if(op == "^")
+  {
+    res = std::pow(lhs,rhs);
   }
   else
   {

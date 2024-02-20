@@ -1252,12 +1252,17 @@ return TOKEN(TMOD);
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 69 "tokens.l"
-printf("Unknown token '%s'\n", yytext); yyterminate();
+#line 68 "tokens.l"
+return TOKEN(TPOW);
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 70 "tokens.l"
+#line 69 "tokens.l"
+printf("Unknown token '%s'\n", yytext); yyterminate();
+	YY_BREAK
+case 40:
+YY_RULE_SETUP
+#line 71 "tokens.l"
 ECHO;
 	YY_BREAK
 #line 1250 "ascent_expressions_tokens.cpp"
@@ -2364,7 +2369,8 @@ extern int ascentdebug;
     TMUL = 286,                    /* TMUL  */
     TDIV = 287,                    /* TDIV  */
     TMOD = 288,                    /* TMOD  */
-    TNEG = 289                     /* TNEG  */
+    TNEG = 289,                    /* TNEG  */
+    TPOW = 290                     /* TPOW  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
