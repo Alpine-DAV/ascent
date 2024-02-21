@@ -636,7 +636,7 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27,    28,    29,    30,    31,    32,    33,    34
+      25,    26,    27,    28,    29,    30,    31,    32,    33,    34, 53
 };
 
 #if YYDEBUG
@@ -670,7 +670,7 @@ static const char *const yytname[] =
   "TCLE", "TCGT", "TCGE", "TLPAREN", "TRPAREN", "TLBRACKET", "TRBRACKET",
   "TCOMMA", "TDOT", "TENDEXPR", "TPLUS", "TMINUS", "TMUL", "TDIV", "TMOD",
   "TNEG", "TPOW", "$accept", "root", "block", "stmts", "stmt", "ident",
-  "numeric","call_args", "pos_args", "named_args", "named_arg", "if_expr",
+  "numeric", "call_args", "pos_args", "named_args", "named_arg", "if_expr",
   "string_literal", "array_access", "dot_access", "list", "bool_literal",
   "expr", YY_NULLPTR
 };
@@ -690,7 +690,7 @@ static const yytype_int16 yytoknum[] =
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
      275,   276,   277,   278,   279,   280,   281,   282,   283,   284,
-     285,   286,   287,   288,   289, 290
+     285,   286,   287,   288,   289,   290
 };
 #endif
 

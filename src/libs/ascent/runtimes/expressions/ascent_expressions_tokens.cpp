@@ -1253,6 +1253,7 @@ return TOKEN(TMOD);
 case 36:
 YY_RULE_SETUP
 #line 68 "tokens.l"
+std::cerr << "HERE token" << std::endl;
 return TOKEN(TPOW);
 	YY_BREAK
 case 37:

@@ -94,7 +94,7 @@ void fill_attrs(conduit::Node &obj)
 bool
 is_math(const std::string &op)
 {
-  return op == "*" || op == "+" || op == "/" || op == "-" || op == "%";
+  return op == "*" || op == "+" || op == "/" || op == "-" || op == "%" || op == "^";
 }
 
 bool
