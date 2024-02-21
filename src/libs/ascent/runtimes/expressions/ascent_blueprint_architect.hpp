@@ -95,6 +95,11 @@ ASCENT_API
 void derived_field_add_fields(conduit::Node &dataset,
                               const std::vector<std::string> &field_names,
                               const std::string &output_field_name);
+ASCENT_API
+void derived_field_power_of_field(conduit::Node &dataset,
+                              const std::string &field_name,
+                              const double &exponent,
+                              const std::string &output_field_name);
 //
 // NOTE: ascent_data_binning contains a RAJA version
 // of binning that needs more work, but should eventually

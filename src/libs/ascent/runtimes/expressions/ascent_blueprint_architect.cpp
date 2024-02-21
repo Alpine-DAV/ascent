@@ -1069,6 +1069,78 @@ derived_field_add_fields(conduit::Node &dataset,
   return;
 }
 
+//Take in a field array
+//add new field that field^exponent
+void
+derived_field_power_of_field(conduit::Node &dataset,
+                         const std::string &field_name,
+                         const double &exponent,
+                         const std::string &out_field_name)
+{
+    const std::string output_path = "fields/" + out_field_name;
+    for(int i = 0; i < dataset.number_of_children(); ++i)
+    {
+        conduit::Node &dom = dataset.child(i);
+        const std::string path = "fields/" + field_name;
+        if(dom.has_path(path)) //has field
+        {
+            if(!dom.has_path(output_path)) //setup output path
+            {
+                dom[output_path]["association"] = dom[path]["association"];
+                dom[output_path]["topology"]    = dom[path]["topology"];
+                if(field_is_float32(dom[path]))//Todo:: Ints. longs?
+                {
+                    const int vals = dom[path]["values"].dtype().number_of_elements();
+                    dom[output_path]["values"].set(conduit::DataType::float32(vals));
+                }
+                else
+                {
+                    const int vals = dom[path]["values"].dtype().number_of_elements();
+                    dom[output_path]["values"].set(conduit::DataType::float64(vals));
+                }
+            }
+            else //has output path already; weird but ok
+            {
+                // check that the field assoc and topo 
+                std::string out_assoc = dom[output_path]["association"].to_string();
+                std::string out_topo  = dom[output_path]["topology"].to_string();
+                std::string f_assoc   = dom[path]["association"].to_string();
+                std::string f_topo    = dom[path]["topology"].to_string();
+                if(out_assoc != f_assoc)
+                {
+                    ASCENT_ERROR("Field associations do not match:\n " <<
+                                 "Field " << field_name
+                                  << " has association " << f_assoc << "\n" <<
+                                 "Field " << out_field_name
+                                 << " has association " << out_assoc << "\n");
+                }
+                if(out_topo != f_topo)
+                {
+                    ASCENT_ERROR("Field topologies do not match:\n " <<
+                                 "Field " << field_name
+                                  << " has topology " << f_topo << "\n" <<
+                                 "Field " << out_field_name << " has topology " << out_topo << "\n");
+                }
+            }
+
+	    //make tmp input
+	    conduit::Node tmp_a;
+	    tmp_a.set_external(dom[path]);
+            // execute 
+            // compute power of field given exponent
+            conduit::Node n_power_res = derived_field_power(tmp_a, exponent);
+            // replace out with new result
+            dom[output_path]["values"] = n_power_res["values"];
+        }
+        else //does not have field
+        {
+            // some domains may not have this field, simply skip
+            continue; 
+        }//computing power
+    }//domains
+
+  return;
+}
 // returns a Node containing the min, max and dim for x,y,z given a topology
 conduit::Node
 global_bounds(const conduit::Node &dataset, const std::string &topo_name)

@@ -220,6 +220,49 @@ struct DFAddFunctor
     }
 };
 
+struct DFPowerFunctor
+{
+    template<typename T, typename Exec>
+    conduit::Node operator()(const DeviceAccessor<T> f_accessor,
+                             const double &exponent,
+                             const Exec &) const
+    {
+
+    const int size = f_accessor.m_size;
+
+    // conduit zero initializes this array
+    conduit::Node res;
+    res["values"].set(conduit::DataType::float64(size));
+    double *res_array = res["values"].value();
+
+    Array<double> power_of_field(res_array, size);
+    double *powers_ptr = power_of_field.get_ptr(Exec::memory_space);
+
+    using for_policy = typename Exec::for_policy;
+    using atomic_policy = typename Exec::atomic_policy;
+
+    // init device array
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
+        powers_ptr[i]=0.0;
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
+
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
+      const double val = std::pow(f_accessor[i], exponent);
+      //powers_ptr[i] = val;
+      int old = ascent::atomic_add<atomic_policy>(&(powers_ptr[i]), val);
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
+
+    // synch the values back to the host
+    (void) power_of_field.get_host_ptr();
+
+    return res;
+    }
+};
+
 struct NanFunctor
 {
   template<typename T, typename Exec>
@@ -535,6 +578,16 @@ derived_field_binary_add(const conduit::Node &l_field,
                                  detail::DFAddFunctor());
 }
 
+conduit::Node
+derived_field_power(const conduit::Node &field,
+                    const double &exponent,
+                    const std::string &component)
+{
+  return exec_dispatch_unary_df(field,
+                                exponent,
+                                component,
+                                detail::DFPowerFunctor());
+}
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
