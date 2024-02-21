@@ -253,6 +253,11 @@ struct DFPowerFunctor
       const double val = std::pow(f_accessor[i], exponent);
       //powers_ptr[i] = val;
       int old = ascent::atomic_add<atomic_policy>(&(powers_ptr[i]), val);
+      //if(f_accessor[i] < 0)
+      //{
+      //  std::cerr << "field val: " << f_accessor[i] << "^" << exponent << " = " << val << std::endl;
+      //  std::cerr << "field val: " << f_accessor[i] << "^" << exponent << " = " << powers_ptr[i] << std::endl;
+      //}
     });
     ASCENT_DEVICE_ERROR_CHECK();
 
