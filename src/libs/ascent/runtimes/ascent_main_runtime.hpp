@@ -76,6 +76,7 @@ private:
     int               m_refinement_level;
     int               m_rank;
     conduit::Node     m_ghost_fields; // a list of strings
+    conduit::Node     m_persistent_ghost_fields;
     std::string       m_default_output_dir;
 
     std::string       m_session_name;

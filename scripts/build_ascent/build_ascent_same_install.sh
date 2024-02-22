@@ -158,14 +158,14 @@ fi
 ################
 # Zlib
 ################
-zlib_version=1.3
+zlib_version=1.2.13
 zlib_src_dir=$(ospath ${root_dir}/zlib-${zlib_version})
 zlib_build_dir=$(ospath ${root_dir}/build/zlib-${zlib_version}/)
-zlib_install_dir=$(ospath ${root_dir}/install/zlib-${zlib_version}/)
+zlib_install_dir=$(ospath ${root_dir}/install/)
 zlib_tarball=zlib-${zlib_version}.tar.gz
 
 # build only if install doesn't exist
-if [ ! -d ${zlib_install_dir} ]; then
+# if [ ! -d ${zlib_install_dir} ]; then
 if ${build_zlib}; then
 if [ ! -d ${zlib_src_dir} ]; then
   echo "**** Downloading ${zlib_tarball}"
@@ -185,9 +185,9 @@ echo "**** Installing Zlib ${zlib_version}"
 cmake --install ${zlib_build_dir} --config ${build_config}
 
 fi
-else
-  echo "**** Skipping Zlib build, install found at: ${zlib_install_dir}"
-fi # build_zlib
+# else
+#   echo "**** Skipping Zlib build, install found at: ${zlib_install_dir}"
+# fi # build_zlib
 
 
 ################
@@ -199,11 +199,11 @@ hdf5_middle_version=1.14.1
 hdf5_short_version=1.14
 hdf5_src_dir=$(ospath ${root_dir}/hdf5-${hdf5_version})
 hdf5_build_dir=$(ospath ${root_dir}/build/hdf5-${hdf5_version}/)
-hdf5_install_dir=$(ospath ${root_dir}/install/hdf5-${hdf5_version}/)
+hdf5_install_dir=$(ospath ${root_dir}/install/)
 hdf5_tarball=hdf5-${hdf5_version}.tar.gz
 
 # build only if install doesn't exist
-if [ ! -d ${hdf5_install_dir} ]; then
+# if [ ! -d ${hdf5_install_dir} ]; then
 if ${build_hdf5}; then
 if [ ! -d ${hdf5_src_dir} ]; then
   echo "**** Downloading ${hdf5_tarball}"
@@ -234,9 +234,9 @@ echo "**** Installing HDF5 ${hdf5_version}"
 cmake --install ${hdf5_build_dir} --config ${build_config}
 
 fi
-else
-  echo "**** Skipping HDF5 build, install found at: ${hdf5_install_dir}"
-fi # build_hdf5
+# else
+#   echo "**** Skipping HDF5 build, install found at: ${hdf5_install_dir}"
+# fi # build_hdf5
 
 
 ################
@@ -245,11 +245,11 @@ fi # build_hdf5
 conduit_version=v0.8.8
 conduit_src_dir=$(ospath ${root_dir}/conduit-${conduit_version}/src)
 conduit_build_dir=$(ospath ${root_dir}/build/conduit-${conduit_version}/)
-conduit_install_dir=$(ospath ${root_dir}/install/conduit-${conduit_version}/)
+conduit_install_dir=$(ospath ${root_dir}/install/)
 conduit_tarball=conduit-${conduit_version}-src-with-blt.tar.gz
 
 # build only if install doesn't exist
-if [ ! -d ${conduit_install_dir} ]; then
+# if [ ! -d ${conduit_install_dir} ]; then
 if ${build_conduit}; then
 if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Downloading ${conduit_tarball}"
@@ -278,22 +278,22 @@ echo "**** Installing Conduit ${conduit_version}"
 cmake --install ${conduit_build_dir} --config ${build_config}
 
 fi
-else
-  echo "**** Skipping Conduit build, install found at: ${conduit_install_dir}"
-fi # build_conduit
+# else
+#   echo "**** Skipping Conduit build, install found at: ${conduit_install_dir}"
+# fi # build_conduit
 
 #########################
 # Kokkos (only for hip)
 #########################
-kokkos_version=3.7.02
+kokkos_version=3.6.01
 kokkos_src_dir=$(ospath ${root_dir}/kokkos-${kokkos_version})
 kokkos_build_dir=$(ospath ${root_dir}/build/kokkos-${kokkos_version})
-kokkos_install_dir=$(ospath ${root_dir}/install/kokkos-${kokkos_version}/)
+kokkos_install_dir=$(ospath ${root_dir}/install/)
 kokkos_tarball=kokkos-${kokkos_version}.tar.gz
 
 if [[ "$enable_hip" == "ON" ]]; then
 # build only if install doesn't exist
-if [ ! -d ${kokkos_install_dir} ]; then
+# if [ ! -d ${kokkos_install_dir} ]; then
 if ${build_kokkos}; then
 if [ ! -d ${kokkos_src_dir} ]; then
   echo "**** Downloading ${kokkos_tarball}"
@@ -316,6 +316,7 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
   -DCMAKE_CXX_FLAGS="--amdgpu-target=${ROCM_ARCH}" \
   -DBUILD_TESTING=OFF \
+  -DVTKm_ENABLE_BENCHMARKS=OFF\
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir}
 
 echo "**** Building Kokkos ${kokkos_version}"
@@ -324,35 +325,29 @@ echo "**** Installing VTK-m ${kokkos_version}"
 cmake --install ${kokkos_build_dir} --config ${build_config}
 
 fi
-else
-  echo "**** Skipping Kokkos build, install found at: ${kokkos_install_dir}"
-fi # build_kokkos
+# else
+#   echo "**** Skipping Kokkos build, install found at: ${kokkos_install_dir}"
+# fi # build_kokkos
 
 fi # if enable_hip
 
 ################
 # VTK-m
 ################
-vtkm_version=v2.1.0
+vtkm_version=v2.0.0
 vtkm_src_dir=$(ospath ${root_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${root_dir}/build/vtk-m-${vtkm_version})
-vtkm_install_dir=$(ospath ${root_dir}/install/vtk-m-${vtkm_version}/)
+vtkm_install_dir=$(ospath ${root_dir}/install/)
 vtkm_tarball=vtk-m-${vtkm_version}.tar.gz
 
 # build only if install doesn't exist
-if [ ! -d ${vtkm_install_dir} ]; then
+# if [ ! -d ${vtkm_install_dir} ]; then
 if ${build_vtkm}; then
 if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/${vtkm_tarball} -o ${vtkm_tarball}
   tar -xzf ${vtkm_tarball}
-  
-  # apply vtk-m patch
-  cd  ${vtkm_src_dir}
-  patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
-  cd ${root_dir}
 fi
-
 
 vtkm_extra_cmake_args=""
 if [[ "$enable_cuda" == "ON" ]]; then
@@ -365,7 +360,8 @@ if [[ "$enable_hip" == "ON" ]]; then
   vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_COMPILER_TOOLKIT_ROOT=${ROCM_PATH}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
 
 echo "**** Configuring VTK-m ${vtkm_version}"
@@ -391,9 +387,9 @@ echo "**** Installing VTK-m ${vtkm_version}"
 cmake --install ${vtkm_build_dir}  --config ${build_config}
 
 fi
-else
-  echo "**** Skipping VTK-m build, install found at: ${vtkm_install_dir}"
-fi # build_vtkm
+# else
+#   echo "**** Skipping VTK-m build, install found at: ${vtkm_install_dir}"
+# fi # build_vtkm
 
 
 ################
@@ -402,11 +398,11 @@ fi # build_vtkm
 camp_version=2022.10.1
 camp_src_dir=$(ospath ${root_dir}/camp-${camp_version})
 camp_build_dir=$(ospath ${root_dir}/build/camp-${camp_version})
-camp_install_dir=$(ospath ${root_dir}/install/camp-${camp_version}/)
+camp_install_dir=$(ospath ${root_dir}/install/)
 camp_tarball=camp-${camp_version}.tar.gz
 
 # build only if install doesn't exist
-if [ ! -d ${camp_install_dir} ]; then
+# if [ ! -d ${camp_install_dir} ]; then
 if ${build_camp}; then
 if [ ! -d ${camp_src_dir} ]; then
   echo "**** Cloning Camp ${camp_version}"
@@ -443,9 +439,9 @@ echo "**** Installing Camp ${camp_version}"
 cmake --install ${camp_build_dir}  --config ${build_config}
 
 fi
-else
-  echo "**** Skipping Camp build, install found at: ${camp_install_dir}"
-fi # build_camp
+# else
+#   echo "**** Skipping Camp build, install found at: ${camp_install_dir}"
+# fi # build_camp
 
 
 ################
@@ -454,12 +450,12 @@ fi # build_camp
 raja_version=v2022.10.4
 raja_src_dir=$(ospath ${root_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${root_dir}/build/raja-${raja_version})
-raja_install_dir=$(ospath ${root_dir}/install/raja-${raja_version}/)
+raja_install_dir=$(ospath ${root_dir}/install/)
 raja_tarball=RAJA-${raja_version}.tar.gz
 raja_enable_vectorization="${raja_enable_vectorization:=ON}"
 
 # build only if install doesn't exist
-if [ ! -d ${raja_install_dir} ]; then
+# if [ ! -d ${raja_install_dir} ]; then
 if ${build_raja}; then
 if [ ! -d ${raja_src_dir} ]; then
   echo "**** Downloading ${raja_tarball}"
@@ -503,9 +499,9 @@ echo "**** Installing RAJA ${raja_version}"
 cmake --install ${raja_build_dir}  --config ${build_config}
 
 fi
-else
-  echo "**** Skipping RAJA build, install found at: ${raja_install_dir}"
-fi # build_raja
+# else
+#   echo "**** Skipping RAJA build, install found at: ${raja_install_dir}"
+# fi # build_raja
 
 ################
 # Umpire
@@ -513,7 +509,7 @@ fi # build_raja
 umpire_version=2022.10.0
 umpire_src_dir=$(ospath ${root_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${root_dir}/build/umpire-${umpire_version})
-umpire_install_dir=$(ospath ${root_dir}/install/umpire-${umpire_version}/)
+umpire_install_dir=$(ospath ${root_dir}/install/)
 umpire_tarball=umpire-${umpire_version}.tar.gz
 umpire_windows_cmake_flags="-DBLT_CXX_STD=c++17 -DCMAKE_CXX_STANDARD=17 -DUMPIRE_ENABLE_FILESYSTEM=On -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On"
 
@@ -534,7 +530,7 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 # build only if install doesn't exist
-if [ ! -d ${umpire_install_dir} ]; then
+# if [ ! -d ${umpire_install_dir} ]; then
 if ${build_umpire}; then
 if [ ! -d ${umpire_src_dir} ]; then
   echo "**** Downloading ${umpire_tarball}"
@@ -560,9 +556,9 @@ echo "**** Installing Umpire ${umpire_version}"
 cmake --install ${umpire_build_dir}  --config ${build_config}
 
 fi
-else
-  echo "**** Skipping Umpire build, install found at: ${umpire_install_dir}"
-fi # build_umpire
+# else
+#   echo "**** Skipping Umpire build, install found at: ${umpire_install_dir}"
+# fi # build_umpire
 
 ################
 # MFEM
@@ -570,7 +566,7 @@ fi # build_umpire
 mfem_version=4.5.2
 mfem_src_dir=$(ospath ${root_dir}/mfem-${mfem_version})
 mfem_build_dir=$(ospath ${root_dir}/build/mfem-${mfem_version})
-mfem_install_dir=$(ospath ${root_dir}/install/mfem-${mfem_version}/)
+mfem_install_dir=$(ospath ${root_dir}/install/)
 mfem_tarball=mfem-${mfem_version}.tar.gz
 mfem_windows_cmake_flags="-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 
@@ -581,7 +577,7 @@ fi
 
 
 # build only if install doesn't exist
-if [ ! -d ${mfem_install_dir} ]; then
+# if [ ! -d ${mfem_install_dir} ]; then
 if ${build_mfem}; then
 if [ ! -d ${mfem_src_dir} ]; then
   echo "**** Downloading ${mfem_tarball}"
@@ -607,9 +603,9 @@ echo "**** Installing MFEM ${mfem_version}"
 cmake --install ${mfem_build_dir}  --config ${build_config}
 
 fi
-else
-  echo "**** Skipping MFEM build, install found at: ${mfem_install_dir}"
-fi # build_mfem
+# else
+#   echo "**** Skipping MFEM build, install found at: ${mfem_install_dir}"
+# fi # build_mfem
 
 ################
 # Catalyst
@@ -617,12 +613,12 @@ fi # build_mfem
 catalyst_version=2.0.0-rc3
 catalyst_src_dir=$(ospath ${root_dir}/catalyst-v${catalyst_version})
 catalyst_build_dir=$(ospath ${root_dir}/build/catalyst-v${catalyst_version})
-catalyst_install_dir=$(ospath ${root_dir}/install/catalyst-v${catalyst_version}/)
+catalyst_install_dir=$(ospath ${root_dir}/install/)
 catalyst_cmake_dir=${catalyst_install_dir}lib64/cmake/catalyst-2.0/
 catalyst_tarball=catalyst-v${catalyst_version}.tar.gz
 
 # build only if install doesn't exist
-if [ ! -d ${catalyst_install_dir} ]; then
+# if [ ! -d ${catalyst_install_dir} ]; then
 if ${build_catalyst}; then
 if [ ! -d ${catalyst_src_dir} ]; then
   echo "**** Downloading ${catalyst_tarball}"
@@ -644,9 +640,9 @@ echo "**** Installing Catalyst ${catalyst_version}"
 cmake --install ${catalyst_build_dir} --config ${build_config}
 
 fi
-else
-  echo "**** Skipping Catalyst build, install found at: ${catalyst_install_dir}"
-fi # build_catalyst
+# else
+#   echo "**** Skipping Catalyst build, install found at: ${catalyst_install_dir}"
+# fi # build_catalyst
 
 ################
 # Ascent
@@ -654,7 +650,7 @@ fi # build_catalyst
 ascent_version=develop
 ascent_src_dir=$(ospath ${root_dir}/ascent/src)
 ascent_build_dir=$(ospath ${root_dir}/build/ascent-${ascent_version}/)
-ascent_install_dir=$(ospath ${root_dir}/install/ascent-${ascent_version}/)
+ascent_install_dir=$(ospath ${root_dir}/install/)
 
 echo "**** Creating Ascent host-config (ascent-config.cmake)"
 #
@@ -710,7 +706,7 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 # build only if install doesn't exist
-if [ ! -d ${ascent_install_dir} ]; then
+# if [ ! -d ${ascent_install_dir} ]; then
 if ${build_ascent}; then
 if [ ! -d ${ascent_src_dir} ]; then
     echo "**** Cloning Ascent"
@@ -731,6 +727,6 @@ if ${build_catalyst}; then
 fi
 
 fi
-else
-  echo "**** Skipping Ascent build, install found at: ${ascent_install_dir}"
-fi # build_ascent
+# else
+#   echo "**** Skipping Ascent build, install found at: ${ascent_install_dir}"
+# fi # build_ascent

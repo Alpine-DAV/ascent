@@ -166,6 +166,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_command_filters.hpp
     runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
+    runtimes/flow_filters/ascent_runtime_diva_filters.hpp
     # utils
     utils/ascent_actions_utils.hpp
     utils/ascent_data_logger.hpp
@@ -231,6 +232,7 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
     runtimes/flow_filters/ascent_runtime_command_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
+    runtimes/flow_filters/ascent_runtime_diva_filters.cpp
     # utils
     utils/ascent_actions_utils.cpp
     utils/ascent_data_logger.cpp
@@ -355,6 +357,13 @@ endif()
 ##################################
 if(CUDA_FOUND)
   set_source_files_properties(${ascent_device_sources} PROPERTIES LANGUAGE CUDA)
+
+  set(CUDA_ARCH_FLAGS)
+  foreach(arch ${CMAKE_CUDA_ARCHITECTURES})
+    list(APPEND CUDA_ARCH_FLAGS --generate-code=arch=compute_${arch},code=sm_${arch})
+  endforeach()
+  message(STATUS "CUDA_ARCH_FLAGS: ${CUDA_ARCH_FLAGS}")
+
 endif()
 
 if(HIP_FOUND)
@@ -495,7 +504,6 @@ if (ENABLE_SERIAL)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkm::vtkmdiympi_nompi
                     vtkm::io
                     vtkm::rendering
                     vtkm::filter_clean_grid
@@ -552,11 +560,11 @@ if (ENABLE_SERIAL)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
 
         add_custom_command(TARGET ascent PRE_LINK
                            DEPENDS ascent rover vtkh
-                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
+                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
                            COMMENT "manual device link step for Ascent"
                            )
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm.o DESTINATION lib)
@@ -676,7 +684,7 @@ if(MPI_FOUND)
 
     # manual device link for CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
-        set(internal_targets_to_link $<TARGET_FILE:rover>)
+        set(internal_targets_to_link $<TARGET_FILE:rover_mpi>)
 
         if(ENABLE_VTKH)
             list(APPEND internal_targets_to_link
@@ -696,7 +704,6 @@ if(MPI_FOUND)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
-                    vtkm::vtkmdiympi_nompi
                     vtkm::io
                     vtkm::rendering
                     vtkm::filter_clean_grid
@@ -753,10 +760,10 @@ if(MPI_FOUND)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
         add_custom_command(TARGET ascent_mpi PRE_LINK
                             DEPENDS ascent_mpi rover_mpi
-                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
                             COMMENT "manual device link step for Ascent parallel"
                             )
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm_mpi.o DESTINATION lib)

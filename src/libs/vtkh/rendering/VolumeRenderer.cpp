@@ -24,6 +24,52 @@
 
 #define VTKH_OPACITY_CORRECTION 10.f
 
+#include <chrono>
+
+namespace {
+
+struct HighPerformanceTimer {
+private:
+  static const char* c_str(const std::string& s) { return s.c_str(); }
+  template<typename T> static T c_str(T s) { return s; }
+public:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+  template<typename... Ts>
+  static std::string stringf(const std::string& format, Ts... rest) {
+    int64_t sz = snprintf(NULL, 0, format.c_str(), c_str(rest)...);
+    char* bf = static_cast<char*>(malloc(sz + 1));
+    snprintf(bf, sz + 1, format.c_str(), c_str(rest)...);
+    std::string ret(bf);
+    free(bf);
+    return ret;
+  }
+#pragma GCC diagnostic pop
+private:
+  std::chrono::high_resolution_clock::time_point t1, t2;
+  std::chrono::duration<double> time_span;
+  double time_ms;
+public:
+  HighPerformanceTimer() { reset(); }
+  void start() { t1 = std::chrono::high_resolution_clock::now(); }
+  void stop() {
+    t2 = std::chrono::high_resolution_clock::now();
+    time_span += std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+  }
+  double milliseconds() {
+    time_ms = time_span.count() * 1000.0f;
+    return time_ms;
+  }
+  double seconds() { return milliseconds() / 1000; }
+  void reset() { time_span = std::chrono::duration<double>(0); }
+};
+
+float render_time = 1000;
+float composite_time = 1000;
+float total_time = 1000;
+
+}
+
 namespace vtkh {
 
 namespace detail
@@ -415,6 +461,8 @@ VolumeRenderer::~VolumeRenderer()
 void
 VolumeRenderer::Update()
 {
+  HighPerformanceTimer tot_timer; tot_timer.reset(); tot_timer.start();
+
   VTKH_DATA_OPEN(this->GetName());
 #ifdef VTKH_ENABLE_LOGGING
   VTKH_DATA_ADD("device", GetCurrentDevice());
@@ -437,12 +485,36 @@ VolumeRenderer::Update()
   DoExecute();
   PostExecute();
 
+  tot_timer.stop();
+  double tot_time = tot_timer.milliseconds() / 1000.0;
+
+  int rank = 0;
+#ifdef VTKH_PARALLEL
+  {
+    MPI_Comm comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+    int num_ranks = vtkh::GetMPISize();
+    rank = vtkh::GetMPIRank();
+    double sendbuf[] = { tot_time, render_time, composite_time };
+    double recvbuf[] = { 0.0, 0.0, 0.0 };
+    MPI_Allreduce(sendbuf, recvbuf, sizeof(sendbuf) / sizeof(double), MPI_DOUBLE, MPI_SUM, comm);
+    tot_time = recvbuf[0] / num_ranks;
+    render_time = recvbuf[1] / num_ranks;
+    composite_time = recvbuf[2] / num_ranks;
+  }
+#endif
+  if (rank == 0) {
+    fprintf(stderr, "[ascent] render time = %f (s), rendering = %f (s), composite = %f (s)\n", 
+            tot_time, render_time, composite_time);
+  }
+
   VTKH_DATA_CLOSE();
 }
 
 void VolumeRenderer::SetColorTable(const vtkm::cont::ColorTable &color_table)
 {
   m_color_table = color_table;
+  m_color_table.SetColorSpace(vtkm::ColorSpace::RGB);
+  m_corrected_color_table = m_color_table;
 }
 
 void VolumeRenderer::CorrectOpacity()
@@ -453,6 +525,7 @@ void VolumeRenderer::CorrectOpacity()
   float ratio = correction_scalar / samples;
   vtkm::cont::ColorTable corrected;
   corrected = m_color_table.MakeDeepCopy();
+  corrected.SetColorSpace(vtkm::ColorSpace::RGB);
   int num_points = corrected.GetNumberOfPointsAlpha();
   for(int i = 0; i < num_points; i++)
   {
@@ -496,6 +569,9 @@ VolumeRenderer::RenderOneDomainPerRank()
   {
     throw Error("RenderOneDomainPerRank: this should never happend.");
   }
+
+  HighPerformanceTimer timer;
+  timer.reset(); timer.start();
   for(int dom = 0; dom < num_domains; ++dom)
   {
     vtkm::cont::DataSet data_set;
@@ -528,11 +604,16 @@ VolumeRenderer::RenderOneDomainPerRank()
                             m_range);
     }
   }
+  timer.stop();
+  render_time = timer.milliseconds() / 1000.0;
 
+  timer.reset(); timer.start();
   if(m_do_composite)
   {
     this->Composite(total_renders);
   }
+  timer.stop();
+  composite_time = timer.milliseconds() / 1000.0;
 }
 
 void
@@ -561,6 +642,8 @@ VolumeRenderer::RenderMultipleDomainsPerRank()
     render_partials[i].resize(num_domains);
   }
 
+  HighPerformanceTimer timer;
+  timer.reset(); timer.start();
   for(int i = 0; i < num_domains; ++i)
   {
     detail::VolumeWrapper *wrapper = m_wrappers[i];
@@ -576,12 +659,15 @@ VolumeRenderer::RenderMultipleDomainsPerRank()
       wrapper->render(camera, canvas, render_partials[r][i]);
     }
   }
+  timer.stop();
+  render_time = timer.milliseconds() / 1000.0;
 
   PartialCompositor<VolumePartial<float>> compositor;
 #ifdef VTKH_PARALLEL
   compositor.set_comm_handle(GetMPICommHandle());
 #endif
   // composite
+  timer.reset(); timer.start();
   for(int r = 0; r < total_renders; ++r)
   {
     std::vector<VolumePartial<float>> res;
@@ -593,7 +679,7 @@ VolumeRenderer::RenderMultipleDomainsPerRank()
                                  m_renders[r].GetCanvas());
     }
   }
-
+  composite_time = timer.milliseconds() / 1000.0;
 }
 
 void
@@ -601,14 +687,18 @@ VolumeRenderer::PreExecute()
 {
   Renderer::PreExecute();
 
-  CorrectOpacity();
+  // CorrectOpacity();
 
   vtkm::Vec<vtkm::Float32,3> extent;
   extent[0] = static_cast<vtkm::Float32>(this->m_bounds.X.Length());
   extent[1] = static_cast<vtkm::Float32>(this->m_bounds.Y.Length());
   extent[2] = static_cast<vtkm::Float32>(this->m_bounds.Z.Length());
-  vtkm::Float32 dist = vtkm::Magnitude(extent) / m_num_samples;
-  m_sample_dist = dist;
+
+  // vtkm::Float32 dist = vtkm::Magnitude(extent) / m_num_samples;
+  // m_sample_dist = dist;
+
+  m_sample_dist = 0.5f;
+  m_num_samples = vtkm::Magnitude(extent) / m_sample_dist;
 }
 
 void
