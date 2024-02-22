@@ -1171,6 +1171,11 @@ DefaultRender::execute()
 	  if(render_node.has_path("output_path"))
 	  {
             output_path = render_node["output_path"].as_string();
+            // create a folder if it doesn't exist
+            if(!conduit::utils::is_directory(output_path))
+            {
+              conduit::utils::create_directory(output_path);
+            }
 	  }
 
           if(!render_node.has_path("db_name"))
