@@ -1171,8 +1171,13 @@ DefaultRender::execute()
 	  if(render_node.has_path("output_path"))
 	  {
             output_path = render_node["output_path"].as_string();
+	    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+            MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+            MPI_Comm_rank(mpi_comm, &rank);
+#endif
             // create a folder if it doesn't exist
-            if(!conduit::utils::is_directory(output_path))
+            if(rank == 0 && !conduit::utils::is_directory(output_path))
             {
               conduit::utils::create_directory(output_path);
             }
