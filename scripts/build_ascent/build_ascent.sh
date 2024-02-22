@@ -132,9 +132,13 @@ fi
 
 cd ${root_dir}
 
+# install_dir is where we will install
+# override with `prefix` env var
+install_dir="${install_dir:=$root_dir/install}"
+
 echo "*** prefix:       ${root_dir}" 
 echo "*** build root:   ${root_dir}/build"
-echo "*** install root: ${root_dir}/install"
+echo "*** install root: ${install_dir}"
 echo "*** script dir:   ${script_dir}"
 
 ################
@@ -161,7 +165,7 @@ fi
 zlib_version=1.3
 zlib_src_dir=$(ospath ${root_dir}/zlib-${zlib_version})
 zlib_build_dir=$(ospath ${root_dir}/build/zlib-${zlib_version}/)
-zlib_install_dir=$(ospath ${root_dir}/install/zlib-${zlib_version}/)
+zlib_install_dir=$(ospath ${install_dir}/zlib-${zlib_version}/)
 zlib_tarball=zlib-${zlib_version}.tar.gz
 
 # build only if install doesn't exist
@@ -199,7 +203,7 @@ hdf5_middle_version=1.14.1
 hdf5_short_version=1.14
 hdf5_src_dir=$(ospath ${root_dir}/hdf5-${hdf5_version})
 hdf5_build_dir=$(ospath ${root_dir}/build/hdf5-${hdf5_version}/)
-hdf5_install_dir=$(ospath ${root_dir}/install/hdf5-${hdf5_version}/)
+hdf5_install_dir=$(ospath ${install_dir}/hdf5-${hdf5_version}/)
 hdf5_tarball=hdf5-${hdf5_version}.tar.gz
 
 # build only if install doesn't exist
@@ -245,7 +249,7 @@ fi # build_hdf5
 conduit_version=v0.8.8
 conduit_src_dir=$(ospath ${root_dir}/conduit-${conduit_version}/src)
 conduit_build_dir=$(ospath ${root_dir}/build/conduit-${conduit_version}/)
-conduit_install_dir=$(ospath ${root_dir}/install/conduit-${conduit_version}/)
+conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
 conduit_tarball=conduit-${conduit_version}-src-with-blt.tar.gz
 
 # build only if install doesn't exist
@@ -288,7 +292,7 @@ fi # build_conduit
 kokkos_version=3.7.02
 kokkos_src_dir=$(ospath ${root_dir}/kokkos-${kokkos_version})
 kokkos_build_dir=$(ospath ${root_dir}/build/kokkos-${kokkos_version})
-kokkos_install_dir=$(ospath ${root_dir}/install/kokkos-${kokkos_version}/)
+kokkos_install_dir=$(ospath ${install_dir}/kokkos-${kokkos_version}/)
 kokkos_tarball=kokkos-${kokkos_version}.tar.gz
 
 if [[ "$enable_hip" == "ON" ]]; then
@@ -336,7 +340,7 @@ fi # if enable_hip
 vtkm_version=v2.1.0
 vtkm_src_dir=$(ospath ${root_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${root_dir}/build/vtk-m-${vtkm_version})
-vtkm_install_dir=$(ospath ${root_dir}/install/vtk-m-${vtkm_version}/)
+vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
 vtkm_tarball=vtk-m-${vtkm_version}.tar.gz
 
 # build only if install doesn't exist
@@ -402,7 +406,7 @@ fi # build_vtkm
 camp_version=2022.10.1
 camp_src_dir=$(ospath ${root_dir}/camp-${camp_version})
 camp_build_dir=$(ospath ${root_dir}/build/camp-${camp_version})
-camp_install_dir=$(ospath ${root_dir}/install/camp-${camp_version}/)
+camp_install_dir=$(ospath ${install_dir}/camp-${camp_version}/)
 camp_tarball=camp-${camp_version}.tar.gz
 
 # build only if install doesn't exist
@@ -454,7 +458,7 @@ fi # build_camp
 raja_version=v2022.10.4
 raja_src_dir=$(ospath ${root_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${root_dir}/build/raja-${raja_version})
-raja_install_dir=$(ospath ${root_dir}/install/raja-${raja_version}/)
+raja_install_dir=$(ospath ${install_dir}/raja-${raja_version}/)
 raja_tarball=RAJA-${raja_version}.tar.gz
 raja_enable_vectorization="${raja_enable_vectorization:=ON}"
 
@@ -513,7 +517,7 @@ fi # build_raja
 umpire_version=2022.10.0
 umpire_src_dir=$(ospath ${root_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${root_dir}/build/umpire-${umpire_version})
-umpire_install_dir=$(ospath ${root_dir}/install/umpire-${umpire_version}/)
+umpire_install_dir=$(ospath ${install_dir}/umpire-${umpire_version}/)
 umpire_tarball=umpire-${umpire_version}.tar.gz
 umpire_windows_cmake_flags="-DBLT_CXX_STD=c++17 -DCMAKE_CXX_STANDARD=17 -DUMPIRE_ENABLE_FILESYSTEM=On -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On"
 
@@ -570,7 +574,7 @@ fi # build_umpire
 mfem_version=4.5.2
 mfem_src_dir=$(ospath ${root_dir}/mfem-${mfem_version})
 mfem_build_dir=$(ospath ${root_dir}/build/mfem-${mfem_version})
-mfem_install_dir=$(ospath ${root_dir}/install/mfem-${mfem_version}/)
+mfem_install_dir=$(ospath ${install_dir}/mfem-${mfem_version}/)
 mfem_tarball=mfem-${mfem_version}.tar.gz
 mfem_windows_cmake_flags="-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 
@@ -617,7 +621,7 @@ fi # build_mfem
 catalyst_version=2.0.0-rc3
 catalyst_src_dir=$(ospath ${root_dir}/catalyst-v${catalyst_version})
 catalyst_build_dir=$(ospath ${root_dir}/build/catalyst-v${catalyst_version})
-catalyst_install_dir=$(ospath ${root_dir}/install/catalyst-v${catalyst_version}/)
+catalyst_install_dir=$(ospath ${install_dir}/catalyst-v${catalyst_version}/)
 catalyst_cmake_dir=${catalyst_install_dir}lib64/cmake/catalyst-2.0/
 catalyst_tarball=catalyst-v${catalyst_version}.tar.gz
 
@@ -654,7 +658,7 @@ fi # build_catalyst
 ascent_version=develop
 ascent_src_dir=$(ospath ${root_dir}/ascent/src)
 ascent_build_dir=$(ospath ${root_dir}/build/ascent-${ascent_version}/)
-ascent_install_dir=$(ospath ${root_dir}/install/ascent-${ascent_version}/)
+ascent_install_dir=$(ospath ${install_dir}//ascent-${ascent_version}/)
 
 echo "**** Creating Ascent host-config (ascent-config.cmake)"
 #
