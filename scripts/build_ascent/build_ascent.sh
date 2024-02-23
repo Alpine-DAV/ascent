@@ -409,11 +409,9 @@ camp_tarball=camp-${camp_version}.tar.gz
 if [ ! -d ${camp_install_dir} ]; then
 if ${build_camp}; then
 if [ ! -d ${camp_src_dir} ]; then
-  echo "**** Cloning Camp ${camp_version}"
-  # clone since camp releases don't contain submodules
-  git clone --recursive --depth 1 --branch v${camp_version} https://github.com/LLNL/camp.git camp-${camp_version}
-  # curl -L https://github.com/LLNL/camp/archive/refs/tags/v${camp_version}.tar.gz -o ${camp_tarball} 
-  # tar -xzf ${camp_tarball} 
+  echo "**** Downloading ${camp_tarball}"
+  curl -L https://github.com/LLNL/camp/releases/download/${camp_version}/${camp_tarball} -o ${camp_tarball}
+  tar -xzf ${camp_tarball} 
 fi
 
 camp_extra_cmake_args=""
@@ -463,7 +461,7 @@ if [ ! -d ${raja_install_dir} ]; then
 if ${build_raja}; then
 if [ ! -d ${raja_src_dir} ]; then
   echo "**** Downloading ${raja_tarball}"
-  curl -L https://github.com/LLNL/RAJA/releases/download/${raja_version}/${raja_tarball} -o ${raja_tarball} 
+  curl -L https://github.com/LLNL/RAJA/releases/download/${raja_version}/${raja_tarball} -o ${raja_tarball}
   tar -xzf ${raja_tarball}
   # apply raja patch
   cd  ${raja_src_dir}
