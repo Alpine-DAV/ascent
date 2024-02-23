@@ -189,10 +189,10 @@ if(UMPIRE_DIR)
     if(EXISTS ${UMPIRE_DIR}/share/umpire/cmake)
       # old install layout
       set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/share/umpire/cmake)
-    elseif(${UMPIRE_DIR}/lib/cmake/umpire)
+    elseif(EXISTS ${UMPIRE_DIR}/lib/cmake/umpire)
       # new install layout
       set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib/cmake/umpire)
-    elseif(${UMPIRE_DIR}/lib64/cmake/umpire)
+    elseif(EXISTS ${UMPIRE_DIR}/lib64/cmake/umpire)
         # new new install layout
         set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib64/cmake/umpire)
     endif()
