@@ -12,9 +12,12 @@ set(_UMPIRE_SEARCH_PATH)
 if(EXISTS ${UMPIRE_DIR}/share/umpire/cmake)
   # old install layout
   set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/share/umpire/cmake)
-else()
+elseif(${UMPIRE_DIR}/lib/cmake/umpire)
   # new install layout
   set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib/cmake/umpire)
+elseif(${UMPIRE_DIR}/lib64/cmake/umpire)
+  # new install layout
+  set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib64/cmake/umpire)
 endif()
 
 set(UMPIRE_DIR_ORIG ${UMPIRE_DIR})
@@ -27,5 +30,11 @@ set(UMPIRE_FOUND TRUE)
 
 if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
     # if we are running tests with dlls, we need path to dlls
-    list(APPEND ASCENT_TPL_DLL_PATHS ${UMPIRE_DIR_ORIG}/lib/)
+    if(EXISTS ${UMPIRE_DIR}/lib)
+        list(APPEND ASCENT_TPL_DLL_PATHS ${UMPIRE_DIR_ORIG}/lib/)
+    elseif(EXISTS ${UMPIRE_DIR}/lib64) 
+      # lib64 shouldn't happen on windows, but someone might
+      # be clever and suprise us
+      list(APPEND ASCENT_TPL_DLL_PATHS ${UMPIRE_DIR_ORIG}/lib64/)
+    endif()
 endif()
