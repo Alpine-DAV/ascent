@@ -510,7 +510,7 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=2022.10.0
+umpire_version=2024.02.0
 umpire_src_dir=$(ospath ${root_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${root_dir}/build/umpire-${umpire_version})
 umpire_install_dir=$(ospath ${root_dir}/install/umpire-${umpire_version}/)
@@ -567,7 +567,7 @@ fi # build_umpire
 ################
 # MFEM
 ################
-mfem_version=4.5.2
+mfem_version=4.6
 mfem_src_dir=$(ospath ${root_dir}/mfem-${mfem_version})
 mfem_build_dir=$(ospath ${root_dir}/build/mfem-${mfem_version})
 mfem_install_dir=$(ospath ${root_dir}/install/mfem-${mfem_version}/)
@@ -614,7 +614,7 @@ fi # build_mfem
 ################
 # Catalyst
 ################
-catalyst_version=2.0.0-rc3
+catalyst_version=2.0.0-rc4
 catalyst_src_dir=$(ospath ${root_dir}/catalyst-v${catalyst_version})
 catalyst_build_dir=$(ospath ${root_dir}/build/catalyst-v${catalyst_version})
 catalyst_install_dir=$(ospath ${root_dir}/install/catalyst-v${catalyst_version}/)
