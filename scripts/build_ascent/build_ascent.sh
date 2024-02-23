@@ -463,10 +463,6 @@ if [ ! -d ${raja_src_dir} ]; then
   echo "**** Downloading ${raja_tarball}"
   curl -L https://github.com/LLNL/RAJA/releases/download/${raja_version}/${raja_tarball} -o ${raja_tarball}
   tar -xzf ${raja_tarball}
-  # apply raja patch
-  cd  ${raja_src_dir}
-  patch -p1 < ${script_dir}/2023_01_30_raja.patch
-  cd ${root_dir}
 fi
 
 raja_extra_cmake_args=""
