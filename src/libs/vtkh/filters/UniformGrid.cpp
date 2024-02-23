@@ -5,6 +5,12 @@
 #include <vtkh/vtkm_filters/vtkmProbe.hpp>
 #include <limits>
 
+#ifdef VTKH_PARALLEL
+#include <vtkm/thirdparty/diy/diy.h>
+#include <vtkm/thirdparty/diy/mpi-cast.h>
+#include <mpi.h>
+#endif
+
 namespace vtkh
 {
 
@@ -28,9 +34,19 @@ UniformGrid::PreExecute()
 void
 UniformGrid::DoExecute()
 {
+#ifdef VTKH_PARALLEL
+  // Setup VTK-h and VTK-m comm.
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+  vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+  int par_rank;
+  int par_size;
+  MPI_Comm_rank(mpi_comm, &par_rank);
+  MPI_Comm_size(mpi_comm, &par_size);  
+#endif
   this->m_output = new DataSet();
 
   const int num_domains = this->m_input->GetNumberOfDomains();
+  this->m_input->AddConstantPointField(0.0, "mask");
 
   for(int i = 0; i < num_domains; ++i)
   {
@@ -45,8 +61,12 @@ UniformGrid::DoExecute()
     probe.invalidValue(m_invalid_value);
 
     auto dataset = probe.Run(dom);
+
     this->m_output->AddDomain(dataset, domain_id);
   }
+#ifdef VTKH_PARALLEL
+
+#endif
 
 }
 
