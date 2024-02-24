@@ -254,7 +254,7 @@ if ${build_conduit}; then
 if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Downloading ${conduit_tarball}"
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/${conduit_tarball} -o ${conduit_tarball}
-  tar --exclude conduit-${conduit_version}/src/tests/relay/data/silo/ -x -v -f ${conduit_tarball}
+  tar --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -x -v -f ${conduit_tarball}
 fi
 
 echo "**** Configuring Conduit ${conduit_version}"
