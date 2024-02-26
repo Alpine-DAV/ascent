@@ -717,10 +717,10 @@ void binning_interface(const std::string &reduction_var,
   // verify reduction_var
   if(reduction_var.empty())
   {
-    if(reduction_op != "sum" && reduction_op != "pdf")
+    if(reduction_op != "count" && reduction_op != "pdf")
     {
       ASCENT_ERROR("Binning: reduction_var can only be left empty if "
-                   "reduction_op is 'sum' or 'pdf'.");
+                   "reduction_op is 'count' or 'pdf'.");
     }
   }
   else if(!is_xyz(reduction_var))
@@ -779,13 +779,13 @@ void binning_interface(const std::string &reduction_var,
   // verify reduction_op
   if(reduction_op != "sum" && reduction_op != "min" && reduction_op != "max" &&
      reduction_op != "avg" && reduction_op != "pdf" && reduction_op != "std" &&
-     reduction_op != "var" && reduction_op != "rms")
+     reduction_op != "var" && reduction_op != "rms" && reduction_op != "count")
   {
     ASCENT_ERROR(
         "Unknown reduction_op: '"
         << reduction_op
-        << "'. Known reduction operators are: cnt, sum, min, max, avg, pdf, "
-           "std, var, rms");
+        << "'. Known reduction operators are: sum, min, max, avg, count,"
+           " pdf, std, var, rms");
   }
 
   double empty_bin_val = 0;
@@ -794,22 +794,14 @@ void binning_interface(const std::string &reduction_var,
     empty_bin_val = n_empty_bin_val["value"].to_float64();
   }
 
-  n_binning = binning(dataset,
-                      n_output_axes,
-                      reduction_var,
-                      reduction_op,
-                      empty_bin_val,
-                      component);
-
-  // // TODO THIS IS THE RAJA VERSION
-  // std::map<int, Array<int>> bindexes;
-  // n_binning = data_binning(dataset,
-  //                          n_output_axes,
-  //                          reduction_var,
-  //                          reduction_op,
-  //                          empty_bin_val,
-  //                          component,
-  //                          bindexes);
+  std::map<int, Array<int>> bindexes;
+  n_binning = data_binning(dataset,
+                           n_output_axes,
+                           reduction_var,
+                           reduction_op,
+                           empty_bin_val,
+                           component,
+                           bindexes);
 
 }
 
