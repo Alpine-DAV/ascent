@@ -122,7 +122,10 @@ if(NOT ASCENT_FOUND)
     # pull in vars with details about configured paths
     get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
-    # setup dependent pkgs (conduit + vtk-h)
+    # setup blt targets
+    include(${ASCENT_CMAKE_CONFIG_DIR}/BLTSetupTargets.cmake)
+
+    # setup dependent pkgs (conduit, vtk-m, etc)
     include(${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_deps.cmake)
 
     # include the main exported targets

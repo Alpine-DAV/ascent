@@ -166,11 +166,16 @@ endif()
 ####################################################
 # finish export of blt builtin tpl targets
 ####################################################
-set(BLT_TPL_DEPS_EXPORTS)
+# Add blt third-party library setup files to the project's installation
+# directory.
+blt_install_tpl_setups(DESTINATION lib/cmake/${PROJECT_NAME})
 
-# Note: Underlying target is still cuda, not blt_cuda
-blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUDA)
-blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENABLE_HIP)
+#============
+# set(BLT_TPL_DEPS_EXPORTS)
+#
+# # Note: Underlying target is still cuda, not blt_cuda
+# blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUDA)
+# blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENABLE_HIP)
 
 # if(ENABLE_MPI AND ENABLE_FIND_MPI AND NOT ASCENT_USE_CMAKE_MPI_TARGETS)
 #     list(APPEND BLT_TPL_DEPS_EXPORTS mpi)
@@ -179,13 +184,7 @@ blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENAB
 # if(ENABLE_OPENMP AND NOT ASCENT_USE_CMAKE_OPENMP_TARGETS)
 #     list(APPEND BLT_TPL_DEPS_EXPORTS openmp)
 # endif()
-
 #message(FATAL_ERROR ${BLT_TPL_DEPS_EXPORTS})
-
-# Add third-party library setup files to the project's installation
-# directory.
-blt_install_tpl_setups(DESTINATION lib/cmake/${PROJECT_NAME})
-
 #
 # foreach(dep ${BLT_TPL_DEPS_EXPORTS})
 #     # If the target is EXPORTABLE, add it to the export set
@@ -198,3 +197,4 @@ blt_install_tpl_setups(DESTINATION lib/cmake/${PROJECT_NAME})
 #         set_target_properties(${dep} PROPERTIES EXPORT_NAME ascent::blt_tpl_exports_${dep})
 #     endif()
 # endforeach()
+#============
