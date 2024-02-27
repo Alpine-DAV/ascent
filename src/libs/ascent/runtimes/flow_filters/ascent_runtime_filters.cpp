@@ -57,6 +57,7 @@
 #endif
 
 #include <ascent_runtime_diva_filters.hpp>
+#include <ascent_runtime_anari_filters.hpp>
 
 using namespace flow;
 
@@ -144,6 +145,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHWarpXStreamline>("transforms","warpx_streamline");
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
 
+    AscentRuntime::register_filter_type<AnariVolume>("extracts", "anari_volume");
 
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
