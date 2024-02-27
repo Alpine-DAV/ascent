@@ -129,20 +129,20 @@ static bool
 check_image_names(const conduit::Node &params, conduit::Node &info)
 {
   bool res = true;
-  if (!params.has_path("image_prefix") /*&& !params.has_path("camera/db_name")*/)
-  {
-    res = false;
-    info.append() = "Anari ray rendering paths must include either "
-                    "a 'image_prefix' (if its a single image) or a "
-                    "'camera/db_name' (if using a cinema camere)";
-  }
-  if (params.has_path("image_prefix") /*&& params.has_path("camera/db_name")*/)
-  {
-    res = false;
-    info.append() = "Anari ray rendering paths cannot use both "
-                    "a 'image_prefix' (if its a single image) and a "
-                    "'camera/db_name' (if using a cinema camere)";
-  }
+  // if (!params.has_path("image_prefix") && !params.has_path("camera/db_name"))
+  // {
+  //   res = false;
+  //   info.append() = "Anari ray rendering paths must include either "
+  //                   "a 'image_prefix' (if its a single image) or a "
+  //                   "'camera/db_name' (if using a cinema camere)";
+  // }
+  // if (params.has_path("image_prefix") && params.has_path("camera/db_name"))
+  // {
+  //   res = false;
+  //   info.append() = "Anari ray rendering paths cannot use both "
+  //                   "a 'image_prefix' (if its a single image) and a "
+  //                   "'camera/db_name' (if using a cinema camere)";
+  // }
   return res;
 }
 
@@ -346,16 +346,18 @@ AnariVolume::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 AnariVolume::execute()
 {
-    if (!input(0).check_type<DataObject>())
-    {
-        ASCENT_ERROR("dray 3slice input must be a DataObject");
-    }
+  if (!input(0).check_type<DataObject>())
+  {
+    ASCENT_ERROR("dray 3slice input must be a DataObject");
+  }
 
-    DataObject *d_input = input<DataObject>(0);
-    if (!d_input->is_valid())
-    {
-      return;
-    }
+  DataObject *d_input = input<DataObject>(0);
+  if (!d_input->is_valid())
+  {
+    return;
+  }
+
+  VTKHCollection *collection = d_input->as_vtkh_collection().get();
 
     dray::Collection *dcol = d_input->as_dray_collection().get();
 
