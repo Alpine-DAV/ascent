@@ -7,6 +7,9 @@
 ################################################################
 set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "")
 
+# don't export blt third-party targets
+set(BLT_EXPORT_THIRDPARTY OFF CACHE BOOL "")
+
 ################################################################
 # if BLT_SOURCE_DIR is not set - use "blt" as default
 ################################################################
