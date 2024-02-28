@@ -30,9 +30,31 @@
 #include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_resources.hpp>
-#include <png_utils/ascent_png_encoder.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
+
+
+#if defined(ASCENT_VTKM_ENABLED)
+#include <ascent_vtkh_collection.hpp>
+#include <vtkh/vtkh.hpp>
+#include <vtkh/DataSet.hpp>
+#include <vtkh/rendering/RayTracer.hpp>
+#include <vtkh/rendering/Scene.hpp>
+#include <vtkh/rendering/MeshRenderer.hpp>
+#include <vtkh/rendering/PointRenderer.hpp>
+#include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/AutoCamera.hpp>
+#include <vtkm/rendering/Camera.h>
+#include <vtkm/cont/DataSet.h>
+
+#include <vtkm/interop/anari/ANARIMapperVolume.h>
+#include <vtkm/interop/anari/ANARIScene.h>
+
+#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_vtkh_utils.hpp>
+#endif
+
+#include <png_utils/ascent_png_encoder.hpp>
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
@@ -45,6 +67,7 @@
 
 #include <runtimes/ascent_data_object.hpp>
 
+#if 0
 #include <dray/dray.hpp>
 #include <dray/data_model/data_set.hpp>
 #include <dray/data_model/collection.hpp>
@@ -59,11 +82,98 @@
 #include <dray/rendering/slice_plane.hpp>
 #include <dray/rendering/scalar_renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
+#endif
 
 using namespace conduit;
-using namespace std;
-
 using namespace flow;
+
+using namespace vtkm::interop::anari;
+
+
+static void StatusFunc(const void* userData,
+                       ANARIDevice /*device*/,
+                       ANARIObject source,
+                       ANARIDataType /*sourceType*/,
+                       ANARIStatusSeverity severity,
+                       ANARIStatusCode /*code*/,
+                       const char* message)
+{
+  bool verbose = *(bool*)userData;
+  if (!verbose)
+    return;
+
+  if (severity == ANARI_SEVERITY_FATAL_ERROR)
+  {
+    fprintf(stderr, "[FATAL][%p] %s\n", source, message);
+  }
+  else if (severity == ANARI_SEVERITY_ERROR)
+  {
+    fprintf(stderr, "[ERROR][%p] %s\n", source, message);
+  }
+  else if (severity == ANARI_SEVERITY_WARNING)
+  {
+    fprintf(stderr, "[WARN ][%p] %s\n", source, message);
+  }
+  else if (severity == ANARI_SEVERITY_PERFORMANCE_WARNING)
+  {
+    fprintf(stderr, "[PERF ][%p] %s\n", source, message);
+  }
+  else if (severity == ANARI_SEVERITY_INFO)
+  {
+    fprintf(stderr, "[INFO ][%p] %s\n", source, message);
+  }
+  else if (severity == ANARI_SEVERITY_DEBUG)
+  {
+    fprintf(stderr, "[DEBUG][%p] %s\n", source, message);
+  }
+}
+
+static anari_cpp::Device 
+loadANARIDevice()
+{
+  auto* libraryName = std::getenv("VTKM_TEST_ANARI_LIBRARY");
+  static bool verbose = std::getenv("VTKM_TEST_ANARI_VERBOSE") != nullptr;
+  auto lib = anari_cpp::loadLibrary(libraryName ? libraryName : "helide", StatusFunc, &verbose);
+  auto d = anari_cpp::newDevice(lib, "default");
+  anari_cpp::unloadLibrary(lib);
+  return d;
+}
+
+static void 
+setANARIColorMap(anari_cpp::Device d, ANARIMapper& mapper, vtkm::cont::ColorTable& tfn)
+{
+  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
+  vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
+  {
+    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+    tfn.Sample(1024, temp);
+  }
+  auto colorPortal = temp.ReadPortal();
+
+  // Create the color and opacity arrays
+
+  auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, 1024);
+  auto* colors = anari_cpp::map<vtkm::Vec3f_32>(d, colorArray);
+
+  auto opacityArray = anari_cpp::newArray1D(d, ANARI_FLOAT32, 1024);
+  auto* opacities = anari_cpp::map<float>(d, opacityArray);
+
+  for (vtkm::Id i = 0; i < 1024; ++i)
+  {
+    auto color = colorPortal.Get(i);
+    colors[i] = vtkm::Vec3f_32(color[0], color[1], color[2]) * conversionToFloatSpace;
+    opacities[i] = color[3] * conversionToFloatSpace;
+  }
+
+  anari_cpp::unmap(d, colorArray);
+  anari_cpp::unmap(d, opacityArray);
+
+  auto range = tfn.GetRange();
+
+  mapper.SetANARIColorMap(colorArray, opacityArray, true);
+  mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(range.Min, range.Max));
+  mapper.SetANARIColorMapOpacityScale(0.5f);
+}
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -86,189 +196,132 @@ namespace filters
 namespace detail
 {
 
-static std::string
-dray_color_table_surprises(const conduit::Node &color_table)
-{
-  std::string surprises;
-
-  std::vector<std::string> valid_paths;
-  valid_paths.push_back("name");
-  valid_paths.push_back("reverse");
-
-  std::vector<std::string> ignore_paths;
-  ignore_paths.push_back("control_points");
-
-  surprises += surprise_check(valid_paths, ignore_paths, color_table);
-  if (color_table.has_path("control_points"))
-  {
-    std::vector<std::string> c_valid_paths;
-    c_valid_paths.push_back("type");
-    c_valid_paths.push_back("alpha");
-    c_valid_paths.push_back("color");
-    c_valid_paths.push_back("position");
-
-    const conduit::Node &control_points = color_table["control_points"];
-    const int num_points = control_points.number_of_children();
-    for(int i = 0; i < num_points; ++i)
-    {
-      const conduit::Node &point = control_points.child(i);
-      surprises += surprise_check(c_valid_paths, point);
-    }
-  }
-
-  return surprises;
-}
-
-void
-parse_camera(const conduit::Node camera_node, dray::Camera &camera);
-
-dray::ColorTable
-parse_color_table(const conduit::Node &color_table_node);
+/* defined in ascent_runtime_anari_filters.cpp */
+std::string
+check_color_table_surprises(const conduit::Node &color_table);
 
 static bool 
 check_image_names(const conduit::Node &params, conduit::Node &info)
 {
   bool res = true;
-  // if (!params.has_path("image_prefix") && !params.has_path("camera/db_name"))
-  // {
-  //   res = false;
-  //   info.append() = "Anari ray rendering paths must include either "
-  //                   "a 'image_prefix' (if its a single image) or a "
-  //                   "'camera/db_name' (if using a cinema camere)";
-  // }
-  // if (params.has_path("image_prefix") && params.has_path("camera/db_name"))
-  // {
-  //   res = false;
-  //   info.append() = "Anari ray rendering paths cannot use both "
-  //                   "a 'image_prefix' (if its a single image) and a "
-  //                   "'camera/db_name' (if using a cinema camere)";
-  // }
+  if (!params.has_path("image_prefix") && !params.has_path("camera/db_name"))
+  {
+    res = false;
+    info.append() = "Anari ray rendering paths must include either "
+                    "a 'image_prefix' (if its a single image) or a "
+                    "'camera/db_name' (if using a cinema camere)";
+  }
+  if (params.has_path("image_prefix") && params.has_path("camera/db_name"))
+  {
+    res = false;
+    info.append() = "Anari ray rendering paths cannot use both "
+                    "a 'image_prefix' (if its a single image) and a "
+                    "'camera/db_name' (if using a cinema camere)";
+  }
   return res;
-}
-
-static void
-parse_params(const conduit::Node &params,
-             dray::Collection *dcol,
-             const conduit::Node *meta,
-             std::vector<dray::Camera> &cameras,
-             dray::ColorMap &color_map,
-             std::string &field_name,
-             std::vector<std::string> &image_names)
-{
-  field_name = params["field"].as_string();
-
-  int width  = 512;
-  int height = 512;
-
-  if (params.has_path("image_width"))
-  {
-    width = params["image_width"].to_int32();
-  }
-
-  if (params.has_path("image_height"))
-  {
-    height = params["image_height"].to_int32();
-  }
-
-  dray::AABB<3> bounds = dcol->bounds();
-
-  if (params.has_path("camera"))
-  {
-    bool is_cinema = false;
-
-    const conduit::Node &n_camera = params["camera"];
-    if (n_camera.has_path("type"))
-    {
-      if (n_camera["type"].as_string() == "cinema")
-      {
-        is_cinema = true;
-      }
-    }
-
-    if (is_cinema)
-    {
-      ASCENT_ERROR("Cinema database not yet implemented for Anari");
-    }
-    else
-    {
-      dray::Camera camera;
-      camera.set_width(width);
-      camera.set_height(height);
-      camera.reset_to_bounds(bounds);
-      detail::parse_camera(n_camera, camera);
-      cameras.push_back(camera);
-    }
-  }
-  else // if we don't have camera params, we need to add a default camera
-  {
-    dray::Camera camera;
-    camera.set_width(width);
-    camera.set_height(height);
-    camera.reset_to_bounds(bounds);
-    cameras.push_back(camera);
-  }
-
-  int cycle = 0;
-
-  if (meta->has_path("cycle"))
-  {
-    cycle = (*meta)["cycle"].as_int32();
-  }
-
-  if (params.has_path("image_prefix"))
-  {
-
-    std::string image_name = params["image_prefix"].as_string();
-    image_name = expand_family_name(image_name, cycle);
-    image_name = output_dir(image_name);
-    image_names.push_back(image_name);
-  }
-
-  dray::Range scalar_range = dcol->range(field_name);
-  dray::Range range;
-  if (params.has_path("min_value"))
-  {
-    range.include(params["min_value"].to_float32());
-  }
-  else
-  {
-    range.include(scalar_range.min());
-  }
-
-  if (params.has_path("max_value"))
-  {
-    range.include(params["max_value"].to_float32());
-  }
-  else
-  {
-    range.include(scalar_range.max());
-  }
-
-  color_map.scalar_range(range);
-
-  bool log_scale = false;
-  if (params.has_path("log_scale"))
-  {
-    if (params["log_scale"].as_string() == "true")
-    {
-      log_scale = true;
-    }
-  }
-
-  color_map.log_scale(log_scale);
-
-  if (params.has_path("color_table"))
-  {
-    color_map.color_table(parse_color_table(params["color_table"]));
-  }
 }
 
 }; // namespace detail
 
+//-----------------------------------------------------------------------------
+struct AnariVolume::Impl {
+public:
+  anari_cpp::Device device;
+  anari_cpp::Renderer renderer;
+  anari_cpp::Camera camera;
+  anari_cpp::Frame frame;
+
+  vtkm::cont::ColorTable tfn = vtkm::cont::ColorTable("Cool to Warm");
+
+  // camera parameters
+  vtkm::Vec3f_32 cam_pos = vtkm::Vec3f_32(800, 800, 800);
+  vtkm::Vec3f_32 cam_dir = vtkm::Vec3f_32(-1,-1,-1);
+  vtkm::Vec3f_32 cam_up  = vtkm::Vec3f_32(0,1,0);
+
+  // framebuffer parameters
+  std::string img_name = "interop_anari_volume";
+  vtkm::Vec2ui_32 img_size = vtkm::Vec2ui_32(1024, 768);
+
+  // renderer parameters
+  vtkm::Vec4f_32 background = vtkm::Vec4f_32(0.3f, 0.3f, 0.3f, 1.f);
+  int pixelSamples = 64;
+
+public:
+  ~Impl();
+  Impl();
+  void render(const vtkm::cont::DataSet &dset);
+};
+
+AnariVolume::Impl::Impl()
+{
+  device = loadANARIDevice();
+  renderer = anari_cpp::newObject<anari_cpp::Renderer>(device, "default");
+  camera = anari_cpp::newObject<anari_cpp::Camera>(device, "perspective");
+  frame = anari_cpp::newObject<anari_cpp::Frame>(device);
+}
+
+AnariVolume::Impl::~Impl()
+{
+  anari_cpp::release(device, camera);
+  anari_cpp::release(device, renderer);
+  anari_cpp::release(device, frame);
+  anari_cpp::release(device, device);
+}
+
+void
+AnariVolume::Impl::render(const vtkm::cont::DataSet &dset)
+{
+  // scene graph parameters
+  ANARIScene scene(device);
+
+  auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(device));
+  mVol.SetName("volume");
+  mVol.SetActor({ dset.GetCellSet(), dset.GetCoordinateSystem(), dset.GetField("energy") });
+  setANARIColorMap(device, mVol, tfn);
+
+  // renderer parameters
+  anari_cpp::setParameter(device, renderer, "background", background);
+  anari_cpp::setParameter(device, renderer, "pixelSamples", pixelSamples);
+  anari_cpp::commitParameters(device, renderer);
+
+  // camera parameters
+  anari_cpp::setParameter(device, camera, "aspect", img_size[0] / float(img_size[1]));
+  anari_cpp::setParameter(device, camera, "position",  cam_pos);
+  anari_cpp::setParameter(device, camera, "direction", cam_dir);
+  anari_cpp::setParameter(device, camera, "up",        cam_up);
+  anari_cpp::commitParameters(device, camera);
+
+  // frame parameters
+  anari_cpp::setParameter(device, frame, "size", img_size);
+  anari_cpp::setParameter(device, frame, "channel.color", ANARI_FLOAT32_VEC4);
+  anari_cpp::setParameter(device, frame, "world", scene.GetANARIWorld());
+  anari_cpp::setParameter(device, frame, "camera", camera);
+  anari_cpp::setParameter(device, frame, "renderer", renderer);
+  anari_cpp::commitParameters(device, frame);
+
+  // render and wait for completion
+  anari_cpp::render(device, frame);
+  anari_cpp::wait(device, frame);
+
+  // on rank 0, access framebuffer and write its content as PNG file
+  int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+  MPI_Comm_rank(mpi_comm, &rank);
+#endif
+  if (rank == 0) 
+  {
+    const auto fb = anari_cpp::map<vtkm::Vec4f_32>(device, frame, "channel.color");
+    ascent::PNGEncoder encoder;
+    encoder.Encode((float*)fb.data, fb.width, fb.height);
+    encoder.Save(img_name  + ".png");
+    anari_cpp::unmap(device, frame, "channel.color");
+  }
+}
 
 //-----------------------------------------------------------------------------
 AnariVolume::AnariVolume()
-  :Filter()
+  : Filter(), pimpl(new AnariVolume::Impl())
 {
   // empty
 }
@@ -283,9 +336,9 @@ AnariVolume::~AnariVolume()
 void
 AnariVolume::declare_interface(Node &i)
 {
-    i["type_name"]   = "dray_volume";
-    i["port_names"].append() = "in";
-    i["output_port"] = "false";
+  i["type_name"]   = "dray_volume";
+  i["port_names"].append() = "in";
+  i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
@@ -303,7 +356,7 @@ AnariVolume::verify_params(const conduit::Node &params, conduit::Node &info)
   res &= check_numeric("image_width",params, info, false);
   res &= check_numeric("image_height",params, info, false);
   res &= check_string("log_scale",params, info, false);
-  res &= check_string("annotations",params, info, false);
+  // res &= check_string("annotations",params, info, false);
 
   std::vector<std::string> valid_paths;
   std::vector<std::string> ignore_paths;
@@ -317,6 +370,18 @@ AnariVolume::verify_params(const conduit::Node &params, conduit::Node &info)
   valid_paths.push_back("log_scale");
   valid_paths.push_back("annotations");
 
+  valid_paths.push_back("camera/look_at");
+  valid_paths.push_back("camera/position");
+  valid_paths.push_back("camera/up");
+  valid_paths.push_back("camera/fov");
+  valid_paths.push_back("camera/xpan");
+  valid_paths.push_back("camera/ypan");
+  valid_paths.push_back("camera/zoom");
+  valid_paths.push_back("camera/near_plane");
+  valid_paths.push_back("camera/far_plane");
+  valid_paths.push_back("camera/azimuth");
+  valid_paths.push_back("camera/elevation");
+
   // filter knobs
   res &= check_numeric("samples",params, info, false);
   res &= check_string("use_lighing",params, info, false);
@@ -324,14 +389,13 @@ AnariVolume::verify_params(const conduit::Node &params, conduit::Node &info)
   valid_paths.push_back("samples");
   valid_paths.push_back("use_lighting");
 
-  ignore_paths.push_back("camera");
   ignore_paths.push_back("color_table");
 
   std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
   if (params.has_path("color_table"))
   {
-    surprises += detail::dray_color_table_surprises(params["color_table"]);
+    surprises += detail::check_color_table_surprises(params["color_table"]);
   }
 
   if (surprises != "")
@@ -348,7 +412,7 @@ AnariVolume::execute()
 {
   if (!input(0).check_type<DataObject>())
   {
-    ASCENT_ERROR("dray 3slice input must be a DataObject");
+    ASCENT_ERROR("Anari Volume input must be a DataObject");
   }
 
   DataObject *d_input = input<DataObject>(0);
@@ -357,79 +421,71 @@ AnariVolume::execute()
     return;
   }
 
+  // Parse input data as a VTK-h collection
   VTKHCollection *collection = d_input->as_vtkh_collection().get();
+  std::vector<std::string> topos = collection->topology_names();
 
-    dray::Collection *dcol = d_input->as_dray_collection().get();
+  if (topos.size() != 1)
+  {
+    ASCENT_ERROR("Anari Volume accepts only one topology");
+  }
+  auto &topo = collection->dataset_by_topology(topos[0]);
 
-    dray::Collection dataset = *dcol;
+  if (topo.GetNumberOfDomains() != 1)
+  {
+    ASCENT_ERROR("Anari Volume accepts only one domain");
+  }
+  auto& dset = topo.GetDomain(0);
+  // dset.PrintSummary(std::cout);
 
-    std::vector<dray::Camera> cameras;
+  // It is important to compute the data bounds
+  vtkm::Bounds bounds = collection->global_bounds();
 
-    dray::ColorMap color_map("cool2warm");
-    std::string field_name;
-    std::vector<std::string> image_names;
-    conduit::Node meta = Metadata::n_metadata;
+  // Parse camera
+  vtkm::rendering::Camera camera;
+  if (params().has_path("camera"))
+  {
+    parse_camera(params()["camera"], camera);
+  }
+  else // if we don't have camera params, we need to add a default camera
+  {
+    camera.ResetToBounds(bounds);
+  }    
+  pimpl->cam_pos = camera.GetPosition();
+  pimpl->cam_dir = camera.GetLookAt() - camera.GetPosition();
+  pimpl->cam_up  = camera.GetViewUp();
 
-    detail::parse_params(params(),
-                         dcol,
-                         &meta,
-                         cameras,
-                         color_map,
-                         field_name,
-                         image_names);
+  // Set transfer function
+  if(params().has_path("color_table"))
+  {
+    vtkm::cont::ColorTable color_table = parse_color_table(params()["color_table"]);
+    // if (type != "mesh")
+    // {
+    //   if (params()["color_table"].has_path("annotation"))
+    //   {
+    //      if (params()["color_table/annotation"].as_string() == "false")
+    //      {
+    //         renderer->DisableColorBar();
+    //      }
+    //   }
+    // }
+    pimpl->tfn = color_table;
+  }
 
-    if (color_map.color_table().number_of_alpha_points() == 0)
-    {
-      color_map.color_table().add_alpha (0.f, 0.00f);
-      color_map.color_table().add_alpha (0.1f, 0.00f);
-      color_map.color_table().add_alpha (0.3f, 0.05f);
-      color_map.color_table().add_alpha (0.4f, 0.21f);
-      color_map.color_table().add_alpha (1.0f, 0.9f);
-    }
+  vtkm::Range scalar_range;
+  if (params().has_path("min_value"))
+  {
+    scalar_range.Min = params()["min_value"].to_float64();
+  }
+  if (params().has_path("max_value"))
+  {
+    scalar_range.Max = params()["max_value"].to_float64();
+  }
+  // renderer->SetRange(scalar_range);
 
-    bool use_lighting = false;
-    if (params().has_path("use_lighting"))
-    {
-      if (params()["use_lighting"].as_string() == "true")
-      {
-        use_lighting = true;
-      }
-    }
-
-    int samples = 100;
-    if (params().has_path("samples"))
-    {
-      samples = params()["samples"].to_int32();
-    }
-
-    std::shared_ptr<dray::Volume> volume
-      = std::make_shared<dray::Volume>(dataset);
-
-    volume->color_map() = color_map;
-    volume->samples(samples);
-    volume->field(field_name);
-    dray::Renderer renderer;
-    renderer.volume(volume);
-
-    bool annotations = true;
-    if (params().has_path("annotations"))
-    {
-      annotations = params()["annotations"].as_string() != "false";
-    }
-    renderer.world_annotations(annotations);
-
-    const int num_images = cameras.size();
-    for(int i = 0; i < num_images; ++i)
-    {
-      dray::Camera &camera = cameras[i];
-      dray::Framebuffer fb = renderer.render(camera);
-
-      if (dray::dray::mpi_rank() == 0)
-      {
-        fb.composite_background();
-        fb.save(image_names[i]);
-      }
-    }
+  // Initialize ANARI /////////////////////////////////////////////////////////
+  pimpl->render(dset);
+  // Finalize ANARI ///////////////////////////////////////////////////////////
 }
 
 //-----------------------------------------------------------------------------

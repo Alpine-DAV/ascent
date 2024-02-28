@@ -440,6 +440,19 @@ if(GENTEN_FOUND)
 endif()
 
 ##########################################
+# Create imported target vtkm::anari
+##########################################
+find_package(anari 0.8.0)
+if(TARGET anari::anari)
+    find_package(vtkmanari REQUIRED)
+    if(TARGET vtkm::anari)
+        list(APPEND ascent_thirdparty_libs vtkm::anari)
+    else()
+        message(FATAL_ERROR "vtkm::anari not found")
+    endif()
+endif()
+
+##########################################
 # Build a serial version of ascent
 ##########################################
 if (ENABLE_SERIAL)
