@@ -446,7 +446,7 @@ stages:
         ubuntu_20.04_static_cuda_12.1.1:
           containerImage: ${{ variables.ubuntu_20_04_cuda_12_1_1_tag }}
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
+          CMAKE_BUILD_TYPE: MinSizeRel
           ENABLE_DRAY: ON
           ENABLE_MFEM: ON
           BLT_CXX_STD: c++14
@@ -457,7 +457,7 @@ stages:
         ubuntu_20.04_static_cuda_11.4.3:
           containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
+          CMAKE_BUILD_TYPE: MinSizeRel
           ENABLE_DRAY: ON
           ENABLE_MFEM: ON
           BLT_CXX_STD: c++14
@@ -467,7 +467,7 @@ stages:
         ubuntu_20.04_static_cuda_11.4.3_no_mfem:
           containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
+          CMAKE_BUILD_TYPE: MinSizeRel
           ENABLE_DRAY: ON
           ENABLE_MFEM: OFF
           BLT_CXX_STD: c++14
@@ -552,6 +552,7 @@ stages:
            #################################
            cd build
            make install
+           make clean
         displayName: 'Install'
 
       - script: |

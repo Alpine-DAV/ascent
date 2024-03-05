@@ -87,7 +87,11 @@ conduit::Node ASCENT_API field_reduction_histogram(const conduit::Node &field,
 //----------------------
 conduit::Node ASCENT_API derived_field_binary_add(const conduit::Node &l_field,
                                                   const conduit::Node &r_field,
-                                            const std::string &component = "");
+                                                  const std::string &component = "");
+
+conduit::Node ASCENT_API derived_field_power(const conduit::Node &field,
+                                             const double &exponent,
+                                             const std::string &component = "");
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
