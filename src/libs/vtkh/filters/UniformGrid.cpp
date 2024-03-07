@@ -1,13 +1,14 @@
 
 #include <vtkh/filters/UniformGrid.hpp>
 #include <vtkh/Error.hpp>
-
 #include <vtkh/vtkm_filters/vtkmProbe.hpp>
+
 #include <limits>
 
 #ifdef VTKH_PARALLEL
 #include <vtkm/thirdparty/diy/diy.h>
 #include <vtkm/thirdparty/diy/mpi-cast.h>
+#include <vtkm/cont/EnvironmentTracker.h>
 #include <mpi.h>
 #endif
 
@@ -64,8 +65,51 @@ UniformGrid::DoExecute()
 
     this->m_output->AddDomain(dataset, domain_id);
   }
+
+//if parallel collect valid results on root rank
 #ifdef VTKH_PARALLEL
 
+  int num_points = m_dims[0]*m_dims[1]*m_dims[2];
+  std::cerr << "dims size: " << num_points << std::endl;
+  std::cerr << "m_dims: "<< m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
+  //create invalid mask where true == invalid
+  std::vector<float> l_mask(num_points,1);
+  std::vector<float> g_mask(num_points,1);
+  //loop over local domains
+  for(int i = 0; i < num_domains; ++i)
+  {
+    vtkm::Id domain_id;
+    vtkm::cont::DataSet dom;
+    this->m_output->GetDomain(i, dom, domain_id);
+    std::cerr << "domain: " << i << " START" << std::endl;
+    dom.PrintSummary(std::cerr);
+    std::cerr << "domain: " << i << " END" << std::endl;
+    vtkm::cont::ArrayHandle<vtkm::Float32> ah_mask;
+    dom.GetField("mask").GetData().AsArrayHandle(ah_mask);
+    auto mask_portal = ah_mask.ReadPortal();
+    for(int j = 0; j < num_points; ++j)
+    {
+      l_mask[j] = l_mask[j] && mask_portal.Get(j);
+    }
+  std::cerr << "mask: ";
+  for(int m : l_mask)
+    std::cerr << m << " ";
+  std::cerr << std::endl;
+  }
+  std::cerr << "local mask: ";
+  for(int m : l_mask)
+    std::cerr << m << " ";
+  std::cerr << std::endl;
+
+   MPI_Reduce(l_mask.data(), g_mask.data(), num_points, MPI_FLOAT, MPI_LAND, 0, MPI_COMM_WORLD);
+
+  if(par_rank == 0)
+  {
+    std::cerr << "global mask: ";
+    for(int m : g_mask)
+      std::cerr << m << " ";
+    std::cerr << std::endl;
+  }
 #endif
 
 }
