@@ -15,6 +15,87 @@
 namespace vtkh
 {
 
+namespace detail
+{
+
+class GlobalReduceFields
+{
+  vtkm::cont::DataSet m_dataset;
+
+public:
+  GlobalReduceFields(vtkm::cont::DataSet dataset)
+    : m_dataset(dataset)
+  {}
+  ~GlobalReduceFields()
+  {}
+
+  vtkm::cont::DataSet Reduce()
+  {
+    vtkm::cont::DataSet res;
+    int num_fields = m_dataset.GetNumberOfFields();
+    for(int i = 0; i < num_fields; ++i)
+    { 
+      vtkm::cont::Field field = m_dataset.GetField(i);
+      ReduceField r_field(res);
+      auto reduce_field = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
+      reduce_field.CastAndCall(r_field);
+    } 
+
+    return res;
+  }
+
+  struct ReduceField
+  {
+    vtkm::cont::DataSet &m_data_set;
+  
+    ReduceField(vtkm::cont::DataSet &data_set)
+      : m_data_set(data_set)
+    {}
+  
+    template<typename T, typename S>
+    void operator()(const vtkm::cont::ArrayHandle<T,S> &vtkmNotUsed(field)) const
+    {
+      //check to see if this is a supported field ;
+      //const vtkm::cont::Field &scalar_field = m_in_data_sets[0].GetField(m_field_index);
+      //bool is_supported = (scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points ||
+      //                     scalar_field.GetAssociation() == vtkm::cont::Field::Association::Cells);
+  
+      //if(!is_supported) return;
+  
+      //bool assoc_points = scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points;
+      //vtkm::cont::ArrayHandle<T> out;
+      //if(assoc_points)
+      //{
+      //  out.Allocate(m_num_points);
+      //}
+      //else
+      //{
+      //  out.Allocate(m_num_cells);
+      //}
+  
+      //for(size_t i = 0; i < m_in_data_sets.size(); ++i)
+      //{
+      //  const vtkm::cont::Field &f = m_in_data_sets[i].GetField(m_field_index);
+      //  vtkm::cont::ArrayHandle<T,S> in = f.GetData().AsArrayHandle<vtkm::cont::ArrayHandle<T,S>>();
+      //  vtkm::Id start = 0;
+      //  vtkm::Id copy_size = in.GetNumberOfValues();
+      //  vtkm::Id offset = assoc_points ? m_point_offsets[i] : m_cell_offsets[i];
+  
+      //  vtkm::cont::Algorithm::CopySubRange(in, start, copy_size, out, offset);
+      //}
+  
+      //vtkm::cont::Field out_field(scalar_field.GetName(),
+      //                            scalar_field.GetAssociation(),
+      //                            out);
+      //m_data_set.AddField(out_field);
+  
+    }
+  }; //struct reduceFields
+
+};//class globalReduceFields
+
+} //namespace detail
+
 UniformGrid::UniformGrid()
 	: m_invalid_value(std::numeric_limits<double>::min())
 {
@@ -62,13 +143,40 @@ UniformGrid::DoExecute()
     probe.invalidValue(m_invalid_value);
 
     auto dataset = probe.Run(dom);
+    //take uniform sampled grid and reduce to root process
+    vtkh::detail::GlobalReduceFields g_reducefields(dataset);
+    auto output = g_reducefields.Reduce();
+    //auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
+    //full.CastAndCall(g_reducefields);
 
-    this->m_output->AddDomain(dataset, domain_id);
+    this->m_output->AddDomain(output, domain_id);
   }
 
 //if parallel collect valid results on root rank
 #ifdef VTKH_PARALLEL
 
+  for(int i = 0; i < num_domains; ++i)
+  {
+    vtkm::Id domain_id;
+    vtkm::cont::DataSet dom;
+    this->m_output->GetDomain(i, dom, domain_id);
+    std::cerr << "domain: " << i << " START" << std::endl;
+    dom.PrintSummary(std::cerr);
+    std::cerr << "domain: " << i << " END" << std::endl;
+    vtkm::cont::ArrayHandle<vtkm::Float32> ah_mask;
+    dom.GetField("mask").GetData().AsArrayHandle(ah_mask);
+    auto mask_portal = ah_mask.ReadPortal();
+
+    int num_fields = dom.GetNumberOfFields();
+    //loop through fields, zero out invalid value
+    for(int j = 0; j < num_fields; ++j)
+    {
+      vtkm::cont::ArrayHandle<vtkm::Float64> ah_field;
+      dom.GetField(j).GetData().AsArrayHandle(ah_field);
+    }
+    //send to root process
+    
+  }
   int num_points = m_dims[0]*m_dims[1]*m_dims[2];
   std::cerr << "dims size: " << num_points << std::endl;
   std::cerr << "m_dims: "<< m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
