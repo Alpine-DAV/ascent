@@ -69,6 +69,18 @@ if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_KOKKOS_ENABLED ${HIP_FOUND})
 endif()
 
+
+##########################################
+# Create imported target vtkm::anari
+##########################################
+set(ASCENT_ANARI_ENABLED ${ENABLE_ANARI})
+if(ENABLE_ANARI)
+    find_package(anari 0.8.0 REQUIRED)
+    if(NOT TARGET vtkm::anari)
+        message(FATAL_ERROR "vtkm::anari not found, check your VTK-m install")
+    endif()
+endif()
+
 # ASCENT_ZZZ_ENTIRES are derived vars.
 # We mark them as advanced b/c otherwise folks may see them
 # in ccmake or the cmake gui and think they should be changing them
@@ -100,6 +112,7 @@ mark_as_advanced(ASCENT_INSTALL_PREFIX
                  ASCENT_VTKM_OPENMP_ENABLED
                  ASCENT_VTKM_CUDA_ENABLED
                  ASCENT_VTKM_KOKKOS_ENABLED
+                 ASCENT_ANARI_ENABLED
                  )
 
 # gen config header
@@ -167,7 +180,6 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     runtimes/flow_filters/ascent_runtime_diva_filters.hpp
-    runtimes/flow_filters/ascent_runtime_anari_filters.hpp
     # utils
     utils/ascent_actions_utils.hpp
     utils/ascent_data_logger.hpp
@@ -234,7 +246,6 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_command_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
     runtimes/flow_filters/ascent_runtime_diva_filters.cpp
-    runtimes/flow_filters/ascent_runtime_anari_filters.cpp
     # utils
     utils/ascent_actions_utils.cpp
     utils/ascent_data_logger.cpp
@@ -337,7 +348,10 @@ if(FORTRAN_FOUND)
             DESTINATION include/ascent)
 endif()
 
-
+if(ENABLE_ANARI)
+    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_anari_filters.hpp)
+    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_anari_filters.cpp)
+endif()
 
 ################################
 # Add python wrappers if python
@@ -439,17 +453,8 @@ if(GENTEN_FOUND)
     list(APPEND ascent_thirdparty_libs genten)
 endif()
 
-##########################################
-# Create imported target vtkm::anari
-##########################################
-find_package(anari 0.8.0)
-if(TARGET anari::anari)
-    find_package(vtkmanari REQUIRED)
-    if(TARGET vtkm::anari)
-        list(APPEND ascent_thirdparty_libs vtkm::anari)
-    else()
-        message(FATAL_ERROR "vtkm::anari not found")
-    endif()
+if(ENABLE_ANARI)
+    list(APPEND ascent_thirdparty_libs vtkm::anari)
 endif()
 
 ##########################################

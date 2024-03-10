@@ -259,7 +259,7 @@ AnariVolume::Impl::render(const vtkm::cont::DataSet &dset)
 
   auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(device));
   mVol.SetName("volume");
-  mVol.SetActor({ dset.GetCellSet(), dset.GetCoordinateSystem(), dset.GetField("energy") });
+  mVol.SetActor({ dset.GetCellSet(), dset.GetCoordinateSystem(), dset.GetField("mag") });
   setANARIColorMap(device, mVol, tfn);
 
   // renderer parameters

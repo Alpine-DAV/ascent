@@ -145,7 +145,9 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHWarpXStreamline>("transforms","warpx_streamline");
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
 
+#if defined(ASCENT_ANARI_ENABLED)
     AscentRuntime::register_filter_type<AnariVolume>("extracts", "anari_volume");
+#endif
 
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
