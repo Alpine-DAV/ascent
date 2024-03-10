@@ -67,23 +67,6 @@
 
 #include <runtimes/ascent_data_object.hpp>
 
-#if 0
-#include <dray/dray.hpp>
-#include <dray/data_model/data_set.hpp>
-#include <dray/data_model/collection.hpp>
-#include <dray/filters/reflect.hpp>
-#include <dray/filters/mesh_boundary.hpp>
-#include <dray/filters/volume_balance.hpp>
-#include <dray/filters/vector_component.hpp>
-#include <dray/dray_exports.h>
-#include <dray/transform_3d.hpp>
-#include <dray/rendering/renderer.hpp>
-#include <dray/rendering/surface.hpp>
-#include <dray/rendering/slice_plane.hpp>
-#include <dray/rendering/scalar_renderer.hpp>
-#include <dray/io/blueprint_reader.hpp>
-#endif
-
 using namespace conduit;
 using namespace flow;
 
