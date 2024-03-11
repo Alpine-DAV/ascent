@@ -50,6 +50,9 @@
 #include <vtkm/interop/anari/ANARIMapperVolume.h>
 #include <vtkm/interop/anari/ANARIScene.h>
 
+#include <vtkm/cont/EnvironmentTracker.h>
+#include <vtkm/cont/FieldRangeGlobalCompute.h>
+
 #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
 #endif
@@ -72,6 +75,26 @@ using namespace flow;
 
 using namespace vtkm::interop::anari;
 
+//-----------------------------------------------------------------------------
+// -- begin ascent:: --
+//-----------------------------------------------------------------------------
+namespace ascent
+{
+
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime --
+//-----------------------------------------------------------------------------
+namespace runtime
+{
+
+//-----------------------------------------------------------------------------
+// -- begin ascent::runtime::filters --
+//-----------------------------------------------------------------------------
+namespace filters
+{
+
+namespace detail
+{
 
 static void StatusFunc(const void* userData,
                        ANARIDevice /*device*/,
@@ -122,63 +145,6 @@ loadANARIDevice()
   return d;
 }
 
-static void 
-setANARIColorMap(anari_cpp::Device d, ANARIMapper& mapper, vtkm::cont::ColorTable& tfn)
-{
-  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
-  vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
-  {
-    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
-    tfn.Sample(1024, temp);
-  }
-  auto colorPortal = temp.ReadPortal();
-
-  // Create the color and opacity arrays
-
-  auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, 1024);
-  auto* colors = anari_cpp::map<vtkm::Vec3f_32>(d, colorArray);
-
-  auto opacityArray = anari_cpp::newArray1D(d, ANARI_FLOAT32, 1024);
-  auto* opacities = anari_cpp::map<float>(d, opacityArray);
-
-  for (vtkm::Id i = 0; i < 1024; ++i)
-  {
-    auto color = colorPortal.Get(i);
-    colors[i] = vtkm::Vec3f_32(color[0], color[1], color[2]) * conversionToFloatSpace;
-    opacities[i] = color[3] * conversionToFloatSpace;
-  }
-
-  anari_cpp::unmap(d, colorArray);
-  anari_cpp::unmap(d, opacityArray);
-
-  auto range = tfn.GetRange();
-
-  mapper.SetANARIColorMap(colorArray, opacityArray, true);
-  mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(range.Min, range.Max));
-  mapper.SetANARIColorMapOpacityScale(0.5f);
-}
-
-//-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-namespace ascent
-{
-
-//-----------------------------------------------------------------------------
-// -- begin ascent::runtime --
-//-----------------------------------------------------------------------------
-namespace runtime
-{
-
-//-----------------------------------------------------------------------------
-// -- begin ascent::runtime::filters --
-//-----------------------------------------------------------------------------
-namespace filters
-{
-
-namespace detail
-{
-
 /* defined in ascent_runtime_anari_filters.cpp */
 std::string
 check_color_table_surprises(const conduit::Node &color_table);
@@ -214,6 +180,8 @@ public:
   anari_cpp::Camera camera;
   anari_cpp::Frame frame;
 
+  std::string field_name;
+  vtkm::Range scalar_range;
   vtkm::cont::ColorTable tfn = vtkm::cont::ColorTable("Cool to Warm");
 
   // camera parameters
@@ -222,7 +190,7 @@ public:
   vtkm::Vec3f_32 cam_up  = vtkm::Vec3f_32(0,1,0);
 
   // framebuffer parameters
-  std::string img_name = "interop_anari_volume";
+  std::string img_name = "anari_volume";
   vtkm::Vec2ui_32 img_size = vtkm::Vec2ui_32(1024, 768);
 
   // renderer parameters
@@ -233,11 +201,12 @@ public:
   ~Impl();
   Impl();
   void render(const vtkm::cont::DataSet &dset);
+  void set_tfn(ANARIMapper& mapper);
 };
 
 AnariVolume::Impl::Impl()
 {
-  device = loadANARIDevice();
+  device = detail::loadANARIDevice();
   renderer = anari_cpp::newObject<anari_cpp::Renderer>(device, "default");
   camera = anari_cpp::newObject<anari_cpp::Camera>(device, "perspective");
   frame = anari_cpp::newObject<anari_cpp::Frame>(device);
@@ -252,6 +221,44 @@ AnariVolume::Impl::~Impl()
 }
 
 void
+AnariVolume::Impl::set_tfn(ANARIMapper& mapper)
+{
+  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
+  vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
+  {
+    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+    tfn.Sample(1024, temp);
+  }
+  auto colorPortal = temp.ReadPortal();
+
+  // Create the color and opacity arrays
+  auto colorArray   = anari_cpp::newArray1D(device, ANARI_FLOAT32_VEC3, 1024);
+  auto* colors      = anari_cpp::map<vtkm::Vec3f_32>(device, colorArray  );
+  auto opacityArray = anari_cpp::newArray1D(device, ANARI_FLOAT32,      1024);
+  auto* opacities   = anari_cpp::map<vtkm::Float32 >(device, opacityArray);
+
+  for (vtkm::Id i = 0; i < 1024; ++i)
+  {
+    auto color = colorPortal.Get(i);
+    colors[i] = vtkm::Vec3f_32(color[0], color[1], color[2]) * conversionToFloatSpace;
+    opacities[i] = color[3] * conversionToFloatSpace;
+  }
+
+  anari_cpp::unmap(device, colorArray);
+  anari_cpp::unmap(device, opacityArray);
+
+  mapper.SetANARIColorMap(colorArray, opacityArray, true);
+  if (scalar_range.IsNonEmpty()) {
+    mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(scalar_range.Min, scalar_range.Max));
+  }
+  else {
+    auto range = tfn.GetRange();
+    mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(range.Min, range.Max));
+  }
+  mapper.SetANARIColorMapOpacityScale(0.5f); // no-op
+}
+
+void
 AnariVolume::Impl::render(const vtkm::cont::DataSet &dset)
 {
   // scene graph parameters
@@ -259,8 +266,32 @@ AnariVolume::Impl::render(const vtkm::cont::DataSet &dset)
 
   auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(device));
   mVol.SetName("volume");
-  mVol.SetActor({ dset.GetCellSet(), dset.GetCoordinateSystem(), dset.GetField("mag") });
-  setANARIColorMap(device, mVol, tfn);
+  mVol.SetActor({ 
+    dset.GetCellSet(), 
+    dset.GetCoordinateSystem(), 
+    dset.GetField(field_name) 
+  });
+  set_tfn(mVol);
+
+  if (!scalar_range.IsNonEmpty()) {
+    vtkm::cont::PartitionedDataSet parts;
+    parts.AppendPartition({ dset });
+    
+    auto ranges = vtkm::cont::FieldRangeGlobalCompute(parts, field_name);
+    
+    auto size = ranges.GetNumberOfValues();
+    if (size != 1) {
+      ASCENT_ERROR("Anari Volume only supports scalar fields");
+    }
+
+    auto portal = ranges.ReadPortal();
+    for (int cc = 0; cc < size; ++cc)
+    {
+      auto range = portal.Get(cc);
+      scalar_range.Include(range);
+      break;
+    }
+  }
 
   // renderer parameters
   anari_cpp::setParameter(device, renderer, "background", background);
@@ -289,8 +320,7 @@ AnariVolume::Impl::render(const vtkm::cont::DataSet &dset)
   // on rank 0, access framebuffer and write its content as PNG file
   int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
-  MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-  MPI_Comm_rank(mpi_comm, &rank);
+  rank = vtkm::cont::EnvironmentTracker::GetCommunicator().rank();
 #endif
   if (rank == 0) 
   {
@@ -332,26 +362,29 @@ AnariVolume::verify_params(const conduit::Node &params, conduit::Node &info)
 
   bool res = true;
 
-  res &= check_string("field",params, info, true);
-  res &= detail::check_image_names(params, info);
-  res &= check_numeric("min_value",params, info, false);
-  res &= check_numeric("max_value",params, info, false);
-  res &= check_numeric("image_width",params, info, false);
-  res &= check_numeric("image_height",params, info, false);
-  res &= check_string("log_scale",params, info, false);
-  // res &= check_string("annotations",params, info, false);
-
   std::vector<std::string> valid_paths;
   std::vector<std::string> ignore_paths;
 
+  res &= check_string("field", params, info, true);
   valid_paths.push_back("field");
+
+  res &= detail::check_image_names(params, info); // check "image_prefix" or "camera/db_name"
   valid_paths.push_back("image_prefix");
+
+  res &= check_numeric("min_value", params, info, false);
+  res &= check_numeric("max_value", params, info, false);
   valid_paths.push_back("min_value");
   valid_paths.push_back("max_value");
+
+  res &= check_numeric("image_width", params, info, false);
+  res &= check_numeric("image_height", params, info, false);
   valid_paths.push_back("image_width");
   valid_paths.push_back("image_height");
-  valid_paths.push_back("log_scale");
-  valid_paths.push_back("annotations");
+
+  // res &= check_string("log_scale",params, info, false);
+  // res &= check_string("annotations",params, info, false);
+  // valid_paths.push_back("log_scale");
+  // valid_paths.push_back("annotations");
 
   valid_paths.push_back("camera/look_at");
   valid_paths.push_back("camera/position");
@@ -365,12 +398,10 @@ AnariVolume::verify_params(const conduit::Node &params, conduit::Node &info)
   valid_paths.push_back("camera/azimuth");
   valid_paths.push_back("camera/elevation");
 
-  // filter knobs
-  res &= check_numeric("samples",params, info, false);
-  res &= check_string("use_lighing",params, info, false);
-
-  valid_paths.push_back("samples");
-  valid_paths.push_back("use_lighting");
+  // res &= check_numeric("samples",params, info, false);
+  // res &= check_string("use_lighing",params, info, false);
+  // valid_paths.push_back("samples");
+  // valid_paths.push_back("use_lighting");
 
   ignore_paths.push_back("color_table");
 
@@ -393,6 +424,13 @@ AnariVolume::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 AnariVolume::execute()
 {
+  Node meta = Metadata::n_metadata;
+  int cycle = 0;
+  if(meta.has_path("cycle"))
+  {
+    cycle = meta["cycle"].to_int32();
+  }
+
   if (!input(0).check_type<DataObject>())
   {
     ASCENT_ERROR("Anari Volume input must be a DataObject");
@@ -407,22 +445,22 @@ AnariVolume::execute()
   // Parse input data as a VTK-h collection
   VTKHCollection *collection = d_input->as_vtkh_collection().get();
   std::vector<std::string> topos = collection->topology_names();
-
   if (topos.size() != 1)
   {
     ASCENT_ERROR("Anari Volume accepts only one topology");
   }
   auto &topo = collection->dataset_by_topology(topos[0]);
-
   if (topo.GetNumberOfDomains() != 1)
   {
     ASCENT_ERROR("Anari Volume accepts only one domain");
   }
   auto& dset = topo.GetDomain(0);
-  // dset.PrintSummary(std::cout);
 
   // It is important to compute the data bounds
   vtkm::Bounds bounds = collection->global_bounds();
+
+  // Parse field name
+  pimpl->field_name = params()["field"].as_string();
 
   // Parse camera
   vtkm::rendering::Camera camera;
@@ -439,32 +477,31 @@ AnariVolume::execute()
   pimpl->cam_up  = camera.GetViewUp();
 
   // Set transfer function
-  if(params().has_path("color_table"))
+  if (params().has_path("color_table"))
   {
     vtkm::cont::ColorTable color_table = parse_color_table(params()["color_table"]);
-    // if (type != "mesh")
-    // {
-    //   if (params()["color_table"].has_path("annotation"))
-    //   {
-    //      if (params()["color_table/annotation"].as_string() == "false")
-    //      {
-    //         renderer->DisableColorBar();
-    //      }
-    //   }
-    // }
     pimpl->tfn = color_table;
   }
-
-  vtkm::Range scalar_range;
   if (params().has_path("min_value"))
   {
-    scalar_range.Min = params()["min_value"].to_float64();
+    pimpl->scalar_range.Min = params()["min_value"].to_float64();
   }
   if (params().has_path("max_value"))
   {
-    scalar_range.Max = params()["max_value"].to_float64();
+    pimpl->scalar_range.Max = params()["max_value"].to_float64();
   }
-  // renderer->SetRange(scalar_range);
+
+  // This is the path for the default render attached directly to a scene
+  std::string image_name;
+  image_name = params()["image_prefix"].as_string();
+  image_name = expand_family_name(image_name, cycle);
+  image_name = output_dir(image_name);
+  pimpl->img_name = image_name;
+
+  int image_width;
+  int image_height;
+  parse_image_dims(params(), image_width, image_height);
+  pimpl->img_size = vtkm::Vec2ui_32(image_width, image_height);
 
   // Initialize ANARI /////////////////////////////////////////////////////////
   pimpl->render(dset);
