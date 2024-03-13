@@ -245,7 +245,6 @@ struct AnariImpl {
 public:
   anari_cpp::Device device;
   anari_cpp::Renderer renderer;
-  anari_cpp::Camera camera;
   anari_cpp::Frame frame;
 
   std::string field_name;
@@ -253,9 +252,7 @@ public:
   vtkm::cont::ColorTable tfn = vtkm::cont::ColorTable("Cool to Warm");
 
   // camera parameters
-  vtkm::Vec3f_32 cam_pos = vtkm::Vec3f_32(800, 800, 800);
-  vtkm::Vec3f_32 cam_dir = vtkm::Vec3f_32(-1,-1,-1);
-  vtkm::Vec3f_32 cam_up  = vtkm::Vec3f_32(0,1,0);
+  vtkm::rendering::Camera cam;
 
   // framebuffer parameters
   std::string img_name = "anari_volume";
@@ -279,13 +276,11 @@ AnariImpl::AnariImpl()
 {
   device = detail::anari_device_load();
   renderer = anari_cpp::newObject<anari_cpp::Renderer>(device, "default");
-  camera = anari_cpp::newObject<anari_cpp::Camera>(device, "perspective");
   frame = anari_cpp::newObject<anari_cpp::Frame>(device);
 }
 
 AnariImpl::~AnariImpl()
 {
-  anari_cpp::release(device, camera);
   anari_cpp::release(device, renderer);
   anari_cpp::release(device, frame);
   anari_cpp::release(device, device);
@@ -460,11 +455,32 @@ AnariImpl::render(ANARIScene& scene)
   anari_cpp::setParameter(device, renderer, "pixelSamples", pixelSamples);
   anari_cpp::commitParameters(device, renderer);
 
-  // TODO camera parameters
+  // TODO support all camera parameters
+  //    -- missing parameters: xpan, ypan, zoom
+  //
+  const auto cam_type = cam.GetMode() == vtkm::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
+  const auto cam_pos = cam.GetPosition();
+  const auto cam_dir = cam.GetLookAt() - cam.GetPosition();
+  const auto cam_up  = cam.GetViewUp();
+  const auto cam_range = cam.GetClippingRange();
+  anari_cpp::Camera camera = anari_cpp::newObject<anari_cpp::Camera>(device, cam_type);
   anari_cpp::setParameter(device, camera, "aspect", img_size[0] / float(img_size[1]));
   anari_cpp::setParameter(device, camera, "position",  cam_pos);
   anari_cpp::setParameter(device, camera, "direction", cam_dir);
+  // std::cout << "Camera position: " << cam_pos << std::endl;
+  // std::cout << "Camera direction: " << cam_dir << std::endl;
+  // std::cout << "Camera up: " << cam_up << std::endl;
   anari_cpp::setParameter(device, camera, "up", cam_up);
+  anari_cpp::setParameter(device, camera, "near", cam_range.Min);
+  anari_cpp::setParameter(device, camera, "far",  cam_range.Max);
+  if (cam_type == "perspective")
+  {
+    anari_cpp::setParameter(device, camera, "fov", cam.GetFieldOfView() / 180.0 * vtkm::Pi());
+  }
+  else
+  {
+    anari_cpp::setParameter(device, camera, "height", cam.GetXScale() / img_size[0] * img_size[1]);
+  }
   anari_cpp::commitParameters(device, camera);
 
   // frame parameters
@@ -492,6 +508,9 @@ AnariImpl::render(ANARIScene& scene)
     encoder.Save(img_name  + ".png");
     anari_cpp::unmap(device, frame, "channel.color");
   }
+
+  // release resources
+  anari_cpp::release(device, camera);
 }
 
 //-----------------------------------------------------------------------------
@@ -510,17 +529,12 @@ parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& b
 
   // Parse camera
   vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds); // if we don't have camera params, we need to add a default camera
   if (params.has_path("camera"))
   {
     parse_camera(params["camera"], camera);
   }
-  else // if we don't have camera params, we need to add a default camera
-  {
-    camera.ResetToBounds(bounds);
-  }    
-  self.cam_pos = camera.GetPosition();
-  self.cam_dir = camera.GetLookAt() - camera.GetPosition();
-  self.cam_up  = camera.GetViewUp();
+  self.cam = camera;
 
   // Set transfer function
   if (params.has_path("color_table"))
