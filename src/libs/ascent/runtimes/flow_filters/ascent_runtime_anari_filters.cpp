@@ -50,8 +50,8 @@
 #include <vtkm/rendering/Camera.h>
 #include <vtkm/cont/DataSet.h>
 
-#include <vtkm/interop/anari/ANARIMapperGlyphs.h>
 #include <vtkm/interop/anari/ANARIMapperTriangles.h>
+#include <vtkm/interop/anari/ANARIMapperGlyphs.h>
 #include <vtkm/interop/anari/ANARIMapperVolume.h>
 #include <vtkm/interop/anari/ANARIScene.h>
 
@@ -249,7 +249,7 @@ public:
   anari_cpp::Frame frame;
 
   std::string field_name;
-  vtkm::Range scalar_range;
+  vtkm::Range scalar_range; // scalar value range set by users
   vtkm::cont::ColorTable tfn = vtkm::cont::ColorTable("Cool to Warm");
 
   // camera parameters
@@ -269,8 +269,9 @@ public:
   ~AnariImpl();
   AnariImpl();
   void set_tfn(ANARIMapper& mapper);
-  void render_triangles(const vtkm::cont::DataSet &dset);
-  void render_volume(const vtkm::cont::DataSet &dset);
+  void render_triangles(vtkh::DataSet &dset);
+  void render_glyphs(vtkh::DataSet &dset);
+  void render_volume(vtkh::DataSet &dset);
   void render(ANARIScene& scene);
 };
 
@@ -331,27 +332,16 @@ AnariImpl::set_tfn(ANARIMapper& mapper)
 }
 
 void 
-AnariImpl::render_triangles(const vtkm::cont::DataSet &dset)
+AnariImpl::render_triangles(vtkh::DataSet &dset)
 {
-  ANARIScene scene(device);
-
-  auto& mIso = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(device));
-  mIso.SetName("isosurface");
-  mIso.SetActor({ 
-    dset.GetCellSet(), 
-    dset.GetCoordinateSystem(), 
-    dset.GetField(field_name) 
-  });
-  mIso.SetCalculateNormals(true);
-
-  // compute value range if necessary
-  if (!scalar_range.IsNonEmpty()) {
-    vtkm::cont::PartitionedDataSet parts;
-    parts.AppendPartition({ dset });
-    auto ranges = vtkm::cont::FieldRangeGlobalCompute(parts, field_name);
+  // Compute value range if necessary
+  if (!scalar_range.IsNonEmpty()) 
+  {
+    auto ranges = dset.GetGlobalRange(field_name);
     auto size = ranges.GetNumberOfValues();
-    if (size != 1) {
-      ASCENT_ERROR("Anari Volume only supports scalar fields");
+    if (size != 1) 
+    {
+      ASCENT_ERROR("Anari Triangles only supports scalar fields");
     }
     auto portal = ranges.ReadPortal();
     for (int cc = 0; cc < size; ++cc)
@@ -362,33 +352,76 @@ AnariImpl::render_triangles(const vtkm::cont::DataSet &dset)
     }
   }
 
-  // update transfer function
-  set_tfn(mIso);
+  // Build Scene
+  ANARIScene scene(device);
+  // std::cout << "Number of domains: " << dset.GetNumberOfDomains() << std::endl;
+  for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
+  {
+    auto& mTri = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(device));
+    mTri.SetName(("triangles_" + std::to_string(i)).c_str());
+    mTri.SetActor({ 
+      dset.GetDomain(i).GetCellSet(), 
+      dset.GetDomain(i).GetCoordinateSystem(), 
+      dset.GetDomain(i).GetField(field_name) 
+    });
+    mTri.SetCalculateNormals(true);
+    set_tfn(mTri);
+  }
 
-  // finalize
+  // Finalize
   render(scene);
 }
 
 void 
-AnariImpl::render_volume(const vtkm::cont::DataSet &dset)
+AnariImpl::render_glyphs(vtkh::DataSet &dset)
 {
-  ANARIScene scene(device);
-
-  auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(device));
-  mVol.SetName("volume");
-  mVol.SetActor({ 
-    dset.GetCellSet(), 
-    dset.GetCoordinateSystem(), 
-    dset.GetField(field_name) 
-  });
-
-  // compute value range if necessary
-  if (!scalar_range.IsNonEmpty()) {
-    vtkm::cont::PartitionedDataSet parts;
-    parts.AppendPartition({ dset });
-    auto ranges = vtkm::cont::FieldRangeGlobalCompute(parts, field_name);
+  // Compute value range if necessary
+  if (!scalar_range.IsNonEmpty()) 
+  {
+    auto ranges = dset.GetGlobalRange(field_name);
     auto size = ranges.GetNumberOfValues();
-    if (size != 1) {
+    if (size != 3) 
+    {
+      ASCENT_ERROR("Anari Glyphs only supports 3-vector fields");
+    }
+    auto portal = ranges.ReadPortal();
+    for (int cc = 0; cc < size; ++cc)
+    {
+      auto range = portal.Get(cc);
+      scalar_range.Include(range);
+      // break;
+    }
+  }
+
+  // Build Scene
+  ANARIScene scene(device);
+  // std::cout << "Number of domains: " << dset.GetNumberOfDomains() << std::endl;
+  for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
+  {
+    auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperGlyphs(device));
+    mVol.SetName(("glyphs_" + std::to_string(i)).c_str());
+    mVol.SetActor({ 
+      dset.GetDomain(i).GetCellSet(), 
+      dset.GetDomain(i).GetCoordinateSystem(), 
+      dset.GetDomain(i).GetField(field_name) 
+    });
+    set_tfn(mVol);
+  }
+
+  // Finalize
+  render(scene);
+}
+
+void 
+AnariImpl::render_volume(vtkh::DataSet &dset)
+{
+  // Compute value range if necessary
+  if (!scalar_range.IsNonEmpty()) 
+  {
+    auto ranges = dset.GetGlobalRange(field_name);
+    auto size = ranges.GetNumberOfValues();
+    if (size != 1) 
+    {
       ASCENT_ERROR("Anari Volume only supports scalar fields");
     }
     auto portal = ranges.ReadPortal();
@@ -400,10 +433,22 @@ AnariImpl::render_volume(const vtkm::cont::DataSet &dset)
     }
   }
 
-  // update transfer function
-  set_tfn(mVol);
+  // Build Scene
+  ANARIScene scene(device);
+  // std::cout << "Number of domains: " << dset.GetNumberOfDomains() << std::endl;
+  for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
+  {
+    auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(device));
+    mVol.SetName(("volume_" + std::to_string(i)).c_str());
+    mVol.SetActor({ 
+      dset.GetDomain(i).GetCellSet(), 
+      dset.GetDomain(i).GetCoordinateSystem(), 
+      dset.GetDomain(i).GetField(field_name) 
+    });
+    set_tfn(mVol);
+  }
 
-  // finalize
+  // Finalize
   render(scene);
 }
 
@@ -483,6 +528,8 @@ parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& b
     vtkm::cont::ColorTable color_table = parse_color_table(params["color_table"]);
     self.tfn = color_table;
   }
+
+  // Set data value range
   if (params.has_path("min_value"))
   {
     self.scalar_range.Min = params["min_value"].to_float64();
@@ -510,21 +557,21 @@ parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& b
 
 
 //-----------------------------------------------------------------------------
-AnariPseudocolor::AnariPseudocolor()
+AnariTriangles::AnariTriangles()
   : Filter(), pimpl(new AnariImpl())
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
-AnariPseudocolor::~AnariPseudocolor()
+AnariTriangles::~AnariTriangles()
 {
   // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-AnariPseudocolor::declare_interface(Node &i)
+AnariTriangles::declare_interface(Node &i)
 {
   i["type_name"]   = "anari_pseudocolor";
   i["port_names"].append() = "in";
@@ -533,18 +580,18 @@ AnariPseudocolor::declare_interface(Node &i)
 
 //-----------------------------------------------------------------------------
 bool
-AnariPseudocolor::verify_params(const conduit::Node &params, conduit::Node &info)
+AnariTriangles::verify_params(const conduit::Node &params, conduit::Node &info)
 {
   return detail::verify_params(params, info);
 }
 
 //-----------------------------------------------------------------------------
 void
-AnariPseudocolor::execute()
+AnariTriangles::execute()
 {
   if (!input(0).check_type<DataObject>())
   {
-    ASCENT_ERROR("Anari Volume input must be a DataObject");
+    ASCENT_ERROR("Anari Pseudocolor input must be a DataObject");
   }
 
   DataObject *d_input = input<DataObject>(0);
@@ -558,24 +605,98 @@ AnariPseudocolor::execute()
   std::vector<std::string> topos = collection->topology_names();
   if (topos.size() != 1)
   {
-    ASCENT_ERROR("Anari Volume accepts only one topology");
+    ASCENT_ERROR("Anari Glyphs accepts only one topology");
   }
+  // Access the first (and only) topology
   auto &topo = collection->dataset_by_topology(topos[0]);
-  if (topo.GetNumberOfDomains() != 1)
-  {
-    ASCENT_ERROR("Anari Volume accepts only one domain");
+
+  // Check if the field is a scalar field
+  std::string field_name = params()["field"].as_string();
+  if (topo.NumberOfComponents(field_name) != 1) {
+    ASCENT_ERROR("Anari Pseudocolor only supports scalar fields");
   }
-  auto& dset = topo.GetDomain(0);
 
   // It is important to compute the data bounds
   vtkm::Bounds bounds = collection->global_bounds();
 
   // Initialize ANARI /////////////////////////////////////////////////////////
   parse_params(*pimpl, params(), bounds);
-  pimpl->render_triangles(dset);
+  pimpl->render_triangles(topo);
   // Finalize ANARI ///////////////////////////////////////////////////////////
 }
 
+
+
+
+
+//-----------------------------------------------------------------------------
+AnariGlyphs::AnariGlyphs()
+  : Filter(), pimpl(new AnariImpl())
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+AnariGlyphs::~AnariGlyphs()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+void
+AnariGlyphs::declare_interface(Node &i)
+{
+  i["type_name"]   = "anari_glyphs";
+  i["port_names"].append() = "in";
+  i["output_port"] = "false";
+}
+
+//-----------------------------------------------------------------------------
+bool
+AnariGlyphs::verify_params(const conduit::Node &params, conduit::Node &info)
+{
+  return detail::verify_params(params, info);
+}
+
+//-----------------------------------------------------------------------------
+void
+AnariGlyphs::execute()
+{
+  if (!input(0).check_type<DataObject>())
+  {
+    ASCENT_ERROR("Anari Glyphs input must be a DataObject");
+  }
+
+  DataObject *d_input = input<DataObject>(0);
+  if (!d_input->is_valid())
+  {
+    return;
+  }
+
+  // Parse input data as a VTK-h collection
+  VTKHCollection *collection = d_input->as_vtkh_collection().get();
+  std::vector<std::string> topos = collection->topology_names();
+  if (topos.size() != 1)
+  {
+    ASCENT_ERROR("Anari Glyphs accepts only one topology");
+  }
+  // Access the first (and only) topology
+  auto &topo = collection->dataset_by_topology(topos[0]);
+
+  // Check if the field is a scalar field
+  std::string field_name = params()["field"].as_string();
+  if (topo.NumberOfComponents(field_name) != 3) {
+    ASCENT_ERROR("Anari Glyphs only supports 3-vector fields");
+  }
+
+  // It is important to compute the data bounds
+  vtkm::Bounds bounds = collection->global_bounds();
+
+  // Initialize ANARI /////////////////////////////////////////////////////////
+  parse_params(*pimpl, params(), bounds);
+  pimpl->render_glyphs(topo);
+  // Finalize ANARI ///////////////////////////////////////////////////////////
+}
 
 
 
@@ -629,21 +750,23 @@ AnariVolume::execute()
   std::vector<std::string> topos = collection->topology_names();
   if (topos.size() != 1)
   {
-    ASCENT_ERROR("Anari Volume accepts only one topology");
+    ASCENT_ERROR("Anari Glyphs accepts only one topology");
   }
+  // Access the first (and only) topology
   auto &topo = collection->dataset_by_topology(topos[0]);
-  if (topo.GetNumberOfDomains() != 1)
-  {
-    ASCENT_ERROR("Anari Volume accepts only one domain");
+
+  // Check if the field is a scalar field
+  std::string field_name = params()["field"].as_string();
+  if (topo.NumberOfComponents(field_name) != 1) {
+    ASCENT_ERROR("Anari Volume only supports scalar fields");
   }
-  auto& dset = topo.GetDomain(0);
 
   // It is important to compute the data bounds
   vtkm::Bounds bounds = collection->global_bounds();
 
   // Initialize ANARI /////////////////////////////////////////////////////////
   parse_params(*pimpl, params(), bounds);
-  pimpl->render_volume(dset);
+  pimpl->render_volume(topo);
   // Finalize ANARI ///////////////////////////////////////////////////////////
 }
 

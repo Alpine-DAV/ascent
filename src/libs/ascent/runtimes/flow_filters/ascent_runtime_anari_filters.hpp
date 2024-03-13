@@ -45,11 +45,27 @@ namespace filters
 struct AnariImpl;
 
 //-----------------------------------------------------------------------------
-class ASCENT_API AnariPseudocolor : public ::flow::Filter
+class ASCENT_API AnariTriangles : public ::flow::Filter
 {
 public:
-    AnariPseudocolor();
-    virtual ~AnariPseudocolor();
+    AnariTriangles();
+    virtual ~AnariTriangles();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+private:
+    std::shared_ptr<AnariImpl> pimpl;
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API AnariGlyphs : public ::flow::Filter
+{
+public:
+    AnariGlyphs();
+    virtual ~AnariGlyphs();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,

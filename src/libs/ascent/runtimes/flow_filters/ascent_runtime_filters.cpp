@@ -146,7 +146,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
 
 #if defined(ASCENT_ANARI_ENABLED)
-    AscentRuntime::register_filter_type<AnariPseudocolor>("extracts", "anari_pseudocolor");
+    AscentRuntime::register_filter_type<AnariTriangles>("extracts", "anari_triangles");
+    AscentRuntime::register_filter_type<AnariGlyphs>("extracts", "anari_glyphs");
     AscentRuntime::register_filter_type<AnariVolume>("extracts", "anari_volume");
 #endif
 
