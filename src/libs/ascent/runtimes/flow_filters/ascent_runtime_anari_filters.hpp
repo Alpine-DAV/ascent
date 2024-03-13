@@ -42,18 +42,23 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 
+struct AnariImpl;
+
 //-----------------------------------------------------------------------------
-// class ASCENT_API AnariIsosurface : public ::flow::Filter
-// {
-// public:
-//     AnariIsosurface();
-//     virtual ~AnariIsosurface();
-// 
-//     virtual void   declare_interface(conduit::Node &i);
-//     virtual bool   verify_params(const conduit::Node &params,
-//                                  conduit::Node &info);
-//     virtual void   execute();
-// };
+class ASCENT_API AnariPseudocolor : public ::flow::Filter
+{
+public:
+    AnariPseudocolor();
+    virtual ~AnariPseudocolor();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+
+private:
+    std::shared_ptr<AnariImpl> pimpl;
+};
 
 //-----------------------------------------------------------------------------
 class ASCENT_API AnariVolume : public ::flow::Filter
@@ -68,8 +73,7 @@ public:
     virtual void   execute();
 
 private:
-    struct Impl;
-    std::shared_ptr<Impl> pimpl;
+    std::shared_ptr<AnariImpl> pimpl;
 };
 
 };
