@@ -485,7 +485,7 @@ AnariImpl::render(ANARIScene& scene)
 
   // frame parameters
   anari_cpp::setParameter(device, frame, "size", img_size);
-  anari_cpp::setParameter(device, frame, "channel.color", ANARI_FLOAT32_VEC4);
+  anari_cpp::setParameter(device, frame, "channel.color", ANARI_UFIXED8_VEC4);
   anari_cpp::setParameter(device, frame, "world", scene.GetANARIWorld());
   anari_cpp::setParameter(device, frame, "camera", camera);
   anari_cpp::setParameter(device, frame, "renderer", renderer);
@@ -502,9 +502,9 @@ AnariImpl::render(ANARIScene& scene)
 #endif
   if (rank == 0) 
   {
-    const auto fb = anari_cpp::map<vtkm::Vec4f_32>(device, frame, "channel.color");
+    const auto fb = anari_cpp::map<uint32_t>(device, frame, "channel.color");
     ascent::PNGEncoder encoder;
-    encoder.Encode((float*)fb.data, fb.width, fb.height);
+    encoder.Encode((unsigned char*)fb.data, fb.width, fb.height);
     encoder.Save(img_name  + ".png");
     anari_cpp::unmap(device, frame, "channel.color");
   }
