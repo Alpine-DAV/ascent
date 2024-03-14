@@ -57,6 +57,9 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
         return;
     }
 
+    Node res;
+    conduit::blueprint::mesh::examples::braid("rectilinear",2,2,0,res);
+    res.print();
     //
     // Create an example mesh.
     //
@@ -70,7 +73,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid");
-    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid10");
+    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid");
 
     // remove old images before rendering
     if(par_rank == 0)
@@ -88,8 +91,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "dist";
-    //scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = image_file;
 
@@ -114,7 +117,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
-    ascent.publish(data);
+//    ascent.publish(data);
+    ascent.publish(res);
     ascent.execute(actions);
     ascent.close();
 

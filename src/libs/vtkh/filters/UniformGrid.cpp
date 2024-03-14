@@ -38,6 +38,7 @@ public:
   vtkm::cont::DataSet Reduce()
   {
     vtkm::cont::DataSet res;
+    res.CopyStructure(m_dataset);
     int num_fields = m_dataset.GetNumberOfFields();
     std::cerr << "NUM fields: " << num_fields << std::endl;
     m_dataset.PrintSummary(std::cerr);
@@ -85,21 +86,19 @@ public:
 
       vtkm::cont::UnknownArrayHandle uah_field = m_input_field.GetData();
 
-      using scalar32 = vtkm::cont::ArrayHandle<vtkm::Float32>;
-      using scalar64 = vtkm::cont::ArrayHandle<vtkm::Float64>;
-      using vec32    = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>; 
-      using vec64    = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>; 
-      using vecSOA32 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float32,3>>; 
-      using vecSOA64 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float64,3>>; 
+      using scalarI = vtkm::cont::ArrayHandle<vtkm::Int32>;
+      using scalarF = vtkm::cont::ArrayHandle<vtkm::Float32>;
+      using scalarD = vtkm::cont::ArrayHandle<vtkm::Float64>;
+      using vec3_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>; 
+      using vec3_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>; 
+      using vec2_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>; 
+      using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>; 
 
       vtkm::cont::ArrayHandle<vtkm::Float32> ah_mask;
       m_data_set.GetField("mask").GetData().AsArrayHandle(ah_mask);
       auto mask_portal = ah_mask.ReadPortal();
       int num_points = mask_portal.GetNumberOfValues();
 
-      std::cerr << "HEREERERER" << std::endl;
-      std::cerr << uah_field.GetValueTypeName() << std::endl;
-      m_input_field.PrintSummary(std::cerr);
       //create invalid mask where true == invalid
       std::vector<float> l_mask(num_points,1);
       std::vector<float> g_mask(num_points,1);
@@ -109,29 +108,23 @@ public:
       }
       
       MPI_Reduce(l_mask.data(), g_mask.data(), num_points, MPI_FLOAT, MPI_LAND, 0, MPI_COMM_WORLD);
-      std::cerr << "got to this" << std::endl;
 
       ////send to root process
-      if(uah_field.CanConvert<scalar32>())
+      if(uah_field.CanConvert<scalarI>())
       {
         //loop through field, zero out invalid value
-	scalar32 ah_field = m_input_field.GetData().AsArrayHandle<scalar32>();
+	scalarI ah_field = m_input_field.GetData().AsArrayHandle<scalarI>();
+        int * local_field = GetVTKMPointer(ah_field);
+        std::vector<int> global_field(num_points,0);
+
         for(int i = 0; i < num_points; ++i)
         {
           if(l_mask[i] == 1)
             ah_field.WritePortal().Set(i,0);
         }
-	std::cerr << "FLOAT FLOAT FLOAT " << std::endl;
-        float * local_field = GetVTKMPointer(ah_field);
-        std::vector<float> global_field(num_points,0);
-        MPI_Reduce(local_field, global_field.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-	std::cerr << "global data: " << std::endl;
-	for(int i = 0; i < num_points; ++i)
-	{
-		std::cerr << global_field[i] << " ";
-	}
-	std::cerr << std::endl;
-	std::cerr << "global data END" << std::endl;
+
+        MPI_Reduce(local_field, global_field.data(), num_points, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
 	if(par_rank == 0)
 	{
           for(int i = 0; i < num_points; ++i)
@@ -141,7 +134,7 @@ public:
               global_field[i] = m_invalid_value;
 	    }
 	  }
-	  scalar32 ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
+	  scalarI ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
 	  vtkm::cont::Field out_field(m_input_field.GetName(),
 			              m_input_field.GetAssociation(),
 				      ah_out);
@@ -150,10 +143,44 @@ public:
 	}
 	else
 	  res = m_input_field;
-      }//end scalar32
-      else if(uah_field.CanConvert<scalar64>())
+      }//end scalarI
+      else if(uah_field.CanConvert<scalarF>())
       {
-	scalar64 ah_field = uah_field.AsArrayHandle<scalar64>();
+        //loop through field, zero out invalid value
+	scalarF ah_field = m_input_field.GetData().AsArrayHandle<scalarF>();
+        float * local_field = GetVTKMPointer(ah_field);
+        std::vector<float> global_field(num_points,0);
+
+        for(int i = 0; i < num_points; ++i)
+        {
+          if(l_mask[i] == 1)
+            ah_field.WritePortal().Set(i,0);
+        }
+
+        MPI_Reduce(local_field, global_field.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+	if(par_rank == 0)
+	{
+          for(int i = 0; i < num_points; ++i)
+	  {
+            if(g_mask[i] == 1)
+	    {
+              global_field[i] = m_invalid_value;
+	    }
+	  }
+	  scalarF ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
+	  vtkm::cont::Field out_field(m_input_field.GetName(),
+			              m_input_field.GetAssociation(),
+				      ah_out);
+				      
+	  res = out_field;
+	}
+	else
+	  res = m_input_field;
+      }//end scalarF
+      else if(uah_field.CanConvert<scalarD>())
+      {
+	scalarD ah_field = uah_field.AsArrayHandle<scalarD>();
         //loop through field, zero out invalid value
         for(int i = 0; i < num_points; ++i)
         {
@@ -174,7 +201,7 @@ public:
               global_field[i] = m_invalid_value;
 	    }
 	  }
-	  scalar64 ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
+	  scalarD ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
 	  vtkm::cont::Field out_field(m_input_field.GetName(),
 			              m_input_field.GetAssociation(),
 				      ah_out);
@@ -183,44 +210,45 @@ public:
 	}
 	else
 	  res = m_input_field;
-      } //end scalar64
-      if(uah_field.CanConvert<vec32>())
+      } //end scalarD
+      else if(uah_field.CanConvert<vec2_32>())
       {
         //loop through field, zero out invalid value
-	vec32 ah_field = m_input_field.GetData().AsArrayHandle<vec32>();
+	vec2_32 ah_field = m_input_field.GetData().AsArrayHandle<vec2_32>();
+        std::vector<float> local_x_points(num_points,0);
+        std::vector<float> local_y_points(num_points,0);
+        std::vector<float> global_x_points(num_points,0);
+        std::vector<float> global_y_points(num_points,0);
+
+	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+
         for(int i = 0; i < num_points; ++i)
         {
           if(l_mask[i] == 1)
 	  {
-            ah_field.WritePortal().Set(i*3,0);
-            ah_field.WritePortal().Set(i*3+1,0);
-            ah_field.WritePortal().Set(i*3+2,0);
+            ah_field.WritePortal().Set(i,0);
 	  }
+          local_x_points[i] = ah_field.ReadPortal().Get(i)[0];
+          local_y_points[i] = ah_field.ReadPortal().Get(i)[1];
         }
-	std::cerr << "FLOAT FLOAT FLOAT " << std::endl;
-        float * local_field = GetVTKMPointer(ah_field);
-	int vec_points = num_points*3;
-        std::vector<float> global_field(vec_points,0);
-        MPI_Reduce(local_field, global_field.data(), vec_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-	std::cerr << "global data: " << std::endl;
-	for(int i = 0; i < vec_points; ++i)
-	{
-		std::cerr << global_field[i][0] << " ";
-	}
-	std::cerr << std::endl;
-	std::cerr << "global data END" << std::endl;
+
+        MPI_Reduce(local_x_points.data(), global_x_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_y_points.data(), global_y_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+
 	if(par_rank == 0)
 	{
+	  vec2_32 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>();
+          ah_out.Allocate(num_points);
           for(int i = 0; i < num_points; ++i)
 	  {
             if(g_mask[i] == 1)
 	    {
-              global_field[i*3] = m_invalid_value;
-              global_field[i*3+1] = m_invalid_value;
-              global_field[i*3+2] = m_invalid_value;
+              global_x_points[i] = m_invalid_value;
+              global_y_points[i] = m_invalid_value;
 	    }
+            vtkm::Vec<vtkm::Float32,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
+            ah_out.WritePortal().Set(i,points_vec);
 	  }
-	  vec32 ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),vec_points,vtkm::CopyFlag::On);
 	  vtkm::cont::Field out_field(m_input_field.GetName(),
 			              m_input_field.GetAssociation(),
 				      ah_out);
@@ -229,7 +257,164 @@ public:
 	}
 	else
 	  res = m_input_field;
-      }//end vec32
+      }//end vec2_32
+      else if(uah_field.CanConvert<vec2_64>())
+      {
+        //loop through field, zero out invalid value
+	vec2_64 ah_field = m_input_field.GetData().AsArrayHandle<vec2_64>();
+        std::vector<double> local_x_points(num_points,0);
+        std::vector<double> local_y_points(num_points,0);
+        std::vector<double> global_x_points(num_points,0);
+        std::vector<double> global_y_points(num_points,0);
+
+	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+
+        for(int i = 0; i < num_points; ++i)
+        {
+          if(l_mask[i] == 1)
+	  {
+            ah_field.WritePortal().Set(i,0);
+	  }
+          local_x_points[i] = ah_field.ReadPortal().Get(i)[0];
+          local_y_points[i] = ah_field.ReadPortal().Get(i)[1];
+        }
+
+        MPI_Reduce(local_x_points.data(), global_x_points.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_y_points.data(), global_y_points.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+	if(par_rank == 0)
+	{
+	  vec2_64 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
+          ah_out.Allocate(num_points);
+          for(int i = 0; i < num_points; ++i)
+	  {
+            if(g_mask[i] == 1)
+	    {
+              global_x_points[i] = m_invalid_value;
+              global_y_points[i] = m_invalid_value;
+	    }
+            vtkm::Vec<vtkm::Float64,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
+            ah_out.WritePortal().Set(i,points_vec);
+	  }
+	  vtkm::cont::Field out_field(m_input_field.GetName(),
+			              m_input_field.GetAssociation(),
+				      ah_out);
+				      
+	  res = out_field;
+	}
+	else
+	  res = m_input_field;
+      }//end vec2_64
+      else if(uah_field.CanConvert<vec3_32>())
+      {
+        //loop through field, zero out invalid value
+	vec3_32 ah_field = m_input_field.GetData().AsArrayHandle<vec3_32>();
+        std::vector<float> local_x_points(num_points,0);
+        std::vector<float> local_y_points(num_points,0);
+        std::vector<float> local_z_points(num_points,0);
+        std::vector<float> global_x_points(num_points,0);
+        std::vector<float> global_y_points(num_points,0);
+        std::vector<float> global_z_points(num_points,0);
+
+	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+
+        for(int i = 0; i < num_points; ++i)
+        {
+          if(l_mask[i] == 1)
+	  {
+            ah_field.WritePortal().Set(i,0);
+	  }
+          local_x_points[i] = ah_field.ReadPortal().Get(i)[0];
+          local_y_points[i] = ah_field.ReadPortal().Get(i)[1];
+          local_z_points[i] = ah_field.ReadPortal().Get(i)[2];
+        }
+
+        MPI_Reduce(local_x_points.data(), global_x_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_y_points.data(), global_y_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_z_points.data(), global_z_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+	if(par_rank == 0)
+	{
+	  vec3_32 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
+          ah_out.Allocate(num_points);
+          for(int i = 0; i < num_points; ++i)
+	  {
+            if(g_mask[i] == 1)
+	    {
+              global_x_points[i] = m_invalid_value;
+              global_y_points[i] = m_invalid_value;
+              global_z_points[i] = m_invalid_value;
+	    }
+
+            vtkm::Vec<vtkm::Float32,3> points_vec = vtkm::make_Vec(global_x_points[i],
+                                                                   global_y_points[i],
+                                                                   global_z_points[i]);
+            ah_out.WritePortal().Set(i,points_vec);
+	  }
+	  vtkm::cont::Field out_field(m_input_field.GetName(),
+			              m_input_field.GetAssociation(),
+				      ah_out);
+				      
+	  res = out_field;
+	}
+	else
+	  res = m_input_field;
+      }//end vec3_32
+      else if(uah_field.CanConvert<vec3_64>())
+      {
+        //loop through field, zero out invalid value
+	vec3_64 ah_field = m_input_field.GetData().AsArrayHandle<vec3_64>();
+        std::vector<double> local_x_points(num_points,0);
+        std::vector<double> local_y_points(num_points,0);
+        std::vector<double> local_z_points(num_points,0);
+        std::vector<double> global_x_points(num_points,0);
+        std::vector<double> global_y_points(num_points,0);
+        std::vector<double> global_z_points(num_points,0);
+
+	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+
+        for(int i = 0; i < num_points; ++i)
+        {
+          if(l_mask[i] == 1)
+	  {
+            ah_field.WritePortal().Set(i,0);
+	  }
+          local_x_points[i] = ah_field.ReadPortal().Get(i)[0];
+          local_y_points[i] = ah_field.ReadPortal().Get(i)[1];
+          local_z_points[i] = ah_field.ReadPortal().Get(i)[2];
+        }
+
+        MPI_Reduce(local_x_points.data(), global_x_points.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_y_points.data(), global_y_points.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_z_points.data(), global_z_points.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+	if(par_rank == 0)
+	{
+          vec3_64 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>();
+          ah_out.Allocate(num_points);
+          for(int i = 0; i < num_points; ++i)
+	  {
+            if(g_mask[i] == 1)
+	    {
+              global_x_points[i] = m_invalid_value;
+              global_y_points[i] = m_invalid_value;
+              global_z_points[i] = m_invalid_value;
+	    }
+
+            vtkm::Vec<vtkm::Float64,3> points_vec = vtkm::make_Vec(global_x_points[i],
+                                                                   global_y_points[i],
+                                                                   global_z_points[i]);
+            ah_out.WritePortal().Set(i,points_vec);
+	  }
+	  vtkm::cont::Field out_field(m_input_field.GetName(),
+			              m_input_field.GetAssociation(),
+				      ah_out);
+				      
+	  res = out_field;
+	}
+	else
+	  res = m_input_field;
+      }//end vec3_64
       else
         return m_input_field;
 
