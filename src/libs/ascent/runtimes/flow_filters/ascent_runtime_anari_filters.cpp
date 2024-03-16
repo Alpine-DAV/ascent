@@ -241,6 +241,9 @@ verify_params(const conduit::Node &params, conduit::Node &info)
 // -- end ascent::runtime::filters::detail --
 //-----------------------------------------------------------------------------
 
+anari_cpp::Device   gd;
+anari_cpp::Renderer gr;
+
 struct AnariImpl {
 public:
   anari_cpp::Device device;
@@ -260,7 +263,7 @@ public:
 
   // renderer parameters
   vtkm::Vec4f_32 background = vtkm::Vec4f_32(0.3f, 0.3f, 0.3f, 1.f);
-  int pixelSamples = 64;
+  int pixelSamples = 16;
 
 public:
   ~AnariImpl();
@@ -274,23 +277,24 @@ public:
 
 AnariImpl::AnariImpl()
 {
-  device = detail::anari_device_load();
-  renderer = anari_cpp::newObject<anari_cpp::Renderer>(device, "default");
+  if (!gd) gd = detail::anari_device_load();
+  if (!gr) gr = anari_cpp::newObject<anari_cpp::Renderer>(gd, "default");
+  device = gd; renderer = gr;
+  // device = detail::anari_device_load();
+  // renderer = anari_cpp::newObject<anari_cpp::Renderer>(device, "default");
   frame = anari_cpp::newObject<anari_cpp::Frame>(device);
 }
 
 AnariImpl::~AnariImpl()
 {
-  anari_cpp::release(device, renderer);
+  // anari_cpp::release(device, renderer);
+  // anari_cpp::release(device, device);
   anari_cpp::release(device, frame);
-  anari_cpp::release(device, device);
 }
 
 void
 AnariImpl::set_tfn(ANARIMapper& mapper)
 {
-  // tfn.SetColorSpace(vtkm::ColorSpace::RGB);
-
   constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
   vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
   {
@@ -323,7 +327,7 @@ AnariImpl::set_tfn(ANARIMapper& mapper)
     auto range = tfn.GetRange();
     mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(range.Min, range.Max));
   }
-  mapper.SetANARIColorMapOpacityScale(0.5f); // no-op
+  mapper.SetANARIColorMapOpacityScale(1.0f);
 }
 
 void 
