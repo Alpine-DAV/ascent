@@ -63,6 +63,15 @@
 
 #include <png_utils/ascent_png_encoder.hpp>
 
+// #include <assert.h>
+// #include <math.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// namespace {
+// #include "sky_model/color_info.h"
+// #include "sky_model/sky_model.cpp"
+// }
+
 // mpi
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -249,6 +258,7 @@ public:
   anari_cpp::Device device;
   anari_cpp::Renderer renderer;
   anari_cpp::Frame frame;
+  std::vector<anari_cpp::Light> lights;
 
   std::string field_name;
   vtkm::Range scalar_range; // scalar value range set by users
@@ -263,12 +273,13 @@ public:
 
   // renderer parameters
   vtkm::Vec4f_32 background = vtkm::Vec4f_32(0.3f, 0.3f, 0.3f, 1.f);
-  int pixelSamples = 16;
+  int pixelSamples = 64;
 
 public:
   ~AnariImpl();
   AnariImpl();
   void set_tfn(ANARIMapper& mapper);
+  void set_lights();
   void render_triangles(vtkh::DataSet &dset);
   void render_glyphs(vtkh::DataSet &dset);
   void render_volume(vtkh::DataSet &dset);
@@ -283,10 +294,15 @@ AnariImpl::AnariImpl()
   // device = detail::anari_device_load();
   // renderer = anari_cpp::newObject<anari_cpp::Renderer>(device, "default");
   frame = anari_cpp::newObject<anari_cpp::Frame>(device);
+  set_lights();
 }
 
 AnariImpl::~AnariImpl()
 {
+  for (auto& light : lights)
+  {
+    anari_cpp::release(device, light);
+  }
   // anari_cpp::release(device, renderer);
   // anari_cpp::release(device, device);
   anari_cpp::release(device, frame);
@@ -330,6 +346,164 @@ AnariImpl::set_tfn(ANARIMapper& mapper)
   mapper.SetANARIColorMapOpacityScale(1.0f);
 }
 
+#if 0
+template<class T>
+constexpr const T& clamp(const T& v, const T& lo, const T& hi)
+{
+  return (v < lo) ? lo : (hi < v) ? hi : v;
+}
+
+inline vtkm::Vec3f_32 cieXyz(int i)
+{
+  return vtkm::Vec3f_32(cieX[i], cieY[i], cieZ[i]);
+}
+
+inline float deg2rad(float deg)
+{
+  return deg * (float)M_PI / 180.0f;
+}
+
+inline vtkm::Vec3f_32 xyzToRgb(const vtkm::Vec3f_32 &c)
+{
+  float r =  3.240479f * c[0] - 1.537150f * c[1] - 0.498535f * c[2];
+  float g = -0.969256f * c[0] + 1.875991f * c[1] + 0.041556f * c[2];
+  float b =  0.055648f * c[0] - 0.204043f * c[1] + 1.057311f * c[2];
+  return vtkm::Vec3f_32(r, g, b);
+}
+
+const std::vector<vtkm::Vec3f_32>& create_skymap(vtkm::Vec3f_32& solarIrradiance) 
+{
+  // Parameters
+  vtkm::Vec3f_32 up = vtkm::Vec3f_32(0.0f, 1.0f, 0.0f);
+  vtkm::Vec3f_32 direction = vtkm::Vec3f_32(0.0f, -1.0f, 0.0f);
+  float turbidity = 3.f;
+  float albedo = 0.3f;
+  float horizon  = 0.01f;
+  const float sunTheta = up[0] * direction[0] + up[1] * direction[1] + up[2] * direction[2];
+  vtkm::Vec3f_32 coloredIntensity  = vtkm::Vec3f_32(1.0f, 1.0f, 1.0f);
+  float intensityScale = 0.025f;
+  const int skyResolution = 512;
+
+  const float lambdaMin = 320.0f;
+  const float lambdaMax = 720.0f;
+
+  // sun doesn't go beneath the horizon as theta clamped to pi/2
+  const float sunThetaMax = std::min(std::acos(sunTheta), (float)M_PI * 0.999f / 2.0f);
+  const float sunPhi = M_PI;
+  const float sunElevation = (float)M_PI / 2.0f - sunThetaMax;
+
+  // Solar irradiance
+  ArHosekSkyModelState *spectralModel =
+      arhosekskymodelstate_alloc_init(sunElevation, turbidity, albedo);
+
+  // angular diameter of the sun in degrees
+  // using this value produces matching solar irradiance results from the model
+  // and directional light
+  const float angularDiameter = 0.53;
+  solarIrradiance = vtkm::Vec3f_32(0,0,0);
+
+  // calculate solar radiance
+  for (int i = 0; i < cieSize; ++i) {
+    if (cieLambda[i] >= lambdaMin && cieLambda[i] <= lambdaMax) {
+      float r = arhosekskymodel_solar_radiance_internal2(
+          spectralModel, cieLambda[i], sunElevation, 1);
+      solarIrradiance += r * cieXyz(i);
+    }
+  }
+
+  arhosekskymodelstate_free(spectralModel);
+
+  float cosAngle = std::cos(deg2rad(0.5f * angularDiameter));
+  const float rcpPdf = 2 * (float)M_PI * (1 - cosAngle);
+
+  // convert solar radiance to solar irradiance
+  solarIrradiance =
+      xyzToRgb(solarIrradiance) * vtkm::Vec3f_32(rcpPdf * intensityScale) * coloredIntensity;
+
+  // Result
+  static std::vector<vtkm::Vec3f_32> skyMap;
+
+  // Lazy initialization
+  if (skyMap.empty()) 
+  {
+    std::cout << "Creating sky map" << std::endl;
+
+    const auto skySize = vtkm::Vec2i_32(skyResolution, skyResolution / 2);
+    skyMap.resize(skySize[0] * skySize[1]);
+
+
+    ArHosekSkyModelState *rgbModel =
+        arhosek_rgb_skymodelstate_alloc_init(turbidity, albedo, sunElevation);
+
+    for (int y = 0; y < skySize[1]; y++) 
+    {
+      for (int x = 0; x < skySize[0]; x++) 
+      {
+        float theta = (y + 0.5) / skySize[1] * float(M_PI);
+        const size_t index = skySize[0] * y + x;
+        // const size_t index = skySize[0] * y + x * 3;
+        vtkm::Vec3f_32 skyRadiance(0,0,0);
+
+        const float maxTheta = 0.999 * float(M_PI) / 2.0;
+        const float maxThetaHorizon = (horizon + 1.0) * float(M_PI) / 2.0;
+
+        if (theta <= maxThetaHorizon) {
+          float shadow = (horizon > 0.f)
+              ? float(
+                  clamp((maxThetaHorizon - theta) / (maxThetaHorizon - maxTheta),
+                      0.f,
+                      1.f))
+              : 1.f;
+          theta = std::min(theta, maxTheta);
+
+          float phi = ((x + 0.5) / skySize[0] - 0.5) * (2.0 * (float)M_PI);
+
+          float cosGamma = std::cos(theta) * std::cos(sunThetaMax)
+              + std::sin(theta) * std::sin(sunThetaMax) * std::cos(phi - sunPhi);
+
+          float gamma = std::acos(clamp(cosGamma, -1.f, 1.f));
+
+          float rgbData[3];
+          for (int i = 0; i < 3; ++i) {
+            rgbData[i] =
+                arhosek_tristim_skymodel_radiance(rgbModel, theta, gamma, i);
+          }
+
+          skyRadiance = vtkm::Vec3f_32(rgbData[0], rgbData[1], rgbData[2]);
+          skyRadiance = skyRadiance * shadow;
+          skyRadiance *= vtkm::Vec3f_32(intensityScale, intensityScale, intensityScale);
+        }
+
+        skyMap[index] = std::max(skyRadiance, vtkm::Vec3f_32(0.0f,0.0f,0.0f));
+      }
+    }
+    
+    arhosekskymodelstate_free(rgbModel);
+  }
+  
+  return skyMap;
+}
+#endif
+
+void 
+AnariImpl::set_lights()
+{
+  for (auto& light : lights)
+  {
+    anari_cpp::release(device, light);
+  }
+  lights.clear();
+
+  // create default lights
+  anari_cpp::Light sun = anari_cpp::newObject<anari_cpp::Light>(device, "directional");
+  anari_cpp::setParameter(device, sun, "direction", vtkm::Vec3f_32(0.0f, -1.0f, 0.0f));
+  anari_cpp::setParameter(device, sun, "irradiance", 2.f);
+  anari_cpp::setParameter(device, sun, "angularDiameter", 0.00925f);
+  anari_cpp::setParameter(device, sun, "radiance", 1.f);
+  anari_cpp::commitParameters(device, sun);
+  lights.push_back(sun);
+}
+
 void 
 AnariImpl::render_triangles(vtkh::DataSet &dset)
 {
@@ -353,7 +527,6 @@ AnariImpl::render_triangles(vtkh::DataSet &dset)
 
   // Build Scene
   ANARIScene scene(device);
-  // std::cout << "Number of domains: " << dset.GetNumberOfDomains() << std::endl;
   for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
   {
     auto& mTri = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(device));
@@ -394,7 +567,6 @@ AnariImpl::render_glyphs(vtkh::DataSet &dset)
 
   // Build Scene
   ANARIScene scene(device);
-  // std::cout << "Number of domains: " << dset.GetNumberOfDomains() << std::endl;
   for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
   {
     auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperGlyphs(device));
@@ -434,7 +606,6 @@ AnariImpl::render_volume(vtkh::DataSet &dset)
 
   // Build Scene
   ANARIScene scene(device);
-  // std::cout << "Number of domains: " << dset.GetNumberOfDomains() << std::endl;
   for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
   {
     auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(device));
@@ -457,10 +628,11 @@ AnariImpl::render(ANARIScene& scene)
   // renderer parameters
   anari_cpp::setParameter(device, renderer, "background", background);
   anari_cpp::setParameter(device, renderer, "pixelSamples", pixelSamples);
+  anari_cpp::setParameter(device, renderer, "ambientRadiance", 0.8f);
   anari_cpp::commitParameters(device, renderer);
 
   // TODO support all camera parameters
-  //    -- missing parameters: xpan, ypan, zoom
+  //    -- missing parameters: xpan, ypan, zoom (through imageRegion)
   //
   const auto cam_type = cam.GetMode() == vtkm::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
   const auto cam_pos = cam.GetPosition();
@@ -471,9 +643,6 @@ AnariImpl::render(ANARIScene& scene)
   anari_cpp::setParameter(device, camera, "aspect", img_size[0] / float(img_size[1]));
   anari_cpp::setParameter(device, camera, "position",  cam_pos);
   anari_cpp::setParameter(device, camera, "direction", cam_dir);
-  // std::cout << "Camera position: " << cam_pos << std::endl;
-  // std::cout << "Camera direction: " << cam_dir << std::endl;
-  // std::cout << "Camera up: " << cam_up << std::endl;
   anari_cpp::setParameter(device, camera, "up", cam_up);
   anari_cpp::setParameter(device, camera, "near", cam_range.Min);
   anari_cpp::setParameter(device, camera, "far",  cam_range.Max);
@@ -487,10 +656,16 @@ AnariImpl::render(ANARIScene& scene)
   }
   anari_cpp::commitParameters(device, camera);
 
+  // commit world with lights
+  auto world = scene.GetANARIWorld();
+  anari_cpp::setAndReleaseParameter(device, world, "light", 
+    anari_cpp::newArray1D(device, lights.data(), lights.size()));
+  anari_cpp::commitParameters(device, world);
+
   // frame parameters
   anari_cpp::setParameter(device, frame, "size", img_size);
   anari_cpp::setParameter(device, frame, "channel.color", ANARI_UFIXED8_VEC4);
-  anari_cpp::setParameter(device, frame, "world", scene.GetANARIWorld());
+  anari_cpp::setParameter(device, frame, "world", world);
   anari_cpp::setParameter(device, frame, "camera", camera);
   anari_cpp::setParameter(device, frame, "renderer", renderer);
   anari_cpp::commitParameters(device, frame);
