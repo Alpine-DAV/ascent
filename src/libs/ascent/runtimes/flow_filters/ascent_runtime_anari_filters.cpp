@@ -272,7 +272,7 @@ public:
   vtkm::Vec2ui_32 img_size = vtkm::Vec2ui_32(1024, 768);
 
   // renderer parameters
-  vtkm::Vec4f_32 background = vtkm::Vec4f_32(0.3f, 0.3f, 0.3f, 1.f);
+  vtkm::Vec4f_32 background = vtkm::Vec4f_32(0.0f, 0.0f, 0.0f, 0.f);
   int pixelSamples = 64;
 
 public:
