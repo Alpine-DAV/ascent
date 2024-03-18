@@ -189,11 +189,14 @@ if(UMPIRE_DIR)
     if(EXISTS ${UMPIRE_DIR}/share/umpire/cmake)
       # old install layout
       set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/share/umpire/cmake)
-    else()
+    elseif(EXISTS ${UMPIRE_DIR}/lib/cmake/umpire)
       # new install layout
       set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib/cmake/umpire)
+    elseif(EXISTS ${UMPIRE_DIR}/lib64/cmake/umpire)
+        # new new install layout
+        set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib64/cmake/umpire)
     endif()
-    
+
     if(NOT EXISTS ${_UMPIRE_SEARCH_PATH})
         message(FATAL_ERROR "Could not find Umpire CMake include file (${_UMPIRE_SEARCH_PATH})")
     endif()
