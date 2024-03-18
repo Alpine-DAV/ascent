@@ -3786,6 +3786,12 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     valid_paths.push_back("seed_bounding_box_ymax");
     valid_paths.push_back("seed_bounding_box_zmin");
     valid_paths.push_back("seed_bounding_box_zmax");
+    valid_paths.push_back("enable_tubes");
+    valid_paths.push_back("tube_capping");
+    valid_paths.push_back("tube_size");
+    valid_paths.push_back("tube_sides");
+    valid_paths.push_back("tube_value");
+    valid_paths.push_back("output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3835,6 +3841,18 @@ VTKHParticleAdvection::execute()
     int numSeeds = get_int32(params()["num_seeds"], data_object);
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
+    
+    //tube params
+    std::string output_field = field_name + "_streamlines";
+
+    bool draw_tubes = true;
+    if(params().has_path("enable_tubes"))
+    {
+      if(params()["enable_tubes"].as_string() == "false")
+      {
+        draw_tubes = false;
+      }
+    }
 
     float seedBBox[6];
     seedBBox[0] = get_float32(params()["seed_bounding_box_xmin"], data_object);
@@ -3869,6 +3887,7 @@ VTKHParticleAdvection::execute()
       float x = seedBBox[0] + dx * distribution(generator);
       float y = seedBBox[2] + dy * distribution(generator);
       float z = seedBBox[4] + dz * distribution(generator);
+      std::cerr << "seed " << i << ": " << x << " " << y << " " << z << std::endl;
       seeds.push_back(vtkm::Particle({x,y,z}, i));
     }
     auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
@@ -3882,6 +3901,45 @@ VTKHParticleAdvection::execute()
       sl.SetNumberOfSteps(numSteps);
       sl.SetSeeds(seeds);
       sl.SetField(field_name);
+      if(draw_tubes)
+      {
+        sl.SetTubes(true);
+        if(params().has_path("output_field")) 
+	{
+          std::string output_field = params()["output_field"].as_string();
+          sl.SetOutputField(output_field);
+	}
+	else
+	{
+	  std::string output_field = field_name + "_streamlines";
+          sl.SetOutputField(output_field);
+	}
+        if(params().has_path("tube_value")) 
+	{
+          double tube_value = params()["tube_value"].as_float64();
+          sl.SetTubeValue(tube_value);
+	}
+        if(params().has_path("tube_size")) 
+	{
+          double tube_size = params()["tube_size"].as_float64();
+          sl.SetTubeSize(tube_size);
+	}
+        if(params().has_path("tube_sides")) 
+	{
+          int tube_sides = params()["tube_sides"].as_int32();
+          sl.SetTubeSides(tube_sides);
+	}
+        if(params().has_path("tube_capping"))
+        {
+          bool tube_capping = true;
+          if(params()["tube_capping"].as_string() == "false")
+          {
+            tube_capping = false;
+          }
+          sl.SetTubeCapping(tube_capping);
+        }
+      }
+
       sl.SetInput(&data);
       sl.Update();
       output = sl.GetOutput();
@@ -3973,6 +4031,12 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
     valid_paths.push_back("weighting_field");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
+    valid_paths.push_back("enable_tubes");
+    valid_paths.push_back("tube_capping");
+    valid_paths.push_back("tube_size");
+    valid_paths.push_back("tube_sides");
+    valid_paths.push_back("tube_value");
+    valid_paths.push_back("output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -4047,6 +4111,15 @@ VTKHWarpXStreamline::execute()
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
 
+    //tube params
+    bool draw_tubes = false;
+    if(params().has_path("enable_tubes"))
+    {
+      if(params()["enable_tubes"].as_string() == "true")
+      {
+        draw_tubes = true;
+      }
+    }
 
     vtkh::DataSet *output = nullptr;
     vtkh::WarpXStreamline sl;
@@ -4058,6 +4131,46 @@ VTKHWarpXStreamline::execute()
     sl.SetMassField(mass_field);
     sl.SetMomentumField(momentum_field);
     sl.SetWeightingField(weighting_field);
+
+    if(draw_tubes)
+    {
+      sl.SetTubes(true);
+      if(params().has_path("output_field")) 
+      {
+        std::string output_field = params()["output_field"].as_string();
+        sl.SetOutputField(output_field);
+      }
+      else
+      {
+        std::string output_field = b_field+ "_" + e_field + "_streamlines";
+        sl.SetOutputField(output_field);
+      }
+      if(params().has_path("tube_value")) 
+      {
+        double tube_value = params()["tube_value"].as_float64();
+        sl.SetTubeValue(tube_value);
+      }
+      if(params().has_path("tube_size")) 
+      {
+        double tube_size = params()["tube_size"].as_float64();
+        sl.SetTubeSize(tube_size);
+      }
+      if(params().has_path("tube_sides")) 
+      {
+        int tube_sides = params()["tube_sides"].as_int32();
+        sl.SetTubeSides(tube_sides);
+      }
+      if(params().has_path("tube_capping"))
+      {
+        bool tube_capping = true;
+        if(params()["tube_capping"].as_string() == "false")
+        {
+          tube_capping = false;
+        }
+        sl.SetTubeCapping(tube_capping);
+      }
+    }
+
     sl.SetInput(&data);
     sl.Update();
     output = sl.GetOutput();

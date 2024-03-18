@@ -5,15 +5,19 @@
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
+#include "t_vtkm_test_utils.hpp"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Streamline.hpp>
+#include <vtkh/rendering/RayTracer.hpp>
+#include <vtkh/rendering/Scene.hpp>
+
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/CellSetSingleType.h>
-#include "t_vtkm_test_utils.hpp"
+
 #include <iostream>
 #include <mpi.h>
 
@@ -28,11 +32,10 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
     auto cs = currentDomain.GetCellSet();
     if (isSL)
     {
-      auto cellSet = cs.AsCellSet<vtkm::cont::CellSetExplicit<>>();
       //Ensure that streamlines took <= to the max number of steps
-      for(int j = 0; j < cellSet.GetNumberOfCells(); j++)
+      for(int j = 0; j < cs.GetNumberOfCells(); j++)
       {
-        EXPECT_LE(cellSet.GetNumberOfPointsInCell(j), maxSteps);
+        EXPECT_LE(cs.GetNumberOfPointsInCell(j), maxSteps);
       }
     }
     else
@@ -131,16 +134,51 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   }
 
   vtkh::DataSet *outPA=NULL, *outSL=NULL;
-
   outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
-  outPA->PrintSummary(std::cout);
+  std::cerr << "Particle Advection Output:" << std::endl;
+  outPA->PrintSummary(std::cerr);
   checkValidity(outPA, maxAdvSteps+1, false);
 
-  outSL = RunFilter<vtkh::Streamline>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
-  outSL->PrintSummary(std::cout);
+  vtkh::Streamline streamline;
+  streamline.SetInput(&data_set);
+  streamline.SetField("vector_data_Float64");
+  streamline.SetNumberOfSteps(maxAdvSteps);
+  streamline.SetStepSize(0.1);
+  streamline.SetSeeds(seeds);
+  streamline.SetTubes(true);
+  streamline.SetTubeCapping(true);
+  streamline.SetTubeSize(0.1);
+  streamline.SetTubeSides(3);
+  streamline.SetOutputField("lines");
+  streamline.Update();
+
+  outSL = streamline.GetOutput();
+  //outSL = RunFilter<vtkh::Streamline>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
   checkValidity(outSL, maxAdvSteps+1, true);
+  std::cerr << "Streamline Output:" << std::endl;
+  outSL->PrintSummary(std::cerr);
 
   writeDataSet(outSL, "advection_SeedsRandomWhole", rank);
+
+  vtkm::Bounds paBounds = outSL->GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(paBounds);
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *outSL,
+                                         "tout_streamline_render");
+
+  vtkh::RayTracer tracer;
+  tracer.SetInput(outSL);
+  tracer.SetField("lines");
+
+  vtkh::Scene scene;
+  scene.AddRender(render);
+  scene.AddRenderer(&tracer);
+  scene.Render();
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();

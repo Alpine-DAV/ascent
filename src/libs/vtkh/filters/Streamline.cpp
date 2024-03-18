@@ -1,9 +1,10 @@
 #include <iostream>
 #include <vtkh/filters/Streamline.hpp>
-#include <vtkm/filter/flow/Streamline.h>
-#include <vtkm/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
+#include <vtkm/filter/flow/Streamline.h>
+#include <vtkm/cont/EnvironmentTracker.h>
+#include <vtkm/filter/geometry_refinement/Tube.h>
 
 #if VTKH_PARALLEL
 #include <vtkm/thirdparty/diy/diy.h>
@@ -15,6 +16,11 @@ namespace vtkh
 {
 
 Streamline::Streamline()
+:  m_tubes(true),
+   m_radius_set(false),
+   m_tube_sides(3.0),
+   m_tube_capping(true),
+   m_tube_value(0.0)
 {
 }
 
@@ -106,9 +112,56 @@ void Streamline::DoExecute()
   streamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = streamlineFilter.Execute(inputs);
 
-  for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+  //call tube filter if we want to render output
+  if(m_tubes)
   {
-    this->m_output->AddDomain(out.GetPartition(i), i);
+
+    if(!m_radius_set)
+    {
+      vtkm::Float32 radius = 0.0;
+      vtkm::Bounds coordBounds = out.GetPartition(0).GetCoordinateSystem().GetBounds();
+      // set a default radius
+      vtkm::Float64 lx = coordBounds.X.Length();
+      vtkm::Float64 ly = coordBounds.Y.Length();
+      vtkm::Float64 lz = coordBounds.Z.Length();
+      vtkm::Float64 mag = vtkm::Sqrt(lx * lx + ly * ly + lz * lz);
+      // same as used in vtk ospray
+      constexpr vtkm::Float64 heuristic = 1000.;
+      radius = static_cast<vtkm::Float32>(mag / heuristic);
+      m_tube_size = radius;
+    }
+
+    //if the tubes are too small they cannot be rendered
+    float min_tube_size = 0.00000001;
+    if(m_tube_size < min_tube_size)
+    {
+      int num_domains = out.GetNumberOfPartitions();
+      for (vtkm::Id i = 0; i < num_domains; i++)
+      {
+        this->m_output->AddDomain(out.GetPartition(i), i);
+      }
+      return;
+    }
+
+    vtkm::filter::geometry_refinement::Tube tubeFilter;
+    tubeFilter.SetCapping(m_tube_capping);
+    tubeFilter.SetNumberOfSides(m_tube_sides);
+    tubeFilter.SetRadius(m_tube_size);
+
+    auto tubeOut = tubeFilter.Execute(out);
+
+    for (vtkm::Id i = 0; i < tubeOut.GetNumberOfPartitions(); i++)
+    {
+      this->m_output->AddDomain(tubeOut.GetPartition(i), i);
+    }
+    this->m_output->AddConstantPointField(m_tube_value, m_output_field_name);
+  }
+  else
+  {
+    for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+    {
+      this->m_output->AddDomain(out.GetPartition(i), i);
+    }
   }
 #endif
 }

@@ -1,0 +1,35 @@
+#An example of using the streamline filter and rendering the result.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f2: 
+        type: "streamline"
+        params: 
+          field: "vel"
+          num_seeds: 10
+          num_steps: 100
+          step_size: 0.01
+          seed_bounding_box_x_min: 0.0
+          seed_bounding_box_x_max: 1.0
+          seed_bounding_box_y_min: 0.0
+          seed_bounding_box_y_max: 1.0
+          seed_bounding_box_z_min: 0.0
+          seed_bounding_box_z_max: 1.0
+          enable_tubes: "true"
+          tube_capping: "false"
+          tube_size: 0.1
+          tube_sides: 4
+          tube_value: 0.0
+          output_name: "lines"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "lines"
+          pipeline: "pl1"
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/tout_streamline_vel"
