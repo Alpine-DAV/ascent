@@ -33,3 +33,27 @@ if(MPI_FOUND)
       ARCHIVE DESTINATION examples/ascent/babelflow/pmt
       RUNTIME DESTINATION examples/ascent/babelflow/pmt)
 endif()
+
+
+set(ascent_babelflow_example_noise_sources
+    ascent_babelflow_example_noise.cpp
+    open_simplex_noise.c)
+
+set(ascent_babelflow_example_noise_header
+	open_simplex_noise.h)
+
+if(MPI_FOUND)
+	set(ascent_babelflow_example_noise_deps ascent_mpi BabelFlow::babelflow ${MPI_CXX_LIBRARIES} PMT::pmt)
+
+    blt_add_executable(
+        NAME        ascent_babelflow_example_noise
+        SOURCES     ${ascent_babelflow_example_noise_sources}
+        DEPENDS_ON  ${ascent_babelflow_example_noise_deps}
+        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+  install(TARGETS ascent_babelflow_example_noise
+      EXPORT  ascent
+      LIBRARY DESTINATION examples/ascent/babelflow/pmt
+      ARCHIVE DESTINATION examples/ascent/babelflow/pmt
+      RUNTIME DESTINATION examples/ascent/babelflow/pmt)
+endif()

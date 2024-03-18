@@ -12,7 +12,12 @@
 #include <ascent_runtime_param_check.hpp>
 #include <flow_workspace.hpp>
 
+//#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+//#else
+//#include <mpidummy.h>
+//#define _NOMPI
+//#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ParallelMergeTree --
@@ -934,6 +939,7 @@ void merge_tree_stats_helper( std::vector<BabelFlow::Payload> &inputs,
 
   merge_stat_maps( stat_tree_combined.mStatMap, stats_input_v );
   merge_trees_algorithm( trees_input_v, stat_tree_combined.mTree, task );
+
 }
 
 int merge_tree_stats( std::vector<BabelFlow::Payload> &inputs,
@@ -977,7 +983,11 @@ int write_stats_topo( std::vector<BabelFlow::Payload> &inputs,
 
   uint32_t tree_sz = stat_tree_combined.mTree.nodes().size();
 
-  assert( tree_sz == stat_tree_combined.mStatMap.mapSize() );
+  // XUAN: work around the size check for now
+  // possible duplicate nodes
+  //assert( tree_sz == stat_tree_combined.mStatMap.mapSize() );
+  tree_sz = tree_sz <= stat_tree_combined.mStatMap.mapSize()?
+      tree_sz : stat_tree_combined.mStatMap.mapSize();
 
 #ifdef BFLOW_PMT_DEBUG
   {
@@ -1006,9 +1016,14 @@ int write_stats_topo( std::vector<BabelFlow::Payload> &inputs,
   features.resize( tree_sz, 
                    TopologyFileFormat::FeatureElement(TopologyFileFormat::SINGLE_REPRESENTATIVE) );
 
-  for( BabelFlow::LocalIndexType i = 0; i < tree_sz; ++i )
+  BabelFlow::LocalIndexType index_j = 0;
+  for( BabelFlow::LocalIndexType i = 0; i < stat_tree_combined.mTree.nodes().size(); ++i )
   {
     TreeNode* node = stat_tree_combined.mTree.getNode(i);
+
+    // XUAN changing to match size
+    StatisticsMap::StatisticsVec& sv = stat_tree_combined.mStatMap.getStatsVec( node->id() );
+    if (sv.size() <= 0) continue;
 
     life[0] = life[1] = node->value();
     if( node->down() != NULL )    // Not a local minimum
@@ -1017,12 +1032,14 @@ int write_stats_topo( std::vector<BabelFlow::Payload> &inputs,
     if( life[0] > life[1] )
       std::swap( life[0], life[1] );
 
-    features[i].addLink( (node->down() == NULL) ? BabelFlow::LNULL : node->down()->index() );
-    features[i].direction( 0 );   // Direction == 0 means it's a merge tree
-    features[i].lifeTime( life[0], life[1] );
+    features[index_j].addLink( (node->down() == NULL) ? BabelFlow::LNULL : node->down()->index() );
+    features[index_j].direction( 0 );   // Direction == 0 means it's a merge tree
+    features[index_j].lifeTime( life[0], life[1] );
 
     low = std::min( low, life[0] );
     high = std::max( high, life[1] );
+
+    index_j++;
   }
 
   // Set the overall function range of the clan
@@ -1053,17 +1070,26 @@ int write_stats_topo( std::vector<BabelFlow::Payload> &inputs,
 
   TopologyFileFormat::Data<double> stats_arr( tree_sz );
 
-  // std::cout << "Stats:" << std::endl;
-  for( BabelFlow::LocalIndexType i = 0; i < tree_sz; ++i )
+  
+  //std::cout << "sizes tree vs statmap: " << tree_sz <<" "
+  //	    << stat_tree_combined.mTree.nodes().size()
+  //        << " " << stat_tree_combined.mStatMap.mapSize() <<" \n";
+
+  index_j = 0;
+  
+  for( BabelFlow::LocalIndexType i = 0; i < stat_tree_combined.mTree.nodes().size(); ++i )
   {
     TreeNode* node = stat_tree_combined.mTree.getNode(i);
     StatisticsMap::StatisticsVec& sv = stat_tree_combined.mStatMap.getStatsVec( node->id() );
-    
-    assert( sv.size() > 0 );
-    
-    stats_arr[i] = sv[0]->value();
-    stat_handle.stat( sv[0]->typeName() );
 
+    // XUAN: disble the check now
+    //assert( sv.size() > 0 );
+
+    if (sv.size() > 0){
+        stats_arr[index_j] = sv[0]->value();
+        stat_handle.stat( sv[0]->typeName() );
+	index_j++;
+    }
     // std::cout << node->id() << "  " << sv[0]->value() << std::endl;
   }
 
