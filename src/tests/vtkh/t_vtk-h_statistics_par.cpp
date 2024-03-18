@@ -39,12 +39,16 @@ TEST(vtkh_statistics_par, vtkh_stats)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
 
-  vtkh::Statistics::Result res;
+  vtkh::DataSet* res;
   vtkh::Statistics stats;
 
-  res = stats.Run(data_set,"point_data_Float64");
+  stats.SetField("point_data_Float64");
+  stats.SetInput(&data_set);
+  stats.Update();
+  res = stats.GetOutput();
 
-  if(rank == 0) res.Print(std::cout);
+
+  if(rank == 0) res->PrintSummary(std::cout);
 
   MPI_Finalize();
 }
