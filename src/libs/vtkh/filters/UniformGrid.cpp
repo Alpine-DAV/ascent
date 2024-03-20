@@ -40,21 +40,13 @@ public:
     vtkm::cont::DataSet res;
     res.CopyStructure(m_dataset);
     int num_fields = m_dataset.GetNumberOfFields();
-    std::cerr << "NUM fields: " << num_fields << std::endl;
-    m_dataset.PrintSummary(std::cerr);
     for(int i = 0; i < num_fields; ++i)
     { 
       vtkm::cont::Field field = m_dataset.GetField(i);
-      std::cerr << "inputing field: " << std::endl;
-      field.PrintSummary(std::cerr);
-      std::cerr << "inputing field END: " << std::endl;
       ReduceField r_field(field, m_dataset, m_invalid_value);
       vtkm::cont::Field res_field = r_field.reduce();
       //auto reduce_field = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
       //reduce_field.CastAndCall(r_field);
-      std::cerr << "resulting field: " << std::endl;
-      res_field.PrintSummary(std::cerr);
-      std::cerr << "resulting field END: " << std::endl;
       res.AddField(res_field);
     } 
 
@@ -76,6 +68,8 @@ public:
     vtkm::cont::Field 
     reduce()
     {
+      if(m_input_field.GetName() == "mask")
+        return m_input_field;
       vtkm::cont::Field res;
       MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
       vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
@@ -100,14 +94,19 @@ public:
       int num_points = mask_portal.GetNumberOfValues();
 
       //create invalid mask where true == invalid
-      std::vector<float> l_mask(num_points,1);
-      std::vector<float> g_mask(num_points,1);
+      std::vector<int> l_mask(num_points,1);
+      std::vector<int> g_mask(num_points,1);
+      std::vector<int> g_valid(num_points,0);
+      std::vector<int> l_valid(num_points,0);
       for(int j = 0; j < num_points; ++j)
       {
         l_mask[j] = l_mask[j] && mask_portal.Get(j);
+	if(l_mask[j] == 0)
+	  l_valid[j] = 1;
       }
       
-      MPI_Reduce(l_mask.data(), g_mask.data(), num_points, MPI_FLOAT, MPI_LAND, 0, MPI_COMM_WORLD);
+      MPI_Reduce(l_mask.data(), g_mask.data(), num_points, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
+      MPI_Reduce(l_valid.data(), g_valid.data(), num_points, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
       ////send to root process
       if(uah_field.CanConvert<scalarI>())
@@ -132,6 +131,10 @@ public:
             if(g_mask[i] == 1)
 	    {
               global_field[i] = m_invalid_value;
+	    }
+	    if(g_valid[i] > 1)
+	    {
+              global_field[i] = global_field[i]/g_valid[i];
 	    }
 	  }
 	  scalarI ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
@@ -167,6 +170,10 @@ public:
 	    {
               global_field[i] = m_invalid_value;
 	    }
+	    if(g_valid[i] > 1)
+	    {
+              global_field[i] = global_field[i]/g_valid[i];
+	    }
 	  }
 	  scalarF ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
 	  vtkm::cont::Field out_field(m_input_field.GetName(),
@@ -199,6 +206,10 @@ public:
             if(g_mask[i] == 1)
 	    {
               global_field[i] = m_invalid_value;
+	    }
+	    if(g_valid[i] > 1)
+	    {
+              global_field[i] = global_field[i]/g_valid[i];
 	    }
 	  }
 	  scalarD ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
@@ -246,6 +257,11 @@ public:
               global_x_points[i] = m_invalid_value;
               global_y_points[i] = m_invalid_value;
 	    }
+	    if(g_valid[i] > 1)
+	    {
+              global_x_points[i] = global_x_points[i]/g_valid[i];
+              global_y_points[i] = global_y_points[i]/g_valid[i];
+	    }
             vtkm::Vec<vtkm::Float32,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
 	  }
@@ -292,6 +308,11 @@ public:
 	    {
               global_x_points[i] = m_invalid_value;
               global_y_points[i] = m_invalid_value;
+	    }
+	    if(g_valid[i] > 1)
+	    {
+              global_x_points[i] = global_x_points[i]/g_valid[i];
+              global_y_points[i] = global_y_points[i]/g_valid[i];
 	    }
             vtkm::Vec<vtkm::Float64,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
@@ -344,6 +365,12 @@ public:
               global_x_points[i] = m_invalid_value;
               global_y_points[i] = m_invalid_value;
               global_z_points[i] = m_invalid_value;
+	    }
+	    if(g_valid[i] > 1)
+	    {
+              global_x_points[i] = global_x_points[i]/g_valid[i];
+              global_y_points[i] = global_y_points[i]/g_valid[i];
+              global_z_points[i] = global_z_points[i]/g_valid[i];
 	    }
 
             vtkm::Vec<vtkm::Float32,3> points_vec = vtkm::make_Vec(global_x_points[i],
@@ -399,6 +426,12 @@ public:
               global_x_points[i] = m_invalid_value;
               global_y_points[i] = m_invalid_value;
               global_z_points[i] = m_invalid_value;
+	    }
+	    if(g_valid[i] > 1)
+	    {
+              global_x_points[i] = global_x_points[i]/g_valid[i];
+              global_y_points[i] = global_y_points[i]/g_valid[i];
+              global_z_points[i] = global_z_points[i]/g_valid[i];
 	    }
 
             vtkm::Vec<vtkm::Float64,3> points_vec = vtkm::make_Vec(global_x_points[i],
@@ -479,12 +512,6 @@ UniformGrid::DoExecute()
 #ifdef VTKH_PARALLEL
     vtkh::detail::GlobalReduceFields g_reducefields(dataset,m_invalid_value);
     auto output = g_reducefields.Reduce();
-    std::cerr << "AFTER Reduce();" << std::endl;
-    if(par_rank == 0)
-    {
-      std::cerr << "output after reduce: " << std::endl;
-      output.PrintSummary(std::cerr);
-    }
     //auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
     //full.CastAndCall(g_reducefields);
     this->m_output->AddDomain(output, domain_id);

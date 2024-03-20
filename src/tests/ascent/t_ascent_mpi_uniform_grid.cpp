@@ -57,23 +57,53 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
         return;
     }
 
-    Node res;
-    conduit::blueprint::mesh::examples::braid("rectilinear",2,2,0,res);
-    res.print();
     //
     // Create an example mesh.
     //
     Node data, verify_info;
     conduit::blueprint::mpi::mesh::examples::spiral_round_robin(NUM_DOMAINS,data,comm);
+
+    int local_domains = data.number_of_children();
+    for(int i = 0; i < local_domains; ++i)
+    {
+      double x_min, x_max, y_min, y_max;
+      Node vel_field;
+      vel_field["association"] = "vertex";
+      vel_field["topology"] = "topo";
+      Node &dom = data.child(i);
+      Node &values = dom["coordsets/coords/values"];
+      Node &x = values["x"];
+      Node &y = values["y"];
+      int x_nvalues = x.dtype().number_of_elements(); 
+      int y_nvalues = y.dtype().number_of_elements(); 
+      double * x_array = x.value();
+      double * y_array = y.value();
+      x_max = x_array[x_nvalues-1];
+      x_min = x_array[0];
+      y_max = y_array[y_nvalues-1];
+      y_min = y_array[0];
+      int num_values = x_nvalues * y_nvalues;
+      double x_step = (x_max - x_min)/num_values;
+      double y_step = (y_max - y_min)/num_values;
+      std::vector<double> u_array;
+      std::vector<double> v_array;
+      for(int i = 0; i < num_values; ++i)
+      {
+        u_array.push_back(x_min + x_step*i);
+        v_array.push_back(y_min + y_step*i);
+      }
+      vel_field["values/u"].set(u_array);
+      vel_field["values/v"].set(v_array);
+      dom["fields/vel"] = vel_field;
+    }
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    data.print();
 
     ASCENT_INFO("Testing mpi uniform grid of conduit::blueprint spiral input\n");
 
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid");
-    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid");
+    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid10");
 
     // remove old images before rendering
     if(par_rank == 0)
@@ -91,7 +121,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "dist";
     scenes["s1/plots/p1/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = image_file;
@@ -117,8 +147,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
-//    ascent.publish(data);
-    ascent.publish(res);
+    ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
 
