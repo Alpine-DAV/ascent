@@ -49,6 +49,8 @@
 #include <vtkh/rendering/AutoCamera.hpp>
 #include <vtkm/rendering/Camera.h>
 #include <vtkm/cont/DataSet.h>
+// #include <vtkm/io/VTKDataSetReader.h>
+// #include <vtkm/io/VTKDataSetWriter.h>
 
 #include <vtkm/interop/anari/ANARIMapperTriangles.h>
 #include <vtkm/interop/anari/ANARIMapperGlyphs.h>
@@ -62,15 +64,6 @@
 #include <ascent_runtime_vtkh_utils.hpp>
 
 #include <png_utils/ascent_png_encoder.hpp>
-
-// #include <assert.h>
-// #include <math.h>
-// #include <stdio.h>
-// #include <stdlib.h>
-// namespace {
-// #include "sky_model/color_info.h"
-// #include "sky_model/sky_model.cpp"
-// }
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
@@ -146,12 +139,33 @@ static void StatusFunc(const void* userData,
 static anari_cpp::Device 
 anari_device_load()
 {
-  auto* libraryName = std::getenv("VTKM_TEST_ANARI_LIBRARY");
-  static bool verbose = std::getenv("VTKM_TEST_ANARI_VERBOSE") != nullptr;
+  static char* libraryName 
+    = std::getenv("VTKM_ANARI_LIBRARY")      ? std::getenv("VTKM_ANARI_LIBRARY") 
+    : std::getenv("VTKM_TEST_ANARI_LIBRARY") ? std::getenv("VTKM_TEST_ANARI_LIBRARY") // fall back to the old environment variable
+    : nullptr;
+  static bool verbose = std::getenv("VTKM_ANARI_VERBOSE") != nullptr;
+  static bool  debug = std::getenv("VTKM_ANARI_DEBUG_DEVICE") != nullptr;
+  static char* trace_dir = std::getenv("VTKM_ANARI_DEBUG_TRACE_DIR");
+
   auto lib = anari_cpp::loadLibrary(libraryName ? libraryName : "helide", StatusFunc, &verbose);
-  auto d = anari_cpp::newDevice(lib, "default");
+  auto dev = anari_cpp::newDevice(lib, "default");
   anari_cpp::unloadLibrary(lib);
-  return d;
+
+  if (debug) {
+    auto g_debug = anari_cpp::loadLibrary("debug", StatusFunc, &verbose);
+    anari::Device dbg = anariNewDevice(g_debug, "debug");
+    anari::setParameter(dbg, dbg, "wrappedDevice", dev);
+    if (trace_dir) {
+      anari::setParameter(dbg, dbg, "traceDir", trace_dir);
+      anari::setParameter(dbg, dbg, "traceMode", "code");
+    }
+    anari::commitParameters(dbg, dbg);
+    anari::release(dev, dev);
+    dev = dbg;
+    anari_cpp::unloadLibrary(g_debug);
+  }
+
+  return dev;
 }
 
 /* defined in ascent_runtime_anari_filters.cpp */
@@ -303,29 +317,30 @@ AnariImpl::~AnariImpl()
   {
     anari_cpp::release(device, light);
   }
+  anari_cpp::release(device, frame);
   // anari_cpp::release(device, renderer);
   // anari_cpp::release(device, device);
-  anari_cpp::release(device, frame);
 }
 
 void
 AnariImpl::set_tfn(ANARIMapper& mapper)
 {
+  constexpr int resolution = 256;
+
   constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
   vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
   {
     vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
-    tfn.Sample(1024, temp);
+    tfn.Sample(resolution, temp);
   }
   auto colorPortal = temp.ReadPortal();
 
   // Create the color and opacity arrays
-  auto colorArray   = anari_cpp::newArray1D(device, ANARI_FLOAT32_VEC3, 1024);
+  auto colorArray   = anari_cpp::newArray1D(device, ANARI_FLOAT32_VEC3, resolution);
   auto* colors      = anari_cpp::map<vtkm::Vec3f_32>(device, colorArray  );
-  auto opacityArray = anari_cpp::newArray1D(device, ANARI_FLOAT32,      1024);
+  auto opacityArray = anari_cpp::newArray1D(device, ANARI_FLOAT32,      resolution);
   auto* opacities   = anari_cpp::map<vtkm::Float32 >(device, opacityArray);
-
-  for (vtkm::Id i = 0; i < 1024; ++i)
+  for (vtkm::Id i = 0; i < resolution; ++i)
   {
     auto color = colorPortal.Get(i);
     colors[i] = vtkm::Vec3f_32(color[0], color[1], color[2]) * conversionToFloatSpace;
@@ -345,145 +360,6 @@ AnariImpl::set_tfn(ANARIMapper& mapper)
   }
   mapper.SetANARIColorMapOpacityScale(1.0f);
 }
-
-#if 0
-template<class T>
-constexpr const T& clamp(const T& v, const T& lo, const T& hi)
-{
-  return (v < lo) ? lo : (hi < v) ? hi : v;
-}
-
-inline vtkm::Vec3f_32 cieXyz(int i)
-{
-  return vtkm::Vec3f_32(cieX[i], cieY[i], cieZ[i]);
-}
-
-inline float deg2rad(float deg)
-{
-  return deg * (float)M_PI / 180.0f;
-}
-
-inline vtkm::Vec3f_32 xyzToRgb(const vtkm::Vec3f_32 &c)
-{
-  float r =  3.240479f * c[0] - 1.537150f * c[1] - 0.498535f * c[2];
-  float g = -0.969256f * c[0] + 1.875991f * c[1] + 0.041556f * c[2];
-  float b =  0.055648f * c[0] - 0.204043f * c[1] + 1.057311f * c[2];
-  return vtkm::Vec3f_32(r, g, b);
-}
-
-const std::vector<vtkm::Vec3f_32>& create_skymap(vtkm::Vec3f_32& solarIrradiance) 
-{
-  // Parameters
-  vtkm::Vec3f_32 up = vtkm::Vec3f_32(0.0f, 1.0f, 0.0f);
-  vtkm::Vec3f_32 direction = vtkm::Vec3f_32(0.0f, -1.0f, 0.0f);
-  float turbidity = 3.f;
-  float albedo = 0.3f;
-  float horizon  = 0.01f;
-  const float sunTheta = up[0] * direction[0] + up[1] * direction[1] + up[2] * direction[2];
-  vtkm::Vec3f_32 coloredIntensity  = vtkm::Vec3f_32(1.0f, 1.0f, 1.0f);
-  float intensityScale = 0.025f;
-  const int skyResolution = 512;
-
-  const float lambdaMin = 320.0f;
-  const float lambdaMax = 720.0f;
-
-  // sun doesn't go beneath the horizon as theta clamped to pi/2
-  const float sunThetaMax = std::min(std::acos(sunTheta), (float)M_PI * 0.999f / 2.0f);
-  const float sunPhi = M_PI;
-  const float sunElevation = (float)M_PI / 2.0f - sunThetaMax;
-
-  // Solar irradiance
-  ArHosekSkyModelState *spectralModel =
-      arhosekskymodelstate_alloc_init(sunElevation, turbidity, albedo);
-
-  // angular diameter of the sun in degrees
-  // using this value produces matching solar irradiance results from the model
-  // and directional light
-  const float angularDiameter = 0.53;
-  solarIrradiance = vtkm::Vec3f_32(0,0,0);
-
-  // calculate solar radiance
-  for (int i = 0; i < cieSize; ++i) {
-    if (cieLambda[i] >= lambdaMin && cieLambda[i] <= lambdaMax) {
-      float r = arhosekskymodel_solar_radiance_internal2(
-          spectralModel, cieLambda[i], sunElevation, 1);
-      solarIrradiance += r * cieXyz(i);
-    }
-  }
-
-  arhosekskymodelstate_free(spectralModel);
-
-  float cosAngle = std::cos(deg2rad(0.5f * angularDiameter));
-  const float rcpPdf = 2 * (float)M_PI * (1 - cosAngle);
-
-  // convert solar radiance to solar irradiance
-  solarIrradiance =
-      xyzToRgb(solarIrradiance) * vtkm::Vec3f_32(rcpPdf * intensityScale) * coloredIntensity;
-
-  // Result
-  static std::vector<vtkm::Vec3f_32> skyMap;
-
-  // Lazy initialization
-  if (skyMap.empty()) 
-  {
-    std::cout << "Creating sky map" << std::endl;
-
-    const auto skySize = vtkm::Vec2i_32(skyResolution, skyResolution / 2);
-    skyMap.resize(skySize[0] * skySize[1]);
-
-
-    ArHosekSkyModelState *rgbModel =
-        arhosek_rgb_skymodelstate_alloc_init(turbidity, albedo, sunElevation);
-
-    for (int y = 0; y < skySize[1]; y++) 
-    {
-      for (int x = 0; x < skySize[0]; x++) 
-      {
-        float theta = (y + 0.5) / skySize[1] * float(M_PI);
-        const size_t index = skySize[0] * y + x;
-        // const size_t index = skySize[0] * y + x * 3;
-        vtkm::Vec3f_32 skyRadiance(0,0,0);
-
-        const float maxTheta = 0.999 * float(M_PI) / 2.0;
-        const float maxThetaHorizon = (horizon + 1.0) * float(M_PI) / 2.0;
-
-        if (theta <= maxThetaHorizon) {
-          float shadow = (horizon > 0.f)
-              ? float(
-                  clamp((maxThetaHorizon - theta) / (maxThetaHorizon - maxTheta),
-                      0.f,
-                      1.f))
-              : 1.f;
-          theta = std::min(theta, maxTheta);
-
-          float phi = ((x + 0.5) / skySize[0] - 0.5) * (2.0 * (float)M_PI);
-
-          float cosGamma = std::cos(theta) * std::cos(sunThetaMax)
-              + std::sin(theta) * std::sin(sunThetaMax) * std::cos(phi - sunPhi);
-
-          float gamma = std::acos(clamp(cosGamma, -1.f, 1.f));
-
-          float rgbData[3];
-          for (int i = 0; i < 3; ++i) {
-            rgbData[i] =
-                arhosek_tristim_skymodel_radiance(rgbModel, theta, gamma, i);
-          }
-
-          skyRadiance = vtkm::Vec3f_32(rgbData[0], rgbData[1], rgbData[2]);
-          skyRadiance = skyRadiance * shadow;
-          skyRadiance *= vtkm::Vec3f_32(intensityScale, intensityScale, intensityScale);
-        }
-
-        skyMap[index] = std::max(skyRadiance, vtkm::Vec3f_32(0.0f,0.0f,0.0f));
-      }
-    }
-    
-    arhosekskymodelstate_free(rgbModel);
-  }
-  
-  return skyMap;
-}
-#endif
 
 void 
 AnariImpl::set_lights()
@@ -524,6 +400,14 @@ AnariImpl::render_triangles(vtkh::DataSet &dset)
       break;
     }
   }
+  
+  // static int step = 0;
+  // for (int i = 0; i < dset.GetNumberOfDomains(); ++i) {
+  //   vtkm::io::VTKDataSetWriter writer("anari_triangles_" + std::to_string(i) + "_" + std::to_string(step) + ".vtk");
+  //   writer.SetFileType(vtkm::io::FileType::BINARY);
+  //   writer.WriteDataSet(dset.GetDomain(i));
+  // }
+  // step++;
 
   // Build Scene
   ANARIScene scene(device);
@@ -723,6 +607,7 @@ parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& b
   }
 
   // Set data value range
+  self.scalar_range = vtkm::Range();
   if (params.has_path("min_value"))
   {
     self.scalar_range.Min = params["min_value"].to_float64();
