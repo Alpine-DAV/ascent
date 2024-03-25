@@ -135,14 +135,30 @@ void Transmogrifier::to_poly(conduit::Node &doms, conduit::Node &to_vtkh)
     {
       conduit::Node s2dmap, d2smap, options;
       coordsets.push_back(dom["topologies/" + poly_topos[i] + "/coordset"].as_string());
-      conduit::blueprint::mesh::topology::unstructured::generate_sides(
-        dom["topologies/" + poly_topos[i]],
-        res["topologies/" + poly_topos[i]],
-        res["coordsets/" + coordsets[coordsets.size() - 1]],
-        res["fields"],
-        s2dmap,
-        d2smap,
-        options);
+
+      //
+      // check if this mesh has fields, if so call the gen_sides version that supports fields
+      //
+      if(res.has_child("fields"))
+      {
+        conduit::blueprint::mesh::topology::unstructured::generate_sides(
+          dom["topologies/" + poly_topos[i]],
+          res["topologies/" + poly_topos[i]],
+          res["coordsets/" + coordsets[coordsets.size() - 1]],
+          res["fields"],
+          s2dmap,
+          d2smap,
+          options);
+      }
+      else
+      {
+        conduit::blueprint::mesh::topology::unstructured::generate_sides(
+          dom["topologies/" + poly_topos[i]],
+          res["topologies/" + poly_topos[i]],
+          res["coordsets/" + coordsets[coordsets.size() - 1]],
+          s2dmap,
+          d2smap);
+      }
     }
   }
 }
