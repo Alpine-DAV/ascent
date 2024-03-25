@@ -20,6 +20,7 @@
 using namespace std;
 using namespace conduit;
 using namespace ascent;
+
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_render_2d_poly)
 {
@@ -32,7 +33,7 @@ TEST(ascent_pipeline, test_render_2d_poly)
         ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
-    
+
     //
     // Create example mesh.
     //
@@ -192,7 +193,7 @@ TEST(ascent_pipeline, test_render_2d_poly_and_nonpoly)
     //
     // Create the actions.
     //
-    
+
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
@@ -221,3 +222,62 @@ TEST(ascent_pipeline, test_render_2d_poly_and_nonpoly)
     EXPECT_TRUE(check_test_image(output_file + "polytess", 0.001f, "0"));
     EXPECT_TRUE(check_test_image(output_file + "braid", 0.001f, "0"));
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_render_2d_poly_no_fields)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create example mesh.
+    //
+    Node data, braid_data, verify_info;
+    index_t nlevels = 5;
+    index_t nz = 1;
+
+    conduit::blueprint::mesh::examples::polytess(nlevels, nz, data);
+
+    data.remove("fields");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_2d_poly_no_fields");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"] = "mesh";
+    scenes["s1/image_prefix"] = output_file + "_polytess_mesh";
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    //
+    // // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file + "_polytess_mesh", 0.001f, "0"));
+}
+
