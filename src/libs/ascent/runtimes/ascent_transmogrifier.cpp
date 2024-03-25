@@ -150,7 +150,7 @@ void Transmogrifier::to_poly(conduit::Node &doms, conduit::Node &to_vtkh)
           d2smap,
           options);
       }
-      else
+      else // otherwise, cal gen_sides that does not include fields
       {
         conduit::blueprint::mesh::topology::unstructured::generate_sides(
           dom["topologies/" + poly_topos[i]],
