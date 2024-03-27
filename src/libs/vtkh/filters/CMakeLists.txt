@@ -27,9 +27,10 @@ set(vtkh_filters_headers
     Tetrahedralize.hpp
     Threshold.hpp
     Triangulate.hpp
+    Slice.hpp
     Statistics.hpp
     Streamline.hpp
-    Slice.hpp
+    UniformGrid.hpp
     VectorComponent.hpp
     VectorMagnitude.hpp
     WarpXStreamline.hpp
@@ -67,6 +68,7 @@ set(vtkh_filters_sources
     Slice.cpp
     Statistics.cpp
     Streamline.cpp
+    UniformGrid.cpp
     VectorComponent.cpp
     VectorMagnitude.cpp
     WarpXStreamline.cpp

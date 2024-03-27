@@ -142,6 +142,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<VTKHStreamline>("transforms","streamline");
     AscentRuntime::register_filter_type<VTKHWarpXStreamline>("transforms","warpx_streamline");
+    AscentRuntime::register_filter_type<VTKHUniformGrid>("transforms","uniform_grid");
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
 
 

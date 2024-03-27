@@ -355,6 +355,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHUniformGrid : public ::flow::Filter
+{
+public:
+    VTKHUniformGrid();
+    virtual ~VTKHUniformGrid();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHHistogram : public ::flow::Filter
 {
 public:
