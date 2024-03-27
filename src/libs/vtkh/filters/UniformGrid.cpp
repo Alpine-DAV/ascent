@@ -15,6 +15,7 @@
 #endif
 
 #include <vtkm/cont/Algorithm.h>
+#include <vtkm/filter/multi_block/MergeDataSets.h>
 #include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/worklet/DispatcherMapField.h>
 
@@ -62,26 +63,26 @@ public:
   {}
 
 
-  template<typename U>
+  template<typename U, int N>
   struct CopyFunctor
   {
-    vtkm::cont::ArrayHandle<U> output;
+    vtkm::cont::ArrayHandle<vtkm::Vec<U,N>> output;
     vtkm::Id offset;
 
-    template<typename Type>
-    void operator()(vtkm::cont::ArrayHandle<Type> &input)
+    template<typename Type, typename S>
+    void operator()(vtkm::cont::ArrayHandle<Type, S> &input)
     {
       vtkm::Id copy_size = input.GetNumberOfValues();
       vtkm::Id start = 0;
       vtkm::cont::Algorithm::CopySubRange(input, start, copy_size, output, offset);
     }
   };
-  template<typename T, typename U>
-  void CopyCoords(vtkm::cont::UncertainArrayHandle<T> &input,
-                  vtkm::cont::ArrayHandle<U> &output,
+  template<typename T, typename S, typename U, int N>
+  void CopyCoords(vtkm::cont::UncertainArrayHandle<T,S> &input,
+                  vtkm::cont::ArrayHandle<vtkm::Vec<U,N>> &output,
                   vtkm::Id offset)
   {
-    CopyFunctor<U> func{output,offset};
+    CopyFunctor<U,N> func{output,offset};
     input.CastAndCall(func);
   }
 
@@ -111,8 +112,8 @@ public:
         m_num_cells(num_cells)
     {}
 
-    template<typename T>
-    void operator()(const vtkm::cont::ArrayHandle<T> &vtkmNotUsed(field)) const
+    template<typename T, typename S>
+    void operator()(const vtkm::cont::ArrayHandle<T,S> &vtkmNotUsed(field)) const
     {
       //check to see if this is a supported field ;
       const vtkm::cont::Field &scalar_field = m_in_data_sets[0].GetField(m_field_index);
@@ -135,7 +136,7 @@ public:
       for(size_t i = 0; i < m_in_data_sets.size(); ++i)
       {
         const vtkm::cont::Field &f = m_in_data_sets[i].GetField(m_field_index);
-        vtkm::cont::ArrayHandle<T> in = f.GetData().AsArrayHandle<vtkm::cont::ArrayHandle<T>>();
+        vtkm::cont::ArrayHandle<T,S> in = f.GetData().AsArrayHandle<vtkm::cont::ArrayHandle<T,S>>();
         vtkm::Id start = 0;
         vtkm::Id copy_size = in.GetNumberOfValues();
         vtkm::Id offset = assoc_points ? m_point_offsets[i] : m_cell_offsets[i];
@@ -187,12 +188,21 @@ public:
       num_points += coords.GetData().GetNumberOfValues();
 
     }
+    std::cerr << "POINT OFFSET: " << std::endl;
+    for(int i = 0; i < point_offsets.size();++i)
+    {
+      std::cerr << point_offsets[i] << " "; 
+    }
+    std::cerr << std::endl;
+    std::cerr << "CELL OFFSET: " << std::endl;
+    for(int i = 0; i < cell_offsets.size();++i)
+    {
+      std::cerr << cell_offsets[i] << " "; 
+    }
+    std::cerr << std::endl;
+
 
     const vtkm::Id conn_size = num_cells;
-
-    // calculate merged offsets for all domains
-    vtkm::cont::ArrayHandle<vtkm::Id> conn;
-    conn.Allocate(conn_size);
 
     // handle coordinate merging
     vtkm::cont::ArrayHandle<vtkm::Float64> out_coords;
@@ -214,7 +224,8 @@ public:
 
       // merge coodinates
       auto coords = m_data_set[dom].GetCoordinateSystem().GetData();
-      this->CopyCoords(coords, out_coords, point_offsets[dom]);
+
+      //this->CopyCoords(coords, out_coords, point_offsets[dom]);
 
     } // for each domain
 
@@ -240,7 +251,8 @@ public:
                        num_cells,
                        f);
 
-      auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
+//      auto full = field.GetData().ResetTypes(vtkm::TypeListField(),VTKM_DEFAULT_STORAGE_LIST{});
+      auto full = field.GetData().ResetTypes(vtkm::TypeListAll(),VTKM_DEFAULT_STORAGE_LIST{});
       full.CastAndCall(copier);
     }
     }
@@ -723,7 +735,7 @@ UniformGrid::DoExecute()
   std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
   const int num_domains = domain_ids.size();
   this->m_input->AddConstantPointField(0.0, "mask");
-  std::vector<vtkm::cont::DataSet> sampled_doms;
+  vtkm::cont::PartitionedDataSet sampled_doms;
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::cont::DataSet dom;
@@ -738,7 +750,7 @@ UniformGrid::DoExecute()
       probe.spacing(m_spacing);
       probe.invalidValue(m_invalid_value);
       auto dataset = probe.Run(dom);
-      sampled_doms.push_back(dataset);
+      sampled_doms.AppendPartition(dataset);
     }
   }
   int is_2d = 2;
@@ -747,8 +759,16 @@ UniformGrid::DoExecute()
   //reduce across domains local domain
   //ie merge domains togeter
 
-  detail::MergeDomains merge_doms(sampled_doms, is_2d);
-  auto merged = merge_doms.Merge();
+  std::cerr << "MERGED INPUT: " << std::endl;
+  for(int i = 0; i < sampled_doms.GetNumberOfPartitions(); ++i)
+  {
+	  std::cerr << "VTKM DOMAIN: " << i << std::endl;
+	  sampled_doms.GetPartition(i).PrintSummary(std::cerr);
+  }
+  vtkm::filter::multi_block::MergeDataSets mergeDataSets;
+  mergeDataSets.SetInvalidValue(m_invalid_value);
+  //return a partitiondataset
+  auto merged = mergeDataSets(sampled_doms);
   std::cerr << "MERGED OUTPUT: " << std::endl;
   merged.PrintSummary(std::cerr);
   

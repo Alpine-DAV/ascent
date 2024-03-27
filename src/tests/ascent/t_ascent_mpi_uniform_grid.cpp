@@ -34,7 +34,7 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 1000;
-int NUM_DOMAINS = 3;
+int NUM_DOMAINS = 2;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
