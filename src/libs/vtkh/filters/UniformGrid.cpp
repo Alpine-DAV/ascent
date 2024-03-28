@@ -25,250 +25,14 @@ namespace vtkh
 namespace detail
 {
 
-class Offset : public vtkm::worklet::WorkletMapField
-{
-protected:
-  vtkm::Id m_offset;
-
-public:
-  VTKM_CONT
-  Offset(const vtkm::Id offset)
-    : m_offset(offset)
-  {
-  }
-
-  typedef void ControlSignature(FieldIn, WholeArrayInOut);
-  typedef void ExecutionSignature(_1, _2);
-
-  template<typename PortalType>
-  VTKM_EXEC
-  void operator()(const vtkm::Id &index, PortalType values) const
-  {
-    vtkm::Id value = values.Get(index);
-    values.Set(index, value + m_offset);
-  }
-}; //class Offset
-
-class MergeDomains
-{
-  std::vector<vtkm::cont::DataSet> &m_data_set;
-  bool m_is_2d;
-public:
-  MergeDomains(std::vector<vtkm::cont::DataSet> &data_sets, bool is_2d)
-    : m_data_set(data_sets),
-     m_is_2d(is_2d)
-  {}
-
-  ~MergeDomains()
-  {}
-
-
-  template<typename U, int N>
-  struct CopyFunctor
-  {
-    vtkm::cont::ArrayHandle<vtkm::Vec<U,N>> output;
-    vtkm::Id offset;
-
-    template<typename Type, typename S>
-    void operator()(vtkm::cont::ArrayHandle<Type, S> &input)
-    {
-      vtkm::Id copy_size = input.GetNumberOfValues();
-      vtkm::Id start = 0;
-      vtkm::cont::Algorithm::CopySubRange(input, start, copy_size, output, offset);
-    }
-  };
-  template<typename T, typename S, typename U, int N>
-  void CopyCoords(vtkm::cont::UncertainArrayHandle<T,S> &input,
-                  vtkm::cont::ArrayHandle<vtkm::Vec<U,N>> &output,
-                  vtkm::Id offset)
-  {
-    CopyFunctor<U,N> func{output,offset};
-    input.CastAndCall(func);
-  }
-
-  struct CopyField
-  {
-    vtkm::cont::DataSet &m_data_set;
-    std::vector<vtkm::cont::DataSet> m_in_data_sets;
-    vtkm::Id *m_point_offsets;
-    vtkm::Id *m_cell_offsets;
-    vtkm::Id  m_field_index;
-    vtkm::Id  m_num_points;
-    vtkm::Id  m_num_cells;
-
-    CopyField(vtkm::cont::DataSet &data_set,
-              std::vector<vtkm::cont::DataSet> in_data_sets,
-              vtkm::Id *point_offsets,
-              vtkm::Id *cell_offsets,
-              vtkm::Id num_points,
-              vtkm::Id num_cells,
-              vtkm::Id field_index)
-      : m_data_set(data_set),
-        m_in_data_sets(in_data_sets),
-        m_point_offsets(point_offsets),
-        m_cell_offsets(cell_offsets),
-        m_field_index(field_index),
-        m_num_points(num_points),
-        m_num_cells(num_cells)
-    {}
-
-    template<typename T, typename S>
-    void operator()(const vtkm::cont::ArrayHandle<T,S> &vtkmNotUsed(field)) const
-    {
-      //check to see if this is a supported field ;
-      const vtkm::cont::Field &scalar_field = m_in_data_sets[0].GetField(m_field_index);
-      bool is_supported = (scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points ||
-                           scalar_field.GetAssociation() == vtkm::cont::Field::Association::Cells);
-
-      if(!is_supported) return;
-
-      bool assoc_points = scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points;
-      vtkm::cont::ArrayHandle<T> out;
-      if(assoc_points)
-      {
-        out.Allocate(m_num_points);
-      }
-      else
-      {
-        out.Allocate(m_num_cells);
-      }
-
-      for(size_t i = 0; i < m_in_data_sets.size(); ++i)
-      {
-        const vtkm::cont::Field &f = m_in_data_sets[i].GetField(m_field_index);
-        vtkm::cont::ArrayHandle<T,S> in = f.GetData().AsArrayHandle<vtkm::cont::ArrayHandle<T,S>>();
-        vtkm::Id start = 0;
-        vtkm::Id copy_size = in.GetNumberOfValues();
-        vtkm::Id offset = assoc_points ? m_point_offsets[i] : m_cell_offsets[i];
-
-        vtkm::cont::Algorithm::CopySubRange(in, start, copy_size, out, offset);
-      }
-
-      vtkm::cont::Field out_field(scalar_field.GetName(),
-                                  scalar_field.GetAssociation(),
-                                  out);
-      m_data_set.AddField(out_field);
-
-    }
-  };
-
-  vtkm::cont::DataSet Merge()
-  {
-    vtkm::cont::DataSet res;
-
-    vtkm::Id num_cells = 0;
-    vtkm::Id num_points = 0;
-    std::vector<vtkm::Id> cell_offsets(m_data_set.size());
-    std::vector<vtkm::Id> point_offsets(m_data_set.size());
-    if(m_is_2d)
-    {
-      vtkm::Id2 dims;
-
-    for(size_t dom = 0; dom < m_data_set.size(); ++dom)
-    {
-      auto cell_set = m_data_set[dom].GetCellSet();
-
-      //Assuming data type is 2 dimensional uniform grid
-      if(!cell_set.IsType<vtkm::cont::CellSetStructured<2>>())
-      {
-        std::cout<<"expected uniform cell set as the result of uniform grid sampling\n";
-
-        continue;
-      }
-
-      vtkm::cont::CellSetStructured<2> s_cell_set; 
-      cell_set.AsCellSet(s_cell_set);
-      dims = s_cell_set.GetPointDimensions();
-
-      cell_offsets[dom] = num_cells;
-      num_cells += cell_set.GetNumberOfCells();
-
-      auto coords = m_data_set[dom].GetCoordinateSystem();
-      point_offsets[dom] = num_points;
-      num_points += coords.GetData().GetNumberOfValues();
-
-    }
-    std::cerr << "POINT OFFSET: " << std::endl;
-    for(int i = 0; i < point_offsets.size();++i)
-    {
-      std::cerr << point_offsets[i] << " "; 
-    }
-    std::cerr << std::endl;
-    std::cerr << "CELL OFFSET: " << std::endl;
-    for(int i = 0; i < cell_offsets.size();++i)
-    {
-      std::cerr << cell_offsets[i] << " "; 
-    }
-    std::cerr << std::endl;
-
-
-    const vtkm::Id conn_size = num_cells;
-
-    // handle coordinate merging
-    vtkm::cont::ArrayHandle<vtkm::Float64> out_coords;
-    out_coords.Allocate(num_points);
-    // coordinate type that contour produces
-    //using CoordsType3f = vtkm::cont::ArrayHandleVirtual<vtkm::Vec<vtkm::Float32,3>>;
-    //using CoordsType3d = vtkm::cont::ArrayHandleVirtual<vtkm::Vec<vtkm::Float64,3>>;
-
-    for(size_t dom = 0; dom < m_data_set.size(); ++dom)
-    {
-      auto cell_set = m_data_set[dom].GetCellSet();
-
-      //if(!cell_set.IsType(vtkm::cont::CellSetSingleType<>())) continue;
-      if(!cell_set.IsType<vtkm::cont::CellSetStructured<2>>())
-      {
-        std::cout<<"expected uniform cell set as the result of uniform grid sampling\n";
-        continue;
-      }
-
-      // merge coodinates
-      auto coords = m_data_set[dom].GetCoordinateSystem().GetData();
-
-      //this->CopyCoords(coords, out_coords, point_offsets[dom]);
-
-    } // for each domain
-
-
-    vtkm::cont::CellSetStructured<2> cellSet;
-    cellSet.SetPointDimensions(dims);
-    res.SetCellSet(cellSet);
-
-    res.AddCoordinateSystem(vtkm::cont::CoordinateSystem("coords", out_coords));
-
-    // handle fields, they are all the same since they came from the same data set
-    const int num_fields = m_data_set[0].GetNumberOfFields();
-
-    for(int f = 0; f < num_fields; ++f)
-    {
-      const vtkm::cont::Field &field = m_data_set[0].GetField(f);
-
-      CopyField copier(res,
-                       m_data_set,
-                       &point_offsets[0],
-                       &cell_offsets[0],
-                       num_points,
-                       num_cells,
-                       f);
-
-//      auto full = field.GetData().ResetTypes(vtkm::TypeListField(),VTKM_DEFAULT_STORAGE_LIST{});
-      auto full = field.GetData().ResetTypes(vtkm::TypeListAll(),VTKM_DEFAULT_STORAGE_LIST{});
-      full.CastAndCall(copier);
-    }
-    }
-    return res;
-  }
-
-};// end MergeDomains
-
 #ifdef VTKH_PARALLEL
 class GlobalReduceFields
 {
-  vtkm::cont::DataSet &m_dataset;
+  const vtkm::cont::DataSet &m_dataset;
   vtkm::Float64       m_invalid_value;
 
 public:
-  GlobalReduceFields(vtkm::cont::DataSet &dataset, vtkm::Float64 invalid_value)
+  GlobalReduceFields(const vtkm::cont::DataSet &dataset, vtkm::Float64 invalid_value)
     : m_dataset(dataset),
       m_invalid_value(invalid_value)
   {}
@@ -296,10 +60,10 @@ public:
   struct ReduceField
   {
     vtkm::cont::Field &m_input_field;
-    vtkm::cont::DataSet &m_data_set;
+    const vtkm::cont::DataSet &m_data_set;
     vtkm::Float64 &m_invalid_value;
   
-    ReduceField(vtkm::cont::Field &input_field, vtkm::cont::DataSet &data_set, vtkm::Float64 &invalid_value)
+    ReduceField(vtkm::cont::Field &input_field, const vtkm::cont::DataSet &data_set, vtkm::Float64 &invalid_value)
       : m_input_field(input_field),
         m_data_set(data_set),
 	m_invalid_value(invalid_value)
@@ -449,6 +213,8 @@ public:
 	    }
 	    if(g_valid[i] > 1)
 	    {
+		    std::cerr << "g_valid > 1: " << g_valid[i] << std::endl;
+		    std::cerr << "for field: " << m_input_field.GetName() << std::endl;
               global_field[i] = global_field[i]/g_valid[i];
 	    }
 	  }
@@ -744,43 +510,49 @@ UniformGrid::DoExecute()
     {
       dom = this->m_input->GetDomainById(domain_ids[i]);
 
-      vtkh::vtkmProbe probe;
-      probe.dims(m_dims);
-      probe.origin(m_origin);
-      probe.spacing(m_spacing);
-      probe.invalidValue(m_invalid_value);
-      auto dataset = probe.Run(dom);
-      sampled_doms.AppendPartition(dataset);
+      sampled_doms.AppendPartition(dom);
     }
-  }
-  int is_2d = 2;
-  if(m_dims[2] > 1)
-    is_2d = 3;
-  //reduce across domains local domain
-  //ie merge domains togeter
-
-  std::cerr << "MERGED INPUT: " << std::endl;
-  for(int i = 0; i < sampled_doms.GetNumberOfPartitions(); ++i)
-  {
-	  std::cerr << "VTKM DOMAIN: " << i << std::endl;
-	  sampled_doms.GetPartition(i).PrintSummary(std::cerr);
   }
   vtkm::filter::multi_block::MergeDataSets mergeDataSets;
   mergeDataSets.SetInvalidValue(m_invalid_value);
   //return a partitiondataset
-  auto merged = mergeDataSets(sampled_doms);
+  if(sampled_doms.GetNumberOfPartitions() == 0)
+	  std::cerr << "NO PARTITIONS == NO DATA " << std::endl;
+  auto merged = mergeDataSets.Execute(sampled_doms);
   std::cerr << "MERGED OUTPUT: " << std::endl;
   merged.PrintSummary(std::cerr);
-  
+
+  //Uniform Grid Sample
+  vtkh::vtkmProbe probe;
+  probe.dims(m_dims);
+  probe.origin(m_origin);
+  probe.spacing(m_spacing);
+  probe.invalidValue(m_invalid_value);
+  auto result = merged.GetPartitions();
+  auto dataset = probe.Run(result[0]);
+  int is_2d = 2;
+  if(m_dims[2] > 1)
+    is_2d = 3;
+
   //take uniform sampled grid and reduce to root process
 #ifdef VTKH_PARALLEL
-  vtkh::detail::GlobalReduceFields g_reducefields(merged,m_invalid_value);
+  if(par_rank == 0)
+  {
+    std::cerr << "RANK 0 before reduction: " << std::endl; 
+    dataset.PrintSummary(std::cerr);
+  }
+  vtkh::detail::GlobalReduceFields g_reducefields(dataset,m_invalid_value);
   auto output = g_reducefields.Reduce();
   //auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
   //full.CastAndCall(g_reducefields);
+  if(par_rank == 0)
+  {
+    std::cerr << "RANK 0 reduced output: " << std::endl; 
+    output.PrintSummary(std::cerr);
+  }
   this->m_output->AddDomain(output,0);
 #else
-  this->m_output->AddDomain(merged,0);
+  this->m_output->AddDomain(dataset,0);
 #endif
 
 }
