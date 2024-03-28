@@ -3011,6 +3011,7 @@ VTKHUniformGrid::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = true;
+    res &= check_string("field",params, info, true);
     res &= check_numeric("dims/i",params, info, false);
     res &= check_numeric("dims/j",params, info, false);
     res &= check_numeric("dims/k",params, info, false);
@@ -3024,6 +3025,7 @@ VTKHUniformGrid::verify_params(const conduit::Node &params,
     res &= check_numeric("invalid_value",params, info, false);
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
     valid_paths.push_back("dims/i");
     valid_paths.push_back("dims/j");
     valid_paths.push_back("dims/k");
@@ -3085,6 +3087,8 @@ VTKHUniformGrid::execute()
     vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
     vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
 
+    std::string field = params()["field"].as_string();
+
     vtkm::Float64 invalid_value = 0.0;
     
     using Vec3f = vtkm::Vec<vtkm::Float64,3>;
@@ -3133,6 +3137,7 @@ VTKHUniformGrid::execute()
     grid_probe.Dims(v_dims);
     grid_probe.Origin(v_origin);
     grid_probe.Spacing(v_spacing);
+    grid_probe.Field(field);
     grid_probe.SetInput(&data);
 
     grid_probe.Update();
