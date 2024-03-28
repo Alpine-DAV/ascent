@@ -163,7 +163,9 @@ fi
 # print all build_ZZZ and enable_ZZZ options
 ################
 echo "*** cmake_compiler_settings: ${cmake_compiler_settings}"
+echo "*** build_ascent `enable` settings:"
 set | grep enable_
+echo "*** build_ascent `build` settings:"
 set | grep build_
 
 ################
