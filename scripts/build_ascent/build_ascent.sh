@@ -29,7 +29,7 @@ enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
 enable_mpi="${enable_mpi:=OFF}"
 enable_find_mpi="${enable_find_mpi:=ON}"
-enable_tests="${enable_tests:=ON}"
+enable_tests="${enable_tests:=OFF}"
 enable_verbose="${enable_verbose:=ON}"
 build_jobs="${build_jobs:=6}"
 build_config="${build_config:=Release}"
@@ -158,6 +158,15 @@ fi
 if [ ! -z ${FTN+x} ]; then
   cmake_compiler_settings="${cmake_compiler_settings} -DCMAKE_Fortran_COMPILER:PATH=${FTN}"
 fi
+
+################
+# print all build_ZZZ and enable_ZZZ options
+################
+echo "*** cmake_compiler_settings: ${cmake_compiler_settings}"
+echo "*** build_ascent `enable` settings:"
+set | grep enable_
+echo "*** build_ascent `build` settings:"
+set | grep build_
 
 ################
 # Zlib
