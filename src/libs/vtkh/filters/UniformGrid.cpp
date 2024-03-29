@@ -10,6 +10,7 @@
 #include <vtkm/thirdparty/diy/diy.h>
 #include <vtkm/thirdparty/diy/mpi-cast.h>
 #include <vtkm/cont/EnvironmentTracker.h>
+#include <vtkm/cont/DataSetBuilderUniform.h>
 
 #include <mpi.h>
 #endif
@@ -26,33 +27,29 @@ namespace detail
 {
 
 #ifdef VTKH_PARALLEL
-class GlobalReduceFields
+class GlobalReduceField
 {
   const vtkm::cont::DataSet &m_dataset;
-  vtkm::Float64       m_invalid_value;
+  const std::string         m_field;
+  vtkm::Float64             m_invalid_value;
 
 public:
-  GlobalReduceFields(const vtkm::cont::DataSet &dataset, vtkm::Float64 invalid_value)
+  GlobalReduceField(const vtkm::cont::DataSet &dataset, const std::string &field, vtkm::Float64 &invalid_value)
     : m_dataset(dataset),
+      m_field(field),
       m_invalid_value(invalid_value)
   {}
-  ~GlobalReduceFields()
+  ~GlobalReduceField()
   {}
 
   vtkm::cont::DataSet Reduce()
   {
     vtkm::cont::DataSet res;
     res.CopyStructure(m_dataset);
-    int num_fields = m_dataset.GetNumberOfFields();
-    for(int i = 0; i < num_fields; ++i)
-    { 
-      vtkm::cont::Field field = m_dataset.GetField(i);
-      ReduceField r_field(field, m_dataset, m_invalid_value);
-      vtkm::cont::Field res_field = r_field.reduce();
-      //auto reduce_field = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
-      //reduce_field.CastAndCall(r_field);
-      res.AddField(res_field);
-    } 
+    vtkm::cont::Field field = m_dataset.GetField(m_field);
+    ReduceField r_field(field, m_dataset, m_invalid_value);
+    vtkm::cont::Field res_field = r_field.reduce();
+    res.AddField(res_field);
 
     return res;
   }
@@ -96,6 +93,9 @@ public:
       m_data_set.GetField("mask").GetData().AsArrayHandle(ah_mask);
       auto mask_portal = ah_mask.ReadPortal();
       int num_points = mask_portal.GetNumberOfValues();
+      //Todo: NUM POINTS needs to be based on dims
+      //Todo: determine if field point or cell
+      //Todo: check if all ranks have field? 
 
       //create invalid mask where true == invalid
       std::vector<int> l_mask(num_points,1);
@@ -462,7 +462,7 @@ public:
     }
   }; //struct reduceFields
 
-};//class globalReduceFields
+};//class globalReduceField
 #endif
 
 } //namespace detail
@@ -513,12 +513,30 @@ UniformGrid::DoExecute()
       sampled_doms.AppendPartition(dom);
     }
   }
+  //TODO: Need field type
+//#ifdef VTKH_PARALLEL
+//  vtkm::cont::DataSet tmp_empty;
+//  if(sampled_doms.GetNumberOfPartitions() == 0)
+//  {
+//    tmp_empty = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
+//    bool valid_field;
+//    vtkm::Id num_components = this->m_input->NumberOfComponents(m_field);
+//    vtkm::cont::Field::Association assoc = this->m_input->GetFieldAssociation(m_field, valid_field);
+//    std::vector<double> v_empty(num_components, 0.0);
+//
+//    vtkm::cont::UnknownArrayHandle ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_components,vtkm::CopyFlag::On);
+//    vtkm::cont::Field f_empty(m_field,
+//                              assoc,
+//                              ah_empty);
+//    tmp_empty.AddField(f_empty);
+//  }
+//#endif
+
   vtkm::filter::multi_block::MergeDataSets mergeDataSets;
   mergeDataSets.SetInvalidValue(m_invalid_value);
   //return a partitiondataset
-  if(sampled_doms.GetNumberOfPartitions() == 0)
-	  std::cerr << "NO PARTITIONS == NO DATA " << std::endl;
   auto merged = mergeDataSets.Execute(sampled_doms);
+  auto result = merged.GetPartitions();
   std::cerr << "MERGED OUTPUT: " << std::endl;
   merged.PrintSummary(std::cerr);
 
@@ -528,20 +546,17 @@ UniformGrid::DoExecute()
   probe.origin(m_origin);
   probe.spacing(m_spacing);
   probe.invalidValue(m_invalid_value);
-  auto result = merged.GetPartitions();
   auto dataset = probe.Run(result[0]);
-  int is_2d = 2;
-  if(m_dims[2] > 1)
-    is_2d = 3;
 
   //take uniform sampled grid and reduce to root process
 #ifdef VTKH_PARALLEL
+  
   if(par_rank == 0)
   {
     std::cerr << "RANK 0 before reduction: " << std::endl; 
     dataset.PrintSummary(std::cerr);
   }
-  vtkh::detail::GlobalReduceFields g_reducefields(dataset,m_invalid_value);
+  vtkh::detail::GlobalReduceField g_reducefields(dataset, m_field, m_invalid_value);
   auto output = g_reducefields.Reduce();
   //auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
   //full.CastAndCall(g_reducefields);
@@ -585,6 +600,12 @@ void
 UniformGrid::Spacing(const Vec3f spacing)
 {
   m_spacing = spacing;
+}
+
+void
+UniformGrid::Field(const std::string field)
+{
+  m_field = field;
 }
 
 void
