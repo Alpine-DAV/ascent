@@ -213,8 +213,6 @@ public:
 	    }
 	    if(g_valid[i] > 1)
 	    {
-		    std::cerr << "g_valid > 1: " << g_valid[i] << std::endl;
-		    std::cerr << "for field: " << m_input_field.GetName() << std::endl;
               global_field[i] = global_field[i]/g_valid[i];
 	    }
 	  }
@@ -537,8 +535,6 @@ UniformGrid::DoExecute()
   //return a partitiondataset
   auto merged = mergeDataSets.Execute(sampled_doms);
   auto result = merged.GetPartitions();
-  std::cerr << "MERGED OUTPUT: " << std::endl;
-  merged.PrintSummary(std::cerr);
 
   //Uniform Grid Sample
   vtkh::vtkmProbe probe;
@@ -550,21 +546,8 @@ UniformGrid::DoExecute()
 
   //take uniform sampled grid and reduce to root process
 #ifdef VTKH_PARALLEL
-  
-  if(par_rank == 0)
-  {
-    std::cerr << "RANK 0 before reduction: " << std::endl; 
-    dataset.PrintSummary(std::cerr);
-  }
   vtkh::detail::GlobalReduceField g_reducefields(dataset, m_field, m_invalid_value);
   auto output = g_reducefields.Reduce();
-  //auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
-  //full.CastAndCall(g_reducefields);
-  if(par_rank == 0)
-  {
-    std::cerr << "RANK 0 reduced output: " << std::endl; 
-    output.PrintSummary(std::cerr);
-  }
   this->m_output->AddDomain(output,0);
 #else
   this->m_output->AddDomain(dataset,0);

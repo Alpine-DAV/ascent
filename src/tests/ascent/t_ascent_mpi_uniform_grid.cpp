@@ -33,11 +33,10 @@ using namespace conduit;
 using namespace ascent;
 
 
-index_t EXAMPLE_MESH_SIDE_DIM = 1000;
-int NUM_DOMAINS = 2;
+int NUM_DOMAINS = 30;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
+TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
 {
     //
     //Set Up MPI
@@ -99,7 +98,6 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing mpi uniform grid of conduit::blueprint spiral input\n");
-    std::cerr << "RANK: " << par_rank << " data: " << std::endl;
     data.print();
 
 
@@ -120,6 +118,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
     params["invalid_value"] = -100.0;      
+    params["field"] = "dist";
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";
@@ -157,7 +156,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by1_than_input)
     if(par_rank == 0)
     {
       EXPECT_TRUE(check_test_image(output_file));
-      std::string msg = "An example of using the uniform grid filter.";
+      std::string msg = "An example of using the mpi uniform grid filter.";
       ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     }
 }
