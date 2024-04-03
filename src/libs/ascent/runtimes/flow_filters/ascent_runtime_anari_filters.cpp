@@ -287,7 +287,7 @@ public:
 
   // renderer parameters
   vtkm::Vec4f_32 background = vtkm::Vec4f_32(0.0f, 0.0f, 0.0f, 0.f);
-  int pixelSamples = 64;
+  int pixelSamples = 128;
 
 public:
   ~AnariImpl();
@@ -516,11 +516,15 @@ AnariImpl::render(ANARIScene& scene)
   anari_cpp::commitParameters(device, renderer);
 
   // TODO support all camera parameters
-  //    -- missing parameters: xpan, ypan, zoom (through imageRegion)
+  //    -- missing parameters: xpan, ypan (through imageRegion)
   //
+  const auto cam_zoom = cam.GetZoom();
   const auto cam_type = cam.GetMode() == vtkm::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
-  const auto cam_pos = cam.GetPosition();
   const auto cam_dir = cam.GetLookAt() - cam.GetPosition();
+  // TODO: what is the correct way to apply zoom?
+  const auto cam_pos = cam_zoom > 0
+    ? cam.GetLookAt() - cam_dir / cam_zoom
+    : cam.GetPosition();
   const auto cam_up  = cam.GetViewUp();
   const auto cam_range = cam.GetClippingRange();
   anari_cpp::Camera camera = anari_cpp::newObject<anari_cpp::Camera>(device, cam_type);
