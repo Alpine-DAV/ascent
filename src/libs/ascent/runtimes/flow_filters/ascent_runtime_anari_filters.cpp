@@ -140,11 +140,12 @@ static anari_cpp::Device
 anari_device_load()
 {
   static char* libraryName 
-    = std::getenv("VTKM_ANARI_LIBRARY")      ? std::getenv("VTKM_ANARI_LIBRARY") 
+    = std::getenv("ANARI_LIBRARY")           ? std::getenv("ANARI_LIBRARY") 
+    : std::getenv("VTKM_ANARI_LIBRARY")      ? std::getenv("VTKM_ANARI_LIBRARY") 
     : std::getenv("VTKM_TEST_ANARI_LIBRARY") ? std::getenv("VTKM_TEST_ANARI_LIBRARY") // fall back to the old environment variable
     : nullptr;
   static bool verbose = std::getenv("VTKM_ANARI_VERBOSE") != nullptr;
-  static bool  debug = std::getenv("VTKM_ANARI_DEBUG_DEVICE") != nullptr;
+  static bool debug = std::getenv("VTKM_ANARI_DEBUG_DEVICE") != nullptr;
   static char* trace_dir = std::getenv("VTKM_ANARI_DEBUG_TRACE_DIR");
 
   auto lib = anari_cpp::loadLibrary(libraryName ? libraryName : "helide", StatusFunc, &verbose);
