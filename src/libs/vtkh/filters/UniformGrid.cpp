@@ -20,11 +20,121 @@
 #include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/worklet/DispatcherMapField.h>
 
+using scalarI = vtkm::cont::ArrayHandle<vtkm::Int32>;
+using scalarF = vtkm::cont::ArrayHandle<vtkm::Float32>;
+using scalarD = vtkm::cont::ArrayHandle<vtkm::Float64>;
+using vec3_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>; 
+using vec3_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>; 
+using vec2_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>; 
+using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>; 
+using Vec2d    = vtkm::Vec<double, 2>;
+using Vec3d    = vtkm::Vec<double, 3>;
+
 namespace vtkh
 {
 
 namespace detail
 {
+
+vtkm::cont::Field 
+MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::cont::Field::Association assoc)
+{
+  int num_values = 0;
+  if(assoc == vtkm::cont::Field::Association::Cells) //cell centered field
+  {
+    num_values = (dims[0]-1)*(dims[1]-1);
+    if(dims[2] > 1)
+      num_values = num_values*(dims[2]-1);
+  }
+  else
+  {
+    num_values = dims[0]*dims[1];
+    if(dims[2] > 1)
+      num_values = num_values*dims[2];
+  }
+
+  if(field_id == 0)
+  {
+    std::vector<int> v_empty(num_values, 0.0);
+    scalarI ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
+    vtkm::cont::Field f_empty(field_name,
+                              assoc,
+                              ah_empty);
+    return f_empty;
+  }
+  else if(field_id == 1)
+  {
+    std::vector<float> v_empty(num_values, 0.0);
+    scalarF ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
+    vtkm::cont::Field f_empty(field_name,
+                              assoc,
+                              ah_empty);
+    return f_empty;
+  }
+  else if(field_id == 2)
+  {
+    std::vector<double> v_empty(num_values, 0.0);
+    scalarD ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
+    vtkm::cont::Field f_empty(field_name,
+                              assoc,
+                              ah_empty);
+    return f_empty;
+  }
+  else if(field_id == 3)
+  {
+    vec2_32 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>();
+    for(int i = 0; i < num_values; ++i)
+    {
+      Vec2f empty_vec = vtkm::make_Vec(0.0,0.0);
+      ah_empty.WritePortal().Set(i,empty_vec);
+    }
+    vtkm::cont::Field f_empty(field_name,
+                              assoc,
+                              ah_empty);
+    return f_empty;
+  }
+  else if(field_id == 4)
+  {
+    vec2_64 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
+    for(int i = 0; i < num_values; ++i)
+    {
+      Vec2d empty_vec = vtkm::make_Vec(0.0,0.0);
+      ah_empty.WritePortal().Set(i,empty_vec);
+    }
+    vtkm::cont::Field f_empty(field_name,
+                              assoc,
+                              ah_empty);
+    return f_empty;
+  }
+  else if(field_id == 5)
+  {
+    vec3_32 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
+    for(int i = 0; i < num_values; ++i)
+    {
+      Vec3f empty_vec = vtkm::make_Vec(0.0,0.0,0.0);
+      ah_empty.WritePortal().Set(i,empty_vec);
+    }
+    vtkm::cont::Field f_empty(field_name,
+                              assoc,
+                              ah_empty);
+    return f_empty;
+  }
+  else if(field_id == 6)
+  {
+    vec3_64 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>();
+    for(int i = 0; i < num_values; ++i)
+    {
+      Vec3d empty_vec = vtkm::make_Vec(0.0,0.0,0.0);
+      ah_empty.WritePortal().Set(i,empty_vec);
+    }
+    vtkm::cont::Field f_empty(field_name,
+                              assoc,
+                              ah_empty);
+    return f_empty;
+  }
+  vtkm::cont::Field field;
+  return field;
+}
 
 #ifdef VTKH_PARALLEL
 class GlobalReduceField
@@ -81,13 +191,6 @@ public:
 
       vtkm::cont::UnknownArrayHandle uah_field = m_input_field.GetData();
 
-      using scalarI = vtkm::cont::ArrayHandle<vtkm::Int32>;
-      using scalarF = vtkm::cont::ArrayHandle<vtkm::Float32>;
-      using scalarD = vtkm::cont::ArrayHandle<vtkm::Float64>;
-      using vec3_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>; 
-      using vec3_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>; 
-      using vec2_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>; 
-      using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>; 
 
       vtkm::cont::ArrayHandle<vtkm::Float32> ah_mask;
       m_data_set.GetField("mask").GetData().AsArrayHandle(ah_mask);
@@ -213,8 +316,6 @@ public:
 	    }
 	    if(g_valid[i] > 1)
 	    {
-		    std::cerr << "g_valid > 1: " << g_valid[i] << std::endl;
-		    std::cerr << "for field: " << m_input_field.GetName() << std::endl;
               global_field[i] = global_field[i]/g_valid[i];
 	    }
 	  }
@@ -513,33 +614,49 @@ UniformGrid::DoExecute()
       sampled_doms.AppendPartition(dom);
     }
   }
-  //TODO: Need field type
-//#ifdef VTKH_PARALLEL
-//  vtkm::cont::DataSet tmp_empty;
-//  if(sampled_doms.GetNumberOfPartitions() == 0)
-//  {
-//    tmp_empty = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
-//    bool valid_field;
-//    vtkm::Id num_components = this->m_input->NumberOfComponents(m_field);
-//    vtkm::cont::Field::Association assoc = this->m_input->GetFieldAssociation(m_field, valid_field);
-//    std::vector<double> v_empty(num_components, 0.0);
-//
-//    vtkm::cont::UnknownArrayHandle ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_components,vtkm::CopyFlag::On);
-//    vtkm::cont::Field f_empty(m_field,
-//                              assoc,
-//                              ah_empty);
-//    tmp_empty.AddField(f_empty);
-//  }
-//#endif
+#ifdef VTKH_PARALLEL
+  vtkm::cont::DataSet tmp_empty;
+  if(sampled_doms.GetNumberOfPartitions() == 0)
+  {
+    tmp_empty = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
+    bool valid_field;
+    vtkm::cont::Field::Association assoc = this->m_input->GetFieldAssociation(m_field, valid_field);
+
+    if(!valid_field)
+    {
+      this->m_output = this->m_input;
+      return;
+    }
+    
+    vtkm::Id field_id = this->m_input->GetFieldType(m_field, valid_field);
+    vtkm::cont::Field empty_field = vtkh::detail::MakeEmptyField(m_field,field_id,m_dims,assoc);
+    tmp_empty.AddField(empty_field);
+    sampled_doms.AppendPartition(tmp_empty);
+  }
+#endif
 
   vtkm::filter::multi_block::MergeDataSets mergeDataSets;
   mergeDataSets.SetInvalidValue(m_invalid_value);
   //return a partitiondataset
   auto merged = mergeDataSets.Execute(sampled_doms);
   auto result = merged.GetPartitions();
-  std::cerr << "MERGED OUTPUT: " << std::endl;
-  merged.PrintSummary(std::cerr);
 
+#ifdef VTKH_PARALLEL
+  
+  if(par_rank == 7)
+  {
+    std::cerr << "RANK " << par_rank << " BEFORE PROBE: " << std::endl; 
+    result[0].PrintSummary(std::cerr);
+    vtkm::cont::ArrayHandle<vtkm::Float64> ah;
+    result[0].GetField(m_field).GetData().AsArrayHandle(ah);
+    auto ah_portal = ah.ReadPortal();
+    int num_vals = ah_portal.GetNumberOfValues();
+    std::cerr << "VALUES START: " << std::endl;
+    for(int i = 0; i < num_vals ; i++)
+	    std::cerr << " " << ah_portal.Get(i);
+    std::cerr << "VALUES END " << std::endl;
+  }
+#endif
   //Uniform Grid Sample
   vtkh::vtkmProbe probe;
   probe.dims(m_dims);
@@ -551,10 +668,18 @@ UniformGrid::DoExecute()
   //take uniform sampled grid and reduce to root process
 #ifdef VTKH_PARALLEL
   
-  if(par_rank == 0)
+  if(par_rank == 7)
   {
-    std::cerr << "RANK 0 before reduction: " << std::endl; 
+    std::cerr << "RANK " << par_rank << " AFTER PROBE " << std::endl; 
     dataset.PrintSummary(std::cerr);
+    vtkm::cont::ArrayHandle<vtkm::Float64> ah;
+    dataset.GetField(m_field).GetData().AsArrayHandle(ah);
+    auto ah_portal = ah.ReadPortal();
+    int num_vals = ah_portal.GetNumberOfValues();
+    std::cerr << "VALUES START: " << std::endl;
+    for(int i = 0; i < num_vals ; i++)
+	    std::cerr << " " << ah_portal.Get(i);
+    std::cerr << "VALUES END " << std::endl;
   }
   vtkh::detail::GlobalReduceField g_reducefields(dataset, m_field, m_invalid_value);
   auto output = g_reducefields.Reduce();
@@ -564,8 +689,17 @@ UniformGrid::DoExecute()
   {
     std::cerr << "RANK 0 reduced output: " << std::endl; 
     output.PrintSummary(std::cerr);
+    vtkm::cont::ArrayHandle<vtkm::Float64> ah;
+    output.GetField(m_field).GetData().AsArrayHandle(ah);
+    auto ah_portal = ah.ReadPortal();
+    int num_vals = ah_portal.GetNumberOfValues();
+    std::cerr << "VALUES START: " << std::endl;
+    for(int i = 0; i < num_vals ; i++)
+	    std::cerr << " " << ah_portal.Get(i);
+    std::cerr << "VALUES END " << std::endl;
   }
-  this->m_output->AddDomain(output,0);
+  //this->m_output->AddDomain(output,0);
+  this->m_output->AddDomain(dataset,0);
 #else
   this->m_output->AddDomain(dataset,0);
 #endif

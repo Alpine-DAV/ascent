@@ -49,18 +49,18 @@ vtkmProbe::Run(vtkm::cont::DataSet &input)
   {
     ds_probe = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
   }
-  std::cerr << "VTKM INPUT START " << std::endl;
-  input.PrintSummary(std::cerr);
-  std::cerr << "VTKM INPUT END " << std::endl;
-  std::cerr << "vtkm ds_probe: " << std::endl;
-  ds_probe.PrintSummary(std::cerr);
+//  std::cerr << "VTKM INPUT START " << std::endl;
+//  input.PrintSummary(std::cerr);
+//  std::cerr << "VTKM INPUT END " << std::endl;
+//  std::cerr << "vtkm ds_probe: " << std::endl;
+//  ds_probe.PrintSummary(std::cerr);
   probe.SetGeometry(ds_probe);
   probe.SetInvalidValue(m_invalid_value);
 
   auto output = probe.Execute(input);
-  std::cerr << "RESULT START" << std::endl;
-  output.PrintSummary(std::cerr);
-  std::cerr << "RESULT END" << std::endl;
+//  std::cerr << "RESULT START" << std::endl;
+//  output.PrintSummary(std::cerr);
+//  std::cerr << "RESULT END" << std::endl;
   return output;
 }
 
