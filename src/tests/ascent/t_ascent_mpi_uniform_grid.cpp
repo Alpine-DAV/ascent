@@ -33,7 +33,7 @@ using namespace conduit;
 using namespace ascent;
 
 
-int NUM_DOMAINS = 30;
+int NUM_DOMAINS = 8;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
@@ -98,7 +98,9 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing mpi uniform grid of conduit::blueprint spiral input\n");
-    data.print();
+    std::cerr << "RANK: " << par_rank << " data: " << std::endl;
+    if(par_rank ==7)
+      data.print();
 
 
     string output_path = prepare_output_dir();
@@ -118,7 +120,7 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
     params["invalid_value"] = -100.0;      
-    params["field"] = "dist";
+    params["field"] = "dist"; 
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";

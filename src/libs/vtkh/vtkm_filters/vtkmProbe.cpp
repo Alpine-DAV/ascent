@@ -50,6 +50,9 @@ vtkmProbe::Run(vtkm::cont::DataSet &input)
   probe.SetInvalidValue(m_invalid_value);
 
   auto output = probe.Execute(input);
+//  std::cerr << "RESULT START" << std::endl;
+//  output.PrintSummary(std::cerr);
+//  std::cerr << "RESULT END" << std::endl;
   return output;
 }
 
