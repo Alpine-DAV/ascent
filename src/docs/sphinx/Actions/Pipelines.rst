@@ -692,10 +692,11 @@ the data set has more than one domain. Without ghost, the averaging will not be 
   params["association"] = "vertex";   // output field association
   // or params["association"] = "element";   // output field association
 
-Sample (a Regular) Grid
+Uniform Grid
 ~~~~~~~~~~~~~~~~~~~~~
-Sample grid changes the coordinate system of the input mesh to that of the user-specified regular mesh. Input fields are transferred by sampling the data at the vertex locations of the output geometry. For the output geometry, users have the option to specify the origin (`origin`), the number of points along each axis (`dims`) from the origin, and the spacing between these points (`spacing`). 
+Uniform Grid filter changes the coordinate system of the input mesh to that of the user-specified regular mesh. Input fields are transferred by sampling the data at the vertex locations of the output geometry. For the output geometry, users must specify the field (`field`) to be sampled, and have the option to specify the origin (`origin`), the number of points along each axis (`dims`) from the origin, and the spacing between these points (`spacing`). 
 
+For distributed data, the final output of this filter is composited on the root process, and ties for sampled points are handled by taking the average of all valid values.
 .. code-block:: c++
 
   conduit::Node pipelines;
@@ -703,6 +704,7 @@ Sample grid changes the coordinate system of the input mesh to that of the user-
   pipelines["pl1/f1/type"] = "sample_grid";
   //params optional
   conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "dist";   //required
   params["origin/x"] = 0.0;   //default: minimum point in x dim
   params["origin/y"] = 0.0;   //default: minimum point in y dim
   params["origin/z"] = 0.0;   //default: minimum point in z dim
