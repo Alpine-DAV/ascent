@@ -98,9 +98,6 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing mpi uniform grid of conduit::blueprint spiral input\n");
-    std::cerr << "RANK: " << par_rank << " data: " << std::endl;
-    if(par_rank ==7)
-      data.print();
 
 
     string output_path = prepare_output_dir();
