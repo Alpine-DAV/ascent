@@ -601,7 +601,10 @@ UniformGrid::DoExecute()
 
   std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
   const int num_domains = domain_ids.size();
+  //add mask to keep track of valid points after sampling
   this->m_input->AddConstantPointField(0.0, "mask");
+
+  //put vtkm datasets into a partitionedDS for vtkm::Merge
   vtkm::cont::PartitionedDataSet sampled_doms;
   for(int i = 0; i < num_domains; ++i)
   {
@@ -615,6 +618,7 @@ UniformGrid::DoExecute()
     }
   }
 #ifdef VTKH_PARALLEL
+  //if there is no data, add some empty 
   vtkm::cont::DataSet tmp_empty;
   if(sampled_doms.GetNumberOfPartitions() == 0)
   {
@@ -641,22 +645,6 @@ UniformGrid::DoExecute()
   auto merged = mergeDataSets.Execute(sampled_doms);
   auto result = merged.GetPartitions();
 
-#ifdef VTKH_PARALLEL
-  
-  if(par_rank == 7)
-  {
-    std::cerr << "RANK " << par_rank << " BEFORE PROBE: " << std::endl; 
-    result[0].PrintSummary(std::cerr);
-    vtkm::cont::ArrayHandle<vtkm::Float64> ah;
-    result[0].GetField(m_field).GetData().AsArrayHandle(ah);
-    auto ah_portal = ah.ReadPortal();
-    int num_vals = ah_portal.GetNumberOfValues();
-    std::cerr << "VALUES START: " << std::endl;
-    for(int i = 0; i < num_vals ; i++)
-	    std::cerr << " " << ah_portal.Get(i);
-    std::cerr << "VALUES END " << std::endl;
-  }
-#endif
   //Uniform Grid Sample
   vtkh::vtkmProbe probe;
   probe.dims(m_dims);
@@ -665,41 +653,14 @@ UniformGrid::DoExecute()
   probe.invalidValue(m_invalid_value);
   auto dataset = probe.Run(result[0]);
 
-  //take uniform sampled grid and reduce to root process
 #ifdef VTKH_PARALLEL
-  
-  if(par_rank == 7)
-  {
-    std::cerr << "RANK " << par_rank << " AFTER PROBE " << std::endl; 
-    dataset.PrintSummary(std::cerr);
-    vtkm::cont::ArrayHandle<vtkm::Float64> ah;
-    dataset.GetField(m_field).GetData().AsArrayHandle(ah);
-    auto ah_portal = ah.ReadPortal();
-    int num_vals = ah_portal.GetNumberOfValues();
-    std::cerr << "VALUES START: " << std::endl;
-    for(int i = 0; i < num_vals ; i++)
-	    std::cerr << " " << ah_portal.Get(i);
-    std::cerr << "VALUES END " << std::endl;
-  }
+  //take uniform sampled grid and reduce to root process
   vtkh::detail::GlobalReduceField g_reducefields(dataset, m_field, m_invalid_value);
   auto output = g_reducefields.Reduce();
-  //auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
-  //full.CastAndCall(g_reducefields);
   if(par_rank == 0)
   {
-    std::cerr << "RANK 0 reduced output: " << std::endl; 
-    output.PrintSummary(std::cerr);
-    vtkm::cont::ArrayHandle<vtkm::Float64> ah;
-    output.GetField(m_field).GetData().AsArrayHandle(ah);
-    auto ah_portal = ah.ReadPortal();
-    int num_vals = ah_portal.GetNumberOfValues();
-    std::cerr << "VALUES START: " << std::endl;
-    for(int i = 0; i < num_vals ; i++)
-	    std::cerr << " " << ah_portal.Get(i);
-    std::cerr << "VALUES END " << std::endl;
+    this->m_output->AddDomain(output,0);
   }
-  //this->m_output->AddDomain(output,0);
-  this->m_output->AddDomain(dataset,0);
 #else
   this->m_output->AddDomain(dataset,0);
 #endif

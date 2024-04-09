@@ -139,6 +139,15 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     add_scenes["action"] = "add_scenes";
     add_scenes["scenes"] = scenes;
 
+//    conduit::Node extracts;
+//
+//    extracts["e1/type"]  = "relay";
+//    extracts["e1/params/path"] = output_file;
+//    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+//    conduit::Node &add_ext= actions.append();
+//    add_ext["action"] = "add_extracts";
+//    add_ext["extracts"] = extracts;
+
     //
     // Run Ascent
     //

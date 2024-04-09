@@ -3088,7 +3088,6 @@ VTKHUniformGrid::execute()
     vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
 
     std::string field = params()["field"].as_string();
-
     vtkm::Float64 invalid_value = 0.0;
     
     using Vec3f = vtkm::Vec<vtkm::Float64,3>;
