@@ -74,6 +74,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_i)
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["dims/i"] = EXAMPLE_MESH_SIDE_DIM-10;
     params["invalid_value"] = -10.0;      
 
@@ -161,6 +162,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_j)
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["dims/j"] = EXAMPLE_MESH_SIDE_DIM-10;
     params["invalid_value"] = -10.0;      
 
@@ -240,6 +242,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_k)
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["dims/k"] = EXAMPLE_MESH_SIDE_DIM-10;
     params["invalid_value"] = -10.0;      
 
@@ -319,6 +322,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by10_than_input)
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["dims/i"] = EXAMPLE_MESH_SIDE_DIM-10;
     params["dims/j"] = EXAMPLE_MESH_SIDE_DIM-10;
     params["dims/k"] = EXAMPLE_MESH_SIDE_DIM-10;
@@ -400,6 +404,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input)
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["dims/i"] = EXAMPLE_MESH_SIDE_DIM;
     params["dims/j"] = EXAMPLE_MESH_SIDE_DIM;
     params["dims/k"] = EXAMPLE_MESH_SIDE_DIM;
@@ -481,6 +486,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_increased_s
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["spacing/dx"] = 2.0;      
     params["spacing/dy"] = 2.0;      
     params["spacing/dz"] = 2.0;      
@@ -573,6 +579,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_decreased_s
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["spacing/dx"] = 0.5;      
     params["spacing/dy"] = 0.5;      
     params["spacing/dz"] = 0.5;      
@@ -654,6 +661,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["origin/x"] = -5.0;        
     params["origin/y"] = -5.0;        
     params["origin/z"] = -5.0;        
@@ -746,6 +754,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["origin/x"] = 0.0;        
     params["invalid_value"] = -10.0;      
 
@@ -836,6 +845,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["origin/y"] = 0.0;        
     params["invalid_value"] = -10.0;      
 
@@ -926,6 +936,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["origin/z"] = 0.0;        
     params["invalid_value"] = -10.0;      
 
@@ -1016,6 +1027,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input)
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["dims/i"] = EXAMPLE_MESH_SIDE_DIM+5;
     params["dims/j"] = EXAMPLE_MESH_SIDE_DIM+5;
     params["dims/k"] = EXAMPLE_MESH_SIDE_DIM+5;
@@ -1108,6 +1120,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input_large_
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
     conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
     params["dims/i"] = EXAMPLE_MESH_SIDE_DIM+5;
     params["dims/j"] = EXAMPLE_MESH_SIDE_DIM+5;
     params["dims/k"] = EXAMPLE_MESH_SIDE_DIM+5;
