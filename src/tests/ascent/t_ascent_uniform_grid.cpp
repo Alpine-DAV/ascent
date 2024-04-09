@@ -1212,6 +1212,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_default_values)
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["field"] = "braid";      
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
