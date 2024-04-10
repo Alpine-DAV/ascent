@@ -3763,35 +3763,108 @@ bool
 VTKHParticleAdvection::verify_params(const conduit::Node &params,
                                      conduit::Node &info)
 {
-    info.reset();
     bool res = check_string("field", params, info, true);
-    res &= check_numeric("num_seeds", params, info, true, true);
     res &= check_numeric("num_steps", params, info, true, true);
     res &= check_numeric("step_size", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_xmin", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_xmax", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_ymin", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_ymax", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_zmin", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_zmax", params, info, true, true);
+    info.reset();
+
+    if(!param.has_child("seeds"))
+    {
+        info["errors"].append() = "Missing required parameter. Particle Advection must specify seeds";
+        res = false;
+    }
+    else
+    {
+      conduit::Node seed_params = params["seeds"];
+      if(!seed_params.has_child("type"))
+      {
+        info["errors"].append() = "Missing required parameter. Particle Advection must specify seed type";
+        res = false;
+      }
+      else
+      {
+	std::string sampling = "";
+	if(seed_params.has_child("sampling_type"))
+	{
+          res &= check_string("sampling_type", seed_params, info, true);
+	  sampling_type = seed_params["sampling_type"].as_string();
+	}
+
+        res &= check_string("type", seed_params, info, true);
+        std::string type = seed_params["type"].as_string();	
+	if(type == "point")
+        {
+          res &= check_numeric("location",seed_params,info,true);
+	}
+	else if(type == "point_list")
+        {
+          res &= check_numeric("location",seed_params,info,true);
+	}
+	else if(type == "line")
+        {
+          res &= check_numeric("start",seed_params,info,true);
+          res &= check_numeric("end",seed_params,info,true);
+	  res &= check_numeric("num_seeds",seed_params,info,true);
+	}
+	else if(type == "box")
+        {
+          if(sampling_type == "uniform")
+	  {
+            res &= check_numeric("num_seeds_x",seed_params,info,true);
+            res &= check_numeric("num_seeds_y",seed_params,info,true);
+            res &= check_numeric("num_seeds_z",seed_params,info,true);
+	  }
+	  else
+	  {
+            res &= check_numeric("num_seeds",seed_params,info,true);
+	  }
+
+	  if(seed_params.has_child("sampling_space"))
+	  {
+            res &= check_string("sampling_space", seed_params, info, true);
+	  }
+
+	}
+	else
+	{
+          info["errors"].append() = "Unrecognized parameter. Particle Advection supports seed types 'point', 'point_list', 'line', or 'box'.";
+          res = false;
+	}
+
+
+      }
+    }
+
+    if(param.has_child("rendering"))
+    {
+      res &= check_string("rendering/enable_tubes", params, info, false);
+      res &= check_string("rendering/tube_capping", params, info, false);
+      res &= check_numeric("rendering/tube_size", params, info, false);
+      res &= check_numeric("rendering/tube_sides", params, info, false);
+      res &= check_numeric("rendering/tube_value", params, info, false);
+      res &= check_string("rendering/output_field", params, info, false);
+
+    }
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
-    valid_paths.push_back("num_seeds");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
-    valid_paths.push_back("seed_bounding_box_xmin");
-    valid_paths.push_back("seed_bounding_box_xmax");
-    valid_paths.push_back("seed_bounding_box_ymin");
-    valid_paths.push_back("seed_bounding_box_ymax");
-    valid_paths.push_back("seed_bounding_box_zmin");
-    valid_paths.push_back("seed_bounding_box_zmax");
-    valid_paths.push_back("enable_tubes");
-    valid_paths.push_back("tube_capping");
-    valid_paths.push_back("tube_size");
-    valid_paths.push_back("tube_sides");
-    valid_paths.push_back("tube_value");
-    valid_paths.push_back("output_field");
+    valid_paths.push_back("seeds/type");
+    valid_paths.push_back("seeds/location");
+    valid_paths.push_back("seeds/num_seeds");
+    valid_paths.push_back("seeds/num_seeds_x");
+    valid_paths.push_back("seeds/num_seeds_y");
+    valid_paths.push_back("seeds/num_seeds_z");
+    valid_paths.push_back("seeds/sampling_type");
+    valid_paths.push_back("seeds/sampling_space");
+
+    valid_paths.push_back("rendering/enable_tubes");
+    valid_paths.push_back("rendering/tube_capping");
+    valid_paths.push_back("rendering/tube_size");
+    valid_paths.push_back("rendering/tube_sides");
+    valid_paths.push_back("rendering/tube_value");
+    valid_paths.push_back("rendering/output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3846,9 +3919,9 @@ VTKHParticleAdvection::execute()
     std::string output_field = field_name + "_streamlines";
 
     bool draw_tubes = true;
-    if(params().has_path("enable_tubes"))
+    if(params().has_path("rendering/enable_tubes"))
     {
-      if(params()["enable_tubes"].as_string() == "false")
+      if(params()["rendering/enable_tubes"].as_string() == "false")
       {
         draw_tubes = false;
       }
@@ -3904,9 +3977,9 @@ VTKHParticleAdvection::execute()
       if(draw_tubes)
       {
         sl.SetTubes(true);
-        if(params().has_path("output_field")) 
+        if(params().has_path("rendering/output_field")) 
 	{
-          std::string output_field = params()["output_field"].as_string();
+          std::string output_field = params()["rendering/output_field"].as_string();
           sl.SetOutputField(output_field);
 	}
 	else
@@ -3914,25 +3987,25 @@ VTKHParticleAdvection::execute()
 	  std::string output_field = field_name + "_streamlines";
           sl.SetOutputField(output_field);
 	}
-        if(params().has_path("tube_value")) 
+        if(params().has_path("rendering/tube_value")) 
 	{
-          double tube_value = params()["tube_value"].as_float64();
+          double tube_value = params()["rendering/tube_value"].as_float64();
           sl.SetTubeValue(tube_value);
 	}
-        if(params().has_path("tube_size")) 
+        if(params().has_path("rendering/tube_size")) 
 	{
-          double tube_size = params()["tube_size"].as_float64();
+          double tube_size = params()["renderng/tube_size"].as_float64();
           sl.SetTubeSize(tube_size);
 	}
-        if(params().has_path("tube_sides")) 
+        if(params().has_path("rendering/tube_sides")) 
 	{
-          int tube_sides = params()["tube_sides"].as_int32();
+          int tube_sides = params()["rendering/tube_sides"].as_int32();
           sl.SetTubeSides(tube_sides);
 	}
-        if(params().has_path("tube_capping"))
+        if(params().has_path("rendering/tube_capping"))
         {
           bool tube_capping = true;
-          if(params()["tube_capping"].as_string() == "false")
+          if(params()["rendering/tube_capping"].as_string() == "false")
           {
             tube_capping = false;
           }
