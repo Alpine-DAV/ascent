@@ -3768,7 +3768,7 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     res &= check_numeric("step_size", params, info, true, true);
     info.reset();
 
-    if(!param.has_child("seeds"))
+    if(!params.has_child("seeds"))
     {
         info["errors"].append() = "Missing required parameter. Particle Advection must specify seeds";
         res = false;
@@ -3783,7 +3783,7 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
       }
       else
       {
-	std::string sampling = "";
+	std::string sampling_type = "";
 	if(seed_params.has_child("sampling_type"))
 	{
           res &= check_string("sampling_type", seed_params, info, true);
@@ -3835,7 +3835,7 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
       }
     }
 
-    if(param.has_child("rendering"))
+    if(params.has_child("rendering"))
     {
       res &= check_string("rendering/enable_tubes", params, info, false);
       res &= check_string("rendering/tube_capping", params, info, false);
@@ -3843,7 +3843,6 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
       res &= check_numeric("rendering/tube_sides", params, info, false);
       res &= check_numeric("rendering/tube_value", params, info, false);
       res &= check_string("rendering/output_field", params, info, false);
-
     }
 
     std::vector<std::string> valid_paths;
@@ -3910,10 +3909,52 @@ VTKHParticleAdvection::execute()
     std::string topo_name = collection->field_topology(field_name);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
-
-    int numSeeds = get_int32(params()["num_seeds"], data_object);
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
+
+    conduit::Node n_seeds = params()["seeds"];
+    std::string seed_type = n_seeds["type"].as_string();
+    std::vector<vtkm::Particle> seeds;
+    if(seed_type == "point")
+    {
+      const Node &n_loc_vals = n_seeds["location"];
+
+      //convert to contig doubles
+      Node n_loc_vals_dbls;
+      n_loc_vals.to_float64_array(n_loc_vals_dbls);
+
+      double* location = n_loc_vals_dbls.as_double_ptr();
+      double x = location[0];
+      double y = location[1];
+      double z = location[2];
+      std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+      seeds.push_back(vtkm::Particle({x,y,z}, 0));
+    }
+    else if(seed_type == "point_list")
+    {
+      const Node &n_loc_vals = n_seeds["location"];
+
+      //convert to contig doubles
+      Node n_loc_vals_dbls;
+      n_loc_vals.to_float64_array(n_loc_vals_dbls);
+
+      double* location = n_loc_vals_dbls.as_double_ptr();
+      
+      int num_points = (n_loc_vals_dbls.dtype().number_of_elements());
+      std::cerr << "num_points: " << num_points << std::endl;
+      for(int i = 0; i < num_points; i+=3)
+      {
+	      std::cerr << "i: " << i << std::endl;
+        double x = location[i];
+        double y = location[i+1];
+        double z = location[i+2];
+        std::cerr << "seed point " << i/3 <<  ": " << x << " " << y << " " << z << std::endl;
+        seeds.push_back(vtkm::Particle({x,y,z}, i/3));
+      }
+    }
+
+    auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
+    //int numSeeds = get_int32(params()["num_seeds"], data_object);
     
     //tube params
     std::string output_field = field_name + "_streamlines";
@@ -3927,26 +3968,26 @@ VTKHParticleAdvection::execute()
       }
     }
 
-    float seedBBox[6];
-    seedBBox[0] = get_float32(params()["seed_bounding_box_xmin"], data_object);
-    seedBBox[1] = get_float32(params()["seed_bounding_box_xmax"], data_object);
-    seedBBox[2] = get_float32(params()["seed_bounding_box_ymin"], data_object);
-    seedBBox[3] = get_float32(params()["seed_bounding_box_ymax"], data_object);
-    seedBBox[4] = get_float32(params()["seed_bounding_box_zmin"], data_object);
-    seedBBox[5] = get_float32(params()["seed_bounding_box_zmax"], data_object);
+    //float seedBBox[6];
+    //seedBBox[0] = get_float32(params()["seed_bounding_box_xmin"], data_object);
+    //seedBBox[1] = get_float32(params()["seed_bounding_box_xmax"], data_object);
+    //seedBBox[2] = get_float32(params()["seed_bounding_box_ymin"], data_object);
+    //seedBBox[3] = get_float32(params()["seed_bounding_box_ymax"], data_object);
+    //seedBBox[4] = get_float32(params()["seed_bounding_box_zmin"], data_object);
+    //seedBBox[5] = get_float32(params()["seed_bounding_box_zmax"], data_object);
 
-    float dx = seedBBox[1] - seedBBox[0];
-    float dy = seedBBox[3] - seedBBox[2];
-    float dz = seedBBox[5] - seedBBox[4];
+    //float dx = seedBBox[1] - seedBBox[0];
+    //float dy = seedBBox[3] - seedBBox[2];
+    //float dz = seedBBox[5] - seedBBox[4];
 
-    if (dx < 0 || dy < 0 || dz < 0)
-    {
-      bool throw_error = false;
-      detail::field_error(field_name, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
+    //if (dx < 0 || dy < 0 || dz < 0)
+    //{
+    //  bool throw_error = false;
+    //  detail::field_error(field_name, this->name(), collection, throw_error);
+    //  // this creates a data object with an invalid soource
+    //  set_output<DataObject>(new DataObject());
+    //  return;
+    //}
 
     std::random_device device;
     std::default_random_engine generator(0);
@@ -3954,16 +3995,16 @@ VTKHParticleAdvection::execute()
     std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
     //Generate seeds
 
-    std::vector<vtkm::Particle> seeds;
-    for (int i = 0; i < numSeeds; i++)
-    {
-      float x = seedBBox[0] + dx * distribution(generator);
-      float y = seedBBox[2] + dy * distribution(generator);
-      float z = seedBBox[4] + dz * distribution(generator);
-      std::cerr << "seed " << i << ": " << x << " " << y << " " << z << std::endl;
-      seeds.push_back(vtkm::Particle({x,y,z}, i));
-    }
-    auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
+    //std::vector<vtkm::Particle> seeds;
+    //for (int i = 0; i < numSeeds; i++)
+    //{
+    //  float x = seedBBox[0] + dx * distribution(generator);
+    //  float y = seedBBox[2] + dy * distribution(generator);
+    //  float z = seedBBox[4] + dz * distribution(generator);
+    //  std::cerr << "seed " << i << ": " << x << " " << y << " " << z << std::endl;
+    //  seeds.push_back(vtkm::Particle({x,y,z}, i));
+    //}
+    //auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
 
 
     vtkh::DataSet *output = nullptr;
@@ -3994,7 +4035,7 @@ VTKHParticleAdvection::execute()
 	}
         if(params().has_path("rendering/tube_size")) 
 	{
-          double tube_size = params()["renderng/tube_size"].as_float64();
+          double tube_size = params()["rendering/tube_size"].as_float64();
           sl.SetTubeSize(tube_size);
 	}
         if(params().has_path("rendering/tube_sides")) 
@@ -4095,6 +4136,16 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
     res &= check_numeric("num_steps", params, info, true, true);
     res &= check_numeric("step_size", params, info, true, true);
 
+    if(params.has_child("rendering"))
+    {
+      res &= check_string("rendering/enable_tubes", params, info, false);
+      res &= check_string("rendering/tube_capping", params, info, false);
+      res &= check_numeric("rendering/tube_size", params, info, false);
+      res &= check_numeric("rendering/tube_sides", params, info, false);
+      res &= check_numeric("rendering/tube_value", params, info, false);
+      res &= check_string("rendering/output_field", params, info, false);
+    }
+
     std::vector<std::string> valid_paths;
     valid_paths.push_back("b_field");
     valid_paths.push_back("e_field");
@@ -4104,12 +4155,12 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
     valid_paths.push_back("weighting_field");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
-    valid_paths.push_back("enable_tubes");
-    valid_paths.push_back("tube_capping");
-    valid_paths.push_back("tube_size");
-    valid_paths.push_back("tube_sides");
-    valid_paths.push_back("tube_value");
-    valid_paths.push_back("output_field");
+    valid_paths.push_back("rendering/enable_tubes");
+    valid_paths.push_back("rendering/tube_capping");
+    valid_paths.push_back("rendering/tube_size");
+    valid_paths.push_back("rendering/tube_sides");
+    valid_paths.push_back("rendering/tube_value");
+    valid_paths.push_back("rendering/output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -4188,7 +4239,7 @@ VTKHWarpXStreamline::execute()
     bool draw_tubes = false;
     if(params().has_path("enable_tubes"))
     {
-      if(params()["enable_tubes"].as_string() == "true")
+      if(params()["rendering/enable_tubes"].as_string() == "true")
       {
         draw_tubes = true;
       }
@@ -4210,7 +4261,7 @@ VTKHWarpXStreamline::execute()
       sl.SetTubes(true);
       if(params().has_path("output_field")) 
       {
-        std::string output_field = params()["output_field"].as_string();
+        std::string output_field = params()["rendering/output_field"].as_string();
         sl.SetOutputField(output_field);
       }
       else
@@ -4220,23 +4271,23 @@ VTKHWarpXStreamline::execute()
       }
       if(params().has_path("tube_value")) 
       {
-        double tube_value = params()["tube_value"].as_float64();
+        double tube_value = params()["rendering/tube_value"].as_float64();
         sl.SetTubeValue(tube_value);
       }
       if(params().has_path("tube_size")) 
       {
-        double tube_size = params()["tube_size"].as_float64();
+        double tube_size = params()["rendering/tube_size"].as_float64();
         sl.SetTubeSize(tube_size);
       }
       if(params().has_path("tube_sides")) 
       {
-        int tube_sides = params()["tube_sides"].as_int32();
+        int tube_sides = params()["rendering/tube_sides"].as_int32();
         sl.SetTubeSides(tube_sides);
       }
       if(params().has_path("tube_capping"))
       {
         bool tube_capping = true;
-        if(params()["tube_capping"].as_string() == "false")
+        if(params()["rendering/tube_capping"].as_string() == "false")
         {
           tube_capping = false;
         }
