@@ -95,15 +95,11 @@ void testFilter(bool isStreamline)
     // filter knobs
     conduit::Node &sl_params = pipelines["pl1/f1/params"];
     sl_params["field"] = "vel";
-    sl_params["num_steps"] = 10;
+    sl_params["num_steps"] = 100;
     sl_params["step_size"] = 0.01;
-    sl_params["seeds/type"] = "line";
-    double start[3] = {-10.,-10.,-10.};
-    double end[3] = {0.,0.,0.};
-    sl_params["seeds/start"].set_float64_ptr(start,3);
-    sl_params["seeds/end"].set_float64_ptr(end,3);
-    sl_params["seeds/sampling_type"] = "random";
-    sl_params["seeds/num_seeds"] = 10;
+    sl_params["seeds/type"] = "point";
+    double loc[3] = {-5.,-5.,0.};
+    sl_params["seeds/location"].set_float64_ptr(loc,3);
     if (isStreamline)
     {
       sl_params["rendering/enable_tubes"] = "true";

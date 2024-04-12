@@ -3822,6 +3822,14 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
 	  if(seed_params.has_child("sampling_space"))
 	  {
             res &= check_string("sampling_space", seed_params, info, true);
+
+	    std::string sampling_space = seed_params["sampling_space"].as_string();
+	    if(sampling_space == "interior")
+	    {
+              res &= check_numeric("extents_x",seed_params,info,true);
+              res &= check_numeric("extents_y",seed_params,info,true);
+              res &= check_numeric("extents_z",seed_params,info,true);
+	    }
 	  }
 
 	}
@@ -3851,10 +3859,15 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
     valid_paths.push_back("step_size");
     valid_paths.push_back("seeds/type");
     valid_paths.push_back("seeds/location");
+    valid_paths.push_back("seeds/start");
+    valid_paths.push_back("seeds/end");
     valid_paths.push_back("seeds/num_seeds");
     valid_paths.push_back("seeds/num_seeds_x");
     valid_paths.push_back("seeds/num_seeds_y");
     valid_paths.push_back("seeds/num_seeds_z");
+    valid_paths.push_back("seeds/extents_x");
+    valid_paths.push_back("seeds/extents_y");
+    valid_paths.push_back("seeds/extents_z");
     valid_paths.push_back("seeds/sampling_type");
     valid_paths.push_back("seeds/sampling_space");
 
@@ -3911,6 +3924,10 @@ VTKHParticleAdvection::execute()
 
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
+    std::random_device device;
+    std::default_random_engine generator(0);
+    float  zero(0), one(1);
+    std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
 
     conduit::Node n_seeds = params()["seeds"];
     std::string seed_type = n_seeds["type"].as_string();
@@ -3952,6 +3969,58 @@ VTKHParticleAdvection::execute()
         seeds.push_back(vtkm::Particle({x,y,z}, i/3));
       }
     }
+    if(seed_type == "line")
+    {
+      const Node &n_start_vals = n_seeds["start"];
+      const Node &n_end_vals = n_seeds["end"];
+      std::string sampling = n_seeds["sampling_type"].as_string();
+      int num_seeds = n_seeds["num_seeds"].as_int();
+
+
+      //convert to contig doubles
+      Node n_start_vals_dbls;
+      n_start_vals.to_float64_array(n_start_vals_dbls);
+      Node n_end_vals_dbls;
+      n_end_vals.to_float64_array(n_end_vals_dbls);
+
+      double* start = n_start_vals_dbls.as_double_ptr();
+      double* end = n_end_vals_dbls.as_double_ptr();
+
+      double dist_x = end[0] - start[0];
+      double dist_y = end[1] - start[1];
+      double dist_z = end[2] - start[2];
+
+      if(sampling == "uniform")
+      {
+        double dx = (dist_x)/num_seeds;
+        double dy = (dist_y)/num_seeds;
+        double dz = (dist_z)/num_seeds;
+        for(int i = 0; i < num_seeds; ++i)
+	{
+          double x = start[0] + dx*i;
+          double y = start[1] + dy*i;
+          double z = start[2] + dz*i;
+          std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+          seeds.push_back(vtkm::Particle({x,y,z}, i));
+	}
+      }
+      else
+      {
+        std::random_device device;
+        std::default_random_engine generator(0);
+        float  zero(0), one(1);
+        std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+        for(int i = 0; i < num_seeds; ++i)
+	{
+	  double rand = distribution(generator);
+          double x = start[0] + dist_x*rand;
+          double y = start[1] + dist_y*rand;
+          double z = start[2] + dist_z*rand;
+          std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+          seeds.push_back(vtkm::Particle({x,y,z}, i));
+	}
+      }
+    }
 
     auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
     //int numSeeds = get_int32(params()["num_seeds"], data_object);
@@ -3980,19 +4049,7 @@ VTKHParticleAdvection::execute()
     //float dy = seedBBox[3] - seedBBox[2];
     //float dz = seedBBox[5] - seedBBox[4];
 
-    //if (dx < 0 || dy < 0 || dz < 0)
-    //{
-    //  bool throw_error = false;
-    //  detail::field_error(field_name, this->name(), collection, throw_error);
-    //  // this creates a data object with an invalid soource
-    //  set_output<DataObject>(new DataObject());
-    //  return;
-    //}
 
-    std::random_device device;
-    std::default_random_engine generator(0);
-    float  zero(0), one(1);
-    std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
     //Generate seeds
 
     //std::vector<vtkm::Particle> seeds;
