@@ -3786,8 +3786,6 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
 	std::string sampling_type = "";
 	if(seed_params.has_child("sampling_type"))
 	{
-          res &= check_string("sampling_type", seed_params, info, true);
-	  sampling_type = seed_params["sampling_type"].as_string();
 	}
 
         res &= check_string("type", seed_params, info, true);
@@ -3808,6 +3806,9 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
 	}
 	else if(type == "box")
         {
+          res &= check_string("sampling_space", seed_params, info, true);
+          res &= check_string("sampling_type", seed_params, info, true);
+	  string sampling_type = seed_params["sampling_type"].as_string();
           if(sampling_type == "uniform")
 	  {
             res &= check_numeric("num_seeds_x",seed_params,info,true);
@@ -3819,19 +3820,12 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
             res &= check_numeric("num_seeds",seed_params,info,true);
 	  }
 
-	  if(seed_params.has_child("sampling_space"))
-	  {
-            res &= check_string("sampling_space", seed_params, info, true);
-
-	    std::string sampling_space = seed_params["sampling_space"].as_string();
-	    if(sampling_space == "interior")
-	    {
-              res &= check_numeric("extents_x",seed_params,info,true);
-              res &= check_numeric("extents_y",seed_params,info,true);
-              res &= check_numeric("extents_z",seed_params,info,true);
-	    }
-	  }
-
+          if(seed_params.has_child("extents_x"))
+          {
+            res &= check_numeric("extents_x",seed_params,info,true);
+            res &= check_numeric("extents_y",seed_params,info,true);
+            res &= check_numeric("extents_z",seed_params,info,true);
+          }
 	}
 	else
 	{
@@ -3969,7 +3963,7 @@ VTKHParticleAdvection::execute()
         seeds.push_back(vtkm::Particle({x,y,z}, i/3));
       }
     }
-    if(seed_type == "line")
+    else if(seed_type == "line")
     {
       const Node &n_start_vals = n_seeds["start"];
       const Node &n_end_vals = n_seeds["end"];
@@ -4020,6 +4014,70 @@ VTKHParticleAdvection::execute()
           seeds.push_back(vtkm::Particle({x,y,z}, i));
 	}
       }
+    }
+    else if(seed_type == "box")
+    {
+      double dist_x, dist_y, dist_z;
+      if(n_seeds.has_child("extents_x"))
+      {
+        const Node &n_extents_x_vals = n_seeds["extents_x"];
+        const Node &n_extents_y_vals = n_seeds["extents_y"];
+        const Node &n_extents_z_vals = n_seeds["extents_z"];
+        Node n_extents_x_vals_dbls;
+        Node n_extents_y_vals_dbls;
+        Node n_extents_z_vals_dbls;
+        n_extents_x_vals.to_float64_array(n_extents_x_vals_dbls);
+        n_extents_y_vals.to_float64_array(n_extents_y_vals_dbls);
+        n_extents_z_vals.to_float64_array(n_extents_z_vals_dbls);
+        double* extents_x = n_extents_x_vals_dbls.as_double_ptr();
+        double* extents_y = n_extents_y_vals_dbls.as_double_ptr();
+        double* extents_z = n_extents_z_vals_dbls.as_double_ptr();
+	dist_x = extents_x[1] - extents_x[0];
+	dist_y = extents_y[1] - extents_y[0];
+	dist_z = extents_z[1] - extents_z[0];
+      }
+      else// whole dataset
+      {
+        vtkm::Bounds global_bounds = data.GetGlobalBounds();
+	dist_x = global_bounds.X.Length();
+	dist_y = global_bounds.Y.Length();
+	dist_z = global_bounds.Z.Length();
+      }
+      std::string sampling_type = n_seeds["sampling_type"].as_string();
+      std::string sampling_space = n_seeds["sampling_space"].as_string();
+      if(sampling_type != "uniform" && sampling_type != "random")
+      {
+        ASCENT_ERROR("Particle Advection box seeds accepts either 'uniform' or 'random' as the 'sampling_type'");
+      }
+
+
+      if(sampling_space == "interior")
+      {
+        if(sampling_type == "uniform")
+        {
+
+        }
+        else //random
+        {
+        }
+
+      }
+      else if (sampling_space == "boundary") 
+      {
+        if(sampling_type == "uniform")
+        {
+
+        }
+        else //random
+        {
+        }
+      }
+      else //error
+      {
+        ASCENT_ERROR("Particle Advection box seeds accepts either 'interior' or 'boundary' as the 'sampling_space'");
+      }
+
+	    
     }
 
     auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
