@@ -4018,6 +4018,7 @@ VTKHParticleAdvection::execute()
     else if(seed_type == "box")
     {
       double dist_x, dist_y, dist_z;
+      double x_min, y_min, z_min;
       if(n_seeds.has_child("extents_x"))
       {
         const Node &n_extents_x_vals = n_seeds["extents_x"];
@@ -4035,6 +4036,9 @@ VTKHParticleAdvection::execute()
 	dist_x = extents_x[1] - extents_x[0];
 	dist_y = extents_y[1] - extents_y[0];
 	dist_z = extents_z[1] - extents_z[0];
+	x_min = extents_x[0];
+	y_min = extents_y[0];
+	z_min = extents_z[0];
       }
       else// whole dataset
       {
@@ -4042,6 +4046,9 @@ VTKHParticleAdvection::execute()
 	dist_x = global_bounds.X.Length();
 	dist_y = global_bounds.Y.Length();
 	dist_z = global_bounds.Z.Length();
+	x_min = global_bounds.X.Min;
+	y_min = global_bounds.Y.Min;
+	z_min = global_bounds.Z.Min;
       }
       std::string sampling_type = n_seeds["sampling_type"].as_string();
       std::string sampling_space = n_seeds["sampling_space"].as_string();
@@ -4055,10 +4062,63 @@ VTKHParticleAdvection::execute()
       {
         if(sampling_type == "uniform")
         {
+	  
+	  int num_seeds_x = n_seeds["num_seeds_x"].as_int();
+	  int num_seeds_y = n_seeds["num_seeds_y"].as_int();
+	  int num_seeds_z = n_seeds["num_seeds_z"].as_int();
 
+	  double dx = 1, dy = 1, dz = 1;
+	  if(num_seeds_x != 0)
+            dx = dist_x/num_seeds_x;
+	  if(num_seeds_y != 0)
+            dy = dist_y/num_seeds_y;
+	  if(num_seeds_z != 0)
+            dz = dist_z/num_seeds_z;
+ 
+	  double epsilon = 0.1;
+          for(int i = 0; i <= num_seeds_x; ++i)
+	  {
+            double x = x_min + dx*i;
+            if(x < 0)
+              x += epsilon;
+            else
+              x -= epsilon;
+            for(int j = 0; j <= num_seeds_y; ++j)
+	    {
+              double y = y_min + dy*j;
+              if(y < 0)
+                y += epsilon;
+              else
+                y -= epsilon;
+              for(int k = 0; k <= num_seeds_z; ++k)
+	      {
+                double z = z_min + dz*k;
+		if(z < 0)
+		  z += epsilon;
+		else
+		  z -= epsilon;
+                std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+                seeds.push_back(vtkm::Particle({x,y,z}, i));
+	      }
+	    }
+	  }
         }
         else //random
         {
+          std::random_device device;
+          std::default_random_engine generator(0);
+          float  zero(0), one(1);
+          std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+	  int num_seeds = n_seeds["num_seeds"].as_int();
+          for(int i = 0; i < num_seeds; ++i)
+	  {
+	    double rand = distribution(generator);
+            double x = x_min + dist_x*distribution(generator);
+            double y = y_min + dist_y*distribution(generator);
+            double z = z_min + dist_z*distribution(generator);
+            std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+            seeds.push_back(vtkm::Particle({x,y,z}, i));
+	  }
         }
 
       }
