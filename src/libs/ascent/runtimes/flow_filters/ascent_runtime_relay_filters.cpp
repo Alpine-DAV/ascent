@@ -41,6 +41,7 @@
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include "ascent_transmogrifier.hpp"
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -336,6 +337,19 @@ verify_io_params(const conduit::Node &params,
             info["info"].append() = "includes 'num_files'";
         }
     }
+    
+    if( params.has_child("refinement_level") )
+    {
+        if(!params["refinement_level"].dtype().is_integer())
+        {
+            info["errors"].append() = "optional entry 'refinement_level' must be an integer";
+            res = false;
+        }
+        else
+        {
+            info["info"].append() = "includes 'refinement_level'";
+        }
+    }
 
 #if defined(ASCENT_HDF5_ENABLED)
     if( params.has_child("hdf5_options") )
@@ -415,6 +429,7 @@ verify_io_params(const conduit::Node &params,
     valid_paths.push_back("protocol");
     valid_paths.push_back("fields");
     valid_paths.push_back("num_files");
+    valid_paths.push_back("refinement_level");
     ignore_paths.push_back("fields");
 #if defined(ASCENT_HDF5_ENABLED)
     ignore_paths.push_back("hdf5_options");
@@ -550,12 +565,46 @@ RelayIOSave::execute()
         ASCENT_ERROR("relay_io_save requires a DataObject input");
     }
 
+    // check if user requested lor for export
+    int lor_level = -1;
+    if(params().has_child("refinement_level"))
+    {
+        lor_level = params()["refinement_level"].to_int();
+    }
+
     DataObject *data_object  = input<DataObject>("in");
     if(!data_object->is_valid())
     {
       return;
     }
-    std::shared_ptr<Node> n_input = data_object->as_node();
+
+    std::shared_ptr<Node> n_input;
+    int tmogr_ref_level = Transmogrifier::m_refinement_level;
+    // check if user requested lor for export
+    if(lor_level >0)
+    {
+      // check if extract params are the same as global lor setting
+      if(lor_level != tmogr_ref_level)
+      {
+          // not the same, preserve global setting
+          //push
+          Transmogrifier::m_refinement_level = lor_level;
+      }
+
+      n_input = data_object->as_low_order_bp();
+
+      if(lor_level != Transmogrifier::m_refinement_level)
+      {
+          // not the same, restore global setting
+          // pop
+          Transmogrifier::m_refinement_level = tmogr_ref_level;
+      }
+
+    }
+    else
+    {
+        n_input = data_object->as_node();
+    }
 
     Node *in = n_input.get();
 
@@ -638,7 +687,9 @@ RelayIOSave::execute()
         result_path = path;
     }
 #if defined(ASCENT_HDF5_ENABLED)
-    else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
+    else if( protocol == "blueprint" ||
+             protocol == "blueprint/mesh/hdf5" ||
+             protocol == "hdf5")
     {
         mesh_blueprint_save(selected,
                             path,
@@ -648,21 +699,23 @@ RelayIOSave::execute()
                             result_path);
     }
 #endif
-    else if( protocol == "blueprint/mesh/json" || protocol == "json")
+    else if( protocol == "blueprint" ||
+             protocol == "blueprint/mesh/yaml" ||
+             protocol == "yaml")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "json",
+                            "yaml",
                             num_files,
                             extra_opts,
                             result_path);
 
     }
-    else if( protocol == "blueprint/mesh/yaml" || protocol == "yaml")
+    else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "yaml",
+                            "json",
                             num_files,
                             extra_opts,
                             result_path);
