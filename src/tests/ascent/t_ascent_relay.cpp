@@ -1026,6 +1026,8 @@ TEST(ascent_relay, test_relay_lor_extract)
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
+    // check that we created an extract file
+    EXPECT_TRUE(conduit::utils::is_file(output_file + ".cycle_001860.root"));
 
     output_file = conduit::utils::join_file_path(output_path,"tout_relay_ho_lor_5");
 
