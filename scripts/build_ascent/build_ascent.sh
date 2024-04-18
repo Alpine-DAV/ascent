@@ -399,7 +399,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=v2024.02.0
+camp_version=v2024.02.1
 camp_src_dir=$(ospath ${root_dir}/camp-${camp_version})
 camp_build_dir=$(ospath ${root_dir}/build/camp-${camp_version})
 camp_install_dir=$(ospath ${root_dir}/install/camp-${camp_version}/)
@@ -449,7 +449,7 @@ fi # build_camp
 ################
 # RAJA
 ################
-raja_version=v2024.02.0
+raja_version=v2024.02.1
 raja_src_dir=$(ospath ${root_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${root_dir}/build/raja-${raja_version})
 raja_install_dir=$(ospath ${root_dir}/install/raja-${raja_version}/)
@@ -504,7 +504,7 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=2024.02.0
+umpire_version=2024.02.1
 umpire_src_dir=$(ospath ${root_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${root_dir}/build/umpire-${umpire_version})
 umpire_install_dir=$(ospath ${root_dir}/install/umpire-${umpire_version}/)
