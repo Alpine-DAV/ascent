@@ -20,7 +20,7 @@ class Raja(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     version("develop", branch="develop", submodules=False)
     version("main", branch="main", submodules=False)
-    version("2024.02.0", tag="v2024.02.0", submodules=False)
+    version("2024.02.1", tag="v2024.02.1", submodules=False)
     version("2022.10.4", tag="v2022.10.4", submodules=False)
     version("2022.03.0", tag="v2022.03.0", submodules=False)
     version("0.14.0", tag="v0.14.0", submodules="True")

@@ -24,7 +24,7 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     version("develop", branch="develop", submodules=False)
     version("main", branch="main", submodules=False)
-    version("2024.02.0", tag="v2024.02.0", submodules=False)
+    version("2024.02.1", tag="v2024.02.1", submodules=False)
     version("2022.03.1", tag="v2022.03.1", submodules=False)
     version("2022.03.0", tag="v2022.03.0", submodules=False)
     version("6.0.0", tag="v6.0.0", submodules=True)
