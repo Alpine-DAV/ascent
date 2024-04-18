@@ -30,11 +30,16 @@ set(UMPIRE_FOUND TRUE)
 
 if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
     # if we are running tests with dlls, we need path to dlls
-    if(EXISTS ${UMPIRE_DIR}/lib)
+    # hey, now we have to look at bin for the dlls :-(
+    if(EXISTS ${UMPIRE_DIR_ORIG}/bin/)
+        list(APPEND ASCENT_TPL_DLL_PATHS ${UMPIRE_DIR_ORIG}/bin/)
+    endif()
+    
+    if(EXISTS ${UMPIRE_DIR_ORIG}/lib)
         list(APPEND ASCENT_TPL_DLL_PATHS ${UMPIRE_DIR_ORIG}/lib/)
-    elseif(EXISTS ${UMPIRE_DIR}/lib64) 
-      # lib64 shouldn't happen on windows, but someone might
-      # be clever and suprise us
-      list(APPEND ASCENT_TPL_DLL_PATHS ${UMPIRE_DIR_ORIG}/lib64/)
+    elseif(EXISTS ${UMPIRE_DIR_ORIG}/lib64) 
+        # lib64 shouldn't happen on windows, but someone might
+        # be clever and suprise us
+        list(APPEND ASCENT_TPL_DLL_PATHS ${UMPIRE_DIR_ORIG}/lib64/)
     endif()
 endif()
