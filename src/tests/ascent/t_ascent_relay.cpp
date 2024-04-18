@@ -994,14 +994,22 @@ TEST(ascent_relay, test_relay_lor_extract)
 {
     Node n;
     ascent::about(n);
+    
+    if(n["runtimes/ascent/mfem/status"].as_string() == "disabled")
+    {
+      std::cout << "mfem disabled: skipping test that requires mfem for lor" << std::endl;
+      return;
+    }
+
     //
-    // Create an example mesh.
+    // load example mesh
     //
     Node data,verify_info;
     conduit::relay::io::blueprint::read_mesh(test_data_file("taylor_green.cycle_001860.root"),
                                              data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
+    // create extract as published (no lor)
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_ho_no_lor");
 
@@ -1031,6 +1039,7 @@ TEST(ascent_relay, test_relay_lor_extract)
 
     output_file = conduit::utils::join_file_path(output_path,"tout_relay_ho_lor_5");
 
+    // LOR and save as create extract
     conduit::Node actions2;
     // add the extracts
     conduit::Node &add_extracts2 = actions2.append();
