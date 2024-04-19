@@ -400,7 +400,8 @@ fi # build_vtkm
 # Camp
 ################
 camp_version=v2024.02.1
-camp_src_dir=$(ospath ${root_dir}/camp-${camp_version})
+camp_version_no_v=2024.02.1
+camp_src_dir=$(ospath ${root_dir}/camp-${camp_version_no_v})
 camp_build_dir=$(ospath ${root_dir}/build/camp-${camp_version})
 camp_install_dir=$(ospath ${root_dir}/install/camp-${camp_version}/)
 camp_tarball=camp-${camp_version}.tar.gz
