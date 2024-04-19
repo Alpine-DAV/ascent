@@ -405,12 +405,17 @@ camp_build_dir=$(ospath ${root_dir}/build/camp-${camp_version})
 camp_install_dir=$(ospath ${root_dir}/install/camp-${camp_version}/)
 camp_tarball=camp-${camp_version}.tar.gz
 
+
 # build only if install doesn't exist
 if [ ! -d ${camp_install_dir} ]; then
 if ${build_camp}; then
 if [ ! -d ${camp_src_dir} ]; then
   echo "**** Downloading ${camp_tarball}"
-  curl -L https://github.com/LLNL/camp/releases/download/${camp_version}/${camp_tarball} -o ${camp_tarball}
+  # Example download link for latest releast
+  # https://github.com/LLNL/camp/archive/refs/tags/v2024.02.1.tar.gz
+  curl -L https://github.com/LLNL/camp/archive/refs/tags/${camp_version}.tar.gz -o ${camp_tarball}
+  # OLD Pattern:
+  #curl -L https://github.com/LLNL/camp/releases/download/${camp_version}/${camp_tarball} -o ${camp_tarball}
   tar -xzf ${camp_tarball} 
 fi
 
