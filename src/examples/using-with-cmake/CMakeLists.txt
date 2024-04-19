@@ -49,5 +49,6 @@ target_link_libraries(ascent_render_example ascent::ascent)
 # we need to make sure CUDA_RESOLVE_DEVICE_SYMBOLS is on for our target
 # (it propgates some way magically in 3.14, but not in 3.21)
 if(CMAKE_CUDA_COMPILER)
-    set_property(TARGET ascent_render_example PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+	set_property(TARGET ascent_render_example PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+	#set_property(TARGET ascent_render_example PROPERTY CUDA_ARCHITECTURES "70")
 endif()

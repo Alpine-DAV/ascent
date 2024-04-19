@@ -11,6 +11,14 @@
 #include <cstring> // memcpy
 #include <conduit.hpp>
 
+#if defined(ASCENT_HIP_ENABLED)
+#if HIP_VERSION_MAJOR >= 6
+#define TYPE_ATTR type
+#else
+#define TYPE_ATTR memoryType
+#endif
+#endif
+
 namespace ascent
 {
 
@@ -182,7 +190,7 @@ AllocationManager::set_device_allocator_id(int id)
     {
         can_use = true;
     }
-    
+
     if(!can_use)
     {
         return false;
@@ -379,11 +387,11 @@ DeviceMemory::is_device_ptr(const void *ptr, bool &is_gpu, bool &is_unified)
     // not pick it up
     hipError_t error = hipGetLastError();
     is_gpu = (perr == hipSuccess) &&
-             (atts.memoryType == hipMemoryTypeDevice ||
-              atts.memoryType ==  hipMemoryTypeUnified );
+             (atts.TYPE_ATTR == hipMemoryTypeDevice ||
+              atts.TYPE_ATTR ==  hipMemoryTypeUnified );
     // CYRUSH: this doens't look right:
-    is_unified = (hipSuccess && atts.memoryType == hipMemoryTypeDevice);
-#endif 
+    is_unified = (hipSuccess && atts.TYPE_ATTR == hipMemoryTypeDevice);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -409,8 +417,8 @@ DeviceMemory::is_device_ptr(const void *ptr)
     // not pick it up
     hipError_t error = hipGetLastError();
     return perr == hipSuccess &&
-                (atts.memoryType == hipMemoryTypeDevice ||
-                 atts.memoryType == hipMemoryTypeUnified);
+                (atts.TYPE_ATTR == hipMemoryTypeDevice ||
+                 atts.TYPE_ATTR == hipMemoryTypeUnified);
 #else
   (void) ptr;
   return false;
