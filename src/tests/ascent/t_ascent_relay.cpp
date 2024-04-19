@@ -178,7 +178,7 @@ TEST(ascent_relay, test_relay_hdf5_opts)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    // change values -- zeros compress nicely .... 
+    // change values -- zeros compress nicely ....
     float64_array vals = data["fields/field/values"].value();
     vals.fill(0);
     index_t nele = vals.number_of_elements();
@@ -985,6 +985,88 @@ TEST(ascent_relay, test_relay_sparse_topos)
     Node n_root;
     conduit::relay::io::load(output_file + ".cycle_000000.root","hdf5",n_root);
     n_root.print();
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_lor_extract)
+{
+    Node n;
+    ascent::about(n);
+    
+    if(n["runtimes/ascent/mfem/status"].as_string() == "disabled")
+    {
+      std::cout << "mfem disabled: skipping test that requires mfem for lor" << std::endl;
+      return;
+    }
+
+    //
+    // load example mesh
+    //
+    Node data,verify_info;
+    conduit::relay::io::blueprint::read_mesh(test_data_file("taylor_green.cycle_001860.root"),
+                                             data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // create extract as published (no lor)
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_ho_no_lor");
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    Node &extracts = add_extracts["extracts"];
+
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint";
+
+    std::cout << actions.to_yaml() << std::endl;
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+    // check that we created an extract file
+    EXPECT_TRUE(conduit::utils::is_file(output_file + ".cycle_001860.root"));
+
+    output_file = conduit::utils::join_file_path(output_path,"tout_relay_ho_lor_5");
+
+    // LOR and save as create extract
+    conduit::Node actions2;
+    // add the extracts
+    conduit::Node &add_extracts2 = actions2.append();
+    add_extracts2["action"] = "add_extracts";
+    Node &extracts2 = add_extracts2["extracts"];
+
+    extracts2["e1/type"]  = "relay";
+
+    extracts2["e1/params/path"] = output_file;
+    extracts2["e1/params/refinement_level"] = 5;
+    extracts2["e1/params/protocol"] = "blueprint";
+
+    std::cout << actions2.to_yaml() << std::endl;
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent2;
+    ascent2.open();
+    ascent2.publish(data);
+    ascent2.execute(actions2);
+    ascent2.close();
+    // check that we created an extract file
+    EXPECT_TRUE(conduit::utils::is_file(output_file + ".cycle_001860.root"));
+    std::string msg = "An example of creating a relay extract "
+                      "with low order refined data.";
+    ASCENT_ACTIONS_DUMP(actions2,output_file,msg);
 }
 
 

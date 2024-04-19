@@ -10,6 +10,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - vtk-m@2.1.0
 
 ### Added
+- Added `refinement_level` option to Relay Extract. When used this will refine high order meshes to a low order representation and save the low order result as the extract data.
 - Added parameters to control HDF5 compression options to the Relay Extract.
 - Added check to make sure all domain IDs are unique
 - Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
