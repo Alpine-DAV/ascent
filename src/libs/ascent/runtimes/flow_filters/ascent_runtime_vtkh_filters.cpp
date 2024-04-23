@@ -3952,10 +3952,9 @@ VTKHParticleAdvection::execute()
       double* location = n_loc_vals_dbls.as_double_ptr();
       
       int num_points = (n_loc_vals_dbls.dtype().number_of_elements());
-      std::cerr << "num_points: " << num_points << std::endl;
+      //std::cerr << "num_points: " << num_points << std::endl;
       for(int i = 0; i < num_points; i+=3)
       {
-	      std::cerr << "i: " << i << std::endl;
         double x = location[i];
         double y = location[i+1];
         double z = location[i+2];

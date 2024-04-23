@@ -95,15 +95,11 @@ void testFilter(bool isStreamline)
     // filter knobs
     conduit::Node &sl_params = pipelines["pl1/f1/params"];
     sl_params["field"] = "vel";
-    sl_params["num_steps"] = 10;
+    sl_params["num_steps"] = 100;
     sl_params["step_size"] = 0.01;
-    sl_params["seeds/type"] = "line";
-    double start[3] = {-10.,-10.,-10.};
-    double end[3] = {0.,0.,0.};
-    sl_params["seeds/start"].set_float64_ptr(start,3);
-    sl_params["seeds/end"].set_float64_ptr(end,3);
-    sl_params["seeds/sampling_type"] = "random";
-    sl_params["seeds/num_seeds"] = 10;
+    sl_params["seeds/type"] = "point_list";
+    double loc[60] = {-0.826997, -5.62082, 3.57729,0.388328, -9.30856, 0.594004,-8.66316, 3.73545, 8.60873,3.07838, 4.02381, 5.24396,-3.43532, 5.12821, -2.69323,5.06712, -8.54628, 7.69414,-0.445364, -4.50186, -6.66986,-8.78871, 0.0904583, -3.61934,-8.18534, -8.52502, -2.31716,-0.711083, -8.99832, 5.40409, 3.76911, 2.59087, 4.50824,-3.87356, 0.265474, 6.91963,-1.69211, -0.641653, -6.43345,-9.33892, -0.0303976, 4.96585,6.84079, -5.74497, -7.39145,-1.71413, 4.19639, -5.20178,3.04117, 3.62692, -2.24549,6.91151, 9.10818, -7.03697,1.29797, -0.229709, 9.2219,2.58538, 3.02507, 6.06146};
+    sl_params["seeds/location"].set_float64_ptr(loc,60);
     if (isStreamline)
     {
       sl_params["rendering/enable_tubes"] = "true";
@@ -159,7 +155,8 @@ void testFilter(bool isStreamline)
    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
    if(isStreamline)
    {
-     output_image = output_image + "100";
+     output_image = output_image + "100.png";
+     std::cerr << "output image: " << output_image << std::endl;
      EXPECT_TRUE(check_test_file(output_image));
    }
 
