@@ -609,7 +609,21 @@ values are removed from the data set.
 
 Particle Advection
 ~~~~~~~~~~~~~~~~
-Particle advection randomly distributes some number (``num_seeds``) of weightless particles over a user-specified vector field and, given some advection distance (``step_size``), advects them for some number of advection steps (``num_steps``).
+The particle advection filter distributes some number of weightless particles over a user-specified vector field (``field``) and, given some advection distance (``step_size``), advects them for some number of advection steps (``num_steps``).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "particle_advection";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";                 // required: name of the vector field
+  params["step_size"] = 0.01;              // required: advection step size
+  params["num_steps"] = 100;               // required: number of advection steps
+
+Users also need to specify how to generate seed placements (``seeds``). 
+The seed placements can be an individual point (``point``), a list of points (``point_list``), a line (``line``), or a box (``box``), and require the following parameters: 
 
 .. code-block:: c++
 
@@ -619,15 +633,30 @@ Particle advection randomly distributes some number (``num_seeds``) of weightles
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field"] = "vel";                 // name of the vector field
-  params["num_seeds"] = 20;                // number of particles
   params["step_size"] = 0.01;              // advection step size
   params["num_steps"] = 100;               // number of advection steps
-  params["seed_bounding_box_x_min"] = 0.0; 
-  params["seed_bounding_box_x_max"] = 1.0; // define the boundary
-  params["seed_bounding_box_y_min"] = 0.0; // for the distibution
-  params["seed_bounding_box_y_max"] = 1.0; // of the particles 
-  params["seed_bounding_box_z_min"] = 0.0; // starting locations
-  params["seed_bounding_box_z_max"] = 1.0;
+  //Point
+  params["seeds/type"] = "point";               // number of advection steps
+  params["seeds/location"] = [0,0,0];               // number of advection steps
+  //Point List
+  params["seeds/type"] = "point_list";               // number of advection steps
+  params["seeds/location"] = [0,0,0,1,1,1];               // number of advection steps
+  //Line
+  params["seeds/type"] = "line";               // number of advection steps
+  params["seeds/start"] = [0,0,0];               // number of advection steps
+  params["seeds/end"] = [10,10,10];               // number of advection steps
+  params["seeds/sampling_type"] = "random";//or "uniform"
+  //Box
+  params["seeds/type"] = "box";               // number of advection steps
+  params["seeds/sampling_type"] = "random";//or "uniform"
+  params["seeds/sampling_space"] = "interior";//or "boundary"
+  //optional:
+  //define a boundary box for the distribution of particles
+  //default is whole data set
+  params["seeds/x_extents"] = [0,10]; //optional: define the boundary
+  params["seeds/y_extents"] = [0,10]; //for the distribution
+  params["seeds/z_extents"] = [0,10]; //of the particles
+
 
 At this time, Ascent can only save the output of the particle advection filter as an extract. For rendering, consider using the streamline filter. 
 
@@ -635,7 +664,7 @@ Streamlines
 ~~~~~~~~~~~~
 The streamline filter behaves similarly to the particle advection filter, but as the particles are advected, the path of the particle is is collected as a streamline that can be rendered or saved as an extract. 
 The streamlines are rendered using tubes, which transform the streamline data into a 3D surface. 
-Tubes are on by default but they can be diabled, though this would also diable rendering capabilities. 
+Tubes are on by default but they can be disabled, though this would also disable rendering capabilities. 
 
 .. code-block:: c++
 
@@ -645,15 +674,14 @@ Tubes are on by default but they can be diabled, though this would also diable r
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field"] = "vel";                 // name of the vector field
-  params["num_seeds"] = 20;                // number of particles
   params["step_size"] = 0.01;              // advection step size
   params["num_steps"] = 100;               // number of advection steps
-  params["seed_bounding_box_x_min"] = 0.0; 
-  params["seed_bounding_box_x_max"] = 1.0; // define the boundary
-  params["seed_bounding_box_y_min"] = 0.0; // for the distibution
-  params["seed_bounding_box_y_max"] = 1.0; // of the particles'
-  params["seed_bounding_box_z_min"] = 0.0; // starting locations
-  params["seed_bounding_box_z_max"] = 1.0;
+  params["seeds/type"] = "box";
+  params["seeds/sampling_type"] = "random"; //or "uniform"
+  params["seeds/sampling_space"] = "interior"; //or "boundary"
+  params["seeds/x_extents"] = [0,10]; //optional: define the boundary
+  params["seeds/y_extents"] = [0,10]; //for the distribution
+  params["seeds/z_extents"] = [0,10]; //of the particles
   //all tubing params are optional
   params["enable_tubes"] = "true";         //default: true
   params["tube_size"] = 0.2;               //default: based on bounds

@@ -15,6 +15,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added check to make sure all domain IDs are unique
 - Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
 - Added WarpX Streamline filter that uses charged particles.
+- Added seed population options for particle advection: point, point list, line, and box
 
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
