@@ -4091,28 +4091,15 @@ VTKHParticleAdvection::execute()
 	    else
               dz = dist_z/num_seeds_z;
  
-	  double epsilon = 0.1;
           for(int i = 0; i < num_seeds_x; ++i)
 	  {
             double x = x_min + dx*i;
-            if(x < 0)
-              x += epsilon;
-            else
-              x -= epsilon;
             for(int j = 0; j < num_seeds_y; ++j)
 	    {
               double y = y_min + dy*j;
-              if(y < 0)
-                y += epsilon;
-              else
-                y -= epsilon;
               for(int k = 0; k < num_seeds_z; ++k)
 	      {
                 double z = z_min + dz*k;
-		if(z < 0)
-		  z += epsilon;
-		else
-		  z -= epsilon;
                 //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
                 seeds.push_back(vtkm::Particle({x,y,z}, i));
 	      }
@@ -4163,48 +4150,31 @@ VTKHParticleAdvection::execute()
 	    else
               dz = dist_z/num_seeds_z;
  
-	  double epsilon = 0.1;
 	  int seed_count = 0;
           for(int i = 0; i < num_seeds_x; ++i)
 	  {
             double x = x_min + dx*i;
-            if(x < 0)
-              x += epsilon;
-            else
-              x -= epsilon;
 	    for(int j = 0; j < num_seeds_z; ++j)
 	    {
               double z = z_min + dz*j;
-              if(z < 0)
-                z += epsilon;
-              else
-                z -= epsilon;
               //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
               //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
 	      //std::cerr << "seed_count: " << seed_count << std::endl;
-              seeds.push_back(vtkm::Particle({x,y_min + epsilon,z}, seed_count++));
-              seeds.push_back(vtkm::Particle({x,y_max - epsilon,z}, seed_count++));
+              seeds.push_back(vtkm::Particle({x,y_min,z}, seed_count++));
+              seeds.push_back(vtkm::Particle({x,y_max,z}, seed_count++));
 	    }
 	  }
           for(int j = 0; j < num_seeds_y; ++j)
 	  {
             double y = y_min + dy*j;
-            if(y < 0)
-              y += epsilon;
-            else
-              y -= epsilon;
             for(int k = 0; k < num_seeds_z; ++k)
 	    {
               double z = z_min + dz*k;
-              if(z < 0)
-                z += epsilon;
-              else
-                z -= epsilon;
               //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
               //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
 	      //std::cerr << "seed_count: " << seed_count << std::endl;
-              seeds.push_back(vtkm::Particle({x_min + epsilon,y,z}, seed_count++));
-              seeds.push_back(vtkm::Particle({x_max - epsilon,y,z}, seed_count++));
+              seeds.push_back(vtkm::Particle({x_min,y,z}, seed_count++));
+              seeds.push_back(vtkm::Particle({x_max,y,z}, seed_count++));
 	    }
 	  }
         }
@@ -4215,7 +4185,6 @@ VTKHParticleAdvection::execute()
           float  zero(0), one(1);
           std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
 	  int num_seeds = n_seeds["num_seeds"].as_int();
-	  double epsilon = 0.1;
 	  for(int i = 0; i < num_seeds; ++i)
 	  {
 	    int side = std::rand()%4;
@@ -4224,28 +4193,28 @@ VTKHParticleAdvection::execute()
 	    {
               double y = y_min + dist_y*distribution(generator);
               double z = z_min + dist_z*distribution(generator);
-              seeds.push_back(vtkm::Particle({x_max - epsilon,y,z}, i));
+              seeds.push_back(vtkm::Particle({x_max,y,z}, i));
               //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
 	    }
 	    else if(side == 1) //x_min
 	    {
               double y = y_min + dist_y*distribution(generator);
               double z = z_min + dist_z*distribution(generator);
-              seeds.push_back(vtkm::Particle({x_min + epsilon,y,z}, i));
+              seeds.push_back(vtkm::Particle({x_min,y,z}, i));
               //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
 	    }
 	    else if(side == 2) //y_max
 	    {
               double x = x_min + dist_x*distribution(generator);
               double z = z_min + dist_z*distribution(generator);
-              seeds.push_back(vtkm::Particle({x,y_max - epsilon,z}, i));
+              seeds.push_back(vtkm::Particle({x,y_max,z}, i));
               //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
 	    }
 	    else //y_min
 	    {
               double x = x_min + dist_x*distribution(generator);
               double z = z_min + dist_z*distribution(generator);
-              seeds.push_back(vtkm::Particle({x,y_min + epsilon,z}, i));
+              seeds.push_back(vtkm::Particle({x,y_min,z}, i));
               //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
 	    }
 	  }
