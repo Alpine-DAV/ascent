@@ -41,14 +41,3 @@ jobs:
       run: |
         echo "**** Ascent Unit Tests"
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
-    - name: Create Unit Test Report
-      if: always()
-      run: |
-        echo "**** Ascent Unit Tests Report Ggen"
-        cmake --build  build --target gen_report
-    - name: Archive Test Results
-      if: always()
-      uses: actions/upload-artifact@v1
-      with:
-        name: test-results
-        path: build/tests/_output/
