@@ -31,6 +31,7 @@ TEST(ascent_flow_timer, time_passed)
 {
     flow::Timer t;
     float delta_1 = t.elapsed();
+    conduit::utils::sleep(250);
     float delta_2 = t.elapsed();
     std::cout << "d1 " << delta_1 << " d2 " << delta_2 << std::endl;
 
