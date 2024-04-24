@@ -616,43 +616,45 @@ The particle advection filter distributes some number of weightless particles ov
   conduit::Node pipelines;
   // pipeline 1
   pipelines["pl1/f1/type"] = "particle_advection";
-  // filter knobs (all these are optional)
-  conduit::Node &params = pipelines["pl1/f1/params"];
-  params["field"] = "vel";                 // required: name of the vector field
-  params["step_size"] = 0.01;              // required: advection step size
-  params["num_steps"] = 100;               // required: number of advection steps
-
-Users also need to specify how to generate seed placements (``seeds``). 
-The seed placements can be an individual point (``point``), a list of points (``point_list``), a line (``line``), or a box (``box``), and require the following parameters: 
-
-.. code-block:: c++
-
-  conduit::Node pipelines;
-  // pipeline 1
-  pipelines["pl1/f1/type"] = "particle_advection";
-  // filter knobs (all these are optional)
+  //required params
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field"] = "vel";                 // name of the vector field
   params["step_size"] = 0.01;              // advection step size
   params["num_steps"] = 100;               // number of advection steps
+
+Users also need to specify how to generate seed placements (``seeds``). 
+The seed placements can be an individual point (``point``), a list of points (``point_list``), a line (``line``), or a box (``box``), and require certain parameters. 
+
+.. code-block:: c++
   //Point
-  params["seeds/type"] = "point";               // number of advection steps
-  params["seeds/location"] = [0,0,0];               // number of advection steps
+  params["seeds/type"] = "point";            
+  params["seeds/location"] = [0,0,0];        
+  
+.. code-block:: c++
   //Point List
-  params["seeds/type"] = "point_list";               // number of advection steps
-  params["seeds/location"] = [0,0,0,1,1,1];               // number of advection steps
+  params["seeds/type"] = "point_list";       
+  params["seeds/location"] = [0,0,0,1,1,1];  
+
+
+.. code-block:: c++
   //Line
-  params["seeds/type"] = "line";               // number of advection steps
-  params["seeds/start"] = [0,0,0];               // number of advection steps
-  params["seeds/end"] = [10,10,10];               // number of advection steps
+  params["seeds/type"] = "line";              
+  params["seeds/start"] = [0,0,0];            
+  params["seeds/end"] = [10,10,10];           
   params["seeds/sampling_type"] = "random";//or "uniform"
+
+
+.. code-block:: c++
   //Box
-  params["seeds/type"] = "box";               // number of advection steps
+  params["seeds/type"] = "box";      
   params["seeds/sampling_type"] = "random";//or "uniform"
   params["seeds/sampling_space"] = "interior";//or "boundary"
+
+
+.. code-block:: c++
   //optional:
   //define a boundary box for the distribution of particles
-  //default is whole data set
+  //default is the whole data set
   params["seeds/x_extents"] = [0,10]; //optional: define the boundary
   params["seeds/y_extents"] = [0,10]; //for the distribution
   params["seeds/z_extents"] = [0,10]; //of the particles
@@ -674,17 +676,13 @@ Tubes are on by default but they can be disabled, though this would also disable
   // filter knobs (all these are optional)
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field"] = "vel";                 // name of the vector field
+  params["num_steps"] = 1;               // number of advection steps
   params["step_size"] = 0.01;              // advection step size
-  params["num_steps"] = 100;               // number of advection steps
-  params["seeds/type"] = "box";
-  params["seeds/sampling_type"] = "random"; //or "uniform"
-  params["seeds/sampling_space"] = "interior"; //or "boundary"
-  params["seeds/x_extents"] = [0,10]; //optional: define the boundary
-  params["seeds/y_extents"] = [0,10]; //for the distribution
-  params["seeds/z_extents"] = [0,10]; //of the particles
+  params["seeds/type"] = "point";
+  params["seeds/location"] = [-0.826997,-5.62082,3.52779]; 
   //all tubing params are optional
   params["enable_tubes"] = "true";         //default: true
-  params["tube_size"] = 0.2;               //default: based on bounds
+  params["tube_size"] = 0.4;               //default: based on bounds
   params["tube_sides"] = 4;                //default: 3
   params["tube_val"] = 1.0;                //default: 0.0
   params["tube_capping"] = "true";         //default: true
@@ -692,6 +690,101 @@ Tubes are on by default but they can be disabled, though this would also disable
                                            //default: "field" + "_streamlines" 
                                            //e.g "vel_streamlines"
 
+..  figure:: ../images/tout_render_streamlines_point.png
+    :scale: 50 %
+    :align: center
+
+    An example of creating a pseudocolor plot of streamline seed placements using ``point``.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] =  "streamline";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";                 // name of the vector field
+  params["num_steps"] = 1;               // number of advection steps
+  params["step_size"] = 0.01;              // advection step size
+  params["seeds/type"] = "point_list";
+  params["seeds/location"] = [-9,-9,-9,1,1,1]; 
+  //all tubing params are optional
+  params["enable_tubes"] = "true";         //default: true
+  params["tube_size"] = 0.4;               //default: based on bounds
+  params["tube_sides"] = 4;                //default: 3
+  params["tube_val"] = 1.0;                //default: 0.0
+  params["tube_capping"] = "true";         //default: true
+  params["output_field"] = "lines";        //name of streamline tubes for rendering
+                                           //default: "field" + "_streamlines" 
+                                           //e.g "vel_streamlines"
+
+..  figure:: ../images/tout_render_streamlines_point_list.png
+    :scale: 50 %
+    :align: center
+
+    An example of creating a pseudocolor plot of streamline seed placements using ``point_list``.
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] =  "streamline";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";                 // name of the vector field
+  params["num_steps"] = 1;               // number of advection steps
+  params["step_size"] = 0.01;              // advection step size
+  params["seeds/type"] = "line";
+  params["seeds/sampling_type"] = "uniform"; //or "random"
+  params["seeds/start"] = [-9,-9,-9]; //optional: define the boundary
+  params["seeds/end"] = [9,9,9]; //of the particles
+  params["seeds/num_seeds"] = 10; //of the particles
+  //all tubing params are optional
+  params["enable_tubes"] = "true";         //default: true
+  params["tube_size"] = 0.1;               //default: based on bounds
+  params["tube_sides"] = 4;                //default: 3
+  params["tube_val"] = 1.0;                //default: 0.0
+  params["tube_capping"] = "true";         //default: true
+  params["output_field"] = "lines";        //name of streamline tubes for rendering
+                                           //default: "field" + "_streamlines" 
+                                           //e.g "vel_streamlines"
+
+..  figure:: ../images/tout_render_streamlines_line.png
+    :scale: 50 %
+    :align: center
+
+    An example of creating a pseudocolor plot of streamline seed placements using ``line``.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] =  "streamline";
+  // filter knobs (all these are optional)
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "vel";                 // name of the vector field
+  params["step_size"] = 0.01;              // advection step size
+  params["num_steps"] = 1;               // number of advection steps
+  params["seeds/type"] = "box";
+  params["seeds/sampling_type"] = "uniform"; //or "random"
+  params["seeds/sampling_space"] = "interior"; //or "boundary"
+  params["seeds/x_extents"] = [-9,9]; //optional: define the boundary
+  params["seeds/y_extents"] = [-9,9]; //for the distribution
+  params["seeds/z_extents"] = [-9,9]; //of the particles
+  //all tubing params are optional
+  params["enable_tubes"] = "true";         //default: true
+  params["tube_size"] = 0.1;               //default: based on bounds
+  params["tube_sides"] = 4;                //default: 3
+  params["tube_val"] = 1.0;                //default: 0.0
+  params["tube_capping"] = "true";         //default: true
+  params["output_field"] = "lines";        //name of streamline tubes for rendering
+                                           //default: "field" + "_streamlines" 
+                                           //e.g "vel_streamlines"
+
+..  figure:: ../images/tout_render_streamlines_box.png
+    :scale: 50 %
+    :align: center
+
+    An example of creating a pseudocolor plot of streamline seed placements using ``box``.
 
 Streamlines with Charged Particles (WarpX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

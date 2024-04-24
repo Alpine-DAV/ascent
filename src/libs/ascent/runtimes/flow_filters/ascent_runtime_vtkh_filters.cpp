@@ -3783,10 +3783,6 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
       }
       else
       {
-	std::string sampling_type = "";
-	if(seed_params.has_child("sampling_type"))
-	{
-	}
 
         res &= check_string("type", seed_params, info, true);
         std::string type = seed_params["type"].as_string();	
@@ -3803,6 +3799,7 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
           res &= check_numeric("start",seed_params,info,true);
           res &= check_numeric("end",seed_params,info,true);
 	  res &= check_numeric("num_seeds",seed_params,info,true);
+          res &= check_string("sampling_type", seed_params, info, true);
 	}
 	else if(type == "box")
         {
@@ -3985,9 +3982,9 @@ VTKHParticleAdvection::execute()
 
       if(sampling == "uniform")
       {
-        double dx = (dist_x)/num_seeds;
-        double dy = (dist_y)/num_seeds;
-        double dz = (dist_z)/num_seeds;
+        double dx = (dist_x)/(num_seeds-1);
+        double dy = (dist_y)/(num_seeds-1);
+        double dz = (dist_z)/(num_seeds-1);
         for(int i = 0; i < num_seeds; ++i)
 	{
           double x = start[0] + dx*i;
@@ -4062,7 +4059,6 @@ VTKHParticleAdvection::execute()
       {
         ASCENT_ERROR("Particle Advection box seeds accepts either 'uniform' or 'random' as the 'sampling_type'");
       }
-
 
       if(sampling_space == "interior")
       {

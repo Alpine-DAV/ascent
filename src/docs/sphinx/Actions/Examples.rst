@@ -238,6 +238,17 @@ Resulting image:
 
 .. image:: examples/tout_trigger_extract_inline100.png
 
+An example of the streamline filter using point list seed placement
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_streamline_point_list100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_streamline_point_list.png
+
 An example of the interconnecting pipelines.
 ---------------------------------------------
 
