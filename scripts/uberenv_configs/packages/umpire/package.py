@@ -24,7 +24,7 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     version("develop", branch="develop", submodules=False)
     version("main", branch="main", submodules=False)
-    version("2024.02.1", tag="v2024.02.1", submodules=False)
+    version("2024.02.1", tag="v2024.02.1", submodules=True)
     version("2022.03.1", tag="v2022.03.1", submodules=False)
     version("2022.03.0", tag="v2022.03.0", submodules=False)
     version("6.0.0", tag="v6.0.0", submodules=True)
@@ -238,6 +238,9 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
         )
         entries.append(cmake_cache_option("BUILD_SHARED_LIBS", "+shared" in spec))
         entries.append(cmake_cache_option("ENABLE_TESTS", "tests=none" not in spec))
+
+        if spec.satisfies("@2024.02.0:"):
+            entries.append(cmake_cache_path("fmt_DIR", spec["fmt"].prefix))
 
         return entries
 

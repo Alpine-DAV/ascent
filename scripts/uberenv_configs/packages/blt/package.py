@@ -65,7 +65,7 @@ class Blt(Package):
 
     maintainers("white238", "davidbeckingsale")
 
-    license("BSD-3-Clause")
+    #license("BSD-3-Clause")
 
     version("develop", branch="develop")
     version("main", branch="main")
