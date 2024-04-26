@@ -247,7 +247,7 @@ YAML actions:
 
 Resulting image:
 
-.. image:: examples/tout_streamline_point_list.png
+.. image:: examples/tout_streamline_point_list100.png
 
 An example of the interconnecting pipelines.
 ---------------------------------------------

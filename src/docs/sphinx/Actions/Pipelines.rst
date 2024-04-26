@@ -623,41 +623,12 @@ The particle advection filter distributes some number of weightless particles ov
   params["num_steps"] = 100;               // number of advection steps
 
 Users also need to specify how to generate seed placements (``seeds``). 
-The seed placements can be an individual point (``point``), a list of points (``point_list``), a line (``line``), or a box (``box``), and require certain parameters. 
-
-.. code-block:: c++
-  //Point
-  params["seeds/type"] = "point";            
-  params["seeds/location"] = [0,0,0];        
-  
-.. code-block:: c++
-  //Point List
-  params["seeds/type"] = "point_list";       
-  params["seeds/location"] = [0,0,0,1,1,1];  
-
-
-.. code-block:: c++
-  //Line
-  params["seeds/type"] = "line";              
-  params["seeds/start"] = [0,0,0];            
-  params["seeds/end"] = [10,10,10];           
-  params["seeds/sampling_type"] = "random";//or "uniform"
-
-
-.. code-block:: c++
-  //Box
-  params["seeds/type"] = "box";      
-  params["seeds/sampling_type"] = "random";//or "uniform"
-  params["seeds/sampling_space"] = "interior";//or "boundary"
-
-
-.. code-block:: c++
-  //optional:
-  //define a boundary box for the distribution of particles
-  //default is the whole data set
-  params["seeds/x_extents"] = [0,10]; //optional: define the boundary
-  params["seeds/y_extents"] = [0,10]; //for the distribution
-  params["seeds/z_extents"] = [0,10]; //of the particles
+The seed placements can be an individual point (``point``), a list of points (``point_list``), a line (``line``), or a box (``box``). 
+The seed placement type will determine the necessary parameters. 
+Seed placement ``point`` requires a ``location`` as an [x,y,z] list of doubles.
+Seed placement ``point_list`` requires a ``location`` as an [x0,y0,z0,...,xn,yn,zn] list of doubles.
+Seed placement ``line`` requires a ``start`` and ``end`` as [x,y,z] lists of doubles, the number of seeds (``num_seeds``) to place on the line as well as defining the spacing between seeds (``sampling_type``) as either ``uniform`` or ``random``.
+Seed placement ``box`` requires the sampling space (``sampling_space``) to be defined (``boundary`` or ``interior``), the sampling type (``sampling_type``) to be defined (``random`` or ``uniform``). By default the boundary of the entire dataset is used, but user can define a new boundary (``x_extents``, ``y_extents``, and ``z_extents``).
 
 
 At this time, Ascent can only save the output of the particle advection filter as an extract. For rendering, consider using the streamline filter. 
@@ -690,7 +661,7 @@ Tubes are on by default but they can be disabled, though this would also disable
                                            //default: "field" + "_streamlines" 
                                            //e.g "vel_streamlines"
 
-..  figure:: ../images/tout_render_streamlines_point.png
+..  figure:: ../images/tout_render_streamlines_point100.png
     :scale: 50 %
     :align: center
 
@@ -707,7 +678,7 @@ Tubes are on by default but they can be disabled, though this would also disable
   params["num_steps"] = 1;               // number of advection steps
   params["step_size"] = 0.01;              // advection step size
   params["seeds/type"] = "point_list";
-  params["seeds/location"] = [-9,-9,-9,1,1,1]; 
+  params["seeds/location"] = [-9,-9,-9,1,1,1]; // two points
   //all tubing params are optional
   params["enable_tubes"] = "true";         //default: true
   params["tube_size"] = 0.4;               //default: based on bounds
@@ -718,7 +689,7 @@ Tubes are on by default but they can be disabled, though this would also disable
                                            //default: "field" + "_streamlines" 
                                            //e.g "vel_streamlines"
 
-..  figure:: ../images/tout_render_streamlines_point_list.png
+..  figure:: ../images/tout_render_streamlines_point_list100.png
     :scale: 50 %
     :align: center
 
@@ -734,10 +705,11 @@ Tubes are on by default but they can be disabled, though this would also disable
   params["num_steps"] = 1;               // number of advection steps
   params["step_size"] = 0.01;              // advection step size
   params["seeds/type"] = "line";
+  //required: how to space the seeds on the line
   params["seeds/sampling_type"] = "uniform"; //or "random"
-  params["seeds/start"] = [-9,-9,-9]; //optional: define the boundary
-  params["seeds/end"] = [9,9,9]; //of the particles
-  params["seeds/num_seeds"] = 10; //of the particles
+  params["seeds/start"] = [-9,-9,-9]; // required: start of line
+  params["seeds/end"] = [9,9,9];      // required: end of line
+  params["seeds/num_seeds"] = 10;     // required: number of seeds
   //all tubing params are optional
   params["enable_tubes"] = "true";         //default: true
   params["tube_size"] = 0.1;               //default: based on bounds
@@ -748,7 +720,7 @@ Tubes are on by default but they can be disabled, though this would also disable
                                            //default: "field" + "_streamlines" 
                                            //e.g "vel_streamlines"
 
-..  figure:: ../images/tout_render_streamlines_line.png
+..  figure:: ../images/tout_render_streamlines_line100.png
     :scale: 50 %
     :align: center
 
@@ -764,9 +736,11 @@ Tubes are on by default but they can be disabled, though this would also disable
   params["field"] = "vel";                 // name of the vector field
   params["step_size"] = 0.01;              // advection step size
   params["num_steps"] = 1;               // number of advection steps
+  //seed parameters
   params["seeds/type"] = "box";
   params["seeds/sampling_type"] = "uniform"; //or "random"
   params["seeds/sampling_space"] = "interior"; //or "boundary"
+  //default is using the boundary of the entire dataset
   params["seeds/x_extents"] = [-9,9]; //optional: define the boundary
   params["seeds/y_extents"] = [-9,9]; //for the distribution
   params["seeds/z_extents"] = [-9,9]; //of the particles
@@ -780,7 +754,7 @@ Tubes are on by default but they can be disabled, though this would also disable
                                            //default: "field" + "_streamlines" 
                                            //e.g "vel_streamlines"
 
-..  figure:: ../images/tout_render_streamlines_box.png
+..  figure:: ../images/tout_render_streamlines_box100.png
     :scale: 50 %
     :align: center
 
@@ -791,7 +765,7 @@ Streamlines with Charged Particles (WarpX)
 The streamlines with charged particles filter behaves similarly to the streamline filter, but instead utilizes charged particles, which are particles with physical attributes (``charge``, ``mass``, ``momentum``, ``weighting``), that are advected using magnetic (``b_field``) and electric (``e_field``) vector fields.
 The resulting streamlines are rendered using tubes, which transform the streamline data into a 3D surface. 
 Note: the tube functionality is not behaving correctly, currently this functionality is OFF by default. 
-Otherwise, the resulting streamlines, sans tubes, can be saved via an extract.
+Otherwise, the resulting streamlines can be saved via an extract.
 
 .. code-block:: c++
 
