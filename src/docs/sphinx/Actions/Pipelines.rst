@@ -625,10 +625,11 @@ The particle advection filter distributes some number of weightless particles ov
 Users also need to specify how to generate seed placements (``seeds``). 
 The seed placements can be an individual point (``point``), a list of points (``point_list``), a line (``line``), or a box (``box``). 
 The seed placement type will determine the necessary parameters:
-- ``point`` requires a ``location`` as an [x,y,z] list of doubles.
-- ``point_list`` requires a ``location`` as an [x0,y0,z0,...,xn,yn,zn] list of doubles.
-- ``line`` requires a ``start`` and ``end`` as [x,y,z] lists of doubles, the number of seeds (``num_seeds``) to place on the line as well as defining the spacing between seeds (``sampling_type``) as either ``uniform`` or ``random``.
-- ``box`` requires the sampling space (``sampling_space``) to be defined (``boundary`` or ``interior``), the sampling type (``sampling_type``) to be defined (``random`` or ``uniform``). By default the boundary of the entire dataset is used, but user can define a new boundary (``x_extents``, ``y_extents``, and ``z_extents``).
+
+  - ``point`` requires a ``location`` as an [x,y,z] list of doubles.
+  - ``point_list`` requires a ``location`` as an [x0,y0,z0,...,xn,yn,zn] list of doubles.
+  - ``line`` requires a ``start`` and ``end`` as [x,y,z] lists of doubles, the number of seeds (``num_seeds``) to place on the line as well as defining the spacing between seeds (``sampling_type``) as either ``uniform`` or ``random``.
+  - ``box`` requires the sampling space (``sampling_space``) to be defined (``boundary`` or ``interior``), the sampling type (``sampling_type``) to be defined (``random`` or ``uniform``). By default the boundary of the entire dataset is used, but user can define a new boundary (``x_extents``, ``y_extents``, and ``z_extents``).
 
 
 At this time, Ascent can only save the output of the particle advection filter as an extract. For rendering, consider using the streamline filter. 
