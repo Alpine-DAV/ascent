@@ -16,6 +16,9 @@ public:
   std::string GetName() const override;
   void SetBoxClip(const vtkm::Bounds &clipping_bounds);
   void SetSphereClip(const double center[3], const double radius);
+  void SetCylinderClip(const double center[3],
+                       const double axis[3],
+                       const double radius);
   void SetPlaneClip(const double origin[3], const double normal[3]);
 
   void Set2PlaneClip(const double origin1[3],

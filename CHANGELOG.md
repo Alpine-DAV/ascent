@@ -14,6 +14,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added parameters to control HDF5 compression options to the Relay Extract.
 - Added check to make sure all domain IDs are unique
 - Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
+- Added a `cylinder` option to the clip filter.
+
 
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.

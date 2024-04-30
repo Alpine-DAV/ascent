@@ -18,22 +18,41 @@ public:
   Threshold();
   virtual ~Threshold();
   std::string GetName() const override;
-  void SetUpperThreshold(const double &value);
-  void SetLowerThreshold(const double &value);
-  void SetField(const std::string &field_name);
-  void SetAllInRange(const bool &value);
 
-  double GetUpperThreshold() const;
-  double GetLowerThreshold() const;
+  void SetAllInRange(const bool &value);
   bool GetAllInRange() const;
-  std::string GetField() const;
+  std::string GetThresholdMode() const;
+
+  // threshold by field
+  void SetFieldUpperThreshold(const double &value);
+  void SetFieldLowerThreshold(const double &value);
+  void SetField(const std::string &field_name);
+
+  // threshold by box
+  void SetBoxThreshold(const vtkm::Bounds &box_bounds);
+
+  // threshold by plane
+  void SetPlaneThreshold(const double plane_origin[3],
+                         const double plane_normal[3]);
+
+  // threshold by cylinder
+  void SetCylinderThreshold(const double cylinder_center[3],
+                            const double cylinder_axis[3],
+                            const double cylinder_radius);
+
+  // threshold by Sphere
+  void SetSphereThreshold(const double sphere_center[3],
+                          const double sphere_radius);
+
 protected:
-  void PreExecute() override;
+  void PreExecute()  override;
   void PostExecute() override;
-  void DoExecute() override;
-  vtkm::Range m_range;
-  std::string m_field_name;
-  bool m_return_all_in_range = false;
+  void DoExecute()   override;
+
+  // for vtkm implicit fun for non field cases
+  struct Internals;
+  std::shared_ptr<Internals> m_internals;
+
 };
 
 } //namespace vtkh

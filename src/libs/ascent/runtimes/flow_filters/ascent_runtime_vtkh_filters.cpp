@@ -1283,8 +1283,8 @@ VTKHThreshold::execute()
     // convert to contig doubles
     double min_val = get_float64(n_min_val, data_object);
     double max_val = get_float64(n_max_val, data_object);
-    thresher.SetUpperThreshold(max_val);
-    thresher.SetLowerThreshold(min_val);
+    thresher.SetFieldUpperThreshold(max_val);
+    thresher.SetFieldLowerThreshold(min_val);
 
     thresher.Update();
 
@@ -1336,6 +1336,10 @@ VTKHClip::verify_params(const conduit::Node &params,
     {
       type_present = true;
     }
+    else if(params.has_child("cylinder"))
+    {
+      type_present = true;
+    }
     else if(params.has_child("box"))
     {
       type_present = true;
@@ -1351,7 +1355,7 @@ VTKHClip::verify_params(const conduit::Node &params,
 
     if(!type_present)
     {
-        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'box', 'plane', or 'mulit_plane'";
+        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'cylinder', 'box', 'plane', or 'mulit_plane'";
         res = false;
     }
     else
@@ -1364,7 +1368,16 @@ VTKHClip::verify_params(const conduit::Node &params,
          res = check_numeric("sphere/center/y",params, info, true, true) && res;
          res = check_numeric("sphere/center/z",params, info, true, true) && res;
          res = check_numeric("sphere/radius",params, info, true, true) && res;
-
+      }
+      else if(params.has_child("cylinder"))
+      {
+         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/radius",params, info, true, true) && res;
       }
       else if(params.has_child("box"))
       {
@@ -1408,16 +1421,27 @@ VTKHClip::verify_params(const conduit::Node &params,
     std::vector<std::string> valid_paths;
     valid_paths.push_back("topology");
     valid_paths.push_back("invert");
+
     valid_paths.push_back("sphere/center/x");
     valid_paths.push_back("sphere/center/y");
     valid_paths.push_back("sphere/center/z");
     valid_paths.push_back("sphere/radius");
+
+    valid_paths.push_back("cylinder/center/x");
+    valid_paths.push_back("cylinder/center/y");
+    valid_paths.push_back("cylinder/center/z");
+    valid_paths.push_back("cylinder/axis/x");
+    valid_paths.push_back("cylinder/axis/y");
+    valid_paths.push_back("cylinder/axis/z");
+    valid_paths.push_back("cylinder/radius");
+
     valid_paths.push_back("box/min/x");
     valid_paths.push_back("box/min/y");
     valid_paths.push_back("box/min/z");
     valid_paths.push_back("box/max/x");
     valid_paths.push_back("box/max/y");
     valid_paths.push_back("box/max/z");
+
     valid_paths.push_back("plane/point/x");
     valid_paths.push_back("plane/point/y");
     valid_paths.push_back("plane/point/z");
@@ -1496,6 +1520,23 @@ VTKHClip::execute()
       center[2] = get_float64(sphere["center/z"], data_object);
       double radius = get_float64(sphere["radius"], data_object);
       clipper.SetSphereClip(center, radius);
+    }
+    else if(params().has_path("cylinder"))
+    {
+      const Node &cylinder = params()["cylinder"];
+      double center[3];
+      double axis[3];
+
+      center[0] = get_float64(cylinder["center/x"], data_object);
+      center[1] = get_float64(cylinder["center/y"], data_object);
+      center[2] = get_float64(cylinder["center/z"], data_object);
+
+      axis[0] = get_float64(cylinder["axis/x"], data_object);
+      axis[1] = get_float64(cylinder["axis/y"], data_object);
+      axis[2] = get_float64(cylinder["axis/z"], data_object);
+
+      double radius = get_float64(cylinder["radius"], data_object);
+      clipper.SetCylinderClip(center, axis, radius);
     }
     else if(params().has_path("box"))
     {
