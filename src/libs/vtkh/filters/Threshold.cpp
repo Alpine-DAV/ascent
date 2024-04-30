@@ -45,6 +45,7 @@ Threshold::Internals
 
 //---------------------------------------------------------------------------//
 Threshold::Threshold()
+: m_internals(new Internals)
 {
 }
 
