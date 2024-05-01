@@ -20,6 +20,7 @@ jobs:
       run: |
         env build_ascent=false `
             enable_tests=OFF `
+            enable_python=ON `
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
