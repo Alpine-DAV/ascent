@@ -192,7 +192,7 @@ TEST (dray_low_order, dray_explicit_tris)
   conduit::blueprint::mesh::examples::braid("tris",
                                              EXAMPLE_MESH_SIDE_DIM,
                                              EXAMPLE_MESH_SIDE_DIM,
-                                             EXAMPLE_MESH_SIDE_DIM,
+                                             0,
                                              data);
 
   render_2d(data, "explicit_tris");
@@ -205,7 +205,7 @@ TEST (dray_low_order, dray_structured_quads)
   conduit::blueprint::mesh::examples::braid("structured",
                                              EXAMPLE_MESH_SIDE_DIM,
                                              EXAMPLE_MESH_SIDE_DIM,
-                                             1,
+                                             0,
                                              data);
 
   render_2d(data, "structured_quads");
