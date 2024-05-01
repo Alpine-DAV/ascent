@@ -2,11 +2,11 @@
 #include <vtkh/filters/UniformGrid.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/vtkm_filters/vtkmProbe.hpp>
+#include <vtkh/utils/vtkm_array_utils.hpp>
 
 #include <limits>
 
 #ifdef VTKH_PARALLEL
-#include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkm/thirdparty/diy/diy.h>
 #include <vtkm/thirdparty/diy/mpi-cast.h>
 #include <vtkm/cont/EnvironmentTracker.h>
@@ -16,7 +16,6 @@
 #endif
 
 #include <vtkm/cont/Algorithm.h>
-#include <vtkm/filter/multi_block/MergeDataSets.h>
 #include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/worklet/DispatcherMapField.h>
 
@@ -172,7 +171,7 @@ public:
   
     ReduceField(vtkm::cont::Field &input_field,
                 const vtkm::cont::DataSet &data_set, 
-                tkm::Float64 &invalid_value)
+                vtkm::Float64 &invalid_value)
       : m_input_field(input_field),
         m_data_set(data_set),
         m_invalid_value(invalid_value)
@@ -591,6 +590,230 @@ public:
 
 };//class globalReduceField
 #endif
+class LocalReduceField
+{
+  vtkm::cont::DataSet &m_dataset;
+  vtkm::cont::Field   &m_field;
+  const std::string   m_field_name;
+
+public:
+  LocalReduceField(vtkm::cont::DataSet &dataset, vtkm::cont::Field &field, const std::string &field_name)
+    : m_dataset(dataset),
+      m_field(field),
+      m_field_name(field_name)
+  {}
+  ~LocalReduceField()
+  {}
+
+  void LocalReduce()
+  {
+    vtkm::cont::UnknownArrayHandle uah_field = m_field.GetData();
+    vtkm::cont::UnknownArrayHandle uah_local_field = m_dataset.GetField(m_field_name).GetData();
+
+    vtkm::cont::ArrayHandle<vtkm::Float32> ah_mask;
+    m_dataset.GetField("mask").GetData().AsArrayHandle(ah_mask);
+    auto mask_portal = ah_mask.ReadPortal();
+    int num_points = mask_portal.GetNumberOfValues();
+    //Todo: NUM POINTS needs to be based on dims
+    //Todo: determine if field point or cell
+    //Todo: check if all ranks have field? 
+
+    //create invalid mask where true == invalid
+    std::vector<int> l_mask(num_points,1);
+    for(int j = 0; j < num_points; ++j)
+    {
+      l_mask[j] = l_mask[j] && mask_portal.Get(j);
+    }
+
+    if(uah_field.CanConvert<scalarI>())
+    {
+      //loop through field, zero out invalid values
+      scalarI tmp_data = m_field.GetData().AsArrayHandle<scalarI>();
+      scalarI local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<scalarI>();
+      int *tmp_field = GetVTKMPointer(tmp_data);
+      int *local_field = GetVTKMPointer(local_data);
+
+      for(int i = 0; i < num_points; ++i)
+      {
+        if(l_mask[i] != 1)
+        {
+          //point present from previous domain
+	  //if not equal, take their average
+	  //TODO: User can decide how ties are broken
+          if(local_field[i] != tmp_field[i])
+	  {
+            int avg = (int)(local_field[i] + tmp_field[i])/2;
+            local_data.WritePortal().Set(i,avg);
+	  }
+        }
+      }
+    }//end scalarI
+    else if(uah_field.CanConvert<scalarF>())
+    {
+      //loop through field, zero out invalid values
+      scalarF tmp_data = m_field.GetData().AsArrayHandle<scalarF>();
+      scalarF local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<scalarF>();
+      float *tmp_field = GetVTKMPointer(tmp_data);
+      float *local_field = GetVTKMPointer(local_data);
+
+      for(int i = 0; i < num_points; ++i)
+      {
+        if(l_mask[i] != 1)
+        {
+          //pofloat present from previous domain
+	  //if not equal, take their average
+	  //TODO: User can decide how ties are broken
+          if(local_field[i] != tmp_field[i])
+	  {
+            float avg = (float)(local_field[i] + tmp_field[i])/2;
+            local_data.WritePortal().Set(i,avg);
+	  }
+        }
+      }
+    }//end scalarF
+    else if(uah_field.CanConvert<scalarD>())
+    {
+      //loop through field, zero out invalid values
+      scalarD tmp_data = m_field.GetData().AsArrayHandle<scalarD>();
+      scalarD local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<scalarD>();
+      double *tmp_field = GetVTKMPointer(tmp_data);
+      double *local_field = GetVTKMPointer(local_data);
+
+      for(int i = 0; i < num_points; ++i)
+      {
+        if(l_mask[i] != 1)
+        {
+          //podouble present from previous domain
+	  //if not equal, take their average
+	  //TODO: User can decide how ties are broken
+          if(local_field[i] != tmp_field[i])
+	  {
+            double avg = (double)(local_field[i] + tmp_field[i])/2;
+            local_data.WritePortal().Set(i,avg);
+	  }
+        }
+      }
+    } //end scalarD
+    else if(uah_field.CanConvert<vec2_32>())
+    {
+      //loop through field, zero out invalid values
+      vec2_32 tmp_data = m_field.GetData().AsArrayHandle<vec2_32>();
+      vec2_32 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec2_32>();
+
+      for(int i = 0; i < num_points; ++i)
+      {
+        if(l_mask[i] != 1)
+        {
+          //pofloat present from previous domain
+	  //if not equal, take their average
+	  //TODO: User can decide how ties are broken
+          float tmp_x = tmp_data.ReadPortal().Get(i)[0];
+          float tmp_y = tmp_data.ReadPortal().Get(i)[1];
+          float local_x = local_data.ReadPortal().Get(i)[0];
+          float local_y = local_data.ReadPortal().Get(i)[1];
+          if((local_x != tmp_x) || (local_y != tmp_y))
+	  {
+            float avg_x = (float)(local_x + tmp_x)/2;
+            float avg_y = (float)(local_y + tmp_y)/2;
+            vtkm::Vec<vtkm::Float32,2> avg_vec = vtkm::make_Vec(avg_x,avg_y);
+            local_data.WritePortal().Set(i,avg_vec);
+	  }
+        }
+      }
+    }//end vec2_32
+    else if(uah_field.CanConvert<vec2_64>())
+    {
+      //loop through field, zero out invalid values
+      vec2_64 tmp_data = m_field.GetData().AsArrayHandle<vec2_64>();
+      vec2_64 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec2_64>();
+
+      for(int i = 0; i < num_points; ++i)
+      {
+        if(l_mask[i] != 1)
+        {
+          //points present from previous domain
+	  //if not equal, take their average
+	  //TODO: User can decide how ties are broken
+          double tmp_x = tmp_data.ReadPortal().Get(i)[0];
+          double tmp_y = tmp_data.ReadPortal().Get(i)[1];
+          double local_x = local_data.ReadPortal().Get(i)[0];
+          double local_y = local_data.ReadPortal().Get(i)[1];
+          if((local_x != tmp_x) || (local_y != tmp_y))
+	  {
+            double avg_x = (double)(local_x + tmp_x)/2;
+            double avg_y = (double)(local_y + tmp_y)/2;
+            vtkm::Vec<vtkm::Float64,2> avg_vec = vtkm::make_Vec(avg_x,avg_y);
+            local_data.WritePortal().Set(i,avg_vec);
+	  }
+        }
+      }
+    }//end vec2_64
+    else if(uah_field.CanConvert<vec3_32>())
+    {
+      //loop through field, zero out invalid values
+      vec3_32 tmp_data = m_field.GetData().AsArrayHandle<vec3_32>();
+      vec3_32 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec3_32>();
+
+      for(int i = 0; i < num_points; ++i)
+      {
+        if(l_mask[i] != 1)
+        {
+          //pofloat present from previous domain
+	  //if not equal, take their average
+	  //TODO: User can decide how ties are broken
+          float tmp_x = tmp_data.ReadPortal().Get(i)[0];
+          float tmp_y = tmp_data.ReadPortal().Get(i)[1];
+          float tmp_z = tmp_data.ReadPortal().Get(i)[2];
+          float local_x = local_data.ReadPortal().Get(i)[0];
+          float local_y = local_data.ReadPortal().Get(i)[1];
+          float local_z = local_data.ReadPortal().Get(i)[2];
+          if((local_x != tmp_x) || (local_y != tmp_y))
+	  {
+            float avg_x = (float)(local_x + tmp_x)/2;
+            float avg_y = (float)(local_y + tmp_y)/2;
+            float avg_z = (float)(local_z + tmp_z)/2;
+            vtkm::Vec<vtkm::Float32,3> avg_vec = vtkm::make_Vec(avg_x,avg_y,avg_z);
+            local_data.WritePortal().Set(i,avg_vec);
+	  }
+        }
+      }
+    }//end vec3_32
+    else if(uah_field.CanConvert<vec3_64>())
+    {
+      //loop through field, zero out invalid values
+      vec3_64 tmp_data = m_field.GetData().AsArrayHandle<vec3_64>();
+      vec3_64 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec3_64>();
+
+      for(int i = 0; i < num_points; ++i)
+      {
+        if(l_mask[i] != 1)
+        {
+          //podouble present from previous domain
+	  //if not equal, take their average
+	  //TODO: User can decide how ties are broken
+          double tmp_x = tmp_data.ReadPortal().Get(i)[0];
+          double tmp_y = tmp_data.ReadPortal().Get(i)[1];
+          double tmp_z = tmp_data.ReadPortal().Get(i)[2];
+          double local_x = local_data.ReadPortal().Get(i)[0];
+          double local_y = local_data.ReadPortal().Get(i)[1];
+          double local_z = local_data.ReadPortal().Get(i)[2];
+          if((local_x != tmp_x) || (local_y != tmp_y))
+	  {
+            double avg_x = (double)(local_x + tmp_x)/2;
+            double avg_y = (double)(local_y + tmp_y)/2;
+            double avg_z = (double)(local_z + tmp_z)/2;
+            vtkm::Vec<vtkm::Float64,3> avg_vec = vtkm::make_Vec(avg_x,avg_y,avg_z);
+            local_data.WritePortal().Set(i,avg_vec);
+	  }
+        }
+      }
+    }//end vec3_64
+    else
+    {
+        return;
+    }
+  }; //struct reduceField
+};//class localReduceField
 
 } //namespace detail
 
@@ -631,39 +854,39 @@ UniformGrid::DoExecute()
   this->m_input->AddConstantPointField(0.0, "mask");
 
   //put vtkm datasets into a partitionedDS for vtkm::Merge
-  vtkm::cont::PartitionedDataSet sampled_doms;
-  for(int i = 0; i < num_domains; ++i)
-  {
-    vtkm::cont::DataSet dom;
-    
-    if(this->m_input->HasDomainId(domain_ids[i]))
-    {
-      dom = this->m_input->GetDomainById(domain_ids[i]);
-
-      sampled_doms.AppendPartition(dom);
-    }
-  }
-#ifdef VTKH_PARALLEL
-  //if there is no data, add some empty 
-  vtkm::cont::DataSet tmp_empty;
-  if(sampled_doms.GetNumberOfPartitions() == 0)
-  {
-    tmp_empty = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
-    bool valid_field;
-    vtkm::cont::Field::Association assoc = this->m_input->GetFieldAssociation(m_field, valid_field);
-
-    if(!valid_field)
-    {
-      this->m_output = this->m_input;
-      return;
-    }
-    
-    vtkm::Id field_id = this->m_input->GetFieldType(m_field, valid_field);
-    vtkm::cont::Field empty_field = vtkh::detail::MakeEmptyField(m_field,field_id,m_dims,assoc);
-    tmp_empty.AddField(empty_field);
-    sampled_doms.AppendPartition(tmp_empty);
-  }
-#endif
+//  vtkm::cont::PartitionedDataSet sampled_doms;
+//  for(int i = 0; i < num_domains; ++i)
+//  {
+//    vtkm::cont::DataSet dom;
+//    
+//    if(this->m_input->HasDomainId(domain_ids[i]))
+//    {
+//      dom = this->m_input->GetDomainById(domain_ids[i]);
+//
+//      sampled_doms.AppendPartition(dom);
+//    }
+//  }
+//#ifdef VTKH_PARALLEL
+//  //if there is no data, add some empty 
+//  vtkm::cont::DataSet tmp_empty;
+//  if(sampled_doms.GetNumberOfPartitions() == 0)
+//  {
+//    tmp_empty = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
+//    bool valid_field;
+//    vtkm::cont::Field::Association assoc = this->m_input->GetFieldAssociation(m_field, valid_field);
+//
+//    if(!valid_field)
+//    {
+//      this->m_output = this->m_input;
+//      return;
+//    }
+//    
+//    vtkm::Id field_id = this->m_input->GetFieldType(m_field, valid_field);
+//    vtkm::cont::Field empty_field = vtkh::detail::MakeEmptyField(m_field,field_id,m_dims,assoc);
+//    tmp_empty.AddField(empty_field);
+//    sampled_doms.AppendPartition(tmp_empty);
+//  }
+//#endif
 
   ///
   /// Approach we can use that would not need MergeDataSets:
@@ -686,30 +909,57 @@ UniformGrid::DoExecute()
   ///.   even if they have no domains, the still created the local
   ///    output grid)
 
-  vtkm::filter::multi_block::MergeDataSets mergeDataSets;
-  mergeDataSets.SetInvalidValue(m_invalid_value);
-  //return a partitiondataset
-  auto merged = mergeDataSets.Execute(sampled_doms);
-  auto result = merged.GetPartitions();
+//  vtkm::filter::multi_block::MergeDataSets mergeDataSets;
+//  mergeDataSets.SetInvalidValue(m_invalid_value);
+//  //return a partitiondataset
+//  auto merged = mergeDataSets.Execute(sampled_doms);
+//  auto result = merged.GetPartitions();
+  vtkm::cont::DataSet local_res;
+  for(int i = 0; i < num_domains; ++i)
+  {
+    vtkm::cont::DataSet dom;
+    
+    if(this->m_input->HasDomainId(domain_ids[i]))
+    {
+      dom = this->m_input->GetDomainById(domain_ids[i]);
+      //Uniform Grid Sample
+      vtkh::vtkmProbe probe;
+      probe.dims(m_dims);
+      probe.origin(m_origin);
+      probe.spacing(m_spacing);
+      probe.invalidValue(m_invalid_value);
+      auto dataset = probe.Run(dom);
+      vtkm::cont::Field tmp_field = dataset.GetField(m_field);
+      
+      std::string cs_name = dataset.GetCoordinateSystemName();
+      if(!local_res.HasCoordinateSystem(cs_name))
+      {
+        local_res.CopyStructure(dataset);
+	vtkm::cont::Field mask = dataset.GetField("mask");
+	local_res.AddField(mask);
+      }
+      if(!local_res.HasField(m_field))
+      {
+        local_res.AddField(tmp_field);
+      }
+      else
+      {
+        vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field, m_field);
+      }
+    }
+  }
 
-  //Uniform Grid Sample
-  vtkh::vtkmProbe probe;
-  probe.dims(m_dims);
-  probe.origin(m_origin);
-  probe.spacing(m_spacing);
-  probe.invalidValue(m_invalid_value);
-  auto dataset = probe.Run(result[0]);
 
 #ifdef VTKH_PARALLEL
   //take uniform sampled grid and reduce to root process
-  vtkh::detail::GlobalReduceField g_reducefields(dataset, m_field, m_invalid_value);
+  vtkh::detail::GlobalReduceField g_reducefields(local_res, m_field, m_invalid_value);
   auto output = g_reducefields.Reduce();
   if(par_rank == 0)
   {
     this->m_output->AddDomain(output,0);
   }
 #else
-  this->m_output->AddDomain(dataset,0);
+  this->m_output->AddDomain(local_res,0);
 #endif
 
 }
