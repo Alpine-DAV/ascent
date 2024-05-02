@@ -767,93 +767,82 @@ Resulting image:
 .. image:: examples/tout_cell_gradient_mag_radial100.png
 
 
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is smaller in each dimension by 1.
+An example of using the  uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is smaller in each dimension by 10.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_sample_smaller_by1_grid100.yaml
+.. literalinclude:: examples/tout_uniform_smaller_by10_grid100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_sample_smaller_by1_grid100.png
+.. image:: examples/tout_uniform_smaller_by10_grid100.png
 
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is smaller in each dimension by 5.
+An example of using the  uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_sample_smaller_by5_grid100.yaml
+.. literalinclude:: examples/tout_uniform_equal_grid100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_sample_smaller_by5_grid100.png
+.. image:: examples/tout_uniform_equal_grid100.png
 
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions.
+An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with smaller spacing between points.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_sample_equal_grid100.yaml
+.. literalinclude:: examples/tout_uniform_grid_equal_dims_decrease_spacing100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_sample_equal_grid100.png
+.. image:: examples/tout_uniform_grid_equal_dims_decrease_spacing100.png
 
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with smaller spacing between points.
+An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with larger spacing between points.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_sample_grid_equal_dims_decrease_spacing100.yaml
+.. literalinclude:: examples/tout_uniform_grid_equal_dims_increase_spacing100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_sample_grid_equal_dims_decrease_spacing100.png
+.. image:: examples/tout_uniform_grid_equal_dims_increase_spacing100.png
 
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with larger spacing between points.
+An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with a shifted origin.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_sample_grid_equal_dims_increase_spacing100.yaml
+.. literalinclude:: examples/tout_uniform_grid_shift_origin100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_sample_grid_equal_dims_increase_spacing100.png
+.. image:: examples/tout_uniform_grid_shift_origin100.png
 
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with a shifted origin.
+An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that has larger dimensions by 5.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_sample_grid_shift_origin100.yaml
+.. literalinclude:: examples/tout_uniform_larger_by5_grid100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_sample_grid_shift_origin100.png
+.. image:: examples/tout_uniform_larger_by5_grid100.png
 
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that has larger dimensions by 5.
+An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that has larger dimensions by 5 and with a disproportionately large invalid_value.
 ---------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_sample_larger_by5_grid100.yaml
+.. literalinclude:: examples/tout_uniform_larger_by5_grid_with_invalid_value100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_sample_larger_by5_grid100.png
-
-An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that has larger dimensions by 5 and with a disproportionately large invalid_value.
----------------------------------------------------------------------------------------------------------------------
-
-YAML actions:
-
-.. literalinclude:: examples/tout_sample_larger_by5_grid_with_invalid_value100.yaml
-
-Resulting image:
-
-.. image:: examples/tout_sample_larger_by5_grid_with_invalid_value100.png
+.. image:: examples/tout_uniform_larger_by5_grid_with_invalid_value100.png
 
 An example of using the streamline filter and associated tube parameters to produce a rendering.
 --------------------------------------------------------------------------------------------------
