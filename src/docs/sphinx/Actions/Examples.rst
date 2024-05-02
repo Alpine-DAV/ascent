@@ -238,6 +238,17 @@ Resulting image:
 
 .. image:: examples/tout_trigger_extract_inline100.png
 
+An example of the streamline filter using point list seed placement
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_streamline_point_list100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_streamline_point_list100.png
+
 An example of the interconnecting pipelines.
 ---------------------------------------------
 
@@ -755,6 +766,7 @@ Resulting image:
 
 .. image:: examples/tout_cell_gradient_mag_radial100.png
 
+
 An example of using the regular sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is smaller in each dimension by 1.
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -842,6 +854,19 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_sample_larger_by5_grid_with_invalid_value100.png
+
+An example of using the streamline filter and associated tube parameters to produce a rendering.
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_streamline_render100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_streamline_render100.png
+
+
 
 An example of using the xray extract.
 --------------------------------------
