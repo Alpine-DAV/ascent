@@ -121,6 +121,12 @@ if(NOT ASCENT_FOUND)
 
     # pull in vars with details about configured paths
     get_filename_component(ASCENT_CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+    
+    # Support IN_LIST operator for if()
+    # Policy added in 3.3+
+    if(POLICY CMP0057)
+        cmake_policy(SET CMP0057 NEW)
+    endif()
 
     # setup blt targets
     include(${ASCENT_CMAKE_CONFIG_DIR}/BLTSetupTargets.cmake)
