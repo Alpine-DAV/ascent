@@ -6,7 +6,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_render_3d.cpp
+/// file: t_ascent_derived.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -28,6 +28,8 @@ using namespace conduit;
 using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
+
+//-----------------------------------------------------------------------------
 
 TEST(ascent_jit_expressions, derived_support_test)
 {
@@ -594,6 +596,75 @@ TEST(ascent_derived, df_add_fields)
 
   scenes["s1/plots/p1/type"] = "pseudocolor";
   scenes["s1/plots/p1/field"] = "braid_composite";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/renders/r1/image_prefix"] = output_image;
+
+
+  //
+  // Run Ascent
+  //
+
+  Ascent ascent;
+
+  Node ascent_opts;
+  ascent_opts["ascent_info"] = "verbose";
+  ascent_opts["timings"] = "true";
+  ascent_opts["runtime/type"] = "ascent";
+
+  ascent.open(ascent_opts);
+  ascent.publish(data);
+  ascent.execute(actions);
+  ascent.close();
+
+  EXPECT_TRUE(check_test_image(output_image, 0.1));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_derived, df_power_of_field)
+{
+  Node n;
+  ascent::about(n);
+
+  // only run this test if ascent was built with vtkm support
+  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  {
+      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      return;
+  }
+
+  conduit::Node data;
+  conduit::blueprint::mesh::examples::braid("uniform",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            data);
+
+  const std::string output_path = prepare_output_dir();
+
+  std::string output_image =
+      conduit::utils::join_file_path(output_path, "tout_df_power_of_field");
+
+  conduit::Node actions;
+  conduit::Node &add_pipelines = actions.append();
+  add_pipelines["action"]  = "add_pipelines";
+  conduit::Node &pipelines = add_pipelines["pipelines"];
+
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "power_of_field";
+  // filter knobs
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["output_field"] = "power_braid";
+  params["field"] = "braid";
+  params["exponent"] = 2;
+
+
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  conduit::Node &scenes = add_plots["scenes"];
+
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  //scenes["s1/plots/p1/field"] = "braid";
+  scenes["s1/plots/p1/field"] = "power_braid";
   scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/renders/r1/image_prefix"] = output_image;
 

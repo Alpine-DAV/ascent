@@ -102,6 +102,7 @@ register_builtin()
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
     AscentRuntime::register_filter_type<BlueprintPartition>("transforms","partition");
     AscentRuntime::register_filter_type<AddFields>("transforms","add_fields");
+    AscentRuntime::register_filter_type<PowerOfField>("transforms","power_of_field");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
@@ -140,6 +141,9 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHTriangulate>("transforms","triangulate");
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<VTKHStreamline>("transforms","streamline");
+    AscentRuntime::register_filter_type<VTKHWarpXStreamline>("transforms","warpx_streamline");
+    AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
+
 
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");

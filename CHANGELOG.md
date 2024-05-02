@@ -7,14 +7,19 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased 
 ### Preferred dependency versions for ascent@develop
 - conduit@0.8.8
-- vtk-m@2.0.0
+- vtk-m@2.1.0
 
 ### Added
+- Added `refinement_level` option to Relay Extract. When used this will refine high order meshes to a low order representation and save the low order result as the extract data.
 - Added parameters to control HDF5 compression options to the Relay Extract.
 - Added check to make sure all domain IDs are unique
+- Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
+- Added WarpX Streamline filter that uses charged particles.
+- Added seed population options for particle advection: point, point list, line, and box
 
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
+- Changed the Streamline and WarpXStreamline filters to apply the VTK-m Tube filter to their outputs, allowing for the results to be rendered.
 
 ## [0.9.2] - Released 2023-06-30
 ### Preferred dependency versions for ascent@0.9.2
