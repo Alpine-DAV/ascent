@@ -65,10 +65,10 @@ if(ENABLE_DRAY AND NOT ENABLE_APCOMP)
     message(FATAL_ERROR "Devil Ray requires APComp (ENABLE_APCOMP=OFF and ENABLE_DRAY=ON)")
 endif()
 
-if(ENABLE_CUDA)
-    cmake_minimum_required(VERSION 3.14)
+if (ENABLE_HIP)
+    cmake_minimum_required(VERSION 3.21)
 else()
-    cmake_minimum_required(VERSION 3.9)
+    cmake_minimum_required(VERSION 3.14)
 endif()
 
 if(ENABLE_CUDA)
