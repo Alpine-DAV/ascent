@@ -3374,8 +3374,11 @@ VTKHStats::execute()
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::Statistics stats;
+    stats.SetField(field_name);
+    stats.SetInput(&data);
+    stats.Update();
 
-    vtkh::Statistics::Result res = stats.Run(data, field_name);
+    vtkh::DataSet* res = stats.GetOutput();
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
@@ -3383,7 +3386,7 @@ VTKHStats::execute()
 #endif
     if(rank == 0)
     {
-      res.Print(std::cout);
+      res->PrintSummary(std::cout);
     }
 }
 //-----------------------------------------------------------------------------
