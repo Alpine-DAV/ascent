@@ -18,6 +18,7 @@ set(vtkm_filters_headers
     vtkmMeshQuality.hpp
     vtkmPointAverage.hpp
     vtkmPointTransform.hpp
+    vtkmStatistics.hpp
     vtkmTetrahedralize.hpp
     vtkmTriangulate.hpp
     vtkmThreshold.hpp
@@ -41,6 +42,7 @@ set(vtkm_filters_sources
     vtkmMeshQuality.cpp
     vtkmPointAverage.cpp
     vtkmPointTransform.cpp
+    vtkmStatistics.cpp
     vtkmTetrahedralize.cpp
     vtkmTriangulate.cpp
     vtkmThreshold.cpp
