@@ -3,7 +3,9 @@
 #include <vtkm/filter/entity_extraction/ExtractGeometry.h>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/vtkm_filters/vtkmThreshold.hpp>
+#include <vtkh/vtkm_filters/vtkmExtractGeometry.hpp>
 #include <vtkm/ImplicitFunction.h>
+
 
 
 //---------------------------------------------------------------------------//
@@ -278,10 +280,17 @@ Threshold::DoExecute()
     else
     {
       // use implicit function w/ entity extractor
-      vtkm::filter::entity_extraction::ExtractGeometry extractor;
-      extractor.SetImplicitFunction(m_internals->m_thresh_func);
-      extractor.SetExtractInside(true);
-      auto data_set = extractor.Execute(dom);
+      // vtkm::filter::entity_extraction::ExtractGeometry extractor;
+      // extractor.SetImplicitFunction(m_internals->m_thresh_func);
+      // extractor.SetExtractInside(true);
+      // extractor.SetFieldsToPass(this->GetFieldSelection());
+      // auto data_set = extractor.Execute(dom);
+      // temp_data.AddDomain(data_set, domain_id);
+        vtkmExtractGeometry extractor;
+        auto data_set = extractor.Run(dom,
+                                      m_internals->m_thresh_func,
+                                      "inside",
+                                      this->GetFieldSelection());
       temp_data.AddDomain(data_set, domain_id);
     }
   }

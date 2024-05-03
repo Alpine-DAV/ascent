@@ -9,6 +9,7 @@ set(vtkm_filters_headers
     vtkmClipWithField.hpp
     vtkmCompositeVector.hpp
     vtkmExtractStructured.hpp
+    vtkmExtractGeometry.hpp
     vtkmGhostCellRemove.hpp
     vtkmGradient.hpp
     vtkmHistogram.hpp
@@ -32,6 +33,7 @@ set(vtkm_filters_sources
     vtkmClipWithField.cpp
     vtkmCompositeVector.cpp
     vtkmExtractStructured.cpp
+    vtkmExtractGeometry.cpp
     vtkmGhostCellRemove.cpp
     vtkmGradient.cpp
     vtkmHistogram.cpp

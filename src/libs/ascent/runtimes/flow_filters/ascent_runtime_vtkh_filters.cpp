@@ -1249,7 +1249,7 @@ VTKHThreshold::verify_params(const conduit::Node &params,
 
     if(!type_present)
     {
-        info["errors"].append() = "Missing required parameter. Threshold must specify a 'field', 'sphere', 'cylinder', 'box', or 'plane'";
+        info["errors"].append() = "Missing required parameter. Threshold must specify 'field', 'sphere', 'cylinder', 'box', or 'plane'";
         res = false;
     }
     else
