@@ -3,7 +3,6 @@
 #include <vtkm/filter/entity_extraction/ExtractGeometry.h>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/vtkm_filters/vtkmThreshold.hpp>
-#include <vtkh/vtkm_filters/vtkmExtractGeometry.hpp>
 #include <vtkm/ImplicitFunction.h>
 
 
