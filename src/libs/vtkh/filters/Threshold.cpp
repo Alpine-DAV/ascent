@@ -1,10 +1,9 @@
 #include "Threshold.hpp"
 #include <vtkh/Error.hpp>
+#include <vtkm/filter/entity_extraction/Threshold.h>
 #include <vtkm/filter/entity_extraction/ExtractGeometry.h>
 #include <vtkh/filters/CleanGrid.hpp>
-#include <vtkh/vtkm_filters/vtkmThreshold.hpp>
 #include <vtkm/ImplicitFunction.h>
-
 
 
 //---------------------------------------------------------------------------//
@@ -287,27 +286,36 @@ Threshold::DoExecute()
         continue;
       }
 
-      vtkmThreshold thresholder;
+      vtkm::filter::entity_extraction::Threshold thresholder;
+      
+      if(m_internals->m_invert)
+      {
+        thresholder.SetInvert(true);
+      }
+      else
+      {
+        thresholder.SetInvert(false);
+      }
 
-      auto data_set = thresholder.Run(dom,
-                                      m_internals->m_field_name,
-                                      m_internals->m_field_range.Min,
-                                      m_internals->m_field_range.Max,
-                                      this->GetFieldSelection(),
-                                      m_internals->m_return_all_in_range);
+      thresholder.SetAllInRange(m_internals->m_return_all_in_range);
+      thresholder.SetUpperThreshold(m_internals->m_field_range.Max);
+      thresholder.SetLowerThreshold(m_internals->m_field_range.Min);
+      thresholder.SetActiveField(m_internals->m_field_name);
+      thresholder.SetFieldsToPass(this->GetFieldSelection());
+      auto data_set = thresholder.Execute(dom);
       temp_data.AddDomain(data_set, domain_id);
     }
     else
     {
       // use implicit function w/ entity extractor
       vtkm::filter::entity_extraction::ExtractGeometry extractor;
-      if(!m_internals->m_invert)
+      if(m_internals->m_invert)
       {
-        extractor.SetExtractInside(true);
+        extractor.SetExtractInside(false);
       }
       else
       {
-        extractor.SetExtractInside(false);
+        extractor.SetExtractInside(true);
       }
 
       if(m_internals->m_boundary)
