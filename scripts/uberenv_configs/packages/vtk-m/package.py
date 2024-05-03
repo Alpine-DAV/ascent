@@ -154,7 +154,7 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
     # VTK-m PR #3215
     # https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3215
-    patch("2024_05_03_vtkm-mr3215-ext-geom-fix", when="@2.1:")
+    patch("2024_05_03_vtkm-mr3215-ext-geom-fix.patch", when="@2.1:")
 
     # VTK-M PR#2972
     # https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/2972
