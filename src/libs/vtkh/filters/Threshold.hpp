@@ -28,6 +28,14 @@ public:
   void SetFieldLowerThreshold(const double &value);
   void SetField(const std::string &field_name);
 
+  // threshold by implicit function
+
+  // invert
+  void SetInvertThreshold(bool invert);
+
+  // boundary
+  void SetBoundaryThreshold(bool boundary);
+
   // threshold by box
   void SetBoxThreshold(const vtkm::Bounds &box_bounds);
 
@@ -43,6 +51,8 @@ public:
   // threshold by Sphere
   void SetSphereThreshold(const double sphere_center[3],
                           const double sphere_radius);
+
+
 
 protected:
   void PreExecute()  override;

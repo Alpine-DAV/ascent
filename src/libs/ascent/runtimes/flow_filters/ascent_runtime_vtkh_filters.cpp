@@ -1318,22 +1318,10 @@ VTKHThreshold::verify_params(const conduit::Node &params,
     res = check_numeric("min_value",params, info, false, true) && res;
     res = check_numeric("max_value",params, info, false, true) && res;
 
-    // if provided, extract must be "inner", "outer", "boundary"
-    res = check_string("extract",params, info, false) && res;
-    if(params.has_child("extract"))
-    {
-        std::string ext_mode = params["extract"].as_string();
-        if( (ext_mode != "inner") &&
-            (ext_mode != "outer") &&
-            (ext_mode != "boundary") )
-        {
-            std::string msg = "parameter `extract` must be one of `inner`, `outer`, or `boundary`";
-            info["errors"].append() = msg;
-            res = false;
-        }
-    }
+    res = check_string("invert",params, info, false) && res;
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("invert");
     valid_paths.push_back("field");
     valid_paths.push_back("min_value");
     valid_paths.push_back("max_value");
@@ -1450,6 +1438,15 @@ VTKHThreshold::execute()
     vtkh::Threshold thresher;
     thresher.SetInput(&data);
 
+    if(params().has_child("invert"))
+    {
+      std::string invert = params()["invert"].as_string();
+      if(invert == "true")
+      {
+        thresher.SetInvertThreshold(true);
+      }
+    }
+
     // field case
     if(params().has_child("field"))
     {
@@ -1540,25 +1537,6 @@ VTKHThreshold::execute()
         //   clipper.Set2PlaneClip(point1, normal1, point2, normal2);
         // }
 
-        // default extract mode is inner
-        std::string extract_mode = "inner";
-        if(params().has_child("extract"))
-        {
-            extract_mode = params()["extract"].as_string();
-            if(extract_mode == "inner")
-            {
-                // TODO
-            }
-            else if(extract_mode == "outer")
-            {
-                // TODO
-            }
-            else if(extract_mode == "boundary")
-            {
-                // TODO
-            }
-            // else wont happen b/c we validated these options in param check
-        }
     }
     
     thresher.Update();

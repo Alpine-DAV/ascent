@@ -31,17 +31,20 @@ Threshold::Internals
 
   int  m_mode;
   bool m_return_all_in_range;
+  bool m_invert;
+  bool m_boundary;
 
   // field case
   vtkm::Range m_field_range;
   std::string m_field_name;
 
-  // other cases
   vtkm::ImplicitFunctionGeneral m_thresh_func;
 
   Internals():
   m_mode(Threshold::Internals::Mode::UNKNOWN),
-  m_return_all_in_range(false)
+  m_return_all_in_range(false),
+  m_invert(false),
+  m_boundary(false)
   {}
 };
 
@@ -124,8 +127,26 @@ Threshold::SetField(const std::string &field_name)
 }
 
 //---------------------------------------------------------------------------//
-// inside/outside/boundary
+// invert/boundary
 //---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// invert
+//---------------------------------------------------------------------------//
+void
+Threshold::SetInvertThreshold(bool invert)
+{
+  m_internals->m_invert = invert;
+}
+
+//---------------------------------------------------------------------------//
+// boundary
+//---------------------------------------------------------------------------//
+void
+Threshold::SetBoundaryThreshold(bool boundary)
+{
+  m_internals->m_boundary = boundary;
+}
 
 
 //---------------------------------------------------------------------------//
@@ -280,17 +301,28 @@ Threshold::DoExecute()
     else
     {
       // use implicit function w/ entity extractor
-      // vtkm::filter::entity_extraction::ExtractGeometry extractor;
-      // extractor.SetImplicitFunction(m_internals->m_thresh_func);
-      // extractor.SetExtractInside(true);
-      // extractor.SetFieldsToPass(this->GetFieldSelection());
-      // auto data_set = extractor.Execute(dom);
-      // temp_data.AddDomain(data_set, domain_id);
-        vtkmExtractGeometry extractor;
-        auto data_set = extractor.Run(dom,
-                                      m_internals->m_thresh_func,
-                                      "inside",
-                                      this->GetFieldSelection());
+      vtkm::filter::entity_extraction::ExtractGeometry extractor;
+      if(!m_internals->m_invert)
+      {
+        extractor.SetExtractInside(true);
+      }
+      else
+      {
+        extractor.SetExtractInside(false);
+      }
+
+      if(m_internals->m_boundary)
+      {
+        extractor.SetExtractBoundaryCells(true);
+      }
+      else
+      {
+        extractor.SetExtractBoundaryCells(false);
+      }
+
+      extractor.SetImplicitFunction(m_internals->m_thresh_func);
+      extractor.SetFieldsToPass(this->GetFieldSelection());
+      auto data_set = extractor.Execute(dom);
       temp_data.AddDomain(data_set, domain_id);
     }
   }

@@ -461,7 +461,7 @@ TEST(ascent_clip, test_clip_box)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example a blox clip";
+    std::string msg = "An example of a box clip";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
