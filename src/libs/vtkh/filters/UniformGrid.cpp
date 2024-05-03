@@ -594,14 +594,19 @@ class LocalReduceField
 {
   vtkm::cont::DataSet &m_dataset;
   vtkm::cont::Field   &m_field;
+  vtkm::cont::Field   &m_mask;
   const std::string   m_field_name;
+  vtkm::Float64       m_invalid_value;
 
 public:
-  LocalReduceField(vtkm::cont::DataSet &dataset, vtkm::cont::Field &field, const std::string &field_name)
+  LocalReduceField(vtkm::cont::DataSet &dataset, vtkm::cont::Field &field, vtkm::cont::Field &mask, const std::string &field_name, vtkm::Float64 invalid_value)
     : m_dataset(dataset),
       m_field(field),
-      m_field_name(field_name)
+      m_mask(mask),
+      m_field_name(field_name),
+      m_invalid_value(invalid_value)
   {}
+
   ~LocalReduceField()
   {}
 
@@ -610,19 +615,28 @@ public:
     vtkm::cont::UnknownArrayHandle uah_field = m_field.GetData();
     vtkm::cont::UnknownArrayHandle uah_local_field = m_dataset.GetField(m_field_name).GetData();
 
-    vtkm::cont::ArrayHandle<vtkm::Float32> ah_mask;
-    m_dataset.GetField("mask").GetData().AsArrayHandle(ah_mask);
-    auto mask_portal = ah_mask.ReadPortal();
-    int num_points = mask_portal.GetNumberOfValues();
-    //Todo: NUM POINTS needs to be based on dims
-    //Todo: determine if field point or cell
-    //Todo: check if all ranks have field? 
+    vtkm::cont::ArrayHandle<vtkm::Float32> tmp_mask;
+    m_mask.GetData().AsArrayHandle(tmp_mask);
+
+    vtkm::cont::ArrayHandle<vtkm::Float32> local_mask;
+    m_dataset.GetField("mask").GetData().AsArrayHandle(local_mask);
+
+    auto tmp_mask_portal = tmp_mask.ReadPortal();
+    auto r_local_mask_portal = local_mask.ReadPortal();
+    auto w_local_mask_portal = local_mask.WritePortal();
+    
+    int num_points = tmp_mask_portal.GetNumberOfValues();
 
     //create invalid mask where true == invalid
+    std::cerr << "HJERERERERERER" << std::endl;
+    std::cerr << "tmp mask: " << std::endl;
     std::vector<int> l_mask(num_points,1);
     for(int j = 0; j < num_points; ++j)
     {
-      l_mask[j] = l_mask[j] && mask_portal.Get(j);
+	    std::cerr << tmp_mask_portal.Get(j) << " " << std::endl;
+      l_mask[j] = l_mask[j] && tmp_mask_portal.Get(j) && r_local_mask_portal.Get(j);
+      if(l_mask[j] != r_local_mask_portal.Get(j))
+        w_local_mask_portal.Set(j,l_mask[j]);
     }
 
     if(uah_field.CanConvert<scalarI>())
@@ -635,12 +649,17 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if(l_mask[i] != 1)
+        if((l_mask[i]) != 1 && (tmp_field[i] != m_invalid_value))
         {
+	  if(local_field[i] == m_invalid_value)
+	  {
+            local_field[i] = tmp_field[i];
+            local_data.WritePortal().Set(i,tmp_field[i]);
+	  }
           //point present from previous domain
 	  //if not equal, take their average
 	  //TODO: User can decide how ties are broken
-          if(local_field[i] != tmp_field[i])
+	  else if(local_field[i] != tmp_field[i])
 	  {
             int avg = (int)(local_field[i] + tmp_field[i])/2;
             local_data.WritePortal().Set(i,avg);
@@ -658,12 +677,17 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if(l_mask[i] != 1)
+        if((l_mask[i] != 1) && (tmp_field[i] != m_invalid_value))
         {
-          //pofloat present from previous domain
+	  if(local_field[i] == m_invalid_value)
+	  {
+            local_field[i] = tmp_field[i];
+            local_data.WritePortal().Set(i,tmp_field[i]);
+	  }
+          //points present from previous domain
 	  //if not equal, take their average
 	  //TODO: User can decide how ties are broken
-          if(local_field[i] != tmp_field[i])
+	  else if(local_field[i] != tmp_field[i])
 	  {
             float avg = (float)(local_field[i] + tmp_field[i])/2;
             local_data.WritePortal().Set(i,avg);
@@ -681,12 +705,17 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if(l_mask[i] != 1)
+        if((l_mask[i] != 1) && (tmp_field[i] != m_invalid_value))
         {
+	  if(local_field[i] == m_invalid_value)
+	  {
+            local_field[i] = tmp_field[i];
+            local_data.WritePortal().Set(i,tmp_field[i]);
+	  }
           //podouble present from previous domain
 	  //if not equal, take their average
 	  //TODO: User can decide how ties are broken
-          if(local_field[i] != tmp_field[i])
+	  else if(local_field[i] != tmp_field[i])
 	  {
             double avg = (double)(local_field[i] + tmp_field[i])/2;
             local_data.WritePortal().Set(i,avg);
@@ -702,16 +731,23 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if(l_mask[i] != 1)
+        float tmp_x = tmp_data.ReadPortal().Get(i)[0];
+        float tmp_y = tmp_data.ReadPortal().Get(i)[1];
+        float local_x = local_data.ReadPortal().Get(i)[0];
+        float local_y = local_data.ReadPortal().Get(i)[1];
+        if((l_mask[i] != 1) && (tmp_x != m_invalid_value) && (tmp_y != m_invalid_value))
         {
           //pofloat present from previous domain
 	  //if not equal, take their average
 	  //TODO: User can decide how ties are broken
-          float tmp_x = tmp_data.ReadPortal().Get(i)[0];
-          float tmp_y = tmp_data.ReadPortal().Get(i)[1];
-          float local_x = local_data.ReadPortal().Get(i)[0];
-          float local_y = local_data.ReadPortal().Get(i)[1];
-          if((local_x != tmp_x) || (local_y != tmp_y))
+	  if((local_x == m_invalid_value) || (local_y == m_invalid_value))
+	  {
+            local_x = tmp_x;
+            local_y = tmp_y;
+            vtkm::Vec<vtkm::Float32,2> vec = vtkm::make_Vec(local_x,local_y);
+            local_data.WritePortal().Set(i,vec);
+	  }
+	  else if((local_x != tmp_x) || (local_y != tmp_y))
 	  {
             float avg_x = (float)(local_x + tmp_x)/2;
             float avg_y = (float)(local_y + tmp_y)/2;
@@ -729,16 +765,23 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if(l_mask[i] != 1)
+        double tmp_x = tmp_data.ReadPortal().Get(i)[0];
+        double tmp_y = tmp_data.ReadPortal().Get(i)[1];
+        double local_x = local_data.ReadPortal().Get(i)[0];
+        double local_y = local_data.ReadPortal().Get(i)[1];
+        if((l_mask[i] != 1) && (tmp_x != m_invalid_value) && (tmp_y != m_invalid_value))
         {
           //points present from previous domain
 	  //if not equal, take their average
 	  //TODO: User can decide how ties are broken
-          double tmp_x = tmp_data.ReadPortal().Get(i)[0];
-          double tmp_y = tmp_data.ReadPortal().Get(i)[1];
-          double local_x = local_data.ReadPortal().Get(i)[0];
-          double local_y = local_data.ReadPortal().Get(i)[1];
-          if((local_x != tmp_x) || (local_y != tmp_y))
+	  if((local_x == m_invalid_value) || (local_y == m_invalid_value))
+	  {
+            local_x = tmp_x;
+            local_y = tmp_y;
+            vtkm::Vec<vtkm::Float64,2> vec = vtkm::make_Vec(local_x,local_y);
+            local_data.WritePortal().Set(i,vec);
+	  }
+	  else if((local_x != tmp_x) || (local_y != tmp_y))
 	  {
             double avg_x = (double)(local_x + tmp_x)/2;
             double avg_y = (double)(local_y + tmp_y)/2;
@@ -756,18 +799,29 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if(l_mask[i] != 1)
+        float tmp_x = tmp_data.ReadPortal().Get(i)[0];
+        float tmp_y = tmp_data.ReadPortal().Get(i)[1];
+        float tmp_z = tmp_data.ReadPortal().Get(i)[2];
+        float local_x = local_data.ReadPortal().Get(i)[0];
+        float local_y = local_data.ReadPortal().Get(i)[1];
+        float local_z = local_data.ReadPortal().Get(i)[2];
+        if((l_mask[i] != 1) && 
+          (tmp_x != m_invalid_value) && 
+	  (tmp_y != m_invalid_value) && 
+	  (tmp_z != m_invalid_value))
         {
           //pofloat present from previous domain
 	  //if not equal, take their average
 	  //TODO: User can decide how ties are broken
-          float tmp_x = tmp_data.ReadPortal().Get(i)[0];
-          float tmp_y = tmp_data.ReadPortal().Get(i)[1];
-          float tmp_z = tmp_data.ReadPortal().Get(i)[2];
-          float local_x = local_data.ReadPortal().Get(i)[0];
-          float local_y = local_data.ReadPortal().Get(i)[1];
-          float local_z = local_data.ReadPortal().Get(i)[2];
-          if((local_x != tmp_x) || (local_y != tmp_y))
+	  if((local_x == m_invalid_value) || (local_y == m_invalid_value) || (local_z == m_invalid_value))
+	  {
+            local_x = tmp_x;
+            local_y = tmp_y;
+            local_z = tmp_z;
+            vtkm::Vec<vtkm::Float32,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
+            local_data.WritePortal().Set(i,vec);
+	  }
+	  else if((local_x != tmp_x) || (local_y != tmp_y))
 	  {
             float avg_x = (float)(local_x + tmp_x)/2;
             float avg_y = (float)(local_y + tmp_y)/2;
@@ -786,17 +840,28 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if(l_mask[i] != 1)
+        double tmp_x = tmp_data.ReadPortal().Get(i)[0];
+        double tmp_y = tmp_data.ReadPortal().Get(i)[1];
+        double tmp_z = tmp_data.ReadPortal().Get(i)[2];
+        double local_x = local_data.ReadPortal().Get(i)[0];
+        double local_y = local_data.ReadPortal().Get(i)[1];
+        double local_z = local_data.ReadPortal().Get(i)[2];
+        if((l_mask[i] != 1) && 
+          (tmp_x != m_invalid_value) && 
+	  (tmp_y != m_invalid_value) && 
+	  (tmp_z != m_invalid_value))
         {
           //podouble present from previous domain
 	  //if not equal, take their average
 	  //TODO: User can decide how ties are broken
-          double tmp_x = tmp_data.ReadPortal().Get(i)[0];
-          double tmp_y = tmp_data.ReadPortal().Get(i)[1];
-          double tmp_z = tmp_data.ReadPortal().Get(i)[2];
-          double local_x = local_data.ReadPortal().Get(i)[0];
-          double local_y = local_data.ReadPortal().Get(i)[1];
-          double local_z = local_data.ReadPortal().Get(i)[2];
+	  if((local_x == m_invalid_value) || (local_y == m_invalid_value) || (local_z == m_invalid_value))
+	  {
+            local_x = tmp_x;
+            local_y = tmp_y;
+            local_z = tmp_z;
+            vtkm::Vec<vtkm::Float64,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
+            local_data.WritePortal().Set(i,vec);
+	  }
           if((local_x != tmp_x) || (local_y != tmp_y))
 	  {
             double avg_x = (double)(local_x + tmp_x)/2;
@@ -944,7 +1009,9 @@ UniformGrid::DoExecute()
       }
       else
       {
-        vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field, m_field);
+	vtkm::cont::Field tmp_mask = dataset.GetField("mask");
+        vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field,tmp_mask, m_field, m_invalid_value);
+	localreducefield.LocalReduce();
       }
     }
   }
