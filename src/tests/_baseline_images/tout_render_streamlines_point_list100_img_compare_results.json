@@ -1,0 +1,13 @@
+
+{
+  "test_file": 
+  {
+    "path": "/home/user/ascent/build/tests/_output/tout_render_streamlines_point_list100.png",
+    "exists": "true"
+  },
+  "baseline_file": 
+  {
+    "path": "/home/user/ascent/src/tests/_baseline_images/tout_render_streamlines_point_list100.png",
+    "exists": "false"
+  }
+}

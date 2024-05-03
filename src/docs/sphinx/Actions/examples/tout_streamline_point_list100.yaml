@@ -1,0 +1,35 @@
+#An example of using the streamline flow filter.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "streamline"
+        params: 
+          field: "vel"
+          num_steps: 100
+          step_size: 0.01
+          seeds: 
+            type: "point_list"
+            location: [-0.826997, -5.62082, 3.57729, 0.388328, -9.30856, 0.594004, -8.66316, 3.73545, 8.60873, 3.07838, 4.02381, 5.24396, -3.43532, 5.12821, -2.69323, 5.06712, -8.54628, 7.69414, -0.445364, -4.50186, -6.66986, -8.78871, 0.0904583, -3.61934, -8.18534, -8.52502, -2.31716, -0.711083, -8.99832, 5.40409, 3.76911, 2.59087, 4.50824, -3.87356, 0.265474, 6.91963, -1.69211, -0.641653, -6.43345, -9.33892, -0.0303976, 4.96585, 6.84079, -5.74497, -7.39145, -1.71413, 4.19639, -5.20178, 3.04117, 3.62692, -2.24549, 6.91151, 9.10818, -7.03697, 1.29797, -0.229709, 9.2219, 2.58538, 3.02507, 6.06146]
+          rendering: 
+            enable_tubes: "true"
+            tube_capping: "false"
+            tube_size: 0.4
+            tube_sides: 4
+            tube_value: 0.0
+            output_field: "lines"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "lines"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/home/user/ascent/build/tests/_output/tout_render_streamlines_point_list"
+          dataset_bounds: [-10.0, 10.0, -10.0, 10.0, -10.0, 10.0]

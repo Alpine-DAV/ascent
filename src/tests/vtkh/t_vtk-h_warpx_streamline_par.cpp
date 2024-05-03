@@ -20,7 +20,7 @@
 #include <vtkm/cont/CellSetSingleType.h>
 #include "t_vtkm_test_utils.hpp"
 #include <iostream>
-
+#include <mpi.h>
 
 void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
 {
@@ -47,14 +47,14 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
   }
 }
 
-void writeDataSet(vtkh::DataSet *data, std::string fName)
+void writeDataSet(vtkh::DataSet *data, std::string fName, int rank)
 {
   int numDomains = data->GetNumberOfDomains();
   std::cerr << "num domains " << numDomains << std::endl;
   for(int i = 0; i < numDomains; i++)
   {
     char fileNm[128];
-    sprintf(fileNm, "%s.domain%d.vtk", fName.c_str(), i);
+    sprintf(fileNm, "%s.rank%d.domain%d.vtk", fName.c_str(), rank, i);
     vtkm::io::VTKDataSetWriter write(fileNm);
     write.WriteDataSet(data->GetDomain(i));
   }
@@ -106,24 +106,30 @@ RunWFilter(vtkh::DataSet& input,
   filter.SetNumberOfSteps(maxAdvSteps);
   filter.SetStepSize(stepSize);
   //warpxstreamline will make its own seeds
-  filter.SetTubeSize(0.00000007);
+  filter.SetTubeSize(0.1);
   filter.SetTubeCapping(true);
   filter.SetTubeValue(1.0);
-  filter.SetTubeSides(3);
+  filter.SetTubeSides(2);
   filter.SetOutputField(output_field);
   filter.Update();
 
   return filter.GetOutput();
 }
 //----------------------------------------------------------------------------
-TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
+TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
 {
 #ifdef VTKM_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   const int maxAdvSteps = 1000;
 
-  std::cout << "Running serial WarpX Charged Particle Advection" << std::endl;
+  MPI_Init(NULL, NULL);
+  int comm_size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  vtkh::SetMPICommHandle(MPI_Comm_c2f(MPI_COMM_WORLD));
+
+  std::cout << "Running parallel WarpX Charged Particle Advection, vtkh - with " << comm_size << " ranks" << std::endl;
 
   vtkh::DataSet warpx_data_set;
   
@@ -163,7 +169,7 @@ TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
   outWSL->PrintSummary(std::cerr);
 
   checkValidity(outWSL, maxAdvSteps+1, true);
-  writeDataSet(outWSL, "warpx_streamline");
+  writeDataSet(outWSL, "warpx_streamline", rank);
 //  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
 //
 //  vtkm::rendering::Camera camera;
@@ -173,16 +179,17 @@ TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
 //                                         512,
 //                                         camera,
 //                                         *outWSL,
-//                                         "tout_warpx_render");
+//                                         "tout_warpx_streamline_render");
 //
 //  vtkh::RayTracer tracer;
 //  tracer.SetInput(outWSL);
 //  tracer.SetField("streamlines");
-//  std::string fieldName = "streamlines";
 //
 //  vtkh::Scene scene;
 //  scene.AddRender(render);
 //  scene.AddRenderer(&tracer);
 //  scene.Render();
-//
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
 }

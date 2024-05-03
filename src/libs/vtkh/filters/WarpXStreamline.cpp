@@ -1,15 +1,26 @@
 #include <iostream>
-#include <vtkh/filters/WarpXStreamline.hpp>
-#include <vtkm/filter/flow/WarpXStreamline.h>
-#include <vtkm/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
+#include <vtkh/filters/WarpXStreamline.hpp>
+#include <vtkh/filters/PointTransform.hpp>
+#include <vtkm/filter/flow/WarpXStreamline.h>
+#include <vtkm/cont/EnvironmentTracker.h>
+#include <vtkm/filter/geometry_refinement/Tube.h>
 
 #if VTKH_PARALLEL
 #include <vtkm/thirdparty/diy/diy.h>
 #include <vtkm/thirdparty/diy/mpi-cast.h>
 #include <mpi.h>
 #endif
+
+
+#include <vtkm/rendering/Actor.h>
+#include <vtkm/rendering/CanvasRayTracer.h>
+#include <vtkm/rendering/MapperWireframer.h>
+#include <vtkm/rendering/MapperRayTracer.h>
+#include <vtkm/rendering/Scene.h>
+#include <vtkm/rendering/View3D.h>
+
 
 
 namespace vtkh
@@ -55,7 +66,13 @@ WarpXStreamline::WarpXStreamline()
 	m_charge_field_name("Charge"), 
 	m_mass_field_name("Mass"),
 	m_momentum_field_name("Momentum"), 
-	m_weighting_field_name("Weighting")
+	m_weighting_field_name("Weighting"),
+	m_tubes(false),
+	m_radius_set(false),
+	m_tube_sides(3.0),
+	m_tube_capping(true),
+	m_tube_value(0.0),
+	m_output_field_name("E_B_streamlines")
 {
 	
 }
@@ -176,11 +193,61 @@ void WarpXStreamline::DoExecute()
   warpxStreamlineFilter.SetSeeds(seeds);
   warpxStreamlineFilter.SetNumberOfSteps(m_num_steps);
   auto out = warpxStreamlineFilter.Execute(inputs);
+
+  //std::cerr << "streamline output:" << std::endl;
   //out.PrintSummary(std::cerr);
-  int num_domains = m_output->GetNumberOfDomains();
-  for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+
+  //call tube filter if we want to render output
+  if(m_tubes)
   {
-    this->m_output->AddDomain(out.GetPartition(i), num_domains + i);
+    if(!m_radius_set)
+    {
+      vtkm::Float32 radius = 0.0;
+      vtkm::Bounds coordBounds = out.GetPartition(0).GetCoordinateSystem().GetBounds();
+      // set a default radius
+      vtkm::Float64 lx = coordBounds.X.Length();
+      vtkm::Float64 ly = coordBounds.Y.Length();
+      vtkm::Float64 lz = coordBounds.Z.Length();
+      vtkm::Float64 mag = vtkm::Sqrt(lx * lx + ly * ly + lz * lz);
+      // same as used in vtk ospray
+      constexpr vtkm::Float64 heuristic = 1000.;
+      radius = static_cast<vtkm::Float32>(mag / heuristic);
+      m_tube_size = radius;
+    }
+
+    //if the tubes are too small they cannot be rendered
+    float min_tube_size = 0.00000001;
+    if(m_tube_size < min_tube_size)
+    {
+      int num_domains = out.GetNumberOfPartitions();
+      for (vtkm::Id i = 0; i < num_domains; i++)
+      {
+        this->m_output->AddDomain(out.GetPartition(i), i);
+      }
+      return;
+    }
+
+    vtkm::filter::geometry_refinement::Tube tubeFilter;
+    tubeFilter.SetCapping(m_tube_capping);
+    tubeFilter.SetNumberOfSides(m_tube_sides);
+    tubeFilter.SetRadius(m_tube_size);
+    //std::cerr << "tube size: " << radius << std::endl;
+    auto tubeOut = tubeFilter.Execute(out);
+    
+    int num_domains = tubeOut.GetNumberOfPartitions();
+    for (vtkm::Id i = 0; i < num_domains; i++)
+    {
+      this->m_output->AddDomain(tubeOut.GetPartition(i), i);
+    }
+    this->m_output->AddConstantPointField(m_tube_value, m_output_field_name);
+  }
+  else
+  {
+    int num_domains = out.GetNumberOfPartitions();
+    for (vtkm::Id i = 0; i < num_domains; i++)
+    {
+      this->m_output->AddDomain(out.GetPartition(i), i);
+    }
   }
 #endif
 }
