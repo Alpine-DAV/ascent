@@ -19,6 +19,7 @@ set(vtkm_filters_headers
     vtkmPointAverage.hpp
     vtkmPointTransform.hpp
     vtkmProbe.hpp
+    vtkmStatistics.hpp
     vtkmTetrahedralize.hpp
     vtkmTriangulate.hpp
     vtkmThreshold.hpp
@@ -43,6 +44,7 @@ set(vtkm_filters_sources
     vtkmPointAverage.cpp
     vtkmPointTransform.cpp
     vtkmProbe.cpp
+    vtkmStatistics.cpp
     vtkmTetrahedralize.cpp
     vtkmTriangulate.cpp
     vtkmThreshold.cpp
