@@ -117,6 +117,92 @@ TEST(ascent_threshold, test_threshold_3d)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(ascent_threshold, test_inverted_threshold_3d)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_threshold_inverted_3d");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "threshold";
+    // filter knobs
+    conduit::Node &thresh_params = pipelines["pl1/f1/params"];
+    thresh_params["invert"] = "true";
+    thresh_params["field"] = "braid";
+    thresh_params["min_value"] = -0.2;
+    thresh_params["max_value"] = 0.2;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the threshold filter (inverted).";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+
 //-----------------------------------------------------------------------------
 TEST(ascent_threshold, test_threshold_sphere)
 {
@@ -634,172 +720,6 @@ TEST(ascent_threshold, test_threshold_inverted_box)
     EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of an inverted box threshold";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(ascent_threshold, test_threshold_plane)
-{
-    // the ascent runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
-        return;
-    }
-
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing a Plane Threshold");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_threshold_plane");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-    //
-    // Create the actions.
-    //
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
-    add_pipelines["action"]  = "add_pipelines";
-    conduit::Node &pipelines = add_pipelines["pipelines"];
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    conduit::Node &scenes = add_scenes["scenes"];
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "threshold";
-    // filter knobs
-    conduit::Node &thresh_params = pipelines["pl1/f1/params"];
-    thresh_params["plane/point/x"] = 0.;
-    thresh_params["plane/point/y"] = 0.;
-    thresh_params["plane/point/z"] = 0.;
-    thresh_params["plane/normal/x"] = 1.;
-    thresh_params["plane/normal/y"] = 0.;
-    thresh_params["plane/normal/z"] = 0;
-
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
-
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    ascent.open();
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of a plane threshold defined with a point and a normal";
-    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
-
-}
-
-
-
-//-----------------------------------------------------------------------------
-TEST(ascent_threshold, test_threshold_inverted_plane)
-{
-    // the ascent runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
-        return;
-    }
-
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing a Plane Threshold");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_threshold_inverted_plane");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-    //
-    // Create the actions.
-    //
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines= actions.append();
-    add_pipelines["action"]  = "add_pipelines";
-    conduit::Node &pipelines = add_pipelines["pipelines"];
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    conduit::Node &scenes = add_scenes["scenes"];
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "threshold";
-    // filter knobs
-    conduit::Node &thresh_params = pipelines["pl1/f1/params"];
-    thresh_params["invert"] = "true";
-    thresh_params["plane/point/x"] = 0.;
-    thresh_params["plane/point/y"] = 0.;
-    thresh_params["plane/point/z"] = 0.;
-    thresh_params["plane/normal/x"] = 1.;
-    thresh_params["plane/normal/y"] = 0.;
-    thresh_params["plane/normal/z"] = 0;
-
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "radial";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
-
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    ascent.open();
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of an inverted plane threshold defined with a point and a normal";
-    ASCENT_ACTIONS_DUMP(actions,output_file, msg);
-
 }
 
 
