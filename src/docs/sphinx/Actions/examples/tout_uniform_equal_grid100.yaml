@@ -1,0 +1,24 @@
+#An example of using the uniform grid filter.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          dims: 
+            i: 20
+            j: 20
+            k: 20
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      image_prefix: "/home/user/ascent/build/tests/_output/tout_uniform_equal_grid"

@@ -55,8 +55,8 @@
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
-#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
+#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
@@ -64,6 +64,7 @@
 #include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
+#include <vtkh/filters/UniformGrid.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Streamline.hpp>
@@ -2979,6 +2980,178 @@ VTKHGradient::execute()
     delete grad_output;
     set_output<DataObject>(res);
 }
+//-----------------------------------------------------------------------------
+
+VTKHUniformGrid::VTKHUniformGrid()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHUniformGrid::~VTKHUniformGrid()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHUniformGrid::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_uniform_grid";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHUniformGrid::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+    res &= check_string("field",params, info, true);
+    res &= check_numeric("dims/i",params, info, false);
+    res &= check_numeric("dims/j",params, info, false);
+    res &= check_numeric("dims/k",params, info, false);
+    res &= check_numeric("origin/x",params, info, false);
+    res &= check_numeric("origin/y",params, info, false);
+    res &= check_numeric("origin/z",params, info, false);
+    res &= check_numeric("spacing/dx",params, info, false);
+    res &= check_numeric("spacing/dx",params, info, false);
+    res &= check_numeric("spacing/dy",params, info, false);
+    res &= check_numeric("spacing/dz",params, info, false);
+    res &= check_numeric("invalid_value",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("dims/i");
+    valid_paths.push_back("dims/j");
+    valid_paths.push_back("dims/k");
+    valid_paths.push_back("origin/x");
+    valid_paths.push_back("origin/y");
+    valid_paths.push_back("origin/z");
+    valid_paths.push_back("spacing/dx");
+    valid_paths.push_back("spacing/dy");
+    valid_paths.push_back("spacing/dz");
+    valid_paths.push_back("invalid_value");
+
+    std::string surprises = "";
+    if(params.number_of_children() != 0)
+      surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHUniformGrid::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_uniform_grid input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkm::Bounds d_bounds = data.GetGlobalBounds();
+    vtkm::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
+    vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
+    vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
+
+    std::string field = params()["field"].as_string();
+    vtkm::Float64 invalid_value = 0.0;
+    
+    using Vec3f = vtkm::Vec<vtkm::Float64,3>;
+    Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
+    Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
+    Vec3f v_spacing = {1.,1.,1.};
+
+    if(params().has_path("dims"))
+    {
+      const Node &n_dims = params()["dims"];
+      if(n_dims.has_path("i"))
+        v_dims[0] = get_float64(n_dims["i"], data_object);
+      if(n_dims.has_path("j"))
+        v_dims[1] = get_float64(n_dims["j"], data_object);
+      if(n_dims.has_path("k"))
+        v_dims[2] = get_float64(n_dims["k"], data_object);
+    }
+    if(params().has_path("origin"))
+    {
+      const Node &n_origin = params()["origin"];
+      if(n_origin.has_path("x"))
+        v_origin[0] = get_float64(n_origin["x"], data_object);
+      if(n_origin.has_path("y"))
+        v_origin[1] = get_float64(n_origin["y"], data_object);
+      if(n_origin.has_path("z"))
+        v_origin[2] = get_float64(n_origin["z"], data_object);
+    }
+    if(params().has_path("spacing"))
+    {
+      const Node &n_spacing = params()["spacing"];
+      if(n_spacing.has_path("dx"))
+        v_spacing[0] = get_float64(n_spacing["dx"], data_object);
+      if(n_spacing.has_path("dy"))
+        v_spacing[1] = get_float64(n_spacing["dy"], data_object);
+      if(n_spacing.has_path("dz"))
+        v_spacing[2] = get_float64(n_spacing["dz"], data_object);
+    }
+    if(params().has_path("invalid_value"))
+    {
+      invalid_value = params()["invalid_value"].as_float64();
+    }
+
+    vtkh::UniformGrid grid_probe;
+
+    grid_probe.InvalidValue(invalid_value);
+    grid_probe.Dims(v_dims);
+    grid_probe.Origin(v_origin);
+    grid_probe.Spacing(v_spacing);
+    grid_probe.Field(field);
+    grid_probe.SetInput(&data);
+
+    grid_probe.Update();
+
+    vtkh::DataSet *grid_output = grid_probe.GetOutput();
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*grid_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grid_output;
+    set_output<DataObject>(res);
+}
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 
