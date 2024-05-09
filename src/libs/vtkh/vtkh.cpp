@@ -7,9 +7,14 @@
 #include <vtkm/cont/RuntimeDeviceTracker.h>
 
 
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(KOKKOS_ENABLE_CUDA)
 #include <cuda.h>
 #endif
+
+#ifdef KOKKOS_ENABLE_HIP
+#include <hip.h>
+#endif
+
 
 #include <sstream>
 
@@ -323,7 +328,38 @@ KokkosDeviceCount()
 {
     int device_count = 0;
 #ifdef VTKM_ENABLE_KOKKOS
-    device_count = Kokkos::num_devices();
+    // NEW KOKKOS API makes this easier, use it when we have access
+    // device_count = Kokkos::num_devices();
+
+    #ifdef KOKKOS_ENABLE_HIP
+    // kokkos + hip case
+    {
+        hipError_t res = hipGetDeviceCount(&device_count);
+        if(res != hipSuccess)
+        {
+            std::stringstream msg;
+            msg << "Failed to get HIP device count" << std::endl
+                << "HIP Error Message: "
+                << hipGetErrorString(res);
+            throw Error(msg.str());
+        }
+    }
+    #endif
+
+    #ifdef KOKKOS_ENABLE_CUDA
+        // kokkos + cuda case
+        {
+            cudaError_t res = cudaGetDeviceCount(&device_count);
+            if(res != cudaSuccess)
+            {
+                std::stringstream msg;
+                msg << "Failed to get CUDA device count" << std::endl
+                    << "CUDA Error Message: "
+                    << cudaGetErrorString(res);
+                throw Error(msg.str());
+            }
+        }
+    #endif
 #else
     throw Error("Cannot fetch Kokkos device count: VTK-m lacks Kokkos support");
 #endif
