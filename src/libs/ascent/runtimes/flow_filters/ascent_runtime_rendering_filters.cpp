@@ -1287,7 +1287,7 @@ DefaultRender::execute()
 
             std::string field_name = render_node["auto_camera/field"].as_string();
             std::string metric     = render_node["auto_camera/metric"].as_string();
-            int samples            = render_node["auto_camera/samples"].as_int32();
+            int samples            = render_node["auto_camera/samples"].to_int64();
       
             if(!collection->has_field(field_name))
             {
@@ -1303,17 +1303,17 @@ DefaultRender::execute()
 	    int width  = 1024;
             if(render_node.has_path("auto_camera/bins"))
             {
-              int bins = render_node["auto_camera/bins"].as_int32();
+              int bins = render_node["auto_camera/bins"].to_int64();
               auto_cam.SetNumBins(bins); 
             }
             if(render_node.has_path("auto_camera/height"))
             {
-              height = render_node["auto_camera/height"].as_int32();
+              height = render_node["auto_camera/height"].to_int64();
               auto_cam.SetHeight(height); 
             }
             if(render_node.has_path("auto_camera/width"))
             {
-              width = render_node["auto_camera/width"].as_int32();
+              width = render_node["auto_camera/width"].to_int64();
               auto_cam.SetWidth(width); 
             }
       
