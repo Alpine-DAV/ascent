@@ -15,6 +15,10 @@
 #include <dray/rendering/renderer.hpp>
 #include <dray/io/blueprint_reader.hpp>
 
+int RENDER_WIDTH  = 128;
+int RENDER_HEIGHT = 128;
+
+
 //---------------------------------------------------------------------------//
 bool
 mfem_enabled()
@@ -49,8 +53,8 @@ TEST (dray_isosurface, simple)
   collection = vc.execute(collection);
 
   // Camera
-  const int c_width = 512;
-  const int c_height = 512;
+  const int c_width = RENDER_WIDTH;
+  const int c_height = RENDER_HEIGHT;
   dray::Camera camera;
   camera.set_width (c_width);
   camera.set_height (c_height);
@@ -104,8 +108,8 @@ TEST (dray_isosurface, complex)
   collection = vc.execute(collection);
 
   // Camera
-  const int c_width = 512;
-  const int c_height = 512;
+  const int c_width = RENDER_WIDTH;
+  const int c_height = RENDER_HEIGHT;
   dray::Camera camera;
   camera.set_width (c_width);
   camera.set_height (c_height);
