@@ -26,6 +26,7 @@ namespace vtkh
 
 static int  g_mpi_comm_id = -1;
 static bool g_vtkm_inited = false;
+static bool g_vtkh_inited_kokkos = false;
 
 
 //---------------------------------------------------------------------------//
@@ -317,28 +318,39 @@ InitializeKokkos()
 }
 
 //---------------------------------------------------------------------------//
+int
+KokkosDeviceCount()
+{
+    int device_count = 0;
+#ifdef VTKM_ENABLE_KOKKOS
+    device_count = Kokkos::num_devices();
+#else
+    throw Error("Cannot fetch Kokkos device count: VTK-m lacks Kokkos support");
+#endif
+    return device_count;
+}
+
+
+//---------------------------------------------------------------------------//
 void
 SelectKokkosDevice(int device_index)
 { 
 #ifdef VTKM_ENABLE_KOKKOS
-#ifdef VTKM_KOKKOS_HIP 
-  if(!Kokkos::is_initialized())
-    Kokkos::initialize();
-#endif  
-
-#ifdef VTKM_KOKKOS_CUDA
-  Kokkos::InitArguments pars;
-  pars.device_id = device_index;
-  //TODO:Will this break with CUDA? CUDA is initialized with a specified device
-  //and calling SelectCudaDevice(device_index) 
-  //Is Kokkos smart enough to find this device for us? 
-  //Kokkos::initialize(pars);
-  if(!Kokkos::is_initialized())
-    Kokkos::initialize();
-#endif
-  
-  if(!Kokkos::is_initialized())
-    Kokkos::initialize(); //no backend
+    // if kokkos is not already inited
+    if(!Kokkos::is_initialized())
+    {
+        // only set if we have devices
+        if(KokkosDeviceCount() > 0 )
+        {
+            // TODO: is this newer kokkos api than we are using?
+            Kokkos::InitializationSettings settings;
+            // If Kokkos was built with CUDA or HIP enabled, use the GPU with device ID.
+            settings.set_device_id(device_index);
+        }
+        // init Kokkos
+        Kokkos::initialize();
+        g_vtkh_inited_kokkos = true;
+    }
 #endif
 }
 
