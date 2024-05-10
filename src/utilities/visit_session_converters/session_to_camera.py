@@ -48,9 +48,9 @@ def print_ascent_view_yaml(view):
     ps = view_d["parallelScale"][0]
     va = view_d["viewAngle"][0]
     focus = view_d["focus"]
-    ident = "  "
+    indent = "  "
     print("camera:")
-    pos_str = ident + "position: ["
+    pos_str = indent + "position: ["
     pos_str += str(vn[0] * (ps / math.tan(math.pi * va / 360.0)) + focus[0])
     pos_str += ", "
     pos_str += str(vn[1] * (ps / math.tan(math.pi * va / 360.0)) + focus[1])
@@ -58,10 +58,10 @@ def print_ascent_view_yaml(view):
     pos_str += str(vn[2] * (ps / math.tan(math.pi * va / 360.0)) + focus[2])
     pos_str += "]"
     print(pos_str)
-    print(ident + "look_at: " + str(focus))
-    print(ident + "up: " + str(view_d["viewUp"]))
-    print(ident + "zoom: " + str(view_d["imageZoom"]))
-    print(ident + "fov: " + str(va))
+    print(indent + "look_at: " + str(focus))
+    print(indent + "up: " + str(view_d["viewUp"]))
+    print(indent + "zoom: " + str(view_d["imageZoom"]))
+    print(indent + "fov: " + str(va))
 
 def main():
     if len(sys.argv) != 2:
