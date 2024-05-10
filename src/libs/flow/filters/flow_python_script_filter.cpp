@@ -138,10 +138,10 @@ PyObject* execute_python(PyObject *py_input,
     filter_setup_src_oss.str("");
     filter_setup_src_oss << "def flow_setup_module(name):\n"
                          << "    import sys\n"
-                         << "    import imp\n"
+                         << "    import types\n"
                          << "    if name in sys.modules.keys():\n"
                          << "       return sys.modules[name]\n"
-                         << "    mymod = imp.new_module(name)\n"
+                         << "    mymod = types.ModuleType(name)\n"
                          << "    sys.modules[name] = mymod\n"
                          << "    return mymod\n"
                          << "\n"
