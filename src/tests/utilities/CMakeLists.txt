@@ -11,7 +11,7 @@
 
 if(PYTHON_FOUND AND ENABLE_PYTHON)
     message(STATUS "Adding ascent utility tests")
-    add_python_test(t_python_visit_session_convert)
+    add_python_test(t_python_visit_session_converts)
 else()
     message(STATUS "Python disabled: Skipping ascent python utility tests")
 endif()
