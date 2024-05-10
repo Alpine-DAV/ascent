@@ -15,6 +15,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 
 ### Added
+- Added a uniform grid resampling filter.
 - Added `refinement_level` option to Relay Extract. When used this will refine high order meshes to a low order representation and save the low order result as the extract data.
 - Added parameters to control HDF5 compression options to the Relay Extract.
 - Added check to make sure all domain IDs are unique
@@ -24,12 +25,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added seed population options for particle advection: point, point list, line, and box
 - Added more Ascent tutorial examples
 - Added support for implicit points style Blueprint input meshes
-- Added actions for shell commands and function call backs
+- Added actions for shell commands and simulation code function callbacks
+- Added `box`, `plane`, `cylinder`, and `sphere` options to the Threshold filter, enabling sub selecting a mesh spatially.
 
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
 - Changed the Streamline and WarpXStreamline filters to apply the VTK-m Tube filter to their outputs, allowing for the results to be rendered.
-
+- Updated CMake Python build infrastructure to use 
 
 ### Fixed
 - Various small bug fixes
