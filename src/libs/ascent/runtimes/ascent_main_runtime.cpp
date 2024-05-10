@@ -202,22 +202,11 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 #endif
 
-//What if Kokkos is Serial/OpenMP/TBB w/no backend?
-//Ascent may not be the one in charge of initializing kokkos; ex: Genten(?)
-//Probably should get a flag from VTKh saying it wants Kokkos for VKTm
 #if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VTKM_ENABLED)
-    vtkh::SelectKokkosDevice(1);
-#ifdef VTKM_KOKKOS_HIP
-    vtkh::SelectKokkosDevice(1);
+    int device_count = vtkh::KokkosDeviceCount();
+    int rank_device = m_rank % device_count;
+    vtkh::SelectKokkosDevice(rank_device);
 #endif
-#ifdef VTKM_KOKKOS_CUDA
-    //TODO: Figure out how to get device index for kokkos cuda
-    //int device_count = vtkh::CUDADeviceCount();
-    //int rank_device = m_rank % device_count;
-    vtkh::SelectKokkosDevice(1);
-#endif
-#endif
-
 
 #if defined(ASCENT_UMPIRE_ENABLED)
 //

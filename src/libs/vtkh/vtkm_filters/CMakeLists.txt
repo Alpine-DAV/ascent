@@ -7,6 +7,7 @@ set(vtkm_filters_headers
     vtkmClip.hpp
     vtkmCleanGrid.hpp
     vtkmClipWithField.hpp
+    vtkmCompositeVector.hpp
     vtkmExtractStructured.hpp
     vtkmGhostCellRemove.hpp
     vtkmGradient.hpp
@@ -17,6 +18,8 @@ set(vtkm_filters_headers
     vtkmMeshQuality.hpp
     vtkmPointAverage.hpp
     vtkmPointTransform.hpp
+    vtkmProbe.hpp
+    vtkmStatistics.hpp
     vtkmTetrahedralize.hpp
     vtkmTriangulate.hpp
     vtkmThreshold.hpp
@@ -29,6 +32,7 @@ set(vtkm_filters_sources
     vtkmClip.cpp
     vtkmCleanGrid.cpp
     vtkmClipWithField.cpp
+    vtkmCompositeVector.cpp
     vtkmExtractStructured.cpp
     vtkmGhostCellRemove.cpp
     vtkmGradient.cpp
@@ -39,6 +43,8 @@ set(vtkm_filters_sources
     vtkmMeshQuality.cpp
     vtkmPointAverage.cpp
     vtkmPointTransform.cpp
+    vtkmProbe.cpp
+    vtkmStatistics.cpp
     vtkmTetrahedralize.cpp
     vtkmTriangulate.cpp
     vtkmThreshold.cpp
