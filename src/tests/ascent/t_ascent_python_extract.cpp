@@ -101,7 +101,7 @@ TEST(ascent_runtime, test_python_script_extract_from_file)
 
     conduit::Node extracts;
     extracts["e1/type"]  = "python";
-    extracts["e1/params/file"] = "t_my_test_script2.py";
+    extracts["e1/params/file"] = "t_my_test_script.py";
 
     conduit::Node actions;
     // add the extracts
