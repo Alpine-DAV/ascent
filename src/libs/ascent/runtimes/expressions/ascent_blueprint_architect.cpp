@@ -1485,6 +1485,470 @@ populate_homes(const conduit::Node &dom,
 
 
 void
+update_bin(double *bins,
+           const int i,
+           const double value,
+           const std::string &reduction_op)
+{
+  if(reduction_op == "min")
+  {
+    bins[i] = std::min(bins[i], value);
+  }
+  else if(reduction_op == "max")
+  {
+    bins[i] = std::max(bins[i], value);
+  }
+  else if(reduction_op == "avg" || reduction_op == "sum" ||
+          reduction_op == "pdf")
+  {
+    bins[2 * i] += value;
+    bins[2 * i + 1] += 1;
+  }
+  else if(reduction_op == "rms")
+  {
+    bins[2 * i] += value * value;
+    bins[2 * i + 1] += 1;
+  }
+  else if(reduction_op == "var" || reduction_op == "std")
+  {
+    bins[3 * i] += value * value;
+    bins[3 * i + 1] += value;
+    bins[3 * i + 2] += 1;
+  }
+}
+
+
+void init_bins(double *bins,
+               const int size,
+               const std::string reduction_op)
+{
+  if(reduction_op != "max" && reduction_op != "min")
+  {
+    // already init to 0, so do nothing
+    return;
+  }
+
+  double init_val;
+  if(reduction_op == "max")
+  {
+    init_val = std::numeric_limits<double>::lowest();
+  }
+  else
+  {
+    init_val = std::numeric_limits<double>::max();
+  }
+
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+  for(int i = 0; i < size; ++i)
+  {
+    bins[i] = init_val;
+  }
+
+}
+
+
+//
+// NOTE THERE IS A RAJA VERSION IN ascent_data_binning
+// that we want to supercede this one, it needs more work.
+//
+
+conduit::Node
+binning(const conduit::Node &dataset,
+        conduit::Node &bin_axes,
+        const std::string &reduction_var,
+        const std::string &reduction_op,
+        const double empty_bin_val,
+        const std::string &component)
+{
+  std::vector<std::string> var_names = bin_axes.child_names();
+  if(!reduction_var.empty())
+  {
+    var_names.push_back(reduction_var);
+  }
+  const conduit::Node &topo_and_assoc =
+      global_topo_and_assoc(dataset, var_names);
+  const std::string topo_name = topo_and_assoc["topo_name"].as_string();
+  const std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+
+  const conduit::Node &bounds = global_bounds(dataset, topo_name);
+  const double *min_coords = bounds["min_coords"].value();
+  const double *max_coords = bounds["max_coords"].value();
+  const std::string axes[3][3] = {
+      {"x", "i", "dx"}, {"y", "j", "dy"}, {"z", "k", "dz"}};
+  // populate min_val, max_val, for x,y,z
+  for(int axis_num = 0; axis_num < 3; ++axis_num)
+  {
+    if(bin_axes.has_path(axes[axis_num][0]))
+    {
+      conduit::Node &axis = bin_axes[axes[axis_num][0]];
+
+      if(axis.has_path("bins"))
+      {
+        // rectilinear binning was specified
+        continue;
+      }
+
+      if(min_coords[axis_num] == std::numeric_limits<double>::max())
+      {
+        ASCENT_ERROR("Could not finds bounds for axis: "
+                     << axes[axis_num][0]
+                     << ". It probably doesn't exist in the topology: "
+                     << topo_name);
+      }
+
+      if(!axis.has_path("min_val"))
+      {
+        axis["min_val"] = min_coords[axis_num];
+      }
+
+      if(!axis.has_path("max_val"))
+      {
+        // We add eps because the last bin isn't inclusive
+        double min_val = axis["min_val"].to_float64();
+        double length = max_coords[axis_num] - min_val;
+        double eps = length * 1e-8;
+        axis["max_val"] = max_coords[axis_num] + eps;
+      }
+    }
+  }
+
+  int num_axes = bin_axes.number_of_children();
+
+  // create bins
+  index_t num_bins = 1;
+  for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+  {
+    conduit::Node &axis = bin_axes.child(axis_index);
+    const std::string axis_name = axis.name();
+
+    if(!bin_axes.child(axis_index).has_child("min_val"))
+    {
+      axis["min_val"] = field_min(dataset, axis_name)["value"].to_float64();
+    }
+    if(!axis.has_child("max_val"))
+    {
+      // TODO: FIXME THE BASELINES REQUIRE +1 here, not good.
+      axis["max_val"] = field_max(dataset, axis_name)["value"].to_float64() + 1.0;
+    }
+
+    if(bin_axes.child(axis_index).has_path("num_bins"))
+    {
+      // uniform axis
+      num_bins *= bin_axes.child(axis_index)["num_bins"].to_index_t();
+    }
+    else
+    {
+      // rectilinear axis
+      num_bins *=
+          bin_axes.child(axis_index)["bins"].dtype().number_of_elements() - 1;
+    }
+  }
+  // number of variables held per bin (e.g. sum and cnt for average)
+  int num_bin_vars = 2;
+  if(reduction_op == "var" || reduction_op == "std")
+  {
+    num_bin_vars = 3;
+  }
+  else if(reduction_op == "min" || reduction_op == "max")
+  {
+    num_bin_vars = 1;
+  }
+  const int bins_size = num_bins * num_bin_vars;
+  double *bins = new double[bins_size]();
+  init_bins(bins, bins_size, reduction_op);
+
+  for(int dom_index = 0; dom_index < dataset.number_of_children(); ++dom_index)
+  {
+    const conduit::Node &dom = dataset.child(dom_index);
+    if(!dom.has_path("topologies/"+topo_name))
+    {
+      continue;
+    }
+
+    conduit::Node n_homes;
+    populate_homes(dom, bin_axes, topo_name, assoc_str, n_homes);
+
+    if(n_homes.has_path("error"))
+    {
+      ASCENT_INFO("Binning: not binning domain "
+                  << dom_index << " because field: '"
+                  << n_homes["error/field_name"].to_string()
+                  << "' was not found.");
+      continue;
+    }
+    const int *homes = n_homes.as_int_ptr();
+    const int homes_size = n_homes.dtype().number_of_elements();
+
+    // update bins
+    if(reduction_var.empty())
+    {
+//#ifdef ASCENT_OPENMP_ENABLED
+//#pragma omp parallel for
+//#endif
+      for(int i = 0; i < homes_size; ++i)
+      {
+        if(homes[i] != -1)
+        {
+          update_bin(bins, homes[i], 1, reduction_op);
+        }
+      }
+    }
+    else if(dom.has_path("fields/" + reduction_var))
+    {
+      const std::string comp_path = component == "" ? "" : "/" + component;
+      const std::string values_path
+        = "fields/" + reduction_var + "/values" + comp_path;
+
+      if(dom[values_path].dtype().is_float32())
+      {
+        const conduit::float32_array values = dom[values_path].value();
+//#ifdef ASCENT_OPENMP_ENABLED
+//#pragma omp parallel for
+//#endif
+        for(int i = 0; i < homes_size; ++i)
+        {
+          if(homes[i] != -1)
+          {
+            update_bin(bins, homes[i], values[i], reduction_op);
+          }
+        }
+      }
+      else
+      {
+        const conduit::float64_array values = dom[values_path].value();
+//#ifdef ASCENT_OPENMP_ENABLED
+//#pragma omp parallel for
+//#endif
+        for(int i = 0; i < homes_size; ++i)
+        {
+          if(homes[i] != -1)
+          {
+            update_bin(bins, homes[i], values[i], reduction_op);
+          }
+        }
+      }
+    }
+    else if(is_xyz(reduction_var))
+    {
+      int coord = reduction_var[0] - 'x';
+//#ifdef ASCENT_OPENMP_ENABLED
+//#pragma omp parallel for
+//#endif
+      for(int i = 0; i < homes_size; ++i)
+      {
+        conduit::Node n_loc;
+        if(assoc_str == "vertex")
+        {
+          n_loc = vert_location(dom, i, topo_name);
+        }
+        else if(assoc_str == "element")
+        {
+          n_loc = element_location(dom, i, topo_name);
+        }
+        const double *loc = n_loc.value();
+        if(homes[i] != -1)
+        {
+          update_bin(bins, homes[i], loc[coord], reduction_op);
+        }
+      }
+    }
+    else
+    {
+      ASCENT_INFO("Binning: not binning domain "
+                  << dom_index << " because field: '" << reduction_var
+                  << "' was not found.");
+    }
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  double *global_bins = new double[bins_size];
+  if(reduction_op == "sum" || reduction_op == "pdf" || reduction_op == "avg" ||
+     reduction_op == "std" || reduction_op == "var" || reduction_op == "rms")
+  {
+    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
+  }
+  else if(reduction_op == "min")
+  {
+    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_MIN, mpi_comm);
+  }
+  else if(reduction_op == "max")
+  {
+    MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_MAX, mpi_comm);
+  }
+  delete[] bins;
+  bins = global_bins;
+#endif
+
+
+  conduit::Node res;
+  res["value"].set(conduit::DataType::c_double(num_bins));
+  double *res_bins = res["value"].value();
+  if(reduction_op == "pdf")
+  {
+    double total = 0;
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for reduction(+ : total)
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      total += bins[2 * i];
+    }
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[2 * i + 1] == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[2 * i] / total;
+      }
+    }
+  }
+  else if(reduction_op == "min")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[i] == std::numeric_limits<double>::max())
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[i];
+      }
+    }
+  }
+  else if(reduction_op == "max")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[i] == std::numeric_limits<double>::lowest())
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[i];
+      }
+    }
+
+  }
+  else if(reduction_op == "sum")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      if(bins[2 * i + 1] == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = bins[2 * i];
+      }
+    }
+  }
+  else if(reduction_op == "avg")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      const double sumX = bins[2 * i];
+      const double n = bins[2 * i + 1];
+      if(n == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = sumX / n;
+      }
+    }
+  }
+  else if(reduction_op == "rms")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      const double sumX = bins[2 * i];
+      const double n = bins[2 * i + 1];
+      if(n == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = std::sqrt(sumX / n);
+      }
+    }
+  }
+  else if(reduction_op == "var")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      const double sumX2 = bins[3 * i];
+      const double sumX = bins[3 * i + 1];
+      const double n = bins[3 * i + 2];
+      if(n == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = (sumX2 / n) - std::pow(sumX / n, 2);
+      }
+    }
+  }
+  else if(reduction_op == "std")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      const double sumX2 = bins[3 * i];
+      const double sumX = bins[3 * i + 1];
+      const double n = bins[3 * i + 2];
+      if(n == 0)
+      {
+        res_bins[i] = empty_bin_val;
+      }
+      else
+      {
+        res_bins[i] = std::sqrt((sumX2 / n) - std::pow(sumX / n, 2));
+      }
+    }
+  }
+  res["association"] = assoc_str;
+  delete[] bins;
+  return res;
+}
+
+
+/// TODO MOVE TO ascent_data_binning.cpp
+void
 paint_binning(const conduit::Node &binning,
               conduit::Node &dataset,
               const std::string field_name)
@@ -1574,6 +2038,7 @@ paint_binning(const conduit::Node &binning,
 }
 
 
+/// TODO MOVE TO ascent_data_binning.cpp
 void
 binning_mesh(const conduit::Node &binning,
              conduit::Node &mesh,
@@ -1582,7 +2047,7 @@ binning_mesh(const conduit::Node &binning,
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
 
 
-  std::cout << "Creating binning mesh from " << binning.to_yaml();
+  // std::cout << "Creating binning mesh from " << binning.to_yaml();
 
   if(num_axes > 3)
   {

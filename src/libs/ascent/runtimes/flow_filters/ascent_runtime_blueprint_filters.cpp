@@ -692,6 +692,22 @@ DataBinning::execute()
     expressions::paint_binning(mesh_in, *n_input.get(), output_field);
     set_output<DataObject>(d_output);
   }
+  else if(output_type== "samples")
+  {
+    // create a point mesh that has the sample points and value
+
+    DataObject  *d_output = new DataObject();
+    d_output->reset(n_input);
+    expressions::paint_binning(mesh_in, *n_input.get());
+    set_output<DataObject>(d_output);
+
+    // // we are taking the shared pointer from the input so
+    // // we don't copy anything extra
+    // DataObject  *d_output = new DataObject();
+    // d_output->reset(n_input);
+    // expressions::paint_binning(mesh_in, *n_input.get(), output_field);
+    // set_output<DataObject>(d_output);
+  }
   else
   {
     //we already checked so this should not happen

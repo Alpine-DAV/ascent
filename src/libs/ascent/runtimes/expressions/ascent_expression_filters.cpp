@@ -43,8 +43,11 @@
 #include <dray/queries/lineout.hpp>
 #endif
 
+#include <conduit_relay.hpp>
+
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
+#include "conduit_relay_mpi_io_blueprint.hpp"
 #endif
 
 using namespace conduit;
@@ -794,14 +797,115 @@ void binning_interface(const std::string &reduction_var,
     empty_bin_val = n_empty_bin_val["value"].to_float64();
   }
 
-  std::map<int, Array<int>> bindexes;
-  n_binning = data_binning(dataset,
-                           n_output_axes,
-                           reduction_var,
-                           reduction_op,
-                           empty_bin_val,
-                           component,
-                           bindexes);
+  n_binning = binning(dataset,
+                      n_output_axes,
+                      reduction_var,
+                      reduction_op,
+                      empty_bin_val,
+                      component);
+
+  // // TODO THIS IS THE RAJA VERSION
+  // std::map<int, Array<int>> bindexes;
+  // n_binning = data_binning(dataset,
+  //                          n_output_axes,
+  //                          reduction_var,
+  //                          reduction_op,
+  //                          empty_bin_val,
+  //                          component,
+  //                          bindexes);
+
+
+// TODO: Internal work testing the raja version samples
+// // void data_binning_samples(conduit::Node &dataset,
+// //                           conduit::Node &bin_axes,
+// //                           const std::string &reduction_var,
+// //                           const std::string &reduction_op,
+// //                           const double empty_bin_val,
+// //                           const std::string &component,
+// //                           std::map<int,Array<double> > &points,
+// //                           std::map<int,Array<double> > &values);
+//
+//   std::map<int, Array<double>> sample_points;
+//   std::map<int, Array<double>> sample_values;
+//   data_binning_samples(dataset,
+//                       n_output_axes,
+//                       reduction_var,
+//                       reduction_op,
+//                       empty_bin_val,
+//                       component,
+//                       sample_points,
+//                       sample_values);
+//
+//   Node bp_samples_mesh;
+//
+//   std::cout << " GAH:  points stuff" << std::endl;
+//   for( const auto &pts_items : sample_points )
+//   {
+//      Node &dom = bp_samples_mesh.append();
+//      index_t npts = pts_items.second.size() / 3;
+//      dom["state/domain_id"] = pts_items.first;
+//
+//      dom["coordsets/coords/type"] = "explicit";
+//      dom["coordsets/coords/values/x"].set(DataType::float64(npts));
+//      dom["coordsets/coords/values/y"].set(DataType::float64(npts));
+//      dom["coordsets/coords/values/z"].set(DataType::float64(npts));
+//      dom["topologies/points/coordset"] = "coords";
+//      dom["topologies/points/type"] = "points";
+//
+//      float64_array x_vals = dom["coordsets/coords/values/x"].value();
+//      float64_array y_vals = dom["coordsets/coords/values/y"].value();
+//      float64_array z_vals = dom["coordsets/coords/values/z"].value();
+//      // int idx = 0;
+//      // for(index_t i=0;i<npts;i++)
+//      // {
+//      //   x_vals[i] = pts_items.second.get_value(idx);
+//      //   y_vals[i] = pts_items.second.get_value(idx+1);
+//      //   z_vals[i] = pts_items.second.get_value(idx+2);
+//      //   idx+=3;
+//      // }
+//
+//      int idx = 0;
+//      for(index_t i=0;i<npts;i++)
+//      {
+//        x_vals[i] = pts_items.second.get_value(idx);
+//        idx+=1;
+//      }
+//      for(index_t i=0;i<npts;i++)
+//      {
+//        y_vals[i] = pts_items.second.get_value(idx);
+//        idx+=1;
+//      }
+//      for(index_t i=0;i<npts;i++)
+//      {
+//        z_vals[i] = pts_items.second.get_value(idx);
+//        idx+=1;
+//      }
+//
+//   }
+//
+//   Node opts;
+//   #ifdef ASCENT_MPI_ENABLED
+//     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+//     conduit::relay::mpi::io::blueprint::save_mesh(bp_samples_mesh,
+//                                                 "here_we_go",
+//                                                 "hdf5",
+//                                                 opts,
+//                                                 mpi_comm);
+//   #else
+//     conduit::relay::io::blueprint::save_mesh(bp_samples_mesh,
+//                                                 "here_we_go",
+//                                                 "hdf5",
+//                                                 opts);
+//   #endif
+//
+//
+//   std::cout << " GAH:  vals stuff" << std::endl;
+//   for( const auto &vals_items : sample_values )
+//   {
+//       std::cout << vals_items.first <<  " " << vals_items.second.size() << "\n";
+//
+//   }
+
 
 }
 
@@ -4281,6 +4385,7 @@ ExprMeshBinning::verify_params(const conduit::Node &params, conduit::Node &info)
 void
 ExprMeshBinning::execute()
 {
+  // why isn't this an input?
   DataObject *data_object =
     graph().workspace().registry().fetch<DataObject>("dataset");
 

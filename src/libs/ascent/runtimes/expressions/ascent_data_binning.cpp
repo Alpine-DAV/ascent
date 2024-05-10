@@ -579,15 +579,72 @@ Array<double> cast_field_values(conduit::Node &field, const std::string componen
   return res;
 }
 
+template<typename Exec, typename T>
+void copy_array_values(const Array<T> &src,
+                       const int num_entries,
+                       const int src_offset,
+                       const int src_stride,
+                       Array<T> &dest,
+                       const int des_offset,
+                       const int des_stride,
+                       Exec)
+{
+  using for_policy = typename Exec::for_policy;
+  const std::string mem_space = Exec::memory_space;
+
+  const T *src_ptr = src.get_ptr_const(mem_space);
+  T *dest_ptr = dest.get_ptr(mem_space);
+
+  ascent::forall<for_policy>(0, num_entries, [=] ASCENT_LAMBDA(index_t i)
+  {
+    // std::cout<<"**** bindex idx "<< i <<"\n";
+    // calc location of bin result
+    const int src_index  = i * src_stride + src_offset;
+    const int dest_index = i * des_stride + des_offset;
+    dest_ptr[dest_index] = src_ptr[src_index];
+  });
+  ASCENT_DEVICE_ERROR_CHECK();
+}
+
+// template<typename Exec>
+// void extract_component(const Array<double> &values,
+//                        const int num_components,
+//                        const int component_id,
+//                        Array<double> &component_values,
+//                        Exec)
+// {
+//   const std::string mem_space = Exec::memory_space;
+//   //  the bin extents for given axis
+//   const double *vals_ptr = values.get_ptr_const(mem_space);
+//
+//   const int comp_vals_size = values.size() / num_components;
+//
+//   component_values.resize(comp_vals_size);
+//   array_memset(component_values, 0);
+//
+//   double *comp_vals_ptr = component_values.get_ptr(mem_space);
+//
+//   using for_policy = typename Exec::for_policy;
+//
+//   ascent::forall<for_policy>(0, comp_vals_size, [=] ASCENT_LAMBDA(index_t i)
+//   {
+//     // std::cout<<"**** bindex idx "<< i <<"\n";
+//     // calc location of bin result
+//     const int v_offset = i * num_components + component_id;
+//     comp_vals_ptr[i] = vals_ptr[v_offset];
+//   });
+//   ASCENT_DEVICE_ERROR_CHECK();
+// }
+
 struct BinningFunctor
 {
   // per domain bindexes
   // per domain values
-  std::map<int,Array<int>> &m_bindexes;
+  std::map<int,Array<int>>    &m_bindexes;
   std::map<int,Array<double>> &m_values;
-  Array<double> &m_bins;
-  const std::string m_op;
-  std::vector<int> m_domain_ids;
+  Array<double>               &m_bins;
+  const std::string           m_op;
+  std::vector<int>            m_domain_ids;
 
 
   BinningFunctor() = delete;
@@ -745,6 +802,191 @@ struct BinningFunctor
   }
 };
 
+struct SamplesFunctor
+{
+
+  // inputs:
+  const conduit::Node &m_axes;
+  conduit::Node       &m_dataset;
+  const std::string    m_topo_name;
+  const std::string    m_assoc;
+  const std::string    m_component;
+  const std::string    m_reduction_var;
+
+  // results:
+  int                           m_sample_dims;
+  std::map<int, Array<double> > m_sample_points;
+  std::map<int, Array<double> > m_sample_values;
+
+
+  SamplesFunctor(conduit::Node &dataset,
+                 const conduit::Node &axes,
+                 const std::string topo_name,
+                 const std::string assoc,
+                 const std::string component,
+                 const std::string reduction_var)
+    : m_axes(axes),
+      m_dataset(dataset),
+      m_topo_name(topo_name),
+      m_assoc(assoc),
+      m_component(component),
+      m_reduction_var(reduction_var),
+      m_sample_dims(-1),
+      m_sample_points(),
+      m_sample_values()
+  {}
+
+  template<typename Exec>
+  void operator()(const Exec &)
+  {
+      m_sample_points.clear();
+      m_sample_values.clear();
+
+      const int num_domains = m_dataset.number_of_children();
+      const int num_axes = m_axes.number_of_children();
+
+      // loop over domains
+      for(int dom_index = 0; dom_index < num_domains; ++dom_index)
+      {
+          // ensure this domain has the necessary topo and fields
+          conduit::Node &dom = m_dataset.child(dom_index);
+
+          if(!dom["topologies"].has_child(m_topo_name))
+          {
+            continue;
+          }
+
+          for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+          {
+              const conduit::Node &axis   = m_axes.child(axis_index);
+              const std::string axis_name = axis.name();
+              // skip the axis name is not one of the spatial axes
+              // or if the domain is missing the named field
+              if(!dom.has_path("fields/" + axis_name) && !is_xyz(axis_name))
+              {
+                  continue;
+              }
+          }
+
+        // find the coordset name for the topo
+        std::string coords_name = dom["topologies"][m_topo_name]["coordset"].as_string();
+        // find the coordset dims
+        int coords_dims = conduit::blueprint::mesh::coordset::dims(dom["coordsets"][coords_name]);
+
+        // Calculate the size of homes
+        conduit::index_t num_samples = 0;
+        if(m_assoc== "vertex")
+        {
+            num_samples = num_points(dom, m_topo_name);
+        }
+        else if(m_assoc == "element")
+        {
+            num_samples = num_cells(dom, m_topo_name);
+        }
+
+        // we have the assumption that ascent ensured that there
+        // are in fact domain ids
+
+        const int domain_id = dom["state/domain_id"].to_int();
+
+        // the sample points will be # of samples * num axes
+        m_sample_points[domain_id].resize(num_samples * num_axes);
+
+        // will hold vertex locations or centroids based on the
+        // centering of the reduction variable
+        Array<double> spatial_values;
+
+
+        bool reduction_op_values_found = false;
+        bool do_once = true;
+
+        for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+        {
+            const conduit::Node &axis   = m_axes.child(axis_index);
+            const std::string axis_name = axis.name();
+            // std::cout << "axis index = " <<  axis_index << " " << axis_name << std::endl;
+            // case where bin axis is a field
+            if(dom.has_path("fields/" + axis_name))
+            {
+                Array<double> values;
+                //std::cout<<"**** Casting field to double\n";
+                conduit::Node &field = dom["fields/"+axis_name];
+                values = cast_field_values(field, m_component, Exec());
+
+                copy_array_values(values, // src
+                                  num_samples, // num_entries
+                                  0,      // src offset
+                                  1,      // src stride
+                                  m_sample_points[domain_id], // dest
+                                  num_samples * axis_index, // dest offset
+                                  1, // dest stride
+                                  Exec());
+
+                if(axis_name == m_reduction_var)
+                {
+                    reduction_op_values_found = true;
+                    m_sample_values[domain_id] = values;
+                }
+            }
+            // case where bin axis is one of the spatial axes
+            else // this is a spatial axis
+            {
+                // this is a coordinate axis so we need the spatial information
+                if(do_once)
+                {
+                    do_once = false;
+                    if(m_assoc == "vertex")
+                    {
+                        std::cout<<"**** Getting vertices\n";
+                        spatial_values = vertices(dom, m_topo_name);
+                    }
+                    else
+                    {
+                        std::cout<<"**** Getting centroids\n";
+                        spatial_values = centroids(dom, m_topo_name);
+                        // double *sval_ptr = spatial_values.get_host_ptr();
+                        //std::cout<<"*** spatial values "<<spatial_values.size()<<"\n";
+                    }
+                }
+              //std::cout<<"Spatial axis "<<axis_name<<"\n";
+              int spatial_comp = detail::spatial_component(axis_name);
+
+              // spatial values are interleaved
+              // extract
+              copy_array_values(spatial_values, // src
+                                num_samples,  // num_entries
+                                0,            // src offset
+                                coords_dims,  // src stride
+                                m_sample_points[domain_id], // dest
+                                num_samples * axis_index, // dest offset
+                                1, // dest stride
+                                Exec());
+            }
+        }
+
+        // // we need to extract the values if we haven't already pulled them out
+        // if(!reduction_op_values_found)
+        // {
+        //    // empty reduction var is supported for count and pdf
+        //    if(m_reduction_var != "")
+        //    {
+        //      conduit::Node &field = dom["fields/"+m_reduction_var];
+        //      m_sample_values = cast_field_values(field, m_component, Exec());
+        //    }
+        // }
+
+        // debug
+        // int bsize = bindexes.size();
+        // int *b_ptr = bindexes.get_host_ptr();
+        // for(int i = 0; i < bsize; ++i)
+        // {
+        //   std::cout<<"Index "<<i<<" bin "<<b_ptr[i]<<"\n";
+        // }
+      }
+  }
+  
+};
+
 struct BindexingFunctor
 {
 
@@ -804,6 +1046,7 @@ struct BindexingFunctor
 
       // find the mesh dims
       int coords_dims = conduit::blueprint::mesh::coordset::dims(dom["coordsets"][coords_name]);
+
 
       // Calculate the size of homes
       conduit::index_t homes_size = 0;
@@ -1260,6 +1503,51 @@ conduit::Node data_binning(conduit::Node &dataset,
   //std::cout<<"res "<<res.to_summary_string()<<"\n";
   return res;
 }
+
+
+//-----------------------------------------------------------------------
+ASCENT_API
+void data_binning_samples(conduit::Node &dataset,
+                                   conduit::Node &bin_axes,
+                                   const std::string &reduction_var,
+                                   const std::string &reduction_op,
+                                   const double empty_bin_val,
+                                   const std::string &component,
+                                   std::map<int, Array<double> > &points,
+                                   std::map<int, Array<double> > &values)
+{
+  // bin_axes.print();
+
+  // first verify that all variables have matching associations
+  // and are part of the same topology
+  std::vector<std::string> var_names = bin_axes.child_names();
+  if(!reduction_var.empty())
+  {
+    var_names.push_back(reduction_var);
+  }
+  const conduit::Node &topo_and_assoc =
+      detail::verify_topo_and_assoc(dataset, var_names);
+  const std::string topo_name = topo_and_assoc["topo_name"].as_string();
+  const std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+
+  // expand optional / automatic axes into explicit bins
+  conduit::Node axes = detail::create_bins_axes(bin_axes, dataset, topo_name);
+
+  detail::SamplesFunctor samples(dataset,
+                                 axes,
+                                 topo_name,
+                                 assoc_str,
+                                 component,
+                                 reduction_var);
+  exec_dispatch_function(samples);
+
+  points = samples.m_sample_points;
+  values = samples.m_sample_values;
+  
+  //std::cout<<"res "<<res.to_summary_string()<<"\n";
+  // return res;
+}
+
 
 //-----------------------------------------------------------------------------
 };
