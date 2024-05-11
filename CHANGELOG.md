@@ -26,6 +26,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added more Ascent tutorial examples
 - Added support for implicit points style Blueprint input meshes
 - Added actions for shell commands and simulation code function callbacks
+- Added a `cylinder` option to the clip filter.
 - Added `box`, `plane`, `cylinder`, and `sphere` options to the Threshold filter, enabling sub selecting a mesh spatially.
 
 ### Changed

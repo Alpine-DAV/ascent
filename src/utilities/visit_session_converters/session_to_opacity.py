@@ -1,52 +1,33 @@
+#
+# session_to_opac.py
+#
+
 import xml.etree.ElementTree as ET
 import math
-import yaml
 import sys
 
-if len(sys.argv) != 2:
-  print("Only one agrument expected: visit session file")
-  exit(1)
 
-session_file = str(sys.argv[1])
-
-if 'gui' in session_file:
-  print('Warning: gui detected in session file name. Visit saves two files '
-        'one for the gui and the other one. I need the other one.')
-
-tree = ET.parse(session_file)
-root = tree.getroot()
-
-indent = 0
-
-def printRecur(root):
+def print_tree(node,indent=0):
   """Recursively prints the tree."""
-  global indent
-  print (' '*indent + '%s: %s' % (root.tag.title(), root.attrib.get('name', root.text)))
-  name = str(root.attrib.get('name', root.text))
+  print (' '*indent + '%s: %s' % (node.tag.title(), node.attrib.get('name', node.text)))
+  name = str(node.attrib.get('name', node.text))
   print (' '*indent + '%s' % name)
   indent += 4
-  for elem in root.getchildren():
-      printRecur(elem)
+  for elem in node:
+      print_tree(elem,indent)
   indent -= 4
 
-#printRecur(root)
-
-attr = "VolumeAttributes"
-
-def find_attribute(root, attr_name):
-  name = str(root.attrib.get('name', root.text))
-  if name == attr_name:
-    return root
-  for elem in root:
-    res = find_attribute(elem, attr_name)
+def find_vol_atts(node):
+  name = str(node.attrib.get('name', node.text))
+  if name == "VolumeAttributes":
+    # found it!
+    return node
+  for elem in node:
+    res = find_vol_atts(elem)
     if res is not None:
-      return res
+        return res
 
-node = find_attribute(root, attr)
-print(node)
-if type(node) is None:
-  print("Attribute %s not found" % attr )
-  exit(1)
+def normalize(x): return x/255.0
 
 def get_field(name, node):
   for field in node.iter('Field'):
@@ -59,35 +40,41 @@ def get_field(name, node):
         values.append(float(v))
       return values
 
-field = "freeformOpacity"
-opacity = get_field('freeformOpacity', node)
-def normalize(x): return x/255.0
-opacity = list(map(normalize, opacity))
-positions = []
-for i in range(0, len(opacity)):
-  positions.append(float(i)/float(len(opacity)))
+def print_ascent_opac_yaml(vol_atts):
+    field = "freeformOpacity"
+    opacity = get_field('freeformOpacity', vol_atts)
+    opacity = list(map(normalize, opacity))
+    positions = []
+    for i in range(0, len(opacity)):
+      positions.append(float(i)/float(len(opacity)))
+    indent = "  "
+    print("control_points:")
+    for i in range(0, len(opacity)):
+      print(indent + "-")
+      print(indent + indent + "type: alpha")
+      print(indent + indent + "position: " + str(positions[i]))
+      print(indent + indent + "alpha: " + str(opacity[i]))
 
-ctable = {}
-cpoints = []
-for i in range(0, len(opacity)):
-  cpoint = {}
-  cpoint['type'] = 'alpha'
-  cpoint['position'] = positions[i]
-  cpoint['alpha'] = opacity[i]
-  cpoints.append(cpoint)
+def main():
+    if len(sys.argv) != 2:
+      print("usage: python3 session_to_camera {visit.session}")
+      exit(1)
 
-ctable['control_points'] = cpoints
-print(yaml.dump(ctable, default_flow_style=False))
+    session_file = str(sys.argv[1])
+
+    if 'gui' in session_file:
+      print('Warning: gui detected in session file name. Visit saves two files '
+            'one for the gui and the other one. I need the other one.')
+
+    tree = ET.parse(session_file)
+    root = tree.getroot()
+
+    vol_atts = find_vol_atts(root)
+    if vol_atts is None:
+      print('Warning: failed to find VolumeAttributes entry in {}'.format(session_file))
+    else:
+      print_ascent_opac_yaml(vol_atts)
+
+main()
 
 
-#camera = {}
-#camera["camera"] = {}
-#camera["camera"]["position"] = [0,0,0]
-#camera["camera"]["position"][0] = vn[0] * (ps / math.tan(math.pi * va / 360.0)) + focus[0]
-#camera["camera"]["position"][1] = vn[1] * (ps / math.tan(math.pi * va / 360.0)) + focus[1]
-#camera["camera"]["position"][2] = vn[2] * (ps / math.tan(math.pi * va / 360.0)) + focus[2]
-#camera["camera"]["look_at"] = focus
-#camera["camera"]["up"] = view_d["viewUp"]
-#camera["camera"]["zoom"] = view_d["imageZoom"]
-#camera["camera"]["fov"] = va
-#print(yaml.dump(camera, default_flow_style=None))
