@@ -2072,7 +2072,7 @@ paint_binning(const conduit::Node &binning,
         binning["attrs/reduction_var/value"].as_string();
     if(reduction_var.empty())
     {
-      reduction_var = "cnt";
+      reduction_var = "count";
     }
     std::string fname =
         "painted_" + reduction_var + "_" +
@@ -2159,7 +2159,7 @@ binning_mesh(const conduit::Node &binning,
   std::string reduction_var = binning["attrs/reduction_var/value"].as_string();
   if(reduction_var.empty())
   {
-    reduction_var = "cnt";
+    reduction_var = "count";
   }
   std::string fname =
       reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();

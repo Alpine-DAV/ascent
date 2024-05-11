@@ -4,10 +4,10 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.3] - Released 2024-05-10
+## [0.9.3] - Released 2024-05-11
 ### Preferred dependency versions for ascent@0.9.3
 - conduit@0.9.1
-- vtk-m@2.1.0 (with patch LINK)
+- vtk-m@2.1.0 (requires [patch](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch) )
 - raja@2024.02.1
 - umpire@2024.02.1
 - camp@2024.02.1
