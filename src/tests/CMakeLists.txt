@@ -63,6 +63,10 @@ add_subdirectory("ascent")
 # add ascent performance tests
 add_subdirectory("perf")
 
+# add utils tests
+add_subdirectory("utilities")
+
+
 if(PYTHON_FOUND)
 # if we have python:
 #  add custom command that generates a html img comparison report for our tests
