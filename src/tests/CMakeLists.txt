@@ -75,5 +75,5 @@ if(PYTHON_FOUND)
     add_custom_target(gen_report
                       ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_img_compare_html_report.py
                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                      COMMENT "Generating html summary of image compare tests (tests/_output/tout_img_report.html)")
+                      COMMENT "Generating html summary of image compare tests (tests/_output/index.html)")
 endif()
