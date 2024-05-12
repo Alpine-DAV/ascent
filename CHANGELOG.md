@@ -4,23 +4,38 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased 
-### Preferred dependency versions for ascent@develop
-- conduit@0.8.8
-- vtk-m@2.1.0
+## [0.9.3] - Released 2024-05-11
+### Preferred dependency versions for ascent@0.9.3
+- conduit@0.9.1
+- vtk-m@2.1.0 (requires [patch](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch) )
+- raja@2024.02.1
+- umpire@2024.02.1
+- camp@2024.02.1
+- kokkos@3.7.02
+
 
 ### Added
+- Added a uniform grid resampling filter.
 - Added `refinement_level` option to Relay Extract. When used this will refine high order meshes to a low order representation and save the low order result as the extract data.
 - Added parameters to control HDF5 compression options to the Relay Extract.
 - Added check to make sure all domain IDs are unique
 - Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
+- Added particle advection for streamline and related rendering support.
 - Added WarpX Streamline filter that uses charged particles.
 - Added seed population options for particle advection: point, point list, line, and box
+- Added more Ascent tutorial examples
+- Added support for implicit points style Blueprint input meshes
+- Added actions for shell commands and simulation code function callbacks
 - Added a `cylinder` option to the clip filter.
+- Added `box`, `plane`, `cylinder`, and `sphere` options to the Threshold filter, enabling sub selecting a mesh spatially.
 
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
 - Changed the Streamline and WarpXStreamline filters to apply the VTK-m Tube filter to their outputs, allowing for the results to be rendered.
+- Updated CMake Python build infrastructure to use 
+
+### Fixed
+- Various small bug fixes
 
 ## [0.9.2] - Released 2023-06-30
 ### Preferred dependency versions for ascent@0.9.2
@@ -38,7 +53,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added C++ `Ascent::info()` method that returns a reference to execution info in addition the existing info() method that provides copy out semantics.
 
 
-### Fixed
+
 
 ## [0.9.1] - Released 2023-04-21
 ### Preferred dependency versions for ascent@0.9.1
