@@ -363,6 +363,7 @@ if [ ! -d ${vtkm_src_dir} ]; then
   # apply vtk-m patch
   cd  ${vtkm_src_dir}
   patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
+  patch -p1 < ${script_dir}/2024_05_03_vtkm-mr3215-ext-geom-fix.patch
   cd ${root_dir}
 fi
 

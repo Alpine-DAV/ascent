@@ -840,13 +840,16 @@ struct RectilinearMesh
 
   //==---------------------------------------------------------------------==//
   RectilinearMesh(const std::string mem_space,
-                  MCArray<CoordsType> &coords,
+                  MCArray<CoordsType> &x_coords,
+                  MCArray<CoordsType> &y_coords,
+                  MCArray<CoordsType> &z_coords,
                   const int dims)
-    : m_coords_x(coords.accessor(mem_space, "x")),
-      m_coords_y(coords.accessor(mem_space, "y")),
-      m_coords_z(dims == 3 ? coords.accessor(mem_space, "z") :
-                             // just use a dummy in this case
-                             coords.accessor(mem_space, "x")),
+    : m_coords_x(x_coords.accessor(mem_space)),
+      m_coords_y(x_coords.accessor(mem_space)),
+      m_coords_z(z_coords.accessor(mem_space)),
+      // m_coords_z(dims == 3 ? z_coords.accessor(mem_space) :
+      //                        // just use a dummy in this case
+      //                        coords.accessor(mem_space)),
       m_dims(dims),
       m_point_dims({{(int)m_coords_x.m_size,
                      (int)m_coords_y.m_size,

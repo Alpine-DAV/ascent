@@ -2213,7 +2213,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
-        static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
@@ -2238,8 +2237,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
-
-        static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
 
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());

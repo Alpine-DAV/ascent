@@ -33,14 +33,55 @@ def gen_image_table_entry(fname):
     res += '</td>\n'
     return res
 
+def test_resources_dir():
+    # these are found relative to this script
+    return pjoin(os.path.split(os.path.abspath(__file__))[0],"_test_resources")
+
+def gen_html_resources():
+    res = glob.glob(pjoin(test_resources_dir(),"*.js"))
+    res.extend(glob.glob(pjoin(test_resources_dir(),"*.css")))
+    for fname in res:
+        shutil.copy2(fname,"_output")
+
+def gen_report_header():
+    return """
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <script src="bootstrap.bundle.min.js"></script>
+    <script src="sortable.js"></script>
+    <table class="sortable table table-striped table-bordered table-hover">
+      <tr>
+        <th>Case</th>
+        <th>Status</th>
+        <th>Details</th>
+        <th>Current</th>
+        <th>Baseline</th>
+        <th>Diff</th>
+      </tr>
+    <tr>
+    """
+
 def gen_html_report():
-    ofile = open(pjoin("_output","tout_img_report.html"),"w")
-    ofile.write("<table border=1>\n")
+    gen_html_resources()
+    ofile = open(pjoin("_output","index.html"),"w")
+    ofile.write(gen_report_header())
     for res in find_img_compare_results():
         v = json.load(open(res))
         ofile.write("<tr>\n")
+        # case name
         ofile.write("<td>\n")
         case_name = os.path.split(v["test_file"]["path"])[1]
+        ofile.write(case_name)
+        ofile.write("</td>\n")
+        # status
+        ofile.write("<td>\n")
+        if "pass" in v.keys():
+            ofile.write(v["pass"])
+        else:
+            ofile.write("unknown")
+        ofile.write("</td>\n")
+        # details
+        # put all info in details
+        ofile.write("<td>\n")
         ofile.write("case: {0} <br>\n".format(case_name))
         if "pass" in v.keys():
             ofile.write("pass: {0} <br>\n".format(v["pass"]))
