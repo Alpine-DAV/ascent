@@ -2865,6 +2865,7 @@ int main(int argc, char *argv[])
     Ascent ascent;
     Node ascent_opts;
 
+    ascent_opts["default_dir"] = "imgs";
 #if USE_MPI
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
@@ -2885,10 +2886,12 @@ int main(int argc, char *argv[])
    conduit::Node scenes;
    scenes["s1/plots/p1/type"]  = "pseudocolor";
    scenes["s1/plots/p1/field"] = "e";
+   scenes["s1/image_prefix"] = "banad_%02d";
+
    double vec3[3];
    vec3[0] = -0.6; vec3[1] = -0.6; vec3[2] = -0.8;
-   scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
-   scenes["s1/renders/r1/image_prefix"] = "lulesh_image";
+   //scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
+   //scenes["s1/renders/r1/image_prefix"] = "lulesh_image_%04d";
 
    conduit::Node actions;
    conduit::Node &add_plots = actions.append();
