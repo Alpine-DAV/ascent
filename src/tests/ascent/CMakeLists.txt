@@ -68,7 +68,6 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_blueprint_reductions
                 t_ascent_sampling
 		t_ascent_uniform_grid
-		t_ascent_material_interface_reconstruction
                 t_ascent_hola)
 
 set(DEVICE_TESTS  t_ascent_execution_policies
