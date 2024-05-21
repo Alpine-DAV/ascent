@@ -71,6 +71,10 @@ IF(VTKM_FOUND AND ENABLE_SERIAL)
         target_compile_definitions(t_vtkm_smoke PRIVATE "VTKH_FORCE_OPENMP")
     endif()
 
+    if (KOKKOS_FOUND)
+      set_target_properties(t_vtkm_smoke PROPERTIES CMAKE_CXX_STANDARD 17 CXX_VISIBILITY_PRESET hidden CUDA_SEPARABLE_COMPILATION OFF)
+    endif()
+
     if (CUDA_FOUND)
         target_compile_definitions(t_vtkm_smoke PRIVATE "VTKH_FORCE_CUDA")
     endif()

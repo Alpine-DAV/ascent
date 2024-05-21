@@ -25,7 +25,7 @@ set(vtkh_utils_deps vtkm ascent_lodepng ${vtkh_base_deps})
 
 ###############################################################################
 if (ENABLE_SERIAL)
-    blt_add_library(NAME vtkh_utils
+  blt_add_library(NAME vtkh_utils
                     SOURCES ${vtkh_utils_sources}
                     HEADERS ${vtkh_utils_headers}
                     DEPENDS_ON ${vtkh_utils_deps}
@@ -41,6 +41,10 @@ if (ENABLE_SERIAL)
 
     if(CUDA_FOUND)
         set_target_properties(vtkh_utils PROPERTIES LINKER_LANGUAGE CUDA)
+    endif()
+
+    if(KOKKOS_FOUND)
+      set_target_properties(vtkh_utils PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
     endif()
 
     # build includes
@@ -77,6 +81,10 @@ if (MPI_FOUND)
     target_compile_definitions(vtkh_utils_mpi PRIVATE ASCENT_EXPORTS_FLAG)
     if(ENABLE_HIDDEN_VISIBILITY)
       set_target_properties(vtkh_utils_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
+
+    if(KOKKOS_FOUND)
+      set_target_properties(vtkh_utils_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
     endif()
     #
     target_compile_definitions(vtkh_utils_mpi PRIVATE VTKH_PARALLEL)

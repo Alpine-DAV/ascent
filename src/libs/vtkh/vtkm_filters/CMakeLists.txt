@@ -75,7 +75,7 @@ endif()
 
 if(KOKKOS_FOUND)
     # vtkm + object libs are fun. Flags are not being propagated, so manually add them
-    set_target_properties(vtkm_compiled_filters PROPERTIES COMPILE_FLAGS "-I${KOKKOS_DIR}/include" )
+    set_target_properties(vtkm_compiled_filters PROPERTIES COMPILE_FLAGS "-I${KOKKOS_DIR}/include" CUDA_SEPARABLE_COMPILATION OFF)
 endif()
 
 if(CUDA_FOUND)

@@ -94,6 +94,11 @@ if (ENABLE_SERIAL)
     if(ENABLE_HIDDEN_VISIBILITY)
       set_target_properties(vtkh_core PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
+    if(KOKKOS_FOUND)
+      # ask politely a few times for no SEPARABLE COMPILATION
+      set_property(TARGET vtkh_core PROPERTY CUDA_SEPARABLE_COMPILATION OFF)
+      set_property(TARGET vtkh_core PROPERTY CMAKE_CUDA_SEPARABLE_COMPILATION OFF)
+    endif()
 
     # build includes
     # this allows us to include as <vtkh/header.hpp>
@@ -131,6 +136,12 @@ if(MPI_FOUND)
     target_compile_definitions(vtkh_core_mpi PRIVATE ASCENT_EXPORTS_FLAG)
     if(ENABLE_HIDDEN_VISIBILITY)
       set_target_properties(vtkh_core_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
+
+    if(KOKKOS_FOUND)
+      # ask politely a few times for no SEPARABLE COMPILATION
+      set_property(TARGET vtkh_core_mpi PROPERTY CUDA_SEPARABLE_COMPILATION OFF)
+      set_property(TARGET vtkh_core_mpi PROPERTY CMAKE_CUDA_SEPARABLE_COMPILATION OFF)
     endif()
     #
     target_compile_definitions(vtkh_core_mpi PRIVATE VTKH_PARALLEL)

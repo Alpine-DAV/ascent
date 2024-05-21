@@ -8,7 +8,6 @@
 ################################
 add_subdirectory(flow)
 
-
 # display info about optional features
 if(ENABLE_APCOMP)
     message(STATUS "Building APComp    (ENABLE_APCOMP=ON)")
