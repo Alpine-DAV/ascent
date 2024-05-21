@@ -2587,6 +2587,19 @@ TEST(ascent_render_3d, test_render_3d_points_implicit_topo)
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_pyra)
 {
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+  
     Node mesh, info;
     mesh["state/cycle"] = 100;
     // create the coordinate set
@@ -2649,6 +2662,18 @@ TEST(ascent_render_3d, test_render_3d_pyra)
 //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_wedge)
 {
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
     Node mesh, info;
     mesh["state/cycle"] = 100;
     // create the coordinate set
@@ -2713,6 +2738,18 @@ TEST(ascent_render_3d, test_render_3d_wedge)
 // //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_extreme_extents)
 {
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
     // create uniform grid with very large (spatial) extents
     Node mesh, info;
 
