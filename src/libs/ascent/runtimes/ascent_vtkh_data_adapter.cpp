@@ -474,6 +474,16 @@ void VTKmCellShape(const std::string &shape_type,
       shape_id = 3;
       num_indices = 2;
   }
+  else if(shape_type == "pyramid")
+  {
+      shape_id = 14;
+      num_indices = 5;
+  }
+  else if(shape_type == "wedge")
+  {
+      shape_id = 13;
+      num_indices = 6;
+  }
   else
   {
     ASCENT_ERROR("Unsupported cell type "<<shape_type);
@@ -812,19 +822,18 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
         indices = 1;
         dimensionality = 1;
     }
-    // TODO: Not supported in blueprint yet ...
-    // else if(shape_type == "wedge")
-    // {
-    //     shape_id = 13;
-    //     indices = 6;
-    //     dimensionality = 3;
-    // }
-    // else if(shape_type == "pyramid")
-    // {
-    //     shape_id = 14;
-    //     indices = 5;
-    //     dimensionality = 3;
-    // }
+    else if(shape_type == "wedge")
+    {
+        shape_id = 13;
+        indices = 6;
+        dimensionality = 3;
+    }
+    else if(shape_type == "pyramid")
+    {
+        shape_id = 14;
+        indices = 5;
+        dimensionality = 3;
+    }
     else
     {
         ASCENT_ERROR("Unsupported element shape " << shape_type);
@@ -1880,11 +1889,11 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
   }
   else if(shape_id == vtkm::CELL_SHAPE_WEDGE)
   {
-    ASCENT_ERROR("Wedge is not supported in blueprint");
+    name = "wedge";
   }
   else if(shape_id == vtkm::CELL_SHAPE_PYRAMID)
   {
-    ASCENT_ERROR("Pyramid is not supported in blueprint");
+    name = "pyramid";
   }
   return name;
 }
