@@ -40,6 +40,17 @@ def timestamp(t=None,sep="_"):
 def ascent_blurb():
     return "[Ascent](https://github.com/Alpine-DAV/ascent) is flyweight in situ visualization and analysis runtime for multi-physics HPC simulations"
 
+def release_date(release_id,src):
+    for l in src.split("\n"):
+        if l.startswith("## "):
+            sub_open = False
+            active_rel = proc_changelog_rel_id_line(l)
+            if active_rel == release_id:
+                # grab the date, it will be the last token
+                return l.split()[-1]
+    return "Unknown Date"
+
+
 def gen_llnl_news_entry(release_id,src):
     txt  = "---\n"
     txt += 'title: "Ascent {0} Released"\n'.format(release_id)
@@ -57,6 +68,7 @@ def gen_llnl_news_entry(release_id,src):
 def gen_sphinx_entry(release_id,src):
     txt  = "v{0}\n".format(release_id)
     txt += "---------------------------------\n\n"
+    txt += "* Released {0}\n".format(release_date(release_id,src))
     txt += "* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v{0}/ascent-v{0}-src-with-blt.tar.gz>`__\n\n".format(release_id)
     txt += "* Docker Containers\n"
     txt += "   * ``alpinedav/ascent:{0}``\n".format(release_id)
@@ -91,7 +103,8 @@ def sphinx_translate_ticks(l):
 
 def gen_github_entry(release_id,src):
     txt  = "# {0} Release Highlights\n\n".format(release_id)
-    txt += "(adapted from Ascent's [Changelog](https://github.com/Alpine-DAV/ascent/blob/develop/CHANGELOG.md) )\n"
+    txt += "(adapted from Ascent's [Changelog](https://github.com/Alpine-DAV/ascent/blob/develop/CHANGELOG.md) )\n\n"
+    txt += "Released {0}\n\n".format(release_date(release_id,src))
     sub_open = False
     active_rel = ""
     for l in src.split("\n"):
