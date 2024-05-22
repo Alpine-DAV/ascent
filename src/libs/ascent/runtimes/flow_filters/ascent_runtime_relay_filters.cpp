@@ -136,10 +136,6 @@ filter_topos(const conduit::Node &input,
     const conduit::Node &dom = input.child(d);
     conduit::Node &out_dom = output.append();
 
-
-    std::set<std::string> topos;
-    std::set<std::string> matsets;
-
     for(auto topo_name : topo_names)
     {
       const std::string tpath = "topologies/" + topo_name;
@@ -211,7 +207,9 @@ filter_topos(const conduit::Node &input,
         
       }
     }
-    if(dom.has_path("state") && out_dom.has_path("state"))
+
+    // set state if not already set
+    if(dom.has_path("state") && !out_dom.has_path("state"))
     {
       out_dom["state"].set_external(dom["state"]);
     }
