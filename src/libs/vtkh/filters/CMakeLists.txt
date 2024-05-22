@@ -112,6 +112,10 @@ if (ENABLE_SERIAL)
         set_target_properties(vtkh_filters PROPERTIES LINKER_LANGUAGE CUDA)
     endif()
 
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(vtkh_filters PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+    endif()       
+
     # build includes
     # this allows us to include as <vtkh/header.hpp>
     target_include_directories(vtkh_filters PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
@@ -157,6 +161,9 @@ if (MPI_FOUND)
        set_target_properties(vtkh_filters_mpi PROPERTIES LINKER_LANGUAGE CUDA)
     endif()
 
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(vtkh_filters_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+    endif()       
     # build includes
     # this allows us to include as <vtkh/header.hpp>
     target_include_directories(vtkh_filters_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)

@@ -109,6 +109,9 @@ if (ENABLE_SERIAL)
 
     vtkm_add_target_information(rover DEVICE_SOURCES ${rover_sources})
 
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(rover PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+    endif()
     # build includes
     # this allows us to include as <header.hpp>
     target_include_directories(rover PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
@@ -150,6 +153,10 @@ if(MPI_FOUND)
                   )
 
   vtkm_add_target_information(rover_mpi DEVICE_SOURCES ${rover_sources})
+
+  if(KOKKOS_FOUND)                                                                
+    set_target_properties(rover_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+  endif()
 
   # build includes
   # this allows us to include as <rover/header.hpp>
