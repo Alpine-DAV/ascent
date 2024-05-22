@@ -46,6 +46,10 @@ if (ENABLE_SERIAL)
 
     vtkm_add_target_information(vtkh_rendering DEVICE_SOURCES ${vtkh_rendering_sources})
 
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(vtkh_rendering PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+    endif()       
+
     # build time only defs
     target_compile_definitions(vtkh_rendering PRIVATE ASCENT_EXPORTS_FLAG)
     if(ENABLE_HIDDEN_VISIBILITY)
@@ -82,6 +86,10 @@ if (MPI_FOUND)
     endif()
     #
     target_compile_definitions(vtkh_rendering_mpi PRIVATE VTKH_PARALLEL)
+
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(vtkh_rendering_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+    endif()       
 
     # Install libraries
     install(TARGETS vtkh_rendering_mpi

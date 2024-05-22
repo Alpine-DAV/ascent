@@ -450,6 +450,10 @@ if (ENABLE_SERIAL)
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
 
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(ascent PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+    endif()
+
     # build includes
     # for generated config header
     target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
@@ -645,6 +649,10 @@ if(MPI_FOUND)
     # symbol visibility
     if(ENABLE_HIDDEN_VISIBILITY)
         set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
+
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(ascent_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
     endif()
 
     # special device source logic for vtk-m features
