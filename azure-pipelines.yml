@@ -658,3 +658,20 @@ stages:
           cd install/examples/ascent/using-with-make
           make
         displayName: 'Test vs Install (using-with-make) [build only]'
+
+  - job: Linux_Docker
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 0
+    steps:
+      - checkout: self
+        clean: boolean
+        submodules: recursive
+
+      - script: |
+           #################################
+           # build main docker container
+           #################################
+           cd src/examples/docker/ubuntu/
+           ./build.sh
+
