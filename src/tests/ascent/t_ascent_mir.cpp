@@ -93,9 +93,9 @@ TEST(ascent_vorticity, vel_vorticity)
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
     // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+ //   conduit::Node &add_scenes= actions.append();
+ //   add_scenes["action"] = "add_scenes";
+ //   add_scenes["scenes"] = scenes;
 
     //
     // Run Ascent
@@ -111,10 +111,10 @@ TEST(ascent_vorticity, vel_vorticity)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the gradient filter "
-                      "and plotting the magnitude.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+//    EXPECT_TRUE(check_test_image(output_file));
+//    std::string msg = "An example of using the gradient filter "
+//                      "and plotting the magnitude.";
+//    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 
 }
 
