@@ -31,5 +31,5 @@ chmod +x clone.sh
 #  gen env script that points to spack installs of tpls
 cd /uberenv_libs/ && python /ascent/scripts/gen_spack_env_script.py cmake mpi
 cp /uberenv_libs/s_env.sh /ascent_docker_setup_env.sh
-echo "export PATH=/uberenv_libs/spack_env/bin/:$PATH" >> /ascent_docker_setup_env.sh
+echo "export PATH=/uberenv_libs/spack_view/bin/:$PATH" >> /ascent_docker_setup_env.sh
 echo "export PYTHONPATH=/ascent/install/python-modules/" >> /ascent_docker_setup_env.sh
