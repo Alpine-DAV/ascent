@@ -450,10 +450,6 @@ if (ENABLE_SERIAL)
         vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
     endif()
 
-    if(KOKKOS_FOUND)                                                                
-      set_target_properties(ascent PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
-    endif()
-
     # build includes
     # for generated config header
     target_include_directories(ascent PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
@@ -555,6 +551,10 @@ if (ENABLE_SERIAL)
                        IMPORTED_TARGETS ${imported_targets_to_link}
                        RESULT locations_on_disk)
 
+        if(KOKKOS_FOUND)                                                                
+          set_target_properties(ascent PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
+        endif()
+
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
         message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
 
@@ -564,6 +564,8 @@ if (ENABLE_SERIAL)
                            COMMENT "manual device link step for Ascent"
                            )
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm.o DESTINATION lib)
+
+
     endif()
 
 endif()

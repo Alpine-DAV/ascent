@@ -109,9 +109,6 @@ if (ENABLE_SERIAL)
 
     vtkm_add_target_information(rover DEVICE_SOURCES ${rover_sources})
 
-    if(KOKKOS_FOUND)                                                                
-      set_target_properties(rover PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
-    endif()
     # build includes
     # this allows us to include as <header.hpp>
     target_include_directories(rover PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
@@ -120,6 +117,10 @@ if (ENABLE_SERIAL)
 
     if(ENABLE_HIDDEN_VISIBILITY)
       set_target_properties(rover PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    endif()
+
+    if(KOKKOS_FOUND)                                                                
+      set_target_properties(rover PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
     endif()
 
     target_compile_definitions(rover PRIVATE ROVER_EXPORTS_FLAG)
@@ -154,10 +155,6 @@ if(MPI_FOUND)
 
   vtkm_add_target_information(rover_mpi DEVICE_SOURCES ${rover_sources})
 
-  if(KOKKOS_FOUND)                                                                
-    set_target_properties(rover_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
-  endif()
-
   # build includes
   # this allows us to include as <rover/header.hpp>
   target_include_directories(rover_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
@@ -165,6 +162,10 @@ if(MPI_FOUND)
 
   if(ENABLE_HIDDEN_VISIBILITY)
     set_target_properties(rover_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  endif()
+
+  if(KOKKOS_FOUND)                                                                
+    set_target_properties(rover_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION OFF) 
   endif()
 
   blt_add_target_compile_flags(TO rover_mpi FLAGS "-DROVER_PARALLEL")
