@@ -67,13 +67,24 @@ the number of files written (aggregating multiple domains per file) using the
     extracts["e1/params/num_files"] = 2;
 
 
-Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameters is a list of
-strings that indicate which fields should be saved.
+Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameter is a list of
+strings that indicate which fields should be saved. Each selected field's associated topology is also saved.
 
 .. code-block:: c++
 
     extracts["e1/params/fields"].append("density");
     extracts["e1/params/fields"].append("pressure");
+
+The ``topologies`` parameter is a list of strings that indicate which topologies should be saved.
+When selected, the topology and all of its associated data (fields, matsets, etc) are saved.
+
+.. code-block:: c++
+
+    extracts["e1/params/topologies"].append("topo");
+
+
+When both ``topolgoies`` and ``fields`` parameters are used, the result is the union of the selections.
+ 
 
 Relay HDF5 extracts use gzip to compress leaf data arrays to reduce I/O and file size.
 Compression support is enabled when leaf arrays are greater than a heuristic size in bytes.

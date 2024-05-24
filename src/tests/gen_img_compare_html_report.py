@@ -114,7 +114,7 @@ def gen_html_report():
         else:
             ofile.write("<td> BASELINE IMAGE MISSING!</td>\n")
         if "diff_image" in v.keys():
-            ofile.write(gen_image_table_entry(file_name(v["diff_image"])))
+            ofile.write(gen_image_table_entry(file_name_only(v["diff_image"])))
         else:
             ofile.write('<td> (NO DIFF) </td>\n')
         ofile.write("</tr>\n")
