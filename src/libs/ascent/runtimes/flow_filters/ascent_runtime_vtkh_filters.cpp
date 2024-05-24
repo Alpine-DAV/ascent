@@ -4985,13 +4985,9 @@ VTKHMIR::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("field",params, info, true);
-    res &= check_numeric("bins",params, info, false, true);
-    res &= check_numeric("sample_rate",params, info, false, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
-    valid_paths.push_back("bins");
-    valid_paths.push_back("sample_rate");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -5035,75 +5031,30 @@ VTKHMIR::execute()
     std::string topo_name = collection->field_topology(field_name);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    std::cerr << "data going into ascent_runtime_vtkh_filters: " << std::endl;
+    data.PrintSummary(std::cerr);
 
-    float sample_rate = .1f;
-    if(params().has_path("sample_rate"))
-    {
-      sample_rate = get_float32(params()["sample_rate"], data_object);
-      if(sample_rate <= 0.f || sample_rate >= 1.f)
-      {
-        ASCENT_ERROR("vtkh_hist_sampling 'sample_rate' value '"<<sample_rate<<"'"
-                     <<" not in the range (0,1)");
-      }
-    }
+    //vtkh::HistSampling hist;
 
-    int bins = 128;
+    //hist.SetInput(&data);
+    //hist.SetField(field_name);
+    //hist.SetNumBins(bins);
+    //hist.SetSamplingPercent(sample_rate);
+    //if(ghost_field != "")
+    //{
+    //  hist.SetGhostField(ghost_field);
+    //}
 
-    if(params().has_path("bins"))
-    {
-      bins = get_int32(params()["bins"], data_object);
-      if(bins <= 0.f)
-      {
-        ASCENT_ERROR("vtkh_hist_sampling 'bins' value '"<<bins<<"'"
-                     <<" must be positive");
-      }
-    }
+    //hist.Update();
+    //vtkh::DataSet *hist_output = hist.GetOutput();
 
-    // TODO: write helper functions for this
-    std::string ghost_field = "";
-    Node meta = Metadata::n_metadata;
-
-    if(meta.has_path("ghost_field"))
-    {
-
-      // there can be multiple ghost fields on different topologies
-      // We should only find one(max) associated with this vtkh data set
-      const conduit::Node ghost_list = meta["ghost_field"];
-      const int num_ghosts = ghost_list.number_of_children();
-
-      for(int i = 0; i < num_ghosts; ++i)
-      {
-        std::string ghost = ghost_list.child(i).as_string();
-        if(data.GlobalFieldExists(ghost_field))
-        {
-          ghost_field = ghost;
-          break;
-        }
-      }
-
-    }
-
-    vtkh::HistSampling hist;
-
-    hist.SetInput(&data);
-    hist.SetField(field_name);
-    hist.SetNumBins(bins);
-    hist.SetSamplingPercent(sample_rate);
-    if(ghost_field != "")
-    {
-      hist.SetGhostField(ghost_field);
-    }
-
-    hist.Update();
-    vtkh::DataSet *hist_output = hist.GetOutput();
-
-    // we need to pass through the rest of the topologies, untouched,
-    // and add the result of this operation
-    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    new_coll->add(*hist_output, topo_name);
-    // re wrap in data object
-    DataObject *res =  new DataObject(new_coll);
-    delete hist_output;
+    //// we need to pass through the rest of the topologies, untouched,
+    //// and add the result of this operation
+    //VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    //new_coll->add(*hist_output, topo_name);
+    //// re wrap in data object
+    //DataObject *res =  new DataObject(new_coll);
+    //delete hist_output;
     set_output<DataObject>(data_object);
 }
 
