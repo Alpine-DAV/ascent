@@ -674,4 +674,4 @@ stages:
            #################################
            cd src/examples/docker/ubuntu/
            ./build.sh
-
+        displayName: 'Docker Build'
