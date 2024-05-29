@@ -9,7 +9,7 @@ export TAG_BASE=alpinedav/ascent:ascent-ubuntu-22.04-${TAG_ARCH}
 
 date
 
-python3 ../../../../scripts/docker_build_and_tag.py ${REPO_NAME} ${TAG_ARCH} ${TAG_BASE} --squash
+python3 ../../../../scripts/docker_build_and_tag.py ${REPO_NAME} ${TAG_ARCH} ${TAG_BASE}
 
 date
 

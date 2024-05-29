@@ -1351,6 +1351,7 @@ DefaultRender::execute()
       if(params().has_path("image_name"))
       {
         image_name =  params()["image_name"].as_string();
+        image_name = output_dir(image_name);
       }
       else
       {

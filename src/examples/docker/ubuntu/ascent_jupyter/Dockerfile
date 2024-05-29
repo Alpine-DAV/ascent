@@ -2,8 +2,8 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-ARG TAG=latest
-FROM alpinedav/ascent:${TAG}
+ARG BASE_IMAGE=ascent-ubuntu-22.04-x86_64_2024-05-23-sha988339
+FROM alpinedav/ascent:${BASE_IMAGE}
 
 # add our 'user' with password 'docker'
 RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
