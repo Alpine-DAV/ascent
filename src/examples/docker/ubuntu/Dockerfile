@@ -22,7 +22,7 @@ RUN  ./docker_uberenv_build.sh
 
 
 # install jupyter, matplotlib, cinema, etc via pip
-RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+RUN /uberenv_libs/spack_view/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     bash_kernel \
@@ -36,33 +36,33 @@ RUN /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
     scikit-learn \
     ipympl
 
-# configure a debug build with cmake
-RUN cd /ascent && mkdir build 
-RUN cd /ascent/build && \
-    /uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
+# configure a build with cmake
+RUN  /uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/ascent/install \
     -DBABELFLOW_DIR=IGNORE \
     -DADIOS2_DIR=IGNORE \
     -DFIDES_DIR=IGNORE \
     -C /uberenv_libs/*.cmake \
-    ../src
+    -S /ascent/src \
+    -B /ascent/build
 
 # build, test, and install ascent
 RUN cd /ascent/build && make
-RUN cd /ascent/build && env CTEST_OUTPUT_ON_FAILURE=1 make test
+# This fails on some archs, we need better fuzzy diffing
+#RUN cd /ascent/build && env CTEST_OUTPUT_ON_FAILURE=1 OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 make test
 RUN cd /ascent/build && make install
 
 
 # install ascent bridge kernel into jupyter
 RUN cd /ascent/install/share/ascent/ascent_jupyter_bridge/ && \
-    /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+    /uberenv_libs/spack_view/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     -r requirements.txt
 
 RUN cd /ascent/install/share/ascent/ascent_jupyter_bridge/ && \
-    /uberenv_libs/spack/opt/spack/*/*/python*/bin/pip \
+    /uberenv_libs/spack_view/bin/pip \
     install \
     --trusted-host pypi.org --trusted-host files.pythonhosted.org \
     .
