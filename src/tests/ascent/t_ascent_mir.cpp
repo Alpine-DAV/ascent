@@ -77,12 +77,14 @@ TEST(ascent_vorticity, vel_vorticity)
 
     pipelines["pl1/f1/type"] = "mir";
     conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "vel_vorticity";         // name of the vector field
+    params["field"] = "circle_a";         // name of the vector field
+    params["matset"] = "matset";         // name of the vector field
     //params["output_name"] = "mag_vorticity";   // name of the output field
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "mag_vorticity";
+    scenes["s1/plots/p1/matset"] = "matset";
+    scenes["s1/plots/p1/field"] = "field";
     scenes["s1/plots/p1/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = output_file;

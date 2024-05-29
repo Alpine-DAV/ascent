@@ -486,6 +486,124 @@ bool allEqual(std::vector<T> const &v)
   return std::adjacent_find(v.begin(), v.end(), std::not_equal_to<T>()) == v.end();
 }
 
+
+
+template<typename T, typename S>
+void GetMatSetLength(const conduit::Node &node, //materials["matset"]
+                           const std::string &length_name,
+                           const std::string &offsets_name,
+                           const std::string &topo_str,
+                           int &total,
+                           const int neles,
+                           vtkm::cont::Field &length,
+                           vtkm::cont::Field &offsets)
+{
+  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Cells;
+
+  std::vector<T> v_length(neles,0);
+  std::vector<T> v_offsets(neles,0);
+  for(int i = 0; i < neles; ++i)
+  {
+    NodeConstIterator itr = node["volume_fractions"].children();
+    std::string material_name;
+
+    //increase length when a material vf value > 0
+    while(itr.has_next())
+    {
+      const Node &n_material = itr.next();
+      const S *data = n_material.value();
+      if(data[i] > 0)
+        v_length[i] = v_length[i] + 1;
+    }
+  }
+
+  //calc offset of length and total length
+  int l_total = 0;
+  for(int i = 0; i < neles-1; ++i)
+  {
+    v_offsets[i+1] = v_offsets[i] + v_length[i];
+    l_total += v_length[i];
+  }
+  l_total += v_length[neles-1];
+  total = l_total;
+
+  const T *length_ptr = v_length.data();
+
+  length = vtkm::cont::make_Field(length_name,
+                                 vtkm_assoc,
+                                 length_ptr,
+                                 neles,
+                                 copy);
+
+  const T *offsets_ptr = v_offsets.data();
+
+  offsets = vtkm::cont::make_Field(offsets_name,
+                                 vtkm_assoc,
+                                 offsets_ptr,
+                                 neles,
+                                 copy);
+
+}
+
+template<typename T, typename S>
+void GetMatSetIDsAndVFs(const conduit::Node &node, //materials["matset"]
+                           const std::string &ids_name,
+                           const std::string &vfs_name,
+                           const std::string &topo_str,
+                           const int total,
+                           const int neles,
+                           vtkm::cont::Field &offsets,
+                           vtkm::cont::Field &ids,
+                           vtkm::cont::Field &vfs)
+{
+  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::WholeDataSet;
+
+  vtkm::cont::ArrayHandle<int> ah_offsets;
+  offsets.GetData().AsArrayHandle(ah_offsets);
+  std::vector<T> v_ids(total,0);
+  std::vector<S> v_vfs(total,0);
+  
+  int num_materials = node["volume_fractions"].number_of_children();
+  for(int i = 0; i < neles; ++i)
+  {
+    int offset = ah_offsets.ReadPortal().Get(i);
+    const Node &n_materials = node["volume_fractions"];
+    std::string material_name;
+
+    for(int j = 0; j < num_materials; ++j)
+    {
+      const Node &n_material = n_materials.child(j);
+      const S *data = n_material.value();
+      if(data[i] > 0)
+      {
+        v_ids[offset] = j;
+        v_vfs[offset] = data[i];
+        offset++;
+      }
+    }
+  }
+
+  const T *ids_ptr = v_ids.data();
+
+  ids = vtkm::cont::make_Field(ids_name,
+                                 vtkm_assoc,
+                                 ids_ptr,
+                                 total,
+                                 copy);
+
+  const S *vfs_ptr = v_vfs.data();
+
+  vfs = vtkm::cont::make_Field(vfs_name,
+                                 vtkm_assoc,
+                                 vfs_ptr,
+                                 total,
+                                 copy);
+
+}
+
 };
 //-----------------------------------------------------------------------------
 // -- end detail:: --
@@ -1887,157 +2005,85 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
     std::string assoc_str = "element";
     NodeConstIterator itr = n_matset["volume_fractions"].children();
     std::string material_name;
-    while(itr.has_next())
+
+    //add each material of specified matset to vtkm dataset
+    const Node &n_material = itr.next();
+    material_name = itr.name();
+    std::string field_name = matset_name + "_" + material_name;
+    int num_vals = n_material.dtype().number_of_elements();
+    if(num_vals != neles )
     {
-        const Node &n_material = itr.next();
-        material_name = itr.name();
-        std::string field_name = matset_name + "_VF_" + material_name;
-        int num_vals = n_material.dtype().number_of_elements();
-        if(num_vals != neles )
+        ASCENT_ERROR("Number of vf values " 
+                      << num_vals 
+                      << " for material " 
+                      << material_name 
+                      << " does not equal number of cells "
+                      << neles);
+    }
+    
+    try
+    {
+        bool supported_type = false;
+
+        // we compile vtk-h with fp types
+        if(n_material.dtype().is_float32())
         {
-            ASCENT_ERROR("Number of vf values " 
-                          << num_vals 
-                          << " for material " 
-                          << material_name 
-                          << " does not equal number of cells "
-                          << neles);
+            //add materials directly
+            //dset->AddField(detail::GetField<float32>(n_material,
+            //                                         field_name,
+            //                                         assoc_str,
+            //                                         topo_name,
+            //                                         element_stride,
+            //                                         zero_copy));
+            supported_type = true;
+            //add calculated material fields for vtkm
+            int total;
+            vtkm::cont::Field length, offsets, ids, vfs;
+            detail::GetMatSetLength<int,float32>(n_matset, "lengths", "offsets", topo_name, total,neles, length, offsets);
+            detail::GetMatSetIDsAndVFs<int,float32>(n_matset, "ids", "vfs", topo_name,total, neles, offsets, ids, vfs);
+            dset->AddField(length);
+            dset->AddField(offsets);
+            dset->AddField(ids);
+            dset->AddField(vfs);
+            //std::cerr << "total: " << total << std::endl;
         }
-        
-        try
+        else if(n_material.dtype().is_float64())
         {
-            bool supported_type = false;
+            //add materials directly
+            //dset->AddField(detail::GetField<float64>(n_material,
+            //                                         field_name,
+            //                                         assoc_str,
+            //                                         topo_name,
+            //                                         element_stride,
+            //                                         zero_copy));
+            supported_type = true;
+            //add calculated material fields for vtkm
+            int total;
+            vtkm::cont::Field length, offsets, ids, vfs;
+            detail::GetMatSetLength<int,float64>(n_matset, "lengths", "offsets", topo_name, total,neles, length, offsets);
+            detail::GetMatSetIDsAndVFs<int,float64>(n_matset, "ids", "vfs", topo_name,total, neles, offsets, ids, vfs);
+            dset->AddField(length);
+            dset->AddField(offsets);
+            dset->AddField(ids);
+            dset->AddField(vfs);
+            //std::cerr << "total: " << total << std::endl;
+            //std::cerr << "float64 length: " << std::endl;
+            //length.PrintSummary(std::cerr);
+            //std::cerr << "float64 offsets: " << std::endl;
+            //offsets.PrintSummary(std::cerr);
+            //std::cerr << "float64 ids: " << std::endl;
+            //ids.PrintSummary(std::cerr);
+            //std::cerr << "float64 vfs: " << std::endl;
+            //vfs.PrintSummary(std::cerr);
 
-            // we compile vtk-h with fp types
-            if(n_material.dtype().is_float32())
-            {
-                index_t stride = n_material.dtype().stride();
-                index_t element_stride = stride / sizeof(float32);
-                //std::cout << "material name: " << field_name << " <float32>"
-                //          << " byte stride: " << stride
-                //          << " element_stride: " << element_stride << std::endl;
-                // if element_stride is evenly divided by native, we are good to
-                // use vtk m array handles
-                if( stride % sizeof(float32) == 0 )
-                {
-                    // in this case we can use a strided array handle
-                    dset->AddField(detail::GetField<float32>(n_material,
-                                                             field_name,
-                                                             assoc_str,
-                                                             topo_name,
-                                                             element_stride,
-                                                             zero_copy));
-                    supported_type = true;
-                }
-            }
-            else if(n_material.dtype().is_float64())
-            {
-                // check that the byte stride is a multiple of native stride
-                index_t stride = n_material.dtype().stride();
-                index_t element_stride = stride / sizeof(float64);
-                //std::cout << "material name: " << field_name << " <float64>"
-                //          << " byte stride: " << stride
-                //          << " element_stride: " << element_stride << std::endl;
-                // if element_stride is evenly divided by native, we are good to
-                // use vtk m array handles
-                if( stride % sizeof(float64) == 0 )
-                {
-                    // in this case we can use a strided array handle
-                    dset->AddField(detail::GetField<float64>(n_material,
-                                                             field_name,
-                                                             assoc_str,
-                                                             topo_name,
-                                                             element_stride,
-                                                             zero_copy));
-                    supported_type = true;
-                }
-            }
-            // ***********************************************************************
-            // NOTE: TODO OUR VTK-M is not compiled with int32 and int64 support ...
-            // ***********************************************************************
-            // These cases fail and provide this error message:
-            //   Execution failed with vtkm: Could not find appropriate cast for array in CastAndCall.
-            //   Array: valueType=x storageType=N4vtkm4cont15StorageTagBasicE 27 values occupying 216 bytes [0 1 2 ... 24 25 26]
-            //   TypeList: N4vtkm4ListIJfdEEE
-            // ***********************************************************************
-            //
-            // else if(n_material.dtype().is_int32())
-            // {
-            //     // check that the byte stride is a multiple of native stride
-            //     index_t stride = n_material.dtype().stride();
-            //     index_t element_stride = stride / sizeof(int32);
-            //     //std::cout << "material name: " << field_name << " <int32>"
-            //     //          << " byte stride: " << stride
-            //     //          << " element_stride: " << element_stride << std::endl;
-            //     // if element_stride is evenly divided by native, we are good to
-            //     // use vtk m array handles
-            //     if( stride % sizeof(int32) == 0 )
-            //     {
-            //         // in this case we can use a strided array handle
-            //         dset->AddField(detail::Getmaterial<int32>(n_material,
-            //                                                  field_name,
-            //                                                  assoc_str,
-            //                                                  topo_name,
-            //                                                  element_stride,
-            //                                                  zero_copy));
-            //         supported_type = true;
-            //     }
-            // }
-            // else if(n_material.dtype().is_int64())
-            // {
-            //     // check that the byte stride is a multiple of native stride
-            //     index_t stride = n_material.dtype().stride();
-            //     index_t element_stride = stride / sizeof(int64);
-            //     //std::cout << "material name: " << field_name << " <int64>"
-            //     //          << " byte stride: " << stride
-            //     //          << " element_stride: " << element_stride << std::endl;
-            //     // if element_stride is evenly divided by native, we are good to
-            //     // use vtk m array handles
-            //     if( stride % sizeof(int64) == 0 )
-            //     {
-            //         // in this case we can use a strided array handle
-            //         dset->AddField(detail::Getmaterial<int64>(n_material,
-            //                                                  field_name,
-            //                                                  assoc_str,
-            //                                                  topo_name,
-            //                                                  element_stride,
-            //                                                  zero_copy));
-            //         supported_type = true;
-            //     }
-            // }
-
-            // vtk-m cant support zero copy for this layout or was not compiled to expose this datatype
-            // use float64 by default
-            if(!supported_type)
-            {
-                // std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
-                //           << n_material.dtype().name() << std::endl;
-
-                // convert to float64, we use this as a comprise to cover the widest range
-                vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-                vtkm_arr.Allocate(num_vals);
-
-                // TODO -- FUTURE: Do this conversion w/ device if on device
-                void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
-                Node n_tmp;
-                n_tmp.set_external(DataType::float64(num_vals),ptr);
-                n_material.to_float64_array(n_tmp);
-
-                // add material to dataset
-                dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                 vtkm::cont::Field::Association::Cells,
-                                                 vtkm_arr));
-            }
-            // else
-            // {
-            //     std::cout << "SUPPORTED DATA TYPE: "
-            //               << n_material.dtype().name() << std::endl;
-            // }
-        }
-        catch (vtkm::cont::Error error)
-        {
-            ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+            //calculate vf and ids
         }
     }
+    catch (vtkm::cont::Error error)
+    {
+        ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+    }
+        
 }
 
 std::string

@@ -76,6 +76,7 @@
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
+#include <vtkh/filters/MIR.hpp>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <ascent_vtkh_data_adapter.hpp>
@@ -4984,9 +4985,11 @@ VTKHMIR::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = check_string("field",params, info, true);
+    bool res = check_string("matset",params, info, true);
+    res = check_string("field",params, info, true);
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("matset");
     valid_paths.push_back("field");
 
     std::string surprises = surprise_check(valid_paths, params);
@@ -5007,7 +5010,7 @@ VTKHMIR::execute()
 
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_hist_sampling input must be a data object");
+        ASCENT_ERROR("vtkh_MIR input must be a data object");
     }
 
     DataObject *data_object = input<DataObject>(0);
@@ -5018,6 +5021,7 @@ VTKHMIR::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    std::string matset_name = params()["matset"].as_string();
     std::string field_name = params()["field"].as_string();
     if(!collection->has_field(field_name))
     {
@@ -5034,10 +5038,10 @@ VTKHMIR::execute()
     std::cerr << "data going into ascent_runtime_vtkh_filters: " << std::endl;
     data.PrintSummary(std::cerr);
 
-    //vtkh::HistSampling hist;
+    vtkh::MIR mir;
 
-    //hist.SetInput(&data);
-    //hist.SetField(field_name);
+    mir.SetInput(&data);
+    mir.SetMatSet(matset_name);
     //hist.SetNumBins(bins);
     //hist.SetSamplingPercent(sample_rate);
     //if(ghost_field != "")
@@ -5045,8 +5049,10 @@ VTKHMIR::execute()
     //  hist.SetGhostField(ghost_field);
     //}
 
-    //hist.Update();
-    //vtkh::DataSet *hist_output = hist.GetOutput();
+    mir.Update();
+    vtkh::DataSet *mir_output = mir.GetOutput();
+    std::cerr << "vkth::dataset MIR: " << std::endl;
+    mir_output->PrintSummary(std::cerr);
 
     //// we need to pass through the rest of the topologies, untouched,
     //// and add the result of this operation
@@ -5063,6 +5069,7 @@ VTKHMIR::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------

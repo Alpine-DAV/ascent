@@ -14,13 +14,13 @@ public:
   MIR();
   virtual ~MIR();
   std::string GetName() const override;
-  void SetField(const std::string field_name);
+  void SetMatSet(const std::string matset_name);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
 
-  std::string m_field_name;
+  std::string m_matset_name;
 };
 
 } //namespace vtkh
