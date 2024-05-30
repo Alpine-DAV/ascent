@@ -1018,3 +1018,14 @@ YAML actions:
 
 .. literalinclude:: examples/tout_render_amr_complex_ghost100.yaml
 
+
+An example of using the Material Interface Reconstruction filter.
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_mir_venn0.yaml
+
+Resulting image:
+
+.. image:: examples/tout_mir_venn0.png

@@ -81,7 +81,7 @@ TEST(ascent_mir, venn_vtkm_mir)
     params["matset"] = "matset";         // name of the vector field
     params["error_scaling"] = 0.2;
     params["scaling_decay"] = 1.0;
-    params["iterations"] = 21;
+    params["iterations"] = 8;
     params["max_error"] = 0.00001;
     //params["output_name"] = "mag_vorticity";   // name of the output field
 
@@ -118,9 +118,9 @@ TEST(ascent_mir, venn_vtkm_mir)
 
     // check that we created an image
 //    EXPECT_TRUE(check_test_image(output_file));
-//    std::string msg = "An example of using the gradient filter "
-//                      "and plotting the magnitude.";
-//    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    std::string msg = "An example of using the MIR filter "
+                      "and plotting the field 'cellMat'.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 
 }
 
