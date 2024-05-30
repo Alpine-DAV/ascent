@@ -35,7 +35,7 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 float64 RADIUS = 10;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_vorticity, vel_vorticity)
+TEST(ascent_mir, venn_vtkm_mir)
 {
     Node n;
     ascent::about(n);
@@ -63,7 +63,7 @@ TEST(ascent_vorticity, vel_vorticity)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_vorticity_vel");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_mir_venn");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -77,14 +77,18 @@ TEST(ascent_vorticity, vel_vorticity)
 
     pipelines["pl1/f1/type"] = "mir";
     conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "circle_a";         // name of the vector field
+    //params["field"] = "circle_a";         // name of the vector field
     params["matset"] = "matset";         // name of the vector field
+    params["error_scaling"] = 0.2;
+    params["scaling_decay"] = 1.0;
+    params["iterations"] = 21;
+    params["max_error"] = 0.00001;
     //params["output_name"] = "mag_vorticity";   // name of the output field
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/matset"] = "matset";
-    scenes["s1/plots/p1/field"] = "field";
+//    scenes["s1/plots/p1/matset"] = "matset";
+    scenes["s1/plots/p1/field"] = "cellMat";
     scenes["s1/plots/p1/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = output_file;
@@ -95,9 +99,9 @@ TEST(ascent_vorticity, vel_vorticity)
     add_pipelines["action"] = "add_pipelines";
     add_pipelines["pipelines"] = pipelines;
     // add the scenes
- //   conduit::Node &add_scenes= actions.append();
- //   add_scenes["action"] = "add_scenes";
- //   add_scenes["scenes"] = scenes;
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
 
     //
     // Run Ascent

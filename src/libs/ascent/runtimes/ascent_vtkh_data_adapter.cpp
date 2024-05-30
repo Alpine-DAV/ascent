@@ -2004,8 +2004,11 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
     std::string assoc_str = "element";
     NodeConstIterator itr = n_matset["volume_fractions"].children();
-    std::string material_name;
-
+    std::string material_name, length_name, offsets_name, ids_name, vfs_name;
+    length_name = matset_name + "_lengths";
+    offsets_name = matset_name + "_offsets";
+    ids_name = matset_name + "_ids";
+    vfs_name = matset_name + "_vfs";
     //add each material of specified matset to vtkm dataset
     const Node &n_material = itr.next();
     material_name = itr.name();
@@ -2039,8 +2042,8 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             //add calculated material fields for vtkm
             int total;
             vtkm::cont::Field length, offsets, ids, vfs;
-            detail::GetMatSetLength<int,float32>(n_matset, "lengths", "offsets", topo_name, total,neles, length, offsets);
-            detail::GetMatSetIDsAndVFs<int,float32>(n_matset, "ids", "vfs", topo_name,total, neles, offsets, ids, vfs);
+            detail::GetMatSetLength<int,float32>(n_matset, length_name, offsets_name, topo_name, total,neles, length, offsets);
+            detail::GetMatSetIDsAndVFs<int,float32>(n_matset, ids_name, vfs_name, topo_name,total, neles, offsets, ids, vfs);
             dset->AddField(length);
             dset->AddField(offsets);
             dset->AddField(ids);
@@ -2060,8 +2063,8 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             //add calculated material fields for vtkm
             int total;
             vtkm::cont::Field length, offsets, ids, vfs;
-            detail::GetMatSetLength<int,float64>(n_matset, "lengths", "offsets", topo_name, total,neles, length, offsets);
-            detail::GetMatSetIDsAndVFs<int,float64>(n_matset, "ids", "vfs", topo_name,total, neles, offsets, ids, vfs);
+            detail::GetMatSetLength<int,float64>(n_matset, length_name, offsets_name, topo_name, total,neles, length, offsets);
+            detail::GetMatSetIDsAndVFs<int,float64>(n_matset, ids_name, vfs_name, topo_name,total, neles, offsets, ids, vfs);
             dset->AddField(length);
             dset->AddField(offsets);
             dset->AddField(ids);

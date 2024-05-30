@@ -1,8 +1,6 @@
 #include "MIR.hpp"
 
-#include <vtkh/vtkm_filters/vtkmMIR.hpp>
-#include <vtkm/worklet/WorkletMapField.h>
-#include <vtkm/cont/Invoker.h>
+#include <vtkm/filter/contour/MIRFilter.h>
 
 namespace vtkh
 {
@@ -24,26 +22,6 @@ isMaterial(std::string matset_name, std::string field_name)
   return false;
 }
 
-class MetaDataLength : public vtkm::worklet::WorkletMapField
-{
-public:
-  using ControlSignature = void(FieldIn, FieldOut);
-
-  VTKM_EXEC
-  void operator()(const vtkm::FloatDefault& vf_data,
-                  vtkm::Id& length) const
-  {
-    if (vf_data > vtkm::FloatDefault(0.0))
-    {
-      length = length + 1;
-      //std::cerr << "length before: " << length << std::endl;
-      //length++;
-      //std::cerr << "length after: " << length << std::endl;
-      //std::cerr << std::endl;
-    }
-  }
-};
-
 
 }//end detail
 
@@ -61,13 +39,48 @@ void
 MIR::SetMatSet(const std::string matset_name)
 {
   m_matset_name = matset_name;
+  m_lengths_name = matset_name + "_lengths";
+  m_offsets_name = matset_name + "_offsets";
+  m_ids_name = matset_name + "_ids";
+  m_vfs_name = matset_name + "_vfs";
+}
+
+void 
+MIR::SetErrorScaling(const double error_scaling)
+{
+  m_error_scaling = error_scaling;
+}
+
+void 
+MIR::SetScalingDecay(const double scaling_decay)
+{
+  m_scaling_decay = scaling_decay;
+}
+
+void 
+MIR::SetIterations(const int iterations)
+{
+  m_iterations = iterations;
+}
+
+void 
+MIR::SetMaxError(const double max_error)
+{
+  m_max_error = max_error;
 }
 
 void
 MIR::PreExecute()
 {
   Filter::PreExecute();
-  //Filter::CheckForRequiredField(m_field_name);
+  std::string lengths_field = m_matset_name + "_lengths";
+  std::string offsets_field = m_matset_name + "_offsets";
+  std::string ids_field = m_matset_name + "_ids";
+  std::string vfs_field = m_matset_name + "_vfs";
+  Filter::CheckForRequiredField(lengths_field);
+  Filter::CheckForRequiredField(offsets_field);
+  Filter::CheckForRequiredField(ids_field);
+  Filter::CheckForRequiredField(vfs_field);
 }
 
 void
@@ -78,40 +91,30 @@ MIR::PostExecute()
 
 void MIR::DoExecute()
 {
-  vtkm::cont::Invoker invoker;
+  this->m_output = new DataSet();
   const int num_domains = this->m_input->GetNumberOfDomains();
-  vtkm::cont::ArrayHandle<vtkm::Id> length;
   
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::Id domain_id;
     vtkm::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
-    vtkm::Id num_fields = dom.GetNumberOfFields();
-    for(int j = 0; j < num_fields; ++j)
-    {
-      vtkm::cont::Field field = dom.GetField(j);
-      std::string field_name = field.GetName();
-      bool is_material = detail::isMaterial(m_matset_name, field_name);
-      std::cerr << "isMaterial( " << field_name << " ): " << is_material << std::endl;
-      if(is_material)
-      {
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> data;
-        field.GetDataAsDefaultFloat().AsArrayHandle(data);
-        vtkm::Id num_values = data.GetNumberOfValues();
-        if(length.GetNumberOfValues() != num_values)
-        {
-          std::cerr << "HERE" << std::endl;
-          length.AllocateAndFill(num_values,0.0);
-        }
-        invoker(detail::MetaDataLength{}, data, length);
-        std::cerr << "length now: " << std::endl;
-        for(int n = 0; n < num_values; ++n)
-        {
-          std::cerr << length.ReadPortal().Get(n) << " ";
-        }
-      }
-    }
+    vtkm::filter::contour::MIRFilter mir; 
+    mir.SetLengthCellSetName(m_lengths_name);
+    mir.SetPositionCellSetName(m_offsets_name);
+    mir.SetIDWholeSetName(m_ids_name);
+    mir.SetVFWholeSetName(m_vfs_name);
+    mir.SetErrorScaling(vtkm::Float64(m_error_scaling));
+    mir.SetScalingDecay(vtkm::Float64(m_scaling_decay));
+    mir.SetMaxIterations(vtkm::IdComponent(m_iterations));
+    mir.SetMaxPercentError(vtkm::Float64(m_max_error));
+    vtkm::cont::DataSet output = mir.Execute(dom);
+    vtkm::cont::UnknownArrayHandle float_field = output.GetField("cellMat").GetDataAsDefaultFloat();
+    output.GetField("cellMat").SetData(float_field);
+    std::cerr << "OUTPUT CELLS: " << output.GetNumberOfCells() << std::endl;
+    std::cerr << "output from vtkm MIR: =================" << std::endl;
+    output.PrintSummary(std::cerr);
+    this->m_output->AddDomain(output, i);
   }
 }
 

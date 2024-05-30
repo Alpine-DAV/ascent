@@ -4986,11 +4986,17 @@ VTKHMIR::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("matset",params, info, true);
-    res = check_string("field",params, info, true);
+    res &= check_numeric("error_scaling", params, info, true);
+    res &= check_numeric("scaling_decay", params, info, true);
+    res &= check_numeric("iterations", params, info, true);
+    res &= check_numeric("max_error", params, info, true);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("matset");
-    valid_paths.push_back("field");
+    valid_paths.push_back("error_scaling");
+    valid_paths.push_back("scaling_decay");
+    valid_paths.push_back("iterations");
+    valid_paths.push_back("max_error");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -5022,33 +5028,34 @@ VTKHMIR::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string matset_name = params()["matset"].as_string();
-    std::string field_name = params()["field"].as_string();
-    if(!collection->has_field(field_name))
+    std::string length_name = matset_name + "_lengths";
+    if(!collection->has_field(length_name))
     {
       bool throw_error = false;
-      detail::field_error(field_name, this->name(), collection, throw_error);
+      detail::field_error(length_name, this->name(), collection, throw_error);
       // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
 
-    std::string topo_name = collection->field_topology(field_name);
+    std::string topo_name = collection->field_topology(length_name);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     std::cerr << "data going into ascent_runtime_vtkh_filters: " << std::endl;
     data.PrintSummary(std::cerr);
 
+    double error_scaling = params()["error_scaling"].to_float64();
+    double scaling_decay = params()["scaling_decay"].to_float64();
+    int iterations = params()["iterations"].to_int64();
+    double max_error = params()["max_error"].to_float64();
+
     vtkh::MIR mir;
-
-    mir.SetInput(&data);
+    mir.SetErrorScaling(error_scaling);
+    mir.SetScalingDecay(scaling_decay);
+    mir.SetIterations(iterations);
+    mir.SetMaxError(max_error);
     mir.SetMatSet(matset_name);
-    //hist.SetNumBins(bins);
-    //hist.SetSamplingPercent(sample_rate);
-    //if(ghost_field != "")
-    //{
-    //  hist.SetGhostField(ghost_field);
-    //}
-
+    mir.SetInput(&data);
     mir.Update();
     vtkh::DataSet *mir_output = mir.GetOutput();
     std::cerr << "vkth::dataset MIR: " << std::endl;
@@ -5056,12 +5063,12 @@ VTKHMIR::execute()
 
     //// we need to pass through the rest of the topologies, untouched,
     //// and add the result of this operation
-    //VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    //new_coll->add(*hist_output, topo_name);
-    //// re wrap in data object
-    //DataObject *res =  new DataObject(new_coll);
-    //delete hist_output;
-    set_output<DataObject>(data_object);
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*mir_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete mir_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
