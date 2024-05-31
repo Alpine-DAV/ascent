@@ -194,7 +194,7 @@ main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  conduit::Node replay_datal
+  conduit::Node replay_data;
   //replay_data.print();
   conduit::Node ascent_opts;
   ascent_opts["actions_file"] = options.m_actions_file;
