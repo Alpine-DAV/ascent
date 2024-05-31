@@ -5178,7 +5178,7 @@ VTKHVTKFileExtract::execute()
         Node n_recv;
         conduit::relay::mpi::all_gather_using_schema(n_local_domain_ids,
                                                      n_recv,
-                                                     MPI_COMM_WORLD);
+                                                     mpi_comm);
         n_global_domain_ids.set(DataType::index_t(num_global_domains));
         n_global_domain_ids.print();
         index_t_array global_vals = n_global_domain_ids.value();

@@ -99,9 +99,9 @@ MultiDomainVTKReader::read_file(const std::string &directory, const std::string 
      // figure out which data sets to read
      //
      int rank;
-     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+     MPI_Comm_rank(rover::get_mpi_comm_handle(), &rank);
      int num_ranks;
-     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+     MPI_Comm_size(rover::get_mpi_comm_handle(), &num_ranks);
      if(rank == 0)
      {
         std::cout<<"Num ranks "<<num_ranks<<"\n";

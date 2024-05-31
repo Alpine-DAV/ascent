@@ -59,9 +59,12 @@ template<typename BlockType>
 struct Redistribute
 {
   const vtkhdiy::RegularDecomposer<vtkhdiy::DiscreteBounds> &m_decomposer;
+  MPI_Comm &m_comm;
 
-  Redistribute(const vtkhdiy::RegularDecomposer<vtkhdiy::DiscreteBounds> &decomposer)
-    : m_decomposer(decomposer)
+  Redistribute(const vtkhdiy::RegularDecomposer<vtkhdiy::DiscreteBounds> &decomposer,
+               MPI_Comm &comm)
+    : m_decomposer(decomposer),
+      m_comm(comm)
   {}
 
   void operator()(void *v_block, const vtkhdiy::ReduceProxy &proxy) const
@@ -113,7 +116,7 @@ struct Redistribute
       } // for
 
     } // else
-    MPI_Barrier(MPI_COMM_WORLD); //HACK
+    MPI_Barrier(comm); //HACK
   } // operator
 };
 
@@ -145,7 +148,7 @@ void redistribute_detail(std::vector<typename AddBlockType::PartialType> &partia
   const int dims = 1;
   vtkhdiy::RegularDecomposer<vtkhdiy::DiscreteBounds> decomposer(dims, global_bounds, num_blocks);
   decomposer.decompose(world.rank(), assigner, create);
-  vtkhdiy::all_to_all(master, assigner, Redistribute<Block>(decomposer), magic_k);
+  vtkhdiy::all_to_all(master, assigner, Redistribute<Block>(decomposer,comm), magic_k);
 }
 
 //

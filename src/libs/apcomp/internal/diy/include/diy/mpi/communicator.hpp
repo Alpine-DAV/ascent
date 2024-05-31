@@ -9,7 +9,7 @@ namespace mpi
   {
     public:
                 inline
-                communicator(MPI_Comm comm = MPI_COMM_WORLD, bool owner = false);
+                communicator(MPI_Comm comm, bool owner = false);
 
                 ~communicator()                     { destroy(); }
 

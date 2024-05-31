@@ -23,7 +23,7 @@ Logger::Logger()
   log_name<<"rover";
 #ifdef ROVER_PARALLEL
   int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(rover::get_mpi_comm_handle(), &rank);
   log_name<<"_"<<rank;
 #endif
   log_name<<".log";
@@ -99,7 +99,7 @@ DataLogger::WriteLog()
   log_name<<"rover_data";
 #ifdef ROVER_PARALLEL
   int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(rover::get_mpi_comm_handle(), &rank);
   log_name<<"_"<<rank;
 #endif
   log_name<<".log";

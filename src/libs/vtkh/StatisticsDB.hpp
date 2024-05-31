@@ -251,9 +251,10 @@ public:
             return;
 
 #ifdef VTKH_PARALLEL
+        MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
         int rank, nProcs;
-        MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(mpi_comm, &nProcs);
+        MPI_Comm_rank(mpi_comm, &rank);
 
         int sz = 0;
 
@@ -275,7 +276,7 @@ public:
                 {
                     std::vector<float>tmp(nProcs,0.0);
                     tmp[rank] = vals[i];
-                    MPI_Reduce(&tmp[0], &res[0], nProcs, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+                    MPI_Reduce(&tmp[0], &res[0], nProcs, MPI_FLOAT, MPI_SUM, 0, mpi_comm);
                 }
                 if (rank == 0)
                     timerStats[it->first] = statValue<float>(res);
@@ -300,7 +301,7 @@ public:
                 {
                     std::vector<unsigned long> tmp(nProcs,0);
                     tmp[rank] = vals[i];
-                    MPI_Reduce(&tmp[0], &res[0], nProcs, MPI_UNSIGNED_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+                    MPI_Reduce(&tmp[0], &res[0], nProcs, MPI_UNSIGNED_LONG, MPI_SUM, 0, mpi_comm);
                 }
                 if (rank == 0)
                     counterStats[it->first] = statValue<unsigned long>(res);
@@ -334,9 +335,9 @@ public:
 
             float allMin, allMax;
             int allMaxSz;
-            MPI_Allreduce(&myMin, &allMin, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
-            MPI_Allreduce(&myMax, &allMax, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
-            MPI_Allreduce(&myMaxSz, &allMaxSz, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+            MPI_Allreduce(&myMin, &allMin, 1, MPI_FLOAT, MPI_MIN, mpi_comm);
+            MPI_Allreduce(&myMax, &allMax, 1, MPI_FLOAT, MPI_MAX, mpi_comm);
+            MPI_Allreduce(&myMaxSz, &allMaxSz, 1, MPI_INT, MPI_MAX, mpi_comm);
 
             int buffSz = allMaxSz*2 + 1, tag = 0;
             for (it = events.begin(); it != events.end(); it++)
@@ -354,7 +355,7 @@ public:
                     for (int i = 1; i < nProcs; i++)
                     {
                         MPI_Status status;
-                        MPI_Recv(&buff[0], buffSz, MPI_FLOAT, i, tag, MPI_COMM_WORLD, &status);
+                        MPI_Recv(&buff[0], buffSz, MPI_FLOAT, i, tag, mpi_comm, &status);
                         int n = int(buff[0]);
                         for (int j = 0; j < n; j+=2)
                             eventStats[i][it->first].history.push_back(std::make_pair(buff[1+j], buff[1+j+1]));
@@ -373,7 +374,7 @@ public:
                         evData[1+j*2+0] = it->second.history[j].first;
                         evData[1+j*2+1] = it->second.history[j].second;
                     }
-                    MPI_Send(&evData[0], buffSz, MPI_FLOAT, 0, tag, MPI_COMM_WORLD);
+                    MPI_Send(&evData[0], buffSz, MPI_FLOAT, 0, tag, mpi_comm);
                 }
             }
         }

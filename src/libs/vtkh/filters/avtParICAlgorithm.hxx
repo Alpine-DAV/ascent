@@ -2,15 +2,15 @@
 #include <string.h>
 #include "MemStream.h"
 #include <vtkh/filters/DebugMeowMeow.hpp>
-//#include "avtParICAlgorithm.h"
 
 using namespace std;
 
-avtParICAlgorithm::avtParICAlgorithm(MPI_Comm comm)
+avtParICAlgorithm::avtParICAlgorithm(MPI_Comm _comm):
+: comm(_comm),
+  msgID(0)
 {
-    MPI_Comm_size(comm, &nProcs);
-    MPI_Comm_rank(comm, &rank);
-    msgID = 0;
+    MPI_Comm_size(transaction_safe_dynamic, &nProcs);
+    MPI_Comm_rank(_comm, &rank);
 }
 
 void
@@ -92,9 +92,9 @@ avtParICAlgorithm::PostRecv(int tag, int sz, int src)
 
     MPI_Request req;
     if (src == -1)
-        MPI_Irecv(buff, sz, MPI_BYTE, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &req);
+        MPI_Irecv(buff, sz, MPI_BYTE, MPI_ANY_SOURCE, tag, comm, &req);
     else
-        MPI_Irecv(buff, sz, MPI_BYTE, src, tag, MPI_COMM_WORLD, &req);
+        MPI_Irecv(buff, sz, MPI_BYTE, src, tag, comm, &req);
 
     RequestTagPair entry(req, tag);
     recvBuffers[entry] = buff;
@@ -220,7 +220,7 @@ avtParICAlgorithm::SendData(int dst, int tag, MemStream *buff)
         memcpy(&header, bufferList[i], sizeof(header));
         MPI_Request req;
         int err = MPI_Isend(bufferList[i], header.packetSz, MPI_BYTE, dst,
-                            tag, MPI_COMM_WORLD, &req);
+                            tag, comm, &req);
         if (err != MPI_SUCCESS)
         {
             cerr << "Err with MPI_Isend in PARIC algorithm" << endl;
