@@ -18,7 +18,7 @@
 #include <vector>
 #include <algorithm>
 
-#ifdef defined(ASCENT_REPLAY_MPI)
+#if defined(ASCENT_REPLAY_MPI)
 #include <mpi.h>
 #include <conduit_relay_mpi.hpp>
 #include <conduit_relay_mpi_io_blueprint.hpp>
@@ -188,7 +188,7 @@ main(int argc, char *argv[])
   int comm_size = 1;
   int rank = 0;
 
-#ifdef ASCENT_REPLAY_MPI
+#if defined(ASCENT_REPLAY_MPI)
   MPI_Init(NULL,NULL);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -199,7 +199,7 @@ main(int argc, char *argv[])
   conduit::Node ascent_opts;
   ascent_opts["actions_file"] = options.m_actions_file;
   ascent_opts["ascent_info"] = "verbose";
-#ifdef ASCENT_REPLAY_MPI
+#if defined(ASCENT_REPLAY_MPI)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
 
@@ -226,21 +226,21 @@ main(int argc, char *argv[])
     conduit::relay::io::blueprint::load_mesh(time_steps[i],replay_data);
 #endif
 
-#ifdef ASCENT_REPLAY_MPI
+#if defined(ASCENT_REPLAY_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     float load_time = load.elapsed();
 
     flow::Timer publish;
     ascent.publish(replay_data);
-#ifdef ASCENT_REPLAY_MPI
+#if defined(ASCENT_REPLAY_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     float publish_time = publish.elapsed();
 
     flow::Timer execute;
     ascent.execute(actions);
-#ifdef ASCENT_REPLAY_MPI
+#if defined(ASCENT_REPLAY_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     float execute_time = execute.elapsed();
@@ -254,7 +254,7 @@ main(int argc, char *argv[])
 
   ascent.close();
 
-#ifdef ASCENT_REPLAY_MPI
+#if defined(ASCENT_REPLAY_MPI)
   MPI_Finalize();
 #endif
   return 0;
