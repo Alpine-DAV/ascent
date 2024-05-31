@@ -8,9 +8,9 @@
         type: "mir"
         params: 
           matset: "matset"
-          error_scaling: 0.2
-          scaling_decay: 1.0
-          iterations: 8
+          error_scaling: 0.0
+          scaling_decay: 0.0
+          iterations: 0
           max_error: 1e-05
 - 
   action: "add_scenes"

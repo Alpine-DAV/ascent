@@ -4986,10 +4986,10 @@ VTKHMIR::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("matset",params, info, true);
-    res &= check_numeric("error_scaling", params, info, true);
-    res &= check_numeric("scaling_decay", params, info, true);
-    res &= check_numeric("iterations", params, info, true);
-    res &= check_numeric("max_error", params, info, true);
+    res &= check_numeric("error_scaling", params, info, false);
+    res &= check_numeric("scaling_decay", params, info, false);
+    res &= check_numeric("iterations", params, info, false);
+    res &= check_numeric("max_error", params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("matset");
@@ -5041,13 +5041,18 @@ VTKHMIR::execute()
     std::string topo_name = collection->field_topology(length_name);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    std::cerr << "data going into ascent_runtime_vtkh_filters: " << std::endl;
-    data.PrintSummary(std::cerr);
-
-    double error_scaling = params()["error_scaling"].to_float64();
-    double scaling_decay = params()["scaling_decay"].to_float64();
-    int iterations = params()["iterations"].to_int64();
-    double max_error = params()["max_error"].to_float64();
+    double error_scaling = 0.0; 
+    double scaling_decay = 0.0; 
+    double max_error = 0.00001;
+    int iterations = 0;
+    if(params().has_path("error_scaling"))
+      error_scaling = params()["error_scaling"].to_float64();
+    if(params().has_path("scaling_decay"))
+      scaling_decay = params()["scaling_decay"].to_float64();
+    if(params().has_path("iterations"))
+      iterations = params()["iterations"].to_int64();
+    if(params().has_path("max_error"))
+      max_error = params()["max_error"].to_float64();
 
     vtkh::MIR mir;
     mir.SetErrorScaling(error_scaling);
@@ -5058,8 +5063,6 @@ VTKHMIR::execute()
     mir.SetInput(&data);
     mir.Update();
     vtkh::DataSet *mir_output = mir.GetOutput();
-    std::cerr << "vkth::dataset MIR: " << std::endl;
-    mir_output->PrintSummary(std::cerr);
 
     //// we need to pass through the rest of the topologies, untouched,
     //// and add the result of this operation

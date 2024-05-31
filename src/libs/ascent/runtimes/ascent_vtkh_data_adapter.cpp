@@ -579,7 +579,7 @@ void GetMatSetIDsAndVFs(const conduit::Node &node, //materials["matset"]
       const S *data = n_material.value();
       if(data[i] > 0)
       {
-        v_ids[offset] = j;
+        v_ids[offset] = j + 1; //IDs cannot start at zero
         v_vfs[offset] = data[i];
         offset++;
       }

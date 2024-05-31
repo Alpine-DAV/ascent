@@ -967,8 +967,8 @@ accurate but slower point based gradients (default).
 Material Interface Reconstruction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The Material Interface Reconstruction (MIR) filter does something sciency that people like and want. 
-The user must specify the name of the material set (`matset`), as well as the error scaling (`error_scaling`), scaling decay (`scaling_decay`), maximum iterations (`iterations`), and maximum error percentage (`max_error`).
-The output field of the MIR Filter is `cellMat` and can be used for rendering in scenes. 
+The user must specify the name of the material set (`matset`) they wish to use.  Optional parameters include error scaling (`error_scaling`), scaling decay (`scaling_decay`), maximum iterations (`iterations`), and maximum error percentage (`max_error`).
+The output field of the MIR Filter is `cellMat` that can be used further in scenes or pipelines. 
 
 .. code-block:: c++
 
@@ -978,10 +978,10 @@ The output field of the MIR Filter is `cellMat` and can be used for rendering in
   //params optional
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["matset"] = "matset";   //required
-  params["error_scaling"] = 0.2; //required
-  params["scaling_decay"] = 1.0; //required
-  params["iterations"] = 8;      //required
-  params["max_error"] = 0.00001; //required
+  params["error_scaling"] = 0.2; //default: 0.0
+  params["scaling_decay"] = 1.0; //default: 0.0
+  params["iterations"] = 8;      //default: 0
+  params["max_error"] = 0.00001; //default: 0.00001
 
 
 Partitioning

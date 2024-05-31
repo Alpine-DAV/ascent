@@ -109,12 +109,11 @@ void MIR::DoExecute()
     mir.SetMaxIterations(vtkm::IdComponent(m_iterations));
     mir.SetMaxPercentError(vtkm::Float64(m_max_error));
     vtkm::cont::DataSet output = mir.Execute(dom);
+    //cast and call error if cellMat stays as ints
     vtkm::cont::UnknownArrayHandle float_field = output.GetField("cellMat").GetDataAsDefaultFloat();
     output.GetField("cellMat").SetData(float_field);
-    std::cerr << "OUTPUT CELLS: " << output.GetNumberOfCells() << std::endl;
-    std::cerr << "output from vtkm MIR: =================" << std::endl;
-    output.PrintSummary(std::cerr);
     this->m_output->AddDomain(output, i);
+//    this->m_output->AddDomain(dom, i); //original data
   }
 }
 
