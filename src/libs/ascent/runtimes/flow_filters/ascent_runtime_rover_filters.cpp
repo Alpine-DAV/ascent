@@ -40,6 +40,7 @@
 
 #if defined(ASCENT_VTKM_ENABLED)
 #include <rover.hpp>
+#include <rover/utils/rover_logging.hpp>
 #include <ray_generators/camera_generator.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
@@ -212,6 +213,9 @@ RoverXRay::execute()
     Rover tracer;
 #ifdef ASCENT_MPI_ENABLED
     int comm_id = flow::Workspace::default_mpi_comm();
+    rover::Logger::get_instance()->set_mpi_comm_id(comm_id);
+    /// these use different styles of naming functions ....
+    rover::DataLogger::GetInstance()->set_mpi_comm_id(comm_id);
     tracer.set_mpi_comm_handle(comm_id);
 #endif
 

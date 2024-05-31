@@ -116,7 +116,7 @@ struct Redistribute
       } // for
 
     } // else
-    MPI_Barrier(comm); //HACK
+    MPI_Barrier(m_comm); //HACK
   } // operator
 };
 
