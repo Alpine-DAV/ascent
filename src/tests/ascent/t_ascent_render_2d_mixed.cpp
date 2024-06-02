@@ -63,15 +63,16 @@ TEST(ascent_pipeline, test_render_2d_mixed)
 
     data["topologies/topo/type"] = "unstructured";
     data["topologies/topo/coordset"] = "coords";
-    data["topologies/elements/shape"] = "mixed";
-    data["topologies/elements/shape_map/tri"]  = 5;
-    data["topologies/elements/shape_map/quad"] = 9;
-    data["topologies/elements/sizes"] =  {4, 4, 4,
-                                          3, 3, 3, 3, 3, 3 };
-    data["topologies/elements/offsets"] =  {0, 4, 8,
-                                            12, 15, 18, 21, 24, 28};
+    data["topologies/topo/elements/shape"] = "mixed";
+    data["topologies/topo/elements/shape_map/tri"]  = 5;
+    data["topologies/topo/elements/shape_map/quad"] = 9;
+    data["topologies/topo/elements/shapes"] = { 9, 9, 9, 5, 5, 5, 5, 5};
+    data["topologies/topo/elements/sizes"] =  {4, 4, 4,
+                                               3, 3, 3, 3, 3, 3 };
+    data["topologies/topo/elements/offsets"] =  {0, 4, 8,
+                                                 12, 15, 18, 21, 24, 28};
    
-    data["topologies/elements/connectivity"] =  {0, 1, 5, 4, 
+    data["topologies/topo/elements/connectivity"] =  {0, 1, 5, 4, 
                                                  1, 2, 6, 5, 
                                                  2, 3, 7, 6, 
                                                  4, 5, 8,
@@ -84,6 +85,8 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     data.print();
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+    
+    std::cout << verify_info.to_yaml() << std::endl;
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
