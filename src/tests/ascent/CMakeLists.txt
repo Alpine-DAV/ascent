@@ -27,6 +27,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_render_2d_poly
                 t_ascent_render_3d_poly
                 t_ascent_render_2d_mixed
+                t_ascent_render_3d_mixed
                 t_ascent_render_auto_camera
                 t_ascent_info
                 t_ascent_render_bounds

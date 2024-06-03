@@ -138,7 +138,7 @@ BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
 
     if( sizeof(T) == 1 ) // uint8 is what vtk-m will use for this case.
     {
-        if(n.is_compact() && n.dtype().is_int32())
+        if(n.is_compact() && n.dtype().is_uint8())
         {
             // directly compatible
             const void *idx_ptr = n.data_ptr();
@@ -151,7 +151,7 @@ BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
             void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
             Node n_tmp;
             n_tmp.set_external(DataType::uint8(array_size),ptr);
-            n.to_int32_array(n_tmp);
+            n.to_uint8_array(n_tmp);
         }
     }
     else if( sizeof(T) == 2)
@@ -1532,8 +1532,8 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
         // shapes
         vtkm::cont::ArrayHandle<vtkm::UInt8> vtkm_shapes;
         detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["shapes"],
-                                                zero_copy,
-                                                vtkm_shapes);
+                                                 zero_copy,
+                                                 vtkm_shapes);
 
         // offsets
         vtkm::cont::ArrayHandle<vtkm::Id> vtkm_offsets;
@@ -1541,12 +1541,12 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
                                                  zero_copy,
                                                  vtkm_offsets);
 
-        using StorageTag = typename decltype(vtkm_conn)::StorageTag;
 
-
-        vtkm::cont::CellSetExplicit<StorageTag, StorageTag, StorageTag> cell_set;
+        vtkm::cont::CellSetExplicit<> cell_set;
         cell_set.Fill(num_ids, vtkm_shapes, vtkm_conn, vtkm_offsets);
         result->SetCellSet(cell_set);
+        // for debugging help
+        // result->PrintSummary(std::cout);
     }
     else
     {

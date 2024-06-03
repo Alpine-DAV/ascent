@@ -6,7 +6,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_render_2d_poly.cpp
+/// file: t_ascent_render_3d_mixed.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 //-----------------------------------------------------------------------------
-TEST(ascent_pipeline, test_render_2d_mixed)
+TEST(ascent_pipeline, test_render_3d_mixed)
 {
     // the vtkm runtime is currently our only rendering runtime
     Node n;
@@ -38,54 +38,61 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     //
     Node data, verify_info;
 
-    // create simple mixed 2d mesh with triangles and quads
+    // create simple mixed 3d mesh with hexs and pyramids
     /*
-    3     *-------*-------*       (8, 9, 10)
-         / \     / \     / \
-        / d \ e / f \ g / h \
-       /     \ /     \ /     \
-    1  *------*-------*------*    (4, 5, 6, 7)
-       |   a  |   b   |  c   |
-    0  *------*-------*------*
-       0      1       2      3
+            *       *      * ( x: 0.5, 1.5, 2.5). 16, 17, 18
+                             ( y:   2,   2,   2)
+                             ( z: 0.5, 0.5, 0.5)
+
+   1    *------*-------*------*  (12, 13, 14, 15) (back upper)
+  z    /      /.      /.     /|
+ 0  1 *------*-------*------* |  (8, 9, 10, 11) (front upper)
+    y |   a  |   b   |  c   | / 
+    0 *------*-------*------*    (4, 5, 6, 7) (back lower)
+      0      1       2      3
     */
     
     data["coordsets/coords/type"] = "explicit";
-    data["coordsets/coords/values/x"].set(DataType::float64(11));
-    data["coordsets/coords/values/y"].set(DataType::float64(11));
-    
     data["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0,
                                           0.0, 1.0, 2.0, 3.0,
-                                          0.5, 1.5, 2.5 };
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.5, 1.5, 2.5};
+
     data["coordsets/coords/values/y"] = { 0.0, 0.0, 0.0, 0.0,
+                                          0.0, 0.0, 0.0, 0.0,
                                           1.0, 1.0, 1.0, 1.0,
-                                          3.0, 3.0, 3.0};
+                                          1.0, 1.0, 1.0, 1.0,
+                                          2.0, 2.0, 2.0};
+
+    data["coordsets/coords/values/z"] = { 0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          0.5, 0.5, 0.5};
+
 
     data["topologies/topo/type"] = "unstructured";
     data["topologies/topo/coordset"] = "coords";
     data["topologies/topo/elements/shape"] = "mixed";
-    data["topologies/topo/elements/shape_map/tri"]  = 5;
-    data["topologies/topo/elements/shape_map/quad"] = 9;
-    data["topologies/topo/elements/shapes"] = { 9, 9, 9,
-                                                5, 5, 5, 5, 5};
-    data["topologies/topo/elements/sizes"] =  { 4, 4, 4,
-                                                3, 3, 3, 3, 3};
-    data["topologies/topo/elements/offsets"] =  {0, 4, 8,
-                                                 12, 15, 18, 21, 24};
+    data["topologies/topo/elements/shape_map/hex"]  = 12;
+    data["topologies/topo/elements/shape_map/pyramid"]  = 14;
+    data["topologies/topo/elements/shapes"] =  { 12, 12, 12, 14, 14, 14 };
+    data["topologies/topo/elements/sizes"] =   { 8, 8, 8, 5, 5, 5};
+    data["topologies/topo/elements/offsets"] = { 0, 8, 16,
+                                                 24, 29, 34};
    
-    data["topologies/topo/elements/connectivity"] =  {0, 1, 5, 4,
-                                                      1, 2, 6, 5,
-                                                      2, 3, 7, 6,
-                                                      4, 5, 8,
-                                                      8, 5, 9,
-                                                      5, 6, 9,
-                                                      9, 6, 10,
-                                                      6, 7, 10};
+    data["topologies/topo/elements/connectivity"] =  {  0,  1,  5,  4,  8,  9, 13, 12,
+                                                        1,  2,  6,  5,  9, 10, 14, 13,
+                                                        2,  3,  7,  6, 10, 11, 15, 14,
+                                                        8,  9, 13, 12, 16,
+                                                        9, 10, 14, 13, 17,
+                                                       10, 11, 15, 14, 18
+                                                    };
 
     data["fields/ele_id/topology"] = "topo";
     data["fields/ele_id/association"] = "element";
-    data["fields/ele_id/values"] = { 0, 1, 2,
-                                     3, 4, 5, 6, 7};
+    data["fields/ele_id/values"] = { 0, 1, 2, 3, 4, 5};
 
     // also add a points topo to help with debugging
 
@@ -93,9 +100,11 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     data["topologies/pts/coordset"] = "coords";
     data["fields/pts_id/topology"] = "pts";
     data["fields/pts_id/association"] = "element";
-    data["fields/pts_id/values"] = { 0, 1, 2, 3,
-                                     4, 5, 6, 7, 
-                                     8, 9, 10};
+    data["fields/pts_id/values"] = {  0,  1,  2,  3,
+                                      4,  5,  6,  7,
+                                      8,  9, 10, 11,
+                                     12, 13, 14, 15,
+                                     16, 17, 18};
 
     data.print();
 
@@ -105,7 +114,7 @@ TEST(ascent_pipeline, test_render_2d_mixed)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                                        "tout_render_2d_mixed");
+                                                        "tout_render_3d_mixed");
     // remove old images before rendering
     remove_test_image(output_file);
 
@@ -125,8 +134,7 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     scenes["s1/plots/p2/field"] = "pts_id";
     scenes["s1/plots/p2/points/radius"] = .15;
     scenes["s1/renders/r1/image_prefix"] = output_file;
-    // TODO: This isn't changing the view in 2D ...
-    //scenes["s1/renders/r1/camera/zoom"] = .5;
+    scenes["s1/renders/r1/camera/zoom"] = .5;
     actions.print();
 
     //
