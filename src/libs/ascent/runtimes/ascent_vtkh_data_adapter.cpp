@@ -1466,48 +1466,9 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
 
-
-
     const Node &n_topo_eles = n_topo["elements"];
     std::string ele_shape = n_topo_eles["shape"].as_string();
-    //
-    // if( sizeof(vtkm::Id) == 4)
-    // {
-    //      if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
-    //      {
-    //        const void *ele_idx_ptr = n_topo_conn.data_ptr();
-    //        detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size,zero_copy);
-    //      }
-    //      else
-    //      {
-    //          // convert to int32
-    //          // std::cout << "INT32 unstructured conversion: non zero copy" << std::endl;
-    //          connectivity.Allocate(conn_size);
-    //          void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-    //          Node n_tmp;
-    //          n_tmp.set_external(DataType::int32(conn_size),ptr);
-    //          n_topo_conn.to_int32_array(n_tmp);
-    //     }
-    // }
-    // else
-    // {
-    //     if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
-    //     {
-    //         const void *ele_idx_ptr = n_topo_conn.data_ptr();
-    //         detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size, zero_copy);
-    //     }
-    //     else
-    //     {
-    //          // convert to int64
-    //          // std::cout << "INT64 unstructured conversion: non zero copy" << std::endl;
-    //          connectivity.Allocate(conn_size);
-    //          void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-    //          Node n_tmp;
-    //          n_tmp.set_external(DataType::int64(conn_size),ptr);
-    //          n_topo_conn.to_int64_array(n_tmp);
-    //     }
-    // }
-    
+
     if(ele_shape == "mixed")
     {
         std::cout << "MIXED CASE!" << std::endl;
@@ -1518,6 +1479,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
         // if(!detail::CheckShapeMapVsVTKmShapeIds(n_topo_eles["shape_map"]))
         // {
         //     // TODO -- solve this (strategy to remap ids)
+        //     ASCENT_ERROR("Shape Map Entries do not match VTK-m Ids");
         // }
 
         index_t num_ids  = n_topo_eles["connectivity"].dtype().number_of_elements();
