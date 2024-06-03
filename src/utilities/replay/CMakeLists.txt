@@ -24,7 +24,7 @@ if (ENABLE_SERIAL)
         NAME        replay_ser
         SOURCES     ${REPLAY_SOURCES}
         DEPENDS_ON  ${replay_deps}
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
     
     # install target for replay serial
     install(TARGETS replay_ser
@@ -46,9 +46,9 @@ if(MPI_FOUND)
         NAME        replay_mpi
         SOURCES     ${REPLAY_SOURCES}
         DEPENDS_ON  ${replay_mpi_deps}
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
 
-    blt_add_target_compile_flags(TO replay_mpi FLAGS "-DREPLAY_MPI=1")
+    blt_add_target_compile_flags(TO replay_mpi FLAGS "-DASCENT_REPLAY_MPI=1")
 
     # install target for replay mpi
     install(TARGETS replay_mpi
