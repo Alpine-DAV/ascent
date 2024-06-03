@@ -66,11 +66,12 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     data["topologies/topo/elements/shape"] = "mixed";
     data["topologies/topo/elements/shape_map/tri"]  = 5;
     data["topologies/topo/elements/shape_map/quad"] = 9;
-    data["topologies/topo/elements/shapes"] = { 9, 9, 9, 5, 5, 5, 5, 5};
-    data["topologies/topo/elements/sizes"] =  {4, 4, 4,
-                                               3, 3, 3, 3, 3, 3 };
+    data["topologies/topo/elements/shapes"] = { 9, 9, 9,
+                                                5, 5, 5, 5, 5};
+    data["topologies/topo/elements/sizes"] =  { 4, 4, 4,
+                                                3, 3, 3, 3, 3};
     data["topologies/topo/elements/offsets"] =  {0, 4, 8,
-                                                 12, 15, 18, 21, 24, 28};
+                                                 12, 15, 18, 21, 24};
    
     data["topologies/topo/elements/connectivity"] =  {0, 1, 5, 4, 
                                                  1, 2, 6, 5, 
@@ -80,8 +81,11 @@ TEST(ascent_pipeline, test_render_2d_mixed)
                                                  5, 6, 9,
                                                  9, 6, 10,
                                                  6, 7, 10};
-    
-    
+
+    data["fields/ele_id/topology"] = "topo";
+    data["fields/ele_id/association"] = "element";
+    data["fields/ele_id/values"] = { 0, 1, 2,
+                                     3, 4, 5, 6, 7};
     data.print();
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));

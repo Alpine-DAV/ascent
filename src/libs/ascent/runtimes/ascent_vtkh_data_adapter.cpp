@@ -127,6 +127,76 @@ void CopyArray(vtkm::cont::ArrayHandle<T> &vtkm_handle, const T* vals_ptr, const
   vtkm_handle = vtkm::cont::make_ArrayHandle(vals_ptr, size, copy);
 }
 
+
+template<typename T>
+void
+BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
+                                 bool zero_copy,
+                                 vtkm::cont::ArrayHandle<T> &vtkm_handle)
+{
+    int array_size = n.dtype().number_of_elements();
+
+    if( sizeof(T) == 1 ) // uint8 is what vtk-m will use for this case.
+    {
+        if(n.is_compact() && n.dtype().is_int32())
+        {
+            // directly compatible
+            const void *idx_ptr = n.data_ptr();
+            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size,zero_copy);
+        }
+        else
+        {
+            // we need to convert to uint8 to match vtkm::Id
+            vtkm_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            Node n_tmp;
+            n_tmp.set_external(DataType::uint8(array_size),ptr);
+            n.to_int32_array(n_tmp);
+        }
+    }
+    else if( sizeof(T) == 2)
+    {
+        // unsupported! -- TODO ERROR!
+    }
+    else if( sizeof(T) == 4) // int32 is what vtk-m will use for this case.
+    {
+        if(n.is_compact() && n.dtype().is_int32())
+        {
+            // directly compatible
+            const void *idx_ptr = n.data_ptr();
+            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size,zero_copy);
+        }
+        else
+        {
+            // we need to convert to int32 to match vtkm::Id
+            vtkm_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            Node n_tmp;
+            n_tmp.set_external(DataType::int32(array_size),ptr);
+            n.to_int32_array(n_tmp);
+        }
+    }
+    else if( sizeof(T) == 8) // int64 is what vtk-m will use for this case.
+    {
+        if(n.is_compact() && n.dtype().is_int64())
+        {
+            // directly compatible
+            const void *idx_ptr = n.data_ptr();
+            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size, zero_copy);
+        }
+        else
+        {
+            // we need to convert to int64 to match vtkm::Id
+            vtkm_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            Node n_tmp;
+            n_tmp.set_external(DataType::int64(array_size),ptr);
+            n.to_int64_array(n_tmp);
+        }
+    }
+}
+
+
 template<typename T>
 vtkm::cont::CoordinateSystem
 GetExplicitCoordinateSystem(const conduit::Node &n_coords,
@@ -1396,64 +1466,100 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
 
-    // TODO: there is a special data set type for single cell types
+
 
     const Node &n_topo_eles = n_topo["elements"];
     std::string ele_shape = n_topo_eles["shape"].as_string();
-
-    // TODO: assumes int32, and contiguous
-
-    const Node &n_topo_conn = n_topo_eles["connectivity"];
-
-    vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
-
-    int conn_size = n_topo_conn.dtype().number_of_elements();
-
-    if( sizeof(vtkm::Id) == 4)
+    //
+    // if( sizeof(vtkm::Id) == 4)
+    // {
+    //      if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
+    //      {
+    //        const void *ele_idx_ptr = n_topo_conn.data_ptr();
+    //        detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size,zero_copy);
+    //      }
+    //      else
+    //      {
+    //          // convert to int32
+    //          // std::cout << "INT32 unstructured conversion: non zero copy" << std::endl;
+    //          connectivity.Allocate(conn_size);
+    //          void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
+    //          Node n_tmp;
+    //          n_tmp.set_external(DataType::int32(conn_size),ptr);
+    //          n_topo_conn.to_int32_array(n_tmp);
+    //     }
+    // }
+    // else
+    // {
+    //     if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
+    //     {
+    //         const void *ele_idx_ptr = n_topo_conn.data_ptr();
+    //         detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size, zero_copy);
+    //     }
+    //     else
+    //     {
+    //          // convert to int64
+    //          // std::cout << "INT64 unstructured conversion: non zero copy" << std::endl;
+    //          connectivity.Allocate(conn_size);
+    //          void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
+    //          Node n_tmp;
+    //          n_tmp.set_external(DataType::int64(conn_size),ptr);
+    //          n_topo_conn.to_int64_array(n_tmp);
+    //     }
+    // }
+    
+    if(ele_shape == "mixed")
     {
-         if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
-         {
-           const void *ele_idx_ptr = n_topo_conn.data_ptr();
-           detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size,zero_copy);
-         }
-         else
-         {
-             // convert to int32
-             // std::cout << "INT32 unstructured conversion: non zero copy" << std::endl;
-             connectivity.Allocate(conn_size);
-             void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-             Node n_tmp;
-             n_tmp.set_external(DataType::int32(conn_size),ptr);
-             n_topo_conn.to_int32_array(n_tmp);
-        }
+        std::cout << "MIXED CASE!" << std::endl;
+        // blueprint allows mapping of shape names
+        // to arbitrary ids, check if shape ids match the VTK-m ids
+        index_t num_of_shapes = n_topo_eles["shape_map"].number_of_children();
+
+        // if(!detail::CheckShapeMapVsVTKmShapeIds(n_topo_eles["shape_map"]))
+        // {
+        //     // TODO -- solve this (strategy to remap ids)
+        // }
+
+        index_t num_ids  = n_topo_eles["connectivity"].dtype().number_of_elements();
+        // number of elements is the number of shapes presented
+        neles = (int) n_topo_eles["shapes"].dtype().number_of_elements();
+
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_conn;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["connectivity"],
+                                                 zero_copy,
+                                                 vtkm_conn);
+
+        // shapes
+        vtkm::cont::ArrayHandle<vtkm::UInt8> vtkm_shapes;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["shapes"],
+                                                zero_copy,
+                                                vtkm_shapes);
+
+        // offsets
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_offsets;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["offsets"],
+                                                 zero_copy,
+                                                 vtkm_offsets);
+
+        using StorageTag = typename decltype(vtkm_conn)::StorageTag;
+
+
+        vtkm::cont::CellSetExplicit<StorageTag, StorageTag, StorageTag> cell_set;
+        cell_set.Fill(num_ids, vtkm_shapes, vtkm_conn, vtkm_offsets);
+        result->SetCellSet(cell_set);
     }
     else
     {
-        if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
-        {
-            const void *ele_idx_ptr = n_topo_conn.data_ptr();
-            detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size, zero_copy);
-        }
-        else
-        {
-             // convert to int64
-             // std::cout << "INT64 unstructured conversion: non zero copy" << std::endl;
-             connectivity.Allocate(conn_size);
-             void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-             Node n_tmp;
-             n_tmp.set_external(DataType::int64(conn_size),ptr);
-             n_topo_conn.to_int64_array(n_tmp);
-        }
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_conn;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["connectivity"],zero_copy,vtkm_conn);
+        vtkm::UInt8 shape_id;
+        vtkm::IdComponent indices_per;
+        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+        vtkm::cont::CellSetSingleType<> cell_set;
+        cell_set.Fill(nverts, shape_id, indices_per, vtkm_conn);
+        neles = cell_set.GetNumberOfCells();
+        result->SetCellSet(cell_set);
     }
-
-    vtkm::UInt8 shape_id;
-    vtkm::IdComponent indices_per;
-    detail::VTKmCellShape(ele_shape, shape_id, indices_per);
-    vtkm::cont::CellSetSingleType<> cellset;
-    cellset.Fill(nverts, shape_id, indices_per, connectivity);
-    neles = cellset.GetNumberOfCells();
-    result->SetCellSet(cellset);
-
     return result;
 }
 
