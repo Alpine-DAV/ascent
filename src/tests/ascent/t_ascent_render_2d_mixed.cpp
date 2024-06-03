@@ -86,6 +86,18 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     data["fields/ele_id/association"] = "element";
     data["fields/ele_id/values"] = { 0, 1, 2,
                                      3, 4, 5, 6, 7};
+
+    // also add a points topo to help with debugging
+                                     
+
+    data["topologies/pts/type"] = "points";
+    data["topologies/pts/coordset"] = "coords";
+    data["fields/pts_id/topology"] = "pts";
+    data["fields/pts_id/association"] = "element";
+    data["fields/pts_id/values"] = { 0, 1, 2, 3,
+                                     4, 5, 6, 7, 
+                                     8, 9, 10};
+
     data.print();
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
@@ -106,20 +118,28 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     conduit::Node &scenes = add_plots["scenes"];
-    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "ele_id";
-    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/plots/p2/type"]  = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "pts_id";
+    scenes["s1/plots/p2/points/radius"] = .15;
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/camera/zoom"] = .5;
     actions.print();
 
     //
     // Run Ascent
     //
+    conduit::Node info;
 
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(info);
     ascent.close();
+
+    std::cout << info.to_yaml() << std::endl;
 
     //
     // // check that we created an image
