@@ -16,7 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
 - Added WarpX Streamline filter that uses charged particles.
 - Added seed population options for particle advection: point, point list, line, and box.
-- Added Uniform Grid Sampling filter
+- Added Uniform Grid Sampling filter.
 - Added Material Interface Reconstruction (`mir`) filter which produces `cellMat` output field.
 
 ### Changed
