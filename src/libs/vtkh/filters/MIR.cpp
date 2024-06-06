@@ -22,7 +22,6 @@ isMaterial(std::string matset_name, std::string field_name)
   return false;
 }
 
-
 }//end detail
 
 MIR::MIR()
@@ -93,7 +92,10 @@ void MIR::DoExecute()
 {
   this->m_output = new DataSet();
   const int num_domains = this->m_input->GetNumberOfDomains();
-  
+  //set fake discret color table
+  vtkm::Range ids_range = this->m_input->GetGlobalRange(m_ids_name).ReadPortal().Get(0);
+  std::cerr << "ids global range: " << ids_range.Min << " " << ids_range.Max << std::endl;
+
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::Id domain_id;

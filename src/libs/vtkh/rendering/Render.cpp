@@ -205,7 +205,8 @@ Render::RenderWorldAnnotations()
 void
 Render::RenderScreenAnnotations(const std::vector<std::string> &field_names,
                                 const std::vector<vtkm::Range> &ranges,
-                                const std::vector<vtkm::cont::ColorTable> &colors)
+                                const std::vector<vtkm::cont::ColorTable> &colors,
+                                const std::vector<int> &is_discrete)
 {
   if(!m_render_annotations) return;
   if(!m_render_screen_annotations) return;
@@ -219,10 +220,11 @@ Render::RenderScreenAnnotations(const std::vector<std::string> &field_names,
   if(!m_render_annotations) return;
   Annotator annotator(m_canvas, m_camera, m_scene_bounds);
   if(m_color_bar_position.size() == 0)
-    annotator.RenderScreenAnnotations(field_names, ranges, colors);
+    annotator.RenderScreenAnnotations(field_names, ranges, colors, is_discrete);
   else
-    annotator.RenderScreenAnnotations(field_names, ranges, colors, m_color_bar_position);
+    annotator.RenderScreenAnnotations(field_names, ranges, colors, m_color_bar_position, is_discrete);
 }
+
 
 Render
 Render::Copy() const

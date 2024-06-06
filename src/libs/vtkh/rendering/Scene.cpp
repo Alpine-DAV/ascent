@@ -126,6 +126,7 @@ Scene::Render()
 
   std::vector<vtkm::Range> ranges;
   std::vector<std::string> field_names;
+  std::vector<int> is_ct_discrete;
   std::vector<vtkm::cont::ColorTable> color_tables;
   bool do_once = true;
 
@@ -223,6 +224,10 @@ Scene::Render()
           ranges.push_back((*plot).GetRange());
           field_names.push_back((*plot).GetFieldName());
           color_tables.push_back((*plot).GetColorTable());
+          if((*plot).IsDiscrete())
+            is_ct_discrete.push_back(1);
+          else
+            is_ct_discrete.push_back(0);
         }
       }
       do_once = false;
@@ -232,7 +237,7 @@ Scene::Render()
     for(int i = 0; i < current_batch.size(); ++i)
     {
       current_batch[i].RenderWorldAnnotations();
-      current_batch[i].RenderScreenAnnotations(field_names, ranges, color_tables);
+      current_batch[i].RenderScreenAnnotations(field_names, ranges, color_tables, is_ct_discrete);
       current_batch[i].RenderBackground();
       current_batch[i].Save();
     }

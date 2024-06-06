@@ -5028,19 +5028,29 @@ VTKHMIR::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string matset_name = params()["matset"].as_string();
-    std::string length_name = matset_name + "_lengths";
-    if(!collection->has_field(length_name))
+    std::string ids_name = matset_name + "_ids";
+    if(!collection->has_field(ids_name))
     {
       bool throw_error = false;
-      detail::field_error(length_name, this->name(), collection, throw_error);
+      detail::field_error(ids_name, this->name(), collection, throw_error);
       // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
 
-    std::string topo_name = collection->field_topology(length_name);
+    std::string topo_name = collection->field_topology(ids_name);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    if(!graph().workspace().registry().has_entry("is_discrete"))
+    {
+      
+      int *is_discrete = new int();
+      *is_discrete = 1;
+      std::cerr << "setting is_discrete: " << *is_discrete << std::endl;
+      graph().workspace().registry().add<int>("is_discrete",
+                                               is_discrete,
+                                               -1); // TODO keep forever?
+    }
     double error_scaling = 0.0; 
     double scaling_decay = 0.0; 
     double max_error = 0.00001;
