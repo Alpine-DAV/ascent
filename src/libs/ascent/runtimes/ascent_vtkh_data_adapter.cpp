@@ -2383,8 +2383,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         VTKmBlueprintShapeMap(topo_ele["shape_map"]);
 
         size_t num_cells = static_cast<size_t>(cells.GetNumberOfCells());
-
-
         auto vtkm_shapes  = cells.GetShapesArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
         auto vtkm_conn    = cells.GetConnectivityArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
         auto vtkm_offsets = cells.GetOffsetsArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
@@ -2397,66 +2395,17 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
             topo_ele["shapes"].set_external(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
             topo_ele["connectivity"].set_external(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
             topo_ele["offsets"].set_external(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
-            //topo_ele["sizes"].set_external(vtkh::GetVTKMPointer(vtkm_sizes), num_cells);
         }
         else
         {
             topo_ele["shapes"].set(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
             topo_ele["connectivity"].set(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
             topo_ele["offsets"].set(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
-            // topo_ele["sizes"].set(vtkh::GetVTKMPointer(vtkm_sizes), num_cells);
         }
 
+        // bp requires sizes, so we have to compute them
         topo_ele["sizes"].set(DataType::index_t(num_cells));
         generate_sizes_from_shapes(topo_ele["shapes"],topo_ele["sizes"]);
-
-        topo_ele.print();
-        // calc sizes?
-
-        //
-        //
-        // // no zero copy for this case
-        // const auto* cells_base = cells.GetCellSetBase();
-        //
-        // // counting exercise for index
-        // // small hack as we can't compute properly the number of cells
-        // // instead we will pre-allocate and than shrink
-        // const vtkm::Id num_cells = cellset->GetNumberOfCells();
-        //
-        // // as we walk though, create a map of used vtk element types
-        //
-        // auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
-        //                                        vtkm::TopologyElementTagPoint());
-        //
-        // vtkIdType* connIter = connArray->GetPointer(0);
-        // const vtkIdType* connBegin = connIter;
-        //
-        // for (vtkm::Id cellId = 0; cellId < numCells; ++cellId)
-        // {
-        //   const vtkIdType vtkCellId = static_cast<vtkIdType>(cellId);
-        //   const vtkm::Id npts = cellset->GetNumberOfPointsInCell(cellId);
-        //   assert(npts <= 8 && "Initial allocation assumes no more than 8 pts/cell.");
-        //
-        //   vtkm_shape_id_mask[]
-        //
-        //   const vtkIdType offset = static_cast<vtkIdType>(connIter - connBegin);
-        //   offsetsArray->SetValue(vtkCellId, offset);
-        //
-        //   cellset->GetCellPointIds(cellId, connIter);
-        //   connIter += npts;
-        //
-        //   if (typesArray)
-        //   {
-        //     typesArray->SetValue(vtkCellId, cellset->GetCellShape(cellId));
-        //   }
-        // }
-        //
-        // const vtkIdType connSize = static_cast<vtkIdType>(connIter - connBegin);
-        // offsetsArray->SetValue(static_cast<vtkIdType>(numCells), connSize);
-        // connArray->Resize(connSize);
-        // cells->SetData(offsetsArray, connArray);
-        
-        
       }
 
     }
