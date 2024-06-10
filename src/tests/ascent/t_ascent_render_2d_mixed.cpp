@@ -6,13 +6,14 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_render_2d_poly.cpp
+/// file: t_ascent_render_2d_mixed.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
 
 #include <ascent.hpp>
+#include <conduit_relay.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -20,23 +21,17 @@
 using namespace std;
 using namespace conduit;
 using namespace ascent;
+
 //-----------------------------------------------------------------------------
-TEST(ascent_pipeline, test_render_2d_mixed)
+void
+gen_example_2d_mixed_mesh(Node &data)
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
-        return;
-    }
-    
+    data.reset();
+
+    Node verify_info;
     //
     // Create example mesh.
     //
-    Node data, verify_info;
 
     // create simple mixed 2d mesh with triangles and quads
     /*
@@ -97,11 +92,29 @@ TEST(ascent_pipeline, test_render_2d_mixed)
                                      4, 5, 6, 7, 
                                      8, 9, 10};
 
-    data.print();
+    //data.print();
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
     
-    std::cout << verify_info.to_yaml() << std::endl;
+    //std::cout << verify_info.to_yaml() << std::endl;
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_render_2d_mixed)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    Node data;
+    gen_example_2d_mixed_mesh(data);
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
@@ -149,3 +162,110 @@ TEST(ascent_pipeline, test_render_2d_mixed)
     EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
+{
+    // exec a pipeline to make sure we got through the vtk-m conversion 
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    Node data;
+    gen_example_2d_mixed_mesh(data);
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_2d_mixed_thresh_input");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    // apply threshold to make sure we do vtk-m round trip
+
+    Node actions;
+    Node &add_act = actions.append();
+    add_act["action"] = "add_pipelines";
+    Node &pipelines = add_act["pipelines"];
+
+    // add a threshold (f1)
+    pipelines["thresh/f1/type"] = "threshold";
+    Node &thresh_params = pipelines["thresh/f1/params"];
+    // keep first 6 elements
+    thresh_params["field"]  = "ele_id";
+    thresh_params["min_value"] = 0.0;
+    thresh_params["max_value"] = 5.0;
+    
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "ele_id";
+    scenes["s1/plots/p1/pipeline"] = "thresh";
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    // TODO: This isn't changing the view in 2D ...
+    //scenes["s1/renders/r1/camera/zoom"] = .5;
+
+    string output_extract_root = conduit::utils::join_file_path(output_path,
+                                                               "tout_render_2d_mixed_thresh_extract");
+
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"] = "thresh";
+    extracts["e1/params/path"] = output_extract_root;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+    conduit::Node info;
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.info(info);
+    ascent.close();
+
+    //std::cout << info.to_yaml() << std::endl;
+ 
+    // check result
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
+
+    // load back the extract
+    conduit::Node n_load, verify_info;
+    conduit::relay::io::blueprint::load_mesh(output_extract_root + ".root",n_load);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    string output_final_render = conduit::utils::join_file_path(output_path,
+                                                               "tout_render_2d_mixed_thresh_extract_render");
+    actions.reset();
+    conduit::Node &add_plots2 = actions.append();
+    add_plots2["action"] = "add_scenes";
+    conduit::Node &scenes2 = add_plots2["scenes"];
+    scenes2["s1/plots/p1/type"]  = "pseudocolor";
+    scenes2["s1/plots/p1/field"] = "ele_id";
+    scenes2["s1/renders/r1/image_prefix"] = output_final_render;
+
+
+    Ascent ascent2;
+    ascent2.open();
+    ascent2.publish(n_load);
+    ascent2.execute(actions);
+    ascent2.close();
+
+    // check result
+    EXPECT_TRUE(check_test_image(output_final_render, 0.001f, "0"));
+    
+}

@@ -167,6 +167,9 @@ private:
                                      const std::string &topo_name,
                                      bool zero_copy);
 
+    static void VTKmBlueprintShapeMap(conduit::Node &output);
+
+
 };
 
 //-----------------------------------------------------------------------------

@@ -1471,7 +1471,6 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
 
     if(ele_shape == "mixed")
     {
-        std::cout << "MIXED CASE!" << std::endl;
         // blueprint allows mapping of shape names
         // to arbitrary ids, check if shape ids match the VTK-m ids
         index_t num_of_shapes = n_topo_eles["shape_map"].number_of_children();
@@ -1955,15 +1954,57 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
   {
     name = "hex";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_WEDGE)
-  {
-    name = "wedge";
-  }
   else if(shape_id == vtkm::CELL_SHAPE_PYRAMID)
   {
     name = "pyramid";
   }
+  else if(shape_id == vtkm::CELL_SHAPE_WEDGE)
+  {
+    name = "wedge";
+  }
   return name;
+}
+
+
+inline index_t
+vtkm_shape_size(vtkm::Id shape_id)
+{
+    switch(shape_id)
+    {
+        // point
+        case vtkm::CELL_SHAPE_VERTEX:  return 1; break;
+        // line
+        case vtkm::CELL_SHAPE_LINE:  return 2; break;
+        // tri
+        case vtkm::CELL_SHAPE_TRIANGLE:  return 3; break;
+        // quad
+        case vtkm::CELL_SHAPE_QUAD:  return 4; break;
+        // tet
+        case vtkm::CELL_SHAPE_TETRA: return 4; break;
+        // hex
+        case vtkm::CELL_SHAPE_HEXAHEDRON: return 8; break;
+        // pyramid
+        case vtkm::CELL_SHAPE_PYRAMID: return 5; break;
+        // wedge
+        case vtkm::CELL_SHAPE_WEDGE: return 6; break;
+        //
+        default: return 0;
+    }
+}
+
+
+void
+generate_sizes_from_shapes(const conduit::Node &shapes,conduit::Node &sizes)
+{
+    index_t num_eles = shapes.dtype().number_of_elements();
+    uint8_array   shapes_arr = shapes.value();
+    index_t_array sizes_arr = sizes.value();
+
+    for(index_t i=0; i < num_eles; i++)
+    {
+        sizes_arr[i] = vtkm_shape_size(shapes_arr[i]);
+    }
+    
 }
 
 bool
@@ -2333,8 +2374,89 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       else
       {
         data_set.PrintSummary(std::cout);
-        ASCENT_ERROR("Mixed explicit types not implemented");
+        //ASCENT_ERROR("Mixed explicit types not implemented");
         MixedType cells = dyn_cells.AsCellSet<MixedType>();
+        Node &topo_ele = output
+            ["topologies/" + topo_name + "/elements"];
+        topo_ele["shape"] = "mixed";
+
+        VTKmBlueprintShapeMap(topo_ele["shape_map"]);
+
+        size_t num_cells = static_cast<size_t>(cells.GetNumberOfCells());
+
+
+        auto vtkm_shapes  = cells.GetShapesArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
+        auto vtkm_conn    = cells.GetConnectivityArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
+        auto vtkm_offsets = cells.GetOffsetsArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
+
+
+        std::size_t conn_size = static_cast<std::size_t>(vtkm_conn.GetNumberOfValues());
+
+        if(zero_copy)
+        {
+            topo_ele["shapes"].set_external(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
+            topo_ele["connectivity"].set_external(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
+            topo_ele["offsets"].set_external(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
+            //topo_ele["sizes"].set_external(vtkh::GetVTKMPointer(vtkm_sizes), num_cells);
+        }
+        else
+        {
+            topo_ele["shapes"].set(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
+            topo_ele["connectivity"].set(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
+            topo_ele["offsets"].set(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
+            // topo_ele["sizes"].set(vtkh::GetVTKMPointer(vtkm_sizes), num_cells);
+        }
+
+        topo_ele["sizes"].set(DataType::index_t(num_cells));
+        generate_sizes_from_shapes(topo_ele["shapes"],topo_ele["sizes"]);
+
+        topo_ele.print();
+        // calc sizes?
+
+        //
+        //
+        // // no zero copy for this case
+        // const auto* cells_base = cells.GetCellSetBase();
+        //
+        // // counting exercise for index
+        // // small hack as we can't compute properly the number of cells
+        // // instead we will pre-allocate and than shrink
+        // const vtkm::Id num_cells = cellset->GetNumberOfCells();
+        //
+        // // as we walk though, create a map of used vtk element types
+        //
+        // auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
+        //                                        vtkm::TopologyElementTagPoint());
+        //
+        // vtkIdType* connIter = connArray->GetPointer(0);
+        // const vtkIdType* connBegin = connIter;
+        //
+        // for (vtkm::Id cellId = 0; cellId < numCells; ++cellId)
+        // {
+        //   const vtkIdType vtkCellId = static_cast<vtkIdType>(cellId);
+        //   const vtkm::Id npts = cellset->GetNumberOfPointsInCell(cellId);
+        //   assert(npts <= 8 && "Initial allocation assumes no more than 8 pts/cell.");
+        //
+        //   vtkm_shape_id_mask[]
+        //
+        //   const vtkIdType offset = static_cast<vtkIdType>(connIter - connBegin);
+        //   offsetsArray->SetValue(vtkCellId, offset);
+        //
+        //   cellset->GetCellPointIds(cellId, connIter);
+        //   connIter += npts;
+        //
+        //   if (typesArray)
+        //   {
+        //     typesArray->SetValue(vtkCellId, cellset->GetCellShape(cellId));
+        //   }
+        // }
+        //
+        // const vtkIdType connSize = static_cast<vtkIdType>(connIter - connBegin);
+        // offsetsArray->SetValue(static_cast<vtkIdType>(numCells), connSize);
+        // connArray->Resize(connSize);
+        // cells->SetData(offsetsArray, connArray);
+        
+        
       }
 
     }
@@ -2557,6 +2679,21 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
     msg<<" Skipping.";
     ASCENT_INFO(msg.str());
   }
+}
+
+
+void
+VTKHDataAdapter::VTKmBlueprintShapeMap(conduit::Node &output)
+{
+    output.reset();
+    output["tri"]     = 5;
+    output["quad"]    = 9;
+    output["tet"]     = 10;
+    output["hex"]     = 12;
+    output["point"]   = 1;
+    output["line"]    = 3;
+    output["wedge"]   = 13;
+    output["pyramid"] = 14;
 }
 
 void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,
