@@ -23,7 +23,7 @@ Logger::Logger()
   log_name<<"rover";
 #ifdef ROVER_PARALLEL
   int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(MPI_Comm_f2c(get_mpi_comm_id()), &rank);
   log_name<<"_"<<rank;
 #endif
   log_name<<".log";
@@ -44,6 +44,20 @@ Logger* Logger::get_instance()
     m_instance =  new Logger();
   return m_instance;
 }
+
+void
+Logger::set_mpi_comm_id(int comm_id)
+{
+  m_mpi_comm_id = comm_id;
+}
+
+int
+Logger::get_mpi_comm_id()
+{
+  return m_mpi_comm_id;
+}
+  
+  
 
 std::ofstream& Logger::get_stream()
 {
@@ -75,6 +89,18 @@ DataLogger::~DataLogger()
   Stream.str("");
 }
 
+void
+DataLogger::set_mpi_comm_id(int comm_id)
+{
+  m_mpi_comm_id = comm_id;
+}
+
+int
+DataLogger::get_mpi_comm_id()
+{
+  return m_mpi_comm_id;
+}
+
 DataLogger*
 DataLogger::GetInstance()
 {
@@ -99,7 +125,7 @@ DataLogger::WriteLog()
   log_name<<"rover_data";
 #ifdef ROVER_PARALLEL
   int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(MPI_Comm_f2c(get_mpi_comm_id()), &rank);
   log_name<<"_"<<rank;
 #endif
   log_name<<".log";

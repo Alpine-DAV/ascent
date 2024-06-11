@@ -17,6 +17,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `topologies` option to the relay extract. This allows you to select which topologies are saved. This option can be used with the existing `fields` option, the result is the union of the selected topologies and fields.
 - Added `near_plane` and `far_plane` to the camera details provided in Ascent::info()
 
+### Fixed
+- Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
+
 ## [0.9.3] - Released 2024-05-11
 ### Preferred dependency versions for ascent@0.9.3
 - conduit@0.9.1

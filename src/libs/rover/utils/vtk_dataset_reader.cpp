@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include <utils/rover_logging.hpp>
 #include <utils/vtk_dataset_reader.hpp>
 #include <vtkm/io/VTKDataSetReader.h>
 #include <iostream>
@@ -98,10 +99,10 @@ MultiDomainVTKReader::read_file(const std::string &directory, const std::string 
      //
      // figure out which data sets to read
      //
-     int rank;
-     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-     int num_ranks;
-     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+     int rank, num_ranks;
+     MPI_Comm comm = MPI_Comm_f2c(Logger::get_instance()->get_mpi_comm_id());
+     MPI_Comm_rank(comm, &rank);
+     MPI_Comm_size(comm, &num_ranks);
      if(rank == 0)
      {
         std::cout<<"Num ranks "<<num_ranks<<"\n";
