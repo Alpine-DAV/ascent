@@ -219,7 +219,7 @@ main(int argc, char *argv[])
     }
     flow::Timer load;
 
-#if defined(ASCENT_MPI_ENABLED)
+#if defined(ASCENT_REPLAY_MPI)
     MPI_Comm comm  = MPI_Comm_f2c(options["mpi_comm"].to_int());
     conduit::relay::mpi::io::blueprint::load_mesh(time_steps[i],replay_data,comm);
 #else
