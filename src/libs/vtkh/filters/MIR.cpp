@@ -38,10 +38,10 @@ void
 MIR::SetMatSet(const std::string matset_name)
 {
   m_matset_name = matset_name;
-  m_lengths_name = matset_name + "_lengths";
-  m_offsets_name = matset_name + "_offsets";
-  m_ids_name = matset_name + "_ids";
-  m_vfs_name = matset_name + "_vfs";
+  m_lengths_name = "sizes";// matset_name + "_lengths";
+  m_offsets_name = "offsets";// matset_name + "_offsets";
+  m_ids_name = "material_ids";// matset_name + "_ids";
+  m_vfs_name = "volume_fractions";// matset_name + "_vfs";
 }
 
 void 
@@ -72,10 +72,12 @@ void
 MIR::PreExecute()
 {
   Filter::PreExecute();
-  std::string lengths_field = m_matset_name + "_lengths";
-  std::string offsets_field = m_matset_name + "_offsets";
-  std::string ids_field = m_matset_name + "_ids";
-  std::string vfs_field = m_matset_name + "_vfs";
+  std::string lengths_field ="sizes";// m_matset_name + "_lengths";
+  std::string offsets_field = "offsets";//m_matset_name + "_offsets";
+  std::string ids_field = "material_ids";//m_matset_name + "_ids";
+  std::string vfs_field = "volume_fractions";//m_matset_name + "_vfs";
+    std::cerr << "IDS NAME " << ids_field <<  std::endl;
+
   Filter::CheckForRequiredField(lengths_field);
   Filter::CheckForRequiredField(offsets_field);
   Filter::CheckForRequiredField(ids_field);
@@ -90,9 +92,11 @@ MIR::PostExecute()
 
 void MIR::DoExecute()
 {
+                std::cerr << "HERE 4" << std::endl;
   this->m_output = new DataSet();
   const int num_domains = this->m_input->GetNumberOfDomains();
   //set fake discret color table
+  std::cerr << "m_ids_name: " << m_ids_name << std::endl;
   vtkm::Range ids_range = this->m_input->GetGlobalRange(m_ids_name).ReadPortal().Get(0);
   std::cerr << "ids global range: " << ids_range.Min << " " << ids_range.Max << std::endl;
 
@@ -101,6 +105,8 @@ void MIR::DoExecute()
     vtkm::Id domain_id;
     vtkm::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
+    std::cerr << "DATA before execute" << std::endl;
+    dom.PrintSummary(std::cerr);
     vtkm::filter::contour::MIRFilter mir; 
     mir.SetLengthCellSetName(m_lengths_name);
     mir.SetPositionCellSetName(m_offsets_name);
@@ -110,7 +116,9 @@ void MIR::DoExecute()
     mir.SetScalingDecay(vtkm::Float64(m_scaling_decay));
     mir.SetMaxIterations(vtkm::IdComponent(m_iterations));
     mir.SetMaxPercentError(vtkm::Float64(m_max_error));
+    std::cerr << "before execute" << std::endl;
     vtkm::cont::DataSet output = mir.Execute(dom);
+    std::cerr << "after execute" << std::endl;
     //cast and call error if cellMat stays as ints
     vtkm::cont::UnknownArrayHandle float_field = output.GetField("cellMat").GetDataAsDefaultFloat();
     output.GetField("cellMat").SetData(float_field);

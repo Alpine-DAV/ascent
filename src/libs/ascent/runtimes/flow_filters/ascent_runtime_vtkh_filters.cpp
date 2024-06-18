@@ -5028,7 +5028,7 @@ VTKHMIR::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string matset_name = params()["matset"].as_string();
-    std::string ids_name = matset_name + "_ids";
+    std::string ids_name = "material_ids";//matset_name + "_ids";
     if(!collection->has_field(ids_name))
     {
       bool throw_error = false;
