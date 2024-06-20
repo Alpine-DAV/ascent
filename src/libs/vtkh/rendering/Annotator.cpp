@@ -50,7 +50,6 @@ Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
       this->m_color_bar_annotation.SetRange(ranges[i], 5);
     this->m_color_bar_annotation.SetFieldName(field_names[i]);
     this->m_color_bar_annotation.SetPosition(m_color_bar_pos[i]);
-    std::cerr << "color_bar_pos: " << m_color_bar_pos[i].X.Min << " " << m_color_bar_pos[i].X.Max << " " << m_color_bar_pos[i].Y.Min << " " << m_color_bar_pos[i].Y.Max << std::endl;
     this->m_color_bar_annotation.SetColorTable(color_tables[i]);
     this->m_color_bar_annotation.Render(m_camera, *m_world_annotator, m_canvas);
   }

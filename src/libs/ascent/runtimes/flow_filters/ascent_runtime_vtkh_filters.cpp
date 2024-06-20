@@ -5046,7 +5046,6 @@ VTKHMIR::execute()
       
       int *is_discrete = new int();
       *is_discrete = 1;
-      std::cerr << "setting is_discrete: " << *is_discrete << std::endl;
       graph().workspace().registry().add<int>("is_discrete",
                                                is_discrete,
                                                -1); // TODO keep forever?

@@ -493,11 +493,12 @@ bool allEqual(std::vector<T> const &v)
 
 
 template<typename T, typename S>
-void GetMatSetLength(const conduit::Node &node, //materials["matset"]
+void GetMatSetFields(const conduit::Node &node, //materials["matset"]
                            const std::string &length_name,
                            const std::string &offsets_name,
+                           const std::string &ids_name,
+                           const std::string &vfs_name,
                            const std::string &topo_str,
-                           int &total,
                            const int neles,
                            vtkm::cont::Field &length,
                            vtkm::cont::Field &offsets,
@@ -537,22 +538,22 @@ void GetMatSetLength(const conduit::Node &node, //materials["matset"]
       const Node &n_material = itr.next();
       const S *data = n_material.value();
       //increase length when a material vf value > 0
-      for(int i = 0; i < neles; ++i)
+      for(index_t i = 0; i < neles; ++i)
       {
         if(data[i] > 0)
-          v_length[i] = v_length[i] + 1;
+          v_length[i] += 1;
       }
     }
   }
+
   //calc offset of length and total length
   int l_total = 0;
-  for(int i = 0; i < neles-1; ++i)
+  for(index_t i = 0; i < neles-1; ++i)
   {
     v_offsets[i+1] = v_offsets[i] + v_length[i];
     l_total += v_length[i];
   }
   l_total += v_length[neles-1];
-  total = l_total;
 
   const T *length_ptr = v_length.data();
 
@@ -569,42 +570,65 @@ void GetMatSetLength(const conduit::Node &node, //materials["matset"]
                                  offsets_ptr,
                                  neles,
                                  copy);
-//calc vfs and mat ids
+  //calc vfs and mat ids
   vtkm::cont::Field::Association vtkm_assoc_w = vtkm::cont::Field::Association::WholeDataSet;
-  std::vector<T> v_ids(total,0);
-  std::vector<S> v_vfs(total,0);
+  std::vector<T> v_ids(l_total,0);
+  std::vector<S> v_vfs(l_total,0);
+
   if(node.has_child("element_ids"))
   {
 
     int num_materials = node["element_ids"].number_of_children();
+    const Node &n_vol_fracs = node["volume_fractions"];
+    const Node &n_ele_ids = node["element_ids"];
+
+    for(index_t i = 0; i < num_materials; ++i)
+    {
+      const Node &n_vol_frac = n_vol_fracs.child(i);
+      const Node &n_ele_id = n_ele_ids.child(i);
+      const S *vf_data = n_vol_frac.value();
+      const T *id_data = n_ele_id.value();
+      int num_vals = n_ele_id.dtype().number_of_elements(); 
+
+      for(index_t j = 0; j < num_vals; ++j)
+      {
+        v_length[id_data[j]] -= 1;
+        index_t offset = v_offsets[id_data[j]];
+        index_t length = v_length[id_data[j]];
+        v_vfs[offset + length] = vf_data[j];
+        v_ids[offset + length] = i+1; //material ids can't start at 0
+      }
+    }
   }
   else
   {
     int num_materials = node["volume_fractions"].number_of_children();
-    for(int i = 0; i < num_materials; ++i)
+    for(index_t i = 0; i < num_materials; ++i)
     {
       const Node &n_materials = node["volume_fractions"];
       const Node &n_material = n_materials.child(i);
       const S *data = n_material.value();
 
-      for(int j = 0; j < neles; ++j)
+      for(index_t j = 0; j < neles; ++j)
       {
-        int offset = offsets[j];
+        index_t offset = v_offsets[j];
         if(data[j] > 0)
         {
-          v_ids[offset] = i + 1; //IDs cannot start at 0
-          v_vfs[offset] = data[j];
-          offset++;
+          v_length[j] -= 1;
+          index_t length = v_length[j];
+          v_ids[offset + length] = i + 1; //IDs cannot start at 0
+          v_vfs[offset + length] = data[j];
         }
       }
     }
   }
+
   const T *ids_ptr = v_ids.data();
 
   ids = vtkm::cont::make_Field(ids_name,
                                vtkm_assoc_w,
                                ids_ptr,
-                               total,
+                               l_total,
                                copy);
 
   const S *vfs_ptr = v_vfs.data();
@@ -612,60 +636,60 @@ void GetMatSetLength(const conduit::Node &node, //materials["matset"]
   vfs = vtkm::cont::make_Field(vfs_name,
                                vtkm_assoc_w,
                                vfs_ptr,
-                               total,
+                               l_total,
                                copy);
 }
 
-template<typename T, typename S>
-void GetMatSetIDsAndVFs(const conduit::Node &node, //materials["matset"]
-                           const std::string &ids_name,
-                           const std::string &vfs_name,
-                           const std::string &topo_str,
-                           const int total,
-                           const int neles,
-                           vtkm::cont::Field &offsets,
-{
-  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
-
-  vtkm::cont::ArrayHandle<int> ah_offsets;
-  offsets.GetData().AsArrayHandle(ah_offsets);
-  
-  int num_materials = node["volume_fractions"].number_of_children();
-  for(int i = 0; i < num_materials; ++i)
-  {
-    int offset = ah_offsets.ReadPortal().Get(j);
-    const Node &n_materials = node["volume_fractions"];
-    const Node &n_material = n_materials.child(i);
-    const S *data = n_material.value();
-
-    for(int j = 0; j < neles; ++j)
-    {
-      if(data[j] > 0)
-      {
-        v_ids[offset] = j + 1; //IDs cannot start at 0
-        v_vfs[offset] = data[j];
-        offset++;
-      }
-    }
-  }
-
-  const T *ids_ptr = v_ids.data();
-
-  ids = vtkm::cont::make_Field(ids_name,
-                               vtkm_assoc,
-                               ids_ptr,
-                               total,
-                               copy);
-
-  const S *vfs_ptr = v_vfs.data();
-
-  vfs = vtkm::cont::make_Field(vfs_name,
-                               vtkm_assoc,
-                               vfs_ptr,
-                               total,
-                               copy);
-
-}
+//template<typename T, typename S>
+//void GetMatSetIDsAndVFs(const conduit::Node &node, //materials["matset"]
+//                           const std::string &ids_name,
+//                           const std::string &vfs_name,
+//                           const std::string &topo_str,
+//                           const int total,
+//                           const int neles,
+//                           vtkm::cont::Field &offsets,
+//{
+//  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+//
+//  vtkm::cont::ArrayHandle<int> ah_offsets;
+//  offsets.GetData().AsArrayHandle(ah_offsets);
+//  
+//  int num_materials = node["volume_fractions"].number_of_children();
+//  for(int i = 0; i < num_materials; ++i)
+//  {
+//    int offset = ah_offsets.ReadPortal().Get(j);
+//    const Node &n_materials = node["volume_fractions"];
+//    const Node &n_material = n_materials.child(i);
+//    const S *data = n_material.value();
+//
+//    for(int j = 0; j < neles; ++j)
+//    {
+//      if(data[j] > 0)
+//      {
+//        v_ids[offset] = j + 1; //IDs cannot start at 0
+//        v_vfs[offset] = data[j];
+//        offset++;
+//      }
+//    }
+//  }
+//
+//  const T *ids_ptr = v_ids.data();
+//
+//  ids = vtkm::cont::make_Field(ids_name,
+//                               vtkm_assoc,
+//                               ids_ptr,
+//                               total,
+//                               copy);
+//
+//  const S *vfs_ptr = v_vfs.data();
+//
+//  vfs = vtkm::cont::make_Field(vfs_name,
+//                               vtkm_assoc,
+//                               vfs_ptr,
+//                               total,
+//                               copy);
+//
+//}
 
 };
 //-----------------------------------------------------------------------------
@@ -958,7 +982,6 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
               // these are not the materials we are looking for
               continue;
             }
-            std::cerr << "calling AddMatSets on: " << matset_name << " w/topo: " << topo_name << std::endl;
             AddMatSets(matset_name,
                      n_matset,
                      topo_name,
@@ -2063,6 +2086,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
     if(!n_matset.has_child("volume_fractions"))
         ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+    //TODO: zero_copy = true segfaulting in vtkm mir filter
     zero_copy = false;
     
     std::string assoc_str = "element";
@@ -2102,7 +2126,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 if(n_material_ids.dtype().is_int64())
                 {
                     conduit::int64 *vec_ids = n_material_ids.as_int64_ptr();
-                    std::cerr << "num_vals: " << num_vals << std::endl;
                     for(int i = 0; i < num_vals; ++i)
                     {
                       vec_ids[i] += 1.0; 
@@ -2111,7 +2134,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 else if(n_material_ids.dtype().is_int32())
                 {
                     conduit::int32 *vec_ids = n_material_ids.as_int32_ptr();
-                    std::cerr << "num_vals: " << num_vals << std::endl;
                     for(int i = 0; i < num_vals; ++i)
                     {
                       vec_ids[i] += 1.0; 
@@ -2158,7 +2180,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 if(n_material_ids.dtype().is_int64())
                 {
                     conduit::int64 *vec_ids = n_material_ids.as_int64_ptr();
-                    std::cerr << "num_vals: " << num_vals << std::endl;
                     for(int i = 0; i < num_vals; ++i)
                     {
                       vec_ids[i] += 1.0; 
@@ -2167,7 +2188,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 else if(n_material_ids.dtype().is_int32())
                 {
                     conduit::int32 *vec_ids = n_material_ids.as_int32_ptr();
-                    std::cerr << "num_vals: " << num_vals << std::endl;
                     for(int i = 0; i < num_vals; ++i)
                     {
                       vec_ids[i] += 1.0; 
@@ -2184,7 +2204,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                      topo_name,
                                                      index_t(1),
                                                      zero_copy));
-                std::cerr << "HERE 2" << std::endl;
                 const conduit::Node n_volume_fractions = n_matset["volume_fractions"];
                 dset->AddField(detail::GetField<float64>(n_volume_fractions,
                                                          vfs_name,
@@ -2192,8 +2211,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                          topo_name,
                                                          index_t(1),
                                                          zero_copy));
-                std::cerr << "print data from data adaptor: " << std::endl;
-                dset->PrintSummary(std::cerr);
                 supported_type = true;
             }
         }
@@ -2202,21 +2219,16 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             ASCENT_ERROR("VTKm exception:" << error.GetMessage());
         }
 
-
-
     }
-    //matset is "sparse_by_material"
-    else if(n_matset.has_child("element_ids"))
+    else if(n_matset.has_child("element_ids"))//matset is "sparse_by_material"
     {
         int num_ids = n_matset["element_ids"].number_of_children();
-        std::cerr << "num_ids: " << num_ids << std::endl;
         if(num_ids == 0)
         {
             ASCENT_ERROR("No element ids were defined for matset: " << matset_name);
         }
 
         int num_materials = n_matset["volume_fractions"].number_of_children();
-        std::cerr << "num_materials: " << num_materials << std::endl;
         if(num_materials == 0)
         {
             ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
@@ -2229,49 +2241,53 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                          " defined for matset: " << matset_name);
         }
 
-        const conduit::Node n_vfs = n_matset["volume_fractions"].child(0);
         try
         {
             bool supported_type = false;
 
+            const conduit::Node n_vfs = n_matset["volume_fractions"].child(0);
             // we compile vtk-h with fp types
             if(n_vfs.dtype().is_float32())
             {
                 supported_type = true;
                 //add calculated material fields for vtkm
-                int total;
                 vtkm::cont::Field length, offsets, ids, vfs;
-                //detail::SparseGetMatSetLength<int,float32>(n_matset, length_name, offsets_name, topo_name, total,neles, length, offsets);
-                //detail::SparseGetMatSetIDsAndVFs<int,float32>(n_matset, ids_name, vfs_name, topo_name,total, neles, offsets, ids, vfs);
-                //dset->AddField(length);
-                //dset->AddField(offsets);
-                //dset->AddField(ids);
-                //dset->AddField(vfs);
-                //std::cerr << "total: " << total << std::endl;
+                detail::GetMatSetFields<int,float32>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
+                dset->AddField(length);
+                dset->AddField(offsets);
+                dset->AddField(ids);
+                dset->AddField(vfs);
             }
             else if(n_vfs.dtype().is_float64())
             {
-                 //NodeConstIterator itr = n_matset["volume_fractions"].children();
-                 std::cerr << "neles: " << neles << std::endl;
-                 NodeConstIterator itr = n_matset["element_ids"].children();
-                 while(itr.has_next())
-                 {
-                   const Node &n_material = itr.next();
-                   const std::string material_name = n_material.name();
-                   const int num_mat_vals = n_material.dtype().number_of_elements();
-                   std::cerr << "element_ids: " << material_name << " has num_vals: " << num_mat_vals << std::endl;
-                 }
                 supported_type = true;
                 //add calculated material fields for vtkm
-                int total;
                 vtkm::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetLength<int,float64>(n_matset, length_name, offsets_name, topo_name, total,neles, length, offsets);
-                std::cerr << "total: " << total << std::endl;
-                //detail::SparseGetMatSetIDsAndVFs<int,float64>(n_matset, ids_name, vfs_name, topo_name,total, neles, offsets, ids, vfs);
-                //dset->AddField(length);
-                //dset->AddField(offsets);
-                //dset->AddField(ids);
-                //dset->AddField(vfs);
+                detail::GetMatSetFields<int,float64>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
+                dset->AddField(length);
+                dset->AddField(offsets);
+                dset->AddField(ids);
+                dset->AddField(vfs);
             }
         }
         catch (vtkm::cont::Error error)
@@ -2279,12 +2295,9 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             ASCENT_ERROR("VTKm exception:" << error.GetMessage());
         }
     }
-    //matset is "full"
-    else
+    else //matset is "full"
     {
-                std::cerr << "HERE 3" << std::endl;
         int num_materials = n_matset["volume_fractions"].number_of_children();
-        std::cerr << "num_materials: " << num_materials << std::endl;
         if(num_materials == 0)
             ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
 
@@ -2313,13 +2326,21 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 //add calculated material fields for vtkm
                 int total;
                 vtkm::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetLength<int,float32>(n_matset, length_name, offsets_name, topo_name, total,neles, length, offsets);
-                detail::GetMatSetIDsAndVFs<int,float32>(n_matset, ids_name, vfs_name, topo_name,total, neles, offsets, ids, vfs);
+                detail::GetMatSetFields<int,float32>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
                 dset->AddField(length);
                 dset->AddField(offsets);
                 dset->AddField(ids);
                 dset->AddField(vfs);
-                //std::cerr << "total: " << total << std::endl;
             }
             else if(n_material.dtype().is_float64())
             {
@@ -2327,8 +2348,17 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 //add calculated material fields for vtkm
                 int total;
                 vtkm::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetLength<int,float64>(n_matset, length_name, offsets_name, topo_name, total,neles, length, offsets);
-                detail::GetMatSetIDsAndVFs<int,float64>(n_matset, ids_name, vfs_name, topo_name,total, neles, offsets, ids, vfs);
+                detail::GetMatSetFields<int,float64>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
                 dset->AddField(length);
                 dset->AddField(offsets);
                 dset->AddField(ids);
@@ -2754,7 +2784,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
       else
       {
-        data_set.PrintSummary(std::cout);
         ASCENT_ERROR("Mixed explicit types not implemented");
         MixedType cells = dyn_cells.AsCellSet<MixedType>();
       }

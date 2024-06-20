@@ -1641,12 +1641,11 @@ CreatePlot::execute()
       return;
     }
 
-  bool *discrete_color_table = new bool(); 
-  if(graph().workspace().registry().has_entry("discrete_color_table"))
-  {
-    discrete_color_table = graph().workspace().registry().fetch<bool>("discrete_color_table");
-  }
-  std::cerr << "BOOL: " << *discrete_color_table << "  IN CreatePlot " << std::endl;
+    bool *discrete_color_table = new bool(); 
+    if(graph().workspace().registry().has_entry("discrete_color_table"))
+    {
+      discrete_color_table = graph().workspace().registry().fetch<bool>("discrete_color_table");
+    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     conduit::Node &plot_params = params();
@@ -1781,9 +1780,7 @@ CreatePlot::execute()
     {
       
       int *is_discrete;
-      std::cerr << "getting is_discrete" << std::endl;
       is_discrete = graph().workspace().registry().fetch<int>("is_discrete");
-      std::cerr << "got is_discrete: " << *is_discrete << std::endl;
       //make sure we set the discrete only for mir output field
       if(is_discrete && field_name == "cellMat") 
         renderer->SetDiscrete();
