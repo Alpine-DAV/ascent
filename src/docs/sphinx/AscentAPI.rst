@@ -29,7 +29,7 @@ Here is a file that would set the runtime to the main ascent runtime using a Ope
 
   {
     "runtime/type"    : "ascent",
-    "runtine/vtkm/backend" : "openmp"
+    "runtime/vtkm/backend" : "openmp"
   }
 
 Example Options
@@ -45,7 +45,7 @@ A typical integration will include the following code:
   ascent_options["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
   #endif
   ascent_options["runtime/type"] = "ascent";
-  ascent_options["runtime/backend"] = "openmp";
+  ascent_options["runtime/vtkm/backend"] = "openmp";
 
   ascent.Open(ascent_options);
 
