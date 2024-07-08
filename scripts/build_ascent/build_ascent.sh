@@ -171,7 +171,7 @@ set | grep build_
 ################
 # Zlib
 ################
-zlib_version=1.3
+zlib_version=1.3.1
 zlib_src_dir=$(ospath ${root_dir}/zlib-${zlib_version})
 zlib_build_dir=$(ospath ${root_dir}/build/zlib-${zlib_version}/)
 zlib_install_dir=$(ospath ${install_dir}/zlib-${zlib_version}/)
@@ -364,6 +364,7 @@ if [ ! -d ${vtkm_src_dir} ]; then
   cd  ${vtkm_src_dir}
   patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
   patch -p1 < ${script_dir}/2024_05_03_vtkm-mr3215-ext-geom-fix.patch
+  patch -p1 < ${script_dir}/2024_07_02_vtkm-raysubset_bugfix.patch
   cd ${root_dir}
 fi
 
