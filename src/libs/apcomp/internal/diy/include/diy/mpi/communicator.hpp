@@ -8,8 +8,11 @@ namespace mpi
   class communicator
   {
     public:
+                inline 
+                communicator();
+
                 inline
-                communicator(MPI_Comm comm = MPI_COMM_WORLD, bool owner = false);
+                communicator(MPI_Comm comm, bool owner = false);
 
                 ~communicator()                     { destroy(); }
 
@@ -96,6 +99,14 @@ namespace mpi
   };
 }
 }
+
+apcompdiy::mpi::communicator::
+communicator():
+    comm_(MPI_COMM_NULL), rank_(0), size_(1), owner_(false)
+{
+  // empty
+}
+
 
 apcompdiy::mpi::communicator::
 communicator(MPI_Comm comm, bool owner):

@@ -3361,18 +3361,18 @@ VTKHUniformGrid::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    bool throw_error = false;
-    std::string topo_name = detail::resolve_topology(params(),
-                                                     this->name(),
-                                                     collection,
-                                                     throw_error);
-    if(topo_name == "")
+    std::string field = params()["field"].as_string();
+    if(!collection->has_field(field))
     {
+      bool throw_error = false;
+      detail::field_error(field, this->name(), collection, throw_error);
       // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
 
+
+    std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkm::Bounds d_bounds = data.GetGlobalBounds();
@@ -3380,7 +3380,6 @@ VTKHUniformGrid::execute()
     vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
     vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
 
-    std::string field = params()["field"].as_string();
     vtkm::Float64 invalid_value = 0.0;
     
     using Vec3f = vtkm::Vec<vtkm::Float64,3>;
@@ -5178,7 +5177,7 @@ VTKHVTKFileExtract::execute()
         Node n_recv;
         conduit::relay::mpi::all_gather_using_schema(n_local_domain_ids,
                                                      n_recv,
-                                                     MPI_COMM_WORLD);
+                                                     mpi_comm);
         n_global_domain_ids.set(DataType::index_t(num_global_domains));
         n_global_domain_ids.print();
         index_t_array global_vals = n_global_domain_ids.value();

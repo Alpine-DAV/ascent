@@ -10,28 +10,34 @@
 #include <fstream>
 #include <stack>
 #include <sstream>
+#include <rover_exports.h>
 
 namespace rover {
 
-class Logger
+class ROVER_API Logger
 {
 public:
   ~Logger();
   static Logger *get_instance();
+  void set_mpi_comm_id(int comm_id);
+  int  get_mpi_comm_id();
   void write(const int level, const std::string &message, const char *file, int line);
   std::ofstream & get_stream();
 protected:
   Logger();
   Logger(Logger const &);
   std::ofstream m_stream;
+  int m_mpi_comm_id;
   static class Logger* m_instance;
 };
 
-class DataLogger
+class ROVER_API DataLogger
 {
 public:
   ~DataLogger();
   static DataLogger *GetInstance();
+  void set_mpi_comm_id(int comm_id);
+  int  get_mpi_comm_id();
   void OpenLogEntry(const std::string &entryName);
   void CloseLogEntry(const double &entryTime);
 
@@ -49,6 +55,7 @@ protected:
   std::stringstream Stream;
   static class DataLogger* Instance;
   std::stack<std::string> Entries;
+  int m_mpi_comm_id;
 };
 
 #ifdef ROVER_ENABLE_LOGGING

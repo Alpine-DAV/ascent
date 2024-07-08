@@ -222,8 +222,7 @@ Compositor::CompositeZBufferSurface()
   // nothing to do here in serial. Images were composited as
   // they were added to the compositor
 #ifdef APCOMP_PARALLEL
-  apcompdiy::mpi::communicator diy_comm;
-  diy_comm = apcompdiy::mpi::communicator(MPI_Comm_f2c(mpi_comm()));
+  apcompdiy::mpi::communicator diy_comm(MPI_Comm_f2c(mpi_comm()));
 
   assert(m_images.size() == 1);
   RadixKCompositor compositor;
@@ -243,8 +242,7 @@ Compositor::CompositeVisOrder()
 {
 
 #ifdef APCOMP_PARALLEL
-  apcompdiy::mpi::communicator diy_comm;
-  diy_comm = apcompdiy::mpi::communicator(MPI_Comm_f2c(mpi_comm()));
+  apcompdiy::mpi::communicator diy_comm(MPI_Comm_f2c(mpi_comm()));
 
   assert(m_images.size() != 0);
   DirectSendCompositor compositor;
