@@ -8,7 +8,7 @@ namespace mpi
   class communicator
   {
     public:
-                communicator(MPI_Comm comm = MPI_COMM_WORLD):
+                communicator(MPI_Comm comm):
                   comm_(comm)                       { MPI_Comm_rank(comm_, &rank_); MPI_Comm_size(comm_, &size_); }
 
       int       rank() const                        { return rank_; }

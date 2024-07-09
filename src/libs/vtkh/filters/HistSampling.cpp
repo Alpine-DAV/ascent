@@ -358,8 +358,8 @@ void HistSampling::DoExecute()
   double upper_bound = 1.;
   double lower_bound = 1.;
 
-  thresher.SetUpperThreshold(upper_bound);
-  thresher.SetLowerThreshold(lower_bound);
+  thresher.SetFieldUpperThreshold(upper_bound);
+  thresher.SetFieldLowerThreshold(lower_bound);
   thresher.Update();
   this->m_output = thresher.GetOutput();
 

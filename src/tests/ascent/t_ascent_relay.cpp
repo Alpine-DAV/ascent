@@ -119,8 +119,7 @@ TEST(ascent_relay, test_relay_hdf5_2)
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract");
     string output_root = output_file + ".cycle_000100.root";
 
-    // remove old images before rendering
-    remove_test_image(output_root);
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -199,9 +198,9 @@ TEST(ascent_relay, test_relay_hdf5_opts)
 
 
     // remove old files before executing
-    remove_test_image(output_root_pre);
-    remove_test_image(output_root_opts);
-    remove_test_image(output_root_post);
+    remove_test_file(output_root_pre);
+    remove_test_file(output_root_opts);
+    remove_test_file(output_root_post);
 
     conduit::Node actions;
     // add the extracts
@@ -284,8 +283,8 @@ TEST(ascent_relay, test_relay_json)
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_json");
     string output_root = output_file + ".cycle_000100.root";
 
-    // remove old images before rendering
-    remove_test_image(output_root);
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -347,8 +346,8 @@ TEST(ascent_relay, test_relay_json_2)
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_json_2");
     string output_root = output_file + ".cycle_000100.root";
 
-    // remove old images before rendering
-    remove_test_image(output_root);
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -372,12 +371,7 @@ TEST(ascent_relay, test_relay_json_2)
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
@@ -410,8 +404,8 @@ TEST(ascent_relay, test_relay_yaml)
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_yaml");
     string output_root = output_file + ".cycle_000100.root";
 
-    // remove old images before rendering
-    remove_test_image(output_file);
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -434,12 +428,7 @@ TEST(ascent_relay, test_relay_yaml)
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
@@ -473,8 +462,8 @@ TEST(ascent_relay, test_relay_yaml_2)
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_yaml_2");
     string output_root = output_file + ".cycle_000100.root";
 
-    // remove old images before rendering
-    remove_test_image(output_root);
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -497,12 +486,7 @@ TEST(ascent_relay, test_relay_yaml_2)
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
@@ -538,42 +522,115 @@ TEST(ascent_relay, test_relay_field_select_nestsets)
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_nestsets");
     string output_root = output_file + ".cycle_000100.root";
 
-    // remove old images before rendering
-    remove_test_image(output_root);
-
-    conduit::Node extracts;
-    extracts["e1/type"]  = "relay";
-
-    extracts["e1/params/path"] = output_file;
-    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-    extracts["e1/params/fields"].append() = "iters";
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node actions;
     // add the extracts
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
+    conduit::Node & extracts = add_extracts["extracts"];
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/params/fields"].append() = "iters";
 
-    conduit::Node &execute  = actions.append();
-    execute["action"] = "execute";
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
 
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_topo_select)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    blueprint::mesh::examples::julia_nestsets_complex(EXAMPLE_MESH_SIDE_DIM,
+                                                      EXAMPLE_MESH_SIDE_DIM,
+                                                      -2.0,  2.0, // x range
+                                                      -2.0,  2.0, // y range
+                                                      0.285, 0.01, // c value
+                                                      1, // amr levels
+                                                      data);
+
+    blueprint::mesh::examples::braid("quads",10,10,0,data["domain_Z"]);
+    // rename the coordset to avoid conflict
+    data["domain_Z/coordsets"].rename_child("coords","braid_coords");
+    data["domain_Z/topologies"][0]["coordset"] = "braid_coords";
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract topo selection");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_topo_select_case_1");
+    string output_root = output_file + ".cycle_000100.root";
+
+    // remove old outputs
+    remove_test_file(output_root);
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    // keep the julia data only 
+    extracts["e1/params/topologies"].append() = "topo";
 
     //
     // Run Ascent
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+    // keep the braid data only
+    output_file = conduit::utils::join_file_path(output_path,"tout_relay_topo_select_case_2");
+    output_root = output_file + ".cycle_000100.root";
+    // remove old outputs
+    remove_test_file(output_root);
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/topologies"].reset();
+    extracts["e1/params/topologies"].append() = "mesh";
+    ascent.execute(actions);
+
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+    // keep the braid data + iters (julia)
+    output_file = conduit::utils::join_file_path(output_path,"tout_relay_topo_select_case_3");
+    output_root = output_file + ".cycle_000100.root";
+    // remove old outputs
+    remove_test_file(output_root);
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/topologies"].reset();
+    extracts["e1/params/topologies"].append() = "mesh";
+    extracts["e1/params/fields"].append() = "iters";
+    ascent.execute(actions);
+
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
     ascent.close();
 
+
 }
+
 
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, test_relay_subselection_no_data)
@@ -598,9 +655,9 @@ TEST(ascent_relay, test_relay_subselection_no_data)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_subset_no_data");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
+    string output_root = output_file + ".cycle_000100.root";
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -666,9 +723,9 @@ TEST(ascent_relay, test_relay_subselection)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_serial_extract_subset");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
+    string output_root = output_file + ".cycle_000100.root";
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -735,9 +792,9 @@ TEST(ascent_relay, test_relay_no_cycle)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_no_cycle");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
+    string output_root = output_file + ".cycle_000100.root";
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -831,12 +888,7 @@ TEST(ascent_relay, test_relay_bp_num_files)
         //
 
         Ascent ascent;
-
-        Node ascent_opts;
-        // we use the mpi handle provided by the fortran interface
-        // since it is simply an integer
-        ascent_opts["runtime"] = "ascent";
-        ascent.open(ascent_opts);
+        ascent.open();
         ascent.publish(data);
         ascent.execute(actions);
         ascent.close();
@@ -946,9 +998,10 @@ TEST(ascent_relay, test_relay_sparse_topos)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_relay_sparse_topos");
+    string output_root = output_file + ".cycle_000100.root";
 
-    // remove old images before rendering
-    remove_test_image(output_file);
+    // remove old outputs
+    remove_test_file(output_root);
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -971,12 +1024,7 @@ TEST(ascent_relay, test_relay_sparse_topos)
     //
 
     Ascent ascent;
-
-    Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();

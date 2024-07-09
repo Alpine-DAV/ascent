@@ -26,9 +26,12 @@ template<typename BlockType>
 struct Redistribute
 {
   const apcompdiy::RegularDecomposer<apcompdiy::DiscreteBounds> &m_decomposer;
+  MPI_Comm &m_comm;
 
-  Redistribute(const apcompdiy::RegularDecomposer<apcompdiy::DiscreteBounds> &decomposer)
-    : m_decomposer(decomposer)
+  Redistribute(const apcompdiy::RegularDecomposer<apcompdiy::DiscreteBounds> &decomposer,
+               MPI_Comm &comm)
+    : m_decomposer(decomposer),
+      m_comm(comm)
   {}
 
   void operator()(void *v_block, const apcompdiy::ReduceProxy &proxy) const
@@ -81,7 +84,7 @@ struct Redistribute
       } // for
 
     } // else
-    MPI_Barrier(MPI_COMM_WORLD); //HACK
+    MPI_Barrier(m_comm); //HACK
   } // operator
 };
 
@@ -113,7 +116,7 @@ void redistribute_detail(std::vector<typename AddBlockType::PartialType> &partia
 
   apcompdiy::RegularDecomposer<apcompdiy::DiscreteBounds> decomposer(dims, global_bounds, num_blocks);
   decomposer.decompose(world.rank(), assigner, create);
-  apcompdiy::all_to_all(master, assigner, Redistribute<Block>(decomposer), magic_k);
+  apcompdiy::all_to_all(master, assigner, Redistribute<Block>(decomposer,comm), magic_k);
 }
 
 //

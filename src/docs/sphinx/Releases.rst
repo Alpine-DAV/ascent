@@ -19,10 +19,65 @@ Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
 
+v0.9.3
+---------------------------------
+
+* Released 2024-05-12
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.3/ascent-v0.9.3-src-with-blt.tar.gz>`__
+
+* Docker Containers
+   * ``alpinedav/ascent:0.9.3``
+   * ``alpinedav/ascent-jupyter:0.9.3``
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Preferred dependency versions for ascent@0.9.3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * conduit@0.9.1
+ * vtk-m@2.1.0 (with required `patch <https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch>`_ )
+ * raja@2024.02.1
+ * umpire@2024.02.1
+ * camp@2024.02.1
+ * kokkos@3.7.02
+
+Added
+~~~~~
+
+ * Added a uniform grid resampling filter.
+ * Added ``refinement_level`` option to Relay Extract. When used this will refine high order meshes to a low order representation and save the low order result as the extract data.
+ * Added parameters to control HDF5 compression options to the Relay Extract.
+ * Added check to make sure all domain IDs are unique
+ * Added a ``vtk`` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a ``.visit`` file.
+ * Added particle advection for streamline and related rendering support.
+ * Added WarpX Streamline filter that uses charged particles.
+ * Added seed population options for particle advection: point, point list, line, and box
+ * Added more Ascent tutorial examples
+ * Added support for implicit points style Blueprint input meshes
+ * Added actions for shell commands and simulation code function callbacks
+ * Added ``box``, ``plane``, ``cylinder``, and ``sphere`` options to the Threshold filter, enabling sub selecting a mesh spatially.
+
+Changed
+~~~~~~~
+
+ * Changed the Data Binning filter to accept a ``reduction_field`` parameter (instead of ``var``), and similarly the axis parameters to take ``field`` (instead of ``var``).  The ``var`` style parameters are still accepted, but deprecated and will be removed in a future release.
+ * Changed the Streamline and WarpXStreamline filters to apply the VTK-m Tube filter to their outputs, allowing for the results to be rendered. 
+ * Updated CMake Python build infrastructure to use
+
+Fixed
+~~~~~
+
+ * Various small bug fixes
+
 
 v0.9.2
 ---------------------------------
 
+* Released 2023-06-30
 * `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.2/ascent-v0.9.2-src-with-blt.tar.gz>`__
 
 * Docker Containers
@@ -59,6 +114,7 @@ Changed
 v0.9.1
 ---------------------------------
 
+* Released 2023-04-22
 * `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.1/ascent-v0.9.1-src-with-blt.tar.gz>`__
 
 * Docker Containers
@@ -99,6 +155,7 @@ Fixed
 v0.9.0
 ---------------------------------
 
+* Released 2023-01-27
 * `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.0/ascent-v0.9.0-src-with-blt.tar.gz>`__
 
 * Docker Containers
@@ -147,6 +204,7 @@ Changed
 v0.8.0
 ---------------------------------
 
+* Released 2022-02-11
 * `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.8.0/ascent-v0.8.0-src-with-blt.tar.gz>`__
 
 * Docker Containers
@@ -208,6 +266,7 @@ Changed
 v0.7.1
 -------
 
+* Released 2021-05-20
 * `v0.7.1 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.7.1/ascent-v0.7.1-src-with-blt.tar.gz>`_
 
 Highlights
@@ -240,6 +299,7 @@ Changed
 v0.7.0
 -------
 
+* Released 2021-03-19
 * `v0.7.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.7.0/ascent-v0.7.0-src-with-blt.tar.gz>`_
 
 Highlights
@@ -275,6 +335,7 @@ Changed
 v0.6.0
 -------
 
+* Released 2020-11-06
 * `v0.6.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.6.0/ascent-v0.6.0-src-with-blt.tar.gz>`_
 
 Highlights
@@ -310,6 +371,7 @@ Changed
 v0.5.1
 -------
 
+* Released 2020-02-01
 * `v0.5.1 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.1/ascent-v0.5.1-src-with-blt.tar.gz>`_
 
 Highlights
@@ -332,6 +394,7 @@ Fixed
 v0.5.0
 -------
 
+* Released 2019-11-14
 * `v0.5.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.5.0/ascent-v0.5.0-src-with-blt.tar.gz>`_
 
 Highlights
@@ -368,31 +431,34 @@ Fixed
 v0.4.0
 -------
 
-The fourth release of Ascent.
-
+* Released 2018-10-01
 * `v0.4.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
+
+The fourth release of Ascent.
   
 v0.3.0
 -------
 
-The third release of Ascent.
-
+* Released 2018-03-31
 * `v0.3.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
+
+The third release of Ascent.
 
 v0.2.0
 -------
 
-The second release of Ascent.
-
+* Released 2017-12-27
 * `v0.2.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
+
+The second release of Ascent.
 
 v0.1.0
 -------
 
-The initial release of Ascent.
-
+* Released 2017-01-11
 * `v0.1.0 Source Tarball <https://github.com/Alpine-DAV/ascent/releases>`_
 
+The initial release of Ascent.
 
 
 

@@ -384,6 +384,19 @@ create_3d_example_dataset(Node &data,
     data["fields/rank_ele/topology"] = "mesh";
     data["fields/rank_ele/values"].set(DataType::float64(nele));
 
+    data["fields/ones_ele/association"] = "element";
+    data["fields/ones_ele/topology"] = "mesh";
+    data["fields/ones_ele/values"].set(DataType::float64(nele));
+
+    data["fields/ones_vert/association"] = "vertex";
+    data["fields/ones_vert/topology"] = "mesh";
+    data["fields/ones_vert/values"].set(DataType::float64(npts));
+
+    float64_array ones_ele_vals =  data["fields/ones_ele/values"].value();
+    ones_ele_vals.fill(1.0);
+
+    float64_array ones_vert_vals =  data["fields/ones_vert/values"].value();
+    ones_vert_vals.fill(1.0);
 
     float64 *x_vals =  data["coordsets/coords/values/x"].value();
     float64 *y_vals =  data["coordsets/coords/values/y"].value();
