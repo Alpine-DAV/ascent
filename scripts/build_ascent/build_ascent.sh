@@ -364,7 +364,7 @@ if [ ! -d ${vtkm_src_dir} ]; then
   cd  ${vtkm_src_dir}
   patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
   patch -p1 < ${script_dir}/2024_05_03_vtkm-mr3215-ext-geom-fix.patch
-  patch -p1 < ${script_dir}/2024_07_02_vtkm-raysubset_bugfix.patch
+  patch -p1 < ${script_dir}/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch
   cd ${root_dir}
 fi
 

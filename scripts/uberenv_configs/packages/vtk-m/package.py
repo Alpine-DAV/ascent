@@ -166,7 +166,7 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
 
     # VTK-M future PR
     # 
-    patch("2024_07_02_vtkm-raysubset_bugfix.patch", when="@2.1:")
+    patch("2024_07_02_vtkm-mr3246-raysubset_bugfix.patch", when="@2.1:")
 
     def cmake_args(self):
         spec = self.spec
