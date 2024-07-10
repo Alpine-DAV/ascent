@@ -261,7 +261,7 @@ StatStore::write_point_stats(const std::string &ofile_base)
   file.close();
   m_point_stats.clear();
 #else
-  (void) name;
+  (void) ofile_base;
 #endif
 }
 
