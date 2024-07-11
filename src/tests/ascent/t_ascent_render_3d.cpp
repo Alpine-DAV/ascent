@@ -2878,6 +2878,105 @@ TEST(ascent_render_3d, test_render_3d_extreme_extents)
 }
 
 
+
+// //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_ray_zcull_bug)
+{
+    //
+    // this test exercises a ray culling bug in vtk-m
+    // the bug improperly culls rays that are valid due to a bad
+    // check related to the near and far plane
+    // we have a patch and will work on getting a fixed in to 2.2
+    //
+
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    // create a tiny mesh that will be far away from the camera
+    Node mesh;
+    mesh["state/cycle"] = 100;
+    int num_per_dim = 6;
+    // create the coordinate set
+    mesh["coordsets/coords/type"] = "uniform";
+    mesh["coordsets/coords/dims/i"] = num_per_dim;
+    mesh["coordsets/coords/dims/j"] = num_per_dim;
+    mesh["coordsets/coords/dims/k"] = num_per_dim;
+
+    // add origin and spacing to the coordset (optional)
+    mesh["coordsets/coords/origin/x"].set_float64(-3.0);
+    mesh["coordsets/coords/origin/y"].set_float64(-3.0);
+    mesh["coordsets/coords/origin/z"].set_float64(10000.0);
+
+    mesh["coordsets/coords/spacing/dx"] = 1.0;
+    mesh["coordsets/coords/spacing/dy"] = 1.0;
+    mesh["coordsets/coords/spacing/dz"] = 1.0;
+
+    // add the topology
+    // this case is simple b/c it's implicitly derived from the coordinate set
+    mesh["topologies/topo/type"] = "uniform";
+    // reference the coordinate set by name
+    mesh["topologies/topo/coordset"] = "coords";
+
+    int num_verts = num_per_dim * num_per_dim * num_per_dim; // 3D
+    // create a vertex associated field named alternating
+    mesh["fields/vert_ids/association"] = "vertex";
+    mesh["fields/vert_ids/topology"] = "topo";
+    mesh["fields/vert_ids/values"].set(DataType::float64(num_verts));
+    float64_array vals_vert_ids =  mesh["fields/vert_ids/values"].value();
+
+    for(index_t i=0;i< num_verts;i++)
+    {
+        vals_vert_ids[i] = i;
+    }
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                  "tout_render_3d_ray_z_cull_bug");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "vert_ids";
+
+    Node &r1 = scenes["s1/renders/r1"];
+
+    std::string cam_yaml = R"INLINE(
+world_annotations: false
+camera:
+  fov: 30.0
+  look_at: [0.0,0.0,10000.0]
+  position: [0.0,0.0,0.0]
+  up: [0.0, 1.0, 0.0]
+  zoom: [100]
+  near_plane: 9000.0
+  far_plane: 11000.0
+)INLINE";
+    r1.parse(cam_yaml,"yaml");
+
+    r1["image_prefix"] = output_file;
+    std::cout << actions.to_yaml() << std::endl;
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
