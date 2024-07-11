@@ -260,21 +260,21 @@ using ReduceMaxLoc = RAJA::ReduceMaxLoc<ExecPolicy,T>;
 
 //---------------------------------------------------------------------------//
 template <typename ExecPolicy, typename T>
-ASCENT_EXEC T atomic_add(T volatile *acc, T value)
+ASCENT_EXEC T atomic_add(T *acc, T value)
 {
     return RAJA::atomicAdd(ExecPolicy{}, acc, value);
 }
 
 //---------------------------------------------------------------------------//
 template <typename ExecPolicy, typename T>
-ASCENT_EXEC T atomic_min(T volatile *acc, T value)
+ASCENT_EXEC T atomic_min(T *acc, T value)
 {
     return RAJA::atomicMin(ExecPolicy{}, acc, value);
 }
 
 //---------------------------------------------------------------------------//
 template <typename ExecPolicy, typename T>
-ASCENT_EXEC T atomic_max(T volatile *acc, T value)
+ASCENT_EXEC T atomic_max(T *acc, T value)
 {
     return RAJA::atomicMax(ExecPolicy{}, acc, value);
 }
