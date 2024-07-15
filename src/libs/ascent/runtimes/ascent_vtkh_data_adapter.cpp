@@ -1502,12 +1502,25 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
                                                  zero_copy,
                                                  vtkm_offsets);
 
+        // vtk-m offsets needs an extra entry
+        // the last entry needs to be the size of the conn array
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_offsets_full;
+        vtkm_offsets_full.Allocate(neles + 1);
+        vtkm::cont::ArrayHandle<vtkm::Id>::WritePortalType vtkm_offsets_full_wp = vtkm_offsets_full.WritePortal();
+        vtkm::cont::ArrayHandle<vtkm::Id>::ReadPortalType vtkm_offsets_rp = vtkm_offsets.ReadPortal();
+
+        for(int i=0;i<neles;i++)
+        {
+          vtkm_offsets_full_wp.Set(i,vtkm_offsets_rp.Get(i));
+        }
+        // set last
+        vtkm_offsets_full_wp.Set(neles,num_ids);
 
         vtkm::cont::CellSetExplicit<> cell_set;
-        cell_set.Fill(num_ids, vtkm_shapes, vtkm_conn, vtkm_offsets);
+        cell_set.Fill(nverts, vtkm_shapes, vtkm_conn, vtkm_offsets_full);
         result->SetCellSet(cell_set);
         // for debugging help
-        // result->PrintSummary(std::cout);
+        //result->PrintSummary(std::cout);
     }
     else
     {

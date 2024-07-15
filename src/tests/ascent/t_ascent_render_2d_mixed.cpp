@@ -92,7 +92,7 @@ gen_example_2d_mixed_mesh(Node &data)
                                      4, 5, 6, 7, 
                                      8, 9, 10};
 
-    //data.print();
+    std::cout << data.to_yaml() << std::endl;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
     
