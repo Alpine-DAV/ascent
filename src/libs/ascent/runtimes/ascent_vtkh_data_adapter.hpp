@@ -169,6 +169,8 @@ private:
 
     static void VTKmBlueprintShapeMap(conduit::Node &output);
 
+    static bool CheckShapeMapVsVTKmShapeIds(const conduit::Node &shape_map);
+
 
 };
 

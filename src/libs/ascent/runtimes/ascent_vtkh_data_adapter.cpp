@@ -156,7 +156,8 @@ BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
     }
     else if( sizeof(T) == 2)
     {
-        // unsupported! -- TODO ERROR!
+        // unsupported!
+        ASCENT_ERROR("BlueprintIndexArrayToVTKmIdArray does not support 2-byte index arrays");
     }
     else if( sizeof(T) == 4) // int32 is what vtk-m will use for this case.
     {
@@ -1382,9 +1383,7 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
 }
 
 
-
 //-----------------------------------------------------------------------------
-
 vtkm::cont::DataSet *
 VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name
@@ -1475,11 +1474,20 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
         // to arbitrary ids, check if shape ids match the VTK-m ids
         index_t num_of_shapes = n_topo_eles["shape_map"].number_of_children();
 
-        // if(!detail::CheckShapeMapVsVTKmShapeIds(n_topo_eles["shape_map"]))
-        // {
-        //     // TODO -- solve this (strategy to remap ids)
-        //     ASCENT_ERROR("Shape Map Entries do not match VTK-m Ids");
-        // }
+        if(!CheckShapeMapVsVTKmShapeIds(n_topo_eles["shape_map"]))
+        {
+            Node ref_map;
+            VTKmBlueprintShapeMap(ref_map);
+            // TODO -- (strategy to remap ids)?
+            ASCENT_ERROR("Shape Map Entries do not match VTK-m Shape Ids." << std::endl
+                         << "Passed Shape Map:"  << std::endl
+                         << n_topo_eles["shape_map"].to_yaml()
+                         << std::endl
+                         << "Supported Shape Map:"
+                         << std::endl 
+                         <<ref_map.to_yaml()
+                         );
+        }
 
         index_t num_ids  = n_topo_eles["connectivity"].dtype().number_of_elements();
         // number of elements is the number of shapes presented
@@ -2537,7 +2545,7 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   //bool assoc_mesh  = vtkm::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
   if(!assoc_points && ! assoc_cells)
   {
-    ASCENT_ERROR("Field must be associtated with cells or points\n");
+    ASCENT_ERROR("Field must be associated with cells or points\n");
   }
   std::string conduit_name;
 
@@ -2642,6 +2650,35 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
     ASCENT_INFO(msg.str());
   }
 }
+
+
+
+//-----------------------------------------------------------------------------
+bool
+VTKHDataAdapter::CheckShapeMapVsVTKmShapeIds(const Node &shape_map)
+{
+    bool res = true;
+    Node ref_map;
+
+    VTKHDataAdapter::VTKmBlueprintShapeMap(ref_map);
+    NodeConstIterator itr = shape_map.children();
+    while(itr.has_next() && res)
+    {
+        const Node &curr = itr.next();
+        std::string name = itr.name();
+        if(curr.dtype().is_number() && ref_map.has_child(name))
+        {
+            // check vs ref map
+            res = ( ref_map[name].to_index_t() == curr.to_index_t() );
+        }
+        else // unknown/unsupported shape type
+        {
+            res = false;
+        }
+    }
+    return res;
+}
+
 
 
 void
