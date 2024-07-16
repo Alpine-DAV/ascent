@@ -245,7 +245,17 @@ TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
 
     // load back the extract
     conduit::Node n_load, verify_info;
-    conduit::relay::io::blueprint::load_mesh(output_extract_root + ".root",n_load);
+
+
+    // NOTE:
+    // a bug in conduit root file creation logic leads to funky paths
+    // when abs paths are used on windows
+    // https://github.com/LLNL/conduit/issues/1297
+    // so,  directly read the output mesh, instead of using mesh_load
+    conduit::relay::io::load(output_extract_root + ".root:mesh","hdf5",n_load);
+
+    // desired load post conduit bugfix
+    //conduit::relay::io::blueprint::load_mesh(output_extract_root + ".root",n_load);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
     string output_final_render = conduit::utils::join_file_path(output_path,
