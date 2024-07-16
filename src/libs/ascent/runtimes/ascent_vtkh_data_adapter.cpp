@@ -1479,7 +1479,8 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
             Node ref_map;
             VTKmBlueprintShapeMap(ref_map);
             // TODO -- (strategy to remap ids)?
-            ASCENT_ERROR("Shape Map Entries do not match VTK-m Shape Ids." << std::endl
+            ASCENT_ERROR("Shape Map Entries do not match required VTK-m Shape Ids."
+                         << std::endl
                          << "Passed Shape Map:"  << std::endl
                          << n_topo_eles["shape_map"].to_yaml()
                          << std::endl
