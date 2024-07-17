@@ -966,9 +966,10 @@ accurate but slower point based gradients (default).
 
 Material Interface Reconstruction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The Material Interface Reconstruction (MIR) filter does something sciency that people like and want. 
-The user must specify the name of the material set (`matset`) they wish to use.  Optional parameters include error scaling (`error_scaling`), scaling decay (`scaling_decay`), maximum iterations (`iterations`), and maximum error percentage (`max_error`).
-The output field of the MIR Filter is `cellMat` that can be used further in scenes or pipelines. 
+The Material Interface Reconstruction (MIR) can be used to represent and track the interfaces between different materials or phases in a multiphase flow. 
+The user must specify the name of the material set (`matset`) they wish to use.  
+Optional parameters include error scaling (`error_scaling`), scaling decay (`scaling_decay`), maximum iterations (`iterations`), and maximum error percentage (`max_error`).
+The output field of the MIR Filter will be the name of the material set and can be used further in scenes or pipelines. 
 
 .. code-block:: c++
 

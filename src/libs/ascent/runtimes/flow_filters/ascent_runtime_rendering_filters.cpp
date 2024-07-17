@@ -1641,11 +1641,6 @@ CreatePlot::execute()
       return;
     }
 
-    bool *discrete_color_table = new bool(); 
-    if(graph().workspace().registry().has_entry("discrete_color_table"))
-    {
-      discrete_color_table = graph().workspace().registry().fetch<bool>("discrete_color_table");
-    }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     conduit::Node &plot_params = params();

@@ -273,6 +273,10 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   // base case is naturally stride data
   if(element_stride == 1)
   {
+    std::cerr << " In element_stride==1 for field: " << field_name << std::endl;
+    std::cerr << "vtkm_assoc: " << assoc_str << std::endl;
+    std::cerr << "num_vals: " << num_vals << std::endl;
+    std::cerr << "copy: " << zero_copy << std::endl;
       field = vtkm::cont::make_Field(field_name,
                                      vtkm_assoc,
                                      values_ptr,
@@ -281,7 +285,7 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   }
   else
   {
-
+    std::cerr << "not in element_stride==1" << std::endl;
       //
       // use ArrayHandleStride to create new field
       //
@@ -2086,8 +2090,12 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
     if(!n_matset.has_child("volume_fractions"))
         ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+    std::cerr << "zero copy going into AddMatSets: " << zero_copy << std::endl;
     //TODO: zero_copy = true segfaulting in vtkm mir filter
-    zero_copy = false;
+    //zero_copy = false;
+    
+    //std::cerr << " after setting zero copy to true or false: " << zero_copy << std::endl;
+
     
     std::string assoc_str = "element";
     //fields required from VTK-m MIR filter
@@ -2107,49 +2115,93 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             if(n_matset["volume_fractions"].dtype().is_float32())
             {
                 //add materials directly
-                const conduit::Node n_length = n_matset["sizes"];
+                const conduit::Node &n_length = n_matset["sizes"];
                 dset->AddField(detail::GetField<int>(n_length,
                                                      length_name,
                                                      assoc_str,
                                                      topo_name,
                                                      index_t(1),
                                                      zero_copy));
-                const conduit::Node n_offsets = n_matset["offsets"];
+                const conduit::Node &n_offsets = n_matset["offsets"];
                 dset->AddField(detail::GetField<int>(n_offsets,
                                                      offsets_name,
                                                      assoc_str,
                                                      topo_name,
                                                      index_t(1),
                                                      zero_copy));
-                conduit::Node n_material_ids = n_matset["material_ids"];
+                const conduit::Node &n_material_ids = n_matset["material_ids"];
                 int num_vals = n_material_ids.dtype().number_of_elements();
-                if(n_material_ids.dtype().is_int64())
+                if(n_material_ids.dtype().is_int32())
                 {
-                    conduit::int64 *vec_ids = n_material_ids.as_int64_ptr();
-                    for(int i = 0; i < num_vals; ++i)
+                    const conduit::int32 *n_ids = n_material_ids.value();
+                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
                     {
-                      vec_ids[i] += 1.0; 
+                        conduit::Node n_mat_ids = n_matset["material_ids"];
+                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
+                        for(index_t i = 0; i < num_vals; ++i)
+                        {
+                            tmp_vec_ids[i] += 1.0; 
+                        }
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                        dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                        dset->AddField(field_copy);
                     }
                 }
-                else if(n_material_ids.dtype().is_int32())
+                else if(n_material_ids.dtype().is_int64())
                 {
-                    conduit::int32 *vec_ids = n_material_ids.as_int32_ptr();
-                    for(int i = 0; i < num_vals; ++i)
+                    const conduit::int64 *n_ids = n_material_ids.value();
+                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
                     {
-                      vec_ids[i] += 1.0; 
+                        conduit::Node n_mat_ids = n_matset["material_ids"];
+                        conduit::int64 *tmp_vec_ids = n_mat_ids.value();
+                        for(index_t i = 0; i < num_vals; ++i)
+                        {
+                            tmp_vec_ids[i] += 1.0; 
+                        }
+                        vtkm::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                        dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                        vtkm::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                        dset->AddField(field_copy);
                     }
                 }
                 else
                 {
                     ASCENT_ERROR("Unsupported integer type for material IDs");
                 }
-                dset->AddField(detail::GetField<int>(n_material_ids,
-                                                     ids_name,
-                                                     "whole",
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node n_volume_fractions = n_matset["volume_fractions"];
+                const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                 dset->AddField(detail::GetField<float32>(n_volume_fractions,
                                                          vfs_name,
                                                          "whole",
@@ -2161,50 +2213,93 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             else if(n_matset["volume_fractions"].dtype().is_float64())
             {
                 //add materials directly
-                const conduit::Node n_length = n_matset["sizes"];
+                const Node &n_length = n_matset["sizes"];
                 dset->AddField(detail::GetField<int>(n_length,
                                                      length_name,
                                                      assoc_str,
                                                      topo_name,
                                                      index_t(1),
                                                      zero_copy));
-                const conduit::Node n_offsets = n_matset["offsets"];
+                const conduit::Node &n_offsets = n_matset["offsets"];
                 dset->AddField(detail::GetField<int>(n_offsets,
                                                      offsets_name,
                                                      assoc_str,
                                                      topo_name,
                                                      index_t(1),
                                                      zero_copy));
-                conduit::Node n_material_ids = n_matset["material_ids"];
-                int num_vals = n_material_ids.dtype().number_of_elements();
-                if(n_material_ids.dtype().is_int64())
+                const conduit::Node &n_material_ids = n_matset["material_ids"];
+                int num_vals = n_material_ids.dtype().number_of_elements(); 
+                if(n_material_ids.dtype().is_int32())
                 {
-                    conduit::int64 *vec_ids = n_material_ids.as_int64_ptr();
-                    for(int i = 0; i < num_vals; ++i)
+                    const conduit::int32 *n_ids = n_material_ids.value();
+                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
                     {
-                      vec_ids[i] += 1.0; 
+                        conduit::Node n_mat_ids = n_matset["material_ids"];
+                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
+                        for(index_t i = 0; i < num_vals; ++i)
+                        {
+                            tmp_vec_ids[i] += 1.0; 
+                        }
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                        dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                        dset->AddField(field_copy);
                     }
                 }
-                else if(n_material_ids.dtype().is_int32())
+                else if(n_material_ids.dtype().is_int64())
                 {
-                    conduit::int32 *vec_ids = n_material_ids.as_int32_ptr();
-                    for(int i = 0; i < num_vals; ++i)
+                    const conduit::int64 *n_ids = n_material_ids.value();
+                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
                     {
-                      vec_ids[i] += 1.0; 
+                      conduit::Node n_mat_ids = n_matset["material_ids"];
+                      conduit::int64 *tmp_vec_ids = n_mat_ids.value();
+                      for(index_t i = 0; i < num_vals; ++i)
+                      {
+                        tmp_vec_ids[i] += 1.0; 
+                      }
+                      vtkm::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
+                                                                             ids_name,
+                                                                             "whole",
+                                                                             topo_name,
+                                                                             index_t(1),
+                                                                             false);
+                      dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                      vtkm::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
+                                                                             ids_name,
+                                                                             "whole",
+                                                                             topo_name,
+                                                                             index_t(1),
+                                                                             zero_copy);
+
+                      dset->AddField(field_copy);
                     }
                 }
                 else
                 {
                     ASCENT_ERROR("Unsupported integer type for material IDs");
                 }
-
-                dset->AddField(detail::GetField<int>(n_material_ids,
-                                                     ids_name,
-                                                     "whole",
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node n_volume_fractions = n_matset["volume_fractions"];
+                const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                 dset->AddField(detail::GetField<float64>(n_volume_fractions,
                                                          vfs_name,
                                                          "whole",
@@ -2784,6 +2879,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
       else
       {
+        data_set.PrintSummary(std::cout);
         ASCENT_ERROR("Mixed explicit types not implemented");
         MixedType cells = dyn_cells.AsCellSet<MixedType>();
       }
