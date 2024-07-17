@@ -163,6 +163,52 @@ TEST(ascent_pipeline, test_render_2d_mixed)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_render_2d_mixed_bad_shape_ids_error)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    Node data;
+    gen_example_2d_mixed_mesh(data);
+
+    // add bogus shape map entry
+    data["topologies/topo/elements/shape_map/bananas"]  = 42;
+
+    // actions to try to draw
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "ele_id";
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+    conduit::Node info;
+    Node ascent_opts;
+    ascent_opts["exceptions"] = "forward";
+    Ascent ascent;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    // expect this to fail
+    EXPECT_THROW(ascent.execute(actions),conduit::Error);
+    ascent.close();
+
+    // for debugging help
+    // std::cout << info.to_yaml() << std::endl;
+
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
 {
     // exec a pipeline to make sure we got through the vtk-m conversion 
@@ -245,7 +291,17 @@ TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
 
     // load back the extract
     conduit::Node n_load, verify_info;
-    conduit::relay::io::blueprint::load_mesh(output_extract_root + ".root",n_load);
+
+
+    // NOTE:
+    // a bug in conduit root file creation logic leads to funky paths
+    // when abs paths are used on windows
+    // https://github.com/LLNL/conduit/issues/1297
+    // so,  directly read the output mesh, instead of using mesh_load
+    conduit::relay::io::load(output_extract_root + ".root:mesh","hdf5",n_load);
+
+    // desired load post conduit bugfix
+    //conduit::relay::io::blueprint::load_mesh(output_extract_root + ".root",n_load);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
     string output_final_render = conduit::utils::join_file_path(output_path,
