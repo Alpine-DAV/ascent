@@ -644,7 +644,7 @@ AutoSliceLevels::DoExecute()
   float datafield_min = 0.;
 
 #if ASCENT_MPI_ENABLED
-
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
   float local_datafield_max = 0.;
   float local_datafield_min = 0.;
 
@@ -653,8 +653,8 @@ AutoSliceLevels::DoExecute()
     local_datafield_max = (float)*max_element(field_data.begin(),field_data.end());
     local_datafield_min = (float)*min_element(field_data.begin(),field_data.end());
   }
-  MPI_Reduce(&local_datafield_max, &datafield_max, 1, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&local_datafield_min, &datafield_min, 1, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&local_datafield_max, &datafield_max, 1, MPI_FLOAT, MPI_MAX, 0, mpi_comm);
+  MPI_Reduce(&local_datafield_min, &datafield_min, 1, MPI_FLOAT, MPI_MIN, 0, mpi_comm);
 
 #else
 

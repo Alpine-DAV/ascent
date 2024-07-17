@@ -2584,9 +2584,172 @@ TEST(ascent_render_3d, test_render_3d_points_implicit_topo)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_pyra)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+  
+    Node mesh, info;
+    mesh["state/cycle"] = 100;
+    // create the coordinate set
+    mesh["coordsets/coords/type"] = "explicit";
+    mesh["coordsets/coords/values/x"] = {-1.0,  1.0, 1.0, -1.0, 0.0};
+    mesh["coordsets/coords/values/y"] = {-1.0, -1.0, 1.0,  1.0, 0.0};
+    mesh["coordsets/coords/values/z"] = { 0.0,  0.0, 0.0,  0.0, 1.0};
+    // add the topology
+
+    mesh["topologies/topo/type"] = "unstructured";
+    mesh["topologies/topo/coordset"] = "coords";
+    mesh["topologies/topo/elements/shape"] = "pyramid";
+    mesh["topologies/topo/elements/connectivity"].set(DataType::int64(5));
+    int64_array con_vals = mesh["topologies/topo/elements/connectivity"].value();
+    for(index_t i =0; i < 5; i++)
+    {
+      con_vals[i] = i;
+    }
+
+    mesh["fields/vert_id/topology"] = "topo";
+    mesh["fields/vert_id/association"] = "vertex";
+    mesh["fields/vert_id/values"].set(DataType::float64(5));
+    float64_array vert_id_vals = mesh["fields/vert_id/values"].value();
+    for(index_t i =0; i < 5; i++)
+    {
+      vert_id_vals[i] = i;
+    }
+
+    mesh["fields/ele_id/topology"] = "topo";
+    mesh["fields/ele_id/association"] = "element";
+    mesh["fields/ele_id/values"].set(DataType::float64(1));
+    float64_array ele_id_vals = mesh["fields/ele_id/values"].value();
+    ele_id_vals[0] = 0;
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                  "tout_render_3d_pyramid_vert_id");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "vert_id";
+    scenes["s1/image_prefix"] = output_file;
+
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file));
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_wedge)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    Node mesh, info;
+    mesh["state/cycle"] = 100;
+    // create the coordinate set
+    mesh["coordsets/coords/type"] = "explicit";
+    mesh["coordsets/coords/values/x"] = {-1.0,  1.0, 0.0, -1.0, 1.0, 0.0};
+    mesh["coordsets/coords/values/y"] = {-1.0, -1.0, -1.0,  1.0, 1.0, 1.0};
+    mesh["coordsets/coords/values/z"] = { 0.0,  0.0, 1.0,  0.0, 0.0, 1.0};
+    // add the topology
+
+    mesh["topologies/topo/type"] = "unstructured";
+    mesh["topologies/topo/coordset"] = "coords";
+    mesh["topologies/topo/elements/shape"] = "wedge";
+    mesh["topologies/topo/elements/connectivity"].set(DataType::int64(6));
+    int64_array con_vals = mesh["topologies/topo/elements/connectivity"].value();
+    for(index_t i =0; i < 6; i++)
+    {
+      con_vals[i] = i;
+    }
+
+    mesh["fields/vert_id/topology"] = "topo";
+    mesh["fields/vert_id/association"] = "vertex";
+    mesh["fields/vert_id/values"].set(DataType::float64(6));
+    float64_array vert_id_vals = mesh["fields/vert_id/values"].value();
+    for(index_t i =0; i < 6; i++)
+    {
+      vert_id_vals[i] = i;
+    }
+
+    mesh["fields/ele_id/topology"] = "topo";
+    mesh["fields/ele_id/association"] = "element";
+    mesh["fields/ele_id/values"].set(DataType::float64(1));
+    float64_array ele_id_vals = mesh["fields/ele_id/values"].value();
+    ele_id_vals[0] = 0;
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                  "tout_render_3d_wedge_vert_id");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    conduit::Node &scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "vert_id";
+    scenes["s1/image_prefix"] = output_file;
+
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file));
+
+}
+
+
+
 // //-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_extreme_extents)
 {
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
     // create uniform grid with very large (spatial) extents
     Node mesh, info;
 

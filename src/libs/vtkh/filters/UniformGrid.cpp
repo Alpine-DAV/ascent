@@ -216,8 +216,8 @@ public:
         }
       }
 
-      MPI_Reduce(l_mask.data(), g_mask.data(), num_points, MPI_INT, MPI_LAND, 0, MPI_COMM_WORLD);
-      MPI_Reduce(l_valid.data(), g_valid.data(), num_points, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+      MPI_Reduce(l_mask.data(), g_mask.data(), num_points, MPI_INT, MPI_LAND, 0, mpi_comm);
+      MPI_Reduce(l_valid.data(), g_valid.data(), num_points, MPI_INT, MPI_SUM, 0, mpi_comm);
 
       ////send to root process
       if(uah_field.CanConvert<scalarI>())
@@ -235,7 +235,7 @@ public:
           }
         }
 
-        MPI_Reduce(local_field, global_field.data(), num_points, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_field, global_field.data(), num_points, MPI_INT, MPI_SUM, 0, mpi_comm);
 
         if(par_rank == 0)
         {
@@ -277,7 +277,7 @@ public:
             ah_field.WritePortal().Set(i,0);
         }
 
-        MPI_Reduce(local_field, global_field.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_field, global_field.data(), num_points, MPI_FLOAT, MPI_SUM, 0, mpi_comm);
 
         if(par_rank == 0)
         {
@@ -317,7 +317,7 @@ public:
         }
         double * local_field = GetVTKMPointer(ah_field);
         std::vector<double> global_field(num_points,0);
-        MPI_Reduce(local_field, global_field.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_field, global_field.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, mpi_comm);
 
         if(par_rank == 0)
         {
@@ -365,8 +365,8 @@ public:
           local_y_points[i] = ah_field.ReadPortal().Get(i)[1];
         }
 
-        MPI_Reduce(local_x_points.data(), global_x_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-        MPI_Reduce(local_y_points.data(), global_y_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+        MPI_Reduce(local_x_points.data(), global_x_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, mpi_comm);
+        MPI_Reduce(local_y_points.data(), global_y_points.data(), num_points, MPI_FLOAT, MPI_SUM, 0, mpi_comm);
 
         if(par_rank == 0)
         {

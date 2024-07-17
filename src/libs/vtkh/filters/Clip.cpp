@@ -170,7 +170,6 @@ Clip::SetBoxClip(const vtkm::Bounds &clipping_bounds)
                          clipping_bounds.Y.Max,
                          clipping_bounds.Z.Max});
 
-
   m_internals->m_func = box;
 }
 
@@ -186,6 +185,28 @@ Clip::SetSphereClip(const double center[3], const double radius)
 
   auto sphere = vtkm::Sphere(vec_center, r);
   m_internals->m_func = sphere;
+}
+
+void
+Clip::SetCylinderClip(const double center[3],
+                      const double axis[3],
+                      const double radius)
+{
+  m_do_multi_plane = false;
+  vtkm::Vec<vtkm::FloatDefault,3> vec_center;
+  vec_center[0] = center[0];
+  vec_center[1] = center[1];
+  vec_center[2] = center[2];
+
+  vtkm::Vec<vtkm::FloatDefault,3> vec_axis;
+  vec_axis[0] = axis[0];
+  vec_axis[1] = axis[1];
+  vec_axis[2] = axis[2];
+
+  vtkm::FloatDefault r = radius;
+
+  auto cylinder = vtkm::Cylinder(vec_center, vec_axis, r);
+  m_internals->m_func = cylinder;
 }
 
 void

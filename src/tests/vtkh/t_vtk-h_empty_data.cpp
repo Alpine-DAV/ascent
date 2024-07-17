@@ -87,8 +87,8 @@ TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
   double upper_bound = 1.;
   double lower_bound = 0.;
 
-  thresher.SetUpperThreshold(upper_bound);
-  thresher.SetLowerThreshold(lower_bound);
+  thresher.SetFieldUpperThreshold(upper_bound);
+  thresher.SetFieldLowerThreshold(lower_bound);
   thresher.Update();
   vtkh::DataSet *thresh_output = thresher.GetOutput();
 

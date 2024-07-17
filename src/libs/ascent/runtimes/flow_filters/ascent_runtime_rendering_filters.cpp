@@ -360,6 +360,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   // render create a default camera. Now get it and check for
   // values that override the default view
   //
+
   if(render_node.has_path("camera"))
   {
     vtkm::rendering::Camera camera = render.GetCamera();
@@ -1168,10 +1169,10 @@ DefaultRender::execute()
 
           std::string output_path = default_dir();
 
-	  if(render_node.has_path("output_path"))
-	  {
+          if(render_node.has_path("output_path"))
+          {
             output_path = render_node["output_path"].as_string();
-	    int rank = 0;
+            int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
             MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
             MPI_Comm_rank(mpi_comm, &rank);
@@ -1181,7 +1182,7 @@ DefaultRender::execute()
             {
               conduit::utils::create_directory(output_path);
             }
-	  }
+          }
 
           if(!render_node.has_path("db_name"))
           {
@@ -1242,106 +1243,104 @@ DefaultRender::execute()
                          "'image_prefix' parameter");
           }
 
+          if(render_node.has_path("dataset_bounds"))
+          {
+            float64_accessor d_bounds = render_node["dataset_bounds"].value();
+            int num_bounds = d_bounds.number_of_elements();
 
-	  if(render_node.has_path("dataset_bounds"))
-	  {
-	    float64_accessor d_bounds = render_node["dataset_bounds"].value();
-	    int num_bounds = d_bounds.number_of_elements();
-	    
-	    if(num_bounds != 6)
+            if(num_bounds != 6)
             {
               std::string render_name = renders_node.child_names()[i];
               std::string fpath = filter_to_path(this->name());
               ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
                            " only provided " << num_bounds << 
-	                   " dataset_bounds when 6 are required:" <<
-			   " [xMin,xMax,yMin,yMax,zMin,zMax]");
-	    }
-	    if(scene_bounds.X.Min > d_bounds[0])
-	      scene_bounds.X.Min = d_bounds[0];
-	    if(scene_bounds.X.Max < d_bounds[1])
-	      scene_bounds.X.Max = d_bounds[1];
-	    if(scene_bounds.Y.Min > d_bounds[2])
-	      scene_bounds.Y.Min = d_bounds[2];
-	    if(scene_bounds.Y.Max < d_bounds[3])
-	      scene_bounds.Y.Max = d_bounds[3];
-	    if(scene_bounds.Z.Min > d_bounds[4])
-	      scene_bounds.Z.Min = d_bounds[4];
-	    if(scene_bounds.Z.Max < d_bounds[5])
-	      scene_bounds.Z.Max = d_bounds[5];
-	  }
+                           " dataset_bounds when 6 are required:" <<
+                          " [xMin,xMax,yMin,yMax,zMin,zMax]");
+            }
 
-	  if(is_auto_camera)
-	  { 
+            if(scene_bounds.X.Min > d_bounds[0])
+              scene_bounds.X.Min = d_bounds[0];
+            if(scene_bounds.X.Max < d_bounds[1])
+              scene_bounds.X.Max = d_bounds[1];
+            if(scene_bounds.Y.Min > d_bounds[2])
+              scene_bounds.Y.Min = d_bounds[2];
+            if(scene_bounds.Y.Max < d_bounds[3])
+              scene_bounds.Y.Max = d_bounds[3];
+            if(scene_bounds.Z.Min > d_bounds[4])
+              scene_bounds.Z.Min = d_bounds[4];
+            if(scene_bounds.Z.Max < d_bounds[5])
+              scene_bounds.Z.Max = d_bounds[5];
+          }
+
+          if(is_auto_camera)
+          {
             DataObject *source
-              = graph().workspace().registry().fetch<DataObject>("source_object");
-            
-            std::shared_ptr<VTKHCollection> collection = source->as_vtkh_collection();
+                  = graph().workspace().registry().fetch<DataObject>("source_object");
       
-	    if(!render_node.has_path("auto_camera/field"))
+            std::shared_ptr<VTKHCollection> collection = source->as_vtkh_collection();
+
+            if(!render_node.has_path("auto_camera/field"))
               ASCENT_ERROR("Auto Camera must specify a 'field'");
-	    if(!render_node.has_path("auto_camera/metric"))
+            if(!render_node.has_path("auto_camera/metric"))
               ASCENT_ERROR("Auto Camera must specify a 'metric'");
-	    if(!render_node.has_path("auto_camera/samples"))
+            if(!render_node.has_path("auto_camera/samples"))
               ASCENT_ERROR("Auto Camera must specify number of 'samples'");
 
             std::string field_name = render_node["auto_camera/field"].as_string();
             std::string metric     = render_node["auto_camera/metric"].as_string();
-            int samples            = render_node["auto_camera/samples"].as_int32();
-      
+            int samples            = render_node["auto_camera/samples"].to_int64();
+
             if(!collection->has_field(field_name))
             {
               ASCENT_ERROR("Unknown field '"<<field_name<<"' in Auto Camera");
             }
-      
+
             std::string topo_name = collection->field_topology(field_name);
             vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-      
+
             vtkh::AutoCamera auto_cam;
-      
-	    int height = 1024;
-	    int width  = 1024;
+
+            int height = 1024;
+            int width  = 1024;
             if(render_node.has_path("auto_camera/bins"))
             {
-              int bins = render_node["auto_camera/bins"].as_int32();
+              int bins = render_node["auto_camera/bins"].to_int64();
               auto_cam.SetNumBins(bins); 
             }
             if(render_node.has_path("auto_camera/height"))
             {
-              height = render_node["auto_camera/height"].as_int32();
+              height = render_node["auto_camera/height"].to_int64();
               auto_cam.SetHeight(height); 
             }
             if(render_node.has_path("auto_camera/width"))
             {
-              width = render_node["auto_camera/width"].as_int32();
+              width = render_node["auto_camera/width"].to_int64();
               auto_cam.SetWidth(width); 
             }
-      
+
             auto_cam.SetInput(&dataset);
             auto_cam.SetField(field_name);
             auto_cam.SetMetric(metric);
             auto_cam.SetNumSamples(samples);
             auto_cam.Update();
-            
+  
             vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
             *camera = auto_cam.GetCamera();
-	    vtkh::Render render = vtkh::MakeRender(width,
-                                      height,
-                                      scene_bounds,
-	    			      *camera,
-                                      image_name);
+            vtkh::Render render = vtkh::MakeRender(width,
+                                                   height,
+                                                   scene_bounds,
+                                                   *camera,
+                                                   image_name);
             renders->push_back(render);
-	    delete camera;
-
-	  }
-	  else
-	  {
-
+            delete camera;
+          }
+          else
+          {
             vtkh::Render render = detail::parse_render(render_node,
                                                        scene_bounds,
                                                        image_name);
             renders->push_back(render);
-	  }
+          }
         }
       }
     }
@@ -1352,6 +1351,7 @@ DefaultRender::execute()
       if(params().has_path("image_name"))
       {
         image_name =  params()["image_name"].as_string();
+        image_name = output_dir(image_name);
       }
       else
       {
@@ -1433,7 +1433,7 @@ VTKHBounds::execute()
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
       bounds->Include(collection->global_bounds());
     }
-    
+
     set_output<vtkm::Bounds>(bounds);
 }
 
@@ -1918,6 +1918,9 @@ ExecScene::execute()
       image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
       image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
       image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+      image_data["camera/near_plane"] = renders->at(i).GetCamera().GetClippingRange().Min;
+      image_data["camera/far_plane"] = renders->at(i).GetCamera().GetClippingRange().Max;
+
       vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
       double coord_bounds [6] = {bounds.X.Min,
                                  bounds.Y.Min,
@@ -1925,7 +1928,6 @@ ExecScene::execute()
                                  bounds.X.Max,
                                  bounds.Y.Max,
                                  bounds.Z.Max};
-      
       image_data["scene_bounds"].set(coord_bounds, 6);
 
       image_list->append() = image_data;

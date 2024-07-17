@@ -667,7 +667,7 @@ VTKHCleanGrid::execute()
                                                      throw_error);
     if(topo_name == "")
     {
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
@@ -1220,16 +1220,157 @@ VTKHThreshold::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
+    bool res = true;
 
-    bool res = check_string("field",params, info, true);
+    bool type_present = false;
 
-    res = check_numeric("min_value",params, info, true, true) && res;
-    res = check_numeric("max_value",params, info, true, true) && res;
+    if(params.has_child("field"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("sphere"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("cylinder"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("box"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("plane"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("multi_plane"))
+    {
+      type_present = true;
+    }
+
+    if(!type_present)
+    {
+        info["errors"].append() = "Missing required parameter. Threshold must specify 'field', 'sphere', 'cylinder', 'box', or 'plane'";
+        res = false;
+    }
+    else
+    {
+      if(params.has_child("sphere"))
+      {
+         res = check_numeric("sphere/center/x",params, info, true, true) && res;
+         res = check_numeric("sphere/center/y",params, info, true, true) && res;
+         res = check_numeric("sphere/center/z",params, info, true, true) && res;
+         res = check_numeric("sphere/radius",params, info, true, true) && res;
+      }
+      else if(params.has_child("cylinder"))
+      {
+         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/radius",params, info, true, true) && res;
+      }
+      else if(params.has_child("box"))
+      {
+         res = check_numeric("box/min/x",params, info, true, true) && res;
+         res = check_numeric("box/min/y",params, info, true, true) && res;
+         res = check_numeric("box/min/z",params, info, true, true) && res;
+         res = check_numeric("box/max/x",params, info, true, true) && res;
+         res = check_numeric("box/max/y",params, info, true, true) && res;
+         res = check_numeric("box/max/z",params, info, true, true) && res;
+      }
+      else if(params.has_child("plane"))
+      {
+         res = check_numeric("plane/point/x",params, info, true, true) && res;
+         res = check_numeric("plane/point/y",params, info, true, true) && res;
+         res = check_numeric("plane/point/z",params, info, true, true) && res;
+         res = check_numeric("plane/normal/x",params, info, true, true) && res;
+         res = check_numeric("plane/normal/y",params, info, true, true) && res;
+         res = check_numeric("plane/normal/z",params, info, true, true) && res;
+      }
+      else if(params.has_child("multi_plane"))
+      {
+         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
+
+         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
+      }
+    }
+
+    // we either need 'field` or `topology`
+    if(!params.has_child("field")) 
+    {
+      res &= check_string("topology",params, info, false);
+    }
+
+    // field case
+    res = check_string("field",params, info, false);
+    res = check_numeric("min_value",params, info, false, true) && res;
+    res = check_numeric("max_value",params, info, false, true) && res;
+
+    res = check_string("invert",params, info, false) && res;
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("invert");
     valid_paths.push_back("field");
     valid_paths.push_back("min_value");
     valid_paths.push_back("max_value");
+
+    valid_paths.push_back("topology");
+    valid_paths.push_back("extract");
+
+    valid_paths.push_back("sphere/center/x");
+    valid_paths.push_back("sphere/center/y");
+    valid_paths.push_back("sphere/center/z");
+    valid_paths.push_back("sphere/radius");
+
+    valid_paths.push_back("cylinder/center/x");
+    valid_paths.push_back("cylinder/center/y");
+    valid_paths.push_back("cylinder/center/z");
+    valid_paths.push_back("cylinder/axis/x");
+    valid_paths.push_back("cylinder/axis/y");
+    valid_paths.push_back("cylinder/axis/z");
+    valid_paths.push_back("cylinder/radius");
+
+    valid_paths.push_back("box/min/x");
+    valid_paths.push_back("box/min/y");
+    valid_paths.push_back("box/min/z");
+    valid_paths.push_back("box/max/x");
+    valid_paths.push_back("box/max/y");
+    valid_paths.push_back("box/max/z");
+
+    valid_paths.push_back("plane/point/x");
+    valid_paths.push_back("plane/point/y");
+    valid_paths.push_back("plane/point/z");
+    valid_paths.push_back("plane/normal/x");
+    valid_paths.push_back("plane/normal/y");
+    valid_paths.push_back("plane/normal/z");
+
+    valid_paths.push_back("multi_plane/point1/x");
+    valid_paths.push_back("multi_plane/point1/y");
+    valid_paths.push_back("multi_plane/point1/z");
+    valid_paths.push_back("multi_plane/normal1/x");
+    valid_paths.push_back("multi_plane/normal1/y");
+    valid_paths.push_back("multi_plane/normal1/z");
+
+    valid_paths.push_back("multi_plane/point2/x");
+    valid_paths.push_back("multi_plane/point2/y");
+    valid_paths.push_back("multi_plane/point2/z");
+    valid_paths.push_back("multi_plane/normal2/x");
+    valid_paths.push_back("multi_plane/normal2/y");
+    valid_paths.push_back("multi_plane/normal2/z");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1258,38 +1399,149 @@ VTKHThreshold::execute()
       set_output<DataObject>(data_object);
       return;
     }
+
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string field_name = params()["field"].as_string();
-    if(!collection->has_field(field_name))
-    {
-      bool throw_error = false;
-      detail::field_error(field_name, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
+    // find right topology, either via field name or topology param
+    std::string topo_name = "";
 
-    std::string topo_name = collection->field_topology(field_name);
+    if(params().has_child("field"))
+    {
+        std::string field_name = params()["field"].as_string();
+        if(!collection->has_field(field_name))
+        {
+          bool throw_error = false;
+          detail::field_error(field_name, this->name(), collection, throw_error);
+          // this creates a data object with an invalid source
+          set_output<DataObject>(new DataObject());
+          return;
+        }
+
+        topo_name = collection->field_topology(field_name);
+
+    }
+    else
+    {
+        bool throw_error = false;
+        topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+        if(topo_name == "")
+        {
+            // this creates a data object with an invalid source
+            set_output<DataObject>(new DataObject());
+            return;
+        }
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::Threshold thresher;
-
     thresher.SetInput(&data);
-    thresher.SetField(field_name);
 
-    const Node &n_min_val = params()["min_value"];
-    const Node &n_max_val = params()["max_value"];
+    if(params().has_child("invert"))
+    {
+      std::string invert = params()["invert"].as_string();
+      if(invert == "true")
+      {
+        thresher.SetInvertThreshold(true);
+      }
+    }
 
-    // convert to contig doubles
-    double min_val = get_float64(n_min_val, data_object);
-    double max_val = get_float64(n_max_val, data_object);
-    thresher.SetUpperThreshold(max_val);
-    thresher.SetLowerThreshold(min_val);
+    // field case
+    if(params().has_child("field"))
+    {
+        std::string field_name = params()["field"].as_string();
+        thresher.SetField(field_name);
 
+        const Node &n_min_val = params()["min_value"];
+        const Node &n_max_val = params()["max_value"];
+
+        // convert to contig doubles
+        double min_val = get_float64(n_min_val, data_object);
+        double max_val = get_float64(n_max_val, data_object);
+        thresher.SetFieldUpperThreshold(max_val);
+        thresher.SetFieldLowerThreshold(min_val);
+    }
+    else // spatial select cases
+    {
+        if(params().has_path("sphere"))
+        {
+          const Node &sphere = params()["sphere"];
+          double center[3];
+
+          center[0] = get_float64(sphere["center/x"], data_object);
+          center[1] = get_float64(sphere["center/y"], data_object);
+          center[2] = get_float64(sphere["center/z"], data_object);
+          double radius = get_float64(sphere["radius"], data_object);
+          thresher.SetSphereThreshold(center, radius);
+        }
+        else if(params().has_path("cylinder"))
+        {
+          const Node &cylinder = params()["cylinder"];
+          double center[3];
+          double axis[3];
+
+          center[0] = get_float64(cylinder["center/x"], data_object);
+          center[1] = get_float64(cylinder["center/y"], data_object);
+          center[2] = get_float64(cylinder["center/z"], data_object);
+
+          axis[0] = get_float64(cylinder["axis/x"], data_object);
+          axis[1] = get_float64(cylinder["axis/y"], data_object);
+          axis[2] = get_float64(cylinder["axis/z"], data_object);
+
+          double radius = get_float64(cylinder["radius"], data_object);
+          thresher.SetCylinderThreshold(center, axis, radius);
+        }
+        else if(params().has_path("box"))
+        {
+          const Node &box = params()["box"];
+          vtkm::Bounds bounds;
+          bounds.X.Min= get_float64(box["min/x"], data_object);
+          bounds.Y.Min= get_float64(box["min/y"], data_object);
+          bounds.Z.Min= get_float64(box["min/z"], data_object);
+          bounds.X.Max = get_float64(box["max/x"], data_object);
+          bounds.Y.Max = get_float64(box["max/y"], data_object);
+          bounds.Z.Max = get_float64(box["max/z"], data_object);
+          thresher.SetBoxThreshold(bounds);
+        }
+        else if(params().has_path("plane"))
+        {
+          const Node &plane= params()["plane"];
+          double point[3], normal[3];;
+
+          point[0] =  get_float64(plane["point/x"], data_object);
+          point[1] =  get_float64(plane["point/y"], data_object);
+          point[2] =  get_float64(plane["point/z"], data_object);
+          normal[0] = get_float64(plane["normal/x"], data_object);
+          normal[1] = get_float64(plane["normal/y"], data_object);
+          normal[2] = get_float64(plane["normal/z"], data_object);
+          thresher.SetPlaneThreshold(point, normal);
+        }
+        // else if(params().has_path("multi_plane"))
+        // {
+        //   const Node &plane= params()["multi_plane"];
+        //   double point1[3], normal1[3], point2[3], normal2[3];
+        //
+        //   point1[0] = get_float64(plane["point1/x"], data_object);
+        //   point1[1] = get_float64(plane["point1/y"], data_object);
+        //   point1[2] = get_float64(plane["point1/z"], data_object);
+        //   normal1[0] = get_float64(plane["normal1/x"], data_object);
+        //   normal1[1] = get_float64(plane["normal1/y"], data_object);
+        //   normal1[2] = get_float64(plane["normal1/z"], data_object);
+        //   point2[0] = get_float64(plane["point2/x"], data_object);
+        //   point2[1] = get_float64(plane["point2/y"], data_object);
+        //   point2[2] = get_float64(plane["point2/z"], data_object);
+        //   normal2[0] = get_float64(plane["normal2/x"], data_object);
+        //   normal2[1] = get_float64(plane["normal2/y"], data_object);
+        //   normal2[2] = get_float64(plane["normal2/z"], data_object);
+        //   clipper.Set2PlaneClip(point1, normal1, point2, normal2);
+        // }
+
+    }
+    
     thresher.Update();
-
     vtkh::DataSet *thresh_output = thresher.GetOutput();
 
     // we need to pass through the rest of the topologies, untouched,
@@ -1338,6 +1590,10 @@ VTKHClip::verify_params(const conduit::Node &params,
     {
       type_present = true;
     }
+    else if(params.has_child("cylinder"))
+    {
+      type_present = true;
+    }
     else if(params.has_child("box"))
     {
       type_present = true;
@@ -1353,7 +1609,7 @@ VTKHClip::verify_params(const conduit::Node &params,
 
     if(!type_present)
     {
-        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'box', 'plane', or 'mulit_plane'";
+        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'cylinder', 'box', 'plane', or 'mulit_plane'";
         res = false;
     }
     else
@@ -1366,7 +1622,16 @@ VTKHClip::verify_params(const conduit::Node &params,
          res = check_numeric("sphere/center/y",params, info, true, true) && res;
          res = check_numeric("sphere/center/z",params, info, true, true) && res;
          res = check_numeric("sphere/radius",params, info, true, true) && res;
-
+      }
+      else if(params.has_child("cylinder"))
+      {
+         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/radius",params, info, true, true) && res;
       }
       else if(params.has_child("box"))
       {
@@ -1410,16 +1675,27 @@ VTKHClip::verify_params(const conduit::Node &params,
     std::vector<std::string> valid_paths;
     valid_paths.push_back("topology");
     valid_paths.push_back("invert");
+
     valid_paths.push_back("sphere/center/x");
     valid_paths.push_back("sphere/center/y");
     valid_paths.push_back("sphere/center/z");
     valid_paths.push_back("sphere/radius");
+
+    valid_paths.push_back("cylinder/center/x");
+    valid_paths.push_back("cylinder/center/y");
+    valid_paths.push_back("cylinder/center/z");
+    valid_paths.push_back("cylinder/axis/x");
+    valid_paths.push_back("cylinder/axis/y");
+    valid_paths.push_back("cylinder/axis/z");
+    valid_paths.push_back("cylinder/radius");
+
     valid_paths.push_back("box/min/x");
     valid_paths.push_back("box/min/y");
     valid_paths.push_back("box/min/z");
     valid_paths.push_back("box/max/x");
     valid_paths.push_back("box/max/y");
     valid_paths.push_back("box/max/z");
+
     valid_paths.push_back("plane/point/x");
     valid_paths.push_back("plane/point/y");
     valid_paths.push_back("plane/point/z");
@@ -1476,7 +1752,7 @@ VTKHClip::execute()
                                                      throw_error);
     if(topo_name == "")
     {
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
@@ -1498,6 +1774,23 @@ VTKHClip::execute()
       center[2] = get_float64(sphere["center/z"], data_object);
       double radius = get_float64(sphere["radius"], data_object);
       clipper.SetSphereClip(center, radius);
+    }
+    else if(params().has_path("cylinder"))
+    {
+      const Node &cylinder = params()["cylinder"];
+      double center[3];
+      double axis[3];
+
+      center[0] = get_float64(cylinder["center/x"], data_object);
+      center[1] = get_float64(cylinder["center/y"], data_object);
+      center[2] = get_float64(cylinder["center/z"], data_object);
+
+      axis[0] = get_float64(cylinder["axis/x"], data_object);
+      axis[1] = get_float64(cylinder["axis/y"], data_object);
+      axis[2] = get_float64(cylinder["axis/z"], data_object);
+
+      double radius = get_float64(cylinder["radius"], data_object);
+      clipper.SetCylinderClip(center, axis, radius);
     }
     else if(params().has_path("box"))
     {
@@ -3069,18 +3362,18 @@ VTKHUniformGrid::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    bool throw_error = false;
-    std::string topo_name = detail::resolve_topology(params(),
-                                                     this->name(),
-                                                     collection,
-                                                     throw_error);
-    if(topo_name == "")
+    std::string field = params()["field"].as_string();
+    if(!collection->has_field(field))
     {
+      bool throw_error = false;
+      detail::field_error(field, this->name(), collection, throw_error);
       // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
 
+
+    std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkm::Bounds d_bounds = data.GetGlobalBounds();
@@ -3088,7 +3381,6 @@ VTKHUniformGrid::execute()
     vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
     vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
 
-    std::string field = params()["field"].as_string();
     vtkm::Float64 invalid_value = 0.0;
     
     using Vec3f = vtkm::Vec<vtkm::Float64,3>;
@@ -4886,7 +5178,7 @@ VTKHVTKFileExtract::execute()
         Node n_recv;
         conduit::relay::mpi::all_gather_using_schema(n_local_domain_ids,
                                                      n_recv,
-                                                     MPI_COMM_WORLD);
+                                                     mpi_comm);
         n_global_domain_ids.set(DataType::index_t(num_global_domains));
         n_global_domain_ids.print();
         index_t_array global_vals = n_global_domain_ids.value();

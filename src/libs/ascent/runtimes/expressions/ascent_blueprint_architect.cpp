@@ -529,14 +529,14 @@ struct VertexFunctor
 struct CentroidFunctor
 {
   Array<double> m_centroids;
-  int m_dims;
 
   template<typename MeshType, typename Exec>
   void operator()(MeshType &mesh, const Exec &)
   {
-    
     const int size = mesh.m_num_cells;
     const int dims = mesh.m_dims;
+
+    // std::cout << " centroid mesh dims " << dims << std::endl;
 
     // one component for each dim
     m_centroids.resize(size * mesh.m_dims);
@@ -545,7 +545,6 @@ struct CentroidFunctor
     using for_policy = typename Exec::for_policy;
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t cell_idx)
     {
-      centroids_ptr[cell_idx] = cell_idx;
       int indices[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
       mesh.cell_indices(cell_idx, indices);
 
@@ -1381,7 +1380,7 @@ int find_bin(const T* bins, const int size, const T val, bool clamp)
 
   return first;
 }
-
+//
 // returns -1 if value lies outside the range
 conduit::index_t
 get_bin_index(const conduit::float64 value, const conduit::Node &axis)
@@ -1419,7 +1418,7 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
   }
   return bin_index;
 }
-
+//
 void
 populate_homes(const conduit::Node &dom,
                const conduit::Node &bin_axes,
@@ -1555,6 +1554,7 @@ populate_homes(const conduit::Node &dom,
     }
   }
 }
+
 
 void
 update_bin(double *bins,
@@ -2018,6 +2018,8 @@ binning(const conduit::Node &dataset,
   return res;
 }
 
+
+/// TODO MOVE TO ascent_data_binning.cpp
 void
 paint_binning(const conduit::Node &binning,
               conduit::Node &dataset,
@@ -2072,7 +2074,7 @@ paint_binning(const conduit::Node &binning,
         binning["attrs/reduction_var/value"].as_string();
     if(reduction_var.empty())
     {
-      reduction_var = "cnt";
+      reduction_var = "count";
     }
     std::string fname =
         "painted_" + reduction_var + "_" +
@@ -2108,12 +2110,16 @@ paint_binning(const conduit::Node &binning,
 }
 
 
+/// TODO MOVE TO ascent_data_binning.cpp
 void
 binning_mesh(const conduit::Node &binning,
              conduit::Node &mesh,
              const std::string field_name)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
+
+
+  // std::cout << "Creating binning mesh from " << binning.to_yaml();
 
   if(num_axes > 3)
   {
@@ -2159,7 +2165,7 @@ binning_mesh(const conduit::Node &binning,
   std::string reduction_var = binning["attrs/reduction_var/value"].as_string();
   if(reduction_var.empty())
   {
-    reduction_var = "cnt";
+    reduction_var = "count";
   }
   std::string fname =
       reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();

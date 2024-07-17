@@ -17,8 +17,8 @@ cd /ascent && python scripts/uberenv/uberenv.py \
 #
 # also install h5py, which will be required by cinema's python module
 #
-/uberenv_libs/spack/bin/spack install py-h5py
-/uberenv_libs/spack/bin/spack activate py-h5py
+/uberenv_libs/spack/bin/spack -D /uberenv_libs/spack_env/ add py-h5py 
+/uberenv_libs/spack/bin/spack -D /uberenv_libs/spack_env/ install py-h5py 
 
 # cleanup the spack build stuff to free up space
 /uberenv_libs/spack/bin/spack clean --all
@@ -29,6 +29,7 @@ echo "git clone --recursive https://github.com/Alpine-DAV/ascent.git" > clone.sh
 chmod +x clone.sh
 
 #  gen env script that points to spack installs of tpls
-cd /uberenv_libs/ && python /ascent/scripts/gen_spack_env_script.py cmake mpi python
+cd /uberenv_libs/ && python /ascent/scripts/gen_spack_env_script.py cmake mpi
 cp /uberenv_libs/s_env.sh /ascent_docker_setup_env.sh
+echo "export PATH=/uberenv_libs/spack_view/bin/:$PATH" >> /ascent_docker_setup_env.sh
 echo "export PYTHONPATH=/ascent/install/python-modules/" >> /ascent_docker_setup_env.sh

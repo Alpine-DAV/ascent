@@ -83,6 +83,7 @@ class avtParICAlgorithm
     typedef std::map<RequestTagPair, unsigned char *>::iterator bufferIterator;
     typedef std::map<RankIdPair, std::list<unsigned char *>>::iterator packetIterator;
 
+    MPI_Comm  comm;
     int rank, nProcs;
 
     std::map<RequestTagPair, unsigned char *> sendBuffers, recvBuffers;
