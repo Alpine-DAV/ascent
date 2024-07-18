@@ -130,19 +130,32 @@ void Transmogrifier::to_poly(conduit::Node &doms, conduit::Node &to_vtkh)
 
     res.set_external(dom);
 
-    std::vector<std::string> coordsets;
     for (int i = 0; i < poly_topos.size(); i ++)
     {
+      // coordsets may be shared by multiple topos
+      // generate_sides may need to create a new coordset for each case
+      // make sure that output coordsets have unique names
+      // same for the original id fields
       conduit::Node s2dmap, d2smap, options;
-      coordsets.push_back(dom["topologies/" + poly_topos[i] + "/coordset"].as_string());
+      std::string coordset_name = poly_topos[i] + "_" + dom["topologies/" + poly_topos[i] + "/coordset"].as_string();
+      conduit::Node fields_tmp;
       conduit::blueprint::mesh::topology::unstructured::generate_sides(
         dom["topologies/" + poly_topos[i]],
         res["topologies/" + poly_topos[i]],
-        res["coordsets/" + coordsets[coordsets.size() - 1]],
-        res["fields"],
+        res["coordsets/" + coordset_name],
+        fields_tmp,
         s2dmap,
         d2smap,
         options);
+
+        // makesure orig ids have unique names
+        fields_tmp.rename_child("original_vertex_ids",poly_topos[i] + "_original_vertex_ids");
+        fields_tmp.rename_child("original_element_ids",poly_topos[i] + "_original_element_ids");
+        std::vector<std::string> field_names = fields_tmp.child_names();
+        for(const std::string &fname : field_names)
+        {
+            res["fields/" + fname ].move(fields_tmp[fname]);
+        }
     }
   }
 }
