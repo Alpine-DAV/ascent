@@ -147,8 +147,7 @@ void Transmogrifier::to_poly(conduit::Node &doms, conduit::Node &to_vtkh)
         s2dmap,
         d2smap,
         options);
-
-        // makesure orig ids have unique names
+        // make sure orig ids have unique names
         fields_tmp.rename_child("original_vertex_ids",poly_topos[i] + "_original_vertex_ids");
         fields_tmp.rename_child("original_element_ids",poly_topos[i] + "_original_element_ids");
         std::vector<std::string> field_names = fields_tmp.child_names();
