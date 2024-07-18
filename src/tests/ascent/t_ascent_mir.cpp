@@ -86,7 +86,8 @@ TEST(ascent_mir, venn_vtkm_mir_full)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
 //    scenes["s1/plots/p1/matset"] = "matset";
-    scenes["s1/plots/p1/field"] = "cellMat";
+    scenes["s1/plots/p1/field"] = "matset";
+    scenes["s1/plots/p1/color_table/discrete"] = "true";
 //    scenes["s1/plots/p1/field"] = "circle_b";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
@@ -129,8 +130,8 @@ TEST(ascent_mir, venn_vtkm_mir_full)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 
 }
-
-//-----------------------------------------------------------------------------
+//
+////-----------------------------------------------------------------------------
 TEST(ascent_mir, venn_vtkm_mir_sparse_by_element)
 {
     Node n;
@@ -182,7 +183,8 @@ TEST(ascent_mir, venn_vtkm_mir_sparse_by_element)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
 //    scenes["s1/plots/p1/matset"] = "matset";
-    scenes["s1/plots/p1/field"] = "cellMat";
+    scenes["s1/plots/p1/field"] = "matset";
+    scenes["s1/plots/p1/color_table/discrete"] = "true";
 //    scenes["s1/plots/p1/field"] = "circle_b";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
@@ -278,7 +280,8 @@ TEST(ascent_mir, venn_vtkm_mir_sparse_by_material)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
 //    scenes["s1/plots/p1/matset"] = "matset";
-    scenes["s1/plots/p1/field"] = "cellMat";
+    scenes["s1/plots/p1/color_table/discrete"] = "true";
+    scenes["s1/plots/p1/field"] = "matset";
 //    scenes["s1/plots/p1/field"] = "circle_b";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;

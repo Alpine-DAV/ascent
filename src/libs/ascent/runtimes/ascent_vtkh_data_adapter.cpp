@@ -273,10 +273,6 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   // base case is naturally stride data
   if(element_stride == 1)
   {
-    std::cerr << " In element_stride==1 for field: " << field_name << std::endl;
-    std::cerr << "vtkm_assoc: " << assoc_str << std::endl;
-    std::cerr << "num_vals: " << num_vals << std::endl;
-    std::cerr << "copy: " << zero_copy << std::endl;
       field = vtkm::cont::make_Field(field_name,
                                      vtkm_assoc,
                                      values_ptr,
@@ -285,7 +281,6 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   }
   else
   {
-    std::cerr << "not in element_stride==1" << std::endl;
       //
       // use ArrayHandleStride to create new field
       //
@@ -2099,12 +2094,9 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
     if(!n_matset.has_child("volume_fractions"))
         ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
-    std::cerr << "zero copy going into AddMatSets: " << zero_copy << std::endl;
     //TODO: zero_copy = true segfaulting in vtkm mir filter
     //zero_copy = false;
     
-    //std::cerr << " after setting zero copy to true or false: " << zero_copy << std::endl;
-
     
     std::string assoc_str = "element";
     //fields required from VTK-m MIR filter

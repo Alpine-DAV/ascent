@@ -110,13 +110,6 @@ void MIR::DoExecute()
     mir.SetScalingDecay(vtkm::Float64(m_scaling_decay));
     mir.SetMaxIterations(vtkm::IdComponent(m_iterations));
     mir.SetMaxPercentError(vtkm::Float64(m_max_error));
-    std::cerr <<"data of domain: " << i << " and domain_id: " << domain_id << std::endl;
-    std::cerr << "DATA START" << std::endl;
-    dom.PrintSummary(std::cerr);
-    std::cerr << "DATA END" << std::endl;
-    std::cerr << "DATA START AGAIN" << std::endl;
-    dom.PrintSummary(std::cerr);
-    std::cerr << "END AGAIN" << std::endl;
     vtkm::cont::DataSet output = mir.Execute(dom);
     //cast and call error if cellMat stays as ints
     vtkm::cont::UnknownArrayHandle float_field = output.GetField("cellMat").GetDataAsDefaultFloat();
