@@ -45,7 +45,10 @@ Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
     //TODO: What if we have a large range max? i.e. lots of materials
     //Need to extend color bar in proportion somehow??
     if(is_discrete[i])
-      this->m_color_bar_annotation.SetRange(ranges[i],ranges[i].Max);
+    {
+      int num_tics = abs(ranges[i].Max - ranges[i].Min) + 1;
+      this->m_color_bar_annotation.SetRange(ranges[i],num_tics);
+    }
     else
       this->m_color_bar_annotation.SetRange(ranges[i], 5);
     this->m_color_bar_annotation.SetFieldName(field_names[i]);
