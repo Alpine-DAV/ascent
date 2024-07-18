@@ -21,6 +21,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
+- Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.
 
 ## [0.9.3] - Released 2024-05-11
 ### Preferred dependency versions for ascent@0.9.3
