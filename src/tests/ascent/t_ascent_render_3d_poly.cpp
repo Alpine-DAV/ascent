@@ -153,6 +153,15 @@ TEST(ascent_pipeline, test_render_3d_poly_multi)
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_render_3d_poly_shared_coordset)
 {
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
     // reproducer for issue: https://github.com/Alpine-DAV/ascent/issues/1322
     // generate sides with shared coordset caused name collision with
     // output coordset
