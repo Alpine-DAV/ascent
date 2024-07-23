@@ -5333,15 +5333,6 @@ VTKHMIR::execute()
     std::string topo_name = collection->field_topology(ids_name);
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    if(!graph().workspace().registry().has_entry("is_discrete"))
-    {
-      
-      int *is_discrete = new int();
-      *is_discrete = 1;
-      graph().workspace().registry().add<int>("is_discrete",
-                                               is_discrete,
-                                               -1); // TODO keep forever?
-    }
     double error_scaling = 0.0; 
     double scaling_decay = 0.0; 
     double max_error = 0.00001;

@@ -39,7 +39,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added particle advection for streamline and related rendering support.
 - Added WarpX Streamline filter that uses charged particles.
 - Added Uniform Grid Sampling filter.
-- Added Material Interface Reconstruction (`mir`) filter which produces `cellMat` output field.
+- Added Material Interface Reconstruction (`mir`) filter which produces matset output field.
 - Added seed population options for particle advection: point, point list, line, and box
 - Added more Ascent tutorial examples
 - Added support for implicit points style Blueprint input meshes
