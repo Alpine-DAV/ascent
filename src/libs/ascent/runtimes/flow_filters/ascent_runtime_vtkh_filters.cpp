@@ -911,8 +911,6 @@ VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
       res = false;
     }
 
-    res = check_string("topology",params, info, false) && res;
-
     res = check_numeric("normal/x",params, info, true, true) && res;
     res = check_numeric("normal/y",params, info, true, true) && res;
     res = check_numeric("normal/z",params, info, true, true) && res;
@@ -925,7 +923,6 @@ VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
     valid_paths.push_back("normal/x");
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
-    valid_paths.push_back("topology");
 
 
     std::string surprises = surprise_check(valid_paths, params);
@@ -1008,19 +1005,17 @@ VTKHAutoSliceLevels::execute()
       return;
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-
-    bool throw_error = false;
-    std::string topo_name = detail::resolve_topology(params(),
-                                                     this->name(),
-                                                     collection,
-                                                     throw_error);
-    if(topo_name == "")
+    std::string field = params()["field"].as_string();
+    if(!collection->has_field(field))
     {
+      bool throw_error = false;
+      detail::field_error(field, this->name(), collection, throw_error);
       // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
 
+    std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::AutoSliceLevels slicer;
 
@@ -1028,7 +1023,6 @@ VTKHAutoSliceLevels::execute()
 
     const Node &n_normal = params()["normal"];
     const int n_levels = params()["levels"].to_int32();
-    std::string field = params()["field"].as_string();
 
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
     vtkm::Bounds bounds = data.GetGlobalBounds();
