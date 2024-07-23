@@ -72,3 +72,14 @@ endif()
 
 install(DIRECTORY data
         DESTINATION examples/ascent/proxies/laghos)
+
+# install example launch scripts and options
+install(FILES run_taylor_green_2d.sh
+              run_taylor_green_3d.sh
+              run_tripple_point_2d.sh
+              run_tripple_point_3d.sh
+              run_sedov_2d.sh
+              run_sedov_3d.sh
+              ascent_options.yaml
+        DESTINATION examples/ascent/proxies/laghos)
+
