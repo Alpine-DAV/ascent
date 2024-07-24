@@ -25,12 +25,18 @@ C++ and python filter can be directly developed inside of an Ascent build.
 All that is required is a development build of Ascent. Please see :ref:`building`
 for an overview of the different ways to build Ascent.
 
-Manual Build
-""""""""""""
-An guide to building Ascent's dependencies manually can be found at
-:ref:`building_manually`.
-When building manually, we recommended you create a CMake configure file like the
-example shown below rather than specifying all the CMake options on the command line.
+build_ascent
+""""""""""""""
+We recommend using :ref:`build_ascent` to setup a development environment with Ascent's
+third-party dependencies.This script will create an initial `ascent-config.cmake` file
+that can serve as a CMake initial cache file (host-config).
+
+.. code:: bash
+
+    git clone --recursive https://github.com/alpine-dav/ascent.git
+    cd ascent
+    env prefix=tpls build_ascent=false ./scripts/build_ascent/build_ascent.sh
+    cmake -C tpls/ascent-config.cmake -S src -B build
 
 
 Spack-Based Build

@@ -309,6 +309,7 @@ It is  possible to create your own configure file, and an boilerplate example is
 Building Ascent and Third Party Dependencies
 --------------------------------------------------
 
+.. _build_ascent:
 
 build_ascent
 ~~~~~~~~~~~~~
