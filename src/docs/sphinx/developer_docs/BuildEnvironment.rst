@@ -27,9 +27,9 @@ for an overview of the different ways to build Ascent.
 
 build_ascent
 """"""""""""""
-We recommend using :ref:`build_ascent` to setup a development environment with Ascent's
-third-party dependencies.This script will create an initial `ascent-config.cmake` file
-that can serve as a CMake initial cache file (host-config).
+We recommend using :ref:`build_ascent.sh <build_ascent>` to setup a development environment with Ascent's
+third-party dependencies. This script will create an `ascent-config.cmake` file
+that can serve as a CMake initial cache file (or host-config).
 
 .. code:: bash
 

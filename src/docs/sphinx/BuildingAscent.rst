@@ -13,8 +13,7 @@ This page provides details on several ways to build Ascent from source.
 
 For the shortest path from zero to Ascent, see :doc:`QuickStart`.
 
-To build third party dependencies we recommend using :ref:`build_ascent.sh`, :ref:`uberenv <building_with_uberenv>` which leverages Spack, or :ref:`Spack directly<building_with_spack>`. We also provide a :ref:`Docker example <building_with_docker>` that leverages Spack.
-.. info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`. and
+To build third party dependencies we recommend using :ref:`build_ascent.sh <build_ascent>`, :ref:`uberenv <building_with_uberenv>` which leverages Spack, or :ref:`Spack directly<building_with_spack>`. We also provide a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 Overview
 --------
@@ -312,25 +311,22 @@ Building Ascent and Third Party Dependencies
 .. _build_ascent:
 
 build_ascent
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
-In some environments, a spack build of Ascent's dependencies can fail or a user may prefer to build the dependencies manually.
-
-Here is a `script <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_ that demonstrates how to build Ascent and its main dependencies:
+`build_ascent.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_ demonstrates how to build Ascent and its main dependencies:
 
 .. literalinclude:: ../../../scripts/build_ascent/build_ascent.sh
    :language: bash
 
-This script supports building on linux, macOS, and windows.
-It supports building without device support, and with CUDA or ROCm/HIP.
+It supports supports building on linux, macOS, and windows -- without device support, and with CUDA or ROCm/HIP.
 
 
 .. _building_with_uberenv:
 
 uberenv + spack
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
-We use **Spack** (http://spack.io) to help build Ascent's third party dependencies on OSX and Linux.
+We also use **Spack** (http://spack.io) to help build Ascent's third party dependencies on OSX and Linux.
 
 Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Ascent as well.  To automate the full install process, Uberenv uses the Ascent Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
 
