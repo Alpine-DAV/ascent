@@ -13,7 +13,7 @@ Currently, Ascent provides two main utilities:
 * ``replay`` : a set of programs that replays simulation data saved by Ascent
   or exported by VisIt to Ascent.
 * ``gen_spack_env_script.py`` : a python program to create a shell script that
-  load libraries built by uberenv (i.e., spack) into the user environment.
+  loads libraries built by uberenv (i.e., spack) into the user environment.
 
 
 .. _utils_replay:
