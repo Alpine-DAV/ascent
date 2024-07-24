@@ -24,6 +24,7 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 
 
 Tutorials:
+ * In-Situ Analysis and Visualization with Ascent @ ATPESC24 - August 2024, St. Charles, IL, USA
  * `In-Situ Analysis and Visualization with Ascent and ParaView Catalyst <https://sc23.supercomputing.org/presentation/?id=tut133&sess=sess211>`_ - November 2023, Denver, CO, USA
  * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2023 <https://software.llnl.gov/radiuss/event/2023/07/11/radiuss-on-aws/>`_ - August 2023, Virtual
  * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2022 <https://software.llnl.gov/radiuss/event/2022/07/07/radiuss-on-aws/>`_ - August 2022, Virtual

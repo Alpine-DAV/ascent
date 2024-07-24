@@ -557,7 +557,3 @@ Finally, you can save only a subset of the expressions using a list:
 In this example, there are two queries. The save session action specifies that only
 the `max_pressure` expression should be saved inside the file named
 `saved_by_name_with_selection`.
-.. code-block:: yaml
-
-   -
-     action: "save_session"

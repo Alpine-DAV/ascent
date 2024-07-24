@@ -12,10 +12,9 @@ Ascent Actions
    :maxdepth: 2
 
    Actions
-   Pipelines
    Scenes
+   Pipelines
    Extracts
-   ParaViewVisualization
    Triggers
    Examples
    ExpressionsOverview
@@ -23,6 +22,7 @@ Ascent Actions
    Binning
    VTKmColorTables
    DRayColorTables
+   ParaViewVisualization
 ..
 
 .. future:
