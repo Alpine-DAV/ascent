@@ -66,22 +66,21 @@ file was created that contains the CMake variables need for an Ascent build:
 
 .. code:: bash
 
-    ls uberenv_libs/
-    boden.llnl.gov-macos_1013_x86_64-clang@9.0.0-apple-ascent.cmake
+    uberenv_libs/zeliak-darwin-ventura-m1-apple-clang@=14.0.0-ascent-qnsb6ehgctlevtgmxhdgywrf3opgju7j-patch.cmake
 
 .. code:: cmake
 
     ##################################
     # spack generated host-config
     ##################################
-    # macos_1013_x86_64-clang@9.0.0-apple
+    # darwin-ventura-m1-apple-clang@=14.0.0
     ##################################
 
-    # cmake from spack
-    # cmake executable path: /Users/larsen30/research/ascent_docs/ascent/uberenv_libs/spack/opt/spack/darwin-highsierra-x86_64/clang-9.0.0-apple/cmake-3.9.6-lkrrqgruseaa7kcmtehvmanupghfuwcb/bin/cmake
+    # cmake from spack 
+    # cmake executable path: /Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/cmake-3.26.3-6clohsvnn4k3szexhttgm47f4grlygyr/bin/cmake
 
     #######
-    # using clang@9.0.0-apple compiler spec
+    # using apple-clang@=14.0.0 compiler spec
     #######
 
     # c compiler used by spack
@@ -93,48 +92,100 @@ file was created that contains the CMake variables need for an Ascent build:
     # fortran compiler used by spack
     set(ENABLE_FORTRAN "ON" CACHE BOOL "")
 
-    set(CMAKE_Fortran_COMPILER "/opt/local/bin/gfortran" CACHE PATH "")
+    set(CMAKE_Fortran_COMPILER "/usr/local/bin/gfortran" CACHE PATH "")
+
+    set(BLT_EXE_LINKER_FLAGS " -Wl,-rpath,/usr/local/gfortran/lib/" CACHE PATH "")
 
     set(BUILD_SHARED_LIBS "ON" CACHE BOOL "")
 
     set(ENABLE_TESTS "ON" CACHE BOOL "")
 
-    # conduit from spack
-    set(CONDUIT_DIR "/Users/larsen30/ascent_docs/ascent/uberenv_libs/spack/opt/spack/darwin-highsierra-x86_64/clang-9.0.0-apple/conduit-master-qr6ffvlcnihvcuhjsb3a5kbj5cee4ueo" CACHE PATH "")
+    # conduit from spack 
+    set(CONDUIT_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/conduit-0.8.8-uo35y47k55nl77lfde2g6f4dmwoguiqj" CACHE PATH "")
 
     # Python Support
     # Enable python module builds
     set(ENABLE_PYTHON "ON" CACHE BOOL "")
 
-    # python from spack
-    set(PYTHON_EXECUTABLE "/Users/larsen30/ascent_docs/ascent/uberenv_libs/spack/opt/spack/darwin-highsierra-x86_64/clang-9.0.0-apple/python-2.7.15-im7d5b5gswfkvjfqzec4cbpxwaf6g3kw/bin/python2.7" CACHE PATH "")
+    # python from spack 
+     # NOTE: Pathed by uberenv to use spack view path instead of spack build path
+    set(PYTHON_EXECUTABLE "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack_view/bin/python3" CACHE PATH "")
 
+    # python module install dir
     set(ENABLE_DOCS "ON" CACHE BOOL "")
 
-    # sphinx from spack
-    set(SPHINX_EXECUTABLE "/Users/larsen30/ascent_docs/ascent/uberenv_libs/spack/opt/spack/darwin-highsierra-x86_64/clang-9.0.0-apple/py-sphinx-1.8.2-chmw6atszhupa6shnswvsdwypzoynznj/bin/sphinx-build" CACHE PATH "")
+    # sphinx from spack 
+     # NOTE: Pathed by uberenv to use spack view path instead of spack build path
+    set(SPHINX_EXECUTABLE "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack_view/bin/sphinx-build" CACHE PATH "")
+
+    set(ENABLE_SERIAL "ON" CACHE BOOL "")
 
     # MPI Support
-    set(ENABLE_MPI "OFF" CACHE BOOL "")
+    set(ENABLE_MPI "ON" CACHE BOOL "")
+
+    set(MPI_C_COMPILER "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/mpich-4.1.1-2pbdhcszk35hgvwhxpvnjvcgj2oanyyr/bin/mpicc" CACHE PATH "")
+
+    set(MPI_CXX_COMPILER "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/mpich-4.1.1-2pbdhcszk35hgvwhxpvnjvcgj2oanyyr/bin/mpic++" CACHE PATH "")
+
+    set(MPI_Fortran_COMPILER "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/mpich-4.1.1-2pbdhcszk35hgvwhxpvnjvcgj2oanyyr/bin/mpif90" CACHE PATH "")
+
+    set(MPIEXEC_EXECUTABLE "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/mpich-4.1.1-2pbdhcszk35hgvwhxpvnjvcgj2oanyyr/bin/mpiexec" CACHE PATH "")
+
+    set(ENABLE_FIND_MPI "ON" CACHE BOOL "")
 
     # CUDA Support
     set(ENABLE_CUDA "OFF" CACHE BOOL "")
 
     set(ENABLE_OPENMP "OFF" CACHE BOOL "")
 
-    # vtk-h support
+    # ROCm Support
+    set(ENABLE_HIP "OFF" CACHE BOOL "")
+
+    # vtk-h support 
+    # vtk-h
+    set(ENABLE_VTKH "ON" CACHE BOOL "")
+
     # vtk-m from spack
-    set(VTKM_DIR "/Users/larsen30/ascent_docs/ascent/uberenv_libs/spack/opt/spack/darwin-highsierra-x86_64/clang-9.0.0-apple/vtkm-ascent_ver-w7fnfd3otmpyywvlhsdsdq6x7cau5xgx" CACHE PATH "")
+    set(VTKM_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/vtk-m-2.1.0-l5yh5lkvapxdil5fvhhj4l4udm2x6dg7" CACHE PATH "")
 
-    # vtk-h from spack
-    set(VTKH_DIR "/Users/larsen30/ascent_docs/ascent/uberenv_libs/spack/opt/spack/darwin-highsierra-x86_64/clang-9.0.0-apple/vtkh-ascent_ver-o2qjba4ojyudlswyoqns2qb63xyqagnb" CACHE PATH "")
+    set(VTKm_ENABLE_CUDA "OFF" CACHE BOOL "")
 
-    # mfem not built by spack
-    # adios support
-    # adios not built by spack
+    # vtk-m not using ROCm
+    # mfem from spack 
+    set(MFEM_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/mfem-4.5.2-tspz4yld6oqq55tymvxufwoylsjjg36r" CACHE PATH "")
+
+    set(ZLIB_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/zlib-1.2.13-4qnh2d4b2t32ve5r442d2rpfkrcxlgzs" CACHE PATH "")
+
+    # devil ray
+    set(ENABLE_DRAY "ON" CACHE BOOL "")
+
+    set(ENABLE_APCOMP "ON" CACHE BOOL "")
+
+    # occa not built by spack 
+    # RAJA from spack 
+    set(RAJA_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/raja-2022.10.4-cklp6el764fcceuwjvjtjybem2zhmomw" CACHE PATH "")
+
+    # umpire from spack 
+    set(UMPIRE_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/umpire-2022.03.1-4bfvyx5kaoe5q3vscpm7wyg2vm6bdrwc" CACHE PATH "")
+
+    # camp from spack 
+    set(CAMP_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/camp-2022.10.1-4bwinpswbgafdxotd4r5rnxtbsh6a44k" CACHE PATH "")
+
+    # adios2 support
+    # adios2 not built by spack 
+    # Fides support
+    # fides not built by spack 
+    # GenTen support
+    # genten not built by spack 
+    # caliper from spack 
+    set(CALIPER_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/caliper-2.9.0-orleesu5q52au3jrxwszygt25ggtux27" CACHE PATH "")
+
+    set(ADIAK_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/adiak-0.2.2-bkvtpmg5r6jts3vrel6tptok3xs6dyzd" CACHE PATH "")
+
     ##################################
     # end spack generated host-config
     ##################################
+
 
 
 

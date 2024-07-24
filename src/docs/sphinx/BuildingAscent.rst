@@ -493,7 +493,7 @@ Special Case Builds
 ------------------------
 
 BabelFlow Support
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 Here is script that shows how to build additional dependencies for bflow-stats (babelflow+pmt+streamstats+topo_reader):
 
@@ -604,7 +604,7 @@ Here is script that shows how to build additional dependencies for bflow-stats (
 .. _paraview_ascent_support:
 
 ParaView Support
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 Ascent ParaView support is in `src/examples/paraview-vis <https://github.com/Alpine-DAV/ascent/blob/develop/src/examples/paraview-vis>`_ directory.
 This section describes how to configure, build and run the example
