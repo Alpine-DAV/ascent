@@ -76,6 +76,7 @@
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
+#include <vtkh/filters/MIR.hpp>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <ascent_vtkh_data_adapter.hpp>
@@ -5246,12 +5247,131 @@ VTKHVTKFileExtract::execute()
 }
 
 
+//-----------------------------------------------------------------------------
+
+VTKHMIR::VTKHMIR()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHMIR::~VTKHMIR()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHMIR::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_mir";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHMIR::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("matset",params, info, true);
+    res &= check_numeric("error_scaling", params, info, false);
+    res &= check_numeric("scaling_decay", params, info, false);
+    res &= check_numeric("iterations", params, info, false);
+    res &= check_numeric("max_error", params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("matset");
+    valid_paths.push_back("error_scaling");
+    valid_paths.push_back("scaling_decay");
+    valid_paths.push_back("iterations");
+    valid_paths.push_back("max_error");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHMIR::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_MIR input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string matset_name = params()["matset"].as_string();
+    std::string ids_name = "material_ids";//matset_name + "_ids";
+    if(!collection->has_field(ids_name))
+    {
+      bool throw_error = false;
+      detail::field_error(ids_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    std::string topo_name = collection->field_topology(ids_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    double error_scaling = 0.0; 
+    double scaling_decay = 0.0; 
+    double max_error = 0.00001;
+    int iterations = 0;
+    if(params().has_path("error_scaling"))
+      error_scaling = params()["error_scaling"].to_float64();
+    if(params().has_path("scaling_decay"))
+      scaling_decay = params()["scaling_decay"].to_float64();
+    if(params().has_path("iterations"))
+      iterations = params()["iterations"].to_int64();
+    if(params().has_path("max_error"))
+      max_error = params()["max_error"].to_float64();
+
+    vtkh::MIR mir;
+    mir.SetErrorScaling(error_scaling);
+    mir.SetScalingDecay(scaling_decay);
+    mir.SetIterations(iterations);
+    mir.SetMaxError(max_error);
+    mir.SetMatSet(matset_name);
+    mir.SetInput(&data);
+    mir.Update();
+    vtkh::DataSet *mir_output = mir.GetOutput();
+
+    //// we need to pass through the rest of the topologies, untouched,
+    //// and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*mir_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete mir_output;
+    set_output<DataObject>(res);
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------

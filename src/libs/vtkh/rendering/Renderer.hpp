@@ -36,6 +36,7 @@ public:
   void SetDoComposite(bool do_composite);
   void SetRenders(const std::vector<Render> &renders);
   void SetRange(const vtkm::Range &range);
+  void SetDiscrete();
   void DisableColorBar();
 
   vtkm::cont::ColorTable      GetColorTable() const;
@@ -45,6 +46,7 @@ public:
   vtkh::DataSet              *GetInput();
   vtkm::Range                 GetRange() const;
   bool                        GetHasColorTable() const;
+  bool                        IsDiscrete() const;
 protected:
 
   // image related data with cinema support
@@ -58,6 +60,7 @@ protected:
   vtkm::Range                              m_range;
   vtkm::cont::ColorTable                   m_color_table;
   bool                                     m_has_color_table;
+  bool                                     m_is_discrete;
   // methods
   virtual void PreExecute() override;
   virtual void PostExecute() override;

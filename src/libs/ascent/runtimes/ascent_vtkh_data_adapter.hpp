@@ -157,6 +157,13 @@ private:
                                                 const int dims,
                                                 bool zero_copy);
 
+    static void                  AddMatSets(const std::string &matset_name,
+                                            const conduit::Node &n_matset,
+                                            const std::string &topo_name,
+                                            int neles,
+                                            vtkm::cont::DataSet *dset,
+                                            bool zero_copy);
+
     static bool VTKmTopologyToBlueprint(conduit::Node &output,
                                         const vtkm::cont::DataSet &data_set,
                                         const std::string &topo_name,

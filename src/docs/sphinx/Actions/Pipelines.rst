@@ -964,6 +964,25 @@ accurate but slower point based gradients (default).
   params["output_name"] = "my_q";        // (required) name of the output field
   params["use_cell_gradient"] = "false"; // (optional)
 
+Material Interface Reconstruction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The Material Interface Reconstruction (MIR) filter can be used to represent and track the interfaces between different materials or phases in a multiphase flow. 
+The user must specify the name of the material set (`matset`) they wish to use.  
+Optional parameters include error scaling (`error_scaling`), scaling decay (`scaling_decay`), maximum iterations (`iterations`), and maximum error percentage (`max_error`).
+The output field of the MIR Filter will be the name of the material set and can be used further in scenes or pipelines. 
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "mir";
+  //params optional
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["matset"] = "matset";   //required
+  params["error_scaling"] = 0.2; //default: 0.0
+  params["scaling_decay"] = 1.0; //default: 0.0
+  params["iterations"] = 8;      //default: 0
+  params["max_error"] = 0.00001; //default: 0.00001
 
 
 Partitioning

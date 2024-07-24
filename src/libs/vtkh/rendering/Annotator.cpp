@@ -32,7 +32,8 @@ Annotator::~Annotator()
 void
 Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
                                     const std::vector<vtkm::Range> &ranges,
-                                    const std::vector<vtkm::cont::ColorTable> &color_tables)
+                                    const std::vector<vtkm::cont::ColorTable> &color_tables,
+                                    const std::vector<int> &is_discrete)
 {
   m_canvas.SetViewToScreenSpace(m_camera, true);
   // currently we only support 4 color bars, so grab the first 4
@@ -41,7 +42,15 @@ Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
   m_world_annotator->BeginLineRenderingBatch();
   for(int i = 0; i < num_bars; ++i)
   {
-    this->m_color_bar_annotation.SetRange(ranges[i], 5);
+    //TODO: What if we have a large range max? i.e. lots of materials
+    //Need to extend color bar in proportion somehow??
+    if(is_discrete[i])
+    {
+      int num_tics = abs(ranges[i].Max - ranges[i].Min) + 1;
+      this->m_color_bar_annotation.SetRange(ranges[i],num_tics);
+    }
+    else
+      this->m_color_bar_annotation.SetRange(ranges[i], 5);
     this->m_color_bar_annotation.SetFieldName(field_names[i]);
     this->m_color_bar_annotation.SetPosition(m_color_bar_pos[i]);
     this->m_color_bar_annotation.SetColorTable(color_tables[i]);
@@ -55,7 +64,8 @@ void
 Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
                                     const std::vector<vtkm::Range> &ranges,
                                     const std::vector<vtkm::cont::ColorTable> &color_tables,
-				    const std::vector<vtkm::Bounds> &color_bar_pos)
+                                    const std::vector<vtkm::Bounds> &color_bar_pos,
+                                    const std::vector<int> &is_discrete)
 	                         
 {
   m_canvas.SetViewToScreenSpace(m_camera, true);
@@ -65,7 +75,10 @@ Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
   m_world_annotator->BeginLineRenderingBatch();
   for(int i = 0; i < num_bars; ++i)
   {
-    this->m_color_bar_annotation.SetRange(ranges[i], 5);
+    if(is_discrete[i])
+      this->m_color_bar_annotation.SetRange(ranges[i],ranges[i].Max);
+    else
+      this->m_color_bar_annotation.SetRange(ranges[i], 5);
     this->m_color_bar_annotation.SetFieldName(field_names[i]);
     this->m_color_bar_annotation.SetPosition(color_bar_pos[i]);
     this->m_color_bar_annotation.SetColorTable(color_tables[i]);

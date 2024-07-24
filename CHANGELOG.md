@@ -41,12 +41,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
 - Added particle advection for streamline and related rendering support.
 - Added WarpX Streamline filter that uses charged particles.
+- Added Uniform Grid Sampling filter.
+- Added Material Interface Reconstruction (`mir`) filter which produces matset output field.
 - Added seed population options for particle advection: point, point list, line, and box
 - Added more Ascent tutorial examples
 - Added support for implicit points style Blueprint input meshes
 - Added actions for shell commands and simulation code function callbacks
 - Added a `cylinder` option to the clip filter.
 - Added `box`, `plane`, `cylinder`, and `sphere` options to the Threshold filter, enabling sub selecting a mesh spatially.
+
 
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
