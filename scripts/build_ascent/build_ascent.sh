@@ -13,6 +13,7 @@
 #  - cmake is in your path
 #  - selected compilers are in your path or set via env vars
 #  - [when enabled] MPI and Python (+numpy and mpi4py), are in your path
+#  - build_pyvenv will create a python virtual env with need modules
 #
 ##############################################################################
 set -eu -o pipefail
@@ -119,6 +120,16 @@ function abs_path()
   fi
 }
 
+
+################
+# tar options
+################
+tar_extra_args=""
+if [[ "$build_windows" == "ON" ]]; then
+  tar_extra_args="--force-local"
+fi 
+
+
 root_dir=$(pwd)
 root_dir="${prefix:=${root_dir}}"
 root_dir=$(ospath ${root_dir})
@@ -191,7 +202,7 @@ if ${build_zlib}; then
 if [ ! -d ${zlib_src_dir} ]; then
   echo "**** Downloading ${zlib_tarball}"
   curl -L https://github.com/madler/zlib/releases/download/v${zlib_version}/zlib-${zlib_version}.tar.gz -o ${zlib_tarball}
-  tar --force-local -xzf  ${zlib_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${zlib_tarball} -C ${source_dir}
 fi
 
 echo "**** Configuring Zlib ${zlib_version}"
@@ -229,7 +240,7 @@ if ${build_hdf5}; then
 if [ ! -d ${hdf5_src_dir} ]; then
   echo "**** Downloading ${hdf5_tarball}"
   curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_middle_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
-  tar --force-local -xzf  ${hdf5_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${hdf5_tarball} -C ${source_dir}
 fi
 
 #################
@@ -297,7 +308,7 @@ if ${build_conduit}; then
 if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Downloading ${conduit_tarball}"
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/conduit-${conduit_version}-src-with-blt.tar.gz -o ${conduit_tarball}
-  tar --force-local --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -xzf ${conduit_tarball} -C ${source_dir}
+  tar ${tar_extra_args} --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -xzf ${conduit_tarball} -C ${source_dir}
 fi
 
 #
@@ -350,7 +361,7 @@ if ${build_kokkos}; then
 if [ ! -d ${kokkos_src_dir} ]; then
   echo "**** Downloading ${kokkos_tarball}"
   curl -L https://github.com/kokkos/kokkos/archive/refs/tags/${kokkos_version}.tar.gz -o ${kokkos_tarball}
-  tar --force-local -xzf  ${kokkos_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${kokkos_tarball} -C ${source_dir}
 fi
 
 # TODO: DKokkos_ARCH_VEGA90A needs to be controlled / mapped?
@@ -397,7 +408,7 @@ if ${build_vtkm}; then
 if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
-  tar --force-local -xzf  ${vtkm_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${vtkm_tarball} -C ${source_dir}
 
   # apply vtk-m patch
   cd  ${vtkm_src_dir}
@@ -466,7 +477,7 @@ if ${build_camp}; then
 if [ ! -d ${camp_src_dir} ]; then
   echo "**** Downloading ${camp_tarball}"
   curl -L https://github.com/LLNL/camp/releases/download/${camp_version}/camp-${camp_version}.tar.gz -o ${camp_tarball}
-  tar --force-local -xzf  ${camp_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${camp_tarball} -C ${source_dir}
 fi
 
 camp_extra_cmake_args=""
@@ -517,7 +528,7 @@ if ${build_raja}; then
 if [ ! -d ${raja_src_dir} ]; then
   echo "**** Downloading ${raja_tarball}"
   curl -L https://github.com/LLNL/RAJA/releases/download/${raja_version}/RAJA-${raja_version}.tar.gz -o ${raja_tarball}
-  tar --force-local -xzf  ${raja_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${raja_tarball} -C ${source_dir}
 fi
 
 raja_extra_cmake_args=""
@@ -588,7 +599,7 @@ if ${build_umpire}; then
 if [ ! -d ${umpire_src_dir} ]; then
   echo "**** Downloading ${umpire_tarball}"
   curl -L https://github.com/LLNL/Umpire/releases/download/v${umpire_version}/umpire-${umpire_version}.tar.gz -o ${umpire_tarball}
-  tar --force-local -xzf  ${umpire_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${umpire_tarball} -C ${source_dir}
 fi
 
 echo "**** Configuring Umpire ${umpire_version}"
@@ -635,7 +646,7 @@ if ${build_mfem}; then
 if [ ! -d ${mfem_src_dir} ]; then
   echo "**** Downloading ${mfem_tarball}"
   curl -L https://github.com/mfem/mfem/archive/refs/tags/v${mfem_version}.tar.gz -o ${mfem_tarball}
-  tar --force-local -xzf  ${mfem_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${mfem_tarball} -C ${source_dir}
 fi
 
 
@@ -676,7 +687,7 @@ if ${build_catalyst}; then
 if [ ! -d ${catalyst_src_dir} ]; then
   echo "**** Downloading ${catalyst_tarball}"
   curl -L https://gitlab.kitware.com/paraview/catalyst/-/archive/v${catalyst_version}/catalyst-v${catalyst_version}.tar.gz -o ${catalyst_tarball}
-  tar --force-local -xzf  ${catalyst_tarball} -C ${source_dir}
+  tar ${tar_extra_args} -xzf  ${catalyst_tarball} -C ${source_dir}
 fi
 
 echo "**** Configuring Catalyst ${catalyst_version}"
