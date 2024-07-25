@@ -616,7 +616,7 @@ integrations.  We describe in details the ParaView pipeline for
 .. _paraview_setup_spack:
 
 Setup spack
-^^^^^^^^^^^
+""""""""""""
 Install spack, modules and shell support.
 
 - Clone the spack repository:
@@ -638,7 +638,7 @@ Install spack, modules and shell support.
 .. _paraview_install:
 
 Install ParaView and Ascent
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""
 
 - For MomentInvariants (optional module in ParaView for pattern
   detection) visualization patch ParaView to enable this module:
@@ -672,7 +672,7 @@ Install ParaView and Ascent
 .. _paraview_run_integrations:
 
 Setup and run example integrations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""
 
 You can test Ascent with ParaView support by running the available
 integrations. Visualization images will be generated in the current
@@ -723,7 +723,7 @@ directory. These images can be checked against the images in
 
 
 Setup and run on summit.olcf.ornl.gov
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""
 
 - Execute section :ref:`paraview_setup_spack`
 
@@ -778,7 +778,7 @@ Setup and run on summit.olcf.ornl.gov
   - To check if the integration finished use: ``bjobs -a``
 
 Nightly tests
-^^^^^^^^^^^^^
+""""""""""""""
 
 We provide a docker file for Ubuntu 18.04 and a script that installs
 the latest ParaView and Ascent, runs the integrations provided with
@@ -787,7 +787,7 @@ results. See ``tests/README-docker.md`` for how to create the docker
 image, run the container and execute the test script.
 
 Notes
-^^^^^
+""""""""
 
 - Global extents are computed for uniform and rectilinear topologies but
   they are not yet computed for a structured topology (lulesh). This
