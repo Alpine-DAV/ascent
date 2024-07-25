@@ -28,8 +28,8 @@ ASCENT_DIR ?= ../../..
 # See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
 include $(ASCENT_DIR)/share/ascent/ascent_config.mk
 
-# make sure to enable c++11 support (conduit's interface now requires it)
-CXX_FLAGS = -std=c++11
+# make sure to enable c++14 support (conduit's interface now requires it)
+CXX_FLAGS = -std=c++14
 INC_FLAGS = $(ASCENT_INCLUDE_FLAGS)
 LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_MPI_LIB_FLAGS)
 

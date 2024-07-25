@@ -608,7 +608,7 @@ values are removed from the data set.
     An example of creating a iso-volume of values between 5.0 and 10.0.
 
 Particle Advection
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 The particle advection filter distributes some number of weightless particles over a user-specified vector field (``field``) and, given some advection distance (``step_size``), advects them for some number of advection steps (``num_steps``).
 
 .. code-block:: c++
@@ -1026,7 +1026,7 @@ selections locally so they can be restributed among ranks
 before being combined into the target number of domains.
 
 
-.. figure:: examples/partition.png
+.. figure:: ../images/partition.png
     :width: 800px
     :align: center
 

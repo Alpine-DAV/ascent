@@ -10,49 +10,11 @@ Ascent Utilities
 Ascent provides a some utilities to assist users and developers.
 Currently, Ascent provides two main utilities:
 
-* ``gen_spack_env_script.py`` : a python program to create a shell script that
-  load libraries built by uberenv (i.e., spack) into the user environment.
 * ``replay`` : a set of programs that replays simulation data saved by Ascent
   or exported by VisIt to Ascent.
+* ``gen_spack_env_script.py`` : a python program to create a shell script that
+  loads libraries built by uberenv (i.e., spack) into the user environment.
 
-Generate Spack Environment Script
------------------------------------
-The uberenv spack-based build installs libraries into
-difficult to locate paths. The ``gen_spack_env_script.py`` is a utility program that
-searches the uberenv build for user specified dependencies and creates shell script that
-loads these locations into your path.
-
-Why Do I Need This?
-"""""""""""""""""""
-Even with a shared library build where dependent library locations are found automatically,
-some dependencies such as MPI and Python need to be loaded into the user environment for
-Ascent to execute successfully.
-
-For example if the uberenv built MPI and the user machine
-also contains an installation of MPI, executing a command such as ``mpirun -np 4 cloverleaf_par``
-will most definitely invoke the system MPI and not the MPI that Ascent was built with.
-Mixing MPI versions or implementation will almost never result in successful execution and
-should be avoided at all costs.
-
-How Do I Use It?
-""""""""""""""""
-From the top level Ascent directory (i.e., the root of the repository)
-
-.. code:: bash
-
-   python scripts/gen_spack_env_script.py mpi conduit python
-
-Simply invoke the script with python followed by a list of packages. In the above example,
-we are asking program to generate a shell script called ``s_env.sh`` to load the paths of ``mpi``, ``conduit``,
-and ``python`` into our environment. Once this command executes, source the shell script to
-your path:
-
-.. code:: bash
-
-   source s_env.sh
-
-To verify success, you can echo your path and the paths of the libraries should appear at the
-front of the path.
 
 .. _utils_replay:
 
@@ -375,3 +337,43 @@ around the default position.
 ..  image:: images/my_cooler_image.png
     :width: 50%
     :align: center
+
+Generate Spack Environment Script
+-----------------------------------
+The uberenv spack-based build installs libraries into
+difficult to locate paths. The ``gen_spack_env_script.py`` is a utility program that
+searches the uberenv build for user specified dependencies and creates a shell script that
+loads these locations into your path.
+
+Why Do I Need This?
+"""""""""""""""""""
+Even with a shared library build where dependent library locations are found automatically,
+some dependencies such as MPI and Python need to be loaded into the user environment for
+Ascent to execute successfully.
+
+For example, if the uberenv built MPI and the user's machine
+also contains an installation of MPI, executing a command such as ``mpirun -np 4 cloverleaf_par``
+will most definitely invoke the system MPI and not the MPI that Ascent was built with.
+Mixing MPI versions or implementation will almost never result in successful execution and
+should be avoided at all costs.
+
+How Do I Use It?
+""""""""""""""""
+From the top level Ascent directory (i.e., the root of the repository)
+
+.. code:: bash
+
+   python scripts/gen_spack_env_script.py mpi conduit python
+
+Simply invoke the script with python followed by a list of packages. In the above example,
+we are asking the program to generate a shell script called ``s_env.sh`` to load the paths of ``mpi``, ``conduit``,
+and ``python`` into our environment. Once this command executes, source the shell script to
+your path:
+
+.. code:: bash
+
+   source s_env.sh
+
+To verify success, you can echo your path and the paths of the libraries should appear at the
+front of the path.
+
