@@ -39,6 +39,7 @@ build_shared_libs="${build_shared_libs:=ON}"
 build_zlib="${build_zlib:=true}"
 build_hdf5="${build_hdf5:=true}"
 build_pyvenv="${build_pyvenv:=false}"
+build_silo="${build_silo:=true}"
 build_conduit="${build_conduit:=true}"
 build_vtkm="${build_vtkm:=true}"
 build_camp="${build_camp:=true}"
@@ -266,6 +267,53 @@ fi
 else
   echo "**** Skipping HDF5 build, install found at: ${hdf5_install_dir}"
 fi # build_hdf5
+
+################
+# Silo
+################
+silo_version=4.11.1
+silo_src_dir=$(ospath ${source_dir}/silo-${silo_version})
+silo_build_dir=$(ospath ${build_dir}/silo-${silo_version}/)
+silo_install_dir=$(ospath ${install_dir}/silo-${silo_version}/)
+silo_tarball=$(ospath ${source_dir}/silo-${silo_version}.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${silo_install_dir} ]; then
+if ${build_silo}; then
+if [ ! -d ${silo_src_dir} ]; then
+  echo "**** Downloading ${silo_tarball}"
+  curl -L https://github.com/LLNL/Silo/archive/refs/tags/${silo_version}.tar.gz -o ${silo_tarball}
+  tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir}
+  # apply silo patches
+  cd  ${silop_src_dir}
+  patch -p1 < ${script_dir}/2024_07_25_silo_4_11_cmake_fix.patch
+  cd ${root_dir}
+fi
+
+
+echo "**** Configuring Silo ${silo_version}"
+cmake -S ${silo_src_dir} -B ${silo_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DCMAKE_INSTALL_PREFIX=${silo_install_dir} \
+  -DSILO_ENABLE_SHARED=${build_shared_libs} \
+  -DSILO_ENABLE_HDF5=ON \
+  -DSILO_ENABLE_TESTS=OFF \
+  -DSILO_BUILD_FOR_BSD_LICENSE=ON \
+  -DSILO_ENABLE_FORTRAN=OFF \
+  -DSILO_HDF5_DIR=${hdf5_install_dir}/cmake/ \
+  -DCMAKE_PREFIX_PATH=${zlib_install_dir}
+
+
+echo "**** Building Silo ${silo_version}"
+cmake --build ${silo_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Silo ${silo_version}"
+cmake --install ${silo_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Silo build, install found at: ${silo_install_dir}"
+fi # build_silo
 
 ############################
 # Python Virtual Env
