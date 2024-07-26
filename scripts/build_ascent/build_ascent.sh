@@ -285,7 +285,7 @@ if [ ! -d ${silo_src_dir} ]; then
   curl -L https://github.com/LLNL/Silo/archive/refs/tags/${silo_version}.tar.gz -o ${silo_tarball}
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir} \
-      --exclude="Silo-${silo_version}/config-site/" \
+      --exclude="Silo-${silo_version}/config-site/*" \
       --exclude="Silo-${silo_version}/README.md"
   # apply silo patches
   cd  ${silo_src_dir}
