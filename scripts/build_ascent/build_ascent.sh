@@ -283,7 +283,10 @@ if ${build_silo}; then
 if [ ! -d ${silo_src_dir} ]; then
   echo "**** Downloading ${silo_tarball}"
   curl -L https://github.com/LLNL/Silo/archive/refs/tags/${silo_version}.tar.gz -o ${silo_tarball}
-  tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir}
+  # untar and avoid symlinks (which windows despises)
+  tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir} \
+      --exclude="Silo-${silo_version}/config-site/" \
+      --exclude="Silo-${silo_version}/README.md"
   # apply silo patches
   cd  ${silo_src_dir}
   patch -p1 < ${script_dir}/2024_07_25_silo_4_11_cmake_fix.patch
@@ -354,7 +357,9 @@ if ${build_conduit}; then
 if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Downloading ${conduit_tarball}"
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/conduit-${conduit_version}-src-with-blt.tar.gz -o ${conduit_tarball}
-  tar ${tar_extra_args} --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -xzf ${conduit_tarball} -C ${source_dir}
+  # untar and avoid symlinks (which windows despises)
+  tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
+      --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
 fi
 
 #
