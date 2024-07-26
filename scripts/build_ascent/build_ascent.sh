@@ -272,7 +272,7 @@ fi # build_hdf5
 # Silo
 ################
 silo_version=4.11.1
-silo_src_dir=$(ospath ${source_dir}/silo-${silo_version})
+silo_src_dir=$(ospath ${source_dir}/Silo-${silo_version})
 silo_build_dir=$(ospath ${build_dir}/silo-${silo_version}/)
 silo_install_dir=$(ospath ${install_dir}/silo-${silo_version}/)
 silo_tarball=$(ospath ${source_dir}/silo-${silo_version}.tar.gz)
@@ -285,7 +285,7 @@ if [ ! -d ${silo_src_dir} ]; then
   curl -L https://github.com/LLNL/Silo/archive/refs/tags/${silo_version}.tar.gz -o ${silo_tarball}
   tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir}
   # apply silo patches
-  cd  ${silop_src_dir}
+  cd  ${silo_src_dir}
   patch -p1 < ${script_dir}/2024_07_25_silo_4_11_cmake_fix.patch
   cd ${root_dir}
 fi
@@ -297,6 +297,7 @@ cmake -S ${silo_src_dir} -B ${silo_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DCMAKE_INSTALL_PREFIX=${silo_install_dir} \
   -DSILO_ENABLE_SHARED=${build_shared_libs} \
+  -DCMAKE_C_FLAGS=-Doff64_t=off_t \
   -DSILO_ENABLE_HDF5=ON \
   -DSILO_ENABLE_TESTS=OFF \
   -DSILO_BUILD_FOR_BSD_LICENSE=ON \
@@ -353,7 +354,7 @@ if ${build_conduit}; then
 if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Downloading ${conduit_tarball}"
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/conduit-${conduit_version}-src-with-blt.tar.gz -o ${conduit_tarball}
-  tar ${tar_extra_args} --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -x -v -f ${conduit_tarball} -C ${source_dir}
+  tar ${tar_extra_args} --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -xzf ${conduit_tarball} -C ${source_dir}
 fi
 
 #
