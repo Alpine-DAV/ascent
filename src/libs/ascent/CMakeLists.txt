@@ -164,6 +164,7 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_trigger_filters.hpp
     runtimes/flow_filters/ascent_runtime_query_filters.hpp
     runtimes/flow_filters/ascent_runtime_command_filters.hpp
+    runtimes/flow_filters/ascent_runtime_steering_filters.hpp
     runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
     # utils
@@ -230,6 +231,7 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_trigger_filters.cpp
     runtimes/flow_filters/ascent_runtime_query_filters.cpp
     runtimes/flow_filters/ascent_runtime_command_filters.cpp
+    runtimes/flow_filters/ascent_runtime_steering_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
     # utils
     utils/ascent_actions_utils.cpp

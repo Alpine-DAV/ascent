@@ -1077,6 +1077,10 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
     py_src_final << "jupyter_bridge()" << std::endl;
     params["source"] = py_src_final.str();
   }
+  else if(extract_type == "steering")
+  {
+     filter_name = "ascent_steering";
+  }
   // generic extract support
   else if(n_extracts.has_child(extract_type))
   {
