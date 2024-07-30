@@ -274,14 +274,8 @@ fi # build_hdf5
 ############################
 python_exe="${python_exe:=python3}"
 venv_install_dir=$(ospath ${install_dir}/python-venv/)
-if [[ "$build_windows" == "ON" ]]; then
-  # venv on windows doens't like python3, needs python
-  venv_python_exe=$(ospath ${venv_install_dir}/Scripts/python)
-  venv_sphinx_exe=$(ospath ${venv_install_dir}/Scripts/sphinx-build.exe)
-else
-  venv_python_exe=$(ospath ${venv_install_dir}/bin/python3)
-  venv_sphinx_exe=$(ospath ${venv_install_dir}/bin/sphinx-build)
-fi
+venv_python_exe=$(ospath ${venv_install_dir}/bin/python3)
+venv_sphinx_exe=$(ospath ${venv_install_dir}/bin/sphinx-build)
 
 # build only if install doesn't exist
 if [ ! -d ${venv_install_dir} ]; then
