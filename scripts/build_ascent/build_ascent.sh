@@ -290,7 +290,12 @@ if [ ! -d ${silo_src_dir} ]; then
   # apply silo patches
   cd  ${silo_src_dir}
   patch -p1 < ${script_dir}/2024_07_25_silo_4_11_cmake_fix.patch
-  patch -p1 < ${script_dir}/2024_07_29_silo-pr389-win32-bugfix.patch
+
+  # windows specifc patch
+  if [[ "$build_windows" == "ON" ]]; then
+    patch -p1 < ${script_dir}/2024_07_29_silo-pr389-win32-bugfix.patch
+  fi 
+
   cd ${root_dir}
 fi
 
