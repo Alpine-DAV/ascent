@@ -392,7 +392,7 @@ cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
   -DENABLE_MPI=${enable_mpi} \
   -DENABLE_FIND_MPI=${enable_find_mpi} \
    ${conduit_extra_cmake_opts} \
-  -DENABLE_TESTS=${enable_tests} \
+  -DENABLE_TESTS=OFF \
   -DHDF5_DIR=${hdf5_install_dir} \
   -DZLIB_DIR=${zlib_install_dir}
 
@@ -507,8 +507,8 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DVTKm_ENABLE_MPI=${enable_mpi} \
   -DVTKm_ENABLE_OPENMP=${enable_openmp}\
   -DVTKm_ENABLE_RENDERING=ON \
-  -DVTKm_ENABLE_TESTING=${enable_tests} \
-  -DBUILD_TESTING=${enable_tests} \
+  -DVTKm_ENABLE_TESTING=OFF\
+  -DBUILD_TESTING=OFF \
   -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
@@ -559,8 +559,8 @@ cmake -S ${camp_src_dir} -B ${camp_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} ${camp_extra_cmake_args} \
+  -DENABLE_TESTS=OFF \
+  -DENABLE_EXAMPLES=OFF ${camp_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${camp_install_dir}
 
 echo "**** Building Camp ${camp_version}"
@@ -612,10 +612,10 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=${enable_tests} \
-  -DRAJA_ENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} \
-  -DENABLE_EXERCISES=${enable_tests} ${raja_extra_cmake_args} \
+  -DENABLE_TESTS=OFF \
+  -DRAJA_ENABLE_TESTS=OFF \
+  -DENABLE_EXAMPLES=OFF \
+  -DENABLE_EXERCISES=OFF ${raja_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir} \
   -DRAJA_ENABLE_VECTORIZATION=${raja_enable_vectorization}
 
@@ -671,9 +671,9 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=${enable_tests} \
+  -DENABLE_TESTS=OFF \
   -DUMPIRE_ENABLE_TOOLS=Off \
-  -DUMPIRE_ENABLE_BENCHMARKS=${enable_tests} ${umpire_extra_cmake_args} \
+  -DUMPIRE_ENABLE_BENCHMARKS=OFF ${umpire_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${umpire_install_dir}
 
 echo "**** Building Umpire ${umpire_version}"
@@ -719,8 +719,8 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DMFEM_USE_CONDUIT=ON ${mfem_extra_cmake_args} \
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
-  -DMFEM_ENABLE_TESTING=${enable_tests} \
-  -DMFEM_ENABLE_EXAMPLES=${enable_tests} \
+  -DMFEM_ENABLE_TESTING=OFF \
+  -DMFEM_ENABLE_EXAMPLES=OFF \
   -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
 
 echo "**** Building MFEM ${mfem_version}"
@@ -756,7 +756,7 @@ echo "**** Configuring Catalyst ${catalyst_version}"
 cmake -S ${catalyst_src_dir} -B ${catalyst_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DCATALYST_BUILD_TESTING=${enable_tests} \
+  -DCATALYST_BUILD_TESTING=OFF \
   -DCATALYST_USE_MPI=${enable_mpi} \
   -DCMAKE_INSTALL_PREFIX=${catalyst_install_dir} \
 

@@ -158,4 +158,9 @@ if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
         list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_HDF5_DIR}/bin)
     endif()
 
+    # silo dlls
+    if(CONDUIT_SILO_ENABLED)
+        list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_SILO_DIR}/bin)
+    endif()
+
 endif()
