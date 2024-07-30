@@ -929,6 +929,28 @@ execute_callback(std::string callback_name)
 }
 
 //-----------------------------------------------------------------------------
+std::vector<std::string>
+get_void_callbacks()
+{
+    std::vector<std::string> keys;
+    for (const auto &pair : m_void_callback_map) {
+        keys.push_back(pair.first);
+    }
+    return keys;
+}
+
+//-----------------------------------------------------------------------------
+std::vector<std::string>
+get_bool_callbacks()
+{
+    std::vector<std::string> keys;
+    for (const auto &pair : m_bool_callback_map) {
+        keys.push_back(pair.first);
+    }
+    return keys;
+}
+
+//-----------------------------------------------------------------------------
 void
 reset_callbacks()
 {

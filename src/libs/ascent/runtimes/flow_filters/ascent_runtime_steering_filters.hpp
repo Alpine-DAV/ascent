@@ -16,6 +16,7 @@
 #include <ascent.hpp>
 
 #include <flow_filter.hpp>
+#include <functional>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -51,6 +52,23 @@ public:
     virtual bool verify_params(const conduit::Node &params,
                                conduit::Node &info);
     virtual void execute();
+private:
+    std::map<std::string, std::function<void()>> commands;
+    std::map<std::string, std::string> descriptions;
+    conduit::Node params;
+    conduit::Node output;
+    int m_rank;
+    bool running;
+    bool empty_params;
+
+    void empty_run();
+    void exit_shell();
+    void parse_input(std::string cmd, std::vector<std::string> args);
+    void list_callbacks();
+    void modify_params(std::vector<std::string> args);
+    void print_help();
+    void print_params();
+    void run_callback(std::vector<std::string> args);
 };
 
 };

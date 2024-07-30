@@ -88,6 +88,14 @@ void        ASCENT_API execute_callback(std::string callback_name,
 bool        ASCENT_API execute_callback(std::string callback_name);
 
 //-----------------------------------------------------------------------------
+std::vector<std::string>
+            ASCENT_API get_void_callbacks();
+
+//-----------------------------------------------------------------------------
+std::vector<std::string>
+            ASCENT_API get_bool_callbacks();
+
+//-----------------------------------------------------------------------------
 void        ASCENT_API reset_callbacks();
 
 };

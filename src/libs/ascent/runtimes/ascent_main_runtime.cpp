@@ -1079,7 +1079,7 @@ AscentRuntime::ConvertExtractToFlow(const conduit::Node &extract,
   }
   else if(extract_type == "steering")
   {
-     filter_name = "ascent_steering";
+     filter_name = "steering";
   }
   // generic extract support
   else if(n_extracts.has_child(extract_type))
