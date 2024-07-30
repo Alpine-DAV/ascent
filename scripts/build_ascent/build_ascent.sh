@@ -369,13 +369,18 @@ if [ ! -d ${conduit_src_dir} ]; then
 fi
 
 #
-# python settings
+# extrat cmake args
 #
-conduit_py_cmake_opts=-DENABLE_PYTHON=${enable_python}
+conduit_extra_cmake_opts=-DENABLE_PYTHON=${enable_python}
 if ${build_pyvenv}; then
-  conduit_py_cmake_opts="${conduit_py_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
-  conduit_py_cmake_opts="${conduit_py_cmake_opts} -DSPHINX_EXECUTABLE=${venv_sphinx_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSPHINX_EXECUTABLE=${venv_sphinx_exe}"
 fi
+
+if ${build_silo}; then
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSILO_DIR=${silo_install_dir}"
+fi
+
 
 echo "**** Configuring Conduit ${conduit_version}"
 cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
@@ -386,7 +391,7 @@ cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
   -DENABLE_FORTRAN=${enable_fortran} \
   -DENABLE_MPI=${enable_mpi} \
   -DENABLE_FIND_MPI=${enable_find_mpi} \
-   ${conduit_py_cmake_opts} \
+   ${conduit_extra_cmake_opts} \
   -DENABLE_TESTS=${enable_tests} \
   -DHDF5_DIR=${hdf5_install_dir} \
   -DZLIB_DIR=${zlib_install_dir}
