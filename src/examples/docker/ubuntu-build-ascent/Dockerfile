@@ -2,11 +2,15 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-#
-# all in one build of ascent + jupyter container
-#
+#################################################
+# all in one build of ascent container w/ jupyter
+#################################################
 
 FROM ubuntu:22.04
+
+#####################
+# base deps
+#####################
 # add sudo to base ubuntu container
 # so we can install additional packages as
 # non-root, but admin default user on azure pipelines
@@ -55,6 +59,10 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
 RUN apt-get install -y nodejs
 RUN rm -rf /var/lib/apt/lists/*
 
+#####################
+# ascent build
+#####################
+
 # obtain a copy of ascent source from host env and extract
 COPY ascent.docker.src.tar.gz /
 RUN tar -xzf ascent.docker.src.tar.gz
@@ -67,11 +75,18 @@ RUN chmod +x /ascent/scripts/build_ascent/build_ascent.sh
 COPY docker_build_ascent.sh /
 RUN  ./docker_build_ascent.sh
 
+# ascent is installed at /install/ascent-checkout, symlink to /ascent/install
+RUN ln -s /install/ascent-checkout /ascent/install
+# symlink proxies for easy access next to jupyter notebooks
+RUN ln -s /ascent/install/examples/ascent/proxies/ /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/
+
 # change perms of build results
 RUN chmod a+rwX /*.sh
 RUN chmod -R a+rwX /install/
+# setup perms for tutorial cleanup scripts
+RUN chmod 777 /ascent/install/examples/ascent/tutorial/ascent_intro/*/cleanup.sh
 
-# add setup for login
+# add env setup for login
 RUN cp /ascent_docker_setup_env.sh /etc/profile.d/ascent_docker_setup_env.sh
 
 # force the use of a login shell
@@ -83,12 +98,16 @@ RUN /bin/echo -e '#!/bin/bash -l\n' \
 # set main
 ENTRYPOINT ["/etc/entrypoint.sh"]
 
+#####################
+# jupyter lab setup
+#####################
+
 # add our `user` with password `docker`
 RUN useradd -ms /bin/bash -G sudo user && echo "user:docker" | chpasswd
 # allow sudo w/o password
 RUN echo "user ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/user && \
 chmod 0440 /etc/sudoers.d/user
-     
+
 # run the rest as `user`
 USER user
 WORKDIR /home/user
@@ -99,8 +118,7 @@ RUN ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N ""
 RUN cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 RUN chmod 0600 ~/.ssh/authorized_keys
 
-# setup jupyter password
-# the password is:
+# setup jupyter password, the password is:
 #  learn
 RUN mkdir /home/user/.jupyter/
 RUN echo "c.NotebookApp.password = 'sha1:9777986fd066:283f673e1a311e2d5ef58c174eaebf3e1cb536dd'" > /home/user/.jupyter/jupyter_notebook_config.py
@@ -112,12 +130,8 @@ RUN echo "c.NotebookApp.terminado_settings = { 'shell_command': ['/bin/bash'] }"
 RUN cp /ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyterlab.sh
 RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> /home/user/ascent_docker_run_jupyterlab.sh
 
-# symlink proxies under the notebooks dir for easy access in jupyter env
-#RUN ln -s /ascent/install/examples/ascent/proxies/ /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/
-
 # make sure helpers are executable
 RUN sudo chmod 777 /home/user/ascent_docker_run_jupyterlab.sh
-RUN sudo chmod 777 /ascent/install/examples/ascent/tutorial/ascent_intro/*/cleanup.sh
 
 # open port 8888, for use by jupyter notebook http server
 EXPOSE 8888
