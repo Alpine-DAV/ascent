@@ -16,9 +16,9 @@
 // thirdparty includes
 //-----------------------------------------------------------------------------
 
-// #ifdef ASCENT_MPI_ENABLED
+#ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
-// #endif
+#endif
 
 // conduit includes
 #include <conduit.hpp>
