@@ -18,6 +18,7 @@
 #include <iostream>
 #include <math.h>
 
+#include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
@@ -2975,6 +2976,92 @@ camera:
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 
+}
+
+TEST(ascent_render_3d, test_render_3d_render_emily)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_emily");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    Node &add_act = actions.append();
+    add_act["action"] = "add_extracts";
+    conduit::Node &extracts = add_act["extracts"];
+    extracts["e1/type"] = "relay";
+    extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_emily_export_all_fields");
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts, ascent_info;
+    //ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["timings"] = "true";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.info(ascent_info);
+    ascent.close();
+    conduit::Node &image_node = ascent_info["images"][0];
+    conduit::Node camera_data = image_node["camera/camera_frustum_mesh"];
+    std::cout << "begin_out" << std::endl;
+    std::cout << camera_data.to_yaml() << std::endl;
+    std::cout << "end_out" << std::endl;
+
+    conduit::relay::io::blueprint::save_mesh(camera_data, conduit::utils::join_file_path(output_path, "tout_emily_export_frust_fields"),"hdf5");
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
 }
 
 //-----------------------------------------------------------------------------

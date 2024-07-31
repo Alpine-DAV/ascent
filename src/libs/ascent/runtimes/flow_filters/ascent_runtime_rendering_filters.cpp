@@ -58,6 +58,7 @@
 #endif
 
 #include <stdio.h>
+#include <math.h>
 
 using namespace conduit;
 using namespace std;
@@ -1880,6 +1881,145 @@ ExecScene::declare_interface(conduit::Node &i)
     i["output_port"] = "false";
 }
 
+void generate_camera_meshes(conduit::Node &image_data){
+  // Add some stuff. 
+  // cross product
+  // Referencing "py_ascent_cameras_to_blueprint.py"
+  // add a test that renders something and check the view frustum and plot it
+
+  conduit::Node &camera = image_data["camera"];
+  std::string image_name = image_data["image_name"].as_string();
+  int image_height = image_data["image_height"].to_value();
+  int image_width = image_data["image_width"].to_value();
+  double image_aspect = image_height/image_width;
+  float64_accessor position = camera["position"].value();
+  float64_accessor look_at = camera["look_at"].value();
+  double near_dist = camera["near_plane"].to_value();
+  double far_dist = camera["far_plane"].to_value();
+  float64_accessor up = camera["up"].value();
+  double fov = camera["fov"].to_value();
+  double zoom = camera["zoom"].to_value();
+
+  // Initializing and normalizing up vector
+  vtkm::Vec<vtkm::Float64,3> vtkm_up(up[0], up[1], up[2]);
+  vtkm::Normalize(vtkm_up);
+
+  // Initializing look vector from position to point of interest ("look_at")
+  vtkm::Vec<vtkm::Float64,3> vtkm_look_at(look_at[0], look_at[1], look_at[2]);
+  vtkm::Vec<vtkm::Float64,3> vtkm_position(position[0], position[1], position[2]);
+  vtkm::Vec<vtkm::Float64,3> vtkm_look = vtkm_look_at - vtkm_position;
+  vtkm::Normalize(vtkm_look);
+
+  // // nside = numpy.cross(nup,nlook) math_code?
+  vtkm::Vec<vtkm::Float64,3> vtkm_side = vtkm::Cross(vtkm_up, vtkm_look);
+  // // # point on look vector that is at the near plane
+  vtkm::Vec<vtkm::Float64,3> vtkm_near_pt = (vtkm_look * near_dist) + vtkm_position;
+  vtkm::Vec<vtkm::Float64,3> vtkm_far_pt = (vtkm_look * far_dist) + vtkm_position;
+
+  conduit::Node &cam_frustum = camera["camera_frustum_mesh"];
+
+  // Adding the frustum points
+  double x_vals[2] = {vtkm_near_pt[0], vtkm_far_pt[0]};
+  double y_vals[2] = {vtkm_near_pt[1], vtkm_far_pt[1]};
+  double z_vals[2] = {vtkm_near_pt[2], vtkm_far_pt[2]};
+
+  cam_frustum["coordsets/frust_pts_coords/type"] = "explicit";
+  cam_frustum["coordsets/frust_pts_coords/values/x"].set(x_vals,2);
+  cam_frustum["coordsets/frust_pts_coords/values/y"].set(y_vals,2);
+  cam_frustum["coordsets/frust_pts_coords/values/z"].set(z_vals,2);
+  
+  cam_frustum["topologies/frust_pts_topo/type"] = "points";
+  cam_frustum["topologies/frust_pts_topo/coordset"] = "frust_pts_coords";
+  
+  cam_frustum["topologies/frust_look_topo/type"] = "unstructured";
+  cam_frustum["topologies/frust_look_topo/elements/shape"]  = "line";
+  cam_frustum["topologies/frust_look_topo/elements/connectivity"] = {0,1};
+  cam_frustum["topologies/frust_look_topo/coordset"] = "frust_pts_coords";
+
+  // Near Frustum
+  double frustum_near_height = near_dist * vtkm::Tan(fov * 0.5 * vtkm::Pi() / 180.0) / zoom;
+  double frustum_near_width  = frustum_near_height;
+  vtkm::Vec<vtkm::Float64,3> frustum_near_lower_left = vtkm_near_pt + (-1 * vtkm_up * frustum_near_height) + (vtkm_side * frustum_near_width * image_aspect );
+  vtkm::Vec<vtkm::Float64,3> frustum_near_lower_right = vtkm_near_pt + (-1 * vtkm_up * frustum_near_height) + (-1 * vtkm_side * frustum_near_width * image_aspect);
+  vtkm::Vec<vtkm::Float64,3> frustum_near_upper_right = vtkm_near_pt + (vtkm_up * frustum_near_height) + (-1 * vtkm_side * frustum_near_width * image_aspect);
+  vtkm::Vec<vtkm::Float64,3> frustum_near_upper_left = vtkm_near_pt + (vtkm_up * frustum_near_height)      + (vtkm_side * frustum_near_width * image_aspect);
+  double x_vals_near_plane[4] = {frustum_near_lower_left[0],frustum_near_lower_right[0],frustum_near_upper_right[0],frustum_near_upper_left[0]};
+  double y_vals_near_plane[4] = {frustum_near_lower_left[1],frustum_near_lower_right[1],frustum_near_upper_right[1],frustum_near_upper_left[1]};
+  double z_vals_near_plane[4] = {frustum_near_lower_left[2],frustum_near_lower_right[2],frustum_near_upper_right[2],frustum_near_upper_left[2]};
+  
+  cam_frustum["coordsets/frust_near_plane_coords/type"] = "explicit";
+  cam_frustum["coordsets/frust_near_plane_coords/values/x"].set(x_vals_near_plane, 4);
+  cam_frustum["coordsets/frust_near_plane_coords/values/y"].set(y_vals_near_plane, 4);
+  cam_frustum["coordsets/frust_near_plane_coords/values/z"].set(z_vals_near_plane, 4);
+  
+  cam_frustum["topologies/frust_near_plane_topo/type"] = "unstructured";
+  cam_frustum["topologies/frust_near_plane_topo/coordset"] = "frust_near_plane_coords";
+  cam_frustum["topologies/frust_near_plane_topo/elements/shape"]  = "quad";
+  cam_frustum["topologies/frust_near_plane_topo/elements/connectivity"] = {0,1,2,3};
+
+  // Far Frustum
+  double frustum_far_height = far_dist * vtkm::Tan(fov * 0.5 * vtkm::Pi() / 180.0) / zoom;
+  double frustum_far_width  = frustum_far_height;
+  vtkm::Vec<vtkm::Float64,3> frustum_far_lower_left = vtkm_far_pt + (-1 * vtkm_up * frustum_far_height) + (vtkm_side * frustum_far_width * image_aspect);
+  vtkm::Vec<vtkm::Float64,3> frustum_far_lower_right = vtkm_far_pt + (-1 * vtkm_up * frustum_far_height) + (-1 * vtkm_side * frustum_far_width * image_aspect);
+  vtkm::Vec<vtkm::Float64,3> frustum_far_upper_right = vtkm_far_pt + (vtkm_up * frustum_far_height) + (-1 * vtkm_side * frustum_far_width * image_aspect);
+  vtkm::Vec<vtkm::Float64,3> frustum_far_upper_left = vtkm_far_pt + (vtkm_up * frustum_far_height)      + (vtkm_side * frustum_far_width * image_aspect);
+  double x_vals_far_plane[4] = {frustum_far_lower_left[0],frustum_far_lower_right[0],frustum_far_upper_right[0],frustum_far_upper_left[0]};
+  double y_vals_far_plane[4] = {frustum_far_lower_left[1],frustum_far_lower_right[1],frustum_far_upper_right[1],frustum_far_upper_left[1]};
+  double z_vals_far_plane[4] = {frustum_far_lower_left[2],frustum_far_lower_right[2],frustum_far_upper_right[2],frustum_far_upper_left[2]};
+  
+  cam_frustum["coordsets/frust_far_plane_coords/type"] = "explicit";
+  cam_frustum["coordsets/frust_far_plane_coords/values/x"].set(x_vals_far_plane, 4);
+  cam_frustum["coordsets/frust_far_plane_coords/values/y"].set(y_vals_far_plane, 4);
+  cam_frustum["coordsets/frust_far_plane_coords/values/z"].set(z_vals_far_plane, 4);
+
+  cam_frustum["topologies/frust_far_plane_topo/type"] = "unstructured";
+  cam_frustum["topologies/frust_far_plane_topo/coordset"] = "frust_far_plane_coords";
+  cam_frustum["topologies/frust_far_plane_topo/elements/shape"]  = "quad";
+  cam_frustum["topologies/frust_far_plane_topo/elements/connectivity"] = {0,1,2,3};
+
+  // Frustum Mesh
+  double x_val_frustum_plane[8] = {frustum_near_lower_left[0],frustum_near_lower_right[0],frustum_near_upper_right[0],frustum_near_upper_left[0], frustum_far_lower_left[0],frustum_far_lower_right[0],frustum_far_upper_right[0],frustum_far_upper_left[0]};
+  double y_val_frustum_plane[8] = {frustum_near_lower_left[1],frustum_near_lower_right[1],frustum_near_upper_right[1],frustum_near_upper_left[1], frustum_far_lower_left[1],frustum_far_lower_right[1],frustum_far_upper_right[1],frustum_far_upper_left[1]};
+  double z_val_frustum_plane[8] = {frustum_near_lower_left[2],frustum_near_lower_right[2],frustum_near_upper_right[2],frustum_near_upper_left[2], frustum_far_lower_left[2],frustum_far_lower_right[2],frustum_far_upper_right[2],frustum_far_upper_left[2]};
+  
+  cam_frustum["coordsets/frust_planes_coords/type"] = "explicit";
+  cam_frustum["coordsets/frust_planes_coords/values/x"].set(x_val_frustum_plane, 8);
+  cam_frustum["coordsets/frust_planes_coords/values/y"].set(y_val_frustum_plane, 8);
+  cam_frustum["coordsets/frust_planes_coords/values/z"].set(z_val_frustum_plane, 8);
+
+  cam_frustum["topologies/frust_planes_topo/type"] = "unstructured";
+  cam_frustum["topologies/frust_planes_topo/coordset"] = "frust_planes_coords";
+  cam_frustum["topologies/frust_planes_topo/elements/shape"]  = "quad";
+  cam_frustum["topologies/frust_planes_topo/elements/connectivity"] = {0,1,2,3,4,5,6,7};
+
+  cam_frustum["topologies/frust_corners_topo/type"] = "unstructured";
+  cam_frustum["topologies/frust_corners_topo/coordset"] = "frust_planes_coords";
+  cam_frustum["topologies/frust_corners_topo/elements/shape"]  = "line";
+  cam_frustum["topologies/frust_corners_topo/elements/connectivity"] = {0,4,
+                                                                1,5,
+                                                                2,6,
+                                                                3,7};
+  
+  // Scene Bounds Mesh
+  float64_accessor scene_bounds = image_data["scene_bounds"].value();
+  double x_val_scene_bounds[8] = {scene_bounds[0], scene_bounds[3], scene_bounds[3], scene_bounds[0], scene_bounds[0], scene_bounds[3], scene_bounds[3], scene_bounds[0]};
+  double y_val_scene_bounds[8] = {scene_bounds[1], scene_bounds[1], scene_bounds[1], scene_bounds[1], scene_bounds[4], scene_bounds[4], scene_bounds[4], scene_bounds[4]};
+  double z_val_scene_bounds[8] = {scene_bounds[2], scene_bounds[2], scene_bounds[5], scene_bounds[5], scene_bounds[2], scene_bounds[2], scene_bounds[5], scene_bounds[5]};
+
+  cam_frustum["coordsets/scene_bounds_coords/type"] = "explicit";
+  cam_frustum["coordsets/scene_bounds_coords/values/x"].set(x_val_frustum_plane, 8);
+  cam_frustum["coordsets/scene_bounds_coords/values/y"].set(y_val_frustum_plane, 8);
+  cam_frustum["coordsets/scene_bounds_coords/values/z"].set(z_val_frustum_plane, 8);
+  
+  cam_frustum["topologies/scene_bounds_topo/type"] = "unstructured";
+  cam_frustum["topologies/scene_bounds_topo/coordset"] = "scene_bounds_coords";
+  cam_frustum["topologies/scene_bounds_topo/elements/shape"]  = "hex";
+  cam_frustum["topologies/scene_bounds_topo/elements/connectivity"] = {0,1,2,3,4,5,6,7};
+
+  image_data.print();
+}
+
 //-----------------------------------------------------------------------------
 void
 ExecScene::execute()
@@ -1921,6 +2061,8 @@ ExecScene::execute()
       image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
       image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
       image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+      image_data["camera/near_plane"] = renders->at(i).GetCamera().GetClippingRange().Min;
+      image_data["camera/far_plane"] = renders->at(i).GetCamera().GetClippingRange().Max;
       vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
       double coord_bounds [6] = {bounds.X.Min,
                                  bounds.Y.Min,
@@ -1931,6 +2073,7 @@ ExecScene::execute()
       
       image_data["scene_bounds"].set(coord_bounds, 6);
 
+      generate_camera_meshes(image_data);
       image_list->append() = image_data;
     }
 
