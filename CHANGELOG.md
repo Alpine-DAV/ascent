@@ -6,8 +6,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 ### Preferred dependency versions for ascent@develop
-- conduit@0.9.1
-- vtk-m@2.1.0 (requires [patch](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch) )
+- conduit@0.9.2
+- vtk-m@2.1.0 (requires [patch 1](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch) 
+                        [patch 2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch) )
 - raja@2024.02.1
 - umpire@2024.02.1
 - camp@2024.02.1
