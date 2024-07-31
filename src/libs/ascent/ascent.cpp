@@ -865,7 +865,8 @@ static std::map<std::string, bool (*)(void)> m_bool_callback_map;
 //-----------------------------------------------------------------------------
 void
 register_callback(const std::string &callback_name,
-                  void (*callback_function)(conduit::Node &, conduit::Node &))
+                  void (*callback_function)
+                  (conduit::Node &, conduit::Node &))
 {
     if (callback_name == "")
     {
@@ -904,7 +905,7 @@ register_callback(const std::string &callback_name,
 
 //-----------------------------------------------------------------------------
 void
-execute_callback(std::string callback_name,
+execute_callback(const std::string &callback_name,
                  conduit::Node &params,
                  conduit::Node &output)
 {
@@ -918,7 +919,7 @@ execute_callback(std::string callback_name,
 
 //-----------------------------------------------------------------------------
 bool
-execute_callback(std::string callback_name)
+execute_callback(const std::string &callback_name)
 {
     if (m_bool_callback_map.count(callback_name) != 1)
     {
@@ -929,25 +930,23 @@ execute_callback(std::string callback_name)
 }
 
 //-----------------------------------------------------------------------------
-std::vector<std::string>
-get_void_callbacks()
+void
+get_void_callbacks(std::vector<std::string> &callback_names)
 {
-    std::vector<std::string> keys;
-    for (const auto &pair : m_void_callback_map) {
-        keys.push_back(pair.first);
+    for (const auto &pair : m_void_callback_map)
+    {
+        callback_names.push_back(pair.first);
     }
-    return keys;
 }
 
 //-----------------------------------------------------------------------------
-std::vector<std::string>
-get_bool_callbacks()
+void
+get_bool_callbacks(std::vector<std::string> &callback_names)
 {
-    std::vector<std::string> keys;
-    for (const auto &pair : m_bool_callback_map) {
-        keys.push_back(pair.first);
+    for (const auto &pair : m_bool_callback_map)
+    {
+        callback_names.push_back(pair.first);
     }
-    return keys;
 }
 
 //-----------------------------------------------------------------------------
