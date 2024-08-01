@@ -354,7 +354,7 @@ fi # build_caliper
 # Conduit
 ################
 conduit_version=v0.9.2
-conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version}/src)
+conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
 conduit_tarball=$(ospath ${source_dir}/conduit-${conduit_version}-src-with-blt.tar.gz)
@@ -366,6 +366,14 @@ if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Downloading ${conduit_tarball}"
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/conduit-${conduit_version}-src-with-blt.tar.gz -o ${conduit_tarball}
   tar ${tar_extra_args} --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -x -v -f ${conduit_tarball} -C ${source_dir}
+
+  # caliper vs adiak patch
+  if ${build_caliper}; then
+      cd ${conduit_src_dir}
+      echo ${conduit_src_dir}
+      patch -p 1 < ${script_dir}/2024_08_01_conduit-pr1311-detect-if-caliper-needs-adiak.patch
+      cd ${root_dir}
+  fi
 fi
 
 #
@@ -383,7 +391,7 @@ fi
 
 
 echo "**** Configuring Conduit ${conduit_version}"
-cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
+cmake -S ${conduit_src_dir}/src -B ${conduit_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
