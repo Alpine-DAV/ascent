@@ -14,13 +14,15 @@
 #define ASCENT_RUNTIME_STEERING_FILTERS
 
 #include <ascent.hpp>
-
 #include <flow_filter.hpp>
-#include <functional>
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #endif
+
+// std includes
+#include <algorithm>
+#include <functional>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -54,7 +56,7 @@ public:
     ~Steering();
     virtual void declare_interface(conduit::Node &i);
     virtual bool verify_params(const conduit::Node &params,
-                               conduit::Node &info);
+                                     conduit::Node &info);
     virtual void execute();
 private:
     std::map<std::string, std::function<void()>> m_commands;
@@ -70,12 +72,13 @@ private:
 
     void empty_run();
     void exit_shell();
-    void parse_input(std::string &cmd, std::vector<std::string> &args);
     void list_callbacks();
-    void modify_params(std::vector<std::string> &args);
     void print_help();
     void print_params();
-    void run_callback(std::vector<std::string> &args);
+    void run_callback(const std::vector<std::string> &args);
+    void modify_params(const std::vector<std::string> &args);
+    void parse_input(const std::string &cmd,
+                     const std::vector<std::string> &args);
 };
 
 };

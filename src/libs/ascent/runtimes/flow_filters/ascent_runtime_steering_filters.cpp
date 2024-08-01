@@ -30,12 +30,9 @@
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
-#include <algorithm>
 
-
-using namespace conduit;
 using namespace std;
-
+using namespace conduit;
 using namespace flow;
 
 //-----------------------------------------------------------------------------
@@ -60,31 +57,7 @@ namespace filters
 Steering::Steering()
 :Filter()
 {
-    // Commands
-    m_commands["exit"] = [this]()
-    { this->exit_shell(); };
-    m_commands["help"] = [this]()
-    { this->print_help(); };
-    m_commands["list"] = [this]()
-    { this->list_callbacks(); };
-    m_commands["param"] = [this]()
-    { this->print_params(); };
-    m_commands["run"] = [this]()
-    { this->empty_run(); };
-
-    // Descriptions
-    m_descriptions["exit"] = "Exit the shell.";
-    m_descriptions["help"] = "Print this help message.";
-    m_descriptions["list"] = "List all registered Ascent callbacks.";
-    m_descriptions["param"] = "Prints the current parameters. Can set, modify, or parameters with 'param add|edit|remove key value.";
-    m_descriptions["run"] = "Run an Ascent callback with 'run my_callback_name'.";
-
-#ifdef ASCENT_MPI_ENABLED
-    m_mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-    MPI_Comm_rank(m_mpi_comm, &m_rank);
-#else
-    m_rank = 0;
-#endif
+// empty
 }
 
 //-----------------------------------------------------------------------------
@@ -105,31 +78,84 @@ Steering::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 Steering::verify_params(const conduit::Node &params,
-                       conduit::Node &info)
+                        conduit::Node &info)
 {
-    info.reset();
-    return true;
+    bool res = true;
+    if(params.has_child("explicit_command"))
+    {
+        // This parameter exists for automated testing purposes
+        if(!params["explicit_command"].dtype().is_string())
+        {
+            info["errors"].append() = "optional entry 'explicit_command' must"
+                                      " be a string";
+            res = false;
+        }
+    }
+    return res;
 }
 
 //-----------------------------------------------------------------------------
 void
 Steering::execute()
 {
+    // Commands
+    m_commands["exit"] = [this]()
+    { this->exit_shell(); };
+    m_commands["help"] = [this]()
+    { this->print_help(); };
+    m_commands["list"] = [this]()
+    { this->list_callbacks(); };
+    m_commands["param"] = [this]()
+    { this->print_params(); };
+    m_commands["run"] = [this]()
+    { this->empty_run(); };
+
+    // Descriptions
+    m_descriptions["exit"] = "Exit the steering interface.";
+    m_descriptions["help"] = "Print this help message.";
+    m_descriptions["list"] = "List all registered Ascent callbacks.";
+    m_descriptions["param"] = "Modify current params.\n\t\
+        - Add:     param <key> <value>\n\t\
+        - Delete:  param delete <key>\n\t\
+        - Reset:   param reset";
+    m_descriptions["run"] = "Run an Ascent callback.\n\t\
+        - Example: run <callback_name>";
+
+#ifdef ASCENT_MPI_ENABLED
+    m_mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+    MPI_Comm_rank(m_mpi_comm, &m_rank);
+#else
+    m_rank = 0;
+#endif
+
     m_running = true;
     m_empty_params = true;
 
     if (m_rank == 0)
     {
-        std::cout << "-------------Entering interactive steering mode--------------" << std::endl;
-        std::cout << "Type 'help' to see available commands" << std::endl << std::endl;
+        std::cout << std::endl << "-------------Entering interactive steering";
+        std::cout << " mode for Ascent--------------" << std::endl;
+        std::cout << "Type 'help' to see available commands" << std::endl;
+        std::cout << std::endl;
     }
 
     std::string input;
     int input_size = 0;
     while (m_running)
     {
-        
-        if (m_rank == 0)
+        if(params().has_path("explicit_command"))
+        {
+            // This path exists for automated testing purposes
+            input = params()["explicit_command"].as_string();
+            if (m_rank == 0)
+            {
+                std::cout << "steering>" << std::endl;
+                std::cout << "(explicit_command): " << input << std::endl;
+            }
+            input_size = input.size();
+            m_running = false;
+        }
+        else if (m_rank == 0)
         {
             std::cout << "steering>" << std::endl;
             std::getline(std::cin, input);
@@ -142,42 +168,68 @@ Steering::execute()
         {
             input.resize(input_size);
         }
-        MPI_Bcast(const_cast<char *>(input.data()), input_size, MPI_CHAR, 0, m_mpi_comm);
+        MPI_Bcast(const_cast<char *>(input.data()),
+                  input_size,
+                  MPI_CHAR,
+                  0,
+                  m_mpi_comm);
 #endif
 
-        // Tokenize user input
+        // Parse and execute user input
         std::istringstream iss(input);
-        std::string cmd;
-        iss >> cmd;
-        std::vector<std::string> tokens;
-        std::string token;
-        while (iss >> token)
+        std::string line;
+
+        // Users can't naturally enter multi-line commands, but
+        // we support it here for automated testing purposes
+        while (std::getline(iss, line))
         {
-            tokens.push_back(token);
+            std::istringstream lineStream(line);
+            std::string cmd;
+            lineStream >> cmd;
+        
+            std::vector<std::string> tokens;
+            std::string token;
+            while (lineStream >> token) {
+                tokens.push_back(token);
+            }
+
+            parse_input(cmd, tokens);
         }
-        parse_input(cmd, tokens);
     }
+
     if (m_rank == 0)
     {
-        std::cout << std::endl << "-------------Exiting interactive steering mode-------------" << std::endl;
+        std::cout << "-------------Exiting interactive steering mode for";
+        std::cout << " Ascent-------------" << std::endl << std::endl;
     }
 }
 
-void Steering::empty_run()
+//-----------------------------------------------------------------------------
+void
+Steering::empty_run()
 {
     if (m_rank == 0)
     {
         std::cout << std::endl << "[Error]" << std::endl;
-        std::cout << "Must specify a callback to run, for example: 'run my_callback_name'" << std::endl << std::endl;
+        std::cout << "Did not specify a callback to run. Example usage: run";
+        std::cout << " <callback_name>" << std::endl << std::endl;
     }
 }
 
-void Steering::exit_shell()
+//-----------------------------------------------------------------------------
+void
+Steering::exit_shell()
 {
+    if (m_rank == 0)
+    {
+        std::cout << std::endl;
+    }
     m_running = false;
 }
 
-void Steering::list_callbacks()
+//-----------------------------------------------------------------------------
+void
+Steering::list_callbacks()
 {
     if (m_rank == 0)
     {
@@ -215,54 +267,9 @@ void Steering::list_callbacks()
     }
 }
 
-void Steering::modify_params(std::vector<std::string> &args)
-{
-    std::string cmd = args.size() > 0 ? args[0] : "";
-    std::string arg = args.size() > 1 ? args[1] : "";
-
-    if (cmd == "reset")
-    {
-        m_params.reset();
-        m_empty_params = true;
-    }
-    else if (cmd == "delete" && !arg.empty())
-    {
-        m_params[arg].reset();
-    }
-    else if (!cmd.empty() && !arg.empty())
-    {
-        bool assigned = false;
-
-        // Is the input numeric?
-        if (!assigned)
-        {
-            try
-            {
-                double possible_number = std::stod(arg);
-                m_params[cmd] = possible_number;
-                m_empty_params = false;
-                assigned = true;
-            }
-            catch (const std::invalid_argument&)
-            {
-            }
-            catch (const std::out_of_range&)
-            {
-            }
-        }
-
-        // It wasn't numeric, treat it as a string
-        if (!assigned)
-        {
-            m_params[cmd] = arg;
-            m_empty_params = false;
-        }
-    }
-
-    print_params();
-}
-
-void Steering::print_help()
+//-----------------------------------------------------------------------------
+void
+Steering::print_help()
 {
     if (m_rank == 0)
     {
@@ -275,7 +282,9 @@ void Steering::print_help()
     }
 }
 
-void Steering::print_params()
+//-----------------------------------------------------------------------------
+void
+Steering::print_params()
 {
     if (m_rank == 0)
     {
@@ -291,22 +300,43 @@ void Steering::print_params()
     }
 }
 
-void Steering::run_callback(std::vector<std::string> &args)
+//-----------------------------------------------------------------------------
+void
+Steering::run_callback(const std::vector<std::string> &args)
 {
     try
     {
         std::string callback = args[0];
-
         bool has_callback = false;
+
+        // Void
         std::vector<std::string> void_callback_names;
         ascent::get_void_callbacks(void_callback_names);
-        auto it = std::find(void_callback_names.begin(), void_callback_names.end(), callback);
+        auto void_it = std::find(void_callback_names.begin(),
+                                 void_callback_names.end(),
+                                 callback);
 
-        if (it != void_callback_names.end()) {
+        // Bool
+        std::vector<std::string> bool_callback_names;
+        ascent::get_bool_callbacks(bool_callback_names);
+        auto bool_it = std::find(bool_callback_names.begin(),
+                                 bool_callback_names.end(),
+                                 callback);
+
+        if (void_it != void_callback_names.end()) {
             has_callback = true;
             if (m_rank == 0)
             {
-                std::cout << std::endl << "Running callback: " << callback << "\n" << std::endl;
+                std::cout << std::endl << "Running callback: " << callback;
+                std::cout << std::endl;
+            }
+        }
+        else if (bool_it != bool_callback_names.end()) {
+            if (m_rank == 0)
+            {
+                std::cout << std::endl << "[Error]" << std::endl;
+                std::cout << "Directly executing bool callbacks is not";
+                std::cout << " supported." << std::endl << std::endl;
             }
         }
         else
@@ -314,7 +344,8 @@ void Steering::run_callback(std::vector<std::string> &args)
             if (m_rank == 0)
             {
                 std::cout << std::endl << "[Error]" << std::endl;
-                std::cout << "There is no callback named '" << callback << "'" << std::endl << std::endl;
+                std::cout << "There is no registered callback named '";
+                std::cout << callback << "'" << std::endl << std::endl;
             }
         }
 
@@ -339,12 +370,67 @@ void Steering::run_callback(std::vector<std::string> &args)
     }
     catch (const std::exception &e)
     {
-        // TODO: Ascent error?
+        // TODO: emit an Ascent error instead?
         std::cerr << e.what() << std::endl;
     }
 }
 
-void Steering::parse_input(std::string &cmd, std::vector<std::string> &args)
+//-----------------------------------------------------------------------------
+void
+Steering::modify_params(const std::vector<std::string> &args)
+{
+    std::string cmd = args.size() > 0 ? args[0] : "";
+    std::string arg = args.size() > 1 ? args[1] : "";
+
+    if (cmd == "reset")
+    {
+        m_params = conduit::Node();
+    }
+    else if (cmd == "delete" && !arg.empty())
+    {
+        if(m_params.has_child(arg))
+        {
+            m_params.remove(arg);
+        }
+    }
+    else if (!cmd.empty() && !arg.empty())
+    {
+        bool assigned = false;
+
+        // Is the input numeric?
+        if (!assigned)
+        {
+            try
+            {
+                // The side effect of this is that integers are also 
+                double possible_number = std::stod(arg);
+                m_params[cmd] = possible_number;
+                m_empty_params = false;
+                assigned = true;
+            }
+            catch (const std::invalid_argument&)
+            {
+            }
+            catch (const std::out_of_range&)
+            {
+            }
+        }
+
+        // It wasn't numeric, treat it as a string
+        if (!assigned)
+        {
+            m_params[cmd] = arg;
+            m_empty_params = false;
+        }
+    }
+
+    print_params();
+}
+
+//-----------------------------------------------------------------------------
+void
+Steering::parse_input(const std::string &cmd,
+                      const std::vector<std::string> &args)
 {
     if (m_commands.find(cmd) == m_commands.end())
     {
