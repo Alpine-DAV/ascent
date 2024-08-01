@@ -1,0 +1,23 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0dc4a5b..fd6baaf 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -57,7 +57,9 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+ ###
+ # grab the version string
+ ###
+-file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION SILO_VERSION)
++file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/SILO_VERSION SILO_VERSION)
++# Strip suffix
++string(REGEX REPLACE "-.*" "" SILO_VERSION "${SILO_VERSION}")
+ 
+ ###-----------------------------------------------------------------------------
+ # project command will automatically create cmake vars for major, minor,
+@@ -139,7 +141,9 @@ CMAKE_DEPENDENT_OPTION(SILO_ENABLE_HZIP "Enable Lindstrom hex/quad mesh compress
+ ##
+ #  Set up a default INSTALL prefix that is peer to the build directory
+ ##
+-set(CMAKE_INSTALL_PREFIX ${Silo_BINARY_DIR}/../SiloInstall  CACHE PATH "install prefix" FORCE)
++if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
++   set(CMAKE_INSTALL_PREFIX ${Silo_BINARY_DIR}/../SiloInstall  CACHE PATH "install prefix" FORCE)
++endif()
