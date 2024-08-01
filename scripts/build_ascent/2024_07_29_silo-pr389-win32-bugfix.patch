@@ -1,0 +1,10 @@
+diff --git a/src/silo/silo_win32_compatibility.h b/src/silo/silo_win32_compatibility.h
+index bc4d38f..00b970c 100644
+--- a/src/silo/silo_win32_compatibility.h
++++ b/src/silo/silo_win32_compatibility.h
+@@ -1,4 +1,4 @@
+-#ifdef WIN32
++#ifdef _WIN32
+ #ifndef SILO_WIN32_COMPATIBILITY
+ #define SILO_WIN32_COMPATIBILITY
+ #include <io.h>  /* Include Windows IO *
