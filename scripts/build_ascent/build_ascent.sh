@@ -308,6 +308,12 @@ if [ ! -d ${caliper_src_dir} ]; then
   echo "**** Downloading ${caliper_tarball}"
   curl -L https://github.com/LLNL/Caliper/archive/refs/tags/v${caliper_version}.tar.gz -o ${caliper_tarball}
   tar ${tar_extra_args} -xzf ${caliper_tarball} -C ${source_dir}
+  # windows specifc patch
+  cd  ${caliper_src_dir}
+  if [[ "$build_windows" == "ON" ]]; then
+    patch -p1 < ${script_dir}/2024_08_01_caliper-win-smaller-opts.patch
+  fi
+  cd ${root_dir}
 fi
 
 #
