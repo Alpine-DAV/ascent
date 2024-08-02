@@ -8,7 +8,7 @@
 Tutorial Overview
 ==================
 
-`Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2023_08_22_ascent_intro.pdf>`_
+`Latest Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2024_08_05_ascent_intro.pdf>`_
 
 
 This tutorial introduces how to use Ascent, including basics about:
