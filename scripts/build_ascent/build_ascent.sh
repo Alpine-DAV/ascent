@@ -711,7 +711,10 @@ if [ ! -d ${mfem_src_dir} ]; then
   tar ${tar_extra_args} -xzf ${mfem_tarball} -C ${source_dir}
 fi
 
-
+#
+# Note: MFEM MPI requires Hypre and Metis
+#  -DMFEM_USE_MPI=${enable_mpi} \
+  
 echo "**** Configuring MFEM ${mfem_version}"
 cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
