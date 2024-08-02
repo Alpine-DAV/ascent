@@ -337,6 +337,7 @@ cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DCMAKE_INSTALL_PREFIX=${caliper_install_dir} \
+  -DWITH_TOOLS=OFF \
   -DWITH_MPI=${enable_mpi} ${caliper_windows_cmake_flags}
 
 echo "**** Building Caliper ${caliper_version}"
