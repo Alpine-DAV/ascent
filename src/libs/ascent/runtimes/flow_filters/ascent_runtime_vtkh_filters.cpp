@@ -1186,6 +1186,124 @@ VTKHGhostStripper::execute()
       set_output<DataObject>(data_object);
     }
 }
+//-----------------------------------------------------------------------------
+VTKHAddDomains::VTKHAddRanks()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddDomains::~VTKHAddRanks()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddDomains::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_add_mpi_ranks";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAddDomains::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("topology",params, info, false);
+    res = check_string("output",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("output");
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddDomains::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHAddDomains input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string output_field = "domain_id";
+    if(params().has_child("output"))
+    {
+      output_field = params()["output"].as_string();
+    }
+
+    std::string topo_name = "";
+    if(params().has_child("topology"))
+    {
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      bool throw_error = false;
+      topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+      std::cerr << "topo_name: " << topo_name << std::endl;
+      if(topo_name == "")
+      {
+        // this creates a data object with an invalid source
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    int num_domains = data.GetNumberOfDomains();
+    std::vector<vtkm::Id> domain_ids = data.GetDomainIds();
+    for(index_t i = 0; i < num_domains; ++i)
+    {
+      vtkm::Id domain_id = domain_ids[i];
+      vtkm::cont::DataSet domain_data = data.GetDomainById(domain_id);
+      vtkm::Id num_points = domain_data.GetCoordinateSystem().GetData().GetNumberOfValues();
+      vtkm::cont::ArrayHandle<vtkm::Float32> array;
+      detail::MemSet(array, value, num_points);
+      vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+      domain_data.AddField(field);
+      data.AddDomain(domain_data, domain_id);
+
+    }
+    data.AddConstantPointField(rank,output_field);
+
+
+    new_coll->add(data, topo_name);
+    
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    set_output<DataObject>(res);
+}
 
 //-----------------------------------------------------------------------------
 VTKHAddRanks::VTKHAddRanks()
