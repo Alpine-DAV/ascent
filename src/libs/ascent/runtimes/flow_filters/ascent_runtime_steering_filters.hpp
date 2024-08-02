@@ -68,15 +68,14 @@ private:
 #endif
     int m_rank;
     bool m_running;
-    bool m_empty_params;
 
     void empty_run();
     void exit_shell();
     void list_callbacks();
     void print_help();
     void print_params();
-    void run_callback(const std::vector<std::string> &args);
-    void modify_params(const std::vector<std::string> &args);
+    void run_callback(const std::string &callback_name);
+    void modify_params(const std::vector<std::string> &tokens);
     void parse_input(const std::string &cmd,
                      const std::vector<std::string> &args);
 };

@@ -143,7 +143,7 @@ TEST(ascent_steering, get_bool_callback_names_nonempty)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_steering, terminal_interface_fail_params)
+TEST(ascent_steering, terminal_interface_null_params)
 {
     //
     // Create the actions.
@@ -153,7 +153,8 @@ TEST(ascent_steering, terminal_interface_fail_params)
     conduit::Node extracts;
     extracts["e1/type"] = "steering";
     extracts["e1/params/explicit_command"] = "";
-    // This is the bit which makes it null
+    // This erases the value without erasing the path, effectively passing
+    // null as input
     extracts["e1/params/explicit_command"].reset();
 
     conduit::Node &add_extracts = actions.append();
@@ -174,7 +175,7 @@ TEST(ascent_steering, terminal_interface_fail_params)
     std::string msg = "An example of passing null input to the terminal"
                       " steering interface from Ascent actions.";
     ASCENT_ACTIONS_DUMP(actions,
-                        std::string("terminal_interface_fail_params"),
+                        std::string("terminal_interface_null_params"),
                         msg);
 
     ascent.close();
