@@ -36,7 +36,7 @@ using namespace ascent;
 int NUM_DOMAINS = 8;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mpi_add_mpi_ranks_2d, test_mpi_add_mpi_ranks_2d)
+TEST(ascent_mpi_add_mpi_ranks, test_mpi_add_mpi_ranks)
 {
     //
     //Set Up MPI

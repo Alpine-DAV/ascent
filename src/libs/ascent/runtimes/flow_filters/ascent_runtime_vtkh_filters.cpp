@@ -1222,6 +1222,7 @@ VTKHAddRanks::verify_params(const conduit::Node &params,
     std::vector<std::string> valid_paths;
     valid_paths.push_back("output");
     valid_paths.push_back("topology");
+
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
