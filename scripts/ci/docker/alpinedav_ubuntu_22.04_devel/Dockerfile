@@ -18,7 +18,6 @@ RUN apt-get update && apt-get -y install \
              python3 \
              python3-dev \
              python-is-python3 \
-             python3.10-venv \
              clang \
              llvm \
              perl \
