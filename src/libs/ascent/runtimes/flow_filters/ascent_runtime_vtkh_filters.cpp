@@ -1188,6 +1188,114 @@ VTKHGhostStripper::execute()
 }
 
 //-----------------------------------------------------------------------------
+VTKHAddRanks::VTKHAddRanks()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddRanks::~VTKHAddRanks()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddRanks::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_add_mpi_ranks";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAddRanks::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("topology",params, info, false);
+    res = check_string("output",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("output");
+    valid_paths.push_back("topology");
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddRanks::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHAddRanks input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string output_field = "mpi_rank";
+    if(params().has_child("output"))
+    {
+      output_field = params()["output"].as_string();
+    }
+
+    std::string topo_name = "";
+    if(params().has_child("topology"))
+    {
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      bool throw_error = false;
+      topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+      std::cerr << "topo_name: " << topo_name << std::endl;
+      if(topo_name == "")
+      {
+        // this creates a data object with an invalid source
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    data.AddConstantPointField(rank,output_field);
+    new_coll->add(data, topo_name);
+    
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
 VTKHThreshold::VTKHThreshold()
 :Filter()
 {
