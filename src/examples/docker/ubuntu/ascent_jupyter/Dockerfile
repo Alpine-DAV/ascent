@@ -37,6 +37,9 @@ RUN echo "jupyter notebook --ip=\"0.0.0.0\" --no-browser" >> /home/user/ascent_d
 RUN cp /ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyterlab.sh
 RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> /home/user/ascent_docker_run_jupyterlab.sh
 
+# shorten root path to tutorial
+RUN sudo ln -s /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/ /tutorial
+
 #make sure helpers are executable
 RUN sudo chmod 777 /home/user/ascent_docker_run_jupyter.sh 
 RUN sudo chmod 777 /home/user/ascent_docker_run_jupyterlab.sh
@@ -46,4 +49,4 @@ RUN sudo chmod 777 /ascent/install/examples/ascent/tutorial/ascent_intro/*/clean
 EXPOSE 8888
 
 # launch jupyter lab
-CMD sudo service ssh start && cd /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/ && /home/user/ascent_docker_run_jupyterlab.sh
+CMD sudo service ssh start && cd /tutorial/ && /home/user/ascent_docker_run_jupyterlab.sh
