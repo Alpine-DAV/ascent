@@ -2,7 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-ARG BASE_IMAGE=ascent-ubuntu-22.04-x86_64_2024-07-24-shab2fa81
+ARG BASE_IMAGE=ascent-ubuntu-22.04-x86_64_2024-08-03-sha2bec68
 FROM alpinedav/ascent:${BASE_IMAGE}
 
 # add our 'user' with password 'docker'
@@ -28,6 +28,9 @@ RUN mkdir /home/user/.jupyter/
 RUN echo "c.NotebookApp.password = 'sha1:9777986fd066:283f673e1a311e2d5ef58c174eaebf3e1cb536dd'" > /home/user/.jupyter/jupyter_notebook_config.py
 # set bash as default shell
 RUN echo "c.NotebookApp.terminado_settings = { 'shell_command': ['/bin/bash'] }" >> /home/user/.jupyter/jupyter_notebook_config.py
+
+# disable announcements
+RUN /uberenv_libs/spack_view/bin/python3 -m jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 
 # gen script that allows us to easily run jupyter
 RUN cp /ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyter.sh
