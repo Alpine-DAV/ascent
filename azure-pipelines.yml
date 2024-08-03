@@ -450,9 +450,11 @@ stages:
           ENABLE_DRAY: ON
           ENABLE_MFEM: ON
           BLT_CXX_STD: c++14
-          # static linking unit tests eats up alot of disk space,
+          # static linking unit tests + examples eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+          ENABLE_EXAMPLES: OFF
+          ENABLE_UTILS: OFF
 
         ubuntu_20.04_static_cuda_11.4.3:
           containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
@@ -461,9 +463,12 @@ stages:
           ENABLE_DRAY: ON
           ENABLE_MFEM: ON
           BLT_CXX_STD: c++14
-          # static linking unit tests eats up alot of disk space,
+          # static linking unit tests + examples eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+          ENABLE_EXAMPLES: OFF
+          ENABLE_UTILS: OFF
+
         ubuntu_20.04_static_cuda_11.4.3_no_mfem:
           containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
           BUILD_SHARED_LIBS: OFF
@@ -474,6 +479,8 @@ stages:
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+          ENABLE_EXAMPLES: OFF
+          ENABLE_UTILS: OFF
           ## on hold until we get new CI container with shared libs
           # cuda-11.4.0-shared_dray:
           # containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
@@ -531,6 +538,8 @@ stages:
            if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_EXAMPLES=$ENABLE_EXAMPLES"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_UTILS=$ENABLE_UTILS"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
