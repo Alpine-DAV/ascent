@@ -74,18 +74,25 @@ void        ASCENT_API about(conduit::Node &node);
 
 //-----------------------------------------------------------------------------
 void        ASCENT_API register_callback(const std::string &callback_name,
-                                         void (*callback_function)(conduit::Node &, conduit::Node &));
+                                         void (*callback_function)
+                                         (conduit::Node &, conduit::Node &));
 //-----------------------------------------------------------------------------
 void        ASCENT_API register_callback(const std::string &callback_name,
                                          bool (*callback_function)(void));
 
 //-----------------------------------------------------------------------------
-void        ASCENT_API execute_callback(std::string callback_name,
+void        ASCENT_API execute_callback(const std::string &callback_name,
                                         conduit::Node &params,
                                         conduit::Node &output);
 
 //-----------------------------------------------------------------------------
-bool        ASCENT_API execute_callback(std::string callback_name);
+bool        ASCENT_API execute_callback(const std::string &callback_name);
+
+//-----------------------------------------------------------------------------
+void        ASCENT_API get_void_callbacks(std::vector<std::string> &callbacks);
+
+//-----------------------------------------------------------------------------
+void        ASCENT_API get_bool_callbacks(std::vector<std::string> &callbacks);
 
 //-----------------------------------------------------------------------------
 void        ASCENT_API reset_callbacks();
