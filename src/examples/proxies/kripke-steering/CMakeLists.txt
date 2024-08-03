@@ -37,11 +37,6 @@ set(KRIPKE_STEERING_SOURCES
 
 # kripke reqs mpi
 if(MPI_FOUND)
-    # copy over example command line
-    configure_file(run_kripke_steering_simple_example.sh
-                   ${CMAKE_CURRENT_BINARY_DIR}/run_kripke_steering_simple_example.sh
-                   COPYONLY)
-
     if(OPENMP_FOUND)
        set(kripke_steering_openmp_flags "-DKRIPKE_USE_OPENMP")
     else()
