@@ -37,7 +37,9 @@ RUN echo "jupyter notebook --ip=\"0.0.0.0\" --no-browser" >> /home/user/ascent_d
 RUN cp /ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyterlab.sh
 RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> /home/user/ascent_docker_run_jupyterlab.sh
 
-# shorten root path to tutorial
+# shorten root path to tutorial and link proxies for easier acccess
+# symlink proxies for easy access next to jupyter notebooks
+RUN sudo ln -s /ascent/install/examples/ascent/proxies/ /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/
 RUN sudo ln -s /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/ /tutorial
 
 #make sure helpers are executable

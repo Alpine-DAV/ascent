@@ -55,7 +55,7 @@ RUN apt-get update && apt-get -y install \
              vim
 
 # nodejs is needed by jupyterlab for widgets
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
 RUN rm -rf /var/lib/apt/lists/*
 
