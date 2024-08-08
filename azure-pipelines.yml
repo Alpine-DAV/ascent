@@ -578,7 +578,7 @@ stages:
           which cmake
           # copy example we want to test
           mkdir -p install/examples/ascent/
-          cp -r src/examples/ascent/using-with-cmake install/examples/ascent/
+          cp -r src/examples/using-with-cmake install/examples/ascent/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-cmake
           mkdir _test_build
@@ -596,7 +596,7 @@ stages:
           ls -l
           # copy example we want to test
           mkdir -p install/examples/ascent/
-          cp -r src/examples/ascent/using-with-make install/examples/ascent/
+          cp -r src/examples/using-with-make install/examples/ascent/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-make
           make
