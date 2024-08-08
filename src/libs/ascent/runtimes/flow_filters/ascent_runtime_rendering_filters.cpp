@@ -1908,11 +1908,6 @@ void generate_camera_meshes(conduit::Node &image_data){
                                                                      4,5,5,6,6,7,7,4,
                                                                      0,4,1,5,2,6,3,7};
 
-  // Initializing and normalizing up vector
-  float64_accessor up = camera["up"].value();
-  vtkm::Vec<vtkm::Float64,3> vtkm_up(up[0], up[1], up[2]);
-  vtkm::Normalize(vtkm_up);
-
   // Initializing look vector from position to the "look_at" point of interest
   float64_accessor position = camera["position"].value();
   float64_accessor look_at = camera["look_at"].value();
@@ -1920,6 +1915,21 @@ void generate_camera_meshes(conduit::Node &image_data){
   vtkm::Vec<vtkm::Float64,3> vtkm_position(position[0], position[1], position[2]);
   vtkm::Vec<vtkm::Float64,3> vtkm_look = vtkm_look_at - vtkm_position;
   vtkm::Normalize(vtkm_look);
+
+  // Initializing and normalizing up vector
+  float64_accessor up = camera["up"].value();
+  vtkm::Vec<vtkm::Float64,3> vtkm_up(up[0], up[1], up[2]);
+  
+  vtkm::Vec<vtkm::Float64,3> forward(0,0,-1);
+  double angle_between = vtkm::ACos(vtkm::Dot(forward, vtkm_look)) / vtkm::Pi() * 180;
+
+  // If the look vector has been rotated by a certain angle, ajust the camera up vector to match
+  if (angle_between != 0.0) {
+    vtkm::Vec<vtkm::Float64,3> axisOfRotation = vtkm::Cross(vtkm_look, forward);
+    vtkm_up = 
+      vtkm::Transform3DVector(vtkm::Transform3DRotate(-angle_between, axisOfRotation), vtkm_up);
+  }
+  vtkm::Normalize(vtkm_up);
 
   // Identifying points where the look vector intersects with the near and far frustum planes
   double near_dist = camera["near_plane"].to_value();
@@ -1958,20 +1968,21 @@ void generate_camera_meshes(conduit::Node &image_data){
                                             + (vtkm_side * frust_far_width * image_aspect);
 
   // Assembling frustum mesh
+  vtkm::Vec<vtkm::Float64,3> up_vector_pt = vtkm_up * (far_dist - near_dist) * 0.5 + look_near_pt;
   double x_val_frust[] = {near_frust_ll[0],near_frust_lr[0],near_frust_ur[0],near_frust_ul[0],
                           far_frust_ll[0], far_frust_lr[0], far_frust_ur[0], far_frust_ul[0],
-                          look_near_pt[0],  look_far_pt[0]};
+                          look_near_pt[0],  look_far_pt[0], up_vector_pt[0]};
   double y_val_frust[] = {near_frust_ll[1],near_frust_lr[1],near_frust_ur[1],near_frust_ul[1],
                           far_frust_ll[1], far_frust_lr[1], far_frust_ur[1], far_frust_ul[1],
-                          look_near_pt[1],  look_far_pt[1]};
+                          look_near_pt[1],  look_far_pt[1], up_vector_pt[1]};
   double z_val_frust[] = {near_frust_ll[2],near_frust_lr[2],near_frust_ur[2],near_frust_ul[2],
                           far_frust_ll[2], far_frust_lr[2], far_frust_ur[2], far_frust_ul[2],
-                          look_near_pt[2],  look_far_pt[2]};
+                          look_near_pt[2],  look_far_pt[2], up_vector_pt[2]};
   
   cam_frust["coordsets/camera_frustum_coords/type"] = "explicit";
-  cam_frust["coordsets/camera_frustum_coords/values/x"].set(x_val_frust, 10);
-  cam_frust["coordsets/camera_frustum_coords/values/y"].set(y_val_frust, 10);
-  cam_frust["coordsets/camera_frustum_coords/values/z"].set(z_val_frust, 10);
+  cam_frust["coordsets/camera_frustum_coords/values/x"].set(x_val_frust, 11);
+  cam_frust["coordsets/camera_frustum_coords/values/y"].set(y_val_frust, 11);
+  cam_frust["coordsets/camera_frustum_coords/values/z"].set(z_val_frust, 11);
 
   cam_frust["topologies/camera_frustum_topo/type"] = "unstructured";
   cam_frust["topologies/camera_frustum_topo/coordset"] = "camera_frustum_coords";
@@ -1979,7 +1990,7 @@ void generate_camera_meshes(conduit::Node &image_data){
   cam_frust["topologies/camera_frustum_topo/elements/connectivity"] = {0,1,1,2,2,3,3,0, // Near plane
                                                                        4,5,5,6,6,7,7,4, // Far plane
                                                                        0,4,1,5,2,6,3,7, // Connect
-                                                                       8,9}; // Look Vector
+                                                                       8,9,8,10}; // Look Vector
 
   cam_frust["topologies/clipping_planes_topo/type"] = "unstructured";
   cam_frust["topologies/clipping_planes_topo/coordset"] = "camera_frustum_coords";
@@ -1990,8 +2001,6 @@ void generate_camera_meshes(conduit::Node &image_data){
                                                                        2,3,7,6,  // Upper plane
                                                                        0,3,7,4,  // Left plane
                                                                        1,2,6,5}; // Right plane
-
-  image_data.print();
 }
 
 //-----------------------------------------------------------------------------
