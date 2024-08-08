@@ -58,7 +58,6 @@
 #endif
 
 #include <stdio.h>
-#include <math.h>
 
 using namespace conduit;
 using namespace std;

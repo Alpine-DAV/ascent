@@ -18,7 +18,6 @@
 #include <iostream>
 #include <math.h>
 
-#include <conduit_relay.hpp>
 #include <conduit_blueprint.hpp>
 
 #include "t_config.hpp"
