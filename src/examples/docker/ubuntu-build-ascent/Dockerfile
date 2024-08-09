@@ -55,7 +55,7 @@ RUN apt-get update && apt-get -y install \
              vim
 
 # nodejs is needed by jupyterlab for widgets
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -80,7 +80,7 @@ RUN ln -s /install/ascent-checkout /ascent/install
 # symlink proxies for easy access next to jupyter notebooks
 RUN ln -s /ascent/install/examples/ascent/proxies/ /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/
 # symlink notebooks to shorter root path
-RUN ln -s /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/ /tutorial_notebooks
+RUN ln -s /ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/ /tutorial
 
 # change perms of build results
 RUN chmod a+rwX /*.sh
@@ -139,4 +139,4 @@ RUN sudo chmod 777 /home/user/ascent_docker_run_jupyterlab.sh
 EXPOSE 8888
 
 # default setup -- launch jupyter lab
-CMD sudo service ssh start && cd /tutorial_notebooks/ && /home/user/ascent_docker_run_jupyterlab.sh
+CMD sudo service ssh start && cd /tutorial/ && /home/user/ascent_docker_run_jupyterlab.sh

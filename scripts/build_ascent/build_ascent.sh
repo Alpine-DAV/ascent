@@ -39,6 +39,7 @@ build_shared_libs="${build_shared_libs:=ON}"
 build_zlib="${build_zlib:=true}"
 build_hdf5="${build_hdf5:=true}"
 build_pyvenv="${build_pyvenv:=false}"
+build_caliper="${build_caliper:=false}"
 build_silo="${build_silo:=true}"
 build_conduit="${build_conduit:=true}"
 build_vtkm="${build_vtkm:=true}"
@@ -127,6 +128,7 @@ root_dir=$(abs_path ${root_dir})
 script_dir=$(abs_path "$(dirname "${BASH_SOURCE[0]}")")
 build_dir=$(ospath ${root_dir}/build)
 source_dir=$(ospath ${root_dir}/source)
+
 
 # root_dir is where we will build and install
 # override with `prefix` env var
@@ -328,7 +330,7 @@ fi # build_silo
 ############################
 # Python Virtual Env
 ############################
-python_exe=python3
+python_exe="${python_exe:=python3}"
 venv_install_dir=$(ospath ${install_dir}/python-venv/)
 venv_python_exe=$(ospath ${venv_install_dir}/bin/python3)
 venv_sphinx_exe=$(ospath ${venv_install_dir}/bin/sphinx-build)
@@ -349,10 +351,69 @@ else
 fi # build_pyvenv
 
 ################
+# Caliper
+################
+caliper_version=2.11.0
+caliper_src_dir=$(ospath ${source_dir}/Caliper-${caliper_version})
+caliper_build_dir=$(ospath ${build_dir}/caliper-${caliper_version}/)
+caliper_install_dir=$(ospath ${install_dir}/caliper-${caliper_version}/)
+caliper_tarball=$(ospath ${source_dir}/caliper-${caliper_version}-src-with-blt.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${caliper_install_dir} ]; then
+if ${build_caliper}; then
+if [ ! -d ${caliper_src_dir} ]; then
+  echo "**** Downloading ${caliper_tarball}"
+  curl -L https://github.com/LLNL/Caliper/archive/refs/tags/v${caliper_version}.tar.gz -o ${caliper_tarball}
+  tar ${tar_extra_args} -xzf ${caliper_tarball} -C ${source_dir}
+  # windows specifc patch
+  cd  ${caliper_src_dir}
+  if [[ "$build_windows" == "ON" ]]; then
+    patch -p1 < ${script_dir}/2024_08_01_caliper-win-smaller-opts.patch
+  fi
+  cd ${root_dir}
+fi
+
+#
+# Note: Caliper has optional Umpire support, 
+# if we want to support in the future, we will need to build umpire first
+#
+
+# -DWITH_CUPTI=ON -DWITH_NVTX=ON -DCUDA_TOOLKIT_ROOT_DIR={path} -DCUPTI_PREFIX={path}
+# -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX={path}
+
+caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+
+caliper_extra_cmake_args=""
+if [[ "$build_windows" == "ON" ]]; then
+  caliper_extra_cmake_args="${caliper_windows_cmake_flags}"
+fi 
+
+echo "**** Configuring Caliper ${caliper_version}"
+cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
+  -DCMAKE_INSTALL_PREFIX=${caliper_install_dir} \
+  -DWITH_TOOLS=OFF \
+  -DWITH_MPI=${enable_mpi} ${caliper_windows_cmake_flags}
+
+echo "**** Building Caliper ${caliper_version}"
+cmake --build ${caliper_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Caliper ${caliper_version}"
+cmake --install ${caliper_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Caliper build, install found at: ${caliper_install_dir}"
+fi # build_caliper
+
+
+################
 # Conduit
 ################
 conduit_version=v0.9.2
-conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version}/src)
+conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
 conduit_tarball=$(ospath ${source_dir}/conduit-${conduit_version}-src-with-blt.tar.gz)
@@ -366,6 +427,13 @@ if [ ! -d ${conduit_src_dir} ]; then
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
       --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
+  # caliper vs adiak patch
+  if ${build_caliper}; then
+      cd ${conduit_src_dir}
+      echo ${conduit_src_dir}
+      patch -p 1 < ${script_dir}/2024_08_01_conduit-pr1311-detect-if-caliper-needs-adiak.patch
+      cd ${root_dir}
+  fi
 fi
 
 #
@@ -377,13 +445,16 @@ if ${build_pyvenv}; then
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSPHINX_EXECUTABLE=${venv_sphinx_exe}"
 fi
 
+if ${build_caliper}; then
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DCALIPER_DIR=${caliper_install_dir}"
+fi
+
 if ${build_silo}; then
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSILO_DIR=${silo_install_dir}"
 fi
 
-
 echo "**** Configuring Conduit ${conduit_version}"
-cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
+cmake -S ${conduit_src_dir}/src -B ${conduit_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -836,6 +907,9 @@ if ${build_pyvenv}; then
 echo 'set(PYTHON_EXECUTABLE ' ${venv_python_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DOCS ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(SPHINX_EXECUTABLE ' ${venv_sphinx_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+if ${build_caliper}; then
+  echo 'set(CALIPER_DIR ' ${caliper_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 echo 'set(BLT_CXX_STD c++14 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
