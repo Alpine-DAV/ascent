@@ -2986,8 +2986,8 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
+
+        ASCENT_INFO("Ascent support disabled, skipping camera frustum mesh tests");
 
         return;
     }
@@ -3004,7 +3004,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+    ASCENT_INFO("Testing 3D rendering of camera frustum meshes");
 
     //
     // Create the actions.
