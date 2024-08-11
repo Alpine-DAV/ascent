@@ -52,6 +52,7 @@ jobs:
             enable_fortran=ON \
             enable_tests=OFF \
             enable_verbose=OFF \
+            build_caliper=true \
             build_ascent=false \
             build_jobs=2 \
             ./scripts/build_ascent/build_ascent.sh

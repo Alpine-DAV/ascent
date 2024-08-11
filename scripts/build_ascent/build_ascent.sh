@@ -39,6 +39,8 @@ build_shared_libs="${build_shared_libs:=ON}"
 build_zlib="${build_zlib:=true}"
 build_hdf5="${build_hdf5:=true}"
 build_pyvenv="${build_pyvenv:=false}"
+build_caliper="${build_caliper:=false}"
+build_silo="${build_silo:=true}"
 build_conduit="${build_conduit:=true}"
 build_vtkm="${build_vtkm:=true}"
 build_camp="${build_camp:=true}"
@@ -126,6 +128,7 @@ root_dir=$(abs_path ${root_dir})
 script_dir=$(abs_path "$(dirname "${BASH_SOURCE[0]}")")
 build_dir=$(ospath ${root_dir}/build)
 source_dir=$(ospath ${root_dir}/source)
+
 
 # root_dir is where we will build and install
 # override with `prefix` env var
@@ -267,10 +270,67 @@ else
   echo "**** Skipping HDF5 build, install found at: ${hdf5_install_dir}"
 fi # build_hdf5
 
+################
+# Silo
+################
+silo_version=4.11.1
+silo_src_dir=$(ospath ${source_dir}/Silo-${silo_version})
+silo_build_dir=$(ospath ${build_dir}/silo-${silo_version}/)
+silo_install_dir=$(ospath ${install_dir}/silo-${silo_version}/)
+silo_tarball=$(ospath ${source_dir}/silo-${silo_version}.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${silo_install_dir} ]; then
+if ${build_silo}; then
+if [ ! -d ${silo_src_dir} ]; then
+  echo "**** Downloading ${silo_tarball}"
+  curl -L https://github.com/LLNL/Silo/archive/refs/tags/${silo_version}.tar.gz -o ${silo_tarball}
+  # untar and avoid symlinks (which windows despises)
+  tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir} \
+      --exclude="Silo-${silo_version}/config-site/*" \
+      --exclude="Silo-${silo_version}/README.md"
+  # apply silo patches
+  cd  ${silo_src_dir}
+  patch -p1 < ${script_dir}/2024_07_25_silo_4_11_cmake_fix.patch
+
+  # windows specifc patch
+  if [[ "$build_windows" == "ON" ]]; then
+    patch -p1 < ${script_dir}/2024_07_29_silo-pr389-win32-bugfix.patch
+  fi 
+
+  cd ${root_dir}
+fi
+
+
+echo "**** Configuring Silo ${silo_version}"
+cmake -S ${silo_src_dir} -B ${silo_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DCMAKE_INSTALL_PREFIX=${silo_install_dir} \
+  -DSILO_ENABLE_SHARED=${build_shared_libs} \
+  -DCMAKE_C_FLAGS=-Doff64_t=off_t \
+  -DSILO_ENABLE_HDF5=ON \
+  -DSILO_ENABLE_TESTS=OFF \
+  -DSILO_BUILD_FOR_BSD_LICENSE=ON \
+  -DSILO_ENABLE_FORTRAN=OFF \
+  -DSILO_HDF5_DIR=${hdf5_install_dir}/cmake/ \
+  -DCMAKE_PREFIX_PATH=${zlib_install_dir}
+
+
+echo "**** Building Silo ${silo_version}"
+cmake --build ${silo_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Silo ${silo_version}"
+cmake --install ${silo_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Silo build, install found at: ${silo_install_dir}"
+fi # build_silo
+
 ############################
 # Python Virtual Env
 ############################
-python_exe=python3
+python_exe="${python_exe:=python3}"
 venv_install_dir=$(ospath ${install_dir}/python-venv/)
 venv_python_exe=$(ospath ${venv_install_dir}/bin/python3)
 venv_sphinx_exe=$(ospath ${venv_install_dir}/bin/sphinx-build)
@@ -291,10 +351,69 @@ else
 fi # build_pyvenv
 
 ################
+# Caliper
+################
+caliper_version=2.11.0
+caliper_src_dir=$(ospath ${source_dir}/Caliper-${caliper_version})
+caliper_build_dir=$(ospath ${build_dir}/caliper-${caliper_version}/)
+caliper_install_dir=$(ospath ${install_dir}/caliper-${caliper_version}/)
+caliper_tarball=$(ospath ${source_dir}/caliper-${caliper_version}-src-with-blt.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${caliper_install_dir} ]; then
+if ${build_caliper}; then
+if [ ! -d ${caliper_src_dir} ]; then
+  echo "**** Downloading ${caliper_tarball}"
+  curl -L https://github.com/LLNL/Caliper/archive/refs/tags/v${caliper_version}.tar.gz -o ${caliper_tarball}
+  tar ${tar_extra_args} -xzf ${caliper_tarball} -C ${source_dir}
+  # windows specifc patch
+  cd  ${caliper_src_dir}
+  if [[ "$build_windows" == "ON" ]]; then
+    patch -p1 < ${script_dir}/2024_08_01_caliper-win-smaller-opts.patch
+  fi
+  cd ${root_dir}
+fi
+
+#
+# Note: Caliper has optional Umpire support, 
+# if we want to support in the future, we will need to build umpire first
+#
+
+# -DWITH_CUPTI=ON -DWITH_NVTX=ON -DCUDA_TOOLKIT_ROOT_DIR={path} -DCUPTI_PREFIX={path}
+# -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX={path}
+
+caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+
+caliper_extra_cmake_args=""
+if [[ "$build_windows" == "ON" ]]; then
+  caliper_extra_cmake_args="${caliper_windows_cmake_flags}"
+fi 
+
+echo "**** Configuring Caliper ${caliper_version}"
+cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
+  -DCMAKE_INSTALL_PREFIX=${caliper_install_dir} \
+  -DWITH_TOOLS=OFF \
+  -DWITH_MPI=${enable_mpi} ${caliper_windows_cmake_flags}
+
+echo "**** Building Caliper ${caliper_version}"
+cmake --build ${caliper_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Caliper ${caliper_version}"
+cmake --install ${caliper_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping Caliper build, install found at: ${caliper_install_dir}"
+fi # build_caliper
+
+
+################
 # Conduit
 ################
 conduit_version=v0.9.2
-conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version}/src)
+conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
 conduit_tarball=$(ospath ${source_dir}/conduit-${conduit_version}-src-with-blt.tar.gz)
@@ -305,20 +424,37 @@ if ${build_conduit}; then
 if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Downloading ${conduit_tarball}"
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/conduit-${conduit_version}-src-with-blt.tar.gz -o ${conduit_tarball}
-  tar ${tar_extra_args} --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" -x -v -f ${conduit_tarball} -C ${source_dir}
+  # untar and avoid symlinks (which windows despises)
+  tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
+      --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
+  # caliper vs adiak patch
+  if ${build_caliper}; then
+      cd ${conduit_src_dir}
+      echo ${conduit_src_dir}
+      patch -p 1 < ${script_dir}/2024_08_01_conduit-pr1311-detect-if-caliper-needs-adiak.patch
+      cd ${root_dir}
+  fi
 fi
 
 #
-# python settings
+# extrat cmake args
 #
-conduit_py_cmake_opts=-DENABLE_PYTHON=${enable_python}
+conduit_extra_cmake_opts=-DENABLE_PYTHON=${enable_python}
 if ${build_pyvenv}; then
-  conduit_py_cmake_opts="${conduit_py_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
-  conduit_py_cmake_opts="${conduit_py_cmake_opts} -DSPHINX_EXECUTABLE=${venv_sphinx_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSPHINX_EXECUTABLE=${venv_sphinx_exe}"
+fi
+
+if ${build_caliper}; then
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DCALIPER_DIR=${caliper_install_dir}"
+fi
+
+if ${build_silo}; then
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSILO_DIR=${silo_install_dir}"
 fi
 
 echo "**** Configuring Conduit ${conduit_version}"
-cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
+cmake -S ${conduit_src_dir}/src -B ${conduit_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
@@ -326,8 +462,8 @@ cmake -S ${conduit_src_dir} -B ${conduit_build_dir} ${cmake_compiler_settings} \
   -DENABLE_FORTRAN=${enable_fortran} \
   -DENABLE_MPI=${enable_mpi} \
   -DENABLE_FIND_MPI=${enable_find_mpi} \
-   ${conduit_py_cmake_opts} \
-  -DENABLE_TESTS=${enable_tests} \
+   ${conduit_extra_cmake_opts} \
+  -DENABLE_TESTS=OFF \
   -DHDF5_DIR=${hdf5_install_dir} \
   -DZLIB_DIR=${zlib_install_dir}
 
@@ -442,8 +578,8 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DVTKm_ENABLE_MPI=${enable_mpi} \
   -DVTKm_ENABLE_OPENMP=${enable_openmp}\
   -DVTKm_ENABLE_RENDERING=ON \
-  -DVTKm_ENABLE_TESTING=${enable_tests} \
-  -DBUILD_TESTING=${enable_tests} \
+  -DVTKm_ENABLE_TESTING=OFF\
+  -DBUILD_TESTING=OFF \
   -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
@@ -494,8 +630,8 @@ cmake -S ${camp_src_dir} -B ${camp_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} ${camp_extra_cmake_args} \
+  -DENABLE_TESTS=OFF \
+  -DENABLE_EXAMPLES=OFF ${camp_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${camp_install_dir}
 
 echo "**** Building Camp ${camp_version}"
@@ -547,10 +683,10 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=${enable_tests} \
-  -DRAJA_ENABLE_TESTS=${enable_tests} \
-  -DENABLE_EXAMPLES=${enable_tests} \
-  -DENABLE_EXERCISES=${enable_tests} ${raja_extra_cmake_args} \
+  -DENABLE_TESTS=OFF \
+  -DRAJA_ENABLE_TESTS=OFF \
+  -DENABLE_EXAMPLES=OFF \
+  -DENABLE_EXERCISES=OFF ${raja_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir} \
   -DRAJA_ENABLE_VECTORIZATION=${raja_enable_vectorization}
 
@@ -606,9 +742,9 @@ cmake -S ${umpire_src_dir} -B ${umpire_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -Dcamp_DIR=${camp_install_dir} \
   -DENABLE_OPENMP=${enable_openmp} \
-  -DENABLE_TESTS=${enable_tests} \
+  -DENABLE_TESTS=OFF \
   -DUMPIRE_ENABLE_TOOLS=Off \
-  -DUMPIRE_ENABLE_BENCHMARKS=${enable_tests} ${umpire_extra_cmake_args} \
+  -DUMPIRE_ENABLE_BENCHMARKS=OFF ${umpire_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${umpire_install_dir}
 
 echo "**** Building Umpire ${umpire_version}"
@@ -646,7 +782,10 @@ if [ ! -d ${mfem_src_dir} ]; then
   tar ${tar_extra_args} -xzf ${mfem_tarball} -C ${source_dir}
 fi
 
-
+#
+# Note: MFEM MPI requires Hypre and Metis
+#  -DMFEM_USE_MPI=${enable_mpi} \
+  
 echo "**** Configuring MFEM ${mfem_version}"
 cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
@@ -654,8 +793,8 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DMFEM_USE_CONDUIT=ON ${mfem_extra_cmake_args} \
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
-  -DMFEM_ENABLE_TESTING=${enable_tests} \
-  -DMFEM_ENABLE_EXAMPLES=${enable_tests} \
+  -DMFEM_ENABLE_TESTING=OFF \
+  -DMFEM_ENABLE_EXAMPLES=OFF \
   -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
 
 echo "**** Building MFEM ${mfem_version}"
@@ -691,7 +830,7 @@ echo "**** Configuring Catalyst ${catalyst_version}"
 cmake -S ${catalyst_src_dir} -B ${catalyst_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DCATALYST_BUILD_TESTING=${enable_tests} \
+  -DCATALYST_BUILD_TESTING=OFF \
   -DCATALYST_USE_MPI=${enable_mpi} \
   -DCMAKE_INSTALL_PREFIX=${catalyst_install_dir} \
 
@@ -768,6 +907,9 @@ if ${build_pyvenv}; then
 echo 'set(PYTHON_EXECUTABLE ' ${venv_python_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DOCS ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(SPHINX_EXECUTABLE ' ${venv_sphinx_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+if ${build_caliper}; then
+  echo 'set(CALIPER_DIR ' ${caliper_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 echo 'set(BLT_CXX_STD c++14 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake

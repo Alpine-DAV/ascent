@@ -66,11 +66,12 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_queries
                 t_ascent_failed_pipeline
                 t_ascent_commands
+                t_ascent_steering
                 t_ascent_triggers
                 t_ascent_blueprint_reductions
                 t_ascent_sampling
-		t_ascent_uniform_grid
-		t_ascent_mir
+		        t_ascent_uniform_grid
+		        t_ascent_mir
                 t_ascent_hola)
 
 set(DEVICE_TESTS  t_ascent_execution_policies
