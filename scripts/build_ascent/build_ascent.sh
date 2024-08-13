@@ -382,12 +382,16 @@ fi
 # -DWITH_CUPTI=ON -DWITH_NVTX=ON -DCUDA_TOOLKIT_ROOT_DIR={path} -DCUPTI_PREFIX={path}
 # -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX={path}
 
-caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DWITH_TOOLS=OFF"
 
 caliper_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   caliper_extra_cmake_args="${caliper_windows_cmake_flags}"
 fi 
+
+if [[ "$enable_hip" == "ON" ]]; then
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX=${ROCM_PATH}"
+fi
 
 echo "**** Configuring Caliper ${caliper_version}"
 cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
@@ -395,8 +399,7 @@ cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DCMAKE_INSTALL_PREFIX=${caliper_install_dir} \
-  -DWITH_TOOLS=OFF \
-  -DWITH_MPI=${enable_mpi} ${caliper_windows_cmake_flags}
+  -DWITH_MPI=${enable_mpi} ${caliper_extra_cmake_args}
 
 echo "**** Building Caliper ${caliper_version}"
 cmake --build ${caliper_build_dir} --config ${build_config} -j${build_jobs}
@@ -483,7 +486,7 @@ fi # build_conduit
 #########################
 kokkos_version=3.7.02
 kokkos_src_dir=$(ospath ${source_dir}/kokkos-${kokkos_version})
-kokkos_build_dir=$(ospath ${build_dir}kokkos-${kokkos_version})
+kokkos_build_dir=$(ospath ${build_dir}/kokkos-${kokkos_version})
 kokkos_install_dir=$(ospath ${install_dir}/kokkos-${kokkos_version}/)
 kokkos_tarball=$(ospath ${source_dir}/kokkos-${kokkos_version}.tar.gz)
 
