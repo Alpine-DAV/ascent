@@ -350,6 +350,11 @@ else
   echo "**** Skipping Python venv build, install found at: ${venv_install_dir}"
 fi # build_pyvenv
 
+if ${build_pyvenv}; then
+    venv_python_ver=`${venv_python_exe} -c "import sys;print('{0}.{1}'.format(sys.version_info.major, sys.version_info.minor))"`
+    venv_python_site_pkgs_dir=${venv_install_dir}/lib/python${venv_python_ver}/site-packages
+fi
+
 ################
 # Caliper
 ################
@@ -446,6 +451,7 @@ conduit_extra_cmake_opts=-DENABLE_PYTHON=${enable_python}
 if ${build_pyvenv}; then
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSPHINX_EXECUTABLE=${venv_sphinx_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DPYTHON_MODULE_INSTALL_PREFIX=${venv_python_site_pkgs_dir}"
 fi
 
 if ${build_caliper}; then
@@ -908,6 +914,7 @@ echo 'set(ENABLE_FORTRAN ' ${enable_fortran} ' CACHE BOOL "")' >> ${root_dir}/as
 echo 'set(ENABLE_PYTHON ' ${enable_python} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 if ${build_pyvenv}; then
 echo 'set(PYTHON_EXECUTABLE ' ${venv_python_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(PYTHON_MODULE_INSTALL_PREFIX ' ${venv_python_site_pkgs_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DOCS ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(SPHINX_EXECUTABLE ' ${venv_sphinx_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
