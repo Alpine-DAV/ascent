@@ -101,6 +101,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_uniform_grid
                t_ascent_mpi_vtk_file_extract
                t_ascent_mpi_add_ranks
+               t_ascent_mpi_add_domain_ids
                t_ascent_mpi_unique_ids)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually

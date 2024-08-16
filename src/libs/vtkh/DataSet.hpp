@@ -98,6 +98,7 @@ public:
   // add a scalar field to this data set with a constant value
   void AddConstantPointField(const vtkm::Float32 value, const std::string fieldname);
   void AddLinearPointField(const vtkm::Float32 value, const std::string fieldname);
+  void AddDomainIdField(const std::string fieldname);
 
   bool HasDomainId(const vtkm::Id &domain_id) const;
   /*! \brief IsStructured returns true if all domains, globally,
