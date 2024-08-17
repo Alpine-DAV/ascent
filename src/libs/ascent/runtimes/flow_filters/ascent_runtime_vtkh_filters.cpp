@@ -1362,7 +1362,7 @@ VTKHAddDomains::execute()
 
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string output_field = "mpi_rank";
+    std::string output_field = "domain_ids";
     if(params().has_child("output"))
     {
       output_field = params()["output"].as_string();
