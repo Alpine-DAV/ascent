@@ -984,6 +984,53 @@ The output field of the MIR Filter will be the name of the material set and can 
   params["iterations"] = 8;      //default: 0
   params["max_error"] = 0.00001; //default: 0.00001
 
+Add MPI Ranks as Field Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ascent provides a filter to add MPI Rank information to a mesh. 
+If the input data has multiple topolgies, the user must specify which topology to add the new field to.
+The user also has the option of specifying the output name for the new field.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "add_mpi_ranks";
+  //params optional
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["output"] = "mpi_ranks";//default: "mpi_ranks"
+  params["topology"] = "topo";   //required if data has multiple topologies
+
+.. _addmpiranks:
+
+..  figure:: ../images/add_mpi_ranks.png
+    :scale: 50 %
+    :align: center
+
+    An example of creating a pseudocolor plot of MPI ranks. 
+
+Add Domain IDs as Field Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ascent provides a filter to add Domain ID information to a mesh. 
+If the input data has multiple topolgies, the user must specify which topology to add the new field to.  
+The user also has the option of specifying the output name for the new field.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "add_domain_ids";
+  //params optional
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["output"] = "domain_ids";//default: "domain_ids"
+  params["topology"] = "topo";   //required if data has multiple topologies
+
+.. _adddomainids:
+
+..  figure:: ../images/add_domain_ids.png
+    :scale: 50 %
+    :align: center
+
+    An example of creating a pseudocolor plot of Domain IDs. 
 
 Partitioning
 ~~~~~~~~~~~~
