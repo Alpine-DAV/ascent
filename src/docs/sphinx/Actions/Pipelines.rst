@@ -997,7 +997,7 @@ The user also has the option of specifying the output name for the new field.
   pipelines["pl1/f1/type"] = "add_mpi_ranks";
   //params optional
   conduit::Node &params = pipelines["pl1/f1/params"];
-  params["output"] = "mpi_ranks";//default: "mpi_ranks"
+  params["output"] = "ranks";//default: "mpi_ranks"
   params["topology"] = "topo";   //required if data has multiple topologies
 
 .. _addmpiranks:
