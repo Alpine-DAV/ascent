@@ -986,7 +986,7 @@ The output field of the MIR Filter will be the name of the material set and can 
 
 Add MPI Ranks as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Ascent provides a filter to add MPI Rank information to a mesh. 
+Ascent provides a filter to add MPI rank information to a mesh. 
 If the input data has multiple topolgies, the user must specify which topology to add the new field to.
 The user also has the option of specifying the output name for the new field.
 
@@ -1010,7 +1010,7 @@ The user also has the option of specifying the output name for the new field.
 
 Add Domain IDs as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Ascent provides a filter to add Domain ID information to a mesh. 
+Ascent provides a filter to add domain ID information to a mesh. 
 If the input data has multiple topolgies, the user must specify which topology to add the new field to.  
 The user also has the option of specifying the output name for the new field.
 
@@ -1030,7 +1030,7 @@ The user also has the option of specifying the output name for the new field.
     :scale: 50 %
     :align: center
 
-    An example of creating a pseudocolor plot of Domain IDs. 
+    An example of creating a pseudocolor plot of domain IDs. 
 
 Partitioning
 ~~~~~~~~~~~~
