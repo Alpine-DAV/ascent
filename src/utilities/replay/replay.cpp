@@ -156,6 +156,27 @@ void trim(std::string &s)
              s.end());
 }
 
+conduit::Node load_actions(const std::string &file_name){
+  std::string curr, next;
+  conduit::utils::rsplit_string(file_name, ".", curr, next);
+
+  conduit::Node actions;
+  if(conduit::utils::is_file(file_name)){
+    try
+    {
+      std::string protocol = curr=="yaml" ? "yaml" : "json";
+      actions.load(file_name, protocol);
+    }
+    catch(conduit::Error &e)
+    {
+      // Raise Error
+      ASCENT_ERROR("Failed to load actions file: " << file_name
+                    << "\n" << e.message());
+    }
+  }
+  return actions;
+}
+
 //---------------------------------------------------------------------------//
 int
 main(int argc, char *argv[])
@@ -197,16 +218,15 @@ main(int argc, char *argv[])
   conduit::Node replay_data;
   //replay_data.print();
   conduit::Node ascent_opts;
-  ascent_opts["actions_file"] = options.m_actions_file;
   ascent_opts["ascent_info"] = "verbose";
 #if defined(ASCENT_REPLAY_MPI)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
 
   //
-  // Blank actions to be populated from actions file
+  // Populate actions with actions file
   //
-  conduit::Node actions;
+  conduit::Node actions = load_actions(options.m_actions_file);
 
   ascent::Ascent ascent;
   ascent.open(ascent_opts);
