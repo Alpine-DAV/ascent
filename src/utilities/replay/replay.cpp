@@ -156,24 +156,63 @@ void trim(std::string &s)
              s.end());
 }
 
-conduit::Node load_actions(const std::string &file_name){
-  std::string curr, next;
-  conduit::utils::rsplit_string(file_name, ".", curr, next);
-
+conduit::Node load_actions(const std::string &file_name, int mpi_comm_id){
   conduit::Node actions;
+
+  int comm_size = 1;
+  int rank = 0;
+
+#if defined(ASCENT_REPLAY_MPI)
+  if(mpi_comm_id == -1)
+  {
+    // do nothing, an error will be thrown later
+    // so we can respect the exception handling
+    return actions;
+  }
+  MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+  MPI_Comm_size(mpi_comm, &comm_size);
+  MPI_Comm_rank(mpi_comm, &rank);
+#endif
+  
+  bool has_file = false;
+
   if(conduit::utils::is_file(file_name)){
+    has_file = true;
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Bcast(&has_file, 1, MPI_BOOL, 0, mpi_comm);
+#endif
+
+  bool actions_file_valid = false;
+  std::string file_load_error_msg = "";
+
+  if(has_file && rank==0){
     try
     {
+      std::string curr, next;
+      conduit::utils::rsplit_string(file_name, ".", curr, next);
+
       std::string protocol = curr=="yaml" ? "yaml" : "json";
       actions.load(file_name, protocol);
+      actions_file_valid = true;
     }
     catch(conduit::Error &e)
     {
-      // Raise Error
-      ASCENT_ERROR("Failed to load actions file: " << file_name
-                    << "\n" << e.message());
+      file_load_error_msg = e.message();
     }
   }
+
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Bcast(&actions_file_valid, 1, MPI_BOOL, 0, mpi_comm);
+#endif
+
+  if(!actions_file_valid){
+    // Raise Error
+    ASCENT_ERROR("Failed to load actions file: " << file_name
+                  << "\n" << file_load_error_msg);
+  }
+
   return actions;
 }
 
@@ -226,7 +265,8 @@ main(int argc, char *argv[])
   //
   // Populate actions with actions file
   //
-  conduit::Node actions = load_actions(options.m_actions_file);
+  int mpi_comm = ascent_opts.has_child("mpi_comm") ? ascent_opts["mpi_comm"].to_int() : 0;
+  conduit::Node actions = load_actions(options.m_actions_file, mpi_comm);
 
   ascent::Ascent ascent;
   ascent.open(ascent_opts);
