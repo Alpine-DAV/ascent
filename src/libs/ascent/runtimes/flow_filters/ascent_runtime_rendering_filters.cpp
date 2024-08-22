@@ -35,6 +35,7 @@
 #include <ascent_resources.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
+#include <utils/ascent_annotations.hpp>
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
@@ -1068,6 +1069,7 @@ void
 DefaultRender::execute()
 {
 
+    ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::execute" );
     if(!input(0).check_type<vtkm::Bounds>())
     {
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
@@ -1190,10 +1192,12 @@ DefaultRender::execute()
           }
           std::string db_name = render_node["db_name"].as_string();
           bool exists = detail::CinemaDatabases::db_exists(db_name);
+          ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::Cinema::create_databases" );
           if(!exists)
           {
             detail::CinemaDatabases::create_db(*bounds,render_node, db_name, output_path);
           }
+          ASCENT_ANNOTATE_MARK_END( "DefaultRender::Cinema::create_databases" );
 
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
           // add this to the extract results in the registry
@@ -1214,10 +1218,16 @@ DefaultRender::execute()
           int image_height;
           parse_image_dims(render_node, image_width, image_height);
 
+          ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::Cinema::manager" );
           manager.set_bounds(scene_bounds);
           manager.add_time_step();
+          ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::Cinema::manager.fill_renders" );
           manager.fill_renders(renders, render_node);
+          ASCENT_ANNOTATE_MARK_END( "DefaultRender::Cinema::manager.fill_renders" );
+          ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::Cinema::manager.write_metadata" );
           manager.write_metadata();
+          ASCENT_ANNOTATE_MARK_END( "DefaultRender::Cinema::manager.write_metadata" );
+          ASCENT_ANNOTATE_MARK_END( "DefaultRender::Cinema::manager" );
         }
         else
         {
@@ -1277,7 +1287,9 @@ DefaultRender::execute()
             DataObject *source
               = graph().workspace().registry().fetch<DataObject>("source_object");
             
+            ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::auto_cam::vtkh_col" );
             std::shared_ptr<VTKHCollection> collection = source->as_vtkh_collection();
+            ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::auto_cam::vtkh_col" );
       
 	    if(!render_node.has_path("auto_camera/field"))
               ASCENT_ERROR("Auto Camera must specify a 'field'");
@@ -1322,15 +1334,19 @@ DefaultRender::execute()
             auto_cam.SetField(field_name);
             auto_cam.SetMetric(metric);
             auto_cam.SetNumSamples(samples);
+            ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::auto_cam.Update" );
             auto_cam.Update();
+            ASCENT_ANNOTATE_MARK_END( "DefaultRender::auto_cam.Update" );
             
             vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
             *camera = auto_cam.GetCamera();
+            ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::auto_cam::MakeRender" );
 	    vtkh::Render render = vtkh::MakeRender(width,
                                       height,
                                       scene_bounds,
 	    			      *camera,
                                       image_name);
+            ASCENT_ANNOTATE_MARK_END( "DefaultRender::auto_cam::MakeRender" );
             renders->push_back(render);
 	    delete camera;
 
@@ -1370,11 +1386,15 @@ DefaultRender::execute()
         }
       }
       
+      ASCENT_ANNOTATE_MARK_BEGIN( "DefaultRender::MakeRender" );
+
       vtkh::Render render = vtkh::MakeRender(1024,
                             1024,
                             scene_bounds,
                             image_name);
       
+      ASCENT_ANNOTATE_MARK_END( "DefaultRender::MakeRender" );
+
       Node meta = Metadata::n_metadata;
       if(meta.has_path("comments"))
       {
@@ -1391,6 +1411,7 @@ DefaultRender::execute()
       renders->push_back(render);
     }
     set_output<std::vector<vtkh::Render>>(renders);
+    ASCENT_ANNOTATE_MARK_END( "DefaultRender::execute" );
 }
 
 //-----------------------------------------------------------------------------
@@ -1626,6 +1647,7 @@ CreatePlot::verify_params(const conduit::Node &params,
 void
 CreatePlot::execute()
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "CreatePlot::execute" );
     if(!input(0).check_type<DataObject>())
     {
       ASCENT_ERROR("create_plot input must be a data object");
@@ -1828,6 +1850,7 @@ CreatePlot::execute()
 
     set_output<detail::RendererContainer>(container);
 
+    ASCENT_ANNOTATE_MARK_END( "CreatePlot::execute" );
 }
 
 
@@ -2006,6 +2029,7 @@ void generate_camera_meshes(conduit::Node &image_data){
 void
 ExecScene::execute()
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "ExecScene::execute" );
     if(!input(0).check_type<detail::AscentScene>())
     {
         ASCENT_ERROR("'scene' must be a AscentScene * instance");
@@ -2059,6 +2083,7 @@ ExecScene::execute()
       image_list->append() = image_data;
     }
 
+    ASCENT_ANNOTATE_MARK_END( "ExecScene::execute" );
 }
 //-----------------------------------------------------------------------------
 
