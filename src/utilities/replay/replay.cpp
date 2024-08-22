@@ -156,7 +156,8 @@ void trim(std::string &s)
              s.end());
 }
 
-void load_actions(conduit::Node &actions, const std::string &file_name, int mpi_comm_id){
+void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &actions)
+{
   int comm_size = 1;
   int rank = 0;
 
