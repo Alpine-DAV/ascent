@@ -45,6 +45,7 @@ include(cmake/thirdparty/SetupConduit.cmake)
 ################################
 if(CALIPER_DIR)
     include(cmake/thirdparty/SetupCaliper.cmake)
+    set(ASCENT_CALIPER_ENABLED TRUE)
 endif()
 
 ################################

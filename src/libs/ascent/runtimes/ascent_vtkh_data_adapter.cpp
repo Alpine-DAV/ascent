@@ -40,6 +40,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
 #include <ascent_mpi_utils.hpp>
+#include <utils/ascent_annotations.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 
@@ -787,6 +788,7 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
     // We must separate different topologies into
     // different vtkh data sets
 
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::BlueprintToVTKHCollection" );
     
     const int num_domains = n.number_of_children();
 //    if(num_domains == 0)
@@ -852,6 +854,8 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       res->add(dset_it.second, dset_it.first);
     }
 
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::BlueprintToVTKHCollection" );
+
     return res;
 }
 
@@ -861,6 +865,7 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
                                         const std::string &topo_name,
                                         bool zero_copy)
 {
+   ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::BlueprintToVTKHDataSet" );
 
     // treat everything as a multi-domain data set
 
@@ -911,6 +916,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                         bool zero_copy,
                                         const std::string &topo_name_str)
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::BlueprintToVTKmDataSet" );
     vtkm::cont::DataSet * result = NULL;
 
     std::string topo_name = topo_name_str;
@@ -1071,6 +1077,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
         }
     }
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::BlueprintToVTKmDataSet" );
     return result;
 }
 
@@ -1180,6 +1187,7 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
      int &neles,                     // output, number of eles
      int &nverts)                    // output, number of verts
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::UniformBlueprintToVTKmDataSet" );
     //
     // blueprint uniform coord set provides:
     //
@@ -1306,6 +1314,7 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
         nverts *= dims_k;
     }
 
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::UniformBlueprintToVTKmDataSet" );
     return result;
 }
 
@@ -1322,6 +1331,7 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet" );
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
     int x_npts = n_coords["values/x"].dtype().number_of_elements();
@@ -1425,6 +1435,8 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
         neles *= (z_npts - 1);
     }
 
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet" );
+
     return result;
 }
 
@@ -1440,6 +1452,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::StructuredBlueprintToVTKmDataSet" );
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
     nverts = n_coords["values/x"].dtype().number_of_elements();
@@ -1523,6 +1536,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
       neles = x_elems * y_elems * z_elems;
 
     }
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::StructuredBlueprintToVTKmDataSet" );
     return result;
 }
 
@@ -1538,6 +1552,7 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts (will be the same as neles)
      bool zero_copy)                 // attempt to zero copy
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet" );
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
     nverts = n_coords["values/x"].dtype().number_of_elements();
@@ -1607,6 +1622,7 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
     cellset.Fill(nverts, shape_id, indices_per, connectivity);
     neles = cellset.GetNumberOfCells();
     result->SetCellSet(cellset);
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet" );
     return result;
 }
 
@@ -1622,6 +1638,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet" );
 
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
@@ -1771,6 +1788,7 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
         neles = cell_set.GetNumberOfCells();
         result->SetCellSet(cell_set);
     }
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet" );
     return result;
 }
 
@@ -1785,6 +1803,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                           vtkm::cont::DataSet *dset,
                           bool zero_copy)                 // attempt to zero copy
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::AddField" );
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
 
     string assoc_str = n_field["association"].as_string();
@@ -1979,6 +1998,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         ASCENT_ERROR("VTKm exception:" << error.GetMessage());
     }
 
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::AddField" );
 }
 
 void
@@ -1991,6 +2011,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
                                 const int dims,
                                 bool zero_copy)                 // attempt to zero copy
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::AddVectorField" );
     string assoc_str = n_field["association"].as_string();
 
     vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
@@ -2170,6 +2191,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
         ASCENT_ERROR("VTKm exception:" << error.GetMessage());
     }
 
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::AddVectorField" );
 }
 
 void
@@ -2180,6 +2202,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                             vtkm::cont::DataSet *dset,
                             bool zero_copy)                 // attempt to zero copy
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHDataAdapter::AddMatSets" );
 
     if(!n_matset.has_child("volume_fractions"))
         ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
@@ -2555,6 +2578,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             ASCENT_ERROR("VTKm exception:" << error.GetMessage());
         }
     }   
+    ASCENT_ANNOTATE_MARK_END( "VTKHDataAdapter::AddMatSets" );
 }
 
 std::string

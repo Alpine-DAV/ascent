@@ -34,6 +34,7 @@
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 #include <ascent_data_object.hpp>
+#include <utils/ascent_annotations.hpp>
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
@@ -172,6 +173,7 @@ VTKHMarchingCubes::verify_params(const conduit::Node &params,
 void
 VTKHMarchingCubes::execute()
 {
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHMarchingCubes::execute" );
 
     if(!input(0).check_type<DataObject>())
     {
@@ -230,9 +232,13 @@ VTKHMarchingCubes::execute()
       }
     }
 
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHMarchingCubes::Update" );
     marcher.Update();
+    ASCENT_ANNOTATE_MARK_END( "VTKHMarchingCubes::Update" );
 
+    ASCENT_ANNOTATE_MARK_BEGIN( "VTKHMarchingCubes::GetOutput" );
     vtkh::DataSet *iso_output = marcher.GetOutput();
+    ASCENT_ANNOTATE_MARK_END( "VTKHMarchingCubes::GetOutput" );
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
@@ -241,6 +247,7 @@ VTKHMarchingCubes::execute()
     DataObject *res =  new DataObject(new_coll);
     delete iso_output;
     set_output<DataObject>(res);
+    ASCENT_ANNOTATE_MARK_END( "VTKHMarchingCubes::execute" );
 }
 
 //-----------------------------------------------------------------------------
