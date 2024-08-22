@@ -276,7 +276,7 @@ main(int argc, char *argv[])
   //
   int mpi_comm = ascent_opts.has_child("mpi_comm") ? ascent_opts["mpi_comm"].to_int() : -1;
   conduit::Node actions;
-  load_actions(actions, options.m_actions_file, mpi_comm);
+  load_actions(options.m_actions_file, mpi_comm, actions);
 
   ascent::Ascent ascent;
   ascent.open(ascent_opts);
