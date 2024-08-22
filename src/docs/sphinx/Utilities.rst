@@ -101,8 +101,8 @@ How Do I Use It?
 Replay executables are created in the ``utilities/replay`` directory of the installation or build.
 There are two versions of replay:
 
-* ``replay_ser``: a serial (non-MPI) version
-* ``replay_mpi``: an MPI version
+* ``ascent_replay``: a serial (non-MPI) version
+* ``ascent_replay_mpi``: an MPI version
 
 The options for replay are:
 
@@ -114,9 +114,9 @@ Example launches:
 
 .. code:: bash
 
-   ./replay_ser --root=clover.cycle_000060.root --actions=my_actions.json
-   srun -n 8 ./replay_mpi --root=clover.cycle_000060.root --actions=my_actions.json
-   srun -n 8 ./replay_mpi --cycles=cycles_list.txt --actions=my_actions.json
+   ./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.json
+   srun -n 8 ./ascent_replay_mpi --root=clover.cycle_000060.root --actions=my_actions.json
+   srun -n 8 ./ascent_replay_mpi --cycles=cycles_list.txt --actions=my_actions.json
 
 The cycles files list is a text file containing one root file per line:
 
@@ -132,7 +132,7 @@ Replay will loop over these files in the order in which they appear in the file.
 
 Domain Overloading
 ^^^^^^^^^^^^^^^^^^
-Each root file can point to any number of domains. When launching ``replay_mpi``,
+Each root file can point to any number of domains. When launching ``ascent_replay_mpi``,
 you can specify any number of ranks less than or equal to the number of domains.
 Replay will automatically domain overload. For example if there were 100 domains and
 replay is launched with 50 ranks, then each rank will load 2 domains.
@@ -266,8 +266,8 @@ paste your yaml into the site and validate if the syntax is correct.
 Running Replay
 ^^^^^^^^^^^^^^
 We have created an actions file and now we want to run it.
-We have two choices: use the mpi version ``replay_mpi`` or the serial
-version ``replay_ser``. What you use depends on the data set, but since our
+We have two choices: use the mpi version ``ascent_replay_mpi`` or the serial
+version ``ascent_replay``. What you use depends on the data set, but since our
 sample data size is small, the serial version will work just fine.
 
 
@@ -277,7 +277,7 @@ yaml actions file is called ``ascent_actions.yaml``.
 
 .. code:: bash
 
-   ./replay_ser --cycles=clover_cycles --actions=ascent_actions.yaml
+   ./ascent_replay --cycles=clover_cycles --actions=ascent_actions.yaml
 
 The result produces 20 images, but Ascent emits warnings:
 
