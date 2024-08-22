@@ -156,9 +156,7 @@ void trim(std::string &s)
              s.end());
 }
 
-conduit::Node load_actions(const std::string &file_name, int mpi_comm_id){
-  conduit::Node actions;
-
+void load_actions(conduit::Node &actions, const std::string &file_name, int mpi_comm_id){
   int comm_size = 1;
   int rank = 0;
 
@@ -167,7 +165,7 @@ conduit::Node load_actions(const std::string &file_name, int mpi_comm_id){
   {
     // do nothing, an error will be thrown later
     // so we can respect the exception handling
-    return actions;
+    return;
   }
   MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
   MPI_Comm_size(mpi_comm, &comm_size);
@@ -176,8 +174,9 @@ conduit::Node load_actions(const std::string &file_name, int mpi_comm_id){
   
   bool has_file = false;
 
-  if(conduit::utils::is_file(file_name)){
-    has_file = true;
+  if(rank==0)
+  {
+    has_file = conduit::utils::is_file(file_name);
   }
 
 #ifdef ASCENT_MPI_ENABLED
@@ -187,7 +186,8 @@ conduit::Node load_actions(const std::string &file_name, int mpi_comm_id){
   bool actions_file_valid = false;
   std::string file_load_error_msg = "";
 
-  if(has_file && rank==0){
+  if(rank==0 && has_file)
+  {
     try
     {
       std::string curr, next;
@@ -200,20 +200,28 @@ conduit::Node load_actions(const std::string &file_name, int mpi_comm_id){
     catch(conduit::Error &e)
     {
       file_load_error_msg = e.message();
+      actions_file_valid = false;
     }
   }
 
 #ifdef ASCENT_MPI_ENABLED
-    MPI_Bcast(&actions_file_valid, 1, MPI_BOOL, 0, mpi_comm);
+  MPI_Bcast(&actions_file_valid, 1, MPI_BOOL, 0, mpi_comm);
 #endif
 
-  if(!actions_file_valid){
+  if(!has_file)
+  {
+    ASCENT_WARN("Actions file not found: " << file_name);
+  }
+  else if(!actions_file_valid)
+  {
     // Raise Error
     ASCENT_ERROR("Failed to load actions file: " << file_name
                   << "\n" << file_load_error_msg);
   }
 
-  return actions;
+#ifdef ASCENT_MPI_ENABLED
+  relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+#endif
 }
 
 //---------------------------------------------------------------------------//
@@ -265,8 +273,9 @@ main(int argc, char *argv[])
   //
   // Populate actions with actions file
   //
-  int mpi_comm = ascent_opts.has_child("mpi_comm") ? ascent_opts["mpi_comm"].to_int() : 0;
-  conduit::Node actions = load_actions(options.m_actions_file, mpi_comm);
+  int mpi_comm = ascent_opts.has_child("mpi_comm") ? ascent_opts["mpi_comm"].to_int() : -1;
+  conduit::Node actions;
+  load_actions(actions, options.m_actions_file, mpi_comm);
 
   ascent::Ascent ascent;
   ascent.open(ascent_opts);
