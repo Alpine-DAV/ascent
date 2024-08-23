@@ -134,6 +134,35 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHAddRanks : public ::flow::Filter
+{
+public:
+    VTKHAddRanks();
+    virtual ~VTKHAddRanks();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHAddDomains : public ::flow::Filter
+{
+public:
+    VTKHAddDomains();
+    virtual ~VTKHAddDomains();
+
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHClip: public ::flow::Filter
 {
 public:

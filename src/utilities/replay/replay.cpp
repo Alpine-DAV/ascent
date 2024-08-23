@@ -156,6 +156,75 @@ void trim(std::string &s)
              s.end());
 }
 
+void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &actions)
+{
+  int comm_size = 1;
+  int rank = 0;
+
+#if defined(ASCENT_REPLAY_MPI)
+  if(mpi_comm_id == -1)
+  {
+    // do nothing, an error will be thrown later
+    // so we can respect the exception handling
+    return;
+  }
+  MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+  MPI_Comm_size(mpi_comm, &comm_size);
+  MPI_Comm_rank(mpi_comm, &rank);
+#endif
+  
+  bool has_file = false;
+
+  if(rank==0)
+  {
+    has_file = conduit::utils::is_file(file_name);
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Bcast(&has_file, 1, MPI_BOOL, 0, mpi_comm);
+#endif
+
+  bool actions_file_valid = false;
+  std::string file_load_error_msg = "";
+
+  if(rank==0 && has_file)
+  {
+    try
+    {
+      std::string curr, next;
+      conduit::utils::rsplit_string(file_name, ".", curr, next);
+
+      std::string protocol = curr=="yaml" ? "yaml" : "json";
+      actions.load(file_name, protocol);
+      actions_file_valid = true;
+    }
+    catch(conduit::Error &e)
+    {
+      file_load_error_msg = e.message();
+      actions_file_valid = false;
+    }
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Bcast(&actions_file_valid, 1, MPI_BOOL, 0, mpi_comm);
+#endif
+
+  if(!has_file)
+  {
+    ASCENT_WARN("Actions file not found: " << file_name);
+  }
+  else if(!actions_file_valid)
+  {
+    // Raise Error
+    ASCENT_ERROR("Failed to load actions file: " << file_name
+                  << "\n" << file_load_error_msg);
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+#endif
+}
+
 //---------------------------------------------------------------------------//
 int
 main(int argc, char *argv[])
@@ -197,16 +266,17 @@ main(int argc, char *argv[])
   conduit::Node replay_data;
   //replay_data.print();
   conduit::Node ascent_opts;
-  ascent_opts["actions_file"] = options.m_actions_file;
   ascent_opts["ascent_info"] = "verbose";
 #if defined(ASCENT_REPLAY_MPI)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
 #endif
 
   //
-  // Blank actions to be populated from actions file
+  // Populate actions with actions file
   //
+  int mpi_comm = ascent_opts.has_child("mpi_comm") ? ascent_opts["mpi_comm"].to_int() : -1;
   conduit::Node actions;
+  load_actions(options.m_actions_file, mpi_comm, actions);
 
   ascent::Ascent ascent;
   ascent.open(ascent_opts);

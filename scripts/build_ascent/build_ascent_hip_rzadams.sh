@@ -1,9 +1,9 @@
 module load cmake/3.24.2
-module load craype-accel-amd-gfx90a
+module load craype-accel-amd-gfx940
 module load rocmcc/6.1.2-magic
 
 export MPICH_GPU_SUPPORT_ENABLED=1
-export ROCM_ARCH=gfx90a
+export ROCM_ARCH=gfx942
 
 export CC=/usr/tce/packages/rocmcc/rocmcc-6.1.2-magic/bin/amdclang
 export CXX=/usr/tce/packages/rocmcc/rocmcc-6.1.2-magic/bin/amdclang++
