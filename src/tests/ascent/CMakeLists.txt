@@ -72,7 +72,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_sampling
                 t_ascent_uniform_grid
                 t_ascent_mir
-                t_ascent_hola)
+                t_ascent_hola
+                t_ascent_gpu_data_source)
 
 set(DEVICE_TESTS  t_ascent_execution_policies
                   t_ascent_memory)
