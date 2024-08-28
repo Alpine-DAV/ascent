@@ -26,7 +26,7 @@
 #include "t_utils.hpp"
 
 #if defined(ASCENT_HIP_ENABLED)
-#include <hip.h>
+#include <hip/hip_runtime.h>
 #endif
 
 using namespace std;
