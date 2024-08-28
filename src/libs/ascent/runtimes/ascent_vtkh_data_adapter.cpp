@@ -11,6 +11,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include "ascent_vtkh_data_adapter.hpp"
+#include "ascent_vtkh_device_utils.hpp"
 
 // standard lib includes
 #include <iostream>
@@ -636,9 +637,12 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
                                         bool zero_copy,
                                         const std::string &topo_name_str)
 {
+std::cerr << "IN blueprint to vtkmdataset!!! " << std::endl;
     vtkm::cont::DataSet * result = NULL;
+std::cerr << "BLU 1" << std::endl;
 
     std::string topo_name = topo_name_str;
+std::cerr << "BLU 2" << std::endl;
 
     // we must find the topolgy they asked for
     if(!node["topologies"].has_child(topo_name))
@@ -713,9 +717,13 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     }
 
 
+std::cerr << "BLU 3" << std::endl;
     if(node.has_child("fields"))
     {
+//std::cerr << "NODE OUTPUT: " << std::endl;
+//node.print();
         // add all of the fields:
+std::cerr << "BLU 4" << std::endl;
         NodeConstIterator itr = node["fields"].children();
 	std::string field_name;
         while(itr.has_next())
@@ -732,10 +740,12 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
             // skip vector fields for now, we need to add
             // more logic to AddField
             const int num_children = n_field["values"].number_of_children();
+std::cerr << "BLU 5" << std::endl;
 
             if(num_children == 0 || num_children == 1)
             {
 
+std::cerr << "BLU 6" << std::endl;
                 AddField(field_name,
                          n_field,
                          topo_name,
@@ -1470,6 +1480,8 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 {
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
 
+std::cerr << "IN ADD FIELD FOR : " << field_name << std::endl;
+std::cerr << "AF 1" << std::endl;
     string assoc_str = n_field["association"].as_string();
 
     vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
@@ -1486,14 +1498,20 @@ VTKHDataAdapter::AddField(const std::string &field_name,
       ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
       return;
     }
+std::cerr << "AF 2" << std::endl;
     if(n_field["values"].number_of_children() > 1)
     {
       ASCENT_ERROR("Add field can only use zero or one component");
     }
 
+std::cerr << "AF 3" << std::endl;
     bool is_values = n_field["values"].number_of_children() == 0;
+std::cerr << "AF 4" << std::endl;
     const Node &n_vals = is_values ? n_field["values"] : n_field["values"].child(0);
+std::cerr << "AF 5" << std::endl;
     int num_vals = n_vals.dtype().number_of_elements();
+std::cerr << "num_vals: " << num_vals << std::endl;
+std::cerr << "AF 6" << std::endl;
 
     if(assoc_str == "vertex" && nverts != num_vals)
     {
@@ -1516,13 +1534,23 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
     try
     {
+std::cerr << "SUPPORTED" << std::endl;
         bool supported_type = false;
 
         // vtk-m can stride as long as the strides are a multiple of the native stride
 
+//std::cerr << "n_vals print: " << std::endl;
+//n_vals.print();
+std::cerr << "nvals dtype int32: " << n_vals.dtype().is_int32() << std::endl;
+std::cerr << "nvals dtype int64: " << n_vals.dtype().is_int64() << std::endl;
+std::cerr << "nvals dtype uint32: " << n_vals.dtype().is_uint32() << std::endl;
+std::cerr << "nvals dtype uint64: " << n_vals.dtype().is_uint64() << std::endl;
+std::cerr << "nvals dtype float32: " << n_vals.dtype().is_float32() << std::endl;
+std::cerr << "nvals dtype float64: " << n_vals.dtype().is_float64() << std::endl;
         // we compile vtk-h with fp types
         if(n_vals.dtype().is_float32())
         {
+std::cerr << "type 32 float" << std::endl;
             // check that the byte stride is a multiple of native stride
             index_t stride = n_vals.dtype().stride();
             index_t element_stride = stride / sizeof(float32);
@@ -1546,9 +1574,13 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         }
         else if(n_vals.dtype().is_float64())
         {
+std::cerr << "type 64 float" << std::endl;
             // check that the byte stride is a multiple of native stride
             index_t stride = n_vals.dtype().stride();
+std::cerr << "stride: " << stride << std::endl;
             index_t element_stride = stride / sizeof(float64);
+std::cerr << "element_stride: " << element_stride << std::endl;
+std::cerr << "stride \% sizeof(float64) = " << stride % sizeof(float64) << std::endl;
             //std::cout << "field name: " << field_name << " <float64>"
             //          << " byte stride: " << stride
             //          << " element_stride: " << element_stride << std::endl;
@@ -1624,19 +1656,34 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         // use float64 by default
         if(!supported_type)
         {
+std::cerr << "NOT SUPPORTED" << std::endl;
             // std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
             //           << n_vals.dtype().name() << std::endl;
 
             // convert to float64, we use this as a comprise to cover the widest range
+std::cerr << "AF 7" << std::endl;
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+std::cerr << "AF 8" << std::endl;
             vtkm_arr.Allocate(num_vals);
+std::cerr << "AF 9" << std::endl;
 
             // TODO -- FUTURE: Do this conversion w/ device if on device
+std::cerr << "AF 10" << std::endl;
             void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
+std::cerr << "AF 11" << std::endl;
             Node n_tmp;
+std::cerr << "AF 12" << std::endl;
             n_tmp.set_external(DataType::float64(num_vals),ptr);
+           const uint64_t *input = n_vals.value();
+           double output2[num_vals];
+std::cerr<<  " before calling cast" <<std::endl;
+           castUint64ToFloat64(input, output2, num_vals);
+std::cerr<<  " after calling cast" <<std::endl;
+
+std::cerr << "AF 13" << std::endl;
             n_vals.to_float64_array(n_tmp);
 
+std::cerr << "AF 14" << std::endl;
             // add field to dataset
             if(assoc_str == "vertex")
             {
