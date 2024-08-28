@@ -72,11 +72,11 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_sampling
                 t_ascent_uniform_grid
                 t_ascent_mir
-                t_ascent_hola
-                t_ascent_gpu_data_source)
+                t_ascent_hola)
 
 set(DEVICE_TESTS  t_ascent_execution_policies
-                  t_ascent_memory)
+                  t_ascent_memory
+                  t_ascent_gpu_data_source)
 
 if(CUDA_FOUND)
     list(APPEND ascent_device_deps cuda_runtime)
