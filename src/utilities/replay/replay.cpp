@@ -44,9 +44,9 @@ void usage()
   std::cout<<"  --actions : a yaml file containing ascent actions. Default value\n";
   std::cout<<"              is 'ascent_actions.yaml'.\n\n";
   std::cout<<"======================== Examples =========================\n";
-  std::cout<<"./replay_ser --root=clover.cycle_000060.root\n";
-  std::cout<<"./replay_ser --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
-  std::cout<<"srun -n 4 replay_mpi --cycles=cycles_file\n";
+  std::cout<<"./ascent_replay --root=clover.cycle_000060.root\n";
+  std::cout<<"./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
+  std::cout<<"srun -n 4 ascent_replay_mpi --cycles=cycles_file\n";
   std::cout<<"\n\n";
 }
 
