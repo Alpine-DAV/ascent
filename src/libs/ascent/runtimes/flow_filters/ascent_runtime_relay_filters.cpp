@@ -610,6 +610,27 @@ void mesh_blueprint_save(const Node &data,
     }
 #endif
 
+
+    if (file_protocol == "silo")
+    {
+        if (file_protocol == "overlink")
+        {
+            opts["file_style"] = "overlink";
+        }
+#ifdef ASCENT_MPI_ENABLED
+        MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+        conduit::relay::io::silo::save_mesh(data,
+                                            path,
+                                            opts,
+                                            mpi_comm);
+#else
+        conduit::relay::io::silo::save_mesh(data,
+                                            path,
+                                            opts);
+#endif
+    }
+    else
+    {
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     conduit::relay::mpi::io::blueprint::save_mesh(data,
@@ -623,6 +644,8 @@ void mesh_blueprint_save(const Node &data,
                                              file_protocol,
                                              opts);
 #endif
+    }
+
 
 #ifdef ASCENT_HDF5_ENABLED
     if(using_hdf5_opts)
@@ -866,6 +889,17 @@ RelayIOSave::execute()
         mesh_blueprint_save(selected,
                             path,
                             "json",
+                            num_files,
+                            extra_opts,
+                            result_path);
+
+    }
+    else if( protocol == "silo" ||
+             protocol == "overlink")
+    {
+        mesh_blueprint_save(selected,
+                            path,
+                            protocol,
                             num_files,
                             extra_opts,
                             result_path);
