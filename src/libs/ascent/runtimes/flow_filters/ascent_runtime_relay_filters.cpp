@@ -634,17 +634,17 @@ void mesh_blueprint_save(const Node &data,
     else
     {
 #ifdef ASCENT_MPI_ENABLED
-    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-    conduit::relay::mpi::io::blueprint::save_mesh(data,
-                                                  path,
-                                                  file_protocol,
-                                                  opts,
-                                                  mpi_comm);
+        MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+        conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                      path,
+                                                      file_protocol,
+                                                      opts,
+                                                      mpi_comm);
 #else
-    conduit::relay::io::blueprint::save_mesh(data,
-                                             path,
-                                             file_protocol,
-                                             opts);
+        conduit::relay::io::blueprint::save_mesh(data,
+                                                 path,
+                                                 file_protocol,
+                                                 opts);
 #endif
     }
 
