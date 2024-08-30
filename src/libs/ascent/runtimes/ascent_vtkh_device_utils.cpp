@@ -11,6 +11,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include "ascent_vtkh_device_utils.hpp"
+#include "ascent/runtimes/expressions/ascent_array.hpp"
 
 // standard lib includes
 #include <iostream>
@@ -24,10 +25,6 @@
 // VTKm includes
 #define VTKM_USE_DOUBLE_PRECISION
 
-#include <vtkh/utils/vtkm_array_utils.hpp>
-#include <vtkh/utils/vtkm_dataset_info.hpp>
-
-#include <conduit_blueprint.hpp>
 
 using namespace std;
 using namespace conduit;
@@ -54,14 +51,17 @@ namespace detail
 //-----------------------------------------------------------------------------
 
 // Definition of the cast function with __host__ __device__
-__host__ __device__ void castUint64ToFloat64(const uint64_t* input, double* output, int size) {
-    for (int i = 0; i < size; ++i) {
+ASCENT_EXEC void 
+VTKHDeviceAdapter::castUint64ToFloat64(const uint64_t* input, double* output, int size) {
+    Array<double> int_to_double(input, size);
+    output = int_to_double.get_ptr(memory_space);
+
+    // init device array
+    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    {
         output[i] = static_cast<double>(input[i]);
-    }
-}
-
-
-
+    });
+    ASCENT_DEVICE_ERROR_CHECK();
 };
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
