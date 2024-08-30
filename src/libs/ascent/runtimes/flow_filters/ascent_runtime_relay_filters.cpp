@@ -917,9 +917,6 @@ RelayIOSave::execute()
       detail::post_filter_check_for_data(selected);
     }
 
-    // TODO count unique topo names across ranks
-    // if more than one and overlink then we error
-
     Node meta = Metadata::n_metadata;
 
     // Get the cycle and add it so filters don't have to
