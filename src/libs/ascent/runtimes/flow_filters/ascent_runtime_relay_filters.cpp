@@ -28,6 +28,7 @@
 #include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mesh.hpp>
 #include <conduit_relay_io_blueprint.hpp>
+#include <conduit_relay_io_silo.hpp>
 #if defined(ASCENT_HDF5_ENABLED)
 #include <conduit_relay_io_hdf5.hpp>
 #endif
@@ -53,6 +54,7 @@
 #include <conduit_relay_mpi.hpp>
 #include <conduit_blueprint_mpi_mesh.hpp>
 #include <conduit_relay_mpi_io_blueprint.hpp>
+#include <conduit_relay_mpi_io_silo.hpp>
 #endif
 
 // std includes
@@ -188,7 +190,7 @@ filter_topos(const conduit::Node &input,
           }
         }
 
-        // check for any matsets defined on this topo
+        // check for any nestsets defined on this topo
         if(dom.has_path("nestsets"))
         {
           NodeConstIterator itr = dom["nestsets"].children();
@@ -611,7 +613,7 @@ void mesh_blueprint_save(const Node &data,
 #endif
 
 
-    if (file_protocol == "silo")
+    if (file_protocol == "silo" || file_protocol == "overlink")
     {
         if (file_protocol == "overlink")
         {
@@ -619,10 +621,10 @@ void mesh_blueprint_save(const Node &data,
         }
 #ifdef ASCENT_MPI_ENABLED
         MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-        conduit::relay::io::silo::save_mesh(data,
-                                            path,
-                                            opts,
-                                            mpi_comm);
+        conduit::relay::mpi::io::silo::save_mesh(data,
+                                                 path,
+                                                 opts,
+                                                 mpi_comm);
 #else
         conduit::relay::io::silo::save_mesh(data,
                                             path,
@@ -753,6 +755,112 @@ RelayIOSave::execute()
 
     Node *in = n_input.get();
 
+    // if we are doing overlink, we must enforce the 1-topo rule
+    if (protocol == "overlink")
+    {
+        // either users have specified a topology they want to use
+        if (params().has_path("topologies"))
+        {
+            const conduit::Node &tlist = params()["topologies"];
+            const int num_topos = tlist.number_of_children();
+            if (num_topos != 1)
+            {
+                ASCENT_ERROR("relay_io_save Overlink save requires a single topology; " <<
+                             num_topos << " topologies were requested.");
+            }
+        }
+        // or we must check there is only a single topo in their mesh
+        else
+        {
+            Node local_unique_topos;
+            const int num_doms = in->number_of_children();
+            for (int domain_id = 0; domain_id < num_doms; domain_id ++)
+            {
+                const conduit::Node &dom = in->child(domain_id);
+                if (dom.has_child("topologies"))
+                {
+                    for (const auto & topo_name : dom["topologies"].child_names())
+                    {
+                        if (!local_unique_topos.has_child(topo_name))
+                        {
+                            local_unique_topos[topo_name];
+                        }
+                    }
+                }
+            }
+            Node global_topo_names;
+
+            int rank = 0;
+            int root = 0;
+
+#ifdef ASCENT_MPI_ENABLED
+            MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+            MPI_Comm_rank(mpi_comm, &rank);
+
+            relay::mpi::gather_using_schema(local_unique_topos,
+                                            global_topo_names,
+                                            root,
+                                            mpi_comm);
+#else
+            global_topo_names.append().set_external(local_unique_topos);
+#endif
+            int error = 0;
+            std::ostringstream error_oss;
+
+            Node unique_topos;
+            if (rank == root)
+            {
+                const int num_ranks = global_topo_names.number_of_children();
+                for (int rank_id = 0; rank_id < num_ranks; rank_id ++)
+                {
+                    const conduit::Node &rank_topo_names = global_topo_names.child(rank_id);
+                    for (const auto & topo_name : rank_topo_names.child_names())
+                    {
+                        if (!unique_topos.has_child(topo_name))
+                        {
+                            unique_topos[topo_name];
+                        }
+                    }
+                }
+                const int num_topos = unique_topos.number_of_children();
+                if (num_topos != 1)
+                {
+                    error = 1;
+                    error_oss << "relay_io_save Overlink save requires a single topology; "
+                                 "there are " << num_topos << " topologies in the input mesh.";
+                }
+            }
+
+#ifdef ASCENT_MPI_ENABLED
+            Node n_local, n_global;
+            n_local.set((int)error);
+            relay::mpi::sum_all_reduce(n_local,
+                                       n_global,
+                                       mpi_comm);
+
+            error = n_global.as_int();
+
+            if (error == 1)
+            {
+                // we have a problem, broadcast string message
+                // from rank 0 all ranks can throw an error
+                n_global.set(error_oss.str());
+                conduit::relay::mpi::broadcast_using_schema(n_global,
+                                                            0,
+                                                            mpi_comm);
+
+                ASCENT_ERROR(n_global.as_string());
+            }
+#else
+            // non MPI case, throw error
+            if (error == 1)
+            {
+                ASCENT_ERROR(error_oss.str());
+            }
+#endif            
+        }
+    }
+
     Node selected;
 
     if(!params().has_path("fields") && !params().has_path("topologies"))
@@ -808,6 +916,9 @@ RelayIOSave::execute()
 
       detail::post_filter_check_for_data(selected);
     }
+
+    // TODO count unique topo names across ranks
+    // if more than one and overlink then we error
 
     Node meta = Metadata::n_metadata;
 
@@ -897,7 +1008,6 @@ RelayIOSave::execute()
     else if( protocol == "silo" ||
              protocol == "overlink")
     {
-      // TODO do we need to worry about overlink only taking a single topo?
         mesh_blueprint_save(selected,
                             path,
                             protocol,
