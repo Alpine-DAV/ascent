@@ -35,15 +35,15 @@ Calculating and rendering contours
 Combining threshold and clip transforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example2.cpp
    :language: cpp
    :lines: 13-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example2.py
    :language: python
    :lines: 7-
 
@@ -58,15 +58,15 @@ Combining threshold and clip transforms
 Creating and rendering the multiple pipelines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp>`
+:download:`C++ <../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example3.cpp>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example1.cpp
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/cpp/ascent_pipeline_example3.cpp
    :language: cpp
    :lines: 13-
 
-:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py>`
+:download:`Python <../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example3.py>`
 
-.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example1.py
+.. literalinclude:: ../../../src/examples/tutorial/ascent_intro/python/ascent_pipeline_example3.py
    :language: python
    :lines: 7-
    

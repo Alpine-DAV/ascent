@@ -242,6 +242,11 @@ Color in the table can be reversed through an optional parameter:
 
   scenes["s1/plots/p1/color_table/reverse"] = "true";
 
+The color table can be made (pseudo) discrete through an optional parameter:
+
+.. code-block:: c++
+
+  scenes["s1/plots/p1/color_table/discrete"] = "true";
 
 
 Volume plots are special since ray casting blends colors together.

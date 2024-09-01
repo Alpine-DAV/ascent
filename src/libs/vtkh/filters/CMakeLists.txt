@@ -19,6 +19,7 @@ set(vtkh_filters_headers
     Lagrangian.hpp
     MarchingCubes.hpp
     MeshQuality.hpp
+    MIR.hpp
     ParticleAdvection.hpp
     ParticleMerging.hpp
     PointAverage.hpp
@@ -27,9 +28,10 @@ set(vtkh_filters_headers
     Tetrahedralize.hpp
     Threshold.hpp
     Triangulate.hpp
+    Slice.hpp
     Statistics.hpp
     Streamline.hpp
-    Slice.hpp
+    UniformGrid.hpp
     VectorComponent.hpp
     VectorMagnitude.hpp
     WarpXStreamline.hpp
@@ -56,6 +58,7 @@ set(vtkh_filters_sources
     Lagrangian.cpp
     MarchingCubes.cpp
     MeshQuality.cpp
+    MIR.cpp
     ParticleAdvection.cpp
     ParticleMerging.cpp
     PointAverage.cpp
@@ -67,6 +70,7 @@ set(vtkh_filters_sources
     Slice.cpp
     Statistics.cpp
     Streamline.cpp
+    UniformGrid.cpp
     VectorComponent.cpp
     VectorMagnitude.cpp
     WarpXStreamline.cpp

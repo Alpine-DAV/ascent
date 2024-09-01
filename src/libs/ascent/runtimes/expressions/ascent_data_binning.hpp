@@ -50,6 +50,17 @@ conduit::Node data_binning(conduit::Node &dataset,
                            const std::string &component,
                            std::map<int,Array<int>> &bindexes);
 
+
+ASCENT_API
+void data_binning_samples(conduit::Node &dataset,
+                          conduit::Node &bin_axes,
+                          const std::string &reduction_var,
+                          const std::string &reduction_op,
+                          const double empty_bin_val,
+                          const std::string &component,
+                          std::map<int,Array<double> > &points,
+                          std::map<int,Array<double> > &values);
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

@@ -133,11 +133,15 @@ Array<double> allocate_bins(const std::string reduction_op,
   // i.e., we might need to keep track of the bin sum and counts for
   // average
   int num_bin_vars = 2;
-  if(reduction_op == "var" || reduction_op == "std")
+  if(reduction_op == "var" ||
+     reduction_op == "std")
   {
     num_bin_vars = 3;
   }
-  else if(reduction_op == "min" || reduction_op == "max")
+  else if(reduction_op == "min"   ||
+          reduction_op == "max"   ||
+          reduction_op == "pdf"   ||
+          reduction_op == "count" )
   {
     num_bin_vars = 1;
   }
@@ -147,8 +151,8 @@ Array<double> allocate_bins(const std::string reduction_op,
   bins.resize(bins_size);
 
   double init_val = 0.;
+
   // init the memory
-  // TODO: i think this is wrong: needs offsets and 0s for counts
   if(reduction_op == "max")
   {
     init_val = std::numeric_limits<double>::lowest();
@@ -157,6 +161,7 @@ Array<double> allocate_bins(const std::string reduction_op,
   {
     init_val = std::numeric_limits<double>::max();
   }
+
   array_memset(bins, init_val);
 
   total_bins = static_cast<int>(num_bins);
@@ -314,7 +319,7 @@ create_bins_axes(conduit::Node &bin_axes,
   const double *min_coords = bounds["min_coords"].value();
   const double *max_coords = bounds["max_coords"].value();
 
-  bin_axes.print();
+  // bin_axes.print();
   conduit::Node res;
 
   const int num_axes = bin_axes.number_of_children();
@@ -416,42 +421,56 @@ create_bins_axes(conduit::Node &bin_axes,
 
 
   }
-  res.print();
+  // res.print();
   return res;
 }
 
+
+///
+/// `values` can be 2D multi-component array
+/// bindexes is 1D, either number of verts or number of eles long
+///
 
 template<typename Exec>
 void calc_bindex(const Array<double> &values,
                  const int num_components,
                  const int component_id,
-                 const int bin_stride,
                  const conduit::Node &axis,
+                 const int bin_stride,
                  Array<int> &bindexes,
                  Exec)
 {
   const std::string mem_space = Exec::memory_space;
-
-
-  const int size = values.size();
+  axis.print();
+  // number of values to bin
+  const int size = bindexes.size();
+  // values we want to bin
   const double *values_ptr = values.get_ptr_const(mem_space);
+  // bindexs (binning index result for each value)
   int *bindex_ptr = bindexes.get_ptr(mem_space);
+
+  //  the bin extents for given axis
   double *bins_node_ptr = const_cast<double*>(axis["bins"].as_float64_ptr());
   Array<double> bins( bins_node_ptr, axis["bins"].dtype().number_of_elements());
-  const double *bins_ptr = bins.get_ptr_const(mem_space);
   const int bins_size = bins.size();
+  const double *bins_ptr = bins.get_ptr_const(mem_space);
+
   bool clamp = axis["clamp"].to_int32() == 1;
-  //std::cout<<"**** bindex size "<<size<<"\n";
+  // std::cout<<"**** bindex size "<<size<<"\n";
 
   using for_policy = typename Exec::for_policy;
 
   ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
   {
+    // std::cout<<"**** bindex idx "<< i <<"\n";
+    // calc location of bin result
     const int v_offset = i * num_components + component_id;
     const double value = values_ptr[v_offset];
-    // just scan throught the bins, be facier later
+
+    // just scan through the bins, be fancier later
     // we should get the index of the first bin that
-    //
+    // is greater than the value
+
     int bindex = 0;
     while(value > bins_ptr[bindex])
     {
@@ -461,38 +480,48 @@ void calc_bindex(const Array<double> &values,
         break;
       }
     }
+
     // make sure the last bin is inclusive
     if(value == bins_ptr[bins_size-1])
     {
-      bindex = bins_size - 1;
+      bindex = bins_size - 2;
     }
-    if(!clamp && bindex == 0 && (value < bins_ptr[0]))
+    // if we aren't clamping and we are less
+    // than the first bin, invalidate the index
+    else if(!clamp && bindex == 0 && (value < bins_ptr[0]))
     {
       bindex = -1;
     }
+    // if we aren't clamping and we above
+    // than the last bin, invalidate the index
     else if(!clamp && bindex == bins_size)
     {
       bindex = -1;
     }
-    else
+    else // otherwise we min/max to clamp
     {
-      bindex = max(0,min(bindex,bins_size - 1));
-    }
-    int current_bindex = bins_ptr[i];
-    bool valid = true;
-    // this is missed some other bin, so just keep it that way
-    if(current_bindex == -1 || bindex == -1)
-    {
-      valid = false;
+      // adj back to zero-based, we have one less bin
+      // than we have bin bounds
+      bindex--;
+      bindex = max(0,min(bindex,bins_size - 2));
     }
 
-    int bin_value = bindex * bin_stride + current_bindex;
-    if(!valid)
+    // check bindex from prior passes
+    // if any were -1, that means we are out of bin range
+    // keep -1
+    int prev_bindex = bindex_ptr[i];
+    if (prev_bindex == -1 || bindex == -1)
     {
-      // keep it invalid
-      bin_value = -1;
+      bindex = -1;
     }
-    bindex_ptr[i] = bin_value;
+    // we may have prev pass, apply striding to new value
+    // to eventually land
+    else 
+    {
+      bindex =  bindex * bin_stride + prev_bindex;
+    }
+    bindex_ptr[i] = bindex;
+    // std::cout << "final bindex for " << i << " " << bindex_ptr[i] << std::endl;
   });
   ASCENT_DEVICE_ERROR_CHECK();
 }
@@ -515,7 +544,7 @@ Array<double> cast_to_float64(conduit::Node &field, const std::string component)
     res_ptr[i] = static_cast<double>(accessor[i]);
   });
   //std::cout<<"Cast to float64 "<<mem_space<<"\n";
-  res.status();
+  // res.status();
   ASCENT_DEVICE_ERROR_CHECK();
   return res;
 }
@@ -550,13 +579,72 @@ Array<double> cast_field_values(conduit::Node &field, const std::string componen
   return res;
 }
 
+template<typename Exec, typename T>
+void copy_array_values(const Array<T> &src,
+                       const int num_entries,
+                       const int src_offset,
+                       const int src_stride,
+                       Array<T> &dest,
+                       const int des_offset,
+                       const int des_stride,
+                       Exec)
+{
+  using for_policy = typename Exec::for_policy;
+  const std::string mem_space = Exec::memory_space;
+
+  const T *src_ptr = src.get_ptr_const(mem_space);
+  T *dest_ptr = dest.get_ptr(mem_space);
+
+  ascent::forall<for_policy>(0, num_entries, [=] ASCENT_LAMBDA(index_t i)
+  {
+    // std::cout<<"**** bindex idx "<< i <<"\n";
+    // calc location of bin result
+    const int src_index  = i * src_stride + src_offset;
+    const int dest_index = i * des_stride + des_offset;
+    dest_ptr[dest_index] = src_ptr[src_index];
+  });
+  ASCENT_DEVICE_ERROR_CHECK();
+}
+
+// template<typename Exec>
+// void extract_component(const Array<double> &values,
+//                        const int num_components,
+//                        const int component_id,
+//                        Array<double> &component_values,
+//                        Exec)
+// {
+//   const std::string mem_space = Exec::memory_space;
+//   //  the bin extents for given axis
+//   const double *vals_ptr = values.get_ptr_const(mem_space);
+//
+//   const int comp_vals_size = values.size() / num_components;
+//
+//   component_values.resize(comp_vals_size);
+//   array_memset(component_values, 0);
+//
+//   double *comp_vals_ptr = component_values.get_ptr(mem_space);
+//
+//   using for_policy = typename Exec::for_policy;
+//
+//   ascent::forall<for_policy>(0, comp_vals_size, [=] ASCENT_LAMBDA(index_t i)
+//   {
+//     // std::cout<<"**** bindex idx "<< i <<"\n";
+//     // calc location of bin result
+//     const int v_offset = i * num_components + component_id;
+//     comp_vals_ptr[i] = vals_ptr[v_offset];
+//   });
+//   ASCENT_DEVICE_ERROR_CHECK();
+// }
+
 struct BinningFunctor
 {
-  std::map<int,Array<int>> &m_bindexes;
+  // per domain bindexes
+  // per domain values
+  std::map<int,Array<int>>    &m_bindexes;
   std::map<int,Array<double>> &m_values;
-  Array<double> &m_bins;
-  const std::string m_op;
-  std::vector<int> m_domain_ids;
+  Array<double>               &m_bins;
+  const std::string           m_op;
+  std::vector<int>            m_domain_ids;
 
 
   BinningFunctor() = delete;
@@ -584,98 +672,319 @@ struct BinningFunctor
 
     for(auto dom_id : m_domain_ids)
     {
+      const int size = m_values[dom_id].size();
       const int *bindex_ptr = m_bindexes[dom_id].get_ptr_const(Exec::memory_space);
       const double *values_ptr = m_values[dom_id].get_ptr_const(Exec::memory_space);
-      // std::cout<<"Banananananananananananananananananana\n";
-      m_values[dom_id].status();
-      m_values[dom_id].summary();
-      m_bindexes[dom_id].summary();
-      Array<double> testa = m_values[dom_id];
-      testa.summary();
-      testa.status();
-      const int size = m_values[dom_id].size();
       double *bins_ptr = m_bins.get_ptr(Exec::memory_space);
-      
-  
-      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
-      {
-          // if(i == 0)
-          // {
-          //   for(int ii  = 0; ii< size; ++ii)printf("i %d val %f\n", ii,values_ptr[ii]);
-          // }
-          const int index = bindex_ptr[i];
-          const double value = values_ptr[i];
-          const int offset = index * 2;
-          //printf("binner cell %d bindex %d value %f\n", i,index,value);
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value);
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
-      });
+
+      // m_values[dom_id].status();
+      // m_values[dom_id].summary();
+      // m_bindexes[dom_id].summary();
 
       if(m_op == "min")
       {
         ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
-          const int index = bindex_ptr[i];
-          const double value = values_ptr[i];
-          ascent::atomic_min<atomic_policy>(bins_ptr + index, value);
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            const double value = values_ptr[i];
+            ascent::atomic_min<atomic_policy>(bins_ptr + bindex, value);
+          }
         });
       }
       else if(m_op == "max")
       {
         ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
-          const int index = bindex_ptr[i];
-          const double value = values_ptr[i];
-          ascent::atomic_max<atomic_policy>(bins_ptr + index, value);
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            const double value = values_ptr[i];
+            ascent::atomic_max<atomic_policy>(bins_ptr + bindex, value);
+          }
         });
       }
-      else if(m_op == "avg" || m_op == "sum" || m_op == "pdf")
+      else if(m_op == "count")
       {
         ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
-          if(i == 0)
+
+          const int bindex = bindex_ptr[i];
+          // std::cout << " size "<< size << " i" << i << " bindex" << bindex << std::endl;
+          if(bindex>= 0)
           {
-            for(int ii  = 0; ii< size; ++ii) printf("i %d val %f\n", ii,values_ptr[ii]);
+            ascent::atomic_add<atomic_policy>(bins_ptr + bindex, 1.);
           }
-          const int index = bindex_ptr[i];
-          const double value = values_ptr[i];
-          const int offset = index * 2;
-          // printf("binner cell %d bindex %d value %f\n", i,index,value);
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value);
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
+        });
+      }
+      else if(m_op == "pdf")
+      {
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
+        {
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            ascent::atomic_add<atomic_policy>(bins_ptr + bindex, 1.);
+          }
+        });
+      }
+      else if(m_op == "avg" || m_op == "sum")
+      {
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
+        {
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            const double value = values_ptr[i];
+            const int offset = bindex * 2;
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset, value);
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
+          }
         });
       }
       else if(m_op == "rms")
       {
         ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
-          const int index = bindex_ptr[i];
-          const double value = values_ptr[i];
-          const int offset = index * 2;
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value * value);
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            const double value = values_ptr[i];
+            const int offset = bindex * 2;
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset, value * value);
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
+          }
         });
       }
       else if(m_op == "var" || m_op == "std")
       {
+        // use basic 2-pass, since single pass sum of squares method is not
+        // numerically stable
+        // http://www.johndcook.com/blog/2008/09/26/comparing-three-methods-of-computing-standard-deviation/
         ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
         {
-          const int index = bindex_ptr[i];
-          const double value = values_ptr[i];
-          const int offset = index * 3;
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset, value * value);
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, value);
-          ascent::atomic_add<atomic_policy>(bins_ptr + offset + 2, 1.);
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            const double value = values_ptr[i];
+            const int offset = bindex * 3;
+            // accum value
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset, value);
+            // count
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 1, 1.);
+          }
+        });
+        // NOTE: in second pass we only read [0] and [1], and write [2]
+        ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA (index_t i)
+        {
+          const int bindex = bindex_ptr[i];
+          if(bindex >= 0)
+          {
+            const double value = values_ptr[i];
+            const int offset = bindex * 3;
+            const double val_avg = bins_ptr[offset] / bins_ptr[offset +1];
+            // (v - mean) ^ 2
+            double val_cal = (value - val_avg); 
+            val_cal = val_cal * val_cal;
+            ascent::atomic_add<atomic_policy>(bins_ptr + offset + 2, val_cal);
+          }
         });
       }
 
-      double *host_ptr = m_bins.get_host_ptr();
+      // DEBUGGING:
+      // double *host_ptr = m_bins.get_host_ptr();
       // for(int i = 0; i < m_bins.size(); ++i)
       // {
-      //   /std::cout<<"int results index "<<i<<" "<<host_ptr[i]<<"\n";
+      //   std::cout<<"bin accumulate results index "<<i<<" "<<host_ptr[i]<<"\n";
       // }
     }
   }
+};
+
+struct SamplesFunctor
+{
+
+  // inputs:
+  const conduit::Node &m_axes;
+  conduit::Node       &m_dataset;
+  const std::string    m_topo_name;
+  const std::string    m_assoc;
+  const std::string    m_component;
+  const std::string    m_reduction_var;
+
+  // results:
+  int                           m_sample_dims;
+  std::map<int, Array<double> > m_sample_points;
+  std::map<int, Array<double> > m_sample_values;
+
+
+  SamplesFunctor(conduit::Node &dataset,
+                 const conduit::Node &axes,
+                 const std::string topo_name,
+                 const std::string assoc,
+                 const std::string component,
+                 const std::string reduction_var)
+    : m_axes(axes),
+      m_dataset(dataset),
+      m_topo_name(topo_name),
+      m_assoc(assoc),
+      m_component(component),
+      m_reduction_var(reduction_var),
+      m_sample_dims(-1),
+      m_sample_points(),
+      m_sample_values()
+  {}
+
+  template<typename Exec>
+  void operator()(const Exec &)
+  {
+      m_sample_points.clear();
+      m_sample_values.clear();
+
+      const int num_domains = m_dataset.number_of_children();
+      const int num_axes = m_axes.number_of_children();
+
+      // loop over domains
+      for(int dom_index = 0; dom_index < num_domains; ++dom_index)
+      {
+          // ensure this domain has the necessary topo and fields
+          conduit::Node &dom = m_dataset.child(dom_index);
+
+          if(!dom["topologies"].has_child(m_topo_name))
+          {
+            continue;
+          }
+
+          for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+          {
+              const conduit::Node &axis   = m_axes.child(axis_index);
+              const std::string axis_name = axis.name();
+              // skip the axis name is not one of the spatial axes
+              // or if the domain is missing the named field
+              if(!dom.has_path("fields/" + axis_name) && !is_xyz(axis_name))
+              {
+                  continue;
+              }
+          }
+
+        // find the coordset name for the topo
+        std::string coords_name = dom["topologies"][m_topo_name]["coordset"].as_string();
+        // find the coordset dims
+        int coords_dims = conduit::blueprint::mesh::coordset::dims(dom["coordsets"][coords_name]);
+
+        // Calculate the size of homes
+        conduit::index_t num_samples = 0;
+        if(m_assoc== "vertex")
+        {
+            num_samples = num_points(dom, m_topo_name);
+        }
+        else if(m_assoc == "element")
+        {
+            num_samples = num_cells(dom, m_topo_name);
+        }
+
+        // we have the assumption that ascent ensured that there
+        // are in fact domain ids
+
+        const int domain_id = dom["state/domain_id"].to_int();
+
+        // the sample points will be # of samples * num axes
+        m_sample_points[domain_id].resize(num_samples * num_axes);
+
+        // will hold vertex locations or centroids based on the
+        // centering of the reduction variable
+        Array<double> spatial_values;
+
+
+        bool reduction_op_values_found = false;
+        bool do_once = true;
+
+        for(int axis_index = 0; axis_index < num_axes; ++axis_index)
+        {
+            const conduit::Node &axis   = m_axes.child(axis_index);
+            const std::string axis_name = axis.name();
+            // std::cout << "axis index = " <<  axis_index << " " << axis_name << std::endl;
+            // case where bin axis is a field
+            if(dom.has_path("fields/" + axis_name))
+            {
+                Array<double> values;
+                //std::cout<<"**** Casting field to double\n";
+                conduit::Node &field = dom["fields/"+axis_name];
+                values = cast_field_values(field, m_component, Exec());
+
+                copy_array_values(values, // src
+                                  num_samples, // num_entries
+                                  0,      // src offset
+                                  1,      // src stride
+                                  m_sample_points[domain_id], // dest
+                                  num_samples * axis_index, // dest offset
+                                  1, // dest stride
+                                  Exec());
+
+                if(axis_name == m_reduction_var)
+                {
+                    reduction_op_values_found = true;
+                    m_sample_values[domain_id] = values;
+                }
+            }
+            // case where bin axis is one of the spatial axes
+            else // this is a spatial axis
+            {
+                // this is a coordinate axis so we need the spatial information
+                if(do_once)
+                {
+                    do_once = false;
+                    if(m_assoc == "vertex")
+                    {
+                        std::cout<<"**** Getting vertices\n";
+                        spatial_values = vertices(dom, m_topo_name);
+                    }
+                    else
+                    {
+                        std::cout<<"**** Getting centroids\n";
+                        spatial_values = centroids(dom, m_topo_name);
+                        // double *sval_ptr = spatial_values.get_host_ptr();
+                        //std::cout<<"*** spatial values "<<spatial_values.size()<<"\n";
+                    }
+                }
+              //std::cout<<"Spatial axis "<<axis_name<<"\n";
+              int spatial_comp = detail::spatial_component(axis_name);
+
+              // spatial values are interleaved
+              // extract
+              copy_array_values(spatial_values, // src
+                                num_samples,  // num_entries
+                                0,            // src offset
+                                coords_dims,  // src stride
+                                m_sample_points[domain_id], // dest
+                                num_samples * axis_index, // dest offset
+                                1, // dest stride
+                                Exec());
+            }
+        }
+
+        // // we need to extract the values if we haven't already pulled them out
+        // if(!reduction_op_values_found)
+        // {
+        //    // empty reduction var is supported for count and pdf
+        //    if(m_reduction_var != "")
+        //    {
+        //      conduit::Node &field = dom["fields/"+m_reduction_var];
+        //      m_sample_values = cast_field_values(field, m_component, Exec());
+        //    }
+        // }
+
+        // debug
+        // int bsize = bindexes.size();
+        // int *b_ptr = bindexes.get_host_ptr();
+        // for(int i = 0; i < bsize; ++i)
+        // {
+        //   std::cout<<"Index "<<i<<" bin "<<b_ptr[i]<<"\n";
+        // }
+      }
+  }
+  
 };
 
 struct BindexingFunctor
@@ -707,21 +1016,37 @@ struct BindexingFunctor
   template<typename Exec>
   void operator()(const Exec &)
   {
-    const int num_axes = m_axes.number_of_children();
     const int num_domains = m_dataset.number_of_children();
+    const int num_axes = m_axes.number_of_children();
+
+    // loop over domains
     for(int dom_index = 0; dom_index < num_domains; ++dom_index)
     {
-      // ensure this domain has the necessary fields
+      // ensure this domain has the necessary topo and fields
       conduit::Node &dom = m_dataset.child(dom_index);
+
+      if(!dom["topologies"].has_child(m_topo_name))
+      {
+        continue;
+      }
+
       for(int axis_index = 0; axis_index < num_axes; ++axis_index)
       {
-        const conduit::Node &axis = m_axes.child(axis_index);
+        const conduit::Node &axis   = m_axes.child(axis_index);
         const std::string axis_name = axis.name();
+        // skip the axis name is not one of the spatial axes
+        // or if the domain is missing the named field
         if(!dom.has_path("fields/" + axis_name) && !is_xyz(axis_name))
         {
           continue;
         }
       }
+      // find the coordset name for the topo
+      std::string coords_name = dom["topologies"][m_topo_name]["coordset"].as_string();
+
+      // find the mesh dims
+      int coords_dims = conduit::blueprint::mesh::coordset::dims(dom["coordsets"][coords_name]);
+
 
       // Calculate the size of homes
       conduit::index_t homes_size = 0;
@@ -737,22 +1062,30 @@ struct BindexingFunctor
       // are in fact domain ids
       const int domain_id = dom["state/domain_id"].to_int32();
       Array<int> &bindexes = m_bindexes[domain_id];
+
       //std::cout<<"*** Homes size "<<homes_size<<"\n";
       bindexes.resize(homes_size);
       array_memset(bindexes, 0);
 
       int *bins_ptr = bindexes.get_ptr(Exec::memory_space);
 
+      // we need to track if values were pulled out
+      // things downstream expect the bindexer to do this
+
+      bool reduction_op_values_found = false;
       bool do_once = true;
       // either vertex locations or centroids based on the
       // centering of the reduction variable
       Array<double> spatial_values;
 
       int bin_stride = 1;
+
       for(int axis_index = 0; axis_index < num_axes; ++axis_index)
       {
-        const conduit::Node &axis = m_axes.child(axis_index);
+        const conduit::Node &axis   = m_axes.child(axis_index);
         const std::string axis_name = axis.name();
+        // std::cout << "axis index = " <<  axis_index << " " << axis_name << std::endl;
+        // case where bin axis is a field
         if(dom.has_path("fields/" + axis_name))
         {
           Array<double> values;
@@ -762,19 +1095,21 @@ struct BindexingFunctor
           detail::calc_bindex(values,
                               1, // number of components
                               0, // which component
-                              bin_stride,
                               axis,
+                              bin_stride,
                               bindexes,
                               Exec());
           if(axis_name == m_reduction_var)
           {
+            reduction_op_values_found = true;
             m_values[domain_id] = values;
             //std::cout<<"**** VALUES **** \n";
-            values.status();
-            values.summary();
+            // values.status();
+            // values.summary();
           }
         }
-        else // this is a spatatial axis
+        // case where bin axis is one of the spatial axes
+        else // this is a spatial axis
         {
           // this is a coordinate axis so we need the spatial information
           if(do_once)
@@ -782,28 +1117,60 @@ struct BindexingFunctor
             do_once = false;
             if(m_assoc == "vertex")
             {
-              //std::cout<<"**** Getting vertices\n";
+              std::cout<<"**** Getting vertices\n";
               spatial_values = vertices(dom, m_topo_name);
             }
             else
             {
-              //std::cout<<"**** Getting centroids\n";
+              std::cout<<"**** Getting centroids\n";
               spatial_values = centroids(dom, m_topo_name);
+              std::cout << spatial_values.size() << std::endl;
+              double *sval_ptr = spatial_values.get_host_ptr();
+              index_t sidx = 0;
+              for(index_t e_idx = 0; e_idx < homes_size; e_idx++)
+              {
+                std::cout << sval_ptr[sidx]   << " "
+                          << sval_ptr[sidx+1] << " ";
+
+                if(coords_dims == 3)
+                { 
+                    std::cout << sval_ptr[sidx+2] << "   ";
+                }
+                else 
+                {
+                    std::cout << "  ";
+                }
+                sidx+=coords_dims;
+              }
+              std::cout << std::endl;
             }
             //std::cout<<"*** spatial values "<<spatial_values.size()<<"\n";
           }
           //std::cout<<"Spatial axis "<<axis_name<<"\n";
+
           int comp = detail::spatial_component(axis_name);
           detail::calc_bindex(spatial_values,
-                              3, // number of components
+                              coords_dims, // number of components
                               comp, // which component
-                              bin_stride,
                               axis,
+                              bin_stride,
                               bindexes,
                               Exec());
         }
 
         bin_stride *= axis["bins"].dtype().number_of_elements() - 1;
+      }
+
+      // we need to extract the values if we haven't already
+      // pulled them out
+      if(!reduction_op_values_found)
+      { 
+         // empty reduction var is supported for count and pdf
+         if(m_reduction_var != "")
+         {
+           conduit::Node &field = dom["fields/"+m_reduction_var];
+           m_values[domain_id] = cast_field_values(field, m_component, Exec()); 
+         }
       }
 
       // debug
@@ -828,7 +1195,7 @@ void exchange_bins(Array<double> &bins, const std::string op)
   global_bins.resize(bins_size);
   double *global_ptr = global_bins.get_host_ptr();
 
-  if(op == "sum" || op == "pdf" || op == "avg" ||
+  if(op == "sum" || op == "pdf" || op == "avg" || op == "count" ||
      op == "std" || op == "var" || op == "rms")
   {
     MPI_Allreduce(bins_ptr, global_ptr, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
@@ -845,56 +1212,27 @@ void exchange_bins(Array<double> &bins, const std::string op)
 #endif
 }
 
-struct CalcResultsFunctor
+struct BinningReductionFunctor
 {
-  conduit::Node &m_res;
-  Array<double> &m_bins;
-  const int m_num_bins;
-  const std::string m_op;
-  const double m_empty_val;
-  int m_op_code;
+  conduit::Node     &m_res;
+  Array<double>     &m_bins;
+  const int          m_num_bins;
+  const std::string  m_op;
+  const double       m_empty_val;
 
-  CalcResultsFunctor() = delete;
-  CalcResultsFunctor(conduit::Node &res,
-                     Array<double> &bins,
-                     const int num_bins,
-                     const std::string op,
-                     const double empty_val)
+  BinningReductionFunctor() = delete;
+  BinningReductionFunctor(conduit::Node &res,
+                          Array<double> &bins,
+                          const int num_bins,
+                          const std::string op,
+                          const double empty_val)
     : m_res(res),
       m_bins(bins),
       m_num_bins(num_bins),
       m_op(op),
       m_empty_val(empty_val)
   {
-    m_op_code = -1;
-    if(m_op == "min")
-    {
-      m_op_code = 0;
-    }
-    else if(m_op == "max")
-    {
-      m_op_code = 1;
-    }
-    else if(m_op == "sum")
-    {
-      m_op_code = 2;
-    }
-    else if(m_op == "pdf")
-    {
-      m_op_code = 3;
-    }
-    else if(m_op == "avg")
-    {
-      m_op_code = 4;
-    }
-    else if(m_op == "rms")
-    {
-      m_op_code = 5;
-    }
-    else if(m_op == "std")
-    {
-      m_op_code = 6;
-    }
+    // empty
   }
 
   template<typename Exec>
@@ -903,7 +1241,6 @@ struct CalcResultsFunctor
     double *bins_ptr = m_bins.get_ptr(Exec::memory_space);
     const int size = m_num_bins;
 
-    int op_code = m_op_code;
     const double min_default = std::numeric_limits<double>::max();
     const double max_default = std::numeric_limits<double>::lowest();
     const double empty_val = m_empty_val;
@@ -912,27 +1249,17 @@ struct CalcResultsFunctor
     using for_policy = typename Exec::for_policy;
     using reduce_policy = typename Exec::reduce_policy;
 
-    if(m_op == "pdf")
-    {
-      // we need the total sum to generate a pdf
-      ascent::ReduceSum<reduce_policy, double> sum(0.0);
-      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
-      {
-        sum += bins_ptr[i * 2];
-      });
-      pdf_total = sum.get();
-    }
-
     Array<double> results;
     results.resize(size);
     //std::cout<<"Num bins "<<size<<"\n";
     array_memset(results, m_empty_val);
     double *res_ptr = results.get_ptr(Exec::memory_space);
 
-    ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+    // break in to per op foralls
+
+    if(m_op == "min")
     {
-      double result;
-      if(op_code == 0)
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
         // min
         double val = bins_ptr[i];
@@ -941,8 +1268,11 @@ struct CalcResultsFunctor
           val = empty_val;
         }
         res_ptr[i] = val;
-      }
-      if(op_code == 1)
+      });
+    }
+    else if(m_op == "max")
+    {
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
         // max
         double val = bins_ptr[i];
@@ -951,9 +1281,11 @@ struct CalcResultsFunctor
           val = empty_val;
         }
         res_ptr[i] = val;
-      }
-
-      if(op_code == 2)
+      });
+    }
+    else if(m_op == "sum")
+    {
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
         // sum
         double val = bins_ptr[i*2];
@@ -963,27 +1295,14 @@ struct CalcResultsFunctor
           val = empty_val;
         }
         res_ptr[i] = val;
-        //printf("sum bin %i value %f\n", i, val);
-      }
-      if(op_code == 3)
-      {
-        // pdf
-        double val = bins_ptr[i*2 + 1];
-        if(val == 0)
-        {
-          val = empty_val;
-        }
-        else
-        {
-          val /= pdf_total;
-        }
-        res_ptr[i] = val;
-      }
-
-      if(op_code == 4)
+      });
+    }
+    else if(m_op == "avg")
+    {
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
         // avg
-        const double sum = bins_ptr[2 * i];
+        const double sum   = bins_ptr[2 * i];
         const double count = bins_ptr[2 * i + 1];
         double val;
         if(count == 0)
@@ -995,9 +1314,11 @@ struct CalcResultsFunctor
           val = sum / count;
         }
         res_ptr[i] = val;
-      }
-
-      if(op_code == 5)
+      });
+    }
+    else if(m_op == "rms")
+    {
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
         // rms
         const double sum_x = bins_ptr[2 * i];
@@ -1012,27 +1333,89 @@ struct CalcResultsFunctor
           val = sqrt(sum_x / n);
         }
         res_ptr[i] = val;
-      }
-
-      if(op_code == 6)
+      });
+    }
+    else if(m_op == "var")
+    { 
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
       {
-        // std
-        const double sum_x2 = bins_ptr[3 * i];
-        const double sum_x = bins_ptr[3 * i + 1];
-        const double n = bins_ptr[3 * i + 2];
+        // std =  sum( v[i] - avg(vs)^2) / count
+        const double count = bins_ptr[3 * i + 1];
+        const double var   = bins_ptr[3 * i + 2];
         double val;
-        if(n == 0)
+        if(count == 0)
         {
           val = empty_val;
         }
         else
         {
-          val = (sum_x2 / n) - pow(sum_x / n, 2);
+          val = var/count;
         }
         res_ptr[i] = val;
-      }
+      });
+    }
+    else if(m_op == "std")
+    {
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+      {
+        // std =  sqrt( sum( v[i] - avg(vs)^2) / count )
+        const double count = bins_ptr[3 * i + 1];
+        const double var   = bins_ptr[3 * i + 2];
 
-    });
+        double val;
+        if(count == 0)
+        {
+          val = empty_val;
+        }
+        else
+        {
+          val = sqrt(var/count);
+        }
+        res_ptr[i] = val;
+      });
+    }
+    
+    else if(m_op == "pdf")
+    {
+      // two pass
+      double pdf_total = 0.0;
+      // we need the total count to generate a pdf
+      ascent::ReduceSum<reduce_policy, double> sum(0.0);
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+      {
+        sum += bins_ptr[i];
+      });
+      pdf_total = sum.get();
+
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+      {
+        // pdf
+        double val = bins_ptr[i];
+        if(val == 0)
+        {
+          val = empty_val;
+        }
+        else
+        {
+          val /= pdf_total;
+        }
+        res_ptr[i] = val;
+      });
+    }
+    else if(m_op == "count")
+    {
+      ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+      {
+        // count
+        double val = bins_ptr[i];
+        if(val == 0)
+        {
+          val = empty_val;
+        }
+        res_ptr[i] = val;
+      });
+    }
+    // // debugging: 
     // double *host_ptr = results.get_host_ptr();
     // for(int i = 0; i < m_num_bins; ++i)
     // {
@@ -1052,7 +1435,7 @@ conduit::Node data_binning(conduit::Node &dataset,
                            const std::string &component,
                            std::map<int,Array<int>> &bindexes)
 {
-  bin_axes.print();
+  // bin_axes.print();
 
   // first verify that all variables have matching associations
   // and are part of the same topology
@@ -1087,6 +1470,9 @@ conduit::Node data_binning(conduit::Node &dataset,
 
   exec_dispatch_function(bindexer);
 
+  // return the bindexes so we can paint later
+  bindexes = bindexer.m_bindexes;
+
   // we now have the all of the bin setup, all we have to
   // do now is the reduction
   int num_bins;
@@ -1096,29 +1482,72 @@ conduit::Node data_binning(conduit::Node &dataset,
                                 bindexer.m_values,
                                 bins,
                                 reduction_op);
-  // return the bindexes so we can paint later
-  bindexes = bindexer.m_bindexes;
 
   exec_dispatch_function(binner);
+
   //std::cout<<"DONE BINinng\n";
   // mpi exchange
   detail::exchange_bins(bins, reduction_op);
 
   // use the intermediate results to calc the final bin values
-
   conduit::Node res;
-  detail::CalcResultsFunctor banana(res,
-                                    bins,
-                                    num_bins,
-                                    reduction_op,
-                                    empty_bin_val);
+  detail::BinningReductionFunctor reducer(res,
+                                          bins,
+                                          num_bins,
+                                          reduction_op,
+                                          empty_bin_val);
 
-  exec_dispatch_function(banana);
+  exec_dispatch_function(reducer);
 
   res["association"] = assoc_str;
   //std::cout<<"res "<<res.to_summary_string()<<"\n";
   return res;
 }
+
+
+//-----------------------------------------------------------------------
+ASCENT_API
+void data_binning_samples(conduit::Node &dataset,
+                                   conduit::Node &bin_axes,
+                                   const std::string &reduction_var,
+                                   const std::string &reduction_op,
+                                   const double empty_bin_val,
+                                   const std::string &component,
+                                   std::map<int, Array<double> > &points,
+                                   std::map<int, Array<double> > &values)
+{
+  // bin_axes.print();
+
+  // first verify that all variables have matching associations
+  // and are part of the same topology
+  std::vector<std::string> var_names = bin_axes.child_names();
+  if(!reduction_var.empty())
+  {
+    var_names.push_back(reduction_var);
+  }
+  const conduit::Node &topo_and_assoc =
+      detail::verify_topo_and_assoc(dataset, var_names);
+  const std::string topo_name = topo_and_assoc["topo_name"].as_string();
+  const std::string assoc_str = topo_and_assoc["assoc_str"].as_string();
+
+  // expand optional / automatic axes into explicit bins
+  conduit::Node axes = detail::create_bins_axes(bin_axes, dataset, topo_name);
+
+  detail::SamplesFunctor samples(dataset,
+                                 axes,
+                                 topo_name,
+                                 assoc_str,
+                                 component,
+                                 reduction_var);
+  exec_dispatch_function(samples);
+
+  points = samples.m_sample_points;
+  values = samples.m_sample_values;
+  
+  //std::cout<<"res "<<res.to_summary_string()<<"\n";
+  // return res;
+}
+
 
 //-----------------------------------------------------------------------------
 };

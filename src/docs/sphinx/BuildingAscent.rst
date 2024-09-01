@@ -13,9 +13,7 @@ This page provides details on several ways to build Ascent from source.
 
 For the shortest path from zero to Ascent, see :doc:`QuickStart`.
 
-To build third party dependencies we recommend using :ref:`uberenv <building_with_uberenv>` which leverages Spack or :ref:`Spack directly<building_with_spack>`.
-We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>`.
-and a :ref:`Docker example <building_with_docker>` that leverages Spack.
+To build third party dependencies we recommend using :ref:`build_ascent.sh <build_ascent>`, :ref:`uberenv <building_with_uberenv>` which leverages Spack, or :ref:`Spack directly<building_with_spack>`. We also provide a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 Overview
 --------
@@ -34,12 +32,13 @@ For a minimal build with no parallel components, the following are required:
     * Conduit
     * C++ compilers
 
-We recognize that building on HPC systems can be difficult, and we have provide two separate build strategies.
+We recognize that building on HPC systems can be difficult, and we provide three build strategies.
 
+    * A build_ascent.sh helper script
     * A spack based build
     * Manually compile dependencies using a CMake configuration file to keep compilers and libraries consistent
 
-Most often, the spack based build should be attempted first. Spack will automatically download and build all
+Most often, build_ascent or spack based build should be attempted first. These both automatically download and build all
 the third party dependencies and create a CMake configuration file for Ascent. Should you encounter build issues
 that are not addressed here, please ask questions using our github `issue tracker <https://github.com/Alpine-DAV/ascent/issues>`_.
 
@@ -109,7 +108,6 @@ It optionally includes a ``host-config.cmake`` file with detailed configuration 
 
     cd ascent
     ./config-build.sh
-
 
 Build, test, and install Ascent:
 
@@ -307,11 +305,28 @@ It is  possible to create your own configure file, and an boilerplate example is
 .. warning:: If compiling all of the dependencies yourself, it is important that you use the same compilers for all dependencies. For example, different MPI and Fortran compilers (e.g., Intel and GCC) are not compatible with one another.
 
 
-.. _building_with_uberenv:
-
 Building Ascent and Third Party Dependencies
 --------------------------------------------------
-We use **Spack** (http://spack.io) to help build Ascent's third party dependencies on OSX and Linux.
+
+.. _build_ascent:
+
+build_ascent
+^^^^^^^^^^^^^
+
+`build_ascent.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_ demonstrates how to build Ascent and its main dependencies:
+
+.. literalinclude:: ../../../scripts/build_ascent/build_ascent.sh
+   :language: bash
+
+It supports supports building on linux, macOS, and windows -- without device support, and with CUDA or ROCm/HIP.
+
+
+.. _building_with_uberenv:
+
+uberenv + spack
+^^^^^^^^^^^^^^^^^
+
+We also use **Spack** (http://spack.io) to help build Ascent's third party dependencies on OSX and Linux.
 
 Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Ascent as well.  To automate the full install process, Uberenv uses the Ascent Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
 
@@ -389,12 +404,12 @@ destination directory. It then uses Spack to build and install Conduit's depende
 destination directory that specifies the compiler settings and paths to all of the dependencies.
 
 
-.. _building_known_hpc:
-
-Building with Uberenv on Known HPC Platforms
---------------------------------------------------
-
-`Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
+.. .. _building_known_hpc:
+..
+.. Building with Uberenv on Known HPC Platforms
+.. --------------------------------------------------
+..
+.. `Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
 
 
 Building Third Party Dependencies for Development
@@ -471,20 +486,14 @@ Building Ascent in a Docker Container
 Under ``src/examples/docker/master/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Ascent github master branch. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Ascent repo is cloned into the image's file system at ``/ascent``, the build directory is ``/ascent/build-debug``, and the install directory is ``/ascent/install-debug``.
 
 
-.. _building_manually:
+.. _building_extras:
 
-Building Ascent Dependencies Manually
--------------------------------------
 
-In some environments, a spack build of Ascent's dependencies can fail or a user may prefer to build the dependencies manually.
+Special Case Builds
+------------------------
 
-Here is a `script <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent.sh>`_ that demonstrates how to build Ascent and its main dependencies:
-
-.. literalinclude:: ../../../scripts/build_ascent/build_ascent.sh
-   :language: bash
-
-This script supports building on linux, macOS, and windows.
-It supports building without device support, and with CUDA or ROCm/HIP.
+BabelFlow Support
+^^^^^^^^^^^^^^^^^^^^^^
 
 Here is script that shows how to build additional dependencies for bflow-stats (babelflow+pmt+streamstats+topo_reader):
 
@@ -526,7 +535,7 @@ Here is script that shows how to build additional dependencies for bflow-stats (
    cmake --install ${babelflow_build_dir}
 
 
-   # build parallelmergetree 1.0.2                                                                           
+   # build parallelmergetree 1.0.2
 
    parallelmergetree_src_dir=${root_dir}/parallelmergetree
    parallelmergetree_build_dir=${root_dir}/parallelmergetree/build
@@ -595,7 +604,7 @@ Here is script that shows how to build additional dependencies for bflow-stats (
 .. _paraview_ascent_support:
 
 ParaView Support
-----------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Ascent ParaView support is in `src/examples/paraview-vis <https://github.com/Alpine-DAV/ascent/blob/develop/src/examples/paraview-vis>`_ directory.
 This section describes how to configure, build and run the example
@@ -607,7 +616,7 @@ integrations.  We describe in details the ParaView pipeline for
 .. _paraview_setup_spack:
 
 Setup spack
-^^^^^^^^^^^
+""""""""""""
 Install spack, modules and shell support.
 
 - Clone the spack repository:
@@ -629,7 +638,7 @@ Install spack, modules and shell support.
 .. _paraview_install:
 
 Install ParaView and Ascent
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""
 
 - For MomentInvariants (optional module in ParaView for pattern
   detection) visualization patch ParaView to enable this module:
@@ -663,7 +672,7 @@ Install ParaView and Ascent
 .. _paraview_run_integrations:
 
 Setup and run example integrations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""
 
 You can test Ascent with ParaView support by running the available
 integrations. Visualization images will be generated in the current
@@ -714,7 +723,7 @@ directory. These images can be checked against the images in
 
 
 Setup and run on summit.olcf.ornl.gov
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""
 
 - Execute section :ref:`paraview_setup_spack`
 
@@ -769,7 +778,7 @@ Setup and run on summit.olcf.ornl.gov
   - To check if the integration finished use: ``bjobs -a``
 
 Nightly tests
-^^^^^^^^^^^^^
+""""""""""""""
 
 We provide a docker file for Ubuntu 18.04 and a script that installs
 the latest ParaView and Ascent, runs the integrations provided with
@@ -778,7 +787,7 @@ results. See ``tests/README-docker.md`` for how to create the docker
 image, run the container and execute the test script.
 
 Notes
-^^^^^
+""""""""
 
 - Global extents are computed for uniform and rectilinear topologies but
   they are not yet computed for a structured topology (lulesh). This

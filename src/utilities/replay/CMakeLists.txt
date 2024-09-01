@@ -21,13 +21,13 @@ endif()
 
 if (ENABLE_SERIAL)
     blt_add_executable(
-        NAME        replay_ser
+        NAME        ascent_replay
         SOURCES     ${REPLAY_SOURCES}
         DEPENDS_ON  ${replay_deps}
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
     
     # install target for replay serial
-    install(TARGETS replay_ser
+    install(TARGETS ascent_replay
             EXPORT  ascent
             LIBRARY DESTINATION utilities/ascent/replay
             ARCHIVE DESTINATION utilities/ascent/replay
@@ -37,21 +37,21 @@ endif()
 
 if(MPI_FOUND)
 
-    set(replay_mpi_deps ascent_mpi mpi)
+    set(ascent_replay_mpi_deps ascent_mpi mpi)
     if(OPENMP_FOUND)
-           list(APPEND replay_mpi_deps openmp)
+           list(APPEND ascent_replay_mpi_deps openmp)
     endif()
 
     blt_add_executable(
-        NAME        replay_mpi
+        NAME        ascent_replay_mpi
         SOURCES     ${REPLAY_SOURCES}
-        DEPENDS_ON  ${replay_mpi_deps}
-        OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        DEPENDS_ON  ${ascent_replay_mpi_deps}
+        OUTPUT_DIR  ${CMAKE_CURRENT_BINARY_DIR})
 
-    blt_add_target_compile_flags(TO replay_mpi FLAGS "-DREPLAY_MPI=1")
+    blt_add_target_compile_flags(TO ascent_replay_mpi FLAGS "-DASCENT_REPLAY_MPI=1")
 
     # install target for replay mpi
-    install(TARGETS replay_mpi
+    install(TARGETS ascent_replay_mpi
             EXPORT  ascent
             LIBRARY DESTINATION utilities/ascent/replay
             ARCHIVE DESTINATION utilities/ascent/replay

@@ -10,49 +10,11 @@ Ascent Utilities
 Ascent provides a some utilities to assist users and developers.
 Currently, Ascent provides two main utilities:
 
-* ``gen_spack_env_script.py`` : a python program to create a shell script that
-  load libraries built by uberenv (i.e., spack) into the user environment.
 * ``replay`` : a set of programs that replays simulation data saved by Ascent
   or exported by VisIt to Ascent.
+* ``gen_spack_env_script.py`` : a python program to create a shell script that
+  loads libraries built by uberenv (i.e., spack) into the user environment.
 
-Generate Spack Environment Script
------------------------------------
-The uberenv spack-based build installs libraries into
-difficult to locate paths. The ``gen_spack_env_script.py`` is a utility program that
-searches the uberenv build for user specified dependencies and creates shell script that
-loads these locations into your path.
-
-Why Do I Need This?
-"""""""""""""""""""
-Even with a shared library build where dependent library locations are found automatically,
-some dependencies such as MPI and Python need to be loaded into the user environment for
-Ascent to execute successfully.
-
-For example if the uberenv built MPI and the user machine
-also contains an installation of MPI, executing a command such as ``mpirun -np 4 cloverleaf_par``
-will most definitely invoke the system MPI and not the MPI that Ascent was built with.
-Mixing MPI versions or implementation will almost never result in successful execution and
-should be avoided at all costs.
-
-How Do I Use It?
-""""""""""""""""
-From the top level Ascent directory (i.e., the root of the repository)
-
-.. code:: bash
-
-   python scripts/gen_spack_env_script.py mpi conduit python
-
-Simply invoke the script with python followed by a list of packages. In the above example,
-we are asking program to generate a shell script called ``s_env.sh`` to load the paths of ``mpi``, ``conduit``,
-and ``python`` into our environment. Once this command executes, source the shell script to
-your path:
-
-.. code:: bash
-
-   source s_env.sh
-
-To verify success, you can echo your path and the paths of the libraries should appear at the
-front of the path.
 
 .. _utils_replay:
 
@@ -139,8 +101,8 @@ How Do I Use It?
 Replay executables are created in the ``utilities/replay`` directory of the installation or build.
 There are two versions of replay:
 
-* ``replay_ser``: a serial (non-MPI) version
-* ``replay_mpi``: an MPI version
+* ``ascent_replay``: a serial (non-MPI) version
+* ``ascent_replay_mpi``: an MPI version
 
 The options for replay are:
 
@@ -152,9 +114,9 @@ Example launches:
 
 .. code:: bash
 
-   ./replay_ser --root=clover.cycle_000060.root --actions=my_actions.json
-   srun -n 8 ./replay_mpi --root=clover.cycle_000060.root --actions=my_actions.json
-   srun -n 8 ./replay_mpi --cycles=cycles_list.txt --actions=my_actions.json
+   ./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.json
+   srun -n 8 ./ascent_replay_mpi --root=clover.cycle_000060.root --actions=my_actions.json
+   srun -n 8 ./ascent_replay_mpi --cycles=cycles_list.txt --actions=my_actions.json
 
 The cycles files list is a text file containing one root file per line:
 
@@ -170,7 +132,7 @@ Replay will loop over these files in the order in which they appear in the file.
 
 Domain Overloading
 ^^^^^^^^^^^^^^^^^^
-Each root file can point to any number of domains. When launching ``replay_mpi``,
+Each root file can point to any number of domains. When launching ``ascent_replay_mpi``,
 you can specify any number of ranks less than or equal to the number of domains.
 Replay will automatically domain overload. For example if there were 100 domains and
 replay is launched with 50 ranks, then each rank will load 2 domains.
@@ -304,8 +266,8 @@ paste your yaml into the site and validate if the syntax is correct.
 Running Replay
 ^^^^^^^^^^^^^^
 We have created an actions file and now we want to run it.
-We have two choices: use the mpi version ``replay_mpi`` or the serial
-version ``replay_ser``. What you use depends on the data set, but since our
+We have two choices: use the mpi version ``ascent_replay_mpi`` or the serial
+version ``ascent_replay``. What you use depends on the data set, but since our
 sample data size is small, the serial version will work just fine.
 
 
@@ -315,7 +277,7 @@ yaml actions file is called ``ascent_actions.yaml``.
 
 .. code:: bash
 
-   ./replay_ser --cycles=clover_cycles --actions=ascent_actions.yaml
+   ./ascent_replay --cycles=clover_cycles --actions=ascent_actions.yaml
 
 The result produces 20 images, but Ascent emits warnings:
 
@@ -375,3 +337,43 @@ around the default position.
 ..  image:: images/my_cooler_image.png
     :width: 50%
     :align: center
+
+Generate Spack Environment Script
+-----------------------------------
+The uberenv spack-based build installs libraries into
+difficult to locate paths. The ``gen_spack_env_script.py`` is a utility program that
+searches the uberenv build for user specified dependencies and creates a shell script that
+loads these locations into your path.
+
+Why Do I Need This?
+"""""""""""""""""""
+Even with a shared library build where dependent library locations are found automatically,
+some dependencies such as MPI and Python need to be loaded into the user environment for
+Ascent to execute successfully.
+
+For example, if the uberenv built MPI and the user's machine
+also contains an installation of MPI, executing a command such as ``mpirun -np 4 cloverleaf_par``
+will most definitely invoke the system MPI and not the MPI that Ascent was built with.
+Mixing MPI versions or implementation will almost never result in successful execution and
+should be avoided at all costs.
+
+How Do I Use It?
+""""""""""""""""
+From the top level Ascent directory (i.e., the root of the repository)
+
+.. code:: bash
+
+   python scripts/gen_spack_env_script.py mpi conduit python
+
+Simply invoke the script with python followed by a list of packages. In the above example,
+we are asking the program to generate a shell script called ``s_env.sh`` to load the paths of ``mpi``, ``conduit``,
+and ``python`` into our environment. Once this command executes, source the shell script to
+your path:
+
+.. code:: bash
+
+   source s_env.sh
+
+To verify success, you can echo your path and the paths of the libraries should appear at the
+front of the path.
+

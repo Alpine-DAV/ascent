@@ -33,34 +33,34 @@ To directly start the Jupyter Notebook server and run the tutorial notebooks, ru
 
 This image automatically launches a Jupyter Notebook server on port 8888. Assuming you forwarded port 8888 from the Docker container to your host machine, you should be able to connect to the notebook server using http://localhost:8888. The current password for the notebook server is: ``learn``
 
-
-To start the base image and explore the install and tutorial examples with bash, run:
-
-.. code::
-
-    docker run -p 8888:8888 -t -i alpinedav/ascent
-
-
-You will now be at a bash prompt in you container.
-
-To add the proper paths to Python and MPI to your environment, run:
-
-.. code::
-
-    source ascent_docker_setup_env.sh
-
-The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install/``.
-The tutorial examples are at ``/ascent/install/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/``.
-
-
-You can also launch the a Jupyter Notebook server from this image using the following:
-
-.. code::
-
-    ./ascent_docker_run_jupyter.sh
-
-The url (http://localhost:8888) and password (``learn``) are the same as above.
-
+.. less is more, only point folks to the docker container
+.. To start the base image and explore the install and tutorial examples with bash, run:
+..
+.. .. code::
+..
+..     docker run -p 8888:8888 -t -i alpinedav/ascent
+..
+..
+.. You will now be at a bash prompt in you container.
+..
+.. To add the proper paths to Python and MPI to your environment, run:
+..
+.. .. code::
+..
+..     source ascent_docker_setup_env.sh
+..
+.. The ascent source code is at ``/ascent/src/``, and the install is at ``/ascent/install/``.
+.. The tutorial examples are at ``/ascent/install/examples/ascent/tutorial/`` and the tutorial notebooks are at ``/ascent/install/examples/ascent/tutorial/ascent_intro/notebooks/``.
+..
+..
+.. You can also launch the a Jupyter Notebook server from this image using the following:
+..
+.. .. code::
+..
+..     ./ascent_docker_run_jupyter.sh
+..
+.. The url (http://localhost:8888) and password (``learn``) are the same as above.
+..
 
 .. .. _tutorial_setup_public_installs:
 ..

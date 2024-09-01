@@ -1,0 +1,43 @@
+From 763f13306b719bf6a213d00ead13fc93433e942e Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Tue, 2 Jul 2024 10:28:43 -0700
+Subject: [PATCH] fix bug with ray subsetting using wrong near and far planes
+
+---
+ vtkm/rendering/raytracing/Camera.cxx | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/vtkm/rendering/raytracing/Camera.cxx b/vtkm/rendering/raytracing/Camera.cxx
+index f2a39bef9..10febf39f 100644
+--- a/vtkm/rendering/raytracing/Camera.cxx
++++ b/vtkm/rendering/raytracing/Camera.cxx
+@@ -830,6 +830,7 @@ void Camera::FindSubset(const vtkm::Bounds& bounds)
+         transformed[2] = (transformed[2] * 0.5f + 0.5f);
+         zmin = vtkm::Min(zmin, transformed[2]);
+         zmax = vtkm::Max(zmax, transformed[2]);
++        // skip if outside near and far clipping
+         if (transformed[2] < 0 || transformed[2] > 1)
+         {
+           continue;
+@@ -894,15 +895,10 @@ VTKM_CONT void Camera::UpdateDimensions(Ray<Precision>& rays,
+     this->CameraView.SetLookAt(this->GetLookAt());
+     this->CameraView.SetPosition(this->GetPosition());
+     this->CameraView.SetViewUp(this->GetUp());
+-    //
+-    // Just create come clipping range, we ignore the zmax value in subsetting
+-    //
+-    vtkm::Float64 maxDim = vtkm::Max(
+-      boundingBox.X.Max - boundingBox.X.Min,
+-      vtkm::Max(boundingBox.Y.Max - boundingBox.Y.Min, boundingBox.Z.Max - boundingBox.Z.Min));
+ 
+-    maxDim *= 100;
+-    this->CameraView.SetClippingRange(.0001, maxDim);
++    // Note:
++    // Use clipping range provided, the subsetting does take into consideration
++    // the near and far clipping planes.
+ 
+     //Update our ViewProjection matrix
+     this->ViewProjectionMat =
+-- 
+2.39.3 (Apple Git-145)
+

@@ -4,32 +4,26 @@
 #include <vtkh/vtkh_exports.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
+#include <vtkh/filters/Filter.hpp>
 
 namespace vtkh
 {
 
-class VTKH_API Statistics
+class VTKH_API Statistics: public Filter
 {
 public:
-
-  struct Result
-  {
-    vtkm::Float32 mean;
-    vtkm::Float32 variance;
-    vtkm::Float32 skewness;
-    vtkm::Float32 kurtosis;
-    void Print(std::ostream &out)
-    {
-      out<<"Mean    : "<<mean<<"\n";
-      out<<"Variance: "<<variance<<"\n";
-      out<<"Skewness: "<<skewness<<"\n";
-      out<<"Kurtosis: "<<kurtosis<<"\n";
-    }
-  };
-
   Statistics();
-  ~Statistics();
-  Statistics::Result Run(vtkh::DataSet &data_set, const std::string field_name);
+  virtual ~Statistics();
+  std::string GetName() const override;
+
+  void SetField(const std::string &field_name);
+  std::string GetField() const;
+protected:
+  void PreExecute() override;
+  void PostExecute() override;
+  void DoExecute() override;
+
+  std::string m_field_name;
 
 };
 

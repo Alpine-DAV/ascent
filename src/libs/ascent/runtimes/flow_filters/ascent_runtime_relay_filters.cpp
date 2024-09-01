@@ -41,6 +41,7 @@
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include "ascent_transmogrifier.hpp"
 
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
@@ -93,7 +94,7 @@ namespace detail
 //-----------------------------------------------------------------------------
 void
 check_for_attributes(const conduit::Node &input,
-                     std::vector<std::string> &list)
+                     std::vector<std::string> &field_names)
 {
   const int num_doms = input.number_of_children();
   std::set<std::string> specials;
@@ -116,20 +117,118 @@ check_for_attributes(const conduit::Node &input,
 
   for(auto it = specials.begin(); it != specials.end(); ++it)
   {
-    list.push_back(*it);
+    field_names.push_back(*it);
   }
 }
 
 //-----------------------------------------------------------------------------
 void
+filter_topos(const conduit::Node &input,
+             conduit::Node &output,
+             const std::vector<std::string> &topo_names,
+             flow::Graph &graph)
+{
+  // assume this is multi-domain
+
+  const int num_doms = input.number_of_children();
+  for(int d = 0; d < num_doms; ++d)
+  {
+    const conduit::Node &dom = input.child(d);
+    conduit::Node &out_dom = output.append();
+
+    for(auto topo_name : topo_names)
+    {
+      const std::string tpath = "topologies/" + topo_name;
+      if(dom.has_path(tpath))
+      {
+        if(!out_dom.has_path(tpath))
+        {
+          out_dom[tpath].set_external(dom[tpath]);
+        }
+
+        // check for coord sets
+        const std::string coords = dom[tpath + "/coordset"].as_string();
+        const std::string cpath = "coordsets/" + coords;
+        if(!out_dom.has_path(cpath))
+        {
+          out_dom[cpath].set_external(dom[cpath]);
+        }
+        
+        // check for any fields defined on this topo
+        if(dom.has_path("fields"))
+        {
+          NodeConstIterator itr = dom["fields"].children();
+          while(itr.has_next())
+          {
+            const conduit::Node &curr = itr.next();
+            const std::string curr_name = itr.name();
+            const std::string out_path = "fields/" + curr_name;
+            if( (curr["topology"].as_string() == topo_name) &&
+                !out_dom.has_path(out_path) )
+            {
+              out_dom[out_path].set_external(curr);
+            }
+          }
+        }
+
+        // check for any matsets defined on this topo
+        if(dom.has_path("matsets"))
+        {
+          NodeConstIterator itr = dom["matsets"].children();
+          while(itr.has_next())
+          {
+            const conduit::Node &curr = itr.next();
+            const std::string curr_name = itr.name();
+            const std::string out_path = "matsets/" + curr_name;
+            if( (curr["topology"].as_string() == topo_name) &&
+                !out_dom.has_path(out_path) )
+            {
+              out_dom[out_path].set_external(curr);
+            }
+          }
+        }
+
+        // check for any matsets defined on this topo
+        if(dom.has_path("nestsets"))
+        {
+          NodeConstIterator itr = dom["nestsets"].children();
+          while(itr.has_next())
+          {
+            const conduit::Node &curr = itr.next();
+            const std::string curr_name = itr.name();
+            const std::string out_path = "nestsets/" + curr_name;
+            if( (curr["topology"].as_string() == topo_name) &&
+                !out_dom.has_path(out_path) )
+            {
+              out_dom[out_path].set_external(curr);
+            }
+          }
+        }
+        
+      }
+    }
+
+    // set state if not already set
+    if(dom.has_path("state") && !out_dom.has_path("state"))
+    {
+      out_dom["state"].set_external(dom["state"]);
+    }
+  }
+
+}
+
+
+
+//-----------------------------------------------------------------------------
+void
 filter_fields(const conduit::Node &input,
               conduit::Node &output,
-              std::vector<std::string> fields,
+              std::vector<std::string> &field_names,
               flow::Graph &graph)
 {
   // assume this is multi-domain
   //
-  check_for_attributes(input, fields);
+  check_for_attributes(input, field_names);
 
   const int num_doms = input.number_of_children();
   for(int d = 0; d < num_doms; ++d)
@@ -139,12 +238,11 @@ filter_fields(const conduit::Node &input,
     std::set<std::string> topos;
     std::set<std::string> matsets;
 
-    for(int f = 0; f < fields.size(); ++f)
+    for(auto field_name : field_names)
     {
-      const std::string fname = fields[f];
-      if(dom.has_path("fields/" + fname))
+      if(dom.has_path("fields/" + field_name))
       {
-        const std::string fpath = "fields/" + fname;
+        const std::string fpath = "fields/" + field_name;
         out_dom[fpath].set_external(dom[fpath]);
         // check for topologies
         const std::string topo = dom[fpath + "/topology"].as_string();
@@ -201,7 +299,7 @@ filter_fields(const conduit::Node &input,
       }
     }
 
-    // add nestsets associated with referenced topologies
+    // add matsets associated with referenced topologies
     if(dom.has_path("matsets"))
     {
       const int num_matts = dom["matsets"].number_of_children();
@@ -262,19 +360,42 @@ filter_fields(const conduit::Node &input,
       }
     }
   }
+}
+
+//-----------------------------------------------------------------------------
+void
+post_filter_check_for_data(const conduit::Node &output)
+{
+  const int num_out_doms = output.number_of_children();
+  bool has_data = false;
+  // check to see if this resulted in any data
+  for(int d = 0; d < num_out_doms; ++d)
+  {
+    const conduit::Node &dom = output.child(d);
+    if(dom.has_path("topologies"))
+    {
+      int tsize = dom["topologies"].number_of_children();
+      if(tsize != 0)
+      {
+        has_data = true;
+        break;
+      }
+    }
+  }
 
   has_data = global_someone_agrees(has_data);
   if(!has_data)
   {
-    ASCENT_ERROR("Relay: field selection resulted in no data."
-                 "This can occur if the fields did not exist "
-                 "in the simulation data or if the fields were "
+    ASCENT_ERROR("Relay Extract: "
+                 "field or topology selection resulted in no data."
+                 "This can occur if the selected fields/topologies did not exist "
+                 "in the simulation data or if the fields/topologies were "
                  "created as a result of a pipeline, but the "
                  "relay extract did not receive the result of "
                  "a pipeline");
   }
-
 }
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
@@ -334,6 +455,19 @@ verify_io_params(const conduit::Node &params,
         else
         {
             info["info"].append() = "includes 'num_files'";
+        }
+    }
+    
+    if( params.has_child("refinement_level") )
+    {
+        if(!params["refinement_level"].dtype().is_integer())
+        {
+            info["errors"].append() = "optional entry 'refinement_level' must be an integer";
+            res = false;
+        }
+        else
+        {
+            info["info"].append() = "includes 'refinement_level'";
         }
     }
 
@@ -413,9 +547,12 @@ verify_io_params(const conduit::Node &params,
     std::vector<std::string> ignore_paths;
     valid_paths.push_back("path");
     valid_paths.push_back("protocol");
+    valid_paths.push_back("topologies");
     valid_paths.push_back("fields");
     valid_paths.push_back("num_files");
+    valid_paths.push_back("refinement_level");
     ignore_paths.push_back("fields");
+    ignore_paths.push_back("topologies");
 #if defined(ASCENT_HDF5_ENABLED)
     ignore_paths.push_back("hdf5_options");
 #endif
@@ -550,41 +687,103 @@ RelayIOSave::execute()
         ASCENT_ERROR("relay_io_save requires a DataObject input");
     }
 
+    // check if user requested lor for export
+    int lor_level = -1;
+    if(params().has_child("refinement_level"))
+    {
+        lor_level = params()["refinement_level"].to_int();
+    }
+
     DataObject *data_object  = input<DataObject>("in");
     if(!data_object->is_valid())
     {
       return;
     }
-    std::shared_ptr<Node> n_input = data_object->as_node();
+
+    std::shared_ptr<Node> n_input;
+    int tmogr_ref_level = Transmogrifier::m_refinement_level;
+    // check if user requested lor for export
+    if(lor_level >0)
+    {
+      // check if extract params are the same as global lor setting
+      if(lor_level != tmogr_ref_level)
+      {
+          // not the same, preserve global setting
+          //push
+          Transmogrifier::m_refinement_level = lor_level;
+      }
+
+      n_input = data_object->as_low_order_bp();
+
+      if(lor_level != Transmogrifier::m_refinement_level)
+      {
+          // not the same, restore global setting
+          // pop
+          Transmogrifier::m_refinement_level = tmogr_ref_level;
+      }
+
+    }
+    else
+    {
+        n_input = data_object->as_node();
+    }
 
     Node *in = n_input.get();
 
     Node selected;
 
-    if(params().has_path("fields"))
-    {
-      std::vector<std::string> field_selection;
-      const conduit::Node &flist = params()["fields"];
-      const int num_fields = flist.number_of_children();
-      if(num_fields == 0)
-      {
-        ASCENT_ERROR("relay_io_save field selection list must be non-empty");
-      }
-      for(int i = 0; i < num_fields; ++i)
-      {
-        const conduit::Node &f = flist.child(i);
-        if(!f.dtype().is_string())
-        {
-           ASCENT_ERROR("relay_io_save field selection list values must be a string");
-        }
-        field_selection.push_back(f.as_string());
-      }
-      detail::filter_fields(*in, selected, field_selection, graph());
-    }
-    else
+    if(!params().has_path("fields") && !params().has_path("topologies"))
     {
       // select all fields
       selected.set_external(*in);
+    }
+    else
+    {
+
+      // result of this is an "OR" of the fields and the topologies selected
+      if(params().has_path("fields"))
+      {
+        std::vector<std::string> field_selection;
+        const conduit::Node &flist = params()["fields"];
+        const int num_fields = flist.number_of_children();
+        if(num_fields == 0)
+        {
+          ASCENT_ERROR("relay_io_save field selection list must be non-empty");
+        }
+        for(int i = 0; i < num_fields; ++i)
+        {
+          const conduit::Node &f = flist.child(i);
+          if(!f.dtype().is_string())
+          {
+             ASCENT_ERROR("relay_io_save field selection list values must be a string");
+          }
+          field_selection.push_back(f.as_string());
+        }
+        detail::filter_fields(*in, selected, field_selection, graph());
+      }
+    
+      if(params().has_path("topologies"))
+      {
+        std::vector<std::string> topology_selection;
+        const conduit::Node &tlist = params()["topologies"];
+        const int num_topos = tlist.number_of_children();
+        if(num_topos == 0)
+        {
+          ASCENT_ERROR("relay_io_save topology selection list must be non-empty");
+        }
+        for(int i = 0; i < num_topos; ++i)
+        {
+          const conduit::Node &t = tlist.child(i);
+          if(!t.dtype().is_string())
+          {
+             ASCENT_ERROR("relay_io_save topology selection list values must be a string");
+          }
+          topology_selection.push_back(t.as_string());
+        }
+        detail::filter_topos(*in, selected, topology_selection, graph());
+      }
+
+      detail::post_filter_check_for_data(selected);
     }
 
     Node meta = Metadata::n_metadata;
@@ -638,7 +837,9 @@ RelayIOSave::execute()
         result_path = path;
     }
 #if defined(ASCENT_HDF5_ENABLED)
-    else if( protocol == "blueprint/mesh/hdf5" || protocol == "hdf5")
+    else if( protocol == "blueprint" ||
+             protocol == "blueprint/mesh/hdf5" ||
+             protocol == "hdf5")
     {
         mesh_blueprint_save(selected,
                             path,
@@ -648,21 +849,23 @@ RelayIOSave::execute()
                             result_path);
     }
 #endif
-    else if( protocol == "blueprint/mesh/json" || protocol == "json")
+    else if( protocol == "blueprint" ||
+             protocol == "blueprint/mesh/yaml" ||
+             protocol == "yaml")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "json",
+                            "yaml",
                             num_files,
                             extra_opts,
                             result_path);
 
     }
-    else if( protocol == "blueprint/mesh/yaml" || protocol == "yaml")
+    else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
         mesh_blueprint_save(selected,
                             path,
-                            "yaml",
+                            "json",
                             num_files,
                             extra_opts,
                             result_path);

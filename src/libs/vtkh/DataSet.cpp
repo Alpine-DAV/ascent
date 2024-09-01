@@ -692,6 +692,39 @@ DataSet::AddConstantPointField(const vtkm::Float32 value, const std::string fiel
   }
 }
 
+void
+DataSet::AddLinearPointField(const vtkm::Float32 value, const std::string fieldname)
+{
+  const size_t size = m_domain_ids.size();
+
+  for(size_t i = 0; i < size; ++i)
+  {
+    vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
+    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    detail::MemSet(array, value, num_points);
+    for(int j = 0; j < num_points; ++j)
+      array.WritePortal().Set(j,j);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    m_domains[i].AddField(field);
+  }
+}
+
+void
+DataSet::AddDomainIdField(const std::string fieldname)
+{
+  const size_t size = m_domain_ids.size();
+
+  for(size_t i = 0; i < size; ++i)
+  {
+    vtkm::Id domain_id = m_domain_ids[i];
+    vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
+    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    detail::MemSet(array, (vtkm::Float32)domain_id, num_points);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    m_domains[i].AddField(field);
+  }
+}
+
 bool
 DataSet::FieldExists(const std::string &field_name) const
 {
@@ -874,6 +907,111 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
     throw Error("Get association: unknown association");
   }
   return assoc;
+}
+
+vtkm::Id
+DataSet::GetFieldType(const std::string field_name, bool &valid_field) const
+{
+  valid_field = true;
+  if(!this->GlobalFieldExists(field_name))
+  {
+    valid_field = false;
+    return -1;
+  }
+
+  using scalarI = vtkm::cont::ArrayHandle<vtkm::Int32>;
+  using scalarF = vtkm::cont::ArrayHandle<vtkm::Float32>;
+  using scalarD = vtkm::cont::ArrayHandle<vtkm::Float64>;
+  using vec2F   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>; 
+  using vec2D   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>; 
+  using vec3F   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>; 
+  using vec3D   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>; 
+
+  int field_id = -1;
+  if(this->FieldExists(field_name))
+  {
+    const size_t num_domains = m_domains.size();
+    vtkm::Bounds bounds;
+
+    vtkm::cont::Field::Association local_assoc;
+    for(size_t i = 0; i < num_domains; ++i)
+    {
+      vtkm::cont::DataSet dom = m_domains[i];
+      if(dom.HasField(field_name))
+      {
+	vtkm::cont::Field local_field = dom.GetField(field_name);
+        if(local_field.GetData().IsType<scalarI>())
+        {
+          field_id = 0;
+        }
+	else if(local_field.GetData().IsType<scalarF>())
+        {
+          field_id = 1;
+        }
+	else if(local_field.GetData().IsType<scalarD>())
+        {
+          field_id = 2;
+        }
+	else if(local_field.GetData().IsType<vec2F>())
+        {
+          field_id = 3;
+        }
+	else if(local_field.GetData().IsType<vec2D>())
+        {
+          field_id = 4;
+        }
+	else if(local_field.GetData().IsType<vec3F>())
+        {
+          field_id = 5;
+        }
+	else if(local_field.GetData().IsType<vec3D>())
+        {
+          field_id = 6;
+        }
+        break;
+      }
+    }
+  }
+
+#ifdef VTKH_PARALLEL
+
+  MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
+
+
+  int *global_field_ids = new int[vtkh::GetMPISize()];
+
+  MPI_Allgather(&field_id,
+                1,
+                MPI_INT,
+                global_field_ids,
+                1,
+                MPI_INT,
+                mpi_comm);
+
+  int id = -1;
+
+  for(int i = 0; i < vtkh::GetMPISize(); ++i)
+  {
+    if(global_field_ids[i] != -1)
+    {
+      if(id != -1 && global_field_ids[i] != id)
+      {
+        std::stringstream msg;
+        msg<<"field "<< field_name
+           <<" has inconsistent types";;
+        throw Error(msg.str());
+      }
+      else
+      {
+        id = global_field_ids[i];
+      }
+    }
+  }
+  field_id = id;
+  delete[] global_field_ids;
+#endif
+
+  return field_id;
 }
 
 vtkm::Id DataSet::NumberOfComponents(const std::string &field_name) const

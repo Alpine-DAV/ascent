@@ -692,6 +692,22 @@ DataBinning::execute()
     expressions::paint_binning(mesh_in, *n_input.get(), output_field);
     set_output<DataObject>(d_output);
   }
+  else if(output_type== "samples")
+  {
+    // create a point mesh that has the sample points and value
+
+    DataObject  *d_output = new DataObject();
+    d_output->reset(n_input);
+    expressions::paint_binning(mesh_in, *n_input.get());
+    set_output<DataObject>(d_output);
+
+    // // we are taking the shared pointer from the input so
+    // // we don't copy anything extra
+    // DataObject  *d_output = new DataObject();
+    // d_output->reset(n_input);
+    // expressions::paint_binning(mesh_in, *n_input.get(), output_field);
+    // set_output<DataObject>(d_output);
+  }
   else
   {
     //we already checked so this should not happen
@@ -807,6 +823,114 @@ AddFields::execute()
 
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// PowerOfField (derived field)
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+PowerOfField::PowerOfField() : Filter()
+{
+  // empty
+}
+
+//-----------------------------------------------------------------------------
+PowerOfField::~PowerOfField()
+{
+  // empty
+}
+//-----------------------------------------------------------------------------
+void
+PowerOfField::declare_interface(Node &i)
+{
+    i["type_name"]   = "power_of_field";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+PowerOfField::verify_params(const conduit::Node &params,
+                               conduit::Node &info)
+{
+    info.reset();
+    bool res = true;
+
+
+    if(!params.has_path("output_field"))
+    {
+      res = false;
+      info["errors"].append() = "Missing param 'output_field'";
+    }
+
+    if(!params.has_path("field"))
+    {
+      res = false;
+      info["errors"].append() = "Missing param 'field'";
+    }
+
+    if(!params.has_path("exponent"))
+    {
+      res = false;
+      info["errors"].append() = "Missing param 'exponent'";
+    }
+
+    std::vector<std::string> valid_paths;
+    std::vector<std::string> ignore_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("exponent");
+    valid_paths.push_back("output_field");
+
+
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+PowerOfField::execute()
+{
+  if(!input(0).check_type<DataObject>())
+  {
+      ASCENT_ERROR("add fields input must be a DataObject");
+  }
+
+  Node v_info;
+  DataObject *d_input = input<DataObject>(0);
+  std::shared_ptr<conduit::Node> n_input = d_input->as_low_order_bp();
+
+  std::string out_field = params()["output_field"].as_string();
+  std::string field = params()["field"].as_string();
+  double exponent = 0.0; 
+  if(params()["exponent"].dtype().is_int())
+  {
+    exponent = (double)params()["exponent"].as_int(); 	  
+  }
+  else if(params()["exponent"].dtype().is_float32())
+  {
+    exponent = (double)params()["exponent"].as_float32(); 	  
+  }
+  else if(params()["exponent"].dtype().is_float64())
+  {
+    exponent = params()["exponent"].as_float64(); 	  
+  }
+  else
+    ASCENT_ERROR("'exponent' type not recognized, must be a number");
+
+  DataObject  *d_output = new DataObject();
+  d_output->reset(n_input);
+  expressions::derived_field_power_of_field(*n_input.get(), field, exponent, out_field);
+  set_output<DataObject>(d_output);
+
+}
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

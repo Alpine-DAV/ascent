@@ -20,17 +20,14 @@ find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
 
-        # clear extra python module dirs
-        set(EXTRA_PYTHON_MODULE_DIRS "")
-
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                        "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
+                        "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
                         OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
                         ERROR_VARIABLE  ERROR_FINDING_PYTHON_VERSION)
         MESSAGE(STATUS "PYTHON_CONFIG_VERSION ${PYTHON_CONFIG_VERSION}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                "import sys;from distutils.sysconfig import get_python_inc;sys.stdout.write(get_python_inc())"
+                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('include'))"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
@@ -39,7 +36,18 @@ if(PYTHONINTERP_FOUND)
             MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
         endif()
 
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+        #######################################################################
+        # Find main python package dirs for embedded use cases
+        # (used in Ascent, not Conduit)
+        #######################################################################
+        #
+        # TODO: replacing distutils.get_python_lib() isn't straight forward
+        #       distutils had special logic for some platforms (ubuntu)
+        #       which is not 1:1 using sysconfig.
+        #       We may need several queries and a list of paths to replace
+        #       get_python_lib()
+        #
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
                         ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
@@ -48,9 +56,10 @@ if(PYTHONINTERP_FOUND)
         if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
             MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
         endif()
-
         # for embedded python, we need to know where the site packages dir is
+        set(EXTRA_PYTHON_MODULE_DIRS "")
         list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
+        #######################################################################
 
         # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
@@ -69,7 +78,7 @@ if(PYTHONINTERP_FOUND)
         endif()
 
         # our goal is to find the specific python lib, based on info
-        # we extract from distutils.sysconfig from the python executable
+        # we extract from sysconfig from the python executable
         #
         # check for python libs differs for windows python installs
         if(NOT WIN32)
@@ -85,22 +94,22 @@ if(PYTHONINTERP_FOUND)
             #  LIBPL + LIBRARY
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBDIR
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBDIR)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBPL
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPL)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LDLIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LDLIBRARY)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBRARY)
 
@@ -184,7 +193,7 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 
 
 ##############################################################################
-# Macro to use a pure python distutils setup script
+# Macro to use a pure python pip setup script
 ##############################################################################
 FUNCTION(PYTHON_ADD_PIP_SETUP)
     set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
@@ -197,27 +206,27 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
     # check req'd args
     if(NOT DEFINED args_NAME)
        message(FATAL_ERROR
-               "PYTHON_ADD_HYBRID_MODULE: Missing required argument NAME")
+               "PYTHON_ADD_PIP_SETUP: Missing required argument NAME")
     endif()
 
     if(NOT DEFINED args_DEST_DIR)
        message(FATAL_ERROR
-               "PYTHON_ADD_HYBRID_MODULE: Missing required argument DEST_DIR")
+               "PYTHON_ADD_PIP_SETUP: Missing required argument DEST_DIR")
     endif()
 
     if(NOT DEFINED args_PY_MODULE_DIR)
        message(FATAL_ERROR
-       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_MODULE_DIR")
+       "PYTHON_ADD_PIP_SETUP: Missing required argument PY_MODULE_DIR")
     endif()
 
     if(NOT DEFINED args_PY_SETUP_FILE)
        message(FATAL_ERROR
-       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SETUP_FILE")
+       "PYTHON_ADD_PIP_SETUP: Missing required argument PY_SETUP_FILE")
     endif()
 
     if(NOT DEFINED args_PY_SOURCES)
        message(FATAL_ERROR
-       "PYTHON_ADD_HYBRID_MODULE: Missing required argument PY_SOURCES")
+       "PYTHON_ADD_PIP_SETUP: Missing required argument PY_SOURCES")
     endif()
 
     MESSAGE(STATUS "Configuring python pip setup: ${args_NAME}")
@@ -426,10 +435,10 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
                                SOURCES       ${args_SOURCES}
                                FOLDER        ${args_FOLDER})
 
+    # args_NAME depends on "${args_NAME}_py_setup"
+    add_dependencies( ${args_NAME} "${args_NAME}_py_setup")
+
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
-
-
-
 
 #
 # Also register python as a BLT dep,to support the case were we link python,
@@ -439,5 +448,4 @@ ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 blt_register_library(NAME python
                      INCLUDES ${PYTHON_INCLUDE_DIR}
                      LIBRARIES ${PYTHON_LIBRARY} )
-
 

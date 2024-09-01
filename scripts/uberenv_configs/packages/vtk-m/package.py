@@ -152,6 +152,10 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     # Patch
     patch("diy-include-cstddef.patch", when="@1.5.3:1.8.0")
 
+    # VTK-m PR #3215
+    # https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3215
+    patch("2024_05_03_vtkm-mr3215-ext-geom-fix.patch", when="@2.1:")
+
     # VTK-M PR#2972
     # https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/2972
     patch("vtkm-cuda-swap-conflict-pr2972.patch", when="@1.9 +cuda ^cuda@12:")
@@ -159,6 +163,10 @@ class VtkM(CMakePackage, CudaPackage, ROCmPackage):
     # VTK-M PR#3160
     # https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3160
     patch("mr3160-rocthrust-fix.patch", when="@2.1:")
+
+    # VTK-M future PR
+    # 
+    patch("2024_07_02_vtkm-mr3246-raysubset_bugfix.patch", when="@2.1:")
 
     def cmake_args(self):
         spec = self.spec

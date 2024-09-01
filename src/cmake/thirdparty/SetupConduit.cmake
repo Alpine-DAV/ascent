@@ -46,6 +46,10 @@ if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_io_hdf5.hpp)
     message(STATUS "FOUND conduit HDF5 support")
 endif()
 
+if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_io_silo.hpp)
+    set(CONDUIT_SILO_ENABLED TRUE)
+    message(STATUS "FOUND conduit Silo support")
+endif()
 
 if(EXISTS ${CONDUIT_DIR}/include/conduit/conduit_relay_adios_api.hpp)
     set(CONDUIT_ADIOS_ENABLED TRUE)
@@ -156,6 +160,11 @@ if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
     # hdf5 dlls
     if(CONDUIT_HDF5_ENABLED)
         list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_HDF5_DIR}/bin)
+    endif()
+
+    # silo dlls
+    if(CONDUIT_SILO_ENABLED)
+        list(APPEND ASCENT_TPL_DLL_PATHS ${CONDUIT_SILO_DIR}/bin)
     endif()
 
 endif()

@@ -127,6 +127,77 @@ void CopyArray(vtkm::cont::ArrayHandle<T> &vtkm_handle, const T* vals_ptr, const
   vtkm_handle = vtkm::cont::make_ArrayHandle(vals_ptr, size, copy);
 }
 
+
+template<typename T>
+void
+BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
+                                 bool zero_copy,
+                                 vtkm::cont::ArrayHandle<T> &vtkm_handle)
+{
+    int array_size = n.dtype().number_of_elements();
+
+    if( sizeof(T) == 1 ) // uint8 is what vtk-m will use for this case.
+    {
+        if(n.is_compact() && n.dtype().is_uint8())
+        {
+            // directly compatible
+            const void *idx_ptr = n.data_ptr();
+            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size,zero_copy);
+        }
+        else
+        {
+            // we need to convert to uint8 to match vtkm::Id
+            vtkm_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            Node n_tmp;
+            n_tmp.set_external(DataType::uint8(array_size),ptr);
+            n.to_uint8_array(n_tmp);
+        }
+    }
+    else if( sizeof(T) == 2)
+    {
+        // unsupported!
+        ASCENT_ERROR("BlueprintIndexArrayToVTKmIdArray does not support 2-byte index arrays");
+    }
+    else if( sizeof(T) == 4) // int32 is what vtk-m will use for this case.
+    {
+        if(n.is_compact() && n.dtype().is_int32())
+        {
+            // directly compatible
+            const void *idx_ptr = n.data_ptr();
+            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size,zero_copy);
+        }
+        else
+        {
+            // we need to convert to int32 to match vtkm::Id
+            vtkm_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            Node n_tmp;
+            n_tmp.set_external(DataType::int32(array_size),ptr);
+            n.to_int32_array(n_tmp);
+        }
+    }
+    else if( sizeof(T) == 8) // int64 is what vtk-m will use for this case.
+    {
+        if(n.is_compact() && n.dtype().is_int64())
+        {
+            // directly compatible
+            const void *idx_ptr = n.data_ptr();
+            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size, zero_copy);
+        }
+        else
+        {
+            // we need to convert to int64 to match vtkm::Id
+            vtkm_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            Node n_tmp;
+            n_tmp.set_external(DataType::int64(array_size),ptr);
+            n.to_int64_array(n_tmp);
+        }
+    }
+}
+
+
 template<typename T>
 vtkm::cont::CoordinateSystem
 GetExplicitCoordinateSystem(const conduit::Node &n_coords,
@@ -256,6 +327,10 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   {
     vtkm_assoc = vtkm::cont::Field::Association::Cells;
   }
+  else if(assoc_str == "whole")
+  {
+    vtkm_assoc = vtkm::cont::Field::Association::WholeDataSet;
+  }
   else
   {
     ASCENT_ERROR("Cannot add field association "<<assoc_str<<" from field "<<field_name);
@@ -277,7 +352,6 @@ vtkm::cont::Field GetField(const conduit::Node &node,
   }
   else
   {
-
       //
       // use ArrayHandleStride to create new field
       //
@@ -474,6 +548,16 @@ void VTKmCellShape(const std::string &shape_type,
       shape_id = 3;
       num_indices = 2;
   }
+  else if(shape_type == "pyramid")
+  {
+      shape_id = 14;
+      num_indices = 5;
+  }
+  else if(shape_type == "wedge")
+  {
+      shape_id = 13;
+      num_indices = 6;
+  }
   else
   {
     ASCENT_ERROR("Unsupported cell type "<<shape_type);
@@ -485,6 +569,207 @@ bool allEqual(std::vector<T> const &v)
 {
   return std::adjacent_find(v.begin(), v.end(), std::not_equal_to<T>()) == v.end();
 }
+
+
+
+template<typename T, typename S>
+void GetMatSetFields(const conduit::Node &node, //materials["matset"]
+                           const std::string &length_name,
+                           const std::string &offsets_name,
+                           const std::string &ids_name,
+                           const std::string &vfs_name,
+                           const std::string &topo_str,
+                           const int neles,
+                           vtkm::cont::Field &length,
+                           vtkm::cont::Field &offsets,
+                           vtkm::cont::Field &ids,
+                           vtkm::cont::Field &vfs)
+{
+  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+
+  vtkm::cont::Field::Association vtkm_assoc_c = vtkm::cont::Field::Association::Cells;
+
+  std::vector<T> v_length(neles,0);
+  std::vector<T> v_offsets(neles,0);
+  if(node.has_child("element_ids"))
+  {
+    NodeConstIterator itr = node["element_ids"].children();
+    std::string material_name;
+    while(itr.has_next())
+    {
+
+      const Node &n_material = itr.next();
+      const int nvals = n_material.dtype().number_of_elements();
+      const T *data = n_material.value();
+      //increase length when a material vf value > 0
+      for(int i = 0; i < nvals; ++i)
+      {
+        v_length[data[i]] += 1;
+      }
+    }
+  }
+  else
+  {
+    NodeConstIterator itr = node["volume_fractions"].children();
+    std::string material_name;
+    while(itr.has_next())
+    {
+
+      const Node &n_material = itr.next();
+      const S *data = n_material.value();
+      //increase length when a material vf value > 0
+      for(index_t i = 0; i < neles; ++i)
+      {
+        if(data[i] > 0)
+          v_length[i] += 1;
+      }
+    }
+  }
+
+  //calc offset of length and total length
+  int l_total = 0;
+  for(index_t i = 0; i < neles-1; ++i)
+  {
+    v_offsets[i+1] = v_offsets[i] + v_length[i];
+    l_total += v_length[i];
+  }
+  l_total += v_length[neles-1];
+
+  const T *length_ptr = v_length.data();
+
+  length = vtkm::cont::make_Field(length_name,
+                                 vtkm_assoc_c,
+                                 length_ptr,
+                                 neles,
+                                 copy);
+
+  const T *offsets_ptr = v_offsets.data();
+
+  offsets = vtkm::cont::make_Field(offsets_name,
+                                 vtkm_assoc_c,
+                                 offsets_ptr,
+                                 neles,
+                                 copy);
+  //calc vfs and mat ids
+  vtkm::cont::Field::Association vtkm_assoc_w = vtkm::cont::Field::Association::WholeDataSet;
+  std::vector<T> v_ids(l_total,0);
+  std::vector<S> v_vfs(l_total,0);
+
+  if(node.has_child("element_ids"))
+  {
+
+    int num_materials = node["element_ids"].number_of_children();
+    const Node &n_vol_fracs = node["volume_fractions"];
+    const Node &n_ele_ids = node["element_ids"];
+
+    for(index_t i = 0; i < num_materials; ++i)
+    {
+      const Node &n_vol_frac = n_vol_fracs.child(i);
+      const Node &n_ele_id = n_ele_ids.child(i);
+      const S *vf_data = n_vol_frac.value();
+      const T *id_data = n_ele_id.value();
+      int num_vals = n_ele_id.dtype().number_of_elements(); 
+
+      for(index_t j = 0; j < num_vals; ++j)
+      {
+        v_length[id_data[j]] -= 1;
+        index_t offset = v_offsets[id_data[j]];
+        index_t length = v_length[id_data[j]];
+        v_vfs[offset + length] = vf_data[j];
+        v_ids[offset + length] = i+1; //material ids can't start at 0
+      }
+    }
+  }
+  else
+  {
+    int num_materials = node["volume_fractions"].number_of_children();
+    for(index_t i = 0; i < num_materials; ++i)
+    {
+      const Node &n_materials = node["volume_fractions"];
+      const Node &n_material = n_materials.child(i);
+      const S *data = n_material.value();
+
+      for(index_t j = 0; j < neles; ++j)
+      {
+        index_t offset = v_offsets[j];
+        if(data[j] > 0)
+        {
+          v_length[j] -= 1;
+          index_t length = v_length[j];
+          v_ids[offset + length] = i + 1; //IDs cannot start at 0
+          v_vfs[offset + length] = data[j];
+        }
+      }
+    }
+  }
+
+  const T *ids_ptr = v_ids.data();
+
+  ids = vtkm::cont::make_Field(ids_name,
+                               vtkm_assoc_w,
+                               ids_ptr,
+                               l_total,
+                               copy);
+
+  const S *vfs_ptr = v_vfs.data();
+
+  vfs = vtkm::cont::make_Field(vfs_name,
+                               vtkm_assoc_w,
+                               vfs_ptr,
+                               l_total,
+                               copy);
+}
+
+//template<typename T, typename S>
+//void GetMatSetIDsAndVFs(const conduit::Node &node, //materials["matset"]
+//                           const std::string &ids_name,
+//                           const std::string &vfs_name,
+//                           const std::string &topo_str,
+//                           const int total,
+//                           const int neles,
+//                           vtkm::cont::Field &offsets,
+//{
+//  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+//
+//  vtkm::cont::ArrayHandle<int> ah_offsets;
+//  offsets.GetData().AsArrayHandle(ah_offsets);
+//  
+//  int num_materials = node["volume_fractions"].number_of_children();
+//  for(int i = 0; i < num_materials; ++i)
+//  {
+//    int offset = ah_offsets.ReadPortal().Get(j);
+//    const Node &n_materials = node["volume_fractions"];
+//    const Node &n_material = n_materials.child(i);
+//    const S *data = n_material.value();
+//
+//    for(int j = 0; j < neles; ++j)
+//    {
+//      if(data[j] > 0)
+//      {
+//        v_ids[offset] = j + 1; //IDs cannot start at 0
+//        v_vfs[offset] = data[j];
+//        offset++;
+//      }
+//    }
+//  }
+//
+//  const T *ids_ptr = v_ids.data();
+//
+//  ids = vtkm::cont::make_Field(ids_name,
+//                               vtkm_assoc,
+//                               ids_ptr,
+//                               total,
+//                               copy);
+//
+//  const S *vfs_ptr = v_vfs.data();
+//
+//  vfs = vtkm::cont::make_Field(vfs_name,
+//                               vtkm_assoc,
+//                               vfs_ptr,
+//                               total,
+//                               copy);
+//
+//}
 
 };
 //-----------------------------------------------------------------------------
@@ -707,7 +992,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     {
         // add all of the fields:
         NodeConstIterator itr = node["fields"].children();
-	std::string field_name;
+        std::string field_name;
         while(itr.has_next())
         {
 
@@ -762,6 +1047,30 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
             }
         }
     }
+
+    if(node.has_child("matsets"))
+    {
+        // add all of the materials:
+        NodeConstIterator itr = node["matsets"].children();
+        std::string matset_name;
+        while(itr.has_next())
+        {
+            const Node &n_matset = itr.next();
+            matset_name = itr.name();
+            if(n_matset["topology"].as_string() != topo_name)
+            {
+              // these are not the materials we are looking for
+              continue;
+            }
+            AddMatSets(matset_name,
+                     n_matset,
+                     topo_name,
+                     neles,
+                     result,
+                     zero_copy);
+
+        }
+    }
     return result;
 }
 
@@ -812,19 +1121,18 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
         indices = 1;
         dimensionality = 1;
     }
-    // TODO: Not supported in blueprint yet ...
-    // else if(shape_type == "wedge")
-    // {
-    //     shape_id = 13;
-    //     indices = 6;
-    //     dimensionality = 3;
-    // }
-    // else if(shape_type == "pyramid")
-    // {
-    //     shape_id = 14;
-    //     indices = 5;
-    //     dimensionality = 3;
-    // }
+    else if(shape_type == "wedge")
+    {
+        shape_id = 13;
+        indices = 6;
+        dimensionality = 3;
+    }
+    else if(shape_type == "pyramid")
+    {
+        shape_id = 14;
+        indices = 5;
+        dimensionality = 3;
+    }
     else
     {
         ASCENT_ERROR("Unsupported element shape " << shape_type);
@@ -1303,9 +1611,7 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
 }
 
 
-
 //-----------------------------------------------------------------------------
-
 vtkm::cont::DataSet *
 VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     (const std::string &coords_name, // input string with coordset name
@@ -1387,64 +1693,84 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
 
-    // TODO: there is a special data set type for single cell types
-
     const Node &n_topo_eles = n_topo["elements"];
     std::string ele_shape = n_topo_eles["shape"].as_string();
 
-    // TODO: assumes int32, and contiguous
-
-    const Node &n_topo_conn = n_topo_eles["connectivity"];
-
-    vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
-
-    int conn_size = n_topo_conn.dtype().number_of_elements();
-
-    if( sizeof(vtkm::Id) == 4)
+    if(ele_shape == "mixed")
     {
-         if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int32())
-         {
-           const void *ele_idx_ptr = n_topo_conn.data_ptr();
-           detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size,zero_copy);
-         }
-         else
-         {
-             // convert to int32
-             // std::cout << "INT32 unstructured conversion: non zero copy" << std::endl;
-             connectivity.Allocate(conn_size);
-             void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-             Node n_tmp;
-             n_tmp.set_external(DataType::int32(conn_size),ptr);
-             n_topo_conn.to_int32_array(n_tmp);
+        // blueprint allows mapping of shape names
+        // to arbitrary ids, check if shape ids match the VTK-m ids
+        index_t num_of_shapes = n_topo_eles["shape_map"].number_of_children();
+
+        if(!CheckShapeMapVsVTKmShapeIds(n_topo_eles["shape_map"]))
+        {
+            Node ref_map;
+            VTKmBlueprintShapeMap(ref_map);
+            // TODO -- (strategy to remap ids)?
+            ASCENT_ERROR("Shape Map Entries do not match required VTK-m Shape Ids."
+                         << std::endl
+                         << "Passed Shape Map:"  << std::endl
+                         << n_topo_eles["shape_map"].to_yaml()
+                         << std::endl
+                         << "Supported Shape Map:"
+                         << std::endl 
+                         <<ref_map.to_yaml()
+                         );
         }
+
+        index_t num_ids  = n_topo_eles["connectivity"].dtype().number_of_elements();
+        // number of elements is the number of shapes presented
+        neles = (int) n_topo_eles["shapes"].dtype().number_of_elements();
+
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_conn;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["connectivity"],
+                                                 zero_copy,
+                                                 vtkm_conn);
+
+        // shapes
+        vtkm::cont::ArrayHandle<vtkm::UInt8> vtkm_shapes;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["shapes"],
+                                                 zero_copy,
+                                                 vtkm_shapes);
+
+        // offsets
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_offsets;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["offsets"],
+                                                 zero_copy,
+                                                 vtkm_offsets);
+
+        // vtk-m offsets needs an extra entry
+        // the last entry needs to be the size of the conn array
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_offsets_full;
+        vtkm_offsets_full.Allocate(neles + 1);
+        vtkm::cont::ArrayHandle<vtkm::Id>::WritePortalType vtkm_offsets_full_wp = vtkm_offsets_full.WritePortal();
+        vtkm::cont::ArrayHandle<vtkm::Id>::ReadPortalType vtkm_offsets_rp = vtkm_offsets.ReadPortal();
+
+        for(int i=0;i<neles;i++)
+        {
+          vtkm_offsets_full_wp.Set(i,vtkm_offsets_rp.Get(i));
+        }
+        // set last
+        vtkm_offsets_full_wp.Set(neles,num_ids);
+
+        vtkm::cont::CellSetExplicit<> cell_set;
+        cell_set.Fill(nverts, vtkm_shapes, vtkm_conn, vtkm_offsets_full);
+        result->SetCellSet(cell_set);
+        // for debugging help
+        //result->PrintSummary(std::cout);
     }
     else
     {
-        if(n_topo_conn.is_compact() && n_topo_conn.dtype().is_int64())
-        {
-            const void *ele_idx_ptr = n_topo_conn.data_ptr();
-            detail::CopyArray(connectivity, (const vtkm::Id*)ele_idx_ptr, conn_size, zero_copy);
-        }
-        else
-        {
-             // convert to int64
-             // std::cout << "INT64 unstructured conversion: non zero copy" << std::endl;
-             connectivity.Allocate(conn_size);
-             void *ptr = (void*) vtkh::GetVTKMPointer(connectivity);
-             Node n_tmp;
-             n_tmp.set_external(DataType::int64(conn_size),ptr);
-             n_topo_conn.to_int64_array(n_tmp);
-        }
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_conn;
+        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["connectivity"],zero_copy,vtkm_conn);
+        vtkm::UInt8 shape_id;
+        vtkm::IdComponent indices_per;
+        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+        vtkm::cont::CellSetSingleType<> cell_set;
+        cell_set.Fill(nverts, shape_id, indices_per, vtkm_conn);
+        neles = cell_set.GetNumberOfCells();
+        result->SetCellSet(cell_set);
     }
-
-    vtkm::UInt8 shape_id;
-    vtkm::IdComponent indices_per;
-    detail::VTKmCellShape(ele_shape, shape_id, indices_per);
-    vtkm::cont::CellSetSingleType<> cellset;
-    cellset.Fill(nverts, shape_id, indices_per, connectivity);
-    neles = cellset.GetNumberOfCells();
-    result->SetCellSet(cellset);
-
     return result;
 }
 
@@ -1846,6 +2172,391 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 
 }
 
+void
+VTKHDataAdapter::AddMatSets(const std::string &matset_name,
+                            const Node &n_matset,
+                            const std::string &topo_name,
+                            int neles,
+                            vtkm::cont::DataSet *dset,
+                            bool zero_copy)                 // attempt to zero copy
+{
+
+    if(!n_matset.has_child("volume_fractions"))
+        ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+    //TODO: zero_copy = true segfaulting in vtkm mir filter
+    //zero_copy = false;
+    
+    
+    std::string assoc_str = "element";
+    //fields required from VTK-m MIR filter
+    //std::string length_name, offsets_name, ids_name, vfs_name;
+    std::string length_name = "sizes";//matset_name + "_lengths";
+    std::string offsets_name = "offsets";//matset_name + "_offsets";
+    std::string ids_name = "material_ids";//matset_name + "_ids";
+    std::string vfs_name = "volume_fractions";//matset_name + "_vfs";
+    //matset is "sparse_by_element"
+    if(n_matset.has_child("material_map"))
+    {
+        try
+        {
+            bool supported_type = false;
+
+            // we compile vtk-h with fp types
+            if(n_matset["volume_fractions"].dtype().is_float32())
+            {
+                //add materials directly
+                const conduit::Node &n_length = n_matset["sizes"];
+                dset->AddField(detail::GetField<int>(n_length,
+                                                     length_name,
+                                                     assoc_str,
+                                                     topo_name,
+                                                     index_t(1),
+                                                     zero_copy));
+                const conduit::Node &n_offsets = n_matset["offsets"];
+                dset->AddField(detail::GetField<int>(n_offsets,
+                                                     offsets_name,
+                                                     assoc_str,
+                                                     topo_name,
+                                                     index_t(1),
+                                                     zero_copy));
+                const conduit::Node &n_material_ids = n_matset["material_ids"];
+                int num_vals = n_material_ids.dtype().number_of_elements();
+                if(n_material_ids.dtype().is_int32())
+                {
+                    const conduit::int32 *n_ids = n_material_ids.value();
+                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
+                    {
+                        conduit::Node n_mat_ids = n_matset["material_ids"];
+                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
+                        for(index_t i = 0; i < num_vals; ++i)
+                        {
+                            tmp_vec_ids[i] += 1.0; 
+                        }
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                        dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                        dset->AddField(field_copy);
+                    }
+                }
+                else if(n_material_ids.dtype().is_int64())
+                {
+                    const conduit::int64 *n_ids = n_material_ids.value();
+                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
+                    {
+                        conduit::Node n_mat_ids = n_matset["material_ids"];
+                        conduit::int64 *tmp_vec_ids = n_mat_ids.value();
+                        for(index_t i = 0; i < num_vals; ++i)
+                        {
+                            tmp_vec_ids[i] += 1.0; 
+                        }
+                        vtkm::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                        dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                        vtkm::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                        dset->AddField(field_copy);
+                    }
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported integer type for material IDs");
+                }
+                const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
+                dset->AddField(detail::GetField<float32>(n_volume_fractions,
+                                                         vfs_name,
+                                                         "whole",
+                                                         topo_name,
+                                                         index_t(1),
+                                                         zero_copy));
+                supported_type = true;
+            }
+            else if(n_matset["volume_fractions"].dtype().is_float64())
+            {
+                //add materials directly
+                const Node &n_length = n_matset["sizes"];
+                dset->AddField(detail::GetField<int>(n_length,
+                                                     length_name,
+                                                     assoc_str,
+                                                     topo_name,
+                                                     index_t(1),
+                                                     zero_copy));
+                const conduit::Node &n_offsets = n_matset["offsets"];
+                dset->AddField(detail::GetField<int>(n_offsets,
+                                                     offsets_name,
+                                                     assoc_str,
+                                                     topo_name,
+                                                     index_t(1),
+                                                     zero_copy));
+                const conduit::Node &n_material_ids = n_matset["material_ids"];
+                int num_vals = n_material_ids.dtype().number_of_elements(); 
+                if(n_material_ids.dtype().is_int32())
+                {
+                    const conduit::int32 *n_ids = n_material_ids.value();
+                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
+                    {
+                        conduit::Node n_mat_ids = n_matset["material_ids"];
+                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
+                        for(index_t i = 0; i < num_vals; ++i)
+                        {
+                            tmp_vec_ids[i] += 1.0; 
+                        }
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                        dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                        dset->AddField(field_copy);
+                    }
+                }
+                else if(n_material_ids.dtype().is_int64())
+                {
+                    const conduit::int64 *n_ids = n_material_ids.value();
+                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
+                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
+                    if(zeroes) //need to make a copy and increment all material ids
+                    {
+                      conduit::Node n_mat_ids = n_matset["material_ids"];
+                      conduit::int64 *tmp_vec_ids = n_mat_ids.value();
+                      for(index_t i = 0; i < num_vals; ++i)
+                      {
+                        tmp_vec_ids[i] += 1.0; 
+                      }
+                      vtkm::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
+                                                                             ids_name,
+                                                                             "whole",
+                                                                             topo_name,
+                                                                             index_t(1),
+                                                                             false);
+                      dset->AddField(field_copy);
+                    }
+                    else //can zero copy the material ids
+                    {
+                      vtkm::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
+                                                                             ids_name,
+                                                                             "whole",
+                                                                             topo_name,
+                                                                             index_t(1),
+                                                                             zero_copy);
+
+                      dset->AddField(field_copy);
+                    }
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported integer type for material IDs");
+                }
+                const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
+                dset->AddField(detail::GetField<float64>(n_volume_fractions,
+                                                         vfs_name,
+                                                         "whole",
+                                                         topo_name,
+                                                         index_t(1),
+                                                         zero_copy));
+                supported_type = true;
+            }
+        }
+        catch (vtkm::cont::Error error)
+        {
+            ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+        }
+
+    }
+    else if(n_matset.has_child("element_ids"))//matset is "sparse_by_material"
+    {
+        int num_ids = n_matset["element_ids"].number_of_children();
+        if(num_ids == 0)
+        {
+            ASCENT_ERROR("No element ids were defined for matset: " << matset_name);
+        }
+
+        int num_materials = n_matset["volume_fractions"].number_of_children();
+        if(num_materials == 0)
+        {
+            ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+        }
+        
+        if(num_materials != num_ids)
+        {
+            ASCENT_ERROR("Number of materials (" << num_materials << 
+                         ") does not match number of elment IDs(" << num_ids << 
+                         " defined for matset: " << matset_name);
+        }
+
+        try
+        {
+            bool supported_type = false;
+
+            const conduit::Node n_vfs = n_matset["volume_fractions"].child(0);
+            // we compile vtk-h with fp types
+            if(n_vfs.dtype().is_float32())
+            {
+                supported_type = true;
+                //add calculated material fields for vtkm
+                vtkm::cont::Field length, offsets, ids, vfs;
+                detail::GetMatSetFields<int,float32>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
+                dset->AddField(length);
+                dset->AddField(offsets);
+                dset->AddField(ids);
+                dset->AddField(vfs);
+            }
+            else if(n_vfs.dtype().is_float64())
+            {
+                supported_type = true;
+                //add calculated material fields for vtkm
+                vtkm::cont::Field length, offsets, ids, vfs;
+                detail::GetMatSetFields<int,float64>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
+                dset->AddField(length);
+                dset->AddField(offsets);
+                dset->AddField(ids);
+                dset->AddField(vfs);
+            }
+        }
+        catch (vtkm::cont::Error error)
+        {
+            ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+        }
+    }
+    else //matset is "full"
+    {
+        int num_materials = n_matset["volume_fractions"].number_of_children();
+        if(num_materials == 0)
+            ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+
+        const Node n_material = n_matset["volume_fractions"].child(0);
+        std::string material_name = n_material.name();
+
+        int num_vals = n_material.dtype().number_of_elements();
+
+        if(num_vals != neles )
+        {
+            ASCENT_ERROR("Number of vf values " 
+                          << num_vals 
+                          << " for material " 
+                          << material_name 
+                          << " does not equal number of cells "
+                          << neles);
+        }
+        try
+        {
+            bool supported_type = false;
+
+            // we compile vtk-h with fp types
+            if(n_material.dtype().is_float32())
+            {
+                supported_type = true;
+                //add calculated material fields for vtkm
+                int total;
+                vtkm::cont::Field length, offsets, ids, vfs;
+                detail::GetMatSetFields<int,float32>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
+                dset->AddField(length);
+                dset->AddField(offsets);
+                dset->AddField(ids);
+                dset->AddField(vfs);
+            }
+            else if(n_material.dtype().is_float64())
+            {
+                supported_type = true;
+                //add calculated material fields for vtkm
+                int total;
+                vtkm::cont::Field length, offsets, ids, vfs;
+                detail::GetMatSetFields<int,float64>(n_matset, 
+                                                     length_name, 
+                                                     offsets_name, 
+                                                     ids_name,
+                                                     vfs_name,
+                                                     topo_name, 
+                                                     neles, 
+                                                     length, 
+                                                     offsets,
+                                                     ids,
+                                                     vfs);
+                dset->AddField(length);
+                dset->AddField(offsets);
+                dset->AddField(ids);
+                dset->AddField(vfs);
+            }
+        }
+        catch (vtkm::cont::Error error)
+        {
+            ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+        }
+    }   
+}
+
 std::string
 GetBlueprintCellName(vtkm::UInt8 shape_id)
 {
@@ -1878,15 +2589,57 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
   {
     name = "hex";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_WEDGE)
-  {
-    ASCENT_ERROR("Wedge is not supported in blueprint");
-  }
   else if(shape_id == vtkm::CELL_SHAPE_PYRAMID)
   {
-    ASCENT_ERROR("Pyramid is not supported in blueprint");
+    name = "pyramid";
+  }
+  else if(shape_id == vtkm::CELL_SHAPE_WEDGE)
+  {
+    name = "wedge";
   }
   return name;
+}
+
+
+inline index_t
+vtkm_shape_size(vtkm::Id shape_id)
+{
+    switch(shape_id)
+    {
+        // point
+        case vtkm::CELL_SHAPE_VERTEX:  return 1; break;
+        // line
+        case vtkm::CELL_SHAPE_LINE:  return 2; break;
+        // tri
+        case vtkm::CELL_SHAPE_TRIANGLE:  return 3; break;
+        // quad
+        case vtkm::CELL_SHAPE_QUAD:  return 4; break;
+        // tet
+        case vtkm::CELL_SHAPE_TETRA: return 4; break;
+        // hex
+        case vtkm::CELL_SHAPE_HEXAHEDRON: return 8; break;
+        // pyramid
+        case vtkm::CELL_SHAPE_PYRAMID: return 5; break;
+        // wedge
+        case vtkm::CELL_SHAPE_WEDGE: return 6; break;
+        //
+        default: return 0;
+    }
+}
+
+
+void
+generate_sizes_from_shapes(const conduit::Node &shapes,conduit::Node &sizes)
+{
+    index_t num_eles = shapes.dtype().number_of_elements();
+    uint8_array   shapes_arr = shapes.value();
+    index_t_array sizes_arr = sizes.value();
+
+    for(index_t i=0; i < num_eles; i++)
+    {
+        sizes_arr[i] = vtkm_shape_size(shapes_arr[i]);
+    }
+    
 }
 
 bool
@@ -2213,7 +2966,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
-        static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
@@ -2239,8 +2991,6 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
-        static_assert(sizeof(vtkm::Id) == sizeof(int), "blueprint expects connectivity to be ints");
-
         auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
                                                vtkm::TopologyElementTagPoint());
 
@@ -2259,8 +3009,38 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       else
       {
         data_set.PrintSummary(std::cout);
-        ASCENT_ERROR("Mixed explicit types not implemented");
+        //ASCENT_ERROR("Mixed explicit types not implemented");
         MixedType cells = dyn_cells.AsCellSet<MixedType>();
+        Node &topo_ele = output
+            ["topologies/" + topo_name + "/elements"];
+        topo_ele["shape"] = "mixed";
+
+        VTKmBlueprintShapeMap(topo_ele["shape_map"]);
+
+        size_t num_cells = static_cast<size_t>(cells.GetNumberOfCells());
+        auto vtkm_shapes  = cells.GetShapesArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
+        auto vtkm_conn    = cells.GetConnectivityArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
+        auto vtkm_offsets = cells.GetOffsetsArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
+
+
+        std::size_t conn_size = static_cast<std::size_t>(vtkm_conn.GetNumberOfValues());
+
+        if(zero_copy)
+        {
+            topo_ele["shapes"].set_external(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
+            topo_ele["connectivity"].set_external(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
+            topo_ele["offsets"].set_external(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
+        }
+        else
+        {
+            topo_ele["shapes"].set(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
+            topo_ele["connectivity"].set(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
+            topo_ele["offsets"].set(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
+        }
+
+        // bp requires sizes, so we have to compute them
+        topo_ele["sizes"].set(DataType::index_t(num_cells));
+        generate_sizes_from_shapes(topo_ele["shapes"],topo_ele["sizes"]);
       }
 
     }
@@ -2379,7 +3159,7 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   //bool assoc_mesh  = vtkm::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
   if(!assoc_points && ! assoc_cells)
   {
-    ASCENT_ERROR("Field must be associtated with cells or points\n");
+    ASCENT_ERROR("Field must be associated with cells or points\n");
   }
   std::string conduit_name;
 
@@ -2483,6 +3263,50 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
     msg<<" Skipping.";
     ASCENT_INFO(msg.str());
   }
+}
+
+
+
+//-----------------------------------------------------------------------------
+bool
+VTKHDataAdapter::CheckShapeMapVsVTKmShapeIds(const Node &shape_map)
+{
+    bool res = true;
+    Node ref_map;
+
+    VTKHDataAdapter::VTKmBlueprintShapeMap(ref_map);
+    NodeConstIterator itr = shape_map.children();
+    while(itr.has_next() && res)
+    {
+        const Node &curr = itr.next();
+        std::string name = itr.name();
+        if(curr.dtype().is_number() && ref_map.has_child(name))
+        {
+            // check vs ref map
+            res = ( ref_map[name].to_index_t() == curr.to_index_t() );
+        }
+        else // unknown/unsupported shape type
+        {
+            res = false;
+        }
+    }
+    return res;
+}
+
+
+
+void
+VTKHDataAdapter::VTKmBlueprintShapeMap(conduit::Node &output)
+{
+    output.reset();
+    output["tri"]     = 5;
+    output["quad"]    = 9;
+    output["tet"]     = 10;
+    output["hex"]     = 12;
+    output["point"]   = 1;
+    output["line"]    = 3;
+    output["wedge"]   = 13;
+    output["pyramid"] = 14;
 }
 
 void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collection,

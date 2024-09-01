@@ -22,11 +22,11 @@
 ########################
 
 variables:
-  ubuntu_20_04_tag: alpinedav/ascent-devel:ubuntu-20.04-x86_64-tpls_2023-12-06-sha497882
-  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2023-12-06-sha9574c7
-  ubuntu_20_04_cuda_11_4_3_tag: alpinedav/ascent-devel:ubuntu-20.04-cuda-12.1.1-x86_64-tpls_2023-12-09-sha5d53a0
-  ubuntu_20_04_cuda_12_1_1_tag: alpinedav/ascent-devel:ubuntu-20.04-cuda-11.4.3-x86_64-tpls_2023-12-09-sha5d53a0
-  ubuntu_20_04_rocm_5_1_3_tag:  alpinedav/ascent-devel:ubuntu-20.04-rocm-5.1.3-x86_64-tpls_2023-12-09-sha5d53a0
+  ubuntu_20_04_tag: alpinedav/ascent-devel:ubuntu-20.04-x86_64-tpls_2024-07-09-sha3a1ef8
+  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2024-07-10-sha3a1ef8
+  ubuntu_20_04_cuda_11_4_3_tag: alpinedav/ascent-devel:ubuntu-20.04-cuda-11.4.3-x86_64-tpls_2024-07-09-sha3a1ef8
+  ubuntu_20_04_cuda_12_1_1_tag: alpinedav/ascent-devel:ubuntu-20.04-cuda-12.1.1-x86_64-tpls_2024-07-09-sha3a1ef8
+  ubuntu_20_04_rocm_6_0_0_tag:  alpinedav/ascent-devel:ubuntu-20.04-rocm-6.0.0--x86_64-build-ascent-tpls_2024-07-10-sha3a1ef8
 
  
 # only build merge target pr to develop
@@ -446,34 +446,41 @@ stages:
         ubuntu_20.04_static_cuda_12.1.1:
           containerImage: ${{ variables.ubuntu_20_04_cuda_12_1_1_tag }}
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
+          CMAKE_BUILD_TYPE: MinSizeRel
           ENABLE_DRAY: ON
           ENABLE_MFEM: ON
           BLT_CXX_STD: c++14
-          # static linking unit tests eats up alot of disk space,
+          # static linking unit tests + examples eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+          ENABLE_EXAMPLES: OFF
+          ENABLE_UTILS: OFF
 
         ubuntu_20.04_static_cuda_11.4.3:
           containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
+          CMAKE_BUILD_TYPE: MinSizeRel
           ENABLE_DRAY: ON
           ENABLE_MFEM: ON
           BLT_CXX_STD: c++14
-          # static linking unit tests eats up alot of disk space,
+          # static linking unit tests + examples eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+          ENABLE_EXAMPLES: OFF
+          ENABLE_UTILS: OFF
+
         ubuntu_20.04_static_cuda_11.4.3_no_mfem:
           containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
           BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: Release
+          CMAKE_BUILD_TYPE: MinSizeRel
           ENABLE_DRAY: ON
           ENABLE_MFEM: OFF
           BLT_CXX_STD: c++14
           # static linking unit tests eats up alot of disk space,
           # so skip building tests in CI to keep us away from clif
           ENABLE_TESTS: OFF
+          ENABLE_EXAMPLES: OFF
+          ENABLE_UTILS: OFF
           ## on hold until we get new CI container with shared libs
           # cuda-11.4.0-shared_dray:
           # containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
@@ -531,6 +538,8 @@ stages:
            if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_TESTS=$ENABLE_TESTS"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_EXAMPLES=$ENABLE_EXAMPLES"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_UTILS=$ENABLE_UTILS"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
@@ -552,6 +561,7 @@ stages:
            #################################
            cd build
            make install
+           make clean
         displayName: 'Install'
 
       - script: |
@@ -566,6 +576,9 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           which cmake
+          # copy example we want to test
+          mkdir -p install/examples/ascent/
+          cp -r src/examples/using-with-cmake install/examples/ascent/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-cmake
           mkdir _test_build
@@ -581,6 +594,9 @@ stages:
           cat install/share/ascent/ascent_config.mk
           pwd
           ls -l
+          # copy example we want to test
+          mkdir -p install/examples/ascent/
+          cp -r src/examples/using-with-make install/examples/ascent/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-make
           make
@@ -594,8 +610,8 @@ stages:
       CMAKE_EXE: /cmake-3.23.2-linux-x86_64/bin/cmake
     strategy:
       matrix:
-        ubuntu_20.04_rocm_5.1.3_build_ascent:
-          containerImage: ${{ variables.ubuntu_20_04_rocm_5_1_3_tag }}
+        ubuntu_20.04_rocm_6.0.0_build_ascent:
+          containerImage: ${{ variables.ubuntu_20_04_rocm_6_0_0_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Release
           BLT_CXX_STD: c++14
@@ -657,3 +673,20 @@ stages:
           cd install/examples/ascent/using-with-make
           make
         displayName: 'Test vs Install (using-with-make) [build only]'
+
+  - job: Linux_Docker
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 0
+    steps:
+      - checkout: self
+        clean: boolean
+        submodules: recursive
+
+      - script: |
+           #################################
+           # build main docker container
+           #################################
+           cd src/examples/docker/ubuntu/
+           ./build.sh
+        displayName: 'Docker Build'

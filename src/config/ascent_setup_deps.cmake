@@ -62,6 +62,69 @@ find_dependency(Conduit REQUIRED
                 NO_DEFAULT_PATH
                 PATHS ${CONDUIT_DIR}/lib/cmake)
 
+
+###############################################################################
+# Setup Caliper
+###############################################################################
+if(NOT CALIPER_DIR)
+    set(CALIPER_DIR ${ASCENT_CALIPER_DIR})
+endif()
+
+if(CALIPER_DIR)
+    if(NOT Ascent_FIND_QUIETLY)
+        message(STATUS "Ascent was built with Caliper Support")
+    endif()
+
+    # use caliper config header to detect necessary deps
+    find_file(CALI_CONFIG_HEADER
+              NAMES caliper-config.h
+              PATHS ${CALIPER_DIR}
+              PATH_SUFFIXES include/caliper
+              NO_DEFAULT_PATH
+              NO_CMAKE_ENVIRONMENT_PATH
+              NO_CMAKE_PATH
+              NO_SYSTEM_ENVIRONMENT_PATH
+              NO_CMAKE_SYSTEM_PATH)
+
+    if(EXISTS ${CALI_CONFIG_HEADER})
+        if(NOT Ascent_FIND_QUIETLY)
+            message(STATUS "Found Caliper Config Header: ${CALI_CONFIG_HEADER}")
+        endif()
+    else()
+        message(FATAL_ERROR "Could not find caliper-config.h in caliper ${CALIPER_DIR}/include/caliper")
+    endif()
+
+    file(READ ${CALI_CONFIG_HEADER} _CALI_CONFIG_HEADER_CONTENTS)
+
+    # check if we need ADIAK
+    string(FIND  ${_CALI_CONFIG_HEADER_CONTENTS} "#define CALIPER_HAVE_ADIAK" _caliper_have_adiak)
+
+    if(${_caliper_have_adiak} GREATER_EQUAL 0 )
+        # caliper is built with adiak support and caliper needs us to find adiak.
+        if(NOT ADIAK_DIR)
+            set(ADIAK_DIR ${ASCENT_ADIAK_DIR})
+        endif()
+
+        if(ADIAK_DIR)
+            if(NOT Ascent_FIND_QUIETLY)
+                message(STATUS "Looking for Adiak at: ${ADIAK_DIR}/lib/cmake/adiak")
+            endif()
+            # find adiak first
+            find_dependency(adiak REQUIRED
+                            NO_DEFAULT_PATH
+                            PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+        endif()
+    endif()
+
+    if(NOT Ascent_FIND_QUIETLY)
+        message(STATUS "Looking for Caliper at: ${CALIPER_DIR}/share/cmake/caliper")
+    endif()
+    # find caliper
+    find_dependency(caliper REQUIRED
+                    NO_DEFAULT_PATH
+                    PATHS ${CALIPER_DIR}/share/cmake/caliper)
+endif()
+
 ###############################################################################
 # Setup Caliper
 ###############################################################################
@@ -189,11 +252,14 @@ if(UMPIRE_DIR)
     if(EXISTS ${UMPIRE_DIR}/share/umpire/cmake)
       # old install layout
       set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/share/umpire/cmake)
-    else()
+    elseif(EXISTS ${UMPIRE_DIR}/lib/cmake/umpire)
       # new install layout
       set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib/cmake/umpire)
+    elseif(EXISTS ${UMPIRE_DIR}/lib64/cmake/umpire)
+        # new new install layout
+        set(_UMPIRE_SEARCH_PATH ${UMPIRE_DIR}/lib64/cmake/umpire)
     endif()
-    
+
     if(NOT EXISTS ${_UMPIRE_SEARCH_PATH})
         message(FATAL_ERROR "Could not find Umpire CMake include file (${_UMPIRE_SEARCH_PATH})")
     endif()

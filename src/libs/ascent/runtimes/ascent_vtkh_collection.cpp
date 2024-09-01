@@ -156,7 +156,7 @@ bool VTKHCollection::has_field(const std::string field_name) const
 vtkm::Bounds VTKHCollection::global_bounds() const
 {
   // ranks may have different numbers of local vtk-h datasets
-  // depending on the toplogies at play
+  // depending on the topologies at play
   // can't use vtk-h to get global bounds b/c could create
   // unmatched collectives.
 
@@ -335,7 +335,8 @@ std::string VTKHCollection::summary() const
     const std::string topo_name = it->first;
     msg<<"  Topology '"<<topo_name<<"': \n";
     const vtkh::DataSet &vtkh_dataset = it->second;
-    vtkh_dataset.PrintSummary(msg);
+    std::cerr << msg.str() << std::endl;
+    vtkh_dataset.PrintSummary(std::cerr);
 
   }
   return msg.str();

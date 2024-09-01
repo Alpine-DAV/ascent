@@ -40,8 +40,8 @@ TEST(vtkh_threshold, vtkh_serial_threshold)
   double upper_bound = (float)base_size * (float)num_blocks * 0.5f;
   double lower_bound = 0;
 
-  thresher.SetUpperThreshold(upper_bound);
-  thresher.SetLowerThreshold(lower_bound);
+  thresher.SetFieldUpperThreshold(upper_bound);
+  thresher.SetFieldLowerThreshold(lower_bound);
   thresher.Update();
   vtkh::DataSet *output = thresher.GetOutput();
   vtkm::Bounds bounds = output->GetGlobalBounds();

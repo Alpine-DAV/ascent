@@ -1,19 +1,18 @@
-#ifndef VTK_H_VTKM_POINT_AVERAGE_HPP
-#define VTK_H_VTKM_POINT_AVERAGE_HPP
+#ifndef VTK_H_VTKM_STATISTICS_HPP
+#define VTK_H_VTKM_STATISTICS_HPP
 
+#include <vtkm/cont/PartitionedDataSet.h>
 #include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/density_estimation/Statistics.h>
+#include <vtkm/filter/density_estimate/Statistics.h>
 
 namespace vtkh
 {
 
-class vtkmPointAverage
+class vtkmStatistics
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                     std::string field_name,
-                     std::string output_field_name,
-                     vtkm::filter::FieldSelection map_fields);
+  vtkm::cont::PartitionedDataSet Run(vtkm::cont::PartitionedDataSet &p_input,
+		                     std::string field_name);
 };
 }
 #endif

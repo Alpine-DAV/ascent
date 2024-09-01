@@ -55,8 +55,8 @@
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
-#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
+#include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/NoOp.hpp>
@@ -64,6 +64,7 @@
 #include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
+#include <vtkh/filters/UniformGrid.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Streamline.hpp>
@@ -75,6 +76,7 @@
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
+#include <vtkh/filters/MIR.hpp>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <ascent_vtkh_data_adapter.hpp>
@@ -665,7 +667,7 @@ VTKHCleanGrid::execute()
                                                      throw_error);
     if(topo_name == "")
     {
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
@@ -909,7 +911,6 @@ VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
       res = false;
     }
 
-    res = check_string("topology",params, info, false) && res;
 
     res = check_numeric("normal/x",params, info, true, true) && res;
     res = check_numeric("normal/y",params, info, true, true) && res;
@@ -923,7 +924,6 @@ VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
     valid_paths.push_back("normal/x");
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
-    valid_paths.push_back("topology");
 
 
     std::string surprises = surprise_check(valid_paths, params);
@@ -1006,19 +1006,17 @@ VTKHAutoSliceLevels::execute()
       return;
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-
-    bool throw_error = false;
-    std::string topo_name = detail::resolve_topology(params(),
-                                                     this->name(),
-                                                     collection,
-                                                     throw_error);
-    if(topo_name == "")
+        std::string field = params()["field"].as_string();
+    if(!collection->has_field(field))
     {
+      bool throw_error = false;
+      detail::field_error(field, this->name(), collection, throw_error);
       // this creates a data object with an invalid soource
       set_output<DataObject>(new DataObject());
       return;
     }
 
+    std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkh::AutoSliceLevels slicer;
 
@@ -1026,7 +1024,6 @@ VTKHAutoSliceLevels::execute()
 
     const Node &n_normal = params()["normal"];
     const int n_levels = params()["levels"].to_int32();
-    std::string field = params()["field"].as_string();
 
     using Vec3f = vtkm::Vec<vtkm::Float32,3>;
     vtkm::Bounds bounds = data.GetGlobalBounds();
@@ -1191,6 +1188,219 @@ VTKHGhostStripper::execute()
 }
 
 //-----------------------------------------------------------------------------
+VTKHAddRanks::VTKHAddRanks()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddRanks::~VTKHAddRanks()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddRanks::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_add_mpi_ranks";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAddRanks::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("topology",params, info, false);
+    res = check_string("output",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("output");
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddRanks::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHAddRanks input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string output_field = "mpi_rank";
+    if(params().has_child("output"))
+    {
+      output_field = params()["output"].as_string();
+    }
+
+    std::string topo_name = "";
+    if(params().has_child("topology"))
+    {
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      bool throw_error = false;
+      topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+      std::cerr << "topo_name: " << topo_name << std::endl;
+      if(topo_name == "")
+      {
+        // this creates a data object with an invalid source
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    data.AddConstantPointField(rank,output_field);
+    new_coll->add(data, topo_name);
+    
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddDomains::VTKHAddDomains()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddDomains::~VTKHAddDomains()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddDomains::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_add_domain_ids";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAddDomains::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("topology",params, info, false);
+    res = check_string("output",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("output");
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddDomains::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHAddDomains input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string output_field = "domain_ids";
+    if(params().has_child("output"))
+    {
+      output_field = params()["output"].as_string();
+    }
+
+    std::string topo_name = "";
+    if(params().has_child("topology"))
+    {
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      bool throw_error = false;
+      topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+      std::cerr << "topo_name: " << topo_name << std::endl;
+      if(topo_name == "")
+      {
+        // this creates a data object with an invalid source
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    data.AddDomainIdField(output_field);
+    new_coll->add(data, topo_name);
+    
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
 VTKHThreshold::VTKHThreshold()
 :Filter()
 {
@@ -1218,16 +1428,157 @@ VTKHThreshold::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
+    bool res = true;
 
-    bool res = check_string("field",params, info, true);
+    bool type_present = false;
 
-    res = check_numeric("min_value",params, info, true, true) && res;
-    res = check_numeric("max_value",params, info, true, true) && res;
+    if(params.has_child("field"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("sphere"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("cylinder"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("box"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("plane"))
+    {
+      type_present = true;
+    }
+    else if(params.has_child("multi_plane"))
+    {
+      type_present = true;
+    }
+
+    if(!type_present)
+    {
+        info["errors"].append() = "Missing required parameter. Threshold must specify 'field', 'sphere', 'cylinder', 'box', or 'plane'";
+        res = false;
+    }
+    else
+    {
+      if(params.has_child("sphere"))
+      {
+         res = check_numeric("sphere/center/x",params, info, true, true) && res;
+         res = check_numeric("sphere/center/y",params, info, true, true) && res;
+         res = check_numeric("sphere/center/z",params, info, true, true) && res;
+         res = check_numeric("sphere/radius",params, info, true, true) && res;
+      }
+      else if(params.has_child("cylinder"))
+      {
+         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/radius",params, info, true, true) && res;
+      }
+      else if(params.has_child("box"))
+      {
+         res = check_numeric("box/min/x",params, info, true, true) && res;
+         res = check_numeric("box/min/y",params, info, true, true) && res;
+         res = check_numeric("box/min/z",params, info, true, true) && res;
+         res = check_numeric("box/max/x",params, info, true, true) && res;
+         res = check_numeric("box/max/y",params, info, true, true) && res;
+         res = check_numeric("box/max/z",params, info, true, true) && res;
+      }
+      else if(params.has_child("plane"))
+      {
+         res = check_numeric("plane/point/x",params, info, true, true) && res;
+         res = check_numeric("plane/point/y",params, info, true, true) && res;
+         res = check_numeric("plane/point/z",params, info, true, true) && res;
+         res = check_numeric("plane/normal/x",params, info, true, true) && res;
+         res = check_numeric("plane/normal/y",params, info, true, true) && res;
+         res = check_numeric("plane/normal/z",params, info, true, true) && res;
+      }
+      else if(params.has_child("multi_plane"))
+      {
+         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
+
+         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
+         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
+      }
+    }
+
+    // we either need 'field` or `topology`
+    if(!params.has_child("field")) 
+    {
+      res &= check_string("topology",params, info, false);
+    }
+
+    // field case
+    res = check_string("field",params, info, false);
+    res = check_numeric("min_value",params, info, false, true) && res;
+    res = check_numeric("max_value",params, info, false, true) && res;
+
+    res = check_string("invert",params, info, false) && res;
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("invert");
     valid_paths.push_back("field");
     valid_paths.push_back("min_value");
     valid_paths.push_back("max_value");
+
+    valid_paths.push_back("topology");
+    valid_paths.push_back("extract");
+
+    valid_paths.push_back("sphere/center/x");
+    valid_paths.push_back("sphere/center/y");
+    valid_paths.push_back("sphere/center/z");
+    valid_paths.push_back("sphere/radius");
+
+    valid_paths.push_back("cylinder/center/x");
+    valid_paths.push_back("cylinder/center/y");
+    valid_paths.push_back("cylinder/center/z");
+    valid_paths.push_back("cylinder/axis/x");
+    valid_paths.push_back("cylinder/axis/y");
+    valid_paths.push_back("cylinder/axis/z");
+    valid_paths.push_back("cylinder/radius");
+
+    valid_paths.push_back("box/min/x");
+    valid_paths.push_back("box/min/y");
+    valid_paths.push_back("box/min/z");
+    valid_paths.push_back("box/max/x");
+    valid_paths.push_back("box/max/y");
+    valid_paths.push_back("box/max/z");
+
+    valid_paths.push_back("plane/point/x");
+    valid_paths.push_back("plane/point/y");
+    valid_paths.push_back("plane/point/z");
+    valid_paths.push_back("plane/normal/x");
+    valid_paths.push_back("plane/normal/y");
+    valid_paths.push_back("plane/normal/z");
+
+    valid_paths.push_back("multi_plane/point1/x");
+    valid_paths.push_back("multi_plane/point1/y");
+    valid_paths.push_back("multi_plane/point1/z");
+    valid_paths.push_back("multi_plane/normal1/x");
+    valid_paths.push_back("multi_plane/normal1/y");
+    valid_paths.push_back("multi_plane/normal1/z");
+
+    valid_paths.push_back("multi_plane/point2/x");
+    valid_paths.push_back("multi_plane/point2/y");
+    valid_paths.push_back("multi_plane/point2/z");
+    valid_paths.push_back("multi_plane/normal2/x");
+    valid_paths.push_back("multi_plane/normal2/y");
+    valid_paths.push_back("multi_plane/normal2/z");
     std::string surprises = surprise_check(valid_paths, params);
 
     if(surprises != "")
@@ -1256,38 +1607,149 @@ VTKHThreshold::execute()
       set_output<DataObject>(data_object);
       return;
     }
+
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    std::string field_name = params()["field"].as_string();
-    if(!collection->has_field(field_name))
-    {
-      bool throw_error = false;
-      detail::field_error(field_name, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
+    // find right topology, either via field name or topology param
+    std::string topo_name = "";
 
-    std::string topo_name = collection->field_topology(field_name);
+    if(params().has_child("field"))
+    {
+        std::string field_name = params()["field"].as_string();
+        if(!collection->has_field(field_name))
+        {
+          bool throw_error = false;
+          detail::field_error(field_name, this->name(), collection, throw_error);
+          // this creates a data object with an invalid source
+          set_output<DataObject>(new DataObject());
+          return;
+        }
+
+        topo_name = collection->field_topology(field_name);
+
+    }
+    else
+    {
+        bool throw_error = false;
+        topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+        if(topo_name == "")
+        {
+            // this creates a data object with an invalid source
+            set_output<DataObject>(new DataObject());
+            return;
+        }
+    }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::Threshold thresher;
-
     thresher.SetInput(&data);
-    thresher.SetField(field_name);
 
-    const Node &n_min_val = params()["min_value"];
-    const Node &n_max_val = params()["max_value"];
+    if(params().has_child("invert"))
+    {
+      std::string invert = params()["invert"].as_string();
+      if(invert == "true")
+      {
+        thresher.SetInvertThreshold(true);
+      }
+    }
 
-    // convert to contig doubles
-    double min_val = get_float64(n_min_val, data_object);
-    double max_val = get_float64(n_max_val, data_object);
-    thresher.SetUpperThreshold(max_val);
-    thresher.SetLowerThreshold(min_val);
+    // field case
+    if(params().has_child("field"))
+    {
+        std::string field_name = params()["field"].as_string();
+        thresher.SetField(field_name);
 
+        const Node &n_min_val = params()["min_value"];
+        const Node &n_max_val = params()["max_value"];
+
+        // convert to contig doubles
+        double min_val = get_float64(n_min_val, data_object);
+        double max_val = get_float64(n_max_val, data_object);
+        thresher.SetFieldUpperThreshold(max_val);
+        thresher.SetFieldLowerThreshold(min_val);
+    }
+    else // spatial select cases
+    {
+        if(params().has_path("sphere"))
+        {
+          const Node &sphere = params()["sphere"];
+          double center[3];
+
+          center[0] = get_float64(sphere["center/x"], data_object);
+          center[1] = get_float64(sphere["center/y"], data_object);
+          center[2] = get_float64(sphere["center/z"], data_object);
+          double radius = get_float64(sphere["radius"], data_object);
+          thresher.SetSphereThreshold(center, radius);
+        }
+        else if(params().has_path("cylinder"))
+        {
+          const Node &cylinder = params()["cylinder"];
+          double center[3];
+          double axis[3];
+
+          center[0] = get_float64(cylinder["center/x"], data_object);
+          center[1] = get_float64(cylinder["center/y"], data_object);
+          center[2] = get_float64(cylinder["center/z"], data_object);
+
+          axis[0] = get_float64(cylinder["axis/x"], data_object);
+          axis[1] = get_float64(cylinder["axis/y"], data_object);
+          axis[2] = get_float64(cylinder["axis/z"], data_object);
+
+          double radius = get_float64(cylinder["radius"], data_object);
+          thresher.SetCylinderThreshold(center, axis, radius);
+        }
+        else if(params().has_path("box"))
+        {
+          const Node &box = params()["box"];
+          vtkm::Bounds bounds;
+          bounds.X.Min= get_float64(box["min/x"], data_object);
+          bounds.Y.Min= get_float64(box["min/y"], data_object);
+          bounds.Z.Min= get_float64(box["min/z"], data_object);
+          bounds.X.Max = get_float64(box["max/x"], data_object);
+          bounds.Y.Max = get_float64(box["max/y"], data_object);
+          bounds.Z.Max = get_float64(box["max/z"], data_object);
+          thresher.SetBoxThreshold(bounds);
+        }
+        else if(params().has_path("plane"))
+        {
+          const Node &plane= params()["plane"];
+          double point[3], normal[3];;
+
+          point[0] =  get_float64(plane["point/x"], data_object);
+          point[1] =  get_float64(plane["point/y"], data_object);
+          point[2] =  get_float64(plane["point/z"], data_object);
+          normal[0] = get_float64(plane["normal/x"], data_object);
+          normal[1] = get_float64(plane["normal/y"], data_object);
+          normal[2] = get_float64(plane["normal/z"], data_object);
+          thresher.SetPlaneThreshold(point, normal);
+        }
+        // else if(params().has_path("multi_plane"))
+        // {
+        //   const Node &plane= params()["multi_plane"];
+        //   double point1[3], normal1[3], point2[3], normal2[3];
+        //
+        //   point1[0] = get_float64(plane["point1/x"], data_object);
+        //   point1[1] = get_float64(plane["point1/y"], data_object);
+        //   point1[2] = get_float64(plane["point1/z"], data_object);
+        //   normal1[0] = get_float64(plane["normal1/x"], data_object);
+        //   normal1[1] = get_float64(plane["normal1/y"], data_object);
+        //   normal1[2] = get_float64(plane["normal1/z"], data_object);
+        //   point2[0] = get_float64(plane["point2/x"], data_object);
+        //   point2[1] = get_float64(plane["point2/y"], data_object);
+        //   point2[2] = get_float64(plane["point2/z"], data_object);
+        //   normal2[0] = get_float64(plane["normal2/x"], data_object);
+        //   normal2[1] = get_float64(plane["normal2/y"], data_object);
+        //   normal2[2] = get_float64(plane["normal2/z"], data_object);
+        //   clipper.Set2PlaneClip(point1, normal1, point2, normal2);
+        // }
+
+    }
+    
     thresher.Update();
-
     vtkh::DataSet *thresh_output = thresher.GetOutput();
 
     // we need to pass through the rest of the topologies, untouched,
@@ -1336,6 +1798,10 @@ VTKHClip::verify_params(const conduit::Node &params,
     {
       type_present = true;
     }
+    else if(params.has_child("cylinder"))
+    {
+      type_present = true;
+    }
     else if(params.has_child("box"))
     {
       type_present = true;
@@ -1351,7 +1817,7 @@ VTKHClip::verify_params(const conduit::Node &params,
 
     if(!type_present)
     {
-        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'box', 'plane', or 'mulit_plane'";
+        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'cylinder', 'box', 'plane', or 'mulit_plane'";
         res = false;
     }
     else
@@ -1364,7 +1830,16 @@ VTKHClip::verify_params(const conduit::Node &params,
          res = check_numeric("sphere/center/y",params, info, true, true) && res;
          res = check_numeric("sphere/center/z",params, info, true, true) && res;
          res = check_numeric("sphere/radius",params, info, true, true) && res;
-
+      }
+      else if(params.has_child("cylinder"))
+      {
+         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
+         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
+         res = check_numeric("cylinder/radius",params, info, true, true) && res;
       }
       else if(params.has_child("box"))
       {
@@ -1408,16 +1883,27 @@ VTKHClip::verify_params(const conduit::Node &params,
     std::vector<std::string> valid_paths;
     valid_paths.push_back("topology");
     valid_paths.push_back("invert");
+
     valid_paths.push_back("sphere/center/x");
     valid_paths.push_back("sphere/center/y");
     valid_paths.push_back("sphere/center/z");
     valid_paths.push_back("sphere/radius");
+
+    valid_paths.push_back("cylinder/center/x");
+    valid_paths.push_back("cylinder/center/y");
+    valid_paths.push_back("cylinder/center/z");
+    valid_paths.push_back("cylinder/axis/x");
+    valid_paths.push_back("cylinder/axis/y");
+    valid_paths.push_back("cylinder/axis/z");
+    valid_paths.push_back("cylinder/radius");
+
     valid_paths.push_back("box/min/x");
     valid_paths.push_back("box/min/y");
     valid_paths.push_back("box/min/z");
     valid_paths.push_back("box/max/x");
     valid_paths.push_back("box/max/y");
     valid_paths.push_back("box/max/z");
+
     valid_paths.push_back("plane/point/x");
     valid_paths.push_back("plane/point/y");
     valid_paths.push_back("plane/point/z");
@@ -1474,7 +1960,7 @@ VTKHClip::execute()
                                                      throw_error);
     if(topo_name == "")
     {
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
@@ -1496,6 +1982,23 @@ VTKHClip::execute()
       center[2] = get_float64(sphere["center/z"], data_object);
       double radius = get_float64(sphere["radius"], data_object);
       clipper.SetSphereClip(center, radius);
+    }
+    else if(params().has_path("cylinder"))
+    {
+      const Node &cylinder = params()["cylinder"];
+      double center[3];
+      double axis[3];
+
+      center[0] = get_float64(cylinder["center/x"], data_object);
+      center[1] = get_float64(cylinder["center/y"], data_object);
+      center[2] = get_float64(cylinder["center/z"], data_object);
+
+      axis[0] = get_float64(cylinder["axis/x"], data_object);
+      axis[1] = get_float64(cylinder["axis/y"], data_object);
+      axis[2] = get_float64(cylinder["axis/z"], data_object);
+
+      double radius = get_float64(cylinder["radius"], data_object);
+      clipper.SetCylinderClip(center, axis, radius);
     }
     else if(params().has_path("box"))
     {
@@ -2979,6 +3482,177 @@ VTKHGradient::execute()
     delete grad_output;
     set_output<DataObject>(res);
 }
+//-----------------------------------------------------------------------------
+
+VTKHUniformGrid::VTKHUniformGrid()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHUniformGrid::~VTKHUniformGrid()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHUniformGrid::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_uniform_grid";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHUniformGrid::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+    res &= check_string("field",params, info, true);
+    res &= check_numeric("dims/i",params, info, false);
+    res &= check_numeric("dims/j",params, info, false);
+    res &= check_numeric("dims/k",params, info, false);
+    res &= check_numeric("origin/x",params, info, false);
+    res &= check_numeric("origin/y",params, info, false);
+    res &= check_numeric("origin/z",params, info, false);
+    res &= check_numeric("spacing/dx",params, info, false);
+    res &= check_numeric("spacing/dx",params, info, false);
+    res &= check_numeric("spacing/dy",params, info, false);
+    res &= check_numeric("spacing/dz",params, info, false);
+    res &= check_numeric("invalid_value",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("dims/i");
+    valid_paths.push_back("dims/j");
+    valid_paths.push_back("dims/k");
+    valid_paths.push_back("origin/x");
+    valid_paths.push_back("origin/y");
+    valid_paths.push_back("origin/z");
+    valid_paths.push_back("spacing/dx");
+    valid_paths.push_back("spacing/dy");
+    valid_paths.push_back("spacing/dz");
+    valid_paths.push_back("invalid_value");
+
+    std::string surprises = "";
+    if(params.number_of_children() != 0)
+      surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHUniformGrid::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_uniform_grid input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string field = params()["field"].as_string();
+    if(!collection->has_field(field))
+    {
+      bool throw_error = false;
+      detail::field_error(field, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+
+    std::string topo_name = collection->field_topology(field);
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkm::Bounds d_bounds = data.GetGlobalBounds();
+    vtkm::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
+    vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
+    vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
+
+    vtkm::Float64 invalid_value = 0.0;
+    
+    using Vec3f = vtkm::Vec<vtkm::Float64,3>;
+    Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
+    Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
+    Vec3f v_spacing = {1.,1.,1.};
+
+    if(params().has_path("dims"))
+    {
+      const Node &n_dims = params()["dims"];
+      if(n_dims.has_path("i"))
+        v_dims[0] = get_float64(n_dims["i"], data_object);
+      if(n_dims.has_path("j"))
+        v_dims[1] = get_float64(n_dims["j"], data_object);
+      if(n_dims.has_path("k"))
+        v_dims[2] = get_float64(n_dims["k"], data_object);
+    }
+    if(params().has_path("origin"))
+    {
+      const Node &n_origin = params()["origin"];
+      if(n_origin.has_path("x"))
+        v_origin[0] = get_float64(n_origin["x"], data_object);
+      if(n_origin.has_path("y"))
+        v_origin[1] = get_float64(n_origin["y"], data_object);
+      if(n_origin.has_path("z"))
+        v_origin[2] = get_float64(n_origin["z"], data_object);
+    }
+    if(params().has_path("spacing"))
+    {
+      const Node &n_spacing = params()["spacing"];
+      if(n_spacing.has_path("dx"))
+        v_spacing[0] = get_float64(n_spacing["dx"], data_object);
+      if(n_spacing.has_path("dy"))
+        v_spacing[1] = get_float64(n_spacing["dy"], data_object);
+      if(n_spacing.has_path("dz"))
+        v_spacing[2] = get_float64(n_spacing["dz"], data_object);
+    }
+    if(params().has_path("invalid_value"))
+    {
+      invalid_value = params()["invalid_value"].as_float64();
+    }
+
+    vtkh::UniformGrid grid_probe;
+
+    grid_probe.InvalidValue(invalid_value);
+    grid_probe.Dims(v_dims);
+    grid_probe.Origin(v_origin);
+    grid_probe.Spacing(v_spacing);
+    grid_probe.Field(field);
+    grid_probe.SetInput(&data);
+
+    grid_probe.Update();
+
+    vtkh::DataSet *grid_output = grid_probe.GetOutput();
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*grid_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grid_output;
+    set_output<DataObject>(res);
+}
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 
@@ -3059,8 +3733,11 @@ VTKHStats::execute()
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::Statistics stats;
+    stats.SetField(field_name);
+    stats.SetInput(&data);
+    stats.Update();
 
-    vtkh::Statistics::Result res = stats.Run(data, field_name);
+    vtkh::DataSet* res = stats.GetOutput();
     int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
@@ -3068,7 +3745,7 @@ VTKHStats::execute()
 #endif
     if(rank == 0)
     {
-      res.Print(std::cout);
+      res->PrintSummary(std::cout);
     }
 }
 //-----------------------------------------------------------------------------
@@ -3763,29 +4440,111 @@ bool
 VTKHParticleAdvection::verify_params(const conduit::Node &params,
                                      conduit::Node &info)
 {
-    info.reset();
     bool res = check_string("field", params, info, true);
-    res &= check_numeric("num_seeds", params, info, true, true);
     res &= check_numeric("num_steps", params, info, true, true);
     res &= check_numeric("step_size", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_xmin", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_xmax", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_ymin", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_ymax", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_zmin", params, info, true, true);
-    res &= check_numeric("seed_bounding_box_zmax", params, info, true, true);
+    info.reset();
+
+    if(!params.has_child("seeds"))
+    {
+        info["errors"].append() = "Missing required parameter. Particle Advection must specify seeds";
+        res = false;
+    }
+    else
+    {
+      conduit::Node seed_params = params["seeds"];
+      if(!seed_params.has_child("type"))
+      {
+        info["errors"].append() = "Missing required parameter. Particle Advection must specify seed type";
+        res = false;
+      }
+      else
+      {
+
+        res &= check_string("type", seed_params, info, true);
+        std::string type = seed_params["type"].as_string();	
+	if(type == "point")
+        {
+          res &= check_numeric("location",seed_params,info,true);
+	}
+	else if(type == "point_list")
+        {
+          res &= check_numeric("location",seed_params,info,true);
+	}
+	else if(type == "line")
+        {
+          res &= check_numeric("start",seed_params,info,true);
+          res &= check_numeric("end",seed_params,info,true);
+	  res &= check_numeric("num_seeds",seed_params,info,true);
+          res &= check_string("sampling_type", seed_params, info, true);
+	}
+	else if(type == "box")
+        {
+          res &= check_string("sampling_space", seed_params, info, true);
+          res &= check_string("sampling_type", seed_params, info, true);
+	  string sampling_type = seed_params["sampling_type"].as_string();
+          if(sampling_type == "uniform")
+	  {
+            res &= check_numeric("num_seeds_x",seed_params,info,true);
+            res &= check_numeric("num_seeds_y",seed_params,info,true);
+            res &= check_numeric("num_seeds_z",seed_params,info,true);
+	  }
+	  else
+	  {
+            res &= check_numeric("num_seeds",seed_params,info,true);
+	  }
+
+          if(seed_params.has_child("extents_x"))
+          {
+            res &= check_numeric("extents_x",seed_params,info,true);
+            res &= check_numeric("extents_y",seed_params,info,true);
+            res &= check_numeric("extents_z",seed_params,info,true);
+          }
+	}
+	else
+	{
+          info["errors"].append() = "Unrecognized parameter. Particle Advection supports seed types 'point', 'point_list', 'line', or 'box'.";
+          res = false;
+	}
+
+
+      }
+    }
+
+    if(params.has_child("rendering"))
+    {
+      res &= check_string("rendering/enable_tubes", params, info, false);
+      res &= check_string("rendering/tube_capping", params, info, false);
+      res &= check_numeric("rendering/tube_size", params, info, false);
+      res &= check_numeric("rendering/tube_sides", params, info, false);
+      res &= check_numeric("rendering/tube_value", params, info, false);
+      res &= check_string("rendering/output_field", params, info, false);
+    }
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("field");
-    valid_paths.push_back("num_seeds");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
-    valid_paths.push_back("seed_bounding_box_xmin");
-    valid_paths.push_back("seed_bounding_box_xmax");
-    valid_paths.push_back("seed_bounding_box_ymin");
-    valid_paths.push_back("seed_bounding_box_ymax");
-    valid_paths.push_back("seed_bounding_box_zmin");
-    valid_paths.push_back("seed_bounding_box_zmax");
+    valid_paths.push_back("seeds/type");
+    valid_paths.push_back("seeds/location");
+    valid_paths.push_back("seeds/start");
+    valid_paths.push_back("seeds/end");
+    valid_paths.push_back("seeds/num_seeds");
+    valid_paths.push_back("seeds/num_seeds_x");
+    valid_paths.push_back("seeds/num_seeds_y");
+    valid_paths.push_back("seeds/num_seeds_z");
+    valid_paths.push_back("seeds/extents_x");
+    valid_paths.push_back("seeds/extents_y");
+    valid_paths.push_back("seeds/extents_z");
+    valid_paths.push_back("seeds/sampling_type");
+    valid_paths.push_back("seeds/sampling_space");
+
+    valid_paths.push_back("rendering/enable_tubes");
+    valid_paths.push_back("rendering/tube_capping");
+    valid_paths.push_back("rendering/tube_size");
+    valid_paths.push_back("rendering/tube_sides");
+    valid_paths.push_back("rendering/tube_value");
+    valid_paths.push_back("rendering/output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -3831,47 +4590,356 @@ VTKHParticleAdvection::execute()
     std::string topo_name = collection->field_topology(field_name);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
-
-    int numSeeds = get_int32(params()["num_seeds"], data_object);
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
-
-    float seedBBox[6];
-    seedBBox[0] = get_float32(params()["seed_bounding_box_xmin"], data_object);
-    seedBBox[1] = get_float32(params()["seed_bounding_box_xmax"], data_object);
-    seedBBox[2] = get_float32(params()["seed_bounding_box_ymin"], data_object);
-    seedBBox[3] = get_float32(params()["seed_bounding_box_ymax"], data_object);
-    seedBBox[4] = get_float32(params()["seed_bounding_box_zmin"], data_object);
-    seedBBox[5] = get_float32(params()["seed_bounding_box_zmax"], data_object);
-
-    float dx = seedBBox[1] - seedBBox[0];
-    float dy = seedBBox[3] - seedBBox[2];
-    float dz = seedBBox[5] - seedBBox[4];
-
-    if (dx < 0 || dy < 0 || dz < 0)
-    {
-      bool throw_error = false;
-      detail::field_error(field_name, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
-    }
-
     std::random_device device;
     std::default_random_engine generator(0);
     float  zero(0), one(1);
     std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+
+    conduit::Node n_seeds = params()["seeds"];
+    std::string seed_type = n_seeds["type"].as_string();
+    std::vector<vtkm::Particle> seeds;
+    if(seed_type == "point")
+    {
+      const Node &n_loc_vals = n_seeds["location"];
+
+      //convert to contig doubles
+      Node n_loc_vals_dbls;
+      n_loc_vals.to_float64_array(n_loc_vals_dbls);
+
+      double* location = n_loc_vals_dbls.as_double_ptr();
+      double x = location[0];
+      double y = location[1];
+      double z = location[2];
+      //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+      seeds.push_back(vtkm::Particle({x,y,z}, 0));
+    }
+    else if(seed_type == "point_list")
+    {
+      const Node &n_loc_vals = n_seeds["location"];
+
+      //convert to contig doubles
+      Node n_loc_vals_dbls;
+      n_loc_vals.to_float64_array(n_loc_vals_dbls);
+
+      double* location = n_loc_vals_dbls.as_double_ptr();
+      
+      int num_points = (n_loc_vals_dbls.dtype().number_of_elements());
+      //std::cerr << "num_points: " << num_points << std::endl;
+      for(int i = 0; i < num_points; i+=3)
+      {
+        double x = location[i];
+        double y = location[i+1];
+        double z = location[i+2];
+        //std::cerr << "seed point " << i/3 <<  ": " << x << " " << y << " " << z << std::endl;
+        seeds.push_back(vtkm::Particle({x,y,z}, i/3));
+      }
+    }
+    else if(seed_type == "line")
+    {
+      const Node &n_start_vals = n_seeds["start"];
+      const Node &n_end_vals = n_seeds["end"];
+      std::string sampling = n_seeds["sampling_type"].as_string();
+      int num_seeds = n_seeds["num_seeds"].as_int();
+
+
+      //convert to contig doubles
+      Node n_start_vals_dbls;
+      n_start_vals.to_float64_array(n_start_vals_dbls);
+      Node n_end_vals_dbls;
+      n_end_vals.to_float64_array(n_end_vals_dbls);
+
+      double* start = n_start_vals_dbls.as_double_ptr();
+      double* end = n_end_vals_dbls.as_double_ptr();
+
+      double dist_x = end[0] - start[0];
+      double dist_y = end[1] - start[1];
+      double dist_z = end[2] - start[2];
+
+      if(sampling == "uniform")
+      {
+        double dx = (dist_x)/(num_seeds-1);
+        double dy = (dist_y)/(num_seeds-1);
+        double dz = (dist_z)/(num_seeds-1);
+        for(int i = 0; i < num_seeds; ++i)
+	{
+          double x = start[0] + dx*i;
+          double y = start[1] + dy*i;
+          double z = start[2] + dz*i;
+          //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+          seeds.push_back(vtkm::Particle({x,y,z}, i));
+	}
+      }
+      else
+      {
+        std::random_device device;
+        std::default_random_engine generator(0);
+        float  zero(0), one(1);
+        std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+        for(int i = 0; i < num_seeds; ++i)
+	{
+	  double rand = distribution(generator);
+          double x = start[0] + dist_x*rand;
+          double y = start[1] + dist_y*rand;
+          double z = start[2] + dist_z*rand;
+          //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+          seeds.push_back(vtkm::Particle({x,y,z}, i));
+	}
+      }
+    }
+    else if(seed_type == "box")
+    {
+      double dist_x, dist_y, dist_z;
+      double x_min, y_min, z_min;
+      double x_max, y_max, z_max;
+      if(n_seeds.has_child("extents_x"))
+      {
+        const Node &n_extents_x_vals = n_seeds["extents_x"];
+        const Node &n_extents_y_vals = n_seeds["extents_y"];
+        const Node &n_extents_z_vals = n_seeds["extents_z"];
+        Node n_extents_x_vals_dbls;
+        Node n_extents_y_vals_dbls;
+        Node n_extents_z_vals_dbls;
+        n_extents_x_vals.to_float64_array(n_extents_x_vals_dbls);
+        n_extents_y_vals.to_float64_array(n_extents_y_vals_dbls);
+        n_extents_z_vals.to_float64_array(n_extents_z_vals_dbls);
+        double* extents_x = n_extents_x_vals_dbls.as_double_ptr();
+        double* extents_y = n_extents_y_vals_dbls.as_double_ptr();
+        double* extents_z = n_extents_z_vals_dbls.as_double_ptr();
+	dist_x = extents_x[1] - extents_x[0];
+	dist_y = extents_y[1] - extents_y[0];
+	dist_z = extents_z[1] - extents_z[0];
+	x_min = extents_x[0];
+	y_min = extents_y[0];
+	z_min = extents_z[0];
+	x_max = extents_x[1];
+	y_max = extents_y[1];
+	z_max = extents_z[1];
+      }
+      else// whole dataset
+      {
+        vtkm::Bounds global_bounds = data.GetGlobalBounds();
+	dist_x = global_bounds.X.Length();
+	dist_y = global_bounds.Y.Length();
+	dist_z = global_bounds.Z.Length();
+	x_min = global_bounds.X.Min;
+	y_min = global_bounds.Y.Min;
+	z_min = global_bounds.Z.Min;
+	x_max = global_bounds.X.Max;
+	y_max = global_bounds.Y.Max;
+	z_max = global_bounds.Z.Max;
+      }
+      std::string sampling_type = n_seeds["sampling_type"].as_string();
+      std::string sampling_space = n_seeds["sampling_space"].as_string();
+      if(sampling_type != "uniform" && sampling_type != "random")
+      {
+        ASCENT_ERROR("Particle Advection box seeds accepts either 'uniform' or 'random' as the 'sampling_type'");
+      }
+
+      if(sampling_space == "interior")
+      {
+        if(sampling_type == "uniform")
+        {
+	  
+	  int num_seeds_x = n_seeds["num_seeds_x"].as_int();
+	  int num_seeds_y = n_seeds["num_seeds_y"].as_int();
+	  int num_seeds_z = n_seeds["num_seeds_z"].as_int();
+
+	  double dx = 1, dy = 1, dz = 1;
+	  if(num_seeds_x != 0)
+	    if(num_seeds_x != 1)
+              dx = dist_x/(num_seeds_x-1);
+	    else
+              dx = dist_x/num_seeds_x;
+	  if(num_seeds_y != 0)
+	    if(num_seeds_y != 1)
+              dy = dist_y/(num_seeds_y-1);
+	    else
+              dy = dist_y/num_seeds_y;
+	  if(num_seeds_z != 0)
+	    if(num_seeds_z != 1)
+              dz = dist_z/(num_seeds_z-1);
+	    else
+              dz = dist_z/num_seeds_z;
+ 
+          for(int i = 0; i < num_seeds_x; ++i)
+	  {
+            double x = x_min + dx*i;
+            for(int j = 0; j < num_seeds_y; ++j)
+	    {
+              double y = y_min + dy*j;
+              for(int k = 0; k < num_seeds_z; ++k)
+	      {
+                double z = z_min + dz*k;
+                //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+                seeds.push_back(vtkm::Particle({x,y,z}, i));
+	      }
+	    }
+	  }
+        }
+        else //random
+        {
+          std::random_device device;
+          std::default_random_engine generator(0);
+          float  zero(0), one(1);
+          std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+	  int num_seeds = n_seeds["num_seeds"].as_int();
+          for(int i = 0; i < num_seeds; ++i)
+	  {
+	    double rand = distribution(generator);
+            double x = x_min + dist_x*distribution(generator);
+            double y = y_min + dist_y*distribution(generator);
+            double z = z_min + dist_z*distribution(generator);
+            //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+            seeds.push_back(vtkm::Particle({x,y,z}, i));
+	  }
+        }
+
+      }
+      else if (sampling_space == "boundary") 
+      {
+        if(sampling_type == "uniform")
+        {
+	  int num_seeds_x = n_seeds["num_seeds_x"].as_int();
+	  int num_seeds_y = n_seeds["num_seeds_y"].as_int();
+	  int num_seeds_z = n_seeds["num_seeds_z"].as_int();
+
+	  double dx = 1, dy = 1, dz = 1;
+	  if(num_seeds_x != 0)
+	    if(num_seeds_x != 1)
+              dx = dist_x/(num_seeds_x-1);
+	    else
+              dx = dist_x/num_seeds_x;
+	  if(num_seeds_y != 0)
+	    if(num_seeds_y != 1)
+              dy = dist_y/(num_seeds_y-1);
+	    else
+              dy = dist_y/num_seeds_y;
+	  if(num_seeds_z != 0)
+	    if(num_seeds_z != 1)
+              dz = dist_z/(num_seeds_z-1);
+	    else
+              dz = dist_z/num_seeds_z;
+ 
+	  int seed_count = 0;
+          for(int i = 0; i < num_seeds_x; ++i)
+	  {
+            double x = x_min + dx*i;
+	    for(int j = 0; j < num_seeds_z; ++j)
+	    {
+              double z = z_min + dz*j;
+              //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
+              //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
+	      //std::cerr << "seed_count: " << seed_count << std::endl;
+              seeds.push_back(vtkm::Particle({x,y_min,z}, seed_count++));
+              seeds.push_back(vtkm::Particle({x,y_max,z}, seed_count++));
+	    }
+	  }
+          for(int j = 0; j < num_seeds_y; ++j)
+	  {
+            double y = y_min + dy*j;
+            for(int k = 0; k < num_seeds_z; ++k)
+	    {
+              double z = z_min + dz*k;
+              //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
+              //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
+	      //std::cerr << "seed_count: " << seed_count << std::endl;
+              seeds.push_back(vtkm::Particle({x_min,y,z}, seed_count++));
+              seeds.push_back(vtkm::Particle({x_max,y,z}, seed_count++));
+	    }
+	  }
+        }
+        else //random
+        {
+          std::random_device device;
+          std::default_random_engine generator(0);
+          float  zero(0), one(1);
+          std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+	  int num_seeds = n_seeds["num_seeds"].as_int();
+	  for(int i = 0; i < num_seeds; ++i)
+	  {
+	    int side = std::rand()%4;
+	    //std::cerr << "side: " << side << std::endl;
+	    if(side == 0) //x_max
+	    {
+              double y = y_min + dist_y*distribution(generator);
+              double z = z_min + dist_z*distribution(generator);
+              seeds.push_back(vtkm::Particle({x_max,y,z}, i));
+              //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
+	    }
+	    else if(side == 1) //x_min
+	    {
+              double y = y_min + dist_y*distribution(generator);
+              double z = z_min + dist_z*distribution(generator);
+              seeds.push_back(vtkm::Particle({x_min,y,z}, i));
+              //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
+	    }
+	    else if(side == 2) //y_max
+	    {
+              double x = x_min + dist_x*distribution(generator);
+              double z = z_min + dist_z*distribution(generator);
+              seeds.push_back(vtkm::Particle({x,y_max,z}, i));
+              //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
+	    }
+	    else //y_min
+	    {
+              double x = x_min + dist_x*distribution(generator);
+              double z = z_min + dist_z*distribution(generator);
+              seeds.push_back(vtkm::Particle({x,y_min,z}, i));
+              //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
+	    }
+	  }
+        }
+      }
+      else //error
+      {
+        ASCENT_ERROR("Particle Advection box seeds accepts either 'interior' or 'boundary' as the 'sampling_space'");
+      }
+
+	    
+    }
+
+    auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
+    //int numSeeds = get_int32(params()["num_seeds"], data_object);
+    
+    //tube params
+    std::string output_field = field_name + "_streamlines";
+
+    bool draw_tubes = true;
+    if(params().has_path("rendering/enable_tubes"))
+    {
+      if(params()["rendering/enable_tubes"].as_string() == "false")
+      {
+        draw_tubes = false;
+      }
+    }
+
+    //float seedBBox[6];
+    //seedBBox[0] = get_float32(params()["seed_bounding_box_xmin"], data_object);
+    //seedBBox[1] = get_float32(params()["seed_bounding_box_xmax"], data_object);
+    //seedBBox[2] = get_float32(params()["seed_bounding_box_ymin"], data_object);
+    //seedBBox[3] = get_float32(params()["seed_bounding_box_ymax"], data_object);
+    //seedBBox[4] = get_float32(params()["seed_bounding_box_zmin"], data_object);
+    //seedBBox[5] = get_float32(params()["seed_bounding_box_zmax"], data_object);
+
+    //float dx = seedBBox[1] - seedBBox[0];
+    //float dy = seedBBox[3] - seedBBox[2];
+    //float dz = seedBBox[5] - seedBBox[4];
+
+
     //Generate seeds
 
-    std::vector<vtkm::Particle> seeds;
-    for (int i = 0; i < numSeeds; i++)
-    {
-      float x = seedBBox[0] + dx * distribution(generator);
-      float y = seedBBox[2] + dy * distribution(generator);
-      float z = seedBBox[4] + dz * distribution(generator);
-      seeds.push_back(vtkm::Particle({x,y,z}, i));
-    }
-    auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
+    //std::vector<vtkm::Particle> seeds;
+    //for (int i = 0; i < numSeeds; i++)
+    //{
+    //  float x = seedBBox[0] + dx * distribution(generator);
+    //  float y = seedBBox[2] + dy * distribution(generator);
+    //  float z = seedBBox[4] + dz * distribution(generator);
+    //  std::cerr << "seed " << i << ": " << x << " " << y << " " << z << std::endl;
+    //  seeds.push_back(vtkm::Particle({x,y,z}, i));
+    //}
+    //auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
 
 
     vtkh::DataSet *output = nullptr;
@@ -3882,6 +4950,45 @@ VTKHParticleAdvection::execute()
       sl.SetNumberOfSteps(numSteps);
       sl.SetSeeds(seeds);
       sl.SetField(field_name);
+      if(draw_tubes)
+      {
+        sl.SetTubes(true);
+        if(params().has_path("rendering/output_field")) 
+	{
+          std::string output_field = params()["rendering/output_field"].as_string();
+          sl.SetOutputField(output_field);
+	}
+	else
+	{
+	  std::string output_field = field_name + "_streamlines";
+          sl.SetOutputField(output_field);
+	}
+        if(params().has_path("rendering/tube_value")) 
+	{
+          double tube_value = params()["rendering/tube_value"].as_float64();
+          sl.SetTubeValue(tube_value);
+	}
+        if(params().has_path("rendering/tube_size")) 
+	{
+          double tube_size = params()["rendering/tube_size"].as_float64();
+          sl.SetTubeSize(tube_size);
+	}
+        if(params().has_path("rendering/tube_sides")) 
+	{
+          int tube_sides = params()["rendering/tube_sides"].as_int32();
+          sl.SetTubeSides(tube_sides);
+	}
+        if(params().has_path("rendering/tube_capping"))
+        {
+          bool tube_capping = true;
+          if(params()["rendering/tube_capping"].as_string() == "false")
+          {
+            tube_capping = false;
+          }
+          sl.SetTubeCapping(tube_capping);
+        }
+      }
+
       sl.SetInput(&data);
       sl.Update();
       output = sl.GetOutput();
@@ -3964,6 +5071,16 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
     res &= check_numeric("num_steps", params, info, true, true);
     res &= check_numeric("step_size", params, info, true, true);
 
+    if(params.has_child("rendering"))
+    {
+      res &= check_string("rendering/enable_tubes", params, info, false);
+      res &= check_string("rendering/tube_capping", params, info, false);
+      res &= check_numeric("rendering/tube_size", params, info, false);
+      res &= check_numeric("rendering/tube_sides", params, info, false);
+      res &= check_numeric("rendering/tube_value", params, info, false);
+      res &= check_string("rendering/output_field", params, info, false);
+    }
+
     std::vector<std::string> valid_paths;
     valid_paths.push_back("b_field");
     valid_paths.push_back("e_field");
@@ -3973,6 +5090,12 @@ VTKHWarpXStreamline::verify_params(const conduit::Node &params,
     valid_paths.push_back("weighting_field");
     valid_paths.push_back("num_steps");
     valid_paths.push_back("step_size");
+    valid_paths.push_back("rendering/enable_tubes");
+    valid_paths.push_back("rendering/tube_capping");
+    valid_paths.push_back("rendering/tube_size");
+    valid_paths.push_back("rendering/tube_sides");
+    valid_paths.push_back("rendering/tube_value");
+    valid_paths.push_back("rendering/output_field");
 
     std::string surprises = surprise_check(valid_paths, params);
 
@@ -4047,6 +5170,15 @@ VTKHWarpXStreamline::execute()
     int numSteps = get_int32(params()["num_steps"], data_object);
     float stepSize = get_float32(params()["step_size"], data_object);
 
+    //tube params
+    bool draw_tubes = false;
+    if(params().has_path("enable_tubes"))
+    {
+      if(params()["rendering/enable_tubes"].as_string() == "true")
+      {
+        draw_tubes = true;
+      }
+    }
 
     vtkh::DataSet *output = nullptr;
     vtkh::WarpXStreamline sl;
@@ -4058,6 +5190,46 @@ VTKHWarpXStreamline::execute()
     sl.SetMassField(mass_field);
     sl.SetMomentumField(momentum_field);
     sl.SetWeightingField(weighting_field);
+
+    if(draw_tubes)
+    {
+      sl.SetTubes(true);
+      if(params().has_path("output_field")) 
+      {
+        std::string output_field = params()["rendering/output_field"].as_string();
+        sl.SetOutputField(output_field);
+      }
+      else
+      {
+        std::string output_field = b_field+ "_" + e_field + "_streamlines";
+        sl.SetOutputField(output_field);
+      }
+      if(params().has_path("tube_value")) 
+      {
+        double tube_value = params()["rendering/tube_value"].as_float64();
+        sl.SetTubeValue(tube_value);
+      }
+      if(params().has_path("tube_size")) 
+      {
+        double tube_size = params()["rendering/tube_size"].as_float64();
+        sl.SetTubeSize(tube_size);
+      }
+      if(params().has_path("tube_sides")) 
+      {
+        int tube_sides = params()["rendering/tube_sides"].as_int32();
+        sl.SetTubeSides(tube_sides);
+      }
+      if(params().has_path("tube_capping"))
+      {
+        bool tube_capping = true;
+        if(params()["rendering/tube_capping"].as_string() == "false")
+        {
+          tube_capping = false;
+        }
+        sl.SetTubeCapping(tube_capping);
+      }
+    }
+
     sl.SetInput(&data);
     sl.Update();
     output = sl.GetOutput();
@@ -4214,7 +5386,7 @@ VTKHVTKFileExtract::execute()
         Node n_recv;
         conduit::relay::mpi::all_gather_using_schema(n_local_domain_ids,
                                                      n_recv,
-                                                     MPI_COMM_WORLD);
+                                                     mpi_comm);
         n_global_domain_ids.set(DataType::index_t(num_global_domains));
         n_global_domain_ids.print();
         index_t_array global_vals = n_global_domain_ids.value();
@@ -4283,12 +5455,131 @@ VTKHVTKFileExtract::execute()
 }
 
 
+//-----------------------------------------------------------------------------
+
+VTKHMIR::VTKHMIR()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHMIR::~VTKHMIR()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHMIR::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_mir";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHMIR::verify_params(const conduit::Node &params,
+                        conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("matset",params, info, true);
+    res &= check_numeric("error_scaling", params, info, false);
+    res &= check_numeric("scaling_decay", params, info, false);
+    res &= check_numeric("iterations", params, info, false);
+    res &= check_numeric("max_error", params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("matset");
+    valid_paths.push_back("error_scaling");
+    valid_paths.push_back("scaling_decay");
+    valid_paths.push_back("iterations");
+    valid_paths.push_back("max_error");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHMIR::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_MIR input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string matset_name = params()["matset"].as_string();
+    std::string ids_name = "material_ids";//matset_name + "_ids";
+    if(!collection->has_field(ids_name))
+    {
+      bool throw_error = false;
+      detail::field_error(ids_name, this->name(), collection, throw_error);
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    std::string topo_name = collection->field_topology(ids_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    double error_scaling = 0.0; 
+    double scaling_decay = 0.0; 
+    double max_error = 0.00001;
+    int iterations = 0;
+    if(params().has_path("error_scaling"))
+      error_scaling = params()["error_scaling"].to_float64();
+    if(params().has_path("scaling_decay"))
+      scaling_decay = params()["scaling_decay"].to_float64();
+    if(params().has_path("iterations"))
+      iterations = params()["iterations"].to_int64();
+    if(params().has_path("max_error"))
+      max_error = params()["max_error"].to_float64();
+
+    vtkh::MIR mir;
+    mir.SetErrorScaling(error_scaling);
+    mir.SetScalingDecay(scaling_decay);
+    mir.SetIterations(iterations);
+    mir.SetMaxError(max_error);
+    mir.SetMatSet(matset_name);
+    mir.SetInput(&data);
+    mir.Update();
+    vtkh::DataSet *mir_output = mir.GetOutput();
+
+    //// we need to pass through the rest of the topologies, untouched,
+    //// and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*mir_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete mir_output;
+    set_output<DataObject>(res);
+}
 
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
+
 
 
 //-----------------------------------------------------------------------------

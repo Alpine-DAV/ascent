@@ -58,7 +58,8 @@ public:
   void                            RenderBackground();
   void                            RenderScreenAnnotations(const std::vector<std::string> &field_names,
                                                           const std::vector<vtkm::Range> &ranges,
-                                                          const std::vector<vtkm::cont::ColorTable> &colors);
+                                                          const std::vector<vtkm::cont::ColorTable> &colors,
+                                                          const std::vector<int> &is_discrete);
   void                            Save();
 protected:
   vtkm::rendering::Camera      m_camera;

@@ -865,7 +865,8 @@ static std::map<std::string, bool (*)(void)> m_bool_callback_map;
 //-----------------------------------------------------------------------------
 void
 register_callback(const std::string &callback_name,
-                  void (*callback_function)(conduit::Node &, conduit::Node &))
+                  void (*callback_function)
+                  (conduit::Node &, conduit::Node &))
 {
     if (callback_name == "")
     {
@@ -904,7 +905,7 @@ register_callback(const std::string &callback_name,
 
 //-----------------------------------------------------------------------------
 void
-execute_callback(std::string callback_name,
+execute_callback(const std::string &callback_name,
                  conduit::Node &params,
                  conduit::Node &output)
 {
@@ -918,7 +919,7 @@ execute_callback(std::string callback_name,
 
 //-----------------------------------------------------------------------------
 bool
-execute_callback(std::string callback_name)
+execute_callback(const std::string &callback_name)
 {
     if (m_bool_callback_map.count(callback_name) != 1)
     {
@@ -926,6 +927,26 @@ execute_callback(std::string callback_name)
     }
     auto callback_function = m_bool_callback_map.at(callback_name);
     return callback_function();
+}
+
+//-----------------------------------------------------------------------------
+void
+get_void_callbacks(std::vector<std::string> &callback_names)
+{
+    for (const auto &pair : m_void_callback_map)
+    {
+        callback_names.push_back(pair.first);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+get_bool_callbacks(std::vector<std::string> &callback_names)
+{
+    for (const auto &pair : m_bool_callback_map)
+    {
+        callback_names.push_back(pair.first);
+    }
 }
 
 //-----------------------------------------------------------------------------

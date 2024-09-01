@@ -529,14 +529,14 @@ struct VertexFunctor
 struct CentroidFunctor
 {
   Array<double> m_centroids;
-  int m_dims;
 
   template<typename MeshType, typename Exec>
   void operator()(MeshType &mesh, const Exec &)
   {
-    
     const int size = mesh.m_num_cells;
     const int dims = mesh.m_dims;
+
+    // std::cout << " centroid mesh dims " << dims << std::endl;
 
     // one component for each dim
     m_centroids.resize(size * mesh.m_dims);
@@ -545,7 +545,6 @@ struct CentroidFunctor
     using for_policy = typename Exec::for_policy;
     ascent::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t cell_idx)
     {
-      centroids_ptr[cell_idx] = cell_idx;
       int indices[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
       mesh.cell_indices(cell_idx, indices);
 
@@ -1069,6 +1068,78 @@ derived_field_add_fields(conduit::Node &dataset,
   return;
 }
 
+//Take in a field array
+//add new field that field^exponent
+void
+derived_field_power_of_field(conduit::Node &dataset,
+                         const std::string &field_name,
+                         const double &exponent,
+                         const std::string &out_field_name)
+{
+    const std::string output_path = "fields/" + out_field_name;
+    for(int i = 0; i < dataset.number_of_children(); ++i)
+    {
+        conduit::Node &dom = dataset.child(i);
+        const std::string path = "fields/" + field_name;
+        if(dom.has_path(path)) //has field
+        {
+            if(!dom.has_path(output_path)) //setup output path
+            {
+                dom[output_path]["association"] = dom[path]["association"];
+                dom[output_path]["topology"]    = dom[path]["topology"];
+                if(field_is_float32(dom[path]))//Todo:: Ints. longs?
+                {
+                    const int vals = dom[path]["values"].dtype().number_of_elements();
+                    dom[output_path]["values"].set(conduit::DataType::float32(vals));
+                }
+                else
+                {
+                    const int vals = dom[path]["values"].dtype().number_of_elements();
+                    dom[output_path]["values"].set(conduit::DataType::float64(vals));
+                }
+            }
+            else //has output path already; weird but ok
+            {
+                // check that the field assoc and topo 
+                std::string out_assoc = dom[output_path]["association"].to_string();
+                std::string out_topo  = dom[output_path]["topology"].to_string();
+                std::string f_assoc   = dom[path]["association"].to_string();
+                std::string f_topo    = dom[path]["topology"].to_string();
+                if(out_assoc != f_assoc)
+                {
+                    ASCENT_ERROR("Field associations do not match:\n " <<
+                                 "Field " << field_name
+                                  << " has association " << f_assoc << "\n" <<
+                                 "Field " << out_field_name
+                                 << " has association " << out_assoc << "\n");
+                }
+                if(out_topo != f_topo)
+                {
+                    ASCENT_ERROR("Field topologies do not match:\n " <<
+                                 "Field " << field_name
+                                  << " has topology " << f_topo << "\n" <<
+                                 "Field " << out_field_name << " has topology " << out_topo << "\n");
+                }
+            }
+
+	    //make tmp input
+	    conduit::Node tmp_a;
+	    tmp_a.set_external(dom[path]);
+            // execute 
+            // compute power of field given exponent
+            conduit::Node n_power_res = derived_field_power(tmp_a, exponent);
+            // replace out with new result
+            dom[output_path]["values"] = n_power_res["values"];
+        }
+        else //does not have field
+        {
+            // some domains may not have this field, simply skip
+            continue; 
+        }//computing power
+    }//domains
+
+  return;
+}
 // returns a Node containing the min, max and dim for x,y,z given a topology
 conduit::Node
 global_bounds(const conduit::Node &dataset, const std::string &topo_name)
@@ -1309,7 +1380,7 @@ int find_bin(const T* bins, const int size, const T val, bool clamp)
 
   return first;
 }
-
+//
 // returns -1 if value lies outside the range
 conduit::index_t
 get_bin_index(const conduit::float64 value, const conduit::Node &axis)
@@ -1347,7 +1418,7 @@ get_bin_index(const conduit::float64 value, const conduit::Node &axis)
   }
   return bin_index;
 }
-
+//
 void
 populate_homes(const conduit::Node &dom,
                const conduit::Node &bin_axes,
@@ -1483,6 +1554,7 @@ populate_homes(const conduit::Node &dom,
     }
   }
 }
+
 
 void
 update_bin(double *bins,
@@ -1946,6 +2018,8 @@ binning(const conduit::Node &dataset,
   return res;
 }
 
+
+/// TODO MOVE TO ascent_data_binning.cpp
 void
 paint_binning(const conduit::Node &binning,
               conduit::Node &dataset,
@@ -2000,7 +2074,7 @@ paint_binning(const conduit::Node &binning,
         binning["attrs/reduction_var/value"].as_string();
     if(reduction_var.empty())
     {
-      reduction_var = "cnt";
+      reduction_var = "count";
     }
     std::string fname =
         "painted_" + reduction_var + "_" +
@@ -2036,12 +2110,16 @@ paint_binning(const conduit::Node &binning,
 }
 
 
+/// TODO MOVE TO ascent_data_binning.cpp
 void
 binning_mesh(const conduit::Node &binning,
              conduit::Node &mesh,
              const std::string field_name)
 {
   int num_axes = binning["attrs/bin_axes/value"].number_of_children();
+
+
+  // std::cout << "Creating binning mesh from " << binning.to_yaml();
 
   if(num_axes > 3)
   {
@@ -2087,7 +2165,7 @@ binning_mesh(const conduit::Node &binning,
   std::string reduction_var = binning["attrs/reduction_var/value"].as_string();
   if(reduction_var.empty())
   {
-    reduction_var = "cnt";
+    reduction_var = "count";
   }
   std::string fname =
       reduction_var + "_" + binning["attrs/reduction_op/value"].as_string();

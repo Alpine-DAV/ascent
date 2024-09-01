@@ -1,0 +1,24 @@
+#An example of using the MIR filter and plotting the field 'cellMat'.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "mir"
+        params: 
+          matset: "matset"
+          error_scaling: 0.0
+          scaling_decay: 0.0
+          iterations: 0
+          max_error: 1e-05
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "cellMat"
+          pipeline: "pl1"
+      image_prefix: "/home/user/ascent/build/tests/_output/tout_mir_venn"

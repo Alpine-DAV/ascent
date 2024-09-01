@@ -49,7 +49,7 @@ jobs:
         sudo apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic-2023.1.0 \
                        intel-oneapi-compiler-fortran-2023.1.0
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         submodules: 'recursive'
     - name: Build TPLs

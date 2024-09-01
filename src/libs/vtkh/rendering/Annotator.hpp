@@ -24,12 +24,14 @@ public:
   void RenderWorldAnnotations(vtkm::Vec<float,3> axis_scale);
   void RenderScreenAnnotations(const std::vector<std::string> &field_names,
                                const std::vector<vtkm::Range> &ranges,
-                               const std::vector<vtkm::cont::ColorTable> &color_tables);
+                               const std::vector<vtkm::cont::ColorTable> &color_tables,
+                               const std::vector<int> &is_discrete);
 
   void RenderScreenAnnotations(const std::vector<std::string> &field_names,
                                const std::vector<vtkm::Range> &ranges,
                                const std::vector<vtkm::cont::ColorTable> &color_tables,
-			       const std::vector<vtkm::Bounds> &color_bar_position);
+			                         const std::vector<vtkm::Bounds> &color_bar_position,
+			                         const std::vector<int> &is_discrete);
 protected:
   Annotator();
   bool                                    m_is_3d;

@@ -26,6 +26,7 @@
 #include <ascent_runtime_trigger_filters.hpp>
 #include <ascent_runtime_query_filters.hpp>
 #include <ascent_runtime_command_filters.hpp>
+#include <ascent_runtime_steering_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
@@ -101,9 +102,11 @@ register_builtin()
     AscentRuntime::register_filter_type<BasicQuery>();
     AscentRuntime::register_filter_type<FilterQuery>("transforms","expression");
     AscentRuntime::register_filter_type<Command>();
+    AscentRuntime::register_filter_type<Steering>("extracts");
     AscentRuntime::register_filter_type<DataBinning>("transforms","binning");
     AscentRuntime::register_filter_type<BlueprintPartition>("transforms","partition");
     AscentRuntime::register_filter_type<AddFields>("transforms","add_fields");
+    AscentRuntime::register_filter_type<PowerOfField>("transforms","power_of_field");
 
 #if defined(ASCENT_VTKM_ENABLED)
     AscentRuntime::register_filter_type<DefaultRender>();
@@ -111,6 +114,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
     // transforms, the current crop expect vtk-h input data
+    AscentRuntime::register_filter_type<VTKHAddDomains>("transforms","add_domain_ids");
+    AscentRuntime::register_filter_type<VTKHAddRanks>("transforms","add_mpi_ranks");
     AscentRuntime::register_filter_type<VTKHClip>("transforms","clip");
     AscentRuntime::register_filter_type<VTKHClipWithField>("transforms","clip_with_field");
     AscentRuntime::register_filter_type<VTKHCleanGrid>("transforms","clean_grid");
@@ -143,7 +148,9 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<VTKHStreamline>("transforms","streamline");
     AscentRuntime::register_filter_type<VTKHWarpXStreamline>("transforms","warpx_streamline");
+    AscentRuntime::register_filter_type<VTKHUniformGrid>("transforms","uniform_grid");
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
+    AscentRuntime::register_filter_type<VTKHMIR>("transforms","mir");
 
 #if defined(ASCENT_ANARI_ENABLED)
     AscentRuntime::register_filter_type<AnariTriangles>("extracts", "anari_triangles");

@@ -319,7 +319,7 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
 
       if(is_conduit_type<conduit::int32>(n_topo[conn_path]))
       {
-        MCArray<conduit::int32> conn(n_topo["conn_path"]);
+        MCArray<conduit::int32> conn(n_topo[conn_path]);
         UnstructuredMesh<conduit::float64,conduit::int32> mesh(mem_space,
                                                                coords,
                                                                conn,
@@ -370,17 +370,39 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
     // figure out the types of coords
     if(is_conduit_type<conduit::float32>(n_coords["values/x"]))
     {
-      MCArray<conduit::float32> coords(n_coords["values"]);
+      MCArray<conduit::float32> x_coords(n_coords["values/x"]);
+      MCArray<conduit::float32> y_coords(n_coords["values/y"]);
+      std::string zvalue_path = "values/z";
+
+      if(!n_coords.has_path("values/z"))
+      {
+        zvalue_path = "values/x";
+      }
+      MCArray<conduit::float32> z_coords(n_coords[zvalue_path]);
+
       RectilinearMesh<conduit::float32> mesh(mem_space,
-                                             coords,
+                                             x_coords,
+                                             y_coords,
+                                             z_coords,
                                              dims);
       func(mesh,exec);
     }
     else if(is_conduit_type<conduit::float64>(n_coords["values/x"]))
     {
-      MCArray<conduit::float32> coords(n_coords["values"]);
-      RectilinearMesh<conduit::float32> mesh(mem_space,
-                                             coords,
+      MCArray<conduit::float64> x_coords(n_coords["values/x"]);
+      MCArray<conduit::float64> y_coords(n_coords["values/y"]);
+      std::string zvalue_path = "values/z";
+
+      if(!n_coords.has_path("values/z"))
+      {
+        zvalue_path = "values/x";
+      }
+      MCArray<conduit::float64> z_coords(n_coords[zvalue_path]);
+
+      RectilinearMesh<conduit::float64> mesh(mem_space,
+                                             x_coords,
+                                             y_coords,
+                                             z_coords,
                                              dims);
       func(mesh,exec);
     }
@@ -579,6 +601,53 @@ dispatch_memory_binary_df(const conduit::Node &l_field,
 }
 
 
+//-----------------------------------------------------------------------------
+//dispatch memory for a derived field (DF) unary operation
+template<typename Function, typename Exec>
+conduit::Node
+dispatch_memory_unary_df(const conduit::Node &field,
+                          const double &val,
+                          std::string component,
+                          const Function &func,
+                          const Exec &exec)
+{
+    const std::string mem_space = Exec::memory_space;
+
+    conduit::Node res;
+    if(field_is_float32(field))
+    {
+
+        MCArray<conduit::float32> farray(field["values"]);
+        DeviceAccessor<conduit::float32> accessor = farray.accessor(mem_space, component);
+        res = func(accessor, val, exec);
+    }
+    else if(field_is_float64(field))
+    {
+        MCArray<conduit::float64> farray(field["values"]);
+        DeviceAccessor<conduit::float64>  accessor = farray.accessor(mem_space, component);
+        res = func(accessor, val, exec);
+    }
+    else if(field_is_int32(field))
+    {
+        MCArray<conduit::int32> farray(field["values"]);
+        DeviceAccessor<conduit::int32>  accessor = farray.accessor(mem_space, component);
+        res = func(accessor, val, exec);
+    }
+    else if(field_is_int64(field))
+    {
+
+        MCArray<conduit::int64> farray(field["values"]);
+        DeviceAccessor<conduit::int64>  accessor = farray.accessor(mem_space, component);
+        res = func(accessor, val, exec);
+    }
+    else
+    {
+        ASCENT_ERROR("Type dispatch: unsupported array type "<<
+                      field.schema().to_string());
+    }
+
+    return res;
+}
 
 template<typename Function>
 conduit::Node
@@ -625,6 +694,51 @@ exec_dispatch_binary_df(const conduit::Node &l_field,
   return res;
 }
 
+
+template<typename Function>
+conduit::Node
+exec_dispatch_unary_df(const conduit::Node &field,
+		       const double &val,
+                       std::string component,
+                       const Function &func)
+{
+
+  conduit::Node res;
+  const std::string exec_policy = ExecutionManager::execution_policy();
+  //std::cout<<"Exec policy "<<exec_policy<<"\n";
+  if(exec_policy == "serial")
+  {
+    SerialExec exec;
+    res = dispatch_memory_unary_df(field, val, component, func, exec);
+  }
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+  else if(exec_policy == "openmp")
+  {
+    OpenMPExec exec;
+    res = dispatch_memory_unary_df(field, val, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_CUDA_ENABLED)
+  else if(exec_policy == "cuda")
+  {
+    CudaExec exec;
+    res = dispatch_memory_unary_df(field, val, component, func, exec);
+  }
+#endif
+#if defined(ASCENT_HIP_ENABLED)
+  else if(exec_policy == "hip")
+  {
+    HipExec exec;
+    res = dispatch_memory_unary_df(field, val, component, func, exec);
+  }
+#endif
+  else
+  {
+    ASCENT_ERROR("Execution dispatch: unsupported execution policy "<<
+                  exec_policy);
+  }
+  return res;
+}
 
 //-----------------------------------------------------------------------------
 template<typename Function, typename T>
