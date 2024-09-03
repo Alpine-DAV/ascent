@@ -60,6 +60,7 @@
 // std includes
 #include <limits>
 #include <set>
+#include <numeric>
 
 using namespace std;
 using namespace conduit;
@@ -826,8 +827,19 @@ RelayIOSave::execute()
                 if (num_topos != 1)
                 {
                     error = 1;
+                    std::vector<std::string> unique_topo_names = unique_topos.child_names();
                     error_oss << "relay_io_save Overlink save requires a single topology; "
-                                 "there are " << num_topos << " topologies in the input mesh.";
+                                 "there are " << num_topos << " topologies in the input mesh. "
+                                 "The current topologies are " << 
+                                 std::accumulate(
+                                    unique_topo_names.begin(),
+                                    unique_topo_names.end(),
+                                    std::string(""),
+                                    [](std::string a, std::string b)
+                                    { return std::move(a) + "\n - " + std::move(b); }) <<
+                                 "\nYou can select which topologies to save using the "
+                                 "\"topologies\" parameter like in the following example:\n"
+                                 "extracts[\"<extract_name>/params/topologies\"].append() = \"<topo_name>\"";
                 }
             }
 
