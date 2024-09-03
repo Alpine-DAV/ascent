@@ -20,6 +20,7 @@
 
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
+#include "conduit_fmt/conduit_fmt.h"
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -1089,21 +1090,18 @@ TEST(ascent_relay, silo_spiral_multi_file)
         EXPECT_TRUE(conduit::utils::is_directory(output_dir));
         EXPECT_TRUE(conduit::utils::is_file(output_root));
 
-        char fmt_buff[64] = {0};
         for(int i=0;i<nfiles_to_check;i++)
         {
-            std::string fprefix = "file_";
+            std::string fprefix = conduit_fmt::format("file_{:06d}.silo", i);
             if(nfiles_to_check == 7)
             {
                 // in the n domains == n files case, the file prefix is
                 // domain_
-                fprefix = "domain_";
+                fprefix = conduit_fmt::format("domain_{:06d}.silo", i);
             }
-            snprintf(fmt_buff, sizeof(fmt_buff), "%06d",i);
             oss.str("");
             oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
-                                                  fprefix)
-                << fmt_buff << ".silo";
+                                                  fprefix);
             std::string fcheck = oss.str();
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
@@ -1237,21 +1235,18 @@ TEST(ascent_relay, overlink_spiral_multi_file)
         EXPECT_TRUE(conduit::utils::is_directory(output_dir));
         EXPECT_TRUE(conduit::utils::is_file(output_root));
 
-        char fmt_buff[64] = {0};
         for(int i=0;i<nfiles_to_check;i++)
         {
-            std::string fprefix = "domfile";
+            std::string fprefix = conduit_fmt::format("domfile{:d}.silo", i);
             if(nfiles_to_check == 7)
             {
                 // in the n domains == n files case, the file prefix is
                 // domain_
-                fprefix = "domain";
+                fprefix = conduit_fmt::format("domain{:d}.silo", i);
             }
-            snprintf(fmt_buff, sizeof(fmt_buff), "%d",i);
             oss.str("");
             oss << conduit::utils::join_file_path(output_base,
-                                                  fprefix)
-                << fmt_buff << ".silo";
+                                                  fprefix);
             std::string fcheck = oss.str();
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
