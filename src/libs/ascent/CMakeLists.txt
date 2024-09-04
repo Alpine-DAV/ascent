@@ -291,7 +291,6 @@ if(VTKM_FOUND)
 
     # keep a vtkm-specific device source list
     set(ascent_vtkm_device_sources ${ascent_vtkh_dep_sources}
-                                   runtimes/ascent_vtkh_device_utils.cpp
                                    runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
 
     # also make sure that these are in ascent's device source list

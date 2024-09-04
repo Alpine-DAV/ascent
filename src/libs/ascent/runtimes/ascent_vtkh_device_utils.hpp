@@ -16,9 +16,10 @@
 #include <RAJA/RAJA.hpp>
 #endif
 
+#include <vtkm/cont/DataSet.h>
 
-using namespace std;
-using namespace conduit;
+#include <ascent_exports.h>
+#include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -26,83 +27,159 @@ using namespace conduit;
 namespace ascent
 {
 
-class ASCENT_API VTKHDeviceAdapter
-{
-public:
+using index_t = conduit::index_t;
 
-//---------------------------------------------------------------------------//
-// Lambda decorators
-//---------------------------------------------------------------------------//
+struct EmptyPolicy
+{};
 
-#if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
+#if defined(ASCENT_CUDA_ENABLED)
 //---------------------------------------------------------------------------//
 // CUDA decorators
 //---------------------------------------------------------------------------//
-static const std::string memory_space = "device";
 #define ASCENT_EXEC inline __host__ __device__
 // Note: there is a performance hit for doing both host and device
 // the cuda compiler calls this on then host as a std::function call for each i
 // in the for loop, and that basically works out to a virtual function
 // call. Thus for small loops, the know overhead is about 3x
 #define ASCENT_LAMBDA __device__ __host__
-//#if defined(ASCENT_RAJA_ENABLED)
-//#define BLOCK_SIZE 128
-//using for_policy = RAJA::cuda_exec<BLOCK_SIZE>;
-//using reduce_policy = RAJA::cuda_reduce;
-//using atomic_policy = RAJA::cuda_atomic;
-//#else
-//using for_policy    = EmptyPolicy;
-//using reduce_policy = EmptyPolicy;
-//using atomic_policy = EmptyPolicy;
-//#endif
+#if defined(ASCENT_RAJA_ENABLED)
+#define BLOCK_SIZE 128
+using for_policy = RAJA::cuda_exec<BLOCK_SIZE>;
+using reduce_policy = RAJA::cuda_reduce;
+using atomic_policy = RAJA::cuda_atomic;
+#else
+using for_policy    = EmptyPolicy;
+using reduce_policy = EmptyPolicy;
+using atomic_policy = EmptyPolicy;
+#endif
 
 #elif defined(ASCENT_HIP_ENABLED) // && ?
 //---------------------------------------------------------------------------//
 // HIP decorators
 //---------------------------------------------------------------------------//
-static const std::string memory_space = "device";
 #define ASCENT_EXEC inline __host__ __device__
 #define ASCENT_LAMBDA __device__ __host__
-//#if defined(ASCENT_RAJA_ENABLED)
-//#define BLOCK_SIZE 256
-//using for_policy = RAJA::hip_exec<BLOCK_SIZE>;
-//using reduce_policy = RAJA::hip_reduce;
-//using atomic_policy = RAJA::hip_atomic;
-//#else
-//using for_policy    = EmptyPolicy;
-//using reduce_policy = EmptyPolicy;
-//using atomic_policy = EmptyPolicy;
-//#endif
+#if defined(ASCENT_RAJA_ENABLED)
+#define BLOCK_SIZE 256
+using for_policy = RAJA::hip_exec<BLOCK_SIZE>;
+using reduce_policy = RAJA::hip_reduce;
+using atomic_policy = RAJA::hip_atomic;
+#else
+using for_policy    = EmptyPolicy;
+using reduce_policy = EmptyPolicy;
+using atomic_policy = EmptyPolicy;
+#endif
 
 #else
 //---------------------------------------------------------------------------//
 // Non-device decorators
 //---------------------------------------------------------------------------//
-static const std::string memory_space = "host";
 #define ASCENT_EXEC   inline
 #define ASCENT_LAMBDA
-//#if defined(ASCENT_RAJA_ENABLED)
-//using for_policy = RAJA::seq_exec;
-//using reduce_policy = RAJA::seq_reduce;
-//using atomic_policy = RAJA::seq_atomic;
-//#else
-//using for_policy    = EmptyPolicy;
-//using reduce_policy = EmptyPolicy;
-//using atomic_policy = EmptyPolicy;
-//#endif
+#if defined(ASCENT_RAJA_ENABLED)
+using for_policy = RAJA::seq_exec;
+using reduce_policy = RAJA::seq_reduce;
+using atomic_policy = RAJA::seq_atomic;
+#else
+using for_policy    = EmptyPolicy;
+#endif
 #endif
 
-// Definition of the cast function with __host__ __device__
-ASCENT_EXEC static void castUint64ToFloat64(const uint64_t* input, double* output, int size);
 
 
-};
+//---------------------------------------------------------------------------//
+// Device Error Checks
+//---------------------------------------------------------------------------//
+#if defined(ASCENT_CUDA_ENABLED)
+//---------------------------------------------------------------------------//
+// cuda error check
+//---------------------------------------------------------------------------//
+inline void cuda_error_check(const char *file, const int line )
+{
+  cudaError err = cudaGetLastError();
+  if ( cudaSuccess != err )
+  {
+    std::cerr<<"CUDA error reported at: "<<file<<":"<<line;
+    std::cerr<<" : "<<cudaGetErrorString(err)<<"\n";
+    //exit( -1 );
+  }
+}
+#define ASCENT_DEVICE_ERROR_CHECK() cuda_error_check(__FILE__,__LINE__);
+
+#elif defined(ASCENT_HIP_ENABLED)
+//---------------------------------------------------------------------------//
+// hip error check
+//---------------------------------------------------------------------------//
+inline void hip_error_check(const char *file, const int line )
+{
+  hipError_t err = hipGetLastError();
+  if ( hipSuccess != err )
+  {
+    std::cerr<<"HIP error reported at: "<<file<<":"<<line;
+    std::cerr<<" : "<<hipGetErrorName(err)<<"\n";
+    //exit( -1 );
+  }
+}
+#define ASCENT_DEVICE_ERROR_CHECK() hip_error_check(__FILE__,__LINE__);
+#else
+//---------------------------------------------------------------------------//
+// non-device error check (no op)
+//---------------------------------------------------------------------------//
+#define ASCENT_DEVICE_ERROR_CHECK()
+#endif
+
+//---------------------------------------------------------------------------//
+// forall
+//---------------------------------------------------------------------------//
+#if defined(ASCENT_RAJA_ENABLED)
+template <typename ExecPolicy, typename Kernel>
+inline void forall(const index_t& begin,
+                   const index_t& end,
+                   Kernel&& kernel) noexcept
+{
+    RAJA::forall<ExecPolicy>(RAJA::RangeSegment(begin, end),
+                             std::forward<Kernel>(kernel));
+}
+#else
+template <typename ExecPolicy, typename Kernel>
+inline void forall(const index_t& begin,
+                   const index_t& end,
+                   Kernel&& kernel) noexcept
+{
+    for(index_t i = begin; i < end; ++i)
+    {
+        kernel(i);
+    };
+}
+#endif
+
+//-----------------------------------------------------------------------------
+// -- start VTKHDeviceAdapter --
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHDeviceAdapter
+{
+
+public: 
+  // Definition of the cast function with __host__ __device__
+  template <typename T, typename S> ASCENT_EXEC static void castUint64ToFloat64(const T* input, S* output, int size)
+  {
+      forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+      {
+          output[i] = static_cast<S>(input[i]);
+      });
+      ASCENT_DEVICE_ERROR_CHECK();
+  }
+
 //-----------------------------------------------------------------------------
 // -- end VTKHDeviceAdapter --
 //-----------------------------------------------------------------------------
-
 };
+
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
+//-----------------------------------------------------------------------------
+};
+//-----------------------------------------------------------------------------
+// -- end header --
 //-----------------------------------------------------------------------------
 #endif
