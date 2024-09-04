@@ -28,7 +28,9 @@
 #include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mesh.hpp>
 #include <conduit_relay_io_blueprint.hpp>
-#include <conduit_relay_io_silo.hpp>
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+#include "conduit_relay_io_silo.hpp"
+#endif
 #if defined(ASCENT_HDF5_ENABLED)
 #include <conduit_relay_io_hdf5.hpp>
 #endif
@@ -54,7 +56,9 @@
 #include <conduit_relay_mpi.hpp>
 #include <conduit_blueprint_mpi_mesh.hpp>
 #include <conduit_relay_mpi_io_blueprint.hpp>
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
 #include <conduit_relay_mpi_io_silo.hpp>
+#endif
 #endif
 
 // std includes
@@ -616,20 +620,24 @@ void mesh_blueprint_save(const Node &data,
 
     if (file_protocol == "silo" || file_protocol == "overlink")
     {
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         if (file_protocol == "overlink")
         {
             opts["file_style"] = "overlink";
         }
-#ifdef ASCENT_MPI_ENABLED
+    #ifdef ASCENT_MPI_ENABLED
         MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
         conduit::relay::mpi::io::silo::save_mesh(data,
                                                  path,
                                                  opts,
                                                  mpi_comm);
-#else
+    #else
         conduit::relay::io::silo::save_mesh(data,
                                             path,
                                             opts);
+    #endif
+#else
+        ASCENT_ERROR("Ascent's Conduit was not built with Silo support.");
 #endif
     }
     else
@@ -1017,13 +1025,16 @@ RelayIOSave::execute()
     else if( protocol == "silo" ||
              protocol == "overlink")
     {
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
         mesh_blueprint_save(selected,
                             path,
                             protocol,
                             num_files,
                             extra_opts,
                             result_path);
-
+#else
+        ASCENT_ERROR("Ascent's Conduit was not built with Silo support.");
+#endif
     }
     else
     {
