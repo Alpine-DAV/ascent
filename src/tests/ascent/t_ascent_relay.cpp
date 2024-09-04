@@ -1118,6 +1118,7 @@ TEST(ascent_relay, test_relay_lor_extract)
     ASCENT_ACTIONS_DUMP(actions2,output_file,msg);
 }
 
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, silo_spiral_multi_file)
 {
@@ -1212,7 +1213,9 @@ TEST(ascent_relay, silo_spiral_multi_file)
         }
     }
 }
+#endif
 
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, overlink_spiral_multi_file)
 {
@@ -1308,6 +1311,7 @@ TEST(ascent_relay, overlink_spiral_multi_file)
         }
     }
 }
+#endif
 
 
 //-----------------------------------------------------------------------------

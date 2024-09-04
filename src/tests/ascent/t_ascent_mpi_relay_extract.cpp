@@ -967,6 +967,7 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos_2)
 
 }
 
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, silo_spiral_multi_file)
 {
@@ -1110,7 +1111,9 @@ TEST(ascent_relay, silo_spiral_multi_file)
         MPI_Barrier(comm);
     }
 }
+#endif
 
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, overlink_spiral_multi_file)
 {
@@ -1255,6 +1258,7 @@ TEST(ascent_relay, overlink_spiral_multi_file)
         MPI_Barrier(comm);
     }
 }
+#endif
 
 //
 //-----------------------------------------------------------------------------
