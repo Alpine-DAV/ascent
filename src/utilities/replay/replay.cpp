@@ -232,7 +232,7 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
                      << "\n" << emsg);
     }
 #ifdef ASCENT_REPLAY_MPI
-    relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
+    conduit::relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
 #endif
 }
 
