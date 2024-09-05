@@ -158,70 +158,88 @@ void trim(std::string &s)
 
 void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &actions)
 {
-  int comm_size = 1;
-  int rank = 0;
-
-#if defined(ASCENT_REPLAY_MPI)
-  if(mpi_comm_id == -1)
-  {
-    // do nothing, an error will be thrown later
-    // so we can respect the exception handling
-    return;
-  }
-  MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
-  MPI_Comm_size(mpi_comm, &comm_size);
-  MPI_Comm_rank(mpi_comm, &rank);
-#endif
-  
-  bool has_file = false;
-
-  if(rank==0)
-  {
-    has_file = conduit::utils::is_file(file_name);
-  }
-
+    int comm_size = 1;
+    int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
-    MPI_Bcast(&has_file, 1, MPI_BOOL, 0, mpi_comm);
-#endif
-
-  bool actions_file_valid = false;
-  std::string file_load_error_msg = "";
-
-  if(rank==0 && has_file)
-  {
-    try
+    if(mpi_comm_id == -1)
     {
-      std::string curr, next;
-      conduit::utils::rsplit_string(file_name, ".", curr, next);
-
-      std::string protocol = curr=="yaml" ? "yaml" : "json";
-      actions.load(file_name, protocol);
-      actions_file_valid = true;
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return;
     }
-    catch(conduit::Error &e)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_size(mpi_comm, &comm_size);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    int has_file = 0;
+    if(rank == 0 && conduit::utils::is_file(file_name))
     {
-      file_load_error_msg = e.message();
-      actions_file_valid = false;
+      has_file = 1;
     }
-  }
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Bcast(&has_file, 1, MPI_INT, 0, mpi_comm);
+#endif
+    if(has_file == 0)
+    {
+      return;
+    }
+
+    int actions_file_valid = 0;
+    std::string emsg = "";
+
+    if(rank == 0)
+    {
+      std::string curr,next;
+
+      std::string protocol = "json";
+      // if file ends with yaml, use yaml as proto
+      conduit::utils::rsplit_string(file_name,
+                                    ".",
+                                    curr,
+                                    next);
+
+      if(curr == "yaml")
+      {
+        protocol = "yaml";
+      }
+
+      try
+      {
+        conduit::Node file_node;
+        file_node.load(file_name, protocol);
+
+        if(merge)
+        {
+          node.update(file_node);
+        }
+        else
+        {
+          node = file_node;
+        }
+
+        actions_file_valid = 1;
+      }
+      catch(conduit::Error &e)
+      {
+        // failed to open or parse the actions file
+        actions_file_valid = 0;
+        emsg = e.message();
+      }
+    }
 
 #ifdef ASCENT_MPI_ENABLED
-  MPI_Bcast(&actions_file_valid, 1, MPI_BOOL, 0, mpi_comm);
+    // make sure all ranks error if the parsing on rank 0 failed.
+    MPI_Bcast(&actions_file_valid, 1, MPI_INT, 0, mpi_comm);
 #endif
 
-  if(!has_file)
-  {
-    ASCENT_WARN("Actions file not found: " << file_name);
-  }
-  else if(!actions_file_valid)
-  {
-    // Raise Error
-    ASCENT_ERROR("Failed to load actions file: " << file_name
-                  << "\n" << file_load_error_msg);
-  }
-
+    if(actions_file_valid == 0)
+    {
+        // Raise Error
+        ASCENT_ERROR("Failed to load actions file: " << file_name
+                     << "\n" << emsg);
+    }
 #ifdef ASCENT_MPI_ENABLED
-  relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+    relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
 #endif
 }
 
