@@ -208,7 +208,7 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
         conduit::Node file_node;
         file_node.load(file_name, protocol);
 
-        node = file_node;
+        actions = file_node;
  
         actions_file_valid = 1;
       }
@@ -232,7 +232,7 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
                      << "\n" << emsg);
     }
 #ifdef ASCENT_MPI_ENABLED
-    relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+    relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
 #endif
 }
 
