@@ -160,7 +160,7 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
 {
     int comm_size = 1;
     int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
+#ifdef ASCENT_REPLAY_MPI
     if(mpi_comm_id == -1)
     {
       // do nothing, an error will be thrown later
@@ -176,7 +176,7 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
     {
       has_file = 1;
     }
-#ifdef ASCENT_MPI_ENABLED
+#ifdef ASCENT_REPLAY_MPI
     MPI_Bcast(&has_file, 1, MPI_INT, 0, mpi_comm);
 #endif
     if(has_file == 0)
@@ -220,7 +220,7 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
       }
     }
 
-#ifdef ASCENT_MPI_ENABLED
+#ifdef ASCENT_REPLAY_MPI
     // make sure all ranks error if the parsing on rank 0 failed.
     MPI_Bcast(&actions_file_valid, 1, MPI_INT, 0, mpi_comm);
 #endif
@@ -231,7 +231,7 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
         ASCENT_ERROR("Failed to load actions file: " << file_name
                      << "\n" << emsg);
     }
-#ifdef ASCENT_MPI_ENABLED
+#ifdef ASCENT_REPLAY_MPI
     relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
 #endif
 }
