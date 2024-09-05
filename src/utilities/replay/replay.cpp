@@ -208,15 +208,8 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
         conduit::Node file_node;
         file_node.load(file_name, protocol);
 
-        if(merge)
-        {
-          node.update(file_node);
-        }
-        else
-        {
-          node = file_node;
-        }
-
+        node = file_node;
+ 
         actions_file_valid = 1;
       }
       catch(conduit::Error &e)
