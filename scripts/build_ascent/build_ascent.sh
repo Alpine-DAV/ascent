@@ -544,6 +544,9 @@ vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
 vtkm_tarball=$(ospath ${source_dir}/vtk-m-${vtkm_version}.tar.gz)
 
+mpicc_path=`which mpicc`
+mpicpp_path=`which mpic++`
+
 # build only if install doesn't exist
 if [ ! -d ${vtkm_install_dir} ]; then
 if ${build_vtkm}; then
@@ -575,6 +578,7 @@ if [[ "$enable_hip" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
 fi
 
+
 echo "**** Configuring VTK-m ${vtkm_version}"
 cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
@@ -589,6 +593,8 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DVTKm_ENABLE_RENDERING=ON \
   -DVTKm_ENABLE_TESTING=OFF\
   -DBUILD_TESTING=OFF \
+  -DMPI_CXX_COMPILER=${mpicpp_path} \
+  -DMPI_C_COMPILER=${mpicc_path} \
   -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
@@ -903,13 +909,16 @@ if [ ! -z ${FFLAGS+x} ]; then
     echo 'set(CMAKE_F_FLAGS "' ${FFLAGS} '" CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
+echo 'set(MPI_C_COMPILER '  ${mpicc_path}  ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(MPI_CXX_COMPILER ' ${mpicpp_path}  ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+
 echo 'set(CMAKE_VERBOSE_MAKEFILE ' ${enable_verbose} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CMAKE_BUILD_TYPE ' ${build_config} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(BUILD_SHARED_LIBS ' ${build_shared_libs} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CMAKE_INSTALL_PREFIX ' ${ascent_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_TESTS ' ${enable_tests} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_MPI ' ${enable_mpi} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(ENABLE_FIND_MPI ' ${enable_find_mpi} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
+#echo 'set(ENABLE_FIND_MPI ' ${enable_find_mpi} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_FORTRAN ' ${enable_fortran} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_PYTHON ' ${enable_python} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 if ${build_pyvenv}; then
