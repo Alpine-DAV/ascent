@@ -211,6 +211,7 @@ TEST(ascent_gpu_data_source, test_gpu_source_contour_and_render_3d)
     add_extracts["action"] = "add_extracts";
     conduit::Node &extracts = add_extracts["extracts"];
     extracts["e1/type"] = "relay";
+    extracts["e1/pipeline"] = "pl1";
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
     extracts["e1/params/path"] = conduit::utils::join_file_path(output_path,
                                                         "tout_ext_gpu_source_data_1");
