@@ -207,6 +207,22 @@ TEST(ascent_gpu_data_source, test_gpu_source_contour_and_render_3d)
     scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
 
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    extracts["e1/type"] = "relay";
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/params/path"] = conduit::utils::join_file_path(output_path,
+                                                        "tout_ext_gpu_source_data_1");
+    
+
+    conduit::Node &sinfo = actions.append();
+    sinfo["action"] = "save_info";
+    sinfo["file_name"] = conduit::utils::join_file_path(output_path,
+                                                        "tout_info_gpu_source_data_1.yaml");
+
+    
+    
     ASCENT_ANNOTATE_MARK_END("ascent_setup_actions");
     //
     // Run Ascent
@@ -245,6 +261,12 @@ TEST(ascent_gpu_data_source, test_gpu_source_contour_and_render_3d)
     // remove old images before rendering
     remove_test_image(output_file);
     scenes["s1/image_prefix"] = output_file;
+
+    extracts["e1/params/path"] = conduit::utils::join_file_path(output_path,
+                                                        "tout_ext_gpu_source_data_2");
+
+    sinfo["file_name"] = conduit::utils::join_file_path(output_path,
+                                                        "tout_info_gpu_source_data_2.yaml");
 
     ASCENT_ANNOTATE_MARK_BEGIN("ascent_already_on_device");
     ascent.open();

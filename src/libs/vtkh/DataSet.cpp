@@ -495,6 +495,11 @@ DataSet::GetGlobalRange(const std::string &field_name) const
   delete[] global_components;
 #endif
   VTKH_DATA_CLOSE();
+  std::cout << "GetGlobalRange" <<std::endl;
+  for(int i=0;i< range.GetNumberOfValues();i++)
+  {
+    std::cout << range.ReadPortal().Get(i) << std::endl;
+  }
   return range;
 }
 
