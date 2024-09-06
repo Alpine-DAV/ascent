@@ -197,14 +197,14 @@ TEST(ascent_gpu_data_source, test_gpu_source_contour_and_render_3d)
     pipelines["pl1/f1/type"] = "contour";
     conduit::Node &contour_params = pipelines["pl1/f1/params"];
     contour_params["field"] = "braid";
-    contour_params["iso_values"] = 0.;
+    contour_params["iso_values"] = 0.0;
 
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     conduit::Node &scenes = add_plots["scenes"];
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/image_prefix"] = output_file;
 
     conduit::Node &add_extracts = actions.append();
