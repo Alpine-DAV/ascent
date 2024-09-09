@@ -11,7 +11,6 @@
 ///
 //-----------------------------------------------------------------------------
 #include "ascent_vtkh_data_adapter.hpp"
-#include "ascent_vtkh_device_utils.hpp"
 
 // standard lib includes
 #include <iostream>
@@ -33,8 +32,10 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Algorithm.h>
 #include <vtkm/cont/ArrayCopy.h>
+#include <vtkm/cont/ArrayHandle.h>
 #include <vtkm/cont/ArrayHandleExtractComponent.h>
 #include <vtkm/cont/CoordinateSystem.h>
+#include <vtkm/worklet/DispatcherMapField.h>
 #include <vtkh/DataSet.hpp>
 
 // other ascent includes
@@ -1674,14 +1675,15 @@ std::cerr << "AF 11" << std::endl;
             Node n_tmp;
 std::cerr << "AF 12" << std::endl;
             n_tmp.set_external(DataType::float64(num_vals),ptr);
-           const uint64_t *input = n_vals.value();
-           double output2[num_vals];
+           const unsigned long long *input = n_vals.value();
+           vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(vtkm_arr,input_arr);
 std::cerr<<  " before calling cast" <<std::endl;
-           castUint64ToFloat64(input, output2, num_vals);
+            vtkm::worklet::DispatcherMapField<vtkh::VTKMTypeCast>().Invoke(input_arr,vtkm_arr);
+          // VTKHDeviceAdapter::castUint64ToFloat64(input, output2, num_vals);
 std::cerr<<  " after calling cast" <<std::endl;
 
 std::cerr << "AF 13" << std::endl;
-            n_vals.to_float64_array(n_tmp);
+//            n_vals.to_float64_array(n_tmp);
 
 std::cerr << "AF 14" << std::endl;
             // add field to dataset

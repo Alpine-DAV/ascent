@@ -264,7 +264,6 @@ if(VTKM_FOUND)
     set(ascent_vtkh_dep_headers
         runtimes/ascent_data_object.hpp
         runtimes/ascent_vtkh_data_adapter.hpp
-        runtimes/ascent_vtkh_device_utils.hpp
         runtimes/ascent_vtkh_collection.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp
         runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
