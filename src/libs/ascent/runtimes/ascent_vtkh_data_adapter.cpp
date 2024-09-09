@@ -35,7 +35,7 @@
 #include <vtkm/cont/ArrayHandle.h>
 #include <vtkm/cont/ArrayHandleExtractComponent.h>
 #include <vtkm/cont/CoordinateSystem.h>
-#include <vtkm/worklet/DispatcherMapField.h>
+#include <vtkm/cont/Invoker.h>
 #include <vtkh/DataSet.hpp>
 
 // other ascent includes
@@ -1664,21 +1664,21 @@ std::cerr << "NOT SUPPORTED" << std::endl;
             // convert to float64, we use this as a comprise to cover the widest range
 std::cerr << "AF 7" << std::endl;
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-std::cerr << "AF 8" << std::endl;
             vtkm_arr.Allocate(num_vals);
-std::cerr << "AF 9" << std::endl;
 
             // TODO -- FUTURE: Do this conversion w/ device if on device
-std::cerr << "AF 10" << std::endl;
-            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
-std::cerr << "AF 11" << std::endl;
-            Node n_tmp;
-std::cerr << "AF 12" << std::endl;
-            n_tmp.set_external(DataType::float64(num_vals),ptr);
-           const unsigned long long *input = n_vals.value();
-           vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(vtkm_arr,input_arr);
-std::cerr<<  " before calling cast" <<std::endl;
-            vtkm::worklet::DispatcherMapField<vtkh::VTKMTypeCast>().Invoke(input_arr,vtkm_arr);
+            //void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
+            //Node n_tmp;
+            //n_tmp.set_external(DataType::float64(num_vals),ptr);
+            const double *input = n_vals.value();
+            vtkm::cont::ArrayHandle<double> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::On);
+           //const unsigned long long *input = n_vals.value();
+           //vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals);
+            vtkm::cont::Invoker invoker;
+            //vtkm::worklet::DispatcherMapField<vtkh::VTKmTypeCast>().Invoke(input_arr,vtkm_arr);
+            //vtkh::VTKmTypeCast<double,vtkm::Float64> worklet;
+            vtkh::VTKmTypeCast worklet;
+            invoker(worklet,input_arr,vtkm_arr);
           // VTKHDeviceAdapter::castUint64ToFloat64(input, output2, num_vals);
 std::cerr<<  " after calling cast" <<std::endl;
 

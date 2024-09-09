@@ -2,6 +2,7 @@
 #define VTKH_VTKM_ARRAY_UTILS_HPP
 
 #include <vtkm/cont/ArrayHandle.h>
+#include <vtkm/worklet/WorkletMapField.h>
 
 namespace vtkh {
 
@@ -12,16 +13,22 @@ GetVTKMPointer(vtkm::cont::ArrayHandle<T> &handle)
   return handle.WritePortal().GetArray();
 }
 
-struct VTKmTypeCast : public vtkm::worklet::WorkletMapField
+class VTKmTypeCast : public vtkm::worklet::WorkletMapField
 {
-    using ControlSignature = void(FieldIn input, FieldOut output);
-    using ExecutionSignature = void(_1, _2);
+public:
+    VTKM_CONT
+    VTKmTypeCast() = default;
 
-    // Use VTKM_EXEC for the operator() function to make it run on both host and device
+    using ControlSignature = void(FieldIn, FieldOut);
+    using ExecutionSignature = void( _1, _2);
+    //using ExecutionSignature = void(InputIndex, _1, _2);
+
+    //void operator()(const vtkm::Id idx, const vtkm::cont::ArrayHandle<InType> &input, vtkm::cont::ArrayHandle<OutType> &output) const
     template<typename InType, typename OutType>
-    VTKM_EXEC void operator()(const InType& input, OutType& output) const
+    VTKM_EXEC
+    void operator()(const InType &input, OutType &output) const
     {
-        // Cast input to the output type and assign it
+        //output.Set(idx, static_cast<OutType>(input[idx]));
         output = static_cast<OutType>(input);
     }
 };
