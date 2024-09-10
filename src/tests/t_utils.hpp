@@ -644,6 +644,44 @@ create_example_multi_domain_multi_topo_dataset(Node &data,
     // std::cout  << mesh.to_yaml() << std::endl;
 }
 
+//-----------------------------------------------------------------------------
+void
+add_matset_to_spiral(Node &n_mesh, const int ndomains)
+{
+    // Add a matset to each domain
+    for (index_t domain_id = 0; domain_id < n_mesh.number_of_children(); domain_id ++)
+    {
+        Node &domain = n_mesh[domain_id];
+        const auto num_elements = blueprint::mesh::topology::length(domain["topologies/topo"]);
+        Node &matset = domain["matsets/matset"];
+        // add a matset to it
+        matset["topology"].set("topo");
+
+        // Uni buffer requires material map
+        for(index_t i = 0; i < ndomains; i ++)
+        {
+            const std::string mat_name("mat" + std::to_string(i));
+            matset["material_map"][mat_name].set((int32) i);
+        }
+
+        Node &mat_ids = matset["material_ids"];
+        mat_ids.set_dtype(DataType::index_t(num_elements));
+        index_t_array ids = mat_ids.value();
+        for (index_t i = 0; i < ids.number_of_elements(); i++)
+        {
+            ids[i] = domain_id;
+        }
+
+        Node &mat_vfs = matset["volume_fractions"];
+        mat_vfs.set_dtype(DataType::c_float(num_elements));
+        float_array data = mat_vfs.value();
+        for (index_t i = 0; i < data.number_of_elements(); i++)
+        {
+            data[i] = 1.f;
+        }
+    }
+}
+
 
 // Macro to save ascent actions file
 #define ASCENT_ACTIONS_DUMP(actions,name,msg) \

@@ -395,7 +395,10 @@ if [[ "$build_windows" == "ON" ]]; then
 fi 
 
 if [[ "$enable_hip" == "ON" ]]; then
-  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX=${ROCM_PATH}"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTRACER=ON"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTX=ON"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DROCM_PREFIX:PATH=${ROCM_PATH}"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DROCM_ROOT_DIR:PATH=${ROCM_PATH}"
 fi
 
 echo "**** Configuring Caliper ${caliper_version}"
