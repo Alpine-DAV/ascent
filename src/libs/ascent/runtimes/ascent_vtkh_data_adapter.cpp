@@ -1658,26 +1658,34 @@ std::cerr << "stride \% sizeof(float64) = " << stride % sizeof(float64) << std::
         if(!supported_type)
         {
 std::cerr << "NOT SUPPORTED" << std::endl;
+          if(n_vals.dtype().is_uint64())
+          {
             // std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
             //           << n_vals.dtype().name() << std::endl;
 
             // convert to float64, we use this as a comprise to cover the widest range
 std::cerr << "AF 7" << std::endl;
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+std::cerr << "AF 8" << std::endl;
             vtkm_arr.Allocate(num_vals);
 
+std::cerr << "AF 9" << std::endl;
             // TODO -- FUTURE: Do this conversion w/ device if on device
             //void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
             //Node n_tmp;
             //n_tmp.set_external(DataType::float64(num_vals),ptr);
             const unsigned long long *input = n_vals.value();
-            vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::On);
+std::cerr << "AF 10" << std::endl;
+            vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+std::cerr << "AF 11" << std::endl;
            //const unsigned long long *input = n_vals.value();
            //vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals);
             vtkm::cont::Invoker invoker;
             //vtkm::worklet::DispatcherMapField<vtkh::VTKmTypeCast>().Invoke(input_arr,vtkm_arr);
             //vtkh::VTKmTypeCast<double,vtkm::Float64> worklet;
             vtkh::VTKmTypeCast worklet;
+std::cerr << "AF 7" << std::endl;
+std::cerr<<  " before calling cast" <<std::endl;
             invoker(worklet,input_arr,vtkm_arr);
           // VTKHDeviceAdapter::castUint64ToFloat64(input, output2, num_vals);
 std::cerr<<  " after calling cast" <<std::endl;
@@ -1699,6 +1707,7 @@ std::cerr << "AF 14" << std::endl;
                                                  vtkm::cont::Field::Association::Cells,
                                                  vtkm_arr));
             }
+          }
         }
         // else
         // {
