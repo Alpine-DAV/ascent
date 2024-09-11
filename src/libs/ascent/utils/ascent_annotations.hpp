@@ -33,11 +33,17 @@
 #define ASCENT_ANNOTATE_MARK_END( name ) CALI_MARK_END( name )
 #define ASCENT_ANNOTATE_MARK_FUNCTION CALI_CXX_MARK_FUNCTION
 #define ASCENT_ANNOTATE_MARK_SCOPE( name )  CALI_CXX_MARK_SCOPE( name )
+#define ASCENT_ANNOTATE_MARK_LOOP_BEGIN( loop_id, name ) CALI_CXX_MARK_LOOP_BEGIN( loop_id, name )
+#define ASCENT_ANNOTATE_MARK_LOOP_ITERATION( loop_id, iter ) CALI_CXX_MARK_LOOP_ITERATION( loop_id, iter)
+#define ASCENT_ANNOTATE_MARK_LOOP_END( loop_id ) CALI_CXX_MARK_LOOP_END( loop_id )
 #else // these are empty when caliper is not enabled
 #define ASCENT_ANNOTATE_MARK_BEGIN( name )
 #define ASCENT_ANNOTATE_MARK_END( name )
 #define ASCENT_ANNOTATE_MARK_FUNCTION
 #define ASCENT_ANNOTATE_MARK_SCOPE( name )
+#define ASCENT_ANNOTATE_MARK_LOOP_BEGIN( loop_id, name )
+#define ASCENT_ANNOTATE_MARK_LOOP_ITERATION( loop_id, iter )
+#define ASCENT_ANNOTATE_MARK_LOOP_END( loop_id )
 #endif
 
 //-----------------------------------------------------------------------------
