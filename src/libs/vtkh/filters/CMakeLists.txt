@@ -19,6 +19,7 @@ set(vtkh_filters_headers
     Lagrangian.hpp
     MarchingCubes.hpp
     MeshQuality.hpp
+    MIR.hpp
     ParticleAdvection.hpp
     ParticleMerging.hpp
     PointAverage.hpp
@@ -57,6 +58,7 @@ set(vtkh_filters_sources
     Lagrangian.cpp
     MarchingCubes.cpp
     MeshQuality.cpp
+    MIR.cpp
     ParticleAdvection.cpp
     ParticleMerging.cpp
     PointAverage.cpp

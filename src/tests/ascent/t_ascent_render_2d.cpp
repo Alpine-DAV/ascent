@@ -271,6 +271,75 @@ TEST(ascent_render_2d, test_render_2d_render_serial_backend)
     EXPECT_TRUE(check_test_image(output_file));
 }
 
+// TODO: Address 2D Zoom issue a follow on PR
+//
+// //-----------------------------------------------------------------------------
+// TEST(ascent_render_2d, test_render_2d_render_serial_backend_zoom)
+// {
+//
+//     // the vtkm runtime is currently our only rendering runtime
+//     Node n;
+//     ascent::about(n);
+//     // only run this test if ascent was built with vtkm support
+//     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//     {
+//         ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+//         return;
+//     }
+//
+//     ASCENT_INFO("Testing 2D Ascent Runtime");
+//
+//     //
+//     // Create an example mesh.
+//     //
+//     Node data, verify_info;
+//     conduit::blueprint::mesh::examples::braid("quads",
+//                                                EXAMPLE_MESH_SIDE_DIM,
+//                                                EXAMPLE_MESH_SIDE_DIM,
+//                                                0,
+//                                                data);
+//
+//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//
+//     string output_path = prepare_output_dir();
+//     string output_file = conduit::utils::join_file_path(output_path, "tout_render_2d_ascent_serial_backend_zoom");
+//     // remove old images before rendering
+//     remove_test_image(output_file);
+//
+//     //
+//     // Create the actions.
+//     //
+//     Node actions;
+//
+//     conduit::Node scenes;
+//     scenes["scene1/plots/plt1/type"]         = "pseudocolor";
+//     scenes["scene1/plots/plt1/field"] = "braid";
+//     scenes["scene1/renders/r1/image_prefix"] =  output_file;
+//     scenes["scene1/renders/r1/camera/zoom"] =  .5;
+//
+//     conduit::Node &add_scenes = actions.append();
+//     add_scenes["action"] = "add_scenes";
+//     add_scenes["scenes"] = scenes;
+//
+//     //
+//     // Run Ascent
+//     //
+//
+//     Ascent ascent;
+//     Node ascent_opts;
+//     // default is now ascent
+//     ascent_opts["runtime/type"] = "ascent";
+//     ascent_opts["runtime/backend"] = "serial";
+//     ascent.open(ascent_opts);
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.close();
+//
+//     // check that we created an image
+//     EXPECT_TRUE(check_test_image(output_file));
+// }
+
+
 //-----------------------------------------------------------------------------
 TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
 {

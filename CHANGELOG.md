@@ -6,19 +6,27 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased 
 ### Preferred dependency versions for ascent@develop
-- conduit@0.9.1
-- vtk-m@2.1.0 (requires [patch](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch) )
+- conduit@0.9.2
+- vtk-m@2.1.0 (requires [patch 1](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch) 
+                        [patch 2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch) )
 - raja@2024.02.1
 - umpire@2024.02.1
 - camp@2024.02.1
 - kokkos@3.7.02
 
 ### Added
+- Added support for unstructured topologies with mixed elements types (for example, hexs and tets).
+- Added support for `pyramid` and `wedge` elements.
 - Added a `topologies` option to the relay extract. This allows you to select which topologies are saved. This option can be used with the existing `fields` option, the result is the union of the selected topologies and fields.
 - Added `near_plane` and `far_plane` to the camera details provided in Ascent::info()
+- Added `add_mpi_ranks` and `add_domain_ids` filters for adding rank and domain fields to a mesh
+
+### Changed
+- Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities. 
 
 ### Fixed
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
+- Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.
 
 ## [0.9.3] - Released 2024-05-11
 ### Preferred dependency versions for ascent@0.9.3
@@ -38,12 +46,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `vtk` extract that saves each mesh domain to a legacy vtk file grouped, with all domain data grouped by a `.visit` file.
 - Added particle advection for streamline and related rendering support.
 - Added WarpX Streamline filter that uses charged particles.
+- Added Uniform Grid Sampling filter.
+- Added Material Interface Reconstruction (`mir`) filter which produces matset output field.
 - Added seed population options for particle advection: point, point list, line, and box
 - Added more Ascent tutorial examples
 - Added support for implicit points style Blueprint input meshes
 - Added actions for shell commands and simulation code function callbacks
 - Added a `cylinder` option to the clip filter.
 - Added `box`, `plane`, `cylinder`, and `sphere` options to the Threshold filter, enabling sub selecting a mesh spatially.
+
 
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.

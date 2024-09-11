@@ -33,29 +33,6 @@ Installing Ascent and Third Party Dependencies
 
 We provide two scripted options to quickly install Ascent and its dependencies.
 
-uberenv.py
-++++++++++++++++++
-You can use :ref:`uberenv <building_with_uberenv>`, a python script that leverages spack to build Ascent and its dependencies:
-
-.. code:: bash
-
-    git clone --recursive https://github.com/alpine-dav/ascent.git
-    cd ascent
-    python scripts/uberenv/uberenv.py --install --prefix="build"
-
-
-After this completes, ``build/ascent-install`` will contain an Ascent install.
-
-We also provide spack settings for several well known HPC clusters, here is an example of how to use our settings for OLCF's Summit System:
-
-.. code:: bash
-
-    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0_cuda_11.0.3/"
-
-
-For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
-
-
 build_ascent.sh
 ++++++++++++++++++
 
@@ -78,6 +55,29 @@ After this completes, ``build/install/ascent-develop`` will contain an Ascent in
 We also provide also wrapper scripts for specific HPC platforms (e.g. ``build_ascent_hip_frontier.sh`` for ORNL's Frontier, etc) script that you can leverage. Here is the Frontier HIP build script:
 
  * `https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_hip_frontier.sh <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/build_ascent_hip_frontier.sh>`_
+
+uberenv.py
+++++++++++++++++++
+You can use :ref:`uberenv <building_with_uberenv>`, a python script that leverages spack to build Ascent and its dependencies:
+
+.. code:: bash
+
+    git clone --recursive https://github.com/alpine-dav/ascent.git
+    cd ascent
+    python scripts/uberenv/uberenv.py --install --prefix="build"
+
+
+After this completes, ``build/ascent-install`` will contain an Ascent install.
+
+We also provide spack settings for several well known HPC clusters, here is an example of how to use our settings for OLCF's Summit System:
+
+.. code:: bash
+
+    python scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir="scripts/uberenv_configs/spack_configs/configs/olcf/summit_gcc_9.3.0_cuda_11.0.3/"
+
+
+For more details about building and installing Ascent see :ref:`building`. This page provides detailed info about Ascent's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
+
 
 
 .. Public Installs of Ascent

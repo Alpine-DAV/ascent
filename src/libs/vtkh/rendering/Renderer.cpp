@@ -12,7 +12,8 @@ Renderer::Renderer()
   : m_do_composite(true),
     m_color_table("Cool to Warm"),
     m_field_index(0),
-    m_has_color_table(true)
+    m_has_color_table(true),
+    m_is_discrete(false)
 {
   m_compositor  = new Compositor();
 }
@@ -52,6 +53,18 @@ bool
 Renderer::GetHasColorTable() const
 {
   return m_has_color_table;
+}
+
+void
+Renderer::SetDiscrete()
+{
+  m_is_discrete = true;
+}
+
+bool
+Renderer::IsDiscrete() const
+{
+  return m_is_discrete;
 }
 
 void

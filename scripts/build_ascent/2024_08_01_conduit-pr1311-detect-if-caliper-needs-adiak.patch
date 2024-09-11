@@ -1,0 +1,147 @@
+From 7b25b95c30e083e7d8c541f131df10e401f658d6 Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Thu, 1 Aug 2024 13:26:40 -0700
+Subject: [PATCH] detect if caliper needs adiak
+
+---
+ src/cmake/thirdparty/SetupCaliper.cmake | 47 +++++++++++++++++-----
+ src/config/conduit_setup_deps.cmake     | 52 +++++++++++++++++++------
+ 2 files changed, 77 insertions(+), 22 deletions(-)
+
+diff --git a/src/cmake/thirdparty/SetupCaliper.cmake b/src/cmake/thirdparty/SetupCaliper.cmake
+index 44ad2cc2e..7469097f3 100644
+--- a/src/cmake/thirdparty/SetupCaliper.cmake
++++ b/src/cmake/thirdparty/SetupCaliper.cmake
+@@ -12,24 +12,51 @@ if(NOT CALIPER_DIR)
+     MESSAGE(FATAL_ERROR "Caliper support needs explicit CALIPER_DIR")
+ endif()
+ 
+-# most common case: caliper is built with adiak support
+-# and caliper needs us to find adiak, or else find_pacakge caliper
+-# will fail
+ 
+-# Check for ADIAK_DIR
++# first: look for caliper config header + see what additional deps we need
++#.       to resolve.
++
++message(STATUS "Attempting to find cali-config.h with CALIPER_DIR=${CALIPER_DIR} ...")
++find_file(CALI_CONFIG_HEADER
++          NAMES caliper-config.h
++          PATHS ${CALIPER_DIR}
++          PATH_SUFFIXES include/caliper
++          NO_DEFAULT_PATH
++          NO_CMAKE_ENVIRONMENT_PATH
++          NO_CMAKE_PATH
++          NO_SYSTEM_ENVIRONMENT_PATH
++          NO_CMAKE_SYSTEM_PATH)
++
++if(EXISTS ${CALI_CONFIG_HEADER})
++    message(STATUS "Found Caliper Config Header: ${CALI_CONFIG_HEADER}")
++else()
++    message(FATAL_ERROR "Could not find caliper-config.h in caliper ${CALIPER_DIR}/include/caliper")
++endif()
+ 
+-if(NOT ADIAK_DIR)
+-    MESSAGE(FATAL_ERROR "Caliper support needs explicit ADIAK_DIR")
++file(READ ${CALI_CONFIG_HEADER} _CALI_CONFIG_HEADER_CONTENTS)
++
++# check if we need ADIAK
++string(FIND  ${_CALI_CONFIG_HEADER_CONTENTS} "#define CALIPER_HAVE_ADIAK" _caliper_have_adiak)
++
++if(${_caliper_have_adiak} GREATER_EQUAL 0 )
++    # caliper is built with adiak support and caliper needs us to find adiak,
++    # else find_pacakge caliper will fail
++    # Check for ADIAK_DIR
++    if(NOT ADIAK_DIR)
++        MESSAGE(FATAL_ERROR "Caliper support needs explicit ADIAK_DIR")
++    endif()
++    # find adiak
++    find_package(adiak REQUIRED
++                 NO_DEFAULT_PATH
++                 PATHS ${ADIAK_DIR}/lib/cmake/adiak)
++    set(ADIAK_FOUND TRUE)
+ endif()
+ 
+-find_package(adiak REQUIRED
+-             NO_DEFAULT_PATH
+-             PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+ 
+ find_package(caliper REQUIRED
+              NO_DEFAULT_PATH
+              PATHS ${CALIPER_DIR}/share/cmake/caliper)
+ 
+-set(ADIAK_FOUND TRUE)
++
+ set(CALIPER_FOUND TRUE)
+ set(CONDUIT_USE_CALIPER TRUE)
+diff --git a/src/config/conduit_setup_deps.cmake b/src/config/conduit_setup_deps.cmake
+index 0334a2b54..f9022da66 100644
+--- a/src/config/conduit_setup_deps.cmake
++++ b/src/config/conduit_setup_deps.cmake
+@@ -58,26 +58,54 @@ if(CALIPER_DIR)
+         message(STATUS "Conduit was built with Caliper Support")
+     endif()
+ 
+-    if(NOT ADIAK_DIR)
+-        set(ADIAK_DIR ${CONDUIT_ADIAK_DIR})
++    # use caliper config header to detect necessary deps
++    find_file(CALI_CONFIG_HEADER
++              NAMES caliper-config.h
++              PATHS ${CALIPER_DIR}
++              PATH_SUFFIXES include/caliper
++              NO_DEFAULT_PATH
++              NO_CMAKE_ENVIRONMENT_PATH
++              NO_CMAKE_PATH
++              NO_SYSTEM_ENVIRONMENT_PATH
++              NO_CMAKE_SYSTEM_PATH)
++
++    if(EXISTS ${CALI_CONFIG_HEADER})
++        if(NOT Conduit_FIND_QUIETLY)
++            message(STATUS "Found Caliper Config Header: ${CALI_CONFIG_HEADER}")
++        endif()
++    else()
++        message(FATAL_ERROR "Could not find caliper-config.h in caliper ${CALIPER_DIR}/include/caliper")
+     endif()
+ 
+-    if(ADIAK_DIR)
+-        if(NOT Conduit_FIND_QUIETLY)
+-            message(STATUS "Looking for Adiak at: ${ADIAK_DIR}/lib/cmake/adiak")
++    file(READ ${CALI_CONFIG_HEADER} _CALI_CONFIG_HEADER_CONTENTS)
++
++    # check if we need ADIAK
++    string(FIND  ${_CALI_CONFIG_HEADER_CONTENTS} "#define CALIPER_HAVE_ADIAK" _caliper_have_adiak)
++
++    if(${_caliper_have_adiak} GREATER_EQUAL 0 )
++        # caliper is built with adiak support and caliper needs us to find adiak.
++        if(NOT ADIAK_DIR)
++            set(ADIAK_DIR ${CONDUIT_ADIAK_DIR})
++        endif()
++
++        if(ADIAK_DIR)
++            if(NOT Conduit_FIND_QUIETLY)
++                message(STATUS "Looking for Adiak at: ${ADIAK_DIR}/lib/cmake/adiak")
++            endif()
++            # find adiak first
++            find_dependency(adiak REQUIRED
++                            NO_DEFAULT_PATH
++                            PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+         endif()
+-        # find adiak first
+-        find_package(adiak REQUIRED
+-                     NO_DEFAULT_PATH
+-                     PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+     endif()
++
+     if(NOT Conduit_FIND_QUIETLY)
+         message(STATUS "Looking for Caliper at: ${CALIPER_DIR}/share/cmake/caliper")
+     endif()
+     # find caliper
+-    find_package(caliper REQUIRED
+-                 NO_DEFAULT_PATH
+-                 PATHS ${CALIPER_DIR}/share/cmake/caliper)
++    find_dependency(caliper REQUIRED
++                    NO_DEFAULT_PATH
++                    PATHS ${CALIPER_DIR}/share/cmake/caliper)
+ endif()
+ 
+ ###############################################################################
