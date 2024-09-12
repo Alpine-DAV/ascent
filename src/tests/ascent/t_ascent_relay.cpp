@@ -20,6 +20,7 @@
 
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
+#include "conduit_fmt/conduit_fmt.h"
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -1116,6 +1117,201 @@ TEST(ascent_relay, test_relay_lor_extract)
                       "with low order refined data.";
     ASCENT_ACTIONS_DUMP(actions2,output_file,msg);
 }
+
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, silo_spiral_multi_file)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,data);
+    add_matset_to_spiral(data, 7);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract silo num_files option");
+
+    string output_path = prepare_output_dir();
+    std::ostringstream oss;
+
+    // lets try with -1 to 8 files.
+
+    // nfiles less than 1 should trigger default case
+    // (n output files = n domains)
+    for(int nfiles=-1; nfiles < 9; nfiles++)
+    {
+        oss.str("");
+        oss << "tout_relay_silo_extract_nfiles_" << nfiles;
+
+        std::string output_base = conduit::utils::join_file_path(output_path,
+                                                                 oss.str());
+
+        std::string output_dir  = output_base + ".cycle_000000";
+        std::string output_root = output_base + ".cycle_000000.root";
+
+        // remove existing directory
+        utils::remove_directory(output_dir);
+        utils::remove_directory(output_root);
+
+        conduit::Node actions;
+        // add the extracts
+        conduit::Node &add_extracts = actions.append();
+        add_extracts["action"] = "add_extracts";
+        conduit::Node &extracts = add_extracts["extracts"];
+
+        extracts["e1/type"]  = "relay";
+        extracts["e1/params/path"] = output_base;
+        extracts["e1/params/protocol"] = "silo";
+        extracts["e1/params/num_files"] =  nfiles;
+
+        //
+        // Run Ascent
+        //
+
+        Ascent ascent;
+
+        Node ascent_opts;
+        ascent_opts["runtime"] = "ascent";
+        ascent.open(ascent_opts);
+        ascent.publish(data);
+        ascent.execute(actions);
+        ascent.close();
+
+        // count the files
+        //  file_%06llu.{protocol}:/domain_%06llu/...
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+            std::string fprefix = conduit_fmt::format("file_{:06d}.silo", i);
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is
+                // domain_
+                fprefix = conduit_fmt::format("domain_{:06d}.silo", i);
+            }
+            oss.str("");
+            oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
+                                                  fprefix);
+            std::string fcheck = oss.str();
+            std::cout << " checking: " << fcheck << std::endl;
+            EXPECT_TRUE(conduit::utils::is_file(fcheck));
+        }
+    }
+}
+#endif
+
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, overlink_spiral_multi_file)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,data);
+    add_matset_to_spiral(data, 7);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract overlink num_files option");
+
+    string output_path = prepare_output_dir();
+    std::ostringstream oss;
+
+    // lets try with -1 to 8 files.
+
+    // nfiles less than 1 should trigger default case
+    // (n output files = n domains)
+    for(int nfiles=-1; nfiles < 9; nfiles++)
+    {
+        oss.str("");
+        oss << "tout_relay_overlink_extract_nfiles_" << nfiles;
+
+        std::string output_base = conduit::utils::join_file_path(output_path,
+                                                                 oss.str());
+
+        std::string output_dir  = output_base;
+        std::string output_root = conduit::utils::join_file_path(output_dir,
+                                                                 "OvlTop.silo");;
+
+        // remove existing directory
+        utils::remove_directory(output_dir);
+        utils::remove_directory(output_root);
+
+        conduit::Node actions;
+        // add the extracts
+        conduit::Node &add_extracts = actions.append();
+        add_extracts["action"] = "add_extracts";
+        conduit::Node &extracts = add_extracts["extracts"];
+
+        extracts["e1/type"]  = "relay";
+        extracts["e1/params/path"] = output_base;
+        extracts["e1/params/protocol"] = "overlink";
+        extracts["e1/params/num_files"] =  nfiles;
+
+        //
+        // Run Ascent
+        //
+
+        Ascent ascent;
+
+        Node ascent_opts;
+        ascent_opts["runtime"] = "ascent";
+        ascent.open(ascent_opts);
+        ascent.publish(data);
+        ascent.execute(actions);
+        ascent.close();
+
+        // count the files
+        //  file_%06llu.{protocol}:/domain_%06llu/...
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+            std::string fprefix = conduit_fmt::format("domfile{:d}.silo", i);
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is
+                // domain_
+                fprefix = conduit_fmt::format("domain{:d}.silo", i);
+            }
+            oss.str("");
+            oss << conduit::utils::join_file_path(output_base,
+                                                  fprefix);
+            std::string fcheck = oss.str();
+            std::cout << " checking: " << fcheck << std::endl;
+            EXPECT_TRUE(conduit::utils::is_file(fcheck));
+        }
+    }
+}
+#endif
 
 
 //-----------------------------------------------------------------------------

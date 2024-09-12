@@ -44,9 +44,9 @@ void usage()
   std::cout<<"  --actions : a yaml file containing ascent actions. Default value\n";
   std::cout<<"              is 'ascent_actions.yaml'.\n\n";
   std::cout<<"======================== Examples =========================\n";
-  std::cout<<"./replay_ser --root=clover.cycle_000060.root\n";
-  std::cout<<"./replay_ser --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
-  std::cout<<"srun -n 4 replay_mpi --cycles=cycles_file\n";
+  std::cout<<"./ascent_replay --root=clover.cycle_000060.root\n";
+  std::cout<<"./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
+  std::cout<<"srun -n 4 ascent_replay_mpi --cycles=cycles_file\n";
   std::cout<<"\n\n";
 }
 
@@ -158,70 +158,81 @@ void trim(std::string &s)
 
 void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &actions)
 {
-  int comm_size = 1;
-  int rank = 0;
-
-#if defined(ASCENT_REPLAY_MPI)
-  if(mpi_comm_id == -1)
-  {
-    // do nothing, an error will be thrown later
-    // so we can respect the exception handling
-    return;
-  }
-  MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
-  MPI_Comm_size(mpi_comm, &comm_size);
-  MPI_Comm_rank(mpi_comm, &rank);
-#endif
-  
-  bool has_file = false;
-
-  if(rank==0)
-  {
-    has_file = conduit::utils::is_file(file_name);
-  }
-
-#ifdef ASCENT_MPI_ENABLED
-    MPI_Bcast(&has_file, 1, MPI_BOOL, 0, mpi_comm);
-#endif
-
-  bool actions_file_valid = false;
-  std::string file_load_error_msg = "";
-
-  if(rank==0 && has_file)
-  {
-    try
+    int comm_size = 1;
+    int rank = 0;
+#ifdef ASCENT_REPLAY_MPI
+    if(mpi_comm_id == -1)
     {
-      std::string curr, next;
-      conduit::utils::rsplit_string(file_name, ".", curr, next);
-
-      std::string protocol = curr=="yaml" ? "yaml" : "json";
-      actions.load(file_name, protocol);
-      actions_file_valid = true;
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return;
     }
-    catch(conduit::Error &e)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_size(mpi_comm, &comm_size);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    int has_file = 0;
+    if(rank == 0 && conduit::utils::is_file(file_name))
     {
-      file_load_error_msg = e.message();
-      actions_file_valid = false;
+      has_file = 1;
     }
-  }
+#ifdef ASCENT_REPLAY_MPI
+    MPI_Bcast(&has_file, 1, MPI_INT, 0, mpi_comm);
+#endif
+    if(has_file == 0)
+    {
+      return;
+    }
 
-#ifdef ASCENT_MPI_ENABLED
-  MPI_Bcast(&actions_file_valid, 1, MPI_BOOL, 0, mpi_comm);
+    int actions_file_valid = 0;
+    std::string emsg = "";
+
+    if(rank == 0)
+    {
+      std::string curr,next;
+
+      std::string protocol = "json";
+      // if file ends with yaml, use yaml as proto
+      conduit::utils::rsplit_string(file_name,
+                                    ".",
+                                    curr,
+                                    next);
+
+      if(curr == "yaml")
+      {
+        protocol = "yaml";
+      }
+
+      try
+      {
+        conduit::Node file_node;
+        file_node.load(file_name, protocol);
+
+        actions = file_node;
+ 
+        actions_file_valid = 1;
+      }
+      catch(conduit::Error &e)
+      {
+        // failed to open or parse the actions file
+        actions_file_valid = 0;
+        emsg = e.message();
+      }
+    }
+
+#ifdef ASCENT_REPLAY_MPI
+    // make sure all ranks error if the parsing on rank 0 failed.
+    MPI_Bcast(&actions_file_valid, 1, MPI_INT, 0, mpi_comm);
 #endif
 
-  if(!has_file)
-  {
-    ASCENT_WARN("Actions file not found: " << file_name);
-  }
-  else if(!actions_file_valid)
-  {
-    // Raise Error
-    ASCENT_ERROR("Failed to load actions file: " << file_name
-                  << "\n" << file_load_error_msg);
-  }
-
-#ifdef ASCENT_MPI_ENABLED
-  relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+    if(actions_file_valid == 0)
+    {
+        // Raise Error
+        ASCENT_ERROR("Failed to load actions file: " << file_name
+                     << "\n" << emsg);
+    }
+#ifdef ASCENT_REPLAY_MPI
+    conduit::relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
 #endif
 }
 
