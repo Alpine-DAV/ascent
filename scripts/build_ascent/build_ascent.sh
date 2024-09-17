@@ -567,9 +567,6 @@ vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
 vtkm_tarball=$(ospath ${source_dir}/vtk-m-${vtkm_version}.tar.gz)
 
-mpicc_path=`which mpicc`
-mpicpp_path=`which mpic++`
-
 # build only if install doesn't exist
 if [ ! -d ${vtkm_install_dir} ]; then
 if ${build_vtkm}; then
