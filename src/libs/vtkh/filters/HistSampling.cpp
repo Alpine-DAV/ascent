@@ -16,11 +16,115 @@
 #include <vtkm/worklet/WorkletMapField.h>
 #include <iostream>
 
+#include <vtkm/cont/Initialize.h>
+#include <vtkm/cont/ArrayCopy.h>
+#include <vtkm/cont/CoordinateSystem.h>
+
+#include <vtkm/cont/Invoker.h>
+#include <vtkm/exec/ParametricCoordinates.h>
+
+#include <vtkm/worklet/WorkletMapTopology.h>
+#include <vtkm/exec/ParametricCoordinates.h>
+#include <vtkm/filter/Filter.h>
+
+
+
 namespace vtkh
 {
 
 namespace detail
 {
+
+class CellCenterInterpolate : public vtkm::worklet::WorkletVisitCellsWithPoints
+{
+  public:
+    using ControlSignature = void(CellSetIn cellset,
+                                FieldInPoint inPointField,
+                                FieldOutCell outCellField);
+    using ExecutionSignature = void(_1, PointCount, _2, _3);
+    using InputDomain = _1;
+
+    template <typename CellShape, typename InputPointFieldType, typename OutputType>
+    VTKM_EXEC void operator()(CellShape shape,
+                            vtkm::IdComponent numPoints,
+                            const InputPointFieldType& inputPointField,
+                            OutputType& centerOut) const
+    { 
+      vtkm::Vec3f parametricCenter;
+      vtkm::exec::ParametricCoordinatesCenter(numPoints, shape, parametricCenter);
+      vtkm::exec::CellInterpolate(inputPointField, parametricCenter, shape, centerOut);
+    }
+
+
+
+};
+class ConvertCellDataToPointCloud : public vtkm::filter::Filter
+{
+  public:
+    VTKM_CONT vtkm::cont::DataSet DoExecute(const vtkm::cont::DataSet& inDataSet) override
+    {
+      vtkm::Id numCells = inDataSet.GetNumberOfCells();
+      vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+      vtkm::cont::ArrayCopy(vtkm::cont::ArrayHandleIndex{ numCells }, connectivity);
+
+      vtkm::cont::CellSetSingleType<> cellSet;
+      cellSet.Fill(numCells, vtkm::CELL_SHAPE_VERTEX, 1, connectivity);
+
+      auto fieldMapper = [&](vtkm::cont::DataSet& outData, vtkm::cont::Field& field) {
+        if (field.IsPointField())
+        {
+          // Point fields are dropped.
+          return;
+        }
+        else
+        {
+          outData.AddCellField(field.GetName(), field.GetData());
+        }
+      };
+      auto inCellSet = inDataSet.GetCellSet();
+
+      vtkm::cont::ArrayHandle<vtkm::Vec3f> pts;
+      vtkm::cont::ArrayHandle<vtkm::Vec3f> outpts;
+      vtkm::cont::ArrayCopy(inDataSet.GetCoordinateSystem().GetData(), pts);
+      this->Invoke(
+        vtkh::detail::CellCenterInterpolate{}, inCellSet, pts , outpts);
+      vtkm::cont::CoordinateSystem outcoords;
+      outcoords= vtkm::cont::CoordinateSystem("coord",outpts);
+      return this->CreateResultCoordinateSystem(inDataSet, cellSet, outcoords, fieldMapper);
+  }
+};
+
+class ConvertPointDataToPointCloud : public vtkm::filter::Filter
+{
+  public:
+    VTKM_CONT vtkm::cont::DataSet DoExecute(const vtkm::cont::DataSet& inDataSet) override
+    {
+      vtkm::Id numPoints = inDataSet.GetNumberOfPoints();
+
+      // A connectivity array for a point cloud is easy. All the cells are a vertex with exactly
+      // one point. So, it can be represented a simple index array (i.e., 0, 1, 2, 3, ...).
+      vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+      vtkm::cont::ArrayCopy(vtkm::cont::ArrayHandleIndex{ numPoints }, connectivity);
+
+      vtkm::cont::CellSetSingleType<> cellSet;
+      cellSet.Fill(numPoints, vtkm::CELL_SHAPE_VERTEX, 1, connectivity);
+
+      auto fieldMapper = [&](vtkm::cont::DataSet& outData, vtkm::cont::Field& field) {
+        if (field.IsCellField())
+        {
+          // Cell fields are dropped.
+          return;
+        }
+        else
+        {
+          outData.AddCellField(field.GetName(), field.GetData());
+        }
+      };
+      return this->CreateResult(inDataSet, cellSet, fieldMapper);
+
+  }
+};
+
 
 class RandomGenerate : public vtkm::worklet::WorkletMapField
 {
@@ -284,20 +388,30 @@ void HistSampling::DoExecute()
   bool valid_field;
   vtkm::cont::Field::Association assoc = input->GetFieldAssociation(m_field_name,
                                                                     valid_field);
-
-
+  vtkh::detail::ConvertCellDataToPointCloud convertCellDataToPointCloud;
+  vtkh::detail::ConvertPointDataToPointCloud convertPointDataToPointCloud;
   vtkm::Id global_num_values = histogram.totalCount();
   vtkm::cont:: ArrayHandle <vtkm::Id > globCounts = histogram.m_bins;
 
   vtkm::cont::ArrayHandle <vtkm::Float32 > probArray;
   probArray = detail::calculate_pdf(global_num_values, numberOfBins, m_sample_percent, globCounts);
-
+  DataSet temp_data;
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::Range range;
     vtkm::Float64 delta;
-    vtkm::cont::DataSet &dom = input->GetDomain(i);
+    vtkm::Id domain_id;
+    vtkm::cont::DataSet dom;
+    input->GetDomain(i, dom, domain_id);
 
+    if(assoc == vtkm::cont::Field::Association::Points)
+    {
+      dom = convertPointDataToPointCloud.Execute(dom);
+    }
+    else
+    {
+      dom = convertCellDataToPointCloud.Execute(dom);
+    }
     if(!dom.HasField(m_field_name))
     {
       // We have already check to see if the field exists globally,
@@ -340,19 +454,12 @@ void HistSampling::DoExecute()
 
     vtkm::cont::ArrayHandle <vtkm::Float32> output;
     vtkm::cont::Algorithm ::Copy(stencilBool , output );
-
-    if(assoc == vtkm::cont::Field::Association::Points)
-    {
-      dom.AddPointField("valSampled", output);
-    }
-    else
-    {
-      dom.AddCellField("valSampled", output);
-    }
+    dom.AddCellField("valSampled", output);
+    temp_data.AddDomain(dom, domain_id);
   }
 
   vtkh::Threshold thresher;
-  thresher.SetInput(input);
+  thresher.SetInput(&temp_data);
   thresher.SetField("valSampled");
 
   double upper_bound = 1.;
