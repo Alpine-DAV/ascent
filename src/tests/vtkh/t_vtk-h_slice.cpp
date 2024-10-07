@@ -112,3 +112,210 @@ TEST(vtkh_slice, vtkh_mulit_slice)
 
   delete slice1;
 }
+
+//---------------------------------------------------------------------------//
+TEST(vtkh_slice, vtkh_slice_implicit_sphere)
+{
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
+  vtkh::DataSet data_set;
+
+  const int base_size = 32;
+  const int num_blocks = 1;
+
+  for(int i = 0; i < num_blocks; ++i)
+  {
+    data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
+  }
+
+  vtkh::SliceImplicit slicer;
+  double center[3] = { 0.0, 0.0, 0.0};
+  
+  slicer.SetSphereSlice(center, 10.0);
+  slicer.SetInput(&data_set);
+  slicer.Update();
+  vtkh::DataSet *slice  = slicer.GetOutput();
+
+  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+  vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *slice,
+                                         "slice_implicit_sphere",
+                                          bg_color);
+  vtkh::RayTracer tracer;
+  tracer.SetInput(slice);
+  tracer.SetField("cell_data_Float64");
+
+  vtkh::Scene scene;
+  scene.AddRenderer(&tracer);
+  scene.AddRender(render);
+  scene.Render();
+
+  delete slice;
+}
+
+//---------------------------------------------------------------------------//
+TEST(vtkh_slice, vtkh_slice_implicit_cylinder)
+{
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
+  vtkh::DataSet data_set;
+
+  const int base_size = 32;
+  const int num_blocks = 1;
+
+  for(int i = 0; i < num_blocks; ++i)
+  {
+    data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
+  }
+
+  vtkh::SliceImplicit slicer;
+
+  // void SetCylinderSlice(const double center[3],
+  //                       const double axis[3],
+  //                       const double radius);
+
+  double center[3] = { 0.0, 0.0, 0.0};
+  double axis[3]   = { 0.0, 0.0, 1.0};
+
+  slicer.SetCylinderSlice(center,
+                          axis,
+                          10.0);
+
+  slicer.SetInput(&data_set);
+  slicer.Update();
+  vtkh::DataSet *slice  = slicer.GetOutput();
+
+  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+  vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *slice,
+                                         "slice_implicit_cylinder",
+                                          bg_color);
+  vtkh::RayTracer tracer;
+  tracer.SetInput(slice);
+  tracer.SetField("cell_data_Float64");
+
+  vtkh::Scene scene;
+  scene.AddRenderer(&tracer);
+  scene.AddRender(render);
+  scene.Render();
+
+  delete slice;
+}
+
+//---------------------------------------------------------------------------//
+TEST(vtkh_slice, vtkh_slice_implicit_box)
+{
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
+  vtkh::DataSet data_set;
+
+  const int base_size = 32;
+  const int num_blocks = 1;
+
+  for(int i = 0; i < num_blocks; ++i)
+  {
+    data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
+  }
+
+  vtkh::SliceImplicit slicer;
+
+  vtkm::Bounds slice_bounds(vtkm::Range(0, 20),
+                            vtkm::Range(0, 15),
+                            vtkm::Range(-1, 5));
+
+  // note: we keep one face "open"
+  slicer.SetBoxSlice(slice_bounds);
+  slicer.SetInput(&data_set);
+  slicer.Update();
+  vtkh::DataSet *slice  = slicer.GetOutput();
+
+  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+  vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *slice,
+                                         "slice_implicit_box",
+                                          bg_color);
+  vtkh::RayTracer tracer;
+  tracer.SetInput(slice);
+  tracer.SetField("cell_data_Float64");
+
+
+
+  vtkh::Scene scene;
+  scene.AddRenderer(&tracer);
+  scene.AddRender(render);
+  scene.Render();
+
+  delete slice;
+}
+
+//---------------------------------------------------------------------------//
+TEST(vtkh_slice, vtkh_slice_implicit_plane)
+{
+#ifdef VTKM_ENABLE_KOKKOS
+  vtkh::InitializeKokkos();
+#endif
+  vtkh::DataSet data_set;
+
+  const int base_size = 32;
+  const int num_blocks = 1;
+
+  for(int i = 0; i < num_blocks; ++i)
+  {
+    data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
+  }
+
+  vtkh::SliceImplicit slicer;
+
+  vtkm::Bounds slice_bounds(vtkm::Range(0, 20),
+                            vtkm::Range(0, 15),
+                            vtkm::Range(-1, 5));
+
+  // note: we keep one face "open"
+  slicer.SetBoxSlice(slice_bounds);
+  slicer.SetInput(&data_set);
+  slicer.Update();
+  vtkh::DataSet *slice  = slicer.GetOutput();
+
+  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+  vtkm::rendering::Camera camera;
+  camera.ResetToBounds(bounds);
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *slice,
+                                         "slice_implicit_box",
+                                          bg_color);
+  vtkh::RayTracer tracer;
+  tracer.SetInput(slice);
+  tracer.SetField("cell_data_Float64");
+
+
+
+  vtkh::Scene scene;
+  scene.AddRenderer(&tracer);
+  scene.AddRender(render);
+  scene.Render();
+
+  delete slice;
+}
+
+
