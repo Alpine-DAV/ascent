@@ -46,17 +46,20 @@ public:
                         const double axis[3],
                         const double radius);
   void SetPlaneSlice(const double origin[3], const double normal[3]);
-  void Set2PlaneSlice(const double origin1[3],
-                      const double normal1[3],
-                      const double origin2[3],
-                      const double normal2[3]);
 
-  void Set3PlaneSlice(const double origin1[3],
-                      const double normal1[3],
-                      const double origin2[3],
-                      const double normal2[3],
-                      const double origin3[3],
-                      const double normal3[3]);
+  //
+  // TODO: multi plane needs more work
+  // void Set2PlaneSlice(const double origin1[3],
+  //                     const double normal1[3],
+  //                     const double origin2[3],
+  //                     const double normal2[3]);
+  //
+  // void Set3PlaneSlice(const double origin1[3],
+  //                     const double normal1[3],
+  //                     const double origin2[3],
+  //                     const double normal2[3],
+  //                     const double origin3[3],
+  //                     const double normal3[3]);
 
 protected:
   void PreExecute() override;

@@ -15,6 +15,7 @@
 
 #include <iostream>
 
+//-----------------------------------------------------------------------------
 TEST(vtkh_slice, vtkh_slice)
 {
 #ifdef VTKM_ENABLE_KOKKOS
@@ -61,6 +62,7 @@ TEST(vtkh_slice, vtkh_slice)
   delete slice;
 }
 
+//-----------------------------------------------------------------------------
 TEST(vtkh_slice, vtkh_mulit_slice)
 {
 #ifdef VTKM_ENABLE_KOKKOS
@@ -266,6 +268,15 @@ TEST(vtkh_slice, vtkh_slice_implicit_box)
   delete slice;
 }
 
+
+
+  // void Set3PlaneSlice(const double origin1[3],
+  //                     const double normal1[3],
+  //                     const double origin2[3],
+  //                     const double normal2[3],
+  //                     const double origin3[3],
+  //                     const double normal3[3]);
+
 //---------------------------------------------------------------------------//
 TEST(vtkh_slice, vtkh_slice_implicit_plane)
 {
@@ -284,12 +295,12 @@ TEST(vtkh_slice, vtkh_slice_implicit_plane)
 
   vtkh::SliceImplicit slicer;
 
-  vtkm::Bounds slice_bounds(vtkm::Range(0, 20),
-                            vtkm::Range(0, 15),
-                            vtkm::Range(-1, 5));
+  double origin[3] = {16.0,16.0,16.0};
+  double normal[3] = {0.5,0.5,0.5};
 
-  // note: we keep one face "open"
-  slicer.SetBoxSlice(slice_bounds);
+  // void SetPlaneSlice(const double origin[3], const double normal[3]);
+
+  slicer.SetPlaneSlice(origin,normal);
   slicer.SetInput(&data_set);
   slicer.Update();
   vtkh::DataSet *slice  = slicer.GetOutput();
@@ -302,7 +313,7 @@ TEST(vtkh_slice, vtkh_slice_implicit_plane)
                                          512,
                                          camera,
                                          *slice,
-                                         "slice_implicit_box",
+                                         "slice_implicit_plane",
                                           bg_color);
   vtkh::RayTracer tracer;
   tracer.SetInput(slice);
@@ -317,5 +328,69 @@ TEST(vtkh_slice, vtkh_slice_implicit_plane)
 
   delete slice;
 }
+
+
+//
+// TODO: Multi Plane Implicit needs work.
+//
+
+// //---------------------------------------------------------------------------//
+// TEST(vtkh_slice, vtkh_slice_implicit_2plane)
+// {
+// #ifdef VTKM_ENABLE_KOKKOS
+//   vtkh::InitializeKokkos();
+// #endif
+//   vtkh::DataSet data_set;
+//
+//   const int base_size = 32;
+//   const int num_blocks = 1;
+//
+//   for(int i = 0; i < num_blocks; ++i)
+//   {
+//     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
+//   }
+//
+//   vtkh::SliceImplicit slicer;
+//
+//   double origin_a[3] = {16.0,16.0,16.0};
+//   double normal_a[3] = {0.5,0.5,0.5};
+//
+//   double origin_b[3] = {16.0,16.0,16.0};
+//   double normal_b[3] = {0.0,0.5,0.5};
+//
+//   // void Set2PlaneSlice(const double origin1[3],
+//   //                     const double normal1[3],
+//   //                     const double origin2[3],
+//   //                     const double normal2[3]);
+//
+//   slicer.Set2PlaneSlice(origin_a,normal_a,
+//                         origin_b,normal_b);
+//   slicer.SetInput(&data_set);
+//   slicer.Update();
+//   vtkh::DataSet *slice  = slicer.GetOutput();
+//
+//   vtkm::Bounds bounds = slice->GetGlobalBounds();
+//   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
+//   vtkm::rendering::Camera camera;
+//   camera.ResetToBounds(bounds);
+//   vtkh::Render render = vtkh::MakeRender(512,
+//                                          512,
+//                                          camera,
+//                                          *slice,
+//                                          "slice_implicit_2plane",
+//                                           bg_color);
+//   vtkh::RayTracer tracer;
+//   tracer.SetInput(slice);
+//   tracer.SetField("cell_data_Float64");
+//
+//
+//
+//   vtkh::Scene scene;
+//   scene.AddRenderer(&tracer);
+//   scene.AddRender(render);
+//   scene.Render();
+//
+//   delete slice;
+// }
 
 

@@ -843,7 +843,7 @@ TEST(ascent_slice, test_sphere_slice)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    ASCENT_INFO("Testing sphere slice");
+    ASCENT_INFO("Testing implicit sphere slice");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_slice_sphere_3d");
@@ -921,7 +921,7 @@ TEST(ascent_slice, test_cyln_slice)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    ASCENT_INFO("Testing sphere slice");
+    ASCENT_INFO("Testing implicit cylinder slice");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_slice_cylinder_3d");
@@ -1001,7 +1001,7 @@ TEST(ascent_slice, test_box_slice)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    ASCENT_INFO("Testing sphere slice");
+    ASCENT_INFO("Testing implicit box slice");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_slice_box_3d");
@@ -1058,7 +1058,7 @@ TEST(ascent_slice, test_box_slice)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_slice, test_plance_slice)
+TEST(ascent_slice, test_plane_slice)
 {
     Node n;
     ascent::about(n);
@@ -1080,7 +1080,7 @@ TEST(ascent_slice, test_plance_slice)
                                               data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-    ASCENT_INFO("Testing sphere slice");
+    ASCENT_INFO("Testing implicit plane slice");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_slice_plane_3d");
@@ -1137,6 +1137,210 @@ TEST(ascent_slice, test_plance_slice)
 }
 
 
+// TODO: We want this case to work, but we may have a VTK-m issue
+// //-----------------------------------------------------------------------------
+// TEST(ascent_slice, test_slice_plane_of_plane)
+// {
+//     Node n;
+//     ascent::about(n);
+//     // only run this test if ascent was built with vtkm support
+//     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//     {
+//         ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+//         return;
+//     }
+//
+//     //
+//     // Create an example mesh.
+//     //
+//     Node data, verify_info;
+//     // simple plane
+//     data["coordsets/coords/type"] = "explicit";
+//     Node &coords = data["coordsets/coords/values"];
+//
+//     coords["x"] = {-2.0, -1.0, 0.0, 1.0, 2.0,
+//                    -2.0, -1.0, 0.0, 1.0, 2.0,
+//                    -2.0, -1.0, 0.0, 1.0, 2.0};
+//
+//     coords["y"] = {-2.0, -2.0, -2.0, -2.0, -2.0,
+//                     0.0, 0.0, 0.0, 0.0, 0.0,
+//                     2.0,  2.0, 2.0, 2.0, 2.0};
+//
+//     coords["z"] = {0.0, 0.0, 0.0, 0.0, 0.0,
+//                    0.0, 0.0, 0.0, 0.0, 0.0,
+//                    0.0, 0.0, 0.0, 0.0, 0.0};
+//
+//     data["topologies/topo/type"] = "unstructured";
+//     data["topologies/topo/coordset"] = "coords";
+//     data["topologies/topo/elements/shape"] = "quad";
+//     data["topologies/topo/elements/connectivity"] =  {0,5,6,1,
+//                                                       1,6,7,2,
+//                                                       2,7,8,3,
+//                                                       3,8,9,4,
+//                                                       5,10,11,6,
+//                                                       6,11,12,7,
+//                                                       7,12,13,8,
+//                                                       8,13,14,9};
+//
+//
+//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//     ASCENT_INFO("Testing implicit plane slice of plane");
+//
+//     string output_path = prepare_output_dir();
+//     string output_file = conduit::utils::join_file_path(output_path,"tout_slice_plane_of_plane_3d");
+//
+//     // remove old images before rendering
+//     remove_test_image(output_file);
+//
+//     //
+//     // Create the actions.
+//     //
+//     conduit::Node actions;
+//     conduit::Node &add_pipelines = actions.append();
+//     add_pipelines["action"] = "add_pipelines";
+//     conduit::Node & pipelines = add_pipelines["pipelines"];
+//
+//     pipelines["pl1/f1/type"] = "slice";
+//     conduit::Node &slice_params = pipelines["pl1/f1/params"];
+//
+//     slice_params["plane/point/x"] = 0.0;
+//     slice_params["plane/point/y"] = 0.0;
+//     slice_params["plane/point/z"] = 0.0;
+//     slice_params["plane/normal/x"] = 0.0;
+//     slice_params["plane/normal/y"] = 1.0;
+//     slice_params["plane/normal/z"] = 1.0;
+//
+//     // add a scene
+//     conduit::Node &add_scenes= actions.append();
+//     add_scenes["action"] = "add_scenes";
+//     conduit::Node &scenes = add_scenes["scenes"];
+//     scenes["s1/plots/p1/type"]  = "pseudocolor";
+//     scenes["s1/plots/p1/field"] = "radial";
+//     scenes["s1/plots/p1/pipeline"] = "pl1";
+//     scenes["s1/image_prefix"] = output_file;
+//
+//     // add an extract
+//     conduit::Node &add_extracts= actions.append();
+//     add_extracts["action"] = "add_extracts";
+//     conduit::Node &extracts = add_extracts["extracts"];
+//     extracts["e1/type"]  = "relay";
+//     extracts["e1/params/path"] = output_file + "_hdf5_input";
+//     extracts["e1/params/protocol"] = "hdf5";
+//
+//     extracts["e2/type"]  = "relay";
+//     extracts["e2/pipeline"]  = "pl1";
+//     extracts["e2/params/path"] = output_file + "_hdf5_res";
+//     extracts["e2/params/protocol"] = "hdf5";
+//
+//     // run ascent
+//     Ascent ascent;
+//     ascent.open();
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.close();
+//
+//     // check that we created an image
+//     EXPECT_TRUE(check_test_image(output_file));
+//     std::string msg = "An example of a spherical slice.";
+//     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+// }
+
+
+
+// TODO: We want this case to work, but we may have a VTK-m issue
+// //-----------------------------------------------------------------------------
+// TEST(ascent_slice, test_cyl_plane_slice)
+// {
+//     Node n;
+//     ascent::about(n);
+//     // only run this test if ascent was built with vtkm support
+//     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//     {
+//         ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+//         return;
+//     }
+//
+//     //
+//     // Create an example mesh.
+//     //
+//     Node data, verify_info;
+//     conduit::blueprint::mesh::examples::braid("hexs",
+//                                               EXAMPLE_MESH_SIDE_DIM,
+//                                               EXAMPLE_MESH_SIDE_DIM,
+//                                               EXAMPLE_MESH_SIDE_DIM,
+//                                               data);
+//
+//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//     ASCENT_INFO("Testing implicit plane slice");
+//
+//     string output_path = prepare_output_dir();
+//     string output_file = conduit::utils::join_file_path(output_path,"tout_slice_cyl_then_plane_3d");
+//
+//     // remove old images before rendering
+//     remove_test_image(output_file);
+//
+//     //
+//     // Create the actions.
+//     //
+//     conduit::Node actions;
+//     conduit::Node &add_pipelines = actions.append();
+//     add_pipelines["action"] = "add_pipelines";
+//     conduit::Node & pipelines = add_pipelines["pipelines"];
+//
+//     pipelines["pl1/f1/type"] = "slice";
+//     conduit::Node &slice_params1 = pipelines["pl1/f1/params"];
+//
+//     slice_params1["cylinder/center/x"] = 0.0;
+//     slice_params1["cylinder/center/y"] = 0.0;
+//     slice_params1["cylinder/center/z"] = 0.0;
+//     slice_params1["cylinder/axis/x"] = 0.0;
+//     slice_params1["cylinder/axis/y"] = 0.0;
+//     slice_params1["cylinder/axis/z"] = 1.0;
+//     slice_params1["cylinder/radius"] = 10.0;
+//
+//     pipelines["pl1/f2/type"] = "slice";
+//     conduit::Node &slice_params2 = pipelines["pl1/f2/params"];
+//
+//     slice_params2["plane/point/x"] = 0.0;
+//     slice_params2["plane/point/y"] = 0.0;
+//     slice_params2["plane/point/z"] = 0.0;
+//     slice_params2["plane/normal/x"] = 0.0;
+//     slice_params2["plane/normal/y"] = 0.0;
+//     slice_params2["plane/normal/z"] = 1.0;
+//
+//     // add a scene
+//     conduit::Node &add_scenes= actions.append();
+//     add_scenes["action"] = "add_scenes";
+//     conduit::Node &scenes = add_scenes["scenes"];
+//     scenes["s1/plots/p1/type"]  = "pseudocolor";
+//     scenes["s1/plots/p1/field"] = "radial";
+//     scenes["s1/plots/p1/pipeline"] = "pl1";
+//     scenes["s1/image_prefix"] = output_file;
+//
+//     // add an extract
+//     conduit::Node &add_extracts= actions.append();
+//     add_extracts["action"] = "add_extracts";
+//     conduit::Node &extracts = add_extracts["extracts"];
+//     extracts["e1/type"]  = "relay";
+//     extracts["e1/pipeline"]  = "pl1";
+//     extracts["e1/params/path"] = output_file + "_hdf5";
+//     extracts["e1/params/protocol"] = "hdf5";
+//
+//     // run ascent
+//     Ascent ascent;
+//     ascent.open();
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.close();
+//
+//     // check that we created an image
+//     EXPECT_TRUE(check_test_image(output_file));
+//     std::string msg = "An example of a spherical slice.";
+//     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+// }
+//
+//
+//
 
 
 

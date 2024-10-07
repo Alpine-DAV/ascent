@@ -199,8 +199,7 @@ protected:
   MultiPlane m_multi_plane;
 public:
   //-------------------------------------------------------------------------//
-  VTKM_CONT
-  MultiPlaneField(MultiPlane &multi_plane)
+  VTKM_CONT MultiPlaneField(MultiPlane &multi_plane)
     : m_multi_plane(multi_plane)
   {
   }
@@ -792,92 +791,95 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
   m_internals->m_func = plane;
 }
 
-//---------------------------------------------------------------------------//
-void
-SliceImplicit::Set2PlaneSlice(const double origin1[3],
-                              const double normal1[3],
-                              const double origin2[3],
-                              const double normal2[3])
-{
-  m_do_multi_plane = true;
-  vtkm::Vec3f plane_points[3];
-  plane_points[0][0] = float(origin1[0]);
-  plane_points[0][1] = float(origin1[1]);
-  plane_points[0][2] = float(origin1[2]);
-
-  plane_points[1][0] = float(origin2[0]);
-  plane_points[1][1] = float(origin2[1]);
-  plane_points[1][2] = float(origin2[2]);
-
-  plane_points[2][0] = 0.f;
-  plane_points[2][1] = 0.f;
-  plane_points[2][2] = 0.f;
-
-  vtkm::Vec3f plane_normals[3];
-  plane_normals[0][0] = float(normal1[0]);
-  plane_normals[0][1] = float(normal1[1]);
-  plane_normals[0][2] = float(normal1[2]);
-
-  plane_normals[1][0] = float(normal2[0]);
-  plane_normals[1][1] = float(normal2[1]);
-  plane_normals[1][2] = float(normal2[2]);
-
-  plane_normals[2][0] = 0.f;
-  plane_normals[2][1] = 0.f;
-  plane_normals[2][2] = 0.f;
-
-  vtkm::Normalize(plane_normals[0]);
-  vtkm::Normalize(plane_normals[1]);
-
-  auto planes
-    = detail::MultiPlane(plane_points, plane_normals, 2);
-  m_internals->m_multi_plane = planes;
-}
-
-//---------------------------------------------------------------------------//
-void
-SliceImplicit::Set3PlaneSlice(const double origin1[3],
-                              const double normal1[3],
-                              const double origin2[3],
-                              const double normal2[3],
-                              const double origin3[3],
-                              const double normal3[3])
-{
-  m_do_multi_plane = true;
-  vtkm::Vec3f plane_points[3];
-  plane_points[0][0] = float(origin1[0]);
-  plane_points[0][1] = float(origin1[1]);
-  plane_points[0][2] = float(origin1[2]);
-
-  plane_points[1][0] = float(origin2[0]);
-  plane_points[1][1] = float(origin2[1]);
-  plane_points[1][2] = float(origin2[2]);
-
-  plane_points[2][0] = float(origin3[0]);
-  plane_points[2][1] = float(origin3[1]);
-  plane_points[2][2] = float(origin3[2]);
-
-  vtkm::Vec3f plane_normals[3];
-  plane_normals[0][0] = float(normal1[0]);
-  plane_normals[0][1] = float(normal1[1]);
-  plane_normals[0][2] = float(normal1[2]);
-
-  plane_normals[1][0] = float(normal2[0]);
-  plane_normals[1][1] = float(normal2[1]);
-  plane_normals[1][2] = float(normal2[2]);
-
-  plane_normals[2][0] = float(normal3[0]);
-  plane_normals[2][1] = float(normal3[1]);
-  plane_normals[2][2] = float(normal3[2]);
-
-  vtkm::Normalize(plane_normals[0]);
-  vtkm::Normalize(plane_normals[1]);
-  vtkm::Normalize(plane_normals[2]);
-
-  auto planes
-    = detail::MultiPlane(plane_points, plane_normals, 3);
-  m_internals->m_multi_plane = planes;
-}
+//
+// TODO: Multi Plane Implicit needs work.
+//
+// //---------------------------------------------------------------------------//
+// void
+// SliceImplicit::Set2PlaneSlice(const double origin1[3],
+//                               const double normal1[3],
+//                               const double origin2[3],
+//                               const double normal2[3])
+// {
+//   m_do_multi_plane = true;
+//   vtkm::Vec3f plane_points[3];
+//   plane_points[0][0] = float(origin1[0]);
+//   plane_points[0][1] = float(origin1[1]);
+//   plane_points[0][2] = float(origin1[2]);
+//
+//   plane_points[1][0] = float(origin2[0]);
+//   plane_points[1][1] = float(origin2[1]);
+//   plane_points[1][2] = float(origin2[2]);
+//
+//   plane_points[2][0] = 0.f;
+//   plane_points[2][1] = 0.f;
+//   plane_points[2][2] = 0.f;
+//
+//   vtkm::Vec3f plane_normals[3];
+//   plane_normals[0][0] = float(normal1[0]);
+//   plane_normals[0][1] = float(normal1[1]);
+//   plane_normals[0][2] = float(normal1[2]);
+//
+//   plane_normals[1][0] = float(normal2[0]);
+//   plane_normals[1][1] = float(normal2[1]);
+//   plane_normals[1][2] = float(normal2[2]);
+//
+//   plane_normals[2][0] = 0.f;
+//   plane_normals[2][1] = 0.f;
+//   plane_normals[2][2] = 0.f;
+//
+//   vtkm::Normalize(plane_normals[0]);
+//   vtkm::Normalize(plane_normals[1]);
+//
+//   auto planes
+//     = detail::MultiPlane(plane_points, plane_normals, 2);
+//   m_internals->m_multi_plane = planes;
+// }
+//
+// //---------------------------------------------------------------------------//
+// void
+// SliceImplicit::Set3PlaneSlice(const double origin1[3],
+//                               const double normal1[3],
+//                               const double origin2[3],
+//                               const double normal2[3],
+//                               const double origin3[3],
+//                               const double normal3[3])
+// {
+//   m_do_multi_plane = true;
+//   vtkm::Vec3f plane_points[3];
+//   plane_points[0][0] = float(origin1[0]);
+//   plane_points[0][1] = float(origin1[1]);
+//   plane_points[0][2] = float(origin1[2]);
+//
+//   plane_points[1][0] = float(origin2[0]);
+//   plane_points[1][1] = float(origin2[1]);
+//   plane_points[1][2] = float(origin2[2]);
+//
+//   plane_points[2][0] = float(origin3[0]);
+//   plane_points[2][1] = float(origin3[1]);
+//   plane_points[2][2] = float(origin3[2]);
+//
+//   vtkm::Vec3f plane_normals[3];
+//   plane_normals[0][0] = float(normal1[0]);
+//   plane_normals[0][1] = float(normal1[1]);
+//   plane_normals[0][2] = float(normal1[2]);
+//
+//   plane_normals[1][0] = float(normal2[0]);
+//   plane_normals[1][1] = float(normal2[1]);
+//   plane_normals[1][2] = float(normal2[2]);
+//
+//   plane_normals[2][0] = float(normal3[0]);
+//   plane_normals[2][1] = float(normal3[1]);
+//   plane_normals[2][2] = float(normal3[2]);
+//
+//   vtkm::Normalize(plane_normals[0]);
+//   vtkm::Normalize(plane_normals[1]);
+//   vtkm::Normalize(plane_normals[2]);
+//
+//   auto planes
+//     = detail::MultiPlane(plane_points, plane_normals, 3);
+//   m_internals->m_multi_plane = planes;
+// }
 
 //---------------------------------------------------------------------------//
 void SliceImplicit::PreExecute()
