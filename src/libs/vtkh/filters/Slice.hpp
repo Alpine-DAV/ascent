@@ -28,6 +28,50 @@ protected:
   std::vector<vtkm::Vec<vtkm::Float32,3>> m_normals;
 };
 
+
+///
+/// Slice Filter that uses VTK-m support for Implicit Functions
+/// to support Spherical and Cylindrical slicing
+///
+class VTKH_API SliceImplicit : public Filter
+{
+public:
+  SliceImplicit();
+  virtual ~SliceImplicit();
+  std::string GetName() const override;
+
+  void SetBoxSlice(const vtkm::Bounds &slice_bounds);
+  void SetSphereSlice(const double center[3], const double radius);
+  void SetCylinderSlice(const double center[3],
+                        const double axis[3],
+                        const double radius);
+  void SetPlaneSlice(const double origin[3], const double normal[3]);
+
+  //
+  // TODO: multi plane needs more work
+  // void Set2PlaneSlice(const double origin1[3],
+  //                     const double normal1[3],
+  //                     const double origin2[3],
+  //                     const double normal2[3]);
+  //
+  // void Set3PlaneSlice(const double origin1[3],
+  //                     const double normal1[3],
+  //                     const double origin2[3],
+  //                     const double normal2[3],
+  //                     const double origin3[3],
+  //                     const double normal3[3]);
+
+protected:
+  void PreExecute() override;
+  void PostExecute() override;
+  void DoExecute() override;
+
+  struct InternalsType;
+  bool m_do_multi_plane;
+  std::shared_ptr<InternalsType> m_internals;
+};
+
+
 class VTKH_API AutoSliceLevels : public Filter
 {
 public:
