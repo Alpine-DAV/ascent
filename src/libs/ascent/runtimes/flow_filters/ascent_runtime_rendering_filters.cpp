@@ -1915,6 +1915,9 @@ void generate_camera_meshes(conduit::Node &image_data){
   vtkm::Vec<vtkm::Float64,3> vtkm_look = vtkm_look_at - vtkm_position;
   vtkm::Normalize(vtkm_look);
 
+  // round off any floating point imprecision left over by the normalization. 
+  vtkm_look = vtkm::Round(vtkm_look / 0.000000001) * 0.000000001; 
+
   // Initializing and normalizing up vector
   float64_accessor up = camera["up"].value();
   vtkm::Vec<vtkm::Float64,3> vtkm_up(up[0], up[1], up[2]);
