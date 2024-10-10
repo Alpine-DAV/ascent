@@ -20,6 +20,7 @@
 
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
+#include "conduit_fmt/conduit_fmt.h"
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -965,6 +966,299 @@ TEST(ascent_relay, test_relay_mpi_sparse_topos_2)
     EXPECT_EQ(bp_index["fields"].number_of_children(),3);
 
 }
+
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, silo_spiral_multi_file)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    CONDUIT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,data);
+    add_matset_to_spiral(data, 7);
+
+    // rank 0 gets first 4 domains, rank 1 gets the rest
+    if(par_rank == 0)
+    {
+        data.remove(4);
+        data.remove(4);
+        data.remove(4);
+    }
+    else if(par_rank == 1)
+    {
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+    }
+    else
+    {
+        // cyrus was wrong about 2 mpi ranks.
+        EXPECT_TRUE(false);
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract silo num_files option with mpi");
+
+    string output_path = prepare_output_dir();
+    std::ostringstream oss;
+
+    // lets try with -1 to 8 files.
+
+    // nfiles less than 1 should trigger default case
+    // (n output files = n domains)
+    for(int nfiles=-1; nfiles < 9; nfiles++)
+    {
+        std::cout << "[" << par_rank <<  "] test nfiles = " << nfiles << std::endl;
+        MPI_Barrier(comm);
+        oss.str("");
+        oss << "tout_relay_mpi_silo_extract_nfiles_" << nfiles;
+
+        std::string output_base = conduit::utils::join_file_path(output_path,
+                                                                 oss.str());
+
+        std::string output_dir  = output_base + ".cycle_000000";
+        std::string output_root = output_base + ".cycle_000000.root";
+
+        if(par_rank == 0)
+        {
+            // remove existing directory
+            utils::remove_directory(output_dir);
+            utils::remove_directory(output_root);
+        }
+
+        MPI_Barrier(comm);
+
+        conduit::Node actions;
+        // add the extracts
+        conduit::Node &add_extracts = actions.append();
+        add_extracts["action"] = "add_extracts";
+        conduit::Node &extracts = add_extracts["extracts"];
+
+        extracts["e1/type"]  = "relay";
+        extracts["e1/params/path"] = output_base;
+        extracts["e1/params/protocol"] = "silo";
+        extracts["e1/params/num_files"] =  nfiles;
+
+        //
+        // Run Ascent
+        //
+
+        Ascent ascent;
+
+        Node ascent_opts;
+        // we use the mpi handle provided by the fortran interface
+        // since it is simply an integer
+        ascent_opts["runtime"] = "ascent";
+        ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+        ascent.open(ascent_opts);
+        ascent.publish(data);
+        ascent.execute(actions);
+        ascent.close();
+
+        MPI_Barrier(comm);
+
+        // count the files
+        //  file_%06llu.{protocol}:/domain_%06llu/...
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+            std::string fprefix = conduit_fmt::format("file_{:06d}.silo", i);
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is
+                // domain_
+                fprefix = conduit_fmt::format("domain_{:06d}.silo", i);
+            }
+            oss.str("");
+            oss << conduit::utils::join_file_path(output_base + ".cycle_000000",
+                                                  fprefix);
+            std::string fcheck = oss.str();
+            std::cout << " checking: " << fcheck << std::endl;
+            EXPECT_TRUE(conduit::utils::is_file(fcheck));
+        }
+
+        MPI_Barrier(comm);
+    }
+}
+#endif
+
+#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, overlink_spiral_multi_file)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    CONDUIT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,data);
+    add_matset_to_spiral(data, 7);
+
+    // rank 0 gets first 4 domains, rank 1 gets the rest
+    if(par_rank == 0)
+    {
+        data.remove(4);
+        data.remove(4);
+        data.remove(4);
+    }
+    else if(par_rank == 1)
+    {
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+    }
+    else
+    {
+        // cyrus was wrong about 2 mpi ranks.
+        EXPECT_TRUE(false);
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extract overlink num_files option with mpi");
+
+    string output_path = prepare_output_dir();
+    std::ostringstream oss;
+
+    // lets try with -1 to 8 files.
+
+    // nfiles less than 1 should trigger default case
+    // (n output files = n domains)
+    for(int nfiles=-1; nfiles < 9; nfiles++)
+    {
+        std::cout << "[" << par_rank <<  "] test nfiles = " << nfiles << std::endl;
+        MPI_Barrier(comm);
+        oss.str("");
+        oss << "tout_relay_mpi_overlink_extract_nfiles_" << nfiles;
+
+        std::string output_base = conduit::utils::join_file_path(output_path,
+                                                                 oss.str());
+
+        std::string output_dir  = output_base;
+        std::string output_root = conduit::utils::join_file_path(output_dir,
+                                                                 "OvlTop.silo");;
+
+        if(par_rank == 0)
+        {
+            // remove existing directory
+            utils::remove_directory(output_dir);
+            utils::remove_directory(output_root);
+        }
+
+        MPI_Barrier(comm);
+
+        conduit::Node actions;
+        // add the extracts
+        conduit::Node &add_extracts = actions.append();
+        add_extracts["action"] = "add_extracts";
+        conduit::Node &extracts = add_extracts["extracts"];
+
+        extracts["e1/type"]  = "relay";
+        extracts["e1/params/path"] = output_base;
+        extracts["e1/params/protocol"] = "overlink";
+        extracts["e1/params/num_files"] =  nfiles;
+
+        //
+        // Run Ascent
+        //
+
+        Ascent ascent;
+
+        Node ascent_opts;
+        // we use the mpi handle provided by the fortran interface
+        // since it is simply an integer
+        ascent_opts["runtime"] = "ascent";
+        ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+        ascent.open(ascent_opts);
+        ascent.publish(data);
+        ascent.execute(actions);
+        ascent.close();
+
+        MPI_Barrier(comm);
+
+        // count the files
+        //  file_%06llu.{protocol}:/domain_%06llu/...
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+            std::string fprefix = conduit_fmt::format("domfile{:d}.silo", i);
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is
+                // domain_
+                fprefix = conduit_fmt::format("domain{:d}.silo", i);
+            }
+            oss.str("");
+            oss << conduit::utils::join_file_path(output_base,
+                                                  fprefix);
+            std::string fcheck = oss.str();
+            std::cout << " checking: " << fcheck << std::endl;
+            EXPECT_TRUE(conduit::utils::is_file(fcheck));
+        }
+
+        MPI_Barrier(comm);
+    }
+}
+#endif
 
 //
 //-----------------------------------------------------------------------------

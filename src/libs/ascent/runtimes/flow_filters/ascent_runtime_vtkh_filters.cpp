@@ -723,7 +723,44 @@ VTKHSlice::verify_params(const conduit::Node &params,
 
     bool res = true;
 
+    res &= check_string("topology",params, info, false);
+    if(params.has_child("sphere"))
+    {
+        res = check_numeric("sphere/center/x",params, info, true, true) && res;
+        res = check_numeric("sphere/center/y",params, info, true, true) && res;
+        res = check_numeric("sphere/center/z",params, info, true, true) && res;
+        res = check_numeric("sphere/radius",params, info, true, true) && res;
+    }
+    else if(params.has_child("cylinder"))
+    {
+        res = check_numeric("cylinder/center/x",params, info, true, true) && res;
+        res = check_numeric("cylinder/center/y",params, info, true, true) && res;
+        res = check_numeric("cylinder/center/z",params, info, true, true) && res;
+        res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
+        res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
+        res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
+        res = check_numeric("cylinder/radius",params, info, true, true) && res;
+    }
+    else if(params.has_child("box"))
+    {
+        res = check_numeric("box/min/x",params, info, true, true) && res;
+        res = check_numeric("box/min/y",params, info, true, true) && res;
+        res = check_numeric("box/min/z",params, info, true, true) && res;
+        res = check_numeric("box/max/x",params, info, true, true) && res;
+        res = check_numeric("box/max/y",params, info, true, true) && res;
+        res = check_numeric("box/max/z",params, info, true, true) && res;
+    }
+    else if(params.has_child("plane"))
+    {
+        res = check_numeric("plane/point/x",params, info, true, true) && res;
+        res = check_numeric("plane/point/y",params, info, true, true) && res;
+        res = check_numeric("plane/point/z",params, info, true, true) && res;
+        res = check_numeric("plane/normal/x",params, info, true, true) && res;
+        res = check_numeric("plane/normal/y",params, info, true, true) && res;
+        res = check_numeric("plane/normal/z",params, info, true, true) && res;
+    }
 
+    // old style plane
     if(params.has_path("point/x_offset") && params.has_path("point/x"))
     {
       info["errors"]
@@ -743,20 +780,21 @@ VTKHSlice::verify_params(const conduit::Node &params,
       res = check_numeric("point/y_offset",params, info, true, true) && res;
       res = check_numeric("point/z_offset",params, info, true, true) && res;
     }
-    else
+    // else
+    // {
+    //   info["errors"]
+    //     .append() = "Slice must specify a point for the plane.";
+    //   res = false;
+    // }
+    if(params.has_path("normal/x"))
     {
-      info["errors"]
-        .append() = "Slice must specify a point for the plane.";
-      res = false;
+        res = check_numeric("normal/x",params, info, true, true) && res;
+        res = check_numeric("normal/y",params, info, true, true) && res;
+        res = check_numeric("normal/z",params, info, true, true) && res;
     }
 
-    res = check_string("topology",params, info, false) && res;
-
-    res = check_numeric("normal/x",params, info, true, true) && res;
-    res = check_numeric("normal/y",params, info, true, true) && res;
-    res = check_numeric("normal/z",params, info, true, true) && res;
-
     std::vector<std::string> valid_paths;
+    // old style plane
     valid_paths.push_back("point/x");
     valid_paths.push_back("point/y");
     valid_paths.push_back("point/z");
@@ -767,6 +805,34 @@ VTKHSlice::verify_params(const conduit::Node &params,
     valid_paths.push_back("normal/y");
     valid_paths.push_back("normal/z");
     valid_paths.push_back("topology");
+
+    // sphere
+    valid_paths.push_back("sphere/center/x");
+    valid_paths.push_back("sphere/center/y");
+    valid_paths.push_back("sphere/center/z");
+    valid_paths.push_back("sphere/radius");
+    // cylinder
+    valid_paths.push_back("cylinder/center/x");
+    valid_paths.push_back("cylinder/center/y");
+    valid_paths.push_back("cylinder/center/z");
+    valid_paths.push_back("cylinder/axis/x");
+    valid_paths.push_back("cylinder/axis/y");
+    valid_paths.push_back("cylinder/axis/z");
+    valid_paths.push_back("cylinder/radius");
+    // box
+    valid_paths.push_back("box/min/x");
+    valid_paths.push_back("box/min/y");
+    valid_paths.push_back("box/min/z");
+    valid_paths.push_back("box/max/x");
+    valid_paths.push_back("box/max/y");
+    valid_paths.push_back("box/max/z");
+    // new style plane
+    valid_paths.push_back("plane/point/x");
+    valid_paths.push_back("plane/point/y");
+    valid_paths.push_back("plane/point/z");
+    valid_paths.push_back("plane/normal/x");
+    valid_paths.push_back("plane/normal/y");
+    valid_paths.push_back("plane/normal/z");
 
 
     std::string surprises = surprise_check(valid_paths, params);
@@ -811,56 +877,128 @@ VTKHSlice::execute()
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    vtkh::Slice slicer;
+    vtkh::DataSet *slice_output = nullptr;
 
-    slicer.SetInput(&data);
-
-    const Node &n_point = params()["point"];
-    const Node &n_normal = params()["normal"];
-
-    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
-    vtkm::Bounds bounds = data.GetGlobalBounds();
-    Vec3f point;
-
-    const float eps = 1e-5; // ensure that the slice is always inside the data set
-
-    if(n_point.has_path("x_offset"))
+    // original implementation
+    if(params().has_child("point"))
     {
-      float offset = get_float32(n_point["x_offset"], data_object);
-      std::max(-1.f, std::min(1.f, offset));
-      float t = (offset + 1.f) / 2.f;
-      t = std::max(0.f + eps, std::min(1.f - eps, t));
-      point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+        vtkh::Slice slicer;
 
-      offset = get_float32(n_point["y_offset"], data_object);
-      std::max(-1.f, std::min(1.f, offset));
-      t = (offset + 1.f) / 2.f;
-      t = std::max(0.f + eps, std::min(1.f - eps, t));
-      point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+        slicer.SetInput(&data);
 
-      offset = get_float32(n_point["z_offset"], data_object);
-      std::max(-1.f, std::min(1.f, offset));
-      t = (offset + 1.f) / 2.f;
-      t = std::max(0.f + eps, std::min(1.f - eps, t));
-      point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+        const Node &n_point = params()["point"];
+        const Node &n_normal = params()["normal"];
+
+        using Vec3f = vtkm::Vec<vtkm::Float32,3>;
+        vtkm::Bounds bounds = data.GetGlobalBounds();
+        Vec3f point;
+
+        const float eps = 1e-5; // ensure that the slice is always inside the data set
+
+        if(n_point.has_path("x_offset"))
+        {
+          float offset = get_float32(n_point["x_offset"], data_object);
+          // TODO: THIS RESULT ISN'T USED, should it be offset =?
+          std::max(-1.f, std::min(1.f, offset));
+          float t = (offset + 1.f) / 2.f;
+          t = std::max(0.f + eps, std::min(1.f - eps, t));
+          point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
+
+          offset = get_float32(n_point["y_offset"], data_object);
+          // TODO: THIS RESULT ISN'T USED, should it be offset =?
+          std::max(-1.f, std::min(1.f, offset));
+          t = (offset + 1.f) / 2.f;
+          t = std::max(0.f + eps, std::min(1.f - eps, t));
+          point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
+
+          offset = get_float32(n_point["z_offset"], data_object);
+          // TODO: THIS RESULT ISN'T USED, should it be offset =?
+          std::max(-1.f, std::min(1.f, offset));
+          t = (offset + 1.f) / 2.f;
+          t = std::max(0.f + eps, std::min(1.f - eps, t));
+          point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
+        }
+        else
+        {
+          point[0] = get_float32(n_point["x"], data_object);
+          point[1] = get_float32(n_point["y"], data_object);
+          point[2] = get_float32(n_point["z"], data_object);
+        }
+
+        Vec3f v_normal;
+        v_normal[0] = get_float32(n_normal["x"], data_object);
+        v_normal[1] = get_float32(n_normal["y"], data_object);
+        v_normal[2] = get_float32(n_normal["z"], data_object);
+
+        slicer.AddPlane(point, v_normal);
+
+        slicer.Update();
+
+        slice_output = slicer.GetOutput();
     }
     else
     {
-      point[0] = get_float32(n_point["x"], data_object);
-      point[1] = get_float32(n_point["y"], data_object);
-      point[2] = get_float32(n_point["z"], data_object);
+        // implicit func slice cases
+        vtkh::SliceImplicit slicer;
+        slicer.SetInput(&data);
+
+        if(params().has_path("sphere"))
+        {
+          const Node &sphere = params()["sphere"];
+          double center[3];
+
+          center[0] = get_float64(sphere["center/x"], data_object);
+          center[1] = get_float64(sphere["center/y"], data_object);
+          center[2] = get_float64(sphere["center/z"], data_object);
+          double radius = get_float64(sphere["radius"], data_object);
+          slicer.SetSphereSlice(center, radius);
+        }
+        else if(params().has_path("cylinder"))
+        {
+          const Node &cylinder = params()["cylinder"];
+          double center[3];
+          double axis[3];
+
+          center[0] = get_float64(cylinder["center/x"], data_object);
+          center[1] = get_float64(cylinder["center/y"], data_object);
+          center[2] = get_float64(cylinder["center/z"], data_object);
+
+          axis[0] = get_float64(cylinder["axis/x"], data_object);
+          axis[1] = get_float64(cylinder["axis/y"], data_object);
+          axis[2] = get_float64(cylinder["axis/z"], data_object);
+
+          double radius = get_float64(cylinder["radius"], data_object);
+          slicer.SetCylinderSlice(center, axis, radius);
+        }
+        else if(params().has_path("box"))
+        {
+          const Node &box = params()["box"];
+          vtkm::Bounds bounds;
+          bounds.X.Min= get_float64(box["min/x"], data_object);
+          bounds.Y.Min= get_float64(box["min/y"], data_object);
+          bounds.Z.Min= get_float64(box["min/z"], data_object);
+          bounds.X.Max = get_float64(box["max/x"], data_object);
+          bounds.Y.Max = get_float64(box["max/y"], data_object);
+          bounds.Z.Max = get_float64(box["max/z"], data_object);
+          slicer.SetBoxSlice(bounds);
+        }
+        else if(params().has_path("plane"))
+        {
+          const Node &plane= params()["plane"];
+          double point[3], normal[3];;
+
+          point[0] =  get_float64(plane["point/x"], data_object);
+          point[1] =  get_float64(plane["point/y"], data_object);
+          point[2] =  get_float64(plane["point/z"], data_object);
+          normal[0] = get_float64(plane["normal/x"], data_object);
+          normal[1] = get_float64(plane["normal/y"], data_object);
+          normal[2] = get_float64(plane["normal/z"], data_object);
+          slicer.SetPlaneSlice(point, normal);
+        }
+
+        slicer.Update();
+        slice_output = slicer.GetOutput();
     }
-
-    Vec3f v_normal;
-    v_normal[0] = get_float32(n_normal["x"], data_object);
-    v_normal[1] = get_float32(n_normal["y"], data_object);
-    v_normal[2] = get_float32(n_normal["z"], data_object);
-
-    slicer.AddPlane(point, v_normal);
-    slicer.Update();
-
-    vtkh::DataSet *slice_output = slicer.GetOutput();
-
     // we need to pass through the rest of the topologies, untouched,
     // and add the result of this operation
     VTKHCollection *new_coll = new VTKHCollection();
@@ -870,7 +1008,6 @@ VTKHSlice::execute()
     DataObject *res =  new DataObject(new_coll);
     delete slice_output;
     set_output<DataObject>(res);
-
 }
 
 //-----------------------------------------------------------------------------
@@ -1185,6 +1322,219 @@ VTKHGhostStripper::execute()
     {
       set_output<DataObject>(data_object);
     }
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddRanks::VTKHAddRanks()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddRanks::~VTKHAddRanks()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddRanks::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_add_mpi_ranks";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAddRanks::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("topology",params, info, false);
+    res = check_string("output",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("output");
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddRanks::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHAddRanks input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string output_field = "mpi_rank";
+    if(params().has_child("output"))
+    {
+      output_field = params()["output"].as_string();
+    }
+
+    std::string topo_name = "";
+    if(params().has_child("topology"))
+    {
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      bool throw_error = false;
+      topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+      std::cerr << "topo_name: " << topo_name << std::endl;
+      if(topo_name == "")
+      {
+        // this creates a data object with an invalid source
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    data.AddConstantPointField(rank,output_field);
+    new_coll->add(data, topo_name);
+    
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddDomains::VTKHAddDomains()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHAddDomains::~VTKHAddDomains()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddDomains::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_add_domain_ids";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHAddDomains::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+    bool res = check_string("topology",params, info, false);
+    res = check_string("output",params, info, false);
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("output");
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHAddDomains::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHAddDomains input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::string output_field = "domain_ids";
+    if(params().has_child("output"))
+    {
+      output_field = params()["output"].as_string();
+    }
+
+    std::string topo_name = "";
+    if(params().has_child("topology"))
+    {
+      topo_name = params()["topology"].as_string();
+    }
+    else
+    {
+      bool throw_error = false;
+      topo_name = detail::resolve_topology(params(),
+                                           this->name(),
+                                           collection,
+                                           throw_error);
+      std::cerr << "topo_name: " << topo_name << std::endl;
+      if(topo_name == "")
+      {
+        // this creates a data object with an invalid source
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    data.AddDomainIdField(output_field);
+    new_coll->add(data, topo_name);
+    
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------

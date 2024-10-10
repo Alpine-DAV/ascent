@@ -29,6 +29,7 @@ enable_fortran="${enable_fortran:=OFF}"
 enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
 enable_mpi="${enable_mpi:=OFF}"
+enable_mpicc="${enable_mpicc:=OFF}"
 enable_find_mpi="${enable_find_mpi:=ON}"
 enable_tests="${enable_tests:=OFF}"
 enable_verbose="${enable_verbose:=ON}"
@@ -186,6 +187,12 @@ fi
 if [ ! -z ${FTN+x} ]; then
   cmake_compiler_settings="${cmake_compiler_settings} -DCMAKE_Fortran_COMPILER:PATH=${FTN}"
 fi
+
+############################
+# mpi related vars
+############################
+mpicc_exe="${mpicc_exe:=mpicc}"
+mpicxx_exe="${mpicxx_exe:=mpic++}"
 
 ################
 # print all build_ZZZ and enable_ZZZ options
@@ -359,6 +366,11 @@ else
   echo "**** Skipping Python venv build, install found at: ${venv_install_dir}"
 fi # build_pyvenv
 
+if ${build_pyvenv}; then
+    venv_python_ver=`${venv_python_exe} -c "import sys;print('{0}.{1}'.format(sys.version_info.major, sys.version_info.minor))"`
+    venv_python_site_pkgs_dir=${venv_install_dir}/lib/python${venv_python_ver}/site-packages
+fi
+
 ################
 # Caliper
 ################
@@ -391,12 +403,27 @@ fi
 # -DWITH_CUPTI=ON -DWITH_NVTX=ON -DCUDA_TOOLKIT_ROOT_DIR={path} -DCUPTI_PREFIX={path}
 # -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX={path}
 
-caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DWITH_TOOLS=OFF"
 
 caliper_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   caliper_extra_cmake_args="${caliper_windows_cmake_flags}"
 fi 
+
+# TODO enable_cuda
+
+if [[ "$enable_hip" == "ON" ]]; then
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTRACER=ON"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTX=ON"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DROCM_PREFIX:PATH=${ROCM_PATH}"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DROCM_ROOT_DIR:PATH=${ROCM_PATH}"
+fi
+
+if [[ "$enable_mpicc" == "ON" ]]; then
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
+fi
+
 
 echo "**** Configuring Caliper ${caliper_version}"
 cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
@@ -404,8 +431,7 @@ cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DCMAKE_INSTALL_PREFIX=${caliper_install_dir} \
-  -DWITH_TOOLS=OFF \
-  -DWITH_MPI=${enable_mpi} ${caliper_windows_cmake_flags}
+  -DWITH_MPI=${enable_mpi} ${caliper_extra_cmake_args}
 
 echo "**** Building Caliper ${caliper_version}"
 cmake --build ${caliper_build_dir} --config ${build_config} -j${build_jobs}
@@ -452,6 +478,7 @@ conduit_extra_cmake_opts=-DENABLE_PYTHON=${enable_python}
 if ${build_pyvenv}; then
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSPHINX_EXECUTABLE=${venv_sphinx_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DPYTHON_MODULE_INSTALL_PREFIX=${venv_python_site_pkgs_dir}"
 fi
 
 if ${build_caliper}; then
@@ -460,6 +487,11 @@ fi
 
 if ${build_silo}; then
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSILO_DIR=${silo_install_dir}"
+fi
+
+if [[ "$enable_mpicc" == "ON" ]]; then
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DMPI_C_COMPILER=${mpicc_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
 echo "**** Configuring Conduit ${conduit_version}"
@@ -492,7 +524,7 @@ fi # build_conduit
 #########################
 kokkos_version=3.7.02
 kokkos_src_dir=$(ospath ${source_dir}/kokkos-${kokkos_version})
-kokkos_build_dir=$(ospath ${build_dir}kokkos-${kokkos_version})
+kokkos_build_dir=$(ospath ${build_dir}/kokkos-${kokkos_version})
 kokkos_install_dir=$(ospath ${install_dir}/kokkos-${kokkos_version}/)
 kokkos_tarball=$(ospath ${source_dir}/kokkos-${kokkos_version}.tar.gz)
 
@@ -575,13 +607,13 @@ fi
 
 vtkm_extra_cmake_args=""
 if [[ "$enable_cuda" == "ON" ]]; then
-  vtkm_extra_cmake_args="-DVTKm_ENABLE_CUDA=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_CUDA=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
@@ -591,6 +623,11 @@ if [[ "$enable_sycl" == "ON" ]]; then
   vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+fi
+
+if [[ "$enable_mpicc" == "ON" ]]; then
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
 echo "**** Configuring VTK-m ${vtkm_version}"
@@ -925,6 +962,11 @@ if [ ! -z ${FFLAGS+x} ]; then
     echo 'set(CMAKE_F_FLAGS "' ${FFLAGS} '" CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
+if [[ "$enable_mpicc" == "ON" ]]; then
+  echo 'set(MPI_C_COMPILER '  ${mpicc_exe}  ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+  echo 'set(MPI_CXX_COMPILER ' ${mpicxx_exe}  ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+
 echo 'set(CMAKE_VERBOSE_MAKEFILE ' ${enable_verbose} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CMAKE_BUILD_TYPE ' ${build_config} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(BUILD_SHARED_LIBS ' ${build_shared_libs} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
@@ -936,6 +978,7 @@ echo 'set(ENABLE_FORTRAN ' ${enable_fortran} ' CACHE BOOL "")' >> ${root_dir}/as
 echo 'set(ENABLE_PYTHON ' ${enable_python} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 if ${build_pyvenv}; then
 echo 'set(PYTHON_EXECUTABLE ' ${venv_python_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(PYTHON_MODULE_INSTALL_PREFIX ' ${venv_python_site_pkgs_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DOCS ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(SPHINX_EXECUTABLE ' ${venv_sphinx_exe} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
