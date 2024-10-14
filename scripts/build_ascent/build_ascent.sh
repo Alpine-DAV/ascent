@@ -49,6 +49,7 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
+build_anari="${build_anari:=false}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -558,10 +559,50 @@ fi # build_kokkos
 
 fi # if enable_hip
 
+
+################
+# anari
+################
+anari_version=0.10.0
+anari_src_dir=$(ospath ${source_dir}/ANARI-SDK-${anari_version})
+anari_build_dir=$(ospath ${build_dir}/anari-v${anari_version})
+anari_install_dir=$(ospath ${install_dir}/anari-v${anari_version}/)
+anari_cmake_dir=${anari_install_dir}lib64/cmake/anari/
+anari_tarball=$(ospath ${source_dir}/anari-v${anari_version}.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${anari_install_dir} ]; then
+if ${build_anari}; then
+if [ ! -d ${anari_src_dir} ]; then
+  echo "**** Downloading ${anari_tarball}"
+  curl -L https://github.com/KhronosGroup/ANARI-SDK/archive/refs/tags/v${anari_version}/anari-v${anari_version}.tar.gz -o ${anari_tarball}
+  tar ${tar_extra_args} -xzf ${anari_tarball} -C ${source_dir}
+fi
+
+echo "**** Configuring anari ${anari_version}"
+cmake -S ${anari_src_dir} -B ${anari_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_VIEWER=OFF \
+  -DBUILD_CTS=OFF \
+  -Danari_BUILD_TESTING=OFF \
+  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
+
+echo "**** Building anari ${anari_version}"
+cmake --build ${anari_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing anari ${anari_version}"
+cmake --install ${anari_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping anari build, install found at: ${anari_install_dir}"
+fi # build_anari
+
+
 ################
 # VTK-m
 ################
-vtkm_version=v2.1.0
+vtkm_version=v2.2.0
 vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
@@ -575,11 +616,6 @@ if [ ! -d ${vtkm_src_dir} ]; then
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
   tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
 
-  # apply vtk-m patch
-  cd  ${vtkm_src_dir}
-  patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
-  patch -p1 < ${script_dir}/2024_05_03_vtkm-mr3215-ext-geom-fix.patch
-  patch -p1 < ${script_dir}/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch
   cd ${root_dir}
 fi
 
@@ -602,6 +638,13 @@ if [[ "$enable_mpicc" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
+
+if [[ "$build_anari" == "ON" ]]; then
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_build_anari=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DANARI_DIR=$anari_install_dir}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${anari_install_dir}"
+fi
+
 
 echo "**** Configuring VTK-m ${vtkm_version}"
 cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
@@ -970,9 +1013,13 @@ if ${build_catalyst}; then
     echo 'set(CATALYST_DIR ' ${catalyst_cmake_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
+if [[ "$build_anari" == "ON" ]]; then
+    echo 'set(ANARI_DIR ' ${anari_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+
 if [[ "$enable_cuda" == "ON" ]]; then
     echo 'set(ENABLE_CUDA ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
-    echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(CMAKE_CUDA_ARCHITECTURES ' ${CUDA_ARCH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
