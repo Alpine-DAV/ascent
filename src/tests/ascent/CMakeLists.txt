@@ -75,7 +75,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_hola)
 
 set(DEVICE_TESTS  t_ascent_execution_policies
-                  t_ascent_memory)
+                  t_ascent_memory
+                  t_ascent_gpu_data_source)
 
 if(CUDA_FOUND)
     list(APPEND ascent_device_deps cuda_runtime)
@@ -136,6 +137,7 @@ if(GENTEN_FOUND)
 endif()
 
 
+
 ################################
 # Add main tests
 ################################
@@ -146,10 +148,16 @@ if (ENABLE_SERIAL)
     endforeach()
 
     foreach(TEST ${DEVICE_TESTS})
+        set(ascent_device_tests_deps)
         if(CUDA_FOUND)
             set_source_files_properties(${TEST}.cpp PROPERTIES LANGUAGE CUDA)
+           list(APPEND ascent_device_tests_deps cuda)
         endif()
-        add_cpp_test(TEST ${TEST} DEPENDS_ON ascent ${ascent_device_deps})
+        if(HIP_FOUND)
+            set_source_files_properties(${TEST}.cpp PROPERTIES LANGUAGE HIP)
+            list(APPEND ascent_device_tests_deps blt_hip)
+        endif()
+        add_cpp_test(TEST ${TEST} DEPENDS_ON ascent ${ascent_device_deps} ${ascent_device_tests_deps})
     endforeach()
 
 

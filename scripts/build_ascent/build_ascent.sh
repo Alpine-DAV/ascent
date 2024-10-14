@@ -28,6 +28,7 @@ enable_fortran="${enable_fortran:=OFF}"
 enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
 enable_mpi="${enable_mpi:=OFF}"
+enable_mpicc="${enable_mpicc:=OFF}"
 enable_find_mpi="${enable_find_mpi:=ON}"
 enable_tests="${enable_tests:=OFF}"
 enable_verbose="${enable_verbose:=ON}"
@@ -177,6 +178,12 @@ fi
 if [ ! -z ${FTN+x} ]; then
   cmake_compiler_settings="${cmake_compiler_settings} -DCMAKE_Fortran_COMPILER:PATH=${FTN}"
 fi
+
+############################
+# mpi related vars
+############################
+mpicc_exe="${mpicc_exe:=mpicc}"
+mpicxx_exe="${mpicxx_exe:=mpic++}"
 
 ################
 # print all build_ZZZ and enable_ZZZ options
@@ -394,9 +401,20 @@ if [[ "$build_windows" == "ON" ]]; then
   caliper_extra_cmake_args="${caliper_windows_cmake_flags}"
 fi 
 
+# TODO enable_cuda
+
 if [[ "$enable_hip" == "ON" ]]; then
-  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX=${ROCM_PATH}"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTRACER=ON"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DWITH_ROCTX=ON"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DROCM_PREFIX:PATH=${ROCM_PATH}"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DROCM_ROOT_DIR:PATH=${ROCM_PATH}"
 fi
+
+if [[ "$enable_mpicc" == "ON" ]]; then
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
+  caliper_extra_cmake_args="${caliper_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
+fi
+
 
 echo "**** Configuring Caliper ${caliper_version}"
 cmake -S ${caliper_src_dir} -B ${caliper_build_dir} ${cmake_compiler_settings} \
@@ -460,6 +478,11 @@ fi
 
 if ${build_silo}; then
   conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DSILO_DIR=${silo_install_dir}"
+fi
+
+if [[ "$enable_mpicc" == "ON" ]]; then
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DMPI_C_COMPILER=${mpicc_exe}"
+  conduit_extra_cmake_opts="${conduit_extra_cmake_opts} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
 echo "**** Configuring Conduit ${conduit_version}"
@@ -563,16 +586,21 @@ fi
 
 vtkm_extra_cmake_args=""
 if [[ "$enable_cuda" == "ON" ]]; then
-  vtkm_extra_cmake_args="-DVTKm_ENABLE_CUDA=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_CUDA=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
+fi
+
+if [[ "$enable_mpicc" == "ON" ]]; then
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
 echo "**** Configuring VTK-m ${vtkm_version}"
@@ -901,6 +929,11 @@ fi
 
 if [ ! -z ${FFLAGS+x} ]; then
     echo 'set(CMAKE_F_FLAGS "' ${FFLAGS} '" CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+
+if [[ "$enable_mpicc" == "ON" ]]; then
+  echo 'set(MPI_C_COMPILER '  ${mpicc_exe}  ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+  echo 'set(MPI_CXX_COMPILER ' ${mpicxx_exe}  ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 echo 'set(CMAKE_VERBOSE_MAKEFILE ' ${enable_verbose} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
