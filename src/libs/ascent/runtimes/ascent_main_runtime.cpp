@@ -108,7 +108,8 @@ AscentRuntime::AscentRuntime()
  m_session_name("ascent_session"),
  m_field_filtering(false)
 {
-    m_ghost_fields.append() = "ascent_ghosts";
+    m_persistent_ghost_fields.append() = "ascent_ghosts";
+    // m_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
     ResetInfo();
 }
@@ -289,12 +290,15 @@ AscentRuntime::Initialize(const conduit::Node &options)
     {
       if(options["ghost_field_name"].dtype().is_string())
       {
-        m_ghost_fields.reset();
-        m_ghost_fields.append().set(options["ghost_field_name"]);
+        m_persistent_ghost_fields.reset();
+        m_persistent_ghost_fields.append().set(options["ghost_field_name"]);
+        // m_ghost_fields.reset();
+        // m_ghost_fields.append().set(options["ghost_field_name"]);
       }
       else if(options["ghost_field_name"].dtype().is_list())
       {
-        m_ghost_fields.reset();
+        m_persistent_ghost_fields.reset();
+        // m_ghost_fields.reset();
         const int num_children = options["ghost_field_name"].number_of_children();
         for(int i = 0; i < num_children; ++i)
         {
@@ -304,7 +308,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
             ASCENT_ERROR("ghost_field_name list child "
                          << i << " is not a string");
           }
-          m_ghost_fields.append().set(child);
+          m_persistent_ghost_fields.append().set(child);
+          // m_ghost_fields.append().set(child);
         }
       }
       else
@@ -320,7 +325,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
         ASCENT_ERROR("ghost_field_names is not a list");
       }
 
-      m_ghost_fields.reset();
+      m_persistent_ghost_fields.reset();
+      // m_ghost_fields.reset();
       const int num_children = options["ghost_field_names"].number_of_children();
       for(int i = 0; i < num_children; ++i)
       {
@@ -329,7 +335,8 @@ AscentRuntime::Initialize(const conduit::Node &options)
         {
           ASCENT_ERROR("ghost_field_names list child " << i << " is not a string");
         }
-        m_ghost_fields.append().set(child);
+        m_persistent_ghost_fields.append().set(child);
+        // m_ghost_fields.append().set(child);
       }
     }
 
@@ -498,6 +505,13 @@ AscentRuntime::Cleanup()
 void
 AscentRuntime::Publish(const conduit::Node &data)
 {
+
+    if(data.has_path("state/temporary_ghost_fields")) {
+      m_ghost_fields = data["state/temporary_ghost_fields"];
+    }
+    else {
+      m_ghost_fields = m_persistent_ghost_fields;
+    }
 
     blueprint::mesh::to_multi_domain(data, m_source);
     EnsureDomainIds();
@@ -1568,7 +1582,7 @@ AscentRuntime::GetDefaultImagePrefix(const std::string scene)
 }
 
 void
-AscentRuntime::CreateScenes(const conduit::Node &scenes)
+AscentRuntime::CreateScenes(const conduit::Node &scenes) // called by Execute
 {
 
   std::vector<std::string> names = scenes.child_names();
@@ -2239,7 +2253,7 @@ void AscentRuntime::SourceFieldFilter()
 
 
 //-----------------------------------------------------------------------------
-void AscentRuntime::PaintNestsets()
+void AscentRuntime::PaintNestsets() // called by Publish
 {
   std::vector<std::string> ghosts;
   std::map<std::string,std::string> topo_ghosts;
