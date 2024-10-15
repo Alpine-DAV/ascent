@@ -567,7 +567,6 @@ anari_version=0.10.0
 anari_src_dir=$(ospath ${source_dir}/ANARI-SDK-${anari_version})
 anari_build_dir=$(ospath ${build_dir}/anari-v${anari_version})
 anari_install_dir=$(ospath ${install_dir}/anari-v${anari_version}/)
-anari_cmake_dir=${anari_install_dir}lib64/cmake/anari/
 anari_tarball=$(ospath ${source_dir}/anari-v${anari_version}.tar.gz)
 
 # build only if install doesn't exist
@@ -639,8 +638,8 @@ if [[ "$enable_mpicc" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
-if [[ "$build_anari" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_build_anari=ON"
+if ${build_anari}; then
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_ANARI=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DANARI_DIR=$anari_install_dir}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${anari_install_dir}"
 fi
@@ -928,17 +927,17 @@ fi # build_catalyst
 # Ascent
 ################
 # if we are in an ascent checkout, use existing source
-ascent_checkout_dir=$(ospath ${script_dir}/../../src)
-ascent_checkout_dir=$(abs_path ${ascent_checkout_dir})
-echo ${ascent_checkout_dir}
-if [ -d ${ascent_checkout_dir} ]; then
-    ascent_version=checkout
-    ascent_src_dir=$(abs_path ${ascent_checkout_dir})
-    echo "**** Using existing Ascent source repo checkout: ${ascent_src_dir}"
-else
-    ascent_version=develop
-    ascent_src_dir=$(ospath ${source_dir}/ascent/src)
-fi
+#ascent_checkout_dir=$(ospath ${script_dir}/../../src)
+#ascent_checkout_dir=$(abs_path ${ascent_checkout_dir})
+#echo ${ascent_checkout_dir}
+#if [ -d ${ascent_checkout_dir} ]; then
+#    ascent_version=checkout
+#    ascent_src_dir=$(abs_path ${ascent_checkout_dir})
+#    echo "**** Using existing Ascent source repo checkout: ${ascent_src_dir}"
+#else
+ascent_version=develop_anari
+ascent_src_dir=$(ospath ${source_dir}/ascent/src)
+#fi
 
 # otherwise use ascent develop
 ascent_build_dir=$(ospath ${build_dir}/ascent-${ascent_version}/)
@@ -1013,8 +1012,9 @@ if ${build_catalyst}; then
     echo 'set(CATALYST_DIR ' ${catalyst_cmake_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
-if [[ "$build_anari" == "ON" ]]; then
-    echo 'set(ANARI_DIR ' ${anari_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+if ${build_anari}; then
+    echo 'set(ENABLE_ANARI ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(ANARI_DIR ' ${anari_install_dir}' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 if [[ "$enable_cuda" == "ON" ]]; then
