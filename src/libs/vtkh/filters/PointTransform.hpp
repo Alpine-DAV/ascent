@@ -19,16 +19,23 @@ public:
 
   void ResetTransform();
 
-  void SetTranslation(const double& tx, const double& ty, const double& tz);
-  void SetRotation(const double& angleDegrees, const vtkm::Vec<double, 3>& axis);
-  void SetScale(const double& sx, const double& sy, const double& sz);
+  void SetTranslation(const double& tx,
+                      const double& ty,
+                      const double& tz);
+  void SetRotation(const double& angleDegrees,
+                   const double& axisX,
+                   const double& axisY,
+                   const double& axisZ);
+  void SetScale(const double& sx,
+                const double& sy,
+                const double& sz);
+  void SetTransform(const double *matrix_values);
   void SetTransform(const vtkm::Matrix<double, 4, 4>& mtx);
 
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  std::string m_field_name;
   vtkm::Matrix<vtkm::Float64, 4,4> m_transform;
 };
 
