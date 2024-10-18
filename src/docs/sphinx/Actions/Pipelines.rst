@@ -108,9 +108,6 @@ In c++, the equivalent declarations would be as follows:
   filter["params/string_param"] = "string";
   filter["params/double_param"] = 2.0;
 
-Included Filters
-^^^^^^^^^^^^^^^^
-
 Contour
 ~~~~~~~
 The contour filter evaluates a node-centered scalar field for all points at a given iso-value.
