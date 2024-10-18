@@ -52,8 +52,11 @@ PointTransform::SetRotation(const double& angleDegrees,
 void
 PointTransform::SetTransform(const double *matrix_values)
 {
-  // TODO: row vs col vs matrix vs array, what is the best
+  // Note: row vs col vs matrix vs array, what is the best
   //       order for users to provide flat values to matrix?
+  //       This order is decent, was able to throw values in
+  //       from example matrices in the wild easily.
+
   m_transform[0][0] = matrix_values[0];
   m_transform[0][1] = matrix_values[1];
   m_transform[0][2] = matrix_values[2];
