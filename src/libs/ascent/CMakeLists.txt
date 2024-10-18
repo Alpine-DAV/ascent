@@ -43,6 +43,7 @@ set(ASCENT_DRAY_ENABLED   ${ENABLE_DRAY})
 
 set(ASCENT_VTKH_ENABLED   ${ENABLE_VTKH})
 set(ASCENT_VTKM_ENABLED   ${VTKM_FOUND})
+set(ASCENT_ANARI_ENABLED  ${ANARI_FOUND})
 set(ASCENT_HDF5_ENABLED   ${CONDUIT_RELAY_HDF5_ENABLED})
 set(ASCENT_MFEM_ENABLED   ${MFEM_FOUND})
 
@@ -70,17 +71,6 @@ if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_KOKKOS_ENABLED ${HIP_FOUND})
 endif()
 
-
-##########################################
-# Create imported target vtkm::anari
-##########################################
-set(ASCENT_ANARI_ENABLED ${ENABLE_ANARI})
-if(ENABLE_ANARI)
-    find_package(anari 0.8.0 REQUIRED)
-    if(NOT TARGET vtkm::anari)
-        message(FATAL_ERROR "vtkm::anari not found, check your VTK-m install")
-    endif()
-endif()
 
 # ASCENT_ZZZ_ENTIRES are derived vars.
 # We mark them as advanced b/c otherwise folks may see them
@@ -181,7 +171,6 @@ set(ascent_headers
     runtimes/flow_filters/ascent_runtime_steering_filters.hpp
     runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
     runtimes/flow_filters/ascent_runtime_utils.hpp
-    runtimes/flow_filters/ascent_runtime_diva_filters.hpp
     # utils
     utils/ascent_actions_utils.hpp
     utils/ascent_data_logger.hpp
@@ -248,7 +237,6 @@ set(ascent_sources
     runtimes/flow_filters/ascent_runtime_command_filters.cpp
     runtimes/flow_filters/ascent_runtime_steering_filters.cpp
     runtimes/flow_filters/ascent_runtime_utils.cpp
-    runtimes/flow_filters/ascent_runtime_diva_filters.cpp
     # utils
     utils/ascent_actions_utils.cpp
     utils/ascent_data_logger.cpp
@@ -351,10 +339,6 @@ if(FORTRAN_FOUND)
             DESTINATION include/ascent)
 endif()
 
-if(ENABLE_ANARI)
-    list(APPEND ascent_headers runtimes/flow_filters/ascent_runtime_anari_filters.hpp)
-    list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_anari_filters.cpp)
-endif()
 
 ################################
 # Add python wrappers if python
@@ -456,7 +440,7 @@ if(GENTEN_FOUND)
     list(APPEND ascent_thirdparty_libs genten)
 endif()
 
-if(ENABLE_ANARI)
+if(ANARI_FOUND)
     list(APPEND ascent_thirdparty_libs vtkm::anari)
 endif()
 
