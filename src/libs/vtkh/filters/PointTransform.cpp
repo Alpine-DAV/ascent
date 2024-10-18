@@ -75,7 +75,7 @@ PointTransform::SetTransform(const double *matrix_values)
   m_transform[3][0] = matrix_values[12];
   m_transform[3][1] = matrix_values[13];
   m_transform[3][2] = matrix_values[14];
-  m_transform[3][3] = matrix_values[16];
+  m_transform[3][3] = matrix_values[15];
 }
 
 
