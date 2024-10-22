@@ -140,6 +140,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHGradient>("transforms","gradient");
     AscentRuntime::register_filter_type<VTKHDivergence>("transforms","divergence");
     AscentRuntime::register_filter_type<VTKHVorticity>("transforms","vorticity");
+    AscentRuntime::register_filter_type<VTKHTransform>("transforms","transform");
     AscentRuntime::register_filter_type<VTKHScale>("transforms","scale");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
     AscentRuntime::register_filter_type<VTKHTriangulate>("transforms","triangulate");
