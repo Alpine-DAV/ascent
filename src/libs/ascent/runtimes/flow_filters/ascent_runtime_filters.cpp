@@ -57,6 +57,8 @@
    #include <ascent_runtime_genten_filters.hpp>
 #endif
 
+#include <ascent_runtime_diva_filters.hpp>
+#include <ascent_runtime_anari_filters.hpp>
 
 using namespace flow;
 
@@ -151,6 +153,11 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
     AscentRuntime::register_filter_type<VTKHMIR>("transforms","mir");
 
+#if defined(ASCENT_ANARI_ENABLED)
+    AscentRuntime::register_filter_type<AnariTriangles>("extracts", "anari_triangles");
+    AscentRuntime::register_filter_type<AnariGlyphs>("extracts", "anari_glyphs");
+    AscentRuntime::register_filter_type<AnariVolume>("extracts", "anari_volume");
+#endif
 
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume");
@@ -191,6 +198,7 @@ register_builtin()
     AscentRuntime::register_filter_type<AscentPythonScript>();
 #endif
 
+    AscentRuntime::register_filter_type<DivaFlatten>("extracts", "diva");
 }
 
 
