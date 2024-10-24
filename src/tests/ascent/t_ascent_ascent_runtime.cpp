@@ -269,3 +269,46 @@ TEST(ascent_pipeline, test_register_transform)
     EXPECT_TRUE(check_test_image(output_file));
 }
 
+TEST(ascent_pipeline, test_empty_pipeline_filter)
+{
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+
+    // Initialize a pipeline and then remove the filter. This is what we are testing and should cause an error.
+    conduit::Node pipelines;
+    pipelines["pl1/f1/type"] = "garbage";
+    pipelines.remove("pl1/f1");
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "pl";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+    // Save info
+    conduit::Node &save_info= actions.append();
+    save_info["action"] = "save_info";
+
+    bool error_message = false;
+
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch (conduit::Error e)
+    {
+        error_message = e.message().find("Pipeline pl1 empty")!=std::string::npos;
+    }
+
+    EXPECT_TRUE(error_message);
+}

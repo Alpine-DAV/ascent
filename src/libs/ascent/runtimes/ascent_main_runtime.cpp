@@ -848,6 +848,11 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
 
     const std::vector<std::string> &child_names = pipeline.child_names();
 
+    if(child_names.empty())
+    {
+      ASCENT_ERROR("Pipeline " << pipeline_name << " empty. Must specify a filter.");
+    }
+
     for(int i = 0; i < pipeline.number_of_children(); ++i)
     {
       const std::string cname = child_names[i];
