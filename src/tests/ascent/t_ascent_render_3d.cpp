@@ -3004,7 +3004,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing 3D rendering of camera frustum meshes");
+    ASCENT_INFO("Testing 3D rendering of camera frustum meshes\n");
 
     //
     // Create the actions.
@@ -3048,6 +3048,13 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
     add_plots["scenes/s1/renders/r4/camera/azimuth"] = 20.0;
     add_plots["scenes/s1/renders/r4/camera/elevation"] = -45.0;
 
+    // Test that if the look_at location and the position location are quite similar that the frustum 
+    // is still generated without errors.
+    add_plots["scenes/s1/renders/r5/image_prefix"] = 
+        conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_nan");
+    add_plots["scenes/s1/renders/r5/camera/position"] = {0.0, 0.0, 0.0581200011074543};
+    add_plots["scenes/s1/renders/r5/camera/look_at"] = {0.0, 0.0, 0.0};
+
     //
     // Run Ascent to generate images
     //
@@ -3065,7 +3072,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
     //
     // For each image that was generated, run ascent to visualize the camera frustum
     //
-    for (int image_index = 0; image_index<4; image_index++) {
+    for (int image_index = 0; image_index<5; image_index++) {
         conduit::Node &image_node = ascent_info["images"][image_index];
         conduit::Node camera_data = image_node["camera/camera_frustum_mesh"];
 
