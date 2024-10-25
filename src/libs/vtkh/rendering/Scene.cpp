@@ -1,6 +1,7 @@
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ANARIVolumeRenderer.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 
 #ifdef VTKH_PARALLEL
@@ -68,6 +69,10 @@ Scene::IsVolume(vtkh::Renderer *renderer)
   bool is_volume = false;
 
   if(dynamic_cast<vtkh::VolumeRenderer*>(renderer) != nullptr)
+  {
+    is_volume = true;
+  }
+  else if(dynamic_cast<vtkh::ANARIVolumeRenderer*>(renderer) != nullptr)
   {
     is_volume = true;
   }
