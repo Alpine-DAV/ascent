@@ -82,19 +82,8 @@ filter to extract the intersection of what remains from the threshold with a sph
   ascent.execute(actions);
   ascent.close();
 
-Ascent and VTK-h are under heavy development and features are being added rapidly.
-As we stand up the infrastructure necessary to support a wide variety filter we created the following filters for the alpha release:
 
-  - Contour
-  - Threshold
-  - Slice
-  - Three Slice
-  - Automatic Slice 
-  - Clip
-  - Clip by field
-  - Isovolume
-  - Vector magnitude
-
+Ascent is under active development and features are being added rapidly.
 In the following section we provide brief descriptions and code examples of the supported filters.
 For complete code examples, please consult the unit tests located in ``src/tests/ascent``..
 
@@ -103,16 +92,12 @@ Filters
 -------
 Our filter API consists of the type of filter and the parameters associated with the filter in the general form:
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "type"   : "filter_name",
-    "params":
-    {
-      "string_param" : "string",
-      "double_param" : 2.0
-    }
-  }
+  type: "filter_name"
+  params:
+      string_param: "string"
+      double_param: 2.0
 
 In c++, the equivalent declarations would be as follows:
 
@@ -122,9 +107,6 @@ In c++, the equivalent declarations would be as follows:
   filter["type"] = "filter_name";
   filter["params/string_param"] = "string";
   filter["params/double_param"] = 2.0;
-
-Included Filters
-^^^^^^^^^^^^^^^^
 
 Contour
 ~~~~~~~
@@ -606,6 +588,73 @@ values are removed from the data set.
     :align: center
 
     An example of creating a iso-volume of values between 5.0 and 10.0.
+
+Transform
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The transform filter allows you to scale, translate, and rotate your mesh.
+It also accepts a general 4x4 transformation matrix.
+
+Translate Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            translate:
+              x: 23.0
+              y: 15.0
+
+Scale Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            scale:
+              x: 2.0
+              y: 0.5
+              z: 2.0
+
+Rotate Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            rotate:
+              angle: 45.0
+              axis:
+                y: 1.0
+
+
+Matrix Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            matrix: [2.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 50.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
 
 Particle Advection
 ~~~~~~~~~~~~~~~~~~~~

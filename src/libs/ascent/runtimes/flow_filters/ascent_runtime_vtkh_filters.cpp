@@ -4549,6 +4549,332 @@ VTKHScale::execute()
     set_output<DataObject>(res);
 }
 
+
+//-----------------------------------------------------------------------------
+
+VTKHTransform::VTKHTransform()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHTransform::~VTKHTransform()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHTransform::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_transform";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHTransform::verify_params(const conduit::Node &params,
+                             conduit::Node &info)
+{
+    info.reset();
+
+/*
+    scale/x,y,z
+    translate/x,y,z
+    rotate/x,y,z
+    transform_matrix: float64 x 16
+*/
+
+    bool res = true;
+    
+    std::vector<std::string> modes = {"scale","translate","rotate","matrix"};
+
+    index_t mode_count = 0;
+    for( auto mode : modes)
+    {
+      if(params.has_child(mode))
+      {
+          mode_count++;
+      }
+    }
+
+    if(mode_count > 1)
+    {
+        info["errors"].append() = "transform only supports one of: scale, translate, rotate, or matrix";
+        res = false;
+    }
+
+    if(mode_count == 0)
+    {
+        info["errors"].append() = "transform requires parameters for: scale, translate, rotate, or matrix";
+        res = false;
+    }
+
+    if(params.has_child("scale"))
+    {
+       const Node &p_vals = params["scale"];
+       if( ! p_vals.has_child("x") &&
+           ! p_vals.has_child("y") &&
+           ! p_vals.has_child("z") )
+        {
+            res = false;
+            info["errors"].append()="scale transform requires: scale/x, scale/y, and/or scale/z";
+        }
+        res &= check_numeric("x", p_vals, info, false, true);
+        res &= check_numeric("y", p_vals, info, false, true);
+        res &= check_numeric("z", p_vals, info, false, true);
+    }
+
+    if(params.has_child("translate"))
+    {
+       const Node &p_vals = params["translate"];
+       if( ! p_vals.has_child("x") &&
+           ! p_vals.has_child("y") &&
+           ! p_vals.has_child("z") )
+        {
+            res = false;
+            info["errors"].append() = "translate transform requires: translate/x, translate/y, and/or translate/z";
+        }
+        res &= check_numeric("x", p_vals, info, false, true);
+        res &= check_numeric("y", p_vals, info, false, true);
+        res &= check_numeric("z", p_vals, info, false, true);
+    }
+
+    if(params.has_child("rotate"))
+    {
+        const Node &p_vals = params["rotate"];
+        bool rotate_ok = check_numeric("angle", p_vals, info, true, true);
+
+        if(p_vals.has_child("axis"))
+        {
+           const Node &p_axis = p_vals["axis"];
+           if( ! p_axis.has_child("x") &&
+               ! p_axis.has_child("y") &&
+               ! p_axis.has_child("z") )
+            {
+                rotate_ok  = false;
+            }
+
+           res &= check_numeric("x", p_axis, info, false, true);
+           res &= check_numeric("y", p_axis, info, false, true);
+           res &= check_numeric("z", p_axis, info, false, true);
+
+        }
+        else
+        {
+           rotate_ok = false;
+        }
+
+        if(!rotate_ok)
+        {
+            res = false;
+            info["errors"].append()="rotate transform requires: rotate/angle and rotate/axis/x, rotate/axis/y, and/or rotate/axis/z";
+        }
+    }
+
+    if(params.has_child("matrix"))
+    {
+        res &= check_numeric("matrix",params, info, true, true);
+        if(res)
+        {
+            // make sure it is 16 long
+            index_t matrix_len = params["matrix"].dtype().number_of_elements();
+            if(matrix_len != 16)
+            {
+                res = false;
+                info["errors"].append()="matrix must an array with 16 entries (representing a 4x4 transform matrix)";
+            }
+        }
+    }
+
+    std::vector<std::string> valid_paths = { "scale/x",
+                                             "scale/y",
+                                             "scale/z",
+                                             "translate/x",
+                                             "translate/y",
+                                             "translate/z",
+                                             "rotate/angle",
+                                             "rotate/axis/x",
+                                             "rotate/axis/y",
+                                             "rotate/axis/z",
+                                             "matrix"};
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHTransform::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_transform input must be a data object");
+    }
+
+    // grab the data collection and ask for a vtkh collection
+    // which is one vtkh data set per topology
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool use_scale     = false;
+    bool use_translate = false;
+    bool use_rotate    = false;
+    bool use_matrix    = false;
+
+    double t_scale[3]       = {1.0, 1.0, 1.0};
+    double t_translate[3]   = {0.0, 0.0, 0.0};
+    double t_rotate_angle   =  0.0;
+    double t_rotate_axis[3] = {0.0, 0.0, 0.0};
+    double t_matrix[16]     = {0.0, 0.0, 0.0, 0.0,
+                               0.0, 0.0, 0.0, 0.0,
+                               0.0, 0.0, 0.0, 0.0,
+                               0.0, 0.0, 0.0, 0.0};
+
+    if(params().has_child("scale"))
+    {
+        use_scale = true;
+        const Node &p_vals = params()["scale"];
+        if(p_vals.has_child("x"))
+        {
+            t_scale[0] = get_float64(p_vals["x"],data_object);
+        }
+
+        if(p_vals.has_child("y"))
+        {
+            t_scale[1] = get_float64(p_vals["y"],data_object);
+        }
+
+        if(p_vals.has_child("z"))
+        {
+            t_scale[2] = get_float64(p_vals["z"],data_object);
+        }
+    }
+
+    if(params().has_child("translate"))
+    {
+        use_translate = true;
+        const Node &p_vals = params()["translate"];
+        if(p_vals.has_child("x"))
+        {
+            t_translate[0] = get_float64(p_vals["x"],data_object);
+        }
+
+        if(p_vals.has_child("y"))
+        {
+            t_translate[1] = get_float64(p_vals["y"],data_object);
+        }
+
+        if(p_vals.has_child("z"))
+        {
+            t_translate[2] = get_float64(p_vals["z"],data_object);
+        }
+    }
+
+    if(params().has_child("rotate"))
+    {
+        use_rotate = true;
+        const Node &p_vals = params()["rotate"];
+
+        t_rotate_angle = get_float64(p_vals["angle"],data_object);
+
+        const Node &p_axis = p_vals["axis"];
+        if(p_axis.has_child("x"))
+        {
+            t_rotate_axis[0] = get_float64(p_axis["x"],data_object);
+        }
+
+        if(p_axis.has_child("y"))
+        {
+            t_rotate_axis[1] = get_float64(p_axis["y"],data_object);
+        }
+
+        if(p_axis.has_child("z"))
+        {
+            t_rotate_axis[2] = get_float64(p_axis["z"],data_object);
+        }
+    }
+
+    if(params().has_child("matrix"))
+    {
+        use_matrix = true;
+        // matrix
+        float64_accessor matrix_vals = params()["matrix"].value();
+        for(index_t i=0;i<16;i++)
+        {
+            t_matrix[i] = matrix_vals[i];
+        }
+    }
+
+    std::vector<std::string> topo_names = collection->topology_names();
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    for(auto &topo : topo_names)
+    {
+      vtkh::DataSet &data = collection->dataset_by_topology(topo);
+      vtkh::PointTransform transform;
+
+      if(use_scale)
+      {
+          transform.SetScale(t_scale[0],
+                             t_scale[1],
+                             t_scale[2]);
+      }
+
+      if(use_translate)
+      {
+          transform.SetTranslation(t_translate[0],
+                                   t_translate[1],
+                                   t_translate[2]);
+      }
+
+      if(use_rotate)
+      {
+          transform.SetRotation(t_rotate_angle,
+                                t_rotate_axis[0],
+                                t_rotate_axis[1],
+                                t_rotate_axis[2]);
+      }
+
+      if(use_matrix)
+      {
+          
+          transform.SetTransform(t_matrix);
+      }
+
+      transform.SetInput(&data);
+      transform.Update();
+      vtkh::DataSet *trans_output = transform.GetOutput();
+      new_coll->add(*trans_output, topo);
+      delete trans_output;
+    }
+
+    //// re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    set_output<DataObject>(res);
+}
+
 //-----------------------------------------------------------------------------
 
 VTKHParticleAdvection::VTKHParticleAdvection()
