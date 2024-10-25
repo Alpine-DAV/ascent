@@ -1915,9 +1915,6 @@ void generate_camera_meshes(conduit::Node &image_data){
   vtkm::Vec<vtkm::Float64,3> vtkm_look = vtkm_look_at - vtkm_position;
   vtkm::Normalize(vtkm_look);
 
-  // round off any floating point imprecision left over by the normalization. 
-  vtkm_look = vtkm::Round(vtkm_look / 0.000000001) * 0.000000001; 
-
   // Initializing and normalizing up vector
   float64_accessor up = camera["up"].value();
   vtkm::Vec<vtkm::Float64,3> vtkm_up(up[0], up[1], up[2]);
@@ -1925,8 +1922,8 @@ void generate_camera_meshes(conduit::Node &image_data){
   vtkm::Vec<vtkm::Float64,3> forward(0,0,-1);
   double angle_between = vtkm::ACos(vtkm::Dot(forward, vtkm_look)) / vtkm::Pi() * 180;
 
-  // If the look vector has been rotated by a certain angle, ajust the camera up vector to match
-  if (angle_between != 0.0) {
+  // If the look vector has been rotated by a certain angle, adjust the camera up vector to match
+  if (vtkm::Abs(angle_between) >= 0.001) {
     vtkm::Vec<vtkm::Float64,3> axisOfRotation = vtkm::Cross(vtkm_look, forward);
     vtkm_up = 
       vtkm::Transform3DVector(vtkm::Transform3DRotate(-angle_between, axisOfRotation), vtkm_up);
