@@ -52,6 +52,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_image_compare
                 t_ascent_pipelines_to_pipelines
                 t_ascent_threshold
+                t_ascent_transform
                 t_ascent_slice
                 t_ascent_scale
                 t_ascent_particle_advection

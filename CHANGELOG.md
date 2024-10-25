@@ -17,9 +17,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Added support for unstructured topologies with mixed elements types (for example, hexs and tets).
 - Added support for `pyramid` and `wedge` elements.
+- Added `sphere`, `cylinder`, `box`, and `plane` options to the slice filter.
 - Added a `topologies` option to the relay extract. This allows you to select which topologies are saved. This option can be used with the existing `fields` option, the result is the union of the selected topologies and fields.
 - Added `near_plane` and `far_plane` to the camera details provided in Ascent::info()
 - Added `add_mpi_ranks` and `add_domain_ids` filters for adding rank and domain fields to a mesh
+- Added `transform` filter, which allows you to rotate, scale, translate, mesh coordinates
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities. 

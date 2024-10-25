@@ -352,7 +352,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     std::vector<std::string> comments;
     for(int i = 0; i < num_comments; ++i)
     {
-      comments.push_back(comments_node.child(i).as_string());
+      comments.push_back(comments_node.child(i).to_yaml());
     }
     render.SetComments(comments);
   }
@@ -1383,7 +1383,7 @@ DefaultRender::execute()
         std::vector<std::string> comments;
         for(int i = 0; i < num_comments; ++i)
         {
-          comments.push_back(comments_node.child(i).as_string());
+          comments.push_back(comments_node.child(i).to_yaml());
         }
         render.SetComments(comments);
       }
