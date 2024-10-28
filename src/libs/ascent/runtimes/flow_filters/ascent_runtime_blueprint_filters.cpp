@@ -410,6 +410,10 @@ BlueprintPartition::execute()
       conduit::Node &selections = params()["selections"];
       n_options.append() = selections;
     }
+    if(params().has_child("fields"))
+    {
+      n_options["fields"] = params()["fields"];
+    }
     std::cerr << "PRINT OPTIONS: " << std::endl;
     n_options.print();
     
