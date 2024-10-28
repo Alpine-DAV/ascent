@@ -319,18 +319,42 @@ BlueprintPartition::verify_params(const conduit::Node &params,
     info.reset();
     bool res = true;
 
-    if(! params.has_child("target") ||
-       ! params["target"].dtype().is_int() )
+    res &= check_numeric("target",params, info, false, false);
+
+    if(params.has_child("selections"))
     {
-        info["errors"].append() = "Missing required int parameter 'target'";
+      res &= check_string("selections/type",params, info, true);
+      //domain_id can be int or "any"
+      res &= (check_string("selections/domain_id",params, info, false) || check_numeric("selections/domain_id", params, info, false, false));
+      res &= check_string("selections/topology",params, info, false);
     }
+
+    if(params.has_child("fields"))
+    {
+      if(!params["fields"].dtype().is_list())
+      {
+        res = false;
+        info["errors"].append() = "fields is not a list";
+      }
+    }
+
+    res &= check_numeric("mapping",params, info, false, false);
+    res &= check_numeric("merge_tolerance",params, info, false, false);
+    res &= check_numeric("build_adjsets",params, info, false, false);
+    res &= check_string("original_element_ids",params, info, false);
+    res &= check_string("original_vertex_ids",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("target");
-    valid_paths.push_back("selections");
+    valid_paths.push_back("selections/type");
+    valid_paths.push_back("selections/domain_id");
+    valid_paths.push_back("selections/topology");
     valid_paths.push_back("fields");
     valid_paths.push_back("mapping");
     valid_paths.push_back("merge_tolerance");
+    valid_paths.push_back("build_adjsets");
+    valid_paths.push_back("original_element_ids");
+    valid_paths.push_back("original_vertex_ids");
     valid_paths.push_back("distributed");
     
     std::string surprises = surprise_check(valid_paths, params);
@@ -361,6 +385,35 @@ BlueprintPartition::execute()
     
     conduit::Node n_options = params();
 
+    if(params().has_child("target"))
+    {
+      n_options["target"] = params()["target"].to_int32();
+    }
+    if(params().has_child("mapping"))
+    {
+      n_options["mapping"] = params()["mapping"].to_int32();
+    }
+    if(params().has_child("merge_tolerance"))
+    {
+      n_options["merge_tolerance"] = params()["merge_tolerance"].to_float64();
+    }
+    if(params().has_child("original_element_ids"))
+    {
+      n_options["original_element_ids"] = params()["original_element_ids"].to_string();
+    }
+    if(params().has_child("original_vertex_ids"))
+    {
+      n_options["original_vertex_ids"] = params()["original_vertex_ids"].to_string();
+    }
+    if(params().has_child("selections"))
+    {
+      conduit::Node &selections = params()["selections"];
+      n_options.append() = selections;
+    }
+    std::cerr << "PRINT OPTIONS: " << std::endl;
+    n_options.print();
+    
+
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     if(params().has_child("distributed") && 
@@ -372,6 +425,9 @@ BlueprintPartition::execute()
     }
     else
     {
+      std::cerr << "PRINT DATA START" << std::endl;
+      n_input->print();
+      std::cerr << "PRINT DATA END===========" << std::endl;
         conduit::blueprint::mpi::mesh::partition(*n_input,
                                                  n_options,
                                                  *n_output,
