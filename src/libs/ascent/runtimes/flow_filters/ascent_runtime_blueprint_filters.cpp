@@ -443,7 +443,7 @@ BlueprintPartition::execute()
     {
       n_output->append() = tmp;
     }
-    if(target != 1)
+    else 
     {
       n_output->move(tmp);
     }
