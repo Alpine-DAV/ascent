@@ -383,11 +383,13 @@ BlueprintPartition::execute()
 
     conduit::Node *n_output = new conduit::Node();
     
-    conduit::Node n_options = params();
+    conduit::Node n_options;
 
+    int target = 0;
     if(params().has_child("target"))
     {
-      n_options["target"] = params()["target"].to_int32();
+      target = params()["target"].to_int32();
+      n_options["target"] = target;
     }
     if(params().has_child("mapping"))
     {
@@ -414,10 +416,8 @@ BlueprintPartition::execute()
     {
       n_options["fields"] = params()["fields"];
     }
-    std::cerr << "PRINT OPTIONS: " << std::endl;
-    n_options.print();
-    
-
+  
+    conduit::Node tmp;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     if(params().has_child("distributed") && 
@@ -425,23 +425,28 @@ BlueprintPartition::execute()
     {
         conduit::blueprint::mesh::partition(*n_input,
                                             n_options,
-                                            *n_output);
+                                            tmp);
     }
     else
     {
-      std::cerr << "PRINT DATA START" << std::endl;
-      n_input->print();
-      std::cerr << "PRINT DATA END===========" << std::endl;
         conduit::blueprint::mpi::mesh::partition(*n_input,
                                                  n_options,
-                                                 *n_output,
+                                                 tmp,
                                                  mpi_comm);
     }
 #else
     conduit::blueprint::mesh::partition(*n_input,
                                         n_options,
-                                        *n_output);
+                                        tmp);
 #endif
+    if(target == 1)
+    {
+      n_output->append() = tmp;
+    }
+    if(target != 1)
+    {
+      n_output->move(tmp);
+    }
     DataObject *d_output = new DataObject(n_output);
     set_output<DataObject>(d_output);
 }
