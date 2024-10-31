@@ -1097,7 +1097,8 @@ Funtionality and further descriptions of optional parameters can be found in the
   pipelines["pl1/f1/type"] = "partition";
   //params optional
   pipelines["pl1/f1/params/target"] = 1;
-  pipelines["pl1/f1/params/fields"] = ["pink","pony","club"];
+  const char* fields[3] = {"pink", "pony", "club"};
+  pipelines["pl1/f1/params/fields"].set(fields,3);
   pipelines["pl1/f1/params/merge_tolerance"] = 0.000001;
   pipelines["pl1/f1/params/mapping"] = 0;//turns off; on by default
   pipelines["pl1/f1/params/build_adjsets"] = 1;
@@ -1300,8 +1301,10 @@ preserving the logical structure of the input topology into the output.
   pipelines["pl1/f1/type"] = "partition";
   //params optional
   pipelines["pl1/f1/params/selections/type"] = "logical";
-  pipelines["pl1/f1/params/selections/start"] = [0,0,0]; 
-  pipelines["pl1/f1/params/selections/end"] = [9,9,9]; 
+  const float start[3] = {0,0,0};
+  const float end[3] = {10,10,10};
+  pipelines["pl1/f1/params/selections/start"].set(start,3); 
+  pipelines["pl1/f1/params/selections/end"].set(end,3); 
 
 Explicit Selection
 ******************
@@ -1316,7 +1319,8 @@ The output will result in an explicit topology.
   pipelines["pl1/f1/type"] = "partition";
   //params optional
   pipelines["pl1/f1/params/selections/type"] = "explicit";
-  pipelines["pl1/f1/params/selections/elements"] = [0,1,2,3,100,101,102]; 
+  const int elements[6] = [0,1,2,3,100,101,102]; 
+  pipelines["pl1/f1/params/selections/elements"].set(elements,6); 
 
 
 Ranges Selection
@@ -1332,7 +1336,8 @@ ranges of elements using pairs of numbers. The list of ranges must be a multiple
   pipelines["pl1/f1/type"] = "partition";
   //params optional
   pipelines["pl1/f1/params/selections/type"] = "ranges";
-  pipelines["pl1/f1/params/selections/elements"] = [0,3,100,102]; 
+  const int elements[4] = [0,3,100,102]; 
+  pipelines["pl1/f1/params/selections/elements"].set(elements,4); 
 
 
 Field Selection
@@ -1362,7 +1367,7 @@ integer values to limit the set of domains over which the selection will be appl
 |                  | representing the MPI rank where the     |                                          |
 |                  | domain will be sent after partitioning. |    selections:                           |
 |                  | This option can help ensure domains for |       type: "field"                      |
-|                  | topologies partitioned via multiple     |       field: "albatroaz"                 |
+|                  | topologies partitioned via multiple     |       field: "albatraoz"                 |
 |                  | calls to partition() end up together on |       domain_id: "any"                   |
 |                  | a target MPI rank. The example shows    |       destination_ranks: [0,1,2,3]       |
 |                  | domain 0 going to MPI rank 0 and so on. |                                          |

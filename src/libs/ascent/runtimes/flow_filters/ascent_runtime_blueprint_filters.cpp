@@ -348,7 +348,12 @@ BlueprintPartition::verify_params(const conduit::Node &params,
     valid_paths.push_back("target");
     valid_paths.push_back("selections/type");
     valid_paths.push_back("selections/domain_id");
+    valid_paths.push_back("selections/field");
     valid_paths.push_back("selections/topology");
+    valid_paths.push_back("selections/start");
+    valid_paths.push_back("selections/end");
+    valid_paths.push_back("selections/elements");
+    valid_paths.push_back("selections/ranges");
     valid_paths.push_back("fields");
     valid_paths.push_back("mapping");
     valid_paths.push_back("merge_tolerance");
@@ -385,7 +390,7 @@ BlueprintPartition::execute()
     
     conduit::Node n_options;
 
-    int target = 0;
+    int target = 1;
     if(params().has_child("target"))
     {
       target = params()["target"].to_int32();
@@ -410,7 +415,7 @@ BlueprintPartition::execute()
     if(params().has_child("selections"))
     {
       conduit::Node &selections = params()["selections"];
-      n_options.append() = selections;
+      n_options["selections"].append() = selections;
     }
     if(params().has_child("fields"))
     {
