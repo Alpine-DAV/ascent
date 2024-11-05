@@ -80,6 +80,7 @@ anari_device_load()
     : std::getenv("VTKM_ANARI_LIBRARY")      ? std::getenv("VTKM_ANARI_LIBRARY") 
     : std::getenv("VTKM_TEST_ANARI_LIBRARY") ? std::getenv("VTKM_TEST_ANARI_LIBRARY") // fall back to the old environment variable
     : nullptr;
+  std::cout << "Library loaded: " << (libraryName ? libraryName : "helide") << std::endl;
   static bool verbose = std::getenv("VTKM_ANARI_VERBOSE") != nullptr;
   static bool debug = std::getenv("VTKM_ANARI_DEBUG_DEVICE") != nullptr;
   static char* trace_dir = std::getenv("VTKM_ANARI_DEBUG_TRACE_DIR");
@@ -87,20 +88,6 @@ anari_device_load()
   auto lib = anari_cpp::loadLibrary(libraryName ? libraryName : "helide", StatusFunc, &verbose);
   auto dev = anari_cpp::newDevice(lib, "default");
   anari_cpp::unloadLibrary(lib);
-
-  if (debug) {
-    auto g_debug = anari_cpp::loadLibrary("debug", StatusFunc, &verbose);
-    anari::Device dbg = anariNewDevice(g_debug, "debug");
-    anari::setParameter(dbg, dbg, "wrappedDevice", dev);
-    if (trace_dir) {
-      anari::setParameter(dbg, dbg, "traceDir", trace_dir);
-      anari::setParameter(dbg, dbg, "traceMode", "code");
-    }
-    anari::commitParameters(dbg, dbg);
-    anari::release(dev, dev);
-    dev = dbg;
-    anari_cpp::unloadLibrary(g_debug);
-  }
 
   return dev;
 }
@@ -184,9 +171,14 @@ struct RankOrder
 ANARIVolumeRenderer::ANARIVolumeRenderer()
 {
   std::cerr << "HERE" << std::endl;
-  if(!m_device) m_device = detail::anari_device_load();
-  if(!m_renderer) m_renderer = anari_cpp::newObject<anari_cpp::Renderer>(m_device,"default");
-  if(!m_frame) m_frame = anari_cpp::newObject<anari_cpp::Frame>(m_device);
+  if(!m_device) std::cerr <<" devide setup likely failed for some reason??? " << std::endl;
+  m_device = detail::anari_device_load();
+  if(!m_device) std::cerr <<" devide setup likely failed for some reason??? " << std::endl;
+  m_renderer = anari_cpp::newObject<anari_cpp::Renderer>(m_device,"default");
+  if(!m_renderer) std::cerr <<" renderer setup likely failed for some reason??? " << std::endl;
+  m_frame = anari_cpp::newObject<anari_cpp::Frame>(m_device);
+  if(!m_frame) std::cerr <<" frame setup likely failed for some reason??? " << std::endl;
+
   for (auto& light : m_lights)
   {
     anari_cpp::release(m_device, light);
@@ -194,6 +186,7 @@ ANARIVolumeRenderer::ANARIVolumeRenderer()
   m_lights.clear();
 
   // create default m_lights
+  std::cerr << "setting up lights" << std::endl;
   anari_cpp::Light sun = anari_cpp::newObject<anari_cpp::Light>(m_device, "directional");
   anari_cpp::setParameter(m_device, sun, "direction", vtkm::Vec3f_32(0.0f, -1.0f, 0.0f));
   anari_cpp::setParameter(m_device, sun, "irradiance", 2.f);
@@ -280,6 +273,7 @@ ANARIVolumeRenderer::DoExecute()
   //  }
   //}
 
+  std::cerr << "HERE DoExecute 1" << std::endl;
   // Build Scene
   vtkm::interop::anari::ANARIScene scene(m_device);
   for (int i = 0; i < m_input->GetNumberOfDomains(); ++i)
@@ -293,18 +287,25 @@ ANARIVolumeRenderer::DoExecute()
     });
     detail::set_tfn(mVol,m_device,m_color_table,m_range);
   }
+  std::cerr << "HERE DoExecute 2" << std::endl;
   int num_renders = static_cast<int>(m_renders.size());
+  std::cerr << "HERE DoExecute 3" << std::endl;
+  std::cerr << "num renders; " << num_renders << std::endl;
   for(int i = 0; i < num_renders; ++i)
   {
+    std::cerr << "render: " << i << std::endl;
+    std::cerr << "get camera stuff" << std::endl;
     vtkm::rendering::Camera cam = m_renders[i].GetCamera();
     vtkm::rendering::Canvas &canvas = m_renders[i].GetCanvas();
     vtkm::Vec4f_32 background = m_renders[i].GetBackgroundColor().Components;
     std::string img_name = m_renders[i].GetImageName();
     vtkm::Float32 height = m_renders[i].GetHeight();
     vtkm::Float32 width = m_renders[i].GetWidth();
+    std::cerr << "width and height: " << width << " " << height << std::endl;
     // Finalize
     //render(scene);
     // m_renderer parameters
+    std::cerr << "set anari parameters" << std::endl;
     anari_cpp::setParameter(m_device, m_renderer, "background", background);
     anari_cpp::setParameter(m_device, m_renderer, "pixelSamples", m_num_samples);
     anari_cpp::setParameter(m_device, m_renderer, "ambientRadiance", 0.8f);
@@ -313,6 +314,7 @@ ANARIVolumeRenderer::DoExecute()
     // TODO support all camera parameters
     //    -- missing parameters: xpan, ypan (through imageRegion)
     //
+    std::cerr << "more cam and anari parameters" << std::endl;
     const auto cam_zoom = cam.GetZoom();
     const auto cam_type = cam.GetMode() == vtkm::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
     const auto cam_dir = cam.GetLookAt() - cam.GetPosition();
@@ -329,6 +331,7 @@ ANARIVolumeRenderer::DoExecute()
     anari_cpp::setParameter(m_device, camera, "up", cam_up);
     anari_cpp::setParameter(m_device, camera, "near", cam_range.Min);
     anari_cpp::setParameter(m_device, camera, "far",  cam_range.Max);
+    std::cerr << "set cam type" << std::endl;
     if (cam_type == "perspective")
     {
       anari_cpp::setParameter(m_device, camera, "fov", cam.GetFieldOfView() / 180.0 * vtkm::Pi());
@@ -339,6 +342,7 @@ ANARIVolumeRenderer::DoExecute()
     }
     anari_cpp::commitParameters(m_device, camera);
 
+std::cerr << "anari world stuff" << std::endl;
     // commit world with lights
     auto world = scene.GetANARIWorld();
     anari_cpp::setAndReleaseParameter(m_device, world, "light", 
@@ -348,44 +352,77 @@ ANARIVolumeRenderer::DoExecute()
     // m_frame parameters
     vtkm::Vec2ui_32 img_size = vtkm::Vec2ui_32(width,height);
     anari_cpp::setParameter(m_device, m_frame, "size", img_size);
-    anari_cpp::setParameter(m_device, m_frame, "channel.color", ANARI_UFIXED8_VEC4);
+    //anari_cpp::setParameter(m_device, m_frame, "channel.color", ANARI_UFIXED8_VEC4);
+    anari_cpp::setParameter(m_device, m_frame, "channel.color", ANARI_FLOAT32_VEC4);
+    anari_cpp::setParameter(m_device, m_frame, "channel.depth", ANARI_FLOAT32);
     anari_cpp::setParameter(m_device, m_frame, "world", world);
     anari_cpp::setParameter(m_device, m_frame, "camera", camera);
     anari_cpp::setParameter(m_device, m_frame, "renderer", m_renderer);
     anari_cpp::commitParameters(m_device, m_frame);
 
+std::cerr <<" anari render" << std::endl;
     // render and wait for completion
     anari_cpp::render(m_device, m_frame);
+std::cerr <<" anari wait" << std::endl;
     anari_cpp::wait(m_device, m_frame);
 
-    const auto a_colors = anari_cpp::map<uint32_t>(m_device, m_frame, "channel.color");
-    const auto a_depths = anari_cpp::map<uint32_t>(m_device, m_frame, "channel.depth");
+std::cerr <<" anari colors and depth" << std::endl;
+    //const auto a_colors = anari_cpp::map<uint32_t>(m_device, m_frame, "channel.color");
+    const auto a_colors = anari_cpp::map<vtkm::Vec4f_32>(m_device, m_frame, "channel.color");
+    const auto a_depths = anari_cpp::map<vtkm::Float32>(m_device, m_frame, "channel.depth");
+
+    ascent::PNGEncoder encoder;
+//    encoder.Encode((unsigned char*)a_colors.data, a_colors.width, a_colors.height);
+    encoder.Encode((float *)a_colors.data, a_colors.width, a_colors.height);
+    encoder.Save("encoder_image.png");
     auto v_colors = canvas.GetColorBuffer().WritePortal();
     auto v_depths = canvas.GetDepthBuffer().WritePortal();
+    std::cerr << "v_clors size " << v_colors.GetNumberOfValues() << std::endl;
+    std::cerr << "v_depths size " << v_depths.GetNumberOfValues() << std::endl;
+    const float *d_pixels = anari::map<float>(m_device, m_frame, "channel.depth").data;
     int size = width*height;
+    std::cerr << "size: " << size << std::endl;
+    std::cerr << "try accessing d_pixels at 237815: " << d_pixels[237815] << std::endl;
+    std::cerr << "try accessing v_depths at 237879: " << v_depths.Get(237879) << std::endl;
+    std::cerr << "a_colors height and width: " << a_colors.width << " " << a_colors.height << std::endl;
+    std::cerr << "a_depths height and width: " << a_depths.width << " " << a_depths.height << std::endl;
     for(int pixel = 0; pixel < size; ++pixel)
     {
       int color_index = pixel*4;
+      std::cerr << "color index: " << color_index << std::endl;
       vtkm::Vec4f_32 color;
-      color[0] = a_colors.data[color_index];
-      color[1] = a_colors.data[color_index+1];
-      color[2] = a_colors.data[color_index+2];
-      color[3] = a_colors.data[color_index+3];
-      v_colors.Set(pixel,color);
-      v_depths.Set(pixel,a_depths.data[pixel]);
+      //color[0] = a_colors.data[color_index];
+      //color[1] = a_colors.data[color_index+1];
+      //color[2] = a_colors.data[color_index+2];
+      //color[3] = a_colors.data[color_index+3];
+      v_colors.Set(pixel,a_colors.data[pixel]);
+      //vtkm::rendering::Color color;
+      //color.SetComponentFromByte(0, a_colors.data[color_index]);
+      //color.SetComponentFromByte(1, a_colors.data[color_index + 1]);
+      //color.SetComponentFromByte(2, a_colors.data[color_index + 2]);
+      //color.SetComponentFromByte(3, a_colors.data[color_index + 3]);
+      //std::cerr << "get depth" << std::endl;
+      vtkm::Float32 d = d_pixels[pixel];
+      std::cerr << "set depth: " << d << " at pixel: " << pixel << std::endl;
+      //v_depths.Set(pixel,d);
+
     }
      
+     std::cerr <<" set canvas and unmap" << std::endl;
     m_mapper->SetCanvas(&canvas);
     anari_cpp::unmap(m_device, m_frame, "channel.color");
     anari_cpp::unmap(m_device, m_frame, "channel.depth");
 
     // release resources
+    std::cerr << "release resources" << std::endl;
     anari_cpp::release(m_device, camera);
   } 
+  std::cerr << "HERE DoExecute 4" << std::endl;
   if(m_do_composite)
   {
     this->Composite(num_renders);
   }
+  std::cerr << "HERE DoExecute 5" << std::endl;
 }
 
 
