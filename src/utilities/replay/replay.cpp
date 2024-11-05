@@ -227,9 +227,15 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
 
     if(actions_file_valid == 0)
     {
-        // Raise Error
-        ASCENT_ERROR("Failed to load actions file: " << file_name
-                     << "\n" << emsg);
+        // show on rank 0 and exit
+        if(rank == 0)
+        {
+          std::cout << "Failed to load actions file: "
+                    << file_name
+                    << "\n" << emsg
+                    << std::endl;
+        }
+        exit(-1);
     }
 #ifdef ASCENT_REPLAY_MPI
     conduit::relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
