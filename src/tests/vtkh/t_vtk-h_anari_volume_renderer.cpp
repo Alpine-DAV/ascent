@@ -27,7 +27,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
   vtkh::DataSet data_set;
 
   const int base_size = 32;
-  const int num_blocks = 2;
+  const int num_blocks = 1;
 
   for(int i = 0; i < num_blocks; ++i)
   {
@@ -110,7 +110,9 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
   vtkm::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, 0.01);
   color_map.AddPointAlpha(1.0, 0.6);
-
+  std::cerr << "input data in UNIT TEST START " << std::endl;
+  data_set.PrintSummary(std::cerr);
+  std::cerr << "input data in UNIT TEST END " << std::endl;
   vtkh::ANARIVolumeRenderer tracer;
   tracer.SetColorTable(color_map);
   tracer.SetInput(&data_set);

@@ -94,16 +94,33 @@ anari_device_load()
 
 void
 set_tfn(vtkm::interop::anari::ANARIMapper& mapper, 
-        anari_cpp::Device& device, 
-        vtkm::cont::ColorTable& color_table, 
+        anari_cpp::Device& device,
+        vtkm::cont::ColorTable& color_table,
         vtkm::Range& scalar_range)
 {
+  //auto colorArray = anari_cpp::newArray1D(device, ANARI_FLOAT32_VEC3, 3);
+  //auto* colors = anari_cpp::map<vtkm::Vec3f_32>(device, colorArray);
+  //colors[0] = vtkm::Vec3f_32(0.f, 0.f, 1.f);
+  //colors[1] = vtkm::Vec3f_32(0.f, 1.f, 0.f);
+  //colors[2] = vtkm::Vec3f_32(1.f, 0.f, 0.f);
+  //anari_cpp::unmap(device, colorArray);
+
+  //auto opacityArray = anari_cpp::newArray1D(device, ANARI_FLOAT32, 2);
+  //auto* opacities = anari_cpp::map<float>(device, opacityArray);
+  //opacities[0] = 0.f;
+  //opacities[1] = 1.f;
+  //anari_cpp::unmap(device, opacityArray);
+
+  //mapper.SetColorTable(color_table);
+  //mapper.SetANARIColorMap(colorArray, opacityArray, true);
+  //mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(0.f, 10.f));
+  //mapper.SetANARIColorMapOpacityScale(0.5f);
+
   constexpr int resolution = 256;
 
   constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
   vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
   {
-    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
     color_table.Sample(resolution, temp);
   }
   auto colorPortal = temp.ReadPortal();
@@ -202,8 +219,8 @@ ANARIVolumeRenderer::ANARIVolumeRenderer()
   ////
   //// add some default opacity to the color table
   ////
-  //m_color_table.AddPointAlpha(0.0f, .02);
-  //m_color_table.AddPointAlpha(.0f, .5);
+  m_color_table.AddPointAlpha(0.0f, .02);
+  m_color_table.AddPointAlpha(.0f, .5);
   m_num_samples = 100.f;
   //m_has_unstructured = false;
 }
@@ -276,8 +293,29 @@ ANARIVolumeRenderer::DoExecute()
   std::cerr << "HERE DoExecute 1" << std::endl;
   // Build Scene
   vtkm::interop::anari::ANARIScene scene(m_device);
+  std::cerr << "INPUT in ANARI: " << std::endl;
+  m_input->PrintSummary(std::cerr);
   for (int i = 0; i < m_input->GetNumberOfDomains(); ++i)
   {
+    //std::cerr << "CELLSET: " << std::endl;
+    //m_input->GetDomain(i).GetCellSet().PrintSummary(std::cerr);
+    //std::cerr << "COORDSET: " << std::endl;
+    //m_input->GetDomain(i).GetCoordinateSystem().PrintSummary(std::cerr);
+    //std::cerr << "FIELD: " << std::endl;
+    //m_input->GetDomain(i).GetField(m_field_name).PrintSummary(std::cerr);
+    if(m_input->IsUnstructured())
+    {
+      auto& mIso = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
+      mIso.SetName(("isosurface_" + std::to_string(i)).c_str());
+      mIso.SetActor({ 
+        m_input->GetDomain(i).GetCellSet(), 
+        m_input->GetDomain(i).GetCoordinateSystem(), 
+        m_input->GetDomain(i).GetField(m_field_name) 
+      });
+      mIso.SetCalculateNormals(true);
+      detail::set_tfn(mIso,m_device,m_color_table,m_range);
+    }
+
     auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(m_device));
     mVol.SetName(("volume_" + std::to_string(i)).c_str());
     mVol.SetActor({ 
@@ -301,11 +339,14 @@ ANARIVolumeRenderer::DoExecute()
     std::string img_name = m_renders[i].GetImageName();
     vtkm::Float32 height = m_renders[i].GetHeight();
     vtkm::Float32 width = m_renders[i].GetWidth();
+    std::cerr <<"m_field_name: " << m_field_name << std::endl;
+    std::cerr <<"img_name: " << img_name << std::endl;
     std::cerr << "width and height: " << width << " " << height << std::endl;
     // Finalize
     //render(scene);
     // m_renderer parameters
     std::cerr << "set anari parameters" << std::endl;
+    std::cerr << "m_num_samples"<< m_num_samples << std::endl;
     anari_cpp::setParameter(m_device, m_renderer, "background", background);
     anari_cpp::setParameter(m_device, m_renderer, "pixelSamples", m_num_samples);
     anari_cpp::setParameter(m_device, m_renderer, "ambientRadiance", 0.8f);
@@ -389,7 +430,7 @@ std::cerr <<" anari colors and depth" << std::endl;
     for(int pixel = 0; pixel < size; ++pixel)
     {
       int color_index = pixel*4;
-      std::cerr << "color index: " << color_index << std::endl;
+      //std::cerr << "color index: " << color_index << std::endl;
       vtkm::Vec4f_32 color;
       //color[0] = a_colors.data[color_index];
       //color[1] = a_colors.data[color_index+1];
@@ -403,8 +444,9 @@ std::cerr <<" anari colors and depth" << std::endl;
       //color.SetComponentFromByte(3, a_colors.data[color_index + 3]);
       //std::cerr << "get depth" << std::endl;
       vtkm::Float32 d = d_pixels[pixel];
-      std::cerr << "set depth: " << d << " at pixel: " << pixel << std::endl;
-      //v_depths.Set(pixel,d);
+      //if(d < 10000)
+      //  std::cerr << "set depth: " << d << " at pixel: " << pixel << std::endl;
+      v_depths.Set(pixel,d);
 
     }
      
