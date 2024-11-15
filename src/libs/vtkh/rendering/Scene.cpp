@@ -1,6 +1,7 @@
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ANARIVolumeRenderer.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
 
 #ifdef VTKH_PARALLEL
@@ -68,6 +69,10 @@ Scene::IsVolume(vtkh::Renderer *renderer)
   bool is_volume = false;
 
   if(dynamic_cast<vtkh::VolumeRenderer*>(renderer) != nullptr)
+  {
+    is_volume = true;
+  }
+  else if(dynamic_cast<vtkh::ANARIVolumeRenderer*>(renderer) != nullptr)
   {
     is_volume = true;
   }
@@ -244,6 +249,14 @@ Scene::Render()
 
     batch_start = batch_end;
   } // while
+std::cerr << "print ranges in SCENE" << std::endl;
+std::cerr << "num ranges: " << ranges.size() << std::endl;
+int num_r = ranges.size();
+for(int i = 0; i < num_r; i++)
+{
+  std::cerr <<"RANGE " << i <<  " min: " << ranges[i].Min << " max: " << ranges[i].Max << std::endl;
+
+}
 }
 
 void Scene::SynchDepths(std::vector<vtkh::Render> &renders)

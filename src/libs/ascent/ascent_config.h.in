@@ -54,6 +54,7 @@
 #cmakedefine ASCENT_RAJA_ENABLED      "@RAJA_FOUND@"
 
 #cmakedefine ASCENT_VTKM_ENABLED      "@VTKM_FOUND@"
+#cmakedefine ASCENT_ANARI_ENABLED     "@ANARI_FOUND@"
 
 #cmakedefine ASCENT_VTKM_OPENMP_ENABLED   "@OPENMP_FOUND@"
 #cmakedefine ASCENT_VTKM_CUDA_ENABLED     "@CUDA_FOUND@"
