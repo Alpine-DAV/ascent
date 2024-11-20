@@ -736,7 +736,7 @@ public:
   {
     conduit::Node render_copy = render_node;
 
-    // allow zoom to be ajusted
+    // allow zoom to be adjusted
     conduit::Node zoom;
     if(render_copy.has_path("camera/zoom"))
     {
@@ -774,6 +774,7 @@ public:
       }
 
       tmp.SetCamera(camera);
+
       renders->push_back(tmp);
     }
   }
