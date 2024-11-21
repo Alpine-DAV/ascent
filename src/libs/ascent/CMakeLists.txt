@@ -179,7 +179,6 @@ set(ascent_headers
     utils/ascent_resources.hpp
     utils/ascent_resources_cinema_web.hpp
     utils/ascent_resources_ascent_web.hpp
-    utils/ascent_annotations.hpp
     # hola
     hola/ascent_hola.hpp)
 
@@ -243,7 +242,6 @@ set(ascent_sources
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     utils/ascent_resources.cpp
-    utils/ascent_annotations.cpp
     # hola
     hola/ascent_hola.cpp)
 
@@ -371,7 +369,8 @@ set(ascent_thirdparty_libs
     conduit::conduit
     ascent_flow
     ascent_lodepng
-    ascent_png_utils)
+    ascent_png_utils
+    ascent_logging)
 
 ##################
 # optional libs

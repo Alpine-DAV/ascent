@@ -8,7 +8,6 @@
 ################################
 add_subdirectory(flow)
 
-
 # display info about optional features
 if(ENABLE_APCOMP)
     message(STATUS "Building APComp    (ENABLE_APCOMP=ON)")
@@ -29,9 +28,17 @@ else()
 endif()
 
 
+################################
 # ascent_png_utils object lib
 # shared for testing of all libs
+################################
 add_subdirectory(png_utils)
+
+################################
+# ascent_logging lib
+# shared logging for all libs
+################################
+add_subdirectory(logging)
 
 ################################
 # Add ap comp

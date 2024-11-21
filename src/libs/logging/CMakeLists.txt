@@ -1,0 +1,45 @@
+# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Ascent.
+
+set(ascent_logging_headers
+    ascent_logging.hpp
+    ascent_annotations.hpp
+    ascent_logging_exports.h
+  )
+
+set(ascent_logging_sources
+    ascent_logging.cpp
+    ascent_annotations.cpp
+  )
+
+
+set(ascent_logging_deps conduit::conduit)
+
+if(CALIPER_FOUND)
+    list(APPEND ascent_logging_deps caliper)
+endif()
+
+blt_add_library(NAME ascent_logging
+                SOURCES ${ascent_logging_sources}
+                HEADERS ${aascent_logging_headers}
+                DEPENDS_ON ${ascent_logging_deps})
+
+target_include_directories(ascent_logging PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/logging>)
+
+# extra defs and props
+target_compile_definitions(ascent_logging PUBLIC  ASCENT_LOGGING_ENABLE_CALIPER)
+target_compile_definitions(ascent_logging PRIVATE ASCENT_EXPORTS_FLAG)
+
+if(ENABLE_HIDDEN_VISIBILITY)
+    set_target_properties(ascent_logging PROPERTIES CXX_VISIBILITY_PRESET hidden)
+endif()
+
+install(FILES ${ascent_logging_headers} DESTINATION include/ascent/)
+
+install(TARGETS ascent_logging
+        EXPORT  ascent
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION lib
+        )
