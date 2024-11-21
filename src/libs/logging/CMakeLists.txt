@@ -4,12 +4,14 @@
 
 set(ascent_logging_headers
     ascent_logging.hpp
+    ascent_logging_timer.hpp
     ascent_annotations.hpp
     ascent_logging_exports.h
   )
 
 set(ascent_logging_sources
     ascent_logging.cpp
+    ascent_logging_timer.cpp
     ascent_annotations.cpp
   )
 

@@ -14,8 +14,10 @@
 
 #include <ascent_logging_exports.h>
 #include <ascent_annotations.hpp>
+#include <ascent_logging_timer.hpp>
 
 #include <string>
+#include <stack>
 #include <conduit.hpp>
 
 /*
@@ -38,28 +40,24 @@ ASCENT_LOG_FLUSH()
 //-----------------------------------------------------------------------------
 #define ASCENT_LOG_OPEN( ofname_pattern )                                      \
 {                                                                              \
-    ascent::Logger *lgr = ascent::Logger::activate_instance(ofname_pattern);   \
+    ascent::Logger::activate();                                                \
+    ascent::Logger *lgr = ascent::Logger::instance();                          \
     lgr->open(ofname_pattern);                                                 \
 }
 
 //-----------------------------------------------------------------------------
 #define ASCENT_LOG_OPEN_RANK( ofname_pattern , rank )                          \
 {                                                                              \
-    ascent::Logger *lgr = ascent::Logger::activate_instance(ofname_pattern);   \
+    ascent::Logger::activate();                                                \
+    ascent::Logger *lgr = ascent::Logger::instance();                          \
     lgr->set_rank(rank);                                                       \
     lgr->open(ofname_pattern);                                                 \
 }
 
 //-----------------------------------------------------------------------------
-#define ASCENT_LOG_ACTIVATE( ofname_pattern )                                  \
-{                                                                              \
-    Logger::activate_instance(ofname_pattern);                                 \
-}
-
-//-----------------------------------------------------------------------------
 #define ASCENT_LOG_DEBUG( msg )                                                \
 {                                                                              \
-    ascent::Logger *_ascent_lgr = Logger::active_instance();                   \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
     if(_ascent_lgr != nullptr)                                                 \
     {                                                                          \
         std::ostringstream _ascent_oss_info;                                   \
@@ -74,7 +72,7 @@ ASCENT_LOG_FLUSH()
 //-----------------------------------------------------------------------------
 #define ASCENT_LOG_INFO( msg )                                                 \
 {                                                                              \
-    ascent::Logger *_ascent_lgr = Logger::active_instance();                   \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
     if(_ascent_lgr != nullptr)                                                 \
     {                                                                          \
         std::ostringstream _ascent_oss_info;                                   \
@@ -89,7 +87,7 @@ ASCENT_LOG_FLUSH()
 //-----------------------------------------------------------------------------
 #define ASCENT_LOG_WARN( msg )                                                 \
 {                                                                              \
-    ascent::Logger *_ascent_lgr = Logger::active_instance();                   \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
     if(_ascent_lgr != nullptr)                                                 \
     {                                                                          \
         std::ostringstream _ascent_oss_info;                                   \
@@ -104,7 +102,7 @@ ASCENT_LOG_FLUSH()
 //-----------------------------------------------------------------------------
 #define ASCENT_LOG_ERROR( msg )                                                \
 {                                                                              \
-    ascent::Logger *_ascent_lgr = ascent::Logger::active_instance();           \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
     if(_ascent_lgr != nullptr)                                                 \
     {                                                                          \
         std::ostringstream _ascent_oss_info;                                   \
@@ -117,9 +115,9 @@ ASCENT_LOG_FLUSH()
 }// TODO EXCEPTION!
 
 //-----------------------------------------------------------------------------
-#define ASCENT_FLUSH ()                                                        \
+#define ASCENT_LOG_FLUSH()                                                     \
 {                                                                              \
-    ascent::Logger *_ascent_lgr = ascent::Logger::active_instance();           \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
     if(_ascent_lgr != nullptr)                                                 \
     {                                                                          \
         _ascent_lgr->flush();                                                  \
@@ -127,15 +125,26 @@ ASCENT_LOG_FLUSH()
 }
 
 //-----------------------------------------------------------------------------
-#define ASCENT_MARK_SCOPE( name ) ASCENT_ANNOTATE_MARK_SCOPE; ascent::Logger::Scope _ascent_lgr_scope(ascent::Logger::active_instance(), name );
+#define ASCENT_LOG_CLOSE()                                                     \
+{                                                                              \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
+    if(_ascent_lgr != nullptr)                                                 \
+    {                                                                          \
+        _ascent_lgr->close();                                                  \
+        ascent::Logger::deactivate();                                          \
+    }                                                                          \
+}
 
 //-----------------------------------------------------------------------------
-#define ASCENT_MARK_FUNCTION( name ) ASCENT_ANNOTATE_MARK_FUNCTION; ascent::Logger::Scope _ascent_lgr_func(ascent::Logger::active_instance(), std::string(__func__));
+#define ASCENT_MARK_SCOPE( name ) ASCENT_ANNOTATE_MARK_SCOPE; ascent::Logger::Scope _ascent_lgr_scope(ascent::Logger::instance(), name );
+
+//-----------------------------------------------------------------------------
+#define ASCENT_MARK_FUNCTION( name ) ASCENT_ANNOTATE_MARK_FUNCTION; ascent::Logger::Scope _ascent_lgr_func(ascent::Logger::instance(), std::string(__func__));
 
 //-----------------------------------------------------------------------------
 #define ASCENT_MARK_BEGIN( name ) ASCENT_ANNOTATE_MARK_BEGIN( name );          \
 {                                                                              \
-    ascent::Logger *_ascent_lgr = ascent::Logger::active_instance();           \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
     if(_ascent_lgr != nullptr)                                                 \
     {                                                                          \
         _ascent_lgr->log_block_begin(name);                                    \
@@ -145,7 +154,7 @@ ASCENT_LOG_FLUSH()
 //-----------------------------------------------------------------------------
 #define ASCENT_MARK_END( name ) ASCENT_ANNOTATE_MARK_END( name );              \
 {                                                                              \
-    ascent::Logger *_ascent_lgr = ascent::Logger::active_instance();           \
+    ascent::Logger *_ascent_lgr = ascent::Logger::instance();                  \
     if(_ascent_lgr != nullptr)                                                 \
     {                                                                          \
         _ascent_lgr->log_block_end(name);                                      \
@@ -186,10 +195,6 @@ public:
         std::string  m_name;
     };
 
-    //-------------------------------------------------------------------------
-    Logger();
-    ~Logger();
-
     //
     // "ascent_log_out.yaml"
     // "ascent_log_out_{rank}.yaml"
@@ -197,7 +202,7 @@ public:
     //
 
     void open(const std::string &ofile_pattern);
-
+    bool is_open();
     void close();
     void flush();
 
@@ -208,6 +213,7 @@ public:
 
     void log_message(int level,
                      const std::string &msg);
+
     void log_block_begin(const std::string &name);
     void log_block_end(const std::string &name);
 
@@ -217,37 +223,67 @@ public:
     int  indent_level() const;
     void set_indent_level(int level);
 
-    // any msgs >= level_threshold will be logged
-    void set_level_threshold(int level);
-    int  level_threshold() const;
+    // any msgs >= log_threshold will be logged
+    void set_log_threshold(int level);
+    int  log_threshold() const;
 
-    // any msgs >= echo_level_threshold will sent to std out as well as log
-    void set_echo_level_threshold(int level);
-    int  echo_level_threshold() const;
-
+    // any msgs >= echo_threshold will sent to std out as well as log
+    void set_echo_threshold(int level);
+    int  echo_threshold() const;
 
     std::ostream &stream();
 
-    static Logger *active_instance();
-    static Logger *activate_instance(const std::string &ofile_pattern);
+    static Logger *instance();
+    static void    activate();
+    static void    deactivate();
 
 private:
-    static const std::string &level_string(int level);
+    //-------------------------------------------------------------------------
+    Logger();
+    ~Logger();
 
-    void log_message_inner(const std::string &msg);
+    static const std::string &level_string(int level);
+    std::string timestamp();
+
+    void log_message(int level,
+                     const std::string &msg,
+                     const std::string &file,
+                     int line,
+                     std::ostream &os,
+                     bool detailed);
+
+    void log_message(int level,
+                     const std::string &msg,
+                     std::ostream &os,
+                     bool detailed);
+
+    void log_message_inner(const std::string &msg,
+                           std::ostream &os);
+
+    void log_block_begin(const std::string &name,
+                         std::ostream &os);
+    
+    void log_block_end(const std::string &name,
+                       std::ostream &os);
 
     std::ofstream m_ofstream;
 
-    int           m_indent_level;           // default =  0
+    int           m_indent_level;           // default = 0
     int           m_indent_spaces;          // default = 4
     int           m_rank;                   // default = -1
     int           m_level_threshold;        // default = INFO
     int           m_echo_level_threshold;   // default = LEGENDARY
 
     std::string   m_indent_string;          // current indent string
+    
+    // stack of timers
+    std::stack<Timer>                       m_timers;
+    // stack of block name counters
+    // used to make sure we have unique keys in our yaml output
+    std::stack<std::map<std::string,int>>   m_key_counters;
 
-    static Logger                       *m_active_logger; // default = nullptr
-    static std::map<std::string,Logger>  m_loggers;
+    static Logger                        m_instance;
+    static Logger                       *m_active_instance; // default = nullptr
     static std::vector<std::string>      m_level_strings;
 };
 

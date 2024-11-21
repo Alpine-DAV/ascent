@@ -31,8 +31,8 @@ using namespace conduit;
 namespace ascent
 {
 
-Logger                       *Logger::m_active_logger = nullptr;
-std::map<std::string,Logger>  Logger::m_loggers;
+Logger                        Logger::m_instance;
+Logger                       *Logger::m_active_instance = nullptr;
 std::vector<std::string>      Logger::m_level_strings = {"unset",
                                                          "debug",
                                                          "info",
@@ -60,14 +60,15 @@ Logger::Scope::~Scope()
     }
 }
 
-
 //-----------------------------------------------------------------------------
 Logger::Logger()
  : m_indent_level(0),
    m_rank(-1),
    m_level_threshold(INFO),
    m_echo_level_threshold(LEGENDARY)
-{}
+{
+    m_key_counters.push(std::map<std::string,int>());
+}
 
 //-----------------------------------------------------------------------------
 Logger::~Logger()
@@ -84,7 +85,7 @@ Logger::open(const std::string &ofpattern)
     if(rank() > -1)
     {
         ofname = conduit_fmt::format(ofpattern,
-                                    conduit_fmt::arg("rank",rank()));
+                                     conduit_fmt::arg("rank",rank()));
     }
     else
     {
@@ -99,6 +100,12 @@ Logger::open(const std::string &ofpattern)
     }
 }
 
+//-----------------------------------------------------------------------------
+bool
+Logger::is_open()
+{
+    return m_ofstream.is_open();
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -121,15 +128,37 @@ Logger::flush()
 void
 Logger::log_block_begin(const std::string &name)
 {
-    stream() << m_indent_string << name << ":\n";
+    // make sure we have a unique key name
+    
+    int key_count = m_key_counters.top()[name]++;
+    
+    stream() << m_indent_string <<"-\n";
     set_indent_level(indent_level()+1);
+
+    if(key_count == 0)
+    {
+        stream() << m_indent_string << name << ":\n";
+    }
+    else
+    {
+        stream() << m_indent_string << name << "_" << key_count <<":\n";
+    }
+    set_indent_level(indent_level()+1);
+    // add timer for new level
+    m_timers.push(Timer());
+    // add key counter for new level
+    m_key_counters.push(std::map<std::string,int>());
 }
 
 //-----------------------------------------------------------------------------
 void
 Logger::log_block_end(const std::string &name)
 {
-    set_indent_level(indent_level()-1);
+    stream() << m_indent_string <<"-\n";
+    stream() << m_indent_string << "  time_elapsed: " << m_timers.top().elapsed() << "\n";
+    set_indent_level(indent_level()-2);
+    m_key_counters.pop();
+    m_timers.pop();
 }
 
 //-----------------------------------------------------------------------------
@@ -139,6 +168,29 @@ Logger::log_message(int level,
                     const std::string &file,
                     int line)
 {
+    // log if equal or above logging threshold
+    if(level >= log_threshold())
+    {
+        log_message(level, msg, file, line, stream(), true);
+    }
+
+    // echo if equal or above echo threshold
+    if(level >= echo_threshold())
+    {
+        log_message(level, msg, file, line, std::cout, false);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Logger::log_message(int level,
+                    const std::string &msg,
+                    const std::string &file,
+                    int line,
+                    std::ostream &os,
+                    bool detailed)
+{
     /*
     {parent_indent}-
     {parent_indent}{indent}level:
@@ -146,11 +198,15 @@ Logger::log_message(int level,
     {parent_indent}{indent}line:
     ... msg txt
     */
-    stream() << m_indent_string <<"-\n";
-    stream() << m_indent_string << "  level: " << level_string(level) << "\n";
-    stream() << m_indent_string << "  file: "  << file  << "\n";
-    stream() << m_indent_string << "  line: "  << line  << "\n";
-    log_message_inner(msg);
+    os << m_indent_string <<"-\n";
+    os << m_indent_string << "  level: " << level_string(level) << "\n";
+    if(detailed)
+    {
+        os << m_indent_string << "  file: "  << file  << "\n";
+        os << m_indent_string << "  line: "  << line  << "\n";
+        os << m_indent_string << "  timestamp: \"" << timestamp()  << "\"\n";
+    }
+    log_message_inner(msg, os);
 }
 
 //-----------------------------------------------------------------------------
@@ -158,20 +214,45 @@ void
 Logger::log_message(int level,
                     const std::string &msg)
 {
+    // log if equal or above logging threshold
+    if(level >= log_threshold())
+    {
+        log_message(level, msg, stream(), true);
+    }
+
+    // echo if equal or above echo threshold
+    if(level >= echo_threshold())
+    {
+        log_message(level, msg, std::cout, false);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+Logger::log_message(int level,
+                    const std::string &msg,
+                    std::ostream &os,
+                    bool detailed)
+{
     /*
     {parent_indent}-
     {parent_indent}{indent}level:
     ... msg txt
     */
-    stream() << m_indent_string <<"-\n";
-    stream() << m_indent_string << "  level: " << level_string(level) << "\n";
-    log_message_inner(msg);
+    os << m_indent_string <<"-\n";
+    os << m_indent_string << "  level: " << level_string(level) << "\n";
+    if(detailed)
+    {
+        os << m_indent_string << "  timestamp: \"" << timestamp()  << "\"\n";
+    }
+    log_message_inner(msg, os);
 }
 
 
 //-----------------------------------------------------------------------------
 void
-Logger::log_message_inner(const std::string &msg)
+Logger::log_message_inner(const std::string &msg, 
+                          std::ostream &os)
 {
     /*
     {parent_indent}{indent}msg: |
@@ -179,12 +260,12 @@ Logger::log_message_inner(const std::string &msg)
     ...
     {parent_indent}{indent}{indent} msg line
     */
-    stream() << m_indent_string << "  msg: |\n";
+    os << m_indent_string << "  msg: |\n";
     std::istringstream input;
     input.str(msg);
     for (std::string line; std::getline(input, line);)
     {
-        stream() << m_indent_string << "    " << line << "\n";
+        os << m_indent_string << "    " << line << "\n";
     }
 }
 
@@ -212,28 +293,35 @@ Logger::rank() const
 
 //-----------------------------------------------------------------------------
 void
-Logger::set_level_threshold(int level)
+Logger::set_rank(int rank)
+{
+    m_rank = rank;
+}
+
+//-----------------------------------------------------------------------------
+void
+Logger::set_log_threshold(int level)
 {
     m_level_threshold = level;
 }
 
 //-----------------------------------------------------------------------------
 int
-Logger::level_threshold() const
+Logger::log_threshold() const
 {
     return m_level_threshold;
 }
 
 //-----------------------------------------------------------------------------
 void
-Logger::set_echo_level_threshold(int level)
+Logger::set_echo_threshold(int level)
 {
     m_echo_level_threshold = level;
 }
 
 //-----------------------------------------------------------------------------
 int
-Logger::echo_level_threshold() const
+Logger::echo_threshold() const
 {
     return m_echo_level_threshold;
 }
@@ -247,17 +335,23 @@ Logger::stream()
 
 //-----------------------------------------------------------------------------
 Logger *
-Logger::active_instance()
+Logger::instance()
 {
-    return m_active_logger;
+    return m_active_instance;
 }
 
 //-----------------------------------------------------------------------------
-Logger *
-Logger::activate_instance(const std::string &ofile_pattern)
+void 
+Logger::activate()
 {
-    m_active_logger = &m_loggers[ofile_pattern];
-    return m_active_logger;
+    m_active_instance = &m_instance;
+}
+
+//-----------------------------------------------------------------------------
+void 
+Logger::deactivate()
+{
+    m_active_instance = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -275,7 +369,16 @@ Logger::level_string(int level)
     return m_level_strings[level];
 }
 
-
+//-----------------------------------------------------------------------------
+std::string
+Logger::timestamp()
+{
+    std::time_t time = std::time(nullptr);
+    auto tm = *std::localtime(&time);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    return oss.str();
+}
 
 //-----------------------------------------------------------------------------
 };
