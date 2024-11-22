@@ -229,4 +229,5 @@ TEST(ascent_logging, basic_logging_error_bad_log_file)
         error_occured = true;
     }
     EXPECT_TRUE(error_occured);
+    ASCENT_LOG_CLOSE();
 }
