@@ -18,4 +18,4 @@ module use /soft/modulefiles
 module load spack-pe-gcc cmake
 module load oneapi/eng-compiler/2023.12.15.002
 
-env enable_sycl=ON enable_mpi=ON enable_fortran=ON raja_enable_vectorization=OFF enable_tests=ON enable_verbose=ON ./build_ascent_sycl.sh
+env CC=`which icx` CXX=`which icpx` FTN=`which ifx` enable_sycl=ON enable_mpi=ON enable_fortran=ON raja_enable_vectorization=OFF enable_tests=ON enable_verbose=ON ./build_ascent_sycl.sh

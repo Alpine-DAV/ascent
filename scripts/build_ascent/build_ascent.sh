@@ -71,6 +71,7 @@ if [[ "$enable_cuda" == "ON" ]]; then
     CUDA_ARCH_VTKM="${CUDA_ARCH_VTKM:=ampere}"
 fi
 
+# NOTE: this script only builds kokkos when enable_hip=ON or enable_cycl=ON
 if [[ "$enable_hip" == "ON" ]]; then
     echo "*** configuring with HIP support"
 
@@ -81,15 +82,9 @@ if [[ "$enable_hip" == "ON" ]]; then
     ROCM_ARCH="${ROCM_ARCH:=gfx90a}"
     ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
 
-    # NOTE: this script only builds kokkos when enable_hip=ON
     build_kokkos="${build_kokkos:=true}"
 elif [[ "$enable_sycl" == "ON" ]]; then
     echo "*** configuring with SYCL support"
-
-    CC=`which icx`
-    CXX=`which icpx`
-    FTN=`which ifx`
-
     build_kokkos="${build_kokkos:=true}"
 else
     build_kokkos="${build_kokkos:=false}"
