@@ -57,15 +57,16 @@ void myfunc()
 //-----------------------------------------------------------------------------
 TEST(ascent_logging, basic_logging)
 {
-
-    ASCENT_LOG_OPEN("tout_logging_log_1.yaml");
+    // remove file if it exists
+    std::string lfname = "tout_logging_log_1.yaml";
+    conduit::utils::remove_path_if_exists(lfname);
+    ASCENT_LOG_OPEN(lfname);
+    ASCENT_LOG_DEBUG("my debug!");
     ASCENT_LOG_INFO("my info!");
     ASCENT_LOG_WARN("my warning!");
-    ASCENT_LOG_ERROR("my error!");
     ASCENT_MARK_BEGIN("blocky");
         ASCENT_LOG_INFO("my info!");
         ASCENT_LOG_WARN("my warning!");
-        ASCENT_LOG_ERROR("my error!");
     ASCENT_MARK_END("blocky");
     myfunc();
 
@@ -79,7 +80,7 @@ TEST(ascent_logging, basic_logging)
     ASCENT_LOG_CLOSE();
 
     conduit::Node n;
-    n.load("tout_logging_log_1.yaml");
+    n.load(lfname);
     n.print();
     
 }
@@ -87,39 +88,145 @@ TEST(ascent_logging, basic_logging)
 //-----------------------------------------------------------------------------
 TEST(ascent_logging, basic_logging_echo)
 {
-
+    // remove file if it exists
+    std::string lfname = "tout_logging_log_2.yaml";
+    conduit::utils::remove_path_if_exists(lfname);
+    ascent::Logger::instance().set_echo_threshold(ascent::Logger::ALL);
     std::cout << "[echoed]" << std::endl;
-    ASCENT_LOG_OPEN("tout_logging_log_2.yaml");
-    ascent::Logger::instance()->set_echo_threshold(0);
+    ASCENT_LOG_OPEN(lfname);
+    ASCENT_LOG_DEBUG("my debug!");
     ASCENT_LOG_INFO("my info!");
     ASCENT_LOG_WARN("my warning!");
-    ASCENT_LOG_ERROR("my error!");
     ASCENT_LOG_CLOSE();
 
     std::cout << "[loaded]" << std::endl;
     conduit::Node n;
-    n.load("tout_logging_log_2.yaml");
+    n.load(lfname);
     n.print();
-    EXPECT_EQ(n.number_of_children(),3);
+    // we should have 2 msgs above debug
+    EXPECT_EQ(n.number_of_children(),2); 
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_logging, basic_logging_threshold)
 {
-
-    ASCENT_LOG_OPEN("tout_logging_log_3.yaml");
+    // remove file if it exists
+    std::string lfname = "tout_logging_log_3.yaml";
+    conduit::utils::remove_path_if_exists(lfname);
+    ASCENT_LOG_OPEN(lfname);
     ASCENT_LOG_INFO("my info!");
-    ascent::Logger::instance()->set_log_threshold(ascent::Logger::LEGENDARY);
+    ascent::Logger::instance().set_log_threshold(ascent::Logger::NONE);
     ASCENT_LOG_WARN("my warning!");
-    ASCENT_LOG_ERROR("my error!");
     ASCENT_LOG_CLOSE();
 
     std::cout << "[loaded]" << std::endl;
     conduit::Node n;
-    n.load("tout_logging_log_3.yaml");
+    n.load(lfname);
     n.print();
+    // we should have 1 msg above debug
     EXPECT_EQ(n.number_of_children(),1);
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_logging, basic_logging_error)
+{
+    bool error_occured = false;
+    try
+    {
+        ASCENT_LOG_ERROR("my error!");
+    }
+    catch (conduit::Error &error)
+    {
+        std::cout << error.what() << std::endl;
+        error_occured = true;
+    }
+    EXPECT_TRUE(error_occured);
+
+    // now check error inside log file
+    // remove file if it exists
+    std::string lfname = "tout_logging_log_4.yaml";
+    conduit::utils::remove_path_if_exists(lfname);
+    ASCENT_LOG_OPEN(lfname);
+
+    error_occured = false;
+    try
+    {
+        ASCENT_LOG_ERROR("my error!");
+    }
+    catch (conduit::Error &error)
+    {
+        std::cout << error.what() << std::endl;
+        error_occured = true;
+    }
+    EXPECT_TRUE(error_occured);
+
+    ASCENT_LOG_CLOSE();
+    std::cout << "[loaded]" << std::endl;
+    conduit::Node n;
+    n.load(lfname);
+    n.print();
+    // we should have 1 msg above debug
+    EXPECT_EQ(n.number_of_children(),1);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_logging, basic_logging_append)
+{
+    // remove file if it exists
+    std::string lfname = "tout_logging_log_5.yaml";
+    conduit::utils::remove_path_if_exists(lfname);
+    ascent::Logger::instance().set_log_threshold(ascent::Logger::ALL);
+    ASCENT_LOG_OPEN(lfname);
+    ASCENT_LOG_INFO("my debug 1!");
+    ASCENT_LOG_INFO("my info 1!");
+    ASCENT_LOG_WARN("my warning 1!");
+    ASCENT_LOG_CLOSE();
+
+    ascent::Logger::instance().set_log_threshold(ascent::Logger::ALL);
+    ASCENT_LOG_OPEN(lfname);
+    ASCENT_LOG_INFO("my debug 2!");
+    ASCENT_LOG_INFO("my info 2!");
+    ASCENT_LOG_WARN("my warning 2!");
+    ASCENT_LOG_CLOSE();
+
+    std::cout << "[loaded]" << std::endl;
+    conduit::Node n;
+    n.load(lfname);
+    n.print();
+    // we should have 5 * 2 (open, close, + 1 debug, + 1 info, + 1 warn)
+    EXPECT_EQ(n.number_of_children(),10);
+}
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_logging, basic_logging_error_bad_log_file)
+{
+    bool error_occured = false;
+    try
+    {
+        ASCENT_LOG_OPEN("/blargh/totally/bogus/des/path/to/log/file.yaml");
+    }
+    catch (conduit::Error &error)
+    {
+        std::cout << error.what() << std::endl;
+        error_occured = true;
+    }
+    EXPECT_TRUE(error_occured);
+    
+    // remove file if it exists
+    std::string lfname = "tout_logging_log_6.yaml";
+    conduit::utils::remove_path_if_exists(lfname);
+    error_occured =false;
+    try
+    {
+        // double open should throw an exception
+        ASCENT_LOG_OPEN(lfname);
+        ASCENT_LOG_OPEN(lfname);
+    }
+    catch (conduit::Error &error)
+    {
+        std::cout << error.what() << std::endl;
+        error_occured = true;
+    }
+    EXPECT_TRUE(error_occured);
+}

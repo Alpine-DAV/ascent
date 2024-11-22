@@ -31,41 +31,32 @@ using namespace conduit;
 namespace ascent
 {
 
+//-----------------------------------------------------------------------------
+// main logger instance
+//-----------------------------------------------------------------------------
 Logger                        Logger::m_instance;
-Logger                       *Logger::m_active_instance = nullptr;
-std::vector<std::string>      Logger::m_level_strings = {"unset",
-                                                         "debug",
-                                                         "info",
-                                                         "warn",
-                                                         "error",
-                                                         "legendary"};
 
 //-----------------------------------------------------------------------------
-Logger::Scope::Scope(Logger *lgr, const std::string &name)
+Logger::Scope::Scope(Logger &lgr, const std::string &name)
  : m_lgr(lgr),
    m_name(name)
 {
-    if(m_lgr != nullptr)
-    {
-        m_lgr->log_block_begin(m_name);
-    }
+    m_lgr.log_block_begin(m_name);
 }
 
 //-----------------------------------------------------------------------------
 Logger::Scope::~Scope()
 {
-    if(m_lgr != nullptr)
-    {
-        m_lgr->log_block_end(m_name);
-    }
+    m_lgr.log_block_end(m_name);
 }
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
- : m_indent_level(0),
+ : m_log_open(false),
+   m_indent_level(0),
    m_rank(-1),
-   m_level_threshold(INFO),
-   m_echo_level_threshold(LEGENDARY)
+   m_log_threshold(Logger::INFO),
+   m_echo_threshold(Logger::NONE)
 {
     m_key_counters.push(std::map<std::string,int>());
 }
@@ -78,70 +69,109 @@ Logger::~Logger()
 
 //-----------------------------------------------------------------------------
 void
+Logger::reset()
+{
+    m_indent_level = 0;
+    m_log_threshold  = Logger::INFO;
+    m_echo_threshold = Logger::NONE;
+    // reset our stacks
+    m_timers = std::stack<Timer>();
+    m_key_counters = std::stack<std::map<std::string,int>>();
+    m_key_counters.push(std::map<std::string,int>());
+}
+
+//-----------------------------------------------------------------------------
+void
 Logger::open(const std::string &ofpattern)
 {
+    if(is_log_open())
+    {
+        std::string emsg = conduit_fmt::format("[FATAL_ERROR] failed to open log with pattern: {}, logger already has {} open.",
+                                               ofpattern, m_log_fname);
+        throw conduit::Error(emsg,
+                             __FILE__,
+                             __LINE__);
+    }
+
     // multi node case, assumes file pattern includes "rank"
-    std::string ofname;
     if(rank() > -1)
     {
-        ofname = conduit_fmt::format(ofpattern,
-                                     conduit_fmt::arg("rank",rank()));
+        m_log_fname = conduit_fmt::format(ofpattern,
+                                          conduit_fmt::arg("rank",rank()));
     }
     else
     {
-        ofname = ofpattern;
+        m_log_fname = ofpattern;
     }
 
-    m_ofstream.open(ofname.c_str());
+    // open append (consequtive ascent open use cases)
+    m_log_stream.open(m_log_fname.c_str(),std::ios_base::app);
 
-    if(!m_ofstream.is_open())
+    if(!m_log_stream.is_open())
     {
-        std::cerr << "[ERROR] Failed to open log file: "  << ofname << std::endl;
+        throw conduit::Error(conduit_fmt::format("[FATAL_ERROR] Failed to open log file: {} ", m_log_fname),
+                             __FILE__,
+                             __LINE__);
     }
+    m_log_open = true;
+    log_message(Logger::DEBUG,conduit_fmt::format("opened log file: {}", m_log_fname));
 }
 
 //-----------------------------------------------------------------------------
 bool
-Logger::is_open()
+Logger::is_log_open()
 {
-    return m_ofstream.is_open();
+    return m_log_open;
 }
 
 //-----------------------------------------------------------------------------
 void
 Logger::close()
 {
-    if(m_ofstream.is_open())
+    if(is_log_open())
     {
-        m_ofstream.close();
+        log_message(Logger::DEBUG,conduit_fmt::format("closing log file: {}", m_log_fname));
+        m_log_stream.close();
+        m_log_open = false;
+        m_log_fname = "";
     }
+
+    reset();
 }
 
 //-----------------------------------------------------------------------------
 void
 Logger::flush()
 {
-    m_ofstream << std::flush;
+    if(is_log_open())
+    {
+        log_stream() << std::flush;
+    }
 }
 
 //-----------------------------------------------------------------------------
 void
 Logger::log_block_begin(const std::string &name)
 {
+    // skip if log is not open
+    if(!is_log_open())
+    {
+        return;
+    }
+
     // make sure we have a unique key name
-    
     int key_count = m_key_counters.top()[name]++;
     
-    stream() << m_indent_string <<"-\n";
+    log_stream() << m_indent_string <<"-\n";
     set_indent_level(indent_level()+1);
 
     if(key_count == 0)
     {
-        stream() << m_indent_string << name << ":\n";
+        log_stream() << m_indent_string << name << ":\n";
     }
     else
     {
-        stream() << m_indent_string << name << "_" << key_count <<":\n";
+        log_stream() << m_indent_string << name << "_" << key_count <<":\n";
     }
     set_indent_level(indent_level()+1);
     // add timer for new level
@@ -154,8 +184,14 @@ Logger::log_block_begin(const std::string &name)
 void
 Logger::log_block_end(const std::string &name)
 {
-    stream() << m_indent_string <<"-\n";
-    stream() << m_indent_string << "  time_elapsed: " << m_timers.top().elapsed() << "\n";
+    // skip if log is not open
+    if(!is_log_open())
+    {
+        return;
+    }
+
+    log_stream() << m_indent_string <<"-\n";
+    log_stream() << m_indent_string << "  time_elapsed: " << m_timers.top().elapsed() << "\n";
     set_indent_level(indent_level()-2);
     m_key_counters.pop();
     m_timers.pop();
@@ -168,16 +204,16 @@ Logger::log_message(int level,
                     const std::string &file,
                     int line)
 {
-    // log if equal or above logging threshold
-    if(level >= log_threshold())
-    {
-        log_message(level, msg, file, line, stream(), true);
-    }
-
     // echo if equal or above echo threshold
     if(level >= echo_threshold())
     {
         log_message(level, msg, file, line, std::cout, false);
+    }
+
+    // log if equal or above logging threshold
+    if(level >= log_threshold())
+    {
+        log_message(level, msg, file, line, log_stream(), true);
     }
 }
 
@@ -214,16 +250,16 @@ void
 Logger::log_message(int level,
                     const std::string &msg)
 {
-    // log if equal or above logging threshold
-    if(level >= log_threshold())
-    {
-        log_message(level, msg, stream(), true);
-    }
-
     // echo if equal or above echo threshold
     if(level >= echo_threshold())
     {
         log_message(level, msg, std::cout, false);
+    }
+
+    // log if equal or above logging threshold
+    if(level >= log_threshold())
+    {
+        log_message(level, msg, log_stream(), true);
     }
 }
 
@@ -302,71 +338,69 @@ Logger::set_rank(int rank)
 void
 Logger::set_log_threshold(int level)
 {
-    m_level_threshold = level;
+    m_log_threshold = level;
 }
 
 //-----------------------------------------------------------------------------
 int
 Logger::log_threshold() const
 {
-    return m_level_threshold;
+    return m_log_threshold;
 }
 
 //-----------------------------------------------------------------------------
 void
 Logger::set_echo_threshold(int level)
 {
-    m_echo_level_threshold = level;
+    m_echo_threshold = level;
 }
 
 //-----------------------------------------------------------------------------
 int
 Logger::echo_threshold() const
 {
-    return m_echo_level_threshold;
+    return m_echo_threshold;
 }
 
 //-----------------------------------------------------------------------------
 std::ostream &
-Logger::stream()
+Logger::log_stream()
 {
-    return m_ofstream;
+    return m_log_stream;
 }
 
 //-----------------------------------------------------------------------------
-Logger *
+Logger &
 Logger::instance()
 {
-    return m_active_instance;
+    return m_instance;
 }
 
 //-----------------------------------------------------------------------------
-void 
-Logger::activate()
-{
-    m_active_instance = &m_instance;
-}
-
-//-----------------------------------------------------------------------------
-void 
-Logger::deactivate()
-{
-    m_active_instance = nullptr;
-}
-
-//-----------------------------------------------------------------------------
-const std::string &
+std::string
 Logger::level_string(int level)
 {
-    if(level < Logger::UNKNOWN )
+    if(level < Logger::ALL )
     {
-        level = Logger::UNKNOWN;
+        level = Logger::ALL;
     }
-    else if(level > Logger::LEGENDARY)
+    else if(level < Logger::DEBUG)
     {
-        level = Logger::LEGENDARY;
+        level = Logger::DEBUG;
     }
-    return m_level_strings[level];
+    else if(level > Logger::ERROR)
+    {
+        level = Logger::NONE;
+    }
+    switch(level)
+    {
+        case Logger::ALL:   return "all";   break;
+        case Logger::DEBUG: return "debug"; break;
+        case Logger::INFO:  return "info";  break;
+        case Logger::WARN:  return "warn";  break;
+        case Logger::ERROR: return "error"; break;
+        case Logger::NONE:  return "none";  break;
+    }
 }
 
 //-----------------------------------------------------------------------------
