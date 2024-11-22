@@ -2,7 +2,9 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
+
 # gen config header
+set(ASCENT_LOGGING_ENABLE_CALIPER ${CALIPER_FOUND})
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_logging_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ascent_logging_config.h")
 
