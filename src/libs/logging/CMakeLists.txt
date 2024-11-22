@@ -2,7 +2,12 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
+# gen config header
+configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/ascent_logging_config.h.in"
+                "${CMAKE_CURRENT_BINARY_DIR}/ascent_logging_config.h")
+
 set(ascent_logging_headers
+    ${CMAKE_CURRENT_BINARY_DIR}/ascent_logging_config.h
     ascent_logging.hpp
     ascent_logging_timer.hpp
     ascent_annotations.hpp
@@ -27,10 +32,11 @@ blt_add_library(NAME ascent_logging
                 HEADERS ${aascent_logging_headers}
                 DEPENDS_ON ${ascent_logging_deps})
 
+# for generated config header
+target_include_directories(ascent_logging PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 target_include_directories(ascent_logging PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/logging>)
 
 # extra defs and props
-target_compile_definitions(ascent_logging PUBLIC  ASCENT_LOGGING_ENABLE_CALIPER)
 target_compile_definitions(ascent_logging PRIVATE ASCENT_EXPORTS_FLAG)
 
 if(ENABLE_HIDDEN_VISIBILITY)

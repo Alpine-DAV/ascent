@@ -13,6 +13,7 @@
 #define ASCENT_LOGGING_HPP
 
 #include <ascent_logging_exports.h>
+#include <ascent_logging_config.h>
 #include <ascent_annotations.hpp>
 #include <ascent_logging_timer.hpp>
 

@@ -15,6 +15,7 @@
 // -- ascent includes --
 //-----------------------------------------------------------------------------
 #include <ascent_logging_exports.h>
+#include <ascent_logging_config.h>
 #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
