@@ -171,7 +171,7 @@ set(ascent_headers
     # utils
     utils/ascent_actions_utils.hpp
     utils/ascent_data_logger.hpp
-    utils/ascent_logging.hpp
+    utils/ascent_logging_old.hpp
     utils/ascent_block_timer.hpp
     utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
@@ -237,7 +237,7 @@ set(ascent_sources
     utils/ascent_actions_utils.cpp
     utils/ascent_data_logger.cpp
     utils/ascent_block_timer.cpp
-    utils/ascent_logging.cpp
+    utils/ascent_logging_old.cpp
     utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp

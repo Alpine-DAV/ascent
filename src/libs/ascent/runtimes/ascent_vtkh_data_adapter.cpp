@@ -27,6 +27,9 @@
 #include <mpi.h>
 #endif
 
+#include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
+
 // VTKm includes
 #define VTKM_USE_DOUBLE_PRECISION
 #include <vtkm/cont/DataSet.h>

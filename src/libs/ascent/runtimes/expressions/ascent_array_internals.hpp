@@ -14,6 +14,7 @@
 #include "ascent_memory_manager.hpp"
 
 #include "ascent_logging.hpp"
+#include "ascent_logging_old.hpp"
 
 #if defined(ASCENT_UMPIRE_ENABLED)
 #include <umpire/Umpire.hpp>

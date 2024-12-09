@@ -235,7 +235,7 @@ Logger::log_message(int level,
     ... msg txt
     */
     os << m_indent_string <<"-\n";
-    os << m_indent_string << "  level: " << level_string(level) << "\n";
+    os << m_indent_string << "  level: " << level_id_to_string(level) << "\n";
     if(detailed)
     {
         os << m_indent_string << "  file: "  << file  << "\n";
@@ -276,7 +276,7 @@ Logger::log_message(int level,
     ... msg txt
     */
     os << m_indent_string <<"-\n";
-    os << m_indent_string << "  level: " << level_string(level) << "\n";
+    os << m_indent_string << "  level: " << level_id_to_string(level) << "\n";
     if(detailed)
     {
         os << m_indent_string << "  timestamp: \"" << timestamp()  << "\"\n";
@@ -342,6 +342,13 @@ Logger::set_log_threshold(int level)
 }
 
 //-----------------------------------------------------------------------------
+void
+Logger::set_log_threshold(const std::string &level_str)
+{
+    set_log_threshold(level_string_to_id(level_str));
+}
+
+//-----------------------------------------------------------------------------
 int
 Logger::log_threshold() const
 {
@@ -354,6 +361,14 @@ Logger::set_echo_threshold(int level)
 {
     m_echo_threshold = level;
 }
+
+//-----------------------------------------------------------------------------
+void
+Logger::set_echo_threshold(const std::string &level_str)
+{
+    set_echo_threshold(level_string_to_id(level_str));
+}
+
 
 //-----------------------------------------------------------------------------
 int
@@ -378,7 +393,7 @@ Logger::instance()
 
 //-----------------------------------------------------------------------------
 std::string
-Logger::level_string(int level)
+Logger::level_id_to_string(int level)
 {
     if(level < Logger::ALL )
     {
@@ -400,6 +415,42 @@ Logger::level_string(int level)
         case Logger::WARN:  return "warn";  break;
         case Logger::ERROR: return "error"; break;
         case Logger::NONE:  return "none";  break;
+    }
+}
+
+//-----------------------------------------------------------------------------
+int
+Logger::level_string_to_id(const std::string &level_str)
+{
+    // strip, lower?
+    if(level_str == "all" )
+    {
+        return Logger::ALL;
+    }
+    else if(level_str == "debug" )
+    {
+        return Logger::DEBUG;
+    }
+    else if(level_str == "info" )
+    {
+        return Logger::INFO;
+    }
+    else if(level_str == "warn" )
+    {
+        return Logger::WARN;
+    }
+    else if(level_str == "error" )
+    {
+        return Logger::ERROR;
+    }
+    else if(level_str == "none" )
+    {
+        return Logger::NONE;
+    }
+    else
+    {
+        // Unknown, default to all.
+        return Logger::ALL;
     }
 }
 

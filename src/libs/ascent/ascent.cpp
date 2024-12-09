@@ -17,6 +17,8 @@
 
 #include <ascent_empty_runtime.hpp>
 #include <ascent_flow_runtime.hpp>
+#include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 #include <runtimes/ascent_main_runtime.hpp>
 #include <utils/ascent_string_utils.hpp>
 #include <flow.hpp>
@@ -37,12 +39,48 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
+namespace detail
+{
+
+//-----------------------------------------------------------------------------
+int
+ParRank(int comm_id)
+{
+    int rank = 0;
+
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    return rank;
+}
+
+//-----------------------------------------------------------------------------
+int
+ParSize(int comm_id)
+{
+int comm_size=1;
+
+#if defined(ASCENT_MPI_ENABLED)
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+    MPI_Comm_size(mpi_comm, &comm_size);
+#endif
+
+    return comm_size;
+}
+
+//-----------------------------------------------------------------------------
 void
 quiet_handler(const std::string &,
               const std::string &,
               int )
 {
 }
+
+}
+
+
 
 //-----------------------------------------------------------------------------
 Ascent::Ascent()
@@ -187,6 +225,9 @@ Ascent::open(const conduit::Node &options)
           comm_id = options["mpi_comm"].to_int32();
         }
 
+        int par_rank = detail::ParRank(comm_id);
+        int par_size = detail::ParSize(comm_id);
+
         CheckForSettingsFile(opts_file,
                              processed_opts,
                              true,
@@ -201,20 +242,114 @@ Ascent::open(const conduit::Node &options)
           m_options["mpi_comm"] = options["mpi_comm"];
         }
 
-        if(m_options.has_path("messages") &&
-           m_options["messages"].dtype().is_string() )
+        Node echo_opts;
+        echo_opts["echo_threshold"] = "info";
+        echo_opts["ranks"] = "root";
+
+        // messages echoed to std out
+        if(m_options.has_path("messages"))
         {
-            std::string msgs_opt = m_options["messages"].as_string();
-            if( msgs_opt == "verbose")
+            if(m_options["messages"].dtype().is_string())
             {
-                m_verbose_msgs = true;
+                std::string msgs_opt = m_options["messages"].as_string();
+                if( msgs_opt == "verbose")
+                {
+                    m_verbose_msgs = true;
+                    echo_opts["echo_threshold"] = "all";
+                }
+                else if(msgs_opt == "quiet")
+                {
+                    m_verbose_msgs = false;
+                    echo_opts["echo_threshold"] = "error";
+                }
             }
-            else if(msgs_opt == "quiet")
+            else if(m_options["messages"].dtype().is_object())
             {
-                m_verbose_msgs = false;
+                const Node &msg_ops = m_options["messages"];
+                echo_opts.update(msg_ops);
+                if(msg_ops.has_child("echo_threshold") &&
+                   msg_ops["echo_threshold"].dtype().is_string() ) 
+                {
+                    std::string echo_thresh = msg_ops["echo_threshold"].as_string();
+                    if(echo_thresh == "none" || 
+                       echo_thresh == "error" ||
+                       echo_thresh == "warn" )
+                    {
+                        m_verbose_msgs = false;
+                    }
+                    else
+                    {
+                        m_verbose_msgs = true;
+                    }
+                }
+            }
+        }
+        
+        ascent::Logger &logger = ascent::Logger::instance();
+
+        // setup echo
+        logger.set_echo_threshold(echo_opts["echo_threshold"].as_string());
+
+        // control for mpi case
+        // if ranks == "root"
+        //   rank 0 is what is specified, echo_threshold = "none" for all others
+        // if ranks == "all"
+        //   echo_threshold = specified option used for all ranks (alreay handled above)
+        std::string log_ranks_str = echo_opts["ranks"].as_string();
+
+        if(log_ranks_str == "root")
+        {
+            if(par_rank != 0)
+            {
+                logger.set_echo_threshold(ascent::Logger::NONE);
             }
         }
 
+        // logging options
+        //
+        //   logging: true
+        //
+        //   logging:
+        //      file_pattern: zzzz
+        //      log_threshold:  info
+        //
+
+        Node logging_opts;
+        logging_opts["enabled"] = 0;
+#if defined(ASCENT_MPI_ENABLED)
+        logging_opts["file_pattern"]  = "ascent_log_output.yaml";
+#else
+        logging_opts["file_pattern"]  = "ascent_log_output_rank{rank:05d}.yaml";
+#endif
+        logging_opts["log_threshold"] = "info";
+
+        if(m_options.has_path("logging"))
+        {
+            if(m_options["logging"].dtype().is_string() &&
+               m_options["logging"].as_string() == "true")
+            {
+                logging_opts["enabled"] = 1;
+            }
+            else if(m_options["logging"].dtype().is_object())
+            {
+                logging_opts["enabled"] = 1;
+                // pull over options
+                logging_opts.update(m_options["logging"]);
+            }
+        }
+
+        if(logging_opts["enabled"].to_int() == 1)
+        {
+            std::string file_pattern = logging_opts["file_pattern"].as_string();
+        #if defined(ASCENT_MPI_ENABLED)
+            ASCENT_LOG_OPEN( file_pattern ) // serial    
+        #else
+            ASCENT_LOG_OPEN_RANK( file_pattern, par_rank ) // mpi par
+        #endif      
+        }
+
+
+        // exception controls
         if(m_options.has_path("exceptions") &&
            m_options["exceptions"].dtype().is_string() )
         {
@@ -300,7 +435,7 @@ Ascent::open(const conduit::Node &options)
         // make sure to do this after.
         if(!m_verbose_msgs)
         {
-            conduit::utils::set_info_handler(quiet_handler);
+            conduit::utils::set_info_handler(detail::quiet_handler);
         }
 
         set_status("Ascent::open completed");

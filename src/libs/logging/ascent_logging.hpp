@@ -202,10 +202,12 @@ public:
 
     // any msgs >= log_threshold will be logged
     void set_log_threshold(int level);
+    void set_log_threshold(const std::string &level_str);
     int  log_threshold() const;
 
     // any msgs >= echo_threshold will sent to std out as well as log
     void set_echo_threshold(int level);
+    void set_echo_threshold(const std::string &level_str);
     int  echo_threshold() const;
 
     std::ostream &log_stream();
@@ -221,7 +223,8 @@ private:
     // ------------------------------------------------------------------------
     // helpers
     // ------------------------------------------------------------------------
-    static std::string level_string(int level);
+    static std::string level_id_to_string(int level);
+    static int         level_string_to_id(const std::string &level_str);
     static std::string timestamp();
 
     void log_message(int level,
