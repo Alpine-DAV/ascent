@@ -78,7 +78,6 @@ if [[ "$enable_hip" == "ON" ]]; then
     CC="${CC:=/opt/rocm/llvm/bin/amdclang}"
     CXX="${CXX:=/opt/rocm/llvm/bin/amdclang++}"
     # FTN?
-
     ROCM_ARCH="${ROCM_ARCH:=gfx90a}"
     ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
 
@@ -514,10 +513,10 @@ else
   echo "**** Skipping Conduit build, install found at: ${conduit_install_dir}"
 fi # build_conduit
 
-#########################
-# Kokkos (only for hip)
-#########################
-kokkos_version=3.7.02
+###############################
+# Kokkos (only for hip or sycl)
+###############################
+kokkos_version=4.4.1
 kokkos_src_dir=$(ospath ${source_dir}/kokkos-${kokkos_version})
 kokkos_build_dir=$(ospath ${build_dir}/kokkos-${kokkos_version})
 kokkos_install_dir=$(ospath ${install_dir}/kokkos-${kokkos_version}/)
@@ -537,9 +536,28 @@ kokkos_extra_cmake_args=""
 if [[ "$enable_hip" == "ON" ]]; then
   kokkos_extra_cmake_args="-DKokkos_ENABLE_HIP=ON"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE=OFF"
-  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_VEGA90A=ON"
-  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_FLAGS=--amdgpu-target=${ROCM_ARCH}"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
+  ##
+  ## build_ascent specific ROCM_ARCH Map for Kokkos options:
+  ##
+  ## TODO: Kokkos 4.5 has MI300A specific option, need to figure out how to
+  ##       map hat in when we update.
+  ##
+  ## gfx942 --> Kokkos_ARCH_AMD_GFX942 (MI300A, MI300X) 
+  ## (since Kokkos 4.2, since Kokkos 4.5 this should only be used for MI300X)
+  ##
+  ## gfx90a --> Kokkos_ARCH_AMD_GFX90A (MI200 series)
+  ## (since Kokkos 4.2)
+  ##
+  if [[ "$ROCM_ARCH" == "gfx942" ]]; then
+      kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX942=ON"
+  fi
+  
+  if [[ "$ROCM_ARCH" == "gfx90a" ]]; then
+      kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX90A=ON"
+  fi
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
@@ -549,8 +567,6 @@ if [[ "$enable_sycl" == "ON" ]]; then
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
 fi
-
-# TODO: DKokkos_ARCH_VEGA90A needs to be controlled / mapped?
 
 echo "**** Configuring Kokkos ${kokkos_version}"
 cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
