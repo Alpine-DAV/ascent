@@ -317,11 +317,11 @@ Ascent::open(const conduit::Node &options)
         Node logging_opts;
         logging_opts["enabled"] = 0;
 #if defined(ASCENT_MPI_ENABLED)
-        logging_opts["file_pattern"]  = "ascent_log_output.yaml";
+        logging_opts["file_pattern"]  = "ascent_log_output_rank_{rank:05d}.yaml";
 #else
-        logging_opts["file_pattern"]  = "ascent_log_output_rank{rank:05d}.yaml";
+        logging_opts["file_pattern"]  = "ascent_log_output.yaml";
 #endif
-        logging_opts["log_threshold"] = "info";
+        logging_opts["log_threshold"] = "debug";
 
         if(m_options.has_path("logging"))
         {
@@ -345,7 +345,8 @@ Ascent::open(const conduit::Node &options)
             ASCENT_LOG_OPEN( file_pattern ) // serial    
         #else
             ASCENT_LOG_OPEN_RANK( file_pattern, par_rank ) // mpi par
-        #endif      
+        #endif
+            logger.set_log_threshold(logging_opts["log_threshold"].as_string());
         }
 
 
@@ -684,6 +685,7 @@ Ascent::close()
         }
 
          set_status("Ascent::close completed");
+         ASCENT_LOG_CLOSE();
     }
     catch(conduit::Error &e)
     {
@@ -709,6 +711,7 @@ Ascent::close()
                         << e.message() << std::endl;
             }
         }
+        ASCENT_LOG_CLOSE();
     }
 }
 
@@ -720,6 +723,7 @@ Ascent::set_status(const std::string &msg)
     std::ostringstream oss;
     oss << msg << " at " << timestamp();
     m_status["message"] = oss.str();
+    ASCENT_LOG_DEBUG(msg);
 }
 
 //---------------------------------------------------------------------------//
@@ -732,6 +736,7 @@ Ascent::set_status(const std::string &msg,
     oss << msg << " at " << timestamp();
     m_status["message"] = oss.str();
     m_status["details"] = details;
+    ASCENT_LOG_DEBUG(msg + " " + details);
 }
 
 //---------------------------------------------------------------------------//
