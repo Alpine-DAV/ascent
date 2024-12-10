@@ -568,6 +568,8 @@ if [[ "$enable_sycl" == "ON" ]]; then
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
 fi
 
+echo "HERE: $kokkos_extra_cmake_args"
+
 echo "**** Configuring Kokkos ${kokkos_version}"
 cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
