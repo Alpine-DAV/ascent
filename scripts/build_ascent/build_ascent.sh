@@ -633,7 +633,7 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-  vtkm_extra_cmake_args="-DVTKm_ENABLE_KOKKOS=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
 fi
@@ -657,7 +657,7 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DVTKm_ENABLE_RENDERING=ON \
   -DVTKm_ENABLE_TESTING=OFF\
   -DBUILD_TESTING=OFF \
-  -DVTKm_ENABLE_BENCHMARKS=OFF "${vtkm_extra_cmake_args}" \
+  -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
 
 echo "**** Building VTK-m ${vtkm_version}"
