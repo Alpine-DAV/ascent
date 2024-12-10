@@ -539,6 +539,8 @@ if [[ "$enable_hip" == "ON" ]]; then
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_ROCTHRUST=OFF"
+  
   ##
   ## build_ascent specific ROCM_ARCH Map for Kokkos options:
   ##
@@ -629,6 +631,7 @@ if [[ "$enable_hip" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DAMDGPU_TARGETS=${ROCM_ARCH}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
 fi
 
@@ -637,6 +640,7 @@ if [[ "$enable_sycl" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
   vtkm_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
 fi
+
 
 if [[ "$enable_mpicc" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
@@ -648,7 +652,6 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DVTKm_NO_DEPRECATED_VIRTUAL=ON \
   -DVTKm_USE_64BIT_IDS=OFF \
   -DVTKm_USE_DOUBLE_PRECISION=ON \
   -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
@@ -998,7 +1001,6 @@ fi
 if ${build_caliper}; then
   echo 'set(CALIPER_DIR ' ${caliper_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
-echo 'set(BLT_CXX_STD c++14 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(VTKM_DIR ' ${vtkm_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CAMP_DIR ' ${camp_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
@@ -1021,6 +1023,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
     echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
