@@ -577,7 +577,7 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DKokkos_ENABLE_SERIAL=ON \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
-  -DBUILD_TESTING=OFF "${kokkos_extra_cmake_args}" \
+  -DBUILD_TESTING=OFF ${kokkos_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir}
 
 echo "**** Building Kokkos ${kokkos_version}"
