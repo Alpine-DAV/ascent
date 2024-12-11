@@ -8,7 +8,7 @@ jobs:
   build_cuda:
     name: Build Ascent HIP
     runs-on: ubuntu-latest
-    container: alpinedav/ascent-devel:ubuntu-20.04-rocm-6.3.0-devel
+    container: alpinedav/ascent-devel:ubuntu-20.04-rocm-6.3.0-x86_64
     env:
       CMAKE_VERSION: 3.23.2
     steps:
