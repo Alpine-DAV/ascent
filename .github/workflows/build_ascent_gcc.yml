@@ -87,7 +87,7 @@ jobs:
         mpiexec -n 2 ./build/ascent_mpi_render_example
   build_basic_pyvenv:
     name: Ubuntu Build Ascent GCC with Python VENV
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CC: gcc
       CXX: g++
