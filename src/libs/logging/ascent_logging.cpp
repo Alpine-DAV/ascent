@@ -55,8 +55,8 @@ Logger::Logger()
  : m_log_open(false),
    m_indent_level(0),
    m_rank(-1),
-   m_log_threshold(Logger::INFO),
-   m_echo_threshold(Logger::NONE)
+   m_log_threshold(Logger::LOG_INFO_ID),
+   m_echo_threshold(Logger::LOG_NONE_ID)
 {
     m_key_counters.push(std::map<std::string,int>());
 }
@@ -72,8 +72,8 @@ void
 Logger::reset()
 {
     m_indent_level = 0;
-    m_log_threshold  = Logger::INFO;
-    m_echo_threshold = Logger::NONE;
+    m_log_threshold  = Logger::LOG_INFO_ID;
+    m_echo_threshold = Logger::LOG_NONE_ID;
     // reset our stacks
     m_timers = std::stack<Timer>();
     m_key_counters = std::stack<std::map<std::string,int>>();
@@ -114,7 +114,7 @@ Logger::open(const std::string &ofpattern)
                              __LINE__);
     }
     m_log_open = true;
-    log_message(Logger::DEBUG,conduit_fmt::format("opened log file: {}", m_log_fname));
+    log_message(Logger::LOG_DEBUG_ID,conduit_fmt::format("opened log file: {}", m_log_fname));
 }
 
 //-----------------------------------------------------------------------------
@@ -130,7 +130,7 @@ Logger::close()
 {
     if(is_log_open())
     {
-        log_message(Logger::DEBUG,conduit_fmt::format("closing log file: {}", m_log_fname));
+        log_message(Logger::LOG_DEBUG_ID,conduit_fmt::format("closing log file: {}", m_log_fname));
         m_log_stream.close();
         m_log_open = false;
         m_log_fname = "";
@@ -395,26 +395,26 @@ Logger::instance()
 std::string
 Logger::level_id_to_string(int level)
 {
-    if(level < Logger::ALL )
+    if(level < Logger::LOG_ALL_ID )
     {
-        level = Logger::ALL;
+        level = Logger::LOG_ALL_ID;
     }
-    else if(level < Logger::DEBUG)
+    else if(level < Logger::LOG_DEBUG_ID)
     {
-        level = Logger::DEBUG;
+        level = Logger::LOG_DEBUG_ID;
     }
-    else if(level > Logger::ERROR)
+    else if(level > Logger::LOG_ERROR_ID)
     {
-        level = Logger::NONE;
+        level = Logger::LOG_ERROR_ID;
     }
     switch(level)
     {
-        case Logger::ALL:   return "all";   break;
-        case Logger::DEBUG: return "debug"; break;
-        case Logger::INFO:  return "info";  break;
-        case Logger::WARN:  return "warn";  break;
-        case Logger::ERROR: return "error"; break;
-        case Logger::NONE:  return "none";  break;
+        case Logger::LOG_ALL_ID:   return "all";   break;
+        case Logger::LOG_DEBUG_ID: return "debug"; break;
+        case Logger::LOG_INFO_ID:  return "info";  break;
+        case Logger::LOG_WARN_ID:  return "warn";  break;
+        case Logger::LOG_ERROR_ID: return "error"; break;
+        case Logger::LOG_NONE_ID:  return "none";  break;
     }
 }
 
@@ -425,32 +425,32 @@ Logger::level_string_to_id(const std::string &level_str)
     // strip, lower?
     if(level_str == "all" )
     {
-        return Logger::ALL;
+        return Logger::LOG_ALL_ID;
     }
     else if(level_str == "debug" )
     {
-        return Logger::DEBUG;
+        return Logger::LOG_DEBUG_ID;
     }
     else if(level_str == "info" )
     {
-        return Logger::INFO;
+        return Logger::LOG_INFO_ID;
     }
     else if(level_str == "warn" )
     {
-        return Logger::WARN;
+        return Logger::LOG_WARN_ID;
     }
     else if(level_str == "error" )
     {
-        return Logger::ERROR;
+        return Logger::LOG_ERROR_ID;
     }
     else if(level_str == "none" )
     {
-        return Logger::NONE;
+        return Logger::LOG_NONE_ID;
     }
     else
     {
         // Unknown, default to all.
-        return Logger::ALL;
+        return Logger::LOG_ALL_ID;
     }
 }
 

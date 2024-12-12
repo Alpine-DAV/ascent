@@ -65,7 +65,7 @@ ASCENT_LOG_CLOSE()
 {                                                                             \
     std::ostringstream _ascent_oss_info;                                      \
     _ascent_oss_info << msg;                                                  \
-    ascent::Logger::instance().log_message(ascent::Logger::DEBUG,             \
+    ascent::Logger::instance().log_message(ascent::Logger::LOG_DEBUG_ID,      \
                                            _ascent_oss_info.str(),            \
                                            std::string(__FILE__),             \
                                            __LINE__);                         \
@@ -76,7 +76,7 @@ ASCENT_LOG_CLOSE()
 {                                                                             \
     std::ostringstream _ascent_oss_info;                                      \
     _ascent_oss_info << msg;                                                  \
-    ascent::Logger::instance().log_message(ascent::Logger::INFO,              \
+    ascent::Logger::instance().log_message(ascent::Logger::LOG_INFO_ID,       \
                                            _ascent_oss_info.str(),            \
                                            std::string(__FILE__),             \
                                            __LINE__);                         \
@@ -87,7 +87,7 @@ ASCENT_LOG_CLOSE()
 {                                                                             \
     std::ostringstream _ascent_oss_info;                                      \
     _ascent_oss_info << msg;                                                  \
-    ascent::Logger::instance().log_message(ascent::Logger::WARN,              \
+    ascent::Logger::instance().log_message(ascent::Logger::LOG_WARN_ID,       \
                                            _ascent_oss_info.str(),            \
                                            std::string(__FILE__),             \
                                            __LINE__);                         \
@@ -98,7 +98,7 @@ ASCENT_LOG_CLOSE()
 {                                                                             \
     std::ostringstream _ascent_oss_info;                                      \
     _ascent_oss_info << msg;                                                  \
-    ascent::Logger::instance().log_message(ascent::Logger::ERROR,             \
+    ascent::Logger::instance().log_message(ascent::Logger::LOG_ERROR_ID,      \
                                            _ascent_oss_info.str(),            \
                                            std::string(__FILE__),             \
                                            __LINE__);                         \
@@ -152,12 +152,12 @@ public:
     //-------------------------------------------------------------------------
     typedef enum
     {
-        ALL   = -1,   // lowest
-        DEBUG =  1,
-        INFO  =  2,
-        WARN  =  3,
-        ERROR =  4,
-        NONE  =  127, // highest
+        LOG_ALL_ID   = -1,   // lowest
+        LOG_DEBUG_ID =  1,
+        LOG_INFO_ID  =  2,
+        LOG_WARN_ID  =  3,
+        LOG_ERROR_ID =  4,
+        LOG_NONE_ID  =  127, // highest
     } MessageLevel;
 
     //-------------------------------------------------------------------------

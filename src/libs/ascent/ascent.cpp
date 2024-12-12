@@ -49,7 +49,7 @@ ParRank(int comm_id)
     int rank = 0;
 
 #if defined(ASCENT_MPI_ENABLED)
-    if(mpi_comm_id == -1)
+    if(comm_id == -1)
     {
       // do nothing, an error will be thrown later
       // so we can respect the exception handling
@@ -69,7 +69,7 @@ ParSize(int comm_id)
 int comm_size=1;
 
 #if defined(ASCENT_MPI_ENABLED)
-    if(mpi_comm_id == -1)
+    if(comm_id == -1)
     {
       // do nothing, an error will be thrown later
       // so we can respect the exception handling
@@ -313,7 +313,7 @@ Ascent::open(const conduit::Node &options)
         {
             if(par_rank != 0)
             {
-                logger.set_echo_threshold(ascent::Logger::NONE);
+                logger.set_echo_threshold("none");
             }
         }
 

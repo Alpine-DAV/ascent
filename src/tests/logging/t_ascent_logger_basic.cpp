@@ -91,7 +91,7 @@ TEST(ascent_logging, basic_logging_echo)
     // remove file if it exists
     std::string lfname = "tout_logging_log_2.yaml";
     conduit::utils::remove_path_if_exists(lfname);
-    ascent::Logger::instance().set_echo_threshold(ascent::Logger::ALL);
+    ascent::Logger::instance().set_echo_threshold(ascent::Logger::LOG_ALL_ID);
     std::cout << "[echoed]" << std::endl;
     ASCENT_LOG_OPEN(lfname);
     ASCENT_LOG_DEBUG("my debug!");
@@ -115,7 +115,7 @@ TEST(ascent_logging, basic_logging_threshold)
     conduit::utils::remove_path_if_exists(lfname);
     ASCENT_LOG_OPEN(lfname);
     ASCENT_LOG_INFO("my info!");
-    ascent::Logger::instance().set_log_threshold(ascent::Logger::NONE);
+    ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_NONE_ID);
     ASCENT_LOG_WARN("my warning!");
     ASCENT_LOG_CLOSE();
 
@@ -175,14 +175,14 @@ TEST(ascent_logging, basic_logging_append)
     // remove file if it exists
     std::string lfname = "tout_logging_log_5.yaml";
     conduit::utils::remove_path_if_exists(lfname);
-    ascent::Logger::instance().set_log_threshold(ascent::Logger::ALL);
+    ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_ALL_ID);
     ASCENT_LOG_OPEN(lfname);
     ASCENT_LOG_INFO("my debug 1!");
     ASCENT_LOG_INFO("my info 1!");
     ASCENT_LOG_WARN("my warning 1!");
     ASCENT_LOG_CLOSE();
 
-    ascent::Logger::instance().set_log_threshold(ascent::Logger::ALL);
+    ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_ALL_ID);
     ASCENT_LOG_OPEN(lfname);
     ASCENT_LOG_INFO("my debug 2!");
     ASCENT_LOG_INFO("my info 2!");
