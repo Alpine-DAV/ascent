@@ -841,7 +841,7 @@ fi # build_umpire
 ################
 # MFEM
 ################
-mfem_version=4.6
+mfem_version=4.7
 mfem_src_dir=$(ospath ${source_dir}/mfem-${mfem_version})
 mfem_build_dir=$(ospath ${build_dir}/mfem-${mfem_version})
 mfem_install_dir=$(ospath ${install_dir}/mfem-${mfem_version}/)
