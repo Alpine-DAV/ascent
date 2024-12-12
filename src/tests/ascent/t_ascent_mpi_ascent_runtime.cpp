@@ -124,7 +124,7 @@ TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
     Ascent ascent;
     Node ascent_opts;
     ascent_opts["exceptions"] = "forward";
-    // we throw an error if an mpi_comm is NO provided to a mpi ver of ascent
+    // we throw an error if an mpi_comm is NOT provided to a mpi ver of ascent
     EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
 }
 

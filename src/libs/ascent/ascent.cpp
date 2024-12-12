@@ -49,6 +49,12 @@ ParRank(int comm_id)
     int rank = 0;
 
 #if defined(ASCENT_MPI_ENABLED)
+    if(mpi_comm_id == -1)
+    {
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return 0;
+    }
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
@@ -63,6 +69,12 @@ ParSize(int comm_id)
 int comm_size=1;
 
 #if defined(ASCENT_MPI_ENABLED)
+    if(mpi_comm_id == -1)
+    {
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return 1;
+    }
     MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
     MPI_Comm_size(mpi_comm, &comm_size);
 #endif
