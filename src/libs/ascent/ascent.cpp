@@ -302,18 +302,41 @@ Ascent::open(const conduit::Node &options)
         // setup echo
         logger.set_echo_threshold(echo_opts["echo_threshold"].as_string());
 
-        // control for mpi case
+        // controls for mpi ranks
         // if ranks == "root"
         //   rank 0 is what is specified, echo_threshold = "none" for all others
         // if ranks == "all"
         //   echo_threshold = specified option used for all ranks (alreay handled above)
-        std::string log_ranks_str = echo_opts["ranks"].as_string();
+        // if ranks == [list of ints] (also accepts single int)
+        //   echo_threshold = specified option used for ranks in the list
 
-        if(log_ranks_str == "root")
+        if(echo_opts["ranks"].dtype().is_number()) // list of ints case
         {
-            if(par_rank != 0)
+            int64_accessor ranks_list = echo_opts["ranks"].value();
+            bool active = false;
+            for(index_t i=0; i < ranks_list.number_of_elements(); i++)
+            {
+                if(par_rank == ranks_list[i] )
+                {
+                    active = true;
+                }
+            }
+
+            if(!active)
             {
                 logger.set_echo_threshold("none");
+            }
+        }
+        else // string options case
+        {
+            std::string log_ranks_str = echo_opts["ranks"].as_string();
+
+            if(log_ranks_str == "root")
+            {
+                if(par_rank != 0)
+                {
+                    logger.set_echo_threshold("none");
+                }
             }
         }
 
@@ -328,6 +351,7 @@ Ascent::open(const conduit::Node &options)
 
         Node logging_opts;
         logging_opts["enabled"] = 0;
+        logging_opts["ranks"]   = "all";
 #if defined(ASCENT_MPI_ENABLED)
         logging_opts["file_pattern"]  = "ascent_log_output_rank_{rank:05d}.yaml";
 #else
@@ -350,13 +374,53 @@ Ascent::open(const conduit::Node &options)
             }
         }
 
+        // controls for mpi ranks
+        // if ranks == "root"
+        //   open log on rank 0, do not open on all others
+        // if ranks == "all"
+        //   open log on all ranks
+        // if ranks == [list of ints] (also accepts single int)
+        //   open log on ranks specified in the list
+
+        if(logging_opts["ranks"].dtype().is_number()) // list of ints case
+        {
+            int64_accessor ranks_list = logging_opts["ranks"].value();
+            bool active = false;
+            for(index_t i=0; i < ranks_list.number_of_elements(); i++)
+            {
+                if(par_rank == ranks_list[i] )
+                {
+                    active = true;
+                }
+            }
+
+            if(!active)
+            {
+                logging_opts["enabled"] = 0;
+            }
+        }
+        else // string options case
+        {
+            std::string log_ranks_str = logging_opts["ranks"].as_string();
+
+            if(log_ranks_str == "root")
+            {
+                if(par_rank != 0)
+                {
+                    logging_opts["enabled"] = 0;
+                }
+            }
+            // all already supported if logging is enabled
+        }
+
+
         if(logging_opts["enabled"].to_int() == 1)
         {
             std::string file_pattern = logging_opts["file_pattern"].as_string();
         #if defined(ASCENT_MPI_ENABLED)
-            ASCENT_LOG_OPEN( file_pattern ) // serial    
-        #else
             ASCENT_LOG_OPEN_RANK( file_pattern, par_rank ) // mpi par
+        #else
+            ASCENT_LOG_OPEN( file_pattern ) // serial
         #endif
             logger.set_log_threshold(logging_opts["log_threshold"].as_string());
         }
