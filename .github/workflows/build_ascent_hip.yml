@@ -7,8 +7,8 @@ on:
 jobs:
   build_cuda:
     name: Build Ascent HIP
-    runs-on: ubuntu-latest
-    container: alpinedav/ascent-ci:ubuntu-20.04-rocm-5.1.3-devel
+    runs-on: ubuntu-20.04
+    container: alpinedav/ascent-devel:ubuntu-20.04-rocm-6.3.0-x86_64
     env:
       CMAKE_VERSION: 3.23.2
     steps:
@@ -28,7 +28,7 @@ jobs:
             enable_mpi=OFF \
             enable_fortran=OFF \
             enable_tests=OFF \
-            build_ascent=OFF \
+            build_ascent=false \
             enable_verbose=OFF \
             build_jobs=2 \
             ./scripts/build_ascent/build_ascent.sh
