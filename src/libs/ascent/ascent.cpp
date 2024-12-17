@@ -23,9 +23,13 @@
 #include <utils/ascent_string_utils.hpp>
 #include <flow.hpp>
 
+#include <conduit_fmt/conduit_fmt.h>
+
 #if defined(ASCENT_VTKH_ENABLED)
     #include <vtkh/vtkh.hpp>
 #endif
+
+
 
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
@@ -416,13 +420,17 @@ Ascent::open(const conduit::Node &options)
 
         if(logging_opts["enabled"].to_int() == 1)
         {
+            logger.set_log_threshold(logging_opts["log_threshold"].as_string());
             std::string file_pattern = logging_opts["file_pattern"].as_string();
         #if defined(ASCENT_MPI_ENABLED)
             ASCENT_LOG_OPEN_RANK( file_pattern, par_rank ) // mpi par
+            ASCENT_LOG_DEBUG(conduit_fmt::format("mpi info: rank={}, size={}",
+                                                  par_rank,
+                                                  par_size));
         #else
             ASCENT_LOG_OPEN( file_pattern ) // serial
+            ASCENT_LOG_DEBUG("mpi not enabled");
         #endif
-            logger.set_log_threshold(logging_opts["log_threshold"].as_string());
         }
 
 

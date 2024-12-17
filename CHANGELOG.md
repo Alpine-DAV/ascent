@@ -12,9 +12,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - raja@2024.02.1
 - umpire@2024.02.1
 - camp@2024.02.1
-- kokkos@3.7.02
+- kokkos@4.4.1
+- mfem@4.7
 
 ### Added
+- Added a new unified logging infrastructure.
 - Added support for unstructured topologies with mixed elements types (for example, hexs and tets).
 - Added support for `pyramid` and `wedge` elements.
 - Added `sphere`, `cylinder`, `box`, and `plane` options to the slice filter.

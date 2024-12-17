@@ -61,20 +61,21 @@ TEST(ascent_logging, basic_logging)
     std::string lfname = "tout_logging_log_1.yaml";
     conduit::utils::remove_path_if_exists(lfname);
     ASCENT_LOG_OPEN(lfname);
+    //                                  top level entry count
     ASCENT_LOG_DEBUG("my debug!");
-    ASCENT_LOG_INFO("my info!");
-    ASCENT_LOG_WARN("my warning!");
-    ASCENT_MARK_BEGIN("blocky");
+    ASCENT_LOG_INFO("my info!");       // msg (1)
+    ASCENT_LOG_WARN("my warning!");    // msg (2)
+    ASCENT_MARK_BEGIN("blocky");       // block (3)
         ASCENT_LOG_INFO("my info!");
         ASCENT_LOG_WARN("my warning!");
     ASCENT_MARK_END("blocky");
-    myfunc();
+    myfunc();                          // myfunc (4)
 
-    ASCENT_MARK_BEGIN("blocky");
+    ASCENT_MARK_BEGIN("blocky");       // block (5)
         myfunc();
     ASCENT_MARK_END("blocky");
     
-    ASCENT_MARK_BEGIN("blocky");
+    ASCENT_MARK_BEGIN("blocky");       // block (6)
        my_func_nest_0();
     ASCENT_MARK_END("blocky");
     ASCENT_LOG_CLOSE();
@@ -82,7 +83,8 @@ TEST(ascent_logging, basic_logging)
     conduit::Node n;
     n.load(lfname);
     n.print();
-    
+    // 7 messages at root level
+    EXPECT_EQ(n.number_of_children(),6);
 }
 
 //-----------------------------------------------------------------------------
