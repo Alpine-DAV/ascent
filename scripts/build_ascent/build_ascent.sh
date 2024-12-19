@@ -1031,7 +1031,7 @@ if [ ! -d ${ascent_install_dir} ]; then
 if ${build_ascent}; then
 if [ ! -d ${ascent_src_dir} ]; then
     echo "**** Cloning Ascent"
-    git clone --recursive https://github.com/Alpine-DAV/ascent.git
+    git clone --recursive https://github.com/Alpine-DAV/ascent.git ${source_dir}/ascent
 fi
 
 echo "**** Configuring Ascent"
