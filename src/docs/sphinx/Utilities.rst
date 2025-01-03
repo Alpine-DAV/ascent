@@ -259,7 +259,7 @@ Writing Valid Yaml
 ^^^^^^^^^^^^^^^^^^
 The yaml format is human readable, but it can still be easy to make mistakes.
 Ascent will tell you about yaml parsing errors, but using external validation tools
-like `<http://www.yamllint.com//>`_ helps filter out simple mistakes. You can simply
+like `<https://www.yamllint.com/>`_ or `<https://yamline.com/validator/>`_ helps filter out simple mistakes. You can simply
 paste your yaml into the site and validate if the syntax is correct.
 
 
