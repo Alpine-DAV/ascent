@@ -1969,7 +1969,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // Change the echo to standard output level
         if (action.has_path("echo_threshold"))
         {
-            ascent::Logger::instance().set_log_threshold(action["echo_threshold"].as_string());
+            ascent::Logger::instance().set_echo_threshold(action["echo_threshold"].as_string());
         }
         else
         {
