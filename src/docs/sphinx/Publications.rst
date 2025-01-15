@@ -11,8 +11,7 @@ Publications and Presentations
 Publications
 ------------
 
-- `Bridging Gaps in Simulation Analysis through a General Purpose, Bidirectional Steering Interface with Ascent <https://doi.org/10.1109/SCW63240.2024.00119>`_,
-Presented at the `ISAV 2024 Workshop https://isav-workshop.github.io/2024/>`_, held in conjunction with SC 24, on November 17h 2024 in Atlanta, GA
+- `Bridging Gaps in Simulation Analysis through a General Purpose, Bidirectional Steering Interface with Ascent <https://doi.org/10.1109/SCW63240.2024.00119>`_, Presented at the `ISAV 2024 Workshop https://isav-workshop.github.io/2024/>`_, held in conjunction with SC 24, on November 17h 2024 in Atlanta, GA
 
 - `Ascent: A Flyweight In Situ Library for Exascale Simulations <https://doi.org/10.1007/978-3-030-81627-8_12>`_  In: Childs, H., Bennett, J.C., Garth, C. (eds) In Situ Visualization for Computational Science. Mathematics and Visualization. Springer, Cham. May 2022.
 
