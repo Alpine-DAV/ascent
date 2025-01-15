@@ -220,4 +220,9 @@ TEST(ascent_logging, test_logging_actions)
 
     // check that the log file exists
     EXPECT_TRUE(conduit::utils::is_file(log_file));
+
+    // check that the log file has the expected number of logs in it (1 open, 3 execution, 1 close)
+    conduit::Node log_file_contents;
+    log_file_contents.load(log_file);
+    EXPECT_EQ(log_file_contents.number_of_children(), 5);
 }
