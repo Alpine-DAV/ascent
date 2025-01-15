@@ -12,6 +12,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_main_runtime.hpp"
+#include <ascent_logging.hpp>
 
 // standard lib includes
 #include <string.h>
@@ -1935,6 +1936,27 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // Saving the info will be deferred to after
         // the workspace executes.
         m_save_info_actions.append() = action;
+      }
+      else if(action_name == "open_log")
+      {
+        // Open Ascent Logging Stream
+        // This starts logging
+        ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_ALL_ID);
+        std::string file_pattern = action.has_path("file_pattern") ? 
+                                   action["file_pattern"].as_string() : "ascent_log_output.yaml";
+        ASCENT_LOG_OPEN(file_pattern);
+      }
+      else if(action_name == "flush_log")
+      {
+        // Flush Current Log Streams to Disk
+        // This is so they can be seen before ascent is closed out
+        ASCENT_LOG_FLUSH();
+      }
+      else if(action_name == "close_log")
+      {
+        // Closes current log stream
+        // This stops logging
+        ASCENT_LOG_CLOSE();
       }
       else
       {

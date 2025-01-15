@@ -149,3 +149,75 @@ TEST(ascent_logging, test_logging_options)
     EXPECT_TRUE(conduit::utils::is_file(log_file));
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_logging, test_logging_actions)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              5,
+                                              5,
+                                              5,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_logging_render3");
+    string log_file = conduit::utils::join_file_path(output_path,"ascent_action_log.yaml");
+
+    // remove old images/log files before rendering
+    remove_test_image(output_file);
+    conduit::utils::remove_path_if_exists(log_file);
+    EXPECT_FALSE(conduit::utils::is_file(log_file));
+
+    conduit::Node actions;
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions_begin_logs;
+    conduit::Node &begin_logs= actions_begin_logs.append();
+    begin_logs["action"] = "open_log";
+    begin_logs["file_pattern"] = log_file;
+
+    conduit::Node actions_flush_logs;
+    conduit::Node &flush_logs= actions_flush_logs.append();
+    flush_logs["action"] = "flush_log";
+
+    conduit::Node actions_close_logs;
+    conduit::Node &close_logs= actions_close_logs.append();
+    close_logs["action"] = "close_log";
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions_begin_logs);
+    ascent.execute(actions);
+    ascent.execute(actions_flush_logs);
+    ascent.execute(actions_close_logs);
+    ascent.close();
+
+    // check that the log file exists
+    EXPECT_TRUE(conduit::utils::is_file(log_file));
+}
