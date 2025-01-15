@@ -1941,7 +1941,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
       {
         // Open Ascent Logging Stream
         // This starts logging
-        ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_ALL_ID);
+        ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
         std::string file_pattern = action.has_path("file_pattern") ? 
                                    action["file_pattern"].as_string() : "ascent_log_output.yaml";
         ASCENT_LOG_OPEN(file_pattern);
@@ -1951,6 +1951,30 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // Flush Current Log Streams to Disk
         // This is so they can be seen before ascent is closed out
         ASCENT_LOG_FLUSH();
+      }
+      else if(action_name == "set_log_threshold")
+      {
+        // Change the logging level
+        if (action.has_path("log_threshold"))
+        {
+            ascent::Logger::instance().set_log_threshold(action["log_threshold"].as_string());
+        }
+        else
+        {
+            ASCENT_WARN("No Log Threshold level given. No changes to logging behavior made.");
+        }
+      }
+      else if(action_name == "set_echo_threshold")
+      {
+        // Change the echo to standard output level
+        if (action.has_path("echo_threshold"))
+        {
+            ascent::Logger::instance().set_log_threshold(action["echo_threshold"].as_string());
+        }
+        else
+        {
+            ASCENT_WARN("No Echo Threshold level given. No changes to echo output behavior made.");
+        }
       }
       else if(action_name == "close_log")
       {
