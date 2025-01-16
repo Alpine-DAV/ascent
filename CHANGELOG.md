@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.7
 
 ### Added
+- Added action options relating to logging functionality including `open_log`, `flush_log`, and `close_log` to toggle logging as well as `set_log_threshold` and `set_echo_threshold` to control logging and standard output levels.
 - Added a new unified logging infrastructure.
 - Added support for unstructured topologies with mixed elements types (for example, hexs and tets).
 - Added support for `pyramid` and `wedge` elements.
