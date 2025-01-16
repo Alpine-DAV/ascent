@@ -271,6 +271,7 @@ TEST(ascent_logging, test_logging_actions_threshold)
     conduit::Node &begin_logs= actions_begin_logs.append();
     begin_logs["action"] = "open_log";
     begin_logs["file_pattern"] = log_file;
+    begin_logs["log_threshold"] = "all";
     conduit::Node &set_threshold_logs_open= actions_begin_logs.append();
     set_threshold_logs_open["action"] = "set_log_threshold";
     set_threshold_logs_open["log_threshold"] = "error";

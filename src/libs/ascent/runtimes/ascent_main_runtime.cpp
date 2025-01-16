@@ -1941,7 +1941,17 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
       {
         // Open Ascent Logging Stream
         // This starts logging
-        ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+
+        
+        if(action.has_path("log_threshold"))
+        {
+            ascent::Logger::instance().set_log_threshold(action["log_threshold"].as_string());
+        }
+        else
+        {
+            ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+        }
+
         std::string file_pattern = action.has_path("file_pattern") ? 
                                    action["file_pattern"].as_string() : "ascent_log_output.yaml";
         ASCENT_LOG_OPEN(file_pattern);
