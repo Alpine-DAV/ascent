@@ -262,6 +262,109 @@ TEST(ascent_mpi_runtime, test_mpi_logs)
     EXPECT_TRUE(conduit::utils::is_file(log_base + "_c_01.yaml"));
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_logging_actions_mpi)
+{
+
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              5,
+                                              5,
+                                              5,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+    string output_file = conduit::utils::join_file_path(output_path,"tout_logging_render4_");
+    string log_base = conduit::utils::join_file_path(output_path,"ascent_action_log_mpi_");
+    string log_file = log_base +"{rank:05d}.yaml";
+
+    // remove old images/log files before rendering
+    if(par_rank == 0)
+    {
+        remove_test_image(output_file);
+        conduit::utils::remove_path_if_exists(log_base + "00000.yaml");
+    }
+
+    conduit::Node actions;
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions_begin_logs;
+    conduit::Node &begin_logs= actions_begin_logs.append();
+    begin_logs["action"] = "open_log";
+    begin_logs["file_pattern"] = log_file;
+    begin_logs["log_threshold"] = "all";
+
+    conduit::Node actions_flush_logs;
+    conduit::Node &flush_logs= actions_flush_logs.append();
+    flush_logs["action"] = "flush_log";
+
+    conduit::Node actions_close_logs;
+    conduit::Node &close_logs= actions_close_logs.append();
+    close_logs["action"] = "close_log";
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+
+    ascent.publish(data);
+    ascent.execute(actions_begin_logs);
+    ascent.execute(actions);
+    ascent.execute(actions_flush_logs);
+    ascent.execute(actions_close_logs);
+    ascent.close();
+
+    // check that the log file exists
+    MPI_Barrier(comm);
+    EXPECT_TRUE(conduit::utils::is_file(log_base + "00000.yaml"));
+
+    // check that the log file has the expected number of logs in it (1 open, 3 execution, 1 close)
+    conduit::Node log_file_contents;
+    log_file_contents.load(log_base + "00000.yaml");
+    EXPECT_EQ(log_file_contents.number_of_children(), 6);
+}
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

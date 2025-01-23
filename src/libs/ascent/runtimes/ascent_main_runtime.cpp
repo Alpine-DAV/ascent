@@ -1952,9 +1952,24 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
             ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
         }
 
-        std::string file_pattern = action.has_path("file_pattern") ? 
+        #if defined(ASCENT_MPI_ENABLED)
+            std::string file_pattern = action.has_path("file_pattern") ? 
+                                   action["file_pattern"].as_string() : "ascent_log_output_rank_{rank:05d}.yaml";
+            
+            int comm_id = flow::Workspace::default_mpi_comm();
+            MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+            int comm_size = 1;
+            MPI_Comm_size(mpi_comm, &comm_size);
+            ASCENT_LOG_OPEN_RANK( file_pattern, m_rank );
+            ASCENT_LOG_DEBUG(conduit_fmt::format("mpi info: rank={}, size={}",
+                                                  m_rank,
+                                                  comm_size));
+        #else
+            std::string file_pattern = action.has_path("file_pattern") ? 
                                    action["file_pattern"].as_string() : "ascent_log_output.yaml";
-        ASCENT_LOG_OPEN(file_pattern);
+            ASCENT_LOG_OPEN(file_pattern);
+            ASCENT_LOG_DEBUG("MPI not enabled");
+        #endif
       }
       else if(action_name == "flush_log")
       {
