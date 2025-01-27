@@ -7,7 +7,7 @@ on:
 jobs:
   build_basic:
     name: Ubuntu Build Ascent GCC
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CC: gcc
       CXX: g++
@@ -46,6 +46,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
+    - name: Env Info
+      run: |
+        echo "**** Env Info"
+        cmake --version
+        gcc --version
+        which mpicc
     - name: Build TPLs
       run: |
         env enable_mpi=ON \
@@ -58,7 +64,6 @@ jobs:
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
-        cmake --version
         echo "**** Configuring Ascent"
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
@@ -82,7 +87,7 @@ jobs:
         mpiexec -n 2 ./build/ascent_mpi_render_example
   build_basic_pyvenv:
     name: Ubuntu Build Ascent GCC with Python VENV
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CC: gcc
       CXX: g++
@@ -121,6 +126,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
+    - name: Env Info
+      run: |
+        echo "**** Env Info"
+        cmake --version
+        gcc --version
+        which mpicc
     - name: Build TPLs
       run: |
         env enable_mpi=ON \
@@ -134,7 +145,6 @@ jobs:
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
-        cmake --version
         echo "**** Configuring Ascent"
         cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent

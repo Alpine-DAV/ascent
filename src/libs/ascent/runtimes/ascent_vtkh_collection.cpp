@@ -14,6 +14,7 @@
 #include "ascent_vtkh_collection.hpp"
 #include "ascent_mpi_utils.hpp"
 #include "ascent_logging.hpp"
+#include "ascent_logging_old.hpp"
 
 #if defined(ASCENT_MPI_ENABLED)
 #include <mpi.h>

@@ -131,6 +131,15 @@ AscentRuntime::~AscentRuntime()
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
+
+// handle logging first
+#if defined(ASCENT_MPI_ENABLED)
+    
+#else
+
+#endif
+
+
 #if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())

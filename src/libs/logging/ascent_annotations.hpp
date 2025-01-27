@@ -14,12 +14,12 @@
 //-----------------------------------------------------------------------------
 // -- ascent includes --
 //-----------------------------------------------------------------------------
-#include <ascent_exports.h>
-#include <ascent_config.h>
+#include <ascent_logging_exports.h>
+#include <ascent_logging_config.h>
 #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 #include <caliper/cali.h>
 #endif
 
@@ -28,7 +28,7 @@
 /// ASCENT_ANNOTATE_ZZZ macros are used for caliper performance annotations.
 //
 //-----------------------------------------------------------------------------
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 #define ASCENT_ANNOTATE_MARK_BEGIN( name ) CALI_MARK_BEGIN( name )
 #define ASCENT_ANNOTATE_MARK_END( name ) CALI_MARK_END( name )
 #define ASCENT_ANNOTATE_MARK_FUNCTION CALI_CXX_MARK_FUNCTION

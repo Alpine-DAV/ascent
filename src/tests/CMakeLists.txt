@@ -39,6 +39,9 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vtkh")
 # add tpl smoke tests, so they run before we run the ascent tests
 add_subdirectory("thirdparty")
 
+# add logging tests
+add_subdirectory("logging")
+
 # add apcomp tests
 if(ENABLE_APCOMP)
     add_subdirectory("apcomp")

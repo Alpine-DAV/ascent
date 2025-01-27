@@ -717,10 +717,10 @@ DataSet::AddDomainIdField(const std::string fieldname)
   for(size_t i = 0; i < size; ++i)
   {
     vtkm::Id domain_id = m_domain_ids[i];
-    vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
+    vtkm::Id num_points = m_domains[i].GetNumberOfCells();
     vtkm::cont::ArrayHandle<vtkm::Float32> array;
     detail::MemSet(array, (vtkm::Float32)domain_id, num_points);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Cells, array);
     m_domains[i].AddField(field);
   }
 }

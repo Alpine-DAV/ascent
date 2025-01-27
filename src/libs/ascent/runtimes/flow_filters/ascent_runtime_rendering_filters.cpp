@@ -736,7 +736,7 @@ public:
   {
     conduit::Node render_copy = render_node;
 
-    // allow zoom to be ajusted
+    // allow zoom to be adjusted
     conduit::Node zoom;
     if(render_copy.has_path("camera/zoom"))
     {
@@ -774,6 +774,7 @@ public:
       }
 
       tmp.SetCamera(camera);
+
       renders->push_back(tmp);
     }
   }
@@ -1922,8 +1923,8 @@ void generate_camera_meshes(conduit::Node &image_data){
   vtkm::Vec<vtkm::Float64,3> forward(0,0,-1);
   double angle_between = vtkm::ACos(vtkm::Dot(forward, vtkm_look)) / vtkm::Pi() * 180;
 
-  // If the look vector has been rotated by a certain angle, ajust the camera up vector to match
-  if (angle_between != 0.0) {
+  // If the look vector has been rotated by a certain angle, adjust the camera up vector to match
+  if (vtkm::Abs(angle_between) >= 0.001) {
     vtkm::Vec<vtkm::Float64,3> axisOfRotation = vtkm::Cross(vtkm_look, forward);
     vtkm_up = 
       vtkm::Transform3DVector(vtkm::Transform3DRotate(-angle_between, axisOfRotation), vtkm_up);

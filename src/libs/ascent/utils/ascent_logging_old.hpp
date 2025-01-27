@@ -9,8 +9,8 @@
 /// file: ascent_logging.hpp
 ///
 //-----------------------------------------------------------------------------
-#ifndef ASCENT_LOGGING_HPP
-#define ASCENT_LOGGING_HPP
+#ifndef ASCENT_LOGGING_OLD_HPP
+#define ASCENT_LOGGING_OLD_HPP
 
 #include <conduit.hpp>
 #include <ascent_exports.h>
