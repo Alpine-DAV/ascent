@@ -93,11 +93,11 @@ PointRenderer::PreExecute()
 
   if(m_use_nodes)
   {
-    mesh_mapper->UseNodes();
+    mesh_mapper->SetUseNodes();
   }
   else
   {
-    mesh_mapper->UseCells();
+    mesh_mapper->SetUseCells();
   }
 
   vtkm::Float32 radius = m_base_radius;
