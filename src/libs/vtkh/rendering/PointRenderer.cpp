@@ -93,7 +93,7 @@ PointRenderer::PreExecute()
 
   if(m_use_nodes)
   {
-    mesh_mapper->SetUseNodes();
+    mesh_mapper->SetUsePoints();
   }
   else
   {
