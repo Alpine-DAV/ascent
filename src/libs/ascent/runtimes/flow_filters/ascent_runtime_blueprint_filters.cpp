@@ -446,7 +446,7 @@ BlueprintPartition::execute()
 #endif
     if(target == 1)
     {
-      n_output->append() = tmp;
+      n_output->append().move(tmp);
     }
     else 
     {
