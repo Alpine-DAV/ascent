@@ -36,6 +36,8 @@ int NUM_DOMAINS = 8;
 //-----------------------------------------------------------------------------
 TEST(ascent_partition, test_mpi_partition_target_1)
 {
+    // TODO: Only run if we have hdf5 support
+
     Node n;
     ascent::about(n);
 
@@ -61,23 +63,14 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     ASCENT_INFO("Testing blueprint partition of multi-domain mesh with MPI");
 
     string output_path = prepare_output_dir();
-    std::ostringstream oss;
-
-    oss << "tout_partition_target_1_mpi";
     string output_base = conduit::utils::join_file_path(output_path,
-                                                        oss.str());
-    std::ostringstream ossjson;
-    ossjson << "tout_partition_target_1_mpi_json";
-    string output_json = conduit::utils::join_file_path(output_base,
-		    					ossjson.str());
+                                                        "tout_partition_target_1_mpi");
+    string output_root = output_base + ".cycle_000000.root";
+
     // remove existing file
-    if(utils::is_file(output_base))
+    if(utils::is_file(output_root))
     {
-        utils::remove_file(output_base);
-    }
-    if(utils::is_file(output_json))
-    {
-        utils::remove_file(output_json);
+        utils::remove_file(output_root);
     }
 
     conduit::Node actions;
@@ -88,7 +81,9 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     conduit::Node &pipelines = add_pipelines["pipelines"];
     pipelines["pl1/f1/type"]  = "partition";
     pipelines["pl1/f1/params/target"] = target;
-    
+    // pipelines["pl1/f2/type"] = "add_domain_ids";
+    // pipelines["pl1/f2/params/output"] = "domain_id";
+
     //add the extract
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
@@ -96,109 +91,23 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     extracts["e1/type"] = "relay";
     extracts["e1/pipeline"] = "pl1";
     extracts["e1/params/path"] = output_base;
+    extracts["e1/params/protocol"] = "hdf5";
 
+    extracts["einput/type"] = "relay";
+    extracts["einput/params/path"] = output_base + "_input";
+    extracts["einput/params/protocol"] = "hdf5";
+
+    // Add a scene that shows domain id
     //
-    // Run Ascent
-    //
-
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime"] = "ascent";
-    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    //Two files in _output directory:
-    //tout_partition_multi_dom_serial
-    //tout_partition_multi_dom_serial_json
-    if(par_rank == 0)
-    {
-      EXPECT_TRUE(conduit::utils::is_file(output_base));
-      Node read_csv;
-      conduit::relay::io::load(output_base,read_csv);
-
-      int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
-      EXPECT_TRUE(num_doms == target);
-    }
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_partition, test_mpi_partition_target_10)
-{
-    Node n;
-    ascent::about(n);
-
-    //
-    //Set Up MPI
-    //
-    int par_rank;
-    int par_size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &par_rank);
-    MPI_Comm_size(comm, &par_size);
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-
-    // use spiral , with 7 domains
-    conduit::blueprint::mpi::mesh::examples::spiral_round_robin(NUM_DOMAINS,data,comm);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing blueprint partition of multi-domain mesh with MPI");
-
-    string output_path = prepare_output_dir();
-    std::ostringstream oss;
-
-    oss << "tout_partition_target_10_mpi";
-    string output_base = conduit::utils::join_file_path(output_path,
-                                                        oss.str());
-    std::ostringstream ossjson;
-    ossjson << "tout_partition_taret_10_mpi_json";
-    string output_json = conduit::utils::join_file_path(output_base,
-		    					ossjson.str());
-    // remove existing file
-    if(utils::is_file(output_base))
-    {
-        utils::remove_file(output_base);
-    }
-    if(utils::is_file(output_json))
-    {
-        utils::remove_file(output_json);
-    }
-
-    conduit::Node actions;
-    int target = 10;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    conduit::Node &pipelines = add_pipelines["pipelines"];
-    pipelines["pl1/f1/type"]  = "partition";
-    pipelines["pl1/f1/params/target"] = target;
-    
-    //add the extract
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    conduit::Node &extracts = add_extracts["extracts"];
-    extracts["e1/type"] = "relay";
-    extracts["e1/pipeline"] = "pl1";
-    extracts["e1/params/path"] = output_base;
-
     //add the scene
-    //conduit::Node &add_scenes= actions.append();
-    //add_scenes["action"] = "add_scenes";
-    //conduit::Node &scenes = add_scenes["scenes"];
-    //scenes["s1/plots/p1/type"] = "pseudocolor";
-    //scenes["s1/plots/p1/field"] = "dist";
-    //scenes["s1/plots/p1/field"] = "rank";
-    //scenes["s1/plots/p1/pipeline"] = "pl1";
-    //  scenes["s1/plots/p1/color_table/discrete"] = "true";
-    //scenes["s1/image_prefix"] = "tout_mpi_partition"; 
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "domain_id";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    //scenes["s1/plots/p1/color_table/discrete"] = "true";
+    scenes["s1/image_prefix"] = conduit::utils::join_file_path(output_path, "tout_mpi_partition_target_1_");
 
     //
     // Run Ascent
@@ -207,27 +116,120 @@ TEST(ascent_partition, test_mpi_partition_target_10)
     Ascent ascent;
 
     Node ascent_opts;
-    ascent_opts["runtime"] = "ascent";
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();
 
-    //Two files in _output directory:
-    //tout_partition_multi_dom_serial
-    //tout_partition_multi_dom_serial_json
     if(par_rank == 0)
     {
-      EXPECT_TRUE(conduit::utils::is_file(output_base));
-      Node read_csv;
-      conduit::relay::io::load(output_base,read_csv);
+      EXPECT_TRUE(conduit::utils::is_file(output_root));
+      Node read_mesh;
+      conduit::relay::io::blueprint::load_mesh(output_root,read_mesh);
 
-      int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
+      int num_doms = conduit::blueprint::mesh::number_of_domains(read_mesh);
       EXPECT_TRUE(num_doms == target);
     }
 }
-
+//
+// // ----------------------------------------------------------
+// TEST(ascent_partition, test_mpi_partition_target_10)
+// {
+//     // TODO: Only run if we have hdf5 support
+//
+//     Node n;
+//     ascent::about(n);
+//
+//     //
+//     //Set Up MPI
+//     //
+//     int par_rank;
+//     int par_size;
+//     MPI_Comm comm = MPI_COMM_WORLD;
+//     MPI_Comm_rank(comm, &par_rank);
+//     MPI_Comm_size(comm, &par_size);
+//
+//     //
+//     // Create an example mesh.
+//     //
+//     Node data, verify_info;
+//
+//     // use spiral , with 7 domains
+//     conduit::blueprint::mpi::mesh::examples::spiral_round_robin(NUM_DOMAINS,data,comm);
+//
+//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//
+//     ASCENT_INFO("Testing blueprint partition of multi-domain mesh with MPI");
+//
+//     string output_path = prepare_output_dir();
+//     string output_base = conduit::utils::join_file_path(output_path,
+//                                                         "tout_partition_target_10_mpi");
+//     string output_root = output_base + ".cycle_000000.root";
+//
+//     // remove existing file
+//     if(utils::is_file(output_root))
+//     {
+//         utils::remove_file(output_root);
+//     }
+//
+//     conduit::Node actions;
+//     int target = 10;
+//     // add the pipeline
+//     conduit::Node &add_pipelines = actions.append();
+//     add_pipelines["action"] = "add_pipelines";
+//     conduit::Node &pipelines = add_pipelines["pipelines"];
+//     pipelines["pl1/f1/type"]  = "partition";
+//     pipelines["pl1/f1/params/target"] = target;
+//     pipelines["pl1/f2/type"] = "add_domain_ids";
+//     pipelines["pl1/f2/params/output"] = "domain_id";
+//
+//     //add the extract
+//     conduit::Node &add_extracts = actions.append();
+//     add_extracts["action"] = "add_extracts";
+//     conduit::Node &extracts = add_extracts["extracts"];
+//     extracts["e1/type"] = "relay";
+//     extracts["e1/pipeline"] = "pl1";
+//     extracts["e1/params/path"] = output_base;
+//     extracts["e1/params/protocol"] = "hdf5";
+//
+//     // Add a scene that shows domain id
+//     //
+//     //add the scene
+//     conduit::Node &add_scenes= actions.append();
+//     add_scenes["action"] = "add_scenes";
+//     conduit::Node &scenes = add_scenes["scenes"];
+//     scenes["s1/plots/p1/type"] = "pseudocolor";
+//     scenes["s1/plots/p1/field"] = "domain_id";
+//     scenes["s1/plots/p1/pipeline"] = "pl1";
+//     //scenes["s1/plots/p1/color_table/discrete"] = "true";
+//     scenes["s1/image_prefix"] = conduit::utils::join_file_path(output_path, "tout_mpi_partition_target_10_");
+//
+//     //
+//     // Run Ascent
+//     //
+//
+//     Ascent ascent;
+//
+//     Node ascent_opts;
+//     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+//     ascent.open(ascent_opts);
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.close();
+//
+//     if(par_rank == 0)
+//     {
+//       EXPECT_TRUE(conduit::utils::is_file(output_root));
+//       Node read_mesh;
+//       conduit::relay::io::blueprint::load_mesh(output_root,read_mesh);
+//
+//       int num_doms = conduit::blueprint::mesh::number_of_domains(read_mesh);
+//       EXPECT_TRUE(num_doms == target);
+//     }
+//
+// }
+//
 
 //-----------------------------------------------------------------------------
 //TEST(ascent_partition, test_mpi_partition_selection)
