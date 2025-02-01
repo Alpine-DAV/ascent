@@ -96,6 +96,7 @@ public:
   std::vector<vtkm::Id> GetDomainIds() const;
 
   // add a scalar field to this data set with a constant value
+  void AddConstantCellField(const vtkm::Float32 value, const std::string fieldname);
   void AddConstantPointField(const vtkm::Float32 value, const std::string fieldname);
   void AddLinearPointField(const vtkm::Float32 value, const std::string fieldname);
   void AddDomainIdField(const std::string fieldname);

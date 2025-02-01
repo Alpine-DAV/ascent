@@ -1425,7 +1425,7 @@ VTKHAddRanks::execute()
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    data.AddConstantPointField(rank,output_field);
+    data.AddConstantCellField(rank,output_field);
     new_coll->add(data, topo_name);
     
     // re wrap in data object
