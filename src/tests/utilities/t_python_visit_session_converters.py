@@ -49,6 +49,14 @@ class Test_Session_Converters(unittest.TestCase):
         print(cmd)
         subprocess.check_call(cmd,shell=True)
 
+    def test_extract_ct(self):
+        test_script = pjoin(utils_src_dir(),"visit_session_converters","visit_color_table_to_ascent_color_table.py")
+        test_sess   = pjoin(test_src_dir(),"batlow-visit-ct.ct")
+        print(test_script)
+        print(test_sess)
+        cmd = " ".join([sys.executable,test_script,test_sess])
+        print(cmd)
+        subprocess.check_call(cmd,shell=True)
 
 if __name__ == '__main__':
     unittest.main()

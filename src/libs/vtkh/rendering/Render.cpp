@@ -238,6 +238,8 @@ Render::Copy() const
   copy.m_bg_color = m_bg_color;
   copy.m_fg_color = m_fg_color;
   copy.m_render_annotations = m_render_annotations;
+  copy.m_render_world_annotations = m_render_world_annotations;
+  copy.m_render_screen_annotations = m_render_screen_annotations;
   copy.m_render_background = m_render_background;
   copy.m_shading = m_shading;
   copy.m_canvas = CreateCanvas();
@@ -265,6 +267,12 @@ Render::Print() const
             <<m_fg_color.Components[3]<<"\n";
   std::cout<<"=== annotations : "
            <<(m_render_annotations ? "On" : "Off")
+           <<"\n";
+  std::cout<<"=== world annotations : "
+           <<(m_render_world_annotations ? "On" : "Off")
+           <<"\n";
+  std::cout<<"=== screen annotations : "
+           <<(m_render_screen_annotations ? "On" : "Off")
            <<"\n";
   std::cout<<"=== background  : "
            <<(m_render_background ? "On" : "Off")

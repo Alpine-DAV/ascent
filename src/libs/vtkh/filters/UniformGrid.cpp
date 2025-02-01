@@ -628,12 +628,9 @@ public:
     int num_points = tmp_mask_portal.GetNumberOfValues();
 
     //create invalid mask where true == invalid
-    std::cerr << "HJERERERERERER" << std::endl;
-    std::cerr << "tmp mask: " << std::endl;
     std::vector<int> l_mask(num_points,1);
     for(int j = 0; j < num_points; ++j)
     {
-	    std::cerr << tmp_mask_portal.Get(j) << " " << std::endl;
       l_mask[j] = l_mask[j] && tmp_mask_portal.Get(j) && r_local_mask_portal.Get(j);
       if(l_mask[j] != r_local_mask_portal.Get(j))
         w_local_mask_portal.Set(j,l_mask[j]);

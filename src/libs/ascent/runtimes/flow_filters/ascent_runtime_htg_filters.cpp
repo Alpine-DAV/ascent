@@ -103,9 +103,9 @@ verify_htg_params(const conduit::Node &params,
         info["errors"].append() = "missing required entry 'blank_value'";
         res = false;
     }
-    else if(!params["blank_value"].dtype().is_float())
+    else if(!params["blank_value"].dtype().is_number())
     {
-        info["errors"].append() = "'blank_value' must be a float";
+        info["errors"].append() = "'blank_value' must be a number";
         res = false;
     }
 
@@ -342,7 +342,7 @@ void htg_write_file(const string &stem,
 }
 
 void htg_write(const std::string &path,
-               float blank_value,
+               double blank_value,
                int nx,
                const double *bounds,
                const float *value)
@@ -536,7 +536,7 @@ void htg_write(const std::string &path,
 void htg_save(const Node &data,
               const Node &fields,
               const std::string &path,
-              float blank_value)
+              double blank_value)
 {
     if (data.number_of_children() != 1)
     {
@@ -673,15 +673,15 @@ HTGIOSave::verify_params(const conduit::Node &params,
 void
 HTGIOSave::execute()
 {
-  
+
 #if ASCENT_MPI_ENABLED
-    ASCENT_ERROR("htg extract only supports serial execution"<<endl);  
+    ASCENT_ERROR("htg extract only supports serial execution"<<endl);
 #endif
     std::string path;
     path = params()["path"].as_string();
     path = output_dir(path);
 
-    float blank_value = params()["blank_value"].as_float32();
+    double blank_value = params()["blank_value"].to_float64();
 
     if(!input("in").check_type<DataObject>())
     {

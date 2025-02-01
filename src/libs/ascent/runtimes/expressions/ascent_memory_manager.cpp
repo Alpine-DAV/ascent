@@ -1,5 +1,6 @@
 #include "ascent_memory_manager.hpp"
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 #include <ascent_config.h>
 
 

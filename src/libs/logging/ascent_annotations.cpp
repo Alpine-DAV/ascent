@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 #include "caliper/cali-manager.h"
 #endif
 
@@ -31,7 +31,7 @@ namespace ascent
 namespace annotations
 {
 
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 static cali::ConfigManager *cali_cfg_manager = NULL;
 #endif
 
@@ -40,7 +40,7 @@ static cali::ConfigManager *cali_cfg_manager = NULL;
 bool
 supported()
 {
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
     return true;
 #else
     return false;
@@ -51,7 +51,7 @@ supported()
 void
 initialize()
 {
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
     conduit::Node opts;
     initialize(opts);
 #endif
@@ -61,11 +61,11 @@ initialize()
 void
 initialize(const conduit::Node &opts)
 {
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 
     if(cali_cfg_manager != NULL)
     {
-        ASCENT_ERROR("Ascent Caliper Config Manager already initialized.")
+        ASCENT_LOG_ERROR("Ascent Caliper Config Manager already initialized.")
     }
 
     // check opts
@@ -113,7 +113,7 @@ initialize(const conduit::Node &opts)
 void
 flush()
 {
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
     if(cali_cfg_manager != NULL)
     {
         cali_cfg_manager->flush();
@@ -126,7 +126,7 @@ flush()
 void
 finalize()
 {
-#if defined(ASCENT_CALIPER_ENABLED)
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
     flush();
     if(cali_cfg_manager != NULL)
     {

@@ -124,7 +124,7 @@ TEST(ascent_mpi_runtime, test_error_for_mpi_vs_non_mpi)
     Ascent ascent;
     Node ascent_opts;
     ascent_opts["exceptions"] = "forward";
-    // we throw an error if an mpi_comm is NO provided to a mpi ver of ascent
+    // we throw an error if an mpi_comm is NOT provided to a mpi ver of ascent
     EXPECT_THROW(ascent.open(ascent_opts),conduit::Error);
 }
 
@@ -167,6 +167,99 @@ TEST(ascent_mpi_runtime, test_for_error_reading_actions)
 
     ascent.close();
 
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_runtime, test_mpi_logs)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    // make sure the _output dir exists
+    string output_path = "";
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
+
+    string log_base = conduit::utils::join_file_path(output_path,"tout_log_mpi_test");
+
+    //
+    // Test cases
+    //
+    // case "0" creates 1 log per mpi task default name in cwd
+    //     ascent_log_out_rank_00000.yaml
+    //     ascent_log_out_rank_00001.yaml
+    // case "a" creates 1 log per mpi
+    //     tout_log_mpi_test_rank_a_00.yaml
+    //     tout_log_mpi_test_rank_a_01.yaml
+    //
+    // case "b" creates log only for root (rank 0)
+    //     tout_log_mpi_test_rank_b_00.yaml
+    //
+    // case "c" creates log only on rank 1
+    //     tout_log_mpi_test_rank_c_01.yaml
+    //
+
+
+    if(par_rank == 0)
+    {
+        conduit::utils::remove_path_if_exists("ascent_log_output_rank_00000.yaml");
+        conduit::utils::remove_path_if_exists("ascent_log_output_rank_00001.yaml");
+        conduit::utils::remove_path_if_exists(log_base + "_a_00.yaml");
+        conduit::utils::remove_path_if_exists(log_base + "_a_01.yaml");
+        conduit::utils::remove_path_if_exists(log_base + "_b_00.yaml");
+        conduit::utils::remove_path_if_exists(log_base + "_c_01.yaml");
+    }
+
+    Ascent ascent;
+    // case 0
+    Node ascent_opts;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["logging"] = "true";
+    ascent.open(ascent_opts);
+    ascent.close();
+
+    // case a
+    ascent_opts.reset();
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["logging/file_pattern"] = log_base + "_a_{rank:02d}.yaml";
+    ascent.open(ascent_opts);
+    ascent.close();
+
+    // case b
+    ascent_opts.reset();
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["logging/file_pattern"] = log_base + "_b_{rank:02d}.yaml";
+    ascent_opts["logging/ranks"] = "root";
+    ascent.open(ascent_opts);
+    ascent.close();
+
+    // case c
+    ascent_opts.reset();
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent_opts["logging/file_pattern"] = log_base + "_c_{rank:02d}.yaml";
+    ascent_opts["logging/ranks"] =1;
+    ascent.open(ascent_opts);
+    ascent.close();
+
+    MPI_Barrier(comm);
+    EXPECT_TRUE(conduit::utils::is_file("ascent_log_output_rank_00000.yaml"));
+    EXPECT_TRUE(conduit::utils::is_file("ascent_log_output_rank_00001.yaml"));
+    EXPECT_TRUE(conduit::utils::is_file(log_base + "_a_00.yaml"));
+    EXPECT_TRUE(conduit::utils::is_file(log_base + "_a_01.yaml"));
+    EXPECT_TRUE(conduit::utils::is_file(log_base + "_b_00.yaml"));
+    EXPECT_TRUE(conduit::utils::is_file(log_base + "_c_01.yaml"));
 }
 
 

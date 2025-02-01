@@ -14,6 +14,7 @@
 #include "ascent_runtime_conduit_to_vtkm_parsing.hpp"
 
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -252,6 +253,7 @@ parse_color_table(const conduit::Node &color_table_node)
         const Node &peg = itr.next();
         if(!peg.has_child("position"))
         {
+            // FIXME: This should be an error
             ASCENT_WARN("Color map control point must have a position");
         }
 

@@ -1,6 +1,7 @@
 #include "ascent_execution_manager.hpp"
 #include <ascent_config.h>
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 
 namespace ascent
 {

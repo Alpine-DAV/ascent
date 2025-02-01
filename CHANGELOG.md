@@ -12,9 +12,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - raja@2024.02.1
 - umpire@2024.02.1
 - camp@2024.02.1
-- kokkos@3.7.02
+- kokkos@4.4.1
+- mfem@4.7
 
 ### Added
+- Added a new unified logging infrastructure.
 - Added support for unstructured topologies with mixed elements types (for example, hexs and tets).
 - Added support for `pyramid` and `wedge` elements.
 - Added `sphere`, `cylinder`, `box`, and `plane` options to the slice filter.
@@ -22,6 +24,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `near_plane` and `far_plane` to the camera details provided in Ascent::info()
 - Added `add_mpi_ranks` and `add_domain_ids` filters for adding rank and domain fields to a mesh
 - Added `transform` filter, which allows you to rotate, scale, translate, mesh coordinates
+- Added python script in src/utilities/visit_session_converters to convert VisIt color table to Ascent actions color table
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities. 
@@ -29,6 +32,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
 - Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.
+- Fixed a bug with Cinema resource output that could lead to corrupted html results.
+- Fixed a bug where controls for world and screen annotations where ignored in Cinema renders.
 
 ## [0.9.3] - Released 2024-05-11
 ### Preferred dependency versions for ascent@0.9.3

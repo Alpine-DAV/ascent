@@ -678,7 +678,22 @@ bool DataSet::HasDomainId(const vtkm::Id &domain_id) const
 }
 
 void
-DataSet::AddConstantPointField(const vtkm::Float32 value, const std::string fieldname)
+DataSet::AddConstantCellField(const vtkm::Float32 value, const std::string &fieldname)
+{
+  const size_t size = m_domain_ids.size();
+
+  for(size_t i = 0; i < size; ++i)
+  {
+    vtkm::Id num_cells = m_domains[i].GetNumberOfCells();
+    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    detail::MemSet(array, value, num_cells);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Cells, array);
+    m_domains[i].AddField(field);
+  }
+}
+
+void
+DataSet::AddConstantPointField(const vtkm::Float32 value, const std::string &fieldname)
 {
   const size_t size = m_domain_ids.size();
 
@@ -693,7 +708,7 @@ DataSet::AddConstantPointField(const vtkm::Float32 value, const std::string fiel
 }
 
 void
-DataSet::AddLinearPointField(const vtkm::Float32 value, const std::string fieldname)
+DataSet::AddLinearPointField(const vtkm::Float32 value, const std::string &fieldname)
 {
   const size_t size = m_domain_ids.size();
 
@@ -710,17 +725,17 @@ DataSet::AddLinearPointField(const vtkm::Float32 value, const std::string fieldn
 }
 
 void
-DataSet::AddDomainIdField(const std::string fieldname)
+DataSet::AddDomainIdField(const std::string &fieldname)
 {
   const size_t size = m_domain_ids.size();
 
   for(size_t i = 0; i < size; ++i)
   {
     vtkm::Id domain_id = m_domain_ids[i];
-    vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
+    vtkm::Id num_cells = m_domains[i].GetNumberOfCells();
     vtkm::cont::ArrayHandle<vtkm::Float32> array;
-    detail::MemSet(array, (vtkm::Float32)domain_id, num_points);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    detail::MemSet(array, (vtkm::Float32)domain_id, num_cells);
+    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Cells, array);
     m_domains[i].AddField(field);
   }
 }
@@ -803,7 +818,7 @@ DataSet::GlobalFieldExists(const std::string &field_name) const
 }
 
 vtkm::cont::Field::Association
-DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) const
+DataSet::GetFieldAssociation(const std::string &field_name, bool &valid_field) const
 {
   valid_field = true;
   if(!this->GlobalFieldExists(field_name))
@@ -910,7 +925,7 @@ DataSet::GetFieldAssociation(const std::string field_name, bool &valid_field) co
 }
 
 vtkm::Id
-DataSet::GetFieldType(const std::string field_name, bool &valid_field) const
+DataSet::GetFieldType(const std::string &field_name, bool &valid_field) const
 {
   valid_field = true;
   if(!this->GlobalFieldExists(field_name))

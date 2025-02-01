@@ -87,8 +87,12 @@ expand_resource_tree_to_file_system(const conduit::Node &resource_tree,
             {
                 ASCENT_ERROR("expand_to_file_system failed to open file: "
                              << "\"" << child_file << "\"");
+
             }
-            ofs << curr.as_string();
+            std::string sval;
+            // construct string obeying bounds
+            sval.assign(curr.as_char8_str(), curr.dtype().number_of_elements());
+            ofs << sval;
         }
         else
         {
