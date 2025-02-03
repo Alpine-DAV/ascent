@@ -609,12 +609,6 @@ if [ ! -d ${vtkm_src_dir} ]; then
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
   tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
 
-  # apply vtk-m patch
-  cd  ${vtkm_src_dir}
-  patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
-  patch -p1 < ${script_dir}/2024_05_03_vtkm-mr3215-ext-geom-fix.patch
-  patch -p1 < ${script_dir}/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch
-  cd ${root_dir}
 fi
 
 
