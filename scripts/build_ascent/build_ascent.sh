@@ -441,7 +441,7 @@ fi # build_caliper
 ################
 # Conduit
 ################
-conduit_version=v0.9.2
+conduit_version=v0.9.3
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
