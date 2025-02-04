@@ -32,9 +32,6 @@ using namespace ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_partition, test_partition_2D_multi_dom)
 {
-    Node n;
-    ascent::about(n);
-
     //
     // Create an example mesh.
     //
@@ -80,11 +77,11 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     extracts["eout/type"] = "relay";
     extracts["eout/pipeline"] = "pl1";
     extracts["eout/params/path"] = output_base;
-    extracts["eout/params/protocol"] = "hdf5";
+    extracts["eout/params/protocol"] = "blueprint/mesh/yaml";
 
     extracts["einput/type"] = "relay";
     extracts["einput/params/path"] = output_base + "_input";
-    extracts["einput/params/protocol"] = "hdf5";
+    extracts["einput/params/protocol"] = "blueprint/mesh/yaml";
 
     //
     // Run Ascent
