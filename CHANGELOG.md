@@ -25,6 +25,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `add_mpi_ranks` and `add_domain_ids` filters for adding rank and domain fields to a mesh
 - Added `transform` filter, which allows you to rotate, scale, translate, mesh coordinates
 - Added python script in src/utilities/visit_session_converters to convert VisIt color table to Ascent actions color table
+- Added `fields` option to the project 2d to support scalar rendering of specific fields.
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities. 

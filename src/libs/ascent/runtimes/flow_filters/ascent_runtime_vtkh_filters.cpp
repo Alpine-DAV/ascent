@@ -4018,13 +4018,21 @@ VTKHProject2d::verify_params(const conduit::Node &params,
     res &= check_numeric("image_width",params, info, false);
     res &= check_numeric("image_height",params, info, false);
 
+    if(params.has_child("fields") && !params["fields"].dtype().is_list())
+    {
+      res = false;
+      info["errors"].append() = "fields is not a list";
+    }
+
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
     valid_paths.push_back("topology");
     valid_paths.push_back("image_width");
     valid_paths.push_back("image_height");
-    valid_paths.push_back("camera");
     ignore_paths.push_back("camera");
+    valid_paths.push_back("fields");
+    ignore_paths.push_back("fields");
+    valid_paths.push_back("camera");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -4074,9 +4082,33 @@ VTKHProject2d::execute()
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
 
+    std::vector<std::string> field_names;
+
     if(params().has_path("camera"))
     {
       parse_camera(params()["camera"], camera);
+    }
+
+    if(params().has_path("fields"))
+    {
+
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("'fields' list must be non-empty");
+      }
+
+      for(int i = 0; i < num_fields; i++)
+      {
+        const conduit::Node &f = flist.child(i); 
+        if(!f.dtype().is_string())
+        {
+            ASCENT_ERROR("'fields' list values must be a string");
+        }
+        field_names.push_back(f.as_string());
+      }
     }
 
     int width = 512;
@@ -4096,7 +4128,7 @@ VTKHProject2d::execute()
     tracer.SetHeight(height);
     tracer.SetInput(&data);
     tracer.SetCamera(camera);
-
+    tracer.SetFields(field_names);
     tracer.Update();
 
     vtkh::DataSet *output = tracer.GetOutput();
