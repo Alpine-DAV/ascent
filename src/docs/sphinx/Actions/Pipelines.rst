@@ -1098,14 +1098,14 @@ Funtionality and further descriptions of optional parameters can be found in the
   pipelines["pl1/f1/type"] = "partition";
   //params optional
   pipelines["pl1/f1/params/target"] = 1;
-  const char* fields[3] = {"pink", "pony", "club"};
-  pipelines["pl1/f1/params/fields"].set(fields,3);
+  pipelines["pl1/f1/params/fields"].append() = "pink";
+  pipelines["pl1/f1/params/fields"].append() = "pony";
+  pipelines["pl1/f1/params/fields"].append() = "clib";
   pipelines["pl1/f1/params/merge_tolerance"] = 0.000001;
-  pipelines["pl1/f1/params/mapping"] = 0;//turns off; on by default
+  pipelines["pl1/f1/params/mapping"] = 0; //turns off; on by default
   pipelines["pl1/f1/params/build_adjsets"] = 1;
 
-  
-  
+   
 
 
 In parallel, the Partition filter will make an effort to redistribute data across MPI

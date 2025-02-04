@@ -355,16 +355,18 @@ BlueprintPartition::verify_params(const conduit::Node &params,
     valid_paths.push_back("selections/end");
     valid_paths.push_back("selections/elements");
     valid_paths.push_back("selections/ranges");
-    valid_paths.push_back("fields");
+    valid_paths.push_back("selections/field");
     valid_paths.push_back("mapping");
     valid_paths.push_back("merge_tolerance");
     valid_paths.push_back("build_adjsets");
     valid_paths.push_back("original_element_ids");
     valid_paths.push_back("original_vertex_ids");
     valid_paths.push_back("distributed");
-    
-    std::string surprises = surprise_check(valid_paths, params);
-    
+
+    std::vector<std::string> ingore_paths = {"fields"};
+
+    std::string surprises = surprise_check(valid_paths,ingore_paths, params);
+
     if(surprises != "")
     {
       res = false;

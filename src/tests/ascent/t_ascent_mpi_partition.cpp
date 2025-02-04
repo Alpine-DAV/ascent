@@ -95,8 +95,8 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     conduit::Node &pipelines = add_pipelines["pipelines"];
-    pipelines["pl1/f2/type"]  = "partition";
-    pipelines["pl1/f2/params/target"] = target;
+    pipelines["pl1/f1/type"]  = "partition";
+    pipelines["pl1/f1/params/target"] = target;
 
     //add the extract
     conduit::Node &add_extracts = actions.append();
@@ -212,8 +212,8 @@ TEST(ascent_partition, test_mpi_partition_target_10)
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     conduit::Node &pipelines = add_pipelines["pipelines"];
-    pipelines["pl1/f2/type"]  = "partition";
-    pipelines["pl1/f2/params/target"] = target;
+    pipelines["pl1/f1/type"]  = "partition";
+    pipelines["pl1/f1/params/target"] = target;
 
     //add the extract
     conduit::Node &add_extracts = actions.append();
@@ -238,7 +238,6 @@ TEST(ascent_partition, test_mpi_partition_target_10)
     scenes["s1/plots/p1/field"] = "rank";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = conduit::utils::join_file_path(output_path, "tout_mpi_partition_target_10_result_render");
-
 
     //
     // Run Ascent
@@ -269,110 +268,122 @@ TEST(ascent_partition, test_mpi_partition_target_10)
 }
 
 
-// //-----------------------------------------------------------------------------
-// TEST(ascent_partition, test_mpi_partition_selection)
-// {
-//    Node n;
-//    ascent::about(n);
+// ----------------------------------------------------------
+TEST(ascent_partition, test_mpi_partition_fields)
+{
+    Node n;
+    ascent::about(n);
 
-//    //
-//    //Set Up MPI
-//    //
-//    int par_rank;
-//    int par_size;
-//    MPI_Comm comm = MPI_COMM_WORLD;
-//    MPI_Comm_rank(comm, &par_rank);
-//    MPI_Comm_size(comm, &par_size);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent Rendering support disabled, skipping test");
+        return;
+    }
+    //
+    //Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
 
-//    //
-//    // Create an example mesh.
-//    //
-//    Node data, verify_info;
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
 
-//    // use spiral , with 7 domains
-//    conduit::blueprint::mpi::mesh::examples::spiral_round_robin(NUM_DOMAINS,data,comm);
+    // use spiral , with 7 domains
+    conduit::blueprint::mpi::mesh::examples::spiral_round_robin(NUM_DOMAINS,data,comm);
 
-//    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-//    ASCENT_INFO("Testing blueprint partition of multi-domain mesh with MPI");
+    ASCENT_INFO("Testing blueprint partition of multi-domain mesh with MPI");
+    
+    string output_path;
+    if(par_rank == 0)
+    {
+        output_path = prepare_output_dir();
+    }
+    else
+    {
+        output_path = output_dir();
+    }
 
-//    string output_path = prepare_output_dir();
-//    std::ostringstream oss;
+    string output_base = conduit::utils::join_file_path(output_path,
+                                                        "tout_partition_target_1_fields");
+    string output_root = output_base + "_result.cycle_000000.root";
 
-//    oss << "tout_partition_selection_mpi";
-//    string output_base = conduit::utils::join_file_path(output_path,
-//                                                        oss.str());
-//    std::ostringstream ossjson;
-//    ossjson << "tout_partition_selection_mpi_json";
-//    string output_json = conduit::utils::join_file_path(output_base,
-// 		    					ossjson.str());
-//    // remove existing file
-//    if(utils::is_file(output_base))
-//    {
-//        utils::remove_file(output_base);
-//    }
-//    if(utils::is_file(output_json))
-//    {
-//        utils::remove_file(output_json);
-//    }
+    if(par_rank == 0)
+    {
+        // remove existing file
+        if(utils::is_file(output_root))
+        {
+            utils::remove_file(output_root);
+        }
+    }
 
-//    conduit::Node actions;
-//    int target = 1;
-//    // add the pipeline
-//    conduit::Node &add_pipelines = actions.append();
-//    add_pipelines["action"] = "add_pipelines";
-//    conduit::Node &pipelines = add_pipelines["pipelines"];
-//    pipelines["pl1/f1/type"]  = "partition";
-//    pipelines["pl1/f1/params/selections/type"] = "field";
-//    pipelines["pl1/f1/params/selections/field"] = "dist";
-//    //float start[2] = {0,0};
+    conduit::Node actions;
+    int target = 1;
+    // add the pipeline
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+    pipelines["pl1/f1/type"]  = "partition";
+    pipelines["pl1/f1/params/target"] = target;
+    pipelines["pl1/f1/params/fields"].append()="dist";
 
-//    //add the extract
-//    conduit::Node &add_extracts = actions.append();
-//    add_extracts["action"] = "add_extracts";
-//    conduit::Node &extracts = add_extracts["extracts"];
-//    extracts["e1/type"] = "relay";
-//    extracts["e1/pipeline"] = "pl1";
-//    extracts["e1/params/path"] = output_base;
+    //add the extract
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    extracts["e1/type"] = "relay";
+    extracts["e1/pipeline"] = "pl1";
+    extracts["e1/params/path"] = output_base + "_result";
+    extracts["e1/params/protocol"] = "hdf5";
 
-//    //add the scene
-//    conduit::Node &add_scenes= actions.append();
-//    add_scenes["action"] = "add_scenes";
-//    conduit::Node &scenes = add_scenes["scenes"];
-//    scenes["s1/plots/p1/type"] = "pseudocolor";
-//    scenes["s1/plots/p1/field"] = "dist";
-//    scenes["s1/plots/p1/pipeline"] = "pl1";
-//    scenes["s1/image_prefix"] = output_base; 
+    extracts["einput/type"] = "relay";
+    extracts["einput/params/path"] = output_base + "_input";
+    extracts["einput/params/protocol"] = "hdf5";
 
-//    //
-//    // Run Ascent
-//    //
+    // Add a scene that shows domain id
+    //
+    //add the scene
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "dist";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = conduit::utils::join_file_path(output_path, "tout_partition_target_1_fields_result_render");
 
-//    Ascent ascent;
+    //
+    // Run Ascent
+    //
 
-//    Node ascent_opts;
-//    ascent_opts["runtime"] = "ascent";
-//    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
-//    ascent.open(ascent_opts);
-//    ascent.publish(data);
-//    ascent.execute(actions);
-//    ascent.close();
+    Ascent ascent;
 
-//    //Two files in _output directory:
-//    //tout_partition_multi_dom_serial
-//    //tout_partition_multi_dom_serial_json
-//    if(par_rank == 0)
-//    {
-//      EXPECT_TRUE(conduit::utils::is_file(output_base));
-//      Node read_csv;
-//      conduit::relay::io::load(output_base,read_csv);
+    Node ascent_opts;
+    ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
 
-//      int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
-//      EXPECT_TRUE(num_doms == target);
-//    }
-// }
+    MPI_Barrier(comm);
 
+    if(par_rank == 0)
+    {
+      EXPECT_TRUE(conduit::utils::is_file(output_root));
+      Node read_mesh;
+      conduit::relay::io::blueprint::load_mesh(output_root,read_mesh);
 
+      int num_doms = conduit::blueprint::mesh::number_of_domains(read_mesh);
+      EXPECT_TRUE(num_doms == target);
+    }
+
+}
 
 
 //-----------------------------------------------------------------------------
