@@ -40,6 +40,7 @@
 #include <mpi.h>
 #include <conduit_blueprint_mpi_mesh.hpp>
 #include <conduit_blueprint_mpi.hpp>
+#include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -394,34 +395,14 @@ BlueprintPartition::execute()
     if(params().has_child("target"))
     {
       target = params()["target"].to_int32();
-      n_options["target"] = target;
     }
-    if(params().has_child("mapping"))
+
+    n_options.set_external(params());
+    if(n_options.has_child("distributed"))
     {
-      n_options["mapping"] = params()["mapping"].to_int32();
+      n_options.remove_child("distributed");
     }
-    if(params().has_child("merge_tolerance"))
-    {
-      n_options["merge_tolerance"] = params()["merge_tolerance"].to_float64();
-    }
-    if(params().has_child("original_element_ids"))
-    {
-      n_options["original_element_ids"] = params()["original_element_ids"].to_string();
-    }
-    if(params().has_child("original_vertex_ids"))
-    {
-      n_options["original_vertex_ids"] = params()["original_vertex_ids"].to_string();
-    }
-    if(params().has_child("selections"))
-    {
-      conduit::Node &selections = params()["selections"];
-      n_options["selections"].append() = selections;
-    }
-    if(params().has_child("fields"))
-    {
-      n_options["fields"] = params()["fields"];
-    }
-  
+
     conduit::Node tmp;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
@@ -444,13 +425,17 @@ BlueprintPartition::execute()
                                         n_options,
                                         tmp);
 #endif
-    if(target == 1)
+
+    if(tmp.number_of_children() > 0)
     {
-      n_output->append().move(tmp);
-    }
-    else 
-    {
-      n_output->move(tmp);
+      if(target == 1)
+      {
+        n_output->append().move(tmp);
+      }
+      else
+      {
+        n_output->move(tmp);
+      }
     }
     DataObject *d_output = new DataObject(n_output);
     set_output<DataObject>(d_output);

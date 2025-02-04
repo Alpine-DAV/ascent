@@ -1414,7 +1414,7 @@ VTKHAddRanks::execute()
                                            this->name(),
                                            collection,
                                            throw_error);
-      std::cerr << "topo_name: " << topo_name << std::endl;
+
       if(topo_name == "")
       {
         // this creates a data object with an invalid source
@@ -1517,7 +1517,7 @@ VTKHAddDomains::execute()
                                            this->name(),
                                            collection,
                                            throw_error);
-      std::cerr << "topo_name: " << topo_name << std::endl;
+
       if(topo_name == "")
       {
         // this creates a data object with an invalid source
@@ -1530,8 +1530,8 @@ VTKHAddDomains::execute()
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     data.AddDomainIdField(output_field);
+
     new_coll->add(data, topo_name);
-    
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     set_output<DataObject>(res);
