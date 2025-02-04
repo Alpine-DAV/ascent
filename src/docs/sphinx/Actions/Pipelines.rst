@@ -1100,7 +1100,7 @@ Funtionality and further descriptions of optional parameters can be found in the
   pipelines["pl1/f1/params/target"] = 1;
   pipelines["pl1/f1/params/fields"].append() = "pink";
   pipelines["pl1/f1/params/fields"].append() = "pony";
-  pipelines["pl1/f1/params/fields"].append() = "clib";
+  pipelines["pl1/f1/params/fields"].append() = "club";
   pipelines["pl1/f1/params/merge_tolerance"] = 0.000001;
   pipelines["pl1/f1/params/mapping"] = 0; //turns off; on by default
   pipelines["pl1/f1/params/build_adjsets"] = 1;
