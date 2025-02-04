@@ -39,10 +39,11 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with hdf5 +  vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled" ||
+       n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
     {
-        ASCENT_INFO("Ascent Rendering support disabled, skipping test");
+        ASCENT_INFO("Ascent Rendering and/or HDF5 support are disabled, skipping test");
         return;
     }
 
@@ -103,11 +104,11 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     extracts["e1/type"] = "relay";
     extracts["e1/pipeline"] = "pl1";
     extracts["e1/params/path"] = output_base + "_result";
-    extracts["e1/params/protocol"] = "blueprint/mesh/yaml";
+    extracts["e1/params/protocol"] = "hdf5";
 
     extracts["einput/type"] = "relay";
     extracts["einput/params/path"] = output_base + "_input";
-    extracts["einput/params/protocol"] = "blueprint/mesh/yaml";
+    extracts["einput/params/protocol"] = "hdf5";
 
     // Add a scene that shows domain id
     //
@@ -149,17 +150,17 @@ TEST(ascent_partition, test_mpi_partition_target_1)
 // ----------------------------------------------------------
 TEST(ascent_partition, test_mpi_partition_target_10)
 {
-    // TODO: Only run if we have hdf5 support
-
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with hdf5 +  vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled" ||
+       n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
     {
-        ASCENT_INFO("Ascent Rendering support disabled, skipping test");
+        ASCENT_INFO("Ascent Rendering and/or HDF5 support are disabled, skipping test");
         return;
     }
+
     //
     //Set Up MPI
     //
@@ -272,12 +273,14 @@ TEST(ascent_partition, test_mpi_partition_fields)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with hdf5 +  vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled" ||
+       n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
     {
-        ASCENT_INFO("Ascent Rendering support disabled, skipping test");
+        ASCENT_INFO("Ascent Rendering and/or HDF5 support are disabled, skipping test");
         return;
     }
+
     //
     //Set Up MPI
     //

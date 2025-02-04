@@ -32,6 +32,17 @@ using namespace ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_partition, test_partition_2D_multi_dom)
 {
+    Node n;
+    ascent::about(n);
+
+    // only run this test if ascent was built with hdf5 \support
+    if(n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
+    {
+        ASCENT_INFO("Ascent HDF5 support is disabled, skipping test");
+        return;
+    }
+    
+    
     //
     // Create an example mesh.
     //
