@@ -30,10 +30,14 @@ public:
   vtkh::DataSet *GetInput();
   void SetHeight(const int height);
   void SetWidth(const int width);
+
+  void SetFields(const std::vector<std::string> &fields);
+
 protected:
 
   int m_width;
   int m_height;
+  std::vector<std::string> m_field_names;
   // image related data with cinema support
   vtkmCamera  m_camera;
   // methods
