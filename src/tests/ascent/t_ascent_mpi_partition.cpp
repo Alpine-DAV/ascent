@@ -36,8 +36,6 @@ int NUM_DOMAINS = 8;
 //-----------------------------------------------------------------------------
 TEST(ascent_partition, test_mpi_partition_target_1)
 {
-    // TODO: Only run if we have hdf5 support
-
     Node n;
     ascent::about(n);
 
@@ -105,11 +103,11 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     extracts["e1/type"] = "relay";
     extracts["e1/pipeline"] = "pl1";
     extracts["e1/params/path"] = output_base + "_result";
-    extracts["e1/params/protocol"] = "hdf5";
+    extracts["e1/params/protocol"] = "blueprint/mesh/yaml";
 
     extracts["einput/type"] = "relay";
     extracts["einput/params/path"] = output_base + "_input";
-    extracts["einput/params/protocol"] = "hdf5";
+    extracts["einput/params/protocol"] = "blueprint/mesh/yaml";
 
     // Add a scene that shows domain id
     //
