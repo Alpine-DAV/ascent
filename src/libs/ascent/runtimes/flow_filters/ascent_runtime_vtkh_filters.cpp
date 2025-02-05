@@ -3880,10 +3880,10 @@ VTKHStats::execute()
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
-    if(rank == 0)
-    {
-      res->PrintSummary(std::cout);
-    }
+    // if(rank == 0)
+    // {
+    //   res->PrintSummary(std::cout);
+    // }
 }
 //-----------------------------------------------------------------------------
 
@@ -3980,10 +3980,10 @@ VTKHHistogram::execute()
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
-    if(rank == 0)
-    {
-      res.Print(std::cout);
-    }
+    // if(rank == 0)
+    // {
+    //   res.Print(std::cout);
+    // }
 }
 //-----------------------------------------------------------------------------
 
@@ -4029,10 +4029,13 @@ VTKHProject2d::verify_params(const conduit::Node &params,
     valid_paths.push_back("topology");
     valid_paths.push_back("image_width");
     valid_paths.push_back("image_height");
-    ignore_paths.push_back("camera");
-    valid_paths.push_back("fields");
-    ignore_paths.push_back("fields");
+    valid_paths.push_back("dataset_bounds");
     valid_paths.push_back("camera");
+    valid_paths.push_back("fields");
+
+    ignore_paths.push_back("camera");
+    ignore_paths.push_back("fields");
+    ignore_paths.push_back("dataset_bounds");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -4044,6 +4047,7 @@ VTKHProject2d::verify_params(const conduit::Node &params,
 
     return res;
 }
+
 
 //-----------------------------------------------------------------------------
 void
@@ -4072,13 +4076,36 @@ VTKHProject2d::execute()
                                                      throw_error);
     if(topo_name == "")
     {
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkm::Bounds bounds = data.GetGlobalBounds();
+
+    if(params().has_path("dataset_bounds"))
+    {
+        float64_accessor d_bounds = params()["dataset_bounds"].value();
+        int num_bounds = d_bounds.number_of_elements();
+
+        if(num_bounds != 6)
+        {
+            std::string fpath = filter_to_path(this->name());
+            ASCENT_ERROR("project_2d (" << fpath << ")" <<
+                         " only provided " << num_bounds <<
+                         " dataset_bounds when 6 are required:" <<
+                         " [xMin,xMax,yMin,yMax,zMin,zMax]");
+        }
+
+        bounds.X.Min = d_bounds[0];
+        bounds.X.Max = d_bounds[1];
+        bounds.Y.Min = d_bounds[2];
+        bounds.Y.Max = d_bounds[3];
+        bounds.Z.Min = d_bounds[4];
+        bounds.Z.Max = d_bounds[5];
+    }
+
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
 
@@ -4111,7 +4138,7 @@ VTKHProject2d::execute()
       }
     }
 
-    int width = 512;
+    int width  = 512;
     int height = 512;
     if(params().has_path("image_width"))
     {
@@ -5883,7 +5910,7 @@ VTKHVTKFileExtract::execute()
                                                      n_recv,
                                                      mpi_comm);
         n_global_domain_ids.set(DataType::index_t(num_global_domains));
-        n_global_domain_ids.print();
+        //n_global_domain_ids.print();
         index_t_array global_vals = n_global_domain_ids.value();
         // each child will an array with its domain ids
         index_t idx = 0;
