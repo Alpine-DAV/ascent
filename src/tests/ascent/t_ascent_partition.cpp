@@ -55,9 +55,11 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
 
     ASCENT_INFO("Testing blueprint partition of multi-domain mesh in serial");
 
-    string output_path = prepare_output_dir();
-    string output_base = conduit::utils::join_file_path(output_path,
-                                                        "tout_partition_multi_dom_serial");
+    // work around for windows roundtrip conduit read bug
+    // string output_path = prepare_output_dir();
+    // string output_base = conduit::utils::join_file_path(output_path,
+    //                                                     "tout_partition_multi_dom_serial");
+    string output_base = "tout_partition_multi_dom_serial";
     string output_root = output_base + ".cycle_000000.root";
 
     // remove existing file
