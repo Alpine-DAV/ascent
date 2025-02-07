@@ -1942,7 +1942,6 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // Open Ascent Logging Stream
         // This starts logging
 
-        
         if(action.has_path("log_threshold"))
         {
             ascent::Logger::instance().set_log_threshold(action["log_threshold"].as_string());
@@ -1961,7 +1960,6 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         #else
             ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
         #endif
-            
         }
 
         #if defined(ASCENT_MPI_ENABLED)
