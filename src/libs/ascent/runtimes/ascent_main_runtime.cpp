@@ -1949,7 +1949,19 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         }
         else
         {
+        #if defined(ASCENT_MPI_ENABLED)
+            if(m_rank == 0)
+            {
+                ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+            }
+            else
+            {
+                ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_WARN_ID);
+            }
+        #else
             ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+        #endif
+            
         }
 
         #if defined(ASCENT_MPI_ENABLED)

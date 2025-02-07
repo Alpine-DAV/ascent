@@ -31,7 +31,8 @@ Opening Logs
 The ``open_log`` action can be used to start a logging stream. While there are no required keywords,
 options to set the output log file name and location using the ``file_pattern`` keyword as well as
 the logging threshold level using the ``log_threshold`` are available. The Default ``file_pattern``
-is ``ascent_log_output.yaml`` and the default ``log_threshold`` is ``debug``.
+is ``ascent_log_output.yaml`` and the default ``log_threshold`` is ``debug``. If using MPI, the
+default ``log_threshold`` is ``debug`` for rank 0 and ``warn`` for all other ranks.
 
 .. code-block:: yaml
 
