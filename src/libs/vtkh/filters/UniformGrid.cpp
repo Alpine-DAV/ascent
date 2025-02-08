@@ -179,7 +179,7 @@ public:
 
     vtkm::cont::Field reduce()
     {
-      if(m_input_field.GetName() == "mask")
+      if(m_input_field.GetName() == "HIDDEN")
       {
         return m_input_field;
       }
@@ -194,42 +194,51 @@ public:
 
       vtkm::cont::UnknownArrayHandle uah_field = m_input_field.GetData();
 
-      vtkm::cont::ArrayHandle<vtkm::Float32> ah_mask;
-      m_data_set.GetField("mask").GetData().AsArrayHandle(ah_mask);
+      vtkm::cont::ArrayHandle<unsigned char> ah_mask;
+      if(m_input_field.IsPointField())
+      {
+        m_data_set.GetPointField("HIDDEN").GetData().AsArrayHandle(ah_mask);
+      }
+      else
+      {
+        m_data_set.GetCellField("HIDDEN").GetData().AsArrayHandle(ah_mask);
+      }
       auto mask_portal = ah_mask.ReadPortal();
       int num_points = mask_portal.GetNumberOfValues();
       //Todo: NUM POINTS needs to be based on dims
       //Todo: determine if field point or cell
       //Todo: check if all ranks have field? 
 
-      //create invalid mask where true == invalid
-      std::vector<int> l_mask(num_points,1);
-      std::vector<int> g_mask(num_points,1);
-      std::vector<int> g_valid(num_points,0);
-      std::vector<int> l_valid(num_points,0);
+      //local and global point ownership by rank
+      std::vector<int> l_rank_mask(num_points,-1);
+      std::vector<int> g_rank_mask(num_points,-1);
+
+      //if a valid/owned point, declare your rank
       for(int j = 0; j < num_points; ++j)
       {
-        l_mask[j] = l_mask[j] && mask_portal.Get(j);
-        if(l_mask[j] == 0)
-        {
-          l_valid[j] = 1;
-        }
+        if(mask_portal.Get(j) == 0)
+	{
+          l_rank_mask[j] = par_rank;
+	}
       }
 
-      MPI_Reduce(l_mask.data(), g_mask.data(), num_points, MPI_INT, MPI_LAND, 0, mpi_comm);
-      MPI_Reduce(l_valid.data(), g_valid.data(), num_points, MPI_INT, MPI_SUM, 0, mpi_comm);
+      //take Max to figure out which ranks own which points
+      MPI_Allreduce(l_rank_mask.data(), g_rank_mask.data(), num_points, MPI_INT, MPI_MAX, mpi_comm);
 
+      m_invalid_value = 1000;
+      //combine fields
       ////send to root process
       if(uah_field.CanConvert<scalarI>())
       {
-        //loop through field, zero out invalid values
+        //loop through field, zero out invalid and unowned values
         scalarI ah_field = m_input_field.GetData().AsArrayHandle<scalarI>();
         int *local_field = GetVTKMPointer(ah_field);
         std::vector<int> global_field(num_points,0);
 
         for(int i = 0; i < num_points; ++i)
         {
-          if(l_mask[i] == 1)
+          //if we do not own the point, set it to zero
+          if(g_rank_mask[i] != par_rank)
           {
             ah_field.WritePortal().Set(i,0);
           }
@@ -241,15 +250,9 @@ public:
         {
           for(int i = 0; i < num_points; ++i)
           {
-
-            if(g_mask[i] == 1)
+            if(g_rank_mask[i] == -1)
             {
               global_field[i] = m_invalid_value;
-            }
-
-            if(g_valid[i] > 1)
-            {
-              global_field[i] = global_field[i]/g_valid[i];
             }
           }
           
@@ -273,8 +276,11 @@ public:
 
         for(int i = 0; i < num_points; ++i)
         {
-          if(l_mask[i] == 1)
+          //if we do not own the point, set it to zero
+          if(g_rank_mask[i] != par_rank)
+	  {
             ah_field.WritePortal().Set(i,0);
+	  }
         }
 
         MPI_Reduce(local_field, global_field.data(), num_points, MPI_FLOAT, MPI_SUM, 0, mpi_comm);
@@ -283,13 +289,9 @@ public:
         {
           for(int i = 0; i < num_points; ++i)
           {
-            if(g_mask[i] == 1)
+            if(g_rank_mask[i] == -1)
             {
               global_field[i] = m_invalid_value;
-            }
-            if(g_valid[i] > 1)
-            {
-              global_field[i] = global_field[i]/g_valid[i];
             }
           }
           scalarF ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
@@ -310,7 +312,8 @@ public:
         //loop through field, zero out invalid value
         for(int i = 0; i < num_points; ++i)
         {
-          if(l_mask[i] == 1.0)
+          //if we do not own the point, set it to zero
+          if(g_rank_mask[i] != par_rank)
           {
             ah_field.WritePortal().Set(i,0);
           }
@@ -323,13 +326,10 @@ public:
         {
           for(int i = 0; i < num_points; ++i)
           {
-            if(g_mask[i] == 1)
+            if(g_rank_mask[i] == -1)
             {
-                    global_field[i] = m_invalid_value;
-            }
-            if(g_valid[i] > 1)
-            {
-                    global_field[i] = global_field[i]/g_valid[i];
+              global_field[i] = m_invalid_value;
+	      std::cerr << "INVALID VALUE>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
             }
           }
           
@@ -357,7 +357,8 @@ public:
 
         for(int i = 0; i < num_points; ++i)
         {
-          if(l_mask[i] == 1)
+          //if we do not own the point, set it to zero
+          if(g_rank_mask[i] != par_rank)
           {
             ah_field.WritePortal().Set(i,0);
           }
@@ -374,16 +375,12 @@ public:
             ah_out.Allocate(num_points);
             for(int i = 0; i < num_points; ++i)
             {
-              if(g_mask[i] == 1)
+              if(g_rank_mask[i] == 1)
               {
                 global_x_points[i] = m_invalid_value;
                 global_y_points[i] = m_invalid_value;
               }
-              if(g_valid[i] > 1)
-              {
-                global_x_points[i] = global_x_points[i]/g_valid[i];
-                global_y_points[i] = global_y_points[i]/g_valid[i];
-              }
+
               vtkm::Vec<vtkm::Float32,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
               ah_out.WritePortal().Set(i,points_vec);
             }
@@ -411,7 +408,8 @@ public:
 
         for(int i = 0; i < num_points; ++i)
         {
-          if(l_mask[i] == 1)
+          //if we do not own the point, set it to zero
+          if(g_rank_mask[i] != par_rank)
           {
             ah_field.WritePortal().Set(i,0);
           }
@@ -424,22 +422,17 @@ public:
 
         if(par_rank == 0)
         {
-            vec2_64 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
-            ah_out.Allocate(num_points);
-            for(int i = 0; i < num_points; ++i)
+          vec2_64 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
+          ah_out.Allocate(num_points);
+          for(int i = 0; i < num_points; ++i)
+          {
+            if(g_rank_mask[i] == 1)
             {
-                if(g_mask[i] == 1)
-                {
-                  global_x_points[i] = m_invalid_value;
-                  global_y_points[i] = m_invalid_value;
-                }
-                if(g_valid[i] > 1)
-                {
-                  global_x_points[i] = global_x_points[i]/g_valid[i];
-                  global_y_points[i] = global_y_points[i]/g_valid[i];
-                }
-                vtkm::Vec<vtkm::Float64,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
-                ah_out.WritePortal().Set(i,points_vec);
+              global_x_points[i] = m_invalid_value;
+              global_y_points[i] = m_invalid_value;
+            }
+            vtkm::Vec<vtkm::Float64,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
+            ah_out.WritePortal().Set(i,points_vec);
           }
           vtkm::cont::Field out_field(m_input_field.GetName(),
         		              m_input_field.GetAssociation(),
@@ -465,7 +458,8 @@ public:
 
         for(int i = 0; i < num_points; ++i)
         {
-          if(l_mask[i] == 1)
+          //if we do not own the point, set it to zero
+          if(g_rank_mask[i] != par_rank)
           {
             ah_field.WritePortal().Set(i,0);
           }
@@ -484,17 +478,11 @@ public:
           ah_out.Allocate(num_points);
           for(int i = 0; i < num_points; ++i)
           {
-            if(g_mask[i] == 1)
+            if(g_rank_mask[i] == 1)
             {
               global_x_points[i] = m_invalid_value;
               global_y_points[i] = m_invalid_value;
               global_z_points[i] = m_invalid_value;
-            }
-            if(g_valid[i] > 1)
-            {
-              global_x_points[i] = global_x_points[i]/g_valid[i];
-              global_y_points[i] = global_y_points[i]/g_valid[i];
-              global_z_points[i] = global_z_points[i]/g_valid[i];
             }
 
             vtkm::Vec<vtkm::Float32,3> points_vec = vtkm::make_Vec(global_x_points[i],
@@ -529,7 +517,8 @@ public:
 
         for(int i = 0; i < num_points; ++i)
         {
-          if(l_mask[i] == 1)
+          //if we do not own the point, set it to zero
+          if(g_rank_mask[i] != par_rank)
           {
             ah_field.WritePortal().Set(i,0);
           }
@@ -548,21 +537,13 @@ public:
           ah_out.Allocate(num_points);
           for(int i = 0; i < num_points; ++i)
           {
-            
-            if(g_mask[i] == 1)
+            if(g_rank_mask[i] == 1)
             {
-                    global_x_points[i] = m_invalid_value;
-                    global_y_points[i] = m_invalid_value;
-                    global_z_points[i] = m_invalid_value;
+              global_x_points[i] = m_invalid_value;
+              global_y_points[i] = m_invalid_value;
+              global_z_points[i] = m_invalid_value;
             }
             
-            if(g_valid[i] > 1)
-            {
-                    global_x_points[i] = global_x_points[i]/g_valid[i];
-                    global_y_points[i] = global_y_points[i]/g_valid[i];
-                    global_z_points[i] = global_z_points[i]/g_valid[i];
-            }
-
             vtkm::Vec<vtkm::Float64,3> points_vec = vtkm::make_Vec(global_x_points[i],
                                                                    global_y_points[i],
                                                                    global_z_points[i]);
@@ -615,11 +596,22 @@ public:
     vtkm::cont::UnknownArrayHandle uah_field = m_field.GetData();
     vtkm::cont::UnknownArrayHandle uah_local_field = m_dataset.GetField(m_field_name).GetData();
 
-    vtkm::cont::ArrayHandle<vtkm::Float32> tmp_mask;
+    //mask where 0 is valid adn 2 is invalid
+    //holds individual domain
+    vtkm::cont::ArrayHandle<unsigned char> tmp_mask;
     m_mask.GetData().AsArrayHandle(tmp_mask);
 
-    vtkm::cont::ArrayHandle<vtkm::Float32> local_mask;
-    m_dataset.GetField("mask").GetData().AsArrayHandle(local_mask);
+    //mask where 0 is valid adn 2 is invalid
+    //holds all domains combined
+    vtkm::cont::ArrayHandle<unsigned char> local_mask;
+    if(m_field.IsPointField())
+    {
+      m_dataset.GetPointField("HIDDEN").GetData().AsArrayHandle(local_mask);
+    }
+    else
+    {
+      m_dataset.GetCellField("HIDDEN").GetData().AsArrayHandle(local_mask);
+    }
 
     auto tmp_mask_portal = tmp_mask.ReadPortal();
     auto r_local_mask_portal = local_mask.ReadPortal();
@@ -627,14 +619,18 @@ public:
     
     int num_points = tmp_mask_portal.GetNumberOfValues();
 
-    //create invalid mask where true == invalid
-    std::vector<int> l_mask(num_points,1);
-    for(int j = 0; j < num_points; ++j)
-    {
-      l_mask[j] = l_mask[j] && tmp_mask_portal.Get(j) && r_local_mask_portal.Get(j);
-      if(l_mask[j] != r_local_mask_portal.Get(j))
-        w_local_mask_portal.Set(j,l_mask[j]);
-    }
+    //create mask where true == 1
+//    std::vector<int> l_mask(num_points,1);
+//    for(int j = 0; j < num_points; ++j)
+//    {
+//      //if combined domains have valid location && indiv domain has valid location
+//      l_mask[j] = (tmp_mask_portal.Get(j)==0) && (r_local_mask_portal.Get(j)==0);
+//      if(!l_mask[j])
+//      {
+//        if((r_local_mask_portal.Get(j) == 2) && (tmp_mask+portal.Get(j) == 0))
+//          w_local_mask_portal.Set(j,0);
+//      }
+//    }
 
     if(uah_field.CanConvert<scalarI>())
     {
@@ -646,21 +642,13 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if((l_mask[i]) != 1 && (tmp_field[i] != m_invalid_value))
+        //tie breaker will be higher domain number 
+	//which we loop through as we VTKmProbe/sample
+        if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
-	  if(local_field[i] == m_invalid_value)
-	  {
-            local_field[i] = tmp_field[i];
-            local_data.WritePortal().Set(i,tmp_field[i]);
-	  }
-          //point present from previous domain
-	  //if not equal, take their average
-	  //TODO: User can decide how ties are broken
-	  else if(local_field[i] != tmp_field[i])
-	  {
-            int avg = (int)(local_field[i] + tmp_field[i])/2;
-            local_data.WritePortal().Set(i,avg);
-	  }
+          local_field[i] = tmp_field[i];
+          local_data.WritePortal().Set(i,tmp_field[i]);
+          w_local_mask_portal.Set(i,0);
         }
       }
     }//end scalarI
@@ -674,21 +662,13 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if((l_mask[i] != 1) && (tmp_field[i] != m_invalid_value))
+        //tie breaker will be higher domain number 
+	//which we loop through as we VTKmProbe/sample
+        if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
-	  if(local_field[i] == m_invalid_value)
-	  {
-            local_field[i] = tmp_field[i];
-            local_data.WritePortal().Set(i,tmp_field[i]);
-	  }
-          //points present from previous domain
-	  //if not equal, take their average
-	  //TODO: User can decide how ties are broken
-	  else if(local_field[i] != tmp_field[i])
-	  {
-            float avg = (float)(local_field[i] + tmp_field[i])/2;
-            local_data.WritePortal().Set(i,avg);
-	  }
+          local_field[i] = tmp_field[i];
+          local_data.WritePortal().Set(i,tmp_field[i]);
+          w_local_mask_portal.Set(i,0);
         }
       }
     }//end scalarF
@@ -702,21 +682,13 @@ public:
 
       for(int i = 0; i < num_points; ++i)
       {
-        if((l_mask[i] != 1) && (tmp_field[i] != m_invalid_value))
+        //tie breaker will be higher domain number 
+	//which we loop through as we VTKmProbe/sample
+        if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
-	  if(local_field[i] == m_invalid_value)
-	  {
-            local_field[i] = tmp_field[i];
-            local_data.WritePortal().Set(i,tmp_field[i]);
-	  }
-          //podouble present from previous domain
-	  //if not equal, take their average
-	  //TODO: User can decide how ties are broken
-	  else if(local_field[i] != tmp_field[i])
-	  {
-            double avg = (double)(local_field[i] + tmp_field[i])/2;
-            local_data.WritePortal().Set(i,avg);
-	  }
+          local_field[i] = tmp_field[i];
+          local_data.WritePortal().Set(i,tmp_field[i]);
+          w_local_mask_portal.Set(i,0);
         }
       }
     } //end scalarD
@@ -732,25 +704,15 @@ public:
         float tmp_y = tmp_data.ReadPortal().Get(i)[1];
         float local_x = local_data.ReadPortal().Get(i)[0];
         float local_y = local_data.ReadPortal().Get(i)[1];
-        if((l_mask[i] != 1) && (tmp_x != m_invalid_value) && (tmp_y != m_invalid_value))
+        //tie breaker will be higher domain number 
+	//which we loop through as we VTKmProbe/sample
+        if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
-          //pofloat present from previous domain
-	  //if not equal, take their average
-	  //TODO: User can decide how ties are broken
-	  if((local_x == m_invalid_value) || (local_y == m_invalid_value))
-	  {
-            local_x = tmp_x;
-            local_y = tmp_y;
-            vtkm::Vec<vtkm::Float32,2> vec = vtkm::make_Vec(local_x,local_y);
-            local_data.WritePortal().Set(i,vec);
-	  }
-	  else if((local_x != tmp_x) || (local_y != tmp_y))
-	  {
-            float avg_x = (float)(local_x + tmp_x)/2;
-            float avg_y = (float)(local_y + tmp_y)/2;
-            vtkm::Vec<vtkm::Float32,2> avg_vec = vtkm::make_Vec(avg_x,avg_y);
-            local_data.WritePortal().Set(i,avg_vec);
-	  }
+          w_local_mask_portal.Set(i,0);
+          local_x = tmp_x;
+          local_y = tmp_y;
+          vtkm::Vec<vtkm::Float32,2> vec = vtkm::make_Vec(local_x,local_y);
+          local_data.WritePortal().Set(i,vec);
         }
       }
     }//end vec2_32
@@ -766,25 +728,15 @@ public:
         double tmp_y = tmp_data.ReadPortal().Get(i)[1];
         double local_x = local_data.ReadPortal().Get(i)[0];
         double local_y = local_data.ReadPortal().Get(i)[1];
-        if((l_mask[i] != 1) && (tmp_x != m_invalid_value) && (tmp_y != m_invalid_value))
+        //tie breaker will be higher domain number 
+	//which we loop through as we VTKmProbe/sample
+        if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
-          //points present from previous domain
-	  //if not equal, take their average
-	  //TODO: User can decide how ties are broken
-	  if((local_x == m_invalid_value) || (local_y == m_invalid_value))
-	  {
-            local_x = tmp_x;
-            local_y = tmp_y;
-            vtkm::Vec<vtkm::Float64,2> vec = vtkm::make_Vec(local_x,local_y);
-            local_data.WritePortal().Set(i,vec);
-	  }
-	  else if((local_x != tmp_x) || (local_y != tmp_y))
-	  {
-            double avg_x = (double)(local_x + tmp_x)/2;
-            double avg_y = (double)(local_y + tmp_y)/2;
-            vtkm::Vec<vtkm::Float64,2> avg_vec = vtkm::make_Vec(avg_x,avg_y);
-            local_data.WritePortal().Set(i,avg_vec);
-	  }
+          w_local_mask_portal.Set(i,0);
+          local_x = tmp_x;
+          local_y = tmp_y;
+          vtkm::Vec<vtkm::Float64,2> vec = vtkm::make_Vec(local_x,local_y);
+          local_data.WritePortal().Set(i,vec);
         }
       }
     }//end vec2_64
@@ -802,30 +754,16 @@ public:
         float local_x = local_data.ReadPortal().Get(i)[0];
         float local_y = local_data.ReadPortal().Get(i)[1];
         float local_z = local_data.ReadPortal().Get(i)[2];
-        if((l_mask[i] != 1) && 
-          (tmp_x != m_invalid_value) && 
-	  (tmp_y != m_invalid_value) && 
-	  (tmp_z != m_invalid_value))
+        //tie breaker will be higher domain number 
+	//which we loop through as we VTKmProbe/sample
+        if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
-          //pofloat present from previous domain
-	  //if not equal, take their average
-	  //TODO: User can decide how ties are broken
-	  if((local_x == m_invalid_value) || (local_y == m_invalid_value) || (local_z == m_invalid_value))
-	  {
-            local_x = tmp_x;
-            local_y = tmp_y;
-            local_z = tmp_z;
-            vtkm::Vec<vtkm::Float32,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
-            local_data.WritePortal().Set(i,vec);
-	  }
-	  else if((local_x != tmp_x) || (local_y != tmp_y))
-	  {
-            float avg_x = (float)(local_x + tmp_x)/2;
-            float avg_y = (float)(local_y + tmp_y)/2;
-            float avg_z = (float)(local_z + tmp_z)/2;
-            vtkm::Vec<vtkm::Float32,3> avg_vec = vtkm::make_Vec(avg_x,avg_y,avg_z);
-            local_data.WritePortal().Set(i,avg_vec);
-	  }
+          w_local_mask_portal.Set(i,0);
+          local_x = tmp_x;
+          local_y = tmp_y;
+          local_z = tmp_z;
+          vtkm::Vec<vtkm::Float32,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
+          local_data.WritePortal().Set(i,vec);
         }
       }
     }//end vec3_32
@@ -843,30 +781,16 @@ public:
         double local_x = local_data.ReadPortal().Get(i)[0];
         double local_y = local_data.ReadPortal().Get(i)[1];
         double local_z = local_data.ReadPortal().Get(i)[2];
-        if((l_mask[i] != 1) && 
-          (tmp_x != m_invalid_value) && 
-	  (tmp_y != m_invalid_value) && 
-	  (tmp_z != m_invalid_value))
+        //tie breaker will be higher domain number 
+	//which we loop through as we VTKmProbe/sample
+        if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
-          //podouble present from previous domain
-	  //if not equal, take their average
-	  //TODO: User can decide how ties are broken
-	  if((local_x == m_invalid_value) || (local_y == m_invalid_value) || (local_z == m_invalid_value))
-	  {
-            local_x = tmp_x;
-            local_y = tmp_y;
-            local_z = tmp_z;
-            vtkm::Vec<vtkm::Float64,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
-            local_data.WritePortal().Set(i,vec);
-	  }
-          if((local_x != tmp_x) || (local_y != tmp_y))
-	  {
-            double avg_x = (double)(local_x + tmp_x)/2;
-            double avg_y = (double)(local_y + tmp_y)/2;
-            double avg_z = (double)(local_z + tmp_z)/2;
-            vtkm::Vec<vtkm::Float64,3> avg_vec = vtkm::make_Vec(avg_x,avg_y,avg_z);
-            local_data.WritePortal().Set(i,avg_vec);
-	  }
+          w_local_mask_portal.Set(i,0);
+          local_x = tmp_x;
+          local_y = tmp_y;
+          local_z = tmp_z;
+          vtkm::Vec<vtkm::Float64,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
+          local_data.WritePortal().Set(i,vec);
         }
       }
     }//end vec3_64
@@ -909,11 +833,22 @@ UniformGrid::DoExecute()
   MPI_Comm_size(mpi_comm, &par_size);  
 #endif
   this->m_output = new DataSet();
+  std::cerr << "INPUT START" << std::endl;
+  this->m_input->PrintSummary(std::cerr); 
+  std::cerr << "INPUT END---------------------" << std::endl;
+  std::cerr << "GLOBAL Rageng: " << std::endl;
+  vtkm::Range den_range= m_input->GetGlobalRange("den").ReadPortal().Get(0);
+  std::cerr << den_range.Min << " " << den_range.Max << std::endl;
+  vtkm::Bounds bounds = m_input->GetGlobalBounds();
+  std::cerr << "GlobalBounds: " << std::endl;
+  std::cerr << bounds.X.Min << " " << bounds.X.Max << " " << bounds.Y.Min << " " << bounds.Y.Max << " " << bounds.Z.Min << " " << bounds.Z.Max << std::endl; 
+
 
   std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
   const int num_domains = domain_ids.size();
   //add mask to keep track of valid points after sampling
-  this->m_input->AddConstantPointField(0.0, "mask");
+  //this->m_input->AddConstantPointField(0.0, "mask");
+  this->m_input->AddDomainIdField("mask");
 
   //put vtkm datasets into a partitionedDS for vtkm::Merge
 //  vtkm::cont::PartitionedDataSet sampled_doms;
@@ -976,7 +911,14 @@ UniformGrid::DoExecute()
 //  //return a partitiondataset
 //  auto merged = mergeDataSets.Execute(sampled_doms);
 //  auto result = merged.GetPartitions();
+  std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
+  std::cerr << "m_origin: " << m_origin[0] << " " << m_origin[1] << " " << m_origin[2] << std::endl;
+  std::cerr << "m_spacing: " << m_spacing[0] << " " << m_spacing[1] << " " << m_spacing[2] << std::endl;
+  std::cerr << "input num cells: " << m_input->GetGlobalNumberOfCells() << std::endl; 
   vtkm::cont::DataSet local_res;
+#ifdef VTKH_PARALLEL
+  std::cerr << "par rank " << par_rank << " num domains: " << num_domains << std::endl;
+#endif
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::cont::DataSet dom;
@@ -991,14 +933,36 @@ UniformGrid::DoExecute()
       probe.spacing(m_spacing);
       probe.invalidValue(m_invalid_value);
       auto dataset = probe.Run(dom);
+      std::cerr <<"UNIFORM GRID OUTPUT: " << std::endl;
+      dataset.PrintSummary(std::cerr);
+      std::cerr <<"UNIFORM GRID OUTPUT ENDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" << std::endl;
       vtkm::cont::Field tmp_field = dataset.GetField(m_field);
+      vtkm::cont::Field valid_field;
+      if(tmp_field.IsPointField())
+      {
+	      vtkm::cont::Field point_field = dataset.GetPointField("HIDDEN");
+
+	      std::cerr << "point_field: " << std::endl;
+	      point_field.PrintSummary(std::cerr);
+	      std::cerr << "point_field endl; " << std::endl;
+	      valid_field = point_field;
+      }
+      else
+      {
+
+	      vtkm::cont::Field cell_field = dataset.GetCellField("HIDDEN");
+	      std::cerr << "cell_field: " << std::endl;
+	      cell_field.PrintSummary(std::cerr);
+	      std::cerr << "cell_field endl; " << std::endl;
+	      valid_field = cell_field;
+      }
       
       std::string cs_name = dataset.GetCoordinateSystemName();
       if(!local_res.HasCoordinateSystem(cs_name))
       {
         local_res.CopyStructure(dataset);
-	vtkm::cont::Field mask = dataset.GetField("mask");
-	local_res.AddField(mask);
+	//vtkm::cont::Field mask = dataset.GetField("mask");
+	local_res.AddField(valid_field);
       }
       if(!local_res.HasField(m_field))
       {
@@ -1007,24 +971,35 @@ UniformGrid::DoExecute()
       else
       {
 	vtkm::cont::Field tmp_mask = dataset.GetField("mask");
-        vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field,tmp_mask, m_field, m_invalid_value);
+        vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field,valid_field, m_field, m_invalid_value);
 	localreducefield.LocalReduce();
       }
     }
   }
+  std::cerr <<" LOCAL RES START" << std::endl;
+  local_res.PrintSummary(std::cerr);
+  std::cerr <<" LOCAL RES END" << std::endl;
 
 
 #ifdef VTKH_PARALLEL
   //take uniform sampled grid and reduce to root process
-  vtkh::detail::GlobalReduceField g_reducefields(local_res, m_field, m_invalid_value);
-  auto output = g_reducefields.Reduce();
+  //vtkh::detail::GlobalReduceField g_reducefields(local_res, m_field, m_invalid_value);
+  //auto output = g_reducefields.Reduce();
   if(par_rank == 0)
   {
-    this->m_output->AddDomain(output,0);
+    this->m_output->AddDomain(local_res,0);
+  //  this->m_output->AddDomain(output,0);
   }
 #else
   this->m_output->AddDomain(local_res,0);
 #endif
+  std::cerr << "FINAL OUTPUT START" << std::endl;
+  this->m_output->PrintSummary(std::cerr); 
+  std::cerr << "FINAL OUTPUT END---------------------" << std::endl;
+  std::cerr << "OUTPUT Rageng: " << std::endl;
+  vtkm::Range range= m_output->GetGlobalRange("den").ReadPortal().Get(0);
+  std::cerr << range.Min << " " << range.Max << std::endl;
+  std::cerr << "output num cells: " << m_output->GetGlobalNumberOfCells() << std::endl; 
 
 }
 
