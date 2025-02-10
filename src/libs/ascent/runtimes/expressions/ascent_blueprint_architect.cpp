@@ -610,7 +610,8 @@ vert_location(const conduit::Node &domain,
   {
     res = detail::get_rectilinear_vert(n_coords, index);
   }
-  else if(mesh_type == "unstructured" || mesh_type == "structured")
+  else if(mesh_type == "unstructured" || mesh_type == "structured" ||
+          mesh_type == "points")
   {
     res = detail::get_explicit_vert(n_coords, index);
   }
@@ -1178,7 +1179,7 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
       }
     }
     else if(topo_type == "rectilinear" || topo_type == "structured" ||
-            topo_type == "unstructured")
+            topo_type == "unstructured" || topo_type == "points")
     {
       int num_dims = n_coords["values"].number_of_children();
       for(int i = 0; i < num_dims; ++i)
