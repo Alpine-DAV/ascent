@@ -845,26 +845,30 @@ UniformGrid::DoExecute()
   MPI_Comm_rank(mpi_comm, &par_rank);
   MPI_Comm_size(mpi_comm, &par_size);  
 #endif
+
   this->m_output = new DataSet();
+
+
+#ifdef VTKH_PARALLEL
+#if _DEBUG 
+  vtkm::Range par_den_range= m_input->GetRange("den").ReadPortal().Get(0);
+  std::cerr <<"  par rank: " << par_rank << "local range: " <<  par_den_range.Min << " " << par_den_range.Max << std::endl;
   std::cerr << "INPUT START" << std::endl;
   this->m_input->PrintSummary(std::cerr); 
   std::cerr << "INPUT END---------------------" << std::endl;
   vtkm::Range den_range= m_input->GetGlobalRange("den").ReadPortal().Get(0);
   std::cerr << "GLOBAL Rageng: " << den_range.Min << " " << den_range.Max << std::endl;
-#ifdef VTKH_PARALLEL
-  vtkm::Range par_den_range= m_input->GetRange("den").ReadPortal().Get(0);
-  std::cerr <<"  par rank: " << par_rank << "local range: " <<  par_den_range.Min << " " << par_den_range.Max << std::endl;
-#endif
   vtkm::Bounds bounds = m_input->GetGlobalBounds();
   std::cerr << "GlobalBounds: " << std::endl;
   std::cerr << bounds.X.Min << " " << bounds.X.Max << " " << bounds.Y.Min << " " << bounds.Y.Max << " " << bounds.Z.Min << " " << bounds.Z.Max << std::endl; 
+#endif
+#endif
 
 
   std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
   const int num_domains = domain_ids.size();
   //add mask to keep track of valid points after sampling
   //this->m_input->AddConstantPointField(0.0, "mask");
-  this->m_input->AddDomainIdField("mask");
 
   //put vtkm datasets into a partitionedDS for vtkm::Merge
 //  vtkm::cont::PartitionedDataSet sampled_doms;
@@ -927,14 +931,17 @@ UniformGrid::DoExecute()
 //  //return a partitiondataset
 //  auto merged = mergeDataSets.Execute(sampled_doms);
 //  auto result = merged.GetPartitions();
+#if _DEBUG 
   std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
   std::cerr << "m_origin: " << m_origin[0] << " " << m_origin[1] << " " << m_origin[2] << std::endl;
   std::cerr << "m_spacing: " << m_spacing[0] << " " << m_spacing[1] << " " << m_spacing[2] << std::endl;
   std::cerr << "input num cells: " << m_input->GetGlobalNumberOfCells() << std::endl; 
-  vtkm::cont::DataSet local_res;
 #ifdef VTKH_PARALLEL
   std::cerr << "par rank " << par_rank << " num domains: " << num_domains << std::endl;
 #endif
+#endif
+
+  vtkm::cont::DataSet local_res;
   for(int i = 0; i < num_domains; ++i)
   {
     vtkm::cont::DataSet dom;
@@ -949,27 +956,26 @@ UniformGrid::DoExecute()
       probe.spacing(m_spacing);
       probe.invalidValue(m_invalid_value);
       auto dataset = probe.Run(dom);
+      vtkm::cont::Field tmp_field = dataset.GetField(m_field);
+
+#if _DEBUG 
       std::cerr <<"UNIFORM GRID OUTPUT: " << std::endl;
       dataset.PrintSummary(std::cerr);
-      std::cerr <<"UNIFORM GRID OUTPUT ENDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" << std::endl;
-      vtkm::cont::Field tmp_field = dataset.GetField(m_field);
+      std::cerr <<"UNIFORM GRID OUTPUT END" << std::endl;
+#endif
+
+
       vtkm::cont::Field valid_field;
       if(tmp_field.IsPointField())
       {
 	      vtkm::cont::Field point_field = dataset.GetPointField("HIDDEN");
 
-	      std::cerr << "point_field: " << std::endl;
-	      point_field.PrintSummary(std::cerr);
-	      std::cerr << "point_field endl; " << std::endl;
 	      valid_field = point_field;
       }
       else
       {
 
 	      vtkm::cont::Field cell_field = dataset.GetCellField("HIDDEN");
-	      std::cerr << "cell_field: " << std::endl;
-	      cell_field.PrintSummary(std::cerr);
-	      std::cerr << "cell_field endl; " << std::endl;
 	      valid_field = cell_field;
       }
       
@@ -977,7 +983,6 @@ UniformGrid::DoExecute()
       if(!local_res.HasCoordinateSystem(cs_name))
       {
         local_res.CopyStructure(dataset);
-	//vtkm::cont::Field mask = dataset.GetField("mask");
 	local_res.AddField(valid_field);
       }
       if(!local_res.HasField(m_field))
@@ -986,15 +991,17 @@ UniformGrid::DoExecute()
       }
       else
       {
-	vtkm::cont::Field tmp_mask = dataset.GetField("mask");
         vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field,valid_field, m_field, m_invalid_value);
 	localreducefield.LocalReduce();
       }
     }
   }
+
+#if _DEBUG 
   std::cerr <<" LOCAL RES START" << std::endl;
   local_res.PrintSummary(std::cerr);
   std::cerr <<" LOCAL RES END" << std::endl;
+#endif
 
 
 #ifdef VTKH_PARALLEL
