@@ -205,7 +205,9 @@ public:
       }
       auto mask_portal = ah_mask.ReadPortal();
       int num_points = mask_portal.GetNumberOfValues();
+#if _DEBUG 
       std::cerr << "NUM_POINTS: " << num_points << std::endl;
+#endif
       //Todo: NUM POINTS needs to be based on dims
       //Todo: determine if field point or cell
       //Todo: check if all ranks have field? 
@@ -252,8 +254,10 @@ public:
           {
             if(g_rank_mask[i] == -1)
             {
-              //global_field[i] = m_invalid_value;
+              global_field[i] = m_invalid_value;
+#if _DEBUG 
               global_field[i] = par_rank*10;
+#endif
             }
           }
           
@@ -293,8 +297,10 @@ public:
             if(global_field[i] == 0) std::cerr << "POINT IS ZERO: " << i  << std::endl;
             if(g_rank_mask[i] == -1)
             {
-              //global_field[i] = m_invalid_value;
+              global_field[i] = m_invalid_value;
+#if _DEBUG 
               global_field[i] = par_rank*10;
+#endif
             }
           }
           scalarF ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
@@ -330,11 +336,12 @@ public:
         {
           for(int i = 0; i < num_points; ++i)
           {
-            if(global_field[i] == 0) std::cerr << "POINT IS ZERO: " << i  << std::endl;
             if(g_rank_mask[i] == -1)
             {
-              //global_field[i] = m_invalid_value;
+              global_field[i] = m_invalid_value;
+#if _DEBUG 
               global_field[i] = par_rank*10;
+#endif
 	      std::cerr << "INVALID VALUE>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
             }
           }
@@ -994,25 +1001,27 @@ UniformGrid::DoExecute()
   //take uniform sampled grid and reduce to root process
   vtkh::detail::GlobalReduceField g_reducefields(local_res, m_field, m_invalid_value);
   auto output = g_reducefields.Reduce();
+#if _DEBUG 
+  //change to desired rank for output 
   if(par_rank == 0)
   {
-    //this->m_output->AddDomain(local_res,0);
-    this->m_output->AddDomain(output,0);
+    //this->m_output->AddDomain(output,0);
+    this->m_output->AddDomain(local_res,0);
     vtkm::Range output_den_range= this->m_output->GetRange("den").ReadPortal().Get(0);
     std::cerr <<"  par rank: " << par_rank << "output range: " <<  output_den_range.Min << " " << output_den_range.Max << std::endl;
+    std::cerr << "par rank: " << par_rank << " output num cells: " << m_output->GetGlobalNumberOfCells() << std::endl; 
+    std::cerr << "FINAL OUTPUT START" << std::endl;
+    this->m_output->PrintSummary(std::cerr); 
+    std::cerr << "FINAL OUTPUT END---------------------" << std::endl;
   }
-  //else
-  //{
-  //  this->m_output->AddDomain(local_res,0);
-  //}
+#endif
+  if(par_rank == 0)
+  {
+    this->m_output->AddDomain(output,0);
+  }
 #else
   this->m_output->AddDomain(local_res,0);
 #endif
-  std::cerr << "FINAL OUTPUT START" << std::endl;
-  this->m_output->PrintSummary(std::cerr); 
-  std::cerr << "FINAL OUTPUT END---------------------" << std::endl;
-  vtkm::Range range= m_output->GetGlobalRange("den").ReadPortal().Get(0);
-  std::cerr << "output num cells: " << m_output->GetGlobalNumberOfCells() << std::endl; 
 
 }
 
