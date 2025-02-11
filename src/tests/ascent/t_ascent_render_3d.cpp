@@ -1906,11 +1906,10 @@ TEST(ascent_render_3d, test_render_3d_compressed_color_table)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
 
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+    ASCENT_INFO("Testing 3D Rendering with Compressed Color Table");
 
     string output_path = prepare_output_dir();
-    string image_prefix0 = "compressed_color_table";
-    string output_file = conduit::utils::join_file_path(output_path,image_prefix0);
+    string output_file = conduit::utils::join_file_path(output_path,"vtkm_compressed_color_table");
 
     // remove old images before rendering
     remove_test_image(output_file);

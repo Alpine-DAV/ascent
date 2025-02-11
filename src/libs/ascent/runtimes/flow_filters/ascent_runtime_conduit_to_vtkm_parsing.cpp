@@ -235,7 +235,7 @@ parse_color_table(const conduit::Node &color_table_node)
     bool clear = false;
     if (control_points_node.dtype().is_list())
     {
-        NodeConstIterator itr = color_table_node.fetch("control_points").children();
+        NodeConstIterator itr = control_points_node.children();
         while(itr.has_next())
         {
             const Node &peg = itr.next();
@@ -375,7 +375,7 @@ parse_color_table(const conduit::Node &color_table_node)
 
             for(index_t i=0; i<r_vals.number_of_elements();i++)
             {
-                color_table.AddPointAlpha(pos_vals[i], std::min(1., std::max(alpha_vals[i], 0.)));
+                color_table.AddPointAlpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
             }
         }
     }

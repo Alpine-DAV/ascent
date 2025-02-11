@@ -115,11 +115,10 @@ check_color_table_surprises(const conduit::Node &color_table)
         c_valid_paths.push_back("color");
         c_valid_paths.push_back("position");
 
-        const conduit::Node &control_points = color_table["control_points"];
-        const int num_points = control_points.number_of_children();
+        const int num_points = control_points_node.number_of_children();
         for(int i = 0; i < num_points; ++i)
         {
-            const conduit::Node &point = control_points.child(i);
+            const conduit::Node &point = control_points_node.child(i);
             surprises += surprise_check(c_valid_paths, point);
         }
     }
