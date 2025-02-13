@@ -33,6 +33,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.
 - Fixed a bug with Cinema resource output that could lead to corrupted html results.
 - Fixed a bug where controls for world and screen annotations where ignored in Cinema renders.
+- Fixed a bug in Uniform Grid Sampling and changed how ties for valid points are broken.
 
 ## [0.9.3] - Released 2024-05-11
 ### Preferred dependency versions for ascent@0.9.3
