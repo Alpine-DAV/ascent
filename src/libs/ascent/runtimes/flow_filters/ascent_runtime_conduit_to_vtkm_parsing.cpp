@@ -375,7 +375,7 @@ parse_color_table(const conduit::Node &color_table_node)
 
             for(index_t i=0; i<r_vals.number_of_elements();i++)
             {
-                color_table.AddPointAlpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
+                color_table.AddPointAlpha(pos_vals[i], std::min(1., std::max(alpha_vals[i], 0.)));
             }
         }
     }

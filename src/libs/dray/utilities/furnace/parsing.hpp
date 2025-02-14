@@ -107,7 +107,7 @@ parse_color_table(const conduit::Node &color_table_node)
     if (control_points_node.dtype().is_list())
     {
         NodeConstIterator itr = control_points_node.children();
-        while(itr.has_next())
+        while (itr.has_next())
         {
             const Node &peg = itr.next();
             if (peg["type"].as_string() == "rgb")
@@ -135,30 +135,30 @@ parse_color_table(const conduit::Node &color_table_node)
         }
     }
 
-    if(clear && !name_provided)
+    if (clear && !name_provided)
     {
       color_table.clear_colors();
     }
 
-    if(clear_alphas)
+    if (clear_alphas)
     {
       color_table.clear_alphas();
     }
 
     if (control_points_node.dtype().is_list())
     {
-        itr = control_points_node.children();
-        while(itr.has_next())
+        NodeConstIterator itr = control_points_node.children();
+        while (itr.has_next())
         {
             const Node &peg = itr.next();
-            if(!peg.has_child("position"))
+            if (!peg.has_child("position"))
             {
                 std::cout<<"Color map control point must have a position\n";
             }
 
             float64 position = peg["position"].to_float64();
 
-            if(position > 1.0 || position < 0.0)
+            if (position > 1.0 || position < 0.0)
             {
                 std::cout<<"Cannot add color map control point position "
                         << position
@@ -175,7 +175,7 @@ parse_color_table(const conduit::Node &color_table_node)
 
                 for(int i = 0; i < 3; ++i)
                 {
-                ecolor[i] = std::min(1.f, std::max(ecolor[i], 0.f));
+                    ecolor[i] = std::min(1.f, std::max(ecolor[i], 0.f));
                 }
 
                 color_table.add_point(position, ecolor);
@@ -196,24 +196,24 @@ parse_color_table(const conduit::Node &color_table_node)
     }
     else if (control_points_node.dtype().is_object())
     {
-        if(!control_points_node.has_child("r"))
+        if (!control_points_node.has_child("r"))
         {
-            ASCENT_ERROR("Color map control point must provide r values");
+            std::cout << "Color map control point must provide r values" << std::endl;
         }
 
-        if(!control_points_node.has_child("g"))
+        if (!control_points_node.has_child("g"))
         {
-            ASCENT_ERROR("Color map control point must provide g values");
+            std::cout << "Color map control point must provide g values" << std::endl;
         }
 
-        if(!control_points_node.has_child("b"))
+        if (!control_points_node.has_child("b"))
         {
-            ASCENT_ERROR("Color map control point must provide b values");
+            std::cout << "Color map control point must provide b values" << std::endl;
         }
 
-        if(!control_points_node.has_child("position"))
+        if (!control_points_node.has_child("position"))
         {
-            ASCENT_ERROR("Color map control point must have a position");
+            std::cout << "Color map control point must have a position" << std::endl;
         }
 
         float32_array r_vals = control_points_node.fetch("r").value();
@@ -221,44 +221,44 @@ parse_color_table(const conduit::Node &color_table_node)
         float32_array b_vals = control_points_node.fetch("b").value();
         float32_array pos_vals = control_points_node.fetch("position").value();
 
-        if(r_vals.number_of_elements() != g_vals.number_of_elements() ||
+        if (r_vals.number_of_elements() != g_vals.number_of_elements() ||
             g_vals.number_of_elements() != b_vals.number_of_elements() ||
             b_vals.number_of_elements() != pos_vals.number_of_elements())
         {
-            ASCENT_ERROR("Color map color channels should all be of the same size");
+            std::cout << "Color map color channels should all be of the same size" << std::endl;
         }
 
-        for(index_t i=0; i<r_vals.number_of_elements();i++)
+        for (index_t i=0; i<r_vals.number_of_elements();i++)
         {
-            dray::Vec<float,3> ecolor(r_vals[i], g_vals[i], b_vals[i]);
+            dray::Vec<float,3> ecolor({r_vals[i], g_vals[i], b_vals[i]});
 
-            for(int i = 0; i < 3; ++i)
+            for (int i = 0; i < 3; ++i)
             {
-                ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
+                ecolor[i] = std::min(1.f, std::max(ecolor[i], 0.f));
             }
 
-            if(pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
+            if (pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
             {
-                ASCENT_ERROR("Cannot add color map control point position "
+                std::cout << "Cannot add color map control point position "
                                 << pos_vals[i]
-                                << ". Must be a normalized scalar.");
+                                << ". Must be a normalized scalar." << std::endl;
             }
 
-            color_table.AddPoint(pos_vals[i], ecolor);
+            color_table.add_point(pos_vals[i], ecolor);
         }
 
-        if(control_points_node.has_child("a"))
+        if (control_points_node.has_child("a"))
         {
             float32_array alpha_vals = control_points_node.fetch("a").value();
 
-            if(pos_vals.number_of_elements() != alpha_vals.number_of_elements())
+            if (pos_vals.number_of_elements() != alpha_vals.number_of_elements())
             {
-                ASCENT_ERROR("Color map alpha channel should have same size as color channels");
+                std::cout << "Color map alpha channel should have same size as color channels" << std::endl;
             }
 
-            for(index_t i=0; i<r_vals.number_of_elements();i++)
+            for (index_t i=0; i<r_vals.number_of_elements();i++)
             {
-                color_table.AddPointAlpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
+                color_table.add_alpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
             }
         }
     }

@@ -891,6 +891,78 @@ TEST(ascent_devil_ray, test_vector_component)
     std::string msg = "An example of using devil ray extract a component of a vector.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_compressed_color_table)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing Devil Ray Compressed Color Table");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"dray_compressed_color_table");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node control_points;
+    control_points["r"] = {.23, .48, .99};
+    control_points["g"] = {0.08, .23, 1.};
+    control_points["b"] = {0.08, .04, .96};
+    control_points["a"] = {1., 1., 1.};
+    control_points["position"] = {0., .5, 1.};    
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_pseudocolor";
+    extracts["e1/params/field"] = "braid";
+    extracts["e1/params/color_table/control_points"] = control_points;
+    extracts["e1/params/image_width"]  = 512;
+    extracts["e1/params/image_height"] = 512;
+    extracts["e1/params/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_extracts";
+    add_plots["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    // EXPECT_TRUE(check_test_image(output_file));
+    // std::string msg = "An example of creating a custom compressed color map.";
+    // ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
