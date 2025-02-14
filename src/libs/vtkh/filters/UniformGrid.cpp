@@ -294,7 +294,6 @@ public:
         {
           for(int i = 0; i < num_points; ++i)
           {
-            if(global_field[i] == 0) std::cerr << "POINT IS ZERO: " << i  << std::endl;
             if(g_rank_mask[i] == -1)
             {
               global_field[i] = m_invalid_value;
@@ -342,7 +341,6 @@ public:
 #if _DEBUG 
               global_field[i] = par_rank*10;
 #endif
-	      std::cerr << "INVALID VALUE>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
             }
           }
           
