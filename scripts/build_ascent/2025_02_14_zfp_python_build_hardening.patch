@@ -1,17 +1,18 @@
-From 842cfee0e9e73e81e8de95b21e647bccea1f8d22 Mon Sep 17 00:00:00 2001
+From 138489d7c114fadd428fa1cd39e410e69c500895 Mon Sep 17 00:00:00 2001
 From: Cyrus Harrison <cyrush@llnl.gov>
-Date: Mon, 10 Feb 2025 13:53:21 -0800
-Subject: [PATCH] python cmake logic adjustment for build_ascent
+Date: Fri, 14 Feb 2025 22:44:26 +0000
+Subject: [PATCH] python build hardening
 
 ---
- python/CMakeLists.txt | 182 +++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 179 insertions(+), 3 deletions(-)
+ python/CMakeLists.txt                         | 186 +++++++++++++++++-
+ .../FindPythonExtensions.cmake                |   6 +-
+ 2 files changed, 186 insertions(+), 6 deletions(-)
 
 diff --git a/python/CMakeLists.txt b/python/CMakeLists.txt
-index 9410ddd..9405486 100644
+index 9410ddd..4a7cb67 100644
 --- a/python/CMakeLists.txt
 +++ b/python/CMakeLists.txt
-@@ -2,13 +2,189 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27.0)
+@@ -2,13 +2,193 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27.0)
      cmake_policy(SET CMP0148 OLD)
  endif ()
  
@@ -179,6 +180,9 @@ index 9410ddd..9405486 100644
 +            MESSAGE(FATAL_ERROR "Failed to find main library using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 +        endif()
 +
++        set(PYTHON_LIBRARIES ${PYTHON_LIBRARY})
++        set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIR})
++
 +        MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
 +        find_package(PythonLibs)
 +
@@ -191,6 +195,7 @@ index 9410ddd..9405486 100644
 +
 +find_package_handle_standard_args(Python  DEFAULT_MSG
 +                                  PYTHON_LIBRARY PYTHON_INCLUDE_DIR)
++include_directories("${PYTHON_INCLUDE_DIR}")
 +
  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/scikit-build-cmake)
  include(UseCython)
@@ -203,13 +208,30 @@ index 9410ddd..9405486 100644
  find_package(PythonExtensions REQUIRED)
  find_package(Cython 0.28 REQUIRED) # >= v0.28 required for const memoryview support
  find_package(NumPy REQUIRED)
-@@ -26,5 +202,5 @@ set(PYLIB_BUILD_DIR "${CMAKE_BINARY_DIR}/bin" CACHE PATH "Directory where zfp py
+@@ -26,5 +206,5 @@ set(PYLIB_BUILD_DIR "${CMAKE_BINARY_DIR}/bin" CACHE PATH "Directory where zfp py
  set_target_properties(zfpy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PYLIB_BUILD_DIR})
  
  # Install to the typical python module directory
 -set(python_install_lib_dir "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
 +set(python_install_lib_dir "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/" CACHE PATH "Dest")
  install(TARGETS zfpy LIBRARY DESTINATION ${python_install_lib_dir})
+diff --git a/python/scikit-build-cmake/FindPythonExtensions.cmake b/python/scikit-build-cmake/FindPythonExtensions.cmake
+index 59b30c2..6f489fc 100644
+--- a/python/scikit-build-cmake/FindPythonExtensions.cmake
++++ b/python/scikit-build-cmake/FindPythonExtensions.cmake
+@@ -416,9 +416,9 @@ function(python_extension_module _target)
+     endif()
+   endif()
+ 
+-  if(NOT _is_non_lib)
+-    include_directories("${PYTHON_INCLUDE_DIRS}")
+-  endif()
++  #if(NOT _is_non_lib)
++  #  include_directories("${PYTHON_INCLUDE_DIRS}")
++  #endif()
+ 
+   if(_is_module_lib)
+     set_target_properties(${_target} PROPERTIES
 -- 
-2.39.3 (Apple Git-145)
+2.34.1
 

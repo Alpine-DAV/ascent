@@ -461,7 +461,7 @@ if [ ! -d ${zfp_src_dir} ]; then
 
   # apply patches
   cd ${zfp_src_dir}
-  patch -p1 < ${script_dir}/2025_02_10_zfp_python_install_fix.patch
+  patch -p1 < ${script_dir}/2025_02_14_zfp_python_build_hardening.patch
   cd ${root_dir}
 fi
 
