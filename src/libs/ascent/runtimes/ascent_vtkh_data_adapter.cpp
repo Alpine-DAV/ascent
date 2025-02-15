@@ -919,6 +919,9 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     vtkm::cont::DataSet * result = NULL;
 
     std::string topo_name = topo_name_str;
+    std::cerr << "input node: " << std::endl;
+    node.print();
+    std::cerr << "intput node end" << std::endl;
 
     // we must find the topolgy they asked for
     if(!node["topologies"].has_child(topo_name))
@@ -933,6 +936,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
     string coords_name   = n_topo["coordset"].as_string();
     const Node &n_coords = node["coordsets"][coords_name];
+
 
     int neles  = 0;
     int nverts = 0;
@@ -1447,8 +1451,10 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 {
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
+    string coords_type = n_coords["type"].as_string();
     nverts = n_coords["values/x"].dtype().number_of_elements();
-
+    std::cerr << "nverts: " << nverts << std::endl;
+    std::cerr << "IN STRUCTURED BLUEPRINT TO VTKM DATASET" << std::endl;
     int ndims = 0;
 
     vtkm::cont::CoordinateSystem coords;
@@ -1498,36 +1504,121 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     {
       ASCENT_ERROR("Coordinate system must be floating point values");
     }
+    std::cerr << "what coords look like in structured mesh : " << std::endl;
+    coords.PrintSummary(std::cerr);
 
     result->AddCoordinateSystem(coords);
 
-    int32 x_elems = n_topo["elements/dims/i"].as_int32();
-    int32 y_elems = n_topo["elements/dims/j"].as_int32();
+    int32 x_elems = n_topo["elements/dims/i"].to_int();
+    int32 y_elems = n_topo["elements/dims/j"].to_int();
 
     vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
 
-    if (ndims == 2)
+    if(coords_type == "explicit")
     {
-      vtkm::cont::CellSetStructured<2> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                 y_elems+1));
-      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
-      cell_set.SetGlobalPointIndexStart(origin2);
-      result->SetCellSet(cell_set);
-      neles = x_elems * y_elems;
+      if(ndims == 2)
+      {
+        vtkm::cont::CellSetStructured<2> cell_set;
+        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                   y_elems+1));
+        vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+        cell_set.SetGlobalPointIndexStart(origin2);
+        result->SetCellSet(cell_set);
+        neles = x_elems * y_elems;
+        std::cerr << "HERE IN NDIMS 2" << std::endl;
+
+      }
+      else
+      {
+        std::cerr << "HERE IN NDIMS 3" << std::endl;
+        int32 z_elems = n_topo["elements/dims/k"].to_int();
+
+        //vtkm::cont::UnknownCellSet uk_cell_set(cell_set);
+        //std::cerr << std::endl;
+        //uk_cell_set.AsCellSet(cell_set_ex);
+        //std::cerr << "after AsCellSet" << std::endl;
+        //uk_cell_set.PrintSummary(std::cerr);
+        neles = x_elems * y_elems * z_elems;
+        nverts = (x_elems+1) * (y_elems+1) * (z_elems+1);
+        std::cerr << "x_elems: " << x_elems << std::endl;
+        std::cerr << "y_elems: " << y_elems << std::endl;
+        std::cerr << "z_elems: " << z_elems << std::endl;
+        std::cerr << "new nverts: " << nverts << std::endl;
+        
+        std::vector<vtkm::Id> connectivity;
+        std::string ele_shape = "hex";
+
+        vtkm::UInt8 shape_id;
+        vtkm::IdComponent indices_per;
+        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+        std::cerr <<"indices_per: " << indices_per << std::endl;
+        std::cerr <<"shape_id: " << shape_id << std::endl;
+        // Build Connectivity (Polyhedral cells)
+        for (vtkm::Id k = 0; k < z_elems; ++k) 
+        {
+            for (vtkm::Id j = 0; j < y_elems; ++j) 
+            {
+                for (vtkm::Id i = 0; i < x_elems; ++i) 
+                {
+                    vtkm::Id v0 = k * y_elems * x_elems + j * x_elems + i;
+                    vtkm::Id v1 = v0 + 1;
+                    vtkm::Id v2 = v0 + x_elems + 1;
+                    vtkm::Id v3 = v0 + x_elems;
+                    vtkm::Id v4 = v0 + y_elems * x_elems;
+                    vtkm::Id v5 = v4 + 1;
+                    vtkm::Id v6 = v4 + x_elems + 1;
+                    vtkm::Id v7 = v4 + x_elems;
+                    
+                    connectivity.push_back(v0);
+                    connectivity.push_back(v1);
+                    connectivity.push_back(v2);
+                    connectivity.push_back(v3);
+                    connectivity.push_back(v4);
+                    connectivity.push_back(v5);
+                    connectivity.push_back(v6);
+                    connectivity.push_back(v7);
+                }
+            }
+        }
+
+        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_conn;
+        int num_conn = connectivity.size();
+        ascent::detail::CopyArray(vtkm_conn, (const vtkm::Id*) connectivity.data(), num_conn, "false");
+        std::cerr << "connectivity size: " << connectivity.size() << std::endl;
+        vtkm::cont::CellSetSingleType<> cell_set;
+        std::cerr << " vtkm_conn num values: " << vtkm_conn.GetNumberOfValues() << std::endl;;
+        cell_set.Fill(nverts, shape_id, indices_per, vtkm_conn);
+        neles = cell_set.GetNumberOfCells();
+        result->SetCellSet(cell_set);
+        std::cerr << "CellSet uniforlM: " << std::endl;
+        cell_set.PrintSummary(std::cerr);
+      }
+
     }
     else
     {
-      int32 z_elems = n_topo["elements/dims/k"].as_int32();
-      vtkm::cont::CellSetStructured<3> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                 y_elems+1,
-                                                 z_elems+1));
-      cell_set.SetGlobalPointIndexStart(topo_origin);
-      result->SetCellSet(cell_set);
-      neles = x_elems * y_elems * z_elems;
-
-    }
+      if (ndims == 2)
+      {
+        vtkm::cont::CellSetStructured<2> cell_set;
+        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                   y_elems+1));
+        vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+        cell_set.SetGlobalPointIndexStart(origin2);
+        result->SetCellSet(cell_set);
+        neles = x_elems * y_elems;
+      }
+      else
+      {
+        int32 z_elems = n_topo["elements/dims/k"].to_int();
+        vtkm::cont::CellSetStructured<3> cell_set;
+        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                   y_elems+1,
+                                                   z_elems+1));
+        cell_set.SetGlobalPointIndexStart(topo_origin);
+        result->SetCellSet(cell_set);
+        neles = x_elems * y_elems * z_elems;
+      }
+    }    
     return result;
 }
 
