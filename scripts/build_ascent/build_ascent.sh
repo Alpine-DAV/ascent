@@ -509,13 +509,6 @@ if [ ! -d ${conduit_src_dir} ]; then
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
       --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
-  # caliper vs adiak patch
-  if ${build_caliper}; then
-      cd ${conduit_src_dir}
-      echo ${conduit_src_dir}
-      patch -p 1 < ${script_dir}/2024_08_01_conduit-pr1311-detect-if-caliper-needs-adiak.patch
-      cd ${root_dir}
-  fi
 fi
 
 #
