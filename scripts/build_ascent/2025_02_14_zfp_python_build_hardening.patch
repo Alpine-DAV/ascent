@@ -1,0 +1,237 @@
+From 138489d7c114fadd428fa1cd39e410e69c500895 Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Fri, 14 Feb 2025 22:44:26 +0000
+Subject: [PATCH] python build hardening
+
+---
+ python/CMakeLists.txt                         | 186 +++++++++++++++++-
+ .../FindPythonExtensions.cmake                |   6 +-
+ 2 files changed, 186 insertions(+), 6 deletions(-)
+
+diff --git a/python/CMakeLists.txt b/python/CMakeLists.txt
+index 9410ddd..4a7cb67 100644
+--- a/python/CMakeLists.txt
++++ b/python/CMakeLists.txt
+@@ -2,13 +2,193 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27.0)
+     cmake_policy(SET CMP0148 OLD)
+ endif ()
+ 
++
++
++
++find_package(PythonInterp REQUIRED)
++if(PYTHONINTERP_FOUND)
++        MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
++
++        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
++                        "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
++                        OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
++                        ERROR_VARIABLE  ERROR_FINDING_PYTHON_VERSION)
++        MESSAGE(STATUS "PYTHON_CONFIG_VERSION ${PYTHON_CONFIG_VERSION}")
++
++        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
++                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('include'))"
++                        OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
++                        ERROR_VARIABLE ERROR_FINDING_INCLUDES)
++        MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
++        
++        if(NOT EXISTS ${PYTHON_INCLUDE_DIR})
++            MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
++        endif()
++
++        #######################################################################
++        # Find main python package dirs for embedded use cases
++        # (used in Ascent, not Conduit)
++        #######################################################################
++        # #
++        # # TODO: replacing distutils.get_python_lib() isn't straight forward
++        # #       distutils had special logic for some platforms (ubuntu)
++        # #       which is not 1:1 using sysconfig. 
++        # #       We may need several queries and a list of paths to replace
++        # #       get_python_lib()
++        # #
++        # execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
++        #                         "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
++        #                 OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
++        #                 ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
++        # MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
++
++        # if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
++        #     MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
++        # endif()
++        # # for embedded python, we need to know where the site packages dir is
++        # set(EXTRA_PYTHON_MODULE_DIRS "")
++        # list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
++        #######################################################################
++
++        # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
++        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
++                                "import sys;import sysconfig;sys.stdout.write(sysconfig.get_config_var('LDSHARED'))"
++                        OUTPUT_VARIABLE PYTHON_LDSHARED_FLAGS
++                        ERROR_VARIABLE ERROR_FINDING_PYTHON_LDSHARED_FLAGS)
++
++        MESSAGE(STATUS "PYTHON_LDSHARED_FLAGS ${PYTHON_LDSHARED_FLAGS}")
++
++        if(PYTHON_LDSHARED_FLAGS MATCHES "-undefined dynamic_lookup")
++             MESSAGE(STATUS "PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG is ON")
++            set(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG ON)
++        else()
++             MESSAGE(STATUS "PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG is OFF")
++            set(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG OFF)
++        endif()
++
++        # our goal is to find the specific python lib, based on info
++        # we extract from sysconfig from the python executable
++        #
++        # check for python libs differs for windows python installs
++        if(NOT WIN32)
++            # we may build a shared python module against a static python
++            # check for both shared and static libs cases
++
++            # combos to try:
++            # shared:
++            #  LIBDIR + LDLIBRARY
++            #  LIBPL + LDLIBRARY
++            # static:
++            #  LIBDIR + LIBRARY
++            #  LIBPL + LIBRARY
++
++            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
++                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
++                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBDIR
++                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBDIR)
++
++            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
++                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
++                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBPL
++                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPL)
++
++            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
++                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
++                            OUTPUT_VARIABLE PYTHON_CONFIG_LDLIBRARY
++                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LDLIBRARY)
++
++            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
++                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
++                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBRARY
++                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBRARY)
++
++            message(STATUS "PYTHON_CONFIG_LIBDIR:     ${PYTHON_CONFIG_LIBDIR}")
++            message(STATUS "PYTHON_CONFIG_LIBPL:      ${PYTHON_CONFIG_LIBPL}")
++            message(STATUS "PYTHON_CONFIG_LDLIBRARY:  ${PYTHON_CONFIG_LDLIBRARY}")
++            message(STATUS "PYTHON_CONFIG_LIBRARY:    ${PYTHON_CONFIG_LIBRARY}")
++
++            set(PYTHON_LIBRARY "")
++            # look for shared libs first
++            # shared libdir + ldlibrary
++            if(NOT EXISTS ${PYTHON_LIBRARY})
++                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBDIR})
++                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBDIR}/${PYTHON_CONFIG_LDLIBRARY}")
++                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
++                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
++                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
++                    endif()
++                endif()
++            endif()
++
++            # shared libpl + ldlibrary
++            if(NOT EXISTS ${PYTHON_LIBRARY})
++                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPL})
++                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPL}/${PYTHON_CONFIG_LDLIBRARY}")
++                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
++                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
++                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
++                    endif()
++                endif()
++            endif()
++
++            # static: libdir + library
++            if(NOT EXISTS ${PYTHON_LIBRARY})
++                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBDIR})
++                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBDIR}/${PYTHON_CONFIG_LIBRARY}")
++                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
++                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
++                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
++                    endif()
++                endif()
++            endif()
++
++            # static: libpl + library
++            if(NOT EXISTS ${PYTHON_LIBRARY})
++                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPL})
++                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPL}/${PYTHON_CONFIG_LIBRARY}")
++                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
++                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
++                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
++                    endif()
++                endif()
++            endif()
++        else() # windows 
++            get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
++            # Note: this assumes that two versions of python are not installed in the same dest dir
++            set(_PYTHON_LIBRARY_TEST  "${PYTHON_ROOT_DIR}/libs/python${PYTHON_CONFIG_VERSION}.lib")
++            message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
++            if(EXISTS ${_PYTHON_LIBRARY_TEST})
++                set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
++            endif()
++        endif()
++
++        if(NOT EXISTS ${PYTHON_LIBRARY})
++            MESSAGE(FATAL_ERROR "Failed to find main library using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
++        endif()
++
++        set(PYTHON_LIBRARIES ${PYTHON_LIBRARY})
++        set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIR})
++
++        MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
++        find_package(PythonLibs)
++
++        if(NOT PYTHONLIBS_FOUND)
++            MESSAGE(FATAL_ERROR "Failed to find Python Libraries using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
++        endif()
++        
++endif()
++
++
++find_package_handle_standard_args(Python  DEFAULT_MSG
++                                  PYTHON_LIBRARY PYTHON_INCLUDE_DIR)
++include_directories("${PYTHON_INCLUDE_DIR}")
++
+ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/scikit-build-cmake)
+ include(UseCython)
+ include(FindPythonExtensions)
+ include(FindNumPy)
+ 
+-find_package(PythonInterp REQUIRED)
+-find_package(PythonLibs REQUIRED)
++#find_package(PythonLibs REQUIRED)
+ find_package(PythonExtensions REQUIRED)
+ find_package(Cython 0.28 REQUIRED) # >= v0.28 required for const memoryview support
+ find_package(NumPy REQUIRED)
+@@ -26,5 +206,5 @@ set(PYLIB_BUILD_DIR "${CMAKE_BINARY_DIR}/bin" CACHE PATH "Directory where zfp py
+ set_target_properties(zfpy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PYLIB_BUILD_DIR})
+ 
+ # Install to the typical python module directory
+-set(python_install_lib_dir "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
++set(python_install_lib_dir "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/" CACHE PATH "Dest")
+ install(TARGETS zfpy LIBRARY DESTINATION ${python_install_lib_dir})
+diff --git a/python/scikit-build-cmake/FindPythonExtensions.cmake b/python/scikit-build-cmake/FindPythonExtensions.cmake
+index 59b30c2..6f489fc 100644
+--- a/python/scikit-build-cmake/FindPythonExtensions.cmake
++++ b/python/scikit-build-cmake/FindPythonExtensions.cmake
+@@ -416,9 +416,9 @@ function(python_extension_module _target)
+     endif()
+   endif()
+ 
+-  if(NOT _is_non_lib)
+-    include_directories("${PYTHON_INCLUDE_DIRS}")
+-  endif()
++  #if(NOT _is_non_lib)
++  #  include_directories("${PYTHON_INCLUDE_DIRS}")
++  #endif()
+ 
+   if(_is_module_lib)
+     set_target_properties(${_target} PROPERTIES
+-- 
+2.34.1
+

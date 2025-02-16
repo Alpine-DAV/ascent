@@ -389,7 +389,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
   {
     conduit::Node *out_data = new conduit::Node();
     bool zero_copy = true;
-    VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, true);
+    VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, zero_copy);
 
     detail::add_metadata(*out_data);
     std::shared_ptr<conduit::Node> bp(out_data);

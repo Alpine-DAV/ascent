@@ -14,6 +14,7 @@
 #endif
 #include <assert.h>
 #include <string.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -23,8 +24,11 @@ namespace vtkh
 namespace detail
 {
 vtkm::cont::DataSet
-filter_scalar_fields(vtkm::cont::DataSet &dataset)
+filter_scalar_fields(vtkm::cont::DataSet &dataset,
+                     const std::vector<std::string> &field_names)
 {
+  // we will also screen field names if passed vector is non empty
+  bool skip_field_names = field_names.empty();
   vtkm::cont::DataSet res;
   const vtkm::Id num_coords = dataset.GetNumberOfCoordinateSystems();
   for(vtkm::Id i = 0; i < num_coords; ++i)
@@ -39,10 +43,14 @@ filter_scalar_fields(vtkm::cont::DataSet &dataset)
     vtkm::cont::Field field = dataset.GetField(i);
     if(field.GetData().GetNumberOfComponentsFlat() == 1)
     {
-      if(field.GetData().IsValueType<vtkm::Float32>() ||
-         field.GetData().IsValueType<vtkm::Float64>())
+      if(skip_field_names || 
+         std::find(field_names.begin(), field_names.end(), field.GetName()) != field_names.end() )
       {
-        res.AddField(field);
+          if(field.GetData().IsValueType<vtkm::Float32>() ||
+             field.GetData().IsValueType<vtkm::Float64>())
+          {
+            res.AddField(field);
+          }
       }
     }
   }
@@ -73,6 +81,13 @@ void
 ScalarRenderer::SetCamera(vtkmCamera &camera)
 {
   m_camera = camera;
+}
+
+
+void
+ScalarRenderer::SetFields(const std::vector<std::string> &field_names)
+{
+  m_field_names = field_names;
 }
 
 void
@@ -126,7 +141,8 @@ ScalarRenderer::DoExecute()
     vtkm::cont::DataSet data_set;
     vtkm::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
-    vtkm::cont::DataSet filtered = detail::filter_scalar_fields(data_set);
+    vtkm::cont::DataSet filtered = detail::filter_scalar_fields(data_set,
+                                                                m_field_names);
     renderers[dom].SetInput(filtered);
     renderers[dom].SetWidth(m_width);
     renderers[dom].SetHeight(m_height);

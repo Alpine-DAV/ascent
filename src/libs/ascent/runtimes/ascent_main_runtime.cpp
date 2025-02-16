@@ -12,6 +12,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_main_runtime.hpp"
+#include <ascent_logging.hpp>
 
 // standard lib includes
 #include <string.h>
@@ -1935,6 +1936,86 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // Saving the info will be deferred to after
         // the workspace executes.
         m_save_info_actions.append() = action;
+      }
+      else if(action_name == "open_log")
+      {
+        // Open Ascent Logging Stream
+        // This starts logging
+
+        if(action.has_path("log_threshold"))
+        {
+            ascent::Logger::instance().set_log_threshold(action["log_threshold"].as_string());
+        }
+        else
+        {
+        #if defined(ASCENT_MPI_ENABLED)
+            if(m_rank == 0)
+            {
+                ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+            }
+            else
+            {
+                ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_WARN_ID);
+            }
+        #else
+            ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+        #endif
+        }
+
+        #if defined(ASCENT_MPI_ENABLED)
+            std::string file_pattern = action.has_path("file_pattern") ? 
+                                   action["file_pattern"].as_string() : "ascent_log_output_rank_{rank:05d}.yaml";
+            
+            int comm_id = flow::Workspace::default_mpi_comm();
+            MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+            int comm_size = 1;
+            MPI_Comm_size(mpi_comm, &comm_size);
+            ASCENT_LOG_OPEN_RANK( file_pattern, m_rank );
+            ASCENT_LOG_DEBUG(conduit_fmt::format("mpi info: rank={}, size={}",
+                                                  m_rank,
+                                                  comm_size));
+        #else
+            std::string file_pattern = action.has_path("file_pattern") ? 
+                                   action["file_pattern"].as_string() : "ascent_log_output.yaml";
+            ASCENT_LOG_OPEN(file_pattern);
+            ASCENT_LOG_DEBUG("MPI not enabled");
+        #endif
+      }
+      else if(action_name == "flush_log")
+      {
+        // Flush Current Log Streams to Disk
+        // This is so they can be seen before ascent is closed out
+        ASCENT_LOG_FLUSH();
+      }
+      else if(action_name == "set_log_threshold")
+      {
+        // Change the logging level
+        if (action.has_path("log_threshold"))
+        {
+            ascent::Logger::instance().set_log_threshold(action["log_threshold"].as_string());
+        }
+        else
+        {
+            ASCENT_WARN("No Log Threshold level given. No changes to logging behavior made.");
+        }
+      }
+      else if(action_name == "set_echo_threshold")
+      {
+        // Change the echo to standard output level
+        if (action.has_path("echo_threshold"))
+        {
+            ascent::Logger::instance().set_echo_threshold(action["echo_threshold"].as_string());
+        }
+        else
+        {
+            ASCENT_WARN("No Echo Threshold level given. No changes to echo output behavior made.");
+        }
+      }
+      else if(action_name == "close_log")
+      {
+        // Closes current log stream
+        // This stops logging
+        ASCENT_LOG_CLOSE();
       }
       else
       {
