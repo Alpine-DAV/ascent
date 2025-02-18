@@ -255,6 +255,29 @@ but when a color table is specified, then the color table needs to include
 alpha values. Otherwise, the volume plot will look exactly the same as a
 pseudocolor plot.
 
+There are two formats that can be used to add a custom color table. The first is
+a compact color table format:
+
+.. code-block:: c++
+
+  conduit::Node control_points;
+  control_points["r"] = {.23, .48, .99};
+  control_points["g"] = {0.08, .23, 1.};
+  control_points["b"] = {0.08, .04, .96};
+  control_points["a"] = {1., 1., 1.};
+  control_points["position"] = {0., .5, 1.}; 
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]  = "volume";
+  scenes["s1/plots/p1/field"] = "braid";
+  scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+  conduit::Node actions;
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+Alternatively, there is a second, expanded color table format that can be used.
 Here is an example of adding a custom color table to the volume plot:
 
 .. code-block:: c++
