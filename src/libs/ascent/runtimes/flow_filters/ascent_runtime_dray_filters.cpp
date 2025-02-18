@@ -484,11 +484,11 @@ parse_color_table(const conduit::Node &color_table_node)
 
     if (control_points_node.dtype().is_list())
     {
-        NodeConstIterator itr = color_table_node.fetch("control_points").children();
-        while(itr.has_next())
+        NodeConstIterator itr = control_points_node.children();
+        while (itr.has_next())
         {
             const Node &peg = itr.next();
-            if(!peg.has_child("position"))
+            if (!peg.has_child("position"))
             {
                 // FIXME: This should be an error
                 ASCENT_WARN("Color map control point must have a position");
@@ -496,7 +496,7 @@ parse_color_table(const conduit::Node &color_table_node)
 
             float64 position = peg["position"].to_float64();
 
-            if(position > 1.0 || position < 0.0)
+            if (position > 1.0 || position < 0.0)
             {
                 ASCENT_WARN("Cannot add color map control point position "
                                 << position
@@ -511,7 +511,7 @@ parse_color_table(const conduit::Node &color_table_node)
 
                 dray::Vec<float,3> ecolor({color[0], color[1], color[2]});
 
-                for(int i = 0; i < 3; ++i)
+                for (int i = 0; i < 3; ++i)
                 {
                     ecolor[i] = std::min(1.f, std::max(ecolor[i], 0.f));
                 }

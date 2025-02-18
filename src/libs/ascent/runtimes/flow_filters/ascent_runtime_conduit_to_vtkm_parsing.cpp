@@ -263,7 +263,7 @@ parse_color_table(const conduit::Node &color_table_node)
 
     if (control_points_node.dtype().is_list())
     {
-        NodeConstIterator itr = color_table_node.fetch("control_points").children();
+        NodeConstIterator itr = control_points_node.children();
         while(itr.has_next())
         {
             const Node &peg = itr.next();
@@ -373,7 +373,7 @@ parse_color_table(const conduit::Node &color_table_node)
                 ASCENT_ERROR("Color map alpha channel should have same size as color channels");
             }
 
-            for(index_t i=0; i<r_vals.number_of_elements();i++)
+            for(index_t i=0; i<alpha_vals.number_of_elements();i++)
             {
                 color_table.AddPointAlpha(pos_vals[i], std::min(1., std::max(alpha_vals[i], 0.)));
             }
