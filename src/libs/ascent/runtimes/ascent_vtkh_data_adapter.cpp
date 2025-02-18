@@ -1501,8 +1501,8 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 
     result->AddCoordinateSystem(coords);
 
-    int32 x_elems = n_topo["elements/dims/i"].as_int32();
-    int32 y_elems = n_topo["elements/dims/j"].as_int32();
+    int32 x_elems = n_topo["elements/dims/i"].to_int();
+    int32 y_elems = n_topo["elements/dims/j"].to_int();
 
     vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
 
@@ -1518,7 +1518,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     }
     else
     {
-      int32 z_elems = n_topo["elements/dims/k"].as_int32();
+      int32 z_elems = n_topo["elements/dims/k"].to_int();
       vtkm::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
                                                  y_elems+1,

@@ -75,11 +75,11 @@ public:
   vtkm::Bounds GetDomainBounds(const int &domain_index,
                                vtkm::Id coordinate_system_index = 0) const;
 
-  vtkm::cont::Field::Association GetFieldAssociation(const std::string field_name,
+  vtkm::cont::Field::Association GetFieldAssociation(const std::string &field_name,
                                                      bool &valid_field) const;
   //Get an ID value representing the type of data field_name is
   //-1 if an invalid field i.e. globalFieldExists==false
-  vtkm::Id GetFieldType(const std::string field_name,
+  vtkm::Id GetFieldType(const std::string &field_name,
                         bool &valid_field) const;
   // returns the range of the scalar field across domains in this rank
   // If the field does not exist, the call returns an array of 0
@@ -96,9 +96,10 @@ public:
   std::vector<vtkm::Id> GetDomainIds() const;
 
   // add a scalar field to this data set with a constant value
-  void AddConstantPointField(const vtkm::Float32 value, const std::string fieldname);
-  void AddLinearPointField(const vtkm::Float32 value, const std::string fieldname);
-  void AddDomainIdField(const std::string fieldname);
+  void AddConstantCellField(const vtkm::Float32 value, const std::string &fieldname);
+  void AddConstantPointField(const vtkm::Float32 value, const std::string &fieldname);
+  void AddLinearPointField(const vtkm::Float32 value, const std::string &fieldname);
+  void AddDomainIdField(const std::string &fieldname);
 
   bool HasDomainId(const vtkm::Id &domain_id) const;
   /*! \brief IsStructured returns true if all domains, globally,

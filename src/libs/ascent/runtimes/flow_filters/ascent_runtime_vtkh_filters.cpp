@@ -1414,7 +1414,7 @@ VTKHAddRanks::execute()
                                            this->name(),
                                            collection,
                                            throw_error);
-      std::cerr << "topo_name: " << topo_name << std::endl;
+
       if(topo_name == "")
       {
         // this creates a data object with an invalid source
@@ -1425,7 +1425,7 @@ VTKHAddRanks::execute()
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
-    data.AddConstantPointField(rank,output_field);
+    data.AddConstantCellField(rank,output_field);
     new_coll->add(data, topo_name);
     
     // re wrap in data object
@@ -1517,7 +1517,7 @@ VTKHAddDomains::execute()
                                            this->name(),
                                            collection,
                                            throw_error);
-      std::cerr << "topo_name: " << topo_name << std::endl;
+
       if(topo_name == "")
       {
         // this creates a data object with an invalid source
@@ -1530,8 +1530,8 @@ VTKHAddDomains::execute()
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     data.AddDomainIdField(output_field);
+
     new_coll->add(data, topo_name);
-    
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     set_output<DataObject>(res);
@@ -3880,10 +3880,10 @@ VTKHStats::execute()
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
-    if(rank == 0)
-    {
-      res->PrintSummary(std::cout);
-    }
+    // if(rank == 0)
+    // {
+    //   res->PrintSummary(std::cout);
+    // }
 }
 //-----------------------------------------------------------------------------
 
@@ -3980,10 +3980,10 @@ VTKHHistogram::execute()
     MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
-    if(rank == 0)
-    {
-      res.Print(std::cout);
-    }
+    // if(rank == 0)
+    // {
+    //   res.Print(std::cout);
+    // }
 }
 //-----------------------------------------------------------------------------
 
@@ -4018,13 +4018,24 @@ VTKHProject2d::verify_params(const conduit::Node &params,
     res &= check_numeric("image_width",params, info, false);
     res &= check_numeric("image_height",params, info, false);
 
+    if(params.has_child("fields") && !params["fields"].dtype().is_list())
+    {
+      res = false;
+      info["errors"].append() = "fields is not a list";
+    }
+
     std::vector<std::string> valid_paths;
     std::vector<std::string> ignore_paths;
     valid_paths.push_back("topology");
     valid_paths.push_back("image_width");
     valid_paths.push_back("image_height");
+    valid_paths.push_back("dataset_bounds");
     valid_paths.push_back("camera");
+    valid_paths.push_back("fields");
+
     ignore_paths.push_back("camera");
+    ignore_paths.push_back("fields");
+    ignore_paths.push_back("dataset_bounds");
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -4036,6 +4047,7 @@ VTKHProject2d::verify_params(const conduit::Node &params,
 
     return res;
 }
+
 
 //-----------------------------------------------------------------------------
 void
@@ -4064,22 +4076,69 @@ VTKHProject2d::execute()
                                                      throw_error);
     if(topo_name == "")
     {
-      // this creates a data object with an invalid soource
+      // this creates a data object with an invalid source
       set_output<DataObject>(new DataObject());
       return;
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkm::Bounds bounds = data.GetGlobalBounds();
+
+    if(params().has_path("dataset_bounds"))
+    {
+        float64_accessor d_bounds = params()["dataset_bounds"].value();
+        int num_bounds = d_bounds.number_of_elements();
+
+        if(num_bounds != 6)
+        {
+            std::string fpath = filter_to_path(this->name());
+            ASCENT_ERROR("project_2d (" << fpath << ")" <<
+                         " only provided " << num_bounds <<
+                         " dataset_bounds when 6 are required:" <<
+                         " [xMin,xMax,yMin,yMax,zMin,zMax]");
+        }
+
+        bounds.X.Min = d_bounds[0];
+        bounds.X.Max = d_bounds[1];
+        bounds.Y.Min = d_bounds[2];
+        bounds.Y.Max = d_bounds[3];
+        bounds.Z.Min = d_bounds[4];
+        bounds.Z.Max = d_bounds[5];
+    }
+
     vtkm::rendering::Camera camera;
     camera.ResetToBounds(bounds);
+
+    std::vector<std::string> field_names;
 
     if(params().has_path("camera"))
     {
       parse_camera(params()["camera"], camera);
     }
 
-    int width = 512;
+    if(params().has_path("fields"))
+    {
+
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("'fields' list must be non-empty");
+      }
+
+      for(int i = 0; i < num_fields; i++)
+      {
+        const conduit::Node &f = flist.child(i); 
+        if(!f.dtype().is_string())
+        {
+            ASCENT_ERROR("'fields' list values must be a string");
+        }
+        field_names.push_back(f.as_string());
+      }
+    }
+
+    int width  = 512;
     int height = 512;
     if(params().has_path("image_width"))
     {
@@ -4096,7 +4155,7 @@ VTKHProject2d::execute()
     tracer.SetHeight(height);
     tracer.SetInput(&data);
     tracer.SetCamera(camera);
-
+    tracer.SetFields(field_names);
     tracer.Update();
 
     vtkh::DataSet *output = tracer.GetOutput();
@@ -5851,7 +5910,7 @@ VTKHVTKFileExtract::execute()
                                                      n_recv,
                                                      mpi_comm);
         n_global_domain_ids.set(DataType::index_t(num_global_domains));
-        n_global_domain_ids.print();
+        //n_global_domain_ids.print();
         index_t_array global_vals = n_global_domain_ids.value();
         // each child will an array with its domain ids
         index_t idx = 0;

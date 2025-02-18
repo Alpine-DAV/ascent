@@ -1,0 +1,7 @@
+name: ascent
+repo_url: https://github.com/alpine-dav/ascent.git
+# This tells azemu to find current branch via a git cmd
+repo_branch: <CURRENT>
+runners:  
+  ubuntu-latest: "ubuntu:22.04"
+  ubuntu-22.04:  "ubuntu:22.04"
