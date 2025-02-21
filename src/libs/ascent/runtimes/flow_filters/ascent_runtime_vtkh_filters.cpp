@@ -1517,7 +1517,6 @@ VTKHAddDomains::execute()
                                            this->name(),
                                            collection,
                                            throw_error);
-      std::cerr << "topo_name: " << topo_name << std::endl;
       if(topo_name == "")
       {
         // this creates a data object with an invalid source

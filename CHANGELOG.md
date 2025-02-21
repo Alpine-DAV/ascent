@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.7
 
 ### Added
+- Added use case to vtkh data adaptor for a mesh with a uniform cell set and explicit coordinates.
 - Added a new unified logging infrastructure.
 - Added support for unstructured topologies with mixed elements types (for example, hexs and tets).
 - Added support for `pyramid` and `wedge` elements.
