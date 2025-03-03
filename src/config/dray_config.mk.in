@@ -40,7 +40,7 @@ DRAY_LINK_RPATH = -Wl,-rpath,$(DRAY_DIR)/lib $(CONDUIT_LINK_RPATH)
 # two steps are used b/c there are commas in the linker commands
 # which will undermine parsing of the makefile
 DRAY_RAJA_RPATH_FLAGS_VALUE = -Wl,-rpath,$(DRAY_RAJA_DIR)/lib
-ifeq ($wildcard ${DRAY_UMPIRE_DIR}/lib/.),)
+ifeq ($(wildcard ${DRAY_UMPIRE_DIR}/lib/.),)
     DRAY_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(DRAY_UMPIRE_DIR)/lib
 else
     DRAY_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(DRAY_UMPIRE_DIR)/lib64
@@ -69,7 +69,7 @@ DRAY_CONDUIT_LIB_FLAGS = $(CONDUIT_LIB_FLAGS)
 # UMPIRE
 ##########
 
-ifeq ($wildcard ${DRAY_UMPIRE_DIR}/lib/.),)
+ifeq ($(wildcard ${DRAY_UMPIRE_DIR}/lib/.),)
     DRAY_UMPIRE_LIB_FLAGS=-L $(DRAY_UMPIRE_DIR)/lib \
                           -lumpire
 else
