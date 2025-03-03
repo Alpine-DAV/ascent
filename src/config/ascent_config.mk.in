@@ -87,7 +87,7 @@ else
 endif
 
 ASCENT_RAJA_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_RAJA_DIR)/lib
-ifeq ($wildcard ${DRAY_UMPIRE_DIR}/lib/.),)
+ifeq ($wildcard ${ASCENT_UMPIRE_DIR}/lib/.),)
     ASCENT_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_UMPIRE_DIR)/lib
 else
     ASCENT_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_UMPIRE_DIR)/lib64
@@ -216,7 +216,7 @@ ASCENT_RAJA_LIB_FLAGS = $(if $(ASCENT_RAJA_DIR),-L $(ASCENT_RAJA_DIR)/lib -lRAJA
 ##########
 # UMPIRE
 ##########
-ifeq ($wildcard ${DRAY_UMPIRE_DIR}/lib/.),)
+ifeq ($wildcard ${ASCENT_UMPIRE_DIR}/lib/.),)
     ASCENT_UMPIRE_LIB_FLAGS = $(if $(ASCENT_UMPIRE_DIR),-L $(ASCENT_UMPIRE_DIR)/lib -lumpire)
 else
     ASCENT_UMPIRE_LIB_FLAGS = $(if $(ASCENT_UMPIRE_DIR),-L $(ASCENT_UMPIRE_DIR)/lib64 -lumpire)
