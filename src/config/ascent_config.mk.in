@@ -87,7 +87,11 @@ else
 endif
 
 ASCENT_RAJA_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_RAJA_DIR)/lib
-ASCENT_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_UMPIRE_DIR)/lib
+ifneq ($(wildcard ${ASCENT_UMPIRE_DIR}/lib64/.),)
+    ASCENT_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_UMPIRE_DIR)/lib64
+else
+    ASCENT_UMPIRE_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_UMPIRE_DIR)/lib
+endif
 ASCENT_CAMP_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_CAMP_DIR)/lib
 ASCENT_OCCA_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_OCCA_DIR)/lib
 ASCENT_VTKM_RPATH_FLAGS_VALUE = -Wl,-rpath,$(ASCENT_VTKM_DIR)/lib
@@ -212,12 +216,16 @@ ASCENT_RAJA_LIB_FLAGS = $(if $(ASCENT_RAJA_DIR),-L $(ASCENT_RAJA_DIR)/lib -lRAJA
 ##########
 # UMPIRE
 ##########
-ASCENT_UMPIRE_LIB_FLAGS = $(if $(ASCENT_UMPIRE_DIR),-L $(ASCENT_UMPIRE_DIR)/lib -lumpire)
+ifneq ($(wildcard ${ASCENT_UMPIRE_DIR}/lib64/.),)
+    ASCENT_UMPIRE_LIB_FLAGS = $(if $(ASCENT_UMPIRE_DIR),-L $(ASCENT_UMPIRE_DIR)/lib64 -lumpire)
+else
+    ASCENT_UMPIRE_LIB_FLAGS = $(if $(ASCENT_UMPIRE_DIR),-L $(ASCENT_UMPIRE_DIR)/lib -lumpire)
+endif
 
 ##########
 # CAMP
 ##########
-ASCENT_UMPIRE_LIB_FLAGS = $(if $(ASCENT_CAMP_DIR),-L $(ASCENT_CAMP_DIR)/lib -lcamp)
+ASCENT_CAMP_LIB_FLAGS = $(if $(ASCENT_CAMP_DIR),-L $(ASCENT_CAMP_DIR)/lib -lcamp)
 
 ##########
 # OCCA

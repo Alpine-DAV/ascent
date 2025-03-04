@@ -19,6 +19,11 @@ The currently supported actions are:
 - ``add_triggers`` : adds a list of triggers that executes a set of actions based on a condition
 - ``save_info`` : saves ascent info result at the end of execution
 - ``save_session`` : saves expression session info at the end of execution (see :ref:`ExpressionsSaveSession`)
+- ``open_log`` : opens an assent logging stream and starts logging
+- ``flush_log`` : flushes the current logging stream to the output file
+- ``close_log`` : closes the current logging stream which stops logging
+- ``set_log_threshold`` : changes the threshold of messages recorded in the log file
+- ``set_echo_threshold`` : changes the threshold of messages displayed in standard output
 
 
 Ascent actions can be specified within the integration using Conduit Nodes and can be read in through a file.

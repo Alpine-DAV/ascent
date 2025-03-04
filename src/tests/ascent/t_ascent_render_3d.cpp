@@ -1879,6 +1879,88 @@ TEST(ascent_render_3d, test_render_3d_milk_chocolate)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_compressed_color_table)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing 3D Rendering with Compressed Color Table");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"vtkm_compressed_color_table");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node control_points;
+    control_points["r"] = {.23, .48, .99};
+    control_points["g"] = {0.08, .23, 1.};
+    control_points["b"] = {0.08, .04, .96};
+    control_points["a"] = {1., 1., 1.};
+    control_points["position"] = {0., .5, 1.};    
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom compressed color map.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_disable_color_bar)
 {
     // the ascent runtime is currently our only rendering runtime

@@ -35,6 +35,14 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     Node n;
     ascent::about(n);
 
+    // only run this test if ascent was built with hdf5 \support
+    if(n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
+    {
+        ASCENT_INFO("Ascent HDF5 support is disabled, skipping test");
+        return;
+    }
+    
+    
     //
     // Create an example mesh.
     //
@@ -47,24 +55,17 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
 
     ASCENT_INFO("Testing blueprint partition of multi-domain mesh in serial");
 
-    string output_path = prepare_output_dir();
-    std::ostringstream oss;
+    // work around for windows roundtrip conduit read bug
+    // string output_path = prepare_output_dir();
+    // string output_base = conduit::utils::join_file_path(output_path,
+    //                                                     "tout_partition_multi_dom_serial");
+    string output_base = "tout_partition_multi_dom_serial";
+    string output_root = output_base + ".cycle_000000.root";
 
-    oss << "tout_partition_multi_dom_serial";
-    string output_base = conduit::utils::join_file_path(output_path,
-                                                        oss.str());
-    std::ostringstream ossjson;
-    ossjson << "tout_partition_multi_dom_serial_json";
-    string output_json = conduit::utils::join_file_path(output_base,
-		    					ossjson.str());
     // remove existing file
-    if(utils::is_file(output_base))
+    if(utils::is_file(output_root))
     {
-        utils::remove_file(output_base);
-    }
-    if(utils::is_file(output_json))
-    {
-        utils::remove_file(output_json);
+        utils::remove_file(output_root);
     }
 
     conduit::Node actions;
@@ -73,16 +74,27 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     conduit::Node &pipelines = add_pipelines["pipelines"];
-    pipelines["pl1/f1/type"]  = "partition";
-    pipelines["pl1/f1/params/target"] = target;
-    
+    // pipelines["pl1/f1/type"] = "add_domain_ids";
+    // pipelines["pl1/f1/params/output"] = "d_id_pre";
+
+    pipelines["pl1/f2/type"]  = "partition";
+    pipelines["pl1/f2/params/target"] = target;
+
+    // pipelines["pl1/f3/type"] = "add_domain_ids";
+    // pipelines["pl1/f3/params/output"] = "d_id_post";
+
     //add the extract
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     conduit::Node &extracts = add_extracts["extracts"];
-    extracts["e1/type"] = "relay";
-    extracts["e1/pipeline"] = "pl1";
-    extracts["e1/params/path"] = output_base;
+    extracts["eout/type"] = "relay";
+    extracts["eout/pipeline"] = "pl1";
+    extracts["eout/params/path"] = output_base;
+    extracts["eout/params/protocol"] = "blueprint/mesh/yaml";
+
+    extracts["einput/type"] = "relay";
+    extracts["einput/params/path"] = output_base + "_input";
+    extracts["einput/params/protocol"] = "blueprint/mesh/yaml";
 
     //
     // Run Ascent
@@ -97,14 +109,11 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     ascent.execute(actions);
     ascent.close();
 
-    //Two files in _output directory:
-    //tout_partition_multi_dom_serial
-    //tout_partition_multi_dom_serial_json
-    EXPECT_TRUE(conduit::utils::is_file(output_base));
-    Node read_csv;
-    conduit::relay::io::load(output_base,read_csv);
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+    Node read_mesh;
+    conduit::relay::io::blueprint::load_mesh(output_root,read_mesh);
 
-    int num_doms = conduit::blueprint::mesh::number_of_domains(read_csv);
+    int num_doms = conduit::blueprint::mesh::number_of_domains(read_mesh);
     EXPECT_TRUE(num_doms == target);
 }
 

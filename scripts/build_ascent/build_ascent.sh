@@ -50,6 +50,7 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
+build_zfp="${build_zfp:=true}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -352,6 +353,9 @@ if ${build_pyvenv}; then
     cd ${install_dir} && ${python_exe} -m venv python-venv
     ${venv_python_exe} -m pip install --upgrade pip
     ${venv_python_exe} -m pip install numpy sphinx sphinx_rtd_theme
+    if ${build_zfp}; then
+        ${venv_python_exe} -m pip install cython setuptools
+    fi
     if [[ "$enable_mpi" == "ON" ]]; then
         ${venv_python_exe} -m pip install mpi4py
     fi
@@ -439,6 +443,55 @@ fi # build_caliper
 
 
 ################
+# ZFP
+################
+zfp_version=1.0.1
+zfp_src_dir=$(ospath ${source_dir}/zfp-${zfp_version})
+zfp_build_dir=$(ospath ${build_dir}/zfp-${zfp_version}/)
+zfp_install_dir=$(ospath ${install_dir}/zfp-${zfp_version}/)
+zfp_tarball=$(ospath ${source_dir}/zfp-${zfp_version}.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${zfp_install_dir} ]; then
+if ${build_zfp}; then
+if [ ! -d ${zfp_src_dir} ]; then
+  echo "**** Downloading ${zfp_tarball}"
+  curl -L https://github.com/LLNL/zfp/releases/download/1.0.1/zfp-${zfp_version}.tar.gz -o ${zfp_tarball}
+  tar ${tar_extra_args} -xzf ${zfp_tarball} -C ${source_dir}
+
+  # apply patches
+  cd ${zfp_src_dir}
+  patch -p1 < ${script_dir}/2025_02_14_zfp_python_build_hardening.patch
+  cd ${root_dir}
+fi
+
+#
+# extra cmake args
+#
+zfp_extra_cmake_opts="-DBUILD_ZFPY=${enable_python}"
+if ${build_pyvenv}; then
+  zfp_extra_cmake_opts="${zfp_extra_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
+  zfp_extra_cmake_opts="${zfp_extra_cmake_opts} -Dpython_install_lib_dir=${venv_python_site_pkgs_dir}"
+fi
+
+echo "**** Configuring ZFP ${zfp_version}"
+cmake -S ${zfp_src_dir} -B ${zfp_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
+  -DCMAKE_INSTALL_PREFIX=${zfp_install_dir} ${zfp_extra_cmake_opts}\
+
+echo "**** Building ZFP ${zfp_version}"
+cmake --build ${zfp_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Caliper ${caliper_version}"
+cmake --install ${zfp_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping ZFP build, install found at: ${zfp_install_dir}"
+fi # build_zfp
+
+################
 # Conduit
 ################
 conduit_version=v0.9.2
@@ -466,7 +519,7 @@ if [ ! -d ${conduit_src_dir} ]; then
 fi
 
 #
-# extrat cmake args
+# extra cmake args
 #
 conduit_extra_cmake_opts=-DENABLE_PYTHON=${enable_python}
 if ${build_pyvenv}; then
