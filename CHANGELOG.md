@@ -16,7 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.7
 
 ### Added
-- Added use case to vtkh data adaptor for a mesh with a uniform cell set and explicit coordinates.
+- Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
 - Added a compressed color table format.
 - Added action options relating to logging functionality including `open_log`, `flush_log`, and `close_log` to toggle logging as well as `set_log_threshold` and `set_echo_threshold` to control logging and standard output levels.
 - Added a new unified logging infrastructure.
