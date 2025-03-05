@@ -309,7 +309,7 @@ TEST(ascent_commands, bool_callback_trigger_condition)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
     string output_path = prepare_output_dir();
-    string trigger_file = conduit::utils::join_file_path(output_path, "callback_trigger_actions");
+    string trigger_file = conduit::utils::join_file_path(output_path, "callback_trigger_actions.yaml");
     string output_file = conduit::utils::join_file_path(output_path, "tout_callback_trigger_actions");
 
     // remove old trigger file
@@ -338,7 +338,7 @@ TEST(ascent_commands, bool_callback_trigger_condition)
     add_ext["action"] = "add_extracts";
     add_ext["extracts"] = extracts;
 
-    trigger_actions.save(trigger_file, "json");
+    trigger_actions.save(trigger_file);
 
     //
     // Create the actions.
@@ -358,10 +358,6 @@ TEST(ascent_commands, bool_callback_trigger_condition)
     // Run Ascent
     //
     Ascent ascent;
-    Node ascent_opts;
-
-    // default is now ascent
-    ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
