@@ -358,7 +358,7 @@ TEST(ascent_commands, bool_callback_trigger_condition)
     // Run Ascent
     //
     Ascent ascent;
-    ascent.open(ascent_opts);
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
 
