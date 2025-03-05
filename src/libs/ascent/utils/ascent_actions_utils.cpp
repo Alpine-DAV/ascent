@@ -15,6 +15,16 @@
 #include <sstream>
 #include <stdio.h>
 #include <regex>
+// mpi related includes
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+// -- conduit relay mpi
+#include <conduit_relay_mpi.hpp>
+#include <conduit_blueprint_mpi.hpp>
+#endif
+
+using namespace conduit;
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -318,6 +328,71 @@ bool field_list(const conduit::Node &actions,
   fields.clear();
   detail::filter_fields(actions, fields, info);
   return info.number_of_children() == 0;
+}
+
+//-----------------------------------------------------------------------------
+bool load_actions_file(const std::string &path,
+                       int mpi_comm_id,
+                       conduit::Node &actions)
+{
+
+    int load_ok = 0;
+    int rank = 0;
+    actions.reset();
+
+#ifdef ASCENT_MPI_ENABLED
+
+    if(mpi_comm_id == -1)
+    {
+        // report as failure to load
+        return false;
+    }
+
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+
+#endif
+
+    if(rank == 0)
+    {
+        try
+        {
+            actions.load(path);
+            load_ok = 1;
+        }
+        catch(const conduit::Error &e)
+        {
+            actions.reset();
+        }
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+
+    Node n_src, n_reduce;
+    n_src = load_ok;
+    conduit::relay::mpi::sum_all_reduce(n_src,
+                                        n_reduce,
+                                        mpi_comm);
+
+    load_ok = n_reduce.value();
+
+    if(load_ok == 0)
+    {
+        return false;
+    }
+
+    relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
+
+#else
+
+    if(load_ok == 0)
+    {
+        return false;
+    }
+
+#endif
+
+    return true;
 }
 
 

@@ -194,13 +194,49 @@ check_object(const std::string path,
         if(!params[path].dtype().is_object())
         {
             std::string msg = "Expected object parameter '" + path +
-                              "' is not a object";
+                              "' is not an object";
             info["errors"].append() = msg;
             res = false;
         }
         else if(params[path].number_of_children() == 0)
         {
             std::string msg = "Expected object parameter '" + path +
+                          "' has no children";
+            info["errors"].append() = msg;
+            res = false;
+        }
+    }
+
+  return res;
+}
+
+
+//-----------------------------------------------------------------------------
+bool
+check_list(const std::string path,
+             const conduit::Node &params,
+             conduit::Node &info,
+             bool required)
+{
+    bool res = true;
+    if(!params.has_path(path) && required)
+    {
+        info["errors"].append() = "Missing required list parameter '" + path + "'";
+        res = false;
+    }
+
+    if(params.has_path(path))
+    {
+        if(!params[path].dtype().is_list())
+        {
+            std::string msg = "Expected list parameter '" + path +
+                              "' is not a list";
+            info["errors"].append() = msg;
+            res = false;
+        }
+        else if(params[path].number_of_children() == 0)
+        {
+            std::string msg = "Expected list parameter '" + path +
                           "' has no children";
             info["errors"].append() = msg;
             res = false;

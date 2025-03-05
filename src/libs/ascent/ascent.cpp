@@ -612,6 +612,7 @@ Ascent::execute(const conduit::Node &actions)
                 // an actions file has been set by the user
                 // so we better let them know if we don't find
                 // it
+                // TODO: Rank 0 and broadcast.
                 if(!conduit::utils::is_file(m_actions_file))
                 {
                     ASCENT_ERROR("An actions file '"
