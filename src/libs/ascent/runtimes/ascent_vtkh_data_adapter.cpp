@@ -1524,7 +1524,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
         connectivity.Allocate(neles * indices_per);
         auto conn_portal = connectivity.WritePortal();
         int offset = 0;
-        // Build Connectivity (Polyhedral cells)
+        // Build Connectivity 
         for (vtkm::Id i = 0; i < x_elems; ++i) 
         {
           for (vtkm::Id j = 0; j < y_elems; ++j) 
