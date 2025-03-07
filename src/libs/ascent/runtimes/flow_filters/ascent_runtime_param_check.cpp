@@ -216,6 +216,11 @@ surprise_check(const std::vector<std::string> &valid_paths,
                const std::vector<std::string> &ignore_paths,
                const conduit::Node &params)
 {
+  // only children can surprise us
+  if(params.number_of_children() == 0)
+  {
+      return "";
+  }
 
   std::stringstream ss;
   std::vector<std::string> paths;
@@ -240,7 +245,6 @@ surprise_check(const std::vector<std::string> &valid_paths,
       ss<<"Surprise parameter '"<<paths[i]<<"'\n";
     }
   }
-
   return ss.str();
 }
 
@@ -249,6 +253,11 @@ std::string
 surprise_check(const std::vector<std::string> &valid_paths,
                const conduit::Node &params)
 {
+  // only children can surprise us
+  if(params.number_of_children() == 0)
+  {
+      return "";
+  }
 
   std::stringstream ss;
   std::vector<std::string> paths;
