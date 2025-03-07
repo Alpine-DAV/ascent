@@ -70,6 +70,7 @@ private:
     conduit::Node     m_scene_connections;
 
     conduit::Node     m_info;
+    conduit::Node     m_about;
     conduit::Node     m_previous_actions;
 
     WebInterface      m_web_interface;
