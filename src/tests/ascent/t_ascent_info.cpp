@@ -88,6 +88,10 @@ TEST(ascent_info, info_save)
     conduit::Node info_load;
     info_load.load("out_ascent_info_000100.yaml");
 
+    EXPECT_TRUE(info_load.has_path("runtime/version"));
+    EXPECT_TRUE(info_load.has_path("runtime/git_sha1"));
+    EXPECT_TRUE(info_load.has_path("runtime/git_tag"));
+
     std::cout << info_load.to_yaml() << std::endl;
     // NOTE: some things won't be quite the same due to order of exec
 
