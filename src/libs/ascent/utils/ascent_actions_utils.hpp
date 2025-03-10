@@ -23,9 +23,15 @@
 //-----------------------------------------------------------------------------
 namespace ascent
 {
+
 ASCENT_API bool field_list(const conduit::Node &actions,
                            std::set<std::string> &fields,
                            conduit::Node &info);
+
+ASCENT_API bool load_actions_file(const std::string &path,
+                                  int mpi_comm_id,
+                                  conduit::Node &actions);
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
