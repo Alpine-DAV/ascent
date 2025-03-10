@@ -934,6 +934,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     string coords_name   = n_topo["coordset"].as_string();
     const Node &n_coords = node["coordsets"][coords_name];
 
+
     int neles  = 0;
     int nverts = 0;
 
@@ -1447,8 +1448,8 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 {
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
+    string coords_type = n_coords["type"].as_string();
     nverts = n_coords["values/x"].dtype().number_of_elements();
-
     int ndims = 0;
 
     vtkm::cont::CoordinateSystem coords;
@@ -1506,28 +1507,122 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 
     vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
 
-    if (ndims == 2)
+    if(coords_type == "explicit")
     {
-      vtkm::cont::CellSetStructured<2> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                 y_elems+1));
-      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
-      cell_set.SetGlobalPointIndexStart(origin2);
-      result->SetCellSet(cell_set);
-      neles = x_elems * y_elems;
+      if(ndims == 2)
+      {
+        vtkm::Id x_verts = x_elems + 1;
+        vtkm::Id y_verts = y_elems + 1;
+        neles = x_elems * y_elems;
+        nverts = (x_verts) * (y_verts);
+        
+        std::string ele_shape = "quad";
+        vtkm::UInt8 shape_id;
+        vtkm::IdComponent indices_per;
+        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+        vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+        connectivity.Allocate(neles * indices_per);
+        auto conn_portal = connectivity.WritePortal();
+        int offset = 0;
+        // Build Connectivity 
+        for (vtkm::Id i = 0; i < x_elems; ++i) 
+        {
+          for (vtkm::Id j = 0; j < y_elems; ++j) 
+          {
+            vtkm::Id v0 = j * x_verts + i;
+            vtkm::Id v1 = v0 + 1;
+            vtkm::Id v2 = v0 + x_verts;
+            vtkm::Id v3 = v0 + x_verts + 1;
+            
+            conn_portal.Set(offset, v0);// bottom left
+            conn_portal.Set(offset+1, v1); //bottom right
+            conn_portal.Set(offset+2, v3); //top right
+            conn_portal.Set(offset+3, v2); //top left 
+            offset = offset + 4;
+          }
+        }
+        vtkm::cont::CellSetSingleType<> cell_set;
+        cell_set.Fill(nverts, shape_id, indices_per, connectivity);
+        neles = cell_set.GetNumberOfCells();
+        result->SetCellSet(cell_set);
+      }
+      else
+      {
+        int32 z_elems = n_topo["elements/dims/k"].to_int();
+
+        vtkm::Id x_verts = x_elems + 1;
+        vtkm::Id y_verts = y_elems + 1;
+        vtkm::Id z_verts = z_elems + 1;
+        neles = x_elems * y_elems * z_elems;
+        nverts = (x_verts) * (y_verts) * (z_verts);
+        
+        std::string ele_shape = "hex";
+        vtkm::UInt8 shape_id;
+        vtkm::IdComponent indices_per;
+        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+        vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+        connectivity.Allocate(neles * indices_per);
+        auto conn_portal = connectivity.WritePortal();
+        int offset = 0;
+        // Build Connectivity (Polyhedral cells)
+        for (vtkm::Id i = 0; i < x_elems; ++i) 
+        {
+          for (vtkm::Id j = 0; j < y_elems; ++j) 
+          {
+            for (vtkm::Id k = 0; k < z_elems; ++k) 
+            {
+              vtkm::Id v0 = k * y_verts * x_verts + j * x_verts + i;
+              vtkm::Id v1 = v0 + 1;
+              vtkm::Id v2 = v0 + x_verts;
+              vtkm::Id v3 = v0 + x_verts + 1;
+              vtkm::Id v4 = v0 + y_verts * x_verts;
+              vtkm::Id v5 = v4 + 1;
+              vtkm::Id v6 = v4 + x_verts;
+              vtkm::Id v7 = v4 + x_verts + 1;
+              
+              conn_portal.Set(offset, v0);
+              conn_portal.Set(offset+1, v1);
+              conn_portal.Set(offset+2, v3);
+              conn_portal.Set(offset+3, v2);
+              conn_portal.Set(offset+4, v4);
+              conn_portal.Set(offset+5, v5);
+              conn_portal.Set(offset+6, v7);
+              conn_portal.Set(offset+7, v6);
+              offset = offset + 8;
+            }
+          }
+        }
+
+        vtkm::cont::CellSetSingleType<> cell_set;
+        cell_set.Fill(nverts, shape_id, indices_per, connectivity);
+        neles = cell_set.GetNumberOfCells();
+        result->SetCellSet(cell_set);
+      }
     }
     else
     {
-      int32 z_elems = n_topo["elements/dims/k"].to_int();
-      vtkm::cont::CellSetStructured<3> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                 y_elems+1,
-                                                 z_elems+1));
-      cell_set.SetGlobalPointIndexStart(topo_origin);
-      result->SetCellSet(cell_set);
-      neles = x_elems * y_elems * z_elems;
-
-    }
+      if (ndims == 2)
+      {
+        vtkm::cont::CellSetStructured<2> cell_set;
+        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                   y_elems+1));
+        vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+        cell_set.SetGlobalPointIndexStart(origin2);
+        result->SetCellSet(cell_set);
+        neles = x_elems * y_elems;
+      }
+      else
+      {
+        int32 z_elems = n_topo["elements/dims/k"].to_int();
+        vtkm::cont::CellSetStructured<3> cell_set;
+        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                   y_elems+1,
+                                                   z_elems+1));
+        cell_set.SetGlobalPointIndexStart(topo_origin);
+        result->SetCellSet(cell_set);
+        neles = x_elems * y_elems * z_elems;
+      }
+    }    
     return result;
 }
 
@@ -3072,7 +3167,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
       else
       {
-        data_set.PrintSummary(std::cout);
+        //data_set.PrintSummary(std::cout);
         //ASCENT_ERROR("Mixed explicit types not implemented");
         MixedType cells = dyn_cells.AsCellSet<MixedType>();
         Node &topo_ele = output

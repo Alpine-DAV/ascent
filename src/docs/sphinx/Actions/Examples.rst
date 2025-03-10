@@ -612,6 +612,17 @@ Resulting image:
 
 .. image:: examples/milk_chocolate100.png
 
+An example of creating a custom color map using a compressed format.
+-------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/milk_chocolate_compressed100.yaml
+
+Resulting image:
+
+.. image:: examples/milk_chocolate100.png
+
 An example if using the composite vector filter  to compose three scalar fields into a vector.
 -----------------------------------------------------------------------------------------------
 

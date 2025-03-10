@@ -1,0 +1,23 @@
+#An example of creating a custom color map.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          color_table: 
+            control_points: 
+                r: [0.23, 0.48, 0.99]
+                g: [0.08, 0.23, 1.0]
+                b: [0.08, 0.04, 0.9]
+                a: [1.0, 1.0, 1.0]
+                position: [0.0, 0.5, 1.0]
+      image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/milk_chocolate"
+      renders: 
+        r1: 
+          image_width: 512
+          image_height: 512
+          image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/milk_chocolate"

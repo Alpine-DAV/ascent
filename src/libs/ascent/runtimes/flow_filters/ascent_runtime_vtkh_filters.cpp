@@ -55,6 +55,7 @@
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
+#include <vtkh/filters/ExternalSurfaces.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
@@ -175,7 +176,7 @@ VTKHMarchingCubes::execute()
 
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_vector_magnitude input must be a data object");
+        ASCENT_ERROR("vtkh_marchingcubes input must be a data object");
     }
 
     DataObject *data_object = input<DataObject>(0);
@@ -244,6 +245,101 @@ VTKHMarchingCubes::execute()
 }
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+VTKHExternalSurfaces::VTKHExternalSurfaces()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHExternalSurfaces::~VTKHExternalSurfaces()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHExternalSurfaces::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_external_surfaces";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHExternalSurfaces::verify_params(const conduit::Node &params,
+                                    conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res = check_string("topology",params, info, false) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHExternalSurfaces::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHExternalSurfaces input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = true;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+        // this creates a data object with an invalid soource
+        set_output<DataObject>(new DataObject());
+        return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkh::ExternalSurfaces ext_surf;
+    ext_surf.SetInput(&data);
+
+    ext_surf.Update();
+
+    vtkh::DataSet *ext_surf_output = ext_surf.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*ext_surf_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete ext_surf_output;
+    set_output<DataObject>(res);
+}
+
+
+//-----------------------------------------------------------------------------
 VTKHVectorMagnitude::VTKHVectorMagnitude()
 :Filter()
 {
@@ -268,7 +364,7 @@ VTKHVectorMagnitude::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 VTKHVectorMagnitude::verify_params(const conduit::Node &params,
-                                 conduit::Node &info)
+                                   conduit::Node &info)
 {
     info.reset();
 

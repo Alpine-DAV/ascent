@@ -411,8 +411,17 @@ void
 AscentRuntime::ResetInfo()
 {
     m_info.reset();
+    // we cache the result of ascent::about
+    // b/c we want some info from it
+    if(m_about.number_of_children() == 0)
+    {
+        ascent::about(m_about);
+    }
     m_info["runtime/type"] = "ascent";
-    m_info["runtime/options"] = m_runtime_options;
+    m_info["runtime/version"]  = m_about["version"];
+    m_info["runtime/git_sha1"] = m_about["git_sha1"];
+    m_info["runtime/git_tag"]  = m_about["git_tag"];
+    m_info["runtime/options"]  = m_runtime_options;
     m_info["registered_filter_types"] = registered_filter_types();
 }
 

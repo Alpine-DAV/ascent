@@ -88,10 +88,9 @@ parse_color_table(const conduit::Node &color_table_node)
           ss<<",";
         }
       }
-
       std::cout<<"Invalid color table name '"<<name
-                 <<"'. Defaulting to "<<color_map_name
-                 <<". known names: "<<ss.str()<<"\n";
+                  <<"'. Defaulting to "<<color_map_name
+                  <<". known names: "<<ss.str()<<"\n";
     }
   }
 
@@ -99,78 +98,179 @@ parse_color_table(const conduit::Node &color_table_node)
 
   if(color_table_node.has_child("control_points"))
   {
+    const Node &control_points_node = color_table_node.fetch("control_points");
+
+    // check to see if we have rgb points and clear the table
     bool clear = false;
     bool clear_alphas = false;
-    // check to see if we have rgb points and clear the table
-    NodeConstIterator itr = color_table_node.fetch("control_points").children();
-    while(itr.has_next())
+    if (control_points_node.dtype().is_list())
     {
-        const Node &peg = itr.next();
-        if (peg["type"].as_string() == "rgb")
+        NodeConstIterator itr = control_points_node.children();
+        while (itr.has_next())
         {
-          clear = true;
+            const Node &peg = itr.next();
+            if (peg["type"].as_string() == "rgb")
+            {
+                clear = true;
+            }
+            if (peg["type"].as_string() == "alpha")
+            {
+                clear_alphas = true;
+            }
         }
-        if (peg["type"].as_string() == "alpha")
+    }
+    else if (control_points_node.dtype().is_object())
+    {
+        if (control_points_node.has_child("r") && 
+            control_points_node.has_child("g") && 
+            control_points_node.has_child("b"))
         {
-          clear_alphas = true;
+            clear = true;
+        }
+
+        if (control_points_node.has_child("a"))
+        {
+            clear_alphas = true;
         }
     }
 
-    if(clear && !name_provided)
+    if (clear && !name_provided)
     {
       color_table.clear_colors();
     }
 
-    if(clear_alphas)
+    if (clear_alphas)
     {
       color_table.clear_alphas();
     }
 
-    itr = color_table_node.fetch("control_points").children();
-    while(itr.has_next())
+    if (control_points_node.dtype().is_list())
     {
-      const Node &peg = itr.next();
-      if(!peg.has_child("position"))
-      {
-        std::cout<<"Color map control point must have a position\n";
-      }
-
-      float64 position = peg["position"].to_float64();
-
-      if(position > 1.0 || position < 0.0)
-      {
-        std::cout<<"Cannot add color map control point position "
-                 << position
-                 << ". Must be a normalized scalar.\n";
-      }
-
-      if (peg["type"].as_string() == "rgb")
-      {
-        conduit::Node n;
-        peg["color"].to_float32_array(n);
-        const float *color = n.as_float32_ptr();
-
-        dray::Vec<float,3> ecolor({color[0], color[1], color[2]});
-
-        for(int i = 0; i < 3; ++i)
+        NodeConstIterator itr = control_points_node.children();
+        while (itr.has_next())
         {
-          ecolor[i] = std::min(1.f, std::max(ecolor[i], 0.f));
+            const Node &peg = itr.next();
+            if (!peg.has_child("position"))
+            {
+                std::cout<<"Color map control point must have a position\n";
+            }
+
+            float64 position = peg["position"].to_float64();
+
+            if (position > 1.0 || position < 0.0)
+            {
+                std::cout<<"Cannot add color map control point position "
+                                << position
+                                << ". Must be a normalized scalar.\n";
+            }
+
+            if (peg["type"].as_string() == "rgb")
+            {
+                conduit::Node n;
+                peg["color"].to_float32_array(n);
+                const float *color = n.as_float32_ptr();
+
+                dray::Vec<float,3> ecolor({color[0], color[1], color[2]});
+
+                for(int i = 0; i < 3; ++i)
+                {
+                    ecolor[i] = std::min(1.f, std::max(ecolor[i], 0.f));
+                }
+
+                color_table.add_point(position, ecolor);
+            }
+            else if (peg["type"].as_string() == "alpha")
+            {
+                float alpha = peg["alpha"].to_float32();
+                alpha = std::min(1.f, std::max(alpha, 0.f));
+                color_table.add_alpha(position, alpha);
+            }
+            else
+            {
+                std::cout<<"Unknown color table control point type "
+                            << peg["type"].as_string()
+                            << "\nValid types are 'alpha' and 'rgb'\n";
+            }
+        }
+    }
+    else if (control_points_node.dtype().is_object())
+    {
+        if (!control_points_node.has_child("r"))
+        {
+            std::cout<<"Color map control point must provide r values\n";
         }
 
-        color_table.add_point(position, ecolor);
-      }
-      else if (peg["type"].as_string() == "alpha")
-      {
-        float alpha = peg["alpha"].to_float32();
-        alpha = std::min(1.f, std::max(alpha, 0.f));
-        color_table.add_alpha(position, alpha);
-      }
-      else
-      {
-        std::cout<<"Unknown color table control point type "
-                 << peg["type"].as_string()
-                 << "\nValid types are 'alpha' and 'rgb'";
-      }
+        if (!control_points_node.has_child("g"))
+        {
+            std::cout<<"Color map control point must provide g values\n";
+        }
+
+        if (!control_points_node.has_child("b"))
+        {
+            std::cout<<"Color map control point must provide b values\n";
+        }
+
+        if (!control_points_node.has_child("position"))
+        {
+            std::cout<<"Color map control point must have a position\n";
+        }
+
+        conduit::Node r_vals_node;
+        control_points_node["r"].to_float32_array(r_vals_node);
+        float32_array r_vals = r_vals_node.as_float32_array();
+
+        conduit::Node g_vals_node;
+        control_points_node["g"].to_float32_array(g_vals_node);
+        float32_array g_vals = g_vals_node.as_float32_array();
+
+        conduit::Node b_vals_node;
+        control_points_node["b"].to_float32_array(b_vals_node);
+        float32_array b_vals = b_vals_node.as_float32_array();
+
+        float64_array pos_vals = control_points_node.fetch("position").value();
+
+        if (r_vals.number_of_elements() != g_vals.number_of_elements() ||
+            g_vals.number_of_elements() != b_vals.number_of_elements() ||
+            b_vals.number_of_elements() != pos_vals.number_of_elements())
+        {
+            std::cout<<"Color map color channels should all be of the same size\n";
+        }
+
+        for (index_t i=0; i<r_vals.number_of_elements();i++)
+        {
+            dray::Vec<dray::float32,3> ecolor({r_vals[i], g_vals[i], b_vals[i]});
+            
+            for (int e = 0; e < 3; ++e)
+            {
+                ecolor[e] = std::min(1.f, std::max(ecolor[e], 0.f));
+            }
+
+            if (pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
+            {
+                std::cout<<"Cannot add color map control point position "
+                                << pos_vals[i]
+                                << ". Must be a normalized scalar.\n";
+            }
+
+            color_table.add_point(pos_vals[i], ecolor);
+        }
+
+        if (control_points_node.has_child("a"))
+        {
+            conduit::Node alpha_vals_node;
+            control_points_node["a"].to_float32_array(alpha_vals_node);
+            float32_array alpha_vals = alpha_vals_node.as_float32_array();
+
+            if (pos_vals.number_of_elements() != alpha_vals.number_of_elements())
+            {
+                std::cout<<"Color map alpha channel should have same size as color channels\n";
+            }
+
+            for (index_t i=0; i<alpha_vals.number_of_elements();i++)
+            {
+                color_table.add_alpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
+            }
+        }
     }
   }
   return color_table;
