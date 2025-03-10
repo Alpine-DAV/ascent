@@ -4739,12 +4739,17 @@ VTKHTransform::verify_params(const conduit::Node &params,
     scale/x,y,z
     translate/x,y,z
     rotate/x,y,z
+    reflect/x,y,z
     transform_matrix: float64 x 16
 */
 
     bool res = true;
     
-    std::vector<std::string> modes = {"scale","translate","rotate","matrix"};
+    std::vector<std::string> modes = {"scale",
+                                      "translate",
+                                      "rotate",
+                                      "reflect",
+                                      "matrix"};
 
     index_t mode_count = 0;
     for( auto mode : modes)
@@ -4757,13 +4762,13 @@ VTKHTransform::verify_params(const conduit::Node &params,
 
     if(mode_count > 1)
     {
-        info["errors"].append() = "transform only supports one of: scale, translate, rotate, or matrix";
+        info["errors"].append() = "transform only supports one of: scale, translate, rotate, reflect, or matrix";
         res = false;
     }
 
     if(mode_count == 0)
     {
-        info["errors"].append() = "transform requires parameters for: scale, translate, rotate, or matrix";
+        info["errors"].append() = "transform requires parameters for: scale, translate, rotate, reflect, or matrix";
         res = false;
     }
 
@@ -4829,6 +4834,21 @@ VTKHTransform::verify_params(const conduit::Node &params,
         }
     }
 
+    if(params.has_child("reflect"))
+    {
+       const Node &p_vals = params["reflect"];
+       if( ! p_vals.has_child("x") &&
+           ! p_vals.has_child("y") &&
+           ! p_vals.has_child("z") )
+        {
+            res = false;
+            info["errors"].append() = "reflect transform requires: reflect/x, reflect/y, and/or reflect/z";
+        }
+        res &= check_numeric("x", p_vals, info, false, true);
+        res &= check_numeric("y", p_vals, info, false, true);
+        res &= check_numeric("z", p_vals, info, false, true);
+    }
+
     if(params.has_child("matrix"))
     {
         res &= check_numeric("matrix",params, info, true, true);
@@ -4854,6 +4874,9 @@ VTKHTransform::verify_params(const conduit::Node &params,
                                              "rotate/axis/x",
                                              "rotate/axis/y",
                                              "rotate/axis/z",
+                                             "reflect/x",
+                                             "reflect/y",
+                                             "reflect/z",
                                              "matrix"};
 
     std::string surprises = surprise_check(valid_paths, params);
@@ -4891,12 +4914,14 @@ VTKHTransform::execute()
     bool use_scale     = false;
     bool use_translate = false;
     bool use_rotate    = false;
+    bool use_reflect   = false;
     bool use_matrix    = false;
 
     double t_scale[3]       = {1.0, 1.0, 1.0};
     double t_translate[3]   = {0.0, 0.0, 0.0};
     double t_rotate_angle   =  0.0;
     double t_rotate_axis[3] = {0.0, 0.0, 0.0};
+    double t_reflect[3]     = {0.0, 0.0, 0.0};
     double t_matrix[16]     = {0.0, 0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0, 0.0,
@@ -4966,6 +4991,26 @@ VTKHTransform::execute()
         }
     }
 
+    if(params().has_child("reflect"))
+    {
+        use_reflect = true;
+        const Node &p_vals = params()["reflect"];
+        if(p_vals.has_child("x"))
+        {
+            t_reflect[0] = get_float64(p_vals["x"],data_object);
+        }
+
+        if(p_vals.has_child("y"))
+        {
+            t_reflect[1] = get_float64(p_vals["y"],data_object);
+        }
+
+        if(p_vals.has_child("z"))
+        {
+            t_reflect[2] = get_float64(p_vals["z"],data_object);
+        }
+    }
+
     if(params().has_child("matrix"))
     {
         use_matrix = true;
@@ -5012,9 +5057,15 @@ VTKHTransform::execute()
                                 t_rotate_axis[2]);
       }
 
+      if(use_reflect)
+      {
+          transform.SetReflect(t_reflect[0],
+                               t_reflect[1],
+                               t_reflect[2]);
+      }
+
       if(use_matrix)
       {
-          
           transform.SetTransform(t_matrix);
       }
 

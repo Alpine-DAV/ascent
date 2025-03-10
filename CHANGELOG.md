@@ -26,12 +26,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `topologies` option to the relay extract. This allows you to select which topologies are saved. This option can be used with the existing `fields` option, the result is the union of the selected topologies and fields.
 - Added `near_plane` and `far_plane` to the camera details provided in Ascent::info()
 - Added `add_mpi_ranks` and `add_domain_ids` filters for adding rank and domain fields to a mesh
-- Added `transform` filter, which allows you to rotate, scale, translate, mesh coordinates
+- Added `transform` filter, which allows you to rotate, scale, reflect, translate, mesh coordinates
 - Added python script in src/utilities/visit_session_converters to convert VisIt color table to Ascent actions color table
 - Added `fields` option to the project 2d to support scalar rendering of specific fields.
 - Added `dataset_bounds` option to the project 2d, which can be used instead of a full 3D camera specification
 - Added support for triggers to execute actions from multiple files via an `actions_files` option that takes a list of actions files.
 - Added an `external_surfaces` transform filter, that can be used to reduce memory requriments in pipelines where you plan to only process the external faces of a data set. 
+
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities. 

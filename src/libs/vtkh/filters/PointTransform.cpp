@@ -96,6 +96,57 @@ PointTransform::SetScale(const double& sx,
   m_transform = vtkm::MatrixMultiply(m_transform, matrix);
 }
 
+
+//---------------------------------------------------------------------------//
+void
+PointTransform::SetReflect(const double& axisX,
+                           const double& axisY,
+                           const double& axisZ)
+{
+    // reflect recipe:
+    // identify - 2*(normal) * (normal)^T
+
+    vtkm::Vec<vtkm::Float64,3> axis;
+    axis[0] = axisX;
+    axis[1] = axisY;
+    axis[2] = axisZ;
+    vtkm::Normalize(axis);
+
+    vtkm::Matrix<double,4,1> m_n;
+    m_n[0] = axis[0];
+    m_n[1] = axis[1];
+    m_n[2] = axis[2];
+    m_n[3] = 0.0;
+
+    vtkm::Matrix<double,1,4> m_nt   = vtkm::MatrixTranspose(m_n);
+    vtkm::Matrix<double,4,4> matrix = vtkm::MatrixMultiply(m_n, m_nt);
+
+    matrix[0][0] = 1.0 - 2.0 * matrix[0][0];
+    matrix[0][1] =     - 2.0 * matrix[0][1];
+    matrix[0][2] =     - 2.0 * matrix[0][2];
+    matrix[0][3] =     - 2.0 * matrix[0][3];
+
+    matrix[1][0] =     - 2.0 * matrix[1][0];
+    matrix[1][1] = 1.0 - 2.0 * matrix[1][1];
+    matrix[1][2] =     - 2.0 * matrix[1][2];
+    matrix[1][3] =     - 2.0 * matrix[1][3];
+
+    matrix[2][0] =     - 2.0 * matrix[2][0];
+    matrix[2][1] =     - 2.0 * matrix[2][1];
+    matrix[2][2] = 1.0 - 2.0 * matrix[2][2];
+    matrix[2][3] =     - 2.0 * matrix[2][3];
+
+    matrix[3][0] =     - 2.0 * matrix[3][0];
+    matrix[3][1] =     - 2.0 * matrix[3][1];
+    matrix[3][2] =     - 2.0 * matrix[3][2];
+    matrix[3][3] =     - 2.0 * matrix[3][3];
+
+    // to view/debug the matrix:
+    // std::cout << matrix;
+    m_transform = matrix;
+}
+
+
 //---------------------------------------------------------------------------//
 void
 PointTransform::PreExecute()
