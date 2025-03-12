@@ -229,21 +229,21 @@ exec_dispatch_mcarray_component(const conduit::Node &node,
     SerialExec exec;
     res = exec_dispatch_mcarray_component(node, component, func, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     res = exec_dispatch_mcarray_component(node, component, func, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     res = exec_dispatch_mcarray_component(node, component, func, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_HIP_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -483,21 +483,21 @@ exec_dispatch_mesh(const conduit::Node &n_coords,
     SerialExec exec;
     exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     exec_dispatch_mesh(n_coords,n_topo, func, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_HIP_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -665,21 +665,21 @@ exec_dispatch_binary_df(const conduit::Node &l_field,
     SerialExec exec;
     res = dispatch_memory_binary_df(l_field, r_field, component, func, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     res = dispatch_memory_binary_df(l_field, r_field, component, func, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED)
+#if defined(ASCENT_RAJA_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     res = dispatch_memory_binary_df(l_field, r_field, component, func, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_RAJA_HIP_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -711,21 +711,21 @@ exec_dispatch_unary_df(const conduit::Node &field,
     SerialExec exec;
     res = dispatch_memory_unary_df(field, val, component, func, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     res = dispatch_memory_unary_df(field, val, component, func, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED)
+#if defined(ASCENT_RAJA_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     res = dispatch_memory_unary_df(field, val, component, func, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED)
+#if defined(ASCENT_RAJA_HIP_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -753,21 +753,21 @@ exec_dispatch_array(Array<T> &array, Function &func)
     SerialExec exec;
     func(array, exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     func(array, exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     func(array, exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_HIP_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;
@@ -795,21 +795,21 @@ exec_dispatch_function(Function &func)
     SerialExec exec;
     func(exec);
   }
-#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_OPENMP_ENABLED)
   else if(exec_policy == "openmp")
   {
     OpenMPExec exec;
     func(exec);
   }
 #endif
-#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_CUDA_ENABLED)
   else if(exec_policy == "cuda")
   {
     CudaExec exec;
     func(exec);
   }
 #endif
-#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#if defined(ASCENT_RAJA_HIP_ENABLED)
   else if(exec_policy == "hip")
   {
     HipExec exec;

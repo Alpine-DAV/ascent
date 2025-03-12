@@ -19,7 +19,7 @@ public:
   // i.e., openmp if supported and serial if not
   static std::string preferred_cpu_policy();
 
-  // return the preferred gpuu election device
+  // return the preferred gpu election device
   // i.e., none, cuda, or hip
   static std::string preferred_gpu_policy();
 private:
