@@ -234,7 +234,7 @@ Compositor::CompositeZBufferSurface()
 void
 Compositor::CompositeZBufferBlend()
 {
-  assert("this is not implemented yet" == "error");
+  throw std::runtime_error("CompositeZBufferBlend is is not implemented yet");
 }
 
 void

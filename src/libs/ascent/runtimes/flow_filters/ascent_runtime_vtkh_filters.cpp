@@ -549,7 +549,6 @@ VTKH3Slice::execute()
     if(params().has_path("x_offset"))
     {
       float offset = get_float32(params()["x_offset"], data_object);
-      std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       x_point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
@@ -558,7 +557,6 @@ VTKH3Slice::execute()
     if(params().has_path("y_offset"))
     {
       float offset = get_float32(params()["y_offset"], data_object);
-      std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       y_point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
@@ -567,7 +565,6 @@ VTKH3Slice::execute()
     if(params().has_path("z_offset"))
     {
       float offset = get_float32(params()["z_offset"], data_object);
-      std::max(-1.f, std::min(1.f, offset));
       float t = (offset + 1.f) / 2.f;
       t = std::max(0.f + eps, std::min(1.f - eps, t));
       z_point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);

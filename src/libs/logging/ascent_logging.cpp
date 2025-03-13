@@ -415,6 +415,7 @@ Logger::level_id_to_string(int level)
         case Logger::LOG_WARN_ID:  return "warn";  break;
         case Logger::LOG_ERROR_ID: return "error"; break;
         case Logger::LOG_NONE_ID:  return "none";  break;
+        default: return "unknown"; break;
     }
 }
 
