@@ -4,8 +4,12 @@
 namespace ascent
 {
 
-#if defined(ASCENT_RAJA_DEVICE_ENABLED)
+#if defined(ASCENT_RAJA_CUDA_DEVICE_ENABLED)
 std::string CudaExec::memory_space = "device";
+#endif
+
+#if defined(ASCENT_RAJA_CUDA_DEVICE_ENABLED)
+std::string HipExec::memory_space = "device";
 #endif
 
 #if defined(ASCENT_RAJA_OPENMP_ENABLED)
