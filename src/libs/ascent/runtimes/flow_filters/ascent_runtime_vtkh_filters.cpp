@@ -991,22 +991,16 @@ VTKHSlice::execute()
         if(n_point.has_path("x_offset"))
         {
           float offset = get_float32(n_point["x_offset"], data_object);
-          // TODO: THIS RESULT ISN'T USED, should it be offset =?
-          std::max(-1.f, std::min(1.f, offset));
           float t = (offset + 1.f) / 2.f;
           t = std::max(0.f + eps, std::min(1.f - eps, t));
           point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);
 
           offset = get_float32(n_point["y_offset"], data_object);
-          // TODO: THIS RESULT ISN'T USED, should it be offset =?
-          std::max(-1.f, std::min(1.f, offset));
           t = (offset + 1.f) / 2.f;
           t = std::max(0.f + eps, std::min(1.f - eps, t));
           point[1] = bounds.Y.Min + t * (bounds.Y.Max - bounds.Y.Min);
 
           offset = get_float32(n_point["z_offset"], data_object);
-          // TODO: THIS RESULT ISN'T USED, should it be offset =?
-          std::max(-1.f, std::min(1.f, offset));
           t = (offset + 1.f) / 2.f;
           t = std::max(0.f + eps, std::min(1.f - eps, t));
           point[2] = bounds.Z.Min + t * (bounds.Z.Max - bounds.Z.Min);
@@ -5411,20 +5405,38 @@ VTKHParticleAdvection::execute()
                 
                 double dx = 1, dy = 1, dz = 1;
                 if(num_seeds_x != 0)
+                {
                     if(num_seeds_x != 1)
+                    {
                         dx = dist_x/(num_seeds_x-1);
+                    }
                     else
+                    {
                         dx = dist_x/num_seeds_x;
+                    }
+                }
                 if(num_seeds_y != 0)
+                {
                     if(num_seeds_y != 1)
+                    {
                          dy = dist_y/(num_seeds_y-1);
+                    }
                     else
+                    {
                          dy = dist_y/num_seeds_y;
+                    }
+                }
                 if(num_seeds_z != 0)
+                {
                     if(num_seeds_z != 1)
+                    {
                          dz = dist_z/(num_seeds_z-1);
+                    }
                     else
+                    {
                          dz = dist_z/num_seeds_z;
+                    }
+                }
                 for(int i = 0; i < num_seeds_x; ++i)
                 {
                     double x = x_min + dx*i;
@@ -5469,21 +5481,38 @@ VTKHParticleAdvection::execute()
 
 	              double dx = 1, dy = 1, dz = 1;
 	              if(num_seeds_x != 0)
+                {
 	                  if(num_seeds_x != 1)
+                    {
                         dx = dist_x/(num_seeds_x-1);
+                    }
 	                  else
+                    {
                         dx = dist_x/num_seeds_x;
+                    }
+                }
 	              if(num_seeds_y != 0)
+                {
 	                  if(num_seeds_y != 1)
+                    {
                         dy = dist_y/(num_seeds_y-1);
+                    }
 	                  else
+                    {
                         dy = dist_y/num_seeds_y;
+                    }
+                }
 	              if(num_seeds_z != 0)
+                {
 	                  if(num_seeds_z != 1)
+                    {
                         dz = dist_z/(num_seeds_z-1);
+                    }
 	                  else
+                    {
                         dz = dist_z/num_seeds_z;
- 
+                    }
+                }
 	              int seed_count = 0;
                 for(int i = 0; i < num_seeds_x; ++i)
 	              {
