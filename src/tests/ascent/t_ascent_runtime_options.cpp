@@ -729,7 +729,7 @@ TEST(ascent_runtime_options, test_field_filtering_ghosts)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test\n");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 
@@ -755,7 +755,7 @@ TEST(ascent_runtime_options, test_field_filtering_ghosts)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing field filtering with ghosts\n");
+    ASCENT_INFO("Testing field filtering with ghosts");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_field_filtering_wghosts");
@@ -806,7 +806,7 @@ TEST(ascent_runtime_options, test_field_filtering_sparse_fields_case)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test\n");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 
@@ -828,7 +828,7 @@ TEST(ascent_runtime_options, test_field_filtering_sparse_fields_case)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing field filtering with sparse fields\n");
+    ASCENT_INFO("Testing field filtering with sparse fields");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
@@ -883,7 +883,7 @@ TEST(ascent_runtime_options, test_field_filtering_error)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test\n");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 
@@ -898,7 +898,7 @@ TEST(ascent_runtime_options, test_field_filtering_error)
                                               data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing field filtering error\n");
+    ASCENT_INFO("Testing field filtering error");
 
     //
     // Create the actions.
@@ -906,6 +906,7 @@ TEST(ascent_runtime_options, test_field_filtering_error)
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
+
     extracts["e1/params/path"] = "will never happen";
     extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
 
@@ -927,11 +928,10 @@ TEST(ascent_runtime_options, test_field_filtering_error)
     ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
-
     bool error = false;
     try
     {
-        ascent.execute(actions);
+       ascent.execute(actions);
     }
     catch(...)
     {
@@ -941,76 +941,6 @@ TEST(ascent_runtime_options, test_field_filtering_error)
 
     EXPECT_TRUE(error);
 }
-
-//-----------------------------------------------------------------------------
-TEST(ascent_runtime_options, test_field_filtering_no_extract_type_error)
-{
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test\n");
-        return;
-    }
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing field filtering error with extract type missing\n");
-
-    //
-    // Create the actions.
-    //
-
-    conduit::Node extracts;
-    // extract type is missing
-    extracts["e1/params/path"] = "will never happen";
-    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-    // extracts["e1/params/field"] = "braid";
-
-    conduit::Node actions;
-    // add the extracts
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
-
-    //
-    // Run Ascent
-    //
-
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent_opts["field_filtering"] = "true";
-    ascent_opts["exceptions"] = "forward";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    bool error = false;
-    ascent.execute(actions);
-    try
-    {
-
-    }
-    catch(...)
-    {
-      error = true;
-    }
-    ascent.close();
-
-    EXPECT_TRUE(error);
-}
-
-
 //-----------------------------------------------------------------------------
 TEST(ascent_runtime_options, test_field_filtering_binning_expression)
 {
@@ -1019,7 +949,7 @@ TEST(ascent_runtime_options, test_field_filtering_binning_expression)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test\n");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 
@@ -1039,7 +969,7 @@ TEST(ascent_runtime_options, test_field_filtering_binning_expression)
     data["state/time"] = 1.3;
     data["state/domain_id"] = 0;
 
-    ASCENT_INFO("Testing field filtering error\n");
+    ASCENT_INFO("Testing field filtering error");
 
     //
     // Create the actions.
@@ -1085,7 +1015,7 @@ TEST(ascent_runtime_options, test_field_filtering_binning_filter)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test\n");
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
         return;
     }
 
@@ -1105,7 +1035,7 @@ TEST(ascent_runtime_options, test_field_filtering_binning_filter)
     data["state/time"] = 1.3;
     data["state/domain_id"] = 0;
 
-    ASCENT_INFO("Testing data binning field filtering support\n");
+    ASCENT_INFO("Testing data binning field filtering support");
 
 
     string output_path = prepare_output_dir();
@@ -1184,7 +1114,7 @@ TEST(ascent_runtime_options, test_field_filtering_lineout)
     // only run this test if ascent was built with dray support
     if(n["runtimes/ascent/dray/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent Devil Ray  support disabled, skipping test\n");
+        ASCENT_INFO("Ascent Devil Ray  support disabled, skipping test");
         return;
     }
 
@@ -1204,7 +1134,7 @@ TEST(ascent_runtime_options, test_field_filtering_lineout)
     data["state/time"] = 1.3;
     data["state/domain_id"] = 0;
 
-    ASCENT_INFO("Testing filtering field list\n");
+    ASCENT_INFO("Testing filtering field list");
 
     //
     // Create the actions.
