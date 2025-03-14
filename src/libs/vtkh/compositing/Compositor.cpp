@@ -214,7 +214,7 @@ Compositor::CompositeZBufferSurface()
 void
 Compositor::CompositeZBufferBlend()
 {
-  throw std::runtime_error("CompositeZBufferBlend is is not implemented yet");
+  throw std::runtime_error("CompositeZBufferBlend is not implemented yet");
 }
 
 void
