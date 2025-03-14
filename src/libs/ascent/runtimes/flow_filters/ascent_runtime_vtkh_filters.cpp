@@ -55,6 +55,7 @@
 #include <vtkh/filters/ClipField.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/CompositeVector.hpp>
+#include <vtkh/filters/ExternalSurfaces.hpp>
 #include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
@@ -175,7 +176,7 @@ VTKHMarchingCubes::execute()
 
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_vector_magnitude input must be a data object");
+        ASCENT_ERROR("vtkh_marchingcubes input must be a data object");
     }
 
     DataObject *data_object = input<DataObject>(0);
@@ -244,6 +245,101 @@ VTKHMarchingCubes::execute()
 }
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+VTKHExternalSurfaces::VTKHExternalSurfaces()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHExternalSurfaces::~VTKHExternalSurfaces()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHExternalSurfaces::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_external_surfaces";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHExternalSurfaces::verify_params(const conduit::Node &params,
+                                    conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+
+    res = check_string("topology",params, info, false) && res;
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("topology");
+
+    std::string surprises = surprise_check(valid_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHExternalSurfaces::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHExternalSurfaces input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = true;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+        // this creates a data object with an invalid soource
+        set_output<DataObject>(new DataObject());
+        return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkh::ExternalSurfaces ext_surf;
+    ext_surf.SetInput(&data);
+
+    ext_surf.Update();
+
+    vtkh::DataSet *ext_surf_output = ext_surf.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*ext_surf_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete ext_surf_output;
+    set_output<DataObject>(res);
+}
+
+
+//-----------------------------------------------------------------------------
 VTKHVectorMagnitude::VTKHVectorMagnitude()
 :Filter()
 {
@@ -268,7 +364,7 @@ VTKHVectorMagnitude::declare_interface(Node &i)
 //-----------------------------------------------------------------------------
 bool
 VTKHVectorMagnitude::verify_params(const conduit::Node &params,
-                                 conduit::Node &info)
+                                   conduit::Node &info)
 {
     info.reset();
 
@@ -4643,12 +4739,17 @@ VTKHTransform::verify_params(const conduit::Node &params,
     scale/x,y,z
     translate/x,y,z
     rotate/x,y,z
+    reflect/x,y,z
     transform_matrix: float64 x 16
 */
 
     bool res = true;
     
-    std::vector<std::string> modes = {"scale","translate","rotate","matrix"};
+    std::vector<std::string> modes = {"scale",
+                                      "translate",
+                                      "rotate",
+                                      "reflect",
+                                      "matrix"};
 
     index_t mode_count = 0;
     for( auto mode : modes)
@@ -4661,13 +4762,13 @@ VTKHTransform::verify_params(const conduit::Node &params,
 
     if(mode_count > 1)
     {
-        info["errors"].append() = "transform only supports one of: scale, translate, rotate, or matrix";
+        info["errors"].append() = "transform only supports one of: scale, translate, rotate, reflect, or matrix";
         res = false;
     }
 
     if(mode_count == 0)
     {
-        info["errors"].append() = "transform requires parameters for: scale, translate, rotate, or matrix";
+        info["errors"].append() = "transform requires parameters for: scale, translate, rotate, reflect, or matrix";
         res = false;
     }
 
@@ -4733,6 +4834,21 @@ VTKHTransform::verify_params(const conduit::Node &params,
         }
     }
 
+    if(params.has_child("reflect"))
+    {
+       const Node &p_vals = params["reflect"];
+       if( ! p_vals.has_child("x") &&
+           ! p_vals.has_child("y") &&
+           ! p_vals.has_child("z") )
+        {
+            res = false;
+            info["errors"].append() = "reflect transform requires: reflect/x, reflect/y, and/or reflect/z";
+        }
+        res &= check_numeric("x", p_vals, info, false, true);
+        res &= check_numeric("y", p_vals, info, false, true);
+        res &= check_numeric("z", p_vals, info, false, true);
+    }
+
     if(params.has_child("matrix"))
     {
         res &= check_numeric("matrix",params, info, true, true);
@@ -4758,6 +4874,9 @@ VTKHTransform::verify_params(const conduit::Node &params,
                                              "rotate/axis/x",
                                              "rotate/axis/y",
                                              "rotate/axis/z",
+                                             "reflect/x",
+                                             "reflect/y",
+                                             "reflect/z",
                                              "matrix"};
 
     std::string surprises = surprise_check(valid_paths, params);
@@ -4795,12 +4914,14 @@ VTKHTransform::execute()
     bool use_scale     = false;
     bool use_translate = false;
     bool use_rotate    = false;
+    bool use_reflect   = false;
     bool use_matrix    = false;
 
     double t_scale[3]       = {1.0, 1.0, 1.0};
     double t_translate[3]   = {0.0, 0.0, 0.0};
     double t_rotate_angle   =  0.0;
     double t_rotate_axis[3] = {0.0, 0.0, 0.0};
+    double t_reflect[3]     = {0.0, 0.0, 0.0};
     double t_matrix[16]     = {0.0, 0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0, 0.0,
@@ -4870,6 +4991,26 @@ VTKHTransform::execute()
         }
     }
 
+    if(params().has_child("reflect"))
+    {
+        use_reflect = true;
+        const Node &p_vals = params()["reflect"];
+        if(p_vals.has_child("x"))
+        {
+            t_reflect[0] = get_float64(p_vals["x"],data_object);
+        }
+
+        if(p_vals.has_child("y"))
+        {
+            t_reflect[1] = get_float64(p_vals["y"],data_object);
+        }
+
+        if(p_vals.has_child("z"))
+        {
+            t_reflect[2] = get_float64(p_vals["z"],data_object);
+        }
+    }
+
     if(params().has_child("matrix"))
     {
         use_matrix = true;
@@ -4916,9 +5057,15 @@ VTKHTransform::execute()
                                 t_rotate_axis[2]);
       }
 
+      if(use_reflect)
+      {
+          transform.SetReflect(t_reflect[0],
+                               t_reflect[1],
+                               t_reflect[2]);
+      }
+
       if(use_matrix)
       {
-          
           transform.SetTransform(t_matrix);
       }
 

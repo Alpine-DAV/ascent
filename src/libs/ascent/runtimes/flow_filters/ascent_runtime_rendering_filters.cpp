@@ -104,18 +104,36 @@ check_color_table_surprises(const conduit::Node &color_table)
   surprises += surprise_check(valid_paths, ignore_paths, color_table);
   if(color_table.has_path("control_points"))
   {
-    std::vector<std::string> c_valid_paths;
-    c_valid_paths.push_back("type");
-    c_valid_paths.push_back("alpha");
-    c_valid_paths.push_back("color");
-    c_valid_paths.push_back("position");
+    const Node &control_points_node = color_table.fetch("control_points");
 
-    const conduit::Node &control_points = color_table["control_points"];
-    const int num_points = control_points.number_of_children();
-    for(int i = 0; i < num_points; ++i)
+    if (control_points_node.dtype().is_list())
     {
-      const conduit::Node &point = control_points.child(i);
-      surprises += surprise_check(c_valid_paths, point);
+        // Valid path options for the expanded control points input format
+        std::vector<std::string> c_valid_paths;
+        c_valid_paths.push_back("type");
+        c_valid_paths.push_back("alpha");
+        c_valid_paths.push_back("color");
+        c_valid_paths.push_back("position");
+
+        const int num_points = control_points_node.number_of_children();
+        for(int i = 0; i < num_points; ++i)
+        {
+            const conduit::Node &point = control_points_node.child(i);
+            surprises += surprise_check(c_valid_paths, point);
+        }
+    }
+    else if (control_points_node.dtype().is_object())
+    {
+        // Valid path options for the compressed control points input format
+        std::vector<std::string> c_valid_paths;
+        c_valid_paths.push_back("r");
+        c_valid_paths.push_back("g");
+        c_valid_paths.push_back("b");
+        c_valid_paths.push_back("a");
+        c_valid_paths.push_back("position");
+
+
+        surprises += surprise_check(c_valid_paths, control_points_node);
     }
   }
 

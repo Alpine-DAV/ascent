@@ -62,6 +62,11 @@ bool ASCENT_API check_object(const std::string path,
                              conduit::Node &info,
                              bool required);
 
+bool ASCENT_API check_list(const std::string path,
+                           const conduit::Node &params,
+                           conduit::Node &info,
+                           bool required);
+
 void ASCENT_API path_helper(std::vector<std::string> &paths,
                             const conduit::Node &params);
 

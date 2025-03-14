@@ -591,7 +591,7 @@ values are removed from the data set.
 
 Transform
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The transform filter allows you to scale, translate, and rotate your mesh.
+The transform filter allows you to scale, translate, reflect, and rotate your mesh.
 It also accepts a general 4x4 transformation matrix.
 
 Translate Example:
@@ -624,6 +624,20 @@ Scale Example:
               x: 2.0
               y: 0.5
               z: 2.0
+
+Reflect Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            reflect:
+              x: 1.0
 
 Rotate Example:
 

@@ -9,6 +9,7 @@ set(vtkh_filters_headers
     Clip.hpp
     ClipField.hpp
     CompositeVector.hpp
+    ExternalSurfaces.hpp
     Gradient.hpp
     GhostStripper.hpp
     HistSampling.hpp
@@ -48,6 +49,7 @@ set(vtkh_filters_sources
     Clip.cpp
     ClipField.cpp
     CompositeVector.cpp
+    ExternalSurfaces.cpp
     Gradient.cpp
     GhostStripper.cpp
     HistSampling.cpp

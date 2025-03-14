@@ -47,6 +47,37 @@ namespace detail
 {
 
 //-----------------------------------------------------------------------------
+bool
+check_for_file(const std::string &file_name,
+               int mpi_comm_id)
+{
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    if(mpi_comm_id == -1)
+    {
+        // nothing we can do
+        return false;
+    }
+
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+    int has_file = 0;
+
+    if(rank == 0 && conduit::utils::is_file(file_name))
+    {
+        has_file = 1;
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+        MPI_Bcast(&has_file, 1, MPI_INT, 0, mpi_comm);
+#endif
+
+    return has_file == 1;
+
+}
+
+//-----------------------------------------------------------------------------
 int
 ParRank(int comm_id)
 {
@@ -122,6 +153,7 @@ Ascent::open()
     Node opts;
     open(opts);
 }
+
 
 //-----------------------------------------------------------------------------
 void
@@ -594,13 +626,15 @@ Ascent::execute(const conduit::Node &actions)
     {
         if(m_runtime != NULL)
         {
+            int mpi_comm_id = m_options["mpi_comm"].to_int();
+
             Node processed_actions(actions);
 
             if(m_actions_file == "<<UNSET>>")
             {
                 m_actions_file = "ascent_actions.json";
 
-                if(!conduit::utils::is_file(m_actions_file))
+                if(!detail::check_for_file(m_actions_file, mpi_comm_id))
                 {
                     m_actions_file = "ascent_actions.yaml";
                 }
@@ -612,7 +646,7 @@ Ascent::execute(const conduit::Node &actions)
                 // an actions file has been set by the user
                 // so we better let them know if we don't find
                 // it
-                if(!conduit::utils::is_file(m_actions_file))
+                if(!detail::check_for_file(m_actions_file, mpi_comm_id))
                 {
                     ASCENT_ERROR("An actions file '"
                                  <<m_actions_file<<"' was specified "
@@ -625,7 +659,7 @@ Ascent::execute(const conduit::Node &actions)
             CheckForSettingsFile(m_actions_file,
                                  processed_actions,
                                  false,
-                                 m_options["mpi_comm"].to_int32());
+                                 mpi_comm_id);
 
             m_runtime->Execute(processed_actions);
 

@@ -29,6 +29,11 @@ public:
   void SetScale(const double& sx,
                 const double& sy,
                 const double& sz);
+
+  void SetReflect(const double& axisX,
+                  const double& axisY,
+                  const double& axisZ);
+
   void SetTransform(const double *matrix_values);
   void SetTransform(const vtkm::Matrix<double, 4, 4>& mtx);
 
