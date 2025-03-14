@@ -15,11 +15,11 @@ public:
   static void          set_execution_policy(const std::string &exec);
   static std::string   execution_policy();
 
-  // return the preferred cpu election device
+  // return the preferred cpu execution device
   // i.e., openmp if supported and serial if not
   static std::string preferred_cpu_policy();
 
-  // return the preferred gpuu election device
+  // return the preferred gpu execution device
   // i.e., none, cuda, or hip
   static std::string preferred_gpu_policy();
 private:
