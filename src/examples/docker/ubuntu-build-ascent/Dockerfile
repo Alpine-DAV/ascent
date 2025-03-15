@@ -6,7 +6,7 @@
 # all in one build of ascent container w/ jupyter
 #################################################
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 #####################
 # base deps
@@ -27,7 +27,7 @@ RUN apt-get update && apt-get -y install \
              python3 \
              python3-dev \
              python-is-python3 \
-             python3.10-venv \
+             python3.12-venv \
              clang \
              llvm \
              perl \
@@ -52,11 +52,10 @@ RUN apt-get update && apt-get -y install \
              mpich \
              libmpich-dev \
              openssh-server \
+             nodejs \
+             npm \
              vim
 
-# nodejs is needed by jupyterlab for widgets
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
-RUN apt-get install -y nodejs
 RUN rm -rf /var/lib/apt/lists/*
 
 #####################
@@ -73,7 +72,7 @@ RUN chmod +x /ascent/scripts/build_ascent/build_ascent.sh
 
 # copy docker specific build script in
 COPY docker_build_ascent.sh /
-RUN  ./docker_build_ascent.sh
+RUN ./docker_build_ascent.sh
 
 # ascent is installed at /install/ascent-checkout, symlink to /ascent/install
 RUN ln -s /install/ascent-checkout /ascent/install
@@ -114,12 +113,6 @@ chmod 0440 /etc/sudoers.d/user
 USER user
 WORKDIR /home/user
 
-# setup ssh keys for passwordless ssh to localhost
-RUN mkdir -p ~/.ssh
-RUN ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N ""
-RUN cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-RUN chmod 0600 ~/.ssh/authorized_keys
-
 # setup jupyter password, the password is:
 #  learn
 RUN mkdir /home/user/.jupyter/
@@ -130,6 +123,7 @@ RUN echo "c.NotebookApp.terminado_settings = { 'shell_command': ['/bin/bash'] }"
 
 # gen script that allows us to easily run jupyter lab
 RUN cp /ascent_docker_setup_env.sh /home/user/ascent_docker_run_jupyterlab.sh
+RUN echo "jupyter labextension disable \"@jupyterlab/apputils-extension:announcements\"" >> /home/user/ascent_docker_run_jupyterlab.sh
 RUN echo "jupyter lab --ip=\"0.0.0.0\" --no-browser" >> /home/user/ascent_docker_run_jupyterlab.sh
 
 # make sure helpers are executable
@@ -139,4 +133,4 @@ RUN sudo chmod 777 /home/user/ascent_docker_run_jupyterlab.sh
 EXPOSE 8888
 
 # default setup -- launch jupyter lab
-CMD sudo service ssh start && cd /tutorial/ && /home/user/ascent_docker_run_jupyterlab.sh
+CMD cd /tutorial/ && /home/user/ascent_docker_run_jupyterlab.sh
