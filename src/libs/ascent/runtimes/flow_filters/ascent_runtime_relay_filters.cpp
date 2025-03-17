@@ -160,7 +160,7 @@ filter_topos(const conduit::Node &input,
         {
           out_dom[cpath].set_external(dom[cpath]);
         }
-        
+
         // check for any fields defined on this topo
         if(dom.has_path("fields"))
         {
@@ -211,7 +211,7 @@ filter_topos(const conduit::Node &input,
             }
           }
         }
-        
+
       }
     }
 
@@ -464,7 +464,7 @@ verify_io_params(const conduit::Node &params,
             info["info"].append() = "includes 'num_files'";
         }
     }
-    
+
     if( params.has_child("refinement_level") )
     {
         if(!params["refinement_level"].dtype().is_integer())
@@ -577,13 +577,15 @@ verify_io_params(const conduit::Node &params,
 
 
 //-----------------------------------------------------------------------------
-void mesh_blueprint_save(const Node &data,
+void
+mesh_blueprint_save(const Node &data,
                          const std::string &path,
                          const std::string &file_protocol,
                          int num_files,
                          const Node &extra_opts,
                          std::string &root_file_out)
 {
+    root_file_out = "";
     bool has_data = blueprint::mesh::number_of_domains(data) > 0;
     has_data = global_someone_agrees(has_data);
 
@@ -617,6 +619,14 @@ void mesh_blueprint_save(const Node &data,
     }
 #endif
 
+    // TODO: Silo case is now wired into the main save_mesh
+    // so we can simplify this logic.
+    //
+    //
+    // TODO for Conduit:
+    // given mesh, "path", and options we want the root file name
+    // that will be created
+    // root_file_out = // what conduit provides
 
     if (file_protocol == "silo" || file_protocol == "overlink")
     {
@@ -625,6 +635,7 @@ void mesh_blueprint_save(const Node &data,
         {
             opts["file_style"] = "overlink";
         }
+
     #ifdef ASCENT_MPI_ENABLED
         MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
         conduit::relay::mpi::io::silo::save_mesh(data,
@@ -838,7 +849,7 @@ RelayIOSave::execute()
                     std::vector<std::string> unique_topo_names = unique_topos.child_names();
                     error_oss << "relay_io_save Overlink save requires a single topology; "
                                  "there are " << num_topos << " topologies in the input mesh. "
-                                 "The current topologies are " << 
+                                 "The current topologies are " <<
                                  std::accumulate(
                                     unique_topo_names.begin(),
                                     unique_topo_names.end(),
@@ -877,7 +888,7 @@ RelayIOSave::execute()
             {
                 ASCENT_ERROR(error_oss.str());
             }
-#endif            
+#endif
         }
     }
 
@@ -912,7 +923,7 @@ RelayIOSave::execute()
         }
         detail::filter_fields(*in, selected, field_selection, graph());
       }
-    
+
       if(params().has_path("topologies"))
       {
         std::vector<std::string> topology_selection;
@@ -971,7 +982,7 @@ RelayIOSave::execute()
     {
         num_files = params()["num_files"].to_int();
     }
-    
+
     Node extra_opts;
 
 #if defined(ASCENT_HDF5_ENABLED)
@@ -1231,20 +1242,19 @@ BlueprintFlatten::execute()
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     blueprint::mpi::mesh::flatten(selected,
-		                  params(),
-				  output,
-  				  mpi_comm);
+                                  params(),
+                                  output,
+                                  mpi_comm);
 #else
     blueprint::mesh::flatten(selected,
-		             params(),
-			     output);
-
+                             params(),
+                             output);
 #endif
 
     std::string result_path;
     int rank = 0;
     int root = 0;
- 
+
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
@@ -1261,7 +1271,7 @@ BlueprintFlatten::execute()
         else
         {
             conduit::relay::io::save(output,path,protocol);
-	    result_path = path;
+            result_path = path;
         }
     }
 
