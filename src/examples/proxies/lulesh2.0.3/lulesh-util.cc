@@ -160,7 +160,7 @@ void ParseCommandLineOptions(int argc, char *argv[],
          else {
             char msg[1024];
             PrintCommandLineOptions(argv[0], myRank);
-            snprintf(msg, 1014,"ERROR: Unknown command line argument: %s\n", argv[i]);
+            snprintf(msg, 1024,"ERROR: Unknown command line argument: %s\n", argv[i]);
             ParseError(msg, myRank);
          }
       }
