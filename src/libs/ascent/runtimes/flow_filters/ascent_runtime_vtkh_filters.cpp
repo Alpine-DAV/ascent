@@ -5467,7 +5467,7 @@ VTKHParticleAdvection::execute()
                     double z = z_min + dist_z*distribution(generator);
                     //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
                     seeds.push_back(vtkm::Particle({x,y,z}, i));
-	              }
+                }
             }
         }
         else if (sampling_space == "boundary") 
