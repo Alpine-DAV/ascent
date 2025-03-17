@@ -5123,22 +5123,22 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
 
             res &= check_string("type", seed_params, info, true);
             std::string type = seed_params["type"].as_string();	
-	          if(type == "point")
+            if(type == "point")
             {
-                res &= check_numeric("location",seed_params,info,true);
-	          }
-	          else if(type == "point_list")
+                 res &= check_numeric("location",seed_params,info,true);
+            }
+            else if(type == "point_list")
             {
-                res &= check_numeric("location",seed_params,info,true);
-	          }
-	          else if(type == "line")
+                 res &= check_numeric("location",seed_params,info,true);
+            }
+            else if(type == "line")
             {
-                res &= check_numeric("start",seed_params,info,true);
-                res &= check_numeric("end",seed_params,info,true);
-	              res &= check_numeric("num_seeds",seed_params,info,true);
-                res &= check_string("sampling_type", seed_params, info, true);
-	          }
-	          else if(type == "box")
+                 res &= check_numeric("start",seed_params,info,true);
+                 res &= check_numeric("end",seed_params,info,true);
+                res &= check_numeric("num_seeds",seed_params,info,true);
+                 res &= check_string("sampling_type", seed_params, info, true);
+            }
+            else if(type == "box")
             {
                 res &= check_string("sampling_space", seed_params, info, true);
                 res &= check_string("sampling_type", seed_params, info, true);
@@ -5160,12 +5160,12 @@ VTKHParticleAdvection::verify_params(const conduit::Node &params,
                     res &= check_numeric("extents_y",seed_params,info,true);
                     res &= check_numeric("extents_z",seed_params,info,true);
                 }
-	          }
-	          else
-	          {
+            }
+            else
+            {
                 info["errors"].append() = "Unrecognized parameter. Particle Advection supports seed types 'point', 'point_list', 'line', or 'box'.";
                 res = false;
-	          }
+            }
         }
     }
 
@@ -5322,12 +5322,12 @@ VTKHParticleAdvection::execute()
             double dz = (dist_z)/(num_seeds-1);
             for(int i = 0; i < num_seeds; ++i)
             {
-              double x = start[0] + dx*i;
-              double y = start[1] + dy*i;
-              double z = start[2] + dz*i;
-              //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
-              seeds.push_back(vtkm::Particle({x,y,z}, i));
-	          }
+                double x = start[0] + dx*i;
+                double y = start[1] + dy*i;
+                double z = start[2] + dz*i;
+                //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
+                seeds.push_back(vtkm::Particle({x,y,z}, i));
+            }
         }
         else
         {
@@ -5469,77 +5469,76 @@ VTKHParticleAdvection::execute()
                     seeds.push_back(vtkm::Particle({x,y,z}, i));
 	              }
             }
-
         }
         else if (sampling_space == "boundary") 
         {
             if(sampling_type == "uniform")
             {
-	              int num_seeds_x = n_seeds["num_seeds_x"].as_int();
-	              int num_seeds_y = n_seeds["num_seeds_y"].as_int();
-	              int num_seeds_z = n_seeds["num_seeds_z"].as_int();
+                int num_seeds_x = n_seeds["num_seeds_x"].as_int();
+                int num_seeds_y = n_seeds["num_seeds_y"].as_int();
+                int num_seeds_z = n_seeds["num_seeds_z"].as_int();
 
-	              double dx = 1, dy = 1, dz = 1;
-	              if(num_seeds_x != 0)
+                double dx = 1, dy = 1, dz = 1;
+                if(num_seeds_x != 0)
                 {
-	                  if(num_seeds_x != 1)
+                    if(num_seeds_x != 1)
                     {
                         dx = dist_x/(num_seeds_x-1);
                     }
-	                  else
+                    else
                     {
                         dx = dist_x/num_seeds_x;
                     }
                 }
-	              if(num_seeds_y != 0)
+                if(num_seeds_y != 0)
                 {
-	                  if(num_seeds_y != 1)
+                    if(num_seeds_y != 1)
                     {
                         dy = dist_y/(num_seeds_y-1);
                     }
-	                  else
+                    else
                     {
                         dy = dist_y/num_seeds_y;
                     }
                 }
-	              if(num_seeds_z != 0)
+                if(num_seeds_z != 0)
                 {
-	                  if(num_seeds_z != 1)
+                    if(num_seeds_z != 1)
                     {
                         dz = dist_z/(num_seeds_z-1);
                     }
-	                  else
+                    else
                     {
                         dz = dist_z/num_seeds_z;
                     }
                 }
-	              int seed_count = 0;
+                int seed_count = 0;
                 for(int i = 0; i < num_seeds_x; ++i)
-	              {
+                {
                     double x = x_min + dx*i;
-	                  for(int j = 0; j < num_seeds_z; ++j)
-	                  {
-                        double z = z_min + dz*j;
-                        //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
-                        //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
-	                      //std::cerr << "seed_count: " << seed_count << std::endl;
-                        seeds.push_back(vtkm::Particle({x,y_min,z}, seed_count++));
-                        seeds.push_back(vtkm::Particle({x,y_max,z}, seed_count++));
-	                  }
-	              }
-                for(int j = 0; j < num_seeds_y; ++j)
-	              {
-                    double y = y_min + dy*j;
-                    for(int k = 0; k < num_seeds_z; ++k)
-	                  {
-                        double z = z_min + dz*k;
-                        //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
-                        //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
+                    for(int j = 0; j < num_seeds_z; ++j)
+                    {
+                         double z = z_min + dz*j;
+                         //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
+                         //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
                         //std::cerr << "seed_count: " << seed_count << std::endl;
-                        seeds.push_back(vtkm::Particle({x_min,y,z}, seed_count++));
-                        seeds.push_back(vtkm::Particle({x_max,y,z}, seed_count++));
-	                  }
-	              }
+                         seeds.push_back(vtkm::Particle({x,y_min,z}, seed_count++));
+                         seeds.push_back(vtkm::Particle({x,y_max,z}, seed_count++));
+                    }
+                }
+                for(int j = 0; j < num_seeds_y; ++j)
+                {
+                     double y = y_min + dy*j;
+                     for(int k = 0; k < num_seeds_z; ++k)
+                    {
+                         double z = z_min + dz*k;
+                         //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
+                         //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
+                         //std::cerr << "seed_count: " << seed_count << std::endl;
+                         seeds.push_back(vtkm::Particle({x_min,y,z}, seed_count++));
+                         seeds.push_back(vtkm::Particle({x_max,y,z}, seed_count++));
+                    }
+                }
             }
             else //random
             {
@@ -5547,40 +5546,40 @@ VTKHParticleAdvection::execute()
                 std::default_random_engine generator(0);
                 float  zero(0), one(1);
                 std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
-	              int num_seeds = n_seeds["num_seeds"].as_int();
-	              for(int i = 0; i < num_seeds; ++i)
-	              {
-	                  int side = std::rand()%4;
-	                  //std::cerr << "side: " << side << std::endl;
-	                  if(side == 0) //x_max
-	                  {
+                int num_seeds = n_seeds["num_seeds"].as_int();
+                for(int i = 0; i < num_seeds; ++i)
+                {
+                    int side = std::rand()%4;
+                    //std::cerr << "side: " << side << std::endl;
+                    if(side == 0) //x_max
+                    {
                         double y = y_min + dist_y*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
                         seeds.push_back(vtkm::Particle({x_max,y,z}, i));
                         //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
-	                  }
-	                  else if(side == 1) //x_min
-	                  {
+                    }
+                    else if(side == 1) //x_min
+                    {
                         double y = y_min + dist_y*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
                         seeds.push_back(vtkm::Particle({x_min,y,z}, i));
                         //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
-	                  }
-	                  else if(side == 2) //y_max
-	                  {
+                    }
+                    else if(side == 2) //y_max
+                    {
                         double x = x_min + dist_x*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
                         seeds.push_back(vtkm::Particle({x,y_max,z}, i));
                         //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
-	                  }
-	                  else //y_min
-	                  {
+                    }
+                    else //y_min
+                    {
                         double x = x_min + dist_x*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
                         seeds.push_back(vtkm::Particle({x,y_min,z}, i));
                         //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
-	                  }
-	              }
+                    }
+                }
             }
         }
         else //error
@@ -5647,16 +5646,16 @@ VTKHParticleAdvection::execute()
                 std::string output_field = params()["rendering/output_field"].as_string();
                 sl.SetOutputField(output_field);
             }
-	          else
+            else
             {
-	              std::string output_field = field_name + "_streamlines";
+               std::string output_field = field_name + "_streamlines";
                 sl.SetOutputField(output_field);
-	          }
+            }
             if(params().has_path("rendering/tube_value")) 
-	          {
+            {
                 double tube_value = params()["rendering/tube_value"].as_float64();
                 sl.SetTubeValue(tube_value);
-	          }
+            }
             if(params().has_path("rendering/tube_size")) 
             {
                 double tube_size = params()["rendering/tube_size"].as_float64();
@@ -5677,7 +5676,7 @@ VTKHParticleAdvection::execute()
                 sl.SetTubeCapping(tube_capping);
             }
         }
-
+    
         sl.SetInput(&data);
         sl.Update();
         output = sl.GetOutput();
@@ -5837,19 +5836,19 @@ VTKHWarpXStreamline::execute()
 
     if(!collection->has_field(b_field))
     {
-      bool throw_error = false;
-      detail::field_error(b_field, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
+        bool throw_error = false;
+        detail::field_error(b_field, this->name(), collection, throw_error);
+        // this creates a data object with an invalid soource
+        set_output<DataObject>(new DataObject());
+        return;
     }
     if(!collection->has_field(e_field))
     {
-      bool throw_error = false;
-      detail::field_error(e_field, this->name(), collection, throw_error);
-      // this creates a data object with an invalid soource
-      set_output<DataObject>(new DataObject());
-      return;
+        bool throw_error = false;
+        detail::field_error(e_field, this->name(), collection, throw_error);
+        // this creates a data object with an invalid soource
+        set_output<DataObject>(new DataObject());
+        return;
     }
     
     std::string topo_name = collection->field_topology(b_field);
@@ -5863,10 +5862,10 @@ VTKHWarpXStreamline::execute()
     bool draw_tubes = false;
     if(params().has_path("enable_tubes"))
     {
-      if(params()["rendering/enable_tubes"].as_string() == "true")
-      {
-        draw_tubes = true;
-      }
+        if(params()["rendering/enable_tubes"].as_string() == "true")
+        {
+            draw_tubes = true;
+        }
     }
 
     vtkh::DataSet *output = nullptr;
@@ -5882,41 +5881,41 @@ VTKHWarpXStreamline::execute()
 
     if(draw_tubes)
     {
-      sl.SetTubes(true);
-      if(params().has_path("output_field")) 
-      {
-        std::string output_field = params()["rendering/output_field"].as_string();
-        sl.SetOutputField(output_field);
-      }
-      else
-      {
-        std::string output_field = b_field+ "_" + e_field + "_streamlines";
-        sl.SetOutputField(output_field);
-      }
-      if(params().has_path("tube_value")) 
-      {
-        double tube_value = params()["rendering/tube_value"].as_float64();
-        sl.SetTubeValue(tube_value);
-      }
-      if(params().has_path("tube_size")) 
-      {
-        double tube_size = params()["rendering/tube_size"].as_float64();
-        sl.SetTubeSize(tube_size);
-      }
-      if(params().has_path("tube_sides")) 
-      {
-        int tube_sides = params()["rendering/tube_sides"].as_int32();
-        sl.SetTubeSides(tube_sides);
-      }
-      if(params().has_path("tube_capping"))
-      {
-        bool tube_capping = true;
-        if(params()["rendering/tube_capping"].as_string() == "false")
+        sl.SetTubes(true);
+        if(params().has_path("output_field")) 
         {
-          tube_capping = false;
+            std::string output_field = params()["rendering/output_field"].as_string();
+            sl.SetOutputField(output_field);
         }
-        sl.SetTubeCapping(tube_capping);
-      }
+        else
+        {
+            std::string output_field = b_field+ "_" + e_field + "_streamlines";
+            sl.SetOutputField(output_field);
+        }
+        if(params().has_path("tube_value")) 
+        {
+            double tube_value = params()["rendering/tube_value"].as_float64();
+            sl.SetTubeValue(tube_value);
+        }
+        if(params().has_path("tube_size")) 
+        {
+            double tube_size = params()["rendering/tube_size"].as_float64();
+            sl.SetTubeSize(tube_size);
+        }
+        if(params().has_path("tube_sides")) 
+        {
+            int tube_sides = params()["rendering/tube_sides"].as_int32();
+            sl.SetTubeSides(tube_sides);
+        }
+        if(params().has_path("tube_capping"))
+        {
+            bool tube_capping = true;
+            if(params()["rendering/tube_capping"].as_string() == "false")
+            {
+                tube_capping = false;
+            }
+            sl.SetTubeCapping(tube_capping);
+        }
     }
 
     sl.SetInput(&data);
