@@ -10,9 +10,11 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
+#include <vtkh/filters/PointTransform.hpp>
 #include <vtkh/filters/Streamline.hpp>
 #include <vtkh/filters/WarpXStreamline.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
+#include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/io/VTKDataSetReader.h>
@@ -165,23 +167,42 @@ TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
   
   //warpx_data_set.PrintSummary(std::cerr);
 
-  outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, "streamlines", length);
-  outWSL->PrintSummary(std::cerr);
+  vtkh::WarpXStreamline  warpx;
+  warpx.SetNumberOfSteps(maxAdvSteps);
+  warpx.SetStepSize(length);
+  warpx.SetTubes(true);
+  warpx.SetInput(&warpx_data_set);
+  warpx.SetOutputField("streamlines");
+  warpx.Update();
+  outWSL = warpx.GetOutput();
+  //outWSL->PrintSummary(std::cerr);
 
   checkValidity(outWSL, maxAdvSteps+1, true);
   writeDataSet(outWSL, "warpx_streamline", rank);
   vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
 
+  //unneeded at the moment, but keeping
+  //vtkh::PointTransform transformer;
+  //transformer.SetScale(100, 100, 100);
+  //transformer.SetInput(outWSL);
+
+  //transformer.Update();
+  //vtkh::DataSet *scaled_output = transformer.GetOutput();
+  //vtkm::Bounds tBounds = scaled_output->GetGlobalBounds();
+  ////vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
+
   vtkm::rendering::Camera camera;
   camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.Zoom(1.0);
   camera.ResetToBounds(tBounds);
-  vtkh::Render render = vtkh::MakeRender(512,
-                                         512,
+  vtkh::Render render = vtkh::MakeRender(1024,
+                                         1024,
                                          camera,
                                          *outWSL,
                                          "tout_warpx_streamline_render");
 
   vtkh::RayTracer tracer;
+  //vtkh::MeshRenderer tracer;
   tracer.SetInput(outWSL);
   tracer.SetField("streamlines");
 
@@ -192,4 +213,6 @@ TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
+  
+  delete outWSL;
 }

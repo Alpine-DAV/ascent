@@ -108,35 +108,50 @@ Filter::PostExecute()
 void
 Filter::MapAllFields()
 {
-  int num_domains = m_input->GetNumberOfDomains();
-  if(num_domains > 0)
-  {
-    vtkm::cont::DataSet dom_0 = m_input->GetDomain(0);
-    vtkm::cont::DataSet dom_1 = m_input->GetDomain(1);
-    vtkm::IdComponent num_fields_0 = dom_0.GetNumberOfFields();
-    vtkm::IdComponent num_fields_1 = dom_1.GetNumberOfFields();
-    if(num_fields_0 == num_fields_1)
+    int num_domains = m_input->GetNumberOfDomains();
+    if(num_domains > 0)
     {
-        for(vtkm::IdComponent i = 0; i < num_fields_0; ++i)
+        if(num_domains > 1)
         {
-            std::string field_name = dom_0.GetField(i).GetName();
-            m_map_fields.push_back(field_name);
-        }
-    }
-    else
-    {
-        for(vtkm::IdComponent i = 0; i < num_domains; ++i)
-        {
-            vtkm::cont::DataSet dom = m_input->GetDomain(i);
-            vtkm::IdComponent num_fields = dom.GetNumberOfFields();
-            for(vtkm::IdComponent j = 0; j < num_fields; ++j)
+
+            vtkm::cont::DataSet dom_0 = m_input->GetDomain(0);
+            vtkm::cont::DataSet dom_1 = m_input->GetDomain(1);
+            vtkm::IdComponent num_fields_0 = dom_0.GetNumberOfFields();
+            vtkm::IdComponent num_fields_1 = dom_1.GetNumberOfFields();
+            if(num_fields_0 == num_fields_1)
             {
-                std::string field_name = dom.GetField(j).GetName();
-                m_map_fields.push_back(field_name);
+                for(vtkm::IdComponent i = 0; i < num_fields_0; ++i)
+                {
+                    std::string field_name = dom_0.GetField(i).GetName();
+                    m_map_fields.push_back(field_name);
+                }
+            }
+            else
+            {
+                for(vtkm::IdComponent i = 0; i < num_domains; ++i)
+                {
+                    vtkm::cont::DataSet dom = m_input->GetDomain(i);
+                    vtkm::IdComponent num_fields = dom.GetNumberOfFields();
+                    for(vtkm::IdComponent j = 0; j < num_fields; ++j)
+                    {
+                        std::string field_name = dom.GetField(j).GetName();
+                        m_map_fields.push_back(field_name);
+                    }
+                }
             }
         }
+        else //num_domains == 1
+        {
+            vtkm::cont::DataSet dom = m_input->GetDomain(0);
+            vtkm::IdComponent num_fields = dom.GetNumberOfFields();
+            for(vtkm::IdComponent i = 0; i < num_fields; ++i)
+            {
+                std::string field_name = dom.GetField(i).GetName();
+                m_map_fields.push_back(field_name);
+            }
+
+        }
     }
-  }
 }
 
 void
