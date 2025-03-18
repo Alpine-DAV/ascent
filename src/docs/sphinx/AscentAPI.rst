@@ -53,10 +53,10 @@ A typical integration will include the following code:
 Default Directory
 """""""""""""""""
 By default, Ascent will output files in the current working directory.
-This can be overrided by specifying the ``default_dir``. This directory
+This can be overridden by specifying the ``default_dir``. This directory
 must be a valid directory, i.e., Ascent will not create this director for
 you. Many Ascent filters have parameters that specify output files, and Ascent
-will only place files that do not have an absolue path specified.
+will only place files that do not have an absolute path specified.
 For example, the ``my_image`` would be written to the default directory, but
 ``/some/other/path/my_image`` would be written in the directory
 ``/some/other/path/``.
@@ -75,7 +75,7 @@ high-order elements are discretized into many linear elements. The minimum value
 is ``1``, i.e., no refinement. There is a memory-accuracy trade-off when using refinement.
 The higher the value,
 the more accurate the low-order representation is, but more discretization means more memory
-usage and more time tp process the additional elements.
+usage and more time to process the additional elements.
 
 .. code-block:: yaml
 
@@ -175,7 +175,7 @@ to explicitly control the list of active fields.
 
   -
    action: "declare_fields"
-   fields: ["my_field", "my_other_field", ..]
+   fields: ["my_field", "my_other_field", ...]
 
 
 
@@ -264,7 +264,7 @@ Here is a simple example of adding a plot using the C++ API:
 
 info
 ----
-Info populates a conduit Node with infomation about Ascent including runtime execution and outputted results.
+Info populates a conduit Node with information about Ascent including runtime execution and outputted results.
 This information can be used to return data back to the simulation and for debugging purposes.
 
 .. code-block:: c++

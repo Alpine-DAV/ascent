@@ -15,7 +15,7 @@ A scene defined in this way uses the default data source, which is all of the da
 
 Default Images
 --------------
-When creating a scene, Ascent will set up camera and color table defualts.
+When creating a scene, Ascent will set up camera and color table defaults.
 The only requirement is that either a ``image_name`` or ``image_prefix``
 be provided. Minimally, a scene consists of one plot and a parameter
 to specify the output file name. Default images images have a resolution
@@ -45,7 +45,7 @@ within the image prefix. Assuming the cycle is ``10``, here are some examples:
 
 Image Name
 ^^^^^^^^^^
-The ``image_name`` parameter speficies the excact file name of the of the output
+The ``image_name`` parameter specifies the exact file name of the of the output
 image, and Ascent will append the ``.png`` to the image file name. If not changed,
 the image file will be overwritten.
 
