@@ -32,6 +32,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `dataset_bounds` option to the project 2d, which can be used instead of a full 3D camera specification
 - Added support for triggers to execute actions from multiple files via an `actions_files` option that takes a list of actions files.
 - Added an `external_surfaces` transform filter, that can be used to reduce memory requriments in pipelines where you plan to only process the external faces of a data set. 
+- Added support for `include` keyword to include children from yaml files in an input node trees
 
 
 ### Changed
