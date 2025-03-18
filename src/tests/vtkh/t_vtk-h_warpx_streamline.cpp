@@ -53,8 +53,8 @@ void writeDataSet(vtkh::DataSet *data, std::string fName)
   std::cerr << "num domains " << numDomains << std::endl;
   for(int i = 0; i < numDomains; i++)
   {
-    char fileNm[128];
-    sprintf(fileNm, "%s.domain%d.vtk", fName.c_str(), i);
+    char fileNm[1024];
+    snprintf(fileNm, 1024,"%s.domain%d.vtk", fName.c_str(), i);
     vtkm::io::VTKDataSetWriter write(fileNm);
     write.WriteDataSet(data->GetDomain(i));
   }

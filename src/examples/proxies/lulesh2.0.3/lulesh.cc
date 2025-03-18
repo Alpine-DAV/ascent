@@ -2912,8 +2912,8 @@ int main(int argc, char *argv[])
       }
       //-- begin calls to ascent -- //
       if ( (locDom->cycle() % 1 == 0) || (locDom->cycle() == 0)) {
-         char outFileName[30];
-         sprintf(outFileName,"lulesh_image%03d",locDom->cycle());
+         char outFileName[512];
+         snprintf(outFileName,512,"lulesh_image%03d",locDom->cycle());
          //
          // Create the actions.
          //
