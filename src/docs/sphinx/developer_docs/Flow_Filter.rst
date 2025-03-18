@@ -103,18 +103,15 @@ interface looks like this in c++:
     filter["params/double_param"] = 2.0;
 
 
-or equivalently in json:
+or equivalently in yaml:
 
-.. code-block:: json
+.. code-block:: yaml
 
-    {
-      "type"   : "filter_name",
-      "params":
-      {
-        "string_param" : "string",
-        "double_param" : 2.0
-      }
-    }
+  type: "filter_name"
+  params:
+    string_param: "string"
+    double_param: 2.0
+
 
 The Ascent runtime looks for the ``params`` node and passes it to the filter
 upon creation. Parameters are verified when the filter is created during execution.

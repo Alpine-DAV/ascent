@@ -1946,6 +1946,11 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // the workspace executes.
         m_save_info_actions.append() = action;
       }
+      else if(action_name == "declare_fields")
+      {
+        // Used with field filtering, we don't need
+        // to process as part of exec
+      }
       else if(action_name == "open_log")
       {
         // Open Ascent Logging Stream

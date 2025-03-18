@@ -21,16 +21,16 @@ open
 Open provides the initial setup of Ascent from a Conduit Node.
 Options include runtime type (e.g., ascent, flow, or empty) and associated backend if available.
 If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
-Ascent will always check the file system for a file called ``ascent_options.json`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
+Ascent will always check the file system for a file called ``ascent_options.yaml`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
 Here is a file that would set the runtime to the main ascent runtime using a OpenMP backend (inside VTK-m):
 
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "runtime/type"    : "ascent",
-    "runtime/vtkm/backend" : "openmp"
-  }
+  runtime:
+    type: "ascent"
+    vtkm:
+      backend: "openmp"
 
 Example Options
 """""""""""""""
@@ -61,11 +61,10 @@ For example, the ``my_image`` would be written to the default directory, but
 ``/some/other/path/my_image`` would be written in the directory
 ``/some/other/path/``.
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "default_dir" : "/path/to/output/dir"
-  }
+  default_dir: "/path/to/output/dir"
+
 
 High Order Mesh Refinement
 """"""""""""""""""""""""""
@@ -78,11 +77,10 @@ The higher the value,
 the more accurate the low-order representation is, but more discretization means more memory
 usage and more time tp process the additional elements.
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "refinement_level" : 4
-  }
+  refinement_level: 4
+
 
 Runtime Options
 """""""""""""""
@@ -125,7 +123,7 @@ There are often warnings and other information that can indicate potential issue
     -  ``catch`` Catches conduit::Error exceptions at the Ascent interface and prints info about the error to standard out.
        This case this provides an easy way to prevent host program crashes when something goes wrong in Ascent.
 
-By default, Ascent looks for a file called ``ascent_actions.json`` that can append additional actions at runtime.
+By default, Ascent looks for a file called ``ascent_actions.yaml`` that can append additional actions at runtime.
 This default file name can be overridden in the Ascent options:
 
 .. code-block:: c++
@@ -147,11 +145,10 @@ Filter Timings
 Ascent has internal timings for filters. The timings output is one csv file
 per MPI rank.
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "timings" : "true"
-  }
+  timings : "true"
+
 
 
 Field Filtering
@@ -162,19 +159,23 @@ publish 100s of variables to Ascent. In this case, its undesirable to
 use all fields when the actions only need a single variable. This reduces
 the memory overhead Ascent uses.
 
+
+.. code-block:: yaml
+
+  field_filtering : "true"
+
+
 Field filtering scans the user's actions to identify what fields are required,
 only passing the required fields into Ascent. However, there are several
-actions where the required fields cannot be resolved. For example, saving simulation
-data to the file system saves all fields, and in this case, it is not possible to resolve
-the required fields. If field filtering encounters this case, then an error is generated.
-Alternatively, if the actions specify which fields to save, then this field filtering
-can resolve the fields.
+actions where the required fields cannot be resolved. To support field filtering
+for all cases, we added support for action ``declare_fields`` that allows a user
+to explicitly control the list of active fields.
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "field_filtering" : "true"
-  }
+  -
+   action: "declare_fields"
+   fields: ["my_field", "my_other_field", ..]
 
 
 
