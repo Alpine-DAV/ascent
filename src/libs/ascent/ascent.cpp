@@ -139,6 +139,13 @@ load_included_files_in_node_tree(conduit::Node &node, int mpi_comm_id)
 #ifdef ASCENT_MPI_ENABLED
         // make sure all ranks error if the parsing on rank 0 failed.
         MPI_Bcast(&include_file_valid, 1, MPI_INT, 0, mpi_comm);
+
+        // Pass the error to all ranks so the error message matches
+        int line_size = emsg.size();
+        MPI_Bcast(&line_size, 1, MPI_INT, 0, mpi_comm);
+        if (rank != 0)
+            emsg.resize(line_size);
+        MPI_Bcast(const_cast<char*>(emsg.data()), line_size, MPI_CHAR, 0, mpi_comm);
 #endif
 
         if(include_file_valid == 0)
@@ -333,7 +340,6 @@ CheckForSettingsFile(std::string file_name,
 #endif
 
     detail::load_included_files_in_node_tree(node, mpi_comm_id);
-    node.print();
 }
 
 
