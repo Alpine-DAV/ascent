@@ -3303,7 +3303,7 @@ TEST(ascent_render_3d, test_render_3d_zero_zoom_handled)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+    ASCENT_INFO("Testing Error Handling of Render Camera Zoom Parameter\n");
 
 
     string output_path = prepare_output_dir();
