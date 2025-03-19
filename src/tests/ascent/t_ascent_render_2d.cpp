@@ -440,6 +440,7 @@ TEST(ascent_render_2d, test_render_2d_cam)
     string output_file_v2 = output_file_base  + "_view_2_";
     string output_file_v3 = output_file_base  + "_view_3_";
     string output_file_v4 = output_file_base  + "_view_4_";
+    string output_info = output_file_base  + "_info";
     // remove old images before rendering
     remove_test_image(output_file_v1);
     remove_test_image(output_file_v2);
@@ -470,11 +471,17 @@ TEST(ascent_render_2d, test_render_2d_cam)
     scenes["scene1/renders/r4/image_width"]  = 512;
     scenes["scene1/renders/r4/image_height"] = 1024;
 
+
+    conduit::Node info;
+
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(info);
     ascent.close();
+
+    std::cout << info.to_yaml() << std::endl;
 
     // check output
     EXPECT_TRUE(check_test_image(output_file_v1));

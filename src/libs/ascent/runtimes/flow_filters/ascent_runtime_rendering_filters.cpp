@@ -1901,8 +1901,16 @@ ExecScene::declare_interface(conduit::Node &i)
 }
 
 //-----------------------------------------------------------------------------
-void generate_camera_meshes(conduit::Node &image_data){
+void generate_camera_meshes(conduit::Node &image_data)
+{
   conduit::Node &camera = image_data["camera"];
+
+  if(camera.has_child("2d"))
+  {
+    // skip cam mesh for 2d cam mode
+    return;
+  }
+
   conduit::Node &cam_frust = camera["camera_frustum_mesh"];
   // std::string image_name = image_data["image_name"].as_string();
 
@@ -2058,13 +2066,30 @@ ExecScene::execute()
       image_data["image_width"] = renders->at(i).GetWidth();
       image_data["image_height"] = renders->at(i).GetHeight();
 
-      image_data["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0],3);
-      image_data["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0],3);
-      image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
-      image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
-      image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
-      image_data["camera/near_plane"] = renders->at(i).GetCamera().GetClippingRange().Min;
-      image_data["camera/far_plane"] = renders->at(i).GetCamera().GetClippingRange().Max;
+      // check for 2d vs 3d camera
+      if(renders->at(i).GetCamera().GetMode() ==  vtkm::rendering::Camera::Mode::TwoD)
+      {
+        vtkm::Bounds bounds =  renders->at(i).GetCamera().GetViewRange2D();
+        double view_2d[4] = {bounds.X.Min,
+                             bounds.Y.Min,
+                             bounds.X.Max,
+                             bounds.Y.Max};
+
+        image_data["camera/2d"].set(view_2d,4);
+      }
+      else
+      {
+        image_data["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0],3);
+        image_data["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0],3);
+        image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
+        image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
+        image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+        image_data["camera/near_plane"] = renders->at(i).GetCamera().GetClippingRange().Min;
+        image_data["camera/far_plane"] = renders->at(i).GetCamera().GetClippingRange().Max;
+      }
+      auto pan_vals = renders->at(i).GetCamera().GetPan();
+      image_data["camera/xpan"] = pan_vals[0];
+      image_data["camera/ypan"] = pan_vals[1];
       vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
       double coord_bounds [6] = {bounds.X.Min,
                                  bounds.Y.Min,
