@@ -222,6 +222,13 @@ check_renders_surprises(const conduit::Node &renders_node)
         }
       }
     }
+
+    if(render_node.has_path("camera/zoom")){
+        float zoom_val = render_node["camera/zoom"].to_value();
+        if (zoom_val <= 0) {
+            ASCENT_ERROR("Zoom must be greater than zero. Default zoom is 1.");
+        }
+    }
   }
   return surprises;
 }

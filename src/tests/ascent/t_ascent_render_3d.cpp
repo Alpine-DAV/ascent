@@ -3276,6 +3276,87 @@ TEST(ascent_render_3d, test_render_3d_bentgrid_example)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_zero_zoom_handled)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Default Pipeline");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_default_runtime");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+    scenes["s1/renders/r1/camera/zoom"] = 0.0;
+
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["timings"] = "true";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    
+    bool error = false;
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(...)
+    {
+        error = true;
+    }
+
+    ascent.close();
+
+    EXPECT_TRUE(error);
+}
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
