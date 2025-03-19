@@ -3337,6 +3337,7 @@ TEST(ascent_render_3d, test_render_3d_zero_zoom_handled)
     Node ascent_opts;
     ascent_opts["timings"] = "true";
     ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
     
