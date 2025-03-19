@@ -407,6 +407,84 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_2d, test_render_2d_cam)
+{
+
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    ASCENT_INFO("Testing 2D Ascent Runtime 2d camera controls");
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               0,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file_base = conduit::utils::join_file_path(output_path, "tout_render_2d_uniform_2d_cam");
+    string output_file_v1 = output_file_base  + "_view_1";
+    string output_file_v2 = output_file_base  + "_view_2";
+    string output_file_v3 = output_file_base  + "_view_3";
+    string output_file_v4 = output_file_base  + "_view_4";
+    // remove old images before rendering
+    remove_test_image(output_file_v1);
+    remove_test_image(output_file_v2);
+    remove_test_image(output_file_v3);
+    remove_test_image(output_file_v4);
+
+    //
+    // Create the actions.
+    //
+    Node actions;
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+    scenes["scene1/plots/plt1/type"] = "pseudocolor";
+    scenes["scene1/plots/plt1/field"] = "braid";
+
+    scenes["scene1/renders/r1/image_prefix"] =  output_file_v1;
+    scenes["scene1/renders/r1/camera/2d"] = {-10.0,10.0,-10.0,10.0};
+
+    scenes["scene1/renders/r2/image_prefix"] =  output_file_v2;
+    scenes["scene1/renders/r2/camera/2d"] = {-10.0,10.0,-10.0,10.0};
+
+    scenes["scene1/renders/r3/image_prefix"] =  output_file_v3;
+    scenes["scene1/renders/r3/camera/2d"] = {-10.0,10.0,-10.0,10.0};
+
+    scenes["scene1/renders/r4/image_prefix"] = output_file_v4;
+    scenes["scene1/renders/r4/camera/2d"] = {-10.0,0.0,-10.0,10.0};
+    scenes["scene1/renders/r4/camera/image_width"]  = 512;
+    scenes["scene1/renders/r4/camera/image_height"] = 1024;
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check output
+    EXPECT_TRUE(check_test_image(output_file_v1));
+    EXPECT_TRUE(check_test_image(output_file_v2));
+    EXPECT_TRUE(check_test_image(output_file_v3));
+    EXPECT_TRUE(check_test_image(output_file_v4));
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(ascent_render_2d, test_render_2d_bentgrid_example)
 {
 
