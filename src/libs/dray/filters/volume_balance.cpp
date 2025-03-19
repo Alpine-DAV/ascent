@@ -577,7 +577,7 @@ void VolumeBalance::allgather(std::vector<float32> &local_volumes,
   const int32 comm_size = dray::mpi_size();
   const int32 rank = dray::mpi_rank();
 
-  const int32 local_size = local_volumes.size();
+  int32 local_size = local_volumes.size();
   global_counts.resize(comm_size);
   MPI_Allgather(&local_size, 1, MPI_INT, &global_counts[0], 1, MPI_INT, mpi_comm);
 

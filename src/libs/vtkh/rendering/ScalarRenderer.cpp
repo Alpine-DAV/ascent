@@ -252,7 +252,9 @@ ScalarRenderer::DoExecute()
       {
         int len = strlen(field_names[i].c_str());
         MPI_Send(&len, 1, MPI_INT, 0, 0, mpi_comm);
-        MPI_Send(field_names[i].c_str(),strlen(field_names[i].c_str()),MPI_CHAR, 0, 0,mpi_comm);
+        MPI_Send(const_cast<char*>(field_names[i].c_str()),
+                 strlen(field_names[i].c_str()),
+                 MPI_CHAR, 0, 0,mpi_comm);
       }
     }
   }

@@ -234,7 +234,6 @@ planes(const conduit::Node &params, const dray::AABB<3> bounds)
   if(params.has_path("x_offset"))
   {
     float offset = params["x_offset"].to_float32();
-    std::max(-1.f, std::min(1.f, offset));
     float t = (offset + 1.f) / 2.f;
     t = std::max(0.f + eps, std::min(1.f - eps, t));
     point[0] = bounds.m_ranges[0].min() + t * (bounds.m_ranges[0].length());
@@ -243,7 +242,6 @@ planes(const conduit::Node &params, const dray::AABB<3> bounds)
   if(params.has_path("y_offset"))
   {
     float offset = params["y_offset"].to_float32();
-    std::max(-1.f, std::min(1.f, offset));
     float t = (offset + 1.f) / 2.f;
     t = std::max(0.f + eps, std::min(1.f - eps, t));
     point[1] = bounds.m_ranges[1].min() + t * (bounds.m_ranges[1].length());

@@ -15,7 +15,7 @@ A scene defined in this way uses the default data source, which is all of the da
 
 Default Images
 --------------
-When creating a scene, Ascent will set up camera and color table defualts.
+When creating a scene, Ascent will set up camera and color table defaults.
 The only requirement is that either a ``image_name`` or ``image_prefix``
 be provided. Minimally, a scene consists of one plot and a parameter
 to specify the output file name. Default images images have a resolution
@@ -45,7 +45,7 @@ within the image prefix. Assuming the cycle is ``10``, here are some examples:
 
 Image Name
 ^^^^^^^^^^
-The ``image_name`` parameter speficies the excact file name of the of the output
+The ``image_name`` parameter specifies the exact file name of the of the output
 image, and Ascent will append the ``.png`` to the image file name. If not changed,
 the image file will be overwritten.
 
@@ -58,13 +58,11 @@ Plots optionally consume the result of a pipeline, but if none is specified, the
 Each scene can contain one or more plots.
 The plot interface is simply:
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "type"   : "plot_name",
-    "pipeline" : "pipeline_name",
-    "field" : "field_name"
-  }
+    type: "plot_name"
+    pipeline: "pipeline_name"
+    field: "field_name"
 
 In c++, the equivalent declarations would be as follows:
 
@@ -384,33 +382,25 @@ Now we add a second render to the same example using every available parameter:
   scenes["s1/renders/r2/camera/near_plane"] = 0.1;
   scenes["s1/renders/r2/camera/far_plane"] = 33.1;
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-  "renders":
-  {
-    "r1":
-    {
-      "image_width": 300,
-      "image_height": 400,
-      "image_name": "some_image",
-      "camera":
-      {
-        "look_at": [1.0, 1.0, 1.0],
-        "position": [0.0, 25.0, 15.0],
-        "up": [0.0, -1.0, 0.0],
-        "fov": 60.0,
-        "xpan": 0.0,
-        "ypan": 0.0,
-        "elevation": 10.0,
-        "azimuth": -10.0,
-        "zoom": 0.0,
-        "near_plane": 0.1,
-        "far_plane": 100.1
-      }
-    }
-  }
-  }
+  renders:
+    r1:
+      image_width: 300
+      image_height: 400
+      image_name: "some_image"
+      camera:
+        look_at: [1.0, 1.0, 1.0]
+        position: [0.0, 25.0, 15.0]
+        up: [0.0, -1.0, 0.0]
+        fov: 60.0
+        xpan: 0.0
+        ypan: 0.0
+        elevation: 10.0,
+        azimuth: -10.0,
+        zoom: 0.0
+        near_plane: 0.1
+        far_plane: 100.1
 
 
 Additional Render Options
