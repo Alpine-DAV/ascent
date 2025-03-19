@@ -33,7 +33,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for triggers to execute actions from multiple files via an `actions_files` option that takes a list of actions files.
 - Added an `external_surfaces` transform filter, that can be used to reduce memory requirements in pipelines where you plan to only process the external faces of a data set.
 - Added a `declare_fields` action, that allows users to explicitly list the fields to return for field filtering. This option avoids complex field parsing logic.
-- Added a 2d camera mode (`camera/2d = {left, right, bottom, top}) to scene render cameras and the `project_2d` (scalar rendering) filter cameras.
+- Added a 2d camera mode (`camera/2d: [left, right, bottom, top]`) to scene render cameras and the `project_2d` (scalar rendering) filter cameras.
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
