@@ -436,10 +436,10 @@ TEST(ascent_render_2d, test_render_2d_cam)
 
     string output_path = prepare_output_dir();
     string output_file_base = conduit::utils::join_file_path(output_path, "tout_render_2d_uniform_2d_cam");
-    string output_file_v1 = output_file_base  + "_view_1";
-    string output_file_v2 = output_file_base  + "_view_2";
-    string output_file_v3 = output_file_base  + "_view_3";
-    string output_file_v4 = output_file_base  + "_view_4";
+    string output_file_v1 = output_file_base  + "_view_1_";
+    string output_file_v2 = output_file_base  + "_view_2_";
+    string output_file_v3 = output_file_base  + "_view_3_";
+    string output_file_v4 = output_file_base  + "_view_4_";
     // remove old images before rendering
     remove_test_image(output_file_v1);
     remove_test_image(output_file_v2);
@@ -460,15 +460,15 @@ TEST(ascent_render_2d, test_render_2d_cam)
     scenes["scene1/renders/r1/camera/2d"] = {-10.0,10.0,-10.0,10.0};
 
     scenes["scene1/renders/r2/image_prefix"] =  output_file_v2;
-    scenes["scene1/renders/r2/camera/2d"] = {-10.0,10.0,-10.0,10.0};
+    scenes["scene1/renders/r2/camera/2d"] = {-20.0,20.0,-20.0,20.0};
 
     scenes["scene1/renders/r3/image_prefix"] =  output_file_v3;
-    scenes["scene1/renders/r3/camera/2d"] = {-10.0,10.0,-10.0,10.0};
+    scenes["scene1/renders/r3/camera/2d"] = {-7.0,3.0,0.0,4.0};
 
     scenes["scene1/renders/r4/image_prefix"] = output_file_v4;
     scenes["scene1/renders/r4/camera/2d"] = {-10.0,0.0,-10.0,10.0};
-    scenes["scene1/renders/r4/camera/image_width"]  = 512;
-    scenes["scene1/renders/r4/camera/image_height"] = 1024;
+    scenes["scene1/renders/r4/image_width"]  = 512;
+    scenes["scene1/renders/r4/image_height"] = 1024;
 
     Ascent ascent;
     ascent.open();
