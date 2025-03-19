@@ -1021,8 +1021,6 @@ GetPoint(int level, int num_levels, vtkm::Bounds bounds)
   const float eps = 1e-5;
 
   float offset = (((current_space) * (4)) / (100)) - 2;
-
-  std::max(-1.f, std::min(1.f, offset));
   float t = (offset + 1.f) / 2.f;
   t = std::max(0.f + eps, std::min(1.f - eps, t));
   point[0] = bounds.X.Min + t * (bounds.X.Max - bounds.X.Min);

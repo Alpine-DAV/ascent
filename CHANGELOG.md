@@ -4,10 +4,10 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased 
+## Unreleased
 ### Preferred dependency versions for ascent@develop
 - conduit@0.9.2
-- vtk-m@2.1.0 (requires [patch 1](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch) 
+- vtk-m@2.1.0 (requires [patch 1](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch)
                         [patch 2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch) )
 - raja@2024.02.1
 - umpire@2024.02.1
@@ -31,12 +31,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `fields` option to the project 2d to support scalar rendering of specific fields.
 - Added `dataset_bounds` option to the project 2d, which can be used instead of a full 3D camera specification
 - Added support for triggers to execute actions from multiple files via an `actions_files` option that takes a list of actions files.
-- Added an `external_surfaces` transform filter, that can be used to reduce memory requriments in pipelines where you plan to only process the external faces of a data set. 
+- Added an `external_surfaces` transform filter, that can be used to reduce memory requirements in pipelines where you plan to only process the external faces of a data set.
+- Added a `declare_fields` action, that allows users to explicitly list the fields to return for field filtering. This option avoids complex field parsing logic.
+- Added a 2d camera mode (`camera/2d: [left, right, bottom, top]`) to scene render cameras and the `project_2d` (scalar rendering) filter cameras.
 - Added support for `include` keyword to include children from yaml files in an input node trees
 
 
 ### Changed
-- Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities. 
+- Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
 
 ### Fixed
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
@@ -76,7 +78,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 - Changed the Data Binning filter to accept a `reduction_field` parameter (instead of `var`), and similarly the axis parameters to take `field` (instead of `var`).  The `var` style parameters are still accepted, but deprecated and will be removed in a future release.
 - Changed the Streamline and WarpXStreamline filters to apply the VTK-m Tube filter to their outputs, allowing for the results to be rendered.
-- Updated CMake Python build infrastructure to use 
+- Updated CMake Python build infrastructure to use
 
 ### Fixed
 - Various small bug fixes
@@ -129,12 +131,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added extract `flatten` from Conduit Blueprint
 - Added Log base 10 filter. Filter type is `log10`
 - Added Log base 2 filter. Filter type is `log2`
-- Added Feature Map in the docs. Detailing Devil Ray and VTKh features 
+- Added Feature Map in the docs. Detailing Devil Ray and VTKh features
 - Added `scripts/build_ascent/build_ascent.sh` a script that demonstrates how to manually build Ascent and its main dependencies
 - Added ability to override dimensions for the rendered bounding box around a dataset
 - Added CMake option `ENABLE_HIDDEN_VISIBILITY` (default=ON), which controls if hidden visibility is used for private symbols
 - Added documentation for how to use ROCm's rocprof profiler for GPUs with Ascent
-- Added support for Caliper performance annotations 
+- Added support for Caliper performance annotations
 - Added automatic slice filter that evaluates a number of slices and outputs the one with the highest entropy
 
 ### Changed
@@ -158,15 +160,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added OCCA Derived Field Generation support
 - Added more math expressions
 - Added a time expression
-- Added Cinema rendering support for Devil Ray 
-- Added `streamline` and `particle_advection` transforms 
+- Added Cinema rendering support for Devil Ray
+- Added `streamline` and `particle_advection` transforms
 - Added history gradient expressions
 - Added the ability save named sessions
 - Added new options to specify Cinema rendering parameters
 - Added the ability save subsets of expression results to session files
 - Added the ability to add comments to PNG files that Ascent creates
 - Added timings out control option to Ascent (and Flow)
-- Added support to render Polygonal nd Polyhedral Meshes 
+- Added support to render Polygonal nd Polyhedral Meshes
 - Added option to turn of world annotations
 - Added FIDES Support
 
