@@ -31,8 +31,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `fields` option to the project 2d to support scalar rendering of specific fields.
 - Added `dataset_bounds` option to the project 2d, which can be used instead of a full 3D camera specification
 - Added support for triggers to execute actions from multiple files via an `actions_files` option that takes a list of actions files.
-- Added an `external_surfaces` transform filter, that can be used to reduce memory requriments in pipelines where you plan to only process the external faces of a data set. 
-
+- Added an `external_surfaces` transform filter, that can be used to reduce memory requirements in pipelines where you plan to only process the external faces of a data set. 
+- Added a `declare_fields` action, that allows users to explicitly list the fields to return for field filtering. This option avoids complex field parsing logic.
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities. 
