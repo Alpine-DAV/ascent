@@ -103,18 +103,15 @@ interface looks like this in c++:
     filter["params/double_param"] = 2.0;
 
 
-or equivalently in json:
+or equivalently in yaml:
 
-.. code-block:: json
+.. code-block:: yaml
 
-    {
-      "type"   : "filter_name",
-      "params":
-      {
-        "string_param" : "string",
-        "double_param" : 2.0
-      }
-    }
+  type: "filter_name"
+  params:
+    string_param: "string"
+    double_param: 2.0
+
 
 The Ascent runtime looks for the ``params`` node and passes it to the filter
 upon creation. Parameters are verified when the filter is created during execution.
@@ -288,17 +285,17 @@ is where all builtin filter are registered. Following the NoOp example:
 
 Filter registration is templated on the filter type and takes two arguments.
 
-* arg1: the type of the fitler. Valid values are ``transforms`` and ``extracts``
+* arg1: the type of the filter. Valid values are ``transforms`` and ``extracts``
 * arg2: the front-facing API name of the filter. This is what a user would declare in an actions file.
 
 Accessing Metadata
 ------------------
-We currently populate a limited set of metadata that is accessable to flow filters.
+We currently populate a limited set of metadata that is accessible to flow filters.
 We place a Conduit node containing the metadata inside the registry which can be
 accessed in the following manner:
 
 .. code-block:: c++
-    :caption: Accessing the regsitry metadata inside a flow filter
+    :caption: Accessing the registry metadata inside a flow filter
 
     conduit::Node * meta = graph().workspace().registry().fetch<Node>("metadata");
     int cycle = -1;
