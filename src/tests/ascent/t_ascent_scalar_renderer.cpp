@@ -226,7 +226,7 @@ TEST(ascent_scalar_rendering, test_scalar_rendering_data_bounds_specified)
 
     conduit::relay::io::blueprint::save_mesh(data,conduit::utils::join_file_path(output_path,
                                                 "tout_scalar_rendering_bounds_specified_input"),"hdf5");
-    
+
     //
     // Create the actions.
     //
@@ -272,6 +272,77 @@ TEST(ascent_scalar_rendering, test_scalar_rendering_data_bounds_specified)
 
     // check that we created an image
     std::string msg = "An example of scalar rendering of specific fields";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_scalar_rendering, test_scalar_rendering_2d_camera)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("quads",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              0,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Scalar Rendering with a 2d camera");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_scalar_rendering_2d_camera");
+
+    conduit::relay::io::blueprint::save_mesh(data,conduit::utils::join_file_path(output_path,
+                                                  "tout_scalar_rendering_2d_camera_input"),"hdf5");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_pipelines= actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+    pipelines["pl1/f1/type"] = "project_2d";
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["image_width"]  = 512;
+    params["image_height"] = 512;
+    params["camera/2d"] = { -7.0, 3.0, 0.0,4.0 };
+
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts=add_extracts["extracts"];;
+    extracts["e1/type"]  = "relay";
+    extracts["e1/pipeline"] = "pl1";
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    std::string msg = "An example of scalar rendering with 2d camera mode";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
