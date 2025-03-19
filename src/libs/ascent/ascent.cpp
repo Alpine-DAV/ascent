@@ -141,11 +141,14 @@ load_included_files_in_node_tree(conduit::Node &node, int mpi_comm_id)
         MPI_Bcast(&include_file_valid, 1, MPI_INT, 0, mpi_comm);
 
         // Pass the error to all ranks so the error message matches
-        int line_size = emsg.size();
-        MPI_Bcast(&line_size, 1, MPI_INT, 0, mpi_comm);
-        if (rank != 0)
-            emsg.resize(line_size);
-        MPI_Bcast(const_cast<char*>(emsg.data()), line_size, MPI_CHAR, 0, mpi_comm);
+        conduit::Node n_emsg;
+        if(rank == 0)
+        {
+        n_emsg.set(emsg);
+        }
+
+        conduit::relay::mpi::broadcast_using_schema(n_emsg, 0, mpi_comm);
+        emsg = n_emsg.as_string();
 #endif
 
         if(include_file_valid == 0)
