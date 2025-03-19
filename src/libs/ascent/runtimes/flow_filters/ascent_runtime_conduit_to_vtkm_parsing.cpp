@@ -87,14 +87,33 @@ parse_image_dims(const conduit::Node &node, int &width, int &height)
 
 }
 
+
 //-----------------------------------------------------------------------------
 void
 parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 {
   typedef vtkm::Vec<vtkm::Float32,3> vtkmVec3f;
+
   //
   // Get the optional camera parameters
   //
+
+  // check for 2d mode first
+  if(camera_node.has_child("2d"))
+  {
+    // camera:
+    //  2d: [l,r,b,t]
+    camera.SetModeTo2D();
+    conduit::Node n;
+    camera_node["2d"].to_float64_array(n);
+    const float64 *view_vals = n.as_float64_ptr();
+
+    camera.SetViewRange2D(view_vals[0],
+                          view_vals[1],
+                          view_vals[2],
+                          view_vals[3]);
+  }
+
   if(camera_node.has_child("look_at"))
   {
       conduit::Node n;
@@ -248,8 +267,8 @@ parse_color_table(const conduit::Node &color_table_node)
     }
     else if (control_points_node.dtype().is_object())
     {
-        if (control_points_node.has_child("r") && 
-            control_points_node.has_child("g") && 
+        if (control_points_node.has_child("r") &&
+            control_points_node.has_child("g") &&
             control_points_node.has_child("b"))
         {
             clear = true;
