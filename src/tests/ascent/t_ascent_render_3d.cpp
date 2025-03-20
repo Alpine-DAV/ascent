@@ -3307,11 +3307,7 @@ TEST(ascent_render_3d, test_render_3d_zero_zoom_handled)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_default_runtime");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_zero_zoom_handled");
 
     //
     // Create the actions.
