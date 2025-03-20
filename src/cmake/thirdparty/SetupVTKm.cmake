@@ -42,11 +42,13 @@ set(VTKM_FOUND TRUE)
 set(VTKM_TARGETS vtkm::cont vtkm::filter vtkm::rendering)
 
 # add mpi if mfem uses mpi
-if(ASCENT_MPI_ENABLED)
-    if(VTKM_ENABLE_MPI)
-        list(APPEND VTKM_TARGETS MPI::MPI_CXX) 
-        set(ASCENT_VTKM_MPI_ENABLED TRUE)
+if(VTKM_ENABLE_MPI)
+    if(NOT ASCENT_MPI_ENABLED)
+        message(FATAL_ERROR "VTKm was build with MPI support (config.mk has VTKM_MPI_ENABLED = TRUE)"
+                             "But ASCENT_MPI_ENABLED = FALSE")
     endif()
+    list(APPEND VTKM_TARGETS ${ascent_blt_mpi_deps}) 
+    set(ASCENT_VTKM_MPI_ENABLED TRUE)
 endif()
 
 if(ENABLE_CUDA)
