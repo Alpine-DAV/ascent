@@ -41,6 +41,14 @@ set(VTKM_FOUND TRUE)
 
 set(VTKM_TARGETS vtkm::cont vtkm::filter vtkm::rendering)
 
+# add mpi if mfem uses mpi
+if(ASCENT_MPI_ENABLED)
+    if(VTKM_ENABLE_MPI)
+        list(APPEND VTKM_TARGETS MPI::MPI_CXX) 
+        set(ASCENT_VTKM_MPI_ENABLED TRUE)
+    endif()
+endif()
+
 if(ENABLE_CUDA)
     # we need to inject the vtkm cuda flags into CMAKE_CUDA_FLAGS
     vtkm_get_cuda_flags(_fetch_vtkm_cuda_flags)
