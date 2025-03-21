@@ -2,8 +2,8 @@
 set -ev
 
 # variants
-# TODO:
-# (+genten) genten currently disabled, wait for genten master to gain cokurt
+# NOTES:
+# (+genten) genten currently disabled, wait for genten to gain spack package
 export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa~genten~python~openmp~shared cuda_arch=70"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC} ^raja+cuda~openmp cuda_arch=70 ^umpire+cuda~openmp cuda_arch=70 ^camp+cuda~openmp cuda_arch=70 ^hdf5~mpi ^mfem~cuda~petsc~sundials~slepc ^hypre~cuda ^vtk-m+cuda~kokkos cuda_arch=70"

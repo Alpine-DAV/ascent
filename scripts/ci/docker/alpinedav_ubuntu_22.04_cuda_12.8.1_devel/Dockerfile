@@ -2,7 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM nvidia/cuda:12.1.1-devel-ubuntu20.04
+FROM nvidia/cuda:12.8.1-devel-ubuntu22.04
 
 # add sudo to base cuda devel env
 # so we can install additional packages as
@@ -34,7 +34,6 @@ RUN apt-get update && apt-get -y install \
                liblapack-dev \
                liblapacke-dev \
                unzip \
-               openssh-server \
                vim
 
 

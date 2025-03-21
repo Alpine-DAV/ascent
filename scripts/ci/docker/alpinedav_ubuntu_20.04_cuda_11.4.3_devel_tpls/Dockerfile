@@ -3,7 +3,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 
 ARG TAG_ARCH="x86_64"
-FROM alpinedav/ascent-devel:ubuntu-20.04-cuda-11.4.3-${TAG_ARCH}
+FROM alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-${TAG_ARCH}
 
 # obtain a copy of ascent source from host env,
 # which we use to call uberenv
