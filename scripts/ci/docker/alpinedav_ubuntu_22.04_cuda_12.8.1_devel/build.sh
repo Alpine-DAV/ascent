@@ -5,7 +5,7 @@
 set -ev
 
 export TAG_ARCH=`uname -m`
-export TAG_NAME=alpinedav/ascent-devel:ubuntu-20.04-cuda-12.1.1-${TAG_ARCH}
+export TAG_NAME=alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-${TAG_ARCH}
 
 # exec docker build to create image
 echo "docker build -t ${TAG_NAME} ."
