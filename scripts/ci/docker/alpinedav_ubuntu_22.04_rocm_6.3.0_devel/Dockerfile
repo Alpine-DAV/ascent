@@ -2,7 +2,7 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 # add sudo to base ubuntu container
 # so we can install additional packages as
 # non-root, but admin default user on azure pipelines
@@ -27,7 +27,7 @@ RUN echo 'export PATH=/opt/rocm/llvm/bin:/opt/rocm/bin:/opt/rocm/profiler/bin:/o
   | sudo tee -a /etc/profile.d/rocm.sh
 
 
-  
+
 # install std packages
 # Notes:
 # kmod -- hip requires lsmod
@@ -67,10 +67,9 @@ RUN apt-get update && apt-get -y install \
              rocrand-dev     \
              rocthrust-dev     \
              hiprand-dev     \
-             openssh-server \
              language-pack-en \
              liblocale-codes-perl \
              vim
 
-#RUN apt-get update && apt-get -y install --no-install-recommends 
+#RUN apt-get update && apt-get -y install --no-install-recommends
 # rocm-hip-sdk, vs all of these packages?
