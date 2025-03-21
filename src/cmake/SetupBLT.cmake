@@ -90,7 +90,6 @@ if(ENABLE_MPI)
     # very unhappy, and this will cause blt's mpi smoke test to fail to build
     # with clang.
     #
-    # Conduit does not use mpi fortran, so we strip this flag if it exists.
     #
     # blt's mpi target is called "mpi"
     if(TARGET mpi)
