@@ -4,7 +4,9 @@ set -ev
 # variants
 # NOTES:
 #  genten currently disabled, genten needs a spack package
-export SPACK_SPEC="%gcc+mpi+python+dray+caliper+occa+mfem+fides+adios2+babelflow ^occa~cuda"
+#  occa will build cuda by default, disable via variant
+#  adios2 will need libfabric by default (leads to linking error), turn of sst to avoid
+export SPACK_SPEC="%gcc+mpi+python+dray+caliper+occa+mfem+fides+adios2+babelflow ^occa~cuda ^adios2~sst"
 # constraints
 export SPACK_SPEC="${SPACK_SPEC}"
 # config

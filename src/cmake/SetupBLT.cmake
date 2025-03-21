@@ -43,6 +43,8 @@ set(BLT_EXPORT_THIRDPARTY ON CACHE BOOL "")
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
 if(ENABLE_MPI)
+    set(ASCENT_USE_CMAKE_MPI_TARGETS OFF CACHE BOOL "")
+
     # on some platforms (mostly cray systems) folks skip mpi
     # detection in BLT by setting ENABLE_FIND_MPI = OFF
     # in these cases, we need to set MPI_FOUND = TRUE,
@@ -51,53 +53,56 @@ if(ENABLE_MPI)
         set(MPI_FOUND ON CACHE BOOL "")
     endif()
 
-    # # adjust MPI from BLT
-    # if( ${CMAKE_VERSION} VERSION_LESS "3.15.0" )
-    #     # older cmake, we use BLT's mpi support, it uses
-    #     # the name `mpi`
-    #     set(ascent_blt_mpi_deps mpi CACHE STRING "")
-    # else()
-        # if we are using BLT's enable mpi, then we must
-        # make sure the MPI targets exist
+    #################
+    # defines to prevent mpi from using C++ apis and introducing link
+    # dep of libmpi_cxx  (encountered when using openmpi as mpi)
+    #
+    # In theory, calling set(MPI_CXX_SKIP_MPICXX TRUE BOOL) before FindMPI
+    # would also add these flags, but that did not work w/ cmake 3.22
+    #################
+    set(ASCENT_MPI_SKIP_MPICXX_DEFINES MPICH_SKIP_MPICXX OMPI_SKIP_MPICXX _MPICC_H)
+
+    # if we are using BLT's enable mpi, then we must
+    # make sure the MPI targets exist
     if(ENABLE_FIND_MPI)
-        if(TARGET MPI::MPI_CXX)
+        if(TARGET MPI::MPI_C)
             set(ASCENT_USE_CMAKE_MPI_TARGETS TRUE CACHE BOOL "")
-            message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
-            # newer cmake we use find mpi targets directly
-            set(ascent_blt_mpi_deps MPI::MPI_CXX CACHE STRING "")
+            message(STATUS "Using MPI CMake imported target: MPI::MPI_C")
+            # use cmake mpi targets directly
+            set(ascent_blt_mpi_deps MPI::MPI_C CACHE STRING "")
         else()
             message(FATAL_ERROR "Cannot use CMake imported targets for MPI."
                                 "(ENABLE_MPI == ON, but "
-                                "MPI::MPI_CXX CMake target is missing.)")
+                                "MPI::MPI_C CMake target is missing.)")
         endif()
     else()
         set(ASCENT_USE_CMAKE_MPI_TARGETS FALSE CACHE BOOL "")
         # compiler will handle them implicitly
         set(ascent_blt_mpi_deps "" CACHE STRING "")
     endif()
-    # endif()
-    # #
-    # # In some cases (mpich?) -fallow-argument-mismatch will be
-    # # reported as a needed MPI flag for fortran.
-    # # BLT fuses all MPI compiler flags into one big bunch.
-    # # (It does not differentiate between C and fortran flags)
-    # #
-    # # -fallow-argument-mismatch is a fortran compiler flag that makes clang
-    # # very unhappy, and this will cause blt's mpi smoke test to fail to build
-    # # with clang.
-    # #
-    # # Conduit does not use mpi fortran, so we strip this flag if it exists.
-    # #
-    # # blt's mpi target is called "mpi"
-    # if(TARGET mpi)
-    # # check and strip interface compile opts
-    #     get_target_property(_mpi_iface_compile_opts mpi INTERFACE_COMPILE_OPTIONS)
-    #     if(_mpi_iface_compile_opts)
-    #         list(REMOVE_ITEM _mpi_iface_compile_opts "-fallow-argument-mismatch")
-    #         list(REMOVE_ITEM _mpi_iface_compile_opts "-fallow-invalid-boz")
-    #         set_target_properties(mpi PROPERTIES INTERFACE_COMPILE_OPTIONS "${_mpi_iface_compile_opts}")
-    #     endif()
-    # endif()
+
+    # In some cases (mpich?) -fallow-argument-mismatch will be
+    # reported as a needed MPI flag for fortran.
+    # BLT fuses all MPI compiler flags into one big bunch.
+    # (It does not differentiate between C and fortran flags)
+    #
+    # -fallow-argument-mismatch is a fortran compiler flag that makes clang
+    # very unhappy, and this will cause blt's mpi smoke test to fail to build
+    # with clang.
+    #
+    # Conduit does not use mpi fortran, so we strip this flag if it exists.
+    #
+    # blt's mpi target is called "mpi"
+    if(TARGET mpi)
+    # check and strip interface compile opts
+        get_target_property(_mpi_iface_compile_opts mpi INTERFACE_COMPILE_OPTIONS)
+        if(_mpi_iface_compile_opts)
+            list(REMOVE_ITEM _mpi_iface_compile_opts "-fallow-argument-mismatch")
+            list(REMOVE_ITEM _mpi_iface_compile_opts "-fallow-invalid-boz")
+            set_target_properties(mpi PROPERTIES INTERFACE_COMPILE_OPTIONS "${_mpi_iface_compile_opts}")
+        endif()
+    endif()
+
 endif()
 
 
