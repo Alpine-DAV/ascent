@@ -37,8 +37,10 @@ set(BASIC_TESTS t_vtk-h_smoke
                 t_vtk-h_render
                 t_vtk-h_slice
                 t_vtk-h_volume_renderer
-                t_vtk-h_warpx_streamline
                 )
+if(NOT ASCENT_VTKM_MPI_ENABLED)
+    list(APPEND BASIC_TESTS t-vtk-h_warpx_streamline)
+endif()
 
 # Contour tree depends on the VTK-m build type.
 # If vtkm was built with/out mpi support, we only run the

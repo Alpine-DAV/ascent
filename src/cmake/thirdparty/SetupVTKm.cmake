@@ -40,13 +40,16 @@ endif()
 set(VTKM_FOUND TRUE)
 
 set(VTKM_TARGETS vtkm::cont vtkm::filter vtkm::rendering)
+message(STATUS "vtkm enalbe mpi:  ${VTKm_ENABLE_MPI}")
+message(STATUS "mpi found:  ${MPI_FOUND}")
 
 # add mpi if mfem uses mpi
-if(VTKM_ENABLE_MPI)
-    if(NOT ASCENT_MPI_ENABLED)
-        message(FATAL_ERROR "VTKm was build with MPI support (config.mk has VTKM_MPI_ENABLED = TRUE)"
+if(VTKm_ENABLE_MPI)
+    if(NOT MPI_FOUND)
+        message(FATAL_ERROR "VTKm was built with MPI support (config.mk has VTKM_MPI_ENABLED = TRUE)"
                              "But ASCENT_MPI_ENABLED = FALSE")
     endif()
+    message(STATUS "VTKm was built with MPI support (VTKM_MPI_ENABLED = TRUE)")
     list(APPEND VTKM_TARGETS ${ascent_blt_mpi_deps}) 
     set(ASCENT_VTKM_MPI_ENABLED TRUE)
 endif()
