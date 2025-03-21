@@ -178,23 +178,24 @@ stages:
         ############
         # Babelflow
         ############
-        ubuntu_22.04_shared_py_cxx14_bflow:
-          containerImage: ${{ variables.ubuntu_22_04_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_RAJA: ON
-          ENABLE_UMPIRE: ON
-          ENABLE_CAMP: ON
-          ENABLE_APCOMP: ON
-          ENABLE_DRAY: ON
-          ENABLE_DRAY_DOUBLE: OFF
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: ON
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          BLT_CXX_STD: c++14
+        # TODO: Babel flow components are not maintained
+        # ubuntu_22.04_shared_py_cxx14_bflow:
+        #   containerImage: ${{ variables.ubuntu_22_04_tag }}
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_RAJA: ON
+        #   ENABLE_UMPIRE: ON
+        #   ENABLE_CAMP: ON
+        #   ENABLE_APCOMP: ON
+        #   ENABLE_DRAY: ON
+        #   ENABLE_DRAY_DOUBLE: OFF
+        #   ENABLE_VTKH: ON
+        #   ENABLE_MFEM: ON
+        #   ENABLE_BABELFLOW: ON
+        #   ENABLE_ADIOS2: OFF
+        #   ENABLE_FIDES: OFF
+        #   BLT_CXX_STD: c++14
 
         ############
         # GENTEN
