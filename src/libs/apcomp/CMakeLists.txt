@@ -112,7 +112,6 @@ if (MPI_FOUND)
          list(APPEND apcomp_mpi_deps ${ascent_blt_openmp_deps})
     endif()
 
-
     blt_add_library(NAME apcomp_mpi
                     SOURCES ${apcomp_sources} ${apcomp_mpi_sources}
                     HEADERS ${apcomp_headers} ${apcomp_mpi_headers}
@@ -131,6 +130,9 @@ if (MPI_FOUND)
     # extra defs and props
     target_compile_definitions(apcomp_mpi PRIVATE APCOMP_PARALLEL)
     target_compile_definitions(apcomp_mpi PRIVATE ASCENT_EXPORTS_FLAG)
+
+    # avoid mpi C++ apis + link dep of libmpi_cxx
+    target_compile_definitions(apcomp_mpi PUBLIC ${ASCENT_MPI_SKIP_MPICXX_DEFINES} )
 
     if(ENABLE_HIDDEN_VISIBILITY)
         set_target_properties(apcomp_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)

@@ -14,7 +14,7 @@
 
 ###############################################################################
 # Capture config settings into derived CMake vars with ASCENT_ prefix
-# these are used to generate headers, our CMake exports, and ascent.mk 
+# these are used to generate headers, our CMake exports, and ascent.mk
 ###############################################################################
 
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
@@ -254,7 +254,7 @@ set(ascent_device_sources runtimes/expressions/ascent_memory_manager.cpp
                           runtimes/expressions/ascent_data_binning.cpp
                           runtimes/expressions/ascent_execution_policies.cpp
                           runtimes/expressions/ascent_blueprint_architect.cpp
-                          runtimes/expressions/ascent_derived_jit.cpp 
+                          runtimes/expressions/ascent_derived_jit.cpp
                           )
 
 ##############################
@@ -537,7 +537,7 @@ if (ENABLE_SERIAL)
         if(UMPIRE_FOUND)
             list(APPEND imported_targets_to_link umpire)
         endif()
-        
+
         if(CAMP_FOUND)
             list(APPEND imported_targets_to_link camp)
         endif()
@@ -668,6 +668,9 @@ if(MPI_FOUND)
     # setup exported target to point to proper include dir
     target_include_directories(ascent_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/>)
 
+    # avoid mpi C++ apis + link dep of libmpi_cxx
+    target_compile_definitions(ascent_mpi PUBLIC ${ASCENT_MPI_SKIP_MPICXX_DEFINES} )
+
     # install target for mpi ver
     install(TARGETS ascent_mpi
             EXPORT  ascent
@@ -746,7 +749,7 @@ if(MPI_FOUND)
         set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
         # clear result
         set(locations_on_disk "")
-        
+
         # device link
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES    ${ascent_device_sources}
