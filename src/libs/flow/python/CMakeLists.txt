@@ -20,6 +20,8 @@ PYTHON_ADD_HYBRID_MODULE(NAME flow_python
 # link with the proper libs (beyond python)
 target_link_libraries(flow_python ascent_flow)
 
+# compiled modules depend on output dir structure created by main module setup
+add_dependencies( flow_python PRIVATE flow_python_py_setup)
 
 # TODO: ADD SUPPORT FOR SUPPORT PYTHON_MODULE_INSTALL_PREFIX
 # install the capi header so other python modules can use it
