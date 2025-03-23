@@ -29,6 +29,8 @@ class UberenvAscent(spack.pkg.builtin.ascent.Ascent):
            description="Build deps needed to build Docs")
 
     depends_on("py-sphinx", when="+python+doc", type=("build","run"))
+    depends_on("py-sphinx-rtd-theme", when="+python+doc", type=("build","run"))
+    depends_on("py-sphinxcontrib-jquery", when="+python+doc", type=("build","run"))
 
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))

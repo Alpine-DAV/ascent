@@ -42,6 +42,8 @@ RUN apt-get update && apt-get -y install \
              libbz2-dev \
              mpich \
              libmpich-dev \
-             openssh-server \
              vim
+
+RUN locale-gen en_US.UTF-8
+RUN locale-gen C.UTF-8
 
