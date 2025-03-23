@@ -19,8 +19,7 @@ RUN apt-get update && apt-get -y install \
              python3-dev \
              python-is-python3 \
              python3.10-venv \
-             clang \
-             llvm \
+             clang-format \
              perl \
              git \
              git-lfs \
@@ -43,7 +42,3 @@ RUN apt-get update && apt-get -y install \
              mpich \
              libmpich-dev \
              vim
-
-RUN locale-gen en_US.UTF-8
-RUN locale-gen C.UTF-8
-

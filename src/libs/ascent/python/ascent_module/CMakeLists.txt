@@ -31,10 +31,10 @@ if (ENABLE_SERIAL)
                                SOURCES ${ascent_py_cpp_sources})
 
     # compiled modules depend on output dir structure created by main module setup
-    add_dependencies( ascent_python PRIVATE ascent_python_py_setup)
+    target_link_libraries( ascent_python PRIVATE ascent_python_py_setup)
 
     # link with the proper libs (beyond python)
-    target_link_libraries(ascent_python ascent)
+    target_link_libraries(ascent_python PRIVATE ascent)
 
 endif()
 
