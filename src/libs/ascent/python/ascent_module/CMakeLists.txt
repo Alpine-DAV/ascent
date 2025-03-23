@@ -54,10 +54,10 @@ if(MPI_FOUND)
 
 
     # compiled modules depend on output dir structure created by main module setup
-    add_dependencies( ascent_mpi_python ascent_python_py_setup)
+    target_link_libraries( ascent_mpi_python PRIVATE ascent_python_py_setup)
 
     # link with the proper libs (beyond python)
-    target_link_libraries(ascent_mpi_python ascent_mpi)
+    target_link_libraries(ascent_mpi_python PRIVATE ascent_mpi)
 
 endif()
 
