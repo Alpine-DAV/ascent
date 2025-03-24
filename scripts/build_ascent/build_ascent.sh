@@ -514,6 +514,7 @@ if [ ! -d ${conduit_src_dir} ]; then
   cd  ${conduit_src_dir}
 
   patch -p1 < ${script_dir}/2025_03_21_conduit_pr1370.patch
+  patch -p1 < ${script_dir}/2025_03_conduit_windows_symbol_export_fix.patch
 
   cd ${root_dir}
 fi
