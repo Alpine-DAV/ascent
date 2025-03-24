@@ -236,7 +236,7 @@ stages:
            # capture current path
            export ROOT_DIR=`pwd`
            # find spack generated host config file
-           export HOST_CONFIG=`ls /uberenv_libs/*.cmake`
+           export HOST_CONFIG=`ls /uberenv_libs/*-patch.cmake`
            echo $HOST_CONFIG
            # find spack installed cmake
            export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
@@ -244,17 +244,14 @@ stages:
            echo $PATH
            which cmake
            cmake --version
-           # prepare build dir
-           mkdir build
-           cd build
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=install"
            # c++ std
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            # include host config
-           export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG} -S src -B build"
            # extra settings
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
@@ -275,9 +272,10 @@ stages:
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBABELFLOW_DIR=IGNORE"; fi
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBabelFlow_DIR=IGNORE"; fi
            if [ $ENABLE_GENTEN = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DGENTEN_DIR=IGNORE"; fi
+           echo "[cmake options:]"
            echo ${CMAKE_OPTS}
            # configure
-           cmake ${CMAKE_OPTS} ../src
+           cmake ${CMAKE_OPTS}
         displayName: 'Configure with CMake'
 
       - script: |
@@ -357,9 +355,8 @@ stages:
           export CC=/usr/bin/mpicc
           export CXX=/usr/bin/mpicxx
           cd install/examples/ascent/using-with-cmake
-          mkdir _test_build
+          cmake -B _test_build -S .
           cd _test_build
-          cmake ../
           make VERBOSE=1
           ./ascent_render_example
         displayName: 'Test vs Install (using-with-cmake)'
@@ -395,10 +392,8 @@ stages:
           export CC=/usr/bin/mpicc
           export CXX=/usr/bin/mpicxx
           cd install/examples/ascent/using-with-cmake-mpi
-          rm -rf _test_build
-          mkdir _test_build
+          cmake -B _test_build -S .
           cd _test_build
-          cmake ../
           make VERBOSE=1
           mpiexec -n 2 ./ascent_mpi_render_example
         displayName: 'Test vs Install (using-with-cmake-mpi)'
