@@ -484,6 +484,79 @@ TEST(ascent_triggers, trigger_extract_inline_actions)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_triggers, trigger_single_actions_file_relative_path)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_trigger_actions_file_rel_path");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the trigger actions.
+    //
+    conduit::Node trigger_actions;
+    // add the scenes
+    conduit::Node &add_scenes= trigger_actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &trigger_scenes = add_scenes["scenes"];
+    trigger_scenes["s1/plots/p1/type"] = "pseudocolor";
+    trigger_scenes["s1/plots/p1/field"] = "braid";
+    trigger_scenes["s1/image_prefix"] = output_file;
+    trigger_actions.save("my_test_actions.yaml");
+
+    //
+    // Create the actions.
+    //
+    Node actions;
+    // this should always be true
+    std::string condition = "cycle() == 23232";
+    conduit::Node triggers;
+    triggers["t1/params/condition"] = condition;
+    triggers["t1/params/actions_file"] = "./my_test_actions.yaml";
+
+    conduit::Node &add_triggers= actions.append();
+    add_triggers["action"] = "add_triggers";
+    add_triggers["triggers"] = triggers;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image from the trigger
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of specifying trigger actions file with a relative path;";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
 
 
 //-----------------------------------------------------------------------------

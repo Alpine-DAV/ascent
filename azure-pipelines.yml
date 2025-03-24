@@ -20,7 +20,7 @@
 #    - build_ascent.sh {TPLS + Ascent} x {Standard, CUDA, and HIP} are tested via Github Actions
 #
 #  2025/03/20:
-#    - Dropped Ubuntu 20.04, migrated tests to Ubuntu 22.04, spack update to 0.23.1
+#    - Dropped Ubuntu 20.04, migrated tests to Ubuntu 22.04
 #
 #
 ########################
