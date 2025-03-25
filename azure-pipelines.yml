@@ -253,10 +253,16 @@ stages:
            # include host config
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG} -S src -B build"
            # extra settings
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH}"
+           # spack will add PYTHON_MODULE_INSTALL_PREFIX to the host config,
+           # which will cause ci builds to attempt an install of the python
+           # module to a location not writable buy the ci user:
+           #   so we set this to IGNORE
+           export CMAKE_OPTS="${CMAKE_OPTS} -DPYTHON_MODULE_INSTALL_PREFIX=IGNORE"
+
            # dray double perc option
            if [ $ENABLE_DRAY_DOUBLE  = 'ON' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAY_USE_DOUBLE_PRECISION=ON"; fi
 
