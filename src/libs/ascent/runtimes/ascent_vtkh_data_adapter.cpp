@@ -1983,6 +1983,66 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                 supported_type = true;
             }
         }
+        else if(n_vals.dtype().is_uint32())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint32 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint32> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_uint64())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint64 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint64> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
         // ***********************************************************************
         // NOTE: TODO OUR VTK-M is not compiled with int32 and int64 support ...
         // ***********************************************************************
@@ -1995,50 +2055,50 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         // NOTE: int32 should work as of sept 10 2024 
         // ***********************************************************************
         //
-        //else if(n_vals.dtype().is_int32())
-        //{
-        //    // check that the byte stride is a multiple of native stride
-        //    index_t stride = n_vals.dtype().stride();
-        //    index_t element_stride = stride / sizeof(int32);
-        //    //std::cout << "field name: " << field_name << " <int32>"
-        //    //          << " byte stride: " << stride
-        //    //          << " element_stride: " << element_stride << std::endl;
-        //    // if element_stride is evenly divided by native, we are good to
-        //    // use vtk m array handles
-        //    if( stride % sizeof(int32) == 0 )
-        //    {
-        //        // in this case we can use a strided array handle
-        //        dset->AddField(detail::GetField<int32>(n_vals,
-        //                                                 field_name,
-        //                                                 assoc_str,
-        //                                                 topo_name,
-        //                                                 element_stride,
-        //                                                 zero_copy));
-        //        supported_type = true;
-        //    }
-        //}
-        //else if(n_vals.dtype().is_int64())
-        //{
-        //    // check that the byte stride is a multiple of native stride
-        //    index_t stride = n_vals.dtype().stride();
-        //    index_t element_stride = stride / sizeof(int64);
-        //    //std::cout << "field name: " << field_name << " <int64>"
-        //    //          << " byte stride: " << stride
-        //    //          << " element_stride: " << element_stride << std::endl;
-        //    // if element_stride is evenly divided by native, we are good to
-        //    // use vtk m array handles
-        //    if( stride % sizeof(int64) == 0 )
-        //    {
-        //        // in this case we can use a strided array handle
-        //        dset->AddField(detail::GetField<int64>(n_vals,
-        //                                                 field_name,
-        //                                                 assoc_str,
-        //                                                 topo_name,
-        //                                                 element_stride,
-        //                                                 zero_copy));
-        //        supported_type = true;
-        //    }
-        //}
+        else if(n_vals.dtype().is_int32())
+        {
+            // check that the byte stride is a multiple of native stride
+            index_t stride = n_vals.dtype().stride();
+            index_t element_stride = stride / sizeof(int32);
+            //std::cout << "field name: " << field_name << " <int32>"
+            //          << " byte stride: " << stride
+            //          << " element_stride: " << element_stride << std::endl;
+            // if element_stride is evenly divided by native, we are good to
+            // use vtk m array handles
+            if( stride % sizeof(int32) == 0 )
+            {
+                // in this case we can use a strided array handle
+                dset->AddField(detail::GetField<int32>(n_vals,
+                                                         field_name,
+                                                         assoc_str,
+                                                         topo_name,
+                                                         element_stride,
+                                                         zero_copy));
+                supported_type = true;
+            }
+        }
+        else if(n_vals.dtype().is_int64())
+        {
+            // check that the byte stride is a multiple of native stride
+            index_t stride = n_vals.dtype().stride();
+            index_t element_stride = stride / sizeof(int64);
+            //std::cout << "field name: " << field_name << " <int64>"
+            //          << " byte stride: " << stride
+            //          << " element_stride: " << element_stride << std::endl;
+            // if element_stride is evenly divided by native, we are good to
+            // use vtk m array handles
+            if( stride % sizeof(int64) == 0 )
+            {
+                // in this case we can use a strided array handle
+                dset->AddField(detail::GetField<int64>(n_vals,
+                                                         field_name,
+                                                         assoc_str,
+                                                         topo_name,
+                                                         element_stride,
+                                                         zero_copy));
+                supported_type = true;
+            }
+        }
         //else if(n_vals.dtype().is_uint64())
         //{
         //    // check that the byte stride is a multiple of native stride
@@ -2069,19 +2129,18 @@ VTKHDataAdapter::AddField(const std::string &field_name,
 
           // std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
           //           << n_vals.dtype().name() << std::endl;
-          if(n_vals.dtype().is_uint64())
-          {
+            std::cerr << "WE ARE IN UNSUPPORTED DATA TYPE: "
+                      << n_vals.dtype().name() << std::endl;
 
+            // convert to float64, we use this as a comprise to cover the widest range
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
             vtkm_arr.Allocate(num_vals);
 
-            const unsigned long long *input = n_vals.value();
-            vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
-
-            vtkm::cont::Invoker invoker;
-            vtkh::VTKmTypeCast worklet;
-
-            invoker(worklet,input_arr,vtkm_arr);
+            // TODO -- FUTURE: Do this conversion w/ device if on device
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
+            Node n_tmp;
+            n_tmp.set_external(DataType::float64(num_vals),ptr);
+            n_vals.to_float64_array(n_tmp);
 
             // add field to dataset
             if(assoc_str == "vertex")
@@ -2096,36 +2155,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                                                  vtkm::cont::Field::Association::Cells,
                                                  vtkm_arr));
             }
-          }
-          else
-          {
-   // st  d::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
-              //           << n_vals.dtype().name() << std::endl;
-
-              // convert to float64, we use this as a comprise to cover the widest range
-              vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-              vtkm_arr.Allocate(num_vals);
-
-              // TODO -- FUTURE: Do this conversion w/ device if on device
-              void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
-              Node n_tmp;
-              n_tmp.set_external(DataType::float64(num_vals),ptr);
-              n_vals.to_float64_array(n_tmp);
-
-              // add field to dataset
-              if(assoc_str == "vertex")
-              {
-                  dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                   vtkm::cont::Field::Association::Points,
-                                                   vtkm_arr));
-              }
-              else if( assoc_str == "element")
-              {
-                  dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                   vtkm::cont::Field::Association::Cells,
-                                                   vtkm_arr));
-              }
-          }
         // else
         // {
         //     std::cout << "SUPPORTED DATA TYPE: "
