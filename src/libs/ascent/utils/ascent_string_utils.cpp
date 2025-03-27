@@ -15,6 +15,8 @@
 #include <ctime>
 #include <sstream>
 #include <stdio.h>
+#include <regex>
+#include <conduit.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -72,6 +74,97 @@ std::string expand_family_name(const std::string name, int counter)
     result = ss.str();
   }
   return result;
+}
+
+template<typename T>
+std::string expand_generic_variable(const std::string& path_string, 
+                                    const std::regex& pattern, 
+                                    const T value)
+{
+    std::smatch match;
+    std::string result_string = path_string;
+
+    std::regex valid_int_format(R"(^\d*d$)");
+    std::regex valid_float_format(R"(^\d*(\.\d+)?[fFeEgG]$)");
+
+    while (std::regex_search(result_string, match, pattern))
+    {
+        std::string format_spec = match[1].str();
+
+        if (std::regex_match(format_spec, valid_int_format))
+        {
+          char formatted_number[50];
+          std::string full_format = "%" + format_spec;
+          snprintf(formatted_number, sizeof(formatted_number), full_format.c_str(), static_cast<int>(value));
+          result_string.replace(match.position(0), match.length(0), formatted_number);
+        }
+        else if (std::regex_match(format_spec, valid_float_format))
+        {
+          char formatted_number[50];
+          std::string full_format = "%" + format_spec;
+          snprintf(formatted_number, sizeof(formatted_number), full_format.c_str(), static_cast<float>(value));
+          result_string.replace(match.position(0), match.length(0), formatted_number);
+        }
+        else
+        {
+          // std::cout<< "Invalid format specifier: " << format_spec << std::end;
+          // Fallback: use default string conversion.
+          result_string.replace(match.position(0), match.length(0), std::to_string(value));
+          
+        }
+    }
+
+    return result_string;
+}
+
+template<typename T>
+std::string expand_family_variable(const std::string& path_string, 
+                                   T family_value)
+{
+  std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
+
+  if(family_value == 0)
+  {
+    static std::map<std::string, int> s_file_family_map;
+    bool exists = s_file_family_map.find(path_string) != s_file_family_map.end();
+    if(!exists)
+    {
+      s_file_family_map[path_string] = family_value;
+    }
+    else
+    {
+      family_value = s_file_family_map[path_string] + 1;
+      s_file_family_map[path_string] = family_value;
+    }
+  }
+
+  return expand_generic_variable(path_string, family_pattern, family_value);
+}
+
+std::string expand_path_special_variables(const std::string path_string, 
+                                          const conduit::Node &meta)
+{
+    std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
+    std::regex time_pattern(R"(\{time:((\d+\.)?\d+\D)\})");
+
+    std::cout << "This is the metadata right now" << std::endl;
+    meta.print();
+    
+    std::string result_string = path_string;
+
+    result_string = expand_family_variable(result_string, 0.0);
+
+    if (meta.has_path("cycle")) {
+        int cycle = meta["cycle"].to_value();
+        result_string = expand_generic_variable(result_string, cycle_pattern, cycle);
+    }
+    
+    if (meta.has_path("time")) {
+        float time = meta["time"].to_value();
+        result_string = expand_generic_variable(result_string, time_pattern, time);
+    }
+
+    return result_string;
 }
 
 std::vector<std::string> split(const std::string &s, char delim)

@@ -14,6 +14,7 @@
 #include "gtest/gtest.h"
 
 #include <ascent.hpp>
+#include <ascent_string_utils.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -80,6 +81,53 @@ TEST(ascent_conduit_extract, test_pass_thru)
     // diff to make sure data looks as we expect
     Node diff_info;
     EXPECT_FALSE(extract_copy["data"][0].diff(data,diff_info));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_conduit_extract, test_extract_path)
+{
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              25,
+                                              25,
+                                              25,
+                                              mesh);
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "output_path_{family:05d}_{cycle:04d}_{time:0.4f}_";
+    const string output_file = conduit::utils::join_file_path(output_path,image_prefix);
+    remove_test_image(output_file);
+
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent a;
+
+    // open ascent
+    a.open();
+
+    // publish mesh to ascent
+    a.publish(mesh);
+
+    // setup actions
+    Node actions;
+    Node &add_act2 = actions.append();
+    add_act2["action"] = "add_scenes";
+
+    Node &scenes = add_act2["scenes"];
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "var1";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s2/plots/p2/type"] = "pseudocolor";
+    scenes["s2/plots/p2/field"] = "var1";
+    scenes["s2/image_prefix"] = output_file;
+
+    // print our full actions tree
+    std::cout << actions.to_yaml() << std::endl;
+
+    // execute the actions
+    a.execute(actions);
+
+    // close ascent
+    a.close();
 }
 
 //-----------------------------------------------------------------------------

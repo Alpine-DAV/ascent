@@ -1382,7 +1382,7 @@ DefaultRender::execute()
       else
       {
         image_name =  params()["image_prefix"].as_string();
-        image_name = expand_family_name(image_name, cycle);
+        image_name = expand_path_special_variables(expand_family_name(image_name, cycle), Metadata::n_metadata);
         image_name = output_dir(image_name);
       }
 
@@ -2049,9 +2049,13 @@ ExecScene::execute()
         ASCENT_ERROR("'renders' must be a std::vector<vtkh::Render> * instance");
     }
 
+    std::cout << "\nMade it to this random place" << std::endl;
+
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
+    std::cout << "\nMade it to this random place 1.25" << std::endl;
     scene->Execute(*renders);
+    std::cout << "\nMade it to this random place 1.25" << std::endl;
 
     // the images should exist now so add them to the image list
     // this can be used for the web server or jupyter
@@ -2061,6 +2065,8 @@ ExecScene::execute()
       conduit::Node *image_list = new conduit::Node();
       graph().workspace().registry().add<Node>("image_list", image_list,1);
     }
+
+    std::cout << "\nMade it to this random place 1.5" << std::endl;
 
     conduit::Node *image_list = graph().workspace().registry().fetch<Node>("image_list");
     for(int i = 0; i < renders->size(); ++i)
@@ -2108,6 +2114,7 @@ ExecScene::execute()
       generate_camera_meshes(image_data);
       image_list->append() = image_data;
     }
+    std::cout << "\nMade it to this random place2" << std::endl;
 
 }
 //-----------------------------------------------------------------------------
