@@ -41,41 +41,6 @@ void split_string(const std::string &s,
 
 } // namespace detail
 
-std::string expand_family_name(const std::string name, int counter)
-{
-  if(counter == 0)
-  {
-    static std::map<std::string, int> s_file_family_map;
-    bool exists = s_file_family_map.find(name) != s_file_family_map.end();
-    if(!exists)
-    {
-      s_file_family_map[name] = counter;
-    }
-    else
-    {
-      counter = s_file_family_map[name] + 1;
-      s_file_family_map[name] = counter;
-    }
-  }
-
-  std::string result;
-  bool has_format = name.find("%") != std::string::npos;
-  if(has_format)
-  {
-    // allow for long file paths
-    char buffer[2048];
-    snprintf(buffer, 2048, name.c_str(), counter);
-    result = std::string(buffer);
-  }
-  else
-  {
-    std::stringstream ss;
-    ss<<name<<counter;
-    result = ss.str();
-  }
-  return result;
-}
-
 template<typename T>
 std::string expand_generic_variable(const std::string& path_string, 
                                     const std::regex& pattern, 
@@ -122,6 +87,7 @@ std::string expand_family_variable(const std::string& path_string,
                                    T family_value)
 {
   std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
+  std::string modified_path_string = path_string;
 
   if(family_value == 0)
   {
@@ -138,11 +104,23 @@ std::string expand_family_variable(const std::string& path_string,
     }
   }
 
-  return expand_generic_variable(path_string, family_pattern, family_value);
+  // Maintaing legacy family string formatting
+  bool has_format = modified_path_string.find("%") != std::string::npos;
+  if(has_format)
+  {
+    // allow for long file paths
+    char buffer[2048];
+    snprintf(buffer, 2048, modified_path_string.c_str(), family_value);
+    modified_path_string = std::string(buffer);
+  }
+
+  return expand_generic_variable(modified_path_string, family_pattern, family_value);
 }
 
 std::string expand_path_special_variables(const std::string path_string, 
-                                          const conduit::Node &meta)
+                                          const conduit::Node &meta,
+                                          int counter 
+                                        )
 {
     std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
     std::regex time_pattern(R"(\{time:((\d+\.)?\d+\D)\})");
@@ -152,7 +130,7 @@ std::string expand_path_special_variables(const std::string path_string,
     
     std::string result_string = path_string;
 
-    result_string = expand_family_variable(result_string, 0.0);
+    result_string = expand_family_variable(result_string, counter);
 
     if (meta.has_path("cycle")) {
         int cycle = meta["cycle"].to_value();
