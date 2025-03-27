@@ -335,7 +335,7 @@ TEST(ascent_triggers, trigger_multi_actions_files)
     string output_file_a = conduit::utils::join_file_path(output_path,"tout_trigger_multi_action_extract");
     string output_root_file_a = output_file_a + ".cycle_000100.root";
     string output_file_b = conduit::utils::join_file_path(output_path,"tout_trigger_multi_action_render");
-   
+
     // remove old files
     if(conduit::utils::is_file(trigger_file_a))
     {
@@ -532,7 +532,7 @@ TEST(ascent_triggers, trigger_single_actions_file_relative_path)
     //
     Node actions;
     // this should always be true
-    std::string condition = "cycle() == 23232";
+    std::string condition = "cycle() == 100";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
     triggers["t1/params/actions_file"] = "./my_test_actions.yaml";
