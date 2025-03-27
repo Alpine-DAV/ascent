@@ -535,8 +535,11 @@ TEST(ascent_triggers, trigger_single_actions_file_relative_path)
     std::string condition = "cycle() == 100";
     conduit::Node triggers;
     triggers["t1/params/condition"] = condition;
+#ifdef ASCENT_PLATFORM_WINDOWS
     triggers["t1/params/actions_file"] = "./my_test_actions.yaml";
-
+#else
+    triggers["t1/params/actions_file"] = "my_test_actions.yaml";
+#endif
     conduit::Node &add_triggers= actions.append();
     add_triggers["action"] = "add_triggers";
     add_triggers["triggers"] = triggers;
