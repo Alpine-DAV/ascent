@@ -11,6 +11,8 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_string_utils.hpp"
+#include <ascent.hpp>
+
 #include <map>
 #include <ctime>
 #include <sstream>
@@ -48,6 +50,25 @@ void split_string(const std::string &s,
 } // namespace detail
 
 template<typename T>
+std::string expand_format_value(const std::string path_string,
+                                const T value)
+{
+  std::string result_string = path_string;
+
+  // Maintaing legacy family string formatting
+  bool has_format = result_string.find("%") != std::string::npos;
+  if(has_format)
+  {
+    // allow for long file paths
+    char buffer[2048];
+    snprintf(buffer, 2048, result_string.c_str(), value);
+    result_string = std::string(buffer);
+  }
+
+  return result_string;
+}
+
+template<typename T>
 std::string expand_generic_variable(const std::string& path_string, 
                                     const std::regex& pattern, 
                                     const T value)
@@ -78,20 +99,20 @@ std::string expand_generic_variable(const std::string& path_string,
         }
         else
         {
-          // std::cout<< "Invalid format specifier: " << format_spec << std::end;
-          // Fallback: use default string conversion.
+          ASCENT_WARN("Invalid format specifier: " 
+                        << format_spec 
+                        << ". Inserting value without formatting.");
           result_string.replace(match.position(0), match.length(0), std::to_string(value));
-          
         }
     }
 
     return result_string;
 }
 
-std::string expand_family_variable(const std::string& path_string, 
+int get_family_value(const std::string& path_string, 
                                    int family_value)
 {
-  std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
+  
   std::string modified_path_string = path_string;
 
   int rank = 0;
@@ -119,32 +140,22 @@ std::string expand_family_variable(const std::string& path_string,
   MPI_Bcast(&family_value, 1, MPI_INT, 0, mpi_comm);
 #endif
 
-  // Maintaing legacy family string formatting
-  bool has_format = modified_path_string.find("%") != std::string::npos;
-  if(has_format)
-  {
-    // allow for long file paths
-    char buffer[2048];
-    snprintf(buffer, 2048, modified_path_string.c_str(), family_value);
-    modified_path_string = std::string(buffer);
-  }
-
-  return expand_generic_variable(modified_path_string, family_pattern, family_value);
+  return family_value;
 }
 
-std::string expand_path_special_variables(const std::string path_string, 
+std::string expand_path_special_variables(const std::string &path_string, 
                                           const conduit::Node &meta,
                                           int counter)
 {
     std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
+    std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
     std::regex time_pattern(R"(\{time:((\d+\.)?\d+\D)\})");
 
-    std::cout << "This is the metadata right now" << std::endl;
-    meta.print();
-    
     std::string result_string = path_string;
 
-    result_string = expand_family_variable(result_string, counter);
+    int family_value = get_family_value(path_string, counter);
+    result_string = expand_generic_variable(result_string, family_pattern, family_value);
+    result_string = expand_format_value(result_string, family_value);
 
     if (meta.has_path("cycle")) {
         int cycle = meta["cycle"].to_value();
@@ -154,6 +165,12 @@ std::string expand_path_special_variables(const std::string path_string,
     if (meta.has_path("time")) {
         float time = meta["time"].to_value();
         result_string = expand_generic_variable(result_string, time_pattern, time);
+    }
+
+    if (result_string == path_string) {
+        std::stringstream ss;
+        ss<<result_string<<family_value;
+        result_string = ss.str();
     }
 
     return result_string;

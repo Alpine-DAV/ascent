@@ -2108,6 +2108,7 @@ ExecScene::execute()
       generate_camera_meshes(image_data);
       image_list->append() = image_data;
     }
+    
 }
 //-----------------------------------------------------------------------------
 

@@ -94,8 +94,14 @@ TEST(ascent_conduit_extract, test_extract_path)
                                               mesh);
 
     string output_path = prepare_output_dir();
-    string image_prefix = "output_path_{family:05d}_{cycle:04d}_{time:0.4f}_";
+    string image_prefix = "output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
     const string output_file = conduit::utils::join_file_path(output_path,image_prefix);
+
+    string image_prefix_only_format = "output_path_%03d_only_format";
+    const string output_file_only_format = conduit::utils::join_file_path(output_path,image_prefix_only_format);
+
+    string image_prefix_no_format = "output_path_no_format_";
+    const string output_file_no_format = conduit::utils::join_file_path(output_path,image_prefix_no_format);
     remove_test_image(output_file);
 
     // Use Ascent to export our mesh to blueprint flavored hdf5 files
@@ -113,15 +119,23 @@ TEST(ascent_conduit_extract, test_extract_path)
     add_act2["action"] = "add_scenes";
 
     Node &scenes = add_act2["scenes"];
+    // Showing family value incrementation:
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
-    scenes["s2/plots/p2/type"] = "pseudocolor";
-    scenes["s2/plots/p2/field"] = "braid";
+    scenes["s2/plots/p1/type"] = "pseudocolor";
+    scenes["s2/plots/p1/field"] = "braid";
     scenes["s2/image_prefix"] = output_file;
-    scenes["s3/plots/p2/type"] = "pseudocolor";
-    scenes["s3/plots/p2/field"] = "braid";
-    scenes["s3/image_prefix"] = output_file;
+
+    // Showing formatting with only a format field:
+    scenes["s3/plots/p1/type"] = "pseudocolor";
+    scenes["s3/plots/p1/field"] = "braid";
+    scenes["s3/image_prefix"] = output_file_only_format;
+
+    // Showing that family value is added to output file names when no other format given
+    scenes["s4/plots/p1/type"] = "pseudocolor";
+    scenes["s4/plots/p1/field"] = "braid";
+    scenes["s4/image_prefix"] = output_file_no_format;
 
     // print our full actions tree
     std::cout << actions.to_yaml() << std::endl;
