@@ -870,6 +870,18 @@ TEST(ascent_render_3d, test_render_3d_name_format)
 
 TEST(ascent_render_3d, test_render_3d_name_format_keywords)
 {
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
     Node mesh;
     conduit::blueprint::mesh::examples::braid("hexs",
                                               25,
