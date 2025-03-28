@@ -213,6 +213,14 @@ Renderer::DoExecute()
 
   int total_renders = static_cast<int>(m_renders.size());
 
+  std::cerr << "total renders: " << total_renders << std::endl;
+  vtkm::Bounds g_bounds = m_input->GetGlobalBounds();
+  std::cerr << "Global Bounds: " << std::endl;
+  std::cerr << "X: " << g_bounds.X.Min << " " << g_bounds.X.Max << std::endl;
+  std::cerr << "Y: " << g_bounds.Y.Min << " " << g_bounds.Y.Max << std::endl;
+  std::cerr << "Z: " << g_bounds.Z.Min << " " << g_bounds.Z.Max << std::endl;
+  std::cerr << "Global Bounds ENDKDDKDKDK: " << std::endl;
+
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
   for(int dom = 0; dom < num_domains; ++dom)
   {
@@ -227,6 +235,7 @@ Renderer::DoExecute()
     const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
     const vtkm::cont::Field &field = data_set.GetField(m_field_name);
     const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+
 
     if(cellset.GetNumberOfCells() == 0)
     {
@@ -248,6 +257,9 @@ Renderer::DoExecute()
 
       Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
       const vtkmCamera &camera = m_renders[i].GetCamera();
+      std::cerr << "CAMERA BEFORE VTKM RENDERCELLS: " << std::endl;
+      camera.Print();
+      std::cerr << "CAMERA BEFORE VTKM RENDERCELLS DONE***************************" << std::endl;
       m_mapper->SetCanvas(&canvas);
       m_mapper->RenderCells(cellset,
                             coords,

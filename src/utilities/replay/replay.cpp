@@ -280,7 +280,7 @@ main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  conduit::Node replay_data;
+  conduit::Node replay_data, ascent_info;
   //replay_data.print();
   conduit::Node ascent_opts;
   ascent_opts["ascent_info"] = "verbose";
@@ -327,6 +327,7 @@ main(int argc, char *argv[])
 
     flow::Timer execute;
     ascent.execute(actions);
+    ascent.info(ascent_info);
 #if defined(ASCENT_REPLAY_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -338,6 +339,63 @@ main(int argc, char *argv[])
       std::cout<< "[" << i << "]: Execute --: "<<execute_time<<"\n";
     }
   }
+  std::string output_path = "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/utilities/replay";
+  std::cerr << "print ascent_info node start -=================" << std::endl;
+  ascent_info.print();
+  
+  std::cerr << "print info node END-=================" << std::endl;
+    // For each image that was generated, run ascent to visualize the camera frustum
+    //
+    int num_images = ascent_info["images"].number_of_children();;
+    for (int image_index = 0; image_index<num_images; image_index++) {
+        conduit::Node &image_node = ascent_info["images"][image_index];
+        conduit::Node camera_data = image_node["camera/camera_frustum_mesh"];
+        std::cerr << "CAMERA DATA: " <<image_index << std::endl;
+        camera_data.print();
+        std::cerr << "CAMERA DATA END" << std::endl;
+
+        std::string image_name_root = conduit::utils::join_file_path(output_path, 
+            "tout_render_3d_frust_camera_image_" + std::to_string(image_index));
+        //conduit::relay::io::blueprint::save_mesh(camera_data, image_name_root + "_frustum_mesh","hdf5");
+
+        ascent::Ascent ascent_2;
+        ascent_2.open();
+        ascent_2.publish(camera_data);
+
+        conduit::Node frustum_actions;
+        conduit::Node &add_frustum_plots = frustum_actions.append();
+        add_frustum_plots["action"] = "add_scenes";
+        add_frustum_plots["scenes/s1/plots/p1/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p1/topology"] = "camera_frustum_topo";
+        add_frustum_plots["scenes/s1/plots/p2/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p2/topology"] = "clipping_planes_topo";
+        add_frustum_plots["scenes/s1/plots/p3/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p3/topology"] = "scene_bounds_topo";
+        
+        // Render a plot of the camera frustum to verify it's relation to the scene
+        std::string frust_plot_file_1 = image_name_root + "_frustum_front_image_elev90_az0";
+        //remove_test_image(frust_plot_file_1);
+        add_frustum_plots["scenes/s1/renders/r1/image_prefix"] = frust_plot_file_1;
+        add_frustum_plots["scenes/s1/renders/r1/camera/azimuth"] = 0.0;
+        add_frustum_plots["scenes/s1/renders/r1/camera/elevation"] = 90.0;
+        add_frustum_plots["scenes/s1/renders/r1/annotations"] = "false";
+        
+        // Render a plot of the camera frustum at a 90 degree angle to see the frustum better
+        std::string frust_plot_file_2 = image_name_root + "_frustum_side_image_elev0_az0";
+        //remove_test_image(frust_plot_file_2);
+        add_frustum_plots["scenes/s1/renders/r2/image_prefix"] = frust_plot_file_2;
+        add_frustum_plots["scenes/s1/renders/r2/camera/azimuth"] = 00.0;
+        add_frustum_plots["scenes/s1/renders/r2/camera/elevation"] = 00.0;
+        add_frustum_plots["scenes/s1/renders/r2/annotations"] = "false";
+        
+        ascent_2.execute(frustum_actions);
+        ascent_2.close();
+
+        // check that we created an image
+//        EXPECT_TRUE(check_test_image(frust_plot_file_1));
+//        EXPECT_TRUE(check_test_image(frust_plot_file_2));
+    }
+
 
   ascent.close();
 
