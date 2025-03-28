@@ -33,7 +33,7 @@ if(MPI_FOUND)
     endforeach()
 endif()
 
-# static builds require python 
+# static builds require python
 set(ASCENT_CONFIG_MK_PYTHON_LINK_FLAGS "")
 if(PYTHON_FOUND)
     set(ASCENT_CONFIG_MK_PYTHON_LIB_DIR ${PYTHON_LIB_DIR})
@@ -58,6 +58,12 @@ endif()
 
 if(ENABLE_VTKH)
     set(ASCENT_VTKH_ENABLED TRUE)
+endif()
+
+if(CALIPER_DIR)
+    set(ASCENT_CALIPER_ENABLED TRUE)
+    set(ASCENT_ADIAK_DIR ${ADIAK_DIR})
+    set(ASCENT_CALIPER_DIR ${CALIPER_DIR})
 endif()
 
 # When disabled, TPL dirs may be not be empty, the may be set to INGORE, etc
