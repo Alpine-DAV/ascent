@@ -868,6 +868,72 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+TEST(ascent_render_3d, test_render_output_dir_not_exist)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    ASCENT_INFO("Test to verify that Ascent will catch non-existant output paths.\n");
+
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              25,
+                                              25,
+                                              25,
+                                              mesh);
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "toutput_path_";
+    string image_prefix_dir = conduit::utils::join_file_path("non_existant_dir", image_prefix);
+    const string output_file = conduit::utils::join_file_path(output_path,image_prefix_dir);
+
+    remove_test_image(output_file);
+
+    // setup actions
+    Node actions;
+    Node &add_act2 = actions.append();
+    add_act2["action"] = "add_scenes";
+
+    Node &scenes = add_act2["scenes"];
+    // Showing family value incrementation:
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+    
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+
+    bool error = false;
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(...)
+    {
+        error = true;
+    }
+
+    ascent.close();
+
+    EXPECT_TRUE(error);
+}
+
 TEST(ascent_render_3d, test_render_3d_no_bg)
 {
     // the ascent runtime is currently our only rendering runtime

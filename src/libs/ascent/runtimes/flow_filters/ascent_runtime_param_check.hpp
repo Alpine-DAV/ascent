@@ -52,6 +52,11 @@ bool ASCENT_API check_string(const std::string path,
                              conduit::Node &info,
                              bool required);
 
+bool ASCENT_API check_path(const std::string path,
+                            const conduit::Node &params,
+                            conduit::Node &info,
+                            bool required);
+
 bool ASCENT_API check_bool(const std::string path,
                            const conduit::Node &params,
                            conduit::Node &info,
