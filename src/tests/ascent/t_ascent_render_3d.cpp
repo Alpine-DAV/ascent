@@ -868,6 +868,82 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+TEST(ascent_render_3d, test_render_3d_name_format_keywords)
+{
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              25,
+                                              25,
+                                              25,
+                                              mesh);
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
+    const string output_file = conduit::utils::join_file_path(output_path,image_prefix);
+    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"output_path_00100_0100_3.1415.png");
+    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"output_path_00101_0100_3.1415.png");
+
+    string image_prefix_only_format = "output_path_%03d_only_format";
+    const string output_file_only_format = conduit::utils::join_file_path(output_path,image_prefix_only_format);
+    const string output_file_only_format_final = conduit::utils::join_file_path(output_path,"output_path_100_only_format.png");
+
+    string image_prefix_no_format = "output_path_no_format_";
+    const string output_file_no_format = conduit::utils::join_file_path(output_path,image_prefix_no_format);
+    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"output_path_no_format_100.png");
+    
+    remove_test_image(output_file_final_1);
+    remove_test_image(output_file_final_2);
+    remove_test_image(output_file_only_format_final);
+    remove_test_image(output_file_no_format_final);
+
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent a;
+
+    // open ascent
+    a.open();
+
+    // publish mesh to ascent
+    a.publish(mesh);
+
+    // setup actions
+    Node actions;
+    Node &add_act2 = actions.append();
+    add_act2["action"] = "add_scenes";
+
+    Node &scenes = add_act2["scenes"];
+    // Showing family value incrementation:
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s2/plots/p1/type"] = "pseudocolor";
+    scenes["s2/plots/p1/field"] = "braid";
+    scenes["s2/image_prefix"] = output_file;
+
+    // Showing formatting with only a format field:
+    scenes["s3/plots/p1/type"] = "pseudocolor";
+    scenes["s3/plots/p1/field"] = "braid";
+    scenes["s3/image_prefix"] = output_file_only_format;
+
+    // Showing that family value is added to output file names when no other format given
+    scenes["s4/plots/p1/type"] = "pseudocolor";
+    scenes["s4/plots/p1/field"] = "braid";
+    scenes["s4/image_prefix"] = output_file_no_format;
+
+    // print our full actions tree
+    std::cout << actions.to_yaml() << std::endl;
+
+    // execute the actions
+    a.execute(actions);
+
+    // close ascent
+    a.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(output_file_final_1));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_final_2));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_only_format_final));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_no_format_final));
+}
+
 TEST(ascent_render_3d, test_render_3d_no_bg)
 {
     // the ascent runtime is currently our only rendering runtime
