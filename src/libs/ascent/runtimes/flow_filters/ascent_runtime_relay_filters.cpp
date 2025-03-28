@@ -709,7 +709,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = expand_path_special_variables(path, Metadata::n_metadata);
+    path = expand_path_special_variables(path);
     path = output_dir(path);
 
     if(params().has_child("protocol"))

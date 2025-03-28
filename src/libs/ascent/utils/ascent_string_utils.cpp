@@ -12,6 +12,7 @@
 
 #include "ascent_string_utils.hpp"
 #include <ascent.hpp>
+#include <ascent_metadata.hpp>
 
 #include <map>
 #include <ctime>
@@ -143,8 +144,7 @@ int get_family_value(const std::string& path_string,
   return family_value;
 }
 
-std::string expand_path_special_variables(const std::string &path_string, 
-                                          const conduit::Node &meta,
+std::string expand_path_special_variables(const std::string &path_string,
                                           int counter)
 {
     std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
@@ -152,6 +152,8 @@ std::string expand_path_special_variables(const std::string &path_string,
     std::regex time_pattern(R"(\{time:((\d+\.)?\d+\D)\})");
 
     std::string result_string = path_string;
+
+    conduit::Node meta = Metadata::n_metadata;
 
     int family_value = get_family_value(path_string, counter);
     result_string = expand_generic_variable(result_string, family_pattern, family_value);

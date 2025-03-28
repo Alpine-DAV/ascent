@@ -1203,7 +1203,7 @@ parse_params(const conduit::Node &params,
   {
 
     std::string image_name = params["image_prefix"].as_string();
-    image_name = expand_path_special_variables(image_name, Metadata::n_metadata, cycle);
+    image_name = expand_path_special_variables(image_name, cycle);
     image_name = output_dir(image_name);
     image_names.push_back(image_name);
   }

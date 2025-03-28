@@ -266,7 +266,7 @@ RoverXRay::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      filename = expand_path_special_variables(filename, Metadata::n_metadata, cycle);
+      filename = expand_path_special_variables(filename, cycle);
     }
 
     filename = output_dir(filename);
@@ -334,11 +334,11 @@ RoverXRay::execute()
       bov_filename = output_dir(bov_filename);
       if(cycle != -1)
       {
-        tracer.save_bov(expand_path_special_variables(bov_filename, Metadata::n_metadata, cycle));
+        tracer.save_bov(expand_path_special_variables(bov_filename, cycle));
       }
       else
       {
-        tracer.save_bov(expand_path_special_variables(bov_filename, Metadata::n_metadata));
+        tracer.save_bov(expand_path_special_variables(bov_filename));
       }
     }
     tracer.finalize();
@@ -514,11 +514,11 @@ RoverVolume::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      filename = expand_path_special_variables(filename, Metadata::n_metadata, cycle);
+      filename = expand_path_special_variables(filename, cycle);
     }
     else
     {
-      filename = expand_path_special_variables(filename, Metadata::n_metadata);
+      filename = expand_path_special_variables(filename);
     }
     filename = output_dir(filename);
 

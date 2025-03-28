@@ -1255,7 +1255,7 @@ DefaultRender::execute()
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
-            ss<<expand_path_special_variables(render_node["image_prefix"].as_string(), Metadata::n_metadata, cycle);
+            ss<<expand_path_special_variables(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
             image_name = output_dir(image_name);
           }
@@ -1382,7 +1382,7 @@ DefaultRender::execute()
       else
       {
         image_name =  params()["image_prefix"].as_string();
-        image_name = expand_path_special_variables(image_name, Metadata::n_metadata, cycle);
+        image_name = expand_path_special_variables(image_name, cycle);
         image_name = output_dir(image_name);
       }
 
@@ -2108,7 +2108,7 @@ ExecScene::execute()
       generate_camera_meshes(image_data);
       image_list->append() = image_data;
     }
-    
+
 }
 //-----------------------------------------------------------------------------
 

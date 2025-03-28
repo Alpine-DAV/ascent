@@ -40,7 +40,7 @@ int get_family_value(const std::string& path_string, int family_value);
 // searches for previously defined keywords in a string and fills 
 // in the string with their values. Current supported special variables
 // are cycle, family, and time. 
-std::string expand_path_special_variables(const std::string& path_string, const conduit::Node &meta, int counter = 0);
+std::string expand_path_special_variables(const std::string& path_string, int counter = 0);
 
 std::vector<std::string> split(const std::string &s, char delim = ' ');
 

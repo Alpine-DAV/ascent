@@ -160,7 +160,7 @@ MPI_Comm mpi_comm;
     cycle = Metadata::n_metadata["cycle"].as_int32();
   }
 
-  image_name = expand_path_special_variables(image_name, Metadata::n_metadata, cycle);
+  image_name = expand_path_special_variables(image_name, cycle);
 
 #ifdef BFLOW_COMP_DEBUG
   {
