@@ -157,32 +157,39 @@ TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
 
   vtkh::DataSet *outWSL=NULL;
   
-  //warpx_data_set.PrintSummary(std::cerr);
+  warpx_data_set.PrintSummary(std::cerr);
+  vtkh::WarpXStreamline  warpx;
+  warpx.SetNumberOfSteps(maxAdvSteps);
+  warpx.SetStepSize(length);
+  warpx.SetTubes(true);
+  warpx.SetInput(&warpx_data_set);
+  warpx.SetOutputField("streamlines");
+  warpx.Update();
+  outWSL = warpx.GetOutput();
 
-  outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, "streamlines", length);
   outWSL->PrintSummary(std::cerr);
 
   checkValidity(outWSL, maxAdvSteps+1, true);
   writeDataSet(outWSL, "warpx_streamline");
-//  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
-//
-//  vtkm::rendering::Camera camera;
-//  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
-//  camera.ResetToBounds(tBounds);
-//  vtkh::Render render = vtkh::MakeRender(512,
-//                                         512,
-//                                         camera,
-//                                         *outWSL,
-//                                         "tout_warpx_render");
-//
-//  vtkh::RayTracer tracer;
-//  tracer.SetInput(outWSL);
-//  tracer.SetField("streamlines");
-//  std::string fieldName = "streamlines";
-//
-//  vtkh::Scene scene;
-//  scene.AddRender(render);
-//  scene.AddRenderer(&tracer);
-//  scene.Render();
-//
+  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
+
+  vtkm::rendering::Camera camera;
+  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  camera.ResetToBounds(tBounds);
+  vtkh::Render render = vtkh::MakeRender(512,
+                                         512,
+                                         camera,
+                                         *outWSL,
+                                         "tout_warpx_render");
+
+  vtkh::RayTracer tracer;
+  tracer.SetInput(outWSL);
+  tracer.SetField("streamlines");
+  std::string fieldName = "streamlines";
+
+  vtkh::Scene scene;
+  scene.AddRender(render);
+  scene.AddRenderer(&tracer);
+  scene.Render();
+
 }
