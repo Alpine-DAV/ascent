@@ -1983,6 +1983,66 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                 supported_type = true;
             }
         }
+        else if(n_vals.dtype().is_uint8())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint8 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint8> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_uint16())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint16 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint16> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
         else if(n_vals.dtype().is_uint32())
         {
 
@@ -2043,6 +2103,128 @@ VTKHDataAdapter::AddField(const std::string &field_name,
               supported_type = true;
           }
         }
+        else if(n_vals.dtype().is_int8())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int8 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int8> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_int16())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int16 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int16> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_int32())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int32 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int32> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_int64())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int64 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int64> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        // ***********************************************************************
+        // ***********************************************************************
         // ***********************************************************************
         // NOTE: TODO OUR VTK-M is not compiled with int32 and int64 support ...
         // ***********************************************************************
