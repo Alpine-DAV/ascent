@@ -40,6 +40,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_string_utils.hpp>
 #include <ascent_metadata.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -708,6 +709,7 @@ RelayIOSave::execute()
 {
     std::string path, protocol;
     path = params()["path"].as_string();
+    path = expand_path_special_variables(path, Metadata::n_metadata);
     path = output_dir(path);
 
     if(params().has_child("protocol"))

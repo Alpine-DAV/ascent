@@ -104,6 +104,9 @@ TEST(ascent_conduit_extract, test_extract_path)
     const string output_file_no_format = conduit::utils::join_file_path(output_path,image_prefix_no_format);
     remove_test_image(output_file);
 
+    string extract_prefix = "output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
+    const string extract_file = conduit::utils::join_file_path(output_path,extract_prefix);
+
     // Use Ascent to export our mesh to blueprint flavored hdf5 files
     Ascent a;
 
@@ -137,6 +140,14 @@ TEST(ascent_conduit_extract, test_extract_path)
     scenes["s4/plots/p1/field"] = "braid";
     scenes["s4/image_prefix"] = output_file_no_format;
 
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = extract_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/params/fields"].append().set("braid");
+
     // print our full actions tree
     std::cout << actions.to_yaml() << std::endl;
 
@@ -145,6 +156,8 @@ TEST(ascent_conduit_extract, test_extract_path)
 
     // close ascent
     a.close();
+
+
 }
 
 //-----------------------------------------------------------------------------
