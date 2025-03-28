@@ -145,7 +145,8 @@ int get_family_value(const std::string& path_string,
 }
 
 std::string expand_path_special_variables(const std::string &path_string,
-                                          int counter)
+                                          int counter,
+                                          bool append_if_no_format)
 {
     std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
     std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
@@ -169,7 +170,7 @@ std::string expand_path_special_variables(const std::string &path_string,
         result_string = expand_generic_variable(result_string, time_pattern, time);
     }
 
-    if (result_string == path_string) {
+    if (result_string == path_string && append_if_no_format) {
         std::stringstream ss;
         ss<<result_string<<family_value;
         result_string = ss.str();
