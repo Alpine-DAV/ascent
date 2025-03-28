@@ -14,7 +14,6 @@
 #include "gtest/gtest.h"
 
 #include <ascent.hpp>
-#include <ascent_string_utils.hpp>
 
 #include <iostream>
 #include <math.h>
