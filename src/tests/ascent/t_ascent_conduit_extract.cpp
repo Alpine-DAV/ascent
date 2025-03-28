@@ -114,11 +114,14 @@ TEST(ascent_conduit_extract, test_extract_path)
 
     Node &scenes = add_act2["scenes"];
     scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "var1";
+    scenes["s1/plots/p1/field"] = "braid";
     scenes["s1/image_prefix"] = output_file;
     scenes["s2/plots/p2/type"] = "pseudocolor";
-    scenes["s2/plots/p2/field"] = "var1";
+    scenes["s2/plots/p2/field"] = "braid";
     scenes["s2/image_prefix"] = output_file;
+    scenes["s3/plots/p2/type"] = "pseudocolor";
+    scenes["s3/plots/p2/field"] = "braid";
+    scenes["s3/image_prefix"] = output_file;
 
     // print our full actions tree
     std::cout << actions.to_yaml() << std::endl;

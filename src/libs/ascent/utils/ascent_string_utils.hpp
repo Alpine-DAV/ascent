@@ -16,7 +16,6 @@
 #include <vector>
 #include <regex>
 #include <conduit.hpp>
-#include <flow.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -32,13 +31,12 @@ std::string expand_generic_variable(const std::string& path_string, const std::r
 // formatting notation. For example, "file_%04d_{family:%03d}"
 // would expand to "file_0001_001", if the counter for that key is 1.
 // If no formatting is present, the count is appended to the name.
-template<typename T>
-std::string expand_family_variable(const std::string& path_string, T family_value,int mpi_comm_id = flow::Workspace::default_mpi_comm());
+std::string expand_family_variable(const std::string& path_string, int family_value);
 
 // searches for previously defined keywords in a string and fills 
 // in the string with their values. Current supported special variables
 // are cycle, family, and time. 
-std::string expand_path_special_variables(const std::string path_string, const conduit::Node &meta, int cycle = 0, int mpi_comm_id = flow::Workspace::default_mpi_comm());
+std::string expand_path_special_variables(const std::string path_string, const conduit::Node &meta, int counter = 0);
 
 std::vector<std::string> split(const std::string &s, char delim = ' ');
 

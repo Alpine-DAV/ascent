@@ -21,6 +21,7 @@
 #ifdef ASCENT_MPI_ENABLED
 #include <mpi.h>
 #include <conduit_relay_mpi.hpp>
+#include <flow.hpp>
 #endif
 
 
@@ -87,27 +88,19 @@ std::string expand_generic_variable(const std::string& path_string,
     return result_string;
 }
 
-template<typename T>
 std::string expand_family_variable(const std::string& path_string, 
-                                   T family_value,
-                                   int mpi_comm_id)
+                                   int family_value)
 {
   std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
   std::string modified_path_string = path_string;
 
   int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
-  if(mpi_comm_id == -1)
-  {
-      // nothing we can do
-      return modified_path_string;
-  }
-
-  MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   MPI_Comm_rank(mpi_comm, &rank);
 #endif
 
-  if(family_value == 0 && rank == 0)
+  if(rank == 0)
   {
     static std::map<std::string, int> s_file_family_map;
     bool exists = s_file_family_map.find(path_string) != s_file_family_map.end();
@@ -123,7 +116,7 @@ std::string expand_family_variable(const std::string& path_string,
   }
 
 #ifdef ASCENT_MPI_ENABLED
-  conduit::relay::mpi::broadcast_using_schema(family_value, 0, mpi_comm_id);
+  MPI_Bcast(&family_value, 1, MPI_INT, 0, mpi_comm);
 #endif
 
   // Maintaing legacy family string formatting
@@ -141,8 +134,7 @@ std::string expand_family_variable(const std::string& path_string,
 
 std::string expand_path_special_variables(const std::string path_string, 
                                           const conduit::Node &meta,
-                                          int counter,
-                                          int mpi_comm_id)
+                                          int counter)
 {
     std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
     std::regex time_pattern(R"(\{time:((\d+\.)?\d+\D)\})");
@@ -152,7 +144,7 @@ std::string expand_path_special_variables(const std::string path_string,
     
     std::string result_string = path_string;
 
-    result_string = expand_family_variable(result_string, counter, mpi_comm_id);
+    result_string = expand_family_variable(result_string, counter);
 
     if (meta.has_path("cycle")) {
         int cycle = meta["cycle"].to_value();
