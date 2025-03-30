@@ -9,7 +9,7 @@
 #   env enable_mpi=ON enable_openmp=ON ./build_ascent.sh
 #
 #
-# Assumes: 
+# Assumes:
 #  - cmake is in your path
 #  - selected compilers are in your path or set via env vars
 #  - [when enabled] MPI and Python (+numpy and mpi4py), are in your path
@@ -114,7 +114,7 @@ function ospath()
     echo `cygpath -m $1`
   else
     echo $1
-  fi 
+  fi
 }
 
 function abs_path()
@@ -147,7 +147,7 @@ cd ${root_dir}
 # override with `prefix` env var
 install_dir="${install_dir:=$root_dir/install}"
 
-echo "*** prefix:       ${root_dir}" 
+echo "*** prefix:       ${root_dir}"
 echo "*** build root:   ${build_dir}"
 echo "*** sources root: ${source_dir}"
 echo "*** install root: ${install_dir}"
@@ -159,7 +159,7 @@ echo "*** script dir:   ${script_dir}"
 tar_extra_args=""
 if [[ "$build_windows" == "ON" ]]; then
   tar_extra_args="--force-local"
-fi 
+fi
 
 # make sure sources dir exists
 if [ ! -d ${source_dir} ]; then
@@ -307,7 +307,7 @@ if [ ! -d ${silo_src_dir} ]; then
   # windows specifc patch
   if [[ "$build_windows" == "ON" ]]; then
     patch -p1 < ${script_dir}/2024_07_29_silo-pr389-win32-bugfix.patch
-  fi 
+  fi
 
   cd ${root_dir}
 fi
@@ -394,7 +394,7 @@ if [ ! -d ${caliper_src_dir} ]; then
 fi
 
 #
-# Note: Caliper has optional Umpire support, 
+# Note: Caliper has optional Umpire support,
 # if we want to support in the future, we will need to build umpire first
 #
 
@@ -406,7 +406,7 @@ caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_
 caliper_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   caliper_extra_cmake_args="${caliper_windows_cmake_flags}"
-fi 
+fi
 
 # TODO enable_cuda
 
@@ -593,14 +593,14 @@ if [[ "$enable_hip" == "ON" ]]; then
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_ROCTHRUST=OFF"
-  
+
   ##
   ## build_ascent specific ROCM_ARCH Map for Kokkos options:
   ##
   ## TODO: Kokkos 4.5 has MI300A specific option, need to figure out how to
   ##       map hat in when we update.
   ##
-  ## gfx942 --> Kokkos_ARCH_AMD_GFX942 (MI300A, MI300X) 
+  ## gfx942 --> Kokkos_ARCH_AMD_GFX942 (MI300A, MI300X)
   ## (since Kokkos 4.2, since Kokkos 4.5 this should only be used for MI300X)
   ##
   ## gfx90a --> Kokkos_ARCH_AMD_GFX90A (MI200 series)
@@ -609,7 +609,7 @@ if [[ "$enable_hip" == "ON" ]]; then
   if [[ "$ROCM_ARCH" == "gfx942" ]]; then
       kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX942=ON"
   fi
-  
+
   if [[ "$ROCM_ARCH" == "gfx90a" ]]; then
       kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX90A=ON"
   fi
@@ -751,6 +751,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
     camp_extra_cmake_args="-DENABLE_HIP=ON"
+    camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
     camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
     camp_extra_cmake_args="${camp_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -802,6 +803,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
   raja_extra_cmake_args="-DENABLE_HIP=ON"
+  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
   raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   raja_extra_cmake_args="${raja_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -843,7 +845,7 @@ umpire_windows_cmake_flags="-DBLT_CXX_STD=c++17 -DCMAKE_CXX_STANDARD=17 -DUMPIRE
 umpire_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_windows_cmake_flags}"
-fi 
+fi
 
 if [[ "$enable_cuda" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_CUDA=ON"
@@ -852,6 +854,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_HIP=ON"
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -904,7 +907,7 @@ mfem_windows_cmake_flags="-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 mfem_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   mfem_extra_cmake_args="${mfem_windows_cmake_flags}"
-fi 
+fi
 
 
 # build only if install doesn't exist
@@ -919,7 +922,7 @@ fi
 #
 # Note: MFEM MPI requires Hypre and Metis
 #  -DMFEM_USE_MPI=${enable_mpi} \
-  
+
 echo "**** Configuring MFEM ${mfem_version}"
 cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
@@ -929,7 +932,7 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
   -DMFEM_ENABLE_TESTING=OFF \
   -DMFEM_ENABLE_EXAMPLES=OFF \
-  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
+  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir}
 
 echo "**** Building MFEM ${mfem_version}"
 cmake --build ${mfem_build_dir} --config ${build_config} -j${build_jobs}
@@ -1074,6 +1077,7 @@ fi
 if [[ "$enable_hip" == "ON" ]]; then
     echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(CMAKE_HIP_COMPILER ' ${CXX} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
