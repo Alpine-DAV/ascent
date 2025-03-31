@@ -157,9 +157,16 @@ TEST(vtkh_serial_warpx_streamlines, vtkh_serial_warpx_streamlines)
 
   vtkh::DataSet *outWSL=NULL;
   
-  //warpx_data_set.PrintSummary(std::cerr);
+  warpx_data_set.PrintSummary(std::cerr);
+  vtkh::WarpXStreamline  warpx;
+  warpx.SetNumberOfSteps(maxAdvSteps);
+  warpx.SetStepSize(length);
+  warpx.SetTubes(true);
+  warpx.SetInput(&warpx_data_set);
+  warpx.SetOutputField("streamlines");
+  warpx.Update();
+  outWSL = warpx.GetOutput();
 
-  outWSL = RunWFilter<vtkh::WarpXStreamline>(warpx_data_set, maxAdvSteps, "streamlines", length);
   outWSL->PrintSummary(std::cerr);
 
   checkValidity(outWSL, maxAdvSteps+1, true);
