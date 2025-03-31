@@ -157,7 +157,8 @@ TEST(ascent_utils, ascent_string_fmt_time_integer_fmt)
 
 TEST(ascent_utils, ascent_string_fmt_family)
 {
-    for (int i = 0; i < 4; i++){
+    for (int i = 0; i < 4; i++)
+    {
         char expected_result[50];
         std::string expected_pattern = "output_path_family_%03d_%05.2f_%05.03g";
         float current_family = i+5;
@@ -165,7 +166,6 @@ TEST(ascent_utils, ascent_string_fmt_family)
 
         std::string result = ascent::expand_path_special_variables("output_path_family_{family:03d}_{family:05.2f}_{family:05.03g}", 5);
         std::cout << result << std::endl;
-
 
         EXPECT_TRUE(expected_result == result);
     }
@@ -188,8 +188,10 @@ TEST(ascent_utils, ascent_string_fmt_invalid_int_format)
         std::string result = ascent::expand_path_special_variables("output_path_none_{family:12.3d}");
         std::cout << result << std::endl;
     }
-    catch (conduit::Error &warn) {
-        if (warn.message().find("Invalid format specifier: '12.3d'.") != std::string::npos) {
+    catch (conduit::Error &warn)
+    {
+        if (warn.message().find("Invalid format specifier: '12.3d'.") != std::string::npos)
+        {
             error_occured = true;
         }
         else
@@ -211,8 +213,10 @@ TEST(ascent_utils, ascent_string_fmt_invalid_float_format)
         std::string result = ascent::expand_path_special_variables("output_path_none_{family:2.2.3f}");
         std::cout << result << std::endl;
     }
-    catch (conduit::Error &warn) {
-        if (warn.message().find("Invalid format specifier: '2.2.3f'.") != std::string::npos) {
+    catch (conduit::Error &warn)
+    {
+        if (warn.message().find("Invalid format specifier: '2.2.3f'.") != std::string::npos)
+        {
             error_occured = true;
         }
         else
@@ -234,8 +238,10 @@ TEST(ascent_utils, ascent_string_fmt_invalid_no_format)
         std::string result = ascent::expand_path_special_variables("output_path_none_{family:}");
         std::cout << result << std::endl;
     }
-    catch (conduit::Error &warn) {
-        if (warn.message().find("No format specifications given.") != std::string::npos) {
+    catch (conduit::Error &warn)
+    {
+        if (warn.message().find("No format specifications given.") != std::string::npos)
+        {
             error_occured = true;
         }
         else
@@ -257,8 +263,10 @@ TEST(ascent_utils, ascent_string_fmt_invalid_keyword)
         std::string result = ascent::expand_path_special_variables("output_path_none_{invalid:128f}");
         std::cout << result << std::endl;
     }
-    catch (conduit::Error &warn) {
-        if (warn.message().find("Invalid format keyword 'invalid'.") != std::string::npos) {
+    catch (conduit::Error &warn)
+    {
+        if (warn.message().find("Invalid format keyword 'invalid'.") != std::string::npos)
+        {
             error_occured = true;
         }
         else
