@@ -77,7 +77,28 @@ std::string expand_generic_variable(const std::string& path_string,
     std::smatch match;
     std::string result_string = path_string;
 
-    std::regex valid_int_format(R"(^\d*d$)");
+    // Defining a valid int format to be any number of digits followed by a d,i, or u character
+    //
+    // The different supported integer number types are:
+    //    d: signed decimal integer
+    //    i: digned decimal integer
+    //    u: unsigned decimal integer
+    //
+    // e.g. 003d or 34i or 1d or 4u
+    std::regex valid_int_format(R"(^\d*[diu]$)");
+
+    // Defining a valid float format to be a real number followed by a f,e,g,F,E, or G character
+    // Real numbers are any number of digits potentially followed by a decimal point and at least one digit
+    //
+    // The different supported floating point number types are:
+    //    f: decimal floating point
+    //    F: decimal floating point
+    //    e: scientific notation using e to indicate the exponent
+    //    E: same as e except uses E to indicate the exponent
+    //    g: Uses the shortest notation (either e or f)
+    //    G: Uses the shortest notation (either E or F)
+    //
+    // e.g. 3.14f or 2F or 023g or 10.4e
     std::regex valid_float_format(R"(^\d*(\.\d+)?[fFeEgG]$)");
 
     while (std::regex_search(result_string, match, pattern))
@@ -148,6 +169,13 @@ std::string expand_path_special_variables(const std::string &path_string,
                                           int counter,
                                           bool append_if_no_format)
 {
+    // Parterns to identify keyword specified formatting
+    //
+    // Pattern is '{keyword:format}' where keyword is cycle, family or time and format is a valid
+    // integer or floating point standard format.
+    //
+    // Format is defined here to be a real number followed by a character. More specific formatting
+    // constraints are defined in 'expand_generic_variable()'
     std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
     std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
     std::regex time_pattern(R"(\{time:((\d+\.)?\d+\D)\})");
