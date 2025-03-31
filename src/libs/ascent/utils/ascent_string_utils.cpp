@@ -119,11 +119,15 @@ std::string expand_generic_variable(const std::string& path_string,
           snprintf(formatted_number, sizeof(formatted_number), full_format.c_str(), static_cast<float>(value));
           result_string.replace(match.position(0), match.length(0), formatted_number);
         }
+        else if (format_spec.size() == 0) {
+          ASCENT_WARN("No format specifications given. Inserting value without formatting.");
+          result_string.replace(match.position(0), match.length(0), std::to_string(value));
+        }
         else
         {
-          ASCENT_WARN("Invalid format specifier: " 
+          ASCENT_WARN("Invalid format specifier: '" 
                         << format_spec 
-                        << ". Inserting value without formatting.");
+                        << "'. Inserting value without formatting.");
           result_string.replace(match.position(0), match.length(0), std::to_string(value));
         }
     }
@@ -174,11 +178,12 @@ std::string expand_path_special_variables(const std::string &path_string,
     // Pattern is '{keyword:format}' where keyword is cycle, family or time and format is a valid
     // integer or floating point standard format.
     //
-    // Format is defined here to be a real number followed by a character. More specific formatting
-    // constraints are defined in 'expand_generic_variable()'
-    std::regex cycle_pattern(R"(\{cycle:((\d+\.)?\d+\D)\})");
-    std::regex family_pattern(R"(\{family:((\d+\.)?\d+\D)\})");
-    std::regex time_pattern(R"(\{time:((\d+\.)?\d+\D)\})");
+    // Format loosly defined here any any combination of digits, characters, or a period.
+    // More specific formatting constraints are defined in 'expand_generic_variable()'
+    std::regex cycle_pattern(R"(\{cycle:([a-zA-Z0-9.]*)\})");
+    std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
+    std::regex time_pattern(R"(\{time:([a-zA-Z0-9.]*)\})");
+    std::regex invalid_pattern(R"(\{(.*):.*\})");
 
     std::string result_string = path_string;
 
@@ -196,6 +201,13 @@ std::string expand_path_special_variables(const std::string &path_string,
     if (meta.has_path("time")) {
         float time = meta["time"].to_value();
         result_string = expand_generic_variable(result_string, time_pattern, time);
+    }
+
+    std::smatch match;
+    if (std::regex_search(result_string, match, invalid_pattern)) {
+      ASCENT_WARN("Invalid format keyword '"
+                  << match[1].str()
+                  << "'. Only cycle, family, and time are supported");
     }
 
     if (result_string == path_string && append_if_no_format) {

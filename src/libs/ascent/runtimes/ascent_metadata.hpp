@@ -14,6 +14,8 @@
 #ifndef ASCENT_METADATA_HPP
 #define ASCENT_METADATA_HPP
 
+#include <ascent_exports.h>
+
 #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
@@ -29,7 +31,7 @@ namespace ascent
 // PopoulateMetaData fills this inside the main runtime
 struct Metadata
 {
-  static conduit::Node n_metadata;
+  static ASCENT_API conduit::Node n_metadata;
 };
 
 //-----------------------------------------------------------------------------
