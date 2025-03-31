@@ -178,7 +178,7 @@ blt_install_tpl_setups(DESTINATION lib/cmake/${PROJECT_NAME})
 #
 # # Note: Underlying target is still cuda, not blt_cuda
 # blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS cuda cuda_runtime IF ENABLE_CUDA)
-# blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt_hip blt_hip_runtime IF ENABLE_HIP)
+# blt_list_append(TO BLT_TPL_DEPS_EXPORTS ELEMENTS blt::hip blt::hip_runtime IF ENABLE_HIP)
 
 # if(ENABLE_MPI AND ENABLE_FIND_MPI AND NOT ASCENT_USE_CMAKE_MPI_TARGETS)
 #     list(APPEND BLT_TPL_DEPS_EXPORTS mpi)
