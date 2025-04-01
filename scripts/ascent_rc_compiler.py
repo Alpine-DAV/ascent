@@ -65,7 +65,7 @@ def digest_filesystem_tree(path):
             # this might be an encoding issue, but setting with explicit buffer
             # and length avoids the issue
             s = Schema()
-            s.set(DataType.char8_str(len(rcontents)))
+            s.set(DataType.char8_str(len(rcontents)+1))
             sval = multiprocessing.RawArray(ctypes.c_ubyte,bytearray(rcontents,'utf8'))
             n[dest].set(s,sval)
         #for name in dirs:
