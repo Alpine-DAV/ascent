@@ -119,7 +119,8 @@ std::string expand_generic_variable(const std::string& path_string,
           snprintf(formatted_number, sizeof(formatted_number), full_format.c_str(), static_cast<float>(value));
           result_string.replace(match.position(0), match.length(0), formatted_number);
         }
-        else if (format_spec.size() == 0) {
+        else if (format_spec.size() == 0)
+        {
           ASCENT_WARN("No format specifications given. Inserting value without formatting.");
           result_string.replace(match.position(0), match.length(0), std::to_string(value));
         }
@@ -151,6 +152,11 @@ int check_directory_for_family_value(const std::string& path_string, int family_
 
   // This patern is used to match to numbers.
   // It is looking for integers, decimal, and scientific notation values
+  // Explanation:
+  //      [+-]?              - Optional + or - symbol
+  //      \d+                - At least one digit
+  //      (:?\.\d+)?         - Optional decimal value in a non-capturing group
+  //      (?:[eE][+-]?\d+)?  - Optional handling for scientific notation (e.g. e+02)
   std::string number_pattern = R"([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)";
   
   std::string search_pattern_str = file_name_fmt;
@@ -170,7 +176,8 @@ int check_directory_for_family_value(const std::string& path_string, int family_
   // If there are no formatting sections in the path, then the format should have been added to the
   // end ot the path. This adds a capturing group that matches to a decimal number.
   // When running a regex_search this value will be captured and saved out
-  if (search_pattern_str == file_name_fmt) {
+  if (search_pattern_str == file_name_fmt)
+  {
     search_pattern_str += "(" + number_pattern + ")";
   }
 
@@ -183,12 +190,16 @@ int check_directory_for_family_value(const std::string& path_string, int family_
   // Checking the directory contents for any filenames that match
   std::vector<std::string> contents;
   conduit::utils::list_directory_contents(dir_path, contents);
-  for (const std::string& item : contents) {
+  for (const std::string& item : contents)
+  {
       std::string file_name, rm_path;
       conduit::utils::rsplit_file_path(item, file_name, rm_path);
       
       std::smatch file_match;
-      if (std::regex_search(file_name, file_match, search_pattern)) {
+      if (std::regex_search(file_name, file_match, search_pattern))
+      {
+
+        // If we find a match that is greater than the current family value, update to a new value
         int matched_value = static_cast<int>(std::stod(file_match[1].str()));
         if (matched_value >= family_value)
         {
@@ -253,9 +264,11 @@ std::string expand_path_special_variables(const std::string &path_string,
     std::regex invalid_pattern(R"(\{([a-zA-Z]*):.*\})");
 
     std::smatch match;
-    if (std::regex_search(path_string, match, invalid_pattern)) {
+    if (std::regex_search(path_string, match, invalid_pattern))
+    {
       std::string keyword = match[1].str();
-      if (keyword != "cycle" && keyword != "family" && keyword != "time") {
+      if (keyword != "cycle" && keyword != "family" && keyword != "time")
+      {
         ASCENT_WARN("Invalid format keyword '"
                     << match[1].str()
                     << "'. Only cycle, family, and time are supported");
@@ -270,17 +283,20 @@ std::string expand_path_special_variables(const std::string &path_string,
     result_string = expand_generic_variable(result_string, family_pattern, family_value);
     result_string = expand_format_value(result_string, family_value);
 
-    if (meta.has_path("cycle")) {
+    if (meta.has_path("cycle"))
+    {
         int cycle = meta["cycle"].to_value();
         result_string = expand_generic_variable(result_string, cycle_pattern, cycle);
     }
     
-    if (meta.has_path("time")) {
+    if (meta.has_path("time"))
+    {
         float time = meta["time"].to_value();
         result_string = expand_generic_variable(result_string, time_pattern, time);
     }
 
-    if (result_string == path_string && append_if_no_format) {
+    if (result_string == path_string && append_if_no_format)
+    {
         std::stringstream ss;
         ss<<result_string<<family_value;
         result_string = ss.str();

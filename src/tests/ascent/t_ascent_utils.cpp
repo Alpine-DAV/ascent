@@ -298,7 +298,7 @@ TEST(ascent_utils, ascent_string_fmt_family_check_dir) {
 
     string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_{cycle:3d}_{family:05d}_{time:0.4f}");
     
-    int result = ascent::check_directory_for_family_value(output_file, 0);
+    int result = ascent::get_family_value(output_file, 0);
     EXPECT_TRUE(result == 15);
     
     remove_test_file(pre_existing_file_name_1);
