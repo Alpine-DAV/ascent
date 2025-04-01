@@ -147,17 +147,22 @@ int check_directory_for_family_value(const std::string& path_string, int family_
   // Builting a pattern to match to filenames
   std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
   std::regex other_fmts_pattern(R"(\{[a-zA-Z]*:[a-zA-Z0-9.]*\})");
-  std::string search_pattern_str = "^" + file_name_fmt + ".*";
+  std::string search_pattern_str = file_name_fmt;
   std::smatch match;
   if (std::regex_search(search_pattern_str, match, family_pattern))
   {
-    search_pattern_str.replace(match.position(0), match.length(0), "([0-9.]*)");
+    search_pattern_str.replace(match.position(0), match.length(0), R"((\d*[\.\d+]?))");
   }
   while (std::regex_search(search_pattern_str, match, other_fmts_pattern))
   {
-    search_pattern_str.replace(match.position(0), match.length(0), "[0-9.]*");
+    search_pattern_str.replace(match.position(0), match.length(0), R"(\d*[\.\d+]?)");
   }
-  std::regex search_pattern(search_pattern_str);
+
+  // If there are no formatting sectuons in the path, then check if the format was added to the end of the string
+  if (search_pattern_str == file_name_fmt) {
+    search_pattern_str += R"((\d*[\.\d+]?))";
+  }
+  std::regex search_pattern("^" + search_pattern_str + ".*");
 
   // Checking the directory contents for any filenames that match
   std::vector<std::string> contents;
@@ -168,8 +173,9 @@ int check_directory_for_family_value(const std::string& path_string, int family_
       
       std::smatch file_match;
       if (std::regex_search(file_name, file_match, search_pattern)) {
+
         int matched_value = std::stoi(file_match[1].str());
-        if (matched_value > family_value)
+        if (matched_value >= family_value)
         {
           family_value = matched_value + 1;
         }

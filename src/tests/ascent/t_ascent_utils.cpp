@@ -296,9 +296,37 @@ TEST(ascent_utils, ascent_string_fmt_family_check_dir) {
         file_2.close();
     }
 
-    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_{cycle:3d}_{family:05d}_{time:0.4f}");
-
+    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_{cycle:3d}_{family:05d}_{time:0.4f}");
+    std::string expected_result = conduit::utils::join_file_path(output_path, "t_output_path_none_12");
+    
     std::string result = ascent::expand_path_special_variables(output_file);
+    std::cout << result << std::endl;
+    remove_test_file(pre_existing_file_name_1);
+    remove_test_file(pre_existing_file_name_2);
+}
+
+TEST(ascent_utils, ascent_string_fmt_family_check_dir_no_format) {
+    string output_path = prepare_output_dir();
+
+    string pre_existing_file_name_1 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt_100.root");
+    string pre_existing_file_name_2 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt_101.root");
+    std::ofstream file_1(pre_existing_file_name_1);
+    if (file_1.is_open()) {
+        file_1 << "This is a fake file for testing.\n";
+        file_1.close();
+    }
+
+    std::ofstream file_2(pre_existing_file_name_2);
+    if (file_2.is_open()) {
+        file_2 << "This is a fake file for testing.\n";
+        file_2.close();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt_");
+    std::string expected_result = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt_102");
+    std::string result = ascent::expand_path_special_variables(output_file);
+    std::cout << result << std::endl;
+    EXPECT_TRUE(result == expected_result);
 
     remove_test_file(pre_existing_file_name_1);
     remove_test_file(pre_existing_file_name_2);
