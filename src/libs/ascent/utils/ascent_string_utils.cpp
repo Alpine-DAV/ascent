@@ -144,25 +144,41 @@ int check_directory_for_family_value(const std::string& path_string, int family_
     dir_path = ".";
   }
 
-  // Builting a pattern to match to filenames
+  // Building a pattern to match to filenames
+  // These patterns will be used to identify locations with unknown numbers and 
   std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
   std::regex other_fmts_pattern(R"(\{[a-zA-Z]*:[a-zA-Z0-9.]*\})");
+
+  // This patern is used to match to numbers.
+  // It is looking for integers, decimal, and scientific notation values
+  std::string number_pattern = R"([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)";
+  
   std::string search_pattern_str = file_name_fmt;
   std::smatch match;
   if (std::regex_search(search_pattern_str, match, family_pattern))
   {
-    search_pattern_str.replace(match.position(0), match.length(0), R"((\d*[\.\d+]?))");
+    // This adds a capturing group that matches to a decimal number
+    // When running a regex_search this value will be captured and saved out
+    search_pattern_str.replace(match.position(0), match.length(0), "(" + number_pattern + ")");
   }
   while (std::regex_search(search_pattern_str, match, other_fmts_pattern))
   {
-    search_pattern_str.replace(match.position(0), match.length(0), R"(\d*[\.\d+]?)");
+    // This adds a the pattern for a decimal number
+    search_pattern_str.replace(match.position(0), match.length(0), number_pattern);
   }
 
-  // If there are no formatting sectuons in the path, then check if the format was added to the end of the string
+  // If there are no formatting sections in the path, then the format should have been added to the
+  // end ot the path. This adds a capturing group that matches to a decimal number.
+  // When running a regex_search this value will be captured and saved out
   if (search_pattern_str == file_name_fmt) {
-    search_pattern_str += R"((\d*[\.\d+]?))";
+    search_pattern_str += "(" + number_pattern + ")";
   }
-  std::regex search_pattern("^" + search_pattern_str + ".*");
+
+  // Use the defined pattern to make the final regular expression
+  // Adding a ^ to lock the pattern to the start of the file_name and a pattern for a file extension
+  // at the end to the pattern
+  search_pattern_str = "^" + search_pattern_str + R"(\.[a-zA-Z]+$)";
+  std::regex search_pattern(search_pattern_str);
 
   // Checking the directory contents for any filenames that match
   std::vector<std::string> contents;
@@ -173,8 +189,7 @@ int check_directory_for_family_value(const std::string& path_string, int family_
       
       std::smatch file_match;
       if (std::regex_search(file_name, file_match, search_pattern)) {
-
-        int matched_value = std::stoi(file_match[1].str());
+        int matched_value = static_cast<int>(std::stod(file_match[1].str()));
         if (matched_value >= family_value)
         {
           family_value = matched_value + 1;

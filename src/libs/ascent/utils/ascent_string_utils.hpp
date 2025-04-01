@@ -32,6 +32,8 @@ std::string expand_format_value(const std::string path_string, const T value);
 template<typename T>
 std::string expand_generic_variable(const std::string& path_string, const std::regex& pattern, const T value);
 
+int ASCENT_API check_directory_for_family_value(const std::string& path_string, int family_value);
+
 // keeps track of static counters for a given key, i.e., name
 // c style print formatting is supported as well as ascent path 
 // formatting notation. For example, "file_%04d_{family:%03d}"
