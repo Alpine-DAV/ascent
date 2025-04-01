@@ -135,8 +135,51 @@ std::string expand_generic_variable(const std::string& path_string,
     return result_string;
 }
 
-int get_family_value(const std::string& path_string, 
-                                   int family_value)
+int check_directory_for_family_value(const std::string& path_string, int family_value) {
+
+  // Determining the file name and directory name
+  std::string file_name_fmt, dir_path;
+  conduit::utils::rsplit_file_path(path_string, file_name_fmt, dir_path);
+  if (dir_path.size() == 0) {
+    dir_path = ".";
+  }
+
+  // Builting a pattern to match to filenames
+  std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
+  std::regex other_fmts_pattern(R"(\{[a-zA-Z]*:[a-zA-Z0-9.]*\})");
+  std::string search_pattern_str = "^" + file_name_fmt + ".*";
+  std::smatch match;
+  if (std::regex_search(search_pattern_str, match, family_pattern))
+  {
+    search_pattern_str.replace(match.position(0), match.length(0), "([0-9.]*)");
+  }
+  while (std::regex_search(search_pattern_str, match, other_fmts_pattern))
+  {
+    search_pattern_str.replace(match.position(0), match.length(0), "[0-9.]*");
+  }
+  std::regex search_pattern(search_pattern_str);
+
+  // Checking the directory contents for any filenames that match
+  std::vector<std::string> contents;
+  conduit::utils::list_directory_contents(dir_path, contents);
+  for (const std::string& item : contents) {
+      std::string file_name, rm_path;
+      conduit::utils::rsplit_file_path(item, file_name, rm_path);
+      
+      std::smatch file_match;
+      if (std::regex_search(file_name, file_match, search_pattern)) {
+        int matched_value = std::stoi(file_match[1].str());
+        if (matched_value > family_value)
+        {
+          family_value = matched_value + 1;
+        }
+      }
+  }
+
+  return family_value;
+}
+
+int get_family_value(const std::string& path_string, int family_value)
 {
   
   std::string modified_path_string = path_string;
@@ -147,24 +190,27 @@ int get_family_value(const std::string& path_string,
   MPI_Comm_rank(mpi_comm, &rank);
 #endif
 
-  if(rank == 0)
+  if (rank == 0)
   {
-    static std::map<std::string, int> s_file_family_map;
-    bool exists = s_file_family_map.find(path_string) != s_file_family_map.end();
-    if(!exists)
-    {
-      s_file_family_map[path_string] = family_value;
-    }
-    else
-    {
-      family_value = s_file_family_map[path_string] + 1;
-      s_file_family_map[path_string] = family_value;
-    }
+    family_value = check_directory_for_family_value(path_string, family_value);
   }
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Bcast(&family_value, 1, MPI_INT, 0, mpi_comm);
 #endif
+
+  static std::map<std::string, int> s_file_family_map;
+  bool exists = s_file_family_map.find(path_string) != s_file_family_map.end();
+
+  if(!exists)
+  {
+    s_file_family_map[path_string] = family_value;
+  }
+  else
+  {
+    family_value = s_file_family_map[path_string] + 1;
+    s_file_family_map[path_string] = family_value;
+  }
 
   return family_value;
 }
@@ -183,7 +229,17 @@ std::string expand_path_special_variables(const std::string &path_string,
     std::regex cycle_pattern(R"(\{cycle:([a-zA-Z0-9.]*)\})");
     std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
     std::regex time_pattern(R"(\{time:([a-zA-Z0-9.]*)\})");
-    std::regex invalid_pattern(R"(\{(.*):.*\})");
+    std::regex invalid_pattern(R"(\{([a-zA-Z]*):.*\})");
+
+    std::smatch match;
+    if (std::regex_search(path_string, match, invalid_pattern)) {
+      std::string keyword = match[1].str();
+      if (keyword != "cycle" && keyword != "family" && keyword != "time") {
+        ASCENT_WARN("Invalid format keyword '"
+                    << match[1].str()
+                    << "'. Only cycle, family, and time are supported");
+      }
+    }
 
     std::string result_string = path_string;
 
@@ -201,13 +257,6 @@ std::string expand_path_special_variables(const std::string &path_string,
     if (meta.has_path("time")) {
         float time = meta["time"].to_value();
         result_string = expand_generic_variable(result_string, time_pattern, time);
-    }
-
-    std::smatch match;
-    if (std::regex_search(result_string, match, invalid_pattern)) {
-      ASCENT_WARN("Invalid format keyword '"
-                  << match[1].str()
-                  << "'. Only cycle, family, and time are supported");
     }
 
     if (result_string == path_string && append_if_no_format) {

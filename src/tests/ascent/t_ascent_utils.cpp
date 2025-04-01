@@ -71,7 +71,7 @@ TEST(ascent_utils, ascent_string_fmt_basic)
 {
     // Set up the metadata variables beforehand so there are inputs for the formatter
     Metadata::n_metadata["cycle"] = 100;
-    Metadata::n_metadata["time"] = 3.1415926;
+    Metadata::n_metadata["time"] = 3.141592;
 
     std::string expected_result = "output_path_100_00012_3.1416";
     std::string result = ascent::expand_path_special_variables("output_path_{cycle:3d}_{family:05d}_{time:0.4f}",12);
@@ -82,9 +82,9 @@ TEST(ascent_utils, ascent_string_fmt_basic)
 TEST(ascent_utils, ascent_string_fmt_cycle_integer_fmt)
 {
     // Set up the metadata variable beforehand so there is an input for the formatter
-    Metadata::n_metadata["cycle"] = 9349;
+    Metadata::n_metadata["cycle"] = 100;
 
-    std::string expected_result = "output_path_cycle_int_9349_0000000000000000000000000000000000000009349_9349_9349";
+    std::string expected_result = "output_path_cycle_int_100_0000000000000000000000000000000000000000100_100_100";
     std::string result = ascent::expand_path_special_variables("output_path_cycle_int_{cycle:3d}_{cycle:00043d}_{cycle:3i}_{cycle:3u}");
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
@@ -96,22 +96,22 @@ TEST(ascent_utils, ascent_string_fmt_cycle_float_fmt)
     // value is being converted to floating point correctly
 
     // Set up the metadata variable beforehand so there is an input for the formatter
-    Metadata::n_metadata["cycle"] = 2139;
+    Metadata::n_metadata["cycle"] = 100;
 
     // Test floating point formats
-    std::string expected_result_float = "output_path_cycle_float_2139.00_2139.00";
+    std::string expected_result_float = "output_path_cycle_float_100.00_100.00";
     std::string result_float = ascent::expand_path_special_variables("output_path_cycle_float_{cycle:02.02f}_{cycle:02.02F}");
     std::cout << result_float << std::endl;
     EXPECT_TRUE(expected_result_float == result_float);
 
     // Test scientific notation format
-    std::string expected_result_scientific = "output_path_cycle_scientific_2.14e+03_2.14E+03";
+    std::string expected_result_scientific = "output_path_cycle_scientific_1.00e+02_1.00E+02";
     std::string result_scientific = ascent::expand_path_special_variables("output_path_cycle_scientific_{cycle:02.02e}_{cycle:02.02E}");
     std::cout << result_scientific << std::endl;
     EXPECT_TRUE(expected_result_scientific == result_scientific);
 
     // Test g format
-    std::string expected_result_g = "output_path_cycle_g_2.1e+03_2.1E+03";
+    std::string expected_result_g = "output_path_cycle_g_1e+02_1E+02";
     std::string result_g = ascent::expand_path_special_variables("output_path_cycle_g_{cycle:02.02g}_{cycle:02.02G}");
     std::cout << result_g << std::endl;
     EXPECT_TRUE(expected_result_g == result_g);
@@ -120,22 +120,22 @@ TEST(ascent_utils, ascent_string_fmt_cycle_float_fmt)
 TEST(ascent_utils, ascent_string_fmt_time_float_fmt)
 {
     // Set up the metadata variable beforehand so there is an input for the formatter
-    Metadata::n_metadata["time"] = 103.141592;
+    Metadata::n_metadata["time"] = 3.141592;
 
     // Test floating point formats
-    std::string expected_result_float = "output_path_time_float_103.14_103.14";
+    std::string expected_result_float = "output_path_time_float_3.14_3.14";
     std::string result_float = ascent::expand_path_special_variables("output_path_time_float_{time:02.02f}_{time:02.02F}");
     std::cout << result_float << std::endl;
     EXPECT_TRUE(expected_result_float == result_float);
 
     // Test scientific notation format
-    std::string expected_result_scientific = "output_path_time_scientific_1.03e+02_1.03E+02";
+    std::string expected_result_scientific = "output_path_time_scientific_3.14e+00_3.14E+00";
     std::string result_scientific = ascent::expand_path_special_variables("output_path_time_scientific_{time:02.02e}_{time:02.02E}");
     std::cout << result_scientific << std::endl;
     EXPECT_TRUE(expected_result_scientific == result_scientific);
 
     // Test g format
-    std::string expected_result_g = "output_path_time_g_1e+02_1E+02";
+    std::string expected_result_g = "output_path_time_g_003.1_3.1";
     std::string result_g = ascent::expand_path_special_variables("output_path_time_g_{time:05.02g}_{time:02.02G}");
     std::cout << result_g << std::endl;
     EXPECT_TRUE(expected_result_g == result_g);
@@ -147,10 +147,10 @@ TEST(ascent_utils, ascent_string_fmt_time_integer_fmt)
     // value is being converted to an integer correctly
 
     // Set up the metadata variable beforehand so there is an input for the formatter
-    Metadata::n_metadata["time"] = 329.324134;
+    Metadata::n_metadata["time"] = 3.141592;
 
-    std::string expected_result = "output_path_time_int_329_0000000000000000000000000000000000000000329_329_329";
-    std::string result = ascent::expand_path_special_variables("output_path_time_int_{time:3d}_{time:00043d}_{time:3i}_{time:3u}");
+    std::string expected_result = "output_path_time_int_003_0000000000000000000000000000000000000000003_003_003";
+    std::string result = ascent::expand_path_special_variables("output_path_time_int_{time:03d}_{time:00043d}_{time:03i}_{time:03u}");
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
 }
@@ -277,4 +277,29 @@ TEST(ascent_utils, ascent_string_fmt_invalid_keyword)
     }
 
     EXPECT_TRUE(error_occured);
+}
+
+TEST(ascent_utils, ascent_string_fmt_family_check_dir) {
+    string output_path = prepare_output_dir();
+
+    string pre_existing_file_name_1 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_000_0012_3.14.root");
+    string pre_existing_file_name_2 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_000_0014_3.14.root");
+    std::ofstream file_1(pre_existing_file_name_1);
+    if (file_1.is_open()) {
+        file_1 << "This is a fake file for testing.\n";
+        file_1.close();
+    }
+
+    std::ofstream file_2(pre_existing_file_name_2);
+    if (file_2.is_open()) {
+        file_2 << "This is a fake file for testing.\n";
+        file_2.close();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_{cycle:3d}_{family:05d}_{time:0.4f}");
+
+    std::string result = ascent::expand_path_special_variables(output_file);
+
+    remove_test_file(pre_existing_file_name_1);
+    remove_test_file(pre_existing_file_name_2);
 }
