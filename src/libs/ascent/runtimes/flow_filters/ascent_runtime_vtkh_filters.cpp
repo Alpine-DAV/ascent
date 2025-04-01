@@ -6024,7 +6024,7 @@ VTKHVTKFileExtract::execute()
     std::string output_visit_file = output_base + ".visit";
 
     std::string output_file_pattern = conduit::utils::join_path(output_files_dir,
-                                                                "domain_{:08d}.vtk");
+                                                                "domain_{family:08d}.vtk");
 
     int par_rank = 0;
 #ifdef ASCENT_MPI_ENABLED
@@ -6061,7 +6061,7 @@ VTKHVTKFileExtract::execute()
                             vtkm_dset,
                             domain_id);
         local_domain_ids[idx] = domain_id;
-        vtkm::io::VTKDataSetWriter writer(conduit_fmt::format(output_file_pattern,
+        vtkm::io::VTKDataSetWriter writer(expand_path_special_variables(output_file_pattern,
                                                               domain_id));
         writer.WriteDataSet(vtkm_dset);
     }
