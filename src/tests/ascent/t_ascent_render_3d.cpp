@@ -890,18 +890,18 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
                                               mesh);
 
     string output_path = prepare_output_dir();
-    string image_prefix = "output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
+    string image_prefix = "t_output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
     const string output_file = conduit::utils::join_file_path(output_path,image_prefix);
-    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"output_path_00100_0100_3.1415.png");
-    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"output_path_00101_0100_3.1415.png");
+    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"t_output_path_00100_0100_3.1415.png");
+    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"t_output_path_00101_0100_3.1415.png");
 
-    string image_prefix_only_format = "output_path_%03d_only_format";
+    string image_prefix_only_format = "t_output_path_%03d_only_format";
     const string output_file_only_format = conduit::utils::join_file_path(output_path,image_prefix_only_format);
-    const string output_file_only_format_final = conduit::utils::join_file_path(output_path,"output_path_100_only_format.png");
+    const string output_file_only_format_final = conduit::utils::join_file_path(output_path,"t_output_path_100_only_format.png");
 
-    string image_prefix_no_format = "output_path_no_format_";
+    string image_prefix_no_format = "t_output_path_no_format_";
     const string output_file_no_format = conduit::utils::join_file_path(output_path,image_prefix_no_format);
-    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"output_path_no_format_100.png");
+    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"t_output_path_no_format_100.png");
     
     remove_test_image(output_file_final_1);
     remove_test_image(output_file_final_2);
