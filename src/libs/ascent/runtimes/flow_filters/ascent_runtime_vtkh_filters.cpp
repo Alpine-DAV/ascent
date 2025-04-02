@@ -6027,8 +6027,10 @@ VTKHVTKFileExtract::execute()
                                                                 "domain_{family:08d}.vtk");
 
     int par_rank = 0;
+    int mpi_comm_id = -1; 
 #ifdef ASCENT_MPI_ENABLED
-    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    mpi_comm_id = Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
     MPI_Comm_rank(mpi_comm, &par_rank);
 #endif
 
@@ -6062,6 +6064,7 @@ VTKHVTKFileExtract::execute()
                             domain_id);
         local_domain_ids[idx] = domain_id;
         vtkm::io::VTKDataSetWriter writer(expand_path_special_variables(output_file_pattern,
+                                                              mpi_comm_id,
                                                               domain_id));
         writer.WriteDataSet(vtkm_dset);
     }

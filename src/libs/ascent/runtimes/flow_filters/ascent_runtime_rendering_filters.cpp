@@ -1254,8 +1254,13 @@ DefaultRender::execute()
           }
           else if(render_node.has_path("image_prefix"))
           {
+            int mpi_comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+            mpi_comm_id = Workspace::default_mpi_comm();
+#endif
+
             std::stringstream ss;
-            ss<<expand_path_special_variables(render_node["image_prefix"].as_string(), cycle);
+            ss<<expand_path_special_variables(render_node["image_prefix"].as_string(), mpi_comm_id, cycle);
             image_name = ss.str();
             image_name = output_dir(image_name);
           }
@@ -1381,8 +1386,13 @@ DefaultRender::execute()
       }
       else
       {
+        int mpi_comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+        mpi_comm_id = Workspace::default_mpi_comm();
+#endif
+        
         image_name =  params()["image_prefix"].as_string();
-        image_name = expand_path_special_variables(image_name, cycle);
+        image_name = expand_path_special_variables(image_name, mpi_comm_id, cycle);
         image_name = output_dir(image_name);
       }
 

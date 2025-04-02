@@ -707,9 +707,14 @@ RelayIOSave::verify_params(const conduit::Node &params,
 void
 RelayIOSave::execute()
 {
+    int mpi_comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = flow::Workspace::default_mpi_comm();
+#endif
+
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = expand_path_special_variables(path, 0, false);
+    path = expand_path_special_variables(path, mpi_comm_id, 0, false);
     path = output_dir(path);
 
     if(params().has_child("protocol"))

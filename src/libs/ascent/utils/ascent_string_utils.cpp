@@ -136,8 +136,23 @@ std::string expand_generic_variable(const std::string& path_string,
     return result_string;
 }
 
-int check_directory_for_family_value(const std::string& path_string, int family_value) {
+int check_directory_for_family_value(const std::string& path_string,
+                                     int mpi_comm_id,
+                                     int family_value)
+{
+  // Initialized the MPI variables if needed
+  int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  if(mpi_comm_id == -1)
+  {
+      // report as failure to load
+      return false;
+  }
 
+  MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+  MPI_Comm_rank(mpi_comm, &rank);
+#endif
+  
   // Determining the file name and directory name
   std::string file_name_fmt, dir_path;
   conduit::utils::rsplit_file_path(path_string, file_name_fmt, dir_path);
@@ -187,11 +202,13 @@ int check_directory_for_family_value(const std::string& path_string, int family_
   search_pattern_str = "^" + search_pattern_str + R"(\.[a-zA-Z]+$)";
   std::regex search_pattern(search_pattern_str);
 
-  // Checking the directory contents for any filenames that match
-  std::vector<std::string> contents;
-  conduit::utils::list_directory_contents(dir_path, contents);
-  for (const std::string& item : contents)
-  {
+  if (rank == 0) {
+    // Checking the directory contents for any filenames that match
+    std::vector<std::string> contents;
+    conduit::utils::list_directory_contents(dir_path, contents);
+
+    for (const std::string& item : contents)
+    {
       std::string file_name, rm_path;
       conduit::utils::rsplit_file_path(item, file_name, rm_path);
       
@@ -206,30 +223,22 @@ int check_directory_for_family_value(const std::string& path_string, int family_
           family_value = matched_value + 1;
         }
       }
-  }
-
-  return family_value;
-}
-
-int get_family_value(const std::string& path_string, int family_value)
-{
-  
-  std::string modified_path_string = path_string;
-
-  int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-  MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
-  MPI_Comm_rank(mpi_comm, &rank);
-#endif
-
-  if (rank == 0)
-  {
-    family_value = check_directory_for_family_value(path_string, family_value);
+    }
   }
 
 #ifdef ASCENT_MPI_ENABLED
   MPI_Bcast(&family_value, 1, MPI_INT, 0, mpi_comm);
 #endif
+
+  return family_value;
+}
+
+int get_family_value(const std::string& path_string, int mpi_comm_id, int family_value)
+{
+  std::string modified_path_string = path_string;
+
+  // Check the file directory to determine a valid family value. Increases the value if needed.
+  family_value = check_directory_for_family_value(path_string, mpi_comm_id, family_value);
 
   static std::map<std::string, int> s_file_family_map;
   bool exists = s_file_family_map.find(path_string) != s_file_family_map.end();
@@ -248,6 +257,7 @@ int get_family_value(const std::string& path_string, int family_value)
 }
 
 std::string expand_path_special_variables(const std::string &path_string,
+                                          int mpi_comm_id,
                                           int counter,
                                           bool append_if_no_format)
 {
@@ -279,7 +289,7 @@ std::string expand_path_special_variables(const std::string &path_string,
 
     conduit::Node meta = Metadata::n_metadata;
 
-    int family_value = get_family_value(path_string, counter);
+    int family_value = get_family_value(path_string, mpi_comm_id, counter);
     result_string = expand_generic_variable(result_string, family_pattern, family_value);
     result_string = expand_format_value(result_string, family_value);
 
