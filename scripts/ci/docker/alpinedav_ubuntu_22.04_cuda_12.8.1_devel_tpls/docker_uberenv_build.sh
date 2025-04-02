@@ -10,7 +10,7 @@ export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa~python~openmp~shared cuda_a
 export SPACK_SPEC="${SPACK_SPEC} ^raja+cuda~openmp cuda_arch=70 ^umpire+cuda~openmp cuda_arch=70 ^camp+cuda~openmp cuda_arch=70 ^hdf5~mpi ^mfem~cuda~petsc~sundials~slepc ^hypre~cuda ^vtk-m+cuda~kokkos cuda_arch=70 ^silo~python~mpi"
 
 # config
-export SPACK_ENV_YAML="scripts/uberenv_configs/spack_configs/envs/alpinedav-ubuntu_20.04_cuda_12.1.1_devel/spack.yaml"
+export SPACK_ENV_YAML="scripts/uberenv_configs/spack_configs/envs/alpinedav-ubuntu_22.04_cuda_12.8.1_devel/spack.yaml"
 
 cd ascent && python3 scripts/uberenv/uberenv.py \
      -k \
