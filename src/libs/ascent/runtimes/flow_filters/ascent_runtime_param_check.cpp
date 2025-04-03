@@ -133,34 +133,6 @@ check_string(const std::string path,
 }
 
 //-----------------------------------------------------------------------------
-bool
-check_path(const std::string path,
-             const conduit::Node &params,
-             conduit::Node &info,
-             bool required)
-{
-  bool res = check_string(path, params, info, required);
-
-  if(params.has_path(path))
-  {
-    std::string curr, next;
-    std::string file_path = params[path].as_string();
-    conduit::utils::rsplit_file_path(file_path, curr, next);
-
-    // If no directory is given or if the given directory does not exist log an error
-    if(next.length() != 0 && !conduit::utils::is_directory(next))
-    {
-      std::string msg = "Given output path from '" + next + "' for the parameter '" + path +
-                      "' is not a valid directory'";
-      info["errors"].append() = msg;
-      res = false;
-    }
-  }
-
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 // bools are a string with "true" or "false"
 bool
 check_bool(const std::string path,
