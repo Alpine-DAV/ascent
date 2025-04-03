@@ -919,19 +919,29 @@ TEST(ascent_render_3d, test_render_output_dir_not_exist)
     ascent.open(ascent_opts);
     ascent.publish(mesh);
 
-    bool error = false;
+    bool error_occured = false;
     try
     {
         ascent.execute(actions);
     }
-    catch(...)
+    catch(conduit::Error &err)
     {
-        error = true;
+        if (err.message().find("Error: The specified directory") != std::string::npos)
+        {
+            error_occured = true;
+        }
+        else
+        {
+            std::cout << "The error that was thrown did not match the expected " 
+                      << "'Error: The specified directory' error" << std::endl;
+
+            std::cout << err.message() << std::endl;
+        }
     }
 
     ascent.close();
 
-    EXPECT_TRUE(error);
+    EXPECT_TRUE(error_occured);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_bg)
