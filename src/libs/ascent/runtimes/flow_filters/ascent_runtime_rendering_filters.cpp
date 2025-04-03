@@ -1251,7 +1251,8 @@ DefaultRender::execute()
             image_name = output_dir(image_name);
 
             conduit::Node err_msg;
-            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+            {
               ASCENT_ERROR(err_msg.as_string());
             }
           }
@@ -1263,7 +1264,8 @@ DefaultRender::execute()
             image_name = output_dir(image_name);
 
             conduit::Node err_msg;
-            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+            {
               ASCENT_ERROR(err_msg.as_string());
             }
           }
@@ -1392,7 +1394,8 @@ DefaultRender::execute()
         image_name = output_dir(image_name);
 
         conduit::Node err_msg;
-        if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
+        if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+        {
           ASCENT_ERROR(err_msg.as_string());
         }
       }
