@@ -22,6 +22,7 @@ RUN apt-get update && apt-get -y install \
                git \
                git-lfs \
                curl \
+               libcurl4-openssl-dev \
                wget \
                tar \
                unzip \
