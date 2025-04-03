@@ -1092,6 +1092,14 @@ DefaultRender::execute()
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
     }
 
+    int mpi_comm_id = -1;
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
     vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
@@ -1188,20 +1196,16 @@ DefaultRender::execute()
 
           std::string output_path = default_dir();
 
-	  if(render_node.has_path("output_path"))
-	  {
+          if(render_node.has_path("output_path"))
+          {
             output_path = render_node["output_path"].as_string();
-	    int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-            MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-            MPI_Comm_rank(mpi_comm, &rank);
-#endif
+
             // create a folder if it doesn't exist
             if(rank == 0 && !conduit::utils::is_directory(output_path))
             {
               conduit::utils::create_directory(output_path);
             }
-	  }
+	        }
 
           if(!render_node.has_path("db_name"))
           {
@@ -1245,6 +1249,11 @@ DefaultRender::execute()
           {
             image_name = render_node["image_name"].as_string();
             image_name = output_dir(image_name);
+
+            conduit::Node err_msg;
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
+              ASCENT_ERROR(err_msg.as_string());
+            }
           }
           else if(render_node.has_path("image_prefix"))
           {
@@ -1252,6 +1261,11 @@ DefaultRender::execute()
             ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
             image_name = ss.str();
             image_name = output_dir(image_name);
+
+            conduit::Node err_msg;
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
+              ASCENT_ERROR(err_msg.as_string());
+            }
           }
           else
           {
@@ -1260,15 +1274,6 @@ DefaultRender::execute()
             ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
                          " must have either a 'image_name' or "
                          "'image_prefix' parameter");
-          }
-
-          conduit::Node err_msg;
-          int mpi_comm_id = -1;
-#ifdef ASCENT_MPI_ENABLED
-          mpi_comm_id = Workspace::default_mpi_comm();
-#endif
-          if(check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
-            ASCENT_ERROR(err_msg.as_string());
           }
 
           if(render_node.has_path("dataset_bounds"))
@@ -1364,7 +1369,6 @@ DefaultRender::execute()
           }
           else
           {
-
             vtkh::Render render = detail::parse_render(render_node,
                                                       scene_bounds,
                                                       image_name);
@@ -1386,15 +1390,11 @@ DefaultRender::execute()
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_family_name(image_name, cycle);
         image_name = output_dir(image_name);
-      }
 
-      conduit::Node err_msg;
-      int mpi_comm_id = -1;
-#ifdef ASCENT_MPI_ENABLED
-      mpi_comm_id = Workspace::default_mpi_comm();
-#endif
-      if(check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
-        ASCENT_ERROR(err_msg.as_string());
+        conduit::Node err_msg;
+        if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg)) {
+          ASCENT_ERROR(err_msg.as_string());
+        }
       }
 
       vtkm::Bounds scene_bounds = *bounds;
