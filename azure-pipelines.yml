@@ -564,7 +564,7 @@ stages:
           cp -r src/examples/using-with-make install/examples/ascent/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-make
-          make
+          env CC=mpicc CXX=mpic++ CXXFLAGS="-fno-lto" make
         displayName: 'Test vs Install (using-with-make) [build only]'
 
   - job: Linux_HIP
