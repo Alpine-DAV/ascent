@@ -27,7 +27,7 @@ endif()
 if(ENABLE_LOGGING)
     set(DRAY_ENABLE_LOGGING TRUE)
     message(STATUS "DRay Logging enabled")
-endif() 
+endif()
 
 if(DRAY_USE_DOUBLE_PRECISION)
     # this option is used directly in config.h
@@ -423,6 +423,9 @@ if(MPI_FOUND)
     # install includes
     # setup exported target to point to proper include dir
     target_include_directories(dray_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/dray>)
+
+    # avoid mpi C++ apis + link dep of libmpi_cxx
+    target_compile_definitions(dray_mpi PUBLIC ${ASCENT_MPI_SKIP_MPICXX_DEFINES} )
 
     install(TARGETS dray_mpi
             EXPORT ascent

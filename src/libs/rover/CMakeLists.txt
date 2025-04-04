@@ -156,6 +156,9 @@ if(MPI_FOUND)
   target_include_directories(rover_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/rover>)
   target_include_directories(rover_mpi PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libs/rover>)
 
+  # avoid mpi C++ apis + link dep of libmpi_cxx
+  target_compile_definitions(rover_mpi PUBLIC ${ASCENT_MPI_SKIP_MPICXX_DEFINES} )
+
   if(ENABLE_HIDDEN_VISIBILITY)
     set_target_properties(rover_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
   endif()
