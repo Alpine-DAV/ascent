@@ -14,7 +14,7 @@
 #  ./ascent_render_example
 #
 # From within an ascent install:
-#  make 
+#  make
 #  ./ascent_render_example
 #
 # Which corresponds to:
@@ -26,11 +26,11 @@
 
 ASCENT_DIR ?= ../../..
 
-# See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info 
+# See $(ASCENT_DIR)/share/ascent/ascent_config.mk for detailed linking info
 include $(ASCENT_DIR)/share/ascent/ascent_config.mk
 
 # make sure to enable c++14 support (conduit's interface now requires it)
-CXX_FLAGS = -std=c++14
+CXX_FLAGS = -std=c++14 $(CXXFLAGS)
 INC_FLAGS = $(ASCENT_INCLUDE_FLAGS)
 LNK_FLAGS = $(ASCENT_LINK_RPATH) $(ASCENT_LIB_FLAGS)
 

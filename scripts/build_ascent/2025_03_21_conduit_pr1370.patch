@@ -1,0 +1,13 @@
+diff --git a/src/cmake/SetupTests.cmake b/src/cmake/SetupTests.cmake
+index b59004231..bde35a672 100644
+--- a/src/cmake/SetupTests.cmake
++++ b/src/cmake/SetupTests.cmake
+@@ -28,7 +28,7 @@ if(CONDUIT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
+     add_custom_target(tpl_dlls_dir ALL
+                       COMMAND ${CMAKE_COMMAND} -E make_directory
+                       ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
+-    if(${tpl_all_dlls})
++    if(tpl_all_dlls)
+         add_custom_target(tpl_dlls ALL
+                           COMMAND ${CMAKE_COMMAND} -E copy
+                           ${tpl_all_dlls}
