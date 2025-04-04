@@ -189,11 +189,11 @@ void filter_fields(const conduit::Node &node,
     {
         if(child["action"].as_string() == "declare_fields")
         {
-            const Node fields_list = child["fields"];
-            const int num_entries = child.number_of_children();
+            const Node &fields_list = child["fields"];
+            const int num_entries = fields_list.number_of_children();
             for(int e = 0; e < num_entries;  e++)
             {
-                const conduit::Node &item = child.child(e);
+                const conduit::Node &item = fields_list.child(e);
                 if(item.dtype().is_string())
                 {
                     fields.insert(item.as_string());

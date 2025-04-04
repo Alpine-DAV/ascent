@@ -19,16 +19,20 @@
 #    - Dropped Ubuntu 18.04, migrated tests to Ubuntu 20.04
 #    - build_ascent.sh {TPLS + Ascent} x {Standard, CUDA, and HIP} are tested via Github Actions
 #
+#  2025/03/20:
+#    - Dropped Ubuntu 20.04, migrated tests to Ubuntu 22.04
+#
+#
 ########################
 
 variables:
-  ubuntu_20_04_tag: alpinedav/ascent-devel:ubuntu-20.04-x86_64-tpls_2024-07-09-sha3a1ef8
-  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2024-07-10-sha3a1ef8
-  ubuntu_20_04_cuda_11_4_3_tag: alpinedav/ascent-devel:ubuntu-20.04-cuda-11.4.3-x86_64-tpls_2024-07-09-sha3a1ef8
-  ubuntu_20_04_cuda_12_1_1_tag: alpinedav/ascent-devel:ubuntu-20.04-cuda-12.1.1-x86_64-tpls_2024-07-09-sha3a1ef8
-  ubuntu_20_04_rocm_6_0_0_tag:  alpinedav/ascent-devel:ubuntu-20.04-rocm-6.3.0-x86_64-build-ascent-tpls_2024-12-09-sha21f334
+  #ubuntu_20_04_tag: alpinedav/ascent-devel:ubuntu-20.04-x86_64-tpls_2024-07-09-sha3a1ef8
+  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2025-03-23-sha471b56
+  ubuntu_22_04_cuda_11_8_0_tag: alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-x86_64-tpls_2025-04-02-shaabbac4
+  ubuntu_20_04_cuda_12_8_1_tag: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2025-04-02-shabb940f
+  ubuntu_22_04_rocm_6_3_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64-build-ascent-tpls_2025-04-03-sha0322d1
 
- 
+
 # only build merge target pr to develop
 trigger: none
 pr:
@@ -70,8 +74,8 @@ stages:
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        ubuntu_20.04_shared_minimal_cxx11:
-          containerImage: ${{ variables.ubuntu_20_04_tag }}
+        ubuntu_22.04_shared_minimal_cxx11:
+          containerImage: ${{ variables.ubuntu_22_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: OFF
@@ -88,25 +92,6 @@ stages:
           ENABLE_FIDES: OFF
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++11
-
-        ubuntu_20.04_shared_py_cxx14:
-          containerImage: ${{ variables.ubuntu_20_04_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_RAJA: ON
-          ENABLE_UMPIRE: ON
-          ENABLE_CAMP: ON
-          ENABLE_APCOMP: ON
-          ENABLE_DRAY: ON
-          ENABLE_DRAY_DOUBLE: OFF
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: OFF
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          ENABLE_GENTEN: OFF
-          BLT_CXX_STD: c++14
 
         ubuntu_22.04_shared_py_cxx14:
           containerImage: ${{ variables.ubuntu_22_04_tag }}
@@ -130,8 +115,8 @@ stages:
         #################
         # Dray Options
         #################
-        ubuntu_20.04_shared_py_cxx14_dray_double:
-          containerImage: ${{ variables.ubuntu_20_04_tag }}
+        ubuntu_22.04_shared_py_cxx14_dray_double:
+          containerImage: ${{ variables.ubuntu_22_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -149,8 +134,8 @@ stages:
           ENABLE_GENTEN: OFF
           BLT_CXX_STD: c++14
 
-        ubuntu_20.04_shared_py_cxx14_dray_no_mfem:
-          containerImage: ${{ variables.ubuntu_20_04_tag }}
+        ubuntu_22.04_shared_py_cxx14_dray_no_mfem:
+          containerImage: ${{ variables.ubuntu_22_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -171,8 +156,8 @@ stages:
         ############
         # FIDES
         ############
-        ubuntu_20.04_shared_py_cxx14_fides:
-          containerImage: ${{ variables.ubuntu_20_04_tag }}
+        ubuntu_22.04_shared_py_cxx14_fides:
+          containerImage: ${{ variables.ubuntu_22_04_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Debug
           ENABLE_PYTHON: ON
@@ -193,23 +178,24 @@ stages:
         ############
         # Babelflow
         ############
-        ubuntu_20.04_shared_py_cxx14_bflow:
-          containerImage: ${{ variables.ubuntu_20_04_tag }}
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_PYTHON: ON
-          ENABLE_RAJA: ON
-          ENABLE_UMPIRE: ON
-          ENABLE_CAMP: ON
-          ENABLE_APCOMP: ON
-          ENABLE_DRAY: ON
-          ENABLE_DRAY_DOUBLE: OFF
-          ENABLE_VTKH: ON
-          ENABLE_MFEM: ON
-          ENABLE_BABELFLOW: ON
-          ENABLE_ADIOS2: OFF
-          ENABLE_FIDES: OFF
-          BLT_CXX_STD: c++14
+        # TODO: Babel flow components are not maintained
+        # ubuntu_22.04_shared_py_cxx14_bflow:
+        #   containerImage: ${{ variables.ubuntu_22_04_tag }}
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_RAJA: ON
+        #   ENABLE_UMPIRE: ON
+        #   ENABLE_CAMP: ON
+        #   ENABLE_APCOMP: ON
+        #   ENABLE_DRAY: ON
+        #   ENABLE_DRAY_DOUBLE: OFF
+        #   ENABLE_VTKH: ON
+        #   ENABLE_MFEM: ON
+        #   ENABLE_BABELFLOW: ON
+        #   ENABLE_ADIOS2: OFF
+        #   ENABLE_FIDES: OFF
+        #   BLT_CXX_STD: c++14
 
         ############
         # GENTEN
@@ -250,7 +236,7 @@ stages:
            # capture current path
            export ROOT_DIR=`pwd`
            # find spack generated host config file
-           export HOST_CONFIG=`ls /uberenv_libs/*.cmake`
+           export HOST_CONFIG=`ls /uberenv_libs/*-patch.cmake`
            echo $HOST_CONFIG
            # find spack installed cmake
            export CMAKE_BIN_DIR=`ls -d /uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
@@ -258,22 +244,25 @@ stages:
            echo $PATH
            which cmake
            cmake --version
-           # prepare build dir
-           mkdir build
-           cd build
            # setup cmake options
            export CMAKE_OPTS="-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=install"
            # c++ std
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            # include host config
-           export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG} -S src -B build"
            # extra settings
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON} "
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP} "
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY} "
-           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH} "
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY}"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_VTKH=${ENABLE_VTKH}"
+           # spack will add PYTHON_MODULE_INSTALL_PREFIX to the host config,
+           # which will cause ci builds to attempt an install of the python
+           # module to a location not writable buy the ci user:
+           #   so we set this to IGNORE
+           export CMAKE_OPTS="${CMAKE_OPTS} -DPYTHON_MODULE_INSTALL_PREFIX=IGNORE"
+
            # dray double perc option
            if [ $ENABLE_DRAY_DOUBLE  = 'ON' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAY_USE_DOUBLE_PRECISION=ON"; fi
 
@@ -281,17 +270,18 @@ stages:
            if [ $ENABLE_RAJA    = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_DIR=IGNORE"; fi
            if [ $ENABLE_UMPIRE  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DUMPIRE_DIR=IGNORE"; fi
            if [ $ENABLE_CAMP    = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DRAJA_CAMP=IGNORE"; fi
-           
+
            if [ $ENABLE_MFEM  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DMFEM_DIR=IGNORE"; fi
            if [ $ENABLE_VTKH  = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DVTKM_DIR=IGNORE"; fi
            if [ $ENABLE_ADIOS2 = 'OFF' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DADIOS2_DIR=IGNORE"; fi
            if [ $ENABLE_FIDES = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DFIDES_DIR=IGNORE"; fi
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBABELFLOW_DIR=IGNORE"; fi
            if [ $ENABLE_BABELFLOW = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DBabelFlow_DIR=IGNORE"; fi
-           if [ $ENABLE_GENTEN = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DGENTEN_DIR=IGNORE"; fi 
+           if [ $ENABLE_GENTEN = 'OFF' ];  then export CMAKE_OPTS="${CMAKE_OPTS} -DGENTEN_DIR=IGNORE"; fi
+           echo "[cmake options:]"
            echo ${CMAKE_OPTS}
            # configure
-           cmake ${CMAKE_OPTS} ../src
+           cmake ${CMAKE_OPTS}
         displayName: 'Configure with CMake'
 
       - script: |
@@ -371,9 +361,8 @@ stages:
           export CC=/usr/bin/mpicc
           export CXX=/usr/bin/mpicxx
           cd install/examples/ascent/using-with-cmake
-          mkdir _test_build
+          cmake -B _test_build -S .
           cd _test_build
-          cmake ../
           make VERBOSE=1
           ./ascent_render_example
         displayName: 'Test vs Install (using-with-cmake)'
@@ -409,10 +398,8 @@ stages:
           export CC=/usr/bin/mpicc
           export CXX=/usr/bin/mpicxx
           cd install/examples/ascent/using-with-cmake-mpi
-          rm -rf _test_build
-          mkdir _test_build
+          cmake -B _test_build -S .
           cd _test_build
-          cmake ../
           make VERBOSE=1
           mpiexec -n 2 ./ascent_mpi_render_example
         displayName: 'Test vs Install (using-with-cmake-mpi)'
@@ -443,8 +430,20 @@ stages:
       COMPILER_FC: gfortran
     strategy:
       matrix:
-        ubuntu_20.04_static_cuda_12.1.1:
-          containerImage: ${{ variables.ubuntu_20_04_cuda_12_1_1_tag }}
+        ubuntu_20.04_static_cuda_12.8.1:
+          containerImage: ${{ variables.ubuntu_20_04_cuda_12_8_1_tag }}
+          BUILD_SHARED_LIBS: OFF
+          CMAKE_BUILD_TYPE: MinSizeRel
+          ENABLE_DRAY: ON
+          ENABLE_MFEM: ON
+          BLT_CXX_STD: c++14
+          # static linking unit tests + examples eats up alot of disk space,
+          # so skip building tests in CI to keep us away from clif
+          ENABLE_TESTS: OFF
+          ENABLE_EXAMPLES: OFF
+          ENABLE_UTILS: OFF
+        ubuntu_22.04_static_cuda_11.8.3:
+          containerImage: ${{ variables.ubuntu_22_04_cuda_11_8_0_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: MinSizeRel
           ENABLE_DRAY: ON
@@ -456,39 +455,6 @@ stages:
           ENABLE_EXAMPLES: OFF
           ENABLE_UTILS: OFF
 
-        ubuntu_20.04_static_cuda_11.4.3:
-          containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
-          BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: MinSizeRel
-          ENABLE_DRAY: ON
-          ENABLE_MFEM: ON
-          BLT_CXX_STD: c++14
-          # static linking unit tests + examples eats up alot of disk space,
-          # so skip building tests in CI to keep us away from clif
-          ENABLE_TESTS: OFF
-          ENABLE_EXAMPLES: OFF
-          ENABLE_UTILS: OFF
-
-        ubuntu_20.04_static_cuda_11.4.3_no_mfem:
-          containerImage: ${{ variables.ubuntu_20_04_cuda_11_4_3_tag }}
-          BUILD_SHARED_LIBS: OFF
-          CMAKE_BUILD_TYPE: MinSizeRel
-          ENABLE_DRAY: ON
-          ENABLE_MFEM: OFF
-          BLT_CXX_STD: c++14
-          # static linking unit tests eats up alot of disk space,
-          # so skip building tests in CI to keep us away from clif
-          ENABLE_TESTS: OFF
-          ENABLE_EXAMPLES: OFF
-          ENABLE_UTILS: OFF
-          ## on hold until we get new CI container with shared libs
-          # cuda-11.4.0-shared_dray:
-          # containerImage: ${{ variables.ubuntu_18_cuda_11_4_0_tag }}
-          # BUILD_SHARED_LIBS: ON
-          # ENABLE_MFEM: ON
-          # CMAKE_BUILD_TYPE: Release
-          # # shared linking unit tests shouldn't eat disk space,
-          # ENABLE_TESTS: ON
     container: $[ variables['containerImage'] ]
     steps:
       - checkout: self
@@ -581,9 +547,8 @@ stages:
           cp -r src/examples/using-with-cmake install/examples/ascent/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-cmake
-          mkdir _test_build
+          env CC=mpicc CXX=mpic++ cmake -DCMAKE_CXX_FLAGS="-fno-lto" -DCMAKE_CUDA_ARCHITECTURES=70 -S . -B _test_build
           cd _test_build
-          cmake ../
           make VERBOSE=1
         displayName: 'Test vs Install (using-with-cmake) [build only]'
 
@@ -599,7 +564,7 @@ stages:
           cp -r src/examples/using-with-make install/examples/ascent/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
           cd install/examples/ascent/using-with-make
-          make
+          env CC=mpicc CXX=mpic++ CXXFLAGS="-fno-lto" make
         displayName: 'Test vs Install (using-with-make) [build only]'
 
   - job: Linux_HIP
@@ -610,8 +575,8 @@ stages:
       CMAKE_EXE: /cmake-3.23.2-linux-x86_64/bin/cmake
     strategy:
       matrix:
-        ubuntu_20.04_rocm_6.0.0_build_ascent:
-          containerImage: ${{ variables.ubuntu_20_04_rocm_6_0_0_tag }}
+        ubuntu_20.04_rocm_6.3.0_build_ascent:
+          containerImage: ${{ variables.ubuntu_22_04_rocm_6_3_4_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Release
           BLT_CXX_STD: c++14
@@ -648,18 +613,18 @@ stages:
            ${CMAKE_EXE} --install build
         displayName: 'Install'
 
-      # - script: |
-      #       ###########################
-      #       # using with cmake example
-      #       ###########################
-      #       pwd
-      #       ls -l
-      #       export CC=/opt/rocm/llvm/bin/amdclang
-      #       export CXX=/opt/rocm/llvm/bin/amdclang++
-      #       cd install/examples/ascent/using-with-cmake
-      #       ${CMAKE_EXE} . -B build
-      #       ${CMAKE_EXE} --build build
-      #   displayName: 'Test vs Install (using-with-cmake) [build only]'
+      - script: |
+            ###########################
+            # using with cmake example
+            ###########################
+            pwd
+            ls -l
+            export CC=/opt/rocm/llvm/bin/amdclang
+            export CXX=/opt/rocm/llvm/bin/amdclang++
+            cd install/examples/ascent/using-with-cmake
+            ${CMAKE_EXE} . -B build
+            ${CMAKE_EXE} --build build
+        displayName: 'Test vs Install (using-with-cmake) [build only]'
 
       - script: |
           ###########################

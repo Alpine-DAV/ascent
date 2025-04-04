@@ -494,7 +494,7 @@ fi # build_zfp
 ################
 # Conduit
 ################
-conduit_version=v0.9.2
+conduit_version=v0.9.3
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
@@ -509,13 +509,15 @@ if [ ! -d ${conduit_src_dir} ]; then
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
       --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
-  # caliper vs adiak patch
-  if ${build_caliper}; then
-      cd ${conduit_src_dir}
-      echo ${conduit_src_dir}
-      patch -p 1 < ${script_dir}/2024_08_01_conduit-pr1311-detect-if-caliper-needs-adiak.patch
-      cd ${root_dir}
-  fi
+
+  # apply patches
+  cd  ${conduit_src_dir}
+
+  patch -p1 < ${script_dir}/2025_03_21_conduit_pr1370.patch
+  patch -p1 < ${script_dir}/2025_03_conduit_windows_symbol_export_fix.patch
+  patch -p1 < ${script_dir}/2025_03_25_conduit_hdf5_win_detect_fix.patch
+
+  cd ${root_dir}
 fi
 
 #
@@ -648,7 +650,7 @@ fi # if enable_hip || enable_sycl
 ################
 # VTK-m
 ################
-vtkm_version=v2.1.0
+vtkm_version=v2.2.0
 vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
@@ -662,12 +664,6 @@ if [ ! -d ${vtkm_src_dir} ]; then
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
   tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
 
-  # apply vtk-m patch
-  cd  ${vtkm_src_dir}
-  patch -p1 < ${script_dir}/2023_12_06_vtkm-mr3160-rocthrust-fix.patch
-  patch -p1 < ${script_dir}/2024_05_03_vtkm-mr3215-ext-geom-fix.patch
-  patch -p1 < ${script_dir}/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch
-  cd ${root_dir}
 fi
 
 

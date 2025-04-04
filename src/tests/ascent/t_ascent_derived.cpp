@@ -268,7 +268,7 @@ TEST(ascent_expressions, derived_mesh_specific_paths)
   const std::vector<long long> mesh_3d =
       {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM};
   const std::vector<long long> mesh_2d =
-      {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, 1};
+      {EXAMPLE_MESH_SIDE_DIM, EXAMPLE_MESH_SIDE_DIM, 0};
 
   const std::vector<std::pair<std::string,std::vector<long long>>> meshes =
     {
@@ -338,7 +338,7 @@ TEST(ascent_expressions, derived_mesh_specific_paths)
     EXPECT_NEAR(manual, builtin, 1e-8);
 
     // apparently vel is element assoc
-    if(dims[2] != 1 && (mesh_type == "uniform" || mesh_type == "rectilinear"))
+    if(dims[2] != 0 && (mesh_type == "uniform" || mesh_type == "rectilinear"))
     {
       expr = "builtin_vort = curl(field('vel'))\n"
              "du = gradient(field('vel', 'u'))\n"

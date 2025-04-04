@@ -2098,6 +2098,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
             // fields the actions need
             conduit::Node info;
             bool success = field_list(actions, m_field_list, info);
+
             if(!success)
             {
               ASCENT_ERROR("Field filtering failed: "<<info.to_yaml());

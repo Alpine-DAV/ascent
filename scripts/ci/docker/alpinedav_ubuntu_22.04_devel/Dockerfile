@@ -19,8 +19,7 @@ RUN apt-get update && apt-get -y install \
              python3-dev \
              python-is-python3 \
              python3.10-venv \
-             clang \
-             llvm \
+             clang-format \
              perl \
              git \
              git-lfs \
@@ -42,6 +41,4 @@ RUN apt-get update && apt-get -y install \
              libbz2-dev \
              mpich \
              libmpich-dev \
-             openssh-server \
              vim
-

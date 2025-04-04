@@ -1,0 +1,15 @@
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          include: "./src/docs/sphinx/Actions/examples/color_table.yaml"
+      image_prefix: "./_output/milk_chocolate"
+      renders: 
+        r1: 
+          image_width: 512
+          image_height: 512
+          image_prefix: "./_output/milk_chocolate"

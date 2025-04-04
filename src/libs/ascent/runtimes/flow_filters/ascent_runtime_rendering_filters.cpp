@@ -759,7 +759,12 @@ public:
     conduit::Node zoom;
     if(render_copy.has_path("camera/zoom"))
     {
-      zoom = render_copy["camera/zoom"];
+        float zoom_val = render_node["camera/zoom"].to_value();
+        if (zoom_val <= 0) {
+            ASCENT_ERROR("Zoom must be greater than zero. Default zoom is 1.\n");
+        }
+
+        zoom = render_copy["camera/zoom"];
     }
 
     // cinema is controlling the camera so get
