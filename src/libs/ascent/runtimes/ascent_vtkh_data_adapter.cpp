@@ -1983,8 +1983,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                 supported_type = true;
             }
         }
-<<<<<<< HEAD
-=======
         else if(n_vals.dtype().is_uint8())
         {
 
@@ -2045,7 +2043,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
               supported_type = true;
           }
         }
->>>>>>> develop
         else if(n_vals.dtype().is_uint32())
         {
 
@@ -2106,8 +2103,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
               supported_type = true;
           }
         }
-<<<<<<< HEAD
-=======
         else if(n_vals.dtype().is_int8())
         {
 
@@ -2230,7 +2225,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         }
         // ***********************************************************************
         // ***********************************************************************
->>>>>>> develop
         // ***********************************************************************
         // NOTE: TODO OUR VTK-M is not compiled with int32 and int64 support ...
         // ***********************************************************************
@@ -2244,50 +2238,50 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         // NOTE: int32 & 64 are back to not working as of March 28 2025
         // ***********************************************************************
         //
-        else if(n_vals.dtype().is_int32())
-        {
-            // check that the byte stride is a multiple of native stride
-            index_t stride = n_vals.dtype().stride();
-            index_t element_stride = stride / sizeof(int32);
-            //std::cout << "field name: " << field_name << " <int32>"
-            //          << " byte stride: " << stride
-            //          << " element_stride: " << element_stride << std::endl;
-            // if element_stride is evenly divided by native, we are good to
-            // use vtk m array handles
-            if( stride % sizeof(int32) == 0 )
-            {
-                // in this case we can use a strided array handle
-                dset->AddField(detail::GetField<int32>(n_vals,
-                                                         field_name,
-                                                         assoc_str,
-                                                         topo_name,
-                                                         element_stride,
-                                                         zero_copy));
-                supported_type = true;
-            }
-        }
-        else if(n_vals.dtype().is_int64())
-        {
-            // check that the byte stride is a multiple of native stride
-            index_t stride = n_vals.dtype().stride();
-            index_t element_stride = stride / sizeof(int64);
-            //std::cout << "field name: " << field_name << " <int64>"
-            //          << " byte stride: " << stride
-            //          << " element_stride: " << element_stride << std::endl;
-            // if element_stride is evenly divided by native, we are good to
-            // use vtk m array handles
-            if( stride % sizeof(int64) == 0 )
-            {
-                // in this case we can use a strided array handle
-                dset->AddField(detail::GetField<int64>(n_vals,
-                                                         field_name,
-                                                         assoc_str,
-                                                         topo_name,
-                                                         element_stride,
-                                                         zero_copy));
-                supported_type = true;
-            }
-        }
+        //else if(n_vals.dtype().is_int32())
+        //{
+        //    // check that the byte stride is a multiple of native stride
+        //    index_t stride = n_vals.dtype().stride();
+        //    index_t element_stride = stride / sizeof(int32);
+        //    //std::cout << "field name: " << field_name << " <int32>"
+        //    //          << " byte stride: " << stride
+        //    //          << " element_stride: " << element_stride << std::endl;
+        //    // if element_stride is evenly divided by native, we are good to
+        //    // use vtk m array handles
+        //    if( stride % sizeof(int32) == 0 )
+        //    {
+        //        // in this case we can use a strided array handle
+        //        dset->AddField(detail::GetField<int32>(n_vals,
+        //                                                 field_name,
+        //                                                 assoc_str,
+        //                                                 topo_name,
+        //                                                 element_stride,
+        //                                                 zero_copy));
+        //        supported_type = true;
+        //    }
+        //}
+        //else if(n_vals.dtype().is_int64())
+        //{
+        //    // check that the byte stride is a multiple of native stride
+        //    index_t stride = n_vals.dtype().stride();
+        //    index_t element_stride = stride / sizeof(int64);
+        //    //std::cout << "field name: " << field_name << " <int64>"
+        //    //          << " byte stride: " << stride
+        //    //          << " element_stride: " << element_stride << std::endl;
+        //    // if element_stride is evenly divided by native, we are good to
+        //    // use vtk m array handles
+        //    if( stride % sizeof(int64) == 0 )
+        //    {
+        //        // in this case we can use a strided array handle
+        //        dset->AddField(detail::GetField<int64>(n_vals,
+        //                                                 field_name,
+        //                                                 assoc_str,
+        //                                                 topo_name,
+        //                                                 element_stride,
+        //                                                 zero_copy));
+        //        supported_type = true;
+        //    }
+        //}
         //else if(n_vals.dtype().is_uint64())
         //{
         //    // check that the byte stride is a multiple of native stride
