@@ -8,33 +8,28 @@ set -ev
 
 echo "[BUILDING TPL CONTAINERS]"
 
-# ubuntu 20.04
-echo "[ubuntu 20.04 tpls]"
-cd alpinedav_ubuntu_20.04_devel_tpls
-./build.sh 
-cd ..
 
 # ubuntu 22.04
 echo "[ubuntu 22.04 tpls]"
 cd alpinedav_ubuntu_22.04_devel_tpls
-./build.sh 
-cd ..
-
-# ubuntu 20.04 cuda 11.4.3 tpls
-echo "[ubuntu 20.04 cuda 11.4.3 tpls]"
-cd alpinedav_ubuntu_20.04_cuda_11.4.3_devel_tpls
 ./build.sh
 cd ..
 
-# ubuntu 20.04 cuda 12.1.1 tpls
-echo "[ubuntu 20.04 cuda 12.1.1 tpls]"
-cd alpinedav_ubuntu_20.04_cuda_12.1.1_devel_tpls
+# ubuntu 22.04 cuda 11 tpls
+echo "[ubuntu 22.04 cuda 11.8.0 tpls]"
+cd alpinedav_ubuntu_22.04_cuda_11.8.0_devel_tpls
 ./build.sh
 cd ..
 
-# ubuntu 20.04 rocm 5.1.3 tpls
-echo "[ubuntu 20.04 rocm 5.1.3 tpls]"
-cd alpinedav_ubuntu_20.04_rocm_5.1.3_devel_tpls
+# ubuntu 22.04 cuda 12 tpls
+echo "[ubuntu 22.04 cuda 12.8.1 tpls]"
+cd alpinedav_ubuntu_22.04_cuda_12.8.1_devel_tpls
+./build.sh
+cd ..
+
+# ubuntu 22.04 rocm 6.3.0 tpls
+echo "[ubuntu 22.04 rocm 6.3.0 tpls]"
+cd alpinedav_ubuntu_22.04_rocm_6.3.0_devel_tpls
 ./build.sh
 cd ..
 

@@ -1,16 +1,16 @@
 {
-"package_name" : "ascent",
-"package_version" : "develop",
-"package_source_dir" : "../../",
-"spack_build_mode" : "uberenv-pkg",
-"spack_configs_path": "scripts/uberenv_configs/spack_configs",
-"spack_packages_path": "scripts/uberenv_configs/packages",
-"spack_skip_externals": "true",
-"spack_url": "https://github.com/spack/spack",
-"spack_commit": "6812713cf470b473a607f0de0e8e1cf53f804fb7",
-"spack_host_config_patches":
- {
-   "PYTHON_EXECUTABLE": "spack_view/bin/python3",
-   "SPHINX_EXECUTABLE": "spack_view/bin/sphinx-build"
- }
+  "package_name" : "ascent",
+  "package_version" : "develop",
+  "package_source_dir" : "../../",
+  "spack_build_mode" : "uberenv-pkg",
+  "spack_configs_path": "scripts/uberenv_configs/spack_configs",
+  "spack_packages_path": "scripts/uberenv_configs/packages",
+  "spack_skip_externals": "true",
+  "spack_url": "https://github.com/spack/spack",
+  "spack_commit": "2bfcc69fa870d3c6919be87593f22647981b648a",
+  "spack_host_config_patches":
+   {
+     "PYTHON_EXECUTABLE": "spack_view/view/bin/python3",
+     "SPHINX_EXECUTABLE": "spack_view/view/bin/sphinx-build"
+   }
 }
