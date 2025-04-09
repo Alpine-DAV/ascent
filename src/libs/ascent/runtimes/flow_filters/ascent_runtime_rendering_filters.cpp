@@ -1098,6 +1098,14 @@ DefaultRender::execute()
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
     }
 
+    int mpi_comm_id = -1;
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
     vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
@@ -1197,11 +1205,7 @@ DefaultRender::execute()
 	  if(render_node.has_path("output_path"))
 	  {
             output_path = render_node["output_path"].as_string();
-	    int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-            MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-            MPI_Comm_rank(mpi_comm, &rank);
-#endif
+
             // create a folder if it doesn't exist
             if(rank == 0 && !conduit::utils::is_directory(output_path))
             {
@@ -1254,11 +1258,6 @@ DefaultRender::execute()
           }
           else if(render_node.has_path("image_prefix"))
           {
-            int mpi_comm_id = -1;
-#ifdef ASCENT_MPI_ENABLED
-            mpi_comm_id = Workspace::default_mpi_comm();
-#endif
-
             std::stringstream ss;
             ss<<expand_path_special_variables(render_node["image_prefix"].as_string(), mpi_comm_id, cycle);
             image_name = ss.str();
@@ -1386,11 +1385,6 @@ DefaultRender::execute()
       }
       else
       {
-        int mpi_comm_id = -1;
-#ifdef ASCENT_MPI_ENABLED
-        mpi_comm_id = Workspace::default_mpi_comm();
-#endif
-        
         image_name =  params()["image_prefix"].as_string();
         image_name = expand_path_special_variables(image_name, mpi_comm_id, cycle);
         image_name = output_dir(image_name);
