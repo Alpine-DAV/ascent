@@ -6,6 +6,8 @@
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 #include <vtkm/rendering/raytracing/Logger.h>
 
+#include <vtkm/filter/clean_grid/CleanGrid.h>
+
 namespace vtkh {
 
 Renderer::Renderer()
@@ -210,7 +212,7 @@ Renderer::DoExecute()
     std::string msg = "Renderer Error: no renderer was set by sub-class";
     throw Error(msg);
   }
-
+  m_input->PrintSummary(std::cerr);
   int total_renders = static_cast<int>(m_renders.size());
 
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
@@ -219,14 +221,21 @@ Renderer::DoExecute()
     vtkm::cont::DataSet data_set;
     vtkm::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
+    bool fast_merge = true;
+    vtkm::filter::clean_grid::CleanGrid pointmerge;
+    pointmerge.SetTolerance(0.001);
+    pointmerge.SetFastMerge(fast_merge);
+    vtkm::cont::DataSet output = pointmerge.Execute(data_set);
+    std::cerr << "m_field_name" << m_field_name << std::endl;
     if(!data_set.HasField(m_field_name))
     {
       continue;
     }
-
-    const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
-    const vtkm::cont::Field &field = data_set.GetField(m_field_name);
-    const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+    const vtkm::cont::UnknownCellSet &cellset = output.GetCellSet();
+    cellset.PrintSummary(std::cerr);
+    const vtkm::cont::Field &field = output.GetField(m_field_name);
+    const vtkm::cont::CoordinateSystem &coords = output.GetCoordinateSystem();
+    coords.PrintSummary(std::cerr);
 
     if(cellset.GetNumberOfCells() == 0)
     {
@@ -249,12 +258,14 @@ Renderer::DoExecute()
       Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
       const vtkmCamera &camera = m_renders[i].GetCamera();
       m_mapper->SetCanvas(&canvas);
+      std::cerr <<" before render cells" << std::endl;
       m_mapper->RenderCells(cellset,
                             coords,
                             field,
                             m_color_table,
                             camera,
                             m_range);
+      std::cerr <<" AFTER render cells" << std::endl;
     }
   }
 

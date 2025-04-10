@@ -25,6 +25,7 @@ MeshRenderer::PreExecute()
 {
   Renderer::PreExecute();
 
+std::cerr << "Mesh Renderer PreExecute!" << std::endl;
   typedef vtkm::rendering::MapperWireframer MapperType;
   std::shared_ptr<MapperType> mesh_mapper =
     std::dynamic_pointer_cast<MapperType>(this->m_mapper);

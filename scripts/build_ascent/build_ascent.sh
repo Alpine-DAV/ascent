@@ -28,10 +28,10 @@ enable_sycl="${enable_sycl:=OFF}"
 enable_fortran="${enable_fortran:=OFF}"
 enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
-enable_mpi="${enable_mpi:=OFF}"
+enable_mpi="${enable_mpi:=ON}"
 enable_mpicc="${enable_mpicc:=OFF}"
 enable_find_mpi="${enable_find_mpi:=ON}"
-enable_tests="${enable_tests:=OFF}"
+enable_tests="${enable_tests:=ON}"
 enable_verbose="${enable_verbose:=ON}"
 build_jobs="${build_jobs:=6}"
 build_config="${build_config:=Release}"
@@ -45,10 +45,10 @@ build_caliper="${build_caliper:=false}"
 build_silo="${build_silo:=true}"
 build_conduit="${build_conduit:=true}"
 build_vtkm="${build_vtkm:=true}"
-build_camp="${build_camp:=true}"
-build_raja="${build_raja:=true}"
-build_umpire="${build_umpire:=true}"
-build_mfem="${build_mfem:=true}"
+build_camp="${build_camp:=false}"
+build_raja="${build_raja:=false}"
+build_umpire="${build_umpire:=false}"
+build_mfem="${build_mfem:=false}"
 build_catalyst="${build_catalyst:=false}"
 
 # ascent options
@@ -442,9 +442,12 @@ fi # build_caliper
 # Conduit
 ################
 conduit_version=v0.9.2
-conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
-conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
-conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
+conduit_src_dir=/home/user/ascent_partitions/ascent/scripts/build_ascent/source/conduit
+conduit_build_dir=/home/user/ascent_partitions/ascent/scripts/build_ascent/source/conduit/build
+conduit_install_dir=/home/user/ascent_partitions/ascent/scripts/build_ascent/source/conduit/install
+#conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
+#conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
+#conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
 conduit_tarball=$(ospath ${source_dir}/conduit-${conduit_version}-src-with-blt.tar.gz)
 
 # build only if install doesn't exist
@@ -455,7 +458,7 @@ if [ ! -d ${conduit_src_dir} ]; then
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/conduit-${conduit_version}-src-with-blt.tar.gz -o ${conduit_tarball}
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
-      --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
+      --exclude="conduit/src/tests/relay/data/silo/*"
   # caliper vs adiak patch
   if ${build_caliper}; then
       cd ${conduit_src_dir}
@@ -672,6 +675,7 @@ fi # build_vtkm
 
 
 ################
+<<<<<<< Updated upstream
 # Camp
 ################
 camp_version=v2024.02.1
@@ -889,6 +893,8 @@ else
 fi # build_mfem
 
 ################
+=======
+>>>>>>> Stashed changes
 # Catalyst
 ################
 catalyst_version=2.0.0-rc4
@@ -1000,10 +1006,6 @@ if ${build_caliper}; then
 fi
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(VTKM_DIR ' ${vtkm_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(CAMP_DIR ' ${camp_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(RAJA_DIR ' ${raja_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(UMPIRE_DIR ' ${umpire_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(MFEM_DIR ' ${mfem_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_VTKH ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_APCOMP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_DRAY ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
