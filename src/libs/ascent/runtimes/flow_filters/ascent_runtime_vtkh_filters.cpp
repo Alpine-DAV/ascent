@@ -3829,6 +3829,10 @@ VTKHUniformGrid::execute()
         v_dims[1] = get_float64(n_dims["j"], data_object);
       if(n_dims.has_path("k"))
         v_dims[2] = get_float64(n_dims["k"], data_object);
+
+      v_dims[0] = (v_dims[0] > 0) ? (v_dims[0]) : 1;
+      v_dims[1] = (v_dims[1] > 0) ? (v_dims[1]) : 1;
+      v_dims[2] = (v_dims[2] > 0) ? (v_dims[2]) : 1;
     }
     if(params().has_path("origin"))
     {

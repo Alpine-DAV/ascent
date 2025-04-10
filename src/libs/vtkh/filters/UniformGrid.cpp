@@ -29,6 +29,8 @@ using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
 using Vec2d    = vtkm::Vec<double, 2>;
 using Vec3d    = vtkm::Vec<double, 3>;
 
+#define _DEBUG 0
+
 namespace vtkh
 {
 
@@ -224,9 +226,9 @@ public:
       for(int j = 0; j < num_points; ++j)
       {
         if(mask_portal.Get(j) == 0)
-	{
+	      {
           l_rank_mask[j] = par_rank;
-	}
+	      }
       }
 
       //take Max to figure out which ranks own which points
