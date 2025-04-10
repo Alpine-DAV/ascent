@@ -6117,14 +6117,15 @@ VTKHVTKFileExtract::execute()
                              tmp);
         
           std::string output_file_pattern_rel = conduit::utils::join_path(output_files_dir_rel,
-                                                                  "domain_{:08d}.vtk");
+                                                                  "domain_{family:08d}.vtk");
 
           index_t_array global_domain_ids = n_global_domain_ids.value();
           ofs << "!NBLOCKS " << num_global_domains << std::endl;
           for(size_t i=0;i< global_domain_ids.number_of_elements();i++)
           {
-              ofs << conduit_fmt::format(output_file_pattern_rel,
-                                         global_domain_ids[i]) << std::endl;
+              ofs << expand_path_special_variables(output_file_pattern,
+                                                    mpi_comm_id,
+                                                    domain_id) << std::endl;
           }
         }
     }

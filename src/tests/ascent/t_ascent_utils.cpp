@@ -279,6 +279,31 @@ TEST(ascent_utils, ascent_string_fmt_invalid_keyword)
     EXPECT_TRUE(error_occured);
 }
 
+TEST(ascent_utils, ascent_string_fmt_no_keyword)
+{
+    bool error_occured = false;
+
+    try
+    {
+        std::string result = ascent::expand_path_special_variables("t_output_path_none_{:128f}", -1);
+        std::cout << result << std::endl;
+    }
+    catch (conduit::Error &warn)
+    {
+        if (warn.message().find("Invalid format keyword ''.") != std::string::npos)
+        {
+            error_occured = true;
+        }
+        else
+        {
+            std::cout << "The error that was thrown did not match the expected 'Invalid format keyword' error" << endl;
+            std::cout << warn.message() << std::endl;
+        }
+    }
+
+    EXPECT_TRUE(error_occured);
+}
+
 TEST(ascent_utils, ascent_string_fmt_family_check_dir) {
     string output_path = prepare_output_dir();
 
