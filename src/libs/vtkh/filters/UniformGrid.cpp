@@ -49,9 +49,9 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::con
   }
   else
   {
-    int nx = (dims[0] > 1) ? (dims[0]) : 1;
-    int ny = (dims[1] > 1) ? (dims[1]) : 1;
-    int nz = (dims[2] > 1) ? (dims[2]) : 1;
+    int nx = (dims[0] > 0) ? (dims[0]) : 1;
+    int ny = (dims[1] > 0) ? (dims[1]) : 1;
+    int nz = (dims[2] > 0) ? (dims[2]) : 1;
 
     num_values = nx * ny * nz;
   }
