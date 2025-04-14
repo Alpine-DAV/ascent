@@ -6018,14 +6018,6 @@ VTKHVTKFileExtract::execute()
     // directory: basename + "_vtk_files"
     // files: basename + "_vtk_files/basename_%08d.vtk"
 
-    std::string output_base = params()["path"].as_string();
-    
-    std::string output_files_dir  = output_base + "_vtk_files";
-    std::string output_visit_file = output_base + ".visit";
-
-    std::string output_file_pattern = conduit::utils::join_path(output_files_dir,
-                                                                "domain_{family:08d}.vtk");
-
     int par_rank = 0;
     int mpi_comm_id = -1; 
 #ifdef ASCENT_MPI_ENABLED
@@ -6033,6 +6025,15 @@ VTKHVTKFileExtract::execute()
     MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
     MPI_Comm_rank(mpi_comm, &par_rank);
 #endif
+
+    std::string output_base = expand_path_special_variables(params()["path"].as_string(),
+                                                            mpi_comm_id);
+    
+    std::string output_files_dir  = output_base + "_vtk_files";
+    std::string output_visit_file = output_base + ".visit";
+
+    std::string output_file_pattern = conduit::utils::join_path(output_files_dir,
+                                                                "domain_{:08d}.vtk");
 
     if(par_rank == 0 && !conduit::utils::is_directory(output_files_dir))
     {
@@ -6063,8 +6064,7 @@ VTKHVTKFileExtract::execute()
                             vtkm_dset,
                             domain_id);
         local_domain_ids[idx] = domain_id;
-        vtkm::io::VTKDataSetWriter writer(expand_path_special_variables(output_file_pattern,
-                                                              mpi_comm_id,
+        vtkm::io::VTKDataSetWriter writer(conduit_fmt::format(output_file_pattern,
                                                               domain_id));
         writer.WriteDataSet(vtkm_dset);
     }
@@ -6117,15 +6117,14 @@ VTKHVTKFileExtract::execute()
                              tmp);
         
           std::string output_file_pattern_rel = conduit::utils::join_path(output_files_dir_rel,
-                                                                  "domain_{family:08d}.vtk");
+                                                                  "domain_{:08d}.vtk");
 
           index_t_array global_domain_ids = n_global_domain_ids.value();
           ofs << "!NBLOCKS " << num_global_domains << std::endl;
           for(size_t i=0;i< global_domain_ids.number_of_elements();i++)
           {
-              ofs << expand_path_special_variables(output_file_pattern,
-                                                    mpi_comm_id,
-                                                    domain_id) << std::endl;
+              ofs << conduit_fmt::format(output_file_pattern_rel,
+                                         global_domain_ids[i]) << std::endl;
           }
         }
     }

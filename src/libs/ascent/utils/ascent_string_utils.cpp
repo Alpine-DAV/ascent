@@ -226,6 +226,10 @@ int check_directory_for_family_value(const std::string& path_string,
     }
   }
 
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Bcast(&family_value, 1, MPI_INT, 0, mpi_comm);
+#endif
+
   return family_value;
 }
 
