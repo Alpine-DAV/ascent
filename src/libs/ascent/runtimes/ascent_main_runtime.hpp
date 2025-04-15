@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_ascent_runtime.hpp
@@ -12,16 +11,14 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_ASCENT_RUNTIME_HPP
-#define ASCENT_ASCENT_RUNTIME_HPP
+#    define ASCENT_ASCENT_RUNTIME_HPP
 
-#include <ascent.hpp>
-#include <ascent_exports.h>
-#include <ascent_runtime.hpp>
-#include <ascent_data_object.hpp>
-#include <ascent_web_interface.hpp>
-#include <flow.hpp>
-
-
+#    include <ascent.hpp>
+#    include <ascent_exports.h>
+#    include <ascent_runtime.hpp>
+#    include <ascent_data_object.hpp>
+#    include <ascent_web_interface.hpp>
+#    include <flow.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -32,66 +29,65 @@ namespace ascent
 class ASCENT_API AscentRuntime : public Runtime
 {
 public:
-
     // Creation and Destruction
     AscentRuntime();
     virtual ~AscentRuntime();
 
     // Main runtime interface methods used by the ascent interface.
-    void  Initialize(const conduit::Node &options) override;
+    void Initialize(const conduit::Node &options) override;
 
-    void  Publish(const conduit::Node &data) override;
-    void  Execute(const conduit::Node &actions) override;
+    void Publish(const conduit::Node &data) override;
+    void Execute(const conduit::Node &actions) override;
 
+    void Info(conduit::Node &out) override;
+    conduit::Node &Info() override;
 
-    void                 Info(conduit::Node &out) override;
-    conduit::Node       &Info() override;
-
-    void  Cleanup() override;
+    void Cleanup() override;
 
     void DisplayError(const std::string &msg) override;
 
     template <class FilterType>
     static void register_filter_type(const std::string &role_path = "",
-                                     const std::string &api_name  = "")
+                                     const std::string &api_name = "")
     {
         flow::Workspace::register_filter_type<FilterType>();
-        std::string filter_type_name = flow::Workspace::filter_type_name<FilterType>();
+        std::string filter_type_name =
+            flow::Workspace::filter_type_name<FilterType>();
         RegisterFilterType(role_path, api_name, filter_type_name);
     }
 
 private:
     // holds options passed to initialize
-    conduit::Node     m_runtime_options;
+    conduit::Node m_runtime_options;
     // DataObject that (externally) holds the data from the simulation
-    conduit::Node     m_source;
-    DataObject        m_data_object;
-    conduit::Node     m_connections;
-    conduit::Node     m_scene_connections;
+    conduit::Node m_source;
+    DataObject m_data_object;
+    conduit::Node m_connections;
+    conduit::Node m_scene_connections;
 
-    conduit::Node     m_info;
-    conduit::Node     m_about;
-    conduit::Node     m_previous_actions;
+    conduit::Node m_info;
+    conduit::Node m_about;
+    conduit::Node m_previous_actions;
 
-    WebInterface      m_web_interface;
-    int               m_refinement_level;
-    int               m_rank;
-    conduit::Node     m_ghost_fields; // a list of strings
-    std::string       m_default_output_dir;
+    WebInterface m_web_interface;
+    int m_refinement_level;
+    int m_rank;
+    conduit::Node m_ghost_fields; // a list of strings
+    std::string m_default_output_dir;
 
-    std::string       m_session_name;
-    conduit::Node     m_save_session_actions;
-    conduit::Node     m_save_info_actions;
+    std::string m_session_name;
+    conduit::Node m_save_session_actions;
+    conduit::Node m_save_info_actions;
 
-    bool              m_field_filtering;
+    bool m_field_filtering;
     std::set<std::string> m_field_list;
 
-    conduit::Node     m_comments;
+    conduit::Node m_comments;
 
-    void              ResetInfo();
-    void              AddPublishedMeshInfo();
+    void ResetInfo();
+    void AddPublishedMeshInfo();
 
-    flow::Workspace   m_workspace;
+    flow::Workspace m_workspace;
     conduit::Node CreateDefaultFilters();
     void ConvertPipelineToFlow(const conduit::Node &pipeline,
                                const std::string pipeline_name);
@@ -125,8 +121,7 @@ private:
     void SaveInfo();
 
     void SetStatus(const std::string &msg);
-    void SetStatus(const std::string &msg,
-                   const std::string &details);
+    void SetStatus(const std::string &msg, const std::string &details);
 
     void BuildGraph(const conduit::Node &actions);
     void EnsureDomainIds();
@@ -144,14 +139,15 @@ private:
     // internal reg filter tracking
     // use const method for access, to avoid adding to the tree
     static const conduit::Node &registered_filter_types()
-                                    {return s_reged_filter_types;}
+    {
+        return s_reged_filter_types;
+    }
 
     static conduit::Node s_reged_filter_types;
-
 };
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
@@ -160,5 +156,3 @@ private:
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

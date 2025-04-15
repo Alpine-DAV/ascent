@@ -11,13 +11,13 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_BLUEPRINT_ARCHITECT
-#define ASCENT_BLUEPRINT_ARCHITECT
+#    define ASCENT_BLUEPRINT_ARCHITECT
 
-#include <ascent.hpp>
-#include <conduit.hpp>
+#    include <ascent.hpp>
+#    include <conduit.hpp>
 // TODO this is temporary
-#include <ascent_exports.h>
-#include <expressions/ascent_array.hpp>
+#    include <ascent_exports.h>
+#    include <expressions/ascent_array.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -98,15 +98,15 @@ void derived_field_add_fields(conduit::Node &dataset,
 
 ASCENT_API
 void derived_field_power_of_field(conduit::Node &dataset,
-                              const std::string &field_name,
-                              const double &exponent,
-                              const std::string &output_field_name);
+                                  const std::string &field_name,
+                                  const double &exponent,
+                                  const std::string &output_field_name);
 
 //
 // NOTE: ascent_data_binning contains a RAJA version
 // of binning that needs more work, but should eventually
 // supersede these versions
-// 
+//
 
 ASCENT_API
 conduit::Node binning(const conduit::Node &dataset,
@@ -126,7 +126,6 @@ void ASCENT_API binning_mesh(const conduit::Node &binning,
                              conduit::Node &mesh,
                              const std::string field_name = "");
 
-
 ASCENT_API
 conduit::Node get_state_var(const conduit::Node &dataset,
                             const std::string &var_name);
@@ -144,7 +143,6 @@ bool has_topology(const conduit::Node &dataset, const std::string &topo_name);
 
 ASCENT_API
 std::set<std::string> topology_names(const conduit::Node &dataset);
-
 
 ASCENT_API
 bool has_component(const conduit::Node &dataset,
@@ -164,9 +162,8 @@ std::string component_name(const conduit::Node &dataset,
                            const int component_id);
 
 ASCENT_API
-std::string
-possible_components(const conduit::Node &dataset,
-                    const std::string &field_name);
+std::string possible_components(const conduit::Node &dataset,
+                                const std::string &field_name);
 
 ASCENT_API
 bool is_xyz(const std::string &axis_name);
@@ -189,34 +186,30 @@ int num_points(const conduit::Node &domain, const std::string &topo_name);
 ASCENT_API
 int num_cells(const conduit::Node &domain, const std::string &topo_name);
 
+ASCENT_API
+Array<double> centroids(const conduit::Node &domain, const std::string topo);
 
 ASCENT_API
-Array<double>
-centroids(const conduit::Node &domain, const std::string topo);
+Array<double> vertices(const conduit::Node &domain, const std::string topo);
 
 ASCENT_API
-Array<double>
-vertices(const conduit::Node &domain, const std::string topo);
-
-ASCENT_API
-conduit::Node
-final_topo_and_assoc(const conduit::Node &dataset,
-                     const conduit::Node &bin_axes,
-                     const std::string &topo_name,
-                     const std::string &assoc_str);
-};
+conduit::Node final_topo_and_assoc(const conduit::Node &dataset,
+                                   const conduit::Node &bin_axes,
+                                   const std::string &topo_name,
+                                   const std::string &assoc_str);
+}; // namespace expressions
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

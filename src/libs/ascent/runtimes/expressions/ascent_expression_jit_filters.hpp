@@ -5,12 +5,11 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #ifndef ASCENT_EXPRESSION_JIT_FILTERS
-#define ASCENT_EXPRESSION_JIT_FILTERS
+#    define ASCENT_EXPRESSION_JIT_FILTERS
 
-#include "ascent_derived_jit.hpp"
-#include <flow_workspace.hpp>
-#include <flow_filter.hpp>
-
+#    include "ascent_derived_jit.hpp"
+#    include <flow_workspace.hpp>
+#    include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -34,17 +33,18 @@ namespace expressions
 class ExprJitFilter : public ::flow::Filter
 {
 public:
-  ExprJitFilter(const int num_inputs,
-            const std::shared_ptr<const JitExecutionPolicy> exec_policy);
-  ~ExprJitFilter();
+    ExprJitFilter(const int num_inputs,
+                  const std::shared_ptr<const JitExecutionPolicy> exec_policy);
+    ~ExprJitFilter();
 
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 
 private:
-  int num_inputs;
-  const std::shared_ptr<const JitExecutionPolicy> exec_policy;
+    int num_inputs;
+    const std::shared_ptr<const JitExecutionPolicy> exec_policy;
 };
 
 //-----------------------------------------------------------------------------
@@ -53,17 +53,17 @@ private:
 class ExprExpressionList : public ::flow::Filter
 {
 public:
-  ExprExpressionList();
-  ExprExpressionList(int num_inputs);
-  ~ExprExpressionList();
+    ExprExpressionList();
+    ExprExpressionList(int num_inputs);
+    ~ExprExpressionList();
 
-  virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
-  virtual void execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 
 protected:
-  int m_num_inputs;
-
+    int m_num_inputs;
 };
 
 //-----------------------------------------------------------------------------
@@ -77,19 +77,19 @@ std::string register_jit_filter(
 //-----------------------------------------------------------------------------
 std::string register_expression_list_filter(flow::Workspace &w,
                                             const int num_inputs);
-};
+}; // namespace expressions
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

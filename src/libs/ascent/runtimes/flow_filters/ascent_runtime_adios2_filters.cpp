@@ -55,24 +55,23 @@ using namespace conduit;
 using namespace flow;
 
 template <class T>
-inline std::ostream& operator<<(ostream& os, const vector<T>& v)
+inline std::ostream &operator<<(ostream &os, const vector<T> &v)
 {
-    os<<"[";
+    os << "[";
     auto it = v.begin();
-    for ( ; it != v.end(); ++it)
-        os<<" "<< *it;
-    os<<"]";
+    for (; it != v.end(); ++it)
+        os << " " << *it;
+    os << "]";
     return os;
 }
 
-template <class T>
-inline ostream& operator<<(ostream& os, const set<T>& s)
+template <class T> inline ostream &operator<<(ostream &os, const set<T> &s)
 {
-    os<<"{";
+    os << "{";
     auto it = s.begin();
-    for ( ; it != s.end(); ++it)
-        os<<" "<< *it;
-    os<<"}";
+    for (; it != s.end(); ++it)
+        os << " " << *it;
+    os << "}";
     return os;
 }
 
@@ -97,129 +96,119 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
-ADIOS2::ADIOS2()
-    :Filter()
-{
-}
+ADIOS2::ADIOS2() : Filter() {}
 
 //-----------------------------------------------------------------------------
-ADIOS2::~ADIOS2()
-{
-}
+ADIOS2::~ADIOS2() {}
 
 //-----------------------------------------------------------------------------
-void
-ADIOS2::declare_interface(Node &i)
+void ADIOS2::declare_interface(Node &i)
 {
-    i["type_name"]   = "adios2";
+    i["type_name"] = "adios2";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
-bool
-ADIOS2::verify_params(const conduit::Node &params,
-                     conduit::Node &info)
+bool ADIOS2::verify_params(const conduit::Node &params, conduit::Node &info)
 {
-  bool res = true;
-  if (!params.has_child("filename") ||
-      !params["filename"].dtype().is_string())
-  {
-    info["errors"].append() = "missing required entry 'filename'";
-    res = false;
-  }
-
-  if (!params.has_child("engine") ||
-      !params["engine"].dtype().is_string())
-  {
-    info["errors"].append() = "missing required entry 'engine'";
-    res = false;
-  }
-
-  std::string engineType = params["engine"].as_string();
-  if (engineType != "BPFile" && engineType != "SST")
-  {
-    info["errors"].append() = "unsupported engine type: " + engineType;
-    res = false;
-  }
-
-  std::string fileName = params["filename"].as_string();
-  if (engineType == "SST" && fileName.find("/") != std::string::npos )
-  {
-    info["errors"].append() = "filename with directory not supported for SST engine";
-    res = false;
-  }
-
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-void
-ADIOS2::execute()
-{
-  ASCENT_INFO("execute");
-
-  std::string engineType = params()["engine"].as_string();
-  std::string fileName   = params()["filename"].as_string();
-
-  if (writer == NULL)
-    writer = new fides::io::DataSetAppendWriter(fileName);
-
-  if(!input(0).check_type<DataObject>())
-  {
-    ASCENT_ERROR("ADIOS2 input must be a data object");
-  }
-
-  //If fields set, set the WriteFields attribute.
-  if (params().has_child("fields"))
-  {
-    std::string fields = params()["fields"].as_string();
-    if (!fields.empty())
+    bool res = true;
+    if (!params.has_child("filename") ||
+        !params["filename"].dtype().is_string())
     {
-      std::vector<std::string> fieldList;
-
-      std::istringstream iss(fields);
-      std::copy(std::istream_iterator<std::string>(iss),
-                std::istream_iterator<std::string>(),
-                std::back_inserter(fieldList));
-
-      writer->SetWriteFields(fieldList);
+        info["errors"].append() = "missing required entry 'filename'";
+        res = false;
     }
-  }
 
+    if (!params.has_child("engine") || !params["engine"].dtype().is_string())
+    {
+        info["errors"].append() = "missing required entry 'engine'";
+        res = false;
+    }
 
-  DataObject *data_object = input<DataObject>(0);
-  std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+    std::string engineType = params["engine"].as_string();
+    if (engineType != "BPFile" && engineType != "SST")
+    {
+        info["errors"].append() = "unsupported engine type: " + engineType;
+        res = false;
+    }
 
-  std::string topo_name = detail::resolve_topology(params(),
-                                                   this->name(),
-                                                   collection);
+    std::string fileName = params["filename"].as_string();
+    if (engineType == "SST" && fileName.find("/") != std::string::npos)
+    {
+        info["errors"].append() =
+            "filename with directory not supported for SST engine";
+        res = false;
+    }
 
-  vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-
-  vtkm::cont::PartitionedDataSet pds;
-  vtkm::Id numDS = data.GetNumberOfDomains();
-  for (vtkm::Id i = 0; i < numDS; i++)
-    pds.AppendPartition(data.GetDomain(i));
-
-  writer->Write(pds, engineType);
+    return res;
 }
 
 //-----------------------------------------------------------------------------
-};
+void ADIOS2::execute()
+{
+    ASCENT_INFO("execute");
+
+    std::string engineType = params()["engine"].as_string();
+    std::string fileName = params()["filename"].as_string();
+
+    if (writer == NULL)
+        writer = new fides::io::DataSetAppendWriter(fileName);
+
+    if (!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("ADIOS2 input must be a data object");
+    }
+
+    // If fields set, set the WriteFields attribute.
+    if (params().has_child("fields"))
+    {
+        std::string fields = params()["fields"].as_string();
+        if (!fields.empty())
+        {
+            std::vector<std::string> fieldList;
+
+            std::istringstream iss(fields);
+            std::copy(std::istream_iterator<std::string>(iss),
+                      std::istream_iterator<std::string>(),
+                      std::back_inserter(fieldList));
+
+            writer->SetWriteFields(fieldList);
+        }
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    std::shared_ptr<VTKHCollection> collection =
+        data_object->as_vtkh_collection();
+
+    std::string topo_name =
+        detail::resolve_topology(params(), this->name(), collection);
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkm::cont::PartitionedDataSet pds;
+    vtkm::Id numDS = data.GetNumberOfDomains();
+    for (vtkm::Id i = 0; i < numDS; i++)
+        pds.AppendPartition(data.GetDomain(i));
+
+    writer->Write(pds, engineType);
+}
+
+//-----------------------------------------------------------------------------
+}; // namespace filters
 
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

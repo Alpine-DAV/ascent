@@ -24,20 +24,17 @@
 #include <map>
 #include <fstream>
 #ifdef ASCENT_PLATFORM_UNIX
-#include <sys/sysinfo.h>
-#include <unistd.h>
+#    include <sys/sysinfo.h>
+#    include <unistd.h>
 #endif
-
 
 using namespace conduit;
 
 #ifdef ASCENT_MPI_ENABLED
-#include "conduit_relay_mpi.hpp"
-#include <mpi.h>
+#    include "conduit_relay_mpi.hpp"
+#    include <mpi.h>
 using namespace conduit::relay::mpi;
 #endif
-
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -46,37 +43,30 @@ namespace ascent
 {
 
 // Initialize BlockTimer static data members.
-int                                            BlockTimer::s_global_depth = 0;
-conduit::Node                                  BlockTimer::s_global_root;
-std::string                                    BlockTimer::s_current_path = "";
-std::map<std::string, BlockTimer::time_point>  BlockTimer::s_timers;
-std::set<std::string>                          BlockTimer::s_visited;
-int                                            BlockTimer::s_rank = 0;
+int BlockTimer::s_global_depth = 0;
+conduit::Node BlockTimer::s_global_root;
+std::string BlockTimer::s_current_path = "";
+std::map<std::string, BlockTimer::time_point> BlockTimer::s_timers;
+std::set<std::string> BlockTimer::s_visited;
+int BlockTimer::s_rank = 0;
 
 //-----------------------------------------------------------------------------
-BlockTimer::BlockTimer(std::string const &name)
-: m_name(name)
-{
-  Start(name);
-}
+BlockTimer::BlockTimer(std::string const &name) : m_name(name) { Start(name); }
 
 //-----------------------------------------------------------------------------
-void
-BlockTimer::StartTimer(const char *name)
+void BlockTimer::StartTimer(const char *name)
 {
-  std::string s_name(name);
-  Start(s_name);
+    std::string s_name(name);
+    Start(s_name);
 }
 //-----------------------------------------------------------------------------
-void
-BlockTimer::StopTimer(const char *name)
+void BlockTimer::StopTimer(const char *name)
 {
-  std::string s_name(name);
-  Stop(s_name);
+    std::string s_name(name);
+    Stop(s_name);
 }
 //-----------------------------------------------------------------------------
-int
-parseLine(char *line)
+int parseLine(char *line)
 {
     int i = strlen(line);
     while (*line < '0' || *line > '9')
@@ -84,15 +74,14 @@ parseLine(char *line)
         line++;
     }
 
-    line[i-3] = '\0';
+    line[i - 3] = '\0';
     i = atoi(line);
 
     return i;
 }
 
 //-----------------------------------------------------------------------------
-void
-BlockTimer::Start(const std::string &name)
+void BlockTimer::Start(const std::string &name)
 {
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm_rank(MPI_COMM_WORLD, &s_rank);
@@ -111,25 +100,24 @@ BlockTimer::Start(const std::string &name)
         // Start timing.
         if (s_timers.count(name) == 0)
         {
-            s_timers.insert(std::pair<std::string, time_point>(name,
-                                                               high_resolution_clock::now()));
+            s_timers.insert(std::pair<std::string, time_point>(
+                name, high_resolution_clock::now()));
         }
     }
-
 }
 //-----------------------------------------------------------------------------
-void
-BlockTimer::Stop(const std::string &name)
+void BlockTimer::Stop(const std::string &name)
 {
 #ifdef ASCENT_MPI_ENABLED
-    //MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
 #endif
     if (s_global_depth <= MAX_DEPTH)
     {
         // Record timer.
         auto t_start = s_timers[name];
         using fsec = std::chrono::duration<float>;
-        auto ftime = std::chrono::duration_cast<fsec>(high_resolution_clock::now() - t_start);
+        auto ftime = std::chrono::duration_cast<fsec>(
+            high_resolution_clock::now() - t_start);
         float elapsed_time = ftime.count();
 
         Node &curr = CurrentNode();
@@ -138,10 +126,10 @@ BlockTimer::Stop(const std::string &name)
         double newval = curr["value"].as_float64() + elapsed_time;
 
         curr["value"] = newval;
-        curr["min"]   = newval;
-        curr["avg"]   = newval;
+        curr["min"] = newval;
+        curr["avg"] = newval;
 
-        //increment the counter
+        // increment the counter
         unsigned int count = curr["count"].as_uint32() + 1;
         curr["count"] = count;
 
@@ -153,18 +141,18 @@ BlockTimer::Stop(const std::string &name)
 #ifdef ASCENT_PLATFORM_UNIX
         struct sysinfo system_info;
         sysinfo(&system_info);
-        long long memUsed = (system_info.totalram -system_info.freeram);
+        long long memUsed = (system_info.totalram - system_info.freeram);
         memUsed *= system_info.mem_unit;
         memUsed = memUsed / 1024 / 1024;
         unsigned int cSysMem = curr["sysMemUsed"].as_uint64();
 
-        cSysMem = ((cSysMem * (count - 1) + memUsed) )/ count;
+        cSysMem = ((cSysMem * (count - 1) + memUsed)) / count;
         curr["sysMemUsed"] = uint64(cSysMem);
 
         //
         // Get process memory usage and average
         //
-        FILE* file = fopen("/proc/self/status", "r");
+        FILE *file = fopen("/proc/self/status", "r");
         int kb = -1;
         char line[128];
         while (fgets(line, 128, file) != NULL)
@@ -180,41 +168,31 @@ BlockTimer::Stop(const std::string &name)
         kb = kb / 1024;
 
         int cProcUsage = curr["procMemMB"].as_int32();
-        cProcUsage = ((cProcUsage * (count - 1) + kb ))  / count;
+        cProcUsage = ((cProcUsage * (count - 1) + kb)) / count;
         curr["procMemMB"] = cProcUsage;
 
 #else
         curr["sysMemUsed"] = 0;
-        curr["procMemMB"]  = 0;
+        curr["procMemMB"] = 0;
 #endif
         GoUp();
     }
 
     // Update current location.
     --s_global_depth;
-
 }
 //-----------------------------------------------------------------------------
-BlockTimer::~BlockTimer()
-{
-  Stop(m_name);
-}
+BlockTimer::~BlockTimer() { Stop(m_name); }
 
 //-----------------------------------------------------------------------------
-Node &
-BlockTimer::Finalize()
+Node &BlockTimer::Finalize()
 {
     BlockTimer::ReduceGlobalRoot();
     return GlobalRoot();
 }
 
-
 //-----------------------------------------------------------------------------
-Node &
-BlockTimer::CurrentNode()
-{
-    return s_global_root[s_current_path];
-}
+Node &BlockTimer::CurrentNode() { return s_global_root[s_current_path]; }
 
 //-----------------------------------------------------------------------------
 // Initializes values if the current location hasn't been s_visited yet,
@@ -224,40 +202,46 @@ void BlockTimer::Precheck()
 {
     if (s_visited.count(s_current_path + "value") == 0)
     { // != "" is to prevent a root of ""
-        Node &curr= CurrentNode();
-        curr["value"]      = 0.0;
-        curr["id"]         = s_rank;
-        curr["count"]      = 0u;
+        Node &curr = CurrentNode();
+        curr["value"] = 0.0;
+        curr["id"] = s_rank;
+        curr["count"] = 0u;
         // added after max (the following 3)
-        curr["min"]        = 0.0;
-        curr["minid"]      = s_rank;
-        curr["avg"]        = 0.0;
+        curr["min"] = 0.0;
+        curr["minid"] = s_rank;
+        curr["avg"] = 0.0;
         curr["sysMemUsed"] = 0ul;
-        curr["procMemMB"]  = 0;
+        curr["procMemMB"] = 0;
 
         s_visited.insert(s_current_path + "value");
     }
 }
 
 //-----------------------------------------------------------------------------
-bool
-BlockTimer::CheckForKnownPath(std::string &path)
+bool BlockTimer::CheckForKnownPath(std::string &path)
 {
-  if(path == "value")       return true;
-  if(path == "id")          return true;
-  if(path == "count")       return true;
-  if(path == "avg")         return true;
-  if(path == "minimum")     return true;
-  if(path == "minid")       return true;
-  if(path == "sysMemUsed")  return true;
-  if(path == "procMemMB")   return true;
-  return false;
+    if (path == "value")
+        return true;
+    if (path == "id")
+        return true;
+    if (path == "count")
+        return true;
+    if (path == "avg")
+        return true;
+    if (path == "minimum")
+        return true;
+    if (path == "minid")
+        return true;
+    if (path == "sysMemUsed")
+        return true;
+    if (path == "procMemMB")
+        return true;
+    return false;
 }
 //-----------------------------------------------------------------------------
 // Goes up one function in the current location path.
 //-----------------------------------------------------------------------------
-void
-BlockTimer::GoUp()
+void BlockTimer::GoUp()
 {
     const unsigned int len = s_current_path.length();
     if (len == 0)
@@ -300,30 +284,32 @@ BlockTimer::Reduce(Node &a, Node &b)
     // If a has it
     if (a.dtype().is_object() && a.has_path("value"))
     {
-      // Update (reduce) data
-      a["count"] = a["count"].as_uint32() + b["count"].as_uint32();
+        // Update (reduce) data
+        a["count"] = a["count"].as_uint32() + b["count"].as_uint32();
 
-      if (b["value"].as_float64() > a["value"].as_float64())
-      {
-          a["value"] = b["value"];
-          a["id"] = b["id"];
-      }
+        if (b["value"].as_float64() > a["value"].as_float64())
+        {
+            a["value"] = b["value"];
+            a["id"] = b["id"];
+        }
 
-      // added after max
-      if (a["min"].as_float64() > b["min"].as_float64())
-      {
-          a["min"] = b["min"];
-          a["minid"] = b["minid"];
-      }
+        // added after max
+        if (a["min"].as_float64() > b["min"].as_float64())
+        {
+            a["min"] = b["min"];
+            a["minid"] = b["minid"];
+        }
 
-      unsigned int count_a = a["count"].as_uint32();
-      unsigned int count_b = b["count"].as_uint32();
-      a["avg"] = (a["avg"].as_float64() * count_a + b["avg"].as_float64() * count_b) / (count_a + count_b);
+        unsigned int count_a = a["count"].as_uint32();
+        unsigned int count_b = b["count"].as_uint32();
+        a["avg"] = (a["avg"].as_float64() * count_a +
+                    b["avg"].as_float64() * count_b) /
+                   (count_a + count_b);
     }
 
     NodeIterator itr_b(&b);
 
-    while(itr_b.has_next())
+    while (itr_b.has_next())
     {
         itr_b.next();
         std::string bpath = itr_b.name();
@@ -331,12 +317,12 @@ BlockTimer::Reduce(Node &a, Node &b)
         // If we don't know the path then
         // it is a timer that needs processing
         //
-        if(CheckForKnownPath(bpath))
+        if (CheckForKnownPath(bpath))
         {
             continue;
         }
 
-        if (a.dtype().is_object() &&  a.has_path(bpath))
+        if (a.dtype().is_object() && a.has_path(bpath))
         {
             Reduce(a[bpath], b[bpath]);
         }
@@ -345,27 +331,25 @@ BlockTimer::Reduce(Node &a, Node &b)
     return;
 }
 //-----------------------------------------------------------------------------
-void
-BlockTimer::AverageByCount(Node &node, int numRanks)
+void BlockTimer::AverageByCount(Node &node, int numRanks)
 {
-    if(node.dtype().is_object() && node.has_path("value"))
+    if (node.dtype().is_object() && node.has_path("value"))
     {
-        double count  = node["count"].as_uint32()  / numRanks;
+        double count = node["count"].as_uint32() / numRanks;
         node["value"] = node["value"].as_float64() / count;
-        node["min"]   = node["min"].as_float64()   / count;
-        node["avg"]   = node["avg"].as_float64()   / count;
+        node["min"] = node["min"].as_float64() / count;
+        node["avg"] = node["avg"].as_float64() / count;
         node["count"] = uint32(count);
     }
 
-
     NodeIterator itr = node.children();
 
-    while(itr.has_next())
+    while (itr.has_next())
     {
         Node &curr_node = itr.next();
         std::string curr_path = itr.name();
 
-        if(CheckForKnownPath(curr_path))
+        if (CheckForKnownPath(curr_path))
         {
             continue;
         }
@@ -377,8 +361,7 @@ BlockTimer::AverageByCount(Node &node, int numRanks)
 }
 
 //-----------------------------------------------------------------------------
-void
-BlockTimer::ReduceAll(Node &thisRanksNode)
+void BlockTimer::ReduceAll(Node &thisRanksNode)
 {
 #ifdef ASCENT_MPI_ENABLED
     int temp;
@@ -387,26 +370,26 @@ BlockTimer::ReduceAll(Node &thisRanksNode)
     MPI_Comm_rank(MPI_COMM_WORLD, &temp);
     const unsigned int rank = temp;
 
-    std::vector<Node> recvNodes(numProcesses+1);
+    std::vector<Node> recvNodes(numProcesses + 1);
 
     if (rank == 0)
     {
         for (unsigned int i = 1; i < numProcesses; ++i)
         {
-          recv(recvNodes[i], // node
-               i, // source
-               42, // tag
-               MPI_COMM_WORLD // comm
-               );
-           }
-     }
-     else
-     {
-         send(thisRanksNode, // node
-              0, // dest
-              42, // tag
-              MPI_COMM_WORLD // comm
-              );
+            recv(recvNodes[i],  // node
+                 i,             // source
+                 42,            // tag
+                 MPI_COMM_WORLD // comm
+            );
+        }
+    }
+    else
+    {
+        send(thisRanksNode, // node
+             0,             // dest
+             42,            // tag
+             MPI_COMM_WORLD // comm
+        );
     }
 
     if (rank == 0)
@@ -419,21 +402,18 @@ BlockTimer::ReduceAll(Node &thisRanksNode)
     }
 
     // Get the average time per iteration
-    if(rank == 0)
+    if (rank == 0)
     {
         AverageByCount(s_global_root, numProcesses);
     }
 
 #else
-    AverageByCount(BlockTimer::GlobalRoot(),1);
+    AverageByCount(BlockTimer::GlobalRoot(), 1);
 #endif
 }
 
 //-----------------------------------------------------------------------------
-void BlockTimer::ReduceGlobalRoot()
-{
-    ReduceAll(GlobalRoot());
-}
+void BlockTimer::ReduceGlobalRoot() { ReduceAll(GlobalRoot()); }
 
 //-----------------------------------------------------------------------------
 void BlockTimer::WriteLogFile()
@@ -442,7 +422,7 @@ void BlockTimer::WriteLogFile()
 
     std::string logfile = "ascent.log";
 
-    if(s_rank == 0 )
+    if (s_rank == 0)
     {
         GlobalRoot().print();
         GlobalRoot().to_json_stream(logfile.c_str(), "json", 2, 5);
@@ -450,8 +430,7 @@ void BlockTimer::WriteLogFile()
 }
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-

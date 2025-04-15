@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_hola.cpp
@@ -30,9 +29,9 @@
 #include <fstream>
 
 #if defined(ASCENT_MPI_ENABLED)
-    #include "ascent_hola_mpi.hpp"
-    #include <conduit_relay_mpi.hpp>
-    #include <conduit_relay_mpi_io_blueprint.hpp>
+#    include "ascent_hola_mpi.hpp"
+#    include <conduit_relay_mpi.hpp>
+#    include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
 using namespace conduit;
@@ -44,40 +43,36 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
-void hola(const std::string &source,
-          const Node &options,
-          Node &data)
+void hola(const std::string &source, const Node &options, Node &data)
 {
     data.reset();
-    if(source == "relay/blueprint/mesh")
+    if (source == "relay/blueprint/mesh")
     {
-	std::string root_file = options["root_file"].as_string();
+        std::string root_file = options["root_file"].as_string();
 #if defined(ASCENT_MPI_ENABLED)
-	MPI_Comm comm  = MPI_Comm_f2c(options["mpi_comm"].to_int());
-	conduit::relay::mpi::io::blueprint::load_mesh(root_file,data,comm);
+        MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
+        conduit::relay::mpi::io::blueprint::load_mesh(root_file, data, comm);
 #else
-	conduit::relay::io::blueprint::load_mesh(root_file,data);
+        conduit::relay::io::blueprint::load_mesh(root_file, data);
 #endif
     }
-    else if(source == "hola_mpi")
+    else if (source == "hola_mpi")
     {
 #if defined(ASCENT_MPI_ENABLED)
-        hola_mpi(options,data);
+        hola_mpi(options, data);
 #else
-        ASCENT_ERROR("mpi disabled: 'hola_mpi' can only be used in ascent_mpi" );
+        ASCENT_ERROR(
+            "mpi disabled: 'hola_mpi' can only be used in ascent_mpi");
 #endif
     }
     else
     {
         ASCENT_ERROR("Unknown hola source: " << source);
     }
-
 }
 
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
-
-

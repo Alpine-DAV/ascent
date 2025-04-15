@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_data_object.hpp
@@ -12,9 +11,9 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_METADATA_HPP
-#define ASCENT_METADATA_HPP
+#    define ASCENT_METADATA_HPP
 
-#include <conduit.hpp>
+#    include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -29,11 +28,11 @@ namespace ascent
 // PopoulateMetaData fills this inside the main runtime
 struct Metadata
 {
-  static conduit::Node n_metadata;
+    static conduit::Node n_metadata;
 };
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 #endif
 //-----------------------------------------------------------------------------
 // -- end ascent:: --

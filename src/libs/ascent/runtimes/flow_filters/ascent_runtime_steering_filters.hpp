@@ -11,18 +11,18 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_STEERING_FILTERS
-#define ASCENT_RUNTIME_STEERING_FILTERS
+#    define ASCENT_RUNTIME_STEERING_FILTERS
 
-#include <ascent.hpp>
-#include <flow_filter.hpp>
+#    include <ascent.hpp>
+#    include <flow_filter.hpp>
 
-#ifdef ASCENT_MPI_ENABLED
-#include <mpi.h>
-#endif
+#    ifdef ASCENT_MPI_ENABLED
+#        include <mpi.h>
+#    endif
 
 // std includes
-#include <algorithm>
-#include <functional>
+#    include <algorithm>
+#    include <functional>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -56,16 +56,17 @@ public:
     ~Steering();
     virtual void declare_interface(conduit::Node &i);
     virtual bool verify_params(const conduit::Node &params,
-                                     conduit::Node &info);
+                               conduit::Node &info);
     virtual void execute();
+
 private:
     std::map<std::string, std::function<void()>> m_commands;
     std::map<std::string, std::string> m_descriptions;
     conduit::Node m_params;
     conduit::Node m_output;
-#ifdef ASCENT_MPI_ENABLED
+#    ifdef ASCENT_MPI_ENABLED
     MPI_Comm m_mpi_comm;
-#endif
+#    endif
     int m_rank;
     bool m_running;
 
@@ -80,19 +81,19 @@ private:
                      const std::vector<std::string> &args);
 };
 
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

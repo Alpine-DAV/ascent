@@ -11,10 +11,10 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_JIT_MATH_HPP
-#define ASCENT_JIT_MATH_HPP
+#    define ASCENT_JIT_MATH_HPP
 
-#include "ascent_insertion_ordered_set.hpp"
-#include <string>
+#    include "ascent_insertion_ordered_set.hpp"
+#    include <string>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -37,80 +37,80 @@ namespace expressions
 class MathCode
 {
 public:
-  void determinant_2x2(InsertionOrderedSet<std::string> &code,
-                       const std::string &a,
-                       const std::string &b,
-                       const std::string &res_name,
-                       const bool declare = true) const;
+    void determinant_2x2(InsertionOrderedSet<std::string> &code,
+                         const std::string &a,
+                         const std::string &b,
+                         const std::string &res_name,
+                         const bool declare = true) const;
 
-  void determinant_3x3(InsertionOrderedSet<std::string> &code,
-                       const std::string &a,
-                       const std::string &b,
-                       const std::string &c,
-                       const std::string &res_name,
-                       const bool declare = true) const;
+    void determinant_3x3(InsertionOrderedSet<std::string> &code,
+                         const std::string &a,
+                         const std::string &b,
+                         const std::string &c,
+                         const std::string &res_name,
+                         const bool declare = true) const;
 
-  void vector_subtract(InsertionOrderedSet<std::string> &code,
+    void vector_subtract(InsertionOrderedSet<std::string> &code,
+                         const std::string &a,
+                         const std::string &b,
+                         const std::string &res_name,
+                         const int num_components,
+                         const bool declare = true) const;
+
+    void vector_add(InsertionOrderedSet<std::string> &code,
+                    const std::string &a,
+                    const std::string &b,
+                    const std::string &res_name,
+                    const int num_components,
+                    const bool declare = true) const;
+
+    void cross_product(InsertionOrderedSet<std::string> &code,
                        const std::string &a,
                        const std::string &b,
                        const std::string &res_name,
                        const int num_components,
                        const bool declare = true) const;
 
-  void vector_add(InsertionOrderedSet<std::string> &code,
-                  const std::string &a,
-                  const std::string &b,
-                  const std::string &res_name,
-                  const int num_components,
-                  const bool declare = true) const;
-
-  void cross_product(InsertionOrderedSet<std::string> &code,
+    void dot_product(InsertionOrderedSet<std::string> &code,
                      const std::string &a,
                      const std::string &b,
                      const std::string &res_name,
                      const int num_components,
                      const bool declare = true) const;
 
-  void dot_product(InsertionOrderedSet<std::string> &code,
+    void magnitude(InsertionOrderedSet<std::string> &code,
                    const std::string &a,
-                   const std::string &b,
                    const std::string &res_name,
                    const int num_components,
                    const bool declare = true) const;
 
-  void magnitude(InsertionOrderedSet<std::string> &code,
-                 const std::string &a,
-                 const std::string &res_name,
-                 const int num_components,
-                 const bool declare = true) const;
+    void array_avg(InsertionOrderedSet<std::string> &code,
+                   const int length,
+                   const std::string &array_name,
+                   const std::string &res_name,
+                   const bool declare) const;
 
-  void array_avg(InsertionOrderedSet<std::string> &code,
-                 const int length,
-                 const std::string &array_name,
-                 const std::string &res_name,
-                 const bool declare) const;
-
-  void component_avg(InsertionOrderedSet<std::string> &code,
-                     const int length,
-                     const std::string &array_name,
-                     const std::string &coord,
-                     const std::string &res_name,
-                     const bool declare) const;
+    void component_avg(InsertionOrderedSet<std::string> &code,
+                       const int length,
+                       const std::string &array_name,
+                       const std::string &coord,
+                       const std::string &res_name,
+                       const bool declare) const;
 };
 
-};
+}; // namespace expressions
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_c.cpp
@@ -24,123 +23,92 @@ using conduit::Node;
 // -- begin extern C
 //-----------------------------------------------------------------------------
 
-extern "C" {
-
-
-//---------------------------------------------------------------------------//
-ascent::Ascent *
-cpp_ascent(Ascent *v)
+extern "C"
 {
-    return static_cast<ascent::Ascent*>(v);
-}
 
-//---------------------------------------------------------------------------//
-Ascent *
-c_ascent(ascent::Ascent *v)
-{
-    return (void*)v;
-}
+    //---------------------------------------------------------------------------//
+    ascent::Ascent *cpp_ascent(Ascent *v)
+    {
+        return static_cast<ascent::Ascent *>(v);
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_about(conduit_node *result)
-{
-    Node &n = conduit::cpp_node_ref(result);
-    ascent::about(n);
-}
+    //---------------------------------------------------------------------------//
+    Ascent *c_ascent(ascent::Ascent *v) { return (void *)v; }
 
-//---------------------------------------------------------------------------//
-Ascent *
-ascent_create()
-{
-    return c_ascent(new ascent::Ascent());
-}
+    //---------------------------------------------------------------------------//
+    void ascent_about(conduit_node *result)
+    {
+        Node &n = conduit::cpp_node_ref(result);
+        ascent::about(n);
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_open(Ascent *c_ascent,
-            conduit_node *c_options)
-{
-    ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node &n = conduit::cpp_node_ref(c_options);
-    v->open(n);
-}
+    //---------------------------------------------------------------------------//
+    Ascent *ascent_create() { return c_ascent(new ascent::Ascent()); }
 
-//---------------------------------------------------------------------------//
-void
-ascent_publish(Ascent *c_ascent,
-               conduit_node *c_data)
-{
-    ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node &n = conduit::cpp_node_ref(c_data);
-    v->publish(n);
-}
+    //---------------------------------------------------------------------------//
+    void ascent_open(Ascent *c_ascent, conduit_node *c_options)
+    {
+        ascent::Ascent *v = cpp_ascent(c_ascent);
+        Node &n = conduit::cpp_node_ref(c_options);
+        v->open(n);
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_execute(Ascent *c_ascent,
-               conduit_node *c_actions)
-{
-    ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node &n = conduit::cpp_node_ref(c_actions);
-    v->execute(n);
-}
+    //---------------------------------------------------------------------------//
+    void ascent_publish(Ascent *c_ascent, conduit_node *c_data)
+    {
+        ascent::Ascent *v = cpp_ascent(c_ascent);
+        Node &n = conduit::cpp_node_ref(c_data);
+        v->publish(n);
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_info(Ascent *c_ascent,
-            conduit_node *c_out)
-{
-    ascent::Ascent *v = cpp_ascent(c_ascent);
-    Node &n = conduit::cpp_node_ref(c_out);
-    v->info(n);
-}
+    //---------------------------------------------------------------------------//
+    void ascent_execute(Ascent *c_ascent, conduit_node *c_actions)
+    {
+        ascent::Ascent *v = cpp_ascent(c_ascent);
+        Node &n = conduit::cpp_node_ref(c_actions);
+        v->execute(n);
+    }
 
-//---------------------------------------------------------------------------//
-conduit_node *
-ascent_info_ref(Ascent *c_ascent)
-{
-    ascent::Ascent *v = cpp_ascent(c_ascent);
-    return conduit::c_node(&v->info());
-}
+    //---------------------------------------------------------------------------//
+    void ascent_info(Ascent *c_ascent, conduit_node *c_out)
+    {
+        ascent::Ascent *v = cpp_ascent(c_ascent);
+        Node &n = conduit::cpp_node_ref(c_out);
+        v->info(n);
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_close(Ascent *c_ascent)
-{
-    ascent::Ascent *v = cpp_ascent(c_ascent);
-    v->close();
-}
+    //---------------------------------------------------------------------------//
+    conduit_node *ascent_info_ref(Ascent *c_ascent)
+    {
+        ascent::Ascent *v = cpp_ascent(c_ascent);
+        return conduit::c_node(&v->info());
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_destroy(Ascent *c_ascent)
-{
-    ascent::Ascent *v = cpp_ascent(c_ascent);
-    delete v;
-}
+    //---------------------------------------------------------------------------//
+    void ascent_close(Ascent *c_ascent)
+    {
+        ascent::Ascent *v = cpp_ascent(c_ascent);
+        v->close();
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_timer_start(char *name)
-{
-    ascent::BlockTimer::StartTimer(name);
-}
+    //---------------------------------------------------------------------------//
+    void ascent_destroy(Ascent *c_ascent)
+    {
+        ascent::Ascent *v = cpp_ascent(c_ascent);
+        delete v;
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_timer_stop(char *name)
-{
-    ascent::BlockTimer::StopTimer(name);
-}
+    //---------------------------------------------------------------------------//
+    void ascent_timer_start(char *name)
+    {
+        ascent::BlockTimer::StartTimer(name);
+    }
 
-//---------------------------------------------------------------------------//
-void
-ascent_timer_write()
-{
-    ascent::BlockTimer::WriteLogFile();
-}
+    //---------------------------------------------------------------------------//
+    void ascent_timer_stop(char *name) { ascent::BlockTimer::StopTimer(name); }
 
+    //---------------------------------------------------------------------------//
+    void ascent_timer_write() { ascent::BlockTimer::WriteLogFile(); }
 }
 //-----------------------------------------------------------------------------
 // -- end extern C

@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_transmogrifier.hpp
@@ -12,9 +11,9 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_TRANSMOGRIGIFIER_HPP
-#define ASCENT_TRANSMOGRIGIFIER_HPP
+#    define ASCENT_TRANSMOGRIGIFIER_HPP
 
-#include <flow_filter.hpp>
+#    include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -26,21 +25,20 @@ namespace ascent
 class Transmogrifier
 {
 public:
-// refinement level for high order data
-static int m_refinement_level;
+    // refinement level for high order data
+    static int m_refinement_level;
 
-static conduit::Node* low_order(conduit::Node &dataset);
+    static conduit::Node *low_order(conduit::Node &dataset);
 
-static bool is_high_order(const conduit::Node &doms);
+    static bool is_high_order(const conduit::Node &doms);
 
-static bool is_poly(const conduit::Node &doms);
+    static bool is_poly(const conduit::Node &doms);
 
-static void to_poly(conduit::Node &doms, conduit::Node &to_vtkh);
-
+    static void to_poly(conduit::Node &doms, conduit::Node &to_vtkh);
 };
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 #endif
 //-----------------------------------------------------------------------------
 // -- end ascent:: --

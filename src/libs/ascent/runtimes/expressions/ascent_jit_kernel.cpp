@@ -31,50 +31,48 @@ namespace runtime
 namespace expressions
 {
 
-void
-Kernel::fuse_kernel(const Kernel &from)
+void Kernel::fuse_kernel(const Kernel &from)
 {
-  functions.insert(from.functions);
-  kernel_body.insert(from.kernel_body);
-  for_body.insert(from.for_body);
+    functions.insert(from.functions);
+    kernel_body.insert(from.kernel_body);
+    for_body.insert(from.for_body);
 }
 
 // copy expr into a variable (scalar or vector) "output"
-std::string
-Kernel::generate_output(const std::string &output, bool declare) const
+std::string Kernel::generate_output(const std::string &output,
+                                    bool declare) const
 {
-  std::string res;
-  if(declare)
-  {
-    res += "double " + output;
-    if(num_components > 1)
+    std::string res;
+    if (declare)
     {
-      res += "[" + std::to_string(num_components) + "]";
+        res += "double " + output;
+        if (num_components > 1)
+        {
+            res += "[" + std::to_string(num_components) + "]";
+        }
+        res += ";\n";
     }
-    res += ";\n";
-  }
-  if(num_components > 1)
-  {
-    for(int i = 0; i < num_components; ++i)
+    if (num_components > 1)
     {
-      res += output + "[" + std::to_string(i) + "] = " + expr + "[" +
-             std::to_string(i) + "];\n";
+        for (int i = 0; i < num_components; ++i)
+        {
+            res += output + "[" + std::to_string(i) + "] = " + expr + "[" +
+                   std::to_string(i) + "];\n";
+        }
     }
-  }
-  else
-  {
-    res += output + " = " + expr + ";\n";
-  }
-  return res;
+    else
+    {
+        res += output + " = " + expr + ";\n";
+    }
+    return res;
 }
 
 // generate a loop to set expr into the array "output"
-std::string
-Kernel::generate_loop(const std::string &output,
-                      const ArrayCode &array_code,
-                      const std::string &entries_name) const
+std::string Kernel::generate_loop(const std::string &output,
+                                  const ArrayCode &array_code,
+                                  const std::string &entries_name) const
 {
-  // clang-format off
+    // clang-format off
   std::string res =
     "for (int group = 0; group < " + entries_name + "; group += 128; @outer)\n"
        "{\n"
@@ -100,23 +98,23 @@ Kernel::generate_loop(const std::string &output,
          "}\n"
        "}\n";
   return res;
-  // clang-format on
+    // clang-format on
 }
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace expressions
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

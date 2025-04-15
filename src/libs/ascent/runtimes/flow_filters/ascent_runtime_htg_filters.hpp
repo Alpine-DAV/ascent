@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_htg_filters.hpp
@@ -12,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_FLOW_PIPELINE_HTG_FILTERS_HPP
-#define ASCENT_FLOW_PIPELINE_HTG_FILTERS_HPP
+#    define ASCENT_FLOW_PIPELINE_HTG_FILTERS_HPP
 
-#include <flow_filter.hpp>
+#    include <flow_filter.hpp>
 
-#include <ascent_exports.h>
+#    include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -29,7 +28,6 @@ namespace ascent
 //-----------------------------------------------------------------------------
 namespace runtime
 {
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent::runtime::filters --
@@ -48,36 +46,32 @@ class ASCENT_API HTGIOSave : public ::flow::Filter
 {
 public:
     HTGIOSave();
-   ~HTGIOSave();
+    ~HTGIOSave();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

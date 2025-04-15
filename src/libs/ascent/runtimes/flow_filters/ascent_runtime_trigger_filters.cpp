@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_trigger_filters.cpp
@@ -32,10 +31,10 @@
 
 // mpi related includes
 #ifdef ASCENT_MPI_ENABLED
-#include <mpi.h>
+#    include <mpi.h>
 // -- conduit relay mpi
-#include <conduit_relay_mpi.hpp>
-#include <conduit_blueprint_mpi.hpp>
+#    include <conduit_relay_mpi.hpp>
+#    include <conduit_blueprint_mpi.hpp>
 #endif
 
 #include <flow_graph.hpp>
@@ -64,82 +63,79 @@ namespace runtime
 namespace filters
 {
 
-
 //-----------------------------------------------------------------------------
-BasicTrigger::BasicTrigger()
-:Filter()
+BasicTrigger::BasicTrigger() : Filter()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
 BasicTrigger::~BasicTrigger()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
-void
-BasicTrigger::declare_interface(Node &i)
+void BasicTrigger::declare_interface(Node &i)
 {
-    i["type_name"]   = "basic_trigger";
+    i["type_name"] = "basic_trigger";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
-bool
-BasicTrigger::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
+bool BasicTrigger::verify_params(const conduit::Node &params,
+                                 conduit::Node &info)
 {
     info.reset();
-    bool res = check_string("condition",params, info, false);
-    res &= check_string("callback",params, info, false);
-    res &= check_string("actions_file",params, info, false);
-    res &= check_list("actions_files",params, info, false);
-    res &= check_list("actions",params, info, false);
+    bool res = check_string("condition", params, info, false);
+    res &= check_string("callback", params, info, false);
+    res &= check_string("actions_file", params, info, false);
+    res &= check_list("actions_files", params, info, false);
+    res &= check_list("actions", params, info, false);
 
     bool has_condition = params.has_child("condition");
-    bool has_callback  = params.has_child("callback");
-    bool has_actions   = params.has_child("actions");
-    bool has_actions_file  = params.has_child("actions_file");
+    bool has_callback = params.has_child("callback");
+    bool has_actions = params.has_child("actions");
+    bool has_actions_file = params.has_child("actions_file");
     bool has_actions_files = params.has_child("actions_files");
 
-    if( has_condition && has_callback )
+    if (has_condition && has_callback)
     {
-      res = false;
-      info["errors"].append() = "Both `condition` and `callback` are "
-                                "present. Choose one or the other.";
+        res = false;
+        info["errors"].append() = "Both `condition` and `callback` are "
+                                  "present. Choose one or the other.";
     }
 
-    if( ! (has_condition || has_callback) )
+    if (!(has_condition || has_callback))
     {
-      res = false;
-      info["errors"].append() = "No `condition` or `callback` provided. "
-                                "Choose please provide trigger `condition`"
-                                " or `callback`";
+        res = false;
+        info["errors"].append() = "No `condition` or `callback` provided. "
+                                  "Choose please provide trigger `condition`"
+                                  " or `callback`";
     }
 
-    if( has_actions_file && has_actions_files )
+    if (has_actions_file && has_actions_files)
     {
-      res = false;
-      info["errors"].append() = "Both `actions_file` and `actions_files` are "
-                                "present. Choose one or the other.";
+        res = false;
+        info["errors"].append() =
+            "Both `actions_file` and `actions_files` are "
+            "present. Choose one or the other.";
     }
 
-    if(has_actions && (has_actions_file || has_actions_files))
+    if (has_actions && (has_actions_file || has_actions_files))
     {
-      res = false;
-      info["errors"].append() = "Both `actions` and `actions_file(s)` are "
-                                "present. Choose one or the other.";
+        res = false;
+        info["errors"].append() = "Both `actions` and `actions_file(s)` are "
+                                  "present. Choose one or the other.";
     }
 
-    if(!has_actions && !(has_actions_file || has_actions_files))
+    if (!has_actions && !(has_actions_file || has_actions_files))
     {
-      res = false;
-      info["errors"].append() = "No trigger actions provided. Please "
-                                "specify either 'actions_file(s)' or "
-                                "'actions'.";
+        res = false;
+        info["errors"].append() = "No trigger actions provided. Please "
+                                  "specify either 'actions_file(s)' or "
+                                  "'actions'.";
     }
 
     std::vector<std::string> valid_paths;
@@ -154,9 +150,9 @@ BasicTrigger::verify_params(const conduit::Node &params,
     ignore_paths.push_back("actions");
     ignore_paths.push_back("actions_files");
 
-    std::string surprises = surprise_check(valid_paths, ignore_paths,params);
+    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
-    if(surprises != "")
+    if (surprises != "")
     {
         res = false;
         info["errors"].append() = surprises;
@@ -165,12 +161,10 @@ BasicTrigger::verify_params(const conduit::Node &params,
     return res;
 }
 
-
 //-----------------------------------------------------------------------------
-void
-BasicTrigger::execute()
+void BasicTrigger::execute()
 {
-    if(!input(0).check_type<DataObject>())
+    if (!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("Trigger input must be a data object");
     }
@@ -181,8 +175,8 @@ BasicTrigger::execute()
     int mpi_comm_id = -1;
 
 #ifdef ASCENT_MPI_ENABLED
-      // TODO: Read from this Ascent instance's ops, vs static val
-     mpi_comm_id = Workspace::default_mpi_comm();
+    // TODO: Read from this Ascent instance's ops, vs static val
+    mpi_comm_id = Workspace::default_mpi_comm();
 #endif
 
     // params verify above will make sure that:
@@ -191,47 +185,46 @@ BasicTrigger::execute()
 
     conduit::Node actions;
 
-    std:vector<std::string> actions_files;
+std:
+    vector<std::string> actions_files;
 
-    if(params().has_child("actions_file"))
+    if (params().has_child("actions_file"))
     {
         actions_files.push_back(params()["actions_file"].as_string());
     }
-    else if(params().has_child("actions_files"))
+    else if (params().has_child("actions_files"))
     {
         NodeConstIterator itr = params()["actions_files"].children();
-        while(itr.has_next())
+        while (itr.has_next())
         {
             actions_files.push_back(itr.next().as_string());
         }
     }
     else
     {
-      actions = params()["actions"];
+        actions = params()["actions"];
     }
 
-    if(actions_files.size() > 0)
+    if (actions_files.size() > 0)
     {
-        for(auto actions_file: actions_files)
+        for (auto actions_file : actions_files)
         {
             Node loaded_actions;
-            bool load_ok = load_actions_file(actions_file,
-                                             mpi_comm_id,
-                                             loaded_actions);
-            if(!load_ok)
+            bool load_ok =
+                load_actions_file(actions_file, mpi_comm_id, loaded_actions);
+            if (!load_ok)
             {
-                ASCENT_ERROR("Failed to load actions file: "
-                             << actions_file);
+                ASCENT_ERROR("Failed to load actions file: " << actions_file);
             }
-            
-            if(!loaded_actions.dtype().is_list())
+
+            if (!loaded_actions.dtype().is_list())
             {
                 ASCENT_ERROR("Failed actions loaded from actions file: "
                              << actions_file << " are not a list");
             }
 
             NodeConstIterator itr = loaded_actions.children();
-            while(itr.has_next())
+            while (itr.has_next())
             {
                 const Node &curr = itr.next();
                 actions.append().set(curr);
@@ -244,22 +237,23 @@ BasicTrigger::execute()
 
     conduit::Node res;
 
-    if(has_callback)
+    if (has_callback)
     {
-      std::string callback_name = params()["callback"].as_string();
-      res["value"] = ascent::execute_callback(callback_name);
-      res["type"] = "bool";
+        std::string callback_name = params()["callback"].as_string();
+        res["value"] = ascent::execute_callback(callback_name);
+        res["type"] = "bool";
     }
-    else if(has_condition)
+    else if (has_condition)
     {
-      runtime::expressions::ExpressionEval eval(n_input.get());
-      std::string expression = params()["condition"].as_string();
-      res = eval.evaluate(expression);
+        runtime::expressions::ExpressionEval eval(n_input.get());
+        std::string expression = params()["condition"].as_string();
+        res = eval.evaluate(expression);
 
-      if(res["type"].as_string() != "bool")
-      {
-        ASCENT_ERROR("result of expression '"<<expression<<"' is not an bool");
-      }
+        if (res["type"].as_string() != "bool")
+        {
+            ASCENT_ERROR("result of expression '" << expression
+                                                  << "' is not an bool");
+        }
     }
     else
     {
@@ -269,7 +263,7 @@ BasicTrigger::execute()
 
     bool fire = res["value"].to_uint8() != 0;
 
-    if(fire)
+    if (fire)
     {
         Ascent ascent;
         Node ascent_opts;
@@ -283,28 +277,20 @@ BasicTrigger::execute()
     }
 }
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

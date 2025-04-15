@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_query_filters.hpp
@@ -12,12 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_QUERY_FILTERS
-#define ASCENT_RUNTIME_QUERY_FILTERS
+#    define ASCENT_RUNTIME_QUERY_FILTERS
 
-#include <ascent.hpp>
+#    include <ascent.hpp>
 
-#include <flow_filter.hpp>
-
+#    include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -48,46 +46,42 @@ class ASCENT_API BasicQuery : public ::flow::Filter
 {
 public:
     BasicQuery();
-   ~BasicQuery();
+    ~BasicQuery();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 class ASCENT_API FilterQuery : public ::flow::Filter
 {
 public:
     FilterQuery();
-   ~FilterQuery();
+    ~FilterQuery();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
-
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
 
 #endif
 //-----------------------------------------------------------------------------

@@ -4,29 +4,24 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_python_script_filter.hpp
 ///
 //-----------------------------------------------------------------------------
 
-
-
 /// This support enables running python-based filter scripts
 /// in the case that the host code does not have python.
 /// if the host code is python, we don't need to bring our own
 /// python interpreter
 
-
 #ifndef ASCENT_PYTHON_SCRIPT_FILTER_HPP
-#define ASCENT_PYTHON_SCRIPT_FILTER_HPP
+#    define ASCENT_PYTHON_SCRIPT_FILTER_HPP
 
-#include <ascent_exports.h>
-#include <ascent_data_object.hpp>
+#    include <ascent_exports.h>
+#    include <ascent_data_object.hpp>
 
-#include <flow_python_script_filter.hpp>
-
+#    include <flow_python_script_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -56,37 +51,31 @@ class ASCENT_API AscentPythonScript : public ::flow::filters::PythonScript
 {
 public:
     AscentPythonScript();
-   ~AscentPythonScript();
+    ~AscentPythonScript();
 
-    virtual void   declare_interface(conduit::Node &i) override;
-    virtual void   execute() override;
+    virtual void declare_interface(conduit::Node &i) override;
+    virtual void execute() override;
 };
-
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters--
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime--
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

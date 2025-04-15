@@ -18,15 +18,13 @@
 namespace ascent
 {
 
-void handle_error(const std::string &msg,
-                  const std::string &file,
-                  int line)
+void handle_error(const std::string &msg, const std::string &file, int line)
 {
-  throw conduit::Error( msg, file, line);
+    throw conduit::Error(msg, file, line);
 }
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

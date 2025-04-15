@@ -4,18 +4,17 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 #ifndef ASCENT_VTKH_COLLECTION_HPP
-#define ASCENT_VTKH_COLLECTION_HPP
+#    define ASCENT_VTKH_COLLECTION_HPP
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_vtkh_collection.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <ascent_exports.h>
-#include <vtkh/DataSet.hpp>
-#include <map>
+#    include <ascent_exports.h>
+#    include <vtkh/DataSet.hpp>
+#    include <map>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -36,53 +35,53 @@ namespace ascent
 class ASCENT_API VTKHCollection
 {
 protected:
-  std::map<std::string, vtkh::DataSet> m_datasets;
+    std::map<std::string, vtkh::DataSet> m_datasets;
+
 public:
-  VTKHCollection();
-  void add(vtkh::DataSet &dataset, const std::string topology_name);
+    VTKHCollection();
+    void add(vtkh::DataSet &dataset, const std::string topology_name);
 
-  // returns true if the topology exists on any rank
-  bool has_topology(const std::string name) const;
+    // returns true if the topology exists on any rank
+    bool has_topology(const std::string name) const;
 
-  // returns true if the field exists on any rank
-  bool has_field(const std::string field_name) const;
+    // returns true if the field exists on any rank
+    bool has_field(const std::string field_name) const;
 
-  // returns the local summary
-  std::string summary() const;
+    // returns the local summary
+    std::string summary() const;
 
-  // returns empty string if field not present on
-  // any rank
-  std::string field_topology(const std::string field_name);
+    // returns empty string if field not present on
+    // any rank
+    std::string field_topology(const std::string field_name);
 
-  // returns an empty dataset if topology does not exist on
-  // this rank
-  vtkh::DataSet &dataset_by_topology(const std::string topology_name);
+    // returns an empty dataset if topology does not exist on
+    // this rank
+    vtkh::DataSet &dataset_by_topology(const std::string topology_name);
 
-  vtkm::Bounds global_bounds() const;
+    vtkm::Bounds global_bounds() const;
 
-  // returns the local topology names
-  std::vector<std::string> topology_names() const;
+    // returns the local topology names
+    std::vector<std::string> topology_names() const;
 
-  // returns the local field names
-  std::vector<std::string> field_names() const;
+    // returns the local field names
+    std::vector<std::string> field_names() const;
 
-  // returns the local domain ids
-  std::vector<vtkm::Id> domain_ids() const;
+    // returns the local domain ids
+    std::vector<vtkm::Id> domain_ids() const;
 
-  // returns the local number of topologies
-  int number_of_topologies() const;
+    // returns the local number of topologies
+    int number_of_topologies() const;
 
-  // returns a new collection without the specified topology
-  // this is a shallow copy operation
-  VTKHCollection* copy_without_topology(const std::string topology_name);
+    // returns a new collection without the specified topology
+    // this is a shallow copy operation
+    VTKHCollection *copy_without_topology(const std::string topology_name);
 
-  // re-organize by 'domian_id / topology / data set'
-  std::map<int, std::map<std::string,vtkm::cont::DataSet>> by_domain_id();
-
+    // re-organize by 'domian_id / topology / data set'
+    std::map<int, std::map<std::string, vtkm::cont::DataSet>> by_domain_id();
 };
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 #endif
 //-----------------------------------------------------------------------------
 // -- end ascent:: --

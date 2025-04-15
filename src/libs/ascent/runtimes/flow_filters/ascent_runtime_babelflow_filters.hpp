@@ -9,7 +9,6 @@
 #include <fstream>
 #include <sstream>
 
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -28,7 +27,6 @@ namespace runtime
 namespace filters
 {
 
-
 //-----------------------------------------------------------------------------
 class BFlowPmt : public ::flow::Filter
 {
@@ -36,28 +34,31 @@ public:
     BFlowPmt() = default;
     virtual ~BFlowPmt() {}
 
-    virtual void   declare_interface(conduit::Node &i) override;
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info) override;
-    virtual void   execute() override;
+    virtual void declare_interface(conduit::Node &i) override;
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info) override;
+    virtual void execute() override;
 };
-
 
 //-----------------------------------------------------------------------------
 class BFlowCompose : public ::flow::Filter
 {
 public:
-    enum CompositingType { REDUCE = 0, BINSWAP = 1, RADIX_K = 2 };
-    
+    enum CompositingType
+    {
+        REDUCE = 0,
+        BINSWAP = 1,
+        RADIX_K = 2
+    };
+
     BFlowCompose() = default;
     virtual ~BFlowCompose() {}
 
-    virtual void   declare_interface(conduit::Node &i) override;
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info) override;
-    virtual void   execute() override;
+    virtual void declare_interface(conduit::Node &i) override;
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info) override;
+    virtual void execute() override;
 };
-
 
 //-----------------------------------------------------------------------------
 class BFlowIso : public ::flow::Filter
@@ -66,32 +67,28 @@ public:
     BFlowIso() = default;
     virtual ~BFlowIso() {}
 
-    virtual void   declare_interface(conduit::Node &i) override;
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info) override;
-    virtual void   execute() override;
+    virtual void declare_interface(conduit::Node &i) override;
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info) override;
+    virtual void execute() override;
 };
 
 //-----------------------------------------------------------------------------
-}
+} // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-}
+} // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-}
+} // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
 
-
-
-#endif //ASCENT_ASCENT_RUNTIME_BABELFLOW_FILTERS_H
+#endif // ASCENT_ASCENT_RUNTIME_BABELFLOW_FILTERS_H

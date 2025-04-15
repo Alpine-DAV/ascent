@@ -54,21 +54,19 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
-Steering::Steering()
-:Filter()
+Steering::Steering() : Filter()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
 Steering::~Steering()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::declare_interface(Node &i)
+void Steering::declare_interface(Node &i)
 {
     i["type_name"] = "steering";
     i["port_names"].append() = "in";
@@ -76,15 +74,13 @@ Steering::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-Steering::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
+bool Steering::verify_params(const conduit::Node &params, conduit::Node &info)
 {
     bool res = true;
     // This optional parameter exists for automated testing purposes
-    if(params.has_child("explicit_command"))
+    if (params.has_child("explicit_command"))
     {
-        if(!params["explicit_command"].dtype().is_string())
+        if (!params["explicit_command"].dtype().is_string())
         {
             info["errors"].append() = "optional entry 'explicit_command' must"
                                       " be a string";
@@ -95,15 +91,14 @@ Steering::verify_params(const conduit::Node &params,
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::execute()
+void Steering::execute()
 {
     // Map of commands to function pointers
-    m_commands["exit"] = [this](){this->exit_shell();};
-    m_commands["help"] = [this](){this->print_help();};
-    m_commands["list"] = [this](){this->list_callbacks();};
-    m_commands["param"] = [this](){this->print_params();};
-    m_commands["run"] = [this](){this->empty_run();};
+    m_commands["exit"] = [this]() { this->exit_shell(); };
+    m_commands["help"] = [this]() { this->print_help(); };
+    m_commands["list"] = [this]() { this->list_callbacks(); };
+    m_commands["param"] = [this]() { this->print_params(); };
+    m_commands["run"] = [this]() { this->empty_run(); };
 
     // Descriptions for each command
     m_descriptions["exit"] = "Exit the steering interface.";
@@ -143,7 +138,7 @@ Steering::execute()
         std::string input = "";
         int input_size = input.size();
 
-        if(params().has_path("explicit_command"))
+        if (params().has_path("explicit_command"))
         {
             // This path exists for automated testing purposes
             input = params()["explicit_command"].as_string();
@@ -190,7 +185,7 @@ Steering::execute()
             std::istringstream lineStream(line);
             std::string cmd;
             lineStream >> cmd;
-        
+
             std::vector<std::string> tokens;
             std::string token;
             while (lineStream >> token)
@@ -211,8 +206,7 @@ Steering::execute()
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::empty_run()
+void Steering::empty_run()
 {
     if (m_rank == 0)
     {
@@ -223,8 +217,7 @@ Steering::empty_run()
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::exit_shell()
+void Steering::exit_shell()
 {
     if (m_rank == 0)
     {
@@ -234,8 +227,7 @@ Steering::exit_shell()
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::list_callbacks()
+void Steering::list_callbacks()
 {
     // Let users see which callbacks were registered with Ascent
     if (m_rank == 0)
@@ -278,8 +270,7 @@ Steering::list_callbacks()
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::print_help()
+void Steering::print_help()
 {
     if (m_rank == 0)
     {
@@ -293,8 +284,7 @@ Steering::print_help()
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::print_params()
+void Steering::print_params()
 {
     if (m_rank == 0)
     {
@@ -311,24 +301,21 @@ Steering::print_params()
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::run_callback(const std::string &callback_name)
+void Steering::run_callback(const std::string &callback_name)
 {
     bool has_callback = false;
 
     // Void callback name iterator
     std::vector<std::string> void_callback_names;
     ascent::get_void_callbacks(void_callback_names);
-    auto void_it = std::find(void_callback_names.begin(),
-                             void_callback_names.end(),
-                             callback_name);
+    auto void_it = std::find(
+        void_callback_names.begin(), void_callback_names.end(), callback_name);
 
     // Bool callback name iterator
     std::vector<std::string> bool_callback_names;
     ascent::get_bool_callbacks(bool_callback_names);
-    auto bool_it = std::find(bool_callback_names.begin(),
-                             bool_callback_names.end(),
-                             callback_name);
+    auto bool_it = std::find(
+        bool_callback_names.begin(), bool_callback_names.end(), callback_name);
 
     // Make sure that the callback actually exists before executing it. This
     // lets us print a friendlier error in case it doesn't
@@ -370,7 +357,7 @@ Steering::run_callback(const std::string &callback_name)
     {
         ascent::execute_callback(callback_name, m_params, m_output);
     }
-    catch(const std::exception& e)
+    catch (const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
     }
@@ -379,7 +366,7 @@ Steering::run_callback(const std::string &callback_name)
 #ifdef ASCENT_MPI_ENABLED
     MPI_Barrier(m_mpi_comm);
 #endif
-    
+
     if (m_rank == 0)
     {
         std::cout << std::endl << "[Output]";
@@ -395,8 +382,7 @@ Steering::run_callback(const std::string &callback_name)
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::modify_params(const std::vector<std::string> &tokens)
+void Steering::modify_params(const std::vector<std::string> &tokens)
 {
     std::string cmd = tokens.size() > 0 ? tokens[0] : "";
     std::string arg = tokens.size() > 1 ? tokens[1] : "";
@@ -408,12 +394,12 @@ Steering::modify_params(const std::vector<std::string> &tokens)
 #ifdef ASCENT_MPI_ENABLED
         m_params["mpi_comm"] = MPI_Comm_c2f(m_mpi_comm);
 #endif
-        m_params["mpi_rank"] = m_rank; 
+        m_params["mpi_rank"] = m_rank;
     }
     else if (cmd == "delete" && !arg.empty())
     {
         // Remove a specific param
-        if(arg != "mpi_comm" && arg != "mpi_rank" && m_params.has_child(arg))
+        if (arg != "mpi_comm" && arg != "mpi_rank" && m_params.has_child(arg))
         {
             m_params.remove(arg);
         }
@@ -427,15 +413,15 @@ Steering::modify_params(const std::vector<std::string> &tokens)
         {
             try
             {
-                // The side effect of this is that integers are also 
+                // The side effect of this is that integers are also
                 double possible_number = std::stod(arg);
                 m_params[cmd] = possible_number;
                 assigned = true;
             }
-            catch (const std::invalid_argument&)
+            catch (const std::invalid_argument &)
             {
             }
-            catch (const std::out_of_range&)
+            catch (const std::out_of_range &)
             {
             }
         }
@@ -451,9 +437,8 @@ Steering::modify_params(const std::vector<std::string> &tokens)
 }
 
 //-----------------------------------------------------------------------------
-void
-Steering::parse_input(const std::string &cmd,
-                      const std::vector<std::string> &args)
+void Steering::parse_input(const std::string &cmd,
+                           const std::vector<std::string> &args)
 {
     if (m_commands.find(cmd) == m_commands.end())
     {
@@ -482,19 +467,19 @@ Steering::parse_input(const std::string &cmd,
 }
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

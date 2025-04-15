@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef ASCENT_MPI_ENABLED
-#include <mpi.h>
+#    include <mpi.h>
 #endif
 
 // conduit includes
@@ -59,21 +59,19 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
-Command::Command()
-:Filter()
+Command::Command() : Filter()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
 Command::~Command()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
-void
-Command::declare_interface(Node &i)
+void Command::declare_interface(Node &i)
 {
     i["type_name"] = "command";
     i["port_names"].append() = "in";
@@ -81,9 +79,7 @@ Command::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-Command::verify_params(const conduit::Node &params,
-                       conduit::Node &info)
+bool Command::verify_params(const conduit::Node &params, conduit::Node &info)
 {
     info.reset();
 
@@ -93,20 +89,21 @@ Command::verify_params(const conduit::Node &params,
     bool res = false;
     if (!has_callback && !has_shell_command)
     {
-        info["errors"].append() = "There was no callback or shell command defined";
+        info["errors"].append() =
+            "There was no callback or shell command defined";
     }
     else if (has_callback && has_shell_command)
     {
         info["errors"].append() = "Both a callback and shell command are "
                                   "present. Choose one or the other.";
     }
-    else if(has_callback && !params["callback"].dtype().is_string())
+    else if (has_callback && !params["callback"].dtype().is_string())
     {
-        info["errors"].append() = "Callbacks must be a string";  
+        info["errors"].append() = "Callbacks must be a string";
     }
-    else if(has_shell_command && !params["shell_command"].dtype().is_string())
+    else if (has_shell_command && !params["shell_command"].dtype().is_string())
     {
-        info["errors"].append() = "Shell commands must be a string";  
+        info["errors"].append() = "Shell commands must be a string";
     }
     else
     {
@@ -132,8 +129,7 @@ Command::verify_params(const conduit::Node &params,
 }
 
 //-----------------------------------------------------------------------------
-void
-Command::execute()
+void Command::execute()
 {
 
     if (!input(0).check_type<DataObject>())
@@ -148,12 +144,12 @@ Command::execute()
 
     std::vector<std::string> commands;
     std::string command;
-    while(std::getline(ss, command, '\n'))
+    while (std::getline(ss, command, '\n'))
     {
         commands.push_back(command);
     }
 
-    #ifdef ASCENT_MPI_ENABLED
+#ifdef ASCENT_MPI_ENABLED
     bool has_mpi_behavior = params().has_path("mpi_behavior");
     if (has_mpi_behavior)
     {
@@ -170,15 +166,14 @@ Command::execute()
             return;
         }
     }
-    #endif
+#endif
 
     execute_command_list(commands, command_type);
 }
 
 //-----------------------------------------------------------------------------
-void
-Command::execute_command_list(const std::vector<std::string> commands,
-                              const std::string &command_type)
+void Command::execute_command_list(const std::vector<std::string> commands,
+                                   const std::string &command_type)
 {
     if (command_type == "callback")
     {
@@ -188,7 +183,8 @@ Command::execute_command_list(const std::vector<std::string> commands,
         {
             ascent::execute_callback(commands.at(i), params, output);
         }
-    } else if (command_type == "shell_command")
+    }
+    else if (command_type == "shell_command")
     {
         for (int i = 0; i < commands.size(); i++)
         {
@@ -198,19 +194,19 @@ Command::execute_command_list(const std::vector<std::string> commands,
 }
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

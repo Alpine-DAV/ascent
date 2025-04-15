@@ -10,10 +10,10 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_LOGGING_OLD_HPP
-#define ASCENT_LOGGING_OLD_HPP
+#    define ASCENT_LOGGING_OLD_HPP
 
-#include <conduit.hpp>
-#include <ascent_exports.h>
+#    include <conduit.hpp>
+#    include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 //
@@ -25,7 +25,7 @@
 /// See conduit::utils docs for details.
 ///
 //-----------------------------------------------------------------------------
-#define ASCENT_INFO( msg ) std::cout << msg;
+#    define ASCENT_INFO(msg) std::cout << msg;
 
 //-----------------------------------------------------------------------------
 //
@@ -38,7 +38,7 @@
 /// See conduit::utils docs for details.
 ///
 //-----------------------------------------------------------------------------
-#define ASCENT_WARN( msg ) CONDUIT_WARN( msg );
+#    define ASCENT_WARN(msg) CONDUIT_WARN(msg);
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -56,19 +56,16 @@ void ASCENT_API handle_error(const std::string &msg,
 /// in ascent.
 ///
 //-----------------------------------------------------------------------------
-#define ASCENT_ERROR( msg )                                         \
-{                                                                   \
-    std::ostringstream ascent_oss_error;                            \
-    ascent_oss_error << msg;                                        \
-    ::ascent::handle_error( ascent_oss_error.str(),                           \
-                  std::string(__FILE__),                            \
-                  __LINE__);                                        \
-}                                                                   \
+#    define ASCENT_ERROR(msg)                                                 \
+        {                                                                     \
+            std::ostringstream ascent_oss_error;                              \
+            ascent_oss_error << msg;                                          \
+            ::ascent::handle_error(                                           \
+                ascent_oss_error.str(), std::string(__FILE__), __LINE__);     \
+        }
 
-} //namespace ascent
+} // namespace ascent
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

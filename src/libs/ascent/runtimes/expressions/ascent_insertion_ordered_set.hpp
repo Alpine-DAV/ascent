@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_INSERTION_ORDERED_SET_HPP
-#define ASCENT_INSERTION_ORDERED_SET_HPP
+#    define ASCENT_INSERTION_ORDERED_SET_HPP
 
-#include <vector>
-#include <string>
-#include <unordered_set>
+#    include <vector>
+#    include <string>
+#    include <unordered_set>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -40,43 +40,42 @@ namespace expressions
 // generate code to get the cell center. This class ensures that
 // when we add the identical code from the second call, it doesn't
 // actually get inserted into the set.
-template <typename T>
-class InsertionOrderedSet
+template <typename T> class InsertionOrderedSet
 {
 public:
-  // Seif: 'unique is meant to bypass the very thing this class is meant
-  //        do' if set to false.
-  // Matt:  Not sure if its used or needs to exist. Also we can remove
-  //        the template since its only ever used with strings
-  void insert(const T &item, const bool unique = true);
+    // Seif: 'unique is meant to bypass the very thing this class is meant
+    //        do' if set to false.
+    // Matt:  Not sure if its used or needs to exist. Also we can remove
+    //        the template since its only ever used with strings
+    void insert(const T &item, const bool unique = true);
 
-  void insert(std::initializer_list<T> ilist, const bool unique = true);
+    void insert(std::initializer_list<T> ilist, const bool unique = true);
 
-  void insert(const InsertionOrderedSet<T> &ios, const bool unique = true);
+    void insert(const InsertionOrderedSet<T> &ios, const bool unique = true);
 
-  T accumulate() const;
+    T accumulate() const;
 
-  const std::vector<T> & data() const;
+    const std::vector<T> &data() const;
 
 private:
-  std::unordered_set<T> data_set;
-  std::vector<T> insertion_ordered_data;
+    std::unordered_set<T> data_set;
+    std::vector<T> insertion_ordered_data;
 };
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace expressions
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
