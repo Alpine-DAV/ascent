@@ -56,7 +56,7 @@ std::string expand_format_value(const std::string path_string,
 {
   std::string result_string = path_string;
 
-  // Maintaing legacy family string formatting
+  // Maintaining legacy family string formatting
   bool has_format = result_string.find("%") != std::string::npos;
   if(has_format)
   {
@@ -81,7 +81,7 @@ std::string expand_generic_variable(const std::string& path_string,
     //
     // The different supported integer number types are:
     //    d: signed decimal integer
-    //    i: digned decimal integer
+    //    i: signed decimal integer
     //    u: unsigned decimal integer
     //
     // e.g. 003d or 34i or 1d or 4u
@@ -165,7 +165,7 @@ int check_directory_for_family_value(const std::string& path_string,
   std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
   std::regex other_fmts_pattern(R"(\{[a-zA-Z]*:[a-zA-Z0-9.]*\})");
 
-  // This patern is used to match to numbers.
+  // This pattern is used to match to numbers.
   // It is looking for integers, decimal, and scientific notation values
   // Explanation:
   //      [+-]?              - Optional + or - symbol
@@ -261,12 +261,12 @@ std::string expand_path_special_variables(const std::string &path_string,
                                           int counter,
                                           bool append_if_no_format)
 {
-    // Parterns to identify keyword specified formatting
+    // Patterns to identify keyword specified formatting
     //
     // Pattern is '{keyword:format}' where keyword is cycle, family or time and format is a valid
     // integer or floating point standard format.
     //
-    // Format loosly defined here any any combination of digits, characters, or a period.
+    // Format loosely defined here any any combination of digits, characters, or a period.
     // More specific formatting constraints are defined in 'expand_generic_variable()'
     std::regex cycle_pattern(R"(\{cycle:([a-zA-Z0-9.]*)\})");
     std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
