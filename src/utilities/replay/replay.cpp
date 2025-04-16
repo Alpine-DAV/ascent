@@ -42,7 +42,10 @@ void usage()
   std::cout<<"  --cycles  : a text file containing a list of root files, one per line.\n";
   std::cout<<"              Each file will be loaded and sent to Ascent in order.\n";
   std::cout<<"  --actions : a yaml file containing ascent actions. Default value\n";
-  std::cout<<"              is 'ascent_actions.yaml'.\n\n";
+  std::cout<<"              is 'ascent_actions.yaml'.\n";
+  std::cout<<"  --groups  : for ascent_replay_mpi, specify the number of parallelin time\n";
+  std::cout<<"              groups the processes are split into. Default behavior is to\n";
+  std::cout<<"              have all processes parallel in time.\n\n";
   std::cout<<"======================== Examples =========================\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
@@ -55,6 +58,7 @@ struct Options
   std::string m_actions_file = "ascent_actions.yaml";
   std::string m_root_file;
   std::string m_cycles_file;
+  int m_num_groups = -1;
 
   void parse(int argc, char** argv)
   {
@@ -71,6 +75,10 @@ struct Options
       else if(contains(argv[i], "--actions="))
       {
         m_actions_file = get_arg(argv[i]);
+      }
+      else if(contains(argv[i], "--groups="))
+      {
+        m_num_groups = stoi(get_arg(argv[i]));
       }
       else
       {
@@ -246,6 +254,9 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
 int
 main(int argc, char *argv[])
 {
+  //
+  // Load Replay Options
+  //
   Options options;
   options.parse(argc, argv);
 
@@ -279,7 +290,7 @@ main(int argc, char *argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  num_process_groups = comm_size;
+  num_process_groups = options.m_num_groups > 0 ? options.m_num_groups : comm_size;
 
   // Split processes into multiple comm worlds to do parallel in time processing
   int color = rank % num_process_groups;
