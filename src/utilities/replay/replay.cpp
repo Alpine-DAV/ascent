@@ -271,13 +271,22 @@ main(int argc, char *argv[])
     }
   }
 
-  int comm_size = 1;
-  int rank = 0;
-
+  int comm_size, sub_comm_size = 1;
+  int rank, sub_rank = 0;
+  int num_process_groups = 1;
 #if defined(ASCENT_REPLAY_MPI)
   MPI_Init(NULL,NULL);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  num_process_groups = comm_size;
+
+  // Split processes into multiple comm worlds to do parallel in time processing
+  int color = rank % num_process_groups;
+  MPI_Comm sub_comm_world;
+  MPI_Comm_split(MPI_COMM_WORLD, color, rank, &sub_comm_world);
+  MPI_Comm_size(sub_comm_world, &sub_comm_size);
+  MPI_Comm_rank(sub_comm_world, &sub_rank);
 #endif
 
   conduit::Node replay_data;
@@ -285,7 +294,7 @@ main(int argc, char *argv[])
   conduit::Node ascent_opts;
   ascent_opts["ascent_info"] = "verbose";
 #if defined(ASCENT_REPLAY_MPI)
-  ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  ascent_opts["mpi_comm"] = MPI_Comm_c2f(sub_comm_world);
 #endif
 
   //
@@ -298,9 +307,9 @@ main(int argc, char *argv[])
   ascent::Ascent ascent;
   ascent.open(ascent_opts);
 
-  for(int i = 0; i < time_steps.size(); ++i)
+  for(int i = rank % num_process_groups; i < time_steps.size(); i += num_process_groups)
   {
-    if(rank == 0)
+    if(sub_rank == 0)
     {
       std::cout<< "[" << i << "]: Root file "<<time_steps[i]<<"\n";
     }
@@ -314,24 +323,24 @@ main(int argc, char *argv[])
 #endif
 
 #if defined(ASCENT_REPLAY_MPI)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(sub_comm_world);
 #endif
     float load_time = load.elapsed();
 
     flow::Timer publish;
     ascent.publish(replay_data);
 #if defined(ASCENT_REPLAY_MPI)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(sub_comm_world);
 #endif
     float publish_time = publish.elapsed();
 
     flow::Timer execute;
     ascent.execute(actions);
 #if defined(ASCENT_REPLAY_MPI)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(sub_comm_world);
 #endif
     float execute_time = execute.elapsed();
-    if(rank == 0)
+    if(sub_rank == 0)
     {
       std::cout<< "[" << i << "]: Load -----: "<<load_time<<"\n";
       std::cout<< "[" << i << "]: Publish --: "<<publish_time<<"\n";
@@ -342,6 +351,7 @@ main(int argc, char *argv[])
   ascent.close();
 
 #if defined(ASCENT_REPLAY_MPI)
+  MPI_Comm_free(&sub_comm_world);
   MPI_Finalize();
 #endif
   return 0;
