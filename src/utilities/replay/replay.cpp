@@ -291,8 +291,13 @@ main(int argc, char *argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  // Determine how many sub_comms we should be creating
   num_process_groups = options.m_num_groups > 0 ? options.m_num_groups 
                                                 : static_cast<int>(std::floor(std::sqrt(comm_size)));
+  if(num_process_groups > comm_size)
+  {
+    num_process_groups = comm_size;
+  }
 
   // Split processes into multiple comm worlds to do parallel in time processing
   int color = rank % num_process_groups;
