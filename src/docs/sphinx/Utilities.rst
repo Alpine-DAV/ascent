@@ -109,6 +109,8 @@ The options for replay are:
 * ``--root``: specifies Blueprint root file to load
 * ``--cycles``: specifies a text file containing a list of Blueprint root files to load
 * ``--actions``: specifies the name of the actions file to use (default: ``ascent_actions.json``)
+* ``--groups``: specifies the for ascent_replay_mpi, specify the number of parallelin time groups
+  the processes are split into. (default: square root of availible processes)
 
 Example launches:
 
