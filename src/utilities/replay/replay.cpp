@@ -17,6 +17,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 #if defined(ASCENT_REPLAY_MPI)
 #include <mpi.h>
@@ -44,8 +45,8 @@ void usage()
   std::cout<<"  --actions : a yaml file containing ascent actions. Default value\n";
   std::cout<<"              is 'ascent_actions.yaml'.\n";
   std::cout<<"  --groups  : for ascent_replay_mpi, specify the number of parallelin time\n";
-  std::cout<<"              groups the processes are split into. Default behavior is to\n";
-  std::cout<<"              have all processes parallel in time.\n\n";
+  std::cout<<"              groups the processes are split into. Default value is the\n";
+  std::cout<<"              square root of the number of availible processes.\n\n";
   std::cout<<"======================== Examples =========================\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
@@ -290,7 +291,8 @@ main(int argc, char *argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  num_process_groups = options.m_num_groups > 0 ? options.m_num_groups : comm_size;
+  num_process_groups = options.m_num_groups > 0 ? options.m_num_groups 
+                                                : static_cast<int>(std::floor(std::sqrt(comm_size)));
 
   // Split processes into multiple comm worlds to do parallel in time processing
   int color = rank % num_process_groups;
@@ -322,7 +324,7 @@ main(int argc, char *argv[])
   {
     if(sub_rank == 0)
     {
-      std::cout<< "[" << i << "]: Root file "<<time_steps[i]<<"\n";
+      std::cout<< "[rank: " << rank << "][" << i << "]: Root file "<<time_steps[i]<<"\n";
     }
     flow::Timer load;
 
