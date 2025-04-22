@@ -29,9 +29,9 @@ namespace ascent
 // default_directories
 // cycle and time
 // PopoulateMetaData fills this inside the main runtime
-struct Metadata
+struct ASCENT_API Metadata
 {
-  static ASCENT_API conduit::Node n_metadata;
+  static conduit::Node n_metadata;
 };
 
 //-----------------------------------------------------------------------------

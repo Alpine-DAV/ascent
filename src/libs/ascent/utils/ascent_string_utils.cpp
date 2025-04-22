@@ -145,8 +145,9 @@ int check_directory_for_family_value(const std::string& path_string,
 #ifdef ASCENT_MPI_ENABLED
   if(mpi_comm_id == -1)
   {
-      // report as failure to load
-      return false;
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return family_value;
   }
 
   MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
