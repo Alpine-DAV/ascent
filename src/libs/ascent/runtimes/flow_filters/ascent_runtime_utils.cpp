@@ -72,7 +72,7 @@ bool check_dir_path_exists(const std::string file_path, int mpi_comms_id, condui
   MPI_Comm_rank(mpi_comm, &rank);
 #endif
 
-  int res = true;
+  int res = 1;
   std::string curr, next;
   conduit::utils::rsplit_file_path(file_path, curr, next);
   
@@ -82,7 +82,7 @@ bool check_dir_path_exists(const std::string file_path, int mpi_comms_id, condui
   {
     err_msg.set("Error: The specified directory '" + next + 
                 "' does not exist. Please check the path and try again.");
-    res = false;
+    res = 0;
   }
 
 #ifdef ASCENT_MPI_ENABLED
