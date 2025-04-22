@@ -11,13 +11,13 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_JIT_FIELD_HPP
-#    define ASCENT_JIT_FIELD_HPP
+    #define ASCENT_JIT_FIELD_HPP
 
-#    include <memory>
-#    include <string>
-#    include "ascent_jit_array.hpp"
-#    include "ascent_jit_math.hpp"
-#    include "ascent_jit_topology.hpp"
+    #include <memory>
+    #include <string>
+    #include "ascent_jit_array.hpp"
+    #include "ascent_jit_math.hpp"
+    #include "ascent_jit_topology.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

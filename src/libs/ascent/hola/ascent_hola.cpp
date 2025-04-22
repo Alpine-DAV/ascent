@@ -29,9 +29,9 @@
 #include <fstream>
 
 #if defined(ASCENT_MPI_ENABLED)
-#    include "ascent_hola_mpi.hpp"
-#    include <conduit_relay_mpi.hpp>
-#    include <conduit_relay_mpi_io_blueprint.hpp>
+    #include "ascent_hola_mpi.hpp"
+    #include <conduit_relay_mpi.hpp>
+    #include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
 using namespace conduit;

@@ -41,241 +41,241 @@
 #define YY_FLEX_MINOR_VERSION 6
 #define YY_FLEX_SUBMINOR_VERSION 4
 #if YY_FLEX_SUBMINOR_VERSION > 0
-#    define FLEX_BETA
+    #define FLEX_BETA
 #endif
 
 #ifdef yy_create_buffer
-#    define ascent_create_buffer_ALREADY_DEFINED
+    #define ascent_create_buffer_ALREADY_DEFINED
 #else
-#    define yy_create_buffer ascent_create_buffer
+    #define yy_create_buffer ascent_create_buffer
 #endif
 
 #ifdef yy_delete_buffer
-#    define ascent_delete_buffer_ALREADY_DEFINED
+    #define ascent_delete_buffer_ALREADY_DEFINED
 #else
-#    define yy_delete_buffer ascent_delete_buffer
+    #define yy_delete_buffer ascent_delete_buffer
 #endif
 
 #ifdef yy_scan_buffer
-#    define ascent_scan_buffer_ALREADY_DEFINED
+    #define ascent_scan_buffer_ALREADY_DEFINED
 #else
-#    define yy_scan_buffer ascent_scan_buffer
+    #define yy_scan_buffer ascent_scan_buffer
 #endif
 
 #ifdef yy_scan_string
-#    define ascent_scan_string_ALREADY_DEFINED
+    #define ascent_scan_string_ALREADY_DEFINED
 #else
-#    define yy_scan_string ascent_scan_string
+    #define yy_scan_string ascent_scan_string
 #endif
 
 #ifdef yy_scan_bytes
-#    define ascent_scan_bytes_ALREADY_DEFINED
+    #define ascent_scan_bytes_ALREADY_DEFINED
 #else
-#    define yy_scan_bytes ascent_scan_bytes
+    #define yy_scan_bytes ascent_scan_bytes
 #endif
 
 #ifdef yy_init_buffer
-#    define ascent_init_buffer_ALREADY_DEFINED
+    #define ascent_init_buffer_ALREADY_DEFINED
 #else
-#    define yy_init_buffer ascent_init_buffer
+    #define yy_init_buffer ascent_init_buffer
 #endif
 
 #ifdef yy_flush_buffer
-#    define ascent_flush_buffer_ALREADY_DEFINED
+    #define ascent_flush_buffer_ALREADY_DEFINED
 #else
-#    define yy_flush_buffer ascent_flush_buffer
+    #define yy_flush_buffer ascent_flush_buffer
 #endif
 
 #ifdef yy_load_buffer_state
-#    define ascent_load_buffer_state_ALREADY_DEFINED
+    #define ascent_load_buffer_state_ALREADY_DEFINED
 #else
-#    define yy_load_buffer_state ascent_load_buffer_state
+    #define yy_load_buffer_state ascent_load_buffer_state
 #endif
 
 #ifdef yy_switch_to_buffer
-#    define ascent_switch_to_buffer_ALREADY_DEFINED
+    #define ascent_switch_to_buffer_ALREADY_DEFINED
 #else
-#    define yy_switch_to_buffer ascent_switch_to_buffer
+    #define yy_switch_to_buffer ascent_switch_to_buffer
 #endif
 
 #ifdef yypush_buffer_state
-#    define ascentpush_buffer_state_ALREADY_DEFINED
+    #define ascentpush_buffer_state_ALREADY_DEFINED
 #else
-#    define yypush_buffer_state ascentpush_buffer_state
+    #define yypush_buffer_state ascentpush_buffer_state
 #endif
 
 #ifdef yypop_buffer_state
-#    define ascentpop_buffer_state_ALREADY_DEFINED
+    #define ascentpop_buffer_state_ALREADY_DEFINED
 #else
-#    define yypop_buffer_state ascentpop_buffer_state
+    #define yypop_buffer_state ascentpop_buffer_state
 #endif
 
 #ifdef yyensure_buffer_stack
-#    define ascentensure_buffer_stack_ALREADY_DEFINED
+    #define ascentensure_buffer_stack_ALREADY_DEFINED
 #else
-#    define yyensure_buffer_stack ascentensure_buffer_stack
+    #define yyensure_buffer_stack ascentensure_buffer_stack
 #endif
 
 #ifdef yylex
-#    define ascentlex_ALREADY_DEFINED
+    #define ascentlex_ALREADY_DEFINED
 #else
-#    define yylex ascentlex
+    #define yylex ascentlex
 #endif
 
 #ifdef yyrestart
-#    define ascentrestart_ALREADY_DEFINED
+    #define ascentrestart_ALREADY_DEFINED
 #else
-#    define yyrestart ascentrestart
+    #define yyrestart ascentrestart
 #endif
 
 #ifdef yylex_init
-#    define ascentlex_init_ALREADY_DEFINED
+    #define ascentlex_init_ALREADY_DEFINED
 #else
-#    define yylex_init ascentlex_init
+    #define yylex_init ascentlex_init
 #endif
 
 #ifdef yylex_init_extra
-#    define ascentlex_init_extra_ALREADY_DEFINED
+    #define ascentlex_init_extra_ALREADY_DEFINED
 #else
-#    define yylex_init_extra ascentlex_init_extra
+    #define yylex_init_extra ascentlex_init_extra
 #endif
 
 #ifdef yylex_destroy
-#    define ascentlex_destroy_ALREADY_DEFINED
+    #define ascentlex_destroy_ALREADY_DEFINED
 #else
-#    define yylex_destroy ascentlex_destroy
+    #define yylex_destroy ascentlex_destroy
 #endif
 
 #ifdef yyget_debug
-#    define ascentget_debug_ALREADY_DEFINED
+    #define ascentget_debug_ALREADY_DEFINED
 #else
-#    define yyget_debug ascentget_debug
+    #define yyget_debug ascentget_debug
 #endif
 
 #ifdef yyset_debug
-#    define ascentset_debug_ALREADY_DEFINED
+    #define ascentset_debug_ALREADY_DEFINED
 #else
-#    define yyset_debug ascentset_debug
+    #define yyset_debug ascentset_debug
 #endif
 
 #ifdef yyget_extra
-#    define ascentget_extra_ALREADY_DEFINED
+    #define ascentget_extra_ALREADY_DEFINED
 #else
-#    define yyget_extra ascentget_extra
+    #define yyget_extra ascentget_extra
 #endif
 
 #ifdef yyset_extra
-#    define ascentset_extra_ALREADY_DEFINED
+    #define ascentset_extra_ALREADY_DEFINED
 #else
-#    define yyset_extra ascentset_extra
+    #define yyset_extra ascentset_extra
 #endif
 
 #ifdef yyget_in
-#    define ascentget_in_ALREADY_DEFINED
+    #define ascentget_in_ALREADY_DEFINED
 #else
-#    define yyget_in ascentget_in
+    #define yyget_in ascentget_in
 #endif
 
 #ifdef yyset_in
-#    define ascentset_in_ALREADY_DEFINED
+    #define ascentset_in_ALREADY_DEFINED
 #else
-#    define yyset_in ascentset_in
+    #define yyset_in ascentset_in
 #endif
 
 #ifdef yyget_out
-#    define ascentget_out_ALREADY_DEFINED
+    #define ascentget_out_ALREADY_DEFINED
 #else
-#    define yyget_out ascentget_out
+    #define yyget_out ascentget_out
 #endif
 
 #ifdef yyset_out
-#    define ascentset_out_ALREADY_DEFINED
+    #define ascentset_out_ALREADY_DEFINED
 #else
-#    define yyset_out ascentset_out
+    #define yyset_out ascentset_out
 #endif
 
 #ifdef yyget_leng
-#    define ascentget_leng_ALREADY_DEFINED
+    #define ascentget_leng_ALREADY_DEFINED
 #else
-#    define yyget_leng ascentget_leng
+    #define yyget_leng ascentget_leng
 #endif
 
 #ifdef yyget_text
-#    define ascentget_text_ALREADY_DEFINED
+    #define ascentget_text_ALREADY_DEFINED
 #else
-#    define yyget_text ascentget_text
+    #define yyget_text ascentget_text
 #endif
 
 #ifdef yyget_lineno
-#    define ascentget_lineno_ALREADY_DEFINED
+    #define ascentget_lineno_ALREADY_DEFINED
 #else
-#    define yyget_lineno ascentget_lineno
+    #define yyget_lineno ascentget_lineno
 #endif
 
 #ifdef yyset_lineno
-#    define ascentset_lineno_ALREADY_DEFINED
+    #define ascentset_lineno_ALREADY_DEFINED
 #else
-#    define yyset_lineno ascentset_lineno
+    #define yyset_lineno ascentset_lineno
 #endif
 
 #ifdef yywrap
-#    define ascentwrap_ALREADY_DEFINED
+    #define ascentwrap_ALREADY_DEFINED
 #else
-#    define yywrap ascentwrap
+    #define yywrap ascentwrap
 #endif
 
 #ifdef yyalloc
-#    define ascentalloc_ALREADY_DEFINED
+    #define ascentalloc_ALREADY_DEFINED
 #else
-#    define yyalloc ascentalloc
+    #define yyalloc ascentalloc
 #endif
 
 #ifdef yyrealloc
-#    define ascentrealloc_ALREADY_DEFINED
+    #define ascentrealloc_ALREADY_DEFINED
 #else
-#    define yyrealloc ascentrealloc
+    #define yyrealloc ascentrealloc
 #endif
 
 #ifdef yyfree
-#    define ascentfree_ALREADY_DEFINED
+    #define ascentfree_ALREADY_DEFINED
 #else
-#    define yyfree ascentfree
+    #define yyfree ascentfree
 #endif
 
 #ifdef yytext
-#    define ascenttext_ALREADY_DEFINED
+    #define ascenttext_ALREADY_DEFINED
 #else
-#    define yytext ascenttext
+    #define yytext ascenttext
 #endif
 
 #ifdef yyleng
-#    define ascentleng_ALREADY_DEFINED
+    #define ascentleng_ALREADY_DEFINED
 #else
-#    define yyleng ascentleng
+    #define yyleng ascentleng
 #endif
 
 #ifdef yyin
-#    define ascentin_ALREADY_DEFINED
+    #define ascentin_ALREADY_DEFINED
 #else
-#    define yyin ascentin
+    #define yyin ascentin
 #endif
 
 #ifdef yyout
-#    define ascentout_ALREADY_DEFINED
+    #define ascentout_ALREADY_DEFINED
 #else
-#    define yyout ascentout
+    #define yyout ascentout
 #endif
 
 #ifdef yy_flex_debug
-#    define ascent_flex_debug_ALREADY_DEFINED
+    #define ascent_flex_debug_ALREADY_DEFINED
 #else
-#    define yy_flex_debug ascent_flex_debug
+    #define yy_flex_debug ascent_flex_debug
 #endif
 
 #ifdef yylineno
-#    define ascentlineno_ALREADY_DEFINED
+    #define ascentlineno_ALREADY_DEFINED
 #else
-#    define yylineno ascentlineno
+    #define yylineno ascentlineno
 #endif
 
 /* First, we deal with  platform-specific or compiler-specific issues. */
@@ -291,27 +291,27 @@
 /* flex integer type definitions */
 
 #ifndef FLEXINT_H
-#    define FLEXINT_H
+    #define FLEXINT_H
 
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
-#    if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+    #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
-/* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
- * if you want the limit (max/min) macros for int types.
- */
-#        ifndef __STDC_LIMIT_MACROS
-#            define __STDC_LIMIT_MACROS 1
-#        endif
+        /* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
+         * if you want the limit (max/min) macros for int types.
+         */
+        #ifndef __STDC_LIMIT_MACROS
+            #define __STDC_LIMIT_MACROS 1
+        #endif
 
-#        include <inttypes.h>
+        #include <inttypes.h>
 typedef int8_t flex_int8_t;
 typedef uint8_t flex_uint8_t;
 typedef int16_t flex_int16_t;
 typedef uint16_t flex_uint16_t;
 typedef int32_t flex_int32_t;
 typedef uint32_t flex_uint32_t;
-#    else
+    #else
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
 typedef int flex_int32_t;
@@ -319,40 +319,40 @@ typedef unsigned char flex_uint8_t;
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
 
-/* Limits of integral types. */
-#        ifndef INT8_MIN
-#            define INT8_MIN (-128)
-#        endif
-#        ifndef INT16_MIN
-#            define INT16_MIN (-32767 - 1)
-#        endif
-#        ifndef INT32_MIN
-#            define INT32_MIN (-2147483647 - 1)
-#        endif
-#        ifndef INT8_MAX
-#            define INT8_MAX (127)
-#        endif
-#        ifndef INT16_MAX
-#            define INT16_MAX (32767)
-#        endif
-#        ifndef INT32_MAX
-#            define INT32_MAX (2147483647)
-#        endif
-#        ifndef UINT8_MAX
-#            define UINT8_MAX (255U)
-#        endif
-#        ifndef UINT16_MAX
-#            define UINT16_MAX (65535U)
-#        endif
-#        ifndef UINT32_MAX
-#            define UINT32_MAX (4294967295U)
-#        endif
+        /* Limits of integral types. */
+        #ifndef INT8_MIN
+            #define INT8_MIN (-128)
+        #endif
+        #ifndef INT16_MIN
+            #define INT16_MIN (-32767 - 1)
+        #endif
+        #ifndef INT32_MIN
+            #define INT32_MIN (-2147483647 - 1)
+        #endif
+        #ifndef INT8_MAX
+            #define INT8_MAX (127)
+        #endif
+        #ifndef INT16_MAX
+            #define INT16_MAX (32767)
+        #endif
+        #ifndef INT32_MAX
+            #define INT32_MAX (2147483647)
+        #endif
+        #ifndef UINT8_MAX
+            #define UINT8_MAX (255U)
+        #endif
+        #ifndef UINT16_MAX
+            #define UINT16_MAX (65535U)
+        #endif
+        #ifndef UINT32_MAX
+            #define UINT32_MAX (4294967295U)
+        #endif
 
-#        ifndef SIZE_MAX
-#            define SIZE_MAX (~(size_t)0)
-#        endif
+        #ifndef SIZE_MAX
+            #define SIZE_MAX (~(size_t)0)
+        #endif
 
-#    endif /* ! C99 */
+    #endif /* ! C99 */
 
 #endif /* ! FLEXINT_H */
 
@@ -362,9 +362,9 @@ typedef unsigned int flex_uint32_t;
 #define yyconst const
 
 #if defined(__GNUC__) && __GNUC__ >= 3
-#    define yynoreturn __attribute__((__noreturn__))
+    #define yynoreturn __attribute__((__noreturn__))
 #else
-#    define yynoreturn
+    #define yynoreturn
 #endif
 
 /* Returned upon end-of-file. */
@@ -394,15 +394,15 @@ typedef unsigned int flex_uint32_t;
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
-#    ifdef __ia64__
-/* On IA-64, the buffer size is 16k, not 8k.
- * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
- * Ditto for the __ia64__ case accordingly.
- */
-#        define YY_BUF_SIZE 32768
-#    else
-#        define YY_BUF_SIZE 16384
-#    endif /* __ia64__ */
+    #ifdef __ia64__
+        /* On IA-64, the buffer size is 16k, not 8k.
+         * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
+         * Ditto for the __ia64__ case accordingly.
+         */
+        #define YY_BUF_SIZE 32768
+    #else
+        #define YY_BUF_SIZE 16384
+    #endif /* __ia64__ */
 #endif
 
 /* The state buf must be large enough to hold one state per character in the
@@ -411,12 +411,12 @@ typedef unsigned int flex_uint32_t;
 #define YY_STATE_BUF_SIZE ((YY_BUF_SIZE + 2) * sizeof(yy_state_type))
 
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
-#    define YY_TYPEDEF_YY_BUFFER_STATE
+    #define YY_TYPEDEF_YY_BUFFER_STATE
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 #endif
 
 #ifndef YY_TYPEDEF_YY_SIZE_T
-#    define YY_TYPEDEF_YY_SIZE_T
+    #define YY_TYPEDEF_YY_SIZE_T
 typedef size_t yy_size_t;
 #endif
 
@@ -446,7 +446,7 @@ extern FILE *yyin, *yyout;
 #define unput(c) yyunput(c, (yytext_ptr))
 
 #ifndef YY_STRUCT_YY_BUFFER_STATE
-#    define YY_STRUCT_YY_BUFFER_STATE
+    #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
 {
     FILE *yy_input_file;
@@ -493,8 +493,8 @@ struct yy_buffer_state
 
     int yy_buffer_status;
 
-#    define YY_BUFFER_NEW 0
-#    define YY_BUFFER_NORMAL 1
+    #define YY_BUFFER_NEW 0
+    #define YY_BUFFER_NORMAL 1
     /* When an EOF's been seen but there's still some text to process
      * then we mark the buffer as YY_EOF_PENDING, to indicate that we
      * shouldn't try reading from the input source any more.  We might
@@ -505,7 +505,7 @@ struct yy_buffer_state
      * (via yyrestart()), so that the user can continue scanning by
      * just pointing yyin at a new input file.
      */
-#    define YY_BUFFER_EOF_PENDING 2
+    #define YY_BUFFER_EOF_PENDING 2
 };
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
@@ -599,7 +599,7 @@ int yylineno = 1;
 
 extern char *yytext;
 #ifdef yytext_ptr
-#    undef yytext_ptr
+    #undef yytext_ptr
 #endif
 #define yytext_ptr yytext
 
@@ -728,23 +728,23 @@ int bracket_counter = 0;
 #define INITIAL 0
 
 #ifndef YY_NO_UNISTD_H
-/* Special case for "unistd.h", since it is non-ANSI. We include it way
- * down here because we want the user's section 1 to have been scanned first.
- * The user has a chance to override it with an option.
- */
-#    ifndef _WIN32
-#        include <unistd.h>
-#        define ascent_isatty isatty
-#        define ascent_fileno fileno
-#    else
-#        include <io.h>
-#        define ascent_isatty _isatty
-#        define ascent_fileno _fileno
-#    endif
+    /* Special case for "unistd.h", since it is non-ANSI. We include it way
+     * down here because we want the user's section 1 to have been scanned
+     * first. The user has a chance to override it with an option.
+     */
+    #ifndef _WIN32
+        #include <unistd.h>
+        #define ascent_isatty isatty
+        #define ascent_fileno fileno
+    #else
+        #include <io.h>
+        #define ascent_isatty _isatty
+        #define ascent_fileno _fileno
+    #endif
 #endif
 
 #ifndef YY_EXTRA_TYPE
-#    define YY_EXTRA_TYPE void *
+    #define YY_EXTRA_TYPE void *
 #endif
 
 static int yy_init_globals(void);
@@ -783,11 +783,11 @@ void yyset_lineno(int _line_number);
  */
 
 #ifndef YY_SKIP_YYWRAP
-#    ifdef __cplusplus
+    #ifdef __cplusplus
 extern "C" int yywrap(void);
-#    else
+    #else
 extern int yywrap(void);
-#    endif
+    #endif
 #endif
 
 #ifndef YY_NO_UNPUT
@@ -805,30 +805,30 @@ static int yy_flex_strlen(const char *);
 #endif
 
 #ifndef YY_NO_INPUT
-#    ifdef __cplusplus
+    #ifdef __cplusplus
 static int yyinput(void);
-#    else
+    #else
 static int input(void);
-#    endif
+    #endif
 
 #endif
 
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
-#    ifdef __ia64__
-/* On IA-64, the buffer size is 16k, not 8k */
-#        define YY_READ_BUF_SIZE 16384
-#    else
-#        define YY_READ_BUF_SIZE 8192
-#    endif /* __ia64__ */
+    #ifdef __ia64__
+        /* On IA-64, the buffer size is 16k, not 8k */
+        #define YY_READ_BUF_SIZE 16384
+    #else
+        #define YY_READ_BUF_SIZE 8192
+    #endif /* __ia64__ */
 #endif
 
 /* Copy whatever the last rule matched to the standard output. */
 #ifndef ECHO
-/* This used to be an fputs(), but since the string might contain NUL's,
- * we now use fwrite().
- */
-#    define ECHO                                                              \
+    /* This used to be an fputs(), but since the string might contain NUL's,
+     * we now use fwrite().
+     */
+    #define ECHO                                                              \
         do                                                                    \
         {                                                                     \
             if (fwrite(yytext, (size_t)yyleng, 1, yyout))                     \
@@ -841,7 +841,7 @@ static int input(void);
  * is returned in "result".
  */
 #ifndef YY_INPUT
-#    define YY_INPUT(buf, result, max_size)                                   \
+    #define YY_INPUT(buf, result, max_size)                                   \
         if (YY_CURRENT_BUFFER_LVALUE->yy_is_interactive)                      \
         {                                                                     \
             int c = '*';                                                      \
@@ -879,17 +879,17 @@ static int input(void);
  * some compilers to complain about unreachable statements.
  */
 #ifndef yyterminate
-#    define yyterminate() return YY_NULL
+    #define yyterminate() return YY_NULL
 #endif
 
 /* Number of entries by which start-condition stack grows. */
 #ifndef YY_START_STACK_INCR
-#    define YY_START_STACK_INCR 25
+    #define YY_START_STACK_INCR 25
 #endif
 
 /* Report a fatal error. */
 #ifndef YY_FATAL_ERROR
-#    define YY_FATAL_ERROR(msg) yy_fatal_error(msg)
+    #define YY_FATAL_ERROR(msg) yy_fatal_error(msg)
 #endif
 
 /* end tables serialization structures and prototypes */
@@ -898,23 +898,23 @@ static int input(void);
  * easily add parameters.
  */
 #ifndef YY_DECL
-#    define YY_DECL_IS_OURS 1
+    #define YY_DECL_IS_OURS 1
 
 extern int yylex(void);
 
-#    define YY_DECL int yylex(void)
+    #define YY_DECL int yylex(void)
 #endif /* !YY_DECL */
 
 /* Code executed at the beginning of each rule, after yytext and yyleng
  * have been set up.
  */
 #ifndef YY_USER_ACTION
-#    define YY_USER_ACTION
+    #define YY_USER_ACTION
 #endif
 
 /* Code executed at the end of each rule. */
 #ifndef YY_BREAK
-#    define YY_BREAK /*LINTED*/ break;
+    #define YY_BREAK /*LINTED*/ break;
 #endif
 
 #define YY_RULE_SETUP                                                         \
@@ -1604,11 +1604,11 @@ static void yyunput(int c, char *yy_bp)
 #endif
 
 #ifndef YY_NO_INPUT
-#    ifdef __cplusplus
+    #ifdef __cplusplus
 static int yyinput(void)
-#    else
+    #else
 static int input(void)
-#    endif
+    #endif
 
 {
     int c;
@@ -1655,11 +1655,11 @@ static int input(void)
 
                 if (!(yy_did_buffer_switch_on_eof))
                     YY_NEW_FILE;
-#    ifdef __cplusplus
+    #ifdef __cplusplus
                 return yyinput();
-#    else
+    #else
                 return input();
-#    endif
+    #endif
             }
 
             case EOB_ACT_CONTINUE_SCAN:
@@ -2038,7 +2038,7 @@ YY_BUFFER_STATE yy_scan_bytes(const char *yybytes, int _yybytes_len)
 }
 
 #ifndef YY_EXIT_FAILURE
-#    define YY_EXIT_FAILURE 2
+    #define YY_EXIT_FAILURE 2
 #endif
 
 static void yynoreturn yy_fatal_error(const char *msg)
@@ -2068,34 +2068,52 @@ static void yynoreturn yy_fatal_error(const char *msg)
 /** Get the current line number.
  *
  */
-int yyget_lineno(void) { return yylineno; }
+int yyget_lineno(void)
+{
+    return yylineno;
+}
 
 /** Get the input stream.
  *
  */
-FILE *yyget_in(void) { return yyin; }
+FILE *yyget_in(void)
+{
+    return yyin;
+}
 
 /** Get the output stream.
  *
  */
-FILE *yyget_out(void) { return yyout; }
+FILE *yyget_out(void)
+{
+    return yyout;
+}
 
 /** Get the length of the current token.
  *
  */
-int yyget_leng(void) { return yyleng; }
+int yyget_leng(void)
+{
+    return yyleng;
+}
 
 /** Get the current token.
  *
  */
 
-char *yyget_text(void) { return yytext; }
+char *yyget_text(void)
+{
+    return yytext;
+}
 
 /** Set the current line number.
  * @param _line_number line number
  *
  */
-void yyset_lineno(int _line_number) { yylineno = _line_number; }
+void yyset_lineno(int _line_number)
+{
+    yylineno = _line_number;
+}
 
 /** Set the input stream. This does not discard the current
  * input buffer.
@@ -2103,13 +2121,25 @@ void yyset_lineno(int _line_number) { yylineno = _line_number; }
  *
  * @see yy_switch_to_buffer
  */
-void yyset_in(FILE *_in_str) { yyin = _in_str; }
+void yyset_in(FILE *_in_str)
+{
+    yyin = _in_str;
+}
 
-void yyset_out(FILE *_out_str) { yyout = _out_str; }
+void yyset_out(FILE *_out_str)
+{
+    yyout = _out_str;
+}
 
-int yyget_debug(void) { return yy_flex_debug; }
+int yyget_debug(void)
+{
+    return yy_flex_debug;
+}
 
-void yyset_debug(int _bdebug) { yy_flex_debug = _bdebug; }
+void yyset_debug(int _bdebug)
+{
+    yy_flex_debug = _bdebug;
+}
 
 static int yy_init_globals(void)
 {
@@ -2187,7 +2217,10 @@ static int yy_flex_strlen(const char *s)
 }
 #endif
 
-void *yyalloc(yy_size_t size) { return malloc(size); }
+void *yyalloc(yy_size_t size)
+{
+    return malloc(size);
+}
 
 void *yyrealloc(void *ptr, yy_size_t size)
 {
@@ -2255,18 +2288,18 @@ void scan_string(const char *str)
    private implementation details that can be changed or removed.  */
 
 #ifndef YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
-#    define YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
-/* Debug traces.  */
-#    ifndef YYDEBUG
-#        define YYDEBUG 1
-#    endif
-#    if YYDEBUG
+    #define YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
+    /* Debug traces.  */
+    #ifndef YYDEBUG
+        #define YYDEBUG 1
+    #endif
+    #if YYDEBUG
 extern int ascentdebug;
-#    endif
+    #endif
 
-/* Token kinds.  */
-#    ifndef YYTOKENTYPE
-#        define YYTOKENTYPE
+    /* Token kinds.  */
+    #ifndef YYTOKENTYPE
+        #define YYTOKENTYPE
 enum yytokentype
 {
     YYEMPTY = -2,
@@ -2307,13 +2340,13 @@ enum yytokentype
     TNEG = 289         /* TNEG  */
 };
 typedef enum yytokentype yytoken_kind_t;
-#    endif
+    #endif
 
-/* Value type.  */
-#    if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
+    /* Value type.  */
+    #if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#        line 21 "parser.y"
+        #line 21 "parser.y"
 
     ASTNode *node;
     ASTBlock *block;
@@ -2328,21 +2361,21 @@ union YYSTYPE
     std::string *string;
     int token;
 
-#        line 113 "ascent_expressions_parser.hpp"
+        #line 113 "ascent_expressions_parser.hpp"
 };
 typedef union YYSTYPE YYSTYPE;
-#        define YYSTYPE_IS_TRIVIAL 1
-#        define YYSTYPE_IS_DECLARED 1
-#    endif
+        #define YYSTYPE_IS_TRIVIAL 1
+        #define YYSTYPE_IS_DECLARED 1
+    #endif
 
 extern YYSTYPE ascentlval;
 
 int ascentparse(void);
-/* "%code provides" blocks.  */
-#    line 16 "parser.y"
+    /* "%code provides" blocks.  */
+    #line 16 "parser.y"
 
 ASTNode *get_result();
 
-#    line 130 "ascent_expressions_parser.hpp"
+    #line 130 "ascent_expressions_parser.hpp"
 
 #endif /* !YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED  */

@@ -3,7 +3,7 @@
 #include <expressions/ascent_blueprint_device_dispatch.hpp>
 
 #if defined(ASCENT_RAJA_ENABLED)
-#    include <RAJA/RAJA.hpp>
+    #include <RAJA/RAJA.hpp>
 #endif
 
 //-----------------------------------------------------------------------------

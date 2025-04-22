@@ -11,12 +11,12 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_FLOW_PIPELINE_ADIOS2_FILTERS_HPP
-#    define ASCENT_FLOW_PIPELINE_ADIOS2_FILTERS_HPP
+    #define ASCENT_FLOW_PIPELINE_ADIOS2_FILTERS_HPP
 
-#    include <flow_filter.hpp>
-#    ifdef ASCENT_MPI_ENABLED
-#        include <mpi.h>
-#    endif
+    #include <flow_filter.hpp>
+    #ifdef ASCENT_MPI_ENABLED
+        #include <mpi.h>
+    #endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

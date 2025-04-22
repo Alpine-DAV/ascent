@@ -6,7 +6,7 @@
 #include <conduit.hpp>
 
 #if defined(ASCENT_RAJA_ENABLED)
-#    include <RAJA/RAJA.hpp>
+    #include <RAJA/RAJA.hpp>
 #endif
 
 namespace ascent
@@ -80,29 +80,29 @@ using index_t = conduit::index_t;
 //---------------------------------------------------------------------------//
 
 #if defined(__CUDACC__) && !defined(DEBUG_CPU_ONLY)
-//---------------------------------------------------------------------------//
-// CUDA decorators
-//---------------------------------------------------------------------------//
-#    define ASCENT_EXEC inline __host__ __device__
-// Note: there is a performance hit for doing both host and device
-// the cuda compiler calls this on then host as a std::function call for each i
-// in the for loop, and that basically works out to a virtual function
-// call. Thus for small loops, the know overhead is about 3x
-#    define ASCENT_LAMBDA __device__ __host__
+    //---------------------------------------------------------------------------//
+    // CUDA decorators
+    //---------------------------------------------------------------------------//
+    #define ASCENT_EXEC inline __host__ __device__
+    // Note: there is a performance hit for doing both host and device
+    // the cuda compiler calls this on then host as a std::function call for
+    // each i in the for loop, and that basically works out to a virtual
+    // function call. Thus for small loops, the know overhead is about 3x
+    #define ASCENT_LAMBDA __device__ __host__
 
 #elif defined(ASCENT_HIP_ENABLED) // && ?
-//---------------------------------------------------------------------------//
-// HIP decorators
-//---------------------------------------------------------------------------//
-#    define ASCENT_EXEC inline __host__ __device__
-#    define ASCENT_LAMBDA __device__ __host__
+    //---------------------------------------------------------------------------//
+    // HIP decorators
+    //---------------------------------------------------------------------------//
+    #define ASCENT_EXEC inline __host__ __device__
+    #define ASCENT_LAMBDA __device__ __host__
 
 #else
-//---------------------------------------------------------------------------//
-// Non-device decorators
-//---------------------------------------------------------------------------//
-#    define ASCENT_EXEC inline
-#    define ASCENT_LAMBDA
+    //---------------------------------------------------------------------------//
+    // Non-device decorators
+    //---------------------------------------------------------------------------//
+    #define ASCENT_EXEC inline
+    #define ASCENT_LAMBDA
 
 #endif
 
@@ -110,22 +110,22 @@ using index_t = conduit::index_t;
 
 //---------------------------------------------------------------------------//
 #if defined(ASCENT_RAJA_ENABLED)
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-// RAJA_ON policies for when raja is on
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
+    //---------------------------------------------------------------------------//
+    //---------------------------------------------------------------------------//
+    // RAJA_ON policies for when raja is on
+    //---------------------------------------------------------------------------//
+    //---------------------------------------------------------------------------//
 
-#    if defined(ASCENT_CUDA_ENABLED)
-#        define CUDA_BLOCK_SIZE 128
-#    endif
+    #if defined(ASCENT_CUDA_ENABLED)
+        #define CUDA_BLOCK_SIZE 128
+    #endif
 
-#    if defined(ASCENT_HIP_ENABLED)
-#        define HIP_BLOCK_SIZE 256
-#    endif
+    #if defined(ASCENT_HIP_ENABLED)
+        #define HIP_BLOCK_SIZE 256
+    #endif
 
-//---------------------------------------------------------------------------//
-#    if defined(ASCENT_CUDA_ENABLED)
+    //---------------------------------------------------------------------------//
+    #if defined(ASCENT_CUDA_ENABLED)
 struct CudaExec
 {
     using for_policy = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
@@ -133,10 +133,10 @@ struct CudaExec
     using atomic_policy = RAJA::cuda_atomic;
     static std::string memory_space;
 };
-#    endif
+    #endif
 
-//---------------------------------------------------------------------------//
-#    if defined(ASCENT_HIP_ENABLED)
+    //---------------------------------------------------------------------------//
+    #if defined(ASCENT_HIP_ENABLED)
 struct HipExec
 {
     using for_policy = RAJA::hip_exec<HIP_BLOCK_SIZE>;
@@ -144,79 +144,79 @@ struct HipExec
     using atomic_policy = RAJA::hip_atomic;
     static std::string memory_space;
 };
-#    endif
+    #endif
 
-//---------------------------------------------------------------------------//
-#    if defined(ASCENT_OPENMP_ENABLED)
+    //---------------------------------------------------------------------------//
+    #if defined(ASCENT_OPENMP_ENABLED)
 struct OpenMPExec
 {
     using for_policy = RAJA::omp_parallel_for_exec;
-#        if defined(ASCENT_CUDA_ENABLE)
+        #if defined(ASCENT_CUDA_ENABLE)
     // the cuda policy for reductions can be used
     // by other backends, and this should suppress
     // erroneous host device warnings
     using reduce_policy = RAJA::cuda_reduce;
-#        elif defined(ASCENT_HIP_ENABLED)
+        #elif defined(ASCENT_HIP_ENABLED)
     using reduce_policy = RAJA::hip_reduce;
-#        else
+        #else
     using reduce_policy = RAJA::omp_reduce;
-#        endif
+        #endif
     using atomic_policy = RAJA::omp_atomic;
     static std::string memory_space;
 };
-#    endif
+    #endif
 
 //---------------------------------------------------------------------------//
 struct SerialExec
 {
     using for_policy = RAJA::seq_exec;
-#    if defined(ASCENT_CUDA_ENABLED)
+    #if defined(ASCENT_CUDA_ENABLED)
     // the cuda/hip policy for reductions can be used
     // by other backends, and this should suppress
     // erroneous host device warnings
     using reduce_policy = RAJA::cuda_reduce;
-#    elif defined(ASCENT_HIP_ENABLED)
+    #elif defined(ASCENT_HIP_ENABLED)
     using reduce_policy = RAJA::hip_reduce;
-#    else
+    #else
     using reduce_policy = RAJA::seq_reduce;
-#    endif
+    #endif
     using atomic_policy = RAJA::seq_atomic;
     static std::string memory_space;
 };
 
-//---------------------------------------------------------------------------//
-#    if defined(ASCENT_CUDA_ENABLED)
+    //---------------------------------------------------------------------------//
+    #if defined(ASCENT_CUDA_ENABLED)
 using for_policy = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 using reduce_policy = RAJA::cuda_reduce;
 using atomic_policy = RAJA::cuda_atomic;
-#    elif defined(ASCENT_HIP_ENABLED)
+    #elif defined(ASCENT_HIP_ENABLED)
 using for_policy = RAJA::hip_exec<HIP_BLOCK_SIZE>;
 using reduce_policy = RAJA::hip_reduce;
 using atomic_policy = RAJA::hip_atomic;
-#    elif defined(ASCENT_OPENMP_ENABLED)
+    #elif defined(ASCENT_OPENMP_ENABLED)
 using for_policy = RAJA::omp_parallel_for_exec;
 using reduce_policy = RAJA::omp_reduce;
 using atomic_policy = RAJA::omp_atomic;
-#    else
+    #else
 using for_policy = RAJA::seq_exec;
 using reduce_policy = RAJA::seq_reduce;
 using atomic_policy = RAJA::seq_atomic;
-#    endif
+    #endif
 
-//---------------------------------------------------------------------------//
-//
-// CPU only policies need when using classes
-// that cannot be called on a GPU, e.g. MFEM
-//
-#    if defined(ASCENT_OPENMP_ENABLED)
+    //---------------------------------------------------------------------------//
+    //
+    // CPU only policies need when using classes
+    // that cannot be called on a GPU, e.g. MFEM
+    //
+    #if defined(ASCENT_OPENMP_ENABLED)
 using for_cpu_policy = RAJA::omp_parallel_for_exec;
 using reduce_cpu_policy = RAJA::omp_reduce;
 using atomic_cpu_policy = RAJA::omp_atomic;
-#    else
+    #else
 using for_cpu_policy = RAJA::seq_exec;
 using reduce_cpu_policy = RAJA::seq_reduce;
 using atomic_cpu_policy = RAJA::seq_atomic;
-#    endif
+    #endif
 
 //---------------------------------------------------------------------------//
 // RAJA Exec Interfaces
@@ -355,13 +355,22 @@ public:
     }
 
     //---------------------------------------------------------------------
-    void operator+=(const T value) const { m_value_ptr[0] += value; }
+    void operator+=(const T value) const
+    {
+        m_value_ptr[0] += value;
+    }
 
     //---------------------------------------------------------------------
-    void sum(const T value) const { m_value_ptr[0] += value; }
+    void sum(const T value) const
+    {
+        m_value_ptr[0] += value;
+    }
 
     //---------------------------------------------------------------------
-    T get() const { return m_value; }
+    T get() const
+    {
+        return m_value;
+    }
 
 private:
     T m_value;
@@ -402,7 +411,10 @@ public:
     }
 
     //---------------------------------------------------------------------
-    T get() const { return m_value_ptr[0]; }
+    T get() const
+    {
+        return m_value_ptr[0];
+    }
 
 private:
     T m_value;
@@ -450,10 +462,16 @@ public:
     };
 
     //---------------------------------------------------------------------
-    inline T get() const { return m_value_ptr[0]; }
+    inline T get() const
+    {
+        return m_value_ptr[0];
+    }
 
     //---------------------------------------------------------------------
-    inline index_t getLoc() const { return m_index_ptr[0]; }
+    inline index_t getLoc() const
+    {
+        return m_index_ptr[0];
+    }
 
 private:
     T m_value;
@@ -498,7 +516,10 @@ public:
     }
 
     //---------------------------------------------------------------------
-    T get() const { return m_value_ptr[0]; }
+    T get() const
+    {
+        return m_value_ptr[0];
+    }
 
 private:
     T m_value;
@@ -547,10 +568,16 @@ public:
     };
 
     //---------------------------------------------------------------------
-    inline T get() const { return m_value_ptr[0]; }
+    inline T get() const
+    {
+        return m_value_ptr[0];
+    }
 
     //---------------------------------------------------------------------
-    inline index_t getLoc() const { return m_index_ptr[0]; }
+    inline index_t getLoc() const
+    {
+        return m_index_ptr[0];
+    }
 
 private:
     T m_value;
@@ -604,7 +631,7 @@ inline void cuda_error_check(const char *file, const int line)
         // exit( -1 );
     }
 }
-#    define ASCENT_DEVICE_ERROR_CHECK() cuda_error_check(__FILE__, __LINE__);
+    #define ASCENT_DEVICE_ERROR_CHECK() cuda_error_check(__FILE__, __LINE__);
 
 #elif defined(ASCENT_HIP_ENABLED)
 //---------------------------------------------------------------------------//
@@ -620,12 +647,12 @@ inline void hip_error_check(const char *file, const int line)
         // exit( -1 );
     }
 }
-#    define ASCENT_DEVICE_ERROR_CHECK() hip_error_check(__FILE__, __LINE__);
+    #define ASCENT_DEVICE_ERROR_CHECK() hip_error_check(__FILE__, __LINE__);
 #else
-//---------------------------------------------------------------------------//
-// non-device error check (no op)
-//---------------------------------------------------------------------------//
-#    define ASCENT_DEVICE_ERROR_CHECK()
+    //---------------------------------------------------------------------------//
+    // non-device error check (no op)
+    //---------------------------------------------------------------------------//
+    #define ASCENT_DEVICE_ERROR_CHECK()
 #endif
 
 } // namespace ascent

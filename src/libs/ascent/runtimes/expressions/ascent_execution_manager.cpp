@@ -94,6 +94,9 @@ void ExecutionManager::set_execution_policy(const std::string &exec)
 }
 
 //-----------------------------------------------------------------------------
-std::string ExecutionManager::execution_policy() { return m_exec; }
+std::string ExecutionManager::execution_policy()
+{
+    return m_exec;
+}
 
 } // namespace ascent

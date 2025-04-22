@@ -89,47 +89,53 @@ ASTNode *root_node; /* the top level root node of our final AST */
 
 extern int yylex();
 extern void scan_string(const char *);
-void yyerror(const char *s) { throw "syntax error"; }
-ASTNode *get_result() { return root_node; }
+void yyerror(const char *s)
+{
+    throw "syntax error";
+}
+ASTNode *get_result()
+{
+    return root_node;
+}
 
 #line 94 "ascent_expressions_parser.cpp"
 
 #ifndef YY_CAST
-#    ifdef __cplusplus
-#        define YY_CAST(Type, Val) static_cast<Type>(Val)
-#        define YY_REINTERPRET_CAST(Type, Val) reinterpret_cast<Type>(Val)
-#    else
-#        define YY_CAST(Type, Val) ((Type)(Val))
-#        define YY_REINTERPRET_CAST(Type, Val) ((Type)(Val))
-#    endif
+    #ifdef __cplusplus
+        #define YY_CAST(Type, Val) static_cast<Type>(Val)
+        #define YY_REINTERPRET_CAST(Type, Val) reinterpret_cast<Type>(Val)
+    #else
+        #define YY_CAST(Type, Val) ((Type)(Val))
+        #define YY_REINTERPRET_CAST(Type, Val) ((Type)(Val))
+    #endif
 #endif
 #ifndef YY_NULLPTR
-#    if defined __cplusplus
-#        if 201103L <= __cplusplus
-#            define YY_NULLPTR nullptr
-#        else
-#            define YY_NULLPTR 0
-#        endif
-#    else
-#        define YY_NULLPTR ((void *)0)
-#    endif
+    #if defined __cplusplus
+        #if 201103L <= __cplusplus
+            #define YY_NULLPTR nullptr
+        #else
+            #define YY_NULLPTR 0
+        #endif
+    #else
+        #define YY_NULLPTR ((void *)0)
+    #endif
 #endif
 
 /* Use api.header.include to #include this header
    instead of duplicating it here.  */
 #ifndef YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
-#    define YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
-/* Debug traces.  */
-#    ifndef YYDEBUG
-#        define YYDEBUG 1
-#    endif
-#    if YYDEBUG
+    #define YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
+    /* Debug traces.  */
+    #ifndef YYDEBUG
+        #define YYDEBUG 1
+    #endif
+    #if YYDEBUG
 extern int ascentdebug;
-#    endif
+    #endif
 
-/* Token kinds.  */
-#    ifndef YYTOKENTYPE
-#        define YYTOKENTYPE
+    /* Token kinds.  */
+    #ifndef YYTOKENTYPE
+        #define YYTOKENTYPE
 enum yytokentype
 {
     YYEMPTY = -2,
@@ -170,13 +176,13 @@ enum yytokentype
     TNEG = 289         /* TNEG  */
 };
 typedef enum yytokentype yytoken_kind_t;
-#    endif
+    #endif
 
-/* Value type.  */
-#    if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
+    /* Value type.  */
+    #if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#        line 21 "parser.y"
+        #line 21 "parser.y"
 
     ASTNode *node;
     ASTBlock *block;
@@ -191,22 +197,22 @@ union YYSTYPE
     std::string *string;
     int token;
 
-#        line 193 "ascent_expressions_parser.cpp"
+        #line 193 "ascent_expressions_parser.cpp"
 };
 typedef union YYSTYPE YYSTYPE;
-#        define YYSTYPE_IS_TRIVIAL 1
-#        define YYSTYPE_IS_DECLARED 1
-#    endif
+        #define YYSTYPE_IS_TRIVIAL 1
+        #define YYSTYPE_IS_DECLARED 1
+    #endif
 
 extern YYSTYPE ascentlval;
 
 int ascentparse(void);
-/* "%code provides" blocks.  */
-#    line 16 "parser.y"
+    /* "%code provides" blocks.  */
+    #line 16 "parser.y"
 
 ASTNode *get_result();
 
-#    line 210 "ascent_expressions_parser.cpp"
+    #line 210 "ascent_expressions_parser.cpp"
 
 #endif /* !YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED  */
 /* Symbol kind.  */
@@ -270,7 +276,7 @@ enum yysymbol_kind_t
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
 #ifdef short
-#    undef short
+    #undef short
 #endif
 
 /* On compilers that do not define __PTRDIFF_MAX__ etc., make sure
@@ -278,11 +284,11 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
    so that the code can choose integer types of a good width.  */
 
 #ifndef __PTRDIFF_MAX__
-#    include <limits.h> /* INFRINGES ON USER NAME SPACE */
-#    if defined __STDC_VERSION__ && 199901 <= __STDC_VERSION__
-#        include <stdint.h> /* INFRINGES ON USER NAME SPACE */
-#        define YY_STDINT_H
-#    endif
+    #include <limits.h> /* INFRINGES ON USER NAME SPACE */
+    #if defined __STDC_VERSION__ && 199901 <= __STDC_VERSION__
+        #include <stdint.h> /* INFRINGES ON USER NAME SPACE */
+        #define YY_STDINT_H
+    #endif
 #endif
 
 /* Narrow types that promote to a signed type and that can represent a
@@ -329,32 +335,32 @@ typedef int yytype_uint16;
 #endif
 
 #ifndef YYPTRDIFF_T
-#    if defined __PTRDIFF_TYPE__ && defined __PTRDIFF_MAX__
-#        define YYPTRDIFF_T __PTRDIFF_TYPE__
-#        define YYPTRDIFF_MAXIMUM __PTRDIFF_MAX__
-#    elif defined PTRDIFF_MAX
-#        ifndef ptrdiff_t
-#            include <stddef.h> /* INFRINGES ON USER NAME SPACE */
-#        endif
-#        define YYPTRDIFF_T ptrdiff_t
-#        define YYPTRDIFF_MAXIMUM PTRDIFF_MAX
-#    else
-#        define YYPTRDIFF_T long
-#        define YYPTRDIFF_MAXIMUM LONG_MAX
-#    endif
+    #if defined __PTRDIFF_TYPE__ && defined __PTRDIFF_MAX__
+        #define YYPTRDIFF_T __PTRDIFF_TYPE__
+        #define YYPTRDIFF_MAXIMUM __PTRDIFF_MAX__
+    #elif defined PTRDIFF_MAX
+        #ifndef ptrdiff_t
+            #include <stddef.h> /* INFRINGES ON USER NAME SPACE */
+        #endif
+        #define YYPTRDIFF_T ptrdiff_t
+        #define YYPTRDIFF_MAXIMUM PTRDIFF_MAX
+    #else
+        #define YYPTRDIFF_T long
+        #define YYPTRDIFF_MAXIMUM LONG_MAX
+    #endif
 #endif
 
 #ifndef YYSIZE_T
-#    ifdef __SIZE_TYPE__
-#        define YYSIZE_T __SIZE_TYPE__
-#    elif defined size_t
-#        define YYSIZE_T size_t
-#    elif defined __STDC_VERSION__ && 199901 <= __STDC_VERSION__
-#        include <stddef.h> /* INFRINGES ON USER NAME SPACE */
-#        define YYSIZE_T size_t
-#    else
-#        define YYSIZE_T unsigned
-#    endif
+    #ifdef __SIZE_TYPE__
+        #define YYSIZE_T __SIZE_TYPE__
+    #elif defined size_t
+        #define YYSIZE_T size_t
+    #elif defined __STDC_VERSION__ && 199901 <= __STDC_VERSION__
+        #include <stddef.h> /* INFRINGES ON USER NAME SPACE */
+        #define YYSIZE_T size_t
+    #else
+        #define YYSIZE_T unsigned
+    #endif
 #endif
 
 #define YYSIZE_MAXIMUM                                                        \
@@ -372,68 +378,68 @@ typedef yytype_int8 yy_state_t;
 typedef int yy_state_fast_t;
 
 #ifndef YY_
-#    if defined YYENABLE_NLS && YYENABLE_NLS
-#        if ENABLE_NLS
-#            include <libintl.h> /* INFRINGES ON USER NAME SPACE */
-#            define YY_(Msgid) dgettext("bison-runtime", Msgid)
-#        endif
-#    endif
-#    ifndef YY_
-#        define YY_(Msgid) Msgid
-#    endif
+    #if defined YYENABLE_NLS && YYENABLE_NLS
+        #if ENABLE_NLS
+            #include <libintl.h> /* INFRINGES ON USER NAME SPACE */
+            #define YY_(Msgid) dgettext("bison-runtime", Msgid)
+        #endif
+    #endif
+    #ifndef YY_
+        #define YY_(Msgid) Msgid
+    #endif
 #endif
 
 #ifndef YY_ATTRIBUTE_PURE
-#    if defined __GNUC__ && 2 < __GNUC__ + (96 <= __GNUC_MINOR__)
-#        define YY_ATTRIBUTE_PURE __attribute__((__pure__))
-#    else
-#        define YY_ATTRIBUTE_PURE
-#    endif
+    #if defined __GNUC__ && 2 < __GNUC__ + (96 <= __GNUC_MINOR__)
+        #define YY_ATTRIBUTE_PURE __attribute__((__pure__))
+    #else
+        #define YY_ATTRIBUTE_PURE
+    #endif
 #endif
 
 #ifndef YY_ATTRIBUTE_UNUSED
-#    if defined __GNUC__ && 2 < __GNUC__ + (7 <= __GNUC_MINOR__)
-#        define YY_ATTRIBUTE_UNUSED __attribute__((__unused__))
-#    else
-#        define YY_ATTRIBUTE_UNUSED
-#    endif
+    #if defined __GNUC__ && 2 < __GNUC__ + (7 <= __GNUC_MINOR__)
+        #define YY_ATTRIBUTE_UNUSED __attribute__((__unused__))
+    #else
+        #define YY_ATTRIBUTE_UNUSED
+    #endif
 #endif
 
 /* Suppress unused-variable warnings by "using" E.  */
 #if !defined lint || defined __GNUC__
-#    define YYUSE(E) ((void)(E))
+    #define YYUSE(E) ((void)(E))
 #else
-#    define YYUSE(E) /* empty */
+    #define YYUSE(E) /* empty */
 #endif
 
 #if defined __GNUC__ && !defined __ICC &&                                     \
     407 <= __GNUC__ * 100 + __GNUC_MINOR__
-/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
-#    define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                               \
+    /* Suppress an incorrect diagnostic about yylval being uninitialized.  */
+    #define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                               \
         _Pragma("GCC diagnostic push")                                        \
             _Pragma("GCC diagnostic ignored \"-Wuninitialized\"")             \
                 _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
-#    define YY_IGNORE_MAYBE_UNINITIALIZED_END _Pragma("GCC diagnostic pop")
+    #define YY_IGNORE_MAYBE_UNINITIALIZED_END _Pragma("GCC diagnostic pop")
 #else
-#    define YY_INITIAL_VALUE(Value) Value
+    #define YY_INITIAL_VALUE(Value) Value
 #endif
 #ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-#    define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-#    define YY_IGNORE_MAYBE_UNINITIALIZED_END
+    #define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+    #define YY_IGNORE_MAYBE_UNINITIALIZED_END
 #endif
 #ifndef YY_INITIAL_VALUE
-#    define YY_INITIAL_VALUE(Value) /* Nothing. */
+    #define YY_INITIAL_VALUE(Value) /* Nothing. */
 #endif
 
 #if defined __cplusplus && defined __GNUC__ && !defined __ICC && 6 <= __GNUC__
-#    define YY_IGNORE_USELESS_CAST_BEGIN                                      \
+    #define YY_IGNORE_USELESS_CAST_BEGIN                                      \
         _Pragma("GCC diagnostic push")                                        \
             _Pragma("GCC diagnostic ignored \"-Wuseless-cast\"")
-#    define YY_IGNORE_USELESS_CAST_END _Pragma("GCC diagnostic pop")
+    #define YY_IGNORE_USELESS_CAST_END _Pragma("GCC diagnostic pop")
 #endif
 #ifndef YY_IGNORE_USELESS_CAST_BEGIN
-#    define YY_IGNORE_USELESS_CAST_BEGIN
-#    define YY_IGNORE_USELESS_CAST_END
+    #define YY_IGNORE_USELESS_CAST_BEGIN
+    #define YY_IGNORE_USELESS_CAST_END
 #endif
 
 #define YY_ASSERT(E) ((void)(0 && (E)))
@@ -442,71 +448,72 @@ typedef int yy_state_fast_t;
 
 /* The parser invokes alloca or malloc; define the necessary symbols.  */
 
-#    ifdef YYSTACK_USE_ALLOCA
-#        if YYSTACK_USE_ALLOCA
-#            ifdef __GNUC__
-#                define YYSTACK_ALLOC __builtin_alloca
-#            elif defined __BUILTIN_VA_ARG_INCR
-#                include <alloca.h> /* INFRINGES ON USER NAME SPACE */
-#            elif defined _AIX
-#                define YYSTACK_ALLOC __alloca
-#            elif defined _MSC_VER
-#                include <malloc.h> /* INFRINGES ON USER NAME SPACE */
-#                define alloca _alloca
-#            else
-#                define YYSTACK_ALLOC alloca
-#                if !defined _ALLOCA_H && !defined EXIT_SUCCESS
-#                    include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
-/* Use EXIT_SUCCESS as a witness for stdlib.h.  */
-#                    ifndef EXIT_SUCCESS
-#                        define EXIT_SUCCESS 0
-#                    endif
-#                endif
-#            endif
-#        endif
-#    endif
+    #ifdef YYSTACK_USE_ALLOCA
+        #if YYSTACK_USE_ALLOCA
+            #ifdef __GNUC__
+                #define YYSTACK_ALLOC __builtin_alloca
+            #elif defined __BUILTIN_VA_ARG_INCR
+                #include <alloca.h> /* INFRINGES ON USER NAME SPACE */
+            #elif defined _AIX
+                #define YYSTACK_ALLOC __alloca
+            #elif defined _MSC_VER
+                #include <malloc.h> /* INFRINGES ON USER NAME SPACE */
+                #define alloca _alloca
+            #else
+                #define YYSTACK_ALLOC alloca
+                #if !defined _ALLOCA_H && !defined EXIT_SUCCESS
+                    #include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
+                    /* Use EXIT_SUCCESS as a witness for stdlib.h.  */
+                    #ifndef EXIT_SUCCESS
+                        #define EXIT_SUCCESS 0
+                    #endif
+                #endif
+            #endif
+        #endif
+    #endif
 
-#    ifdef YYSTACK_ALLOC
-/* Pacify GCC's 'empty if-body' warning.  */
-#        define YYSTACK_FREE(Ptr)                                             \
+    #ifdef YYSTACK_ALLOC
+        /* Pacify GCC's 'empty if-body' warning.  */
+        #define YYSTACK_FREE(Ptr)                                             \
             do                                                                \
             { /* empty */                                                     \
                 ;                                                             \
             } while (0)
-#        ifndef YYSTACK_ALLOC_MAXIMUM
-/* The OS might guarantee only one guard page at the bottom of the stack,
-   and a page size can be as small as 4096 bytes.  So we cannot safely
-   invoke alloca (N) if N exceeds 4096.  Use a slightly smaller number
-   to allow for a few compiler-allocated temporary stack slots.  */
-#            define YYSTACK_ALLOC_MAXIMUM 4032 /* reasonable circa 2006 */
-#        endif
-#    else
-#        define YYSTACK_ALLOC YYMALLOC
-#        define YYSTACK_FREE YYFREE
-#        ifndef YYSTACK_ALLOC_MAXIMUM
-#            define YYSTACK_ALLOC_MAXIMUM YYSIZE_MAXIMUM
-#        endif
-#        if (defined __cplusplus && !defined EXIT_SUCCESS &&                  \
+        #ifndef YYSTACK_ALLOC_MAXIMUM
+            /* The OS might guarantee only one guard page at the bottom of the
+               stack, and a page size can be as small as 4096 bytes.  So we
+               cannot safely invoke alloca (N) if N exceeds 4096.  Use a
+               slightly smaller number to allow for a few compiler-allocated
+               temporary stack slots.  */
+            #define YYSTACK_ALLOC_MAXIMUM 4032 /* reasonable circa 2006 */
+        #endif
+    #else
+        #define YYSTACK_ALLOC YYMALLOC
+        #define YYSTACK_FREE YYFREE
+        #ifndef YYSTACK_ALLOC_MAXIMUM
+            #define YYSTACK_ALLOC_MAXIMUM YYSIZE_MAXIMUM
+        #endif
+        #if (defined __cplusplus && !defined EXIT_SUCCESS &&                  \
              !((defined YYMALLOC || defined malloc) &&                        \
                (defined YYFREE || defined free)))
-#            include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
-#            ifndef EXIT_SUCCESS
-#                define EXIT_SUCCESS 0
-#            endif
-#        endif
-#        ifndef YYMALLOC
-#            define YYMALLOC malloc
-#            if !defined malloc && !defined EXIT_SUCCESS
+            #include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
+            #ifndef EXIT_SUCCESS
+                #define EXIT_SUCCESS 0
+            #endif
+        #endif
+        #ifndef YYMALLOC
+            #define YYMALLOC malloc
+            #if !defined malloc && !defined EXIT_SUCCESS
 void *malloc(YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
-#            endif
-#        endif
-#        ifndef YYFREE
-#            define YYFREE free
-#            if !defined free && !defined EXIT_SUCCESS
+            #endif
+        #endif
+        #ifndef YYFREE
+            #define YYFREE free
+            #if !defined free && !defined EXIT_SUCCESS
 void free(void *); /* INFRINGES ON USER NAME SPACE */
-#            endif
-#        endif
-#    endif
+            #endif
+        #endif
+    #endif
 #endif /* !defined yyoverflow */
 
 #if (!defined yyoverflow &&                                                   \
@@ -520,23 +527,23 @@ union yyalloc
     YYSTYPE yyvs_alloc;
 };
 
-/* The size of the maximum gap between one aligned stack and the next.  */
-#    define YYSTACK_GAP_MAXIMUM (YYSIZEOF(union yyalloc) - 1)
+    /* The size of the maximum gap between one aligned stack and the next.  */
+    #define YYSTACK_GAP_MAXIMUM (YYSIZEOF(union yyalloc) - 1)
 
-/* The size of an array large to enough to hold all stacks, each with
-   N elements.  */
-#    define YYSTACK_BYTES(N)                                                  \
+    /* The size of an array large to enough to hold all stacks, each with
+       N elements.  */
+    #define YYSTACK_BYTES(N)                                                  \
         ((N) * (YYSIZEOF(yy_state_t) + YYSIZEOF(YYSTYPE)) +                   \
          YYSTACK_GAP_MAXIMUM)
 
-#    define YYCOPY_NEEDED 1
+    #define YYCOPY_NEEDED 1
 
-/* Relocate STACK from its old location to the new one.  The
-   local variables YYSIZE and YYSTACKSIZE give the old and new number of
-   elements in the stack, and YYPTR gives the new location of the
-   stack.  Advance YYPTR to a properly aligned location for the next
-   stack.  */
-#    define YYSTACK_RELOCATE(Stack_alloc, Stack)                              \
+    /* Relocate STACK from its old location to the new one.  The
+       local variables YYSIZE and YYSTACKSIZE give the old and new number of
+       elements in the stack, and YYPTR gives the new location of the
+       stack.  Advance YYPTR to a properly aligned location for the next
+       stack.  */
+    #define YYSTACK_RELOCATE(Stack_alloc, Stack)                              \
         do                                                                    \
         {                                                                     \
             YYPTRDIFF_T yynewbytes;                                           \
@@ -550,23 +557,23 @@ union yyalloc
 #endif
 
 #if defined YYCOPY_NEEDED && YYCOPY_NEEDED
-/* Copy COUNT objects from SRC to DST.  The source and destination do
-   not overlap.  */
-#    ifndef YYCOPY
-#        if defined __GNUC__ && 1 < __GNUC__
-#            define YYCOPY(Dst, Src, Count)                                   \
+    /* Copy COUNT objects from SRC to DST.  The source and destination do
+       not overlap.  */
+    #ifndef YYCOPY
+        #if defined __GNUC__ && 1 < __GNUC__
+            #define YYCOPY(Dst, Src, Count)                                   \
                 __builtin_memcpy(                                             \
                     Dst, Src, YY_CAST(YYSIZE_T, (Count)) * sizeof(*(Src)))
-#        else
-#            define YYCOPY(Dst, Src, Count)                                   \
+        #else
+            #define YYCOPY(Dst, Src, Count)                                   \
                 do                                                            \
                 {                                                             \
                     YYPTRDIFF_T yyi;                                          \
                     for (yyi = 0; yyi < (Count); yyi++)                       \
                         (Dst)[yyi] = (Src)[yyi];                              \
                 } while (0)
-#        endif
-#    endif
+        #endif
+    #endif
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
@@ -854,24 +861,24 @@ enum
 /* Enable debugging if requested.  */
 #if YYDEBUG
 
-#    ifndef YYFPRINTF
-#        include <stdio.h> /* INFRINGES ON USER NAME SPACE */
-#        define YYFPRINTF fprintf
-#    endif
+    #ifndef YYFPRINTF
+        #include <stdio.h> /* INFRINGES ON USER NAME SPACE */
+        #define YYFPRINTF fprintf
+    #endif
 
-#    define YYDPRINTF(Args)                                                   \
+    #define YYDPRINTF(Args)                                                   \
         do                                                                    \
         {                                                                     \
             if (yydebug)                                                      \
                 YYFPRINTF Args;                                               \
         } while (0)
 
-/* This macro is provided for backward compatibility. */
-#    ifndef YY_LOCATION_PRINT
-#        define YY_LOCATION_PRINT(File, Loc) ((void)0)
-#    endif
+    /* This macro is provided for backward compatibility. */
+    #ifndef YY_LOCATION_PRINT
+        #define YY_LOCATION_PRINT(File, Loc) ((void)0)
+    #endif
 
-#    define YY_SYMBOL_PRINT(Title, Kind, Value, Location)                     \
+    #define YY_SYMBOL_PRINT(Title, Kind, Value, Location)                     \
         do                                                                    \
         {                                                                     \
             if (yydebug)                                                      \
@@ -894,10 +901,10 @@ static void yy_symbol_value_print(FILE *yyo,
     YYUSE(yyoutput);
     if (!yyvaluep)
         return;
-#    ifdef YYPRINT
+    #ifdef YYPRINT
     if (yykind < YYNTOKENS)
         YYPRINT(yyo, yytoknum[yykind], *yyvaluep);
-#    endif
+    #endif
     YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
     YYUSE(yykind);
     YY_IGNORE_MAYBE_UNINITIALIZED_END
@@ -936,7 +943,7 @@ static void yy_stack_print(yy_state_t *yybottom, yy_state_t *yytop)
     YYFPRINTF(stderr, "\n");
 }
 
-#    define YY_STACK_PRINT(Bottom, Top)                                       \
+    #define YY_STACK_PRINT(Bottom, Top)                                       \
         do                                                                    \
         {                                                                     \
             if (yydebug)                                                      \
@@ -965,7 +972,7 @@ static void yy_reduce_print(yy_state_t *yyssp, YYSTYPE *yyvsp, int yyrule)
     }
 }
 
-#    define YY_REDUCE_PRINT(Rule)                                             \
+    #define YY_REDUCE_PRINT(Rule)                                             \
         do                                                                    \
         {                                                                     \
             if (yydebug)                                                      \
@@ -976,15 +983,15 @@ static void yy_reduce_print(yy_state_t *yyssp, YYSTYPE *yyvsp, int yyrule)
    multiple parsers can coexist.  */
 int yydebug;
 #else /* !YYDEBUG */
-#    define YYDPRINTF(Args) ((void)0)
-#    define YY_SYMBOL_PRINT(Title, Kind, Value, Location)
-#    define YY_STACK_PRINT(Bottom, Top)
-#    define YY_REDUCE_PRINT(Rule)
+    #define YYDPRINTF(Args) ((void)0)
+    #define YY_SYMBOL_PRINT(Title, Kind, Value, Location)
+    #define YY_STACK_PRINT(Bottom, Top)
+    #define YY_REDUCE_PRINT(Rule)
 #endif /* !YYDEBUG */
 
 /* YYINITDEPTH -- initial size of the parser's stacks.  */
 #ifndef YYINITDEPTH
-#    define YYINITDEPTH 200
+    #define YYINITDEPTH 200
 #endif
 
 /* YYMAXDEPTH -- maximum size the stacks can grow to (effective only
@@ -995,7 +1002,7 @@ int yydebug;
    evaluated with infinite-precision integer arithmetic.  */
 
 #ifndef YYMAXDEPTH
-#    define YYMAXDEPTH 10000
+    #define YYMAXDEPTH 10000
 #endif
 
 /*-----------------------------------------------.
@@ -1108,7 +1115,7 @@ yysetstate:
         /* Get the current used size of the three stacks, in elements.  */
         YYPTRDIFF_T yysize = yyssp - yyss + 1;
 
-#    if defined yyoverflow
+    #if defined yyoverflow
         {
             /* Give user a chance to reallocate the stack.  Use copies of
                these so that the &'s don't force the real ones into
@@ -1129,7 +1136,7 @@ yysetstate:
             yyss = yyss1;
             yyvs = yyvs1;
         }
-#    else /* defined YYSTACK_RELOCATE */
+    #else /* defined YYSTACK_RELOCATE */
         /* Extend the stack our own way.  */
         if (YYMAXDEPTH <= yystacksize)
             goto yyexhaustedlab;
@@ -1146,11 +1153,11 @@ yysetstate:
                 goto yyexhaustedlab;
             YYSTACK_RELOCATE(yyss_alloc, yyss);
             YYSTACK_RELOCATE(yyvs_alloc, yyvs);
-#        undef YYSTACK_RELOCATE
+        #undef YYSTACK_RELOCATE
             if (yyss1 != yyssa)
                 YYSTACK_FREE(yyss1);
         }
-#    endif
+    #endif
 
         yyssp = yyss + yysize - 1;
         yyvsp = yyvs + yysize - 1;

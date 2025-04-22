@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_JIT_ARRAY_HPP
-#    define ASCENT_JIT_ARRAY_HPP
+    #define ASCENT_JIT_ARRAY_HPP
 
-#    include <unordered_map>
-#    include <string>
-#    include <conduit.hpp>
+    #include <unordered_map>
+    #include <string>
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

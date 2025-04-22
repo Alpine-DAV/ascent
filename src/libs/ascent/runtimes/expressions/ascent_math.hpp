@@ -25,10 +25,10 @@
 #define ASCENT_EPSILON_64 1e-8f
 
 #ifndef __CUDACC__
-// make sure min / max resolve for both cuda and cpu
-#    include <algorithm>
-#    include <math.h>
-#    include <string.h> //resolve memcpy
+    // make sure min / max resolve for both cuda and cpu
+    #include <algorithm>
+    #include <math.h>
+    #include <string.h> //resolve memcpy
 using namespace std;
 #endif
 
@@ -60,11 +60,20 @@ union Bits64
 
 } // namespace detail
 
-template <typename T> ASCENT_EXEC T epsilon() { return 1; }
+template <typename T> ASCENT_EXEC T epsilon()
+{
+    return 1;
+}
 
-template <> ASCENT_EXEC float epsilon<float>() { return ASCENT_EPSILON_32; }
+template <> ASCENT_EXEC float epsilon<float>()
+{
+    return ASCENT_EPSILON_32;
+}
 
-template <> ASCENT_EXEC double epsilon<double>() { return ASCENT_EPSILON_64; }
+template <> ASCENT_EXEC double epsilon<double>()
+{
+    return ASCENT_EPSILON_64;
+}
 
 ASCENT_EXEC
 float nan32()
@@ -116,15 +125,27 @@ double neg_infinity64()
 
 template <typename T> ASCENT_EXEC T infinity();
 
-template <> ASCENT_EXEC float infinity<float>() { return infinity32(); }
+template <> ASCENT_EXEC float infinity<float>()
+{
+    return infinity32();
+}
 
-template <> ASCENT_EXEC double infinity<double>() { return infinity64(); }
+template <> ASCENT_EXEC double infinity<double>()
+{
+    return infinity64();
+}
 
 template <typename T> ASCENT_EXEC T nan();
 
-template <> ASCENT_EXEC float nan<float>() { return nan32(); }
+template <> ASCENT_EXEC float nan<float>()
+{
+    return nan32();
+}
 
-template <> ASCENT_EXEC double nan<double>() { return nan64(); }
+template <> ASCENT_EXEC double nan<double>()
+{
+    return nan64();
+}
 
 template <typename T> ASCENT_EXEC T neg_infinity();
 
@@ -177,19 +198,34 @@ int32 clz(uint32 x)
 }
 
 ASCENT_EXEC
-double pi() { return 3.14159265358979323846264338327950288; }
+double pi()
+{
+    return 3.14159265358979323846264338327950288;
+}
 
 ASCENT_EXEC
-float rcp(float f) { return 1.0f / f; }
+float rcp(float f)
+{
+    return 1.0f / f;
+}
 
 ASCENT_EXEC
-bool is_inf(const double f) { return (2 * f == f) && (f != 0); }
+bool is_inf(const double f)
+{
+    return (2 * f == f) && (f != 0);
+}
 
 ASCENT_EXEC
-bool is_inf(const float f) { return (2 * f == f) && (f != 0); }
+bool is_inf(const float f)
+{
+    return (2 * f == f) && (f != 0);
+}
 
 ASCENT_EXEC
-double rcp(double f) { return 1.0 / f; }
+double rcp(double f)
+{
+    return 1.0 / f;
+}
 
 ASCENT_EXEC
 double rcp_safe(double f)

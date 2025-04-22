@@ -11,12 +11,12 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_EXPRESSION_EVAL_HPP
-#    define ASCENT_EXPRESSION_EVAL_HPP
-#    include <conduit.hpp>
-#    include <ascent_exports.h>
-#    include <ascent_data_object.hpp>
+    #define ASCENT_EXPRESSION_EVAL_HPP
+    #include <conduit.hpp>
+    #include <ascent_exports.h>
+    #include <ascent_data_object.hpp>
 
-#    include "flow_workspace.hpp"
+    #include "flow_workspace.hpp"
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------

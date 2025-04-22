@@ -24,7 +24,10 @@ Runtime::Runtime() {}
 //-----------------------------------------------------------------------------
 Runtime::~Runtime() {}
 
-void Runtime::DisplayError(const std::string &msg) { std::cerr << msg; }
+void Runtime::DisplayError(const std::string &msg)
+{
+    std::cerr << msg;
+}
 //-----------------------------------------------------------------------------
 }; // namespace ascent
 //-----------------------------------------------------------------------------

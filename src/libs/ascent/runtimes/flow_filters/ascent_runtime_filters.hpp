@@ -11,9 +11,9 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_FILTERS_HPP
-#    define ASCENT_RUNTIME_FILTERS_HPP
+    #define ASCENT_RUNTIME_FILTERS_HPP
 
-#    include <ascent_exports.h>
+    #include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -24,11 +24,20 @@ DataLogger::~DataLogger()
     m_stream.str("");
 }
 
-DataLogger *DataLogger::instance() { return &DataLogger::m_instance; }
+DataLogger *DataLogger::instance()
+{
+    return &DataLogger::m_instance;
+}
 
-DataLogger::Block &DataLogger::current_block() { return m_blocks.top(); }
+DataLogger::Block &DataLogger::current_block()
+{
+    return m_blocks.top();
+}
 
-void DataLogger::rank(int rank) { m_rank = rank; }
+void DataLogger::rank(int rank)
+{
+    m_rank = rank;
+}
 
 void DataLogger::write_indent()
 {

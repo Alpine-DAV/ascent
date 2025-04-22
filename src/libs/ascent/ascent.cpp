@@ -25,12 +25,12 @@
 #include <conduit_fmt/conduit_fmt.h>
 
 #if defined(ASCENT_VTKH_ENABLED)
-#    include <vtkh/vtkh.hpp>
+    #include <vtkh/vtkh.hpp>
 #endif
 
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-#    include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
+    #include <conduit_relay_mpi.hpp>
 #endif
 using namespace conduit;
 //-----------------------------------------------------------------------------

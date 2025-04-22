@@ -5,13 +5,13 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #ifndef ASCENT_BLUEPRINT_TOPOLOGIES
-#    define ASCENT_BLUEPRINT_TOPOLOGIES
+    #define ASCENT_BLUEPRINT_TOPOLOGIES
 
-#    include <ascent.hpp>
-#    include <conduit.hpp>
-#    include <memory>
-#    include <unordered_set>
-#    include <array>
+    #include <ascent.hpp>
+    #include <conduit.hpp>
+    #include <memory>
+    #include <unordered_set>
+    #include <array>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

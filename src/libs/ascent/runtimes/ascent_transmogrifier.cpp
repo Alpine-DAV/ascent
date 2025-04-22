@@ -13,7 +13,7 @@
 #include "ascent_transmogrifier.hpp"
 #include "ascent_config.h"
 #if defined(ASCENT_MFEM_ENABLED)
-#    include "ascent_mfem_data_adapter.hpp"
+    #include "ascent_mfem_data_adapter.hpp"
 #endif
 #include "ascent_logging.hpp"
 #include "ascent_logging_old.hpp"

@@ -35,11 +35,11 @@
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
+    #include <mpi.h>
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)
-#    include <ascent_mfem_data_adapter.hpp>
+    #include <ascent_mfem_data_adapter.hpp>
 #endif
 
 #include <runtimes/ascent_data_object.hpp>

@@ -36,23 +36,23 @@
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-#    include <conduit_blueprint_mpi_mesh.hpp>
-#    include <conduit_blueprint_mpi.hpp>
-#    include <conduit_relay_mpi_io_blueprint.hpp>
+    #include <mpi.h>
+    #include <conduit_blueprint_mpi_mesh.hpp>
+    #include <conduit_blueprint_mpi.hpp>
+    #include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include <vtkm/cont/DataSet.h>
-#    include <ascent_vtkh_data_adapter.hpp>
+    #include <vtkm/cont/DataSet.h>
+    #include <ascent_vtkh_data_adapter.hpp>
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)
-#    include <ascent_mfem_data_adapter.hpp>
+    #include <ascent_mfem_data_adapter.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include <vtkh/DataSet.hpp>
+    #include <vtkh/DataSet.hpp>
 #endif
 
 using namespace conduit;

@@ -41,7 +41,10 @@ public:
         m_at_block_start = false;
     }
 
-    std::stringstream &stream() { return m_stream; }
+    std::stringstream &stream()
+    {
+        return m_stream;
+    }
 
 protected:
     DataLogger();

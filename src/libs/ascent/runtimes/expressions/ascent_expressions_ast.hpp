@@ -261,7 +261,10 @@ public:
     }
     virtual void accept(ASTVisitor *visitor) const override;
 
-    virtual ~ASTDotAccess() { delete obj; }
+    virtual ~ASTDotAccess()
+    {
+        delete obj;
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -336,7 +339,10 @@ public:
     void visit(const ASTDotAccess &expr) override;
     void visit(const ASTExpressionList &list) override;
 
-    conduit::Node get_output() const { return output; }
+    conduit::Node get_output() const
+    {
+        return output;
+    }
 
     conduit::Node table() const
     {

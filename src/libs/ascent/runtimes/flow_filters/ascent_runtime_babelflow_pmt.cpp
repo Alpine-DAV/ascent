@@ -290,7 +290,10 @@ public:
         return stats_vec;
     }
 
-    StatisticsVec &getStatsVec(GlobalIndexType id) { return mStats[id]; }
+    StatisticsVec &getStatsVec(GlobalIndexType id)
+    {
+        return mStats[id];
+    }
 
     void setStatsVec(GlobalIndexType id, const StatisticsVec &stats_vec)
     {
@@ -466,7 +469,10 @@ public:
         }
     }
 
-    size_t mapSize() const { return mStats.size(); }
+    size_t mapSize() const
+    {
+        return mStats.size();
+    }
 
 private:
     GlobalIndexType mLow[3];
@@ -1453,7 +1459,10 @@ void ParallelMergeTree::Initialize()
         make_local_block(m_dataPtr, m_low, m_high, m_threshold);
 }
 
-void ParallelMergeTree::Execute() { m_master.run(m_inputs); }
+void ParallelMergeTree::Execute()
+{
+    m_master.run(m_inputs);
+}
 
 void ParallelMergeTree::ExtractSegmentation(FunctionType *output_data_ptr)
 {

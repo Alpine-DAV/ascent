@@ -82,12 +82,21 @@ void WebInterface::SetDocumentRoot(const std::string &path)
 }
 
 //-----------------------------------------------------------------------------
-void WebInterface::SetPoll(int ms_poll) { m_ms_poll = ms_poll; }
+void WebInterface::SetPoll(int ms_poll)
+{
+    m_ms_poll = ms_poll;
+}
 
 //-----------------------------------------------------------------------------
-void WebInterface::SetTimeout(int ms_timeout) { m_ms_timeout = ms_timeout; }
+void WebInterface::SetTimeout(int ms_timeout)
+{
+    m_ms_timeout = ms_timeout;
+}
 
-void WebInterface::Enable() { m_enabled = true; }
+void WebInterface::Enable()
+{
+    m_enabled = true;
+}
 
 //-----------------------------------------------------------------------------
 WebSocket *WebInterface::Connection()

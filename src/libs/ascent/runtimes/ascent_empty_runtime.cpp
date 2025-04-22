@@ -24,9 +24,9 @@
 
 // mpi related includes
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-// -- conduit relay mpi
-#    include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
+    // -- conduit relay mpi
+    #include <conduit_relay_mpi.hpp>
 #endif
 
 using namespace conduit;
@@ -50,7 +50,10 @@ namespace ascent
 EmptyRuntime::EmptyRuntime() : Runtime() {}
 
 //-----------------------------------------------------------------------------
-EmptyRuntime::~EmptyRuntime() { Cleanup(); }
+EmptyRuntime::~EmptyRuntime()
+{
+    Cleanup();
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -77,10 +80,16 @@ void EmptyRuntime::Initialize(const conduit::Node &options)
 }
 
 //-----------------------------------------------------------------------------
-void EmptyRuntime::Info(conduit::Node &out) { out.set(m_info); }
+void EmptyRuntime::Info(conduit::Node &out)
+{
+    out.set(m_info);
+}
 
 //-----------------------------------------------------------------------------
-conduit::Node &EmptyRuntime::Info() { return m_info; }
+conduit::Node &EmptyRuntime::Info()
+{
+    return m_info;
+}
 
 //-----------------------------------------------------------------------------
 void EmptyRuntime::Cleanup() {}

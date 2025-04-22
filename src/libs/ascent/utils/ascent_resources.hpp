@@ -10,11 +10,11 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_RESOURCES_HPP
-#    define ASCENT_RESOURCES_HPP
+    #define ASCENT_RESOURCES_HPP
 
-#    include <ascent_exports.h>
-#    include <string>
-#    include <conduit.hpp>
+    #include <ascent_exports.h>
+    #include <string>
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

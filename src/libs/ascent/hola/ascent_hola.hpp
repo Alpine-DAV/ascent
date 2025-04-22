@@ -11,13 +11,13 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_HOLA_HPP
-#    define ASCENT_HOLA_HPP
+    #define ASCENT_HOLA_HPP
 
-#    include <ascent_config.h>
-#    include <ascent_exports.h>
+    #include <ascent_config.h>
+    #include <ascent_exports.h>
 
-#    include <string>
-#    include <conduit.hpp>
+    #include <string>
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

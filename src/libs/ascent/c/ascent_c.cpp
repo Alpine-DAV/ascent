@@ -33,7 +33,10 @@ extern "C"
     }
 
     //---------------------------------------------------------------------------//
-    Ascent *c_ascent(ascent::Ascent *v) { return (void *)v; }
+    Ascent *c_ascent(ascent::Ascent *v)
+    {
+        return (void *)v;
+    }
 
     //---------------------------------------------------------------------------//
     void ascent_about(conduit_node *result)
@@ -43,7 +46,10 @@ extern "C"
     }
 
     //---------------------------------------------------------------------------//
-    Ascent *ascent_create() { return c_ascent(new ascent::Ascent()); }
+    Ascent *ascent_create()
+    {
+        return c_ascent(new ascent::Ascent());
+    }
 
     //---------------------------------------------------------------------------//
     void ascent_open(Ascent *c_ascent, conduit_node *c_options)
@@ -105,10 +111,16 @@ extern "C"
     }
 
     //---------------------------------------------------------------------------//
-    void ascent_timer_stop(char *name) { ascent::BlockTimer::StopTimer(name); }
+    void ascent_timer_stop(char *name)
+    {
+        ascent::BlockTimer::StopTimer(name);
+    }
 
     //---------------------------------------------------------------------------//
-    void ascent_timer_write() { ascent::BlockTimer::WriteLogFile(); }
+    void ascent_timer_write()
+    {
+        ascent::BlockTimer::WriteLogFile();
+    }
 }
 //-----------------------------------------------------------------------------
 // -- end extern C

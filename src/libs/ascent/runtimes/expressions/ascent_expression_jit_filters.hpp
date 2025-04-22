@@ -5,11 +5,11 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #ifndef ASCENT_EXPRESSION_JIT_FILTERS
-#    define ASCENT_EXPRESSION_JIT_FILTERS
+    #define ASCENT_EXPRESSION_JIT_FILTERS
 
-#    include "ascent_derived_jit.hpp"
-#    include <flow_workspace.hpp>
-#    include <flow_filter.hpp>
+    #include "ascent_derived_jit.hpp"
+    #include <flow_workspace.hpp>
+    #include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

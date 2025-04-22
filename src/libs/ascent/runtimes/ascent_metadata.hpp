@@ -11,9 +11,9 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_METADATA_HPP
-#    define ASCENT_METADATA_HPP
+    #define ASCENT_METADATA_HPP
 
-#    include <conduit.hpp>
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -10,13 +10,13 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_MPI_UTILS_HPP
-#    define ASCENT_MPI_UTILS_HPP
+    #define ASCENT_MPI_UTILS_HPP
 
-#    include <set>
-#    include <string>
-#    ifdef ASCENT_MPI_ENABLED
-#        include <mpi.h>
-#    endif
+    #include <set>
+    #include <string>
+    #ifdef ASCENT_MPI_ENABLED
+        #include <mpi.h>
+    #endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------

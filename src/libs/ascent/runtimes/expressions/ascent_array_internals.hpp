@@ -17,7 +17,7 @@
 #include "ascent_logging_old.hpp"
 
 #if defined(ASCENT_UMPIRE_ENABLED)
-#    include <umpire/Umpire.hpp>
+    #include <umpire/Umpire.hpp>
 #endif
 
 #include <cassert>
@@ -184,7 +184,10 @@ public:
         m_own_host = true;
     }
 
-    size_t size() const { return m_size; }
+    size_t size() const
+    {
+        return m_size;
+    }
 
     void resize(const size_t size)
     {

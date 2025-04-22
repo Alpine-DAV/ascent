@@ -17,10 +17,10 @@
 #include <regex>
 // mpi related includes
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-// -- conduit relay mpi
-#    include <conduit_relay_mpi.hpp>
-#    include <conduit_blueprint_mpi.hpp>
+    #include <mpi.h>
+    // -- conduit relay mpi
+    #include <conduit_relay_mpi.hpp>
+    #include <conduit_blueprint_mpi.hpp>
 #endif
 
 using namespace conduit;

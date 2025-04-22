@@ -11,17 +11,17 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_HPP
-#    define ASCENT_HPP
+    #define ASCENT_HPP
 
-#    include <ascent_config.h>
-#    include <ascent_exports.h>
+    #include <ascent_config.h>
+    #include <ascent_exports.h>
 
-#    include <ascent_logging.hpp>
-#    include <ascent_logging_old.hpp>
-#    include <ascent_block_timer.hpp>
+    #include <ascent_logging.hpp>
+    #include <ascent_logging_old.hpp>
+    #include <ascent_block_timer.hpp>
 
-#    include <conduit.hpp>
-#    include <conduit_blueprint.hpp>
+    #include <conduit.hpp>
+    #include <conduit_blueprint.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

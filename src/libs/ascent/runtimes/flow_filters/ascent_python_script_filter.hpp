@@ -16,12 +16,12 @@
 /// python interpreter
 
 #ifndef ASCENT_PYTHON_SCRIPT_FILTER_HPP
-#    define ASCENT_PYTHON_SCRIPT_FILTER_HPP
+    #define ASCENT_PYTHON_SCRIPT_FILTER_HPP
 
-#    include <ascent_exports.h>
-#    include <ascent_data_object.hpp>
+    #include <ascent_exports.h>
+    #include <ascent_data_object.hpp>
 
-#    include <flow_python_script_filter.hpp>
+    #include <flow_python_script_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -157,9 +157,15 @@ template <typename T, int S> class Vec
 public:
     T m_data[S];
 
-    ASCENT_EXEC const T &operator[](const int &i) const { return m_data[i]; }
+    ASCENT_EXEC const T &operator[](const int &i) const
+    {
+        return m_data[i];
+    }
 
-    ASCENT_EXEC T &operator[](const int &i) { return m_data[i]; }
+    ASCENT_EXEC T &operator[](const int &i)
+    {
+        return m_data[i];
+    }
 };
 
 //---------------------------------------------------------------------------//
@@ -254,10 +260,16 @@ public:
     }
 
     //==---------------------------------------------------------------------==//
-    index_t size(int component) const { return m_sizes[component]; }
+    index_t size(int component) const
+    {
+        return m_sizes[component];
+    }
 
     //==---------------------------------------------------------------------==//
-    int components() const { return m_components; }
+    int components() const
+    {
+        return m_components;
+    }
 
     //==---------------------------------------------------------------------==//
     T value(const index_t idx, const std::string &component)

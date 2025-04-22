@@ -11,12 +11,12 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_VTKH_UTILS_HPP
-#    define ASCENT_RUNTIME_VTKH_UTILS_HPP
+    #define ASCENT_RUNTIME_VTKH_UTILS_HPP
 
-#    include <ascent_data_object.hpp>
-#    include <ascent_vtkh_collection.hpp>
-#    include <string>
-#    include <vector>
+    #include <ascent_data_object.hpp>
+    #include <ascent_vtkh_collection.hpp>
+    #include <string>
+    #include <vector>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

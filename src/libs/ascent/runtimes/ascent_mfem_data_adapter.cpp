@@ -25,7 +25,7 @@
 #include <conduit_blueprint.hpp>
 // mpi
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
+    #include <mpi.h>
 #endif
 
 #include <mfem.hpp>
@@ -56,24 +56,45 @@ MFEMDataSet::MFEMDataSet(mfem::Mesh *mesh)
 {
 }
 
-int MFEMDataSet::cycle() { return m_cycle; }
+int MFEMDataSet::cycle()
+{
+    return m_cycle;
+}
 
-double MFEMDataSet::time() { return m_time; }
+double MFEMDataSet::time()
+{
+    return m_time;
+}
 
-void MFEMDataSet::time(double time) { m_time = time; }
+void MFEMDataSet::time(double time)
+{
+    m_time = time;
+}
 
-void MFEMDataSet::cycle(int cycle) { m_cycle = cycle; }
+void MFEMDataSet::cycle(int cycle)
+{
+    m_cycle = cycle;
+}
 
-void MFEMDataSet::set_mesh(mfem::Mesh *mesh) { m_mesh = mesh; }
+void MFEMDataSet::set_mesh(mfem::Mesh *mesh)
+{
+    m_mesh = mesh;
+}
 
-mfem::Mesh *MFEMDataSet::get_mesh() { return m_mesh; }
+mfem::Mesh *MFEMDataSet::get_mesh()
+{
+    return m_mesh;
+}
 
 void MFEMDataSet::add_field(mfem::GridFunction *field, const std::string &name)
 {
     m_fields[name] = field;
 }
 
-MFEMDataSet::FieldMap MFEMDataSet::get_field_map() { return m_fields; }
+MFEMDataSet::FieldMap MFEMDataSet::get_field_map()
+{
+    return m_fields;
+}
 
 bool MFEMDataSet::has_field(const std::string &field_name)
 {
@@ -92,7 +113,10 @@ mfem::GridFunction *MFEMDataSet::get_field(const std::string &field_name)
     return m_fields[field_name];
 }
 
-int MFEMDataSet::num_fields() { return m_fields.size(); }
+int MFEMDataSet::num_fields()
+{
+    return m_fields.size();
+}
 
 //-----------------------------------------------------------------------------
 // MFEMDataAdapter public methods

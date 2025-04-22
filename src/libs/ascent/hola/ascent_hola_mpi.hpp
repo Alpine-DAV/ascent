@@ -11,15 +11,15 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_HOLA_MPI_HPP
-#    define ASCENT_HOLA_MPI_HPP
+    #define ASCENT_HOLA_MPI_HPP
 
-#    include <ascent_config.h>
-#    include <ascent_exports.h>
+    #include <ascent_config.h>
+    #include <ascent_exports.h>
 
-#    include <string>
-#    include <conduit.hpp>
+    #include <string>
+    #include <conduit.hpp>
 
-#    include <mpi.h>
+    #include <mpi.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -14,13 +14,13 @@
 #include "ascent_metadata.hpp"
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include "ascent_vtkh_collection.hpp"
-#    include "ascent_vtkh_data_adapter.hpp"
+    #include "ascent_vtkh_collection.hpp"
+    #include "ascent_vtkh_data_adapter.hpp"
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-#    include <dray/data_model/collection.hpp>
-#    include <dray/io/blueprint_reader.hpp>
+    #include <dray/data_model/collection.hpp>
+    #include <dray/io/blueprint_reader.hpp>
 #endif
 
 #include "ascent_transmogrifier.hpp"
@@ -83,9 +83,9 @@ DataObject::DataObject()
 #if defined(ASCENT_VTKM_ENABLED)
 DataObject::DataObject(VTKHCollection *dataset)
     : m_low_bp(nullptr), m_high_bp(nullptr), m_vtkh(dataset),
-#    if defined(ASCENT_DRAY_ENABLED)
+    #if defined(ASCENT_DRAY_ENABLED)
       m_dray(nullptr),
-#    endif
+    #endif
       m_source(Source::VTKH)
 {
     m_name = "default";
@@ -95,9 +95,9 @@ DataObject::DataObject(VTKHCollection *dataset)
 #if defined(ASCENT_DRAY_ENABLED)
 DataObject::DataObject(dray::Collection *dataset)
     : m_low_bp(nullptr), m_high_bp(nullptr),
-#    if defined(ASCENT_VTKM_ENABLED)
+    #if defined(ASCENT_VTKM_ENABLED)
       m_vtkh(nullptr),
-#    endif
+    #endif
       m_dray(dataset), m_source(Source::DRAY)
 {
     m_name = "default";
@@ -119,9 +119,15 @@ DataObject::DataObject(conduit::Node *dataset)
     m_name = "default";
 }
 
-void DataObject::name(const std::string n) { m_name = n; }
+void DataObject::name(const std::string n)
+{
+    m_name = n;
+}
 
-std::string DataObject::name() const { return m_name; }
+std::string DataObject::name() const
+{
+    return m_name;
+}
 
 void DataObject::reset_all()
 {
@@ -408,7 +414,10 @@ std::shared_ptr<conduit::Node> DataObject::as_node()
     return nullptr;
 }
 
-DataObject::Source DataObject::source() const { return m_source; }
+DataObject::Source DataObject::source() const
+{
+    return m_source;
+}
 
 std::string DataObject::source_string() const
 {

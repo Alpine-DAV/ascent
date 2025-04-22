@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_COMMAND_FILTERS
-#    define ASCENT_RUNTIME_COMMAND_FILTERS
+    #define ASCENT_RUNTIME_COMMAND_FILTERS
 
-#    include <ascent.hpp>
+    #include <ascent.hpp>
 
-#    include <flow_filter.hpp>
+    #include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -28,19 +28,19 @@
 #include <limits>
 
 #ifdef ASCENT_JIT_ENABLED
-#    include <occa.hpp>
-#    include <occa/utils/env.hpp>
-#    include <stdlib.h>
+    #include <occa.hpp>
+    #include <occa/utils/env.hpp>
+    #include <stdlib.h>
 #endif
 
 #ifdef ASCENT_CUDA_ENABLED
-#    include <cuda_runtime.h>
-#    include <cuda.h>
-#    include "driver_types.h"
+    #include <cuda_runtime.h>
+    #include <cuda.h>
+    #include "driver_types.h"
 #endif
 
 #ifdef ASCENT_HIP_ENABLED
-#    include "hip/hip_runtime.h"
+    #include "hip/hip_runtime.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -128,12 +128,12 @@ void get_occa_mem(std::vector<Array<unsigned char>> &buffers,
         {
             ptr = buf.get_host_ptr();
         }
-#    ifdef ASCENT_CUDA_ENABLED
+    #ifdef ASCENT_CUDA_ENABLED
         else if (mode == "CUDA")
         {
             ptr = buf.get_device_ptr();
         }
-#    endif
+    #endif
         else
         {
             ASCENT_ERROR("Unknow occa mode " << mode);
@@ -539,10 +539,16 @@ void pack_topology(const std::string &topo_name,
 JitExecutionPolicy::JitExecutionPolicy() {}
 
 // fuse policy
-bool FusePolicy::should_execute(const Jitable &jitable) const { return false; }
+bool FusePolicy::should_execute(const Jitable &jitable) const
+{
+    return false;
+}
 
 // unique name
-std::string FusePolicy::get_name() const { return "fuse"; }
+std::string FusePolicy::get_name() const
+{
+    return "fuse";
+}
 
 // roundtrip policy
 bool RoundtripPolicy::should_execute(const Jitable &jitable) const
@@ -550,7 +556,10 @@ bool RoundtripPolicy::should_execute(const Jitable &jitable) const
     return jitable.can_execute();
 }
 
-std::string RoundtripPolicy::get_name() const { return "roundtrip"; }
+std::string RoundtripPolicy::get_name() const
+{
+    return "roundtrip";
+}
 
 // Used when we need to execute (e.g. for a top-level JitFilter or a JitFilter
 // feeding into a reduction)
@@ -559,7 +568,10 @@ bool AlwaysExecutePolicy::should_execute(const Jitable &jitable) const
     return true;
 }
 
-std::string AlwaysExecutePolicy::get_name() const { return "always_execute"; }
+std::string AlwaysExecutePolicy::get_name() const
+{
+    return "always_execute";
+}
 
 // I pass in args because I want execute to generate new args and also be
 // const so it can't just update the object's args
@@ -1019,7 +1031,7 @@ void Jitable::init_occa()
 {
 #ifdef ASCENT_JIT_ENABLED
     // running this in a loop segfaults...
-#    if defined(ASCENT_CUDA_ENABLED)
+    #if defined(ASCENT_CUDA_ENABLED)
     if (m_device_id == -1)
     {
         // the ascent runtime should tell us what to use, otherwise just
@@ -1030,7 +1042,7 @@ void Jitable::init_occa()
         {"mode",      "CUDA"     },
         {"device_id", m_device_id}
     });
-#    elif defined(ASCENT_HIP_ENABLED)
+    #elif defined(ASCENT_HIP_ENABLED)
     if (m_device_id == -1)
     {
         // the ascent runtime should tell us what to use, otherwise just
@@ -1041,15 +1053,15 @@ void Jitable::init_occa()
         {"mode",      "HIP"      },
         {"device_id", m_device_id}
     });
-#    elif defined(ASCENT_OPENMP_ENABLED)
+    #elif defined(ASCENT_OPENMP_ENABLED)
     occa::setDevice({
         {"mode", "OpenMP"}
     });
-#    else
+    #else
     occa::setDevice({
         {"mode", "Serial"}
     });
-#    endif
+    #endif
     occa::env::setOccaCacheDir(
         ::ascent::runtime::filters::output_dir(".occa"));
 #endif
@@ -1082,7 +1094,10 @@ int Jitable::num_devices()
 }
 
 // TODO Num devices instead of "cuda"
-void Jitable::set_device(int device_id) { m_device_id = device_id; }
+void Jitable::set_device(int device_id)
+{
+    m_device_id = device_id;
+}
 //-----------------------------------------------------------------------------
 }; // namespace expressions
 //-----------------------------------------------------------------------------

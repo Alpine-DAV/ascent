@@ -626,7 +626,10 @@ BabelGraphWrapper::BabelGraphWrapper(const ImageData &input_img,
 
 //-----------------------------------------------------------------------------
 
-void BabelGraphWrapper::Execute() { m_master.run(m_inputs); }
+void BabelGraphWrapper::Execute()
+{
+    m_master.run(m_inputs);
+}
 
 //-----------------------------------------------------------------------------
 

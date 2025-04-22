@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_JIT_TOPOLOGY_HPP
-#    define ASCENT_JIT_TOPOLOGY_HPP
+    #define ASCENT_JIT_TOPOLOGY_HPP
 
-#    include "ascent_insertion_ordered_set.hpp"
-#    include "ascent_jit_math.hpp"
-#    include "ascent_jit_array.hpp"
+    #include "ascent_insertion_ordered_set.hpp"
+    #include "ascent_jit_math.hpp"
+    #include "ascent_jit_array.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

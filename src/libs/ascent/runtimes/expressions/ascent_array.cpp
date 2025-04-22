@@ -92,9 +92,15 @@ const T *Array<T>::get_ptr_const(const std::string loc) const
     }
 }
 
-template <typename T> void Array<T>::summary() { m_internals->summary(); }
+template <typename T> void Array<T>::summary()
+{
+    m_internals->summary();
+}
 
-template <typename T> void Array<T>::status() { m_internals->status(); }
+template <typename T> void Array<T>::status()
+{
+    m_internals->status();
+}
 
 template <typename T> T Array<T>::get_value(const size_t i) const
 {

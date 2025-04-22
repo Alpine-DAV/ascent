@@ -24,8 +24,8 @@
 #include "expressions/ascent_expression_jit_filters.hpp"
 
 #ifdef ASCENT_JIT_ENABLED
-// Needed for logging functions
-#    include "expressions/ascent_array_registry.hpp"
+    // Needed for logging functions
+    #include "expressions/ascent_array_registry.hpp"
 #endif
 
 #include <ctime>
@@ -34,8 +34,8 @@
 #include <stdlib.h>
 
 #ifdef ASCENT_MPI_ENABLED
-#    include <conduit_relay_mpi.hpp>
-#    include <mpi.h>
+    #include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
 #endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -70,9 +70,15 @@ double Cache::last_known_time()
     return res;
 }
 
-bool Cache::filtered() { return m_filtered; }
+bool Cache::filtered()
+{
+    return m_filtered;
+}
 
-void Cache::last_known_time(double time) { m_data["last_known_time"] = time; }
+void Cache::last_known_time(double time)
+{
+    m_data["last_known_time"] = time;
+}
 
 void Cache::filter_time(double ftime)
 {
@@ -142,7 +148,10 @@ void Cache::filter_time(double ftime)
     m_filtered = true;
 }
 
-bool Cache::loaded() { return m_loaded; }
+bool Cache::loaded()
+{
+    return m_loaded;
+}
 
 void Cache::load(const std::string &dir, const std::string &session)
 {
@@ -212,7 +221,10 @@ void Cache::save(const std::string &filename,
     }
 }
 
-Cache::~Cache() { save(); }
+Cache::~Cache()
+{
+    save();
+}
 
 void register_builtin()
 {
@@ -1820,16 +1832,25 @@ void ExpressionEval::jit_root(conduit::Node &root,
     }
 }
 //-----------------------------------------------------------------------------
-const conduit::Node &ExpressionEval::get_cache() { return m_cache.m_data; }
+const conduit::Node &ExpressionEval::get_cache()
+{
+    return m_cache.m_data;
+}
 
-void ExpressionEval::reset_cache() { m_cache.m_data.reset(); }
+void ExpressionEval::reset_cache()
+{
+    m_cache.m_data.reset();
+}
 
 void ExpressionEval::save_cache(const std::string &filename)
 {
     m_cache.save(filename);
 }
 
-void ExpressionEval::save_cache() { m_cache.save(); }
+void ExpressionEval::save_cache()
+{
+    m_cache.save();
+}
 
 void ExpressionEval::get_last(conduit::Node &data)
 {
@@ -1853,7 +1874,10 @@ void ExpressionEval::save_cache(const std::string &filename,
     m_cache.save(filename, selection);
 }
 //-----------------------------------------------------------------------------
-DataObject &ExpressionEval::data_object() { return m_data_object; }
+DataObject &ExpressionEval::data_object()
+{
+    return m_data_object;
+}
 //-----------------------------------------------------------------------------
 }; // namespace expressions
 //-----------------------------------------------------------------------------

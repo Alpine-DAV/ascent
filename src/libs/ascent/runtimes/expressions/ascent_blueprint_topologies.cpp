@@ -131,9 +131,15 @@ Topology::Topology(const std::string &topo_name,
 {
 }
 
-size_t Topology::get_num_points() const { return num_points; }
+size_t Topology::get_num_points() const
+{
+    return num_points;
+}
 
-size_t Topology::get_num_cells() const { return num_cells; }
+size_t Topology::get_num_cells() const
+{
+    return num_cells;
+}
 
 //-----------------------------------------------------------------------------
 // -- PointTopology

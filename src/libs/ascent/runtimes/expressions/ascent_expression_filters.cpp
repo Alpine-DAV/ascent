@@ -40,14 +40,14 @@
 #include <typeinfo>
 
 #if defined(ASCENT_DRAY_ENABLED)
-#    include <dray/queries/lineout.hpp>
+    #include <dray/queries/lineout.hpp>
 #endif
 
 #include <conduit_relay.hpp>
 
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-#    include "conduit_relay_mpi_io_blueprint.hpp"
+    #include <mpi.h>
+    #include "conduit_relay_mpi_io_blueprint.hpp"
 #endif
 
 using namespace conduit;

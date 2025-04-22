@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
+    #include <mpi.h>
 #endif
 
 // conduit includes

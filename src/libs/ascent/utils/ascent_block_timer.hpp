@@ -11,21 +11,21 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_BLOCK_TIMER_HPP
-#    define ASCENT_BLOCK_TIMER_HPP
+    #define ASCENT_BLOCK_TIMER_HPP
 
-#    define ASCENT_BLOCK_TIMER(NAME)                                          \
+    #define ASCENT_BLOCK_TIMER(NAME)                                          \
         ascent::BlockTimer ASCENT_BLOCK_TIMER_##NAME(#NAME);
-#    define MAX_DEPTH 5
+    #define MAX_DEPTH 5
 
-#    include <string>
-#    include <map>
-#    include <set>
-#    include <cstdlib>
-#    include <chrono>
+    #include <string>
+    #include <map>
+    #include <set>
+    #include <cstdlib>
+    #include <chrono>
 
-#    include <conduit.hpp>
-#    include <ascent_config.h>
-#    include <ascent_exports.h>
+    #include <conduit.hpp>
+    #include <ascent_config.h>
+    #include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -51,7 +51,10 @@ public:
 private:
     static void Start(const std::string &name);
     static void Stop(const std::string &name);
-    static inline conduit::Node &GlobalRoot() { return s_global_root; }
+    static inline conduit::Node &GlobalRoot()
+    {
+        return s_global_root;
+    }
 
     static void ReduceGlobalRoot();
 

@@ -10,10 +10,10 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_STRING_UTILS_HPP
-#    define ASCENT_STRING_UTILS_HPP
+    #define ASCENT_STRING_UTILS_HPP
 
-#    include <string>
-#    include <vector>
+    #include <string>
+    #include <vector>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

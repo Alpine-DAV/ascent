@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_UTILS_HPP
-#    define ASCENT_RUNTIME_UTILS_HPP
+    #define ASCENT_RUNTIME_UTILS_HPP
 
-#    include <conduit.hpp>
-#    include <ascent_exports.h>
-#    include <string>
+    #include <conduit.hpp>
+    #include <ascent_exports.h>
+    #include <string>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

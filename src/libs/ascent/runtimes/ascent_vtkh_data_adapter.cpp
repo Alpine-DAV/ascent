@@ -23,7 +23,7 @@
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
+    #include <mpi.h>
 #endif
 
 #include <ascent_logging.hpp>
@@ -1132,7 +1132,7 @@ public:
         auto shapes_portal = shapes.WritePortal();
         auto num_indices_portal = num_indices.WritePortal();
 #ifdef ASCENT_OPENMP_ENABLED
-#    pragma omp parallel for
+    #pragma omp parallel for
 #endif
         for (int i = 0; i < num_shapes; ++i)
         {

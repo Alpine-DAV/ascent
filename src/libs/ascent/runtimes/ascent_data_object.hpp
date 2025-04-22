@@ -11,30 +11,30 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_DATA_OBJECT_HPP
-#    define ASCENT_DATA_OBJECT_HPP
+    #define ASCENT_DATA_OBJECT_HPP
 
-#    include <ascent.hpp>
-#    include <conduit.hpp>
-#    include <memory>
+    #include <ascent.hpp>
+    #include <conduit.hpp>
+    #include <memory>
 
-//-----------------------------------------------------------------------------
-// -- begin ascent:: --
-//-----------------------------------------------------------------------------
-// forward declare
-#    if defined(ASCENT_DRAY_ENABLED)
+    //-----------------------------------------------------------------------------
+    // -- begin ascent:: --
+    //-----------------------------------------------------------------------------
+    // forward declare
+    #if defined(ASCENT_DRAY_ENABLED)
 namespace dray
 {
 class Collection;
 } // namespace dray
-#    endif
+    #endif
 
 namespace ascent
 {
 
-#    if defined(ASCENT_VTKM_ENABLED)
+    #if defined(ASCENT_VTKM_ENABLED)
 // forward declare
 class VTKHCollection;
-#    endif
+    #endif
 
 class DataObject
 {
@@ -56,22 +56,28 @@ public:
     void reset(conduit::Node *dataset);
     void reset(std::shared_ptr<conduit::Node> dataset);
     void reset_all();
-    bool is_valid() const { return m_source != Source::INVALID; };
+    bool is_valid() const
+    {
+        return m_source != Source::INVALID;
+    };
     void name(const std::string n);
     std::string name() const;
 
-#    if defined(ASCENT_VTKM_ENABLED)
+    #if defined(ASCENT_VTKM_ENABLED)
     DataObject(VTKHCollection *dataset);
     std::shared_ptr<VTKHCollection> as_vtkh_collection();
 
-    bool is_vtkh_coll_exists() const { return m_vtkh != nullptr; }
+    bool is_vtkh_coll_exists() const
+    {
+        return m_vtkh != nullptr;
+    }
     void reset_vtkh_collection();
 
-#    endif
-#    if defined(ASCENT_DRAY_ENABLED)
+    #endif
+    #if defined(ASCENT_DRAY_ENABLED)
     DataObject(dray::Collection *dataset);
     std::shared_ptr<dray::Collection> as_dray_collection();
-#    endif
+    #endif
     std::shared_ptr<conduit::Node> as_low_order_bp();
     std::shared_ptr<conduit::Node> as_high_order_bp();
     std::shared_ptr<conduit::Node> as_node(); // just return the coduit node
@@ -81,12 +87,12 @@ public:
 protected:
     std::shared_ptr<conduit::Node> m_low_bp;
     std::shared_ptr<conduit::Node> m_high_bp;
-#    if defined(ASCENT_VTKM_ENABLED)
+    #if defined(ASCENT_VTKM_ENABLED)
     std::shared_ptr<VTKHCollection> m_vtkh;
-#    endif
-#    if defined(ASCENT_DRAY_ENABLED)
+    #endif
+    #if defined(ASCENT_DRAY_ENABLED)
     std::shared_ptr<dray::Collection> m_dray;
-#    endif
+    #endif
 
     Source m_source;
     std::string m_name;

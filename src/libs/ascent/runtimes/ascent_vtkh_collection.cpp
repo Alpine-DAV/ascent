@@ -16,8 +16,8 @@
 #include "ascent_logging_old.hpp"
 
 #if defined(ASCENT_MPI_ENABLED)
-#    include <mpi.h>
-#    include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
+    #include <conduit_relay_mpi.hpp>
 #endif
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

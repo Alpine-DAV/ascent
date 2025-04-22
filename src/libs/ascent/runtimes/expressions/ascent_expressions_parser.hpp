@@ -45,7 +45,7 @@
 #define YY_ASCENT_ASCENT_EXPRESSIONS_PARSER_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-#    define YYDEBUG 1
+    #define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int ascentdebug;
@@ -53,7 +53,7 @@ extern int ascentdebug;
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
-#    define YYTOKENTYPE
+    #define YYTOKENTYPE
 enum yytokentype
 {
     YYEMPTY = -2,
@@ -100,7 +100,7 @@ typedef enum yytokentype yytoken_kind_t;
 #if !defined YYSTYPE && !defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#    line 21 "parser.y"
+    #line 21 "parser.y"
 
     ASTNode *node;
     ASTBlock *block;
@@ -115,11 +115,11 @@ union YYSTYPE
     std::string *string;
     int token;
 
-#    line 113 "ascent_expressions_parser.hpp"
+    #line 113 "ascent_expressions_parser.hpp"
 };
 typedef union YYSTYPE YYSTYPE;
-#    define YYSTYPE_IS_TRIVIAL 1
-#    define YYSTYPE_IS_DECLARED 1
+    #define YYSTYPE_IS_TRIVIAL 1
+    #define YYSTYPE_IS_DECLARED 1
 #endif
 
 extern YYSTYPE ascentlval;

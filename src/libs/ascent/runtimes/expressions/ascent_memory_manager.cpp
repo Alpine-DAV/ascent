@@ -4,19 +4,19 @@
 #include <ascent_config.h>
 
 #if defined(ASCENT_UMPIRE_ENABLED)
-#    include <umpire/Umpire.hpp>
-#    include <umpire/util/MemoryResourceTraits.hpp>
-#    include <umpire/strategy/DynamicPoolList.hpp>
+    #include <umpire/Umpire.hpp>
+    #include <umpire/util/MemoryResourceTraits.hpp>
+    #include <umpire/strategy/DynamicPoolList.hpp>
 #endif
 #include <cstring> // memcpy
 #include <conduit.hpp>
 
 #if defined(ASCENT_HIP_ENABLED)
-#    if HIP_VERSION_MAJOR >= 6
-#        define TYPE_ATTR type
-#    else
-#        define TYPE_ATTR memoryType
-#    endif
+    #if HIP_VERSION_MAJOR >= 6
+        #define TYPE_ATTR type
+    #else
+        #define TYPE_ATTR memoryType
+    #endif
 #endif
 
 namespace ascent
@@ -176,9 +176,9 @@ bool AllocationManager::set_device_allocator_id(int id)
     bool can_use = false;
     bool need_device = false;
 
-#    if defined(ASCENT_DEVICE_ENABLED)
+    #if defined(ASCENT_DEVICE_ENABLED)
     need_device = true;
-#    endif
+    #endif
 
     bool is_device =
         resource == umpire::MemoryResourceTraits::resource_type::device;
@@ -426,11 +426,11 @@ void MagicMemory::set(void *ptr, int value, size_t num)
     bool is_device = DeviceMemory::is_device_ptr(ptr);
     if (is_device)
     {
-#    if defined(ASCENT_CUDA_ENABLED)
+    #if defined(ASCENT_CUDA_ENABLED)
         cudaMemset(ptr, value, num);
-#    elif defined(ASCENT_HIP_ENABLED)
+    #elif defined(ASCENT_HIP_ENABLED)
         hipMemset(ptr, value, num);
-#    endif
+    #endif
     }
     else
     {
@@ -449,27 +449,27 @@ void MagicMemory::copy(void *destination, const void *source, size_t num)
     bool dst_is_gpu = DeviceMemory::is_device_ptr(destination);
     if (src_is_gpu && dst_is_gpu)
     {
-#    if defined(ASCENT_CUDA_ENABLED)
+    #if defined(ASCENT_CUDA_ENABLED)
         cudaMemcpy(destination, source, num, cudaMemcpyDeviceToDevice);
-#    elif defined(ASCENT_HIP_ENABLED)
+    #elif defined(ASCENT_HIP_ENABLED)
         hipMemcpy(destination, source, num, hipMemcpyDeviceToDevice);
-#    endif
+    #endif
     }
     else if (src_is_gpu && !dst_is_gpu)
     {
-#    if defined(ASCENT_CUDA_ENABLED)
+    #if defined(ASCENT_CUDA_ENABLED)
         cudaMemcpy(destination, source, num, cudaMemcpyDeviceToHost);
-#    elif defined(ASCENT_HIP_ENABLED)
+    #elif defined(ASCENT_HIP_ENABLED)
         hipMemcpy(destination, source, num, hipMemcpyDeviceToHost);
-#    endif
+    #endif
     }
     else if (!src_is_gpu && dst_is_gpu)
     {
-#    if defined(ASCENT_CUDA_ENABLED)
+    #if defined(ASCENT_CUDA_ENABLED)
         cudaMemcpy(destination, source, num, cudaMemcpyHostToDevice);
-#    elif defined(ASCENT_HIP_ENABLED)
+    #elif defined(ASCENT_HIP_ENABLED)
         hipMemcpy(destination, source, num, hipMemcpyHostToDevice);
-#    endif
+    #endif
     }
     else
     {

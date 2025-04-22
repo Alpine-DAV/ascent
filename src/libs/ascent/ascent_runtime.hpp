@@ -11,9 +11,9 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_HPP
-#    define ASCENT_RUNTIME_HPP
+    #define ASCENT_RUNTIME_HPP
 
-#    include <ascent.hpp>
+    #include <ascent.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

@@ -11,9 +11,9 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_TRANSMOGRIGIFIER_HPP
-#    define ASCENT_TRANSMOGRIGIFIER_HPP
+    #define ASCENT_TRANSMOGRIGIFIER_HPP
 
-#    include <flow_filter.hpp>
+    #include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

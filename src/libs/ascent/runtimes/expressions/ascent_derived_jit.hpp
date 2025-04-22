@@ -11,19 +11,19 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_DERVIVED_JIT_HPP
-#    define ASCENT_DERVIVED_JIT_HPP
+    #define ASCENT_DERVIVED_JIT_HPP
 
-#    include <ascent.hpp>
-#    include <conduit.hpp>
-#    include <flow.hpp>
-#    include <memory>
+    #include <ascent.hpp>
+    #include <conduit.hpp>
+    #include <flow.hpp>
+    #include <memory>
 
-#    include "ascent_jit_array.hpp"
-#    include "ascent_jit_field.hpp"
-#    include "ascent_jit_kernel.hpp"
-#    include "ascent_jit_math.hpp"
-#    include "ascent_jit_topology.hpp"
-#    include "ascent_insertion_ordered_set.hpp"
+    #include "ascent_jit_array.hpp"
+    #include "ascent_jit_field.hpp"
+    #include "ascent_jit_kernel.hpp"
+    #include "ascent_jit_math.hpp"
+    #include "ascent_jit_topology.hpp"
+    #include "ascent_insertion_ordered_set.hpp"
 // Matt: there is a lot of code that needs its own file
 
 //-----------------------------------------------------------------------------

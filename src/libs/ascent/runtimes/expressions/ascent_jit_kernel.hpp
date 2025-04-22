@@ -11,10 +11,10 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_JIT_KERNEL_HPP
-#    define ASCENT_JIT_KERNEL_HPP
+    #define ASCENT_JIT_KERNEL_HPP
 
-#    include "ascent_jit_array.hpp"
-#    include "ascent_insertion_ordered_set.hpp"
+    #include "ascent_jit_array.hpp"
+    #include "ascent_insertion_ordered_set.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

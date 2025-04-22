@@ -11,7 +11,7 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_VTKH_DATA_ADAPTER_HPP
-#    define ASCENT_VTKH_DATA_ADAPTER_HPP
+    #define ASCENT_VTKH_DATA_ADAPTER_HPP
 
 // forward decs
 
@@ -31,10 +31,10 @@ namespace vtkh
 class DataSet;
 };
 
-#    include <ascent_exports.h>
-#    include "ascent_vtkh_collection.hpp"
-// conduit includes
-#    include <conduit.hpp>
+    #include <ascent_exports.h>
+    #include "ascent_vtkh_collection.hpp"
+    // conduit includes
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

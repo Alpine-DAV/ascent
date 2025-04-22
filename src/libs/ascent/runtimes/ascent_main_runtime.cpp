@@ -27,10 +27,10 @@
 
 // mpi related includes
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-// -- conduit relay mpi
-#    include <conduit_relay_mpi.hpp>
-#    include <conduit_blueprint_mpi.hpp>
+    #include <mpi.h>
+    // -- conduit relay mpi
+    #include <conduit_relay_mpi.hpp>
+    #include <conduit_blueprint_mpi.hpp>
 #endif
 
 #include <flow.hpp>
@@ -47,18 +47,18 @@
 #include <ascent_data_logger.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include <vtkm/cont/Error.h>
-#    include <vtkh/vtkh.hpp>
-#    include <vtkh/Error.hpp>
-#    include <vtkh/Logger.hpp>
+    #include <vtkm/cont/Error.h>
+    #include <vtkh/vtkh.hpp>
+    #include <vtkh/Error.hpp>
+    #include <vtkh/Logger.hpp>
 
-#    ifdef VTKM_CUDA
-#        include <vtkm/cont/cuda/ChooseCudaDevice.h>
-#    endif
+    #ifdef VTKM_CUDA
+        #include <vtkm/cont/cuda/ChooseCudaDevice.h>
+    #endif
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-#    include <dray/dray.hpp>
+    #include <dray/dray.hpp>
 #endif
 using namespace conduit;
 using namespace std;
@@ -109,7 +109,10 @@ AscentRuntime::AscentRuntime()
 }
 
 //-----------------------------------------------------------------------------
-AscentRuntime::~AscentRuntime() { Cleanup(); }
+AscentRuntime::~AscentRuntime()
+{
+    Cleanup();
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -139,13 +142,13 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     }
 
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
-#    if defined(ASCENT_VTKM_ENABLED)
+    #if defined(ASCENT_VTKM_ENABLED)
     vtkh::Initialize();
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
-#    endif
-#    if defined(ASCENT_DRAY_ENABLED)
+    #endif
+    #if defined(ASCENT_DRAY_ENABLED)
     dray::dray::mpi_comm(options["mpi_comm"].to_int());
-#    endif
+    #endif
     MPI_Comm comm = MPI_Comm_f2c(options["mpi_comm"].to_int());
     MPI_Comm_rank(comm, &m_rank);
     InfoHandler::m_rank = m_rank;
@@ -160,9 +163,9 @@ void AscentRuntime::Initialize(const conduit::Node &options)
                      "correct version of ascent?");
     }
 
-#    if defined(ASCENT_VTKM_ENABLED)
+    #if defined(ASCENT_VTKM_ENABLED)
     vtkh::Initialize();
-#    endif
+    #endif
 
 #endif // end non-mpi
 
@@ -184,20 +187,20 @@ void AscentRuntime::Initialize(const conduit::Node &options)
     //
     if (sel_cuda_device)
     {
-#    if defined(ASCENT_VTKM_ENABLED)
+    #if defined(ASCENT_VTKM_ENABLED)
         {
             int device_count = vtkh::CUDADeviceCount();
             int rank_device = m_rank % device_count;
             vtkh::SelectCUDADevice(rank_device);
         }
-#    endif
-#    if defined(ASCENT_JIT_ENABLED)
+    #endif
+    #if defined(ASCENT_JIT_ENABLED)
         {
             int device_count = runtime::expressions::Jitable::num_devices();
             int rank_device = m_rank % device_count;
             runtime::expressions::Jitable::set_device(rank_device);
         }
-#    endif
+    #endif
     }
 #endif
 
@@ -244,16 +247,16 @@ void AscentRuntime::Initialize(const conduit::Node &options)
         }
     }
 
-#    if defined(ASCENT_DRAY_ENABLED)
+    #if defined(ASCENT_DRAY_ENABLED)
     // set devil dray allocator ids to be the same as those used by ascent
     host_alloc_id = ascent::AllocationManager::host_allocator_id();
     dray::dray::set_host_allocator_id(host_alloc_id);
 
-#        if defined(ASCENT_DEVICE_ENABLED)
+        #if defined(ASCENT_DEVICE_ENABLED)
     device_alloc_id = ascent::AllocationManager::device_allocator_id();
     dray::dray::set_device_allocator_id(device_alloc_id);
-#        endif // end ASCENT_DEVICE_ENABLED
-#    endif     // end ASCENT_DRAY_ENABLED
+        #endif // end ASCENT_DEVICE_ENABLED
+    #endif     // end ASCENT_DRAY_ENABLED
 
 #endif
 
@@ -387,10 +390,16 @@ void AscentRuntime::Initialize(const conduit::Node &options)
 }
 
 //-----------------------------------------------------------------------------
-void AscentRuntime::Info(conduit::Node &out) { out.set(m_info); }
+void AscentRuntime::Info(conduit::Node &out)
+{
+    out.set(m_info);
+}
 
 //-----------------------------------------------------------------------------
-conduit::Node &AscentRuntime::Info() { return m_info; }
+conduit::Node &AscentRuntime::Info()
+{
+    return m_info;
+}
 
 //-----------------------------------------------------------------------------
 void AscentRuntime::ResetInfo()
@@ -514,11 +523,11 @@ void AscentRuntime::EnsureDomainIds()
 #if _DEBUG
     std::stringstream log_name;
     std::string log_prefix = "EnsureDomainIDs_times_";
-#    ifdef ASCENT_MPI_ENABLED
+    #ifdef ASCENT_MPI_ENABLED
     log_name << log_prefix << m_rank << ".csv";
-#    else
+    #else
     log_name << log_prefix << "0.csv";
-#    endif
+    #endif
     std::ofstream stream;
     stream.open(log_name.str().c_str(), std::ofstream::app);
     conduit::utils::Timer ensureDomainIDsTimer;
@@ -660,9 +669,9 @@ void AscentRuntime::EnsureDomainIds()
 
 #ifdef ASCENT_MPI_ENABLED
 
-#    if _DEBUG
+    #if _DEBUG
     conduit::utils::Timer global_check_timer;
-#    endif
+    #endif
     conduit::Node n_dom_ids;
     conduit::Node n_global_dom_ids;
     conduit::Node n_dom_rank;
@@ -733,13 +742,13 @@ void AscentRuntime::EnsureDomainIds()
         }
         ASCENT_ERROR("Global Domain IDs are not unique for " << ss.str());
     }
-#    if _DEBUG
+    #if _DEBUG
     float global_check_timer_time = global_check_timer.elapsed();
     std::stringstream global_check_timer_log;
     global_check_timer_log << "Global Uniqueness Check: "
                            << global_check_timer_time << "\n";
     stream << global_check_timer_log.str();
-#    endif
+    #endif
 #endif
 
 #if _DEBUG

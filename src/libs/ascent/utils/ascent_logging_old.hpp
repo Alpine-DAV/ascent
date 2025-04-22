@@ -10,35 +10,36 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_LOGGING_OLD_HPP
-#    define ASCENT_LOGGING_OLD_HPP
+    #define ASCENT_LOGGING_OLD_HPP
 
-#    include <conduit.hpp>
-#    include <ascent_exports.h>
+    #include <conduit.hpp>
+    #include <ascent_exports.h>
 
-//-----------------------------------------------------------------------------
-//
-/// The ASCENT_INFO macro is the primary mechanism used to log basic messages.
-///
-/// We use CONDUIT_INFO, b/c conduit's logging infrastructure allows use
-/// it to be easily rewire messages into a client code's logging mechanism.
-///
-/// See conduit::utils docs for details.
-///
-//-----------------------------------------------------------------------------
-#    define ASCENT_INFO(msg) std::cout << msg;
+    //-----------------------------------------------------------------------------
+    //
+    /// The ASCENT_INFO macro is the primary mechanism used to log basic
+    /// messages.
+    ///
+    /// We use CONDUIT_INFO, b/c conduit's logging infrastructure allows use
+    /// it to be easily rewire messages into a client code's logging mechanism.
+    ///
+    /// See conduit::utils docs for details.
+    ///
+    //-----------------------------------------------------------------------------
+    #define ASCENT_INFO(msg) std::cout << msg;
 
-//-----------------------------------------------------------------------------
-//
-/// The ASCENT_WARN macro is the primary mechanism used to capture warnings
-/// in ascent.
-///
-/// We use CONDUIT_WARN, b/c conduit's logging infrastructure allows use
-/// it to be easily rewire messages into a client code's logging mechanism.
-///
-/// See conduit::utils docs for details.
-///
-//-----------------------------------------------------------------------------
-#    define ASCENT_WARN(msg) CONDUIT_WARN(msg);
+    //-----------------------------------------------------------------------------
+    //
+    /// The ASCENT_WARN macro is the primary mechanism used to capture warnings
+    /// in ascent.
+    ///
+    /// We use CONDUIT_WARN, b/c conduit's logging infrastructure allows use
+    /// it to be easily rewire messages into a client code's logging mechanism.
+    ///
+    /// See conduit::utils docs for details.
+    ///
+    //-----------------------------------------------------------------------------
+    #define ASCENT_WARN(msg) CONDUIT_WARN(msg);
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -50,13 +51,13 @@ void ASCENT_API handle_error(const std::string &msg,
                              const std::string &file,
                              int line);
 
-//-----------------------------------------------------------------------------
-//
-/// The ASCENT_ERROR macro is the primary mechanism used to capture errors
-/// in ascent.
-///
-//-----------------------------------------------------------------------------
-#    define ASCENT_ERROR(msg)                                                 \
+    //-----------------------------------------------------------------------------
+    //
+    /// The ASCENT_ERROR macro is the primary mechanism used to capture errors
+    /// in ascent.
+    ///
+    //-----------------------------------------------------------------------------
+    #define ASCENT_ERROR(msg)                                                 \
         {                                                                     \
             std::ostringstream ascent_oss_error;                              \
             ascent_oss_error << msg;                                          \

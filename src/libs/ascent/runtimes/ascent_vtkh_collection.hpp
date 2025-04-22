@@ -5,16 +5,16 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #ifndef ASCENT_VTKH_COLLECTION_HPP
-#    define ASCENT_VTKH_COLLECTION_HPP
+    #define ASCENT_VTKH_COLLECTION_HPP
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_vtkh_collection.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#    include <ascent_exports.h>
-#    include <vtkh/DataSet.hpp>
-#    include <map>
+    #include <ascent_exports.h>
+    #include <vtkh/DataSet.hpp>
+    #include <map>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

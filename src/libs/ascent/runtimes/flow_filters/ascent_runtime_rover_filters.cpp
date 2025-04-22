@@ -34,23 +34,23 @@
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
+    #include <mpi.h>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include <rover.hpp>
-#    include <rover/utils/rover_logging.hpp>
-#    include <ray_generators/camera_generator.hpp>
-#    include <vtkh/vtkh.hpp>
-#    include <vtkh/DataSet.hpp>
-#    include <ascent_vtkh_data_adapter.hpp>
-#    include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
-#    include <ascent_runtime_blueprint_filters.hpp>
-#    include <ascent_runtime_relay_filters.hpp>
+    #include <rover.hpp>
+    #include <rover/utils/rover_logging.hpp>
+    #include <ray_generators/camera_generator.hpp>
+    #include <vtkh/vtkh.hpp>
+    #include <vtkh/DataSet.hpp>
+    #include <ascent_vtkh_data_adapter.hpp>
+    #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+    #include <ascent_runtime_blueprint_filters.hpp>
+    #include <ascent_runtime_relay_filters.hpp>
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)
-#    include <ascent_mfem_data_adapter.hpp>
+    #include <ascent_mfem_data_adapter.hpp>
 #endif
 
 using namespace conduit;

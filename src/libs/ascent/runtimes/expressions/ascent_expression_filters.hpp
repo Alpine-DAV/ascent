@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_EXPRESSION_FILTERS
-#    define ASCENT_EXPRESSION_FILTERS
+    #define ASCENT_EXPRESSION_FILTERS
 
-#    include <ascent.hpp>
-#    include <flow_filter.hpp>
-#    include <flow_graph.hpp>
+    #include <ascent.hpp>
+    #include <flow_filter.hpp>
+    #include <flow_graph.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

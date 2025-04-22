@@ -28,31 +28,31 @@
 #include <ascent_runtime_steering_filters.hpp>
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include <ascent_runtime_vtkh_filters.hpp>
-#    include <ascent_runtime_rendering_filters.hpp>
-#    include <ascent_runtime_rover_filters.hpp>
+    #include <ascent_runtime_vtkh_filters.hpp>
+    #include <ascent_runtime_rendering_filters.hpp>
+    #include <ascent_runtime_rover_filters.hpp>
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
-#    include <ascent_runtime_dray_filters.hpp>
+    #include <ascent_runtime_dray_filters.hpp>
 #endif
 
 #if defined(ASCENT_PYTHON_ENABLED)
-#    include <ascent_python_script_filter.hpp>
+    #include <ascent_python_script_filter.hpp>
 #endif
 
 #ifdef ASCENT_MPI_ENABLED
-#    include <ascent_runtime_hola_filters.hpp>
-#    ifdef ASCENT_BABELFLOW_ENABLED
-#        include <ascent_runtime_babelflow_filters.hpp>
-#    endif
-#    ifdef ASCENT_FIDES_ENABLED
-#        include <ascent_runtime_adios2_filters.hpp>
-#    endif
+    #include <ascent_runtime_hola_filters.hpp>
+    #ifdef ASCENT_BABELFLOW_ENABLED
+        #include <ascent_runtime_babelflow_filters.hpp>
+    #endif
+    #ifdef ASCENT_FIDES_ENABLED
+        #include <ascent_runtime_adios2_filters.hpp>
+    #endif
 #endif
 
 #if defined(ASCENT_GENTEN_ENABLED)
-#    include <ascent_runtime_genten_filters.hpp>
+    #include <ascent_runtime_genten_filters.hpp>
 #endif
 
 using namespace flow;
@@ -207,16 +207,16 @@ void register_builtin()
     AscentRuntime::register_filter_type<HolaMPIExtract>("extracts",
                                                         "hola_mpi");
 
-#    if defined(ASCENT_BABELFLOW_ENABLED)
+    #if defined(ASCENT_BABELFLOW_ENABLED)
     AscentRuntime::register_filter_type<BFlowPmt>("transforms", "bflow_pmt");
     AscentRuntime::register_filter_type<BFlowCompose>("extracts",
                                                       "bflow_comp");
     AscentRuntime::register_filter_type<BFlowIso>("extracts", "bflow_iso");
-#    endif
+    #endif
 
-#    if defined(ASCENT_ADIOS2_ENABLED)
+    #if defined(ASCENT_ADIOS2_ENABLED)
     AscentRuntime::register_filter_type<ADIOS2>("extracts", "adios2");
-#    endif
+    #endif
 
 #endif
 

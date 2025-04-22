@@ -24,9 +24,9 @@
 
 // mpi related includes
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-// -- conduit relay mpi
-#    include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
+    // -- conduit relay mpi
+    #include <conduit_relay_mpi.hpp>
 #endif
 
 #include <flow.hpp>
@@ -57,7 +57,10 @@ FlowRuntime::FlowRuntime() : Runtime()
 }
 
 //-----------------------------------------------------------------------------
-FlowRuntime::~FlowRuntime() { Cleanup(); }
+FlowRuntime::~FlowRuntime()
+{
+    Cleanup();
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -112,10 +115,16 @@ void FlowRuntime::Initialize(const conduit::Node &options)
 }
 
 //-----------------------------------------------------------------------------
-void FlowRuntime::Info(conduit::Node &out) { out.set(m_info); }
+void FlowRuntime::Info(conduit::Node &out)
+{
+    out.set(m_info);
+}
 
 //-----------------------------------------------------------------------------
-conduit::Node &FlowRuntime::Info() { return m_info; }
+conduit::Node &FlowRuntime::Info()
+{
+    return m_info;
+}
 
 //-----------------------------------------------------------------------------
 void FlowRuntime::Cleanup() {}

@@ -19,17 +19,17 @@
 #include <flow_workspace.hpp>
 
 #ifdef ASCENT_VTKM_ENABLED
-#    include <vtkh/vtkh.hpp>
-#    include <vtkh/DataSet.hpp>
-#    include <vtkh/filters/MarchingCubes.hpp>
-#    include <vtkh/rendering/RayTracer.hpp>
-#    include <vtkh/rendering/Scene.hpp>
-#    include <vtkm/rendering/Canvas.h>
+    #include <vtkh/vtkh.hpp>
+    #include <vtkh/DataSet.hpp>
+    #include <vtkh/filters/MarchingCubes.hpp>
+    #include <vtkh/rendering/RayTracer.hpp>
+    #include <vtkh/rendering/Scene.hpp>
+    #include <vtkm/rendering/Canvas.h>
 
-#    include <vtkm/rendering/CanvasRayTracer.h>
-#    include <vtkm/rendering/MapperRayTracer.h>
+    #include <vtkm/rendering/CanvasRayTracer.h>
+    #include <vtkm/rendering/MapperRayTracer.h>
 
-#    include <ascent_vtkh_data_adapter.hpp>
+    #include <ascent_vtkh_data_adapter.hpp>
 #endif
 
 #include <mpi.h>

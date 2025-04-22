@@ -457,7 +457,7 @@ struct HistoryGradientRangeFunctor
         if (single_dx)
         {
 #ifdef ASCENT_OPENMP_ENABLED
-#    pragma omp parallel for
+    #pragma omp parallel for
 #endif
             for (int v = 0; v < num_gradients; ++v)
             {
@@ -468,7 +468,7 @@ struct HistoryGradientRangeFunctor
         else
         {
 #ifdef ASCENT_OPENMP_ENABLED
-#    pragma omp parallel for
+    #pragma omp parallel for
 #endif
             for (int v = 0; v < num_gradients; ++v)
             {

@@ -11,12 +11,12 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_JIT_FUSION_HPP
-#    define ASCENT_JIT_FUSION_HPP
+    #define ASCENT_JIT_FUSION_HPP
 
-#    include <unordered_map>
-#    include <string>
-#    include <conduit.hpp>
-#    include "ascent_derived_jit.hpp"
+    #include <unordered_map>
+    #include <string>
+    #include <conduit.hpp>
+    #include "ascent_derived_jit.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

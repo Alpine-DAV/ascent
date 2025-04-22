@@ -117,13 +117,22 @@ bool is_field_type(const std::string &type)
 // -- Accept Methods --
 //-----------------------------------------------------------------------------
 //{{{
-void ASTBlock::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
+void ASTBlock::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
 void ASTExpression::accept(ASTVisitor *visitor) const
 {
     visitor->visit(*this);
 }
-void ASTInteger::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
-void ASTDouble::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
+void ASTInteger::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
+void ASTDouble::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
 void ASTIdentifier::accept(ASTVisitor *visitor) const
 {
     visitor->visit(*this);
@@ -136,15 +145,30 @@ void ASTMethodCall::accept(ASTVisitor *visitor) const
 {
     visitor->visit(*this);
 }
-void ASTIfExpr::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
+void ASTIfExpr::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
 void ASTArrayAccess::accept(ASTVisitor *visitor) const
 {
     visitor->visit(*this);
 }
-void ASTDotAccess::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
-void ASTBoolean::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
-void ASTBinaryOp::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
-void ASTString::accept(ASTVisitor *visitor) const { visitor->visit(*this); }
+void ASTDotAccess::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
+void ASTBoolean::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
+void ASTBinaryOp::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
+void ASTString::accept(ASTVisitor *visitor) const
+{
+    visitor->visit(*this);
+}
 void ASTExpressionList::accept(ASTVisitor *visitor) const
 {
     visitor->visit(*this);

@@ -37,23 +37,23 @@
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
+    #include <mpi.h>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include <ascent_vtkh_collection.hpp>
-#    include <vtkh/vtkh.hpp>
-#    include <vtkh/DataSet.hpp>
-#    include <vtkh/rendering/RayTracer.hpp>
-#    include <vtkh/rendering/Scene.hpp>
-#    include <vtkh/rendering/MeshRenderer.hpp>
-#    include <vtkh/rendering/PointRenderer.hpp>
-#    include <vtkh/rendering/VolumeRenderer.hpp>
-#    include <vtkh/rendering/AutoCamera.hpp>
-#    include <vtkm/cont/DataSet.h>
+    #include <ascent_vtkh_collection.hpp>
+    #include <vtkh/vtkh.hpp>
+    #include <vtkh/DataSet.hpp>
+    #include <vtkh/rendering/RayTracer.hpp>
+    #include <vtkh/rendering/Scene.hpp>
+    #include <vtkh/rendering/MeshRenderer.hpp>
+    #include <vtkh/rendering/PointRenderer.hpp>
+    #include <vtkh/rendering/VolumeRenderer.hpp>
+    #include <vtkh/rendering/AutoCamera.hpp>
+    #include <vtkm/cont/DataSet.h>
 
-#    include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
-#    include <ascent_runtime_vtkh_utils.hpp>
+    #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+    #include <ascent_runtime_vtkh_utils.hpp>
 #endif
 
 #include <stdio.h>
@@ -265,7 +265,10 @@ public:
         m_registry->add<vtkh::Renderer>(m_key, renderer, 1);
     }
 
-    bool is_valid() { return m_valid; }
+    bool is_valid()
+    {
+        return m_valid;
+    }
 
     vtkh::Renderer *Fetch()
     {

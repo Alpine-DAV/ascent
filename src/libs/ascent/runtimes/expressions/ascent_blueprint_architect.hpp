@@ -11,13 +11,13 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_BLUEPRINT_ARCHITECT
-#    define ASCENT_BLUEPRINT_ARCHITECT
+    #define ASCENT_BLUEPRINT_ARCHITECT
 
-#    include <ascent.hpp>
-#    include <conduit.hpp>
-// TODO this is temporary
-#    include <ascent_exports.h>
-#    include <expressions/ascent_array.hpp>
+    #include <ascent.hpp>
+    #include <conduit.hpp>
+    // TODO this is temporary
+    #include <ascent_exports.h>
+    #include <expressions/ascent_array.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

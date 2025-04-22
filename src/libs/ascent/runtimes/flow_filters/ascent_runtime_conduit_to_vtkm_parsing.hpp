@@ -11,12 +11,12 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
-#    define ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
+    #define ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
 
-#    include <conduit.hpp>
+    #include <conduit.hpp>
 
-#    include <vtkm/rendering/Camera.h>
-#    include <vtkm/cont/ColorTable.h>
+    #include <vtkm/rendering/Camera.h>
+    #include <vtkm/cont/ColorTable.h>
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------

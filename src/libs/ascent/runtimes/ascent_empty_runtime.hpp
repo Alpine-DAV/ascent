@@ -11,10 +11,10 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_EMPTY_RUNTIME_HPP
-#    define ASCENT_EMPTY_RUNTIME_HPP
+    #define ASCENT_EMPTY_RUNTIME_HPP
 
-#    include <ascent.hpp>
-#    include <ascent_runtime.hpp>
+    #include <ascent.hpp>
+    #include <ascent_runtime.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

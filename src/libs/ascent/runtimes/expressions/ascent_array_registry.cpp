@@ -8,8 +8,8 @@
 #include "ascent_array_registry.hpp"
 
 #if defined(ASCENT_UMPIRE_ENABLED)
-#    include <umpire/Umpire.hpp>
-#    include <umpire/strategy/QuickPool.hpp>
+    #include <umpire/Umpire.hpp>
+    #include <umpire/strategy/QuickPool.hpp>
 #endif
 
 #include <algorithm>
@@ -50,16 +50,28 @@ void ArrayRegistry::remove_array(ArrayInternalsBase *array)
 }
 
 //-----------------------------------------------------------------------------
-void ArrayRegistry::reset_high_water_mark() { m_high_water_mark = 0; }
+void ArrayRegistry::reset_high_water_mark()
+{
+    m_high_water_mark = 0;
+}
 
 //-----------------------------------------------------------------------------
-size_t ArrayRegistry::device_usage() { return m_device_bytes; }
+size_t ArrayRegistry::device_usage()
+{
+    return m_device_bytes;
+}
 
 //-----------------------------------------------------------------------------
-size_t ArrayRegistry::high_water_mark() { return m_high_water_mark; }
+size_t ArrayRegistry::high_water_mark()
+{
+    return m_high_water_mark;
+}
 
 //-----------------------------------------------------------------------------
-size_t ArrayRegistry::host_usage() { return m_host_bytes; }
+size_t ArrayRegistry::host_usage()
+{
+    return m_host_bytes;
+}
 
 //-----------------------------------------------------------------------------
 void ArrayRegistry::release_device_resources()
@@ -93,10 +105,16 @@ void ArrayRegistry::remove_device_bytes(size_t bytes)
 }
 
 //-----------------------------------------------------------------------------
-void ArrayRegistry::add_host_bytes(size_t bytes) { m_host_bytes += bytes; }
+void ArrayRegistry::add_host_bytes(size_t bytes)
+{
+    m_host_bytes += bytes;
+}
 
 //-----------------------------------------------------------------------------
-void ArrayRegistry::remove_host_bytes(size_t bytes) { m_host_bytes -= bytes; }
+void ArrayRegistry::remove_host_bytes(size_t bytes)
+{
+    m_host_bytes -= bytes;
+}
 
 } // namespace runtime
 } // namespace ascent

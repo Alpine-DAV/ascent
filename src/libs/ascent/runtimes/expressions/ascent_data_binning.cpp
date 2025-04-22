@@ -5,15 +5,15 @@
 #include <expressions/ascent_blueprint_architect.hpp>
 
 #if defined(ASCENT_RAJA_ENABLED)
-#    include <RAJA/RAJA.hpp>
+    #include <RAJA/RAJA.hpp>
 #endif
 
 #include <flow_workspace.hpp>
 #include <map>
 
 #ifdef ASCENT_MPI_ENABLED
-#    include <conduit_relay_mpi.hpp>
-#    include <mpi.h>
+    #include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
 #endif
 
 // ============================================================================

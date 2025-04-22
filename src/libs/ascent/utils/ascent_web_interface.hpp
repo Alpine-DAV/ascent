@@ -10,13 +10,13 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_WEB_INTERFACE_HPP
-#    define ASCENT_WEB_INTERFACE_HPP
+    #define ASCENT_WEB_INTERFACE_HPP
 
-#    include <string>
+    #include <string>
 
-#    include <conduit.hpp>
-#    include <conduit_relay.hpp>
-#    include <ascent_config.h>
+    #include <conduit.hpp>
+    #include <conduit_relay.hpp>
+    #include <ascent_config.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -54,7 +54,7 @@ public:
     void PushRenders(const conduit::Node &renders);
 
 private:
-#    ifdef ASCENT_WEBSERVER_ENABLED
+    #ifdef ASCENT_WEBSERVER_ENABLED
     conduit::relay::web::WebSocket *Connection();
 
     void EncodeImage(const std::string &png_file_path, conduit::Node &out);
@@ -63,7 +63,7 @@ private:
     int m_ms_poll;
     int m_ms_timeout;
     std::string m_doc_root;
-#    endif
+    #endif
 };
 
 //-----------------------------------------------------------------------------

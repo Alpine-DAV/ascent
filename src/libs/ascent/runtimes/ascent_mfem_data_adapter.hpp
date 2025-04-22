@@ -11,13 +11,13 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_MFEM_DATA_ADAPTER_HPP
-#    define ASCENT_MFEM_DATA_ADAPTER_HPP
+    #define ASCENT_MFEM_DATA_ADAPTER_HPP
 
-// conduit includes
-#    include <conduit.hpp>
-#    include <mfem.hpp>
+    // conduit includes
+    #include <conduit.hpp>
+    #include <mfem.hpp>
 
-#    include <ascent_exports.h>
+    #include <ascent_exports.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

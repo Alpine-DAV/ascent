@@ -11,10 +11,10 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_BLUEPRINT_DEVICE_REDUCTIONS_HPP
-#    define ASCENT_BLUEPRINT_DEVICE_REDUCTIONS_HPP
+    #define ASCENT_BLUEPRINT_DEVICE_REDUCTIONS_HPP
 
-#    include <ascent.hpp>
-#    include <conduit.hpp>
+    #include <ascent.hpp>
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

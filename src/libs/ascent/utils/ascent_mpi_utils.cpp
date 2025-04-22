@@ -13,7 +13,7 @@
 #include "ascent_mpi_utils.hpp"
 #include <flow.hpp>
 #ifdef ASCENT_MPI_ENABLED
-#    include <conduit_relay_mpi.hpp>
+    #include <conduit_relay_mpi.hpp>
 #endif
 
 //-----------------------------------------------------------------------------

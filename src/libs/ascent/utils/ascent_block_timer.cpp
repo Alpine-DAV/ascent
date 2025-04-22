@@ -24,15 +24,15 @@
 #include <map>
 #include <fstream>
 #ifdef ASCENT_PLATFORM_UNIX
-#    include <sys/sysinfo.h>
-#    include <unistd.h>
+    #include <sys/sysinfo.h>
+    #include <unistd.h>
 #endif
 
 using namespace conduit;
 
 #ifdef ASCENT_MPI_ENABLED
-#    include "conduit_relay_mpi.hpp"
-#    include <mpi.h>
+    #include "conduit_relay_mpi.hpp"
+    #include <mpi.h>
 using namespace conduit::relay::mpi;
 #endif
 
@@ -51,7 +51,10 @@ std::set<std::string> BlockTimer::s_visited;
 int BlockTimer::s_rank = 0;
 
 //-----------------------------------------------------------------------------
-BlockTimer::BlockTimer(std::string const &name) : m_name(name) { Start(name); }
+BlockTimer::BlockTimer(std::string const &name) : m_name(name)
+{
+    Start(name);
+}
 
 //-----------------------------------------------------------------------------
 void BlockTimer::StartTimer(const char *name)
@@ -182,7 +185,10 @@ void BlockTimer::Stop(const std::string &name)
     --s_global_depth;
 }
 //-----------------------------------------------------------------------------
-BlockTimer::~BlockTimer() { Stop(m_name); }
+BlockTimer::~BlockTimer()
+{
+    Stop(m_name);
+}
 
 //-----------------------------------------------------------------------------
 Node &BlockTimer::Finalize()
@@ -192,7 +198,10 @@ Node &BlockTimer::Finalize()
 }
 
 //-----------------------------------------------------------------------------
-Node &BlockTimer::CurrentNode() { return s_global_root[s_current_path]; }
+Node &BlockTimer::CurrentNode()
+{
+    return s_global_root[s_current_path];
+}
 
 //-----------------------------------------------------------------------------
 // Initializes values if the current location hasn't been s_visited yet,
@@ -413,7 +422,10 @@ void BlockTimer::ReduceAll(Node &thisRanksNode)
 }
 
 //-----------------------------------------------------------------------------
-void BlockTimer::ReduceGlobalRoot() { ReduceAll(GlobalRoot()); }
+void BlockTimer::ReduceGlobalRoot()
+{
+    ReduceAll(GlobalRoot());
+}
 
 //-----------------------------------------------------------------------------
 void BlockTimer::WriteLogFile()

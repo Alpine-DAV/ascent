@@ -12,7 +12,7 @@
 #include "bytesobject.h"
 
 #if PY_MAJOR_VERSION >= 3
-#    define IS_PY3K
+    #define IS_PY3K
 #endif
 
 //-----------------------------------------------------------------------------
@@ -27,9 +27,9 @@
 // versions.
 //-----------------------------------------------------------------------------
 #ifdef Py_TPFLAGS_HAVE_FINALIZE
-#    define PyVarObject_TAIL , 0
+    #define PyVarObject_TAIL , 0
 #else
-#    define PyVarObject_TAIL
+    #define PyVarObject_TAIL
 #endif
 
 //---------------------------------------------------------------------------//
@@ -54,7 +54,10 @@ using namespace ascent;
 #if defined(IS_PY3K)
 
 //-----------------------------------------------------------------------------
-int PyString_Check(PyObject *o) { return PyUnicode_Check(o); }
+int PyString_Check(PyObject *o)
+{
+    return PyUnicode_Check(o);
+}
 
 //-----------------------------------------------------------------------------
 char *PyString_AsString(PyObject *py_obj)
@@ -95,18 +98,27 @@ PyObject *PyString_FromString(const char *s)
 }
 
 //-----------------------------------------------------------------------------
-void PyString_AsString_Cleanup(char *bytes) { free(bytes); }
+void PyString_AsString_Cleanup(char *bytes)
+{
+    free(bytes);
+}
 
 //-----------------------------------------------------------------------------
-int PyInt_Check(PyObject *o) { return PyLong_Check(o); }
+int PyInt_Check(PyObject *o)
+{
+    return PyLong_Check(o);
+}
 
 //-----------------------------------------------------------------------------
-long PyInt_AsLong(PyObject *o) { return PyLong_AsLong(o); }
+long PyInt_AsLong(PyObject *o)
+{
+    return PyLong_AsLong(o);
+}
 
 #else // python 2.6+
 
-//-----------------------------------------------------------------------------
-#    define PyString_AsString_Cleanup(c)                                      \
+    //-----------------------------------------------------------------------------
+    #define PyString_AsString_Cleanup(c)                                      \
         { /* noop */                                                          \
         }
 
@@ -515,9 +527,9 @@ struct module_state
 
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-#    define GETSTATE(m) ((struct module_state *)PyModule_GetState(m))
+    #define GETSTATE(m) ((struct module_state *)PyModule_GetState(m))
 #else
-#    define GETSTATE(m) (&_state)
+    #define GETSTATE(m) (&_state)
 static struct module_state _state;
 #endif
 //---------------------------------------------------------------------------//
@@ -559,9 +571,9 @@ static struct PyModuleDef ascent_python_module_def = {
 // This macro simplifies the process of returning when an init error occurs.
 //---------------------------------------------------------------------------//
 #if defined(IS_PY3K)
-#    define PY_MODULE_INIT_RETURN_ERROR return NULL
+    #define PY_MODULE_INIT_RETURN_ERROR return NULL
 #else
-#    define PY_MODULE_INIT_RETURN_ERROR return
+    #define PY_MODULE_INIT_RETURN_ERROR return
 #endif
 //---------------------------------------------------------------------------//
 

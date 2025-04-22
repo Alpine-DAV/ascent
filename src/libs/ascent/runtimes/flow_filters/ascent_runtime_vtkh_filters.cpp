@@ -36,53 +36,53 @@
 
 // mpi
 #ifdef ASCENT_MPI_ENABLED
-#    include <mpi.h>
-#    include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
+    #include <conduit_relay_mpi.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
-#    include <vtkh/vtkh.hpp>
-#    include <vtkh/DataSet.hpp>
-#    include <vtkh/rendering/RayTracer.hpp>
-#    include <vtkh/rendering/Scene.hpp>
-#    include <vtkh/rendering/MeshRenderer.hpp>
-#    include <vtkh/rendering/PointRenderer.hpp>
-#    include <vtkh/rendering/VolumeRenderer.hpp>
-#    include <vtkh/rendering/ScalarRenderer.hpp>
-#    include <vtkh/rendering/AutoCamera.hpp>
-#    include <vtkh/filters/Clip.hpp>
-#    include <vtkh/filters/ClipField.hpp>
-#    include <vtkh/filters/CleanGrid.hpp>
-#    include <vtkh/filters/CompositeVector.hpp>
-#    include <vtkh/filters/ExternalSurfaces.hpp>
-#    include <vtkh/filters/GhostStripper.hpp>
-#    include <vtkh/filters/Gradient.hpp>
-#    include <vtkh/filters/IsoVolume.hpp>
-#    include <vtkh/filters/MarchingCubes.hpp>
-#    include <vtkh/filters/NoOp.hpp>
-#    include <vtkh/filters/Lagrangian.hpp>
-#    include <vtkh/filters/Log.hpp>
-#    include <vtkh/filters/ParticleAdvection.hpp>
-#    include <vtkh/filters/Recenter.hpp>
-#    include <vtkh/filters/UniformGrid.hpp>
-#    include <vtkh/filters/Slice.hpp>
-#    include <vtkh/filters/Statistics.hpp>
-#    include <vtkh/filters/Streamline.hpp>
-#    include <vtkh/filters/WarpXStreamline.hpp>
-#    include <vtkh/filters/Threshold.hpp>
-#    include <vtkh/filters/Triangulate.hpp>
-#    include <vtkh/filters/VectorMagnitude.hpp>
-#    include <vtkh/filters/VectorComponent.hpp>
-#    include <vtkh/filters/Histogram.hpp>
-#    include <vtkh/filters/HistSampling.hpp>
-#    include <vtkh/filters/PointTransform.hpp>
-#    include <vtkh/filters/MIR.hpp>
-#    include <vtkm/cont/DataSet.h>
-#    include <vtkm/io/VTKDataSetWriter.h>
-#    include <ascent_vtkh_data_adapter.hpp>
-#    include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
-#    include <ascent_runtime_vtkh_utils.hpp>
-#    include <ascent_expression_eval.hpp>
+    #include <vtkh/vtkh.hpp>
+    #include <vtkh/DataSet.hpp>
+    #include <vtkh/rendering/RayTracer.hpp>
+    #include <vtkh/rendering/Scene.hpp>
+    #include <vtkh/rendering/MeshRenderer.hpp>
+    #include <vtkh/rendering/PointRenderer.hpp>
+    #include <vtkh/rendering/VolumeRenderer.hpp>
+    #include <vtkh/rendering/ScalarRenderer.hpp>
+    #include <vtkh/rendering/AutoCamera.hpp>
+    #include <vtkh/filters/Clip.hpp>
+    #include <vtkh/filters/ClipField.hpp>
+    #include <vtkh/filters/CleanGrid.hpp>
+    #include <vtkh/filters/CompositeVector.hpp>
+    #include <vtkh/filters/ExternalSurfaces.hpp>
+    #include <vtkh/filters/GhostStripper.hpp>
+    #include <vtkh/filters/Gradient.hpp>
+    #include <vtkh/filters/IsoVolume.hpp>
+    #include <vtkh/filters/MarchingCubes.hpp>
+    #include <vtkh/filters/NoOp.hpp>
+    #include <vtkh/filters/Lagrangian.hpp>
+    #include <vtkh/filters/Log.hpp>
+    #include <vtkh/filters/ParticleAdvection.hpp>
+    #include <vtkh/filters/Recenter.hpp>
+    #include <vtkh/filters/UniformGrid.hpp>
+    #include <vtkh/filters/Slice.hpp>
+    #include <vtkh/filters/Statistics.hpp>
+    #include <vtkh/filters/Streamline.hpp>
+    #include <vtkh/filters/WarpXStreamline.hpp>
+    #include <vtkh/filters/Threshold.hpp>
+    #include <vtkh/filters/Triangulate.hpp>
+    #include <vtkh/filters/VectorMagnitude.hpp>
+    #include <vtkh/filters/VectorComponent.hpp>
+    #include <vtkh/filters/Histogram.hpp>
+    #include <vtkh/filters/HistSampling.hpp>
+    #include <vtkh/filters/PointTransform.hpp>
+    #include <vtkh/filters/MIR.hpp>
+    #include <vtkm/cont/DataSet.h>
+    #include <vtkm/io/VTKDataSetWriter.h>
+    #include <ascent_vtkh_data_adapter.hpp>
+    #include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+    #include <ascent_runtime_vtkh_utils.hpp>
+    #include <ascent_expression_eval.hpp>
 
 #endif
 
