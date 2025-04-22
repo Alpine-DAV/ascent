@@ -10,7 +10,7 @@
 # Basic spacing and line length limits
 ColumnLimit: 79
 PenaltyExcessCharacter: 1000000 # Allows for strings to overflow past column
-AlignArrayOfStructures: Left    # Alignes columns of structures so they all line up clearly
+AlignArrayOfStructures: Left    # Aligns columns of structures so they all line up clearly
 AlignConsecutiveAssignments: false # Don't bother lining up `=` symbols in consecutive lines
 AlignConsecutiveDeclarations: false # Don't bother lining up `=` symbols in consecutive lines
 
@@ -23,7 +23,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 # Indentation
 IndentWidth: 4
 UseTab: Never
-IndentPPDirectives: AfterHash   # don't indent things like `#ifdef` and `#define` unless nested
+IndentPPDirectives: BeforeHash  # don't indent things like `#ifdef` and `#define` unless nested
 
 
 #################
@@ -31,7 +31,7 @@ IndentPPDirectives: AfterHash   # don't indent things like `#ifdef` and `#define
 #################
 BreakBeforeBraces: Allman       # Braces get their own lines
 SpaceBeforeParens: ControlStatements
-
+AllowShortFunctionsOnASingleLine: Empty
 
 ################
 ### Includes ###
