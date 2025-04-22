@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_hola_mpi.hpp
@@ -12,16 +11,15 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_HOLA_MPI_HPP
-#define ASCENT_HOLA_MPI_HPP
+    #define ASCENT_HOLA_MPI_HPP
 
-#include <ascent_config.h>
-#include <ascent_exports.h>
+    #include <ascent_config.h>
+    #include <ascent_exports.h>
 
-#include <string>
-#include <conduit.hpp>
+    #include <string>
+    #include <conduit.hpp>
 
-#include <mpi.h>
-
+    #include <mpi.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -29,9 +27,7 @@
 namespace ascent
 {
 
-void ASCENT_API hola_mpi(const conduit::Node &options,
-                         conduit::Node &data);
-
+void ASCENT_API hola_mpi(const conduit::Node &options, conduit::Node &data);
 
 /// Creates maps used for book keeping to guide sending domains
 /// from source to destination ranks.
@@ -53,7 +49,7 @@ void ASCENT_API hola_mpi_recv(MPI_Comm comm,
                               const conduit::Node &comm_map,
                               conduit::Node &data);
 
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
@@ -62,4 +58,3 @@ void ASCENT_API hola_mpi_recv(MPI_Comm comm,
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-

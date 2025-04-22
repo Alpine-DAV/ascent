@@ -35,63 +35,59 @@ namespace ascent
 namespace resources
 {
 
-
 //-----------------------------------------------------------------------------
-void
-load_compiled_resource_tree(const std::string &resource_name,
-                            conduit::Node &res)
+void load_compiled_resource_tree(const std::string &resource_name,
+                                 conduit::Node &res)
 {
     res.reset();
-    if(resource_name == "cinema_web")
+    if (resource_name == "cinema_web")
     {
-        res.parse(RC_CINEMA_WEB,"conduit_base64_json");
+        res.parse(RC_CINEMA_WEB, "conduit_base64_json");
     }
-    else if(resource_name == "ascent_web")
+    else if (resource_name == "ascent_web")
     {
-        res.parse(RC_ASCENT_WEB,"conduit_base64_json");
+        res.parse(RC_ASCENT_WEB, "conduit_base64_json");
     }
 }
 
 //-----------------------------------------------------------------------------
-void
-expand_resource_tree_to_file_system(const conduit::Node &resource_tree,
-                                    const std::string &path)
+void expand_resource_tree_to_file_system(const conduit::Node &resource_tree,
+                                         const std::string &path)
 {
     NodeConstIterator itr = resource_tree.children();
-    while(itr.has_next())
+    while (itr.has_next())
     {
         const Node &curr = itr.next();
         const std::string name = itr.name();
 
-        if(curr.dtype().is_object())
+        if (curr.dtype().is_object())
         {
             // object will become a dir
-            std::string child_dir = conduit::utils::join_file_path(path,
-                                                                   name);
+            std::string child_dir = conduit::utils::join_file_path(path, name);
 
             // create a folder if it doesn't exist
-            if(!conduit::utils::is_directory(child_dir))
+            if (!conduit::utils::is_directory(child_dir))
             {
                 conduit::utils::create_directory(child_dir);
             }
 
-            expand_resource_tree_to_file_system(curr,child_dir);
+            expand_resource_tree_to_file_system(curr, child_dir);
         }
-        else if( curr.dtype().is_string() )
+        else if (curr.dtype().is_string())
         {
-            std::string child_file = conduit::utils::join_file_path(path,
-                                                                    name);
+            std::string child_file =
+                conduit::utils::join_file_path(path, name);
             std::ofstream ofs;
             ofs.open(child_file.c_str());
-            if(!ofs.is_open())
+            if (!ofs.is_open())
             {
                 ASCENT_ERROR("expand_to_file_system failed to open file: "
                              << "\"" << child_file << "\"");
-
             }
             std::string sval;
             // construct string obeying bounds
-            sval.assign(curr.as_char8_str(), curr.dtype().number_of_elements());
+            sval.assign(curr.as_char8_str(),
+                        curr.dtype().number_of_elements());
             ofs << sval;
         }
         else
@@ -101,19 +97,14 @@ expand_resource_tree_to_file_system(const conduit::Node &resource_tree,
     }
 }
 
-
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace resources
 //-----------------------------------------------------------------------------
 // -- end ascent::resources:: --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

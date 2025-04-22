@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_hola_filters.cpp
@@ -55,94 +54,80 @@ namespace runtime
 namespace filters
 {
 
-
 //-----------------------------------------------------------------------------
-HolaMPIExtract::HolaMPIExtract()
-:Filter()
+HolaMPIExtract::HolaMPIExtract() : Filter()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
 HolaMPIExtract::~HolaMPIExtract()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
-void
-HolaMPIExtract::declare_interface(Node &i)
+void HolaMPIExtract::declare_interface(Node &i)
 {
-    i["type_name"]   = "hola_mpi";
+    i["type_name"] = "hola_mpi";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
-bool
-HolaMPIExtract::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
+bool HolaMPIExtract::verify_params(const conduit::Node &params,
+                                   conduit::Node &info)
 {
     info.reset();
     bool res = true;
 
-    if(! params.has_child("mpi_comm") ||
-       ! params["mpi_comm"].dtype().is_integer() )
+    if (!params.has_child("mpi_comm") ||
+        !params["mpi_comm"].dtype().is_integer())
     {
-        info["errors"].append() = "Missing required integer parameter 'mpi_comm'";
+        info["errors"].append() =
+            "Missing required integer parameter 'mpi_comm'";
     }
 
-    if(! params.has_child("rank_split") ||
-       ! params["rank_split"].dtype().is_integer() )
+    if (!params.has_child("rank_split") ||
+        !params["rank_split"].dtype().is_integer())
     {
-        info["errors"].append() = "Missing required integer parameter 'rank_split'";
+        info["errors"].append() =
+            "Missing required integer parameter 'rank_split'";
     }
 
     return res;
 }
 
-
 //-----------------------------------------------------------------------------
-void
-HolaMPIExtract::execute()
+void HolaMPIExtract::execute()
 {
 
-    if(!input(0).check_type<DataObject>())
+    if (!input(0).check_type<DataObject>())
     {
         ASCENT_ERROR("hola_mpi input must be a DataObject");
     }
 
-    DataObject * data_object = input<DataObject>(0);
+    DataObject *data_object = input<DataObject>(0);
     Node *n_input = data_object->as_node().get();
     // assumes multi domain input
 
-    hola_mpi(params(),*n_input);
-
+    hola_mpi(params(), *n_input);
 }
 
-
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

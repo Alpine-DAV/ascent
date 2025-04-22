@@ -17,91 +17,84 @@ std::string ExecutionManager::m_exec = "serial";
 #endif
 
 //-----------------------------------------------------------------------------
-conduit::Node
-ExecutionManager::info()
+conduit::Node ExecutionManager::info()
 {
-  conduit::Node res;
-  res["policy"] = m_exec;
-  res["backends"].append() = "serial";
+    conduit::Node res;
+    res["policy"] = m_exec;
+    res["backends"].append() = "serial";
 #if defined(ASCENT_RAJA_OPENMP_ENABLED)
-  res["backends"].append() = "openmp";
+    res["backends"].append() = "openmp";
 #endif
 #if defined(ASCENT_RAJA_CUDA_ENABLED)
-  res["backends"].append() = "cuda";
+    res["backends"].append() = "cuda";
 #endif
 #if defined(ASCENT_RAJA_HIP_ENABLED)
-  res["backends"].append() = "hip";
+    res["backends"].append() = "hip";
 #endif
 
-  return res;
+    return res;
 }
 
 //-----------------------------------------------------------------------------
-std::string
-ExecutionManager::preferred_cpu_policy()
+std::string ExecutionManager::preferred_cpu_policy()
 {
-  std::string res = "serial";
+    std::string res = "serial";
 
 #if defined(ASCENT_RAJA_OPENMP_ENABLED)
-  res = "openmp";
+    res = "openmp";
 #endif
-  return res;
+    return res;
 }
 
 //-----------------------------------------------------------------------------
-std::string
-ExecutionManager::preferred_gpu_policy()
+std::string ExecutionManager::preferred_gpu_policy()
 {
-  std::string res = "none";
+    std::string res = "none";
 
 #if defined(ASCENT_RAJA_CUDA_ENABLED)
-  res = "cuda";
+    res = "cuda";
 #elif defined(ASCENT_RAJA_HIP_ENABLED)
-  res = "hip";
+    res = "hip";
 #endif
 
-  return res;
+    return res;
 }
 
 //-----------------------------------------------------------------------------
-void
-ExecutionManager::set_execution_policy(const std::string &exec)
+void ExecutionManager::set_execution_policy(const std::string &exec)
 {
-    if(exec != "cuda"   &&
-       exec != "hip"    &&
-       exec != "openmp" &&
-       exec != "serial")
+    if (exec != "cuda" && exec != "hip" && exec != "openmp" &&
+        exec != "serial")
     {
         ASCENT_ERROR("Unknown execution backend '" << exec << "')");
     }
 
 #if not defined(ASCENT_RAJA_CUDA_ENABLED)
-    if(exec == "cuda")
+    if (exec == "cuda")
     {
         ASCENT_ERROR("Cuda backend support not built");
     }
 #endif
 
 #if not defined(ASCENT_RAJA_HIP_ENABLED)
-    if(exec == "hip")
+    if (exec == "hip")
     {
         ASCENT_ERROR("Hip backend support not built");
     }
 #endif
 
 #if not defined(ASCENT_RAJA_OPENMP_ENABLED)
-    if(exec == "openmp")
+    if (exec == "openmp")
     {
         ASCENT_ERROR("OpenMP backend support not built");
     }
 #endif
- 
-  m_exec = exec;
+
+    m_exec = exec;
 }
 
 //-----------------------------------------------------------------------------
-std::string
-ExecutionManager::execution_policy()
+std::string ExecutionManager::execution_policy()
 {
     return m_exec;
 }

@@ -11,21 +11,21 @@ namespace ascent
 class ASCENT_API ExecutionManager
 {
 public:
-  static conduit::Node info();
-  static void          set_execution_policy(const std::string &exec);
-  static std::string   execution_policy();
+    static conduit::Node info();
+    static void set_execution_policy(const std::string &exec);
+    static std::string execution_policy();
 
-  // return the preferred cpu execution device
-  // i.e., openmp if supported and serial if not
-  static std::string preferred_cpu_policy();
+    // return the preferred cpu execution device
+    // i.e., openmp if supported and serial if not
+    static std::string preferred_cpu_policy();
 
-  // return the preferred gpu execution device
-  // i.e., none, cuda, or hip
-  static std::string preferred_gpu_policy();
+    // return the preferred gpu execution device
+    // i.e., none, cuda, or hip
+    static std::string preferred_gpu_policy();
+
 private:
-  static std::string m_exec;
+    static std::string m_exec;
 };
-
 
 } // namespace ascent
 #endif

@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_conduit_to_vtkm_parsing.hpp
@@ -12,12 +11,12 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
-#define ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
+    #define ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
 
-#include<conduit.hpp>
+    #include <conduit.hpp>
 
-#include<vtkm/rendering/Camera.h>
-#include<vtkm/cont/ColorTable.h>
+    #include <vtkm/rendering/Camera.h>
+    #include <vtkm/cont/ColorTable.h>
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -36,12 +35,11 @@ namespace runtime
 namespace filters
 {
 
-void
-parse_image_dims(const conduit::Node &node, int &width, int &height);
+void parse_image_dims(const conduit::Node &node, int &width, int &height);
 
 //-----------------------------------------------------------------------------
-void
-parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera);
+void parse_camera(const conduit::Node camera_node,
+                  vtkm::rendering::Camera &camera);
 
 //-----------------------------------------------------------------------------
 vtkm::cont::ColorTable
@@ -50,27 +48,22 @@ parse_color_table(const conduit::Node &color_table_node);
 //-----------------------------------------------------------------------------
 double zoom_to_vtkm_zoom(double in_zoom);
 //-----------------------------------------------------------------------------
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
 
 #endif
 //-----------------------------------------------------------------------------

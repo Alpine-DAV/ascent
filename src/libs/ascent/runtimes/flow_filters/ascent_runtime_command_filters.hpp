@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_COMMAND_FILTERS
-#define ASCENT_RUNTIME_COMMAND_FILTERS
+    #define ASCENT_RUNTIME_COMMAND_FILTERS
 
-#include <ascent.hpp>
+    #include <ascent.hpp>
 
-#include <flow_filter.hpp>
+    #include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -52,23 +52,23 @@ public:
                                conduit::Node &info);
     virtual void execute();
 
-    void static  execute_command_list(const std::vector<std::string> commands,
-                                      const std::string &command_type);
+    void static execute_command_list(const std::vector<std::string> commands,
+                                     const std::string &command_type);
 };
 
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

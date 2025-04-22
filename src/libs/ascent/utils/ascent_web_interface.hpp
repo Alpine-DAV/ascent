@@ -10,13 +10,13 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_WEB_INTERFACE_HPP
-#define ASCENT_WEB_INTERFACE_HPP
+    #define ASCENT_WEB_INTERFACE_HPP
 
-#include <string>
+    #include <string>
 
-#include <conduit.hpp>
-#include <conduit_relay.hpp>
-#include <ascent_config.h>
+    #include <conduit.hpp>
+    #include <conduit_relay.hpp>
+    #include <ascent_config.h>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -34,8 +34,7 @@ std::string web_client_root_directory();
 class WebInterface
 {
 public:
-
-     WebInterface();
+    WebInterface();
     ~WebInterface();
 
     // Note: Set methods must be called before first call
@@ -45,32 +44,30 @@ public:
     // are copied to and server at the given path
     // if not set, they are served out of web_client_root_directory()
 
-    void                            SetDocumentRoot(const std::string &path);
-    void                            SetPoll(int ms_poll);
-    void                            SetTimeout(int ms_timeout);
+    void SetDocumentRoot(const std::string &path);
+    void SetPoll(int ms_poll);
+    void SetTimeout(int ms_timeout);
 
-    void                            Enable();
+    void Enable();
 
-    void                            PushMessage(const conduit::Node &msg);
-    void                            PushRenders(const conduit::Node &renders);
+    void PushMessage(const conduit::Node &msg);
+    void PushRenders(const conduit::Node &renders);
 
 private:
-#ifdef ASCENT_WEBSERVER_ENABLED
+    #ifdef ASCENT_WEBSERVER_ENABLED
     conduit::relay::web::WebSocket *Connection();
 
-    void                            EncodeImage(const std::string &png_file_path,
-                                                conduit::Node &out);
-    bool                            m_enabled;
-    conduit::relay::web::WebServer  m_server;
-    int                             m_ms_poll;
-    int                             m_ms_timeout;
-    std::string                     m_doc_root;
-#endif
+    void EncodeImage(const std::string &png_file_path, conduit::Node &out);
+    bool m_enabled;
+    conduit::relay::web::WebServer m_server;
+    int m_ms_poll;
+    int m_ms_timeout;
+    std::string m_doc_root;
+    #endif
 };
-
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
@@ -79,5 +76,3 @@ private:
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

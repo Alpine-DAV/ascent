@@ -11,11 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_JIT_ARRAY_HPP
-#define ASCENT_JIT_ARRAY_HPP
+    #define ASCENT_JIT_ARRAY_HPP
 
-#include <unordered_map>
-#include <string>
-#include <conduit.hpp>
+    #include <unordered_map>
+    #include <string>
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -42,61 +42,59 @@ namespace expressions
 class SchemaBool
 {
 public:
-  SchemaBool(const conduit::Schema &schema, bool codegen_array)
-      : schema(schema), codegen_array(codegen_array){};
+    SchemaBool(const conduit::Schema &schema, bool codegen_array)
+        : schema(schema), codegen_array(codegen_array) {};
 
-  conduit::Schema schema;
-  bool codegen_array;
+    conduit::Schema schema;
+    bool codegen_array;
 };
 
 // num_components should be 0 if you don't want an mcarray
-void
-schemaFactory(const std::string &schema_type,
-              const conduit::DataType::TypeID type_id,
-              const size_t component_size,
-              const int num_components,
-              conduit::Schema &out_schema);
+void schemaFactory(const std::string &schema_type,
+                   const conduit::DataType::TypeID type_id,
+                   const size_t component_size,
+                   const int num_components,
+                   conduit::Schema &out_schema);
 
-void
-schemaFactory(const std::string &schema_type,
-              const conduit::DataType::TypeID type_id,
-              const size_t component_size,
-              const std::vector<std::string> &component_names,
-              conduit::Schema &out_schema);
+void schemaFactory(const std::string &schema_type,
+                   const conduit::DataType::TypeID type_id,
+                   const size_t component_size,
+                   const std::vector<std::string> &component_names,
+                   conduit::Schema &out_schema);
 
 class ArrayCode
 {
 public:
-  std::string index(const std::string &array_name,
-                    const std::string &idx,
-                    const int component = -1) const;
+    std::string index(const std::string &array_name,
+                      const std::string &idx,
+                      const int component = -1) const;
 
-  std::string index(const std::string &idx,
-                    const std::string name,
-                    const std::ptrdiff_t offset,
-                    const std::ptrdiff_t stride,
-                    const size_t pointer_size) const;
+    std::string index(const std::string &idx,
+                      const std::string name,
+                      const std::ptrdiff_t offset,
+                      const std::ptrdiff_t stride,
+                      const size_t pointer_size) const;
 
-  std::string index(const std::string &array_name,
-                    const std::string &idx,
-                    const std::string &component) const;
+    std::string index(const std::string &array_name,
+                      const std::string &idx,
+                      const std::string &component) const;
 
-  std::unordered_map<std::string, SchemaBool> array_map;
+    std::unordered_map<std::string, SchemaBool> array_map;
 };
 //-----------------------------------------------------------------------------
-};
+}; // namespace expressions
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::expressions--
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------

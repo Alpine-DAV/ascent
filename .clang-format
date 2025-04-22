@@ -1,0 +1,47 @@
+---
+### Run using:
+###     find ./src/libs/ascent/ -regex '.*\.\(c\|cpp\|h\|hpp\)' -exec clang-format -i {} +
+
+
+#############################
+### Alignment and Spacing ###
+#############################
+
+# Basic spacing and line length limits
+ColumnLimit: 79
+PenaltyExcessCharacter: 1000000 # Allows for strings to overflow past column
+AlignArrayOfStructures: Left    # Aligns columns of structures so they all line up clearly
+AlignConsecutiveAssignments: false # Don't bother lining up `=` symbols in consecutive lines
+AlignConsecutiveDeclarations: false # Don't bother lining up `=` symbols in consecutive lines
+
+# For lines that get wrapped, this forces one parameter per line and aligns them
+BinPackParameters: false        # One param per line if wrapped
+BinPackArguments: false         # One argument per line if wrapped
+AlignAfterOpenBracket: Align    # Align wrapped args/params under the first
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# Indentation
+IndentWidth: 4
+UseTab: Never
+IndentPPDirectives: BeforeHash  # don't indent things like `#ifdef` and `#define` unless nested
+
+
+#################
+### {} Braces ###
+#################
+BreakBeforeBraces: Allman       # Braces get their own lines
+SpaceBeforeParens: ControlStatements
+AllowShortFunctionsOnASingleLine: Empty
+
+################
+### Includes ###
+################
+SortIncludes: false             # Don't auto-sort #includes
+IncludeBlocks: Preserve         # Keeps include groups separate
+
+
+##################
+### Namespaces ###
+##################
+AccessModifierOffset: -4        # Access modifiers (public:, private:, protected:) should be inset
+...

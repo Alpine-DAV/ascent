@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_empty_runtime.cpp
@@ -25,14 +24,13 @@
 
 // mpi related includes
 #ifdef ASCENT_MPI_ENABLED
-#include <mpi.h>
-// -- conduit relay mpi
-#include <conduit_relay_mpi.hpp>
+    #include <mpi.h>
+    // -- conduit relay mpi
+    #include <conduit_relay_mpi.hpp>
 #endif
 
 using namespace conduit;
 using namespace std;
-
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -49,11 +47,7 @@ namespace ascent
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-EmptyRuntime::EmptyRuntime()
-:Runtime()
-{
-
-}
+EmptyRuntime::EmptyRuntime() : Runtime() {}
 
 //-----------------------------------------------------------------------------
 EmptyRuntime::~EmptyRuntime()
@@ -70,14 +64,14 @@ EmptyRuntime::~EmptyRuntime()
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void
-EmptyRuntime::Initialize(const conduit::Node &options)
+void EmptyRuntime::Initialize(const conduit::Node &options)
 {
 #if ASCENT_MPI_ENABLED
-    if(!options.has_child("mpi_comm") ||
-       !options["mpi_comm"].dtype().is_integer())
+    if (!options.has_child("mpi_comm") ||
+        !options["mpi_comm"].dtype().is_integer())
     {
-        ASCENT_ERROR("Missing Ascent::open options missing MPI communicator (mpi_comm)");
+        ASCENT_ERROR("Missing Ascent::open options missing MPI communicator "
+                     "(mpi_comm)");
     }
 #endif
 
@@ -86,32 +80,25 @@ EmptyRuntime::Initialize(const conduit::Node &options)
 }
 
 //-----------------------------------------------------------------------------
-void
-EmptyRuntime::Info(conduit::Node &out)
+void EmptyRuntime::Info(conduit::Node &out)
 {
     out.set(m_info);
 }
 
 //-----------------------------------------------------------------------------
-conduit::Node &
-EmptyRuntime::Info()
+conduit::Node &EmptyRuntime::Info()
 {
     return m_info;
 }
 
 //-----------------------------------------------------------------------------
-void
-EmptyRuntime::Cleanup()
-{
-
-}
+void EmptyRuntime::Cleanup() {}
 
 //-----------------------------------------------------------------------------
-void
-EmptyRuntime::Publish(const conduit::Node &data)
+void EmptyRuntime::Publish(const conduit::Node &data)
 {
     Node verify_info;
-    bool verify_ok = conduit::blueprint::mesh::verify(data,verify_info);
+    bool verify_ok = conduit::blueprint::mesh::verify(data, verify_info);
 
 #if ASCENT_MPI_ENABLED
 
@@ -121,33 +108,27 @@ EmptyRuntime::Publish(const conduit::Node &data)
     // use an mpi sum to check if all is ok
     Node n_src, n_reduce;
 
-    if(verify_ok)
+    if (verify_ok)
         n_src = (int)0;
     else
         n_src = (int)1;
 
-    conduit::relay::mpi::sum_all_reduce(n_src,
-                                        n_reduce,
-                                        mpi_comm);
+    conduit::relay::mpi::sum_all_reduce(n_src, n_reduce, mpi_comm);
 
     int num_failures = n_reduce.value();
-    if(num_failures != 0)
+    if (num_failures != 0)
     {
-        ASCENT_ERROR("Mesh Blueprint Verify failed on "
-                       << num_failures
-                       << " MPI Tasks");
+        ASCENT_ERROR("Mesh Blueprint Verify failed on " << num_failures
+                                                        << " MPI Tasks");
 
         // you could use mpi to find out where things went wrong ...
     }
 
-
-
 #else
-    if(!verify_ok)
+    if (!verify_ok)
     {
-         ASCENT_ERROR("Mesh Blueprint Verify failed!"
-                        << std::endl
-                        << verify_info.to_yaml());
+        ASCENT_ERROR("Mesh Blueprint Verify failed!" << std::endl
+                                                     << verify_info.to_yaml());
     }
 #endif
 
@@ -156,8 +137,7 @@ EmptyRuntime::Publish(const conduit::Node &data)
 }
 
 //-----------------------------------------------------------------------------
-void
-EmptyRuntime::Execute(const conduit::Node &actions)
+void EmptyRuntime::Execute(const conduit::Node &actions)
 {
     // Loop over the actions
     for (int i = 0; i < actions.number_of_children(); ++i)
@@ -168,16 +148,8 @@ EmptyRuntime::Execute(const conduit::Node &actions)
     }
 }
 
-
-
-
-
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

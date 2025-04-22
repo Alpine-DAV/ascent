@@ -25,10 +25,10 @@
 #define ASCENT_EPSILON_64 1e-8f
 
 #ifndef __CUDACC__
-// make sure min / max resolve for both cuda and cpu
-#include <algorithm>
-#include <math.h>
-#include <string.h> //resolve memcpy
+    // make sure min / max resolve for both cuda and cpu
+    #include <algorithm>
+    #include <math.h>
+    #include <string.h> //resolve memcpy
 using namespace std;
 #endif
 
@@ -46,226 +46,227 @@ typedef long long int int64;
 namespace detail
 {
 
-union Bits32 {
-  float scalar;
-  uint32 bits;
+union Bits32
+{
+    float scalar;
+    uint32 bits;
 };
 
-union Bits64 {
-  double scalar;
-  uint64 bits;
+union Bits64
+{
+    double scalar;
+    uint64 bits;
 };
 
 } // namespace detail
 
-template <typename T> ASCENT_EXEC T epsilon ()
+template <typename T> ASCENT_EXEC T epsilon()
 {
-  return 1;
+    return 1;
 }
 
-template <> ASCENT_EXEC float epsilon<float> ()
+template <> ASCENT_EXEC float epsilon<float>()
 {
-  return ASCENT_EPSILON_32;
+    return ASCENT_EPSILON_32;
 }
 
-template <> ASCENT_EXEC double epsilon<double> ()
+template <> ASCENT_EXEC double epsilon<double>()
 {
-  return ASCENT_EPSILON_64;
-}
-
-ASCENT_EXEC
-float nan32 ()
-{
-  detail::Bits32 nan;
-  nan.bits = ASCENT_NAN_32;
-  return nan.scalar;
+    return ASCENT_EPSILON_64;
 }
 
 ASCENT_EXEC
-float infinity32 ()
+float nan32()
 {
-  detail::Bits32 inf;
-  inf.bits = ASCENT_INF_32;
-  return inf.scalar;
+    detail::Bits32 nan;
+    nan.bits = ASCENT_NAN_32;
+    return nan.scalar;
 }
 
 ASCENT_EXEC
-float neg_infinity32 ()
+float infinity32()
 {
-  detail::Bits32 ninf;
-  ninf.bits = ASCENT_NG_INF_32;
-  return ninf.scalar;
+    detail::Bits32 inf;
+    inf.bits = ASCENT_INF_32;
+    return inf.scalar;
 }
 
 ASCENT_EXEC
-double nan64 ()
+float neg_infinity32()
 {
-  detail::Bits64 nan;
-  nan.bits = ASCENT_NAN_64;
-  return nan.scalar;
+    detail::Bits32 ninf;
+    ninf.bits = ASCENT_NG_INF_32;
+    return ninf.scalar;
 }
 
 ASCENT_EXEC
-double infinity64 ()
+double nan64()
 {
-  detail::Bits64 inf;
-  inf.bits = ASCENT_INF_64;
-  return inf.scalar;
+    detail::Bits64 nan;
+    nan.bits = ASCENT_NAN_64;
+    return nan.scalar;
 }
 
 ASCENT_EXEC
-double neg_infinity64 ()
+double infinity64()
 {
-  detail::Bits64 ninf;
-  ninf.bits = ASCENT_NG_INF_64;
-  return ninf.scalar;
+    detail::Bits64 inf;
+    inf.bits = ASCENT_INF_64;
+    return inf.scalar;
 }
 
-template <typename T> ASCENT_EXEC T infinity ();
-
-template <> ASCENT_EXEC float infinity<float> ()
+ASCENT_EXEC
+double neg_infinity64()
 {
-  return infinity32 ();
+    detail::Bits64 ninf;
+    ninf.bits = ASCENT_NG_INF_64;
+    return ninf.scalar;
 }
 
-template <> ASCENT_EXEC double infinity<double> ()
+template <typename T> ASCENT_EXEC T infinity();
+
+template <> ASCENT_EXEC float infinity<float>()
 {
-  return infinity64 ();
+    return infinity32();
+}
+
+template <> ASCENT_EXEC double infinity<double>()
+{
+    return infinity64();
 }
 
 template <typename T> ASCENT_EXEC T nan();
 
-template <> ASCENT_EXEC float nan<float> ()
+template <> ASCENT_EXEC float nan<float>()
 {
-  return nan32 ();
+    return nan32();
 }
 
-template <> ASCENT_EXEC double nan<double> ()
+template <> ASCENT_EXEC double nan<double>()
 {
-  return nan64 ();
+    return nan64();
 }
 
-template <typename T> ASCENT_EXEC T neg_infinity ();
+template <typename T> ASCENT_EXEC T neg_infinity();
 
-template <> ASCENT_EXEC float neg_infinity<float> ()
+template <> ASCENT_EXEC float neg_infinity<float>()
 {
-  return neg_infinity32 ();
+    return neg_infinity32();
 }
 
-template <> ASCENT_EXEC double neg_infinity<double> ()
+template <> ASCENT_EXEC double neg_infinity<double>()
 {
-  return neg_infinity64 ();
+    return neg_infinity64();
 }
 
 //
 // count leading zeros
 //
 ASCENT_EXEC
-int32 clz (uint32 x)
+int32 clz(uint32 x)
 {
-  uint32 y;
-  uint32 n = 32;
-  y = x >> 16;
-  if (y != 0)
-  {
-    n = n - 16;
-    x = y;
-  }
-  y = x >> 8;
-  if (y != 0)
-  {
-    n = n - 8;
-    x = y;
-  }
-  y = x >> 4;
-  if (y != 0)
-  {
-    n = n - 4;
-    x = y;
-  }
-  y = x >> 2;
-  if (y != 0)
-  {
-    n = n - 2;
-    x = y;
-  }
-  y = x >> 1;
-  if (y != 0) return int32 (n - 2);
-  return int32 (n - x);
+    uint32 y;
+    uint32 n = 32;
+    y = x >> 16;
+    if (y != 0)
+    {
+        n = n - 16;
+        x = y;
+    }
+    y = x >> 8;
+    if (y != 0)
+    {
+        n = n - 8;
+        x = y;
+    }
+    y = x >> 4;
+    if (y != 0)
+    {
+        n = n - 4;
+        x = y;
+    }
+    y = x >> 2;
+    if (y != 0)
+    {
+        n = n - 2;
+        x = y;
+    }
+    y = x >> 1;
+    if (y != 0)
+        return int32(n - 2);
+    return int32(n - x);
 }
 
 ASCENT_EXEC
-double pi ()
+double pi()
 {
-  return 3.14159265358979323846264338327950288;
+    return 3.14159265358979323846264338327950288;
 }
 
 ASCENT_EXEC
-float rcp (float f)
+float rcp(float f)
 {
-  return 1.0f / f;
+    return 1.0f / f;
 }
 
 ASCENT_EXEC
 bool is_inf(const double f)
 {
-  return (2*f == f) && (f != 0);
+    return (2 * f == f) && (f != 0);
 }
 
 ASCENT_EXEC
 bool is_inf(const float f)
 {
-  return (2*f == f) && (f != 0);
+    return (2 * f == f) && (f != 0);
 }
 
 ASCENT_EXEC
-double rcp (double f)
+double rcp(double f)
 {
-  return 1.0 / f;
+    return 1.0 / f;
 }
 
 ASCENT_EXEC
-double rcp_safe (double f)
+double rcp_safe(double f)
 {
-  return rcp ((fabs (f) < 1e-8) ? (signbit (f) ? -1e-8 : 1e-8) : f);
+    return rcp((fabs(f) < 1e-8) ? (signbit(f) ? -1e-8 : 1e-8) : f);
 }
 
 ASCENT_EXEC
-float rcp_safe (float f)
+float rcp_safe(float f)
 {
-  return rcp ((fabs (f) < 1e-8f) ? (signbit (f) ? -1e-8f : 1e-8f) : f);
+    return rcp((fabs(f) < 1e-8f) ? (signbit(f) ? -1e-8f : 1e-8f) : f);
 }
 
 ASCENT_EXEC
 float lerp(const float &t0, const float &t1, const float &t)
 {
-  return (t0 + t * (t1 - t0));
+    return (t0 + t * (t1 - t0));
 }
 
-
-
 template <typename T>
-ASCENT_EXEC T clamp (const T &val, const T &min_val, const T &max_val)
+ASCENT_EXEC T clamp(const T &val, const T &min_val, const T &max_val)
 {
-  return min (max_val, max (min_val, val));
+    return min(max_val, max(min_val, val));
 }
 
 // clamped hermite interpolation
 ASCENT_EXEC
-float smoothstep(const float e0, const float e1, float x) {
-  x = clamp((x - e0) / (e1 - e0), 0.0f, 1.0f);
-  return x * x * (3 - 2 * x);
+float smoothstep(const float e0, const float e1, float x)
+{
+    x = clamp((x - e0) / (e1 - e0), 0.0f, 1.0f);
+    return x * x * (3 - 2 * x);
 }
 
-static constexpr ASCENT_EXEC float pi_180f ()
+static constexpr ASCENT_EXEC float pi_180f()
 {
-  return 0.01745329251994329547437168059786927f;
+    return 0.01745329251994329547437168059786927f;
 }
-static constexpr ASCENT_EXEC double pi_180 ()
+static constexpr ASCENT_EXEC double pi_180()
 {
-  return 0.01745329251994329547437168059786927;
+    return 0.01745329251994329547437168059786927;
 }
-
 
 } // namespace ascent
 #endif

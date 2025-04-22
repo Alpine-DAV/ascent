@@ -11,62 +11,62 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_H
-#define ASCENT_H
+    #define ASCENT_H
 
-#include <conduit_node.h>
-#include <ascent_exports.h>
+    #include <conduit_node.h>
+    #include <ascent_exports.h>
 
-//-----------------------------------------------------------------------------
-//
-// The C interface to ascent
-//
-//-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    //
+    // The C interface to ascent
+    //
+    //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// -- begin extern C
-//-----------------------------------------------------------------------------
-#ifdef __cplusplus
-extern "C" {
-#endif
+    //-----------------------------------------------------------------------------
+    // -- begin extern C
+    //-----------------------------------------------------------------------------
+    #ifdef __cplusplus
+extern "C"
+{
+    #endif
 
-//-----------------------------------------------------------------------------
-// -- typedef for ascent --
-//-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // -- typedef for ascent --
+    //-----------------------------------------------------------------------------
 
-typedef void  Ascent;
+    typedef void Ascent;
 
-//-----------------------------------------------------------------------------
-// --ascent methods --
-//-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // --ascent methods --
+    //-----------------------------------------------------------------------------
 
-void ASCENT_API ascent_about(conduit_node *result);
+    void ASCENT_API ascent_about(conduit_node *result);
 
-Ascent ASCENT_API *ascent_create();
+    Ascent ASCENT_API *ascent_create();
 
-void ASCENT_API ascent_destroy(Ascent *c_ascent);
+    void ASCENT_API ascent_destroy(Ascent *c_ascent);
 
-void ASCENT_API ascent_open(Ascent *c_ascent,  conduit_node *options);
+    void ASCENT_API ascent_open(Ascent *c_ascent, conduit_node *options);
 
-void ASCENT_API ascent_publish(Ascent *c_ascent, conduit_node *data);
+    void ASCENT_API ascent_publish(Ascent *c_ascent, conduit_node *data);
 
-void ASCENT_API ascent_execute(Ascent *c_ascent, conduit_node *actions);
+    void ASCENT_API ascent_execute(Ascent *c_ascent, conduit_node *actions);
 
-void ASCENT_API ascent_info(Ascent *c_ascent, conduit_node *result);
+    void ASCENT_API ascent_info(Ascent *c_ascent, conduit_node *result);
 
-conduit_node ASCENT_API *ascent_info_ref(Ascent *c_ascent);
+    conduit_node ASCENT_API *ascent_info_ref(Ascent *c_ascent);
 
-void ASCENT_API ascent_close(Ascent *c_ascent);
+    void ASCENT_API ascent_close(Ascent *c_ascent);
 
-void ASCENT_API ascent_timer_start(char *name);
+    void ASCENT_API ascent_timer_start(char *name);
 
-void ASCENT_API ascent_timer_stop(char *name);
+    void ASCENT_API ascent_timer_stop(char *name);
 
-void ASCENT_API ascent_timer_write();
+    void ASCENT_API ascent_timer_write();
 
-
-#ifdef __cplusplus
+    #ifdef __cplusplus
 }
-#endif
+    #endif
 
 //-----------------------------------------------------------------------------
 // -- end extern C
@@ -76,6 +76,3 @@ void ASCENT_API ascent_timer_write();
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-
-

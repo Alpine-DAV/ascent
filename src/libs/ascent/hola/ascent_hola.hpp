@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_hola.hpp
@@ -12,14 +11,13 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_HOLA_HPP
-#define ASCENT_HOLA_HPP
+    #define ASCENT_HOLA_HPP
 
-#include <ascent_config.h>
-#include <ascent_exports.h>
+    #include <ascent_config.h>
+    #include <ascent_exports.h>
 
-#include <string>
-#include <conduit.hpp>
-
+    #include <string>
+    #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -33,7 +31,7 @@ void ASCENT_API hola(const std::string &source,
                      const conduit::Node &options,
                      conduit::Node &data);
 
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
@@ -42,4 +40,3 @@ void ASCENT_API hola(const std::string &source,
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-

@@ -10,13 +10,12 @@
 ///
 //-----------------------------------------------------------------------------
 #ifndef ASCENT_ACTIONS_UTILS_HPP
-#define ASCENT_ACTIONS_UTILS_HPP
+    #define ASCENT_ACTIONS_UTILS_HPP
 
-#include <ascent_exports.h>
-#include <conduit.hpp>
-#include <string>
-#include <set>
-
+    #include <ascent_exports.h>
+    #include <conduit.hpp>
+    #include <string>
+    #include <set>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -33,15 +32,12 @@ ASCENT_API bool load_actions_file(const std::string &path,
                                   conduit::Node &actions);
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 #endif
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
-

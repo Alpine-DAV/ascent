@@ -16,7 +16,6 @@
 #include <sstream>
 #include <stdio.h>
 
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -29,61 +28,60 @@ void split_string(const std::string &s,
                   char delim,
                   std::vector<std::string> &elems)
 {
-  std::stringstream ss(s);
-  std::string item;
-  while(std::getline(ss, item, delim))
-  {
-    elems.push_back(item);
-  }
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim))
+    {
+        elems.push_back(item);
+    }
 }
 
 } // namespace detail
 
 std::string expand_family_name(const std::string name, int counter)
 {
-  if(counter == 0)
-  {
-    static std::map<std::string, int> s_file_family_map;
-    bool exists = s_file_family_map.find(name) != s_file_family_map.end();
-    if(!exists)
+    if (counter == 0)
     {
-      s_file_family_map[name] = counter;
+        static std::map<std::string, int> s_file_family_map;
+        bool exists = s_file_family_map.find(name) != s_file_family_map.end();
+        if (!exists)
+        {
+            s_file_family_map[name] = counter;
+        }
+        else
+        {
+            counter = s_file_family_map[name] + 1;
+            s_file_family_map[name] = counter;
+        }
+    }
+
+    std::string result;
+    bool has_format = name.find("%") != std::string::npos;
+    if (has_format)
+    {
+        // allow for long file paths
+        char buffer[2048];
+        snprintf(buffer, 2048, name.c_str(), counter);
+        result = std::string(buffer);
     }
     else
     {
-      counter = s_file_family_map[name] + 1;
-      s_file_family_map[name] = counter;
+        std::stringstream ss;
+        ss << name << counter;
+        result = ss.str();
     }
-  }
-
-  std::string result;
-  bool has_format = name.find("%") != std::string::npos;
-  if(has_format)
-  {
-    // allow for long file paths
-    char buffer[2048];
-    snprintf(buffer, 2048, name.c_str(), counter);
-    result = std::string(buffer);
-  }
-  else
-  {
-    std::stringstream ss;
-    ss<<name<<counter;
-    result = ss.str();
-  }
-  return result;
+    return result;
 }
 
 std::vector<std::string> split(const std::string &s, char delim)
 {
-  std::vector<std::string> elems;
-  detail::split_string(s, delim, elems);
-  return elems;
+    std::vector<std::string> elems;
+    detail::split_string(s, delim, elems);
+    return elems;
 }
 
 //-----------------------------------------------------------------------------
-std::string
-timestamp()
+std::string timestamp()
 {
     // create std::string that reps current time
     time_t t;
@@ -96,10 +94,7 @@ timestamp()
 }
 
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

@@ -12,13 +12,9 @@ namespace ascent
 namespace runtime
 {
 
-ArrayInternalsBase::ArrayInternalsBase ()
-{
-}
+ArrayInternalsBase::ArrayInternalsBase() {}
 
-ArrayInternalsBase::~ArrayInternalsBase ()
-{
-}
+ArrayInternalsBase::~ArrayInternalsBase() {}
 
 } // namespace runtime
 } // namespace ascent

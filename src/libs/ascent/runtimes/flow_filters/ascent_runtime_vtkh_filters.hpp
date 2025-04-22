@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_vtkh_filters.hpp
@@ -12,12 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_VTKH_FILTERS
-#define ASCENT_RUNTIME_VTKH_FILTERS
+    #define ASCENT_RUNTIME_VTKH_FILTERS
 
-#include <ascent.hpp>
+    #include <ascent.hpp>
 
-#include <flow_filter.hpp>
-
+    #include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -50,10 +48,10 @@ public:
     VTKHMarchingCubes();
     virtual ~VTKHMarchingCubes();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -63,10 +61,10 @@ public:
     VTKHExternalSurfaces();
     virtual ~VTKHExternalSurfaces();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -76,10 +74,10 @@ public:
     VTKHVectorMagnitude();
     virtual ~VTKHVectorMagnitude();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -89,10 +87,10 @@ public:
     VTKHSlice();
     virtual ~VTKHSlice();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -102,10 +100,10 @@ public:
     VTKHAutoSliceLevels();
     virtual ~VTKHAutoSliceLevels();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKH3Slice : public ::flow::Filter
@@ -114,10 +112,10 @@ public:
     VTKH3Slice();
     virtual ~VTKH3Slice();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -127,23 +125,23 @@ public:
     VTKHThreshold();
     virtual ~VTKHThreshold();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHGhostStripper: public ::flow::Filter
+class ASCENT_API VTKHGhostStripper : public ::flow::Filter
 {
 public:
     VTKHGhostStripper();
     virtual ~VTKHGhostStripper();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -153,10 +151,10 @@ public:
     VTKHAddRanks();
     virtual ~VTKHAddRanks();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -166,26 +164,23 @@ public:
     VTKHAddDomains();
     virtual ~VTKHAddDomains();
 
-
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
-
-
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHClip: public ::flow::Filter
+class ASCENT_API VTKHClip : public ::flow::Filter
 {
 public:
     VTKHClip();
     virtual ~VTKHClip();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -195,10 +190,10 @@ public:
     VTKHClipWithField();
     virtual ~VTKHClipWithField();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -208,10 +203,10 @@ public:
     VTKHIsoVolume();
     virtual ~VTKHIsoVolume();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -221,62 +216,62 @@ public:
     VTKHLagrangian();
     virtual ~VTKHLagrangian();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHLog: public ::flow::Filter
+class ASCENT_API VTKHLog : public ::flow::Filter
 {
 public:
     VTKHLog();
     virtual ~VTKHLog();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHLog10: public ::flow::Filter
+class ASCENT_API VTKHLog10 : public ::flow::Filter
 {
 public:
     VTKHLog10();
     virtual ~VTKHLog10();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHLog2: public ::flow::Filter
+class ASCENT_API VTKHLog2 : public ::flow::Filter
 {
 public:
     VTKHLog2();
     virtual ~VTKHLog2();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHRecenter: public ::flow::Filter
+class ASCENT_API VTKHRecenter : public ::flow::Filter
 {
 public:
     VTKHRecenter();
     virtual ~VTKHRecenter();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -286,49 +281,49 @@ public:
     VTKHHistSampling();
     virtual ~VTKHHistSampling();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHQCriterion: public ::flow::Filter
+class ASCENT_API VTKHQCriterion : public ::flow::Filter
 {
 public:
     VTKHQCriterion();
     virtual ~VTKHQCriterion();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHDivergence: public ::flow::Filter
+class ASCENT_API VTKHDivergence : public ::flow::Filter
 {
 public:
     VTKHDivergence();
     virtual ~VTKHDivergence();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHVorticity: public ::flow::Filter
+class ASCENT_API VTKHVorticity : public ::flow::Filter
 {
 public:
     VTKHVorticity();
     virtual ~VTKHVorticity();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -338,10 +333,10 @@ public:
     VTKHGradient();
     virtual ~VTKHGradient();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -351,10 +346,10 @@ public:
     VTKHNoOp();
     virtual ~VTKHNoOp();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -364,10 +359,10 @@ public:
     VTKHVectorComponent();
     virtual ~VTKHVectorComponent();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -377,10 +372,10 @@ public:
     VTKHCompositeVector();
     virtual ~VTKHCompositeVector();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -390,10 +385,10 @@ public:
     VTKHStats();
     virtual ~VTKHStats();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -403,10 +398,10 @@ public:
     VTKHUniformGrid();
     virtual ~VTKHUniformGrid();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -416,12 +411,11 @@ public:
     VTKHHistogram();
     virtual ~VTKHHistogram();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
-
 
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHProject2d : public ::flow::Filter
@@ -430,12 +424,11 @@ public:
     VTKHProject2d();
     virtual ~VTKHProject2d();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
-
 
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHCleanGrid : public ::flow::Filter
@@ -444,10 +437,10 @@ public:
     VTKHCleanGrid();
     virtual ~VTKHCleanGrid();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -457,10 +450,10 @@ public:
     VTKHScale();
     virtual ~VTKHScale();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -470,10 +463,10 @@ public:
     VTKHTransform();
     virtual ~VTKHTransform();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -483,10 +476,10 @@ public:
     VTKHTriangulate();
     virtual ~VTKHTriangulate();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -496,10 +489,10 @@ public:
     VTKHParticleAdvection();
     virtual ~VTKHParticleAdvection();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 
 protected:
     bool record_trajectories = false;
@@ -509,9 +502,9 @@ protected:
 class ASCENT_API VTKHStreamline : public VTKHParticleAdvection
 {
 public:
-  VTKHStreamline();
-  virtual ~VTKHStreamline();
-  virtual void   declare_interface(conduit::Node &i);
+    VTKHStreamline();
+    virtual ~VTKHStreamline();
+    virtual void declare_interface(conduit::Node &i);
 };
 
 //-----------------------------------------------------------------------------
@@ -521,10 +514,10 @@ public:
     VTKHWarpXStreamline();
     virtual ~VTKHWarpXStreamline();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 
 protected:
     bool record_trajectories = false;
@@ -537,13 +530,11 @@ public:
     VTKHVTKFileExtract();
     virtual ~VTKHVTKFileExtract();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
-
 
 //-----------------------------------------------------------------------------
 class ASCENT_API VTKHMIR : public ::flow::Filter
@@ -552,34 +543,28 @@ public:
     VTKHMIR();
     virtual ~VTKHMIR();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
-
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
 
 #endif
 //-----------------------------------------------------------------------------

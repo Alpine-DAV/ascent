@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_rendering_filters.hpp
@@ -12,12 +11,11 @@
 //-----------------------------------------------------------------------------
 
 #ifndef ASCENT_RUNTIME_RENDERING_FILTERS
-#define ASCENT_RUNTIME_RENDERING_FILTERS
+    #define ASCENT_RUNTIME_RENDERING_FILTERS
 
-#include <ascent.hpp>
+    #include <ascent.hpp>
 
-#include <flow_filter.hpp>
-
+    #include <flow_filter.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -43,7 +41,6 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 class ASCENT_API DefaultRender : public ::flow::Filter
 {
@@ -51,32 +48,32 @@ public:
     DefaultRender();
     virtual ~DefaultRender();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHBounds: public ::flow::Filter
+class ASCENT_API VTKHBounds : public ::flow::Filter
 {
 public:
     VTKHBounds();
     virtual ~VTKHBounds();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
-class ASCENT_API VTKHUnionBounds: public ::flow::Filter
+class ASCENT_API VTKHUnionBounds : public ::flow::Filter
 {
 public:
     VTKHUnionBounds();
     virtual ~VTKHUnionBounds();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
+    virtual void declare_interface(conduit::Node &i);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -86,11 +83,10 @@ public:
     CreatePlot();
     virtual ~CreatePlot();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
-    virtual void   execute();
-
+    virtual void declare_interface(conduit::Node &i);
+    virtual bool verify_params(const conduit::Node &params,
+                               conduit::Node &info);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -100,9 +96,8 @@ public:
     AddPlot();
     virtual ~AddPlot();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-
+    virtual void declare_interface(conduit::Node &i);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -112,9 +107,8 @@ public:
     CreateScene();
     virtual ~CreateScene();
 
-    virtual void   declare_interface(conduit::Node &i);
-    virtual void   execute();
-
+    virtual void declare_interface(conduit::Node &i);
+    virtual void execute();
 };
 
 //-----------------------------------------------------------------------------
@@ -123,34 +117,29 @@ class ASCENT_API ExecScene : public ::flow::Filter
 public:
     ExecScene();
 
-   ~ExecScene();
+    ~ExecScene();
 
     virtual void declare_interface(conduit::Node &i);
 
     virtual void execute();
 };
 
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
 
 #endif
 //-----------------------------------------------------------------------------

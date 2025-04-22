@@ -14,100 +14,97 @@ namespace runtime
 {
 
 template <typename T>
-Array<T>::Array () : m_internals (new ArrayInternals<T> ()){};
+Array<T>::Array() : m_internals(new ArrayInternals<T>()){};
 
 template <typename T>
-Array<T>::Array (T *data, const size_t size)
-: m_internals (new ArrayInternals<T> (data, size)){};
+Array<T>::Array(T *data, const size_t size)
+    : m_internals(new ArrayInternals<T>(data, size)){};
 
-template <typename T> void Array<T>::set (T *data, const size_t size)
+template <typename T> void Array<T>::set(T *data, const size_t size)
 {
-  m_internals->set (data, size);
+    m_internals->set(data, size);
 };
 
-template <typename T> void Array<T>::copy (const T *data, const size_t size)
+template <typename T> void Array<T>::copy(const T *data, const size_t size)
 {
-  m_internals->copy (data, size);
+    m_internals->copy(data, size);
 };
 
-template <typename T> Array<T>::~Array ()
+template <typename T> Array<T>::~Array() {}
+
+template <typename T> void Array<T>::operator=(const Array<T> &other)
 {
+    m_internals = other.m_internals;
 }
 
-template <typename T> void Array<T>::operator= (const Array<T> &other)
+template <typename T> size_t Array<T>::size() const
 {
-  m_internals = other.m_internals;
+    return m_internals->size();
 }
 
-template <typename T> size_t Array<T>::size () const
+template <typename T> void Array<T>::resize(const size_t size)
 {
-  return m_internals->size ();
+    m_internals->resize(size);
 }
 
-template <typename T> void Array<T>::resize (const size_t size)
+template <typename T> T *Array<T>::get_host_ptr()
 {
-  m_internals->resize (size);
+    return m_internals->get_host_ptr();
 }
 
-template <typename T> T *Array<T>::get_host_ptr ()
+template <typename T> T *Array<T>::get_device_ptr()
 {
-  return m_internals->get_host_ptr ();
+    return m_internals->get_device_ptr();
 }
 
-template <typename T> T *Array<T>::get_device_ptr ()
+template <typename T> const T *Array<T>::get_host_ptr_const() const
 {
-  return m_internals->get_device_ptr ();
-}
-
-template <typename T> const T *Array<T>::get_host_ptr_const () const
-{
-  return m_internals->get_host_ptr_const ();
-}
-
-template <typename T> const T *Array<T>::get_device_ptr_const () const
-{
-  return m_internals->get_device_ptr_const ();
-}
-
-
-template <typename T> T *Array<T>::get_ptr (const std::string loc)
-{
-  if(loc == "device")
-  {
-    return m_internals->get_device_ptr ();
-  }
-  else
-  {
-    return m_internals->get_host_ptr ();
-  }
-}
-
-template <typename T> const T *Array<T>::get_ptr_const (const std::string loc) const
-{
-  if(loc == "device")
-  {
-    return m_internals->get_device_ptr_const();
-  }
-  else
-  {
     return m_internals->get_host_ptr_const();
-  }
 }
 
-template <typename T> void Array<T>::summary ()
+template <typename T> const T *Array<T>::get_device_ptr_const() const
 {
-  m_internals->summary ();
+    return m_internals->get_device_ptr_const();
 }
 
+template <typename T> T *Array<T>::get_ptr(const std::string loc)
+{
+    if (loc == "device")
+    {
+        return m_internals->get_device_ptr();
+    }
+    else
+    {
+        return m_internals->get_host_ptr();
+    }
+}
+
+template <typename T>
+const T *Array<T>::get_ptr_const(const std::string loc) const
+{
+    if (loc == "device")
+    {
+        return m_internals->get_device_ptr_const();
+    }
+    else
+    {
+        return m_internals->get_host_ptr_const();
+    }
+}
+
+template <typename T> void Array<T>::summary()
+{
+    m_internals->summary();
+}
 
 template <typename T> void Array<T>::status()
 {
-  m_internals->status();
+    m_internals->status();
 }
 
-template <typename T> T Array<T>::get_value (const size_t i) const
+template <typename T> T Array<T>::get_value(const size_t i) const
 {
-  return m_internals->get_value (i);
+    return m_internals->get_value(i);
 }
 
 // Type Explicit instantiations

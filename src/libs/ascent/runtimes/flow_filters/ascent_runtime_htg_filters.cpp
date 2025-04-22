@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
 //-----------------------------------------------------------------------------
 ///
 /// file: ascent_runtime_htg_filters.cpp
@@ -66,7 +65,6 @@ namespace filters
 namespace detail
 {
 
-
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
@@ -76,34 +74,32 @@ namespace detail
 //-----------------------------------------------------------------------------
 // helper used by io save
 //-----------------------------------------------------------------------------
-bool
-verify_htg_params(const conduit::Node &params,
-                  conduit::Node &info)
+bool verify_htg_params(const conduit::Node &params, conduit::Node &info)
 {
     bool res = true;
 
-    if( !params.has_child("path") )
+    if (!params.has_child("path"))
     {
         info["errors"].append() = "missing required entry 'path'";
         res = false;
     }
-    else if(!params["path"].dtype().is_string())
+    else if (!params["path"].dtype().is_string())
     {
         info["errors"].append() = "'path' must be a string";
         res = false;
     }
-    else if(params["path"].as_string().empty())
+    else if (params["path"].as_string().empty())
     {
         info["errors"].append() = "'path' is an empty string";
         res = false;
     }
 
-    if( !params.has_child("blank_value") )
+    if (!params.has_child("blank_value"))
     {
         info["errors"].append() = "missing required entry 'blank_value'";
         res = false;
     }
-    else if(!params["blank_value"].dtype().is_number())
+    else if (!params["blank_value"].dtype().is_number())
     {
         info["errors"].append() = "'blank_value' must be a number";
         res = false;
@@ -118,7 +114,7 @@ verify_htg_params(const conduit::Node &params,
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
-    if(surprises != "")
+    if (surprises != "")
     {
         info["errors"].append() = surprises;
         res = false;
@@ -142,45 +138,109 @@ float htg_create(const float *var_in,
 {
     if (level < n_levels - 1)
     {
-        // 
+        //
         // Recurse over the 8 sub-blocks.
         //
         int nx_sub_box = 1 << (n_levels - level - 1);
         int offset = offsets[level];
         offsets[level] = offsets[level] + 8;
 
-        var_out[offset]   = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start, j_start, k_start);
-        var_out[offset+1] = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start + nx_sub_box, j_start, k_start);
-        var_out[offset+2] = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start, j_start + nx_sub_box, k_start);
-        var_out[offset+3] = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start + nx_sub_box, j_start + nx_sub_box, k_start);
-        var_out[offset+4] = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start, j_start, k_start + nx_sub_box);
-        var_out[offset+5] = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start + nx_sub_box, j_start, k_start + nx_sub_box);
-        var_out[offset+6] = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start, j_start + nx_sub_box, k_start + nx_sub_box);
-        var_out[offset+7] = htg_create(var_in, var_out, mask, n_levels, nx,
-            blank_value, level+1, offsets,
-            i_start + nx_sub_box, j_start + nx_sub_box, k_start + nx_sub_box);
-        mask[offset]   = var_out[offset]   == blank_value ? 1 : 0;
-        mask[offset+1] = var_out[offset+1] == blank_value ? 1 : 0;
-        mask[offset+2] = var_out[offset+2] == blank_value ? 1 : 0;
-        mask[offset+3] = var_out[offset+3] == blank_value ? 1 : 0;
-        mask[offset+4] = var_out[offset+4] == blank_value ? 1 : 0;
-        mask[offset+5] = var_out[offset+5] == blank_value ? 1 : 0;
-        mask[offset+6] = var_out[offset+6] == blank_value ? 1 : 0;
-        mask[offset+7] = var_out[offset+7] == blank_value ? 1 : 0;
+        var_out[offset] = htg_create(var_in,
+                                     var_out,
+                                     mask,
+                                     n_levels,
+                                     nx,
+                                     blank_value,
+                                     level + 1,
+                                     offsets,
+                                     i_start,
+                                     j_start,
+                                     k_start);
+        var_out[offset + 1] = htg_create(var_in,
+                                         var_out,
+                                         mask,
+                                         n_levels,
+                                         nx,
+                                         blank_value,
+                                         level + 1,
+                                         offsets,
+                                         i_start + nx_sub_box,
+                                         j_start,
+                                         k_start);
+        var_out[offset + 2] = htg_create(var_in,
+                                         var_out,
+                                         mask,
+                                         n_levels,
+                                         nx,
+                                         blank_value,
+                                         level + 1,
+                                         offsets,
+                                         i_start,
+                                         j_start + nx_sub_box,
+                                         k_start);
+        var_out[offset + 3] = htg_create(var_in,
+                                         var_out,
+                                         mask,
+                                         n_levels,
+                                         nx,
+                                         blank_value,
+                                         level + 1,
+                                         offsets,
+                                         i_start + nx_sub_box,
+                                         j_start + nx_sub_box,
+                                         k_start);
+        var_out[offset + 4] = htg_create(var_in,
+                                         var_out,
+                                         mask,
+                                         n_levels,
+                                         nx,
+                                         blank_value,
+                                         level + 1,
+                                         offsets,
+                                         i_start,
+                                         j_start,
+                                         k_start + nx_sub_box);
+        var_out[offset + 5] = htg_create(var_in,
+                                         var_out,
+                                         mask,
+                                         n_levels,
+                                         nx,
+                                         blank_value,
+                                         level + 1,
+                                         offsets,
+                                         i_start + nx_sub_box,
+                                         j_start,
+                                         k_start + nx_sub_box);
+        var_out[offset + 6] = htg_create(var_in,
+                                         var_out,
+                                         mask,
+                                         n_levels,
+                                         nx,
+                                         blank_value,
+                                         level + 1,
+                                         offsets,
+                                         i_start,
+                                         j_start + nx_sub_box,
+                                         k_start + nx_sub_box);
+        var_out[offset + 7] = htg_create(var_in,
+                                         var_out,
+                                         mask,
+                                         n_levels,
+                                         nx,
+                                         blank_value,
+                                         level + 1,
+                                         offsets,
+                                         i_start + nx_sub_box,
+                                         j_start + nx_sub_box,
+                                         k_start + nx_sub_box);
+        mask[offset] = var_out[offset] == blank_value ? 1 : 0;
+        mask[offset + 1] = var_out[offset + 1] == blank_value ? 1 : 0;
+        mask[offset + 2] = var_out[offset + 2] == blank_value ? 1 : 0;
+        mask[offset + 3] = var_out[offset + 3] == blank_value ? 1 : 0;
+        mask[offset + 4] = var_out[offset + 4] == blank_value ? 1 : 0;
+        mask[offset + 5] = var_out[offset + 5] == blank_value ? 1 : 0;
+        mask[offset + 6] = var_out[offset + 6] == blank_value ? 1 : 0;
+        mask[offset + 7] = var_out[offset + 7] == blank_value ? 1 : 0;
 
         //
         // Calculate and return the average.
@@ -189,10 +249,10 @@ float htg_create(const float *var_in,
         int n_val = 0;
         for (int l = 0; l < 8; l++)
         {
-            if (var_out[offset+l] != blank_value)
+            if (var_out[offset + l] != blank_value)
             {
                 n_val++;
-                ave += var_out[offset+l];
+                ave += var_out[offset + l];
             }
         }
         if (n_val)
@@ -210,30 +270,31 @@ float htg_create(const float *var_in,
         int offset = offsets[level];
         offsets[level] = offsets[level] + 8;
 
-        int index  = (k_start)   * nx * nx + (j_start)   * nx + (i_start);
-        int index2 = (k_start)   * nx * nx + (j_start)   * nx + (i_start+1);
-        int index3 = (k_start)   * nx * nx + (j_start+1) * nx + (i_start);
-        int index4 = (k_start)   * nx * nx + (j_start+1) * nx + (i_start+1);
-        int index5 = (k_start+1) * nx * nx + (j_start)   * nx + (i_start);
-        int index6 = (k_start+1) * nx * nx + (j_start)   * nx + (i_start+1);
-        int index7 = (k_start+1) * nx * nx + (j_start+1) * nx + (i_start);
-        int index8 = (k_start+1) * nx * nx + (j_start+1) * nx + (i_start+1);
-        var_out[offset]   = var_in[index];
-        var_out[offset+1] = var_in[index2];
-        var_out[offset+2] = var_in[index3];
-        var_out[offset+3] = var_in[index4];
-        var_out[offset+4] = var_in[index5];
-        var_out[offset+5] = var_in[index6];
-        var_out[offset+6] = var_in[index7];
-        var_out[offset+7] = var_in[index8];
-        mask[offset]   = var_out[offset]   == blank_value ? 1 : 0;
-        mask[offset+1] = var_out[offset+1] == blank_value ? 1 : 0;
-        mask[offset+2] = var_out[offset+2] == blank_value ? 1 : 0;
-        mask[offset+3] = var_out[offset+3] == blank_value ? 1 : 0;
-        mask[offset+4] = var_out[offset+4] == blank_value ? 1 : 0;
-        mask[offset+5] = var_out[offset+5] == blank_value ? 1 : 0;
-        mask[offset+6] = var_out[offset+6] == blank_value ? 1 : 0;
-        mask[offset+7] = var_out[offset+7] == blank_value ? 1 : 0;
+        int index = (k_start)*nx * nx + (j_start)*nx + (i_start);
+        int index2 = (k_start)*nx * nx + (j_start)*nx + (i_start + 1);
+        int index3 = (k_start)*nx * nx + (j_start + 1) * nx + (i_start);
+        int index4 = (k_start)*nx * nx + (j_start + 1) * nx + (i_start + 1);
+        int index5 = (k_start + 1) * nx * nx + (j_start)*nx + (i_start);
+        int index6 = (k_start + 1) * nx * nx + (j_start)*nx + (i_start + 1);
+        int index7 = (k_start + 1) * nx * nx + (j_start + 1) * nx + (i_start);
+        int index8 =
+            (k_start + 1) * nx * nx + (j_start + 1) * nx + (i_start + 1);
+        var_out[offset] = var_in[index];
+        var_out[offset + 1] = var_in[index2];
+        var_out[offset + 2] = var_in[index3];
+        var_out[offset + 3] = var_in[index4];
+        var_out[offset + 4] = var_in[index5];
+        var_out[offset + 5] = var_in[index6];
+        var_out[offset + 6] = var_in[index7];
+        var_out[offset + 7] = var_in[index8];
+        mask[offset] = var_out[offset] == blank_value ? 1 : 0;
+        mask[offset + 1] = var_out[offset + 1] == blank_value ? 1 : 0;
+        mask[offset + 2] = var_out[offset + 2] == blank_value ? 1 : 0;
+        mask[offset + 3] = var_out[offset + 3] == blank_value ? 1 : 0;
+        mask[offset + 4] = var_out[offset + 4] == blank_value ? 1 : 0;
+        mask[offset + 5] = var_out[offset + 5] == blank_value ? 1 : 0;
+        mask[offset + 6] = var_out[offset + 6] == blank_value ? 1 : 0;
+        mask[offset + 7] = var_out[offset + 7] == blank_value ? 1 : 0;
 
         //
         // Calculate and return the average.
@@ -242,10 +303,10 @@ float htg_create(const float *var_in,
         int n_val = 0;
         for (int l = 0; l < 8; l++)
         {
-            if (var_out[offset+l] != blank_value)
+            if (var_out[offset + l] != blank_value)
             {
                 n_val++;
-                ave += var_out[offset+l];
+                ave += var_out[offset + l];
             }
         }
         if (n_val)
@@ -282,56 +343,83 @@ void htg_write_file(const string &stem,
     std::string filename = stem + ".htg";
     ofstream *ofile = new ofstream(filename.c_str());
 
-    *ofile << "<VTKFile type=\"HyperTreeGrid\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt32\">" << endl;
-    *ofile << "  <HyperTreeGrid BranchFactor=\"2\" TransposedRootIndexing=\"0\" Dimensions=\"2 2 2\">" << endl;
+    *ofile << "<VTKFile type=\"HyperTreeGrid\" version=\"1.0\" "
+              "byte_order=\"LittleEndian\" header_type=\"UInt32\">"
+           << endl;
+    *ofile << "  <HyperTreeGrid BranchFactor=\"2\" "
+              "TransposedRootIndexing=\"0\" Dimensions=\"2 2 2\">"
+           << endl;
     *ofile << "    <Grid>" << endl;
-    *ofile << "      <DataArray type=\"Float64\" Name=\"XCoordinates\" NumberOfTuples=\"2\" format=\"ascii\" RangeMin=\"" << bounds[0] << "\" RangeMax=\"" << bounds[1] << "\">" << endl;
+    *ofile << "      <DataArray type=\"Float64\" Name=\"XCoordinates\" "
+              "NumberOfTuples=\"2\" format=\"ascii\" RangeMin=\""
+           << bounds[0] << "\" RangeMax=\"" << bounds[1] << "\">" << endl;
     *ofile << "        " << bounds[0] << " " << bounds[1] << endl;
     *ofile << "      </DataArray>" << endl;
-    *ofile << "      <DataArray type=\"Float64\" Name=\"YCoordinates\" NumberOfTuples=\"2\" format=\"ascii\" RangeMin=\"" << bounds[2] << "\" RangeMax=\"" << bounds[3] << "\">" << endl;
+    *ofile << "      <DataArray type=\"Float64\" Name=\"YCoordinates\" "
+              "NumberOfTuples=\"2\" format=\"ascii\" RangeMin=\""
+           << bounds[2] << "\" RangeMax=\"" << bounds[3] << "\">" << endl;
     *ofile << "        " << bounds[2] << " " << bounds[3] << endl;
     *ofile << "      </DataArray>" << endl;
-    *ofile << "      <DataArray type=\"Float64\" Name=\"ZCoordinates\" NumberOfTuples=\"2\" format=\"ascii\" RangeMin=\"" << bounds[4] << "\" RangeMax=\"" << bounds[5] << "\">" << endl;
+    *ofile << "      <DataArray type=\"Float64\" Name=\"ZCoordinates\" "
+              "NumberOfTuples=\"2\" format=\"ascii\" RangeMin=\""
+           << bounds[4] << "\" RangeMax=\"" << bounds[5] << "\">" << endl;
     *ofile << "        " << bounds[4] << " " << bounds[5] << endl;
     *ofile << "      </DataArray>" << endl;
     *ofile << "    </Grid>" << endl;
     *ofile << "    <Trees>" << endl;
-    *ofile << "      <Tree Index=\"0\" NumberOfLevels=\"" << n_levels << "\" NumberOfVertices=\"" << n_vertices << "\">" << endl;
-    *ofile << "        <DataArray type=\"Bit\" Name=\"Descriptor\" NumberOfTuples=\"" << n_descriptor << "\" format=\"ascii\" RangeMin=\"" << descriptor_min << "\" RangeMax=\"" << descriptor_max << "\">" << endl;
+    *ofile << "      <Tree Index=\"0\" NumberOfLevels=\"" << n_levels
+           << "\" NumberOfVertices=\"" << n_vertices << "\">" << endl;
+    *ofile << "        <DataArray type=\"Bit\" Name=\"Descriptor\" "
+              "NumberOfTuples=\""
+           << n_descriptor << "\" format=\"ascii\" RangeMin=\""
+           << descriptor_min << "\" RangeMax=\"" << descriptor_max << "\">"
+           << endl;
     for (int i = 0; i < n_descriptor; i += 6)
     {
         *ofile << "          ";
         int jmax = (i + 6 < n_descriptor) ? i + 6 : n_descriptor;
         for (int j = i; j < jmax - 1; j++)
             *ofile << descriptor[j] << " ";
-        *ofile << descriptor[jmax-1] << endl;;
+        *ofile << descriptor[jmax - 1] << endl;
+        ;
     }
     *ofile << "        </DataArray>" << endl;
-    *ofile << "        <DataArray type=\"Int64\" Name=\"NbVerticesByLevel\" NumberOfTuples=\"" << n_levels << "\" format=\"ascii\" RangeMin=\"1\" RangeMax=\"" << nb_vertices_by_level_max << "\">" << endl;
+    *ofile << "        <DataArray type=\"Int64\" Name=\"NbVerticesByLevel\" "
+              "NumberOfTuples=\""
+           << n_levels << "\" format=\"ascii\" RangeMin=\"1\" RangeMax=\""
+           << nb_vertices_by_level_max << "\">" << endl;
     *ofile << "          ";
     for (int i = 0; i < n_levels - 1; i++)
         *ofile << nb_vertices_by_level[i] << " ";
-    *ofile << nb_vertices_by_level[n_levels-1] << endl;;
+    *ofile << nb_vertices_by_level[n_levels - 1] << endl;
+    ;
     *ofile << "        </DataArray>" << endl;
-    *ofile << "        <DataArray type=\"Bit\" Name=\"Mask\" NumberOfTuples=\"" << n_mask << "\" format=\"ascii\" RangeMin=\"" << mask_min << "\" RangeMax=\"" << mask_max << "\">" << endl;
+    *ofile << "        <DataArray type=\"Bit\" Name=\"Mask\" NumberOfTuples=\""
+           << n_mask << "\" format=\"ascii\" RangeMin=\"" << mask_min
+           << "\" RangeMax=\"" << mask_max << "\">" << endl;
     for (int i = 0; i < n_mask; i += 6)
     {
         *ofile << "          ";
         int jmax = (i + 6 < n_mask) ? i + 6 : n_mask;
         for (int j = i; j < jmax - 1; j++)
             *ofile << mask[j] << " ";
-        *ofile << mask[jmax-1] << endl;;
+        *ofile << mask[jmax - 1] << endl;
+        ;
     }
     *ofile << "        </DataArray>" << endl;
     *ofile << "        <CellData>" << endl;
-    *ofile << "          <DataArray type=\"Float64\" Name=\"u\" NumberOfTuples=\"" << n_vertices << "\" format=\"ascii\" RangeMin=\"" << var_min << "\" RangeMax=\"" << var_max << "\">" << endl;
+    *ofile
+        << "          <DataArray type=\"Float64\" Name=\"u\" NumberOfTuples=\""
+        << n_vertices << "\" format=\"ascii\" RangeMin=\"" << var_min
+        << "\" RangeMax=\"" << var_max << "\">" << endl;
     for (int i = 0; i < n_vertices; i += 6)
     {
         *ofile << "          ";
         int jmax = (i + 6 < n_vertices) ? i + 6 : n_vertices;
         for (int j = i; j < jmax - 1; j++)
             *ofile << var[j] << " ";
-        *ofile << var[jmax-1] << endl;;
+        *ofile << var[jmax - 1] << endl;
+        ;
     }
     *ofile << "          </DataArray>" << endl;
     *ofile << "        </CellData>" << endl;
@@ -382,7 +470,8 @@ void htg_write(const std::string &path,
 
     if (i_real == nvals)
     {
-        ASCENT_ERROR("htg extract: the variable only had blank values."<<endl);
+        ASCENT_ERROR("htg extract: the variable only had blank values."
+                     << endl);
     }
 
     float var_min = value[i_real];
@@ -413,14 +502,23 @@ void htg_write(const std::string &path,
     int *offsets = new int[n_levels];
     offsets[0] = 0;
     for (int i = 1; i < n_levels; i++)
-       offsets[i] = offsets[i-1] + nb_vertices_by_level[i-1];
+        offsets[i] = offsets[i - 1] + nb_vertices_by_level[i - 1];
     int i_start = 0;
     int j_start = 0;
     int k_start = 0;
-    var[0] = htg_create(value, var, mask, n_levels, nx, blank_value, i_level,
-        offsets, i_start, j_start, k_start);
+    var[0] = htg_create(value,
+                        var,
+                        mask,
+                        n_levels,
+                        nx,
+                        blank_value,
+                        i_level,
+                        offsets,
+                        i_start,
+                        j_start,
+                        k_start);
     mask[0] = var[0] == blank_value ? 1 : 0;
-    delete [] offsets;
+    delete[] offsets;
 
     //
     // Compress the output variable based on the mask variable.
@@ -437,30 +535,30 @@ void htg_write(const std::string &path,
         int nb_vertices = 0;
         for (int j = 0; j < n_bits; j++)
         {
-             if (mask[i_mask] == 0)
-             {
-                 nb_vertices += 8;
-                 for (int k = 0; k < 8; k++)
-                 {
-                     mask2[n_vertices2] = mask[i_var];
-                     var[n_vertices2] = var[i_var];
-                     n_vertices2++;
-                     i_var++;
-                 }
-             }
-             else
-             {
-                 i_var += 8;
-             }
-             i_mask++;
+            if (mask[i_mask] == 0)
+            {
+                nb_vertices += 8;
+                for (int k = 0; k < 8; k++)
+                {
+                    mask2[n_vertices2] = mask[i_var];
+                    var[n_vertices2] = var[i_var];
+                    n_vertices2++;
+                    i_var++;
+                }
+            }
+            else
+            {
+                i_var += 8;
+            }
+            i_mask++;
         }
-        nb_vertices_by_level[i+1] = nb_vertices;
+        nb_vertices_by_level[i + 1] = nb_vertices;
     }
     n_vertices = n_vertices2;
-    delete [] mask;
+    delete[] mask;
     mask = mask2;
 
-    int nb_vertices_by_level_max = nb_vertices_by_level[n_levels-1];
+    int nb_vertices_by_level_max = nb_vertices_by_level[n_levels - 1];
 
     //
     // Determine the size of the mask variable. Remove any trailing zeros.
@@ -488,7 +586,7 @@ void htg_write(const std::string &path,
     // variable for all but the last level.
     //
     int n_descriptor = 0;
-    for (int i = 0; i < n_levels-1; i++)
+    for (int i = 0; i < n_levels - 1; i++)
         n_descriptor += nb_vertices_by_level[i];
 
     int *descriptor = new int[n_descriptor];
@@ -496,7 +594,8 @@ void htg_write(const std::string &path,
         descriptor[i] = (mask[i] == 0) ? 1 : 0;
 
     //
-    // Determine the size of the descriptor variable. Remove any trailing zeros.
+    // Determine the size of the descriptor variable. Remove any trailing
+    // zeros.
     //
     last_zero = -1;
     last_one = -1;
@@ -521,16 +620,29 @@ void htg_write(const std::string &path,
     //
     // Replace any blank_value with zero.
     //
-    for (int i = 0; i <n_vertices; i++)
+    for (int i = 0; i < n_vertices; i++)
     {
         if (var[i] == blank_value)
             var[i] = 0.;
     }
 
-    htg_write_file(path, bounds, n_levels, n_vertices, n_descriptor,
-                   descriptor_min, descriptor_max, descriptor,
-                   nb_vertices_by_level_max, nb_vertices_by_level,
-                   n_mask, mask_min, mask_max, mask, var_min, var_max, var);
+    htg_write_file(path,
+                   bounds,
+                   n_levels,
+                   n_vertices,
+                   n_descriptor,
+                   descriptor_min,
+                   descriptor_max,
+                   descriptor,
+                   nb_vertices_by_level_max,
+                   nb_vertices_by_level,
+                   n_mask,
+                   mask_min,
+                   mask_max,
+                   mask,
+                   var_min,
+                   var_max,
+                   var);
 }
 
 void htg_save(const Node &data,
@@ -540,7 +652,7 @@ void htg_save(const Node &data,
 {
     if (data.number_of_children() != 1)
     {
-        ASCENT_ERROR("htg extract requires a single domain."<<endl);
+        ASCENT_ERROR("htg extract requires a single domain." << endl);
     }
 
     const conduit::Node &dom = data.child(0);
@@ -564,10 +676,10 @@ void htg_save(const Node &data,
     //
     // Loop over the fields.
     //
-    for(int f = 0; f < nfields; ++f)
+    for (int f = 0; f < nfields; ++f)
     {
         const std::string fname = fnames[f];
-        if(dom.has_path("fields/" + fname))
+        if (dom.has_path("fields/" + fname))
         {
             const std::string fpath = "fields/" + fname;
             const std::string topo = dom[fpath + "/topology"].as_string();
@@ -575,19 +687,25 @@ void htg_save(const Node &data,
             const std::string coords = dom[tpath + "/coordset"].as_string();
             const std::string cpath = "coordsets/" + coords;
 
-            if(dom[fpath + "/association"].as_string() != "element")
+            if (dom[fpath + "/association"].as_string() != "element")
             {
-                ASCENT_INFO(fname<<": htg extract requires an element association, skipping."<<endl);
+                ASCENT_INFO(fname << ": htg extract requires an element "
+                                     "association, skipping."
+                                  << endl);
                 continue;
             }
-            if(dom[cpath + "/type"].as_string() != "uniform")
+            if (dom[cpath + "/type"].as_string() != "uniform")
             {
-                ASCENT_INFO(fname<<": htg extract requires a uniform mesh, skipping."<<endl);
+                ASCENT_INFO(
+                    fname << ": htg extract requires a uniform mesh, skipping."
+                          << endl);
                 continue;
             }
             if (!dom.has_path(cpath + "/dims/k"))
             {
-                ASCENT_INFO(fname<<": htg extract requires a 3d mesh, skipping."<<endl);
+                ASCENT_INFO(fname
+                            << ": htg extract requires a 3d mesh, skipping."
+                            << endl);
                 continue;
             }
 
@@ -597,13 +715,17 @@ void htg_save(const Node &data,
             nz = dom[cpath + "/dims/k"].to_int32();
             if (nx != ny && ny != nz)
             {
-                ASCENT_INFO(fname<<": htg extract requires the dimensions to be equal, skipping."<<endl);
+                ASCENT_INFO(fname << ": htg extract requires the dimensions "
+                                     "to be equal, skipping."
+                                  << endl);
                 continue;
             }
             nx = nx - 1;
             if (nx == 0 || ((nx & (nx - 1)) != 0))
             {
-                ASCENT_INFO(fname<<": htg extract requires the grid dimension to be a power of 2, skipping."<<endl);
+                ASCENT_INFO(fname << ": htg extract requires the grid "
+                                     "dimension to be a power of 2, skipping."
+                                  << endl);
                 continue;
             }
 
@@ -638,44 +760,38 @@ void htg_save(const Node &data,
     }
 }
 
-
 //-----------------------------------------------------------------------------
-HTGIOSave::HTGIOSave()
-:Filter()
+HTGIOSave::HTGIOSave() : Filter()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
 HTGIOSave::~HTGIOSave()
 {
-// empty
+    // empty
 }
 
 //-----------------------------------------------------------------------------
-void
-HTGIOSave::declare_interface(Node &i)
+void HTGIOSave::declare_interface(Node &i)
 {
-    i["type_name"]   = "htg_io_save";
+    i["type_name"] = "htg_io_save";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
 }
 
 //-----------------------------------------------------------------------------
-bool
-HTGIOSave::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
+bool HTGIOSave::verify_params(const conduit::Node &params, conduit::Node &info)
 {
-    return verify_htg_params(params,info);
+    return verify_htg_params(params, info);
 }
 
 //-----------------------------------------------------------------------------
-void
-HTGIOSave::execute()
+void HTGIOSave::execute()
 {
 
 #if ASCENT_MPI_ENABLED
-    ASCENT_ERROR("htg extract only supports serial execution"<<endl);
+    ASCENT_ERROR("htg extract only supports serial execution" << endl);
 #endif
     std::string path;
     path = params()["path"].as_string();
@@ -683,61 +799,59 @@ HTGIOSave::execute()
 
     double blank_value = params()["blank_value"].to_float64();
 
-    if(!input("in").check_type<DataObject>())
+    if (!input("in").check_type<DataObject>())
     {
-        ASCENT_ERROR("htg extract requires a DataObject input"<<endl);
+        ASCENT_ERROR("htg extract requires a DataObject input" << endl);
     }
 
-    DataObject *data_object  = input<DataObject>("in");
-    if(!data_object->is_valid())
+    DataObject *data_object = input<DataObject>("in");
+    if (!data_object->is_valid())
     {
-      return;
+        return;
     }
     std::shared_ptr<Node> n_input = data_object->as_node();
 
     Node *in = n_input.get();
 
     Node fields;
-    if(params().has_path("fields"))
+    if (params().has_path("fields"))
     {
-      fields = params()["fields"];
+        fields = params()["fields"];
     }
 
     htg_save(*in, fields, path, blank_value);
 
     // add this to the extract results in the registry
-    if(!graph().workspace().registry().has_entry("extract_list"))
+    if (!graph().workspace().registry().has_entry("extract_list"))
     {
-      conduit::Node *extract_list = new conduit::Node();
-      graph().workspace().registry().add<Node>("extract_list",
-                                               extract_list,
-                                               -1); // TODO keep forever?
+        conduit::Node *extract_list = new conduit::Node();
+        graph().workspace().registry().add<Node>("extract_list",
+                                                 extract_list,
+                                                 -1); // TODO keep forever?
     }
 
-    conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
+    conduit::Node *extract_list =
+        graph().workspace().registry().fetch<Node>("extract_list");
 
     Node &einfo = extract_list->append();
     einfo["type"] = "htg";
     einfo["path"] = path;
 }
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace filters
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace runtime
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime --
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
-};
+}; // namespace ascent
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
