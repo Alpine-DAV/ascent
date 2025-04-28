@@ -1,5 +1,4 @@
 name: build_ascent_macos
-name: build_ascent_macos
 
 on:
   pull_request:
