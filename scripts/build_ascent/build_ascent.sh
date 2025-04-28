@@ -642,7 +642,7 @@ fi # if enable_hip || enable_sycl
 ################
 # VTK-m
 ################
-vtkm_version=v2.3.0
+vtkm_version=v2.2.0
 vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
