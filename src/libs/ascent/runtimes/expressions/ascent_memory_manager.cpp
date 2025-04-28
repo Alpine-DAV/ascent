@@ -277,7 +277,7 @@ HostMemory::allocate_bytes(size_t bytes)
 void *
 HostMemory::allocate(size_t items, size_t item_size)
 {
-  return allocate(items * item_size);
+  return allocate_bytes(items * item_size);
 }
 
 //-----------------------------------------------------------------------------
