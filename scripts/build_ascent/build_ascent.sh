@@ -494,7 +494,7 @@ fi # build_zfp
 ################
 # Conduit
 ################
-conduit_version=v0.9.3
+conduit_version=v0.9.4
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
@@ -650,7 +650,7 @@ fi # if enable_hip || enable_sycl
 ################
 # VTK-m
 ################
-vtkm_version=v2.2.0
+vtkm_version=v2.3.0
 vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
@@ -890,7 +890,7 @@ fi # build_umpire
 ################
 # MFEM
 ################
-mfem_version=4.7
+mfem_version=4.8
 mfem_src_dir=$(ospath ${source_dir}/mfem-${mfem_version})
 mfem_build_dir=$(ospath ${build_dir}/mfem-${mfem_version})
 mfem_install_dir=$(ospath ${install_dir}/mfem-${mfem_version}/)
