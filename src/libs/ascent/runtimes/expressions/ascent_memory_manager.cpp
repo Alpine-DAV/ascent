@@ -258,7 +258,7 @@ size_t HostMemory::m_free_count = 0;
 
 //-----------------------------------------------------------------------------
 void *
-HostMemory::allocate(size_t bytes)
+HostMemory::allocate_bytes(size_t bytes)
 {
   m_total_bytes_alloced += bytes;
   m_alloc_count++;
@@ -306,7 +306,7 @@ size_t DeviceMemory::m_free_count = 0;
 
 //-----------------------------------------------------------------------------
 void *
-DeviceMemory::allocate(size_t bytes)
+DeviceMemory::allocate_bytes(size_t bytes)
 {
 #if !defined(ASCENT_UMPIRE_ENABLED)
      ASCENT_ERROR("Ascent was built without Umpire support. "
