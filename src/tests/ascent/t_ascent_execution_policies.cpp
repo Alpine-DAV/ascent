@@ -32,9 +32,9 @@ using namespace ascent;
 void *device_alloc(index_t bytes)
 {
 #if defined(ASCENT_DEVICE_ENABLED)
-    return DeviceMemory::allocate(bytes);
+    return DeviceMemory::allocate_bytes(bytes);
 #else
-    return HostMemory::allocate(bytes);
+    return HostMemory::allocate_bytes(bytes);
 #endif
 }
 
