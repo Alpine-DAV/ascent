@@ -656,6 +656,10 @@ if [ ! -d ${vtkm_src_dir} ]; then
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
   tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
 
+  # apply vtk-m patch
+  cd  ${vtkm_src_dir}
+  patch -p4 < ${script_dir}/2025_04_29_vtkm_cuda12.6_compilefix.patch
+  cd ${root_dir}
 fi
 
 
