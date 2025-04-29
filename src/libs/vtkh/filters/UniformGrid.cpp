@@ -29,6 +29,8 @@ using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
 using Vec2d    = vtkm::Vec<double, 2>;
 using Vec3d    = vtkm::Vec<double, 3>;
 
+#define _DEBUG 0
+
 namespace vtkh
 {
 
@@ -41,15 +43,19 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::con
   int num_values = 0;
   if(assoc == vtkm::cont::Field::Association::Cells) //cell centered field
   {
-    num_values = (dims[0]-1)*(dims[1]-1);
-    if(dims[2] > 1)
-      num_values = num_values*(dims[2]-1);
+    int nx = (dims[0] > 1) ? (dims[0] - 1) : 1;
+    int ny = (dims[1] > 1) ? (dims[1] - 1) : 1;
+    int nz = (dims[2] > 1) ? (dims[2] - 1) : 1;
+
+    num_values = nx * ny * nz;
   }
   else
   {
-    num_values = dims[0]*dims[1];
-    if(dims[2] > 1)
-      num_values = num_values*dims[2];
+    int nx = (dims[0] > 0) ? (dims[0]) : 1;
+    int ny = (dims[1] > 0) ? (dims[1]) : 1;
+    int nz = (dims[2] > 0) ? (dims[2]) : 1;
+
+    num_values = nx * ny * nz;
   }
 
   if(field_id == 0)
@@ -220,9 +226,9 @@ public:
       for(int j = 0; j < num_points; ++j)
       {
         if(mask_portal.Get(j) == 0)
-	{
+	      {
           l_rank_mask[j] = par_rank;
-	}
+	      }
       }
 
       //take Max to figure out which ranks own which points
