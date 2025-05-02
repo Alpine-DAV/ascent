@@ -8,7 +8,8 @@ import socket
 
 from spack.package import *
 
-from .blt import llnl_link_helpers
+import spack.pkg.builtin.blt
+from spack.pkg.builtin.blt import llnl_link_helpers
 
 
 class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):

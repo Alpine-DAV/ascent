@@ -26,8 +26,7 @@
 ########################
 
 variables:
-  #ubuntu_20_04_tag: alpinedav/ascent-devel:ubuntu-20.04-x86_64-tpls_2024-07-09-sha3a1ef8
-  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2025-03-23-sha471b56
+  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2025-05-02-sha8fd5b6
   ubuntu_22_04_cuda_11_8_0_tag: alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-x86_64-tpls_2025-04-02-shaabbac4
   ubuntu_20_04_cuda_12_8_1_tag: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2025-04-02-shabb940f
   ubuntu_22_04_rocm_6_3_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64-build-ascent-tpls_2025-04-03-sha0322d1
