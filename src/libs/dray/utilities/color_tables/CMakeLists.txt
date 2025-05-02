@@ -16,6 +16,10 @@ if(ENABLE_CUDA)
     list(APPEND color_tables_thirdparty_libs cuda)
 endif()
 
+if(ENABLE_HIP)
+    list(APPEND color_tables_thirdparty_libs blt::hip)
+endif()
+
 
 if(ENABLE_SERIAL)
     blt_add_executable(NAME color_tables
