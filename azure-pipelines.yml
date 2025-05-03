@@ -574,7 +574,7 @@ stages:
       CMAKE_EXE: /cmake-3.23.2-linux-x86_64/bin/cmake
     strategy:
       matrix:
-        ubuntu_20.04_rocm_6.3.0_build_ascent:
+        ubuntu_22.04_rocm_6.3.4_build_ascent:
           containerImage: ${{ variables.ubuntu_22_04_rocm_6_3_4_tag }}
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Release
