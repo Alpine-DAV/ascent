@@ -642,7 +642,7 @@ fi # if enable_hip || enable_sycl
 ################
 # VTK-m
 ################
-vtkm_version=v2.2.0
+vtkm_version=v2.3.0
 vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
@@ -655,11 +655,6 @@ if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
   tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
-
-  # apply vtk-m patch
-  cd  ${vtkm_src_dir}
-  patch -p4 < ${script_dir}/2025_04_29_vtkm_cuda12.6_compilefix.patch
-  cd ${root_dir}
 fi
 
 

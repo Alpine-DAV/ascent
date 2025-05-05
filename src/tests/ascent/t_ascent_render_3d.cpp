@@ -167,6 +167,12 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     scenes["s1/renders/r1/camera/azimuth"] = 90;
 
 
+    conduit::Node exs;
+    exs["e1/type"]         = "relay";
+    exs["e1/pipeline"]     = "pl1";
+    exs["e1/params/path"]         = output_file + "_hdf5_";
+    exs["e1/params/protocol"]     = "hdf5";
+
     conduit::Node actions;
 
     // add the pipeline
@@ -177,6 +183,10 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     conduit::Node &add_plots = actions.append();
     add_plots["scenes"] = scenes;
     add_plots["action"] = "add_scenes";
+
+    conduit::Node &add_exs = actions.append();
+    add_exs["extracts"] = exs;
+    add_exs["action"] = "add_extracts";
 
 
     //
@@ -1924,7 +1934,7 @@ TEST(ascent_render_3d, test_render_3d_compressed_color_table)
     control_points["g"] = {0.08, .23, 1.};
     control_points["b"] = {0.08, .04, .96};
     control_points["a"] = {1., 1., 1.};
-    control_points["position"] = {0., .5, 1.};    
+    control_points["position"] = {0., .5, 1.};
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
@@ -2682,7 +2692,7 @@ TEST(ascent_render_3d, test_render_3d_pyra)
         return;
     }
 
-  
+
     Node mesh, info;
     mesh["state/cycle"] = 100;
     // create the coordinate set
@@ -3103,7 +3113,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
 
     // Base Case
     // Case to verify that the frustrums plot correctly without rotations.
-    add_plots["scenes/s1/renders/r1/image_prefix"] = 
+    add_plots["scenes/s1/renders/r1/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_0_az_0_el_0_");
     add_plots["scenes/s1/renders/r1/camera/azimuth"] = 0.0;
     add_plots["scenes/s1/renders/r1/camera/elevation"] = 0.0;
@@ -3111,29 +3121,29 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
     // Azimuth Check
     // Case to verify that when only the azimuth is changes the frustum is plotted appropriately.
     // Additionally verifies that the up vector is not changed and still points directly up.
-    add_plots["scenes/s1/renders/r2/image_prefix"] = 
+    add_plots["scenes/s1/renders/r2/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_1_az_120_el_0_");
     add_plots["scenes/s1/renders/r2/camera/azimuth"] = 120.0;
     add_plots["scenes/s1/renders/r2/camera/elevation"] = 0.0;
-    
+
     // Elevation Check
     // Case to verify that the frustum is plotted correctly when only elevation changes.
     // Additionally checks that for angles over 90 degrees that the up vector will angle downwards.
-    add_plots["scenes/s1/renders/r3/image_prefix"] = 
+    add_plots["scenes/s1/renders/r3/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_2_az_0_el_120_");
     add_plots["scenes/s1/renders/r3/camera/azimuth"] = 0.0;
     add_plots["scenes/s1/renders/r3/camera/elevation"] = 120;
 
     // Mixed Rotation Check
     // Verify that when both the azimuth and elevation have been changed that the frustum is correct.
-    add_plots["scenes/s1/renders/r4/image_prefix"] = 
+    add_plots["scenes/s1/renders/r4/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_3_az_20_el_-45_");
     add_plots["scenes/s1/renders/r4/camera/azimuth"] = 20.0;
     add_plots["scenes/s1/renders/r4/camera/elevation"] = -45.0;
 
-    // Test that if the look_at location and the position location are quite similar that the frustum 
+    // Test that if the look_at location and the position location are quite similar that the frustum
     // is still generated without errors.
-    add_plots["scenes/s1/renders/r5/image_prefix"] = 
+    add_plots["scenes/s1/renders/r5/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_nan");
     add_plots["scenes/s1/renders/r5/camera/position"] = {0.0, 0.0, 0.0581200011074543};
     add_plots["scenes/s1/renders/r5/camera/look_at"] = {0.0, 0.0, 0.0};
@@ -3159,7 +3169,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         conduit::Node &image_node = ascent_info["images"][image_index];
         conduit::Node camera_data = image_node["camera/camera_frustum_mesh"];
 
-        string image_name_root = conduit::utils::join_file_path(output_path, 
+        string image_name_root = conduit::utils::join_file_path(output_path,
             "tout_render_3d_frust_camera_image_" + std::to_string(image_index));
         //conduit::relay::io::blueprint::save_mesh(camera_data, image_name_root + "_frustum_mesh","hdf5");
 
@@ -3170,13 +3180,13 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         conduit::Node frustum_actions;
         conduit::Node &add_frustum_plots = frustum_actions.append();
         add_frustum_plots["action"] = "add_scenes";
-        add_frustum_plots["scenes/s1/plots/p1/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p1/type"] = "mesh";
         add_frustum_plots["scenes/s1/plots/p1/topology"] = "camera_frustum_topo";
-        add_frustum_plots["scenes/s1/plots/p2/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p2/type"] = "mesh";
         add_frustum_plots["scenes/s1/plots/p2/topology"] = "clipping_planes_topo";
-        add_frustum_plots["scenes/s1/plots/p3/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p3/type"] = "mesh";
         add_frustum_plots["scenes/s1/plots/p3/topology"] = "scene_bounds_topo";
-        
+
         // Render a plot of the camera frustum to verify it's relation to the scene
         std::string frust_plot_file_1 = image_name_root + "_frustum_front_image_";
         remove_test_image(frust_plot_file_1);
@@ -3184,7 +3194,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         add_frustum_plots["scenes/s1/renders/r1/camera/azimuth"] = 0.0;
         add_frustum_plots["scenes/s1/renders/r1/camera/elevation"] = 0.0;
         add_frustum_plots["scenes/s1/renders/r1/annotations"] = "false";
-        
+
         // Render a plot of the camera frustum at a 90 degree angle to see the frustum better
         std::string frust_plot_file_2 = image_name_root + "_frustum_side_image_";
         remove_test_image(frust_plot_file_2);
@@ -3192,7 +3202,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         add_frustum_plots["scenes/s1/renders/r2/camera/azimuth"] = 90.0;
         add_frustum_plots["scenes/s1/renders/r2/camera/elevation"] = 0.0;
         add_frustum_plots["scenes/s1/renders/r2/annotations"] = "false";
-        
+
         ascent_2.execute(frustum_actions);
         ascent_2.close();
 
@@ -3336,7 +3346,7 @@ TEST(ascent_render_3d, test_render_3d_zero_zoom_handled)
     ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
-    
+
     bool error = false;
     try
     {
