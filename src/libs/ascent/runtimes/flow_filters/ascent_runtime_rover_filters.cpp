@@ -211,12 +211,13 @@ RoverXRay::execute()
     CameraGenerator generator(camera, width, height);
 
     Rover tracer;
+    int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
-    int comm_id = flow::Workspace::default_mpi_comm();
-    rover::Logger::get_instance()->set_mpi_comm_id(comm_id);
+    mpi_comm_id = flow::Workspace::default_mpi_comm();
+    rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
     /// these use different styles of naming functions ....
-    rover::DataLogger::GetInstance()->set_mpi_comm_id(comm_id);
-    tracer.set_mpi_comm_handle(comm_id);
+    rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
+    tracer.set_mpi_comm_handle(mpi_comm_id);
 #endif
 
     if(params().has_path("precision"))
@@ -266,7 +267,7 @@ RoverXRay::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      filename = expand_family_name(filename, cycle);
+      filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
     }
 
     filename = output_dir(filename);
@@ -334,11 +335,11 @@ RoverXRay::execute()
       bov_filename = output_dir(bov_filename);
       if(cycle != -1)
       {
-        tracer.save_bov(expand_family_name(bov_filename, cycle));
+        tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
       }
       else
       {
-        tracer.save_bov(expand_family_name(bov_filename));
+        tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
       }
     }
     tracer.finalize();
@@ -445,9 +446,10 @@ RoverVolume::execute()
     CameraGenerator generator(camera, width, height);
 
     Rover tracer;
+    int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
-    int comm_id =flow::Workspace::default_mpi_comm();
-    tracer.set_mpi_comm_handle(comm_id);
+    mpi_comm_id =flow::Workspace::default_mpi_comm();
+    tracer.set_mpi_comm_handle(mpi_comm_id);
 #endif
 
     if(params().has_path("precision"))
@@ -514,11 +516,11 @@ RoverVolume::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      filename = expand_family_name(filename, cycle);
+      filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
     }
     else
     {
-      filename = expand_family_name(filename);
+      filename = expand_path_special_variables(filename, mpi_comm_id);
     }
     filename = output_dir(filename);
 

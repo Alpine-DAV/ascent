@@ -925,6 +925,13 @@ YAML actions:
 
 .. literalinclude:: examples/tout_render_3d_name_format100.yaml
 
+An example of rendering to a filename using keyword formatting specifiers.
+---------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_3d_name_format_keyword.yaml
+
 An example of quiering the current cycle.
 ------------------------------------------
 
