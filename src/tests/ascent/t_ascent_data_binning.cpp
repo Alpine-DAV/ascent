@@ -1040,6 +1040,7 @@ TEST(ascent_binning, filter_braid_binning_bins)
       conduit::utils::join_file_path(output_path, "tout_binning_filter_bins");
 
   remove_test_image(output_file);
+  remove_test_file(output_file + "_dump100.yaml");
   //
   // Create an example mesh.
   //
@@ -1102,7 +1103,7 @@ TEST(ascent_binning, filter_braid_binning_bins)
 
   EXPECT_TRUE(check_test_image(output_file, 0.1));
   std::string msg = "An example of data binning, binning spatially and summing a field.";
-  ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+  ASCENT_ACTIONS_DUMP(actions,output_file + "_dump",msg);
 }
 
 

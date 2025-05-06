@@ -14,6 +14,8 @@
 #ifndef ASCENT_METADATA_HPP
 #define ASCENT_METADATA_HPP
 
+#include <ascent_exports.h>
+
 #include <conduit.hpp>
 
 //-----------------------------------------------------------------------------
@@ -27,7 +29,7 @@ namespace ascent
 // default_directories
 // cycle and time
 // PopoulateMetaData fills this inside the main runtime
-struct Metadata
+struct ASCENT_API Metadata
 {
   static conduit::Node n_metadata;
 };

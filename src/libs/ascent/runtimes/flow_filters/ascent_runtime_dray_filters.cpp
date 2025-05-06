@@ -1201,9 +1201,13 @@ parse_params(const conduit::Node &params,
 
   if(params.has_path("image_prefix"))
   {
+    int mpi_comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = flow::Workspace::default_mpi_comm();
+#endif
 
     std::string image_name = params["image_prefix"].as_string();
-    image_name = expand_family_name(image_name, cycle);
+    image_name = expand_path_special_variables(image_name, mpi_comm_id, cycle);
     image_name = output_dir(image_name);
     image_names.push_back(image_name);
   }
