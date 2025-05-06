@@ -18,6 +18,12 @@
 
 #include <algorithm>
 
+// mpi
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+#include <conduit_relay_mpi.hpp>
+#endif
+
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -56,6 +62,39 @@ std::string output_dir(const std::string file_name)
   return output_path;
 }
 
+//-----------------------------------------------------------------------------
+
+bool check_dir_path_exists(const std::string file_path, int mpi_comms_id, conduit::Node &err_msg)
+{
+  int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comms_id);
+  MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+  int res = 1;
+  std::string curr, next;
+  conduit::utils::rsplit_file_path(file_path, curr, next);
+  
+  // If no directory is given or if the given directory does not exist log an error
+  // Only check on rank 0
+  if(rank == 0 && next.length() != 0 && !conduit::utils::is_directory(next))
+  {
+    err_msg.set("Error: The specified directory '" + next + 
+                "' does not exist. Please check the path and try again.");
+    res = 0;
+  }
+
+#ifdef ASCENT_MPI_ENABLED
+  MPI_Bcast(&res, 1, MPI_INT, 0, mpi_comm);
+  conduit::relay::mpi::broadcast_using_schema(err_msg, 0, mpi_comm);
+#endif
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+
 std::string default_dir()
 {
   if(Metadata::n_metadata.has_path("default_dir"))
@@ -64,6 +103,8 @@ std::string default_dir()
   }
   else return ".";
 }
+
+//-----------------------------------------------------------------------------
 
 std::string filter_to_path(const std::string filter_name)
 {
