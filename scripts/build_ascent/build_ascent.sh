@@ -719,7 +719,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=v2024.02.1
+camp_version=v2025.03.0
 camp_src_dir=$(ospath ${source_dir}/camp-${camp_version})
 camp_build_dir=$(ospath ${build_dir}/camp-${camp_version})
 camp_install_dir=$(ospath ${install_dir}/camp-${camp_version}/)
@@ -743,6 +743,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
     camp_extra_cmake_args="-DENABLE_HIP=ON"
+    camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
     camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
     camp_extra_cmake_args="${camp_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -770,7 +771,7 @@ fi # build_camp
 ################
 # RAJA
 ################
-raja_version=v2024.02.1
+raja_version=v2025.03.1
 raja_src_dir=$(ospath ${source_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${build_dir}/raja-${raja_version})
 raja_install_dir=$(ospath ${install_dir}/raja-${raja_version}/)
@@ -794,6 +795,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
   raja_extra_cmake_args="-DENABLE_HIP=ON"
+  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
   raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   raja_extra_cmake_args="${raja_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -825,7 +827,7 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=2024.02.1
+umpire_version=2025.03.0
 umpire_src_dir=$(ospath ${source_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${build_dir}/umpire-${umpire_version})
 umpire_install_dir=$(ospath ${install_dir}/umpire-${umpire_version}/)
@@ -844,6 +846,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_HIP=ON"
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -1066,6 +1069,7 @@ fi
 if [[ "$enable_hip" == "ON" ]]; then
     echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(CMAKE_HIP_COMPILER ' ${CXX} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake

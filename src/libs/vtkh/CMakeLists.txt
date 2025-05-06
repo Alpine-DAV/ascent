@@ -33,7 +33,7 @@ if(CUDA_FOUND)
 endif()
 
 if(ENABLE_HIP)
-    list(APPEND vtkh_base_deps blt_hip)
+    list(APPEND vtkh_base_deps blt::hip)
 endif()
 
 if(ENABLE_OPENMP)

@@ -6022,19 +6022,22 @@ VTKHVTKFileExtract::execute()
     // directory: basename + "_vtk_files"
     // files: basename + "_vtk_files/basename_%08d.vtk"
 
-    std::string output_base = params()["path"].as_string();
+    int par_rank = 0;
+    int mpi_comm_id = -1; 
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &par_rank);
+#endif
+
+    std::string output_base = expand_path_special_variables(params()["path"].as_string(),
+                                                            mpi_comm_id);
     
     std::string output_files_dir  = output_base + "_vtk_files";
     std::string output_visit_file = output_base + ".visit";
 
     std::string output_file_pattern = conduit::utils::join_path(output_files_dir,
                                                                 "domain_{:08d}.vtk");
-
-    int par_rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-    MPI_Comm_rank(mpi_comm, &par_rank);
-#endif
 
     if(par_rank == 0 && !conduit::utils::is_directory(output_files_dir))
     {

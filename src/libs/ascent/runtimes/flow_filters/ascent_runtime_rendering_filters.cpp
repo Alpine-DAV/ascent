@@ -1098,6 +1098,14 @@ DefaultRender::execute()
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
     }
 
+    int mpi_comm_id = -1;
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
     vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
@@ -1194,20 +1202,16 @@ DefaultRender::execute()
 
           std::string output_path = default_dir();
 
-	  if(render_node.has_path("output_path"))
-	  {
+          if(render_node.has_path("output_path"))
+          {
             output_path = render_node["output_path"].as_string();
-	    int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-            MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-            MPI_Comm_rank(mpi_comm, &rank);
-#endif
+
             // create a folder if it doesn't exist
             if(rank == 0 && !conduit::utils::is_directory(output_path))
             {
               conduit::utils::create_directory(output_path);
             }
-	  }
+	        }
 
           if(!render_node.has_path("db_name"))
           {
@@ -1251,13 +1255,25 @@ DefaultRender::execute()
           {
             image_name = render_node["image_name"].as_string();
             image_name = output_dir(image_name);
+
+            conduit::Node err_msg;
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+            {
+              ASCENT_ERROR(err_msg.as_string());
+            }
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
-            ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
+            ss<<expand_path_special_variables(render_node["image_prefix"].as_string(), mpi_comm_id, cycle);
             image_name = ss.str();
             image_name = output_dir(image_name);
+
+            conduit::Node err_msg;
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+            {
+              ASCENT_ERROR(err_msg.as_string());
+            }
           }
           else
           {
@@ -1268,48 +1284,47 @@ DefaultRender::execute()
                          "'image_prefix' parameter");
           }
 
-
-	  if(render_node.has_path("dataset_bounds"))
-	  {
-	    float64_accessor d_bounds = render_node["dataset_bounds"].value();
-	    int num_bounds = d_bounds.number_of_elements();
-
-	    if(num_bounds != 6)
-            {
-              std::string render_name = renders_node.child_names()[i];
-              std::string fpath = filter_to_path(this->name());
-              ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
-                           " only provided " << num_bounds <<
-	                   " dataset_bounds when 6 are required:" <<
-			   " [xMin,xMax,yMin,yMax,zMin,zMax]");
-	    }
-	    if(scene_bounds.X.Min > d_bounds[0])
-	      scene_bounds.X.Min = d_bounds[0];
-	    if(scene_bounds.X.Max < d_bounds[1])
-	      scene_bounds.X.Max = d_bounds[1];
-	    if(scene_bounds.Y.Min > d_bounds[2])
-	      scene_bounds.Y.Min = d_bounds[2];
-	    if(scene_bounds.Y.Max < d_bounds[3])
-	      scene_bounds.Y.Max = d_bounds[3];
-	    if(scene_bounds.Z.Min > d_bounds[4])
-	      scene_bounds.Z.Min = d_bounds[4];
-	    if(scene_bounds.Z.Max < d_bounds[5])
-	      scene_bounds.Z.Max = d_bounds[5];
-	  }
-
-	  if(is_auto_camera)
-	  {
+          if(render_node.has_path("dataset_bounds"))
+          {
+            float64_accessor d_bounds = render_node["dataset_bounds"].value();
+            int num_bounds = d_bounds.number_of_elements();
+            
+            if(num_bounds != 6)
+                  {
+                    std::string render_name = renders_node.child_names()[i];
+                    std::string fpath = filter_to_path(this->name());
+                    ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
+                                 " only provided " << num_bounds << 
+                                 " dataset_bounds when 6 are required:" <<
+                                 " [xMin,xMax,yMin,yMax,zMin,zMax]");
+            }
+            if(scene_bounds.X.Min > d_bounds[0])
+              scene_bounds.X.Min = d_bounds[0];
+            if(scene_bounds.X.Max < d_bounds[1])
+              scene_bounds.X.Max = d_bounds[1];
+            if(scene_bounds.Y.Min > d_bounds[2])
+              scene_bounds.Y.Min = d_bounds[2];
+            if(scene_bounds.Y.Max < d_bounds[3])
+              scene_bounds.Y.Max = d_bounds[3];
+            if(scene_bounds.Z.Min > d_bounds[4])
+              scene_bounds.Z.Min = d_bounds[4];
+            if(scene_bounds.Z.Max < d_bounds[5])
+              scene_bounds.Z.Max = d_bounds[5];
+          }
+      
+          if(is_auto_camera)
+          { 
             DataObject *source
               = graph().workspace().registry().fetch<DataObject>("source_object");
 
             std::shared_ptr<VTKHCollection> collection = source->as_vtkh_collection();
-
-	    if(!render_node.has_path("auto_camera/field"))
-              ASCENT_ERROR("Auto Camera must specify a 'field'");
-	    if(!render_node.has_path("auto_camera/metric"))
-              ASCENT_ERROR("Auto Camera must specify a 'metric'");
-	    if(!render_node.has_path("auto_camera/samples"))
-              ASCENT_ERROR("Auto Camera must specify number of 'samples'");
+            
+            if(!render_node.has_path("auto_camera/field"))
+                    ASCENT_ERROR("Auto Camera must specify a 'field'");
+            if(!render_node.has_path("auto_camera/metric"))
+                    ASCENT_ERROR("Auto Camera must specify a 'metric'");
+            if(!render_node.has_path("auto_camera/samples"))
+                    ASCENT_ERROR("Auto Camera must specify number of 'samples'");
 
             std::string field_name = render_node["auto_camera/field"].as_string();
             std::string metric     = render_node["auto_camera/metric"].as_string();
@@ -1324,9 +1339,9 @@ DefaultRender::execute()
             vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
             vtkh::AutoCamera auto_cam;
-
-	    int height = 1024;
-	    int width  = 1024;
+            
+            int height = 1024;
+            int width  = 1024;
             if(render_node.has_path("auto_camera/bins"))
             {
               int bins = render_node["auto_camera/bins"].as_int32();
@@ -1348,26 +1363,25 @@ DefaultRender::execute()
             auto_cam.SetMetric(metric);
             auto_cam.SetNumSamples(samples);
             auto_cam.Update();
-
+                  
             vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
             *camera = auto_cam.GetCamera();
-	    vtkh::Render render = vtkh::MakeRender(width,
+            vtkh::Render render = vtkh::MakeRender(width,
                                       height,
                                       scene_bounds,
-	    			      *camera,
+                                      *camera,
                                       image_name);
             renders->push_back(render);
-	    delete camera;
+            delete camera;
 
-	  }
-	  else
-	  {
-
+          }
+          else
+          {
             vtkh::Render render = detail::parse_render(render_node,
-                                                       scene_bounds,
-                                                       image_name);
+                                                      scene_bounds,
+                                                      image_name);
             renders->push_back(render);
-	  }
+          }
         }
       }
     }
@@ -1382,8 +1396,14 @@ DefaultRender::execute()
       else
       {
         image_name =  params()["image_prefix"].as_string();
-        image_name = expand_family_name(image_name, cycle);
+        image_name = expand_path_special_variables(image_name, mpi_comm_id, cycle);
         image_name = output_dir(image_name);
+
+        conduit::Node err_msg;
+        if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+        {
+          ASCENT_ERROR(err_msg.as_string());
+        }
       }
 
       vtkm::Bounds scene_bounds = *bounds;

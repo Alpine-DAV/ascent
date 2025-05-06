@@ -10,6 +10,11 @@ if(ENABLE_CUDA)
     list(APPEND chopper_thirdparty_libs_mpi cuda)
 endif()
 
+if(ENABLE_HIP)
+    list(APPEND chopper_thirdparty_libs blt::hip)
+    list(APPEND chopper_thirdparty_libs_mpi blt::hip)
+endif()
+
 
 ################################################
 # chopper

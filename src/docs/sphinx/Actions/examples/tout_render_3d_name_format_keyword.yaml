@@ -1,0 +1,14 @@
+#An example of rendering to a filename using keyword formatting specifiers.
+
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+      renders: 
+        r1: 
+          image_prefix: "/Users/harrison37/Work/alpine/ascent/build-debug/tests/_output/output_path_{family:05d}_{cycle:04d}_{time:0.4f}"
+          annotations: "false"
