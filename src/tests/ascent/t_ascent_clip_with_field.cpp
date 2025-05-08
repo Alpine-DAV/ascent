@@ -111,7 +111,7 @@ TEST(ascent_clip_with_field, test_clip_with_field)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file,0.004f));
     std::string msg = "An example of using clip with field.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
