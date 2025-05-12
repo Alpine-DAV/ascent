@@ -11,12 +11,20 @@ import os
 import platform
 from os.path import join as pjoin
 
-import spack.pkg.builtin.ascent
+############
+# if you don't have a custom ascent package we need to use:
+# from spack.pkg.builtin.ascent import Ascent
 
-class UberenvAscent(spack.pkg.builtin.ascent.Ascent):
+from spack.pkg.ascent_uberenv_repo.ascent import Ascent
+
+class UberenvAscent( Ascent ):
     """Spack Based Uberenv Build for Ascent Thirdparty Libs """
 
     homepage = "https://github.com/alpine-DAV/ascent"
+
+    version("develop",
+            sha256="21d3663781975432144037270698d493a7f8fa876ede7da51618335be468168f",
+            preferred=True)
 
     # default to building python when using uberenv
     variant("python",
@@ -41,7 +49,7 @@ class UberenvAscent(spack.pkg.builtin.ascent.Ascent):
         return url
 
     def hostconfig(self,spec,prefix):
-        spack.pkg.builtin.ascent.Ascent.hostconfig(self)
+         Ascent.hostconfig(self)
 
     ###################################
     # build phases used by this package
