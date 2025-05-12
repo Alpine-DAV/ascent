@@ -151,8 +151,8 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["box/min/x"] = -10.;
-    clip_params["box/min/y"] = -10.;
+    clip_params["box/min/x"] = -10.1;
+    clip_params["box/min/y"] = -10.1;
     clip_params["box/min/z"] = 0.;
     clip_params["box/max/x"] = 10.01; // <=
     clip_params["box/max/y"] = 10.01;
@@ -168,10 +168,12 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
 
 
     conduit::Node exs;
-    exs["e1/type"]         = "relay";
-    exs["e1/pipeline"]     = "pl1";
-    exs["e1/params/path"]         = output_file + "_hdf5_";
-    exs["e1/params/protocol"]     = "hdf5";
+    exs["e1/type"]         = "vtk";
+    exs["e1/params/path"]         = output_file + "_before_vtk";
+
+    exs["e2/type"]         = "vtk";
+    exs["e2/pipeline"]     = "pl1";
+    exs["e2/params/path"]         = output_file + "_after_vtk";
 
     conduit::Node actions;
 
