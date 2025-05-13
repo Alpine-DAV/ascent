@@ -6031,6 +6031,7 @@ VTKHVTKFileExtract::execute()
 #endif
 
     std::string output_base = expand_path_special_variables(params()["path"].as_string(),
+                                                            ".visit",
                                                             mpi_comm_id);
     
     std::string output_files_dir  = output_base + "_vtk_files";

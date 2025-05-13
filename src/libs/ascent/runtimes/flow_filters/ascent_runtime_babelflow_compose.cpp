@@ -162,7 +162,7 @@ void ascent::runtime::filters::BFlowCompose::execute()
     cycle = Metadata::n_metadata["cycle"].as_int32();
   }
 
-  image_name = expand_path_special_variables(image_name, mpi_comm_id, cycle);
+  image_name = expand_path_special_variables(image_name, ".png", mpi_comm_id, cycle);
 
 #ifdef BFLOW_COMP_DEBUG
   {
