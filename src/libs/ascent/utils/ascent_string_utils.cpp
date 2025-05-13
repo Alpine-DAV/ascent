@@ -308,13 +308,13 @@ std::string expand_path_special_variables(const std::string &path_string,
 
     int family_value = get_family_value(path_string, file_extension, mpi_comm_id, counter);
     result_string = expand_generic_variable(result_string, family_pattern, family_value);
-    result_string = expand_format_value(result_string, family_value);
 
     int cycle = 0;
     if (meta.has_path("cycle"))
     {
         cycle = meta["cycle"].to_value();
         result_string = expand_generic_variable(result_string, cycle_pattern, cycle);
+        result_string = expand_format_value(result_string, cycle);
     }
     
     if (meta.has_path("time"))

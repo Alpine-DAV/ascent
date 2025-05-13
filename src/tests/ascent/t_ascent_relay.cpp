@@ -1333,7 +1333,7 @@ TEST(ascent_relay, test_extract_name_format_keywords)
 
     string extract_prefix_only_format = "extract_path_%03d_only_format";
     const string extract_file_only_format = conduit::utils::join_file_path(output_path, extract_prefix_only_format);
-    const string extract_file_only_format_final = conduit::utils::join_file_path(output_path,"extract_path_000_only_format.cycle_000100.root");
+    const string extract_file_only_format_final = conduit::utils::join_file_path(output_path,"extract_path_100_only_format.cycle_000100.root");
 
     string extract_prefix_no_format = "extract_path_no_format";
     const string extract_file_no_format = conduit::utils::join_file_path(output_path, extract_prefix_no_format);
