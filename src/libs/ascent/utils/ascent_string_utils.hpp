@@ -34,22 +34,29 @@ std::string expand_generic_variable(const std::string& path_string, const std::r
 
 // checks the file at the specified output location to see if there are files with the same name
 // returns a family value that will prevent colisions with other files
-int check_directory_for_family_value(const std::string& path_string, int mpi_comm_id, int family_value = 0);
+int check_directory_for_family_value(const std::string& path_string,
+                                     const std::string &file_extension,
+                                     int mpi_comm_id,
+                                     int family_value = 0);
 
 // keeps track of static counters for a given key, i.e., name
 // c style print formatting is supported as well as ascent path 
 // formatting notation. For example, "file_%04d_{family:%03d}"
 // would expand to "file_0001_001", if the counter for that key is 1.
 // If no formatting is present, the count is appended to the name.
-int ASCENT_API get_family_value(const std::string& path_string, int mpi_comm_id, int family_value = 0);
+int ASCENT_API get_family_value(const std::string& path_string, 
+                                const std::string& file_extension,
+                                int mpi_comm_id,
+                                int family_value = 0);
 
 // searches for previously defined keywords in a string and fills 
 // in the string with their values. Current supported special variables
 // are cycle, family, and time. 
-std::string ASCENT_API expand_path_special_variables(const std::string& path_string, 
-                                          int mpi_comm_id,
-                                          int counter = 0,
-                                          bool append_if_no_format = true);
+std::string ASCENT_API expand_path_special_variables(const std::string& path_string,
+                                                     const std::string& file_extension,
+                                                     int mpi_comm_id,
+                                                     int counter = 0,
+                                                     bool append_if_no_format = true);
 
 std::vector<std::string> split(const std::string &s, char delim = ' ');
 

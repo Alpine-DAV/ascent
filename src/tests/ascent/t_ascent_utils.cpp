@@ -74,7 +74,7 @@ TEST(ascent_utils, ascent_string_fmt_basic)
     Metadata::n_metadata["time"] = 3.141592;
 
     std::string expected_result = "t_output_path_100_00012_3.1416";
-    std::string result = ascent::expand_path_special_variables("t_output_path_{cycle:3d}_{family:05d}_{time:0.4f}", -1, 12);
+    std::string result = ascent::expand_path_special_variables("t_output_path_{cycle:3d}_{family:05d}_{time:0.4f}", "", -1, 12);
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
 }
@@ -85,7 +85,7 @@ TEST(ascent_utils, ascent_string_fmt_cycle_integer_fmt)
     Metadata::n_metadata["cycle"] = 100;
 
     std::string expected_result = "t_output_path_cycle_int_100_0000000000000000000000000000000000000000100_100_100";
-    std::string result = ascent::expand_path_special_variables("t_output_path_cycle_int_{cycle:3d}_{cycle:00043d}_{cycle:3i}_{cycle:3u}", -1);
+    std::string result = ascent::expand_path_special_variables("t_output_path_cycle_int_{cycle:3d}_{cycle:00043d}_{cycle:3i}_{cycle:3u}", "", -1);
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
 }
@@ -100,19 +100,19 @@ TEST(ascent_utils, ascent_string_fmt_cycle_float_fmt)
 
     // Test floating point formats
     std::string expected_result_float = "t_output_path_cycle_float_100.00_100.00";
-    std::string result_float = ascent::expand_path_special_variables("t_output_path_cycle_float_{cycle:02.02f}_{cycle:02.02F}", -1);
+    std::string result_float = ascent::expand_path_special_variables("t_output_path_cycle_float_{cycle:02.02f}_{cycle:02.02F}", "", -1);
     std::cout << result_float << std::endl;
     EXPECT_TRUE(expected_result_float == result_float);
 
     // Test scientific notation format
     std::string expected_result_scientific = "t_output_path_cycle_scientific_1.00e+02_1.00E+02";
-    std::string result_scientific = ascent::expand_path_special_variables("t_output_path_cycle_scientific_{cycle:02.02e}_{cycle:02.02E}", -1);
+    std::string result_scientific = ascent::expand_path_special_variables("t_output_path_cycle_scientific_{cycle:02.02e}_{cycle:02.02E}", "", -1);
     std::cout << result_scientific << std::endl;
     EXPECT_TRUE(expected_result_scientific == result_scientific);
 
     // Test g format
     std::string expected_result_g = "t_output_path_cycle_g_1e+02_1E+02";
-    std::string result_g = ascent::expand_path_special_variables("t_output_path_cycle_g_{cycle:02.02g}_{cycle:02.02G}", -1);
+    std::string result_g = ascent::expand_path_special_variables("t_output_path_cycle_g_{cycle:02.02g}_{cycle:02.02G}", "", -1);
     std::cout << result_g << std::endl;
     EXPECT_TRUE(expected_result_g == result_g);
 }
@@ -124,19 +124,19 @@ TEST(ascent_utils, ascent_string_fmt_time_float_fmt)
 
     // Test floating point formats
     std::string expected_result_float = "t_output_path_time_float_3.14_3.14";
-    std::string result_float = ascent::expand_path_special_variables("t_output_path_time_float_{time:02.02f}_{time:02.02F}", -1);
+    std::string result_float = ascent::expand_path_special_variables("t_output_path_time_float_{time:02.02f}_{time:02.02F}", "", -1);
     std::cout << result_float << std::endl;
     EXPECT_TRUE(expected_result_float == result_float);
 
     // Test scientific notation format
     std::string expected_result_scientific = "t_output_path_time_scientific_3.14e+00_3.14E+00";
-    std::string result_scientific = ascent::expand_path_special_variables("t_output_path_time_scientific_{time:02.02e}_{time:02.02E}", -1);
+    std::string result_scientific = ascent::expand_path_special_variables("t_output_path_time_scientific_{time:02.02e}_{time:02.02E}", "", -1);
     std::cout << result_scientific << std::endl;
     EXPECT_TRUE(expected_result_scientific == result_scientific);
 
     // Test g format
     std::string expected_result_g = "t_output_path_time_g_003.1_3.1";
-    std::string result_g = ascent::expand_path_special_variables("t_output_path_time_g_{time:05.02g}_{time:02.02G}", -1);
+    std::string result_g = ascent::expand_path_special_variables("t_output_path_time_g_{time:05.02g}_{time:02.02G}", "", -1);
     std::cout << result_g << std::endl;
     EXPECT_TRUE(expected_result_g == result_g);
 }
@@ -150,7 +150,7 @@ TEST(ascent_utils, ascent_string_fmt_time_integer_fmt)
     Metadata::n_metadata["time"] = 3.141592;
 
     std::string expected_result = "t_output_path_time_int_003_0000000000000000000000000000000000000000003_003_003";
-    std::string result = ascent::expand_path_special_variables("t_output_path_time_int_{time:03d}_{time:00043d}_{time:03i}_{time:03u}", -1);
+    std::string result = ascent::expand_path_special_variables("t_output_path_time_int_{time:03d}_{time:00043d}_{time:03i}_{time:03u}", "", -1);
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
 }
@@ -164,7 +164,7 @@ TEST(ascent_utils, ascent_string_fmt_family)
         float current_family = i+5;
         snprintf(expected_result, sizeof(expected_result), expected_pattern.c_str(), static_cast<int>(current_family), current_family, current_family);
 
-        std::string result = ascent::expand_path_special_variables("t_output_path_family_{family:03d}_{family:05.2f}_{family:05.03g}", -1, 5);
+        std::string result = ascent::expand_path_special_variables("t_output_path_family_{family:03d}_{family:05.2f}_{family:05.03g}", "", -1, 5);
         std::cout << result << std::endl;
 
         EXPECT_TRUE(expected_result == result);
@@ -174,7 +174,7 @@ TEST(ascent_utils, ascent_string_fmt_family)
 TEST(ascent_utils, ascent_string_fmt_none)
 {
     std::string expected_result = "t_output_path_none_12";
-    std::string result = ascent::expand_path_special_variables("t_output_path_none_", -1, 12);
+    std::string result = ascent::expand_path_special_variables("t_output_path_none_", "", -1, 12);
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
 }
@@ -185,7 +185,7 @@ TEST(ascent_utils, ascent_string_fmt_invalid_int_format)
 
     try
     {
-        std::string result = ascent::expand_path_special_variables("t_output_path_none_{family:12.3d}", -1);
+        std::string result = ascent::expand_path_special_variables("t_output_path_none_{family:12.3d}", "", -1);
         std::cout << result << std::endl;
     }
     catch (conduit::Error &warn)
@@ -210,7 +210,7 @@ TEST(ascent_utils, ascent_string_fmt_invalid_float_format)
 
     try
     {
-        std::string result = ascent::expand_path_special_variables("t_output_path_none_{family:2.2.3f}", -1);
+        std::string result = ascent::expand_path_special_variables("t_output_path_none_{family:2.2.3f}", "", -1);
         std::cout << result << std::endl;
     }
     catch (conduit::Error &warn)
@@ -235,7 +235,7 @@ TEST(ascent_utils, ascent_string_fmt_invalid_no_format)
 
     try
     {
-        std::string result = ascent::expand_path_special_variables("t_output_path_none_{family:}", -1);
+        std::string result = ascent::expand_path_special_variables("t_output_path_none_{family:}", "", -1);
         std::cout << result << std::endl;
     }
     catch (conduit::Error &warn)
@@ -260,7 +260,7 @@ TEST(ascent_utils, ascent_string_fmt_invalid_keyword)
 
     try
     {
-        std::string result = ascent::expand_path_special_variables("t_output_path_none_{invalid:128f}", -1);
+        std::string result = ascent::expand_path_special_variables("t_output_path_none_{invalid:128f}", "", -1);
         std::cout << result << std::endl;
     }
     catch (conduit::Error &warn)
@@ -285,7 +285,7 @@ TEST(ascent_utils, ascent_string_fmt_no_keyword)
 
     try
     {
-        std::string result = ascent::expand_path_special_variables("t_output_path_none_{:128f}", -1);
+        std::string result = ascent::expand_path_special_variables("t_output_path_none_{:128f}", "", -1);
         std::cout << result << std::endl;
     }
     catch (conduit::Error &warn)
@@ -323,7 +323,7 @@ TEST(ascent_utils, ascent_string_fmt_family_check_dir) {
 
     string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_{cycle:3d}_{family:05d}_{time:0.4f}");
     
-    int result = ascent::get_family_value(output_file, -1, 0);
+    int result = ascent::get_family_value(output_file, ".root", -1, 0);
     EXPECT_TRUE(result == 15);
     
     remove_test_file(pre_existing_file_name_1);
@@ -349,7 +349,34 @@ TEST(ascent_utils, ascent_string_fmt_family_check_dir_no_format) {
 
     string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt_");
     std::string expected_result = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt_102");
-    std::string result = ascent::expand_path_special_variables(output_file, -1);
+    std::string result = ascent::expand_path_special_variables(output_file, ".root", -1);
+    std::cout << result << std::endl;
+    EXPECT_TRUE(result == expected_result);
+
+    remove_test_file(pre_existing_file_name_1);
+    remove_test_file(pre_existing_file_name_2);
+}
+
+TEST(ascent_utils, ascent_string_fmt_family_check_diff_ext) {
+    string output_path = prepare_output_dir();
+
+    string pre_existing_file_name_1 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_01000_diff_ext.root");
+    string pre_existing_file_name_2 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_01001_diff_ext.root");
+    std::ofstream file_1(pre_existing_file_name_1);
+    if (file_1.is_open()) {
+        file_1 << "This is a fake file for testing.\n";
+        file_1.close();
+    }
+
+    std::ofstream file_2(pre_existing_file_name_2);
+    if (file_2.is_open()) {
+        file_2 << "This is a fake file for testing.\n";
+        file_2.close();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_{family:05d}_diff_ext");
+    std::string expected_result = conduit::utils::join_file_path(output_path, "t_output_path_family_check_00016_diff_ext");
+    std::string result = ascent::expand_path_special_variables(output_file, ".pmg", -1, 16);
     std::cout << result << std::endl;
     EXPECT_TRUE(result == expected_result);
 

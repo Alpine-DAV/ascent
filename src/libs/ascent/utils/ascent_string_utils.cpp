@@ -50,6 +50,14 @@ void split_string(const std::string &s,
 
 } // namespace detail
 
+std::vector<std::string> split(const std::string &s, char delim)
+{
+  std::vector<std::string> elems;
+  detail::split_string(s, delim, elems);
+  return elems;
+}
+
+//-----------------------------------------------------------------------------
 template<typename T>
 std::string expand_format_value(const std::string path_string,
                                 const T value)
@@ -137,6 +145,7 @@ std::string expand_generic_variable(const std::string& path_string,
 }
 
 int check_directory_for_family_value(const std::string& path_string,
+                                     const std::string &file_extension,
                                      int mpi_comm_id,
                                      int family_value)
 {
@@ -200,7 +209,7 @@ int check_directory_for_family_value(const std::string& path_string,
   // Use the defined pattern to make the final regular expression
   // Adding a ^ to lock the pattern to the start of the file_name and a pattern for a file extension
   // at the end to the pattern
-  search_pattern_str = "^" + search_pattern_str + R"(\.[a-zA-Z]+$)";
+  search_pattern_str = "^" + search_pattern_str + file_extension + R"($)";
   std::regex search_pattern(search_pattern_str);
 
   if (rank == 0) {
@@ -234,12 +243,18 @@ int check_directory_for_family_value(const std::string& path_string,
   return family_value;
 }
 
-int get_family_value(const std::string& path_string, int mpi_comm_id, int family_value)
+int get_family_value(const std::string& path_string, 
+                     const std::string &file_extension,
+                     int mpi_comm_id,
+                     int family_value)
 {
   std::string modified_path_string = path_string;
 
   // Check the file directory to determine a valid family value. Increases the value if needed.
-  family_value = check_directory_for_family_value(path_string, mpi_comm_id, family_value);
+  family_value = check_directory_for_family_value(path_string,
+                                                  file_extension,
+                                                  mpi_comm_id,
+                                                  family_value);
 
   static std::map<std::string, int> s_file_family_map;
   bool exists = s_file_family_map.find(path_string) != s_file_family_map.end();
@@ -258,6 +273,7 @@ int get_family_value(const std::string& path_string, int mpi_comm_id, int family
 }
 
 std::string expand_path_special_variables(const std::string &path_string,
+                                          const std::string &file_extension,
                                           int mpi_comm_id,
                                           int counter,
                                           bool append_if_no_format)
@@ -290,7 +306,7 @@ std::string expand_path_special_variables(const std::string &path_string,
 
     conduit::Node meta = Metadata::n_metadata;
 
-    int family_value = get_family_value(path_string, mpi_comm_id, counter);
+    int family_value = get_family_value(path_string, file_extension, mpi_comm_id, counter);
     result_string = expand_generic_variable(result_string, family_pattern, family_value);
     result_string = expand_format_value(result_string, family_value);
 
@@ -314,13 +330,6 @@ std::string expand_path_special_variables(const std::string &path_string,
     }
 
     return result_string;
-}
-
-std::vector<std::string> split(const std::string &s, char delim)
-{
-  std::vector<std::string> elems;
-  detail::split_string(s, delim, elems);
-  return elems;
 }
 
 //-----------------------------------------------------------------------------
