@@ -35,6 +35,9 @@ class UberenvAscent( Ascent ):
     variant("doc",
            default=True,
            description="Build deps needed to build Docs")
+    # default to building caliper when using uberenv
+    variant("caliper", default=True, description="Build Caliper support")
+
 
     depends_on("py-sphinx", when="+python+doc", type=("build","run"))
     depends_on("py-sphinx-rtd-theme", when="+python+doc", type=("build","run"))
