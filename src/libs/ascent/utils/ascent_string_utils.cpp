@@ -310,9 +310,10 @@ std::string expand_path_special_variables(const std::string &path_string,
     result_string = expand_generic_variable(result_string, family_pattern, family_value);
     result_string = expand_format_value(result_string, family_value);
 
+    int cycle = 0;
     if (meta.has_path("cycle"))
     {
-        int cycle = meta["cycle"].to_value();
+        cycle = meta["cycle"].to_value();
         result_string = expand_generic_variable(result_string, cycle_pattern, cycle);
     }
     
@@ -325,7 +326,7 @@ std::string expand_path_special_variables(const std::string &path_string,
     if (result_string == path_string && append_if_no_format)
     {
         std::stringstream ss;
-        ss<<result_string<<family_value;
+        ss<<result_string<<cycle;
         result_string = ss.str();
     }
 
