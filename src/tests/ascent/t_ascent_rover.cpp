@@ -402,14 +402,12 @@ TEST(ascent_rover, test_xray_blueprint)
     // remove old images before rendering
     remove_test_image(output_file);
 
-
     //
     // Create the actions.
     //
 
     conduit::Node extracts;
     extracts["e1/type"]  = "xray";
-    // populate some param examples
     extracts["e1/params/absorption"] = "radial";
     extracts["e1/params/emission"] = "radial";
     extracts["e1/params/filename"] = output_file;
@@ -445,73 +443,98 @@ TEST(ascent_rover, test_xray_blueprint)
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we need a baseline in order for this to pass.
-    EXPECT_TRUE(check_test_image(out_image_name,0.01f));
+    EXPECT_TRUE(check_test_image(out_image_name, 0.01f));
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, out_image_name, msg);
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
-// {
-//     // the vtkm runtime is currently our only rendering runtime
-//     Node n;
-//     ascent::about(n);
-//     // only run this test if ascent was built with vtkm support
-//     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-//     {
-//         ASCENT_INFO("Ascent support disabled, skipping test");
-//         return;
-//     }
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
 
-//     //
-//     // Create an example mesh.
-//     //
-//     Node data, verify_info;
+    //
+    // Open an example mesh.
+    //
+    Node data, verify_info;
+    const std::string root_file = 
+        conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
+                                       "multi_curv3d_blueprint.cycle_000048.root");
 
-//     const std::string root_file = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-//                                                                  "multi_curv3d_blueprint.cycle_000048.root");
-//     conduit::relay::io::blueprint::load_mesh(root_file, data);
+    // test files:
+    //  - curv3d_blueprint.cycle_000048.root
+    //  - multi_curv3d_blueprint.cycle_000048.root
+    //  - tire_blueprint.cycle_000000.root
+    //  - curv2d_blueprint.cycle_000048.root - we are not sure what will happen for 2D inputs.
 
-//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    conduit::relay::io::blueprint::load_mesh(root_file, data);
 
-//     ASCENT_INFO("Testing xray_extract");
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
-//     string output_path = prepare_output_dir();
-//     string output_file = conduit::utils::join_file_path(output_path,"multi_curv3d_blueprint_xray");
+    ASCENT_INFO("Testing xray_extract on multi_curv3d example");
 
-//     // remove old images before rendering
-//     remove_test_image(output_file);
+    const std::string output_path = prepare_output_dir();
+    const std::string output_file = 
+        conduit::utils::join_file_path(output_path,
+                                       "multi_curv3d_blueprint_xray");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/absorption"] = "d";
+    extracts["e1/params/emission"] = "p";
+    extracts["e1/params/filename"] = output_file;
+    extracts["e1/params/blueprint"] = "json";
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
 
 
-//     //
-//     // Create the actions.
-//     //
+    const std::string full_outfile_name = output_file + "48.cycle_000048.root";
 
-//     conduit::Node extracts;
-//     extracts["e1/type"]  = "xray";
-//     // populate some param examples
-//     extracts["e1/params/absorption"] = "d";
-//     extracts["e1/params/emission"] = "p";
-//     extracts["e1/params/filename"] = output_file;
-//     extracts["e1/params/blueprint"] = "json";
+    Node load_mesh;
+    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
 
-//     conduit::Node actions;
-//     // add the pipeline
-//     conduit::Node &add_extracts = actions.append();
-//     add_extracts["action"] = "add_extracts";
-//     add_extracts["extracts"] = extracts;
+    // TODO currently the cycle in the filename is not working. Other developers are
+    // working on a fix.
+    const std::string out_image_name = 
+        render_blueprint_result("intensities", "tout_rover_xray_multi_curv3d{cycle}", load_mesh);
 
-//     //
-//     // Run Ascent
-//     //
-
-//     Ascent ascent;
-
-//     Node ascent_opts;
-//     ascent_opts["runtime/type"] = "ascent";
-//     ascent.open(ascent_opts);
-//     ascent.publish(data);
-//     ascent.execute(actions);
-//     ascent.close();
-// }
+    // TODO we need the render to make an interesting picture. This will be accomplished
+    // by working on the basic mesh output and changing the order of the dimensions.
+    // TODO we will need to add a baseline
+    EXPECT_TRUE(check_test_image(out_image_name, 0.01f, ""));
+    std::string msg = "TODO we need a good description here";
+    ASCENT_ACTIONS_DUMP(actions, out_image_name, msg);
+}
