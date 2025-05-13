@@ -443,6 +443,7 @@ TEST(ascent_rover, test_xray_blueprint)
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
+    // TODO we will need to change the baseline when we are making good renders.
     EXPECT_TRUE(check_test_image(out_image_name, 0.01f));
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, out_image_name, msg);
@@ -527,14 +528,18 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
 
     // TODO currently the cycle in the filename is not working. Other developers are
-    // working on a fix.
+    // working on a fix. For now I am putting 48 in this name and the filename will
+    // be `tout_rover_xray_multi_curv3d4848.png`.
     const std::string out_image_name = 
-        render_blueprint_result("intensities", "tout_rover_xray_multi_curv3d{cycle}", load_mesh);
+        render_blueprint_result("intensities", "tout_rover_xray_multi_curv3d48", load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we will need to add a baseline
-    EXPECT_TRUE(check_test_image(out_image_name, 0.01f, ""));
+    // TODO we will need to change the baseline when we are making good renders.
+    // TODO we are asking for num 48 to offset the issue of the file being called 
+    // `tout_rover_xray_multi_curv3d4848.png`. When other issues are fixed in Ascent
+    // we can change this to make more sense.
+    EXPECT_TRUE(check_test_image(out_image_name, 0.01f, "48"));
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, out_image_name, msg);
 }
