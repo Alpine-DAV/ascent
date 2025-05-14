@@ -6,6 +6,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 ### Preferred dependency versions for ascent@develop
+- cmake@3.24 or newer
 - conduit@0.9.4
 - vtk-m@2.3.0
 - raja@v2025.03.1
@@ -35,7 +36,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a 2d camera mode (`camera/2d: [left, right, bottom, top]`) to scene render cameras and the `project_2d` (scalar rendering) filter cameras.
 - Added support for `include` keyword to include children from yaml files in an input node trees
 - Added support for special keyword formatting for output paths. Current supported keywords include
-`cycle`, `family`, and `time`. 
+`cycle`, `family`, and `time`.
 - Added support for formatting of output paths for extracts.
 
 

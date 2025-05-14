@@ -7,11 +7,12 @@ if [[ ${CMAKE_ARCH} == "arm64" ]]; then
   export CMAKE_ARCH="aarch64"
 fi
 
-cmake_install_dir=/cmake-3.23.2-linux-${CMAKE_ARCH}
+export CMAKE_VERSION=3.24.4
+cmake_install_dir=/cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}
 if [ ! -d ${cmake_install_dir} ]; then
   # setup cmake in container
-  curl -L https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-${CMAKE_ARCH}.tar.gz -o cmake-3.23.2-linux-${CMAKE_ARCH}.tar.gz
-  tar -xzf cmake-3.23.2-linux-${CMAKE_ARCH}.tar.gz
+  curl -L https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}.tar.gz -o cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}.tar.gz
+  tar -xzf cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}.tar.gz
 fi
 
 export PATH=$PATH:/${cmake_install_dir}/bin/
