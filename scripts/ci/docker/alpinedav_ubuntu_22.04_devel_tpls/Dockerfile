@@ -8,7 +8,7 @@ FROM alpinedav/ascent-devel:ubuntu-22.04-${TAG_ARCH}
 # obtain a copy of ascent source from host env,
 # which we use to call uberenv
 COPY ascent.docker.src.tar.gz /
-# extract 
+# extract
 RUN tar -xzf ascent.docker.src.tar.gz
 
 # copy spack build script in

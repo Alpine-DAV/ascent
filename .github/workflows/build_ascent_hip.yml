@@ -8,8 +8,7 @@ jobs:
   build_cuda:
     name: Build Ascent HIP
     runs-on: ubuntu-22.04
-    # TODO: update to alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.0-x86_64
-    container: alpinedav/ascent-devel:ubuntu-20.04-rocm-6.3.0-x86_64
+    container: alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64
     env:
       CMAKE_VERSION: 3.24.4
     steps:
