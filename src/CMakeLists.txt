@@ -43,7 +43,7 @@ option(ENABLE_HIDDEN_VISIBILITY "Build with hidden visibility for private symbol
 option(DRAY_ENABLE_STATS          "Enable stats"         ON)
 option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
 
-# VTK-h Specific Options 
+# VTK-h Specific Options
 
 option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" ON)
 
@@ -51,7 +51,7 @@ option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" ON)
 option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
 
 #####################################################
-# Note: Third party libs like MFEM, FIDES, etc are 
+# Note: Third party libs like MFEM, FIDES, etc are
 #       enabled when you provide MFEM_DIR, etc
 #####################################################
 
@@ -63,8 +63,6 @@ endif()
 if(ENABLE_DRAY AND NOT ENABLE_APCOMP)
     message(FATAL_ERROR "Devil Ray requires APComp (ENABLE_APCOMP=OFF and ENABLE_DRAY=ON)")
 endif()
-
-cmake_minimum_required(VERSION 3.24)
 
 if(ENABLE_CUDA)
     # ask politely a few times for SEPARABLE COMPILATION
@@ -108,7 +106,7 @@ endif()
 ################################
 # Init BLT
 ################################
-# This also includes 
+# This also includes
 # our BLT defaults
 include(cmake/SetupBLT.cmake)
 
