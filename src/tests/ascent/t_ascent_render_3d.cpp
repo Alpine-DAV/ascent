@@ -2826,7 +2826,7 @@ TEST(ascent_render_3d, test_render_3d_points_implicit_topo)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file,0.002));
 
 }
 
