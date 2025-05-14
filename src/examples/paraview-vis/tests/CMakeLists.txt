@@ -4,7 +4,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.23)
 project(AscentParaViewTests)
 
 include(CTest)
