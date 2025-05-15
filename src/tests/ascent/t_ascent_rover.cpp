@@ -440,16 +440,15 @@ TEST(ascent_rover, test_xray_blueprint)
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
 
     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-    const std::string image_output_base_w_cycle = image_output_base + "100";
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base_w_cycle, 0.01f, ""));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base_w_cycle, msg);
+    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -536,14 +535,13 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_multi_curv3d");
 
     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-    const std::string image_output_base_w_cycle = image_output_base + "48";
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base_w_cycle, 0.01f, ""));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base_w_cycle, msg);
+    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
