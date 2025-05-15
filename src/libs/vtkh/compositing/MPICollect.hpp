@@ -35,7 +35,7 @@ static void MPICollect(Image &image, MPI_Comm comm)
     pixel_bounds = new int[size*4];
   }
 
-  MPI_Gather(&bounds, 4, MPI_INT, pixel_bounds, 4, MPI_INT, 0, comm);
+  MPI_Gather(bounds, 4, MPI_INT, pixel_bounds, 4, MPI_INT, 0, comm);
 
   MPI_Barrier(comm);
   // create the final image

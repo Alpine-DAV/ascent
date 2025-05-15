@@ -623,6 +623,21 @@ Resulting image:
 
 .. image:: examples/milk_chocolate100.png
 
+An example of passing a color table using yaml include
+-------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/include_color_table.yaml
+
+Included YAML with color table information:
+
+.. literalinclude:: examples/color_table.yaml
+
+Resulting image:
+
+.. image:: examples/milk_chocolate100.png
+
 An example if using the composite vector filter  to compose three scalar fields into a vector.
 -----------------------------------------------------------------------------------------------
 
@@ -909,6 +924,13 @@ An example of rendering to a filename using format specifiers.
 YAML actions:
 
 .. literalinclude:: examples/tout_render_3d_name_format100.yaml
+
+An example of rendering to a filename using keyword formatting specifiers.
+---------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_render_3d_name_format_keyword.yaml
 
 An example of quiering the current cycle.
 ------------------------------------------

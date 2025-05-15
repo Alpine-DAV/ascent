@@ -78,6 +78,101 @@ check_for_file(const std::string &file_name,
 }
 
 //-----------------------------------------------------------------------------
+void
+load_included_files_in_node_tree(conduit::Node &node, int mpi_comm_id)
+{
+    // This function recursively traverses the node tree searching for include statements
+    // If one is found, the node attempts to load the file's contents and add it to the node tree
+    int comm_size = 1;
+    int rank = 0;
+
+#ifdef ASCENT_MPI_ENABLED
+    if(mpi_comm_id == -1)
+    {
+      // do nothing, an error will be thrown later
+      // so we can respect the exception handling
+      return;
+    }
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_size(mpi_comm, &comm_size);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
+    if(node.has_child("include"))
+    {
+        int include_file_valid = 0;
+        std::string emsg = "";
+        std::string file_name = "";
+        
+        // Only want to update the node on rank 0
+        if (rank == 0) {
+            file_name = node.fetch("include").as_string();
+            node.remove_child("include");
+
+            // Determine file protocol from file extension
+            std::string curr,next;
+            std::string protocol = "json";
+            conduit::utils::rsplit_string(file_name,
+                                            ".",
+                                            curr,
+                                            next);
+            if(curr == "yaml")
+            {
+                protocol = "yaml";
+            }
+
+            // Try loading in the included path
+            try
+            {
+                conduit::Node file_node;
+                file_node.load(file_name, protocol);
+                node.update(file_node);
+                include_file_valid = 1;
+            }
+            catch(conduit::Error &e)
+            {
+                include_file_valid = 0;
+                emsg = e.message();
+            }
+        }
+
+#ifdef ASCENT_MPI_ENABLED
+        // make sure all ranks error if the parsing on rank 0 failed.
+        MPI_Bcast(&include_file_valid, 1, MPI_INT, 0, mpi_comm);
+
+        // Pass the error to all ranks so the error message matches
+        conduit::Node n_emsg;
+        if(rank == 0)
+        {
+        n_emsg.set(emsg);
+        }
+
+        conduit::relay::mpi::broadcast_using_schema(n_emsg, 0, mpi_comm);
+        emsg = n_emsg.as_string();
+#endif
+
+        if(include_file_valid == 0)
+        {
+            // Raise Error
+            ASCENT_ERROR("Failed to load actions file: " << file_name
+                        << "\n" << emsg);
+        }
+
+#ifdef ASCENT_MPI_ENABLED
+        // If successful, make sure that all ranks received the updated node
+        relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
+#endif
+    }
+
+    // If there are any children, recurse over the children
+    // This includes any newly included children
+    for (index_t i = 0; i<node.number_of_children(); i++)
+    {
+        load_included_files_in_node_tree(node[i], mpi_comm_id);
+    }
+}
+
+//-----------------------------------------------------------------------------
 int
 ParRank(int comm_id)
 {
@@ -242,10 +337,14 @@ CheckForSettingsFile(std::string file_name,
         ASCENT_ERROR("Failed to load actions file: " << file_name
                      << "\n" << emsg);
     }
+
 #ifdef ASCENT_MPI_ENABLED
     relay::mpi::broadcast_using_schema(node, 0, mpi_comm);
 #endif
+
+    detail::load_included_files_in_node_tree(node, mpi_comm_id);
 }
+
 
 //-----------------------------------------------------------------------------
 void
@@ -275,6 +374,8 @@ Ascent::open(const conduit::Node &options)
 
         int par_rank = detail::ParRank(comm_id);
         int par_size = detail::ParSize(comm_id);
+
+        detail::load_included_files_in_node_tree(processed_opts, comm_id);
 
         CheckForSettingsFile(opts_file,
                              processed_opts,
@@ -629,6 +730,7 @@ Ascent::execute(const conduit::Node &actions)
             int mpi_comm_id = m_options["mpi_comm"].to_int();
 
             Node processed_actions(actions);
+            detail::load_included_files_in_node_tree(processed_actions, mpi_comm_id);
 
             if(m_actions_file == "<<UNSET>>")
             {

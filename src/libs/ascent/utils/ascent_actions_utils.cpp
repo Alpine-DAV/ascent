@@ -174,11 +174,36 @@ void filter_fields(const conduit::Node &node,
                    std::set<std::string> &fields,
                    conduit::Node &info)
 {
+
   const int num_children = node.number_of_children();
   const std::vector<std::string> names = node.child_names();
   for(int i = 0; i < num_children; ++i)
   {
     const conduit::Node &child = node.child(i);
+
+    // to avoid complex parsing, we added a shortcut case
+    // action: `declare_fields`
+    // fields: ["field1", "field2", .... "fieldN-1"]
+
+    if(child.has_child("action") && child.has_child("fields"))
+    {
+        if(child["action"].as_string() == "declare_fields")
+        {
+            const Node &fields_list = child["fields"];
+            const int num_entries = fields_list.number_of_children();
+            for(int e = 0; e < num_entries;  e++)
+            {
+                const conduit::Node &item = fields_list.child(e);
+                if(item.dtype().is_string())
+                {
+                    fields.insert(item.as_string());
+                }
+            } // for list  entries
+            // early return, user needs to provide a definitive list
+            return;
+        }
+    }
+
     bool is_leaf = child.number_of_children() == 0;
     if(is_leaf)
     {

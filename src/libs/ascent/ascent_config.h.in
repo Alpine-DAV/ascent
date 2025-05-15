@@ -76,6 +76,21 @@
 #define ASCENT_DEVICE_ENABLED
 #endif
 
+#if defined(ASCENT_OPENMP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#define ASCENT_RAJA_OPENMP_ENABLED
+#endif
+
+#if defined(ASCENT_CUDA_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#define ASCENT_RAJA_DEVICE_ENABLED
+#define ASCENT_RAJA_CUDA_ENABLED
+#endif
+
+#if defined(ASCENT_HIP_ENABLED) && defined(ASCENT_RAJA_ENABLED)
+#define ASCENT_RAJA_DEVICE_ENABLED
+#define ASCENT_RAJA_HIP_ENABLED
+#endif
+
+
 //-----------------------------------------------------------------------------
 //
 // #define platform check helpers

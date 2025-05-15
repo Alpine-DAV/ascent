@@ -46,6 +46,18 @@ Here is an example of an ascent actions yaml file:
             type: "pseudocolor"
             field: "braid"
 
+
+The ``save_info`` action outputs the contents of the ``Ascent::info()`` API call, which provides a comprehensive snapshot of the runtime environment, including version details, available filters, transforms, and the execution flow graph. 
+This is an invaluable tool for debugging and will output even if Ascent encounters an error. 
+The default filename for the output is ``out_ascent_info_{cycle_number:06d}.yaml``.
+
+Here is an example of an ascent actions yaml file using ``save_info``:
+
+.. code-block:: yaml
+
+  -
+    action: "save_info"
+    filename: "info_output.yaml" #optional
+
+
 A full example of actions files populated from Ascent's test suite can be found in :ref:`yaml-examples`.
-
-

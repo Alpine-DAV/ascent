@@ -1,0 +1,53 @@
+From f14a37a67ee3d7512956c37f0c6b50021222a0e1 Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Tue, 25 Mar 2025 11:20:23 -0700
+Subject: [PATCH 1/2] file detection herustic logic, use binary mode to read
+ file leading bytes
+
+---
+ src/libs/relay/conduit_relay_io_identify_protocol.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/libs/relay/conduit_relay_io_identify_protocol.cpp b/src/libs/relay/conduit_relay_io_identify_protocol.cpp
+index 92cd9842d..63b0582d3 100644
+--- a/src/libs/relay/conduit_relay_io_identify_protocol.cpp
++++ b/src/libs/relay/conduit_relay_io_identify_protocol.cpp
+@@ -145,7 +145,11 @@ identify_file_type(const std::string &path,
+     char buff[257];
+     std::memset(buff,0,257);
+     std::ifstream ifs;
+-    ifs.open(path.c_str());
++    // we need to open with std::ios::binary mode
++    //  the hdf5 magic number includes a windows style
++    //  new line. ifstream::read, even when given a size
++    //  will stop at the new line
++    ifs.open(path.c_str(),std::ios::binary);
+     if(ifs.is_open())
+     {
+         ifs.read((char *)buff,256);
+
+From b242330177e60bb9db49a527529fcfe66ae0fadf Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Tue, 25 Mar 2025 11:21:47 -0700
+Subject: [PATCH 2/2] update changelog
+
+---
+ CHANGELOG.md | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 865384797..44ca8547d 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -22,6 +22,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
+ #### Relay
+ - Ported relay and blueprint zfp support to use zfp 1.0 api. Added extra meta data to zfparray blueprint protocol to support roundtrip wrapping and unwrapping with zfp 1.0 api.
+ 
++### Fixed
++
++#### Relay
++- Fixed an issue with the relay hdf5 detection heuristic on windows.
++
+ ## [0.9.3] - Released 2025-01-27
+ 
+ ### Added

@@ -269,6 +269,7 @@ TEST(ascent_pipeline, test_register_transform)
     EXPECT_TRUE(check_test_image(output_file));
 }
 
+//-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_empty_pipeline_filter)
 {
     Ascent ascent;
@@ -311,4 +312,56 @@ TEST(ascent_pipeline, test_empty_pipeline_filter)
     }
 
     EXPECT_TRUE(error_message);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_pipeline, test_include_yaml)
+{
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_with_yaml_included_color_table");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/include"] = conduit::utils::join_file_path(ASCENT_T_DATA_DIR, "color_table.yaml");
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    Node ascent_info;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.info(ascent_info);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
 }

@@ -57,8 +57,8 @@ std::string expand_family_name(const std::string name, int counter)
   if(has_format)
   {
     // allow for long file paths
-    char buffer[1000];
-    sprintf(buffer, name.c_str(), counter);
+    char buffer[2048];
+    snprintf(buffer, 2048, name.c_str(), counter);
     result = std::string(buffer);
   }
   else
