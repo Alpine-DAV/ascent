@@ -34,14 +34,10 @@ using namespace ascent;
 
 constexpr index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
-std::string render_blueprint_result(const std::string &field_name,
-                                    const std::string &output_image_file_basename,
-                                    const Node &data)
+void render_blueprint_result(const std::string &field_name,
+                             const std::string &output_file,
+                             const Node &data)
 {
-    const std::string output_path = prepare_output_dir();
-    const std::string output_file = 
-        conduit::utils::join_file_path(output_path, output_image_file_basename);
-
     //
     // Create the actions.
     //
@@ -69,9 +65,9 @@ std::string render_blueprint_result(const std::string &field_name,
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
+    // TODO can we ask Ascent for the name of the file it wrote?
+    // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
-
-    return output_file;
 }
 
 
@@ -396,11 +392,12 @@ TEST(ascent_rover, test_xray_blueprint)
 
     ASCENT_INFO("Testing xray_extract");
 
-    const std::string output_path = prepare_output_dir();
-    const std::string output_file = conduit::utils::join_file_path(output_path, "tout_rover_xray");
+    const std::string query_output_path = prepare_output_dir();
+    const std::string query_output_file = 
+        conduit::utils::join_file_path(query_output_path, "tout_rover_xray_query");
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    remove_test_image(query_output_file);
 
     //
     // Create the actions.
@@ -410,7 +407,7 @@ TEST(ascent_rover, test_xray_blueprint)
     extracts["e1/type"]  = "xray";
     extracts["e1/params/absorption"] = "radial";
     extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = output_file;
+    extracts["e1/params/filename"] = query_output_file;
     extracts["e1/params/blueprint"] = "json";
 
     conduit::Node actions;
@@ -432,21 +429,27 @@ TEST(ascent_rover, test_xray_blueprint)
     ascent.execute(actions);
     ascent.close();
 
-    const std::string full_outfile_name = output_file + "100.cycle_000100.root";
+    const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
 
-    const std::string out_image_name = 
-        render_blueprint_result("intensities", "tout_rover_xray_blueprint", load_mesh);
+    const std::string image_output_path = prepare_output_dir();
+    const std::string image_output_base =
+        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
+
+    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
+    const std::string image_output_base_w_cycle = image_output_base + "100";
+
+    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(out_image_name, 0.01f));
+    EXPECT_TRUE(check_test_image(image_output_base_w_cycle, 0.01f, ""));
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, out_image_name, msg);
+    ASCENT_ACTIONS_DUMP(actions, image_output_base_w_cycle, msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -482,13 +485,13 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
 
     ASCENT_INFO("Testing xray_extract on multi_curv3d example");
 
-    const std::string output_path = prepare_output_dir();
-    const std::string output_file = 
-        conduit::utils::join_file_path(output_path,
-                                       "multi_curv3d_blueprint_xray");
+    const std::string query_output_path = prepare_output_dir();
+    const std::string query_output_file = 
+        conduit::utils::join_file_path(query_output_path,
+                                       "tout_rover_xray_multi_curv3d_blueprint_query");
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    remove_test_image(query_output_file);
 
     //
     // Create the actions.
@@ -498,7 +501,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     extracts["e1/type"] = "xray";
     extracts["e1/params/absorption"] = "d";
     extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = output_file;
+    extracts["e1/params/filename"] = query_output_file;
     extracts["e1/params/blueprint"] = "json";
 
     conduit::Node actions;
@@ -518,28 +521,29 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
+    // TODO can we ask Ascent for the name of the file it wrote?
+    // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-
-    const std::string full_outfile_name = output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
 
-    // TODO currently the cycle in the filename is not working. Other developers are
-    // working on a fix. For now I am putting 48 in this name and the filename will
-    // be `tout_rover_xray_multi_curv3d4848.png`.
-    const std::string out_image_name = 
-        render_blueprint_result("intensities", "tout_rover_xray_multi_curv3d48", load_mesh);
+    const std::string image_output_path = prepare_output_dir();
+    const std::string image_output_base =
+        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_multi_curv3d");
+
+    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
+    const std::string image_output_base_w_cycle = image_output_base + "48";
+
+    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    // TODO we are asking for num 48 to offset the issue of the file being called 
-    // `tout_rover_xray_multi_curv3d4848.png`. When other issues are fixed in Ascent
-    // we can change this to make more sense.
-    EXPECT_TRUE(check_test_image(out_image_name, 0.01f, "48"));
+    EXPECT_TRUE(check_test_image(image_output_base_w_cycle, 0.01f, ""));
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, out_image_name, msg);
+    ASCENT_ACTIONS_DUMP(actions, image_output_base_w_cycle, msg);
 }
