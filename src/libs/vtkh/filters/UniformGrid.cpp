@@ -238,6 +238,9 @@ public:
       ////send to root process
       if(uah_field.CanConvert<scalarI>())
       {
+#if _DEBUG 
+        std::cerr << "In scalar int global reduce for field: " << m_input_field.GetName() << std::endl;
+#endif
         //loop through field, zero out invalid and unowned values
         scalarI ah_field = m_input_field.GetData().AsArrayHandle<scalarI>();
         int *local_field = GetVTKMPointer(ah_field);
@@ -260,10 +263,7 @@ public:
           {
             if(g_rank_mask[i] == -1)
             {
-              global_field[i] = m_invalid_value;
-#if _DEBUG 
-              global_field[i] = par_rank*10;
-#endif
+              global_field[i] = (int) m_invalid_value;
             }
           }
           
@@ -280,6 +280,9 @@ public:
       }//end scalarI
       else if(uah_field.CanConvert<scalarF>())
       {
+#if _DEBUG 
+        std::cerr << "In scalar float global reduce for field: " << m_input_field.GetName() << std::endl;
+#endif
         //loop through field, zero out invalid value
         scalarF ah_field = m_input_field.GetData().AsArrayHandle<scalarF>();
         float * local_field = GetVTKMPointer(ah_field);
@@ -289,9 +292,9 @@ public:
         {
           //if we do not own the point, set it to zero
           if(g_rank_mask[i] != par_rank)
-	  {
-            ah_field.WritePortal().Set(i,0);
-	  }
+          {
+            ah_field.WritePortal().Set(i,(float)0.0);
+          }
         }
 
         MPI_Reduce(local_field, global_field.data(), num_points, MPI_FLOAT, MPI_SUM, 0, mpi_comm);
@@ -302,10 +305,7 @@ public:
           {
             if(g_rank_mask[i] == -1)
             {
-              global_field[i] = m_invalid_value;
-#if _DEBUG 
-              global_field[i] = par_rank*10;
-#endif
+              global_field[i] = (float) m_invalid_value;
             }
           }
           scalarF ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
@@ -323,6 +323,9 @@ public:
       }//end scalarF
       else if(uah_field.CanConvert<scalarD>())
       {
+#if _DEBUG 
+        std::cerr << "In scalar double global reduce for field: " << m_input_field.GetName() << std::endl;
+#endif
         scalarD ah_field = uah_field.AsArrayHandle<scalarD>();
         //loop through field, zero out invalid value
         for(int i = 0; i < num_points; ++i)
@@ -330,11 +333,11 @@ public:
           //if we do not own the point, set it to zero
           if(g_rank_mask[i] != par_rank)
           {
-            ah_field.WritePortal().Set(i,0);
+            ah_field.WritePortal().Set(i,(double)0.0);
           }
         }
         double * local_field = GetVTKMPointer(ah_field);
-        std::vector<double> global_field(num_points,0);
+        std::vector<double> global_field(num_points,0.0);
         MPI_Reduce(local_field, global_field.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, mpi_comm);
 
         if(par_rank == 0)
@@ -343,10 +346,7 @@ public:
           {
             if(g_rank_mask[i] == -1)
             {
-              global_field[i] = m_invalid_value;
-#if _DEBUG 
-              global_field[i] = par_rank*10;
-#endif
+              global_field[i] = (double)m_invalid_value;
             }
           }
           
@@ -365,12 +365,12 @@ public:
       {
         //loop through field, zero out invalid value
         vec2_32 ah_field = m_input_field.GetData().AsArrayHandle<vec2_32>();
-        std::vector<float> local_x_points(num_points,0);
-        std::vector<float> local_y_points(num_points,0);
-        std::vector<float> global_x_points(num_points,0);
-        std::vector<float> global_y_points(num_points,0);
+        std::vector<float> local_x_points(num_points,(float)0.0);
+        std::vector<float> local_y_points(num_points,(float)0.0);
+        std::vector<float> global_x_points(num_points,(float)0.0);
+        std::vector<float> global_y_points(num_points,(float)0.0);
 
-	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+	      //std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
 
         for(int i = 0; i < num_points; ++i)
         {
@@ -394,8 +394,8 @@ public:
             {
               if(g_rank_mask[i] == 1)
               {
-                global_x_points[i] = m_invalid_value;
-                global_y_points[i] = m_invalid_value;
+                global_x_points[i] = (float)m_invalid_value;
+                global_y_points[i] = (float)m_invalid_value;
               }
 
               vtkm::Vec<vtkm::Float32,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
@@ -416,12 +416,12 @@ public:
       {
         //loop through field, zero out invalid value
         vec2_64 ah_field = m_input_field.GetData().AsArrayHandle<vec2_64>();
-        std::vector<double> local_x_points(num_points,0);
-        std::vector<double> local_y_points(num_points,0);
-        std::vector<double> global_x_points(num_points,0);
-        std::vector<double> global_y_points(num_points,0);
+        std::vector<double> local_x_points(num_points,(double)0.0);
+        std::vector<double> local_y_points(num_points,(double)0.0);
+        std::vector<double> global_x_points(num_points,(double)0.0);
+        std::vector<double> global_y_points(num_points,(double)0.0);
 
-	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+	      //std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
 
         for(int i = 0; i < num_points; ++i)
         {
@@ -452,8 +452,8 @@ public:
             ah_out.WritePortal().Set(i,points_vec);
           }
           vtkm::cont::Field out_field(m_input_field.GetName(),
-        		              m_input_field.GetAssociation(),
-        			      ah_out);
+                                      m_input_field.GetAssociation(),
+                                      ah_out);
 			      
           res = out_field;
         }
@@ -463,16 +463,14 @@ public:
       else if(uah_field.CanConvert<vec3_32>())
       {
         //loop through field, zero out invalid value
-	vec3_32 ah_field = m_input_field.GetData().AsArrayHandle<vec3_32>();
+        vec3_32 ah_field = m_input_field.GetData().AsArrayHandle<vec3_32>();
         std::vector<float> local_x_points(num_points,0);
         std::vector<float> local_y_points(num_points,0);
         std::vector<float> local_z_points(num_points,0);
         std::vector<float> global_x_points(num_points,0);
         std::vector<float> global_y_points(num_points,0);
         std::vector<float> global_z_points(num_points,0);
-
-	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
-
+	      //std::cerr << ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
         for(int i = 0; i < num_points; ++i)
         {
           //if we do not own the point, set it to zero
@@ -506,21 +504,21 @@ public:
                                                                    global_y_points[i],
                                                                    global_z_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
-        }
+          }
         
-        vtkm::cont::Field out_field(m_input_field.GetName(),
-                                    m_input_field.GetAssociation(),
-                                    ah_out);
+          vtkm::cont::Field out_field(m_input_field.GetName(),
+                                      m_input_field.GetAssociation(),
+                                      ah_out);
 
-        res = out_field;
-      }
-      else
+          res = out_field;
+        }
+        else
+        {
+          res = m_input_field;
+        }
+      }//end vec3_32
+      else if(uah_field.CanConvert<vec3_64>())
       {
-        res = m_input_field;
-      }
-    }//end vec3_32
-    else if(uah_field.CanConvert<vec3_64>())
-    {
         //loop through field, zero out invalid value
         vec3_64 ah_field = m_input_field.GetData().AsArrayHandle<vec3_64>();
         std::vector<double> local_x_points(num_points,0);
@@ -530,7 +528,7 @@ public:
         std::vector<double> global_y_points(num_points,0);
         std::vector<double> global_z_points(num_points,0);
 
-	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+      	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
 
         for(int i = 0; i < num_points; ++i)
         {
@@ -588,6 +586,7 @@ public:
 
 };//class globalReduceField
 #endif
+
 class LocalReduceField
 {
   vtkm::cont::DataSet &m_dataset;
@@ -636,19 +635,6 @@ public:
     
     int num_points = tmp_mask_portal.GetNumberOfValues();
 
-    //create mask where true == 1
-//    std::vector<int> l_mask(num_points,1);
-//    for(int j = 0; j < num_points; ++j)
-//    {
-//      //if combined domains have valid location && indiv domain has valid location
-//      l_mask[j] = (tmp_mask_portal.Get(j)==0) && (r_local_mask_portal.Get(j)==0);
-//      if(!l_mask[j])
-//      {
-//        if((r_local_mask_portal.Get(j) == 2) && (tmp_mask+portal.Get(j) == 0))
-//          w_local_mask_portal.Set(j,0);
-//      }
-//    }
-
     if(uah_field.CanConvert<scalarI>())
     {
       //loop through field, zero out invalid values
@@ -660,7 +646,7 @@ public:
       for(int i = 0; i < num_points; ++i)
       {
         //tie breaker will be higher domain number 
-	//which we loop through as we VTKmProbe/sample
+	      //which we loop through as we VTKmProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           local_field[i] = tmp_field[i];
@@ -680,7 +666,7 @@ public:
       for(int i = 0; i < num_points; ++i)
       {
         //tie breaker will be higher domain number 
-	//which we loop through as we VTKmProbe/sample
+	      //which we loop through as we VTKmProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           local_field[i] = tmp_field[i];
@@ -700,7 +686,7 @@ public:
       for(int i = 0; i < num_points; ++i)
       {
         //tie breaker will be higher domain number 
-	//which we loop through as we VTKmProbe/sample
+	      //which we loop through as we VTKmProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           local_field[i] = tmp_field[i];
@@ -722,7 +708,7 @@ public:
         float local_x = local_data.ReadPortal().Get(i)[0];
         float local_y = local_data.ReadPortal().Get(i)[1];
         //tie breaker will be higher domain number 
-	//which we loop through as we VTKmProbe/sample
+	      //which we loop through as we VTKmProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
@@ -746,7 +732,7 @@ public:
         double local_x = local_data.ReadPortal().Get(i)[0];
         double local_y = local_data.ReadPortal().Get(i)[1];
         //tie breaker will be higher domain number 
-	//which we loop through as we VTKmProbe/sample
+	      //which we loop through as we VTKmProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
@@ -772,7 +758,7 @@ public:
         float local_y = local_data.ReadPortal().Get(i)[1];
         float local_z = local_data.ReadPortal().Get(i)[2];
         //tie breaker will be higher domain number 
-	//which we loop through as we VTKmProbe/sample
+	      //which we loop through as we VTKmProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
@@ -799,7 +785,7 @@ public:
         double local_y = local_data.ReadPortal().Get(i)[1];
         double local_z = local_data.ReadPortal().Get(i)[2];
         //tie breaker will be higher domain number 
-	//which we loop through as we VTKmProbe/sample
+	      //which we loop through as we VTKmProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
@@ -855,86 +841,18 @@ UniformGrid::DoExecute()
 
 #ifdef VTKH_PARALLEL
 #if _DEBUG 
-  vtkm::Range par_den_range= m_input->GetRange("den").ReadPortal().Get(0);
-  std::cerr <<"  par rank: " << par_rank << "local range: " <<  par_den_range.Min << " " << par_den_range.Max << std::endl;
   std::cerr << "INPUT START" << std::endl;
   this->m_input->PrintSummary(std::cerr); 
   std::cerr << "INPUT END---------------------" << std::endl;
-  vtkm::Range den_range= m_input->GetGlobalRange("den").ReadPortal().Get(0);
-  std::cerr << "GLOBAL Rageng: " << den_range.Min << " " << den_range.Max << std::endl;
   vtkm::Bounds bounds = m_input->GetGlobalBounds();
   std::cerr << "GlobalBounds: " << std::endl;
   std::cerr << bounds.X.Min << " " << bounds.X.Max << " " << bounds.Y.Min << " " << bounds.Y.Max << " " << bounds.Z.Min << " " << bounds.Z.Max << std::endl; 
 #endif
 #endif
 
-
   std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
   const int num_domains = domain_ids.size();
-  //add mask to keep track of valid points after sampling
-  //this->m_input->AddConstantPointField(0.0, "mask");
 
-  //put vtkm datasets into a partitionedDS for vtkm::Merge
-//  vtkm::cont::PartitionedDataSet sampled_doms;
-//  for(int i = 0; i < num_domains; ++i)
-//  {
-//    vtkm::cont::DataSet dom;
-//    
-//    if(this->m_input->HasDomainId(domain_ids[i]))
-//    {
-//      dom = this->m_input->GetDomainById(domain_ids[i]);
-//
-//      sampled_doms.AppendPartition(dom);
-//    }
-//  }
-//#ifdef VTKH_PARALLEL
-//  //if there is no data, add some empty 
-//  vtkm::cont::DataSet tmp_empty;
-//  if(sampled_doms.GetNumberOfPartitions() == 0)
-//  {
-//    tmp_empty = vtkm::cont::DataSetBuilderUniform::Create(m_dims, m_origin, m_spacing);
-//    bool valid_field;
-//    vtkm::cont::Field::Association assoc = this->m_input->GetFieldAssociation(m_field, valid_field);
-//
-//    if(!valid_field)
-//    {
-//      this->m_output = this->m_input;
-//      return;
-//    }
-//    
-//    vtkm::Id field_id = this->m_input->GetFieldType(m_field, valid_field);
-//    vtkm::cont::Field empty_field = vtkh::detail::MakeEmptyField(m_field,field_id,m_dims,assoc);
-//    tmp_empty.AddField(empty_field);
-//    sampled_doms.AppendPartition(tmp_empty);
-//  }
-//#endif
-
-  ///
-  /// Approach we can use that would not need MergeDataSets:
-  ///
-  /// (This will also be more memory efficient b/c we don't need to convert
-  /// everything to a fused unstructured grid)
-  ///
-  /// create local output grid `local_res` (including masking info)
-  /// create global output grid `global_res` (including masking info)
-  /// create tmp local output grid `local_res_tmp` (including masking info)
-  ///
-  /// for each domain `d`:
-  ///   reset local_res_tmp (including making info)
-  ///   execute probe filter on `d` with output in `local_res_tmp`
-  ///   combine results from `local_res_tmp` into `local_res`
-  /// if mpi parallel:
-  ///.  Use global reduce w/ `local_res` to create `global_res`
-  ///
-  ///.  (We know that all ranks will have something to reduce, b/c
-  ///.   even if they have no domains, the still created the local
-  ///    output grid)
-
-//  vtkm::filter::multi_block::MergeDataSets mergeDataSets;
-//  mergeDataSets.SetInvalidValue(m_invalid_value);
-//  //return a partitiondataset
-//  auto merged = mergeDataSets.Execute(sampled_doms);
-//  auto result = merged.GetPartitions();
 #if _DEBUG 
   std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
   std::cerr << "m_origin: " << m_origin[0] << " " << m_origin[1] << " " << m_origin[2] << std::endl;
@@ -953,50 +871,49 @@ UniformGrid::DoExecute()
     if(this->m_input->HasDomainId(domain_ids[i]))
     {
       dom = this->m_input->GetDomainById(domain_ids[i]);
-      //Uniform Grid Sample
-      vtkh::vtkmProbe probe;
-      probe.dims(m_dims);
-      probe.origin(m_origin);
-      probe.spacing(m_spacing);
-      probe.invalidValue(m_invalid_value);
-      auto dataset = probe.Run(dom);
-      vtkm::cont::Field tmp_field = dataset.GetField(m_field);
+      for(const auto &field_name : m_fields)
+      {
+        //Uniform Grid Sample
+        vtkh::vtkmProbe probe;
+        probe.dims(m_dims);
+        probe.origin(m_origin);
+        probe.spacing(m_spacing);
+        probe.invalidValue(m_invalid_value);
+        auto dataset = probe.Run(dom);
+        vtkm::cont::Field tmp_field = dataset.GetField(field_name);
 
 #if _DEBUG 
-      std::cerr <<"UNIFORM GRID OUTPUT: " << std::endl;
-      dataset.PrintSummary(std::cerr);
-      std::cerr <<"UNIFORM GRID OUTPUT END" << std::endl;
+        std::cerr <<"UNIFORM GRID OUTPUT START: " << std::endl;
+        dataset.PrintSummary(std::cerr);
+        std::cerr <<"UNIFORM GRID OUTPUT END" << std::endl;
 #endif
+        vtkm::cont::Field valid_field;
+        if(tmp_field.IsPointField())
+        {
+          vtkm::cont::Field point_field = dataset.GetPointField("HIDDEN");
+          valid_field = point_field;
+        }
+        else
+        {
+          vtkm::cont::Field cell_field = dataset.GetCellField("HIDDEN");
+          valid_field = cell_field;
+        }
 
-
-      vtkm::cont::Field valid_field;
-      if(tmp_field.IsPointField())
-      {
-	      vtkm::cont::Field point_field = dataset.GetPointField("HIDDEN");
-
-	      valid_field = point_field;
-      }
-      else
-      {
-
-	      vtkm::cont::Field cell_field = dataset.GetCellField("HIDDEN");
-	      valid_field = cell_field;
-      }
-      
-      std::string cs_name = dataset.GetCoordinateSystemName();
-      if(!local_res.HasCoordinateSystem(cs_name))
-      {
-        local_res.CopyStructure(dataset);
-	local_res.AddField(valid_field);
-      }
-      if(!local_res.HasField(m_field))
-      {
-        local_res.AddField(tmp_field);
-      }
-      else
-      {
-        vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field,valid_field, m_field, m_invalid_value);
-	localreducefield.LocalReduce();
+        std::string cs_name = dataset.GetCoordinateSystemName();
+        if(!local_res.HasCoordinateSystem(cs_name))
+        {
+          local_res.CopyStructure(dataset);
+          local_res.AddField(valid_field);
+        }
+        if(!local_res.HasField(field_name))
+        {
+          local_res.AddField(tmp_field);
+        }
+        else
+        {
+          vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field,valid_field, field_name, m_invalid_value);
+          localreducefield.LocalReduce();
+        }
       }
     }
   }
@@ -1010,30 +927,37 @@ UniformGrid::DoExecute()
 
 #ifdef VTKH_PARALLEL
   //take uniform sampled grid and reduce to root process
-  vtkh::detail::GlobalReduceField g_reducefields(local_res, m_field, m_invalid_value);
-  auto output = g_reducefields.Reduce();
+  vtkm::cont::DataSet reduced_output;
+  reduced_output.CopyStructure(local_res);
+  
+  for(const auto &field_name : m_fields)
+  {
+    vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value);
+    vtkm::cont::DataSet reduced = g_reducefield.Reduce();
+    vtkm::cont::Field reduced_field = reduced.GetField(field_name);
+    reduced_output.AddField(reduced_field);
+  }
+  
+  if(par_rank == 0)
+  {
+    this->m_output->AddDomain(reduced_output, 0);
+  }
+
 #if _DEBUG 
   //change to desired rank for output 
-  if(par_rank == 0)
-  {
-    //this->m_output->AddDomain(output,0);
-    this->m_output->AddDomain(local_res,0);
-    vtkm::Range output_den_range= this->m_output->GetRange("den").ReadPortal().Get(0);
-    std::cerr <<"  par rank: " << par_rank << "output range: " <<  output_den_range.Min << " " << output_den_range.Max << std::endl;
-    std::cerr << "par rank: " << par_rank << " output num cells: " << m_output->GetGlobalNumberOfCells() << std::endl; 
-    std::cerr << "FINAL OUTPUT START" << std::endl;
-    this->m_output->PrintSummary(std::cerr); 
-    std::cerr << "FINAL OUTPUT END---------------------" << std::endl;
-  }
-#endif
-  if(par_rank == 0)
-  {
-    this->m_output->AddDomain(output,0);
-  }
-#else
+    if(par_rank == 0)
+    {
+      //this->m_output->AddDomain(output,0);
+      //this->m_output->AddDomain(local_res,0);
+      std::cerr << "FINAL OUTPUT START" << std::endl;
+      this->m_output->PrintSummary(std::cerr); 
+      std::cerr << "FINAL OUTPUT END---------------------" << std::endl;
+    }
+    std::cerr <<" PAR RANK " << par_rank << " at the very end" << std::endl;
+#endif //end _DEBUG
+#else //serial
   this->m_output->AddDomain(local_res,0);
 #endif
-
 }
 
 void
@@ -1067,9 +991,9 @@ UniformGrid::Spacing(const Vec3f spacing)
 }
 
 void
-UniformGrid::Field(const std::string field)
+UniformGrid::Field(const std::vector<std::string> fields)
 {
-  m_field = field;
+  m_fields = fields;
 }
 
 void
