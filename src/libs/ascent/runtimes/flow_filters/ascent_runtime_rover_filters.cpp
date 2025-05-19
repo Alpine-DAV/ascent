@@ -323,7 +323,7 @@ RoverXRay::execute()
     {
       std::string bov_filename = params()["bov_filename"].as_string();
       bov_filename = output_dir(bov_filename);
-      tracer.save_bov(expand_path_special_variables(bov_filename, ".png", mpi_comm_id));
+      tracer.save_bov(expand_path_special_variables(bov_filename, ".bov", mpi_comm_id));
     }
     tracer.finalize();
 
