@@ -55,7 +55,6 @@ int ASCENT_API get_family_value(const std::string& path_string,
 std::string ASCENT_API expand_path_special_variables(const std::string& path_string,
                                                      const std::string& file_extension,
                                                      int mpi_comm_id,
-                                                     int counter = 0,
                                                      bool append_if_no_format = true);
 
 std::vector<std::string> split(const std::string &s, char delim = ' ');

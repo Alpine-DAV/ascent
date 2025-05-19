@@ -156,13 +156,7 @@ void ascent::runtime::filters::BFlowCompose::execute()
   CompositingType compositing_flag = CompositingType(p["compositing"].as_int64());
   std::string image_name = p["image_prefix"].as_string();
 
-  int cycle = 0;
-  if( Metadata::n_metadata.has_path("cycle") )
-  {
-    cycle = Metadata::n_metadata["cycle"].as_int32();
-  }
-
-  image_name = expand_path_special_variables(image_name, ".png", mpi_comm_id, cycle);
+  image_name = expand_path_special_variables(image_name, ".png", mpi_comm_id);
 
 #ifdef BFLOW_COMP_DEBUG
   {

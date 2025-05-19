@@ -1192,13 +1192,6 @@ parse_params(const conduit::Node &params,
     cameras.push_back(camera);
   }
 
-  int cycle = 0;
-
-  if(meta->has_path("cycle"))
-  {
-    cycle = (*meta)["cycle"].as_int32();
-  }
-
   if(params.has_path("image_prefix"))
   {
     int mpi_comm_id = -1;
@@ -1207,7 +1200,7 @@ parse_params(const conduit::Node &params,
 #endif
 
     std::string image_name = params["image_prefix"].as_string();
-    image_name = expand_path_special_variables(image_name, ".png", mpi_comm_id, cycle);
+    image_name = expand_path_special_variables(image_name, ".png", mpi_comm_id);
     image_name = output_dir(image_name);
     image_names.push_back(image_name);
   }

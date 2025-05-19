@@ -72,9 +72,10 @@ TEST(ascent_utils, ascent_string_fmt_basic)
     // Set up the metadata variables beforehand so there are inputs for the formatter
     Metadata::n_metadata["cycle"] = 100;
     Metadata::n_metadata["time"] = 3.141592;
+    Metadata::n_metadata["family_value_seed"] = 12;
 
     std::string expected_result = "t_output_path_100_00012_3.1416";
-    std::string result = ascent::expand_path_special_variables("t_output_path_{cycle:3d}_{family:05d}_{time:0.4f}", "", -1, 12);
+    std::string result = ascent::expand_path_special_variables("t_output_path_{cycle:3d}_{family:05d}_{time:0.4f}", "", -1);
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
 }
@@ -157,14 +158,16 @@ TEST(ascent_utils, ascent_string_fmt_time_integer_fmt)
 
 TEST(ascent_utils, ascent_string_fmt_family)
 {
+    Metadata::n_metadata["family_value_seed"] = 0;
+
     for (int i = 0; i < 4; i++)
     {
         char expected_result[50];
         std::string expected_pattern = "t_output_path_family_%03d_%05.2f_%05.03g";
-        float current_family = i+5;
-        snprintf(expected_result, sizeof(expected_result), expected_pattern.c_str(), static_cast<int>(current_family), current_family, current_family);
+        snprintf(expected_result, sizeof(expected_result), expected_pattern.c_str(), i, static_cast<float>(i), static_cast<float>(i));
 
-        std::string result = ascent::expand_path_special_variables("t_output_path_family_{family:03d}_{family:05.2f}_{family:05.03g}", "", -1, 5);
+        std::string result = ascent::expand_path_special_variables("t_output_path_family_{family:03d}_{family:05.2f}_{family:05.03g}", "", -1);
+        std::cout << expected_result << std::endl;
         std::cout << result << std::endl;
 
         EXPECT_TRUE(expected_result == result);
@@ -229,7 +232,7 @@ TEST(ascent_utils, ascent_string_fmt_invalid_float_format)
     EXPECT_TRUE(error_occured);
 }
 
-TEST(ascent_utils, ascent_string_fmt_invalid_no_format)
+TEST(ascent_utils, ascent_string_fmt_no_format)
 {
     bool error_occured = false;
 
@@ -306,6 +309,7 @@ TEST(ascent_utils, ascent_string_fmt_no_keyword)
 
 TEST(ascent_utils, ascent_string_fmt_family_check_dir) {
     string output_path = prepare_output_dir();
+    Metadata::n_metadata["family_value_seed"] = 0;
 
     string pre_existing_file_name_1 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_000_0012_3.14.root");
     string pre_existing_file_name_2 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_000_1.400000e+01_3.14.root");
@@ -332,6 +336,7 @@ TEST(ascent_utils, ascent_string_fmt_family_check_dir) {
 
 TEST(ascent_utils, ascent_string_fmt_family_check_diff_ext) {
     string output_path = prepare_output_dir();
+    Metadata::n_metadata["family_value_seed"] = 0;
 
     string pre_existing_file_name_1 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_01000_diff_ext.root");
     string pre_existing_file_name_2 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_01001_diff_ext.root");
@@ -348,8 +353,8 @@ TEST(ascent_utils, ascent_string_fmt_family_check_diff_ext) {
     }
 
     string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_{family:05d}_diff_ext");
-    std::string expected_result = conduit::utils::join_file_path(output_path, "t_output_path_family_check_00016_diff_ext");
-    std::string result = ascent::expand_path_special_variables(output_file, ".pmg", -1, 16);
+    std::string expected_result = conduit::utils::join_file_path(output_path, "t_output_path_family_check_00000_diff_ext");
+    std::string result = ascent::expand_path_special_variables(output_file, ".png", -1);
     std::cout << result << std::endl;
     EXPECT_TRUE(result == expected_result);
 

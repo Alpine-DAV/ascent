@@ -275,7 +275,6 @@ int get_family_value(const std::string& path_string,
 std::string expand_path_special_variables(const std::string &path_string,
                                           const std::string &file_extension,
                                           int mpi_comm_id,
-                                          int counter,
                                           bool append_if_no_format)
 {
     // Patterns to identify keyword specified formatting
@@ -306,7 +305,12 @@ std::string expand_path_special_variables(const std::string &path_string,
 
     conduit::Node meta = Metadata::n_metadata;
 
-    int family_value = get_family_value(path_string, file_extension, mpi_comm_id, counter);
+    int family_value = 0;
+    if (meta.has_path("family_value_seed"))
+    {
+        family_value = meta["family_value_seed"].to_value();
+    }
+    family_value = get_family_value(path_string, file_extension, mpi_comm_id, family_value);
     result_string = expand_generic_variable(result_string, family_pattern, family_value);
 
     int cycle = 0;

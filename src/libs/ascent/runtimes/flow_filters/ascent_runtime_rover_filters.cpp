@@ -257,13 +257,6 @@ RoverXRay::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
-    Node meta = Metadata::n_metadata;
-    int cycle = -1;
-    if(meta.has_path("cycle"))
-    {
-      cycle = meta["cycle"].as_int32();
-    }
-
     if(params().has_path("blueprint"))
     {
 
@@ -301,14 +294,8 @@ RoverXRay::execute()
       conduit::Node extra_opts;
       std::string result_path;
       std::string filename = params()["filename"].as_string();
-      if(cycle != -1)
-      {
-        filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id, cycle));
-      }
-      else
-      {
-        filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
-      }
+      filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
+
       mesh_blueprint_save(multi_domain,
                           filename,
                           protocol,
@@ -318,14 +305,7 @@ RoverXRay::execute()
     }
 
     std::string png_filename = params()["filename"].as_string();
-    if(cycle != -1)
-    {
-      png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id, cycle));
-    }
-    else
-    {
-      png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
-    }
+    png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
 
     if(params().has_path("image_params"))
     {
@@ -343,14 +323,7 @@ RoverXRay::execute()
     {
       std::string bov_filename = params()["bov_filename"].as_string();
       bov_filename = output_dir(bov_filename);
-      if(cycle != -1)
-      {
-        tracer.save_bov(expand_path_special_variables(bov_filename, ".png", mpi_comm_id, cycle));
-      }
-      else
-      {
-        tracer.save_bov(expand_path_special_variables(bov_filename, ".png", mpi_comm_id));
-      }
+      tracer.save_bov(expand_path_special_variables(bov_filename, ".png", mpi_comm_id));
     }
     tracer.finalize();
 
@@ -516,27 +489,11 @@ RoverVolume::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
-    Node meta = Metadata::n_metadata;
-    int cycle = -1;
-    if(meta.has_path("cycle"))
-    {
-      cycle = meta["cycle"].as_int32();
-    }
-
     std::string filename = params()["filename"].as_string();
-    if(cycle != -1)
-    {
-      filename = expand_path_special_variables(filename, ".png", mpi_comm_id, cycle);
-    }
-    else
-    {
-      filename = expand_path_special_variables(filename, ".png", mpi_comm_id);
-    }
-    filename = output_dir(filename);
+    filename = output_dir(expand_path_special_variables(filename, ".png", mpi_comm_id));
 
     tracer.save_png(filename);
     tracer.finalize();
-
 }
 
 //-----------------------------------------------------------------------------
