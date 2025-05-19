@@ -892,8 +892,8 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
     string output_path = prepare_output_dir();
     string image_prefix = "t_output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
     const string output_file = conduit::utils::join_file_path(output_path,image_prefix);
-    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"t_output_path_00100_0100_3.1415.png");
-    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"t_output_path_00101_0100_3.1415.png");
+    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"t_output_path_00200_0100_3.1415.png");
+    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"t_output_path_00201_0100_3.1415.png");
 
     string image_prefix_only_format = "t_output_path_%03d_only_format";
     const string output_file_only_format = conduit::utils::join_file_path(output_path,image_prefix_only_format);
@@ -907,15 +907,6 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
     remove_test_image(output_file_final_2);
     remove_test_image(output_file_only_format_final);
     remove_test_image(output_file_no_format_final);
-
-    // Use Ascent to export our mesh to blueprint flavored hdf5 files
-    Ascent a;
-
-    // open ascent
-    a.open();
-
-    // publish mesh to ascent
-    a.publish(mesh);
 
     // setup actions
     Node actions;
@@ -944,11 +935,23 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
     // print our full actions tree
     std::cout << actions.to_yaml() << std::endl;
 
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent ascent;
+
+    // open ascent
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["family_value_seed"] = 200;
+    ascent.open(ascent_opts);
+
+    // publish mesh to ascent
+    ascent.publish(mesh);
+
     // execute the actions
-    a.execute(actions);
+    ascent.execute(actions);
 
     // close ascent
-    a.close();
+    ascent.close();
 
     EXPECT_TRUE(conduit::utils::is_file(output_file_final_1));
     EXPECT_TRUE(conduit::utils::is_file(output_file_final_2));
