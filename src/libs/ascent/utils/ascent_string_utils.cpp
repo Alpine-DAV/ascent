@@ -58,6 +58,20 @@ std::vector<std::string> split(const std::string &s, char delim)
 }
 
 //-----------------------------------------------------------------------------
+
+std::regex get_fomat_pattern(const std::string& variable_name)
+{
+    // Patterns to identify keyword specified formatting
+    //
+    // Pattern is '{keyword:format}' where keyword is cycle, family or time and format is a valid
+    // integer or floating point standard format.
+    //
+    // Format loosely defined here any any combination of digits, characters, or a period.
+    // More specific formatting constraints are defined in 'expand_generic_variable()'
+    std::regex fmt_pattern(R"(\{)" + variable_name + R"((?::([a-zA-Z0-9.]*))?\})");
+    return fmt_pattern;
+}
+
 template<typename T>
 std::string expand_format_value(const std::string path_string,
                                 const T value)
@@ -79,7 +93,7 @@ std::string expand_format_value(const std::string path_string,
 
 template<typename T>
 std::string expand_generic_variable(const std::string& path_string, 
-                                    const std::regex& pattern, 
+                                    const std::string& variable_name, 
                                     const T value)
 {
     std::smatch match;
@@ -109,7 +123,7 @@ std::string expand_generic_variable(const std::string& path_string,
     // e.g. 3.14f or 2F or 023g or 10.4e
     std::regex valid_float_format(R"(^\d*(\.\d+)?[fFeEgG]$)");
 
-    while (std::regex_search(result_string, match, pattern))
+    while (std::regex_search(result_string, match, get_fomat_pattern(variable_name)))
     {
         std::string format_spec = match[1].str();
 
@@ -129,7 +143,6 @@ std::string expand_generic_variable(const std::string& path_string,
         }
         else if (format_spec.size() == 0)
         {
-          ASCENT_WARN("No format specifications given. Inserting value without formatting.");
           result_string.replace(match.position(0), match.length(0), std::to_string(value));
         }
         else
@@ -162,7 +175,7 @@ int check_directory_for_family_value(const std::string& path_string,
   MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
   MPI_Comm_rank(mpi_comm, &rank);
 #endif
-  
+
   // Determining the file name and directory name
   std::string file_name_fmt, dir_path;
   conduit::utils::rsplit_file_path(path_string, file_name_fmt, dir_path);
@@ -170,10 +183,6 @@ int check_directory_for_family_value(const std::string& path_string,
     dir_path = ".";
   }
 
-  // Building a pattern to match to filenames
-  // These patterns will be used to identify locations with unknown numbers and 
-  std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
-  std::regex other_fmts_pattern(R"(\{[a-zA-Z]*:[a-zA-Z0-9.]*\})");
 
   // This pattern is used to match to numbers.
   // It is looking for integers, decimal, and scientific notation values
@@ -186,13 +195,14 @@ int check_directory_for_family_value(const std::string& path_string,
   
   std::string search_pattern_str = file_name_fmt;
   std::smatch match;
-  if (std::regex_search(search_pattern_str, match, family_pattern))
+  if (std::regex_search(search_pattern_str, match, get_fomat_pattern("family")))
   {
     // This adds a capturing group that matches to a decimal number
     // When running a regex_search this value will be captured and saved out
     search_pattern_str.replace(match.position(0), match.length(0), "(" + number_pattern + ")");
   }
-  while (std::regex_search(search_pattern_str, match, other_fmts_pattern))
+
+  while (std::regex_search(search_pattern_str, match, get_fomat_pattern(R"([a-zA-Z]*)")))
   {
     // This adds a the pattern for a decimal number
     search_pattern_str.replace(match.position(0), match.length(0), number_pattern);
@@ -277,16 +287,6 @@ std::string expand_path_special_variables(const std::string &path_string,
                                           int mpi_comm_id,
                                           bool append_if_no_format)
 {
-    // Patterns to identify keyword specified formatting
-    //
-    // Pattern is '{keyword:format}' where keyword is cycle, family or time and format is a valid
-    // integer or floating point standard format.
-    //
-    // Format loosely defined here any any combination of digits, characters, or a period.
-    // More specific formatting constraints are defined in 'expand_generic_variable()'
-    std::regex cycle_pattern(R"(\{cycle:([a-zA-Z0-9.]*)\})");
-    std::regex family_pattern(R"(\{family:([a-zA-Z0-9.]*)\})");
-    std::regex time_pattern(R"(\{time:([a-zA-Z0-9.]*)\})");
     std::regex invalid_pattern(R"(\{([a-zA-Z]*):.*\})");
 
     std::smatch match;
@@ -311,20 +311,20 @@ std::string expand_path_special_variables(const std::string &path_string,
         family_value = meta["family_value_seed"].to_value();
     }
     family_value = get_family_value(path_string, file_extension, mpi_comm_id, family_value);
-    result_string = expand_generic_variable(result_string, family_pattern, family_value);
+    result_string = expand_generic_variable(result_string, "family", family_value);
 
     int cycle = 0;
     if (meta.has_path("cycle"))
     {
         cycle = meta["cycle"].to_value();
-        result_string = expand_generic_variable(result_string, cycle_pattern, cycle);
+        result_string = expand_generic_variable(result_string, "cycle", cycle);
         result_string = expand_format_value(result_string, cycle);
     }
     
     if (meta.has_path("time"))
     {
         float time = meta["time"].to_value();
-        result_string = expand_generic_variable(result_string, time_pattern, time);
+        result_string = expand_generic_variable(result_string, "time", time);
     }
 
     if (result_string == path_string && append_if_no_format)

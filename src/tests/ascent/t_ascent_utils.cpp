@@ -234,27 +234,28 @@ TEST(ascent_utils, ascent_string_fmt_invalid_float_format)
 
 TEST(ascent_utils, ascent_string_fmt_no_format)
 {
-    bool error_occured = false;
+    Metadata::n_metadata["cycle"] = 100;
+    Metadata::n_metadata["time"] = 3.141592;
+    Metadata::n_metadata["family_value_seed"] = 8;
 
-    try
-    {
-        std::string result = ascent::expand_path_special_variables("t_output_path_none_{family:}", "", -1);
-        std::cout << result << std::endl;
-    }
-    catch (conduit::Error &warn)
-    {
-        if (warn.message().find("No format specifications given.") != std::string::npos)
-        {
-            error_occured = true;
-        }
-        else
-        {
-            std::cout << "The error that was thrown did not match the expected 'No format specifications given.' error" << endl;
-            std::cout << warn.message() << std::endl;
-        }
-    }
+    std::string result = ascent::expand_path_special_variables("t_output_path_none_{cycle}_{time}_{family}", "", -1);
+    std::string expected_result = "t_output_path_none_100_3.141592_8";
+    std::cout << result << std::endl;
+   
+    EXPECT_TRUE(expected_result == result);
+}
 
-    EXPECT_TRUE(error_occured);
+TEST(ascent_utils, ascent_string_fmt_no_format_colon)
+{
+    Metadata::n_metadata["cycle"] = 100;
+    Metadata::n_metadata["time"] = 3.141592;
+    Metadata::n_metadata["family_value_seed"] = 10;
+
+    std::string result = ascent::expand_path_special_variables("t_output_path_none_{cycle:}_{time:}_{family:}", "", -1);
+    std::string expected_result = "t_output_path_none_100_3.141592_10";
+    std::cout << result << std::endl;
+   
+    EXPECT_TRUE(expected_result == result);
 }
 
 TEST(ascent_utils, ascent_string_fmt_invalid_keyword)
