@@ -232,6 +232,19 @@ TEST(ascent_utils, ascent_string_fmt_invalid_float_format)
     EXPECT_TRUE(error_occured);
 }
 
+TEST(ascent_utils, ascent_string_fmt_just_type)
+{
+    Metadata::n_metadata["cycle"] = 100;
+    Metadata::n_metadata["time"] = 3.141592;
+    Metadata::n_metadata["family_value_seed"] = 6;
+
+    std::string result = ascent::expand_path_special_variables("t_output_path_none_{cycle:f}_{time:d}_{family:f}", "", -1);
+    std::string expected_result = "t_output_path_none_100.000000_3_6.000000";
+    std::cout << result << std::endl;
+   
+    EXPECT_TRUE(expected_result == result);
+}
+
 TEST(ascent_utils, ascent_string_fmt_no_format)
 {
     Metadata::n_metadata["cycle"] = 100;
