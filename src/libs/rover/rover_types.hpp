@@ -70,7 +70,7 @@ struct RenderSettings
   // Default settings
   //
   RenderSettings()
-    : m_color_table("cool2warm")
+    : m_color_table("Cool to Warm")
   {
     m_render_mode     = volume;
     m_scattering_type = non_scattering;
