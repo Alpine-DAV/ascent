@@ -158,7 +158,6 @@ std::string expand_generic_variable(const std::string& path_string,
 }
 
 int check_directory_for_family_value(const std::string& path_string,
-                                     const std::string &file_extension,
                                      int mpi_comm_id,
                                      int family_value)
 {
@@ -219,7 +218,7 @@ int check_directory_for_family_value(const std::string& path_string,
   // Use the defined pattern to make the final regular expression
   // Adding a ^ to lock the pattern to the start of the file_name and a pattern for a file extension
   // at the end to the pattern
-  search_pattern_str = "^" + search_pattern_str + file_extension + R"($)";
+  search_pattern_str = "^" + search_pattern_str + R"($)";
   std::regex search_pattern(search_pattern_str);
 
   if (rank == 0) {
@@ -254,29 +253,35 @@ int check_directory_for_family_value(const std::string& path_string,
 }
 
 int get_family_value(const std::string& path_string, 
-                     const std::string &file_extension,
+                     const std::string& file_extension,
                      int mpi_comm_id,
                      int family_value)
 {
   std::string modified_path_string = path_string;
 
+  // If extension not added to the file path, add it
+  std::string file_name, ext;
+  conduit::utils::rsplit_string(modified_path_string, ".", ext, file_name);
+  if (file_extension.compare("."+ext) != 0) {
+    modified_path_string += file_extension;
+  }
+
   // Check the file directory to determine a valid family value. Increases the value if needed.
-  family_value = check_directory_for_family_value(path_string,
-                                                  file_extension,
+  family_value = check_directory_for_family_value(modified_path_string,
                                                   mpi_comm_id,
                                                   family_value);
 
   static std::map<std::string, int> s_file_family_map;
-  bool exists = s_file_family_map.find(path_string) != s_file_family_map.end();
+  bool exists = s_file_family_map.find(modified_path_string) != s_file_family_map.end();
 
   if(!exists)
   {
-    s_file_family_map[path_string] = family_value;
+    s_file_family_map[modified_path_string] = family_value;
   }
   else
   {
-    family_value = s_file_family_map[path_string] + 1;
-    s_file_family_map[path_string] = family_value;
+    family_value = s_file_family_map[modified_path_string] + 1;
+    s_file_family_map[modified_path_string] = family_value;
   }
 
   return family_value;

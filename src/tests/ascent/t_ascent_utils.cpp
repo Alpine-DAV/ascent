@@ -375,3 +375,48 @@ TEST(ascent_utils, ascent_string_fmt_family_check_diff_ext) {
     remove_test_file(pre_existing_file_name_1);
     remove_test_file(pre_existing_file_name_2);
 }
+
+TEST(ascent_utils, ascent_string_fmt_family_check_extension_added_already) {
+    string output_path = prepare_output_dir();
+    Metadata::n_metadata["family_value_seed"] = 0;
+
+    string pre_existing_file_name_1 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_01000_diff_ext.root");
+    string pre_existing_file_name_2 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_01001_diff_ext.root");
+    std::ofstream file_1(pre_existing_file_name_1);
+    if (file_1.is_open()) {
+        file_1 << "This is a fake file for testing.\n";
+        file_1.close();
+    }
+
+    std::ofstream file_2(pre_existing_file_name_2);
+    if (file_2.is_open()) {
+        file_2 << "This is a fake file for testing.\n";
+        file_2.close();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_{family:05d}_diff_ext.root");
+    std::string expected_result = conduit::utils::join_file_path(output_path, "t_output_path_family_check_01002_diff_ext.root");
+    std::string result = ascent::expand_path_special_variables(output_file, ".root", -1);
+    std::cout << result << std::endl;
+    EXPECT_TRUE(result == expected_result);
+
+    remove_test_file(pre_existing_file_name_1);
+    remove_test_file(pre_existing_file_name_2);
+}
+
+TEST(ascent_utils, ascent_string_fmt_family_check_extension_sometimes_added) {
+    string output_path = prepare_output_dir();
+    Metadata::n_metadata["family_value_seed"] = 0;
+
+    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_{family:03d}_diff_ext");
+
+    std::string expected_result_1 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_000_diff_ext.root");
+    std::string result_1 = ascent::expand_path_special_variables(output_file + ".root", ".root", -1);
+    std::cout << result_1 << std::endl;
+    EXPECT_TRUE(result_1 == expected_result_1);
+
+    std::string expected_result_2 = conduit::utils::join_file_path(output_path, "t_output_path_family_check_001_diff_ext");
+    std::string result_2 = ascent::expand_path_special_variables(output_file, ".root", -1);
+    std::cout << result_2 << std::endl;
+    EXPECT_TRUE(result_2 == expected_result_2);
+}
