@@ -45,7 +45,9 @@ void render_blueprint_result(const std::string &field_name,
     conduit::Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = field_name;
-    scenes["s1/image_prefix"] = output_file;
+    // scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/camera/azimuth"] = 90.0;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
@@ -70,386 +72,254 @@ void render_blueprint_result(const std::string &field_name,
     ascent.close();
 }
 
-
-#if 0
-//-----------------------------------------------------------------------------
-TEST(ascent_rover, test_xray_serial_iparams)
+bool is_vtk_disabled(const Node &about)
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    bool vtk_disabled = about["runtimes/ascent/vtkm/status"].as_string() == "disabled";
+    if (vtk_disabled)
     {
-        ASCENT_INFO("Ascent support disabled, skipping test");
-        return;
+        ASCENT_INFO("vtkm support disabled, skipping test");
     }
+    return vtk_disabled;
+}
 
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
+void get_valid_test_data(Node &data)
+{
+    Node verify_info;
     conduit::blueprint::mesh::examples::braid("hexs",
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+} 
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing xray_extract");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_rover_xray_params");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-
-    //
-    // Create the actions.
-    //
-
-    conduit::Node extracts;
-    extracts["e1/type"]  = "xray";
-    // populate some param examples
-    extracts["e1/params/absorption"] = "radial";
-    //extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = output_file;
-    extracts["e1/params/image_params/min_value"] = 0.006f;
-    extracts["e1/params/image_params/max_value"] = 1.000;
-    extracts["e1/params/unit_scalar"] = 0.001f;
-    extracts["e1/params/image_params/log_scale"] = "true";
-
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
-
-    //
-    // Run Ascent
-    //
-
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // check that we created an image
-    // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
-    //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
-    std::string msg = "An example of using the xray extract.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
 //-----------------------------------------------------------------------------
-TEST(ascent_rover, test_xray_serial)
-{
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping test");
-        return;
-    }
+// TEST(ascent_rover, test_xray_serial_iparams)
+// {
+//     // the vtkm runtime is currently our only rendering runtime
+//     Node n;
+//     ascent::about(n);
+//     // only run this test if ascent was built with vtkm support
+//     if(is_vtk_disabled(n))
+//     {
+//         return;
+//     }
 
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+//     //
+//     // Create an example mesh.
+//     //
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//     Node data;
+//     Node verify_info;
+//     conduit::blueprint::mesh::examples::braid("hexs",
+//                                               EXAMPLE_MESH_SIDE_DIM,
+//                                               EXAMPLE_MESH_SIDE_DIM,
+//                                               EXAMPLE_MESH_SIDE_DIM,
+//                                               data);
+//     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+//     data.print();
+//     // get_valid_test_data(data);
 
-    ASCENT_INFO("Testing xray_extract");
+//     ASCENT_INFO("Testing xray_extract");
 
+//     string output_path = prepare_output_dir();
+//     string output_file = conduit::utils::join_file_path(output_path, "tout_rover_xray_params");
+//     std::cout << "\n output path: " << output_file << std::endl;
 
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_rover_xray");
+//     // remove old images before rendering
+//     remove_test_image(output_file);
 
-    // remove old images before rendering
-    remove_test_image(output_file);
+//     //
+//     // Create the actions.
+//     //
 
+//     conduit::Node extracts;
+//     extracts["e1/type"]  = "xray";
+//     // populate some param examples
+//     extracts["e1/params/absorption"] = "radial";
+//     extracts["e1/params/precision"] = "single";
+//     extracts["e1/params/emission"] = "emission-named-field";
+//     extracts["e1/params/filename"] = output_file;
+//     extracts["e1/params/image_params/min_value"] = 0.006f;
+//     extracts["e1/params/image_params/max_value"] = 1.000;
+//     extracts["e1/params/unit_scalar"] = 0.001f;
+//     extracts["e1/params/image_params/log_scale"] = "true";
 
-    //
-    // Create the actions.
-    //
+//     conduit::Node actions;
+//     // add the pipeline
+//     conduit::Node &add_extracts = actions.append();
+//     add_extracts["action"] = "add_extracts";
+//     add_extracts["extracts"] = extracts;
 
-    conduit::Node extracts;
-    extracts["e1/type"]  = "xray";
-    // populate some param examples
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = output_file;
+//     //
+//     // Run Ascent
+//     //
 
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
+//     Ascent ascent;
 
-    //
-    // Run Ascent
-    //
+//     Node ascent_opts;
+//     ascent_opts["runtime/type"] = "ascent";
+//     ascent_opts["exceptions"] = "forward";
+//     ascent.open(ascent_opts);
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.close();
 
-    Ascent ascent;
+//     // check that we created an image
+//     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
+//     //       to mitigate differences between platforms
+//     EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
 
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
+//     std::string msg = "An example of using the xray extract.";
+//     ASCENT_ACTIONS_DUMP(actions, output_file, msg);
+// }
 
-    // check that we created an image
-    // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
-    //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
-    std::string msg = "An example of using the xray extract.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
+// // #if 0
+// //-----------------------------------------------------------------------------
+// TEST(ascent_rover, test_xray_serial)
+// {
+//     // the vtkm runtime is currently our only rendering runtime
+//     Node n;
+//     ascent::about(n);
+//     // only run this test if ascent was built with vtkm support
+//     if(is_vtk_disabled(n))
+//     {
+//         return;
+//     }
 
-//
-//-----------------------------------------------------------------------------
-TEST(ascent_rover, test_volume_min_max)
-{
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping test");
-        return;
-    }
+//     //
+//     // Create an example mesh.
+//     //
+    
+//     Node data;
+//     get_valid_test_data(data);
 
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing volume_extract");
-
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_rover_volume_min_max");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
+//     ASCENT_INFO("Testing xray_extract");
 
 
-    //
-    // Create the actions.
-    //
+//     string output_path = prepare_output_dir();
+//     string output_file = conduit::utils::join_file_path(output_path,"tout_rover_xray");
 
-    conduit::Node extracts;
-    extracts["e1/type"]  = "volume";
-    // populate some param examples
-    extracts["e1/params/field"] = "radial";
-    extracts["e1/params/min_value"] = -1.0;
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/precision"] = "double";
-    extracts["e1/params/filename"] = output_file;
+//     // remove old images before rendering
+//     remove_test_image(output_file);
 
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
+//     //
+//     // Create the actions.
+//     //
 
-    //
-    // Run Ascent
-    //
+//     conduit::Node extracts;
+//     extracts["e1/type"]  = "xray";
+//     // populate some param examples
+//     extracts["e1/params/absorption"] = "radial";
+//     extracts["e1/params/emission"] = "radial";
+//     extracts["e1/params/filename"] = output_file;
 
-    Ascent ascent;
+//     conduit::Node actions;
+//     // add the pipeline
+//     conduit::Node &add_extracts = actions.append();
+//     add_extracts["action"] = "add_extracts";
+//     add_extracts["extracts"] = extracts;
 
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
+//     //
+//     // Run Ascent
+//     //
 
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
-    std::string msg = "An example of using the volume (unstructured grid) extract with "
-                      "min and max values.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-//-----------------------------------------------------------------------------
-TEST(ascent_rover, test_volume_serial)
-{
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping test");
-        return;
-    }
+//     Ascent ascent;
 
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+//     Node ascent_opts;
+//     ascent_opts["runtime/type"] = "ascent";
+//     ascent.open(ascent_opts);
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.close();
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//     // check that we created an image
+//     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
+//     //       to mitigate differences between platforms
+//     EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
+//     std::string msg = "An example of using the xray extract.";
+//     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+// }
 
-    ASCENT_INFO("Testing volume_extract");
+// //-----------------------------------------------------------------------------
+// TEST(ascent_rover, test_xray_blueprint)
+// {
+//     // the vtkm runtime is currently our only rendering runtime
+//     Node n;
+//     ascent::about(n);
+//     // only run this test if ascent was built with vtkm support
+//     if(is_vtk_disabled(n))
+//     {
+//         return;
+//     }
 
+//     //
+//     // Create an example mesh.
+//     //
+    
+//     Node data;
+//     get_valid_test_data(data);
 
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_rover_volume");
+//     ASCENT_INFO("Testing xray_extract");
 
-    // remove old images before rendering
-    remove_test_image(output_file);
+//     const std::string query_output_path = prepare_output_dir();
+//     const std::string query_output_file = 
+//         conduit::utils::join_file_path(query_output_path, "tout_rover_xray_query");
 
+//     // remove old images before rendering
+//     remove_test_image(query_output_file);
 
-    //
-    // Create the actions.
-    //
+//     //
+//     // Create the actions.
+//     //
 
-    conduit::Node extracts;
-    extracts["e1/type"]  = "volume";
-    // populate some param examples
-    extracts["e1/params/field"] = "radial";
-    extracts["e1/params/filename"] = output_file;
+//     conduit::Node extracts;
+//     extracts["e1/type"]  = "xray";
+//     extracts["e1/params/absorption"] = "radial";
+//     extracts["e1/params/emission"] = "radial";
+//     extracts["e1/params/filename"] = query_output_file;
+//     extracts["e1/params/blueprint"] = "json";
 
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
+//     conduit::Node actions;
+//     // add the pipeline
+//     conduit::Node &add_extracts = actions.append();
+//     add_extracts["action"] = "add_extracts";
+//     add_extracts["extracts"] = extracts;
 
-    //
-    // Run Ascent
-    //
+//     //
+//     // Run Ascent
+//     //
 
-    Ascent ascent;
+//     Ascent ascent;
 
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
+//     Node ascent_opts;
+//     ascent_opts["runtime/type"] = "ascent";
+//     ascent.open(ascent_opts);
+//     ascent.publish(data);
+//     ascent.execute(actions);
+//     ascent.close();
 
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
-    std::string msg = "An example of using the volume (unstructured grid) extract.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-#endif
-//-----------------------------------------------------------------------------
-TEST(ascent_rover, test_xray_blueprint)
-{
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent support disabled, skipping test");
-        return;
-    }
+//     const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
 
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+//     Node load_mesh, verify_info;
+//     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
+//     EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+//     const std::string image_output_path = prepare_output_dir();
+//     const std::string image_output_base =
+//         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
 
-    ASCENT_INFO("Testing xray_extract");
+//     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
 
-    const std::string query_output_path = prepare_output_dir();
-    const std::string query_output_file = 
-        conduit::utils::join_file_path(query_output_path, "tout_rover_xray_query");
+//     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
-    // remove old images before rendering
-    remove_test_image(query_output_file);
-
-    //
-    // Create the actions.
-    //
-
-    conduit::Node extracts;
-    extracts["e1/type"]  = "xray";
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
-
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
-
-    //
-    // Run Ascent
-    //
-
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
-
-    Node load_mesh;
-    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
-
-    const std::string image_output_path = prepare_output_dir();
-    const std::string image_output_base =
-        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
-
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-
-    // TODO we need the render to make an interesting picture. This will be accomplished
-    // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
-    std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
-}
+//     // TODO we need the render to make an interesting picture. This will be accomplished
+//     // by working on the basic mesh output and changing the order of the dimensions.
+//     // TODO we will need to change the baseline when we are making good renders.
+//     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
+//     std::string msg = "TODO we need a good description here";
+//     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+// }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
@@ -458,9 +328,8 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    if(is_vtk_disabled(n))
     {
-        ASCENT_INFO("Ascent support disabled, skipping test");
         return;
     }
 
@@ -545,3 +414,135 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
+
+#if 0
+//
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_volume_min_max)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(is_vtk_disabled(n))
+    {
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+    get_valid_test_data(data);
+    
+    ASCENT_INFO("Testing volume_extract");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_rover_volume_min_max");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "volume";
+    // populate some param examples
+    extracts["e1/params/field"] = "radial";
+    extracts["e1/params/min_value"] = -1.0;
+    extracts["e1/params/emission"] = "radial";
+    extracts["e1/params/precision"] = "double";
+    extracts["e1/params/filename"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
+    std::string msg = "An example of using the volume (unstructured grid) extract with "
+                      "min and max values.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_volume_serial)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(is_vtk_disabled(n))
+    {
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+    get_valid_test_data(data);
+
+    ASCENT_INFO("Testing volume_extract");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_rover_volume");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "volume";
+    // populate some param examples
+    extracts["e1/params/field"] = "radial";
+    extracts["e1/params/filename"] = output_file;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
+    std::string msg = "An example of using the volume (unstructured grid) extract.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+#endif
