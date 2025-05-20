@@ -234,7 +234,9 @@ RoverXRay::execute()
     //
     RenderSettings settings;
     settings.m_primary_field = params()["absorption"].as_string();
-
+    
+    // TODO: investigate how/why this is getting set, even if emission is not specified
+    // example: if absorption == "radial", why is emission also == "radial"
     if(params().has_path("emission"))
     {
        settings.m_secondary_field = params()["emission"].as_string();
