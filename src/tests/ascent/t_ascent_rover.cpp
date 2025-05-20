@@ -242,84 +242,84 @@ void get_valid_test_data(Node &data)
 // }
 
 // //-----------------------------------------------------------------------------
-// TEST(ascent_rover, test_xray_blueprint)
-// {
-//     // the vtkm runtime is currently our only rendering runtime
-//     Node n;
-//     ascent::about(n);
-//     // only run this test if ascent was built with vtkm support
-//     if(is_vtk_disabled(n))
-//     {
-//         return;
-//     }
+TEST(ascent_rover, test_xray_blueprint)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(is_vtk_disabled(n))
+    {
+        return;
+    }
 
-//     //
-//     // Create an example mesh.
-//     //
+    //
+    // Create an example mesh.
+    //
     
-//     Node data;
-//     get_valid_test_data(data);
+    Node data;
+    get_valid_test_data(data);
 
-//     ASCENT_INFO("Testing xray_extract");
+    ASCENT_INFO("Testing xray_extract");
 
-//     const std::string query_output_path = prepare_output_dir();
-//     const std::string query_output_file = 
-//         conduit::utils::join_file_path(query_output_path, "tout_rover_xray_query");
+    const std::string query_output_path = prepare_output_dir();
+    const std::string query_output_file = 
+        conduit::utils::join_file_path(query_output_path, "tout_rover_xray_query");
 
-//     // remove old images before rendering
-//     remove_test_image(query_output_file);
+    // remove old images before rendering
+    remove_test_image(query_output_file);
 
-//     //
-//     // Create the actions.
-//     //
+    //
+    // Create the actions.
+    //
 
-//     conduit::Node extracts;
-//     extracts["e1/type"]  = "xray";
-//     extracts["e1/params/absorption"] = "radial";
-//     extracts["e1/params/emission"] = "radial";
-//     extracts["e1/params/filename"] = query_output_file;
-//     extracts["e1/params/blueprint"] = "json";
+    conduit::Node extracts;
+    extracts["e1/type"]  = "xray";
+    extracts["e1/params/absorption"] = "radial";
+    extracts["e1/params/emission"] = "radial";
+    extracts["e1/params/filename"] = query_output_file;
+    extracts["e1/params/blueprint"] = "json";
 
-//     conduit::Node actions;
-//     // add the pipeline
-//     conduit::Node &add_extracts = actions.append();
-//     add_extracts["action"] = "add_extracts";
-//     add_extracts["extracts"] = extracts;
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
 
-//     //
-//     // Run Ascent
-//     //
+    //
+    // Run Ascent
+    //
 
-//     Ascent ascent;
+    Ascent ascent;
 
-//     Node ascent_opts;
-//     ascent_opts["runtime/type"] = "ascent";
-//     ascent.open(ascent_opts);
-//     ascent.publish(data);
-//     ascent.execute(actions);
-//     ascent.close();
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
 
-//     const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
+    const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
 
-//     Node load_mesh, verify_info;
-//     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
-//     EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
+    Node load_mesh, verify_info;
+    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
 
-//     const std::string image_output_path = prepare_output_dir();
-//     const std::string image_output_base =
-//         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
+    const std::string image_output_path = prepare_output_dir();
+    const std::string image_output_base =
+        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
 
-//     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
+    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
 
-//     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
-//     // TODO we need the render to make an interesting picture. This will be accomplished
-//     // by working on the basic mesh output and changing the order of the dimensions.
-//     // TODO we will need to change the baseline when we are making good renders.
-//     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
-//     std::string msg = "TODO we need a good description here";
-//     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
-// }
+    // TODO we need the render to make an interesting picture. This will be accomplished
+    // by working on the basic mesh output and changing the order of the dimensions.
+    // TODO we will need to change the baseline when we are making good renders.
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
+    std::string msg = "TODO we need a good description here";
+    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
