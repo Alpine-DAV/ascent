@@ -155,6 +155,8 @@ In the above example, `q2` will evaluate to true if the maximum value of
 pressure jumps over 100 units since the last in invocation, possibly indicating
 that an interesting event inside the simulation occurred.
 
+.. _DerivedFields:
+
 Derived Fields
 --------------
 Derived fields allow users to create new fields on the mesh as a
@@ -276,6 +278,12 @@ of a contour mesh which is output by a pipeline.
 
 Queries like the one above will act on the data published to Ascent. Queries
 are also capable of acting on the results of pipelines.
+
+.. note::
+    `add_queries` does not create a named output that can be referenced by other
+    execution blocks. Rather, queries are a way to summarize and output data.
+    To generate a named output, add the expression to the pipeline directly
+    (see :ref:`DerivedFields`).
 
 Using Queries in Filter Parameters
 ----------------------------------
