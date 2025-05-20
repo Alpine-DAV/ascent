@@ -326,7 +326,7 @@ each element of ``field('density')``.
 
 Certain functions and object attributes will also generate derived fields. The
 return type of such functions (in :ref:`ExpressionFunctions`)  and
-objects (in :ref:`ExpresssionsObjects`) is ``jitable``. For example, there
+objects (in :ref:`ExpressionObjects`) is ``jitable``. For example, there
 is an overload of the ``max`` function with a return type of ``jitable``
 which can be used to take the maximum of two fields via
 ``max(field('energy1'), field('energy2'))``.

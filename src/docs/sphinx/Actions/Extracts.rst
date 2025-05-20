@@ -250,7 +250,7 @@ As such there are a number of limitations on the type of data it writes out.
 These include the following:
 
     * The mesh must be a uniform grid.
-    * The mesh must have a pwer of 2 number of elements in each direction.
+    * The mesh must have a power of 2 number of elements in each direction.
     * The mesh dimensions must be the same in each direction.
     * The fields must be element based.
 

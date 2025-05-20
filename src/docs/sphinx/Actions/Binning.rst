@@ -22,7 +22,7 @@ to enable further analysis, like deviations from an average.
 
 Benefits
 --------
-Simulation user often needs to analyze quantaties of interest within fields on
+Simulation user often needs to analyze quantities of interest within fields on
 a mesh, but the user might not know the exact data structures used by the underlying
 simulation.
 For example, the mesh data might be represented as uniform grids or as high-order finite
@@ -36,7 +36,7 @@ simulation codes, regardless of the underlying mesh representation.
 Sampling and Aggregation
 ------------------------
 When specifying the number of bins on an axis, there will always be over sampling or undersampling.
-During spatial binning, each zone is placed into a bin based on its centriod, and as with all
+During spatial binning, each zone is placed into a bin based on its centroid, and as with all
 binning, this is subject to over sampling or under sampling.
 
 
@@ -55,7 +55,7 @@ When multiple values fall into a single bin (i.e., undersampling), we aggregate 
 *  var: variance of values in a bin
 *  rms: root mean square of values in a bin
 
-The aggegation function is the second argument to the binning function and is demonstrated in the line out
+The aggregation function is the second argument to the binning function and is demonstrated in the line out
 example.
 
 .. figure:: ../images/oversampling.png
@@ -71,14 +71,14 @@ from the results.
 
 Example Line Out
 ----------------
-We will use data binning to provide capablility similar to a a line out.
+We will use data binning to provide capability similar to a a line out.
 To accomplish this, we will define a spatial binning that is like a pencil
 down the center of the data set in the z direction,
 and we will use the noise mini-app to demonstrate.
 
 In the Lulesh proxy application, the mesh is defined with the spatial bounds
 (0,0,0)-(1.2,1.2,1.2).
-We will define a three dimentional binning on the ranges `x=(0,0.1)` with 1 bin,
+We will define a three dimensional binning on the ranges `x=(0,0.1)` with 1 bin,
 `y=(0,1.2)` with 1 bin, and `z=(0,1.2)` with 20 bins.
 This is technically a 3d binning, but it will result in a 1d array of values.
 
@@ -106,7 +106,7 @@ An example ascent actions file that create this query:
           expression: "binning('p','max', [axis('x',[0.0,0.1]), axis('y', [0.0,0.1]), axis('z', num_bins=20)])"
           name: my_binning_name
 
-Note that with and `x` and `y` axes that we are explicity specifying the bounds of the bins.
+Note that with and `x` and `y` axes that we are explicitly specifying the bounds of the bins.
 Ascent deduces the number of bins bases on the explicit coordinates inside the array `[0.0,0.1]`.
 With the `z` axis, the binning  automatically defines a uniform binning based on the spatial
 extents of the mesh.
@@ -116,7 +116,7 @@ Session File
 ^^^^^^^^^^^^
 The binning is called every cycle ascent is executed, and the results are stored within
 the expressions cache.
-When the run is complete, the results of the binnning, as well as all other expressions,
+When the run is complete, the results of the binning, as well as all other expressions,
 are output inside the `ascent_session.yaml` file, which is convenient for post processing.
 
 Here is a excerpt from the session file (note: the large array is truncated):
