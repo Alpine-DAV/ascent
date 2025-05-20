@@ -326,7 +326,7 @@ Resulting image:
 
 .. image:: examples/tout_field_filtering100.png
 
-An example of using the gradient filter on a element centered fieldand plotting the magnitude.
+An example of using the gradient filter on a element centered field and plotting the magnitude.
 -----------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -568,7 +568,7 @@ Resulting image:
 
 .. image:: examples/tout_render_3d_domain_overload100.png
 
-An example a blox clip
+An example a box clip
 -----------------------
 
 YAML actions:
@@ -726,7 +726,7 @@ Resulting image:
 
 .. image:: examples/tout_threshold_3d100.png
 
-A more complex trigger example using several functions that evaluate positons on the mesh.
+A more complex trigger example using several functions that evaluate positions on the mesh.
 -------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -737,7 +737,7 @@ Resulting image:
 
 .. image:: examples/tout_complex_trigger_actions100.png
 
-Example of adding multple ghosts with 2 topologies
+Example of adding multiple ghosts with 2 topologies
 ---------------------------------------------------
 
 YAML actions:
@@ -904,7 +904,7 @@ YAML actions:
 
 .. literalinclude:: examples/tout_relay_serial_extract_subset100.yaml
 
-A more complex trigger example using several functions that evaluate positons on the mesh.
+A more complex trigger example using several functions that evaluate positions on the mesh.
 -------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -932,7 +932,7 @@ YAML actions:
 
 .. literalinclude:: examples/tout_render_3d_name_format_keyword.yaml
 
-An example of quiering the current cycle.
+An example of querying the current cycle.
 ------------------------------------------
 
 YAML actions:
@@ -1002,7 +1002,7 @@ YAML actions:
 
 .. literalinclude:: examples/tout_render_amr_simple100.yaml
 
-An example of quiering the maximum value of a field from the result of a pipeline.
+An example of querying the maximum value of a field from the result of a pipeline.
 -----------------------------------------------------------------------------------
 
 YAML actions:
@@ -1037,7 +1037,7 @@ YAML actions:
 
 .. literalinclude:: examples/tout_render_actions.yaml
 
-An example of quiering the maximum value of a field.
+An example of querying the maximum value of a field.
 -----------------------------------------------------
 
 YAML actions:
