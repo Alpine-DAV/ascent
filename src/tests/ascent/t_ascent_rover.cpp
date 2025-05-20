@@ -74,7 +74,7 @@ bool is_vtk_disabled(const Node &about)
     bool vtk_disabled = about["runtimes/ascent/vtkm/status"].as_string() == "disabled";
     if (vtk_disabled)
     {
-        ASCENT_INFO("vtkm support disabled, skipping test");
+        ASCENT_INFO("vtkm support disabled, skipping test\n");
     }
     return vtk_disabled;
 }
@@ -113,7 +113,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     Node data;
     get_valid_test_data(data);
 
-    ASCENT_INFO("Testing xray_extract");
+    ASCENT_INFO("Testing xray_extract on conduit braid example\n");
 
     const std::string query_output_path = prepare_output_dir();
     const std::string query_output_file = 
@@ -204,12 +204,13 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
-    ASCENT_INFO("Testing xray_extract on curv3d example");
+    ASCENT_INFO("Testing xray_extract on curv3d example\n");
 
     const std::string query_output_path = prepare_output_dir();
     const std::string query_output_file = 
         conduit::utils::join_file_path(query_output_path,
                                        "tout_rover_xray_curv3d_blueprint_query");
+    std::cout << "query_output_file: " << query_output_file << std::endl;
 
     // remove old images before rendering
     remove_test_image(query_output_file);
@@ -246,6 +247,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     ascent.close();
 
     const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    std::cout << "full_outfile_name: " << full_outfile_name << std::endl;
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -298,7 +300,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
-    ASCENT_INFO("Testing xray_extract on multi_curv3d example");
+    ASCENT_INFO("Testing xray_extract on multi_curv3d example\n");
 
     const std::string query_output_path = prepare_output_dir();
     const std::string query_output_file = 
@@ -392,7 +394,7 @@ TEST(ascent_rover, test_xray_blueprint_tire)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
-    ASCENT_INFO("Testing xray_extract on curv3d example");
+    ASCENT_INFO("Testing xray_extract on tire example\n");
 
     const std::string query_output_path = prepare_output_dir();
     const std::string query_output_file = 
@@ -408,6 +410,7 @@ TEST(ascent_rover, test_xray_blueprint_tire)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
+    // TODO: Figure out proper field names
     extracts["e1/params/absorption"] = "d";
     extracts["e1/params/emission"] = "p";
     extracts["e1/params/filename"] = query_output_file;
@@ -486,7 +489,7 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
-    ASCENT_INFO("Testing xray_extract on curv2d example");
+    ASCENT_INFO("Testing xray_extract on curv2d example\n");
 
     const std::string query_output_path = prepare_output_dir();
     const std::string query_output_file = 
@@ -577,7 +580,7 @@ TEST(ascent_rover, test_xray_serial_image_params)
     data.print();
     // get_valid_test_data(data);
 
-    ASCENT_INFO("Testing xray_extract");
+    ASCENT_INFO("Testing xray_extract\n");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, "tout_rover_xray_params");
@@ -594,7 +597,6 @@ TEST(ascent_rover, test_xray_serial_image_params)
     // populate some param examples
     extracts["e1/params/absorption"] = "radial";
     extracts["e1/params/precision"] = "single";
-    extracts["e1/params/emission"] = "emission-named-field";
     extracts["e1/params/filename"] = output_file;
     extracts["e1/params/image_params/min_value"] = 0.006f;
     extracts["e1/params/image_params/max_value"] = 1.000;
@@ -649,8 +651,7 @@ TEST(ascent_rover, test_xray_serial)
     Node data;
     get_valid_test_data(data);
 
-    ASCENT_INFO("Testing xray_extract");
-
+    ASCENT_INFO("Testing xray_extract\n");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path, "tout_rover_xray");
@@ -720,7 +721,7 @@ TEST(ascent_rover, test_volume_min_max)
     Node data;
     get_valid_test_data(data);
     
-    ASCENT_INFO("Testing volume_extract");
+    ASCENT_INFO("Testing volume_extract\n");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_rover_volume_min_max");
@@ -787,7 +788,7 @@ TEST(ascent_rover, test_volume_serial)
     Node data;
     get_valid_test_data(data);
 
-    ASCENT_INFO("Testing volume_extract");
+    ASCENT_INFO("Testing volume_extract\n");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_rover_volume");
