@@ -280,10 +280,10 @@ Queries like the one above will act on the data published to Ascent. Queries
 are also capable of acting on the results of pipelines.
 
 .. note::
-    `add_queries` does not create a named output that can be referenced by other
-    execution blocks. Rather, queries are a way to summarize and output data.
-    To generate a named output, add the expression to the pipeline directly
-    (see :ref:`DerivedFields`).
+    `add_queries` does not create mesh fields that can be used in scenes or
+    filters. It only produces scalar results for analysis or logic. To generate
+    fields usable in visualizations or pipelines, use a derived field expression
+    inside a pipeline (see :ref:`DerivedFields`).
 
 Using Queries in Filter Parameters
 ----------------------------------
