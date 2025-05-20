@@ -364,6 +364,8 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
+#if 0
+
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_tire)
 {
@@ -410,9 +412,9 @@ TEST(ascent_rover, test_xray_blueprint_tire)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    // TODO: Figure out proper field names
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
+    // field names are pressure, sb, and temperature
+    extracts["e1/params/absorption"] = "pressure";
+    // extracts["e1/params/emission"] = "pressure";
     extracts["e1/params/filename"] = query_output_file;
     extracts["e1/params/blueprint"] = "json";
 
@@ -431,6 +433,7 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     Node ascent_opts;
     ascent.open(ascent_opts);
     ascent.publish(data);
+    // TODO: Figure out why is this so slow to run
     ascent.execute(actions);
     // TODO can we ask Ascent for the name of the file it wrote?
     // std::cout << ascent.info().to_yaml() << std::endl;
@@ -525,6 +528,7 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     Node ascent_opts;
     ascent.open(ascent_opts);
     ascent.publish(data);
+    // TODO: It seems that rover doesn't support datasets defined using z/r
     ascent.execute(actions);
     // TODO can we ask Ascent for the name of the file it wrote?
     // std::cout << ascent.info().to_yaml() << std::endl;
@@ -701,7 +705,6 @@ TEST(ascent_rover, test_xray_serial)
 // Note: Ascent doesn't currently use rover for volume rendering
 //
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_volume_min_max)
 {
