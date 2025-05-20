@@ -155,6 +155,8 @@ In the above example, `q2` will evaluate to true if the maximum value of
 pressure jumps over 100 units since the last in invocation, possibly indicating
 that an interesting event inside the simulation occurred.
 
+.. _DerivedFields:
+
 Derived Fields
 --------------
 Derived fields allow users to create new fields on the mesh as a
@@ -277,6 +279,12 @@ of a contour mesh which is output by a pipeline.
 Queries like the one above will act on the data published to Ascent. Queries
 are also capable of acting on the results of pipelines.
 
+.. note::
+    `add_queries` does not create mesh fields that can be used in scenes or
+    filters. It only produces scalar results for analysis or logic. To generate
+    fields usable in visualizations or pipelines, use a derived field expression
+    inside a pipeline (see :ref:`DerivedFields`).
+
 Using Queries in Filter Parameters
 ----------------------------------
 When running in situ, its often the case that you know what you are interested
@@ -326,7 +334,7 @@ each element of ``field('density')``.
 
 Certain functions and object attributes will also generate derived fields. The
 return type of such functions (in :ref:`ExpressionFunctions`)  and
-objects (in :ref:`ExpresssionsObjects`) is ``jitable``. For example, there
+objects (in :ref:`ExpressionObjects`) is ``jitable``. For example, there
 is an overload of the ``max`` function with a return type of ``jitable``
 which can be used to take the maximum of two fields via
 ``max(field('energy1'), field('energy2'))``.

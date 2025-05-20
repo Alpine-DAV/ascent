@@ -102,7 +102,7 @@ Important variables to keep note of are:
  - ``state`` defines different areas with in the mesh, their shape, and the amount of initial energy deposited in them.
  - ``x_cells`` defines the number of cells in the x direction
  - ``xmin`` and ``xmax`` defines the spatial extents in the x direction for the problem
- - ``visit_freqency`` defines often the Ascent API is called
+ - ``visit_frequency`` defines often the Ascent API is called
 
 .. _kripke_integration:
 
