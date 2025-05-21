@@ -43,12 +43,13 @@ namespace filters
 ///
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void mesh_blueprint_save(const conduit::Node &data,
-                         const std::string &path,
-                         const std::string &file_protocol,
-                         int num_files,
-                         const conduit::Node &extra_opts,
-                         std::string &root_file_out);
+void
+mesh_blueprint_save(const conduit::Node &data,
+                    const std::string &path,
+                    const std::string &file_protocol,
+                    int num_files,
+                    const conduit::Node &extra_opts,
+                    std::string &root_file_out);
 
 class ASCENT_API RelayIOSave : public ::flow::Filter
 {

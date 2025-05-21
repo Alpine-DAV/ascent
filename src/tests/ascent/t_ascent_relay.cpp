@@ -30,6 +30,13 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
+// helper def to see if conduit 0.9.4 or newer
+// which includes a new method to generate root file name string
+// given specific options to relays blueprint mesh method
+#if (CONDUIT_VERSION_MINOR >= 9 ) && (CONDUIT_VERSION_PATCH >= 4 )
+    #define CONDUIT_HAS_ROOT_FILE_NAME_GEN 1
+#endif
+
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
@@ -82,15 +89,22 @@ TEST(ascent_relay, test_relay_hdf5)
 
     Ascent ascent;
 
-    Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    Node info;
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(info);
     ascent.close();
 
+    std::cout << info.to_yaml();
+
+#ifdef CONDUIT_HAS_ROOT_FILE_NAME_GEN
+    // if conduit 0.9.4 provides util that allows us to 
+    // provide this, only check if we are using new enough conduit
+    // check the path of the root file reported in info
+    EXPECT_EQ(info["extracts"][0]["path"].as_string(),
+              output_root);
+#endif
     // make sure the expected root file exists
     EXPECT_TRUE(conduit::utils::is_file(output_root));
 }
